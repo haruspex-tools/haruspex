@@ -31,6 +31,92 @@
     }
   ],
   "types": {
+    "ListBooksFirstReview": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "text",
+          "type": {
+            "kind": "json-text"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/list_books.sql:30:20"
+            }
+          ]
+        },
+        {
+          "name": "live",
+          "type": {
+            "ref": "ListBooksFirstReviewLive"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/list_books.sql:35:31"
+            }
+          ]
+        }
+      ]
+    },
+    "ListBooksFirstReviewLive": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "stars",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 1,
+              "inclusive": true,
+              "from": {
+                "check": "pay.ck_review_stars"
+              }
+            },
+            "max": {
+              "value": 5,
+              "inclusive": true,
+              "from": {
+                "check": "pay.ck_review_stars"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
     "ListBooksMeta": {
       "kind": "object",
       "fields": [
@@ -455,6 +541,28 @@
               "at": "procedures/list_books.sql:21:8"
             }
           ]
+        },
+        {
+          "name": "firstReviewText",
+          "type": {
+            "kind": "json-text"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/list_books.sql:24:8"
+            }
+          ]
+        },
+        {
+          "name": "firstReview",
+          "type": {
+            "ref": "ListBooksFirstReview"
+          },
+          "presence": "always",
+          "nullable": false
         },
         {
           "name": "meta",

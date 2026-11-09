@@ -13,8 +13,8 @@ what the edge check shows.
 | Procedure | Covers |
 |---|---|
 | `pay.get_author` | a payload in `json_query(json_object(…))`: a key kept with null (`NULL ON NULL`), a native `json` column, a correlated `json_arrayagg` of objects with `ABSENT ON NULL` (null with no books), a `FOR JSON PATH` subquery inside the constructor; no row at all when nothing matches |
-| `pay.list_books` | constructors as `FOR JSON PATH` columns: `json_array` as a tuple, as an array of the elements' types with its length bounds, and with `NULL ON NULL`; correlated aggregates in a `json_object` with `ABSENT ON NULL`; `TOP (1) json_object(…)` in a subquery; `json_objectagg` with data keys and nullable values; constructors nested in `json_query` |
+| `pay.list_books` | constructors as `FOR JSON PATH` columns: `json_array` as a tuple, as an array of the elements' types with its length bounds, and with `NULL ON NULL`; correlated aggregates in a `json_object` with `ABSENT ON NULL`; `TOP (1) json_object(…)` in a subquery; `json_objectagg` with data keys and nullable values; constructors nested in `json_query`; a `FOR JSON PATH, WITHOUT_ARRAY_WRAPPER` subquery, which nests as text in FOR JSON and in a constructor, and as JSON through `json_query` |
 | `pay.author_stats` | `json_arrayagg` and `json_objectagg` under `GROUP BY`, never null |
-| `pay.reviews_by_book` | the same, of objects, and a record keyed by a number |
+| `pay.reviews_by_book` | the same, of objects, and a record keyed by a number; `json_arrayagg` of a nullable value whose group is all nulls (`[]`) |
 | `pay.author_documents` | a constructor and a `json` column as rowset columns: JSON text to parse |
 | `pay.review_digest` | `json_arrayagg` and `json_objectagg` without `GROUP BY`, as rowset columns: `NULL` over no rows |

@@ -153,6 +153,41 @@ public class JsonConstructorTests
     }
 
     [Fact]
+    public void A_for_json_subquery_without_its_array_wrapper_is_text_in_a_constructor_and_in_for_json()
+    {
+        // Observed: (SELECT … FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) nests as an escaped string, {"a":"{\"x\":1}"}.
+        var doc = Procedure("""
+            SELECT json_object('one': (SELECT u.id FROM dbo.u AS u WHERE u.t_id = t.id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS o,
+                   json_array((SELECT u.id FROM dbo.u AS u WHERE u.t_id = t.id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS a,
+                   (SELECT u.id FROM dbo.u AS u WHERE u.t_id = t.id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS f
+            FROM dbo.t AS t FOR JSON PATH;
+            """);
+
+        var one = Sub(doc, Field(doc, "o"), "one");
+        Assert.IsType<IrJsonText>(one.Type);
+        Assert.Equal(["empty-subquery"], Rules(one.NullableBecause));
+        Assert.IsType<IrJsonText>(Assert.IsType<IrArray>(Field(doc, "a").Type).Items);
+        var f = Field(doc, "f");
+        Assert.IsType<IrJsonText>(f.Type);
+        Assert.Equal(IrPresence.OmittedWhenNull, f.Presence);
+    }
+
+    [Fact]
+    public void Json_query_over_it_makes_it_a_live_object()
+    {
+        var doc = Procedure("""
+            SELECT json_object('one': json_query((SELECT u.id FROM dbo.u AS u WHERE u.t_id = t.id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))) AS o,
+                   json_query((SELECT u.id FROM dbo.u AS u WHERE u.t_id = t.id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS f
+            FROM dbo.t AS t FOR JSON PATH;
+            """);
+
+        var one = Sub(doc, Field(doc, "o"), "one");
+        Assert.Equal("id", Assert.Single(Fields(doc, one.Type)).Name);
+        Assert.Equal(["empty-subquery"], Rules(one.NullableBecause));
+        Assert.Equal("id", Assert.Single(Fields(doc, Field(doc, "f").Type)).Name);
+    }
+
+    [Fact]
     public void Constructors_nest_several_levels_deep()
     {
         var doc = Procedure("SELECT json_array(json_object('a': json_array(json_object('b': json_array(t.id, json_object('c': t.name)))))) AS v FROM dbo.t AS t FOR JSON PATH;");

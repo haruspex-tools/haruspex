@@ -170,6 +170,25 @@
           },
           "presence": "always",
           "nullable": false
+        },
+        {
+          "name": "commentList",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "string",
+              "sql": "nvarchar(100)",
+              "maxLength": {
+                "value": 100,
+                "unit": "utf16",
+                "from": {
+                  "type": "nvarchar(100)"
+                }
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
         }
       ]
     }

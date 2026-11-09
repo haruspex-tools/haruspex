@@ -13,6 +13,7 @@ export const ReviewsByBookRowSchema = z.object({
   bookId: z.int32(),
   reviews: z.array(ReviewsByBookReviewSchema).min(1),
   comments: z.record(z.string(), z.string().max(100).nullable()),
+  commentList: z.array(z.string().max(100)),
 })
 export type ReviewsByBookRow = z.infer<typeof ReviewsByBookRowSchema>
 

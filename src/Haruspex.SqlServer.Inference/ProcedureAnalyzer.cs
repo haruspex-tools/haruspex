@@ -393,7 +393,7 @@ internal sealed class ProcedureAnalyzer
         var at = At(subquery);
 
         // A subquery returning one JSON value, typically a correlated aggregate, keeps it live: observed for a
-        // constructor, an aggregate, json_query, a json value and a FOR JSON subquery inside it. With no rows it is
+        // constructor, an aggregate, json_query, a json value and a FOR JSON subquery (with its wrapper) inside it. With no rows it is
         // null; more than one row is an error, not a value. Any other subquery is not modelled.
         if (subquery.QueryExpression is QuerySpecification { ForClause: null } plain)
         {
@@ -405,12 +405,17 @@ internal sealed class ProcedureAnalyzer
         if (subquery.QueryExpression is not QuerySpecification { ForClause: JsonForClause json } query)
             return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"A subquery that returns neither FOR JSON nor one JSON value is not modelled yet: {Text(subquery)}", at));
 
-        // A FOR JSON subquery is JSON that an enclosing FOR JSON embeds without escaping. It is null when the
-        // subquery returns no rows, which nothing here can rule out.
+        // A FOR JSON subquery is JSON that an enclosing FOR JSON or constructor embeds without escaping, but only with
+        // its array wrapper: WITHOUT_ARRAY_WRAPPER makes it text, escaped as a string wherever it nests, until json_query
+        // makes it JSON again (both observed). Either is null when the subquery returns no rows, which nothing here can
+        // rule out.
         var shape = ForJson(Query(query, scope), json, at);
-        return shape is UnknownShape unknown
-            ? Value.Unknown(unknown)
-            : new Value(shape, [new IrNullReason(IrNullRules.EmptySubquery, at.ToString())], IsLiveJson: true);
+        if (shape is UnknownShape unknown)
+            return Value.Unknown(unknown);
+        IReadOnlyList<IrNullReason> empty = [new IrNullReason(IrNullRules.EmptySubquery, at.ToString())];
+        return json.Options.Any(o => o.OptionKind == JsonForClauseOptions.WithoutArrayWrapper)
+            ? new Value(new JsonTextShape(), empty, TextOf: shape)
+            : new Value(shape, empty, IsLiveJson: true);
     }
 
     private Value JsonQuery(FunctionCall call, BindingScope scope)
@@ -418,6 +423,8 @@ internal sealed class ProcedureAnalyzer
         var argument = Expression(call.Parameters[0], scope);
         if (argument.IsLiveJson || argument.Shape is UnknownShape)
             return argument;
+        if (argument.TextOf is { } shape)
+            return new Value(shape, argument.NullableBecause, IsLiveJson: true);
 
         // json_query over text (a column, a variable) makes it live JSON, but its shape is in data we cannot see.
         return Value.Unknown(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{Text(call)} reads JSON that is not built here, so its shape is unknown.", At(call)));
@@ -429,8 +436,9 @@ internal sealed class ProcedureAnalyzer
     // (JsonConstructorObservationTests in the differential tests):
     // - json_object and json_objectagg keep a null value's key by default (NULL ON NULL); json_array and
     //   json_arrayagg drop a null by default (ABSENT ON NULL). Each takes the other option when it is written.
-    // - A constructor, json_query, a FOR JSON subquery and a json value nest as JSON in a constructor and in FOR
-    //   JSON; any other string is escaped text. So a constructor is live JSON, and a value keeps its shape (and its
+    // - A constructor, json_query, a FOR JSON subquery with its array wrapper and a json value nest as JSON in a
+    //   constructor and in FOR JSON; any other string is escaped text, a FOR JSON subquery WITHOUT_ARRAY_WRAPPER
+    //   included. So a constructor is live JSON, and a value keeps its shape (and its
     //   facets, while it passes through unchanged) and its nullability.
     // - Scalars are written as FOR JSON writes them (dates, times, GUIDs, bit, decimals, bigint, padded char), so
     //   they keep the kinds they have in FOR JSON.

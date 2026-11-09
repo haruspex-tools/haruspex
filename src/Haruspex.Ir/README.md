@@ -138,10 +138,11 @@ not for these facts.
   constraints) or dropped after its `CREATE TABLE` becomes unknown (`unsupported-source`), and a procedure
   altered or dropped has unknown results (`redefined`), because which definition applies depends on the
   order scripts run. A CLR procedure's results are unknown (`external-code`).
-- **Live JSON versus JSON text.** JSON built by `FOR JSON` or a JSON constructor, `json_query` over either, and a
-  value of the native `json` type nest as JSON, in `FOR JSON` and in the constructors, also through a scalar
-  subquery. Any other string is escaped as text, even one holding JSON, and so is JSON once it passes through a
-  variable (observed). Once JSON is returned as a column it is a string holding JSON (`json-text`), which the
+- **Live JSON versus JSON text.** A `FOR JSON` subquery with its array wrapper, a JSON constructor, `json_query`
+  over any JSON, and a value of the native `json` type nest as JSON, in `FOR JSON` and in the constructors, also
+  through a scalar subquery. Any other string is escaped as text, even one holding JSON: a `FOR JSON` subquery
+  `WITHOUT_ARRAY_WRAPPER` nests as a string (`{"a":"{\"x\":1}"}`, so `json-text`) until `json_query` makes it JSON
+  again, and JSON passed through a variable is text too (all observed). Once JSON is returned as a column it is a string holding JSON (`json-text`), which the
   consumer must parse; a `json` column and a `json` parameter are `json-text` too. A `json` value inside JSON is
   live but of unknown shape (`json-shape-unknown`): its shape is in the data.
 - **The JSON constructors** (see "JSON constructors" below) give objects, tuples, arrays and records.

@@ -15,6 +15,18 @@ export const ListBooksReviewsSchema = z.object({
 })
 export type ListBooksReviews = z.infer<typeof ListBooksReviewsSchema>
 
+export const ListBooksFirstReviewLiveSchema = z.object({
+  id: z.int32(),
+  stars: z.int().min(1).max(5),
+})
+export type ListBooksFirstReviewLive = z.infer<typeof ListBooksFirstReviewLiveSchema>
+
+export const ListBooksFirstReviewSchema = z.object({
+  text: z.string().nullable() /* JSON text */,
+  live: ListBooksFirstReviewLiveSchema.nullable(),
+})
+export type ListBooksFirstReview = z.infer<typeof ListBooksFirstReviewSchema>
+
 export const ListBooksMetaAuthorSchema = z.object({
   id: z.int32(),
   name: z.string().max(40),
@@ -33,6 +45,8 @@ export const ListBooksRowSchema = z.object({
   slots: z.tuple([z.string().max(60), z.string().max(13).nullable(), z.iso.date().nullable()]) /* char(13) pads to 13 bytes: 13 characters in a single-byte collation, at most 13 otherwise; no collation is declared */,
   reviews: ListBooksReviewsSchema,
   tags: z.record(z.string(), z.int().min(1).max(100).nullable()).optional(),
+  firstReviewText: z.string().optional() /* JSON text */,
+  firstReview: ListBooksFirstReviewSchema,
   meta: ListBooksMetaSchema,
 })
 export type ListBooksRow = z.infer<typeof ListBooksRowSchema>

@@ -12,8 +12,12 @@ export const book: ListBooksRow = {
   slots: ['A title', null, null],
   // json_object(... ABSENT ON NULL) leaves a null key out.
   reviews: {},
+  firstReview: { text: '{"id":1,"stars":5}', live: { id: 1, stars: 5 } },
   meta: { author: { id: 1, name: 'An author' } },
 }
+
+// @ts-expect-error Without its array wrapper a FOR JSON subquery nests as text, not as an object.
+export const textAsObject: ListBooksRow = { ...book, firstReview: { text: { id: 1, stars: 5 }, live: null } }
 
 // @ts-expect-error A tuple has exactly its positions.
 export const shortPair: ListBooksRow = { ...book, pair: [1] }
@@ -42,4 +46,5 @@ export const stats: AuthorStatsRow = { authorId: 1, bookIds: [1], prices: { 'A t
 // @ts-expect-error ...and never null.
 export const noIds: AuthorStatsRow = { ...stats, bookIds: null }
 
-export const reviews: ReviewsByBookRow = { bookId: 1, reviews: [{ id: 1, stars: 5 }], comments: { '1': null } }
+// A group whose comments are all null gives [] (ABSENT ON NULL drops them), so no fewest items is claimed.
+export const reviews: ReviewsByBookRow = { bookId: 1, reviews: [{ id: 1, stars: 5 }], comments: { '1': null }, commentList: [] }

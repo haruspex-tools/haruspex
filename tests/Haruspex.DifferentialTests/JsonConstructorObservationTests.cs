@@ -170,6 +170,19 @@ public class JsonConstructorObservationTests(SqlServerFixture server)
                                    'd': (SELECT json_array(1) WHERE 1 = 0), 'e': (SELECT json_object('k': 1)));
                 """));
 
+    [Theory]
+    // Without its array wrapper a FOR JSON subquery is text wherever it nests: in a constructor, in FOR JSON, and through
+    // a further subquery. json_query makes it JSON again. With the wrapper it is JSON (above).
+    [InlineData("SELECT json_object('a': (SELECT 1 AS x FOR JSON PATH, WITHOUT_ARRAY_WRAPPER));", """{"a":"{\"x\":1}"}""")]
+    [InlineData("SELECT json_array((SELECT 1 AS x FOR JSON PATH, WITHOUT_ARRAY_WRAPPER));", """["{\"x\":1}"]""")]
+    [InlineData("SELECT (SELECT 1 AS x FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS a FOR JSON PATH;", """[{"a":"{\"x\":1}"}]""")]
+    [InlineData("SELECT json_object('a': (SELECT (SELECT 1 AS x FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)));", """{"a":"{\"x\":1}"}""")]
+    [InlineData("SELECT json_object('a': json_query((SELECT 1 AS x FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)));", """{"a":{"x":1}}""")]
+    [InlineData("SELECT json_query((SELECT 1 AS x FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS a FOR JSON PATH;", """[{"a":{"x":1}}]""")]
+    [InlineData("SELECT json_object('a': (SELECT 1 AS x WHERE 1 = 0 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER));", """{"a":null}""")]
+    public async Task A_for_json_subquery_without_its_array_wrapper_nests_as_text(string sql, string expected) =>
+        Assert.Equal(expected, await One(sql));
+
     [Fact]
     public async Task A_constructor_through_a_variable_is_text() =>
         // The JSON-ness of a value does not survive a variable: it is an nvarchar(max) like any other.

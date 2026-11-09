@@ -42,11 +42,15 @@ internal sealed record FieldShape(string Name, Shape Type, IrPresence Presence, 
 /// <param name="NullableBecause">Why it can be null; empty when it is proved non-null.</param>
 /// <param name="IsLiveJson">
 /// Whether it is JSON that <c>FOR JSON</c> and the JSON constructors embed as JSON rather than escaping as a string:
-/// the output of a <c>FOR JSON</c> subquery, of a constructor (<c>json_object</c>, <c>json_array</c>,
+/// the output of a <c>FOR JSON</c> subquery with its array wrapper, of a constructor (<c>json_object</c>, <c>json_array</c>,
 /// <c>json_arrayagg</c>, <c>json_objectagg</c>), a value of the <c>json</c> type, <c>json_query</c> over any of them,
 /// or a scalar subquery returning one. <see cref="Shape"/> is then the JSON's shape.
 /// </param>
-internal sealed record Value(Shape Shape, IReadOnlyList<IrNullReason> NullableBecause, bool IsLiveJson = false)
+/// <param name="TextOf">
+/// For JSON text whose shape is known, the shape: what <c>json_query</c> makes of it. A <c>FOR JSON</c> subquery without
+/// its array wrapper is such text (<see cref="Shape"/> is then <see cref="JsonTextShape"/>).
+/// </param>
+internal sealed record Value(Shape Shape, IReadOnlyList<IrNullReason> NullableBecause, bool IsLiveJson = false, Shape? TextOf = null)
 {
     public static Value Unknown(UnknownShape shape) =>
         new(shape, [new IrNullReason(IrNullRules.Unknown, shape.At.ToString())]);
