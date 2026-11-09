@@ -16,6 +16,7 @@ public class FixtureSnapshotTests
         ["orders"] = new(() => SqlProject.Load(TestPaths.Fixture("orders"))),
         ["values"] = new(() => SqlProject.Load(TestPaths.Fixture("values"))),
         ["checks"] = new(() => SqlProject.Load(TestPaths.Fixture("checks"))),
+        ["payloads"] = new(() => SqlProject.Load(TestPaths.Fixture("payloads"))),
     };
 
     /// <summary>Every fixture procedure, with its fixture. Procedure ids are unique across fixtures.</summary>
@@ -35,6 +36,11 @@ public class FixtureSnapshotTests
         ["vals.list_nested_with_nulls"] = "values",
         ["chk.list_tickets"] = "checks",
         ["chk.ticket_rows"] = "checks",
+        ["pay.get_author"] = "payloads",
+        ["pay.list_books"] = "payloads",
+        ["pay.author_stats"] = "payloads",
+        ["pay.reviews_by_book"] = "payloads",
+        ["pay.author_documents"] = "payloads",
     };
 
     public static TheoryData<string> Procedures { get; } = [.. FixtureOf.Keys];

@@ -1,0 +1,471 @@
+{
+  "irVersion": "0.3",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "pay.list_books",
+      "name": "ListBooks",
+      "kind": "procedure",
+      "at": "procedures/list_books.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListBooksRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/list_books.sql:7:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListBooksMeta": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "author",
+          "type": {
+            "ref": "ListBooksMetaAuthor"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ListBooksMetaAuthor": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ListBooksReviews": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "stars",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "number",
+              "format": "uint8",
+              "sql": "tinyint",
+              "min": {
+                "value": 1,
+                "inclusive": true,
+                "from": {
+                  "check": "pay.ck_review_stars"
+                }
+              },
+              "max": {
+                "value": 5,
+                "inclusive": true,
+                "from": {
+                  "check": "pay.ck_review_stars"
+                }
+              }
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/list_books.sql:12:29"
+            },
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/list_books.sql:12:21"
+            }
+          ]
+        },
+        {
+          "name": "comments",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "string",
+              "sql": "nvarchar(100)",
+              "maxLength": {
+                "value": 100,
+                "unit": "utf16",
+                "from": {
+                  "type": "nvarchar(100)"
+                }
+              }
+            },
+            "itemsNullable": true,
+            "itemsNullableBecause": [
+              {
+                "rule": "nullable-column",
+                "at": "pay.review.comment"
+              }
+            ],
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/list_books.sql:13:32"
+            },
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/list_books.sql:13:24"
+            }
+          ]
+        },
+        {
+          "name": "latest",
+          "type": {
+            "ref": "ListBooksReviewsLatest"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/list_books.sql:14:22"
+            }
+          ]
+        }
+      ]
+    },
+    "ListBooksReviewsLatest": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "stars",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 1,
+              "inclusive": true,
+              "from": {
+                "check": "pay.ck_review_stars"
+              }
+            },
+            "max": {
+              "value": 5,
+              "inclusive": true,
+              "from": {
+                "check": "pay.ck_review_stars"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "posted",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(0)"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ListBooksRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "pair",
+          "type": {
+            "kind": "tuple",
+            "items": [
+              {
+                "type": {
+                  "kind": "number",
+                  "format": "int32",
+                  "sql": "int",
+                  "min": {
+                    "value": -2147483648,
+                    "inclusive": true,
+                    "from": {
+                      "type": "int"
+                    }
+                  },
+                  "max": {
+                    "value": 2147483647,
+                    "inclusive": true,
+                    "from": {
+                      "type": "int"
+                    }
+                  }
+                },
+                "nullable": false
+              },
+              {
+                "type": {
+                  "kind": "number",
+                  "format": "decimal",
+                  "sql": "decimal(9,2)",
+                  "digits": {
+                    "precision": 9,
+                    "scale": 2,
+                    "from": {
+                      "type": "decimal(9,2)"
+                    }
+                  },
+                  "min": {
+                    "value": 0,
+                    "inclusive": true,
+                    "from": {
+                      "check": "pay.ck_book_price"
+                    }
+                  },
+                  "max": {
+                    "value": 9999999.99,
+                    "inclusive": true,
+                    "from": {
+                      "type": "decimal(9,2)"
+                    }
+                  }
+                },
+                "nullable": false
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "labels",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "union",
+              "variants": [
+                {
+                  "kind": "string",
+                  "sql": "nvarchar(60)",
+                  "maxLength": {
+                    "value": 60,
+                    "unit": "utf16",
+                    "from": {
+                      "type": "nvarchar(60)"
+                    }
+                  }
+                },
+                {
+                  "kind": "string",
+                  "sql": "char(13)",
+                  "length": {
+                    "value": 13,
+                    "unit": "bytes",
+                    "from": {
+                      "type": "char(13)"
+                    }
+                  }
+                }
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 2
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "slots",
+          "type": {
+            "kind": "tuple",
+            "items": [
+              {
+                "type": {
+                  "kind": "string",
+                  "sql": "nvarchar(60)",
+                  "maxLength": {
+                    "value": 60,
+                    "unit": "utf16",
+                    "from": {
+                      "type": "nvarchar(60)"
+                    }
+                  }
+                },
+                "nullable": false
+              },
+              {
+                "type": {
+                  "kind": "string",
+                  "sql": "char(13)",
+                  "length": {
+                    "value": 13,
+                    "unit": "bytes",
+                    "from": {
+                      "type": "char(13)"
+                    }
+                  }
+                },
+                "nullable": true,
+                "nullableBecause": [
+                  {
+                    "rule": "nullable-column",
+                    "at": "pay.book.isbn"
+                  }
+                ]
+              },
+              {
+                "type": {
+                  "kind": "date",
+                  "sql": "date"
+                },
+                "nullable": true,
+                "nullableBecause": [
+                  {
+                    "rule": "nullable-column",
+                    "at": "pay.book.published"
+                  }
+                ]
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "reviews",
+          "type": {
+            "ref": "ListBooksReviews"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "tags",
+          "type": {
+            "kind": "record",
+            "values": {
+              "kind": "number",
+              "format": "int16",
+              "sql": "smallint",
+              "min": {
+                "value": 1,
+                "inclusive": true,
+                "from": {
+                  "check": "pay.ck_book_tag_weight"
+                }
+              },
+              "max": {
+                "value": 100,
+                "inclusive": true,
+                "from": {
+                  "check": "pay.ck_book_tag_weight"
+                }
+              }
+            },
+            "valuesNullable": true,
+            "valuesNullableBecause": [
+              {
+                "rule": "nullable-column",
+                "at": "pay.book_tag.weight"
+              }
+            ]
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/list_books.sql:21:16"
+            },
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/list_books.sql:21:8"
+            }
+          ]
+        },
+        {
+          "name": "meta",
+          "type": {
+            "ref": "ListBooksMeta"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": []
+}

@@ -122,22 +122,16 @@ public static partial class IrValidator
                     JsonObject(document.Types[reference.Name], value, path, general);
                     return;
                 case IrArray array:
-                    if (value.ValueKind != JsonValueKind.Array)
-                    {
-                        Violation(path, "an array", Shorten(value.GetRawText()));
-                        return;
-                    }
-
-                    var index = 0;
-                    foreach (var item in value.EnumerateArray())
-                    {
-                        if (item.ValueKind == JsonValueKind.Null)
-                            Violation($"{path}[{index}]", "array items that are never null", "null");
-                        else
-                            Json(array.Items, item, $"{path}[{index}]", $"{general}[]");
-                        index++;
-                    }
-
+                    JsonArray(array, value, path, general);
+                    return;
+                case IrTuple tuple:
+                    JsonTuple(tuple, value, path, general);
+                    return;
+                case IrRecord record:
+                    JsonRecord(record, value, path, general);
+                    return;
+                case IrUnion union:
+                    JsonUnion(union, value, path, general);
                     return;
                 case IrJsonText:
                     if (value.ValueKind != JsonValueKind.String || !ParsesAsJson(value.GetString()!))
@@ -152,6 +146,135 @@ public static partial class IrValidator
                 default:
                     throw new InvalidOperationException($"Unknown IR type {type}.");
             }
+        }
+
+        private void JsonArray(IrArray array, JsonElement value, string path, string general)
+        {
+            if (value.ValueKind != JsonValueKind.Array)
+            {
+                Violation(path, "an array", Shorten(value.GetRawText()));
+                return;
+            }
+
+            var index = 0;
+            foreach (var item in value.EnumerateArray())
+            {
+                var itemPath = $"{path}[{index}]";
+                if (item.ValueKind == JsonValueKind.Null)
+                {
+                    if (!array.ItemsNullable)
+                        Violation(itemPath, "array items that are never null", "null");
+                    else if (array.Items is not IrUnknownType)
+                        SeenNull(array.Items, $"{general}[]");
+                }
+                else
+                {
+                    // Recorded only where Coverage asks for it: items that may be null must be seen both ways.
+                    if (array.ItemsNullable && array.Items is not IrUnknownType)
+                        seen.Add(($"{general}[]", Seen.Value));
+                    Json(array.Items, item, itemPath, $"{general}[]");
+                }
+
+                index++;
+            }
+
+            var count = value.GetArrayLength();
+            if (array.MinItems is { } min)
+            {
+                if (count < min)
+                    Violation(path, $"at least {min} item(s)", Shorten(value.GetRawText()));
+                else if (count == min)
+                    edges.Add((general, $"min items {min}"));
+            }
+
+            if (array.MaxItems is { } max)
+            {
+                if (count > max)
+                    Violation(path, $"at most {max} items", Shorten(value.GetRawText()));
+                else if (count == max)
+                    edges.Add((general, $"max items {max}"));
+            }
+        }
+
+        /// <summary>A tuple's positions are general paths of their own (<c>[0]</c>, <c>[1]</c>), as each has its own type.</summary>
+        private void JsonTuple(IrTuple tuple, JsonElement value, string path, string general)
+        {
+            if (value.ValueKind != JsonValueKind.Array)
+            {
+                Violation(path, "an array", Shorten(value.GetRawText()));
+                return;
+            }
+
+            if (value.GetArrayLength() != tuple.Items.Count)
+            {
+                Violation(path, $"a tuple of {tuple.Items.Count} elements", Shorten(value.GetRawText()));
+                return;
+            }
+
+            var index = 0;
+            foreach (var item in value.EnumerateArray())
+            {
+                var element = tuple.Items[index];
+                Element(element.Type, element.Nullable, item, $"{path}[{index}]", $"{general}[{index}]");
+                index++;
+            }
+        }
+
+        /// <summary>
+        /// A record's keys are data: any key is allowed, and a repeated one too, since json_objectagg writes each
+        /// (observed). Its values share the general path <c>{}</c>.
+        /// </summary>
+        private void JsonRecord(IrRecord record, JsonElement value, string path, string general)
+        {
+            if (value.ValueKind != JsonValueKind.Object)
+            {
+                Violation(path, "an object", Shorten(value.GetRawText()));
+                return;
+            }
+
+            foreach (var property in value.EnumerateObject())
+                Element(record.Values, record.ValuesNullable, property.Value, $"{path}.{property.Name}", $"{general}{{}}");
+        }
+
+        /// <summary>A value that may be null, at a path where it is always present (a tuple's position, a record's value).</summary>
+        private void Element(IrType type, bool nullable, JsonElement value, string path, string general)
+        {
+            var known = type is not IrUnknownType;
+            if (value.ValueKind == JsonValueKind.Null)
+            {
+                if (!nullable)
+                    Violation(path, "a non-null value", "null");
+                else if (known)
+                    SeenNull(type, general);
+                return;
+            }
+
+            if (known)
+                seen.Add((general, Seen.Value));
+            Json(type, value, path, general);
+        }
+
+        /// <summary>
+        /// A union holds when one variant does. Each is tried in a run of its own, and every variant that holds records
+        /// what it saw: the value really is a value of each of them (an ISBN of 13 characters reaches both
+        /// <c>nvarchar(60)</c> and <c>char(13)</c>), while a variant it breaks is not counted as seen.
+        /// </summary>
+        private void JsonUnion(IrUnion union, JsonElement value, string path, string general)
+        {
+            var held = false;
+            foreach (var variant in union.Variants)
+            {
+                var trial = new Run(document, procedure);
+                trial.Json(variant, value, path, general);
+                if (trial.violations.Count > 0)
+                    continue;
+                held = true;
+                seen.UnionWith(trial.seen);
+                edges.UnionWith(trial.edges);
+            }
+
+            if (!held)
+                Violation(path, $"one of {union.Variants.Count} types", Shorten(value.GetRawText()));
         }
 
         private void JsonObject(IrObjectType type, JsonElement value, string path, string general)

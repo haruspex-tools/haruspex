@@ -35,6 +35,9 @@ internal sealed class ProcedureAnalyzer
     private readonly Binder binder;
     private readonly string file;
 
+    /// <summary>The query whose select list is being read, for an aggregate to know whether it has GROUP BY.</summary>
+    private QuerySpecification? current;
+
     public ProcedureAnalyzer(DatabaseModel model, string file)
     {
         this.model = model;
@@ -164,19 +167,28 @@ internal sealed class ProcedureAnalyzer
         // ignoring them can leave a field nullable that is not, but never the reverse.
         var columns = new List<RowColumn>();
         SourceLocation? star = null;
-        foreach (var element in query.SelectElements)
+        var outer = current;
+        current = query;
+        try
         {
-            switch (element)
+            foreach (var element in query.SelectElements)
             {
-                case SelectScalarExpression scalar:
-                    var name = scalar.ColumnName?.Value
-                        ?? (scalar.Expression as ColumnReferenceExpression)?.MultiPartIdentifier?.Identifiers[^1].Value;
-                    columns.Add(new RowColumn(name, Expression(scalar.Expression, scope), At(scalar)));
-                    break;
-                case SelectStarExpression:
-                    star ??= At(element);
-                    break;
+                switch (element)
+                {
+                    case SelectScalarExpression scalar:
+                        var name = scalar.ColumnName?.Value
+                            ?? (scalar.Expression as ColumnReferenceExpression)?.MultiPartIdentifier?.Identifiers[^1].Value;
+                        columns.Add(new RowColumn(name, Expression(scalar.Expression, scope), At(scalar)));
+                        break;
+                    case SelectStarExpression:
+                        star ??= At(element);
+                        break;
+                }
             }
+        }
+        finally
+        {
+            current = outer;
         }
 
         return new Row(columns, star);
@@ -311,6 +323,7 @@ internal sealed class ProcedureAnalyzer
         ColumnReferenceExpression column => Column(column, scope),
         ParenthesisExpression parenthesis => Expression(parenthesis.Expression, scope),
         ScalarSubquery subquery => Subquery(subquery, scope),
+        FunctionCall { CallTarget: null } call when IsConstructor(call) => Constructor(call, scope),
         FunctionCall { CallTarget: null, Parameters.Count: 1 } call
             when call.FunctionName.Value.Equals("json_query", StringComparison.OrdinalIgnoreCase) => JsonQuery(call, scope),
         _ => Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
@@ -339,6 +352,17 @@ internal sealed class ProcedureAnalyzer
         // be null, whatever its declaration says.
         if (source.OptionalSideOf is { } optional)
             because.Add(new IrNullReason(IrNullRules.OuterJoin, optional.ToString()));
+
+        // A json column nests as JSON inside FOR JSON and the constructors (observed), but what it holds is data.
+        // Through a driver it is text, which Rowset makes of any live value.
+        if (!column.IsComputed && SchemaRules.ResolveType(model, column.Type)?.BuiltIn.Name == "json")
+        {
+            return new Value(
+                Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{table.Name}.{column.Name} is a json column: its shape is in the data, not the schema.", column.At),
+                because,
+                IsLiveJson: true);
+        }
+
         return new Value(ColumnShape(table, column), because);
     }
 
@@ -367,8 +391,19 @@ internal sealed class ProcedureAnalyzer
     private Value Subquery(ScalarSubquery subquery, BindingScope scope)
     {
         var at = At(subquery);
+
+        // A subquery returning one JSON value, typically a correlated aggregate, keeps it live: observed for a
+        // constructor, an aggregate, json_query, a json value and a FOR JSON subquery inside it. With no rows it is
+        // null; more than one row is an error, not a value. Any other subquery is not modelled.
+        if (subquery.QueryExpression is QuerySpecification { ForClause: null } plain)
+        {
+            var row = Query(plain, scope);
+            if (row is { Star: null, Columns: [{ Value.IsLiveJson: true } only] })
+                return new Value(only.Value.Shape, [.. only.Value.NullableBecause, new IrNullReason(IrNullRules.EmptySubquery, at.ToString())], IsLiveJson: true);
+        }
+
         if (subquery.QueryExpression is not QuerySpecification { ForClause: JsonForClause json } query)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"A subquery without FOR JSON is not modelled yet: {Text(subquery)}", at));
+            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"A subquery that returns neither FOR JSON nor one JSON value is not modelled yet: {Text(subquery)}", at));
 
         // A FOR JSON subquery is JSON that an enclosing FOR JSON embeds without escaping. It is null when the
         // subquery returns no rows, which nothing here can rule out.
@@ -387,6 +422,157 @@ internal sealed class ProcedureAnalyzer
         // json_query over text (a column, a variable) makes it live JSON, but its shape is in data we cannot see.
         return Value.Unknown(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{Text(call)} reads JSON that is not built here, so its shape is unknown.", At(call)));
     }
+
+    // ---- JSON constructors ----------------------------------------------------------------------------
+    //
+    // Every rule here was observed on SQL Server 2025 RTM-CU10 before it was relied on, and is kept as a test
+    // (JsonConstructorObservationTests in the differential tests):
+    // - json_object and json_objectagg keep a null value's key by default (NULL ON NULL); json_array and
+    //   json_arrayagg drop a null by default (ABSENT ON NULL). Each takes the other option when it is written.
+    // - A constructor, json_query, a FOR JSON subquery and a json value nest as JSON in a constructor and in FOR
+    //   JSON; any other string is escaped text. So a constructor is live JSON, and a value keeps its shape (and its
+    //   facets, while it passes through unchanged) and its nullability.
+    // - Scalars are written as FOR JSON writes them (dates, times, GUIDs, bit, decimals, bigint, padded char), so
+    //   they keep the kinds they have in FOR JSON.
+    // - The aggregates over no rows are NULL, not [] or {}; under GROUP BY there is no group without a row, even
+    //   with ROLLUP or GROUP BY (), so there they are never null.
+    // - json_object writes a repeated literal key twice, and json_objectagg every repeated key: JSON.parse keeps the
+    //   last. A key can be any expression; a null key is an error, not a value.
+    // json_object and json_array exist from SQL Server 2022, the aggregates from 2025 (and Azure SQL). The target's
+    // version is not known yet, so a constructor it lacks fails when the procedure is created, not here.
+
+    private static readonly HashSet<string> Constructors = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "json_object", "json_array", "json_arrayagg", "json_objectagg",
+    };
+
+    private static bool IsConstructor(FunctionCall call) => Constructors.Contains(call.FunctionName.Value);
+
+    private Value Constructor(FunctionCall call, BindingScope scope)
+    {
+        var at = At(call);
+        var name = call.FunctionName.Value;
+
+        // Forms the server rejects or that would change what an aggregate sees (a window, DISTINCT) are not modelled.
+        if (call.OverClause is not null || call.WithinGroupClause is not null || call.UniqueRowFilter != UniqueRowFilter.NotSpecified
+            || call.IgnoreRespectNulls is { Count: > 0 } || call.WithArrayWrapper)
+            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"This form of {name} is not modelled: {Text(call)}", at));
+
+        // RETURNING json changes the value's SQL type, not what it writes or how it nests (observed).
+        if (call.ReturnType is { Count: > 0 } returns && returns is not [SqlDataTypeReference { SqlDataTypeOption: SqlDataTypeOption.Json }])
+            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"{name} returning anything but json is not modelled: {Text(call)}", at));
+
+        bool? nullOnNull = call.AbsentOrNullOnNull switch
+        {
+            null or [] => null,
+            [{ Value: var option }] when option.Equals("NULL", StringComparison.OrdinalIgnoreCase) => true,
+            [{ Value: var option }] when option.Equals("ABSENT", StringComparison.OrdinalIgnoreCase) => false,
+            _ => throw new InvalidOperationException($"Unexpected null option in {Text(call)}."),
+        };
+
+        if (name.Equals("json_object", StringComparison.OrdinalIgnoreCase))
+            return JsonObjectConstructor(call, scope, nullOnNull ?? true);
+        if (name.Equals("json_array", StringComparison.OrdinalIgnoreCase))
+            return JsonArrayConstructor(call, scope, nullOnNull ?? false);
+        if (name.Equals("json_arrayagg", StringComparison.OrdinalIgnoreCase))
+            return ArrayAggregate(call, scope, nullOnNull ?? false);
+        return ObjectAggregate(call, scope, nullOnNull ?? true);
+    }
+
+    /// <summary><c>json_object('k': v, …)</c>: an object of literal keys, never null.</summary>
+    private Value JsonObjectConstructor(FunctionCall call, BindingScope scope, bool nullOnNull)
+    {
+        var fields = new List<FieldShape>();
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var pair in call.JsonParameters)
+        {
+            // Keys are compared by case, as JSON compares them: 'a' and 'A' are two keys (observed).
+            if (pair.JsonKeyName is not StringLiteral key)
+                return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The key {Text(pair.JsonKeyName)} of json_object is not a literal, so the object's keys are data.", At(pair.JsonKeyName)));
+            if (!keys.Add(key.Value))
+                return Value.Unknown(Unsupported(IrUnknownReasons.DuplicateColumn, $"The key '{key.Value}' is used more than once in json_object, which writes it twice.", At(pair.JsonKeyName)));
+
+            var value = Expression(pair.JsonValue, scope);
+            var presence = value.NullableBecause.Count > 0 && !nullOnNull ? IrPresence.OmittedWhenNull : IrPresence.Always;
+            fields.Add(new FieldShape(key.Value, value.Shape, presence, value.NullableBecause));
+        }
+
+        return new Value(new ObjectShape(fields), [], IsLiveJson: true);
+    }
+
+    /// <summary>
+    /// <c>json_array(v, …)</c>, never null. Under NULL ON NULL every position stays, so it is a tuple. Under ABSENT ON
+    /// NULL a null is dropped and the rest close up: a tuple only when no element can be null, otherwise an array of the
+    /// elements' types, with as many items as the elements never null and at most one per element.
+    /// </summary>
+    private Value JsonArrayConstructor(FunctionCall call, BindingScope scope, bool nullOnNull)
+    {
+        var elements = call.Parameters.Select(p => Expression(p, scope)).ToList();
+        if (nullOnNull || elements.All(e => e.NullableBecause.Count == 0))
+            return new Value(new TupleShape([.. elements.Select(e => new ElementShape(e.Shape, e.NullableBecause))]), [], IsLiveJson: true);
+
+        var variants = Distinct(elements.Select(e => e.Shape));
+        var present = elements.Count(e => e.NullableBecause.Count == 0);
+        return new Value(
+            new ArrayShape(variants.Count == 1 ? variants[0] : new UnionShape(variants), MinItems: present > 0 ? present : null, MaxItems: elements.Count),
+            [],
+            IsLiveJson: true);
+    }
+
+    /// <summary>
+    /// The different shapes among <paramref name="shapes"/>, in order. Scalars are the same when the IR writes them the
+    /// same; any other shape is kept as it is, since telling two objects apart is not worth the risk of merging them.
+    /// </summary>
+    private static List<Shape> Distinct(IEnumerable<Shape> shapes)
+    {
+        var result = new List<Shape>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var shape in shapes)
+        {
+            if (shape is ScalarShape scalar && !seen.Add(IrJsonWriter.WriteType(scalar.Type)))
+                continue;
+            result.Add(shape);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// <c>json_arrayagg(v [ORDER BY …])</c>: an array of v. A non-null result means at least one row, so it has an item
+    /// unless ABSENT ON NULL can drop them all.
+    /// </summary>
+    private Value ArrayAggregate(FunctionCall call, BindingScope scope, bool nullOnNull)
+    {
+        if (call.Parameters.Count != 1)
+            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"json_arrayagg of {call.Parameters.Count} values is not modelled: {Text(call)}", At(call)));
+
+        var value = Expression(call.Parameters[0], scope);
+        var neverEmpty = nullOnNull || value.NullableBecause.Count == 0;
+        return new Value(
+            new ArrayShape(value.Shape, nullOnNull ? value.NullableBecause : null, MinItems: neverEmpty ? 1 : null),
+            Aggregate(call),
+            IsLiveJson: true);
+    }
+
+    /// <summary>
+    /// <c>json_objectagg(k: v)</c>: keys come from data, so a record of string to v. Every key is a string whatever the
+    /// key expression's type, so the key is not typed; a repeated key is written each time, and JSON.parse keeps the last.
+    /// </summary>
+    private Value ObjectAggregate(FunctionCall call, BindingScope scope, bool nullOnNull)
+    {
+        if (call.JsonParameters is not [var pair])
+            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"This form of json_objectagg is not modelled: {Text(call)}", At(call)));
+
+        var value = Expression(pair.JsonValue, scope);
+        return new Value(new RecordShape(value.Shape, nullOnNull ? value.NullableBecause : []), Aggregate(call), IsLiveJson: true);
+    }
+
+    /// <summary>
+    /// Why an aggregate can be null: over no rows it is NULL, which only a query without GROUP BY can give it (with
+    /// GROUP BY, no rows means no groups at all).
+    /// </summary>
+    private IReadOnlyList<IrNullReason> Aggregate(FunctionCall call) =>
+        current?.GroupByClause is null ? [new IrNullReason(IrNullRules.EmptyAggregate, At(call).ToString())] : [];
 
     // ---- helpers ------------------------------------------------------------------------------------
 

@@ -47,7 +47,25 @@ public static class Coverage
         switch (type)
         {
             case IrArray array:
+                // Items that may be null must be seen null and not; items never null need nothing more than FOR JSON's.
+                if (array.ItemsNullable && array.Items is not IrUnknownType)
+                {
+                    need(path + "[]", Seen.Value);
+                    need(path + "[]", Seen.Null);
+                }
+
                 Walk(document, array.Items, path + "[]", need);
+                break;
+            case IrTuple tuple:
+                for (var i = 0; i < tuple.Items.Count; i++)
+                    Element(document, tuple.Items[i].Type, tuple.Items[i].Nullable, $"{path}[{i}]", need);
+                break;
+            case IrRecord record:
+                Element(document, record.Values, record.ValuesNullable, path + "{}", need);
+                break;
+            case IrUnion union:
+                foreach (var variant in union.Variants)
+                    Walk(document, variant, path, need);
                 break;
             case IrRef reference:
                 foreach (var field in document.Types[reference.Name].Fields)
@@ -63,6 +81,16 @@ public static class Coverage
 
                 break;
         }
+    }
+
+    private static void Element(IrDocument document, IrType type, bool nullable, string path, Action<string, Seen> need)
+    {
+        if (type is IrUnknownType)
+            return;
+        need(path, Seen.Value);
+        if (nullable)
+            need(path, Seen.Null);
+        Walk(document, type, path, need);
     }
 
     /// <summary>
@@ -93,6 +121,14 @@ public static class Coverage
                         if (!saw.Contains((path, edge)))
                             missing.Add($"{procedure.Id} {path}: {edge}");
                     }
+                }, (path, array) =>
+                {
+                    // An array's length is an edge like a string's: json_array's bounds are only tested by data at them.
+                    foreach (var edge in new[] { array.MinItems is { } min ? $"min items {min}" : null, array.MaxItems is { } max ? $"max items {max}" : null })
+                    {
+                        if (edge is not null && !saw.Contains((path, edge)))
+                            missing.Add($"{procedure.Id} {path}: {edge}");
+                    }
                 });
             }
         }
@@ -119,16 +155,28 @@ public static class Coverage
             yield return "value " + item.Text;
     }
 
-    private static void WalkScalars(IrDocument document, IrType type, string path, Action<string, IrScalar> visit)
+    private static void WalkScalars(IrDocument document, IrType type, string path, Action<string, IrScalar> visit, Action<string, IrArray> arrays)
     {
         switch (type)
         {
             case IrArray array:
-                WalkScalars(document, array.Items, path + "[]", visit);
+                arrays(path, array);
+                WalkScalars(document, array.Items, path + "[]", visit, arrays);
+                break;
+            case IrTuple tuple:
+                for (var i = 0; i < tuple.Items.Count; i++)
+                    WalkScalars(document, tuple.Items[i].Type, $"{path}[{i}]", visit, arrays);
+                break;
+            case IrRecord record:
+                WalkScalars(document, record.Values, path + "{}", visit, arrays);
+                break;
+            case IrUnion union:
+                foreach (var variant in union.Variants)
+                    WalkScalars(document, variant, path, visit, arrays);
                 break;
             case IrRef reference:
                 foreach (var field in document.Types[reference.Name].Fields)
-                    WalkScalars(document, field.Type, $"{path}.{field.Name}", visit);
+                    WalkScalars(document, field.Type, $"{path}.{field.Name}", visit, arrays);
                 break;
             case IrScalar scalar:
                 visit(path, scalar);

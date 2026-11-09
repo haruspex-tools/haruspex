@@ -26,19 +26,22 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
     /// of a set, each full length. They are the fixtures about scalar facts. <c>orders</c> is about query shapes,
     /// and its scalars are the same types <c>values</c> covers at their edges; seeding its ids and totals at
-    /// int.MinValue would only obscure what it shows.
+    /// int.MinValue would only obscure what it shows. <c>payloads</c> is here because it shows that facts pass through the
+    /// JSON constructors, and that an array's length bounds hold.
     /// </summary>
-    public static IReadOnlyList<string> EdgeFixtures { get; } = ["values", "checks"];
+    public static IReadOnlyList<string> EdgeFixtures { get; } = ["values", "checks", "payloads"];
 
     private const string NoOrders = "DELETE FROM sales.order_line; DELETE FROM sales.[order]; DELETE FROM sales.customer;";
     private const string NoSamples = "DELETE FROM vals.sample_tag; DELETE FROM vals.sample;";
     private const string NoTickets = "DELETE FROM chk.ticket_event; DELETE FROM chk.ticket;";
+    private const string NoBooks = "DELETE FROM pay.book_tag; DELETE FROM pay.review; DELETE FROM pay.book;";
+    private const string NoReviews = "DELETE FROM pay.review;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -75,6 +78,19 @@ public static class Runs
         new("checks: list_tickets", "checks", "chk.list_tickets", None),
         new("checks: list_tickets, no tickets", "checks", "chk.list_tickets", None, NoTickets),
         new("checks: ticket_rows", "checks", "chk.ticket_rows", None),
+
+        new("payloads: get_author, the longest values and both extreme books", "payloads", "pay.get_author", new Dictionary<string, object?> { ["@author_id"] = int.MinValue }),
+        new("payloads: get_author, one book, nulls", "payloads", "pay.get_author", new Dictionary<string, object?> { ["@author_id"] = int.MaxValue }),
+        new("payloads: get_author, no books", "payloads", "pay.get_author", new Dictionary<string, object?> { ["@author_id"] = 3 }),
+        new("payloads: get_author, a book with no reviews", "payloads", "pay.get_author", new Dictionary<string, object?> { ["@author_id"] = 4 }),
+        new("payloads: get_author, no such author", "payloads", "pay.get_author", new Dictionary<string, object?> { ["@author_id"] = 999 }),
+        new("payloads: list_books", "payloads", "pay.list_books", None),
+        new("payloads: list_books, no books", "payloads", "pay.list_books", None, NoBooks),
+        new("payloads: author_stats", "payloads", "pay.author_stats", None),
+        new("payloads: author_stats, no books", "payloads", "pay.author_stats", None, NoBooks),
+        new("payloads: reviews_by_book", "payloads", "pay.reviews_by_book", None),
+        new("payloads: reviews_by_book, no reviews", "payloads", "pay.reviews_by_book", None, NoReviews),
+        new("payloads: author_documents", "payloads", "pay.author_documents", None),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

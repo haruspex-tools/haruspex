@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.2";
+    public const string CurrentVersion = "0.3";
 }
 
 /// <param name="Dialect">The SQL dialect of the source, such as <c>tsql</c>.</param>
@@ -244,7 +244,54 @@ public static class IrFactSources
 }
 
 /// <summary>An array of items.</summary>
-public sealed record IrArray(IrType Items) : IrType;
+/// <param name="Items">The items' type when they are not null.</param>
+public sealed record IrArray(IrType Items) : IrType
+{
+    /// <summary>
+    /// Why an item can be null. Empty, the default, means no item is ever null: FOR JSON and the constructors' default
+    /// <c>ABSENT ON NULL</c> leave nulls out of arrays, so only <c>NULL ON NULL</c> puts them in.
+    /// </summary>
+    public IReadOnlyList<IrNullReason> ItemsNullableBecause { get; init; } = [];
+
+    public bool ItemsNullable => ItemsNullableBecause.Count > 0;
+
+    /// <summary>The fewest items a non-null array has, when more than none is proved.</summary>
+    public int? MinItems { get; init; }
+
+    /// <summary>The most items it has, when that is bounded.</summary>
+    public int? MaxItems { get; init; }
+}
+
+/// <summary>
+/// An array of a fixed length whose every position has its own type, as <c>json_array</c> builds one: each element is
+/// there, possibly null under <c>NULL ON NULL</c>.
+/// </summary>
+public sealed record IrTuple(IReadOnlyList<IrElement> Items) : IrType;
+
+/// <summary>One position of a <see cref="IrTuple"/>.</summary>
+/// <param name="Type">The element's type when it is not null.</param>
+/// <param name="NullableBecause">Why it can be null; empty when it is proved never null.</param>
+public sealed record IrElement(IrType Type, IReadOnlyList<IrNullReason> NullableBecause)
+{
+    public bool Nullable => NullableBecause.Count > 0;
+}
+
+/// <summary>
+/// An object whose keys are data, not a fixed set, as <c>json_objectagg</c> builds one: every key is a string, and
+/// every value has one type.
+/// </summary>
+/// <param name="Values">The values' type when they are not null.</param>
+/// <param name="ValuesNullableBecause">Why a value can be null; empty when no value is ever null.</param>
+public sealed record IrRecord(IrType Values, IReadOnlyList<IrNullReason> ValuesNullableBecause) : IrType
+{
+    public bool ValuesNullable => ValuesNullableBecause.Count > 0;
+}
+
+/// <summary>
+/// A value that has one of several types, such as an item of a <c>json_array</c> whose elements differ in type. At
+/// least two variants, none of them the same.
+/// </summary>
+public sealed record IrUnion(IReadOnlyList<IrType> Variants) : IrType;
 
 /// <summary>A reference to a named object type in <see cref="IrDocument.Types"/>.</summary>
 public sealed record IrRef(string Name) : IrType;
@@ -320,6 +367,9 @@ public static class IrNullRules
 
     /// <summary>It is a nested object that is left out when every one of its fields is null.</summary>
     public const string AllFieldsNull = "all-fields-null";
+
+    /// <summary>It is an aggregate (<c>json_arrayagg</c>, <c>json_objectagg</c>) without GROUP BY, which is null over no rows.</summary>
+    public const string EmptyAggregate = "empty-aggregate";
 
     /// <summary>It is a query result, which returns nothing when no rows match.</summary>
     public const string NoRows = "no-rows";

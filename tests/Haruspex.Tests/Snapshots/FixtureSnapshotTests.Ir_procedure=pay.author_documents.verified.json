@@ -1,0 +1,81 @@
+{
+  "irVersion": "0.3",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "pay.author_documents",
+      "name": "AuthorDocuments",
+      "kind": "procedure",
+      "at": "procedures/author_documents.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "AuthorDocumentsRow"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
+    }
+  ],
+  "types": {
+    "AuthorDocumentsRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "document",
+          "type": {
+            "kind": "json-text"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "profile",
+          "type": {
+            "kind": "json-text"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "pay.author.profile"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": []
+}

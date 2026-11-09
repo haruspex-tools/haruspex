@@ -1,0 +1,374 @@
+{
+  "irVersion": "0.3",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "pay.get_author",
+      "name": "GetAuthor",
+      "kind": "procedure",
+      "at": "procedures/get_author.sql:3:1",
+      "parameters": [
+        {
+          "name": "@author_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "GetAuthorRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/get_author.sql:8:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GetAuthorAuthor": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "bio",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "pay.author.bio"
+            }
+          ]
+        },
+        {
+          "name": "profile",
+          "type": {
+            "kind": "unknown",
+            "reason": "json-shape-unknown"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "pay.author.profile"
+            }
+          ]
+        },
+        {
+          "name": "books",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetAuthorAuthorBook"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/get_author.sql:14:23"
+            },
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/get_author.sql:13:21"
+            }
+          ]
+        },
+        {
+          "name": "reviews",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetAuthorAuthorReview"
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/get_author.sql:25:34"
+            }
+          ]
+        }
+      ]
+    },
+    "GetAuthorAuthorBook": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "title",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(60)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "isbn",
+          "type": {
+            "kind": "string",
+            "sql": "char(13)",
+            "length": {
+              "value": 13,
+              "unit": "bytes",
+              "from": {
+                "type": "char(13)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "pay.book.isbn"
+            }
+          ]
+        },
+        {
+          "name": "price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "check": "pay.ck_book_price"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "published",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "pay.book.published"
+            }
+          ]
+        }
+      ]
+    },
+    "GetAuthorAuthorReview": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "stars",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 1,
+              "inclusive": true,
+              "from": {
+                "check": "pay.ck_review_stars"
+              }
+            },
+            "max": {
+              "value": 5,
+              "inclusive": true,
+              "from": {
+                "check": "pay.ck_review_stars"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "comment",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "pay.review.comment"
+            }
+          ]
+        }
+      ]
+    },
+    "GetAuthorRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "author",
+          "type": {
+            "ref": "GetAuthorAuthor"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "pay.get_author",
+      "path": "results[0].author.profile",
+      "reason": "json-shape-unknown",
+      "detail": "pay.author.profile is a json column: its shape is in the data, not the schema.",
+      "at": "tables/author.sql:7:5"
+    }
+  ]
+}

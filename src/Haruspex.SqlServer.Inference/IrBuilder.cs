@@ -66,7 +66,7 @@ internal sealed class IrBuilder
     private IrType Root(Shape shape, string name, string id, string path) => shape switch
     {
         ObjectShape obj => Object(obj, Unique(name + "Row"), name, id, path),
-        ArrayShape { Items: ObjectShape row } => new IrArray(Object(row, Unique(name + "Row"), name, id, path + "[]")),
+        ArrayShape { Items: ObjectShape row } array => Array(array, Object(row, Unique(name + "Row"), name, id, path + "[]")),
         _ => Convert(shape, name, id, path),
     };
 
@@ -79,7 +79,17 @@ internal sealed class IrBuilder
             case JsonTextShape:
                 return new IrJsonText();
             case ArrayShape array:
-                return new IrArray(Convert(array.Items, objectName, id, path + "[]"));
+                return Array(array, Convert(array.Items, objectName, id, path + "[]"));
+            case TupleShape tuple:
+                // Each position is its own path, so an unknown element is reported where it is.
+                return new IrTuple([.. tuple.Items.Select((e, i) => new IrElement(
+                    Convert(e.Type, objectName, id, path + "[" + i.ToString(System.Globalization.CultureInfo.InvariantCulture) + "]"),
+                    e.NullableBecause))]);
+            case RecordShape record:
+                // A record's values have no key to name them by; {} stands for any key.
+                return new IrRecord(Convert(record.Values, objectName, id, path + "{}"), record.ValuesNullableBecause);
+            case UnionShape union:
+                return new IrUnion([.. union.Variants.Select(v => Convert(v, objectName, id, path))]);
             case ObjectShape obj:
                 var name = Unique(objectName);
                 return Object(obj, name, name, id, path);
@@ -91,6 +101,9 @@ internal sealed class IrBuilder
         }
     }
 
+    private static IrArray Array(ArrayShape array, IrType items) =>
+        new(items) { ItemsNullableBecause = array.ItemsNullableBecause ?? [], MinItems = array.MinItems, MaxItems = array.MaxItems };
+
     /// <param name="name">The type's name, already reserved.</param>
     /// <param name="childBase">What nested types' names start with.</param>
     private IrRef Object(ObjectShape obj, string name, string childBase, string id, string path)
@@ -99,7 +112,7 @@ internal sealed class IrBuilder
         foreach (var field in obj.Fields)
         {
             var pascal = Naming.Pascal(field.Name);
-            var childName = childBase + (field.Type is ArrayShape ? Naming.Singular(pascal) : pascal);
+            var childName = childBase + (field.Type is ArrayShape or RecordShape ? Naming.Singular(pascal) : pascal);
             fields.Add(new IrField(field.Name, Convert(field.Type, childName, id, path + Segment(field.Name)), field.Presence, field.NullableBecause));
         }
 

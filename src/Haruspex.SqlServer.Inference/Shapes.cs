@@ -10,7 +10,21 @@ internal abstract record Shape;
 
 internal sealed record ScalarShape(IrScalar Type) : Shape;
 
-internal sealed record ArrayShape(Shape Items) : Shape;
+/// <param name="ItemsNullableBecause">Why an item can be null (only under <c>NULL ON NULL</c>); null or empty when never.</param>
+/// <param name="MinItems">The fewest items, when more than none is proved.</param>
+/// <param name="MaxItems">The most items, when bounded.</param>
+internal sealed record ArrayShape(Shape Items, IReadOnlyList<IrNullReason>? ItemsNullableBecause = null, int? MinItems = null, int? MaxItems = null) : Shape;
+
+/// <summary>A fixed-length array, each position with its own type: what <c>json_array</c> builds.</summary>
+internal sealed record TupleShape(IReadOnlyList<ElementShape> Items) : Shape;
+
+internal sealed record ElementShape(Shape Type, IReadOnlyList<IrNullReason> NullableBecause);
+
+/// <summary>An object whose keys are data: what <c>json_objectagg</c> builds.</summary>
+internal sealed record RecordShape(Shape Values, IReadOnlyList<IrNullReason> ValuesNullableBecause) : Shape;
+
+/// <summary>One of several types, at least two and all different.</summary>
+internal sealed record UnionShape(IReadOnlyList<Shape> Variants) : Shape;
 
 internal sealed record ObjectShape(IReadOnlyList<FieldShape> Fields) : Shape;
 
@@ -27,8 +41,10 @@ internal sealed record FieldShape(string Name, Shape Type, IrPresence Presence, 
 /// <param name="Shape">Its shape when not null.</param>
 /// <param name="NullableBecause">Why it can be null; empty when it is proved non-null.</param>
 /// <param name="IsLiveJson">
-/// Whether it is JSON that <c>FOR JSON</c> embeds as JSON rather than escaping as a string: the output of a
-/// <c>FOR JSON</c> subquery, or <c>json_query</c> over one. <see cref="Shape"/> is then the JSON's shape.
+/// Whether it is JSON that <c>FOR JSON</c> and the JSON constructors embed as JSON rather than escaping as a string:
+/// the output of a <c>FOR JSON</c> subquery, of a constructor (<c>json_object</c>, <c>json_array</c>,
+/// <c>json_arrayagg</c>, <c>json_objectagg</c>), a value of the <c>json</c> type, <c>json_query</c> over any of them,
+/// or a scalar subquery returning one. <see cref="Shape"/> is then the JSON's shape.
 /// </param>
 internal sealed record Value(Shape Shape, IReadOnlyList<IrNullReason> NullableBecause, bool IsLiveJson = false)
 {

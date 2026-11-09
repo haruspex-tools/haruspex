@@ -1,0 +1,178 @@
+{
+  "irVersion": "0.3",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "pay.reviews_by_book",
+      "name": "ReviewsByBook",
+      "kind": "procedure",
+      "at": "procedures/reviews_by_book.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ReviewsByBookRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/reviews_by_book.sql:6:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ReviewsByBookReview": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "stars",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 1,
+              "inclusive": true,
+              "from": {
+                "check": "pay.ck_review_stars"
+              }
+            },
+            "max": {
+              "value": 5,
+              "inclusive": true,
+              "from": {
+                "check": "pay.ck_review_stars"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "comment",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "pay.review.comment"
+            }
+          ]
+        }
+      ]
+    },
+    "ReviewsByBookRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "bookId",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "reviews",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ReviewsByBookReview"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "comments",
+          "type": {
+            "kind": "record",
+            "values": {
+              "kind": "string",
+              "sql": "nvarchar(100)",
+              "maxLength": {
+                "value": 100,
+                "unit": "utf16",
+                "from": {
+                  "type": "nvarchar(100)"
+                }
+              }
+            },
+            "valuesNullable": true,
+            "valuesNullableBecause": [
+              {
+                "rule": "nullable-column",
+                "at": "pay.review.comment"
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": []
+}

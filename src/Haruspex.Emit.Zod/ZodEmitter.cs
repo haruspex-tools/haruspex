@@ -94,6 +94,17 @@ public static class ZodEmitter
                 case IrArray array:
                     WriteDependencies(array.Items, encoding);
                     break;
+                case IrTuple tuple:
+                    foreach (var element in tuple.Items)
+                        WriteDependencies(element.Type, encoding);
+                    break;
+                case IrRecord record:
+                    WriteDependencies(record.Values, encoding);
+                    break;
+                case IrUnion union:
+                    foreach (var variant in union.Variants)
+                        WriteDependencies(variant, encoding);
+                    break;
                 case IrRef reference:
                     if (emitted.TryGetValue(reference.Name, out var previous))
                     {
@@ -142,12 +153,41 @@ public static class ZodEmitter
         private static (string Code, string? Comment) Expression(IrType type, IrEncoding encoding) => type switch
         {
             IrScalar scalar => Scalar(scalar, encoding),
-            IrArray array => ($"z.array({Expression(array.Items, encoding).Code})", Expression(array.Items, encoding).Comment),
+            IrArray array => Array(array, encoding),
+            IrTuple tuple => Combine("z.tuple([", tuple.Items.Select(e => Nullable(Expression(e.Type, encoding), e.Nullable, e.Type)), "])"),
+            IrRecord record => Combine("z.record(z.string(), ", [Nullable(Expression(record.Values, encoding), record.ValuesNullable, record.Values)], ")"),
+            IrUnion union => Combine("z.union([", union.Variants.Select(v => Expression(v, encoding)), "])"),
             IrRef reference => ($"{reference.Name}Schema", null),
             IrJsonText => ("z.string()", "JSON text"),
             IrUnknownType unknown => ("z.unknown()", unknown.Reason),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown IR type node."),
         };
+
+        /// <summary>
+        /// An array, with its items' nullability and its length when the IR knows them (<c>json_array</c> and the
+        /// aggregates; an array FOR JSON builds has neither).
+        /// </summary>
+        private static (string Code, string? Comment) Array(IrArray array, IrEncoding encoding)
+        {
+            var (code, comment) = Combine("z.array(", [Nullable(Expression(array.Items, encoding), array.ItemsNullable, array.Items)], ")");
+            if (array.MinItems is { } min)
+                code += $".min({min.ToString(System.Globalization.CultureInfo.InvariantCulture)})";
+            if (array.MaxItems is { } max)
+                code += $".max({max.ToString(System.Globalization.CultureInfo.InvariantCulture)})";
+            return (code, comment);
+        }
+
+        /// <summary>A value that may be null; <c>z.unknown()</c> already accepts null.</summary>
+        private static (string Code, string? Comment) Nullable((string Code, string? Comment) value, bool nullable, IrType type) =>
+            nullable && type is not IrUnknownType ? (value.Code + ".nullable()", value.Comment) : value;
+
+        /// <summary>Parts joined into one expression, with their comments joined once each.</summary>
+        private static (string Code, string? Comment) Combine(string open, IEnumerable<(string Code, string? Comment)> parts, string close)
+        {
+            var list = parts.ToList();
+            var comments = list.Select(p => p.Comment).OfType<string>().Distinct(StringComparer.Ordinal).ToList();
+            return (open + string.Join(", ", list.Select(p => p.Code)) + close, comments.Count == 0 ? null : string.Join("; ", comments));
+        }
 
         /// <summary>
         /// A scalar as the caller receives it.

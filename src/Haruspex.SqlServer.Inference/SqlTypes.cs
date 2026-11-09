@@ -49,6 +49,9 @@ internal static class SqlTypes
             "datetime" or "datetime2" or "smalldatetime" => Scalar(IrScalarKind.Datetime, IrFormats.Local),
             "datetimeoffset" => Scalar(IrScalarKind.Datetime, IrFormats.Offset),
             "uniqueidentifier" => Scalar(IrScalarKind.Uuid, null),
+            // A json parameter is text the caller sends, and a driver returns a json column as text. A json column
+            // inside FOR JSON or a constructor is live JSON instead, which ProcedureAnalyzer decides before this.
+            "json" => new JsonTextShape(),
             _ => new UnknownShape(IrUnknownReasons.UnsupportedSqlType, $"The type {text} is not modelled yet.", at),
         };
     }

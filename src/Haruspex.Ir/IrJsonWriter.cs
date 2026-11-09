@@ -190,6 +190,49 @@ public static class IrJsonWriter
                 json.WriteString("kind", "array");
                 json.WritePropertyName("items");
                 WriteType(json, array.Items);
+
+                // Written only when they say something, so an array FOR JSON builds reads as it did in 0.2.
+                if (array.ItemsNullable)
+                {
+                    json.WriteBoolean("itemsNullable", true);
+                    WriteReasons(json, "itemsNullableBecause", array.ItemsNullableBecause);
+                }
+
+                if (array.MinItems is { } minItems)
+                    json.WriteNumber("minItems", minItems);
+                if (array.MaxItems is { } maxItems)
+                    json.WriteNumber("maxItems", maxItems);
+                break;
+            case IrTuple tuple:
+                json.WriteString("kind", "tuple");
+                json.WriteStartArray("items");
+                foreach (var element in tuple.Items)
+                {
+                    json.WriteStartObject();
+                    json.WritePropertyName("type");
+                    WriteType(json, element.Type);
+                    json.WriteBoolean("nullable", element.Nullable);
+                    if (element.Nullable)
+                        WriteReasons(json, "nullableBecause", element.NullableBecause);
+                    json.WriteEndObject();
+                }
+
+                json.WriteEndArray();
+                break;
+            case IrRecord record:
+                json.WriteString("kind", "record");
+                json.WritePropertyName("values");
+                WriteType(json, record.Values);
+                json.WriteBoolean("valuesNullable", record.ValuesNullable);
+                if (record.ValuesNullable)
+                    WriteReasons(json, "valuesNullableBecause", record.ValuesNullableBecause);
+                break;
+            case IrUnion union:
+                json.WriteString("kind", "union");
+                json.WriteStartArray("variants");
+                foreach (var variant in union.Variants)
+                    WriteType(json, variant);
+                json.WriteEndArray();
                 break;
             case IrRef reference:
                 json.WriteString("ref", reference.Name);
@@ -206,6 +249,19 @@ public static class IrJsonWriter
         }
 
         json.WriteEndObject();
+    }
+
+    /// <summary>
+    /// One type node as the document would write it. Two nodes that write the same text are the same type, which is
+    /// how a front end can tell that two variants of a union are one.
+    /// </summary>
+    public static string WriteType(IrType type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        using var buffer = new MemoryStream();
+        using (var json = new Utf8JsonWriter(buffer, new JsonWriterOptions { Encoder = Options.Encoder }))
+            WriteType(json, type);
+        return Encoding.UTF8.GetString(buffer.ToArray());
     }
 
     /// <summary>
