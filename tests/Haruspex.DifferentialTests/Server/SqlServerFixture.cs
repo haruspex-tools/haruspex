@@ -38,7 +38,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
 
     /// <summary>
     /// The database user every <see cref="ReadSession"/> runs as: it may read and execute, and nothing more, so a
-    /// write through a read session fails at once with a permission error (229 or 262), whatever the test.
+    /// direct write through a read session fails with a permission error, and the session cannot leave the snapshot.
     /// </summary>
     private const string Reader = "haruspex_reader";
 
@@ -69,6 +69,14 @@ public sealed class SqlServerFixture : IAsyncLifetime
     public string Database { get; } = DatabasePrefix + Guid.NewGuid().ToString("N");
 
     /// <summary>
+    /// A database snapshot of <see cref="Database"/>, taken once it is seeded, which every <see cref="ReadSession"/>
+    /// reads. A snapshot is read-only to everyone, so nothing that runs in a read session can write, not even a dbo
+    /// procedure that ownership chaining lets past every permission. Its name has the prefix too, and it is dropped
+    /// with the database.
+    /// </summary>
+    private string Snapshot => Database + "_read";
+
+    /// <summary>
     /// A connection string to <see cref="Database"/>, deliberately private: tests reach the database only through
     /// <see cref="ReadAsync"/> and <see cref="WriteAsync"/>, which go through the <see cref="DatabaseGate"/>.
     /// </summary>
@@ -76,7 +84,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
 
     // Each kind of session has a pool of its own (a pool is per connection string), so a connection that read as
     // haruspex_reader is never handed to a write session, nor the other way round.
-    private string ReadConnectionString => new SqlConnectionStringBuilder(ConnectionString) { ApplicationName = "haruspex-tests-read" }.ConnectionString;
+    private string ReadConnectionString => new SqlConnectionStringBuilder(ConnectionString) { InitialCatalog = Snapshot, ApplicationName = "haruspex-tests-read" }.ConnectionString;
 
     private string WriteConnectionString => new SqlConnectionStringBuilder(ConnectionString) { ApplicationName = "haruspex-tests-write" }.ConnectionString;
 
@@ -142,10 +150,29 @@ public sealed class SqlServerFixture : IAsyncLifetime
 
                 await using var connection = new SqlConnection(ConnectionString);
                 await connection.OpenAsync().ConfigureAwait(false);
-                await using var command = new SqlCommand(
+                // The reader, and a probe for IsolationTests: a dbo procedure that writes, which ownership chaining
+                // would let the reader run anywhere but a snapshot. Outside every fixture's schema, so the IR and
+                // coverage never see it.
+                foreach (var batch in new[]
+                {
                     $"CREATE USER {Reader} WITHOUT LOGIN; ALTER ROLE db_datareader ADD MEMBER {Reader}; GRANT EXECUTE TO {Reader};",
-                    connection);
-                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    "CREATE TABLE dbo.gate_probe (i int NOT NULL);",
+                    "CREATE PROCEDURE dbo.gate_probe_write AS SET NOCOUNT ON; INSERT INTO dbo.gate_probe VALUES (1);",
+                })
+                {
+                    await using var command = new SqlCommand(batch, connection);
+                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                }
+
+                // Last, so the snapshot holds the seed, the reader and the probe. Its sparse files go beside the
+                // database's own data files, wherever the server keeps them.
+                await ExecuteOnMasterAsync($"""
+                    DECLARE @files nvarchar(max) = (
+                        SELECT STRING_AGG(CONVERT(nvarchar(max), N'(NAME = ' + QUOTENAME(name) + N', FILENAME = N''' + REPLACE(physical_name, N'''', N'''''') + N'.snapshot'')'), N', ')
+                        FROM {Quote(Database)}.sys.database_files WHERE type = 0);
+                    DECLARE @create nvarchar(max) = N'CREATE DATABASE {Quote(Snapshot)} ON ' + @files + N' AS SNAPSHOT OF {Quote(Database)};';
+                    EXEC (@create);
+                    """).ConfigureAwait(false);
             }
         }
 #pragma warning disable CA1031 // Reported by every test that needs the server (Require), rather than failing the tests that don't.
@@ -264,8 +291,8 @@ public sealed class SqlServerFixture : IAsyncLifetime
     }
 
     /// <summary>
-    /// A session that only reads, beside any number of others, once no write session is open. It runs as a database
-    /// user that cannot write, so a test that writes through it fails loudly. Hold one session at a time: the gate is
+    /// A session that only reads, beside any number of others, once no write session is open. A test that writes
+    /// through it fails loudly (see <see cref="ReadSession"/>). Hold one session at a time: the gate is
     /// not re-entrant, and a second request waits for the first to end (see <see cref="DatabaseGate.Patience"/>).
     /// </summary>
     public async Task<ReadSession> ReadAsync(CancellationToken token)
@@ -275,11 +302,14 @@ public sealed class SqlServerFixture : IAsyncLifetime
         try
         {
             await connection.OpenAsync(token).ConfigureAwait(false);
-            // A pooled connection may still be impersonating from its last use, or reset; either way it ends up as
-            // the reader. EXECUTE AS USER is scoped to this database, where the reader is a user.
-            await using var become = new SqlCommand($"IF USER_NAME() <> N'{Reader}' EXECUTE AS USER = N'{Reader}';", connection);
-            await become.ExecuteNonQueryAsync(token).ConfigureAwait(false);
-            return new ReadSession(connection, pass);
+            // WITH COOKIE, so that only the session, which keeps the cookie, can switch back: a bare REVERT in a test
+            // fails. Sent as a plain batch, not through sp_executesql (as a parameterised command would be), whose
+            // scope would undo the switch when it ended. EXECUTE AS USER confines the session to the snapshot.
+            await using var become = new SqlCommand(
+                $"DECLARE @cookie varbinary(8000); EXECUTE AS USER = N'{Reader}' WITH COOKIE INTO @cookie; SELECT @cookie;",
+                connection);
+            var cookie = (byte[])(await become.ExecuteScalarAsync(token).ConfigureAwait(false))!;
+            return new ReadSession(connection, cookie, pass);
         }
         catch
         {
@@ -332,7 +362,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
         {
             await connection.OpenAsync().ConfigureAwait(false);
             await using var command = new SqlCommand(
-                "SELECT name, CASE WHEN create_date < DATEADD(day, -1, GETDATE()) THEN 1 ELSE 0 END FROM sys.databases WHERE name LIKE @prefix ORDER BY name;",
+                "SELECT name, CASE WHEN create_date < DATEADD(day, -1, GETDATE()) THEN 1 ELSE 0 END FROM sys.databases WHERE name LIKE @prefix AND source_database_id IS NULL ORDER BY name;",
                 connection);
             command.Parameters.AddWithValue("@prefix", DatabasePrefix.Replace("_", "[_]", StringComparison.Ordinal) + "%");
             await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
@@ -356,9 +386,19 @@ public sealed class SqlServerFixture : IAsyncLifetime
             SqlConnection.ClearAllPools();
             try
             {
-                await ExecuteOnMasterAsync(
-                    $"IF DB_ID(N'{name.Replace("'", "''", StringComparison.Ordinal)}') IS NOT NULL BEGIN ALTER DATABASE {Quote(name)} SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE {Quote(name)}; END;")
-                    .ConfigureAwait(false);
+                // Its snapshot first: a database with a snapshot cannot be dropped. A snapshot is read-only, so it
+                // cannot be set to SINGLE_USER; its sessions are killed instead.
+                var literal = name.Replace("'", "''", StringComparison.Ordinal);
+                await ExecuteOnMasterAsync($"""
+                    DECLARE @kill nvarchar(max) = N'', @drop nvarchar(max) = N'';
+                    SELECT @kill += N'KILL ' + CAST(s.session_id AS nvarchar(10)) + N';'
+                    FROM sys.dm_exec_sessions AS s JOIN sys.databases AS d ON d.database_id = s.database_id
+                    WHERE d.source_database_id = DB_ID(N'{literal}') AND s.session_id <> @@SPID;
+                    SELECT @drop += N'DROP DATABASE ' + QUOTENAME(name) + N';' FROM sys.databases WHERE source_database_id = DB_ID(N'{literal}');
+                    EXEC (@kill);
+                    EXEC (@drop);
+                    IF DB_ID(N'{literal}') IS NOT NULL BEGIN ALTER DATABASE {Quote(name)} SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE {Quote(name)}; END;
+                    """).ConfigureAwait(false);
                 return;
             }
             catch (SqlException) when (attempt < 5)

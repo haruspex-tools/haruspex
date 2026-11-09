@@ -8,8 +8,8 @@ namespace Haruspex.DifferentialTests;
 /// <param name="Setup">
 /// SQL run first, in a transaction rolled back afterwards: a way to see the tables in a state the seed does not
 /// leave them in, such as empty, so that a procedure without parameters can still be run with no rows. A run with a
-/// setup writes, so it runs alone in the database (a write session); every other run only reads, and SQL Server
-/// refuses it any write (README.md, "Runs that write").
+/// setup writes, so it runs alone in the database (a write session); every other run must only read, and fails if
+/// its procedure writes (README.md, "Runs that write").
 /// </param>
 public sealed record ProcedureRun(
     string Name,

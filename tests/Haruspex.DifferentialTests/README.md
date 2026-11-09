@@ -36,19 +36,28 @@ once, or one that writes, alone. Nothing reaches the database except through it:
   (`server.ReadAsync`) or a **`WriteSession`** (`server.WriteAsync`); both hold their place in the gate until
   disposed. A write session's work is one transaction, always rolled back. `server.ObserveAsync` and
   `server.RunAsync` pick the session from the run: a write session when it has a `Setup`.
-- **A read session cannot write.** It runs as `haruspex_reader`, a database user with `db_datareader` and
-  `EXECUTE` only, so an insert, delete or `CREATE` through it fails at once with error 229 or 262, rather
-  than deadlocking another test by luck. Temporary tables are allowed: they are the session's own.
-- `No_test_opens_a_connection_of_its_own` fails if a file outside the fixture writes `new SqlConnection(`.
+- **A read session cannot write**, so a test or procedure that tries fails at once rather than deadlocking
+  another test by luck. It reads a **database snapshot** of the test database, taken once it is seeded,
+  which is read-only to everyone: even a `dbo` procedure, which ownership chaining lets past every
+  permission, fails with error 3906. It also runs as `haruspex_reader`, a database user with
+  `db_datareader` and `EXECUTE` only, switched to `WITH COOKIE`, a cookie only the session holds. So a test
+  cannot `REVERT` to `dbo` (15591), nor `USE` the writable database, because an impersonated user is confined
+  to its own (916). Temporary tables are allowed: they are the session's own, in tempdb. Writes see the
+  database itself, and roll back, so readers always see the seed.
+- `No_test_opens_a_connection_of_its_own` fails if a file outside the fixture names `SqlConnection`,
+  `SqlClientFactory` or `DbProviderFactories`. It is there to catch a mistake, not to stop someone set on
+  going around it.
 - Deploying and seeding, the one write that is committed, holds the gate too, though no test has started.
 - The gate is not re-entrant: a test holding a session that asks for another waits on itself. A wait over
   two minutes fails, naming the likely cause.
 
 Why a gate rather than a database per writing run: the writes are few and short (a dozen setups and a few
 dozen observation tests, each well under a second), so making them wait costs little, while a copy per run
-means deploying and seeding again, seconds each, or snapshots, which need a file path on the server.
-Retrying on 1205 or running the whole suite serially would hide the cause, or slow every read for the sake
-of a few writes. Readers only take shared locks, which never conflict, so they need nothing more.
+means deploying and seeding again, seconds each, or a snapshot per run. Retrying on 1205 or running the
+whole suite serially would hide the cause, or slow every read for the sake of a few writes. The one shared
+snapshot is not there for isolation (the gate is) but to make writing through a read session impossible;
+the drop removes it before the database, killing its sessions, since a read-only database cannot be set to
+`SINGLE_USER`.
 
 ## The validator reads the IR, not the Zod
 
@@ -161,4 +170,4 @@ Stopping a run must not leave it behind either:
 
 Add the fixture's name to `Runs.Fixtures`, write `Seeds/<name>.sql`, and add runs to `Runs.All` until the
 coverage test passes. A procedure that cannot run goes in `Runs.NotRun` with the reason. A run whose procedure itself writes needs a `Setup` so that it runs in a write
-session; in a read session SQL Server refuses the write.
+session; in a read session the write fails the run.
