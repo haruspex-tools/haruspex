@@ -6,8 +6,8 @@ namespace Haruspex.DifferentialTests;
 /// <summary>
 /// What SQL Server enforces for types, alias types and CHECK constraints, observed and kept as tests. Semantics'
 /// reading of the schema (SchemaRules, CheckReader) and the Zod emitter's mappings follow what these say; several
-/// are why a fact is weaker than it first looks. Each runs in a transaction that is rolled back, against the test
-/// database (whose collation is the server's default, SQL_Latin1_General_CP1_CI_AS on the pinned image).
+/// are why a fact is weaker than it first looks. Each runs in a write session, alone in the test database and rolled
+/// back (whose collation is the server's default, SQL_Latin1_General_CP1_CI_AS on the pinned image).
 /// </summary>
 public class CheckConstraintObservationTests(SqlServerFixture server)
 {
@@ -15,23 +15,13 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
     private async Task<object?> Query(string setup, string query)
     {
         server.Require();
-        await using var connection = new SqlConnection(server.ConnectionString);
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
-        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(TestContext.Current.CancellationToken);
-        try
-        {
-#pragma warning disable CA2100 // The tests' own literal SQL.
-            await using (var command = new SqlCommand(setup, connection, transaction))
-                await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
-            await using var select = new SqlCommand(query, connection, transaction);
-#pragma warning restore CA2100
-            var value = await select.ExecuteScalarAsync(TestContext.Current.CancellationToken);
-            return value is DBNull ? null : value;
-        }
-        finally
-        {
-            await transaction.RollbackAsync(TestContext.Current.CancellationToken);
-        }
+        // It creates a table and writes to it, so it is alone in the database while it does (README.md).
+        await using var session = await server.WriteAsync(TestContext.Current.CancellationToken);
+        await using (var command = session.Command(setup))
+            await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        await using var select = session.Command(query);
+        var value = await select.ExecuteScalarAsync(TestContext.Current.CancellationToken);
+        return value is DBNull ? null : value;
     }
 
     /// <summary>Whether <paramref name="statement"/> succeeds after <paramref name="setup"/>; rolled back.</summary>

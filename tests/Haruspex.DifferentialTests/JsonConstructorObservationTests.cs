@@ -19,11 +19,8 @@ public class JsonConstructorObservationTests(SqlServerFixture server)
     private async Task<IReadOnlyList<string?>> Rows(string sql)
     {
         server.Require();
-        await using var connection = new SqlConnection(server.ConnectionString);
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
-#pragma warning disable CA2100 // The tests' own literal SQL.
-        await using var command = new SqlCommand(sql, connection);
-#pragma warning restore CA2100
+        await using var session = await server.ReadAsync(TestContext.Current.CancellationToken);
+        await using var command = session.Command(sql);
         await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
         var rows = new List<string?>();
         while (await reader.ReadAsync(TestContext.Current.CancellationToken))

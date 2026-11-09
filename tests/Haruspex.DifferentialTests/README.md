@@ -14,9 +14,41 @@ by a user at runtime.
 3. **Each fixture is seeded** from `Seeds/<name>.sql`.
 4. **Each run in `Runs.All` calls a procedure** and reads every result set. A run with `Setup` runs that SQL
    first in a transaction that is rolled back, which is how a procedure without parameters is run against
-   empty tables.
+   empty tables. Such a run writes, so it runs alone (see "Runs that write").
 5. **The output is validated against the IR** (`Validation/IrValidator.cs`).
 6. **The database is dropped**, in the fixture's `DisposeAsync`, whatever happened before (see below).
+
+## Runs that write
+
+Tests run in parallel against one database. Most only read, but some write inside a transaction that is rolled
+back: a run's `Setup` (deleting rows, to see a procedure on empty tables), and the observation tests that create
+a table or functions to watch the engine (`CheckConstraintObservationTests`, `JsonFunctionObservationTests`). The
+rollback hides what they wrote, but not their locks: until it, a run reading the same tables waits on them, and
+when the two take their locks in opposite orders SQL Server kills one with error 1205. GitHub's CI did on
+9 Nov 2026 (four tests on `trees`). `IsolationTests.A_run_that_writes_never_overlaps_a_run_that_reads` makes the
+overlap certain, holding a setup open while a reading run starts; before the fix the reader waited on `LCK_M_S`
+every time.
+
+So the fixture has a **reader–writer gate** (`Server/DatabaseGate.cs`): any number of sessions that read at
+once, or one that writes, alone. Nothing reaches the database except through it:
+
+- The fixture keeps the connection string to itself. A test asks for a **`ReadSession`**
+  (`server.ReadAsync`) or a **`WriteSession`** (`server.WriteAsync`); both hold their place in the gate until
+  disposed. A write session's work is one transaction, always rolled back. `server.ObserveAsync` and
+  `server.RunAsync` pick the session from the run: a write session when it has a `Setup`.
+- **A read session cannot write.** It runs as `haruspex_reader`, a database user with `db_datareader` and
+  `EXECUTE` only, so an insert, delete or `CREATE` through it fails at once with error 229 or 262, rather
+  than deadlocking another test by luck. Temporary tables are allowed: they are the session's own.
+- `No_test_opens_a_connection_of_its_own` fails if a file outside the fixture writes `new SqlConnection(`.
+- Deploying and seeding, the one write that is committed, holds the gate too, though no test has started.
+- The gate is not re-entrant: a test holding a session that asks for another waits on itself. A wait over
+  two minutes fails, naming the likely cause.
+
+Why a gate rather than a database per writing run: the writes are few and short (a dozen setups and a few
+dozen observation tests, each well under a second), so making them wait costs little, while a copy per run
+means deploying and seeding again, seconds each, or snapshots, which need a file path on the server.
+Retrying on 1205 or running the whole suite serially would hide the cause, or slow every read for the sake
+of a few writes. Readers only take shared locks, which never conflict, so they need nothing more.
 
 ## The validator reads the IR, not the Zod
 
@@ -128,4 +160,5 @@ Stopping a run must not leave it behind either:
 ## Adding a fixture or a run
 
 Add the fixture's name to `Runs.Fixtures`, write `Seeds/<name>.sql`, and add runs to `Runs.All` until the
-coverage test passes. A procedure that cannot run goes in `Runs.NotRun` with the reason.
+coverage test passes. A procedure that cannot run goes in `Runs.NotRun` with the reason. A run whose procedure itself writes needs a `Setup` so that it runs in a write
+session; in a read session SQL Server refuses the write.

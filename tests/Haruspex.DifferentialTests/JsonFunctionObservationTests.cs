@@ -5,8 +5,8 @@ namespace Haruspex.DifferentialTests;
 
 /// <summary>
 /// What a call of a scalar function returning JSON gives, observed and kept as tests: what FunctionSummaries and the
-/// analyzer's "scalar functions" rules rest on. Each test creates its table and functions in a transaction that is
-/// rolled back. Observed on SQL Server 2025 RTM-CU10.
+/// analyzer's "scalar functions" rules rest on. Each test creates its table and functions in a write session, rolled
+/// back, alone in the test database while it lasts. Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
 public class JsonFunctionObservationTests(SqlServerFixture server)
 {
@@ -63,28 +63,19 @@ public class JsonFunctionObservationTests(SqlServerFixture server)
     private async Task<string?> Query(string query)
     {
         server.Require();
-        await using var connection = new SqlConnection(server.ConnectionString);
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
-        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(TestContext.Current.CancellationToken);
-        try
-        {
-            // CREATE FUNCTION must be alone in its batch, so each is a command of its own.
-            foreach (var batch in Functions.Prepend(Table))
-            {
-#pragma warning disable CA2100 // The tests' own literal SQL.
-                await using var create = new SqlCommand(batch, connection, transaction);
-                await create.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
-            }
+        // It creates a table and functions, so it is alone in the database while it does (README.md).
+        await using var session = await server.WriteAsync(TestContext.Current.CancellationToken);
 
-            await using var select = new SqlCommand(query, connection, transaction);
-#pragma warning restore CA2100
-            var value = await select.ExecuteScalarAsync(TestContext.Current.CancellationToken);
-            return value is DBNull or null ? null : value.ToString();
-        }
-        finally
+        // CREATE FUNCTION must be alone in its batch, so each is a command of its own.
+        foreach (var batch in Functions.Prepend(Table))
         {
-            await transaction.RollbackAsync(TestContext.Current.CancellationToken);
+            await using var create = session.Command(batch);
+            await create.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         }
+
+        await using var select = session.Command(query);
+        var value = await select.ExecuteScalarAsync(TestContext.Current.CancellationToken);
+        return value is DBNull or null ? null : value.ToString();
     }
 
     [Theory]

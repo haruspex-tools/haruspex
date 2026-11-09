@@ -36,6 +36,14 @@ public sealed class SqlServerFixture : IAsyncLifetime
     /// <summary>The prefix of every database the tests create, so a leftover one is recognisable.</summary>
     private const string DatabasePrefix = "haruspex_test_";
 
+    /// <summary>
+    /// The database user every <see cref="ReadSession"/> runs as: it may read and execute, and nothing more, so a
+    /// write through a read session fails at once with a permission error (229 or 262), whatever the test.
+    /// </summary>
+    private const string Reader = "haruspex_reader";
+
+    private readonly DatabaseGate gate = new();
+
     private readonly ConcurrentDictionary<string, Lazy<IrDocument>> documents = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, Lazy<Task<IReadOnlyList<ObservedResultSet>>>> observations = new(StringComparer.Ordinal);
 
@@ -60,8 +68,17 @@ public sealed class SqlServerFixture : IAsyncLifetime
     /// <summary>The database created for this run.</summary>
     public string Database { get; } = DatabasePrefix + Guid.NewGuid().ToString("N");
 
-    /// <summary>A connection string to <see cref="Database"/>.</summary>
-    public string ConnectionString => new SqlConnectionStringBuilder(server) { InitialCatalog = Database }.ConnectionString;
+    /// <summary>
+    /// A connection string to <see cref="Database"/>, deliberately private: tests reach the database only through
+    /// <see cref="ReadAsync"/> and <see cref="WriteAsync"/>, which go through the <see cref="DatabaseGate"/>.
+    /// </summary>
+    private string ConnectionString => new SqlConnectionStringBuilder(server) { InitialCatalog = Database }.ConnectionString;
+
+    // Each kind of session has a pool of its own (a pool is per connection string), so a connection that read as
+    // haruspex_reader is never handed to a write session, nor the other way round.
+    private string ReadConnectionString => new SqlConnectionStringBuilder(ConnectionString) { ApplicationName = "haruspex-tests-read" }.ConnectionString;
+
+    private string WriteConnectionString => new SqlConnectionStringBuilder(ConnectionString) { ApplicationName = "haruspex-tests-write" }.ConnectionString;
 
     public async ValueTask InitializeAsync()
     {
@@ -112,10 +129,23 @@ public sealed class SqlServerFixture : IAsyncLifetime
                 done.TrySetResult();
             }
 
-            foreach (var fixture in Runs.Fixtures)
+            // The one write that is committed, and the only one outside a WriteSession, because a fixture's batches
+            // are retried after failures, which a transaction would not survive. It holds the gate all the same,
+            // though no test has started yet, so that every write goes through it.
+            using (await gate.EnterWriteAsync(CancellationToken.None).ConfigureAwait(false))
             {
-                await Deployer.DeployAsync(ConnectionString, Paths.Fixture(fixture)).ConfigureAwait(false);
-                await Deployer.ExecuteScriptAsync(ConnectionString, Paths.Seed(fixture)).ConfigureAwait(false);
+                foreach (var fixture in Runs.Fixtures)
+                {
+                    await Deployer.DeployAsync(ConnectionString, Paths.Fixture(fixture)).ConfigureAwait(false);
+                    await Deployer.ExecuteScriptAsync(ConnectionString, Paths.Seed(fixture)).ConfigureAwait(false);
+                }
+
+                await using var connection = new SqlConnection(ConnectionString);
+                await connection.OpenAsync().ConfigureAwait(false);
+                await using var command = new SqlCommand(
+                    $"CREATE USER {Reader} WITHOUT LOGIN; ALTER ROLE db_datareader ADD MEMBER {Reader}; GRANT EXECUTE TO {Reader};",
+                    connection);
+                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
 #pragma warning disable CA1031 // Reported by every test that needs the server (Require), rather than failing the tests that don't.
@@ -155,6 +185,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
         }
         finally
         {
+            gate.Dispose();
             if (container is not null)
                 await container.DisposeAsync().ConfigureAwait(false);
         }
@@ -212,7 +243,73 @@ public sealed class SqlServerFixture : IAsyncLifetime
     {
         ArgumentNullException.ThrowIfNull(run);
         return observations.GetOrAdd(run.Name, _ => new Lazy<Task<IReadOnlyList<ObservedResultSet>>>(
-            () => ProcedureRunner.RunAsync(ConnectionString, run))).Value;
+            () => RunAsync(run, CancellationToken.None))).Value;
+    }
+
+    /// <summary>
+    /// Runs a procedure now, not reusing an earlier run: in a <see cref="WriteSession"/>, alone, when it has a setup,
+    /// and otherwise in a <see cref="ReadSession"/>, beside any other reader.
+    /// </summary>
+    public async Task<IReadOnlyList<ObservedResultSet>> RunAsync(ProcedureRun run, CancellationToken token)
+    {
+        ArgumentNullException.ThrowIfNull(run);
+        if (run.Setup is null)
+        {
+            await using var read = await ReadAsync(token).ConfigureAwait(false);
+            return await ProcedureRunner.RunAsync(read, run).ConfigureAwait(false);
+        }
+
+        await using var write = await WriteAsync(token).ConfigureAwait(false);
+        return await ProcedureRunner.RunAsync(write, run).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A session that only reads, beside any number of others, once no write session is open. It runs as a database
+    /// user that cannot write, so a test that writes through it fails loudly. Hold one session at a time: the gate is
+    /// not re-entrant, and a second request waits for the first to end (see <see cref="DatabaseGate.Patience"/>).
+    /// </summary>
+    public async Task<ReadSession> ReadAsync(CancellationToken token)
+    {
+        var pass = await gate.EnterReadAsync(token).ConfigureAwait(false);
+        var connection = new SqlConnection(ReadConnectionString);
+        try
+        {
+            await connection.OpenAsync(token).ConfigureAwait(false);
+            // A pooled connection may still be impersonating from its last use, or reset; either way it ends up as
+            // the reader. EXECUTE AS USER is scoped to this database, where the reader is a user.
+            await using var become = new SqlCommand($"IF USER_NAME() <> N'{Reader}' EXECUTE AS USER = N'{Reader}';", connection);
+            await become.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            return new ReadSession(connection, pass);
+        }
+        catch
+        {
+            await connection.DisposeAsync().ConfigureAwait(false);
+            pass.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// A session that writes, alone in the database: it waits for every open session to end, and none starts until
+    /// it is disposed, which rolls back everything it did. Every test that inserts, deletes, creates or alters
+    /// anything in the test database does it here.
+    /// </summary>
+    public async Task<WriteSession> WriteAsync(CancellationToken token)
+    {
+        var pass = await gate.EnterWriteAsync(token).ConfigureAwait(false);
+        var connection = new SqlConnection(WriteConnectionString);
+        try
+        {
+            await connection.OpenAsync(token).ConfigureAwait(false);
+            var transaction = (SqlTransaction)await connection.BeginTransactionAsync(token).ConfigureAwait(false);
+            return new WriteSession(connection, transaction, pass);
+        }
+        catch
+        {
+            await connection.DisposeAsync().ConfigureAwait(false);
+            pass.Dispose();
+            throw;
+        }
     }
 
     /// <summary>Validates a run's output against the IR (<see cref="IrValidator"/>).</summary>
