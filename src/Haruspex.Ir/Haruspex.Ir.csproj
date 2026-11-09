@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>The haruspex intermediate representation: inferred result shapes, dialect-neutral.</Description>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Emits Zod schemas and TypeScript types from the haruspex IR.</Description>
+  </PropertyGroup>
+  <!-- An emitter reads only the IR. It must never reference a front end. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Haruspex.Ir\Haruspex.Ir.csproj" />
+  </ItemGroup>
+</Project>

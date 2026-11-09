@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- xunit v3 test projects are executables. -->
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Haruspex.Ir\Haruspex.Ir.csproj" />
+    <ProjectReference Include="..\..\src\Haruspex.SqlServer\Haruspex.SqlServer.csproj" />
+    <ProjectReference Include="..\..\src\Haruspex.Emit.Zod\Haruspex.Emit.Zod.csproj" />
+    <ProjectReference Include="..\..\src\Haruspex.Cli\Haruspex.Cli.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,4 @@
+# Deterministic output is compared byte for byte across operating systems (snapshots, generated code),
+# so the working tree uses LF everywhere.
+* text=auto eol=lf
+*.png binary

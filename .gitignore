@@ -1,0 +1,23 @@
+# Build output
+bin/
+obj/
+artifacts/
+TestResults/
+
+# Snapshots proposed by a failing test, awaiting review
+*.received.*
+
+# emit-check: dependencies and the module the test generates
+node_modules/
+tests/emit-check/generated/
+
+# Local runs of the tool
+/out/
+
+# Editors and OS
+.vs/
+.vscode/
+.idea/
+*.user
+*.swp
+.DS_Store

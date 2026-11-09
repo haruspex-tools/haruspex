@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only: this workflow builds and tests, and never writes to the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    # Linux only for now; the Windows, Linux and macOS matrix comes in a later change.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+      # Fail, rather than skip, the test that type-checks the generated Zod if Node is missing.
+      HARUSPEX_REQUIRE_NODE: "1"
+    steps:
+      # Actions are pinned to commit SHAs, not tags, because a tag can be moved.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      # Locked mode (set in Directory.Build.props on CI): fails if a packages.lock.json is out of date.
+      - run: dotnet restore
+
+      - run: dotnet build --no-restore --configuration Release
+
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: tests/emit-check
+
+      - run: dotnet test --no-build --configuration Release

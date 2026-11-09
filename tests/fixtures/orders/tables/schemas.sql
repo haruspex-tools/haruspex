@@ -1,0 +1,4 @@
+CREATE SCHEMA sales;
+GO
+CREATE SCHEMA hr;
+GO

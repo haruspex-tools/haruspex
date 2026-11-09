@@ -1,0 +1,6 @@
+# Agent instructions, hooks and workflows run on contributors' machines or with the repository's
+# permissions in CI, so changes to them need the maintainer's review. See CONTRIBUTING.md.
+/.claude/   @sharpblue
+/.github/   @sharpblue
+/AGENTS.md  @sharpblue
+/CLAUDE.md  @sharpblue

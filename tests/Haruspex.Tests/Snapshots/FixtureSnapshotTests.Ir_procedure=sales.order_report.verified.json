@@ -1,0 +1,178 @@
+{
+  "irVersion": "0.1",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "sales.order_report",
+      "name": "OrderReport",
+      "kind": "procedure",
+      "at": "procedures/order_report.sql:1:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OrderReportRow"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
+    }
+  ],
+  "types": {
+    "OrderReportRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "customer_name",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-expression"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/order_report.sql:6:8"
+            }
+          ]
+        },
+        {
+          "name": "total_with_tax",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-expression"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/order_report.sql:7:8"
+            }
+          ]
+        },
+        {
+          "name": "notes",
+          "type": {
+            "kind": "unknown",
+            "reason": "json-shape-unknown"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/order_report.sql:8:8"
+            }
+          ]
+        },
+        {
+          "name": "nickname",
+          "type": {
+            "kind": "unknown",
+            "reason": "unresolved-column"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/order_report.sql:9:8"
+            }
+          ]
+        },
+        {
+          "name": "picture",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-sql-type"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.product.picture"
+            }
+          ]
+        },
+        {
+          "name": "voucher_code",
+          "type": {
+            "kind": "unknown",
+            "reason": "unresolved-table"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/order_report.sql:11:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "sales.order_report",
+      "path": "results[0][].customer_name",
+      "reason": "unsupported-expression",
+      "detail": "The expression upper(c.name) is not modelled yet.",
+      "at": "procedures/order_report.sql:6:8"
+    },
+    {
+      "object": "sales.order_report",
+      "path": "results[0][].nickname",
+      "reason": "unresolved-column",
+      "detail": "The table sales.customer has no column nickname.",
+      "at": "procedures/order_report.sql:9:8"
+    },
+    {
+      "object": "sales.order_report",
+      "path": "results[0][].notes",
+      "reason": "json-shape-unknown",
+      "detail": "json_query(o.notes) reads JSON that is not built here, so its shape is unknown.",
+      "at": "procedures/order_report.sql:8:8"
+    },
+    {
+      "object": "sales.order_report",
+      "path": "results[0][].picture",
+      "reason": "unsupported-sql-type",
+      "detail": "The type varbinary(max) is not modelled yet.",
+      "at": "tables/product.sql:8:5"
+    },
+    {
+      "object": "sales.order_report",
+      "path": "results[0][].total_with_tax",
+      "reason": "unsupported-expression",
+      "detail": "The expression o.total * 1.2 is not modelled yet.",
+      "at": "procedures/order_report.sql:7:8"
+    },
+    {
+      "object": "sales.order_report",
+      "path": "results[0][].voucher_code",
+      "reason": "unresolved-table",
+      "detail": "There is no table sales.voucher in the project.",
+      "at": "procedures/order_report.sql:11:8"
+    }
+  ]
+}

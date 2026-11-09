@@ -1,0 +1,37 @@
+{
+  "irVersion": "0.1",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "sales.archive_orders",
+      "name": "ArchiveOrders",
+      "kind": "procedure",
+      "at": "procedures/archive_orders.sql:1:1",
+      "parameters": [
+        {
+          "name": "@before",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": null
+    }
+  ],
+  "types": {},
+  "unknowns": [
+    {
+      "object": "sales.archive_orders",
+      "path": "results",
+      "reason": "unsupported-statement",
+      "detail": "IF is not modelled yet, so the procedure's result sets cannot be listed.",
+      "at": "procedures/archive_orders.sql:6:1"
+    }
+  ]
+}

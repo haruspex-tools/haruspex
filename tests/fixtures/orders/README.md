@@ -1,0 +1,15 @@
+# Fixture: orders
+
+An invented order-management schema: customers, orders, order lines, products and salespeople. It
+exists only to exercise the constructs haruspex models; no part of it comes from a real system.
+
+Each procedure covers one group of constructs:
+
+| Procedure | Covers |
+|---|---|
+| `sales.list_customers` | a plain rowset; aliases; declared `NULL` and `NOT NULL` |
+| `sales.list_orders` | inner and left joins; a left join makes a `NOT NULL` column nullable |
+| `sales.get_order` | `FOR JSON PATH, WITHOUT_ARRAY_WRAPPER`; dotted aliases; `json_query` over a correlated `FOR JSON` subquery; dates, times and GUIDs in JSON |
+| `sales.list_customer_orders` | `FOR JSON PATH, INCLUDE_NULL_VALUES`; a bare correlated `FOR JSON` subquery |
+| `sales.order_report` | expressions and references haruspex does not model yet, each an unknown with a reason |
+| `sales.archive_orders` | a statement haruspex does not model yet, which makes the procedure's results unknown |

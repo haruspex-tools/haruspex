@@ -1,0 +1,20 @@
+# Agent conventions
+
+Instructions for coding agents working in this repository. Read [CONTRIBUTING.md](CONTRIBUTING.md)
+first: its rules (the soundness principle, test first, decision context in code, how to build and test)
+apply to agents exactly as to people, and are not repeated here.
+
+In addition:
+
+- **Never guess a type.** If a construct is not modelled, produce an IR unknown with a reason. Do not
+  widen inference to make a test pass.
+- **Snapshots are claims.** Never accept a `*.received.*` file without checking each change against what
+  SQL Server actually does. Say in your report which snapshots changed and why.
+- **Invented fixtures only.** Do not copy SQL, names or data from any real organisation's systems into
+  this repository, including from other repositories on the same machine.
+- **No new dependencies without asking.** In particular, never add DacFx (see CONTRIBUTING.md).
+- **Do not commit, push, merge, rebase or reset** unless the maintainer asks. Leave changes in the working
+  tree and list the paths you changed.
+- **Changes to `.claude/`, `.github/`, `AGENTS.md` and `CLAUDE.md` need the maintainer's review**
+  (CODEOWNERS). Point them out explicitly.
+- Keep the build free of warnings; they are errors here.

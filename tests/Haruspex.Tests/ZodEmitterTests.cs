@@ -1,0 +1,157 @@
+using System.Text.RegularExpressions;
+using Haruspex.Emit.Zod;
+using Haruspex.Ir;
+
+namespace Haruspex.Tests;
+
+/// <summary>Emitter behaviour on hand-built IR, independent of any front end.</summary>
+public class ZodEmitterTests
+{
+    private static IrDocument OneResult(IrEncoding encoding, params IrField[] fields) => new(
+        new IrSource("tsql"),
+        [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(encoding, new IrArray(new IrRef("PRow")), [])])],
+        new Dictionary<string, IrObjectType> { ["PRow"] = new(fields) },
+        []);
+
+    private static IrField Field(string name, IrType type) => new(name, type, IrPresence.Always, []);
+
+    [Fact]
+    public void Quotes_field_names_that_are_not_identifiers()
+    {
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("first name", new IrScalar(IrScalarKind.String, null, "nvarchar(10)"))));
+
+        Assert.Contains("  \"first name\": z.string(),\n", ts, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormats.Int64, "bigint", "z.number()")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Number, IrFormats.Int64, "bigint", "z.string()")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormats.Int32, "int", "z.int()")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormats.Decimal, "decimal(19,2)", "z.number()")]
+    [InlineData(IrEncoding.Json, IrScalarKind.String, null, "nvarchar(10)", "z.string()")]
+    // In JSON, dates, times and GUIDs are strings in a known format, validated but not converted.
+    [InlineData(IrEncoding.Json, IrScalarKind.Date, null, "date", "z.iso.date()")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Time, null, "time(0)", "z.iso.time()")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormats.Local, "datetime2(0)", "z.iso.datetime({ local: true })")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormats.Local, "smalldatetime", "z.iso.datetime({ local: true })")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormats.Offset, "datetimeoffset", "z.iso.datetime({ offset: true })")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Uuid, null, "uniqueidentifier", "z.guid()")]
+    // In a rowset the mssql driver returns them as Date objects.
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Date, null, "date", "z.date()")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Time, null, "time(0)", "z.date()")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Datetime, IrFormats.Local, "datetime2", "z.date()")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Datetime, IrFormats.Offset, "datetimeoffset", "z.date()")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Uuid, null, "uniqueidentifier", "z.guid()")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Boolean, null, "bit", "z.boolean()")]
+    public void Maps_each_scalar_as_its_encoding_delivers_it(IrEncoding encoding, IrScalarKind kind, string? format, string sql, string zod)
+    {
+        var ts = ZodEmitter.Emit(OneResult(encoding, Field("v", new IrScalar(kind, format, sql))));
+
+        // An optional trailing comment may explain the mapping (int64 precision, say).
+        Assert.Matches($@"\n  v: {Regex.Escape(zod)}( /\*[^\n]*\*/)?,\n", ts);
+    }
+
+    [Fact]
+    public void Separates_absent_keys_from_null_values()
+    {
+        var because = new[] { new IrNullReason(IrNullRules.NullableColumn, "s.t.c") };
+        var text = new IrScalar(IrScalarKind.String, null, "nvarchar(10)");
+        var ts = ZodEmitter.Emit(OneResult(
+            IrEncoding.Json,
+            new IrField("omitted", text, IrPresence.OmittedWhenNull, because),
+            new IrField("kept", text, IrPresence.Always, because)));
+
+        Assert.Contains("  omitted: z.string().optional(),\n", ts, StringComparison.Ordinal);
+        Assert.Contains("  kept: z.string().nullable(),\n", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Json_text_stays_a_plain_string_even_in_a_json_result()
+    {
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("v", new IrJsonText())));
+
+        Assert.Contains("  v: z.string() /* JSON text */,\n", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Emits_an_unknown_with_its_reason_and_never_a_guess()
+    {
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Rowset, Field("v", new IrUnknownType(IrUnknownReasons.UnsupportedExpression))));
+
+        Assert.Contains("  v: z.unknown() /* unsupported-expression */,\n", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Emits_a_procedure_with_unknown_results_as_unknown()
+    {
+        var doc = new IrDocument(
+            new IrSource("tsql"),
+            [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], null)],
+            new Dictionary<string, IrObjectType>(),
+            [new IrUnknown("s.p", "results", IrUnknownReasons.UnsupportedStatement, "IF", "p.sql:3:1")]);
+
+        var ts = ZodEmitter.Emit(doc);
+
+        Assert.Contains("export const PSchema = z.unknown()", ts, StringComparison.Ordinal);
+        Assert.Contains("export type P = z.infer<typeof PSchema>", ts, StringComparison.Ordinal);
+    }
+
+    private static IrDocument Absent(IrType type) => new(
+        new IrSource("tsql"),
+        [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, type, [new IrNullReason(IrNullRules.NoRows, "p.sql:2:1")])])],
+        new Dictionary<string, IrObjectType> { ["PRow"] = new([Field("v", new IrScalar(IrScalarKind.String, null, "nvarchar(10)"))]) },
+        []);
+
+    [Fact]
+    public void An_absent_object_result_reads_as_null()
+    {
+        var ts = ZodEmitter.Emit(Absent(new IrRef("PRow")));
+
+        Assert.Contains("export const PSchema = PRowSchema.nullable()\n", ts, StringComparison.Ordinal);
+        Assert.Contains("null when no rows match", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_absent_array_result_reads_as_an_empty_array()
+    {
+        var ts = ZodEmitter.Emit(Absent(new IrArray(new IrRef("PRow"))));
+
+        Assert.Contains("export const PSchema = z.array(PRowSchema)\n", ts, StringComparison.Ordinal);
+        Assert.Contains("[] when no rows match", ts, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("dbo.x*/ export const injected = 1; /*")]
+    [InlineData("dbo.x\nexport const injected = 1")]
+    [InlineData("dbo.x\u2028export const injected = 1")]
+    public void Comments_cannot_be_closed_or_broken_by_names_from_the_ir(string id)
+    {
+        var doc = new IrDocument(
+            new IrSource("tsql"),
+            [new IrObject(id, "P", IrObjectKind.Procedure, "p.sql:1:1", [], null)],
+            new Dictionary<string, IrObjectType>(),
+            [new IrUnknown(id, "results", IrUnknownReasons.UnsupportedStatement, "d", "p.sql:1:1")]);
+
+        var ts = ZodEmitter.Emit(doc);
+
+        Assert.DoesNotContain("*/ export const injected", ts, StringComparison.Ordinal);
+        Assert.DoesNotContain("\nexport const injected", ts, StringComparison.Ordinal);
+        Assert.DoesNotContain('\u2028', ts);
+        Assert.Single(ts.Split('\n'), line => line.StartsWith("/**", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("Not An Identifier")]
+    [InlineData("x = 1; export const y")]
+    [InlineData("")]
+    public void Rejects_a_name_that_is_not_an_identifier(string name)
+    {
+        var doc = new IrDocument(
+            new IrSource("tsql"),
+            [new IrObject("s.p", name, IrObjectKind.Procedure, "p.sql:1:1", [], null)],
+            new Dictionary<string, IrObjectType>(),
+            []);
+
+        Assert.Throws<ArgumentException>(() => ZodEmitter.Emit(doc));
+    }
+}

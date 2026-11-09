@@ -1,0 +1,94 @@
+{
+  "irVersion": "0.1",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "sales.list_customers",
+      "name": "ListCustomers",
+      "kind": "procedure",
+      "at": "procedures/list_customers.sql:1:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListCustomersRow"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListCustomersRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "email",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(256)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.customer.email"
+            }
+          ]
+        },
+        {
+          "name": "region",
+          "type": {
+            "kind": "string",
+            "sql": "char(2)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.customer.region_code"
+            }
+          ]
+        },
+        {
+          "name": "createdAt",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": []
+}

@@ -1,0 +1,177 @@
+{
+  "irVersion": "0.1",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "sales.list_customer_orders",
+      "name": "ListCustomerOrders",
+      "kind": "procedure",
+      "at": "procedures/list_customer_orders.sql:1:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListCustomerOrdersRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/list_customer_orders.sql:5:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListCustomerOrdersAddress": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "region",
+          "type": {
+            "kind": "string",
+            "sql": "char(2)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.customer.region_code"
+            }
+          ]
+        }
+      ]
+    },
+    "ListCustomerOrdersOrder": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "placedAt",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "shippedAt",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(0)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.order.shipped_at"
+            }
+          ]
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,2)"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ListCustomerOrdersRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "customerId",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "email",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(256)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.customer.email"
+            }
+          ]
+        },
+        {
+          "name": "address",
+          "type": {
+            "ref": "ListCustomerOrdersAddress"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "all-fields-null",
+              "at": "procedures/list_customer_orders.sql:8:8"
+            }
+          ]
+        },
+        {
+          "name": "orders",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListCustomerOrdersOrder"
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/list_customer_orders.sql:10:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": []
+}

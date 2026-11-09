@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Haruspex.Ir/Haruspex.Ir.csproj" />
+    <Project Path="src/Haruspex.SqlServer/Haruspex.SqlServer.csproj" />
+    <Project Path="src/Haruspex.Emit.Zod/Haruspex.Emit.Zod.csproj" />
+    <Project Path="src/Haruspex.Cli/Haruspex.Cli.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Haruspex.Tests/Haruspex.Tests.csproj" />
+  </Folder>
+</Solution>

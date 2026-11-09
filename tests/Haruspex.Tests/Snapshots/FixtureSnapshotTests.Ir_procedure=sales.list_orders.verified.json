@@ -1,0 +1,144 @@
+{
+  "irVersion": "0.1",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "sales.list_orders",
+      "name": "ListOrders",
+      "kind": "procedure",
+      "at": "procedures/list_orders.sql:1:1",
+      "parameters": [
+        {
+          "name": "@customer_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListOrdersRow"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListOrdersRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "placed_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,2)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "customer_name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "product_legacy_code",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.product.legacy_code"
+            },
+            {
+              "rule": "outer-join",
+              "at": "procedures/list_orders.sql:19:11"
+            }
+          ]
+        },
+        {
+          "name": "salesperson_name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "outer-join",
+              "at": "procedures/list_orders.sql:20:17"
+            }
+          ]
+        },
+        {
+          "name": "salesperson_hired_on",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "outer-join",
+              "at": "procedures/list_orders.sql:20:17"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": []
+}

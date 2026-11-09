@@ -1,0 +1,14 @@
+{
+  "name": "haruspex-emit-check",
+  "private": true,
+  "description": "Type-checks the Zod that haruspex generates from the test fixtures. Driven by EmitCheckTests.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit -p ."
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "zod": "4.6.7"
+  }
+}

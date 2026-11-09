@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>haruspex</AssemblyName>
+    <RootNamespace>Haruspex.Cli</RootNamespace>
+    <Description>The haruspex command line.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Haruspex.Ir\Haruspex.Ir.csproj" />
+    <ProjectReference Include="..\Haruspex.SqlServer\Haruspex.SqlServer.csproj" />
+    <ProjectReference Include="..\Haruspex.Emit.Zod\Haruspex.Emit.Zod.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Haruspex.Tests" />
+  </ItemGroup>
+</Project>
