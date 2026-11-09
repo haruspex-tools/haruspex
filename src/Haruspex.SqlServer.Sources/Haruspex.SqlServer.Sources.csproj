@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Reads a SQL Server database project's folder of .sql scripts into Haruspex.SqlServer.Model, with ScriptDom and without DacFx. Read-only: it never builds or deploys a DACPAC.</Description>
+    <IsPackable>true</IsPackable>
+    <PackageId>Haruspex.SqlServer.Sources</PackageId>
+    <PackageTags>sql-server;t-sql;schema;scriptdom;database-project;sqlproj</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- See Haruspex.SqlServer.Model.csproj: every public member is documented. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Haruspex.Diagnostics\Haruspex.Diagnostics.csproj" />
+    <ProjectReference Include="..\Haruspex.SqlServer.Model\Haruspex.SqlServer.Model.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

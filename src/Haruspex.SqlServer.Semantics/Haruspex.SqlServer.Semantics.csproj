@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Binds the references in SQL Server bodies to model objects, and interprets the schema itself.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Haruspex.Diagnostics\Haruspex.Diagnostics.csproj" />
+    <ProjectReference Include="..\Haruspex.SqlServer.Model\Haruspex.SqlServer.Model.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,7 +1,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Haruspex.Cli;
 using Haruspex.Emit.Zod;
-using Haruspex.SqlServer;
+using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Tests;
 

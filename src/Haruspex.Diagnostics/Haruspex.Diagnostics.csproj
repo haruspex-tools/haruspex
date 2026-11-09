@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Diagnostics for tools that read source files: a message and the file, line and column it applies to.</Description>
+    <!-- Packable because Haruspex.SqlServer.Model and .Sources are, and SourceLocation is part of their public API:
+         without this package theirs would depend on one that does not exist. -->
+    <IsPackable>true</IsPackable>
+    <PackageId>Haruspex.Diagnostics</PackageId>
+    <PackageTags>diagnostics;source-location</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <!-- The bottom layer: it refers to nothing else of haruspex's (see docs/architecture.md). -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

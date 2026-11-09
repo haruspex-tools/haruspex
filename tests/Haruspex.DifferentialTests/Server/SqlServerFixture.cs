@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.DifferentialTests.Validation;
 using Haruspex.Ir;
-using Haruspex.SqlServer;
+using Haruspex.Cli;
 using Microsoft.Data.SqlClient;
 using Testcontainers.MsSql;
 

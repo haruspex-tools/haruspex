@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Model;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -14,7 +15,7 @@ internal sealed class IrBuilder
     private readonly HashSet<string> names = new(StringComparer.Ordinal);
     private readonly List<IrUnknown> unknowns = [];
 
-    public IrDocument Build(IReadOnlyList<(ProcedureSource Source, ProcedureAnalysis Analysis)> procedures)
+    public IrDocument Build(IReadOnlyList<(Procedure Source, ProcedureAnalysis Analysis)> procedures)
     {
         var ordered = procedures.OrderBy(p => p.Source.Name.ToString(), StringComparer.Ordinal).ToList();
         var procedureNames = ProcedureNames(ordered.Select(p => p.Source.Name).ToList());
@@ -50,7 +51,7 @@ internal sealed class IrBuilder
                 unknowns.Add(new IrUnknown(id, "results", why.Reason, why.Detail, why.At.ToString()));
             }
 
-            var at = new SourceLocation(source.File, source.Body.StartLine, source.Body.StartColumn);
+            var at = source.At;
             objects.Add(new IrObject(id, name, IrObjectKind.Procedure, at.ToString(), parameters, results));
         }
 

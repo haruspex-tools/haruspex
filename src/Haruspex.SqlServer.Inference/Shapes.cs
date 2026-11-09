@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
 
 namespace Haruspex.SqlServer.Inference;

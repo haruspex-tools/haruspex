@@ -10,6 +10,11 @@
     <Deterministic>true</Deterministic>
     <InvariantGlobalization>true</InvariantGlobalization>
 
+    <!-- Nothing is published yet. The reusable layers that may be (Haruspex.SqlServer.Model and .Sources, and
+         Haruspex.Diagnostics, which their API uses) opt in with their package metadata; everything else stays
+         unpackable. -->
+    <IsPackable>false</IsPackable>
+
     <!-- Pre-release: nothing is stable yet. The IR has its own version (IrDocument.CurrentVersion). -->
     <VersionPrefix>0.1.0</VersionPrefix>
     <VersionSuffix>dev</VersionSuffix>

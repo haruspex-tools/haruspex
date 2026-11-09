@@ -1,4 +1,4 @@
-using Haruspex.SqlServer;
+using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Tests;
 

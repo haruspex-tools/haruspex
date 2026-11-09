@@ -13,8 +13,10 @@ namespace Haruspex.Tests;
 /// <remarks>
 /// Two things are read for each layer. The compiled assembly's references, which are what its code really
 /// uses (the compiler drops a reference nothing uses). And the project file's references, which are what a
-/// published package would depend on even when unused. Framework assemblies are allowed everywhere except
-/// those named in <see cref="Layer.ForbiddenFramework"/>; every other assembly must be allowed by name.
+/// published package would depend on even when unused. The second also covers what the first cannot see: a
+/// constant from another assembly is inlined, leaving no reference behind. Framework assemblies are allowed
+/// everywhere except those named in <see cref="Layer.ForbiddenFramework"/>; every other assembly must be allowed
+/// by name.
 /// </remarks>
 public class ArchitectureTests
 {

@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Haruspex.SqlServer;
+namespace Haruspex.SqlServer.Model;
 
 /// <summary>
 /// Selects objects by two-part name: <c>sales.get_order</c>, <c>sales.*</c>, <c>*.list_?</c>. <c>*</c> and
@@ -25,9 +25,15 @@ public sealed class ObjectPattern
     /// <summary>The pattern as given.</summary>
     public string Text { get; }
 
+    /// <summary>Parses a pattern.</summary>
+    /// <exception cref="FormatException">The text is not a two-part pattern.</exception>
     public static ObjectPattern Parse(string text) =>
         TryParse(text, out var pattern, out var error) ? pattern : throw new FormatException(error);
 
+    /// <summary>Parses a pattern, or says why the text is not one.</summary>
+    /// <param name="text">The pattern, such as <c>sales.*</c>.</param>
+    /// <param name="pattern">The pattern, when the text is one.</param>
+    /// <param name="error">Why the text is not a pattern, when it is not.</param>
     public static bool TryParse(string text, [NotNullWhen(true)] out ObjectPattern? pattern, [NotNullWhen(false)] out string? error)
     {
         ArgumentNullException.ThrowIfNull(text);
@@ -100,8 +106,10 @@ public sealed class ObjectPattern
         return true;
     }
 
+    /// <summary>Whether the name matches the pattern, ignoring case.</summary>
     public bool Matches(ObjectName objectName) => schema.IsMatch(objectName.Schema) && name.IsMatch(objectName.Name);
 
+    /// <summary>The pattern as given.</summary>
     public override string ToString() => Text;
 
     // NonBacktracking: patterns come from users, so matching must stay linear whatever they write.

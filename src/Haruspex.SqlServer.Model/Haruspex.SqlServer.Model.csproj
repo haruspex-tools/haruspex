@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>A SQL Server database schema as data: tables, columns, types, keys, procedures and their bodies as ScriptDom fragments. Read-only: it does not build, compare or deploy anything. Fill it with Haruspex.SqlServer.Sources.</Description>
+    <IsPackable>true</IsPackable>
+    <PackageId>Haruspex.SqlServer.Model</PackageId>
+    <PackageTags>sql-server;t-sql;schema;scriptdom;database-project</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- The public API is for people who have never heard of haruspex, so every public member is documented:
+         a missing comment is a warning, and warnings are errors. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Haruspex.Diagnostics\Haruspex.Diagnostics.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

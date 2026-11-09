@@ -1,6 +1,7 @@
+using Haruspex.Cli;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
-using Haruspex.SqlServer;
+using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Tests;
 

@@ -1,5 +1,7 @@
-using System.Text;
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -22,14 +24,28 @@ internal sealed record ResultShape(IrEncoding Encoding, Shape Shape, IReadOnlyLi
 /// Infers the result sets of one procedure. Every construct it does not model becomes an
 /// <see cref="UnknownShape"/> with a reason, so what it does claim can be trusted.
 /// </summary>
-internal sealed class ProcedureAnalyzer(Catalog catalog, string file)
+/// <remarks>
+/// Which table and column a reference reads is the <see cref="Binder"/>'s job (Haruspex.SqlServer.Semantics);
+/// what that means for a value's shape and nullability is decided here. Slice 2b split the two out of this one
+/// class, so that lint, lineage and diff can bind without inferring.
+/// </remarks>
+internal sealed class ProcedureAnalyzer
 {
+    private readonly Binder binder;
+    private readonly string file;
+
+    public ProcedureAnalyzer(DatabaseModel model, string file)
+    {
+        binder = new Binder(model, file);
+        this.file = file;
+    }
+
     public ProcedureAnalysis Analyse(ProcedureStatementBody procedure)
     {
         var parameters = procedure.Parameters
             .Select(p => new ParameterShape(
                 p.VariableName.Value,
-                SqlTypes.ToShape(p.DataType, At(p)),
+                SqlTypes.ToShape(SqlType.From(p.DataType), At(p)),
                 HasDefault: p.Value is not null,
                 IsOutput: p.Modifier == ParameterModifier.Output))
             .ToList();
@@ -138,11 +154,9 @@ internal sealed class ProcedureAnalyzer(Catalog catalog, string file)
 
     private sealed record Row(IReadOnlyList<RowColumn> Columns, SourceLocation? Star);
 
-    private Row Query(QuerySpecification query, Scope? parent)
+    private Row Query(QuerySpecification query, BindingScope? parent)
     {
-        var scope = new Scope(parent);
-        foreach (var reference in query.FromClause?.TableReferences ?? [])
-            AddSources(reference, scope, outerJoin: null);
+        var scope = binder.BindFrom(query, parent);
 
         // WHERE, GROUP BY and HAVING are not read. They can only remove rows or make values non-null, so
         // ignoring them can leave a field nullable that is not, but never the reverse.
@@ -288,133 +302,9 @@ internal sealed class ProcedureAnalyzer(Catalog catalog, string file)
         return new ObjectShape(fields);
     }
 
-    // ---- sources and scopes -------------------------------------------------------------------------
-
-    private sealed class Scope(Scope? parent)
-    {
-        public Scope? Parent { get; } = parent;
-
-        public List<Source> Sources { get; } = [];
-    }
-
-    /// <param name="Alias">The name columns are qualified by: the alias, or the table's name without one.</param>
-    /// <param name="Table">The table, or null when the source cannot be resolved.</param>
-    /// <param name="Unresolved">Why the source cannot be resolved.</param>
-    /// <param name="OuterJoin">Set when the source is on the optional side of an outer join.</param>
-    private sealed record Source(string? Alias, TableModel? Table, UnknownShape? Unresolved, IrNullReason? OuterJoin);
-
-    private void AddSources(TableReference reference, Scope scope, IrNullReason? outerJoin)
-    {
-        switch (reference)
-        {
-            case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.Inner } join:
-                AddSources(join.FirstTableReference, scope, outerJoin);
-                AddSources(join.SecondTableReference, scope, outerJoin);
-                break;
-            case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.LeftOuter } join:
-                // The right side has no row when nothing matches, so every column read from it can be null,
-                // whatever its declaration says.
-                AddSources(join.FirstTableReference, scope, outerJoin);
-                AddSources(join.SecondTableReference, scope, outerJoin ?? new IrNullReason(IrNullRules.OuterJoin, At(join.SecondTableReference).ToString()));
-                break;
-            case QualifiedJoin or UnqualifiedJoin:
-                AddUnresolved(reference, scope, Unsupported(IrUnknownReasons.UnsupportedSource, $"{JoinKeyword(reference)} is not modelled yet.", At(reference)));
-                break;
-            case JoinParenthesisTableReference parenthesis:
-                AddSources(parenthesis.Join, scope, outerJoin);
-                break;
-            case NamedTableReference named:
-                scope.Sources.Add(Named(named, outerJoin));
-                break;
-            default:
-                AddUnresolved(reference, scope, Unsupported(IrUnknownReasons.UnsupportedSource, $"The table source {Text(reference)} is not modelled yet.", At(reference)));
-                break;
-        }
-    }
-
-    private Source Named(NamedTableReference named, IrNullReason? outerJoin)
-    {
-        var name = named.SchemaObject;
-        var alias = named.Alias?.Value ?? name.BaseIdentifier.Value;
-        var at = At(named);
-        Source Unresolved(string reason, string detail) => new(alias, null, Unsupported(reason, detail, at), outerJoin);
-
-        if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
-            return Unresolved(IrUnknownReasons.UnsupportedSource, $"The reference {Text(name)} to another database is not modelled yet.");
-        if (name.BaseIdentifier.Value.StartsWith('#'))
-            return Unresolved(IrUnknownReasons.UnsupportedSource, $"The temporary table {name.BaseIdentifier.Value} is not modelled yet.");
-
-        ObjectName objectName;
-        if (name.SchemaIdentifier is not null)
-        {
-            objectName = ObjectName.From(name);
-        }
-        else
-        {
-            // SQL Server resolves an unqualified name in the caller's default schema, then in dbo, and the
-            // source cannot tell which caller. When exactly one object in the project could be read by that
-            // name, a query that runs at all has read that one; with more, which is read depends on the caller.
-            // Views, synonyms and functions count too: they are not modelled, but a caller may read one of them.
-            var candidates = catalog.ReadableNamed(name.BaseIdentifier.Value);
-            if (candidates.Count > 1)
-            {
-                return Unresolved(
-                    IrUnknownReasons.UnresolvedTable,
-                    $"{name.BaseIdentifier.Value} is not schema-qualified, and {string.Join(" and ", candidates.Select(c => $"the {c.Kind} {c.Name}"))} have that name: which is read depends on the caller's default schema.");
-            }
-
-            objectName = candidates.Count == 1 ? candidates[0].Name : ObjectName.From(name);
-        }
-
-        if (catalog.Change(objectName) is { } change)
-            return new Source(alias, null, change, outerJoin);
-
-        if (catalog.OtherKind(objectName) is { } kind)
-            return Unresolved(IrUnknownReasons.UnresolvedTable, $"{objectName} is a {kind}, which is not modelled yet.");
-
-        var table = catalog.Table(objectName);
-        return table is not null
-            ? new Source(alias, table, null, outerJoin)
-            : Unresolved(IrUnknownReasons.UnresolvedTable, $"There is no table {objectName} in the project.");
-    }
-
-    /// <summary>
-    /// Adds an unresolvable source for every alias under <paramref name="reference"/>, so that a column
-    /// qualified by any of them, or not qualified at all, becomes unknown rather than resolving elsewhere.
-    /// </summary>
-    private static void AddUnresolved(TableReference reference, Scope scope, UnknownShape why)
-    {
-        switch (reference)
-        {
-            case JoinTableReference join:
-                AddUnresolved(join.FirstTableReference, scope, why);
-                AddUnresolved(join.SecondTableReference, scope, why);
-                break;
-            case JoinParenthesisTableReference parenthesis:
-                AddUnresolved(parenthesis.Join, scope, why);
-                break;
-            case NamedTableReference named:
-                scope.Sources.Add(new Source(named.Alias?.Value ?? named.SchemaObject.BaseIdentifier.Value, null, why, null));
-                break;
-            default:
-                scope.Sources.Add(new Source((reference as TableReferenceWithAlias)?.Alias?.Value, null, why, null));
-                break;
-        }
-    }
-
-    private static string JoinKeyword(TableReference join) => join switch
-    {
-        QualifiedJoin { QualifiedJoinType: QualifiedJoinType.RightOuter } => "RIGHT OUTER JOIN",
-        QualifiedJoin { QualifiedJoinType: QualifiedJoinType.FullOuter } => "FULL OUTER JOIN",
-        UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossJoin } => "CROSS JOIN",
-        UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossApply } => "CROSS APPLY",
-        UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.OuterApply } => "OUTER APPLY",
-        _ => "This join",
-    };
-
     // ---- expressions --------------------------------------------------------------------------------
 
-    private Value Expression(ScalarExpression expression, Scope scope) => expression switch
+    private Value Expression(ScalarExpression expression, BindingScope scope) => expression switch
     {
         ColumnReferenceExpression column => Column(column, scope),
         ParenthesisExpression parenthesis => Expression(parenthesis.Expression, scope),
@@ -424,60 +314,50 @@ internal sealed class ProcedureAnalyzer(Catalog catalog, string file)
         _ => Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
     };
 
-    private Value Column(ColumnReferenceExpression column, Scope scope)
+    private Value Column(ColumnReferenceExpression column, BindingScope scope) => binder.BindColumn(column, scope) switch
     {
-        var at = At(column);
-        if (column.ColumnType != ColumnType.Regular || column.MultiPartIdentifier is null)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The column reference {Text(column)} is not modelled yet.", at));
+        BoundColumn bound => FromColumn(bound),
+        UnboundColumn unbound => Value.Unknown(Unknown(unbound.Problem)),
+        _ => throw new InvalidOperationException("Unknown binding."),
+    };
 
-        var parts = column.MultiPartIdentifier.Identifiers;
-        if (parts.Count > 2)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The multi-part column reference {Text(column)} is not modelled yet.", at));
-
-        var name = parts[^1].Value;
-
-        // Innermost scope first: a correlated subquery sees its own sources before the outer query's.
-        for (var s = scope; s is not null; s = s.Parent)
-        {
-            if (parts.Count == 2)
-            {
-                var qualifier = parts[0].Value;
-                if (s.Sources.FirstOrDefault(x => qualifier.Equals(x.Alias, StringComparison.OrdinalIgnoreCase)) is { } source)
-                    return FromSource(source, name, at);
-                continue;
-            }
-
-            var matches = s.Sources.Where(x => x.Table?.Column(name) is not null).ToList();
-            if (matches.Count > 1)
-                return Value.Unknown(Unsupported(IrUnknownReasons.UnresolvedColumn, $"The column {name} is ambiguous: more than one table in scope has it.", at));
-            if (matches.Count == 1)
-                return FromSource(matches[0], name, at);
-
-            // A source that cannot be resolved may be the one that has this column.
-            if (s.Sources.FirstOrDefault(x => x.Table is null) is { } unresolved)
-                return FromSource(unresolved, name, at);
-        }
-
-        return Value.Unknown(Unsupported(IrUnknownReasons.UnresolvedColumn, $"No table in scope has the column {Text(column)}.", at));
-    }
-
-    private static Value FromSource(Source source, string name, SourceLocation at)
+    private static Value FromColumn(BoundColumn bound)
     {
-        if (source.Table is null)
-            return Value.Unknown(source.Unresolved! with { At = at });
-
-        if (source.Table.Column(name) is not { } column)
-            return Value.Unknown(new UnknownShape(IrUnknownReasons.UnresolvedColumn, $"The table {source.Table.Name} has no column {name}.", at));
-
+        var (source, table, column) = bound;
         var because = new List<IrNullReason>();
-        if (!column.NotNull)
-            because.Add(new IrNullReason(IrNullRules.NullableColumn, $"{source.Table.Name}.{column.Name}"));
-        if (source.OuterJoin is not null)
-            because.Add(source.OuterJoin);
-        return new Value(column.Type, because);
+        if (!SchemaRules.IsNeverNull(table, column))
+            because.Add(new IrNullReason(IrNullRules.NullableColumn, $"{table.Name}.{column.Name}"));
+
+        // The optional side of an outer join has no row when nothing matches, so every column read from it can
+        // be null, whatever its declaration says.
+        if (source.OptionalSideOf is { } optional)
+            because.Add(new IrNullReason(IrNullRules.OuterJoin, optional.ToString()));
+        return new Value(ColumnShape(table, column), because);
     }
 
-    private Value Subquery(ScalarSubquery subquery, Scope scope)
+    /// <summary>A column's shape when it is not null.</summary>
+    private static Shape ColumnShape(Table table, Column column) => column.IsComputed
+        ? new UnknownShape(IrUnknownReasons.UnsupportedSqlType, $"{table.Name}.{column.Name} is a computed column, which is not modelled yet.", column.At)
+        : SqlTypes.ToShape(column.Type, column.At);
+
+    /// <summary>
+    /// The IR's reason for a binding problem. A table changed after its definition was reported as an unsupported
+    /// source before binding had a layer of its own, and still is; a reference form the binder does not model is
+    /// an unsupported expression.
+    /// </summary>
+    private static UnknownShape Unknown(BindingProblem problem) => new(
+        problem.Kind switch
+        {
+            BindingProblemKind.UnsupportedSource or BindingProblemKind.TableRedefined => IrUnknownReasons.UnsupportedSource,
+            BindingProblemKind.UnresolvedTable => IrUnknownReasons.UnresolvedTable,
+            BindingProblemKind.UnresolvedColumn => IrUnknownReasons.UnresolvedColumn,
+            BindingProblemKind.UnsupportedReference => IrUnknownReasons.UnsupportedExpression,
+            _ => throw new ArgumentOutOfRangeException(nameof(problem), problem.Kind, "Unknown binding problem."),
+        },
+        problem.Detail,
+        problem.At);
+
+    private Value Subquery(ScalarSubquery subquery, BindingScope scope)
     {
         var at = At(subquery);
         if (subquery.QueryExpression is not QuerySpecification { ForClause: JsonForClause json } query)
@@ -491,7 +371,7 @@ internal sealed class ProcedureAnalyzer(Catalog catalog, string file)
             : new Value(shape, [new IrNullReason(IrNullRules.EmptySubquery, at.ToString())], IsLiveJson: true);
     }
 
-    private Value JsonQuery(FunctionCall call, Scope scope)
+    private Value JsonQuery(FunctionCall call, BindingScope scope)
     {
         var argument = Expression(call.Parameters[0], scope);
         if (argument.IsLiveJson || argument.Shape is UnknownShape)
@@ -509,24 +389,5 @@ internal sealed class ProcedureAnalyzer(Catalog catalog, string file)
 
     private static string Text(SourceLocation at) => $"at {at}";
 
-    /// <summary>The fragment's source text on one line, shortened, for messages.</summary>
-    private static string Text(TSqlFragment fragment)
-    {
-        var text = new StringBuilder();
-        for (var i = fragment.FirstTokenIndex; i <= fragment.LastTokenIndex; i++)
-        {
-            var token = fragment.ScriptTokenStream[i];
-            if (token.TokenType is TSqlTokenType.WhiteSpace or TSqlTokenType.SingleLineComment or TSqlTokenType.MultilineComment)
-            {
-                if (text.Length > 0 && text[^1] != ' ')
-                    text.Append(' ');
-                continue;
-            }
-
-            text.Append(token.Text);
-        }
-
-        var result = text.ToString().Trim();
-        return result.Length <= 80 ? result : result[..77] + "...";
-    }
+    private static string Text(TSqlFragment fragment) => FragmentText.OneLine(fragment);
 }

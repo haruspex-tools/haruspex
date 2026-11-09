@@ -19,7 +19,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Haruspex.Ir\Haruspex.Ir.csproj" />
-    <ProjectReference Include="..\..\src\Haruspex.SqlServer\Haruspex.SqlServer.csproj" />
+    <!-- SqlProject, the composition of the front-end layers, lives in the CLI. -->
+    <ProjectReference Include="..\..\src\Haruspex.Cli\Haruspex.Cli.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Seeds\*.sql" />

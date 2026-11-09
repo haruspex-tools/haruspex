@@ -1,7 +1,7 @@
 using System.CommandLine;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
-using Haruspex.SqlServer;
+using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Cli;
 

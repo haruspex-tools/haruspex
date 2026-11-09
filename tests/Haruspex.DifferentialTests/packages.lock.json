@@ -410,13 +410,60 @@
           "xunit.v3.runner.common": "[4.0.2]"
         }
       },
+      "haruspex": {
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Diagnostics": "[0.1.0-dev, )",
+          "Haruspex.Emit.Zod": "[0.1.0-dev, )",
+          "Haruspex.Ir": "[0.1.0-dev, )",
+          "Haruspex.SqlServer.Inference": "[0.1.0-dev, )",
+          "Haruspex.SqlServer.Model": "[0.1.0-dev, )",
+          "Haruspex.SqlServer.Sources": "[0.1.0-dev, )",
+          "System.CommandLine": "[2.0.14, )"
+        }
+      },
+      "haruspex.diagnostics": {
+        "type": "Project"
+      },
+      "haruspex.emit.zod": {
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Ir": "[0.1.0-dev, )"
+        }
+      },
       "haruspex.ir": {
         "type": "Project"
       },
-      "haruspex.sqlserver": {
+      "haruspex.sqlserver.inference": {
         "type": "Project",
         "dependencies": {
+          "Haruspex.Diagnostics": "[0.1.0-dev, )",
           "Haruspex.Ir": "[0.1.0-dev, )",
+          "Haruspex.SqlServer.Model": "[0.1.0-dev, )",
+          "Haruspex.SqlServer.Semantics": "[0.1.0-dev, )",
+          "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
+        }
+      },
+      "haruspex.sqlserver.model": {
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Diagnostics": "[0.1.0-dev, )",
+          "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
+        }
+      },
+      "haruspex.sqlserver.semantics": {
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Diagnostics": "[0.1.0-dev, )",
+          "Haruspex.SqlServer.Model": "[0.1.0-dev, )",
+          "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
+        }
+      },
+      "haruspex.sqlserver.sources": {
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Diagnostics": "[0.1.0-dev, )",
+          "Haruspex.SqlServer.Model": "[0.1.0-dev, )",
           "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
         }
       },
@@ -425,6 +472,12 @@
         "requested": "[180.140.0, )",
         "resolved": "180.140.0",
         "contentHash": "qdSHJPR3t2mqLcYQ31E9hBhQfuHo34jOtMEOrCKHBNuV+IShlLfDR8/tDzXR7MeI2ZhlZ+8wCVRMACifoAepAA=="
+      },
+      "System.CommandLine": {
+        "type": "CentralTransitive",
+        "requested": "[2.0.14, )",
+        "resolved": "2.0.14",
+        "contentHash": "15fyVO4aG6poR6IKmhM74zf7PUzaU6FZAGm2d3SQSO9yIyGAeo44e6t9qeKjjaqyMEqYdqcb2G1B0gpLoDU2cA=="
       }
     }
   }

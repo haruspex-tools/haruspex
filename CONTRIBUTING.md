@@ -91,18 +91,36 @@ To run the tool from source:
 dotnet run --project src/Haruspex.Cli -- generate tests/fixtures/orders --include 'sales.*' --out out
 ```
 
-## Layout
+## Layers
+
+The code is split into layers, one project each, and **a layer refers only to the layers and packages its row
+in the table allows**: only `Sources` reads a database project, `Semantics` never sees the IR, the IR and the
+emitters never see SQL, and no SQL Server layer knows the emitters. The table, the reasons for its
+lines, and the types that were split to fit it are in [docs/architecture.md](docs/architecture.md).
+
+`tests/Haruspex.Tests/ArchitectureTests.cs` enforces it: it holds the same table as data and reads each
+assembly's references and each project file's, failing on anything the table doesn't allow. A new layer, or a
+new reference between layers, changes the table in both places in the same pull request. Never weaken the
+test to let a reference through; move the code to the layer that may know it.
 
 | Path | What it holds |
 |---|---|
+| `src/Haruspex.Diagnostics` | Messages and source locations, shared by the SQL Server layers. Packable, because Model's API uses it. |
+| `src/Haruspex.SqlServer.Model` | The schema as data. Packable; see its `README.md`. |
+| `src/Haruspex.SqlServer.Sources` | Reads a folder of `.sql` files into the model with ScriptDom. Packable; see its `README.md`. |
+| `src/Haruspex.SqlServer.Semantics` | Binds references in bodies to model objects, and interprets the schema. |
+| `src/Haruspex.SqlServer.Inference` | Infers the IR from bound procedure bodies. |
 | `src/Haruspex.Ir` | The IR model and its deterministic JSON form. Depends on nothing. |
-| `src/Haruspex.SqlServer` | The SQL Server front end: reads `.sql` files with ScriptDom and infers the IR. |
-| `src/Haruspex.Emit.Zod` | The Zod emitter. Reads only the IR, never the front end. |
-| `src/Haruspex.Cli` | The `haruspex` command. |
-| `tests/Haruspex.Tests` | Unit, snapshot and end-to-end tests. |
+| `src/Haruspex.Emit.Zod` | The Zod emitter. Reads only the IR. |
+| `src/Haruspex.Cli` | The `haruspex` command, and `SqlProject`, which composes the layers. |
+| `tests/Haruspex.Tests` | Unit, snapshot, end-to-end and architecture tests. |
 | `tests/Haruspex.DifferentialTests` | Runs the fixtures in SQL Server and checks the output against the IR. |
 | `tests/fixtures` | Invented SQL used by the tests. |
 | `tests/emit-check` | A small npm package that type-checks the generated Zod. |
+
+Only `Model` and `Sources` are packable (`IsPackable`, with package metadata and a readme), with `Diagnostics`
+because its types are in their public API; every other project is not. Nothing is published yet: that is a later decision, so don't push packages anywhere. Their public API
+must be documented, which the build enforces (`GenerateDocumentationFile`, so a missing comment is an error).
 
 ## Dependencies
 
@@ -111,7 +129,7 @@ the maintainer's agreement.
 
 | Package | Licence | Used by | Why |
 |---|---|---|---|
-| `Microsoft.SqlServer.TransactSql.ScriptDom` | MIT | front end | Microsoft's own T-SQL parser: the only way to read T-SQL as SQL Server does. |
+| `Microsoft.SqlServer.TransactSql.ScriptDom` | MIT | Model, Sources, Semantics, Inference | Microsoft's own T-SQL parser: the only way to read T-SQL as SQL Server does. |
 | `System.CommandLine` | MIT | CLI | Argument parsing, help and usage errors, maintained by the .NET team. |
 | `xunit.v3` | Apache-2.0 | tests | The test framework; runs on Microsoft.Testing.Platform (opted into in `global.json`). |
 | `typescript` (npm) | Apache-2.0 | emit-check | Compiles the generated Zod, to prove it type-checks. |

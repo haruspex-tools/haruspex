@@ -1,7 +1,11 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Haruspex.Diagnostics/Haruspex.Diagnostics.csproj" />
+    <Project Path="src/Haruspex.SqlServer.Model/Haruspex.SqlServer.Model.csproj" />
+    <Project Path="src/Haruspex.SqlServer.Sources/Haruspex.SqlServer.Sources.csproj" />
+    <Project Path="src/Haruspex.SqlServer.Semantics/Haruspex.SqlServer.Semantics.csproj" />
+    <Project Path="src/Haruspex.SqlServer.Inference/Haruspex.SqlServer.Inference.csproj" />
     <Project Path="src/Haruspex.Ir/Haruspex.Ir.csproj" />
-    <Project Path="src/Haruspex.SqlServer/Haruspex.SqlServer.csproj" />
     <Project Path="src/Haruspex.Emit.Zod/Haruspex.Emit.Zod.csproj" />
     <Project Path="src/Haruspex.Cli/Haruspex.Cli.csproj" />
   </Folder>
