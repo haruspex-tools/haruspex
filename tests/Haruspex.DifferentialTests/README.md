@@ -34,6 +34,8 @@ emitter's mistakes. It checks what the IR claims:
 - a tuple has exactly its positions, an array's items are null only when the IR says they may be and their number
   is within its bounds, a record's every value has its type (any key, even repeated), and a union's value is one of
   its variants (IR 0.3);
+- JSON text with a `content` parses to a value of that type, checked at `<path><json>` (IR 0.4), in JSON and in a
+  rowset; a recursive type is checked at every depth the data reaches (IR 0.4);
 - every scalar keeps its facets (IR 0.2): a length in its unit (UTF-16 code units, or UTF-8 bytes when the IR
   says so, and otherwise only as an upper bound), a minimum length, digits, bounds compared exactly from the
   decimal text (never through a double), and value sets. An `exact` set is matched exactly; a `collation` set
@@ -72,11 +74,15 @@ whose items may be null must be seen null (when they can be) and with a value. T
 own (`v[0]`, `v[1]`), a record's values share `v{}`, and a union's variants share their path; a value counts as seen
 for every variant it satisfies.
 
-For the fixtures about scalar facts (`Runs.EdgeFixtures`: `values`, `checks` and `payloads`), `The_seed_reaches_every_edge_the_ir_claims`
+For the fixtures about scalar facts (`Runs.EdgeFixtures`: `values`, `checks`, `payloads` and `trees`), `The_seed_reaches_every_edge_the_ir_claims`
 also fails unless the data reached every edge of every facet: each bound (or, when exclusive, the nearest step
 inside it), each full length, each minimum length and each value of each set, and each array's fewest and most
 items when the IR bounds them. A maximum of 255 is not shown to hold by values of 7. `orders` is about query shapes, and its scalars are the types `values` covers at their edges.
 `Every_procedure_is_run_or_excluded_with_a_reason` makes sure a new fixture procedure is not forgotten.
+
+A recursive type's cases are counted by its name, not its path: every field of `ComponentsNode` is recorded as
+`<ComponentsNode>.field`, whatever the depth, so a leaf four levels down covers the "null" case, and the walk over the
+IR ends. What JSON text parses to is a path of its own, `<path><json>`, and needs its cases like any other.
 
 ## Where SQL Server comes from
 

@@ -25,7 +25,9 @@ namespace Haruspex.SqlServer.Sources;
 /// same script (see Untrusted).
 /// </para>
 /// <para>
-/// Views, synonyms and functions are recorded by name only, as <see cref="NamedObject"/>s. Every other statement
+/// Functions are read from <c>CREATE FUNCTION</c>, with the same rule as procedures for <c>ALTER FUNCTION</c> and
+/// <c>DROP FUNCTION</c>, and are also recorded by name, as views and synonyms are, as <see cref="NamedObject"/>s.
+/// Every other statement
 /// is ignored. Most cannot change a table's columns or a procedure's body (indexes, permissions, data). Those
 /// that can only do so through code that is not run here, such as <c>EXEC sp_rename</c> or dynamic SQL, are a
 /// known limit: a database project defines its objects declaratively, and such scripts belong in deployment,
@@ -53,6 +55,8 @@ public static class SqlScriptFolder
         var others = new Dictionary<ObjectName, NamedObject>();
         var procedureChanges = new Dictionary<ObjectName, (Redefinition Why, Procedure? Alter)>();
         var userTypes = new Dictionary<ObjectName, UserType>();
+        var functions = new Dictionary<ObjectName, UserFunction>();
+        var functionChanges = new Dictionary<ObjectName, (Redefinition Why, UserFunction? Alter)>();
 
         // ALTER TABLE … NOCHECK CONSTRAINT and … WITH CHECK CHECK CONSTRAINT, wherever they are, in the order read.
         var enforcement = new List<Enforcement>();
@@ -98,8 +102,20 @@ public static class SqlScriptFolder
                     case CreateSynonymStatement synonym:
                         TryAddNamed(others, ObjectName.From(synonym.Name), NamedObjectKind.Synonym);
                         break;
-                    case FunctionStatementBody function:
-                        TryAddNamed(others, ObjectName.From(function.Name), NamedObjectKind.Function);
+                    case CreateFunctionStatement or CreateOrAlterFunctionStatement:
+                        var function = (FunctionStatementBody)statement;
+                        var functionName = ObjectName.From(function.Name);
+                        TryAddNamed(others, functionName, NamedObjectKind.Function);
+                        Add(functions, functionName, new UserFunction(functionName, function, relative), function, relative, diagnostics);
+                        break;
+                    case AlterFunctionStatement alterFunction:
+                        var alteredFunction = ObjectName.From(alterFunction.Name);
+                        TryAddNamed(others, alteredFunction, NamedObjectKind.Function);
+                        functionChanges.TryAdd(alteredFunction, (Changed(alteredFunction, "ALTER FUNCTION", alterFunction, relative), new UserFunction(alteredFunction, alterFunction, relative)));
+                        break;
+                    case DropFunctionStatement dropFunction:
+                        foreach (var dropped in dropFunction.Objects.Select(ObjectName.From))
+                            functionChanges.TryAdd(dropped, (Changed(dropped, "DROP FUNCTION", dropFunction, relative), null));
                         break;
                     case CreateTypeUddtStatement alias when SqlType.From(alias.DataType) is { } baseType:
                         var aliasName = ObjectName.From(alias.Name);
@@ -136,10 +152,19 @@ public static class SqlScriptFolder
                 procedures[name] = new Procedure(alter.Name, alter.Body, alter.File, why);
         }
 
+        // Functions follow the same rule as procedures.
+        foreach (var (name, (why, alter)) in functionChanges)
+        {
+            if (functions.TryGetValue(name, out var created))
+                functions[name] = new UserFunction(created.Name, created.Body, created.File, why);
+            else if (alter is not null)
+                functions[name] = new UserFunction(alter.Name, alter.Body, alter.File, why);
+        }
+
         foreach (var name in tables.Keys.ToList())
             tables[name] = Untrusted(tables[name], enforcement);
 
-        var model = new DatabaseModel(tables.Values, procedures.Values, others.Values, tableChanges.Values, userTypes.Values);
+        var model = new DatabaseModel(tables.Values, procedures.Values, others.Values, tableChanges.Values, userTypes.Values, functions.Values);
         return new SchemaReadResult(model, diagnostics);
     }
 

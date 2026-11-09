@@ -23,6 +23,16 @@ internal static class SqlTypes
             ? ToShape(new ColumnFacts(resolved), at, withFacets: false)
             : Unsupported(type, at);
 
+    /// <summary>
+    /// A value read inside a body after SQL Server converted it to <paramref name="type"/>, such as a function's parameter:
+    /// the type's facts hold, because the conversion cuts a string short and rounds a decimal (observed; an overflow is an
+    /// error, not a value). No collation is known, so a <c>varchar</c>'s byte length has no encoding.
+    /// </summary>
+    public static Shape ToConvertedShape(DatabaseModel model, SqlType? type, SourceLocation at) =>
+        SchemaRules.ResolveType(model, type) is { } resolved
+            ? ToShape(SchemaRules.TypeFacts(resolved, collation: null), at, withFacets: true)
+            : Unsupported(type, at);
+
     /// <summary>A column's type, with every fact Semantics proved about its values.</summary>
     public static Shape ToShape(ColumnFacts facts, SqlType? declared, SourceLocation at) =>
         facts.Type is null ? Unsupported(declared, at) : ToShape(facts, at, withFacets: true);

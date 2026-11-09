@@ -1,0 +1,283 @@
+{
+  "irVersion": "0.4",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "bom.list_parts",
+      "name": "ListParts",
+      "kind": "procedure",
+      "at": "procedures/list_parts.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListPartsRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/list_parts.sql:6:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ComponentsNode": {
+      "kind": "object",
+      "recursive": true,
+      "fields": [
+        {
+          "name": "quantity",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": 1,
+              "inclusive": true,
+              "from": {
+                "check": "bom.ck_component_quantity"
+              }
+            },
+            "max": {
+              "value": 1000,
+              "inclusive": true,
+              "from": {
+                "check": "bom.ck_component_quantity"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "part",
+          "type": {
+            "ref": "ComponentsNodePart"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "components",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ComponentsNode"
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "functions/components.sql:8:12"
+            }
+          ]
+        }
+      ]
+    },
+    "ComponentsNodePart": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "kind",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "part",
+                "assembly"
+              ],
+              "from": [
+                {
+                  "check": "bom.ck_part_kind"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "unitCost",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "check": "bom.ck_part_unit_cost"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "bom.part.unit_cost"
+            }
+          ]
+        }
+      ]
+    },
+    "ListPartsRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "components",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ComponentsNode"
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "functions/components.sql:8:12"
+            }
+          ]
+        },
+        {
+          "name": "componentsText",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "ref": "ComponentsNode"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "functions/components.sql:8:12"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": []
+}

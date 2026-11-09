@@ -34,16 +34,29 @@ internal sealed class ProcedureAnalyzer
     private readonly DatabaseModel model;
     private readonly Binder binder;
     private readonly string file;
+    private readonly FunctionSummaries functions;
+
+    /// <summary>Inside a function's body, its parameters by name; empty in a procedure, whose parameters are not followed yet.</summary>
+    private readonly IReadOnlyDictionary<string, Value> parameters;
 
     /// <summary>The query whose select list is being read, for an aggregate to know whether it has GROUP BY.</summary>
     private QuerySpecification? current;
 
-    public ProcedureAnalyzer(DatabaseModel model, string file)
+    /// <param name="model">The model the body's references resolve in.</param>
+    /// <param name="file">The file the body is in, for locations.</param>
+    /// <param name="functions">What each scalar function returns.</param>
+    /// <param name="parameters">Inside a function, its parameters' values.</param>
+    public ProcedureAnalyzer(DatabaseModel model, string file, FunctionSummaries functions, IReadOnlyDictionary<string, Value>? parameters = null)
     {
         this.model = model;
         binder = new Binder(model, file);
         this.file = file;
+        this.functions = functions;
+        this.parameters = parameters ?? new Dictionary<string, Value>();
     }
+
+    /// <summary>The value a function's <c>RETURN</c> expression gives, read with no FROM in scope.</summary>
+    public Value Return(ScalarExpression expression) => Expression(expression, binder.BindFrom(new QuerySpecification(), null));
 
     public ProcedureAnalysis Analyse(ProcedureStatementBody procedure)
     {
@@ -209,8 +222,8 @@ internal sealed class ProcedureAnalyzer
 
         var fields = row.Columns.Select(c => new FieldShape(
             c.Name!,
-            // A rowset column delivers JSON as text: the driver sees an nvarchar.
-            c.Value.IsLiveJson ? new JsonTextShape() : c.Value.Shape,
+            // A rowset column delivers JSON as text: the driver sees an nvarchar. Its content is what it parses to.
+            c.Value.IsLiveJson ? new JsonTextShape(c.Value.Shape) : c.Value.Shape,
             IrPresence.Always,
             c.Value.NullableBecause));
         return new ArrayShape(new ObjectShape([.. fields]));
@@ -326,6 +339,8 @@ internal sealed class ProcedureAnalyzer
         FunctionCall { CallTarget: null } call when IsConstructor(call) => Constructor(call, scope),
         FunctionCall { CallTarget: null, Parameters.Count: 1 } call
             when call.FunctionName.Value.Equals("json_query", StringComparison.OrdinalIgnoreCase) => JsonQuery(call, scope),
+        FunctionCall call when FunctionSummaries.Callee(call) is { } callee => CallFunction(call, callee, scope),
+        VariableReference variable when parameters.TryGetValue(variable.Name, out var parameter) => parameter,
         _ => Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
     };
 
@@ -414,7 +429,7 @@ internal sealed class ProcedureAnalyzer
             return Value.Unknown(unknown);
         IReadOnlyList<IrNullReason> empty = [new IrNullReason(IrNullRules.EmptySubquery, at.ToString())];
         return json.Options.Any(o => o.OptionKind == JsonForClauseOptions.WithoutArrayWrapper)
-            ? new Value(new JsonTextShape(), empty, TextOf: shape)
+            ? new Value(new JsonTextShape(shape), empty)
             : new Value(shape, empty, IsLiveJson: true);
     }
 
@@ -423,11 +438,44 @@ internal sealed class ProcedureAnalyzer
         var argument = Expression(call.Parameters[0], scope);
         if (argument.IsLiveJson || argument.Shape is UnknownShape)
             return argument;
-        if (argument.TextOf is { } shape)
-            return new Value(shape, argument.NullableBecause, IsLiveJson: true);
+        if (argument.Shape is JsonTextShape { Content: { } shape })
+            return shape is UnknownShape unknown ? Value.Unknown(unknown) : new Value(shape, argument.NullableBecause, IsLiveJson: true);
 
         // json_query over text (a column, a variable) makes it live JSON, but its shape is in data we cannot see.
         return Value.Unknown(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{Text(call)} reads JSON that is not built here, so its shape is unknown.", At(call)));
+    }
+
+    // ---- scalar functions ---------------------------------------------------------------------------------
+    //
+    // Observed on SQL Server 2025 RTM-CU10 and kept as tests (JsonFunctionObservationTests): a call of a function
+    // returning nvarchar(max) nests as an escaped string in FOR JSON and the constructors, even when it holds JSON;
+    // json_query over it, or a return type of json, nests it as JSON. FOR JSON over no rows returns NULL from the function,
+    // and a key whose value is NULL is left out of FOR JSON PATH. RETURNS NULL ON NULL INPUT makes f(NULL) NULL without
+    // running the body. FunctionSummaries says which bodies are read and how recursion is solved.
+
+    private Value CallFunction(FunctionCall call, ObjectName callee, BindingScope scope)
+    {
+        var at = At(call);
+        if (call.OverClause is not null || call.WithinGroupClause is not null)
+            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"This form of call is not modelled: {Text(call)}", at));
+
+        var (result, why) = functions.Find(callee, at);
+        if (result is null)
+            return Value.Unknown(why!);
+
+        var because = new List<IrNullReason>(result.Content is null ? [new IrNullReason(IrNullRules.FunctionResult, at.ToString())] : result.NullableBecause);
+
+        // With RETURNS NULL ON NULL INPUT a null argument makes the call NULL. The arguments are read only for that.
+        if (result.NullOnNullInput && call.Parameters.Any(p => Expression(p, scope).NullableBecause.Count > 0))
+            because.Add(new IrNullReason(IrNullRules.NullInput, at.ToString()));
+
+        return result switch
+        {
+            { Content: null, ReturnsJson: true } => new Value(result.Declared, because, IsLiveJson: true),
+            { Content: null } => new Value(result.Declared, because),
+            { ReturnsJson: true } => result.Content is UnknownShape unknown ? Value.Unknown(unknown) : new Value(result.Content, because, IsLiveJson: true),
+            _ => new Value(new JsonTextShape(result.Content), because),
+        };
     }
 
     // ---- JSON constructors ----------------------------------------------------------------------------

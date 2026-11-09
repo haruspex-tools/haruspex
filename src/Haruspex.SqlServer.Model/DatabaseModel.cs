@@ -16,6 +16,7 @@ public sealed class DatabaseModel
     private readonly Dictionary<ObjectName, NamedObject> namedObjects = [];
     private readonly Dictionary<ObjectName, Redefinition> tableRedefinitions = [];
     private readonly Dictionary<ObjectName, UserType> userTypes = [];
+    private readonly Dictionary<ObjectName, UserFunction> functions = [];
 
     /// <summary>Creates a model.</summary>
     /// <param name="tables">The tables.</param>
@@ -26,13 +27,15 @@ public sealed class DatabaseModel
     /// table name. A name may have no table: a table dropped and never created is still worth knowing about.
     /// </param>
     /// <param name="userTypes">The alias and CLR types (<c>CREATE TYPE</c>).</param>
+    /// <param name="functions">The user-defined functions with their definitions. Each is also among the named objects.</param>
     /// <exception cref="ArgumentException">A name appears twice in one collection.</exception>
     public DatabaseModel(
         IEnumerable<Table> tables,
         IEnumerable<Procedure> procedures,
         IEnumerable<NamedObject> namedObjects,
         IEnumerable<Redefinition> tableRedefinitions,
-        IEnumerable<UserType>? userTypes = null)
+        IEnumerable<UserType>? userTypes = null,
+        IEnumerable<UserFunction>? functions = null)
     {
         ArgumentNullException.ThrowIfNull(tables);
         ArgumentNullException.ThrowIfNull(procedures);
@@ -50,13 +53,22 @@ public sealed class DatabaseModel
 
         foreach (var type in userTypes ?? [])
             this.userTypes.Add(type.Name, type);
+        foreach (var function in functions ?? [])
+            this.functions.Add(function.Name, function);
 
         Tables = [.. this.tables.Values];
         UserTypes = [.. this.userTypes.Values];
         Procedures = [.. this.procedures.Values.OrderBy(p => p.Name.ToString(), StringComparer.Ordinal)];
         NamedObjects = [.. this.namedObjects.Values];
         TableRedefinitions = [.. this.tableRedefinitions.Values];
+        Functions = [.. this.functions.Values.OrderBy(f => f.Name.ToString(), StringComparer.Ordinal)];
     }
+
+    /// <summary>The user-defined functions, in a stable order: by name, ordinally.</summary>
+    public IReadOnlyList<UserFunction> Functions { get; }
+
+    /// <summary>The function with this name, or null.</summary>
+    public UserFunction? FindFunction(ObjectName name) => functions.GetValueOrDefault(name);
 
     /// <summary>The tables, in the order given.</summary>
     public IReadOnlyList<Table> Tables { get; }

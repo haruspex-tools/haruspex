@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.3",
+  "irVersion": "0.4",
   "source": {
     "dialect": "tsql"
   },
@@ -31,7 +31,30 @@
         {
           "name": "ids",
           "type": {
-            "kind": "json-text"
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "kind": "number",
+                "format": "int32",
+                "sql": "int",
+                "min": {
+                  "value": -2147483648,
+                  "inclusive": true,
+                  "from": {
+                    "type": "int"
+                  }
+                },
+                "max": {
+                  "value": 2147483647,
+                  "inclusive": true,
+                  "from": {
+                    "type": "int"
+                  }
+                }
+              },
+              "minItems": 1
+            }
           },
           "presence": "always",
           "nullable": true,
@@ -45,7 +68,30 @@
         {
           "name": "stars",
           "type": {
-            "kind": "json-text"
+            "kind": "json-text",
+            "content": {
+              "kind": "record",
+              "values": {
+                "kind": "number",
+                "format": "uint8",
+                "sql": "tinyint",
+                "min": {
+                  "value": 1,
+                  "inclusive": true,
+                  "from": {
+                    "check": "pay.ck_review_stars"
+                  }
+                },
+                "max": {
+                  "value": 5,
+                  "inclusive": true,
+                  "from": {
+                    "check": "pay.ck_review_stars"
+                  }
+                }
+              },
+              "valuesNullable": false
+            }
           },
           "presence": "always",
           "nullable": true,

@@ -9,11 +9,15 @@ namespace Haruspex.SqlServer.Inference;
 /// Turns inferred shapes into an <see cref="IrDocument"/>: settles a name for every procedure and object type
 /// (names are decided once, here, so every emitter agrees), and lists every unknown with its path.
 /// </summary>
-internal sealed class IrBuilder
+/// <param name="functions">The functions the procedures call, for the named type of each recursive one's node.</param>
+internal sealed class IrBuilder(FunctionSummaries functions)
 {
     private readonly Dictionary<string, IrObjectType> types = new(StringComparer.Ordinal);
     private readonly HashSet<string> names = new(StringComparer.Ordinal);
     private readonly List<IrUnknown> unknowns = [];
+
+    /// <summary>The name given to each recursive function's node, once its type is written.</summary>
+    private readonly Dictionary<ObjectName, string> nodeNames = [];
 
     public IrDocument Build(IReadOnlyList<(Procedure Source, ProcedureAnalysis Analysis)> procedures)
     {
@@ -55,6 +59,7 @@ internal sealed class IrBuilder
             objects.Add(new IrObject(id, name, IrObjectKind.Procedure, at.ToString(), parameters, results));
         }
 
+        MarkRecursive();
         return new IrDocument(new IrSource("tsql"), objects, types, unknowns);
     }
 
@@ -76,8 +81,15 @@ internal sealed class IrBuilder
         {
             case ScalarShape scalar:
                 return scalar.Type;
-            case JsonTextShape:
-                return new IrJsonText();
+            case JsonTextShape text:
+                // An unknown content claims nothing more than "JSON", which the node already says; the unknown is
+                // reported where json_query makes the text live, if it does.
+                return new IrJsonText(text.Content is null or UnknownShape ? null : Convert(text.Content, objectName, id, path + "<json>"));
+            case RecursiveShape recursive:
+                return Node(recursive.Function, id, path);
+            case NeverShape never:
+                unknowns.Add(new IrUnknown(id, path, IrUnknownReasons.UnresolvedRecursion, "The function called here never returns a value: every return calls itself again.", never.At.ToString()));
+                return new IrUnknownType(IrUnknownReasons.UnresolvedRecursion);
             case ArrayShape array:
                 return Array(array, Convert(array.Items, objectName, id, path + "[]"));
             case TupleShape tuple:
@@ -100,6 +112,55 @@ internal sealed class IrBuilder
                 throw new ArgumentOutOfRangeException(nameof(shape), shape, "Unknown shape.");
         }
     }
+
+    /// <summary>
+    /// A recursive function's node: one named type for the whole document, written the first time it is met, with its
+    /// name reserved before its fields are converted so that the fields can refer to it.
+    /// </summary>
+    private IrRef Node(ObjectName function, string id, string path)
+    {
+        if (nodeNames.TryGetValue(function, out var known))
+            return new IrRef(known);
+
+        var name = Unique(Naming.Pascal(function.Name) + "Node");
+        nodeNames[function] = name;
+        return Object(functions.Nodes[function], name, name, id, path);
+    }
+
+    /// <summary>
+    /// Marks every object type that can reach itself through references (inside arrays, tuples, records, unions and the
+    /// content of JSON text too), so that readers which expand references know where to stop.
+    /// </summary>
+    private void MarkRecursive()
+    {
+        var edges = types.ToDictionary(t => t.Key, t => t.Value.Fields.SelectMany(f => Refs(f.Type)).ToHashSet(StringComparer.Ordinal), StringComparer.Ordinal);
+        foreach (var name in types.Keys.ToList())
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var queue = new Queue<string>(edges[name]);
+            while (queue.TryDequeue(out var next))
+            {
+                if (!seen.Add(next))
+                    continue;
+                foreach (var further in edges[next])
+                    queue.Enqueue(further);
+            }
+
+            if (seen.Contains(name))
+                types[name] = types[name] with { Recursive = true };
+        }
+    }
+
+    private static IEnumerable<string> Refs(IrType type) => type switch
+    {
+        IrRef reference => [reference.Name],
+        IrArray array => Refs(array.Items),
+        IrTuple tuple => tuple.Items.SelectMany(e => Refs(e.Type)),
+        IrRecord record => Refs(record.Values),
+        IrUnion union => union.Variants.SelectMany(Refs),
+        IrJsonText { Content: { } content } => Refs(content),
+        _ => [],
+    };
 
     private static IrArray Array(ArrayShape array, IrType items) =>
         new(items) { ItemsNullableBecause = array.ItemsNullableBecause ?? [], MinItems = array.MinItems, MaxItems = array.MaxItems };

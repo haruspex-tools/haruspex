@@ -28,8 +28,26 @@ internal sealed record UnionShape(IReadOnlyList<Shape> Variants) : Shape;
 
 internal sealed record ObjectShape(IReadOnlyList<FieldShape> Fields) : Shape;
 
-/// <summary>A string holding JSON: what a JSON value becomes once a driver returns it as a column.</summary>
-internal sealed record JsonTextShape : Shape;
+/// <summary>
+/// A string holding JSON: what a JSON value becomes once a driver returns it as a column, once it passes through a
+/// scalar function, or when FOR JSON builds it without its array wrapper.
+/// </summary>
+/// <param name="Content">What the text parses to when it was built here, which <c>json_query</c> makes live again; null when unknown.</param>
+internal sealed record JsonTextShape(Shape? Content = null) : Shape;
+
+/// <summary>
+/// The JSON node of a function that calls itself, directly or through others: a reference to a named type that the
+/// IR's type table defines once (<see cref="FunctionSummaries.Nodes"/>).
+/// </summary>
+/// <param name="Function">The function whose node it is.</param>
+internal sealed record RecursiveShape(Model.ObjectName Function) : Shape;
+
+/// <summary>
+/// No value at all: what a recursive call gives before the fixed point has learnt anything about it. It never reaches
+/// the IR; a function whose result is still this when the fixed point is reached never returns.
+/// </summary>
+/// <param name="At">The function's definition.</param>
+internal sealed record NeverShape(SourceLocation At) : Shape;
 
 internal sealed record UnknownShape(string Reason, string Detail, SourceLocation At) : Shape;
 
@@ -46,11 +64,11 @@ internal sealed record FieldShape(string Name, Shape Type, IrPresence Presence, 
 /// <c>json_arrayagg</c>, <c>json_objectagg</c>), a value of the <c>json</c> type, <c>json_query</c> over any of them,
 /// or a scalar subquery returning one. <see cref="Shape"/> is then the JSON's shape.
 /// </param>
-/// <param name="TextOf">
-/// For JSON text whose shape is known, the shape: what <c>json_query</c> makes of it. A <c>FOR JSON</c> subquery without
-/// its array wrapper is such text (<see cref="Shape"/> is then <see cref="JsonTextShape"/>).
-/// </param>
-internal sealed record Value(Shape Shape, IReadOnlyList<IrNullReason> NullableBecause, bool IsLiveJson = false, Shape? TextOf = null)
+/// <remarks>
+/// JSON text whose shape is known (a <c>FOR JSON</c> subquery without its array wrapper, a call of a function returning
+/// JSON) has a <see cref="JsonTextShape"/> with its content, which <c>json_query</c> makes live again.
+/// </remarks>
+internal sealed record Value(Shape Shape, IReadOnlyList<IrNullReason> NullableBecause, bool IsLiveJson = false)
 {
     public static Value Unknown(UnknownShape shape) =>
         new(shape, [new IrNullReason(IrNullRules.Unknown, shape.At.ToString())]);

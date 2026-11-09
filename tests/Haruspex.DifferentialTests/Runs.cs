@@ -26,22 +26,25 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
     /// of a set, each full length. They are the fixtures about scalar facts. <c>orders</c> is about query shapes,
     /// and its scalars are the same types <c>values</c> covers at their edges; seeding its ids and totals at
     /// int.MinValue would only obscure what it shows. <c>payloads</c> is here because it shows that facts pass through the
-    /// JSON constructors, and that an array's length bounds hold.
+    /// JSON constructors, and that an array's length bounds hold. <c>trees</c> is here because facts pass through functions
+    /// and recursive types too, where an edge counts at any depth of the tree.
     /// </summary>
-    public static IReadOnlyList<string> EdgeFixtures { get; } = ["values", "checks", "payloads"];
+    public static IReadOnlyList<string> EdgeFixtures { get; } = ["values", "checks", "payloads", "trees"];
 
     private const string NoOrders = "DELETE FROM sales.order_line; DELETE FROM sales.[order]; DELETE FROM sales.customer;";
     private const string NoSamples = "DELETE FROM vals.sample_tag; DELETE FROM vals.sample;";
     private const string NoTickets = "DELETE FROM chk.ticket_event; DELETE FROM chk.ticket;";
     private const string NoBooks = "DELETE FROM pay.book_tag; DELETE FROM pay.review; DELETE FROM pay.book;";
     private const string NoReviews = "DELETE FROM pay.review;";
+    private const string NoParts = "DELETE FROM bom.component; DELETE FROM bom.part;";
+    private const string NoItems = "DELETE FROM cat.item;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -93,6 +96,26 @@ public static class Runs
         new("payloads: author_documents", "payloads", "pay.author_documents", None),
         new("payloads: review_digest", "payloads", "pay.review_digest", None),
         new("payloads: review_digest, no reviews", "payloads", "pay.review_digest", None, NoReviews),
+        // The text's content claims at least one id when it is not null: one review is that edge.
+        new("payloads: review_digest, one review", "payloads", "pay.review_digest", None, "DELETE FROM pay.review WHERE review_id <> 7;"),
+
+        new("trees: get_assembly, four levels deep", "trees", "bom.get_assembly", new Dictionary<string, object?> { ["@part_id"] = 1 }),
+        new("trees: get_assembly, a part with no components, lowest key", "trees", "bom.get_assembly", new Dictionary<string, object?> { ["@part_id"] = int.MinValue }),
+        new("trees: get_assembly, a part used in three assemblies, highest key", "trees", "bom.get_assembly", new Dictionary<string, object?> { ["@part_id"] = int.MaxValue }),
+        new("trees: get_assembly, an assembly with no components", "trees", "bom.get_assembly", new Dictionary<string, object?> { ["@part_id"] = 12 }),
+        new("trees: get_assembly, the longest name", "trees", "bom.get_assembly", new Dictionary<string, object?> { ["@part_id"] = 21 }),
+        new("trees: get_assembly, no such part", "trees", "bom.get_assembly", new Dictionary<string, object?> { ["@part_id"] = 999 }),
+        new("trees: list_parts", "trees", "bom.list_parts", None),
+        new("trees: list_parts, no parts", "trees", "bom.list_parts", None, NoParts),
+        new("trees: get_category, the whole catalogue", "trees", "cat.get_category", new Dictionary<string, object?> { ["@category_id"] = 5 }),
+        new("trees: get_category, lowest key", "trees", "cat.get_category", new Dictionary<string, object?> { ["@category_id"] = int.MinValue }),
+        new("trees: get_category, a leaf, highest key", "trees", "cat.get_category", new Dictionary<string, object?> { ["@category_id"] = int.MaxValue }),
+        new("trees: get_category, the longest name", "trees", "cat.get_category", new Dictionary<string, object?> { ["@category_id"] = 3 }),
+        new("trees: get_category, empty", "trees", "cat.get_category", new Dictionary<string, object?> { ["@category_id"] = 4 }),
+        new("trees: get_category, no such category", "trees", "cat.get_category", new Dictionary<string, object?> { ["@category_id"] = 999 }),
+        new("trees: list_items", "trees", "cat.list_items", None),
+        new("trees: list_items, no items", "trees", "cat.list_items", None, NoItems),
+        new("trees: item_rows", "trees", "cat.item_rows", None),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

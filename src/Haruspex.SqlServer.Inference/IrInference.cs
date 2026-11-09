@@ -12,18 +12,19 @@ public static class IrInference
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(procedures);
+        var functions = new FunctionSummaries(model);
         var analysed = procedures
             .Distinct()
             .Select(name => model.FindProcedure(name)
                 ?? throw new ArgumentException($"No procedure named {name} in the project.", nameof(procedures)))
-            .Select(procedure => (procedure, Analyse(model, procedure)))
+            .Select(procedure => (procedure, Analyse(model, functions, procedure)))
             .ToList();
-        return new IrBuilder().Build(analysed);
+        return new IrBuilder(functions).Build(analysed);
     }
 
-    private static ProcedureAnalysis Analyse(DatabaseModel model, Procedure procedure)
+    private static ProcedureAnalysis Analyse(DatabaseModel model, FunctionSummaries functions, Procedure procedure)
     {
-        var analysis = new ProcedureAnalyzer(model, procedure.File).Analyse(procedure.Body);
+        var analysis = new ProcedureAnalyzer(model, procedure.File, functions).Analyse(procedure.Body);
         if (procedure.Redefinition is not { } redefinition)
             return analysis;
 

@@ -123,13 +123,54 @@ public static class ZodEmitter
 
                     var body = new StringBuilder("z.object({\n");
                     foreach (var field in objectType.Fields)
-                        body.Append("  ").Append(Key(field.Name)).Append(": ").Append(Field(field, encoding)).Append(",\n");
+                    {
+                        // A field that refers back into its own cycle (a tree's children) is a getter, Zod 4's form for
+                        // recursive objects: the schema it names may not be defined yet, and TypeScript infers the type
+                        // through a getter without casts. Every such reference is one, whichever type is written first.
+                        if (Refs(field.Type).Any(r => Reaches(r, reference.Name)))
+                            body.Append("  get ").Append(Key(field.Name)).Append("() { return ").Append(Field(field, encoding)).Append(" },\n");
+                        else
+                            body.Append("  ").Append(Key(field.Name)).Append(": ").Append(Field(field, encoding)).Append(",\n");
+                    }
+
                     body.Append("})");
 
                     output.Append('\n');
                     WriteSchema(reference.Name, body.ToString());
                     break;
             }
+        }
+
+        /// <summary>The named types a type refers to directly, through arrays, tuples, records and unions.</summary>
+        private static IEnumerable<string> Refs(IrType type) => type switch
+        {
+            IrRef reference => [reference.Name],
+            IrArray array => Refs(array.Items),
+            IrTuple tuple => tuple.Items.SelectMany(e => Refs(e.Type)),
+            IrRecord record => Refs(record.Values),
+            IrUnion union => union.Variants.SelectMany(Refs),
+            _ => [],
+        };
+
+        /// <summary>Whether <paramref name="from"/> refers to <paramref name="to"/>, itself or through other types.</summary>
+        private bool Reaches(string from, string to)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var queue = new Queue<string>([from]);
+            while (queue.TryDequeue(out var next))
+            {
+                if (next == to)
+                    return true;
+                if (!seen.Add(next))
+                    continue;
+                foreach (var field in document.Types[next].Fields)
+                {
+                    foreach (var further in Refs(field.Type))
+                        queue.Enqueue(further);
+                }
+            }
+
+            return false;
         }
 
         private void WriteSchema(string name, string expression) =>

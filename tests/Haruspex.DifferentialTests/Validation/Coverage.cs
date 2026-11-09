@@ -34,7 +34,7 @@ public static class Coverage
                 Need(path, Seen.Value);
                 if (results[i].MayBeAbsent)
                     Need(path, Seen.Absent);
-                Walk(document, results[i].Type, path, Need);
+                Walk(document, results[i].Type, path, Need, []);
             }
         }
 
@@ -42,7 +42,8 @@ public static class Coverage
         return missing;
     }
 
-    private static void Walk(IrDocument document, IrType type, string path, Action<string, Seen> need)
+    /// <param name="walked">The recursive types already walked: each is walked once, under its name (<c>&lt;Node&gt;</c>), as the validator records it.</param>
+    private static void Walk(IrDocument document, IrType type, string path, Action<string, Seen> need, HashSet<string> walked)
     {
         switch (type)
         {
@@ -54,21 +55,33 @@ public static class Coverage
                     need(path + "[]", Seen.Null);
                 }
 
-                Walk(document, array.Items, path + "[]", need);
+                Walk(document, array.Items, path + "[]", need, walked);
                 break;
             case IrTuple tuple:
                 for (var i = 0; i < tuple.Items.Count; i++)
-                    Element(document, tuple.Items[i].Type, tuple.Items[i].Nullable, $"{path}[{i}]", need);
+                    Element(document, tuple.Items[i].Type, tuple.Items[i].Nullable, $"{path}[{i}]", need, walked);
                 break;
             case IrRecord record:
-                Element(document, record.Values, record.ValuesNullable, path + "{}", need);
+                Element(document, record.Values, record.ValuesNullable, path + "{}", need, walked);
                 break;
             case IrUnion union:
                 foreach (var variant in union.Variants)
-                    Walk(document, variant, path, need);
+                    Walk(document, variant, path, need, walked);
+                break;
+            case IrJsonText { Content: { } content }:
+                // What the text parses to is a claim like any other, checked at path<json>.
+                Walk(document, content, path + "<json>", need, walked);
                 break;
             case IrRef reference:
-                foreach (var field in document.Types[reference.Name].Fields)
+                var objectType = document.Types[reference.Name];
+                if (objectType.Recursive)
+                {
+                    if (!walked.Add(reference.Name))
+                        break;
+                    path = $"<{reference.Name}>";
+                }
+
+                foreach (var field in objectType.Fields)
                 {
                     if (field.Type is IrUnknownType)
                         continue;
@@ -76,21 +89,21 @@ public static class Coverage
                     need(fieldPath, Seen.Value);
                     if (field.Nullable)
                         need(fieldPath, Seen.Null);
-                    Walk(document, field.Type, fieldPath, need);
+                    Walk(document, field.Type, fieldPath, need, walked);
                 }
 
                 break;
         }
     }
 
-    private static void Element(IrDocument document, IrType type, bool nullable, string path, Action<string, Seen> need)
+    private static void Element(IrDocument document, IrType type, bool nullable, string path, Action<string, Seen> need, HashSet<string> walked)
     {
         if (type is IrUnknownType)
             return;
         need(path, Seen.Value);
         if (nullable)
             need(path, Seen.Null);
-        Walk(document, type, path, need);
+        Walk(document, type, path, need, walked);
     }
 
     /// <summary>
@@ -114,7 +127,7 @@ public static class Coverage
             var saw = reached.GetValueOrDefault(procedure.Id) ?? new HashSet<(string, string)>();
             for (var i = 0; i < results.Count; i++)
             {
-                WalkScalars(document, results[i].Type, $"results[{i}]", (path, scalar) =>
+                WalkScalars(document, results[i].Type, $"results[{i}]", [], (path, scalar) =>
                 {
                     foreach (var edge in Edges(scalar))
                     {
@@ -155,28 +168,39 @@ public static class Coverage
             yield return "value " + item.Text;
     }
 
-    private static void WalkScalars(IrDocument document, IrType type, string path, Action<string, IrScalar> visit, Action<string, IrArray> arrays)
+    private static void WalkScalars(IrDocument document, IrType type, string path, HashSet<string> walked, Action<string, IrScalar> visit, Action<string, IrArray> arrays)
     {
         switch (type)
         {
             case IrArray array:
                 arrays(path, array);
-                WalkScalars(document, array.Items, path + "[]", visit, arrays);
+                WalkScalars(document, array.Items, path + "[]", walked, visit, arrays);
                 break;
             case IrTuple tuple:
                 for (var i = 0; i < tuple.Items.Count; i++)
-                    WalkScalars(document, tuple.Items[i].Type, $"{path}[{i}]", visit, arrays);
+                    WalkScalars(document, tuple.Items[i].Type, $"{path}[{i}]", walked, visit, arrays);
                 break;
             case IrRecord record:
-                WalkScalars(document, record.Values, path + "{}", visit, arrays);
+                WalkScalars(document, record.Values, path + "{}", walked, visit, arrays);
                 break;
             case IrUnion union:
                 foreach (var variant in union.Variants)
-                    WalkScalars(document, variant, path, visit, arrays);
+                    WalkScalars(document, variant, path, walked, visit, arrays);
+                break;
+            case IrJsonText { Content: { } content }:
+                WalkScalars(document, content, path + "<json>", walked, visit, arrays);
                 break;
             case IrRef reference:
-                foreach (var field in document.Types[reference.Name].Fields)
-                    WalkScalars(document, field.Type, $"{path}.{field.Name}", visit, arrays);
+                var objectType = document.Types[reference.Name];
+                if (objectType.Recursive)
+                {
+                    if (!walked.Add(reference.Name))
+                        break;
+                    path = $"<{reference.Name}>";
+                }
+
+                foreach (var field in objectType.Fields)
+                    WalkScalars(document, field.Type, $"{path}.{field.Name}", walked, visit, arrays);
                 break;
             case IrScalar scalar:
                 visit(path, scalar);

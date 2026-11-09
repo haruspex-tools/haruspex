@@ -1,0 +1,4 @@
+CREATE SCHEMA bom;
+GO
+CREATE SCHEMA cat;
+GO

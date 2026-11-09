@@ -135,6 +135,10 @@ public static class IrJsonWriter
     {
         json.WriteStartObject();
         json.WriteString("kind", "object");
+
+        // Written only when true, so a type that is not recursive reads as in 0.3.
+        if (type.Recursive)
+            json.WriteBoolean("recursive", true);
         json.WriteStartArray("fields");
         foreach (var field in type.Fields)
         {
@@ -237,8 +241,14 @@ public static class IrJsonWriter
             case IrRef reference:
                 json.WriteString("ref", reference.Name);
                 break;
-            case IrJsonText:
+            case IrJsonText text:
                 json.WriteString("kind", "json-text");
+                if (text.Content is { } content)
+                {
+                    json.WritePropertyName("content");
+                    WriteType(json, content);
+                }
+
                 break;
             case IrUnknownType unknown:
                 json.WriteString("kind", "unknown");

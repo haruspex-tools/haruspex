@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.3";
+    public const string CurrentVersion = "0.4";
 }
 
 /// <param name="Dialect">The SQL dialect of the source, such as <c>tsql</c>.</param>
@@ -73,7 +73,16 @@ public enum IrEncoding
 }
 
 /// <summary>A named object type.</summary>
-public sealed record IrObjectType(IReadOnlyList<IrField> Fields);
+/// <param name="Fields">Its fields, in order.</param>
+public sealed record IrObjectType(IReadOnlyList<IrField> Fields)
+{
+    /// <summary>
+    /// Whether the type refers to itself, directly or through other types (a tree a function builds by calling itself).
+    /// A reader that expands references must stop at a recursive type, or it never ends. Set by whoever builds the
+    /// document; a reader may also find cycles itself, by following references with the names it is expanding.
+    /// </summary>
+    public bool Recursive { get; init; }
+}
 
 /// <summary>A field of an object type.</summary>
 /// <param name="Name">The key or column name.</param>
@@ -297,10 +306,14 @@ public sealed record IrUnion(IReadOnlyList<IrType> Variants) : IrType;
 public sealed record IrRef(string Name) : IrType;
 
 /// <summary>
-/// A string that holds JSON. Distinct from embedded JSON: once JSON is stored or returned as a column, a
-/// consumer receives text and must parse it.
+/// A string that holds JSON. Distinct from embedded JSON: once JSON is stored or returned as a column, passes through
+/// a scalar function or is built <c>WITHOUT_ARRAY_WRAPPER</c>, a consumer receives text and must parse it.
 /// </summary>
-public sealed record IrJsonText : IrType;
+/// <param name="Content">
+/// What the text parses to, when it was built here: a non-null string holds JSON of this type. Null when the JSON is
+/// data (a <c>json</c> column, a parameter) or its shape is unknown, which claims nothing beyond "JSON".
+/// </param>
+public sealed record IrJsonText(IrType? Content = null) : IrType;
 
 /// <summary>A value whose type is not known; the document's unknowns say why.</summary>
 /// <param name="Reason">One of <see cref="IrUnknownReasons"/>.</param>
@@ -371,6 +384,18 @@ public static class IrNullRules
     /// <summary>It is an aggregate (<c>json_arrayagg</c>, <c>json_objectagg</c>) without GROUP BY, which is null over no rows.</summary>
     public const string EmptyAggregate = "empty-aggregate";
 
+    /// <summary>It is a scalar function's result, typed from the declared return type only, so it may be NULL.</summary>
+    public const string FunctionResult = "function-result";
+
+    /// <summary>It is a function's parameter, which a caller may pass as NULL.</summary>
+    public const string Parameter = "parameter";
+
+    /// <summary>
+    /// It is a call of a function declared <c>WITH RETURNS NULL ON NULL INPUT</c> with an argument that may be null: such
+    /// a call is NULL without running the body.
+    /// </summary>
+    public const string NullInput = "null-input";
+
     /// <summary>It is a query result, which returns nothing when no rows match.</summary>
     public const string NoRows = "no-rows";
 
@@ -416,6 +441,12 @@ public static class IrUnknownReasons
 
     /// <summary>Two result columns that claim the same key.</summary>
     public const string DuplicateColumn = "duplicate-column";
+
+    /// <summary>
+    /// Functions that call themselves, directly or through others, whose shape reached no fixed point in the bounded
+    /// number of steps, or that never return a value (every return calls itself again).
+    /// </summary>
+    public const string UnresolvedRecursion = "unresolved-recursion";
 
     /// <summary>JSON whose shape is not visible here, such as JSON text read from a column.</summary>
     public const string JsonShapeUnknown = "json-shape-unknown";

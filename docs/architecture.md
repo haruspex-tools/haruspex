@@ -16,7 +16,7 @@ others, published alone as a NuGet package from this repository. Each project un
 | Layer (project) | Knows | Must not know | May refer to |
 |---|---|---|---|
 | `Haruspex.Diagnostics` | diagnostics: message and source location | anything else | nothing |
-| `Haruspex.SqlServer.Model` | the schema as data: tables, columns, types, collations, keys, CHECK constraints, alias and CLR types, procedures (bodies as ScriptDom fragments), views, synonyms and functions by name | where the schema came from; what any reference in a body points to | Diagnostics; ScriptDom |
+| `Haruspex.SqlServer.Model` | the schema as data: tables, columns, types, collations, keys, CHECK constraints, alias and CLR types, procedures and functions (bodies as ScriptDom fragments), views, synonyms and functions by name | where the schema came from; what any reference in a body points to | Diagnostics; ScriptDom |
 | `Haruspex.SqlServer.Sources` | reading a folder of `.sql` files (later a DACPAC's `model.xml`) into the model | name resolution, types of expressions, the IR | Diagnostics, Model; ScriptDom |
 | `Haruspex.SqlServer.Semantics` | binding a body's references to model objects (scopes, aliases, ambiguity), and interpreting the schema (which columns are never null; what types, alias types and CHECK constraints guarantee about values) | result shapes, nullability inference, the IR | Diagnostics, Model; ScriptDom |
 | `Haruspex.SqlServer.Inference` | shapes, nullability, presence and JSON structure, from bound bodies into the IR | files, zips, XML; the emitters; the config file | Diagnostics, Model, Semantics, Ir; ScriptDom |

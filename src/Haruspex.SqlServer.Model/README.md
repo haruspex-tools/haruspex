@@ -1,7 +1,7 @@
 # Haruspex.SqlServer.Model
 
 A SQL Server database's schema as plain .NET data: tables with their columns, declared types, collations, NULL or
-NOT NULL, identity, primary keys and CHECK constraints; alias and CLR types (`CREATE TYPE`); stored procedures, with their definitions as
+NOT NULL, identity, primary keys and CHECK constraints; alias and CLR types (`CREATE TYPE`); stored procedures and user-defined functions, with their definitions as
 [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom) fragments; and views,
 synonyms and functions by name. Names are two-part (`schema.name`) and compared case-insensitively, as SQL Server
 compares them in almost every database.
@@ -27,7 +27,7 @@ foreach (var table in model.Tables)
 says about values (a set, a range) is a reading of its expression; what a reference in a procedure body points
   to depends on scopes and the caller's default schema. Those are a semantic layer's questions, not the model's.
 - **No guessing an order.** When the source changes an object after defining it (`ALTER TABLE`, `DROP
-  PROCEDURE`) and doesn't say which runs last, the model records a `Redefinition` rather than applying one. A
+  PROCEDURE`, `ALTER FUNCTION`) and doesn't say which runs last, the model records a `Redefinition` rather than applying one. A
   CHECK constraint that a later `ALTER TABLE … NOCHECK CONSTRAINT` may disable records where (`DisabledAt`).
 
 It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API will change.

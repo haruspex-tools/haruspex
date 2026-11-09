@@ -1,7 +1,7 @@
-# The haruspex IR, version 0.3
+# The haruspex IR, version 0.4
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
-each side can be written in whatever language suits it. This page describes version 0.3. A JSON Schema for
+each side can be written in whatever language suits it. This page describes version 0.4. A JSON Schema for
 it will follow.
 
 ## Why not JSON Schema
@@ -15,7 +15,7 @@ every document. It maps to JSON Schema without loss.
 
 ```jsonc
 {
-  "irVersion": "0.3",                 // versioned separately from the tool
+  "irVersion": "0.4",                 // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database
@@ -53,7 +53,7 @@ every document. It maps to JSON Schema without loss.
 ```
 
 Type nodes are one of: a scalar (`{ "kind", "format"?, "sql", facets… }`, below), an array, a tuple, a record, a
-union (below), `{ "ref" }`, `{ "kind": "json-text" }` or `{ "kind": "unknown", "reason" }`.
+union (below), `{ "ref" }`, `{ "kind": "json-text", "content"? }` or `{ "kind": "unknown", "reason" }`.
 
 | Node | Written as | Means |
 |---|---|---|
@@ -61,9 +61,25 @@ union (below), `{ "ref" }`, `{ "kind": "json-text" }` or `{ "kind": "unknown", "
 | tuple | `{ "kind": "tuple", "items": [{ "type", "nullable", "nullableBecause"? }, …] }` | exactly these positions, in order, each with its own type and nullability |
 | record | `{ "kind": "record", "values", "valuesNullable", "valuesNullableBecause"? }` | an object whose keys are data: any string keys (possibly repeated in the text, which `JSON.parse` reads as the last), each to a value of `values` |
 | union | `{ "kind": "union", "variants": […] }` | a value of one of the variants: at least two, all different |
+| JSON text | `{ "kind": "json-text", "content"? }` | a string holding JSON, which the consumer parses. With `content`, a non-null string parses to a value of that type (the JSON was built here: a column of live JSON in a rowset, a `FOR JSON` subquery `WITHOUT_ARRAY_WRAPPER`, a call of a function returning JSON). Without it, only "JSON" is claimed (a `json` column, a parameter) |
 
-An unknown's path names a tuple's position as `[0]`, a record's values as `{}` and an array's items as `[]`; a union's
-variants share their path.
+An unknown's path names a tuple's position as `[0]`, a record's values as `{}`, an array's items as `[]` and what JSON
+text parses to as `<json>`; a union's variants share their path.
+
+## Recursive types
+
+An object type may refer to itself, directly or through other types: a scalar function that calls itself builds a
+tree of any depth (a bill of materials, a category's subcategories). Such a type is written once in `types` and marked
+`"recursive": true`; its fields refer to it by `{ "ref" }` like any other.
+
+**A reader detects a cycle** by the flag, or by itself: follow `ref`s (through arrays, tuples, records, unions and
+JSON text's `content`) keeping the names it is expanding, and stop at a name already on that list. A reader that
+inlines references must do one or the other, or it never ends. The flag is set exactly on the types that can reach
+themselves.
+
+The type does not say how deep a tree goes. SQL Server stops at 32 nested calls of a function with error 217
+(observed), which fails the query rather than returning a value, so no output is deeper than that, but the IR does not
+express the bound.
 
 ## Facets: what a scalar's values are guaranteed to be
 
@@ -146,6 +162,8 @@ not for these facts.
   consumer must parse; a `json` column and a `json` parameter are `json-text` too. A `json` value inside JSON is
   live but of unknown shape (`json-shape-unknown`): its shape is in the data.
 - **The JSON constructors** (see "JSON constructors" below) give objects, tuples, arrays and records.
+- **Scalar functions** (see "Scalar functions" below) carry the JSON their body returns, and recursive ones are named
+  recursive types.
 - **A nested object that may be absent.** `FOR JSON PATH` builds nested objects from dotted aliases. Without
   `INCLUDE_NULL_VALUES` an object whose values are all null is left out, so it is `omittedWhenNull` with the
   reason `all-fields-null` when every field in it can be null. With `INCLUDE_NULL_VALUES` it is always
@@ -215,6 +233,37 @@ What each constructor gives, every rule observed on SQL Server 2025 RTM-CU10 and
   the `json` type from SQL Server 2025 and Azure SQL. haruspex does not know the target's version yet, so it types
   them whatever the target; a procedure using one the target lacks fails when it is created.
 
+## Scalar functions
+
+A call of a scalar user function is typed from the function. Observed on SQL Server 2025 RTM-CU10 and kept as tests
+in `tests/Haruspex.DifferentialTests/JsonFunctionObservationTests.cs`:
+
+- **A function returning JSON** (`nvarchar(max)` or `json`) whose body is `RETURN (SELECT … FOR JSON …)`,
+  `RETURN json_object(…)` (any constructor, or `json_query`), or a variable assigned one of them and returned, carries
+  that JSON's shape. A plain call returning `nvarchar(max)` is text, escaped wherever it nests (`{"x":"[{\"id\":2}]"}`):
+  `json-text` with the shape as `content`. `json_query(f(…))` embeds it as JSON, and so does a call of a function
+  returning `json`, without `json_query`.
+- **Its nullability is the body's.** FOR JSON over no rows returns NULL from the function (so a FOR JSON PATH key
+  holding it is left out: `omittedWhenNull`, `empty-subquery`); a constructor never returns NULL.
+- **Parameters** inside the body are nullable (`parameter`), since the shape is the same for every call, and keep their
+  type's facets: an argument is converted to the parameter's type (a string cut short, a decimal rounded). With
+  `RETURNS NULL ON NULL INPUT` they are non-null, because a null argument makes the call NULL without running the
+  body; such a call is nullable (`null-input`) when an argument may be null.
+- **Any other function** gives its declared return type, nullable (`function-result`): a scalar function may return
+  NULL from any body. That includes a JSON body returned as a type shorter than `nvarchar(max)` (observed:
+  `nvarchar(10)` cuts the text to `[{"id":1,"`), and any body with control flow.
+- **A function that calls itself**, directly or through others, gives a recursive type named after it
+  (`<Function>Node`): its object, or the object items of its array. It is found as a least fixed point, starting from
+  no information and reading every body again until nothing changes, at most 4 steps per function in the cycle plus 4.
+  A cycle that reaches no fixed point by then, or a function every return of which calls itself again, is unknown
+  (`unresolved-recursion`). `Haruspex.SqlServer.Inference/FunctionSummaries.cs` says why the method is sound.
+- An altered or dropped function is unknown (`redefined`), as a procedure is; a function not in the project, or a
+  table-valued one called as a scalar, is unknown (`unsupported-expression`).
+
+Changes in 0.4: an object type's `recursive` flag, and references that form cycles; JSON text's `content`; the null
+rules `function-result`, `parameter` and `null-input`; the unknown reason `unresolved-recursion`. A 0.3 reader that
+expands references would loop on a recursive type, which is why the version changed.
+
 Changes in 0.3: the array's `itemsNullable`, `itemsNullableBecause`, `minItems` and `maxItems`; the `tuple`, `record` and
 `union` nodes; the null rule `empty-aggregate`. An array FOR JSON builds is written as in 0.2. A 0.2 reader that ignores
 unknown keys would read an array's possibly-null items as never null, which is why the version changed.
@@ -223,4 +272,4 @@ Changes in 0.2: scalars gained facets (`maxLength`, `length`, `minLength`, `digi
 each with its `from`. A reader of 0.1 that ignores unknown keys reads 0.2 documents unchanged, but the version
 changed because the facets are claims a 0.2 reader may rely on.
 
-Not in 0.3, but planned: origins (column lineage) beyond each facet's `from`, documentation, and a source hash.
+Not in 0.4, but planned: origins (column lineage) beyond each facet's `from`, documentation, and a source hash.

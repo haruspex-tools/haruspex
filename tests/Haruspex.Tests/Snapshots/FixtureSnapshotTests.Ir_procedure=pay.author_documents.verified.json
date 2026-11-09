@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.3",
+  "irVersion": "0.4",
   "source": {
     "dialect": "tsql"
   },
@@ -25,6 +25,49 @@
     }
   ],
   "types": {
+    "AuthorDocumentsDocument": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "bio",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "pay.author.bio"
+            }
+          ]
+        }
+      ]
+    },
     "AuthorDocumentsRow": {
       "kind": "object",
       "fields": [
@@ -55,7 +98,10 @@
         {
           "name": "document",
           "type": {
-            "kind": "json-text"
+            "kind": "json-text",
+            "content": {
+              "ref": "AuthorDocumentsDocument"
+            }
           },
           "presence": "always",
           "nullable": false

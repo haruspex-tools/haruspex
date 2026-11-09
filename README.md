@@ -21,7 +21,9 @@ result is a plain `SELECT` over tables, with inner and left joins; `FOR JSON PAT
 from dotted aliases, `WITHOUT_ARRAY_WRAPPER`, `INCLUDE_NULL_VALUES`, and nested arrays from correlated
 `FOR JSON` subqueries; the JSON constructors `json_object`, `json_array`, `json_arrayagg` and `json_objectagg`
 (SQL Server 2022 for the first two, 2025 or Azure SQL for the aggregates), alone, nested, inside `FOR JSON` and in
-correlated subqueries; and the native `json` type. Anything else is reported as unknown, with a reason.
+correlated subqueries; the native `json` type; and scalar functions that return JSON, including functions that call
+themselves to build trees, which become recursive types (Zod getters). Anything else is reported as unknown, with a
+reason.
 
 ```sh
 haruspex generate path/to/database --include 'sales.*' --out src/db

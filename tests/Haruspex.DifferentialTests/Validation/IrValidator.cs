@@ -119,7 +119,9 @@ public static partial class IrValidator
                 case IrUnknownType:
                     return;
                 case IrRef reference:
-                    JsonObject(document.Types[reference.Name], value, path, general);
+                    // A recursive type's cases are counted by its name, whatever the depth (Coverage does the same).
+                    var objectType = document.Types[reference.Name];
+                    JsonObject(objectType, value, path, objectType.Recursive ? $"<{reference.Name}>" : general);
                     return;
                 case IrArray array:
                     JsonArray(array, value, path, general);
@@ -133,9 +135,11 @@ public static partial class IrValidator
                 case IrUnion union:
                     JsonUnion(union, value, path, general);
                     return;
-                case IrJsonText:
+                case IrJsonText text:
                     if (value.ValueKind != JsonValueKind.String || !ParsesAsJson(value.GetString()!))
                         Violation(path, "a string holding JSON", Shorten(value.GetRawText()));
+                    else if (text.Content is { } content)
+                        Content(content, value.GetString()!, path, general);
                     return;
                 case IrScalar scalar:
                     if (JsonScalarProblem(scalar, value) is { } claim)
@@ -146,6 +150,13 @@ public static partial class IrValidator
                 default:
                     throw new InvalidOperationException($"Unknown IR type {type}.");
             }
+        }
+
+        /// <summary>JSON text whose content the IR claims: parsed, and checked against it at <c>path&lt;json&gt;</c>.</summary>
+        private void Content(IrType content, string text, string path, string general)
+        {
+            using var parsed = JsonDocument.Parse(text);
+            Json(content, parsed.RootElement, path + "<json>", general + "<json>");
         }
 
         private void JsonArray(IrArray array, JsonElement value, string path, string general)
@@ -332,15 +343,23 @@ public static partial class IrValidator
         /// JSON leaves an object out when its values are all null (the columns of a left join, say), so a field in
         /// it is never seen null on its own; the object's absence is the data making each of them null.
         /// </summary>
-        private void SeenNull(IrType type, string general)
+        private void SeenNull(IrType type, string general, HashSet<string>? expanding = null)
         {
             seen.Add((general, Seen.Null));
             if (type is not IrRef reference)
                 return;
-            foreach (var field in document.Types[reference.Name].Fields)
+
+            // A recursive type's fields are counted by its name, once: an object that refers to itself directly would
+            // otherwise never end.
+            var objectType = document.Types[reference.Name];
+            expanding ??= [];
+            if (!expanding.Add(reference.Name))
+                return;
+            var inner = objectType.Recursive ? $"<{reference.Name}>" : general;
+            foreach (var field in objectType.Fields)
             {
                 if (field.Type is not IrUnknownType)
-                    SeenNull(field.Type, $"{general}.{field.Name}");
+                    SeenNull(field.Type, $"{inner}.{field.Name}", expanding);
             }
         }
 
@@ -390,6 +409,8 @@ public static partial class IrValidator
                     seen.Add(($"{path}[].{field.Name}", Seen.Value));
                     if (RowsetValueProblem(field.Type, value) is { } claim)
                         Violation(fieldPath, claim, Describe(value));
+                    else if (field.Type is IrJsonText { Content: { } content })
+                        Content(content, (string)value, fieldPath, $"{path}[].{field.Name}");
                     else if (field.Type is IrScalar scalar && ScalarValue.FromRowset(value) is { } facetValue)
                         Facets(scalar, facetValue, fieldPath, $"{path}[].{field.Name}");
                 }
