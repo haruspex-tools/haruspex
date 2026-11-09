@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.1",
+  "irVersion": "0.2",
   "source": {
     "dialect": "tsql"
   },
@@ -47,7 +47,21 @@
           "type": {
             "kind": "number",
             "format": "int32",
-            "sql": "int"
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -56,7 +70,14 @@
           "name": "label",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(40)"
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -66,7 +87,21 @@
           "type": {
             "kind": "number",
             "format": "uint8",
-            "sql": "tinyint"
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -82,7 +117,21 @@
           "type": {
             "kind": "number",
             "format": "int16",
-            "sql": "smallint"
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -98,7 +147,21 @@
           "type": {
             "kind": "number",
             "format": "int32",
-            "sql": "int"
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -114,7 +177,21 @@
           "type": {
             "kind": "number",
             "format": "int64",
-            "sql": "bigint"
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -130,7 +207,28 @@
           "type": {
             "kind": "number",
             "format": "decimal",
-            "sql": "decimal(19,2)"
+            "sql": "decimal(19,2)",
+            "digits": {
+              "precision": 19,
+              "scale": 2,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -146,7 +244,28 @@
           "type": {
             "kind": "number",
             "format": "decimal",
-            "sql": "decimal(38,0)"
+            "sql": "decimal(38,0)",
+            "digits": {
+              "precision": 38,
+              "scale": 0,
+              "from": {
+                "type": "decimal(38,0)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,0)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,0)"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -162,7 +281,28 @@
           "type": {
             "kind": "number",
             "format": "decimal",
-            "sql": "numeric(9,3)"
+            "sql": "numeric(9,3)",
+            "digits": {
+              "precision": 9,
+              "scale": 3,
+              "from": {
+                "type": "numeric(9,3)"
+              }
+            },
+            "min": {
+              "value": -999999.999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(9,3)"
+              }
+            },
+            "max": {
+              "value": 999999.999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(9,3)"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -178,7 +318,28 @@
           "type": {
             "kind": "number",
             "format": "decimal",
-            "sql": "decimal(5,5)"
+            "sql": "decimal(5,5)",
+            "digits": {
+              "precision": 5,
+              "scale": 5,
+              "from": {
+                "type": "decimal(5,5)"
+              }
+            },
+            "min": {
+              "value": -0.99999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,5)"
+              }
+            },
+            "max": {
+              "value": 0.99999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,5)"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -194,7 +355,28 @@
           "type": {
             "kind": "number",
             "format": "decimal",
-            "sql": "money"
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -210,7 +392,28 @@
           "type": {
             "kind": "number",
             "format": "decimal",
-            "sql": "smallmoney"
+            "sql": "smallmoney",
+            "digits": {
+              "precision": 10,
+              "scale": 4,
+              "from": {
+                "type": "smallmoney"
+              }
+            },
+            "min": {
+              "value": -214748.3648,
+              "inclusive": true,
+              "from": {
+                "type": "smallmoney"
+              }
+            },
+            "max": {
+              "value": 214748.3647,
+              "inclusive": true,
+              "from": {
+                "type": "smallmoney"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -475,7 +678,14 @@
           "name": "code",
           "type": {
             "kind": "string",
-            "sql": "char(5)"
+            "sql": "char(5)",
+            "length": {
+              "value": 5,
+              "unit": "bytes",
+              "from": {
+                "type": "char(5)"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -490,7 +700,14 @@
           "name": "ncode",
           "type": {
             "kind": "string",
-            "sql": "nchar(5)"
+            "sql": "nchar(5)",
+            "length": {
+              "value": 5,
+              "unit": "utf16",
+              "from": {
+                "type": "nchar(5)"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -505,7 +722,14 @@
           "name": "vcode",
           "type": {
             "kind": "string",
-            "sql": "varchar(5)"
+            "sql": "varchar(5)",
+            "maxLength": {
+              "value": 5,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(5)"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,

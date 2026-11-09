@@ -30,11 +30,25 @@ emitter's mistakes. It checks what the IR claims:
 - the number of result sets is the number of results;
 - every scalar has the form its kind claims: in JSON, integers within their format's range, dates, times,
   date-times (with or without an offset) and GUIDs as strings of the right form; in a rowset, the .NET type
-  SqlClient returns for that kind.
+  SqlClient returns for that kind;
+- every scalar keeps its facets (IR 0.2): a length in its unit (UTF-16 code units, or UTF-8 bytes when the IR
+  says so, and otherwise only as an upper bound), a minimum length, digits, bounds compared exactly from the
+  decimal text (never through a double), and value sets. An `exact` set is matched exactly; a `collation` set
+  ignoring case and trailing spaces, which is what the fixtures' collations ignore.
 
 It does not check what the IR leaves open, such as fractional-second precision: that is pinned separately,
-as observed fact, by `ForJsonObservationTests`. Closed value sets are not checked yet because IR 0.1 has
-none; when the IR gains `values`, the validator should check each value seen is in the set.
+as observed fact, by `ForJsonObservationTests`. The engine rules the facets rely on (a string CHECK admits
+other cases and trailing spaces, `char(n)` pads to bytes, an alias type's NOT NULL) are pinned the same way by
+`CheckConstraintObservationTests`.
+
+## The generated Zod meets the same data
+
+`ZodAcceptanceTests` runs every run's output through the Zod emitted for its procedure, in Node against the
+pinned zod (`tests/emit-check/src/accept.mjs`). The validator checks the IR; this checks the emitter turned the
+IR into schemas that accept what SQL Server returns. JSON results are handed over as SQL Server's text, so
+`JSON.parse` rounds their numbers as an application's would; rows as the mssql driver delivers them (bigint as
+a string, dates as `Date`). It needs Node, like the emit check, and `HARUSPEX_REQUIRE_NODE=1` makes its absence a
+failure.
 
 A failure names the procedure, the path with array indexes, the claim and the value:
 
@@ -49,6 +63,11 @@ each path, and `The_seed_reaches_every_case_the_ir_allows` fails unless, across 
 nullable field was seen null, every field was seen with a value, and every result that may be absent was
 seen absent. A nested object that FOR JSON leaves out because all its values are null counts as each of its
 fields being null: the columns of a left join are null together, so they are never seen null one at a time.
+
+For the fixtures about scalar facts (`Runs.EdgeFixtures`: `values` and `checks`), `The_seed_reaches_every_edge_the_ir_claims`
+also fails unless the data reached every edge of every facet: each bound (or, when exclusive, the nearest step
+inside it), each full length, each minimum length and each value of each set. A maximum of 255 is not shown to
+hold by values of 7. `orders` is about query shapes, and its scalars are the types `values` covers at their edges.
 `Every_procedure_is_run_or_excluded_with_a_reason` makes sure a new fixture procedure is not forgotten.
 
 ## Where SQL Server comes from

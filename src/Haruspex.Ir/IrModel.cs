@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.1";
+    public const string CurrentVersion = "0.2";
 }
 
 /// <param name="Dialect">The SQL dialect of the source, such as <c>tsql</c>.</param>
@@ -117,7 +117,125 @@ public abstract record IrType;
 /// <param name="Kind">The logical kind, which every emitter understands.</param>
 /// <param name="Format">A refinement of the kind (see <see cref="IrFormats"/>), or null.</param>
 /// <param name="Sql">The source's own type, as written, such as <c>decimal(19,2)</c>. Informational.</param>
-public sealed record IrScalar(IrScalarKind Kind, string? Format, string Sql) : IrType;
+/// <param name="Facets">
+/// What the database guarantees about the value beyond its kind: lengths, digits, bounds and value sets, each with
+/// where it came from. Null when nothing more is known, which claims nothing.
+/// </param>
+public sealed record IrScalar(IrScalarKind Kind, string? Format, string Sql, IrFacets? Facets = null) : IrType;
+
+/// <summary>
+/// Facts about a scalar's non-null values, each with its source. Every one is a guarantee, never a guess: a fact
+/// that is not proved is left out, which only leaves the type wider. None of them says anything about null;
+/// nullability is the field's.
+/// </summary>
+/// <param name="Length">The string's length: a maximum, or a fixed length.</param>
+/// <param name="MinLength">The string's minimum length in UTF-16 code units.</param>
+/// <param name="Digits">The decimal's precision and scale.</param>
+/// <param name="Min">The number's lower bound.</param>
+/// <param name="Max">The number's upper bound.</param>
+/// <param name="Values">A set the value is drawn from.</param>
+public sealed record IrFacets(
+    IrLength? Length = null,
+    IrMinLength? MinLength = null,
+    IrDigits? Digits = null,
+    IrBound? Min = null,
+    IrBound? Max = null,
+    IrValueSet? Values = null)
+{
+    /// <summary>Whether no fact is known.</summary>
+    public bool IsEmpty => Length is null && MinLength is null && Digits is null && Min is null && Max is null && Values is null;
+}
+
+/// <summary>A string's length.</summary>
+/// <param name="Value">The maximum, or the fixed length.</param>
+/// <param name="IsFixed">Whether every value has exactly this length (padded), rather than at most it.</param>
+/// <param name="Unit">What <paramref name="Value"/> counts.</param>
+/// <param name="Encoding">
+/// For <see cref="IrLengthUnit.Bytes"/>, the encoding the bytes are in, when it is known. In a single-byte encoding
+/// a byte is a UTF-16 code unit, so the length is exact; in UTF-8 or a double-byte encoding a character can take
+/// several bytes, so a maximum is only an upper bound on the UTF-16 length, and a fixed length is not one at all.
+/// </param>
+/// <param name="From">Where it came from.</param>
+public sealed record IrLength(int Value, bool IsFixed, IrLengthUnit Unit, IrByteEncoding Encoding, IrFactSource From);
+
+/// <summary>What a length counts.</summary>
+public enum IrLengthUnit
+{
+    /// <summary>UTF-16 code units, as JavaScript's <c>length</c> counts them.</summary>
+    Utf16,
+
+    /// <summary>Bytes of the stored encoding (see <see cref="IrLength.Encoding"/>).</summary>
+    Bytes,
+}
+
+/// <summary>The encoding of a length counted in bytes.</summary>
+public enum IrByteEncoding
+{
+    /// <summary>Not known, or not applicable (a length in UTF-16 code units).</summary>
+    Unknown,
+
+    /// <summary>One byte per character, each a single UTF-16 code unit.</summary>
+    SingleByte,
+
+    /// <summary>UTF-8: one to four bytes per character.</summary>
+    Utf8,
+
+    /// <summary>A double-byte character set: one or two bytes per character.</summary>
+    DoubleByte,
+}
+
+/// <param name="Value">The minimum length, in UTF-16 code units.</param>
+/// <param name="From">Where it came from.</param>
+public sealed record IrMinLength(int Value, IrFactSource From);
+
+/// <summary>A decimal's digits: at most <paramref name="Precision"/> in all, <paramref name="Scale"/> of them after the point.</summary>
+public sealed record IrDigits(int Precision, int Scale, IrFactSource From);
+
+/// <summary>A bound on a number.</summary>
+/// <param name="Value">The bound as exact decimal text, such as <c>-99999999999999999.99</c>; never rounded to a double.</param>
+/// <param name="Inclusive">Whether the bound itself is allowed.</param>
+/// <param name="From">Where it came from.</param>
+public sealed record IrBound(string Value, bool Inclusive, IrFactSource From);
+
+/// <summary>A set the value is drawn from.</summary>
+/// <param name="Items">The values, in a stable order. Numbers are exact decimal text.</param>
+/// <param name="Match">How a value relates to the items.</param>
+/// <param name="From">Every source that narrowed the set.</param>
+public sealed record IrValueSet(IReadOnlyList<IrValue> Items, IrValueMatch Match, IReadOnlyList<IrFactSource> From);
+
+/// <summary>One item of a value set.</summary>
+/// <param name="Text">A string's value, or a number's exact decimal text.</param>
+/// <param name="IsString">Whether it is a string; otherwise a number.</param>
+public sealed record IrValue(string Text, bool IsString);
+
+/// <summary>How a value relates to the items of its set.</summary>
+public enum IrValueMatch
+{
+    /// <summary>Every value is one of the items, exactly.</summary>
+    Exact,
+
+    /// <summary>
+    /// Every value equals one of the items under the database's string comparison, which may ignore case, accents
+    /// and trailing spaces: <c>'Open '</c> can pass a check for <c>'open'</c>. True of the database, but not an
+    /// exact set, so an emitter must not treat it as one.
+    /// </summary>
+    Collation,
+}
+
+/// <summary>Where a fact came from, for the origins graph.</summary>
+/// <param name="Kind">One of <see cref="IrFactSources"/>.</param>
+/// <param name="Ref">The type's name for a type, or the constraint's name (or its location, when unnamed) for a check.</param>
+public sealed record IrFactSource(string Kind, string Ref);
+
+/// <summary>The kinds of <see cref="IrFactSource"/>.</summary>
+public static class IrFactSources
+{
+    /// <summary>The value's type, such as <c>nvarchar(40)</c> or an alias type's name.</summary>
+    public const string Type = "type";
+
+    /// <summary>A check constraint.</summary>
+    public const string Check = "check";
+}
 
 /// <summary>An array of items.</summary>
 public sealed record IrArray(IrType Items) : IrType;

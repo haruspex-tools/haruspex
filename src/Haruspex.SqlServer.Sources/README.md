@@ -14,7 +14,8 @@ var orders = read.Model.FindTable(new ObjectName("sales", "orders"));
 
 Files are read in order of their relative path, so the result doesn't depend on the file system. Each file is
 UTF-8 unless a byte order mark says otherwise (SSMS writes UTF-16), and is parsed with the SQL Server 2025
-grammar. Parse errors and objects defined twice are reported as diagnostics, with their file, line and column.
+grammar. Tables come with their CHECK constraints (a check that a later `ALTER TABLE … NOCHECK CONSTRAINT` may
+disable says so) and alias and CLR types from `CREATE TYPE`. Parse errors and objects defined twice are reported as diagnostics, with their file, line and column.
 
 ## What it deliberately doesn't do
 

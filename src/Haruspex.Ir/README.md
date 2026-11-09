@@ -1,7 +1,7 @@
-# The haruspex IR, version 0.1
+# The haruspex IR, version 0.2
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
-each side can be written in whatever language suits it. This page describes version 0.1. A JSON Schema for
+each side can be written in whatever language suits it. This page describes version 0.2. A JSON Schema for
 it will follow.
 
 ## Why not JSON Schema
@@ -15,7 +15,7 @@ every document. It maps to JSON Schema without loss.
 
 ```jsonc
 {
-  "irVersion": "0.1",                 // versioned separately from the tool
+  "irVersion": "0.2",                 // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database
@@ -32,7 +32,16 @@ every document. It maps to JSON Schema without loss.
     "GetOrderRow": { "kind": "object", "fields": [
       { "name": "shippedAt", "type": { "kind": "datetime", "format": "offset", "sql": "datetimeoffset(0)" },
         "presence": "omittedWhenNull", "nullable": true,
-        "nullableBecause": [{ "rule": "nullable-column", "at": "sales.order.shipped_at" }] }
+        "nullableBecause": [{ "rule": "nullable-column", "at": "sales.order.shipped_at" }] },
+      { "name": "status", "type": { "kind": "string", "sql": "varchar(10)",
+          "maxLength": { "value": 10, "unit": "bytes", "encoding": "single-byte", "from": { "type": "varchar(10)" } },
+          "values": { "match": "collation", "items": ["open", "closed"], "from": [{ "check": "sales.ck_order_status" }] } },
+        "presence": "always", "nullable": false },
+      { "name": "total", "type": { "kind": "number", "format": "decimal", "sql": "decimal(19,2)",
+          "digits": { "precision": 19, "scale": 2, "from": { "type": "decimal(19,2)" } },
+          "min": { "value": 0, "inclusive": false, "from": { "check": "sales.ck_order_total" } },
+          "max": { "value": 99999999999999999.99, "inclusive": true, "from": { "type": "decimal(19,2)" } } },
+        "presence": "always", "nullable": false }
     ] }
   },
   "unknowns": [                       // everything that could not be typed, and why
@@ -43,8 +52,35 @@ every document. It maps to JSON Schema without loss.
 }
 ```
 
-Type nodes are one of: a scalar (`{ "kind", "format"?, "sql" }`), `{ "kind": "array", "items" }`,
+Type nodes are one of: a scalar (`{ "kind", "format"?, "sql", facets… }`, below), `{ "kind": "array", "items" }`,
 `{ "ref" }`, `{ "kind": "json-text" }` or `{ "kind": "unknown", "reason" }`.
+
+## Facets: what a scalar's values are guaranteed to be
+
+A scalar may carry facets, each a guarantee about its **non-null** values, and each with `from`: where it came
+from, `{ "type": "<type or alias type>" }` or `{ "check": "<schema.constraint>" }` (the constraint's location
+when it has no name), for the origins graph. A facet that is not proved is left out: absence claims nothing.
+None says anything about null, which is the field's `nullable`: a CHECK constraint passes when its condition is
+UNKNOWN, as it is for null, so a constraint never makes a value non-null and a value set never excludes null.
+
+| Facet | Meaning |
+|---|---|
+| `maxLength` / `length` | at most, or exactly (padded), `value` of `unit`: `utf16` (UTF-16 code units, as JavaScript counts) or `bytes` (of the stored encoding). With `bytes`, `encoding` is `single-byte` (a byte is a code unit: exact), `utf-8` or `double-byte` (a character takes several, so a maximum is an upper bound on UTF-16 length and a fixed length is only a maximum), or absent when unknown (no collation declared; a folder of scripts doesn't record the database's default) |
+| `minLength` | at least `value` UTF-16 code units |
+| `digits` | an exact decimal of at most `precision` digits, `scale` of them after the point |
+| `min` / `max` | a bound, `inclusive` or not. `value` is a JSON number written from exact decimal text (`99999999999999999.99`, `-9223372036854775808`), so a reader that parses decimals loses nothing |
+| `values` | the value is one of `items` (strings, or numbers as exact JSON numbers). `match` is `exact`, or `collation`: equal under the database's string comparison, which may ignore case, accents and trailing spaces, so `"Open "` can be a value of a set holding `"open"`. A `collation` set is true but not exact, and an emitter must not treat it as an enum |
+
+Facets travel with a value only while it passes through unchanged: a column reference, under aliases, through
+joins and FOR JSON nesting. Through any expression they are dropped, which leaves the type wider and still true.
+Parameters carry no facets: a parameter's type converts what the caller sends (a string too long is cut short),
+so its facets describe the value after conversion, not what a caller may pass.
+
+The SQL Server front end derives them from types (`tinyint`'s range, `decimal(p, s)`'s digits and range,
+`money`'s, string lengths and, from the collation, their encoding), alias types (`CREATE TYPE … FROM`, and
+`sysname`), and CHECK constraints on one column: `IN`, `=` and OR-ed equalities give a set; `BETWEEN` and
+comparisons combined by AND give bounds; `len(col) > n` and `col <> ''` give a minimum length. Anything else is
+ignored, which is always safe. `Haruspex.SqlServer.Semantics` (`CheckReader`) says why each form is sound.
 
 ## Decisions
 
@@ -101,8 +137,8 @@ What each kind claims about a JSON value, which the differential tests' validato
 
 | Kind | JSON value |
 |---|---|
-| `string` | a string |
-| `number` | a number; with `uint8`, `int16`, `int32` or `int64`, an integer in that range (read exactly, not as a double) |
+| `string` | a string, within its length facets (counted in their unit) and `values` |
+| `number` | a number; with `uint8`, `int16`, `int32` or `int64`, an integer in that range (read exactly, not as a double); within its `min`, `max`, `digits` and `values` (compared exactly) |
 | `boolean` | `true` or `false` |
 | `date` | `"YYYY-MM-DD"` |
 | `time` | `"hh:mm:ss"`, optionally with a fraction of a second |
@@ -121,6 +157,11 @@ is kept as tests in `tests/Haruspex.DifferentialTests/ForJsonObservationTests.cs
 - `uniqueidentifier` is written in upper case.
 - `decimal`, `numeric`, `money` and `smallmoney` keep their scale (`12.50`, `12.5000`); `bigint` is written in
   full, beyond 2^53; `float` and `real` in exponent form (`1.000000000000000e+000`). All are JSON numbers.
-- `char(n)` and `nchar(n)` arrive padded with spaces to `n`.
+- `char(n)` and `nchar(n)` arrive padded with spaces to `n`: UTF-16 code units for `nchar`, bytes for `char`, so
+  in a UTF-8 collation `char(3)` holding `é` arrives as `"é "` (kept as a test in `CheckConstraintObservationTests`).
 
-Not in 0.1, but planned: origins (column lineage), closed value sets, documentation, and a source hash.
+Changes in 0.2: scalars gained facets (`maxLength`, `length`, `minLength`, `digits`, `min`, `max`, `values`),
+each with its `from`. A reader of 0.1 that ignores unknown keys reads 0.2 documents unchanged, but the version
+changed because the facets are claims a 0.2 reader may rely on.
+
+Not in 0.2, but planned: origins (column lineage) beyond each facet's `from`, documentation, and a source hash.

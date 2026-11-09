@@ -48,7 +48,9 @@ and commit the updated lock files with the change. Dependency updates are read b
 automatically.
 
 The emit-check test (`tests/emit-check`) writes the Zod generated from the fixtures and compiles it with
-`tsc --noEmit` against a pinned `zod`. It runs `npm ci` there the first time. CI sets
+`tsc --noEmit` against a pinned `zod`. It runs `npm ci` there the first time. The same package holds
+`src/multiple-of.mjs`, the evidence that Zod checks a decimal's step without floating-point false failures, and
+`src/accept.mjs`, through which the differential tests run real output into the generated schemas. CI sets
 `HARUSPEX_REQUIRE_NODE=1`, which turns a missing Node into a failure rather than a skip.
 
 ### Differential tests against SQL Server
@@ -114,7 +116,8 @@ test to let a reference through; move the code to the layer that may know it.
 | `src/Haruspex.Emit.Zod` | The Zod emitter. Reads only the IR. |
 | `src/Haruspex.Cli` | The `haruspex` command; `SqlProject`, which composes the layers; and `ObjectPattern`, until `Haruspex.Config` exists. |
 | `tests/Haruspex.Tests` | Unit, snapshot, end-to-end and architecture tests. |
-| `tests/Haruspex.DifferentialTests` | Runs the fixtures in SQL Server and checks the output against the IR. |
+| `tests/Haruspex.DifferentialTests` | Runs the fixtures in SQL Server and checks the output against the IR and the generated Zod. |
+| `tests/Shared` | Test helpers compiled into both test projects: running the emit-check npm package. |
 | `tests/fixtures` | Invented SQL used by the tests. |
 | `tests/emit-check` | A small npm package that type-checks the generated Zod. |
 

@@ -26,10 +26,19 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks"];
+
+    /// <summary>
+    /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
+    /// of a set, each full length. They are the fixtures about scalar facts. <c>orders</c> is about query shapes,
+    /// and its scalars are the same types <c>values</c> covers at their edges; seeding its ids and totals at
+    /// int.MinValue would only obscure what it shows.
+    /// </summary>
+    public static IReadOnlyList<string> EdgeFixtures { get; } = ["values", "checks"];
 
     private const string NoOrders = "DELETE FROM sales.order_line; DELETE FROM sales.[order]; DELETE FROM sales.customer;";
     private const string NoSamples = "DELETE FROM vals.sample_tag; DELETE FROM vals.sample;";
+    private const string NoTickets = "DELETE FROM chk.ticket_event; DELETE FROM chk.ticket;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -53,11 +62,19 @@ public static class Runs
         new("values: get_sample, typical", "values", "vals.get_sample", new Dictionary<string, object?> { ["@sample_id"] = 1 }),
         new("values: get_sample, nulls", "values", "vals.get_sample", new Dictionary<string, object?> { ["@sample_id"] = 5 }),
         new("values: get_sample, no such sample", "values", "vals.get_sample", new Dictionary<string, object?> { ["@sample_id"] = -1 }),
+        new("values: get_sample, maxima", "values", "vals.get_sample", new Dictionary<string, object?> { ["@sample_id"] = 2 }),
+        new("values: get_sample, minima", "values", "vals.get_sample", new Dictionary<string, object?> { ["@sample_id"] = 3 }),
+        new("values: get_sample, lowest key", "values", "vals.get_sample", new Dictionary<string, object?> { ["@sample_id"] = int.MinValue }),
+        new("values: get_sample, highest key", "values", "vals.get_sample", new Dictionary<string, object?> { ["@sample_id"] = int.MaxValue }),
         new("values: sample_rows", "values", "vals.sample_rows", None),
         new("values: list_nested", "values", "vals.list_nested", None),
         new("values: list_nested, no samples", "values", "vals.list_nested", None, NoSamples),
         new("values: list_nested_with_nulls", "values", "vals.list_nested_with_nulls", None),
         new("values: list_nested_with_nulls, no samples", "values", "vals.list_nested_with_nulls", None, NoSamples),
+
+        new("checks: list_tickets", "checks", "chk.list_tickets", None),
+        new("checks: list_tickets, no tickets", "checks", "chk.list_tickets", None, NoTickets),
+        new("checks: ticket_rows", "checks", "chk.ticket_rows", None),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

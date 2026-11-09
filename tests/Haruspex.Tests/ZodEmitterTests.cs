@@ -26,7 +26,10 @@ public class ZodEmitterTests
     [Theory]
     [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormats.Int64, "bigint", "z.number()")]
     [InlineData(IrEncoding.Rowset, IrScalarKind.Number, IrFormats.Int64, "bigint", "z.string()")]
-    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormats.Int32, "int", "z.int()")]
+    // Without facets an integer format still states its range: the IR's format is a claim about the values.
+    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormats.Int32, "int", "z.int32()")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormats.Int16, "smallint", "z.int().min(-32768).max(32767)")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Number, IrFormats.Uint8, "tinyint", "z.int().min(0).max(255)")]
     [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormats.Decimal, "decimal(19,2)", "z.number()")]
     [InlineData(IrEncoding.Json, IrScalarKind.String, null, "nvarchar(10)", "z.string()")]
     // In JSON, dates, times and GUIDs are strings in a known format, validated but not converted.

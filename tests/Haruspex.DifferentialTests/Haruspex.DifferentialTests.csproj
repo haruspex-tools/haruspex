@@ -11,6 +11,10 @@
     <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Helpers both test projects use: running the emit-check npm package (see the file). -->
+    <Compile Include="..\Shared\*.cs" LinkBase="Shared" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="Testcontainers.MsSql" />
@@ -21,6 +25,8 @@
     <ProjectReference Include="..\..\src\Haruspex.Ir\Haruspex.Ir.csproj" />
     <!-- SqlProject, the composition of the front-end layers, lives in the CLI. -->
     <ProjectReference Include="..\..\src\Haruspex.Cli\Haruspex.Cli.csproj" />
+    <!-- The Zod acceptance check runs every seeded output through the generated schemas. -->
+    <ProjectReference Include="..\..\src\Haruspex.Emit.Zod\Haruspex.Emit.Zod.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Seeds\*.sql" />

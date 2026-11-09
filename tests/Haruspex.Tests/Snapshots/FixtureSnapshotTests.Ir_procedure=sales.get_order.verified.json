@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.1",
+  "irVersion": "0.2",
   "source": {
     "dialect": "tsql"
   },
@@ -47,7 +47,21 @@
           "type": {
             "kind": "number",
             "format": "int32",
-            "sql": "int"
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -56,7 +70,14 @@
           "name": "name",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(100)"
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -65,7 +86,14 @@
           "name": "email",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(256)"
+            "sql": "nvarchar(256)",
+            "maxLength": {
+              "value": 256,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(256)"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -86,7 +114,21 @@
           "type": {
             "kind": "number",
             "format": "int32",
-            "sql": "int"
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -96,7 +138,21 @@
           "type": {
             "kind": "number",
             "format": "int16",
-            "sql": "smallint"
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -106,7 +162,28 @@
           "type": {
             "kind": "number",
             "format": "decimal",
-            "sql": "decimal(19,2)"
+            "sql": "decimal(19,2)",
+            "digits": {
+              "precision": 19,
+              "scale": 2,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -115,7 +192,14 @@
           "name": "note",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(200)"
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -143,7 +227,14 @@
           "name": "sku",
           "type": {
             "kind": "string",
-            "sql": "varchar(20)"
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -152,7 +243,14 @@
           "name": "name",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(100)"
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -162,7 +260,28 @@
           "type": {
             "kind": "number",
             "format": "decimal",
-            "sql": "decimal(9,3)"
+            "sql": "decimal(9,3)",
+            "digits": {
+              "precision": 9,
+              "scale": 3,
+              "from": {
+                "type": "decimal(9,3)"
+              }
+            },
+            "min": {
+              "value": -999999.999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,3)"
+              }
+            },
+            "max": {
+              "value": 999999.999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,3)"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -183,7 +302,21 @@
           "type": {
             "kind": "number",
             "format": "int32",
-            "sql": "int"
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -242,7 +375,14 @@
           "name": "status",
           "type": {
             "kind": "string",
-            "sql": "varchar(20)"
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -252,7 +392,28 @@
           "type": {
             "kind": "number",
             "format": "decimal",
-            "sql": "decimal(19,2)"
+            "sql": "decimal(19,2)",
+            "digits": {
+              "precision": 19,
+              "scale": 2,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -315,7 +476,21 @@
           "type": {
             "kind": "number",
             "format": "int32",
-            "sql": "int"
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -330,7 +505,14 @@
           "name": "name",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(100)"
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
           },
           "presence": "omittedWhenNull",
           "nullable": true,

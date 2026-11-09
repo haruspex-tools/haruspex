@@ -31,11 +31,13 @@ internal sealed record ResultShape(IrEncoding Encoding, Shape Shape, IReadOnlyLi
 /// </remarks>
 internal sealed class ProcedureAnalyzer
 {
+    private readonly DatabaseModel model;
     private readonly Binder binder;
     private readonly string file;
 
     public ProcedureAnalyzer(DatabaseModel model, string file)
     {
+        this.model = model;
         binder = new Binder(model, file);
         this.file = file;
     }
@@ -45,7 +47,7 @@ internal sealed class ProcedureAnalyzer
         var parameters = procedure.Parameters
             .Select(p => new ParameterShape(
                 p.VariableName.Value,
-                SqlTypes.ToShape(SqlType.From(p.DataType), At(p)),
+                SqlTypes.ToShape(model, SqlType.From(p.DataType), At(p)),
                 HasDefault: p.Value is not null,
                 IsOutput: p.Modifier == ParameterModifier.Output))
             .ToList();
@@ -321,11 +323,16 @@ internal sealed class ProcedureAnalyzer
         _ => throw new InvalidOperationException("Unknown binding."),
     };
 
-    private static Value FromColumn(BoundColumn bound)
+    /// <remarks>
+    /// The column's facts (length, digits, bounds, value sets) travel with the value only while it passes through
+    /// unchanged: a column reference, through aliases, joins and FOR JSON nesting. Any expression makes the value
+    /// something else, and none is modelled yet, so it becomes unknown and the facts go with it.
+    /// </remarks>
+    private Value FromColumn(BoundColumn bound)
     {
         var (source, table, column) = bound;
         var because = new List<IrNullReason>();
-        if (!SchemaRules.IsNeverNull(table, column))
+        if (!SchemaRules.IsNeverNull(model, table, column))
             because.Add(new IrNullReason(IrNullRules.NullableColumn, $"{table.Name}.{column.Name}"));
 
         // The optional side of an outer join has no row when nothing matches, so every column read from it can
@@ -336,9 +343,9 @@ internal sealed class ProcedureAnalyzer
     }
 
     /// <summary>A column's shape when it is not null.</summary>
-    private static Shape ColumnShape(Table table, Column column) => column.IsComputed
+    private Shape ColumnShape(Table table, Column column) => column.IsComputed
         ? new UnknownShape(IrUnknownReasons.UnsupportedSqlType, $"{table.Name}.{column.Name} is a computed column, which is not modelled yet.", column.At)
-        : SqlTypes.ToShape(column.Type, column.At);
+        : SqlTypes.ToShape(SchemaRules.ColumnFacts(model, table, column), column.Type, column.At);
 
     /// <summary>
     /// The IR's reason for a binding problem. A table changed after its definition was reported as an unsupported

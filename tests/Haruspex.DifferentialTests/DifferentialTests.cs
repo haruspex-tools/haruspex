@@ -46,6 +46,29 @@ public class DifferentialTests(SqlServerFixture server)
         Assert.True(missing.Count == 0, "No run saw these cases, so the claims around them are untested. Extend the seed or add a run:\n" + string.Join("\n", missing));
     }
 
+    public static TheoryData<string> EdgeFixtures { get; } = [.. Runs.EdgeFixtures];
+
+    [Theory]
+    [MemberData(nameof(EdgeFixtures))]
+    public async Task The_seed_reaches_every_edge_the_ir_claims(string fixture)
+    {
+        server.Require();
+
+        var reached = new Dictionary<string, IReadOnlySet<(string, string)>>(StringComparer.Ordinal);
+        foreach (var run in Runs.All.Where(r => r.Fixture == fixture))
+        {
+            var report = await server.ValidateAsync(run);
+            var into = reached.TryGetValue(run.Procedure, out var r) ? new HashSet<(string, string)>(r) : [];
+            into.UnionWith(report.Edges);
+            reached[run.Procedure] = into;
+        }
+
+        var missing = Coverage.MissingEdges(server.Ir(fixture), reached)
+            .Where(m => !Runs.NotRun.Keys.Any(p => m.StartsWith(p + " ", StringComparison.Ordinal)))
+            .ToList();
+        Assert.True(missing.Count == 0, "No run reached these edges, so the facets there are untested. Extend the seed:\n" + string.Join("\n", missing));
+    }
+
     [Fact]
     public void Earlier_runs_left_no_database_behind()
     {

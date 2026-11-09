@@ -15,6 +15,7 @@ public sealed class DatabaseModel
     private readonly Dictionary<ObjectName, Procedure> procedures = [];
     private readonly Dictionary<ObjectName, NamedObject> namedObjects = [];
     private readonly Dictionary<ObjectName, Redefinition> tableRedefinitions = [];
+    private readonly Dictionary<ObjectName, UserType> userTypes = [];
 
     /// <summary>Creates a model.</summary>
     /// <param name="tables">The tables.</param>
@@ -24,12 +25,14 @@ public sealed class DatabaseModel
     /// Statements that change a table after its definition in a way the model does not apply, at most one per
     /// table name. A name may have no table: a table dropped and never created is still worth knowing about.
     /// </param>
+    /// <param name="userTypes">The alias and CLR types (<c>CREATE TYPE</c>).</param>
     /// <exception cref="ArgumentException">A name appears twice in one collection.</exception>
     public DatabaseModel(
         IEnumerable<Table> tables,
         IEnumerable<Procedure> procedures,
         IEnumerable<NamedObject> namedObjects,
-        IEnumerable<Redefinition> tableRedefinitions)
+        IEnumerable<Redefinition> tableRedefinitions,
+        IEnumerable<UserType>? userTypes = null)
     {
         ArgumentNullException.ThrowIfNull(tables);
         ArgumentNullException.ThrowIfNull(procedures);
@@ -45,7 +48,11 @@ public sealed class DatabaseModel
         foreach (var redefinition in tableRedefinitions)
             this.tableRedefinitions.Add(redefinition.Name, redefinition);
 
+        foreach (var type in userTypes ?? [])
+            this.userTypes.Add(type.Name, type);
+
         Tables = [.. this.tables.Values];
+        UserTypes = [.. this.userTypes.Values];
         Procedures = [.. this.procedures.Values.OrderBy(p => p.Name.ToString(), StringComparer.Ordinal)];
         NamedObjects = [.. this.namedObjects.Values];
         TableRedefinitions = [.. this.tableRedefinitions.Values];
@@ -62,6 +69,12 @@ public sealed class DatabaseModel
 
     /// <summary>The statements that change a table in a way the model does not apply, in the order given.</summary>
     public IReadOnlyList<Redefinition> TableRedefinitions { get; }
+
+    /// <summary>The alias and CLR types, in the order given.</summary>
+    public IReadOnlyList<UserType> UserTypes { get; }
+
+    /// <summary>The alias or CLR type with this name, or null.</summary>
+    public UserType? FindUserType(ObjectName name) => userTypes.GetValueOrDefault(name);
 
     /// <summary>The table with this name, or null.</summary>
     public Table? FindTable(ObjectName name) => tables.GetValueOrDefault(name);

@@ -15,8 +15,9 @@ namespace Haruspex.DifferentialTests.Validation;
 /// It reads the IR directly and never goes through an emitter, so it cannot share an emitter's mistakes: a
 /// wrong Zod mapping would otherwise pass its own test. It checks only what the IR claims: that a non-null
 /// field is never null, that each key present is one the type has and each key that must be there is, that a
-/// result said always to be present is, and that each scalar has the form its kind claims. It does not check
-/// what the IR leaves open, such as fractional-second precision.
+/// result said always to be present is, that each scalar has the form its kind claims, and that each scalar keeps
+/// its facets (lengths, digits, bounds and value sets; see <see cref="FacetProblem"/>). It does not check what
+/// the IR leaves open, such as fractional-second precision.
 /// </remarks>
 public static partial class IrValidator
 {
@@ -55,8 +56,16 @@ public static partial class IrValidator
     {
         private readonly List<Violation> violations = [];
         private readonly HashSet<(string, Seen)> seen = [];
+        private readonly HashSet<(string, string)> edges = [];
 
-        public ValidationReport Report() => new(violations, seen);
+        public ValidationReport Report() => new(violations, seen, edges);
+
+        /// <summary>Checks a non-null scalar's facets, recording a violation and the edges it reaches.</summary>
+        private void Facets(IrScalar scalar, ScalarValue value, string path, string general)
+        {
+            if (FacetProblem(scalar, value, e => edges.Add((general, e))) is { } claim)
+                Violation(path, claim, value.Describe());
+        }
 
         public void Violation(string path, string claim, string value) => violations.Add(new Violation(procedure, path, claim, value));
 
@@ -137,6 +146,8 @@ public static partial class IrValidator
                 case IrScalar scalar:
                     if (JsonScalarProblem(scalar, value) is { } claim)
                         Violation(path, claim, value.GetRawText());
+                    else if (ScalarValue.FromJson(scalar, value) is { } facetValue)
+                        Facets(scalar, facetValue, path, general);
                     return;
                 default:
                     throw new InvalidOperationException($"Unknown IR type {type}.");
@@ -256,6 +267,8 @@ public static partial class IrValidator
                     seen.Add(($"{path}[].{field.Name}", Seen.Value));
                     if (RowsetValueProblem(field.Type, value) is { } claim)
                         Violation(fieldPath, claim, Describe(value));
+                    else if (field.Type is IrScalar scalar && ScalarValue.FromRowset(value) is { } facetValue)
+                        Facets(scalar, facetValue, fieldPath, $"{path}[].{field.Name}");
                 }
             }
         }
@@ -270,6 +283,90 @@ public static partial class IrValidator
 
             return -1;
         }
+    }
+
+    // ---- facets -------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// What a facet claims, when <paramref name="value"/> breaks it; otherwise null. Each facet is checked in the
+    /// unit it states: a length in UTF-16 code units, or in bytes of UTF-8 when the IR says so (and otherwise, for
+    /// bytes, only as the upper bound on UTF-16 code units it always is); bounds and digits exactly, from the decimal
+    /// text, never through a double; an exact set by equality, and a set under a collation ignoring case and
+    /// trailing spaces, which is what the fixtures' collations ignore. It also reports, through
+    /// <paramref name="edge"/>, each edge the value reaches (<see cref="ValidationReport.Edges"/>).
+    /// </summary>
+    internal static string? FacetProblem(IrScalar scalar, ScalarValue value, Action<string> edge)
+    {
+        if (scalar.Facets is not { } facets)
+            return null;
+
+        if (value.Text is { } text)
+        {
+            if (facets.Length is { } length)
+            {
+                var measure = length is { Unit: IrLengthUnit.Bytes, Encoding: IrByteEncoding.Utf8 } ? Encoding.UTF8.GetByteCount(text) : text.Length;
+                var exact = length.Unit == IrLengthUnit.Utf16 || length.Encoding is IrByteEncoding.SingleByte or IrByteEncoding.Utf8;
+                var unit = length.Unit == IrLengthUnit.Utf16 ? "UTF-16 code units" : length.Encoding == IrByteEncoding.Utf8 ? "UTF-8 bytes" : "characters";
+                if (length.IsFixed && exact ? measure != length.Value : measure > length.Value)
+                    return $"{(length.IsFixed && exact ? "exactly" : "at most")} {length.Value} {unit} ({scalar.Sql})";
+                if (measure == length.Value)
+                    edge($"length {length.Value}");
+            }
+
+            if (facets.MinLength is { } minLength)
+            {
+                if (text.Length < minLength.Value)
+                    return $"at least {minLength.Value} UTF-16 code units ({scalar.Sql})";
+                if (text.Length == minLength.Value)
+                    edge($"min length {minLength.Value}");
+            }
+
+            if (facets.Values is { } strings)
+            {
+                var match = strings.Items.FirstOrDefault(i => i.IsString && (strings.Match == IrValueMatch.Exact
+                    ? i.Text.Equals(text, StringComparison.Ordinal)
+                    : i.Text.TrimEnd(' ').Equals(text.TrimEnd(' '), StringComparison.OrdinalIgnoreCase)));
+                if (match is null)
+                    return $"one of {string.Join(", ", strings.Items.Select(i => JsonSerializer.Serialize(i.Text)))} ({strings.Match.ToString().ToLowerInvariant()})";
+                edge("value " + match.Text);
+            }
+
+            return null;
+        }
+
+        var number = value.Number!.Value;
+        if (facets.Digits is { } digits && (number.Scale > digits.Scale || number.IntegerDigits > digits.Precision - digits.Scale))
+            return $"at most {digits.Precision} digits, {digits.Scale} after the point ({scalar.Sql})";
+
+        // The step to the nearest value inside an exclusive bound: the type's scale, or 1 for an integer format.
+        int? scale = facets.Digits?.Scale ?? (IntegerRange(scalar.Format) is null ? null : 0);
+        if (facets.Min is { } min)
+        {
+            var bound = Exact.Parse(min.Value);
+            if (min.Inclusive ? number.CompareTo(bound) < 0 : number.CompareTo(bound) <= 0)
+                return $"{(min.Inclusive ? "at least" : "more than")} {min.Value} ({scalar.Sql})";
+            if (min.Inclusive ? number.CompareTo(bound) == 0 : scale is { } s && number.CompareTo(bound.Step(s, 1)) == 0)
+                edge("min");
+        }
+
+        if (facets.Max is { } max)
+        {
+            var bound = Exact.Parse(max.Value);
+            if (max.Inclusive ? number.CompareTo(bound) > 0 : number.CompareTo(bound) >= 0)
+                return $"{(max.Inclusive ? "at most" : "less than")} {max.Value} ({scalar.Sql})";
+            if (max.Inclusive ? number.CompareTo(bound) == 0 : scale is { } s && number.CompareTo(bound.Step(s, -1)) == 0)
+                edge("max");
+        }
+
+        if (facets.Values is { } numbers)
+        {
+            var match = numbers.Items.FirstOrDefault(i => !i.IsString && Exact.Parse(i.Text).CompareTo(number) == 0);
+            if (match is null)
+                return $"one of {string.Join(", ", numbers.Items.Select(i => i.Text))}";
+            edge("value " + match.Text);
+        }
+
+        return null;
     }
 
     // ---- scalars ------------------------------------------------------------------------------------

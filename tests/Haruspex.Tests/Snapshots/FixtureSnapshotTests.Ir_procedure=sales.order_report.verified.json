@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.1",
+  "irVersion": "0.2",
   "source": {
     "dialect": "tsql"
   },
@@ -33,7 +33,21 @@
           "type": {
             "kind": "number",
             "format": "int32",
-            "sql": "int"
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
           },
           "presence": "always",
           "nullable": false

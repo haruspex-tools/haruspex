@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.1",
+  "irVersion": "0.2",
   "source": {
     "dialect": "tsql"
   },
@@ -33,7 +33,21 @@
           "type": {
             "kind": "number",
             "format": "int32",
-            "sql": "int"
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -42,7 +56,14 @@
           "name": "name",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(100)"
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
           },
           "presence": "always",
           "nullable": false
@@ -51,7 +72,14 @@
           "name": "email",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(256)"
+            "sql": "nvarchar(256)",
+            "maxLength": {
+              "value": 256,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(256)"
+              }
+            }
           },
           "presence": "always",
           "nullable": true,
@@ -66,7 +94,14 @@
           "name": "region",
           "type": {
             "kind": "string",
-            "sql": "char(2)"
+            "sql": "char(2)",
+            "length": {
+              "value": 2,
+              "unit": "bytes",
+              "from": {
+                "type": "char(2)"
+              }
+            }
           },
           "presence": "always",
           "nullable": true,

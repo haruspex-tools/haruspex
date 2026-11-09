@@ -1,0 +1,555 @@
+{
+  "irVersion": "0.2",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "chk.ticket_rows",
+      "name": "TicketRows",
+      "kind": "procedure",
+      "at": "procedures/ticket_rows.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "TicketRowsRow"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
+    }
+  ],
+  "types": {
+    "TicketRowsRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "utf16",
+              "from": {
+                "type": "chk.short_code"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "alt_code",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "utf16",
+              "from": {
+                "type": "chk.short_code"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.alt_code"
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(10)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "open",
+                "held",
+                "closed"
+              ],
+              "from": [
+                {
+                  "check": "chk.ck_ticket_status"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "priority",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 1,
+              "inclusive": true,
+              "from": {
+                "check": "chk.ck_ticket_priority"
+              }
+            },
+            "max": {
+              "value": 5,
+              "inclusive": true,
+              "from": {
+                "check": "chk.ck_ticket_priority"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.priority"
+            }
+          ]
+        },
+        {
+          "name": "score",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -10,
+              "inclusive": true,
+              "from": {
+                "check": "chk.ck_ticket_score"
+              }
+            },
+            "max": {
+              "value": 100,
+              "inclusive": false,
+              "from": {
+                "check": "chk.ck_ticket_score"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.score"
+            }
+          ]
+        },
+        {
+          "name": "level",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [1,2,4
+              ],
+              "from": [
+                {
+                  "check": "chk.ck_ticket_level"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.level"
+            }
+          ]
+        },
+        {
+          "name": "discount",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(5,2)",
+            "digits": {
+              "precision": 5,
+              "scale": 2,
+              "from": {
+                "type": "chk.pct"
+              }
+            },
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "check": "chk.ck_ticket_discount"
+              }
+            },
+            "max": {
+              "value": 100,
+              "inclusive": true,
+              "from": {
+                "check": "chk.ck_ticket_discount"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.discount"
+            }
+          ]
+        },
+        {
+          "name": "rate",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,4)",
+            "digits": {
+              "precision": 9,
+              "scale": 4,
+              "from": {
+                "type": "decimal(9,4)"
+              }
+            },
+            "min": {
+              "value": 0,
+              "inclusive": false,
+              "from": {
+                "check": "chk.ck_ticket_rate"
+              }
+            },
+            "max": {
+              "value": 1,
+              "inclusive": false,
+              "from": {
+                "check": "chk.ck_ticket_rate"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.rate"
+            }
+          ]
+        },
+        {
+          "name": "big",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "check": "chk.ck_ticket_big"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.big"
+            }
+          ]
+        },
+        {
+          "name": "title",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(60)"
+              }
+            },
+            "minLength": {
+              "value": 1,
+              "from": {
+                "check": "chk.ck_ticket_title"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(30)"
+              }
+            },
+            "minLength": {
+              "value": 1,
+              "from": {
+                "check": "chk.ck_ticket_note"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.note"
+            }
+          ]
+        },
+        {
+          "name": "region",
+          "type": {
+            "kind": "string",
+            "sql": "char(2)",
+            "length": {
+              "value": 2,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "char(2)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "NE",
+                "SW"
+              ],
+              "from": [
+                {
+                  "check": "tables/ticket.sql:21:70"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.region"
+            }
+          ]
+        },
+        {
+          "name": "tag_utf8",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(12)",
+            "maxLength": {
+              "value": 12,
+              "unit": "bytes",
+              "encoding": "utf-8",
+              "from": {
+                "type": "varchar(12)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.tag_utf8"
+            }
+          ]
+        },
+        {
+          "name": "pad_utf8",
+          "type": {
+            "kind": "string",
+            "sql": "char(4)",
+            "length": {
+              "value": 4,
+              "unit": "bytes",
+              "encoding": "utf-8",
+              "from": {
+                "type": "char(4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.pad_utf8"
+            }
+          ]
+        },
+        {
+          "name": "muted",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.muted"
+            }
+          ]
+        },
+        {
+          "name": "owner_name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            },
+            "minLength": {
+              "value": 2,
+              "from": {
+                "check": "chk.ck_owner_name"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "outer-join",
+              "at": "procedures/ticket_rows.sql:25:11"
+            }
+          ]
+        },
+        {
+          "name": "owner_grade",
+          "type": {
+            "kind": "string",
+            "sql": "nchar(1)",
+            "length": {
+              "value": 1,
+              "unit": "utf16",
+              "from": {
+                "type": "nchar(1)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "A",
+                "B"
+              ],
+              "from": [
+                {
+                  "check": "tables/owner.sql:6:38"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "outer-join",
+              "at": "procedures/ticket_rows.sql:25:11"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": []
+}

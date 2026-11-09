@@ -6,6 +6,10 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Helpers both test projects use: running the emit-check npm package (see the file). -->
+    <Compile Include="..\Shared\*.cs" LinkBase="Shared" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
   <ItemGroup>

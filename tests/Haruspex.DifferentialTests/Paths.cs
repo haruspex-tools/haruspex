@@ -7,6 +7,8 @@ internal static class Paths
 
     public static string Fixture(string name) => Path.Combine(RepoRoot, "tests", "fixtures", name);
 
+    public static string EmitCheck => Path.Combine(RepoRoot, "tests", "emit-check");
+
     public static string Seed(string fixture) => Path.Combine(RepoRoot, "tests", "Haruspex.DifferentialTests", "Seeds", fixture + ".sql");
 
     private static string FindRepoRoot()

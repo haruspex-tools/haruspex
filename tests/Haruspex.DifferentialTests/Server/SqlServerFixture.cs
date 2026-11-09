@@ -37,7 +37,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
     private const string DatabasePrefix = "haruspex_test_";
 
     private readonly ConcurrentDictionary<string, Lazy<IrDocument>> documents = new(StringComparer.Ordinal);
-    private readonly ConcurrentDictionary<string, Lazy<Task<ValidationReport>>> reports = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, Lazy<Task<IReadOnlyList<ObservedResultSet>>>> observations = new(StringComparer.Ordinal);
 
     private MsSqlContainer? container;
     private string? server;
@@ -207,15 +207,19 @@ public sealed class SqlServerFixture : IAsyncLifetime
         return project.Infer(project.Procedures);
     })).Value;
 
-    /// <summary>Runs a procedure once per test run and validates its output; later calls reuse the report.</summary>
-    public Task<ValidationReport> ValidateAsync(ProcedureRun run)
+    /// <summary>Runs a procedure once per test run; later calls reuse what it returned.</summary>
+    public Task<IReadOnlyList<ObservedResultSet>> ObserveAsync(ProcedureRun run)
     {
         ArgumentNullException.ThrowIfNull(run);
-        return reports.GetOrAdd(run.Name, _ => new Lazy<Task<ValidationReport>>(async () =>
-        {
-            var observed = await ProcedureRunner.RunAsync(ConnectionString, run).ConfigureAwait(false);
-            return IrValidator.Validate(Ir(run.Fixture), run.Procedure, observed);
-        })).Value;
+        return observations.GetOrAdd(run.Name, _ => new Lazy<Task<IReadOnlyList<ObservedResultSet>>>(
+            () => ProcedureRunner.RunAsync(ConnectionString, run))).Value;
+    }
+
+    /// <summary>Validates a run's output against the IR (<see cref="IrValidator"/>).</summary>
+    public async Task<ValidationReport> ValidateAsync(ProcedureRun run)
+    {
+        ArgumentNullException.ThrowIfNull(run);
+        return IrValidator.Validate(Ir(run.Fixture), run.Procedure, await ObserveAsync(run).ConfigureAwait(false));
     }
 
     /// <summary>

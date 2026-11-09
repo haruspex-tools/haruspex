@@ -174,7 +174,7 @@ public static class ZodEmitter
             var json = encoding == IrEncoding.Json;
             return scalar.Kind switch
             {
-                IrScalarKind.String => ("z.string()", null),
+                IrScalarKind.String => Facets.String(scalar),
                 IrScalarKind.Boolean => ("z.boolean()", null),
                 IrScalarKind.Uuid => ("z.guid()", null),
                 IrScalarKind.Date => (json ? "z.iso.date()" : "z.date()", null),
@@ -187,13 +187,7 @@ public static class ZodEmitter
                     // Without a format the offset is not known, so no format is claimed.
                     _ => ("z.string()", null),
                 },
-                IrScalarKind.Number => scalar.Format switch
-                {
-                    IrFormats.Uint8 or IrFormats.Int16 or IrFormats.Int32 => ("z.int()", null),
-                    IrFormats.Int64 when json => ("z.number()", "int64: exact only up to 2^53 once parsed"),
-                    IrFormats.Int64 => ("z.string()", null),
-                    _ => ("z.number()", null),
-                },
+                IrScalarKind.Number => Facets.Number(scalar, json),
                 _ => throw new ArgumentOutOfRangeException(nameof(scalar), scalar.Kind, "Unknown scalar kind."),
             };
         }
