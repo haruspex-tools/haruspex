@@ -72,10 +72,25 @@ is only reachable over SSH, run a long-lived SQL Server container there and use 
 
 A developer's server is long-running and every run creates a database on it. If a failing run left its
 database behind, they would pile up, and an old one could be mistaken for the current run's. So
-`DisposeAsync` drops it in a `finally` whether the tests passed, failed or never ran, and a failure while
-deploying or seeding is reported by each test rather than thrown, so the fixture is still disposed. The one
-case this cannot cover is a process that is killed; each run therefore also drops `haruspex_test_*`
-databases more than a day old, which leaves a run going on at the same time alone.
+`DisposeAsync` drops it in a `finally` whether the tests passed, failed or never ran. A failure while
+deploying or seeding is reported by each test rather than thrown, so the fixture is still disposed. Only a
+database the run actually created is dropped: when the server cannot be reached there is nothing to drop,
+and a drop that fails says so under its own message.
+
+Stopping a run must not leave it behind either:
+
+- **SIGINT** (Ctrl+C) cancels the run, which still reaches `DisposeAsync`.
+- **SIGTERM** (an IDE's stop button, `timeout`, `docker stop`) does not always reach it, so a SIGTERM handler
+  and process exit drop the database too. The three share one drop and each waits for it, because xunit
+  carries on after SIGTERM and a process that exited during another path's drop would leave the database.
+  The handlers are in place before the `CREATE DATABASE` is sent, and wait for it to finish, so a SIGTERM
+  while it runs is covered. The drop retries, because tests still running can take the database between
+  `SET SINGLE_USER` and `DROP`. Checked on 9 Nov 2026 by sending SIGTERM at fifteen points from 0.5 to 2.0 s
+  into a run, SIGINT at five, and `timeout` around `dotnet test`: no database was left.
+- **SIGKILL** cannot be caught. The next run lists every `haruspex_test_*` database it did not create as a
+  skipped test, `Earlier_runs_left_no_database_behind`, whose reason names them; a skip's reason is printed
+  by `dotnet test`, where xunit's warnings are not. It is not a failure, because the database may belong to
+  another run going on at the same time. Databases more than a day old are dropped at the start of a run.
 
 ## Adding a fixture or a run
 

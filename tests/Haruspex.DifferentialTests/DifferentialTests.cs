@@ -46,6 +46,21 @@ public class DifferentialTests(SqlServerFixture server)
         Assert.True(missing.Count == 0, "No run saw these cases, so the claims around them are untested. Extend the seed or add a run:\n" + string.Join("\n", missing));
     }
 
+    [Fact]
+    public void Earlier_runs_left_no_database_behind()
+    {
+        server.Require();
+
+        // Reported as a skip, which the test output prints with its reason at any verbosity (xunit's warnings are
+        // not shown by `dotnet test`). Not a failure: the database may belong to another run going on now against
+        // the same server.
+        if (server.RecentLeftovers.Count > 0)
+        {
+            Assert.Skip(
+                $"Warning: the server has test databases from other runs: {string.Join(", ", server.RecentLeftovers)}. If no other run is going on, an earlier one was killed (SIGKILL) before it could drop them. They are dropped automatically once a day old, or drop them by hand.");
+        }
+    }
+
     [Theory]
     [MemberData(nameof(Fixtures))]
     public void Every_procedure_is_run_or_excluded_with_a_reason(string fixture)
