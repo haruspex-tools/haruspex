@@ -396,7 +396,7 @@
               ],
               "from": [
                 {
-                  "check": "tables/ticket.sql:21:70"
+                  "check": "tables/ticket.sql:22:70"
                 }
               ]
             }
@@ -487,6 +487,66 @@
           ]
         },
         {
+          "name": "restored",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": 0,
+              "inclusive": false,
+              "from": {
+                "check": "chk.ck_ticket_restored"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.restored"
+            }
+          ]
+        },
+        {
+          "name": "late",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.late"
+            }
+          ]
+        },
+        {
           "name": "owner_name",
           "type": {
             "kind": "string",
@@ -510,7 +570,7 @@
           "nullableBecause": [
             {
               "rule": "outer-join",
-              "at": "procedures/ticket_rows.sql:25:11"
+              "at": "procedures/ticket_rows.sql:27:11"
             }
           ]
         },
@@ -544,7 +604,7 @@
           "nullableBecause": [
             {
               "rule": "outer-join",
-              "at": "procedures/ticket_rows.sql:25:11"
+              "at": "procedures/ticket_rows.sql:27:11"
             }
           ]
         }

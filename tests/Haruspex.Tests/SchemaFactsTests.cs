@@ -315,6 +315,48 @@ public class SchemaFactsTests
         Assert.Equal("-2147483648", Bound(facts.Min));
     }
 
+    /// <summary>The facts about <c>c</c> of <c>dbo.t</c>, from several script files.</summary>
+    private static ColumnFacts FactsFrom(params (string File, string Sql)[] files)
+    {
+        using var dir = new TempDirectory();
+        foreach (var (file, sql) in files)
+            dir.File(file, sql);
+        var read = SqlScriptFolder.Read(dir.Path);
+        Assert.Empty(read.Diagnostics);
+        var table = read.Model.FindTable(new ObjectName("dbo", "t"))!;
+        return SchemaRules.ColumnFacts(read.Model, table, table.Column("c")!);
+    }
+
+    private const string Checked = "CREATE TABLE dbo.t (c int NULL CONSTRAINT ck_c CHECK (c > 0), d int NULL CONSTRAINT ck_d CHECK (d > 0));\nGO\n";
+
+    [Theory]
+    // Re-enabled and every row validated, later in the same script: trusted again.
+    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nGO\nALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ck_c;", "excl 0")]
+    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ALL;\nGO\nALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ALL;", "excl 0")]
+    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ck_d, ck_c;", "excl 0")]
+    // Re-enabled without validating the rows written meanwhile (is_not_trusted stays 1): still nothing.
+    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nGO\nALTER TABLE dbo.t CHECK CONSTRAINT ck_c;", "-2147483648")]
+    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nGO\nALTER TABLE dbo.t WITH NOCHECK CHECK CONSTRAINT ck_c;", "-2147483648")]
+    // Validated before it was disabled, or another constraint validated: still disabled.
+    [InlineData("ALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ck_c;\nGO\nALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;", "-2147483648")]
+    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nGO\nALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ck_d;", "-2147483648")]
+    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ALL;\nGO\nALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ck_d;", "-2147483648")]
+    public void A_disabled_constraint_is_trusted_again_only_after_with_check_check_later_in_the_same_script(string alter, string min) =>
+        Assert.Equal(min, Bound(Facts(Checked + alter).Min));
+
+    [Fact]
+    public void Re_enabling_in_another_script_does_not_count_because_the_order_is_unknown() =>
+        Assert.Equal("-2147483648", Bound(FactsFrom(
+            ("a.sql", Checked + "ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;"),
+            ("b.sql", "ALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ck_c;")).Min));
+
+    [Theory]
+    // Added after the table, WITH NOCHECK (existing rows are not validated) or not: not read either way.
+    [InlineData("ALTER TABLE dbo.t WITH NOCHECK ADD CONSTRAINT ck_late CHECK (c > 0);")]
+    [InlineData("ALTER TABLE dbo.t ADD CONSTRAINT ck_late CHECK (c > 0);")]
+    public void A_constraint_added_by_alter_table_is_not_read(string alter) =>
+        Assert.Equal("-2147483648", Bound(Facts("CREATE TABLE dbo.t (c int NULL);\nGO\n" + alter).Min));
+
     [Fact]
     public void Nocheck_of_another_constraint_leaves_this_one_read() =>
         Assert.Equal("excl 0", Bound(Facts("CREATE TABLE dbo.t (c int NULL CONSTRAINT ck_c CHECK (c > 0), d int NULL CONSTRAINT ck_d CHECK (d > 0));\nGO\nALTER TABLE dbo.t NOCHECK CONSTRAINT ck_d;").Min));

@@ -1,3 +1,4 @@
+using Haruspex.Ir;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.DifferentialTests.Validation;
 
@@ -67,6 +68,34 @@ public class DifferentialTests(SqlServerFixture server)
             .Where(m => !Runs.NotRun.Keys.Any(p => m.StartsWith(p + " ", StringComparison.Ordinal)))
             .ToList();
         Assert.True(missing.Count == 0, "No run reached these edges, so the facets there are untested. Extend the seed:\n" + string.Join("\n", missing));
+    }
+
+    /// <summary>
+    /// An untrusted constraint guarantees nothing, and the fixture proves it: ck_ticket_muted is disabled by NOCHECK
+    /// and ck_ticket_late added WITH NOCHECK after a row that breaks it, and the data really does break both, while the
+    /// IR claims only the columns' type range. ck_ticket_restored, validated again WITH CHECK, is claimed and holds.
+    /// </summary>
+    [Fact]
+    public async Task An_untrusted_constraint_claims_nothing_and_the_data_breaks_it()
+    {
+        server.Require();
+        var fields = server.Ir("checks").Types["ListTicketsRow"].Fields;
+        IrFacets Facets(string name) => Assert.IsType<IrScalar>(fields.Single(f => f.Name == name).Type).Facets!;
+
+        foreach (var untrusted in new[] { "muted", "late" })
+        {
+            Assert.Equal(new IrFactSource(IrFactSources.Type, "int"), Facets(untrusted).Min!.From);
+            Assert.Equal("-2147483648", Facets(untrusted).Min!.Value);
+        }
+
+        Assert.Equal(new IrBound("0", false, new IrFactSource(IrFactSources.Check, "chk.ck_ticket_restored")), Facets("restored").Min);
+
+        var rows = Assert.Single(await server.ObserveAsync(Runs.Named("checks: ticket_rows"))).Rows;
+        var columns = Assert.Single(await server.ObserveAsync(Runs.Named("checks: ticket_rows"))).Columns;
+        int? Least(string column) => rows.Select(r => (int?)r[columns.ToList().IndexOf(column)]).Min();
+        Assert.True(Least("muted") <= 0, "The seed should break ck_ticket_muted.");
+        Assert.True(Least("late") <= 0, "ticket_late.sql should break ck_ticket_late.");
+        Assert.True(Least("restored") > 0);
     }
 
     [Fact]

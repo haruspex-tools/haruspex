@@ -40,6 +40,8 @@ export const row: TicketRowsRow = {
   tag_utf8: null,
   pad_utf8: null,
   muted: null,
+  restored: null,
+  late: null,
   owner_name: null,
   owner_grade: null,
 }

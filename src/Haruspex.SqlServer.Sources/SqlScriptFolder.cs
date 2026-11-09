@@ -20,8 +20,8 @@ namespace Haruspex.SqlServer.Sources;
 /// </para>
 /// <para>
 /// Alias and CLR types are read from <c>CREATE TYPE</c>, and CHECK constraints from <c>CREATE TABLE</c>. A check that
-/// <c>ALTER TABLE … NOCHECK CONSTRAINT</c> names (or <c>ALL</c>) is recorded as possibly disabled, since whether
-/// it was enabled again afterwards depends on the script order.
+/// <c>ALTER TABLE … NOCHECK CONSTRAINT</c> names (or <c>ALL</c>) is recorded as possibly disabled, unless
+/// <c>WITH CHECK CHECK CONSTRAINT</c> validates it again later in the same script (see Untrusted).
 /// </para>
 /// <para>
 /// Views, synonyms and functions are recorded by name only, as <see cref="NamedObject"/>s. Every other statement
@@ -53,8 +53,8 @@ public static class SqlScriptFolder
         var procedureChanges = new Dictionary<ObjectName, (Redefinition Why, Procedure? Alter)>();
         var userTypes = new Dictionary<ObjectName, UserType>();
 
-        // ALTER TABLE … NOCHECK CONSTRAINT, by table: the constraint's name, or null for ALL, and where.
-        var nochecks = new Dictionary<ObjectName, List<(string? Constraint, SourceLocation At)>>();
+        // ALTER TABLE … NOCHECK CONSTRAINT and … WITH CHECK CHECK CONSTRAINT, by table, in the order read.
+        var enforcement = new Dictionary<ObjectName, List<Enforcement>>();
 
         // Sorted by relative path so that which of two duplicate definitions is reported does not depend on
         // the file system's enumeration order.
@@ -110,17 +110,21 @@ public static class SqlScriptFolder
                         var clrName = ObjectName.From(clr.Name);
                         Add(userTypes, clrName, new UserType(clrName, null, DeclaredNullability.NotDeclared, new SourceLocation(relative, clr.StartLine, clr.StartColumn)), clr, relative, diagnostics);
                         break;
-                    case AlterTableConstraintModificationStatement { ConstraintEnforcement: ConstraintEnforcement.NoCheck } nocheck:
-                        // Disables the named constraints (or all of them), so rows written afterwards are not
-                        // checked. Recorded on each constraint it names, which stops it being read as a guarantee.
-                        var noCheckTable = ObjectName.From(nocheck.SchemaObjectName);
-                        if (!nochecks.TryGetValue(noCheckTable, out var list))
-                            nochecks[noCheckTable] = list = [];
-                        var noCheckAt = new SourceLocation(relative, nocheck.StartLine, nocheck.StartColumn);
-                        if (nocheck.All)
-                            list.Add((null, noCheckAt));
-                        foreach (var named in nocheck.ConstraintNames)
-                            list.Add((named.Value, noCheckAt));
+                    case AlterTableConstraintModificationStatement change
+                        when change.ConstraintEnforcement == ConstraintEnforcement.NoCheck
+                        || (change.ConstraintEnforcement == ConstraintEnforcement.Check && change.ExistingRowsCheckEnforcement == ConstraintEnforcement.Check):
+                        // NOCHECK disables the named constraints (or ALL); WITH CHECK CHECK enables them and validates
+                        // every row, failing if any breaks them, so afterwards they hold again. A plain CHECK
+                        // CONSTRAINT enables without validating, leaving the rows written meanwhile (the constraint
+                        // stays not trusted), so it restores nothing and isn't recorded. See Untrusted.
+                        var changedChecks = ObjectName.From(change.SchemaObjectName);
+                        if (!enforcement.TryGetValue(changedChecks, out var list))
+                            enforcement[changedChecks] = list = [];
+                        list.Add(new Enforcement(
+                            change.ConstraintEnforcement == ConstraintEnforcement.Check,
+                            change.All ? null : [.. change.ConstraintNames.Select(n => n.Value)],
+                            new SourceLocation(relative, change.StartLine, change.StartColumn),
+                            list.Count));
                         break;
                     case AlterTableStatement alterTable when !OnlyTightens(alterTable):
                         var changedTable = ObjectName.From(alterTable.SchemaObjectName);
@@ -145,10 +149,10 @@ public static class SqlScriptFolder
                 procedures[name] = new Procedure(alter.Name, alter.Body, alter.File, why);
         }
 
-        foreach (var (name, disabled) in nochecks)
+        foreach (var (name, changes) in enforcement)
         {
             if (tables.TryGetValue(name, out var table))
-                tables[name] = Disable(table, disabled);
+                tables[name] = Untrusted(table, changes);
         }
 
         var model = new DatabaseModel(tables.Values, procedures.Values, others.Values, tableChanges.Values, userTypes.Values);
@@ -206,13 +210,35 @@ public static class SqlScriptFolder
     private static CheckConstraint Check(CheckConstraintDefinition check, string? column, string file) =>
         new(check.ConstraintIdentifier?.Value, check.CheckCondition, column, check.NotForReplication, new SourceLocation(file, check.StartLine, check.StartColumn));
 
-    /// <summary>The table with each check that a NOCHECK statement names (or ALL) marked as possibly disabled.</summary>
-    private static Table Disable(Table table, List<(string? Constraint, SourceLocation At)> disabled)
+    /// <summary>ALTER TABLE … NOCHECK CONSTRAINT, or … WITH CHECK CHECK CONSTRAINT.</summary>
+    /// <param name="Validates">True for WITH CHECK CHECK CONSTRAINT; false for NOCHECK.</param>
+    /// <param name="At">Where it is.</param>
+    /// <param name="Constraints">The constraints named, or null for ALL.</param>
+    /// <param name="Order">Its position among the table's enforcement statements, in reading order.</param>
+    private sealed record Enforcement(bool Validates, IReadOnlyList<string>? Constraints, SourceLocation At, int Order)
     {
-        var checks = table.Checks.Select(c =>
-            disabled.FirstOrDefault(d => d.Constraint is null || (c.Name is not null && d.Constraint.Equals(c.Name, StringComparison.OrdinalIgnoreCase))) is { At: { } at }
-                ? c.WithDisabledAt(at)
-                : c).ToList();
+        public bool Covers(CheckConstraint check) =>
+            Constraints is null || (check.Name is not null && Constraints.Contains(check.Name, StringComparer.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// The table with each check that a NOCHECK statement may have left untrusted marked as possibly disabled.
+    /// </summary>
+    /// <remarks>
+    /// A constraint guarantees nothing unless SQL Server trusts it: while disabled it checks no row, and rows written
+    /// then stay after a plain re-enable. Only <c>WITH CHECK CHECK CONSTRAINT</c> validates every row, so a disable is
+    /// undone only by one that runs after it. Within one script statements run in order; across scripts the order is
+    /// not known, so a re-enable in another file doesn't count. (A constraint added later by ALTER TABLE, with or
+    /// without WITH NOCHECK, is not read at all; see OnlyTightens.)
+    /// </remarks>
+    private static Table Untrusted(Table table, List<Enforcement> changes)
+    {
+        var checks = table.Checks.Select(check =>
+        {
+            var disabled = changes.FirstOrDefault(d => !d.Validates && d.Covers(check)
+                && !changes.Any(v => v.Validates && v.Covers(check) && v.At.File == d.At.File && v.Order > d.Order));
+            return disabled is null ? check : check.WithDisabledAt(disabled.At);
+        }).ToList();
         return new Table(table.Name, table.Columns, table.PrimaryKey, table.At, checks);
     }
 

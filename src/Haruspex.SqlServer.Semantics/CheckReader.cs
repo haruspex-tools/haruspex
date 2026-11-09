@@ -9,8 +9,16 @@ namespace Haruspex.SqlServer.Semantics;
 /// narrower than the data.
 /// </summary>
 /// <remarks>
-/// <para><b>What is read.</b> A constraint that refers to this column and no other, enabled and not
-/// <c>NOT FOR REPLICATION</c>, whose condition is built from these by AND (each conjunct on its own) and OR (only of
+/// <para><b>Only a trusted constraint guarantees anything.</b> A constraint checks no row while it is disabled
+/// (<c>ALTER TABLE … NOCHECK CONSTRAINT</c>), and one added <c>WITH NOCHECK</c> never checked the rows already
+/// there; either way SQL Server marks it not trusted, and the data may break it. So a constraint that the source
+/// may have disabled is not read (unless <c>WITH CHECK CHECK CONSTRAINT</c>, which validates every row, follows in
+/// the same script; Haruspex.SqlServer.Sources records which), a constraint added by <c>ALTER TABLE</c> is not
+/// read at all, and nor is one that is <c>NOT FOR REPLICATION</c>, which a replication agent's writes bypass. All
+/// observed, and kept as CheckConstraintObservationTests. What the source can't show is a live database that has
+/// drifted from it: a constraint disabled by hand on the server is outside static analysis, and a project's facts
+/// hold only for a database deployed from it and not changed since.</para>
+/// <para><b>What is read.</b> A constraint that refers to this column and no other, trusted as above, whose condition is built from these by AND (each conjunct on its own) and OR (only of
 /// value sets):</para>
 /// <list type="bullet">
 /// <item><c>col IN (literal, …)</c> and <c>col = literal</c>: a value set;</item>

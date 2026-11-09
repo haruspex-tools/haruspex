@@ -110,6 +110,40 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
         Assert.False(await Succeeds("CREATE TABLE dbo.obs (m money NULL CHECK (m <= 1.00006));", "INSERT INTO dbo.obs VALUES (1.0001)"));
     }
 
+    // ---- trust --------------------------------------------------------------------------------------
+
+    private const string Trusted = "CREATE TABLE dbo.obs (i int NULL CONSTRAINT ck_obs CHECK (i > 0));";
+
+    private Task<object?> NotTrusted(string setup) =>
+        Query(Trusted + setup, "SELECT is_not_trusted FROM sys.check_constraints WHERE name = 'ck_obs';");
+
+    [Fact]
+    public async Task A_constraint_disabled_by_nocheck_checks_no_row_and_is_not_trusted()
+    {
+        Assert.True(await Succeeds(Trusted + " ALTER TABLE dbo.obs NOCHECK CONSTRAINT ck_obs;", "INSERT INTO dbo.obs VALUES (-5)"));
+        Assert.Equal(true, await NotTrusted(" ALTER TABLE dbo.obs NOCHECK CONSTRAINT ck_obs;"));
+    }
+
+    [Fact]
+    public async Task A_plain_check_constraint_re_enables_without_validating_so_the_constraint_stays_untrusted() =>
+        Assert.Equal(true, await NotTrusted(" ALTER TABLE dbo.obs NOCHECK CONSTRAINT ck_obs; INSERT INTO dbo.obs VALUES (-5); ALTER TABLE dbo.obs CHECK CONSTRAINT ck_obs;"));
+
+    [Fact]
+    public async Task With_check_check_constraint_validates_every_row_so_afterwards_it_holds()
+    {
+        Assert.Equal(false, await NotTrusted(" ALTER TABLE dbo.obs NOCHECK CONSTRAINT ck_obs; ALTER TABLE dbo.obs WITH CHECK CHECK CONSTRAINT ck_obs;"));
+        Assert.False(await Succeeds(Trusted + " ALTER TABLE dbo.obs NOCHECK CONSTRAINT ck_obs; INSERT INTO dbo.obs VALUES (-5);", "ALTER TABLE dbo.obs WITH CHECK CHECK CONSTRAINT ck_obs"));
+    }
+
+    [Fact]
+    public async Task A_constraint_added_with_nocheck_leaves_existing_rows_that_break_it()
+    {
+        const string late = "CREATE TABLE dbo.obs (i int NULL); INSERT INTO dbo.obs VALUES (-5); ALTER TABLE dbo.obs WITH NOCHECK ADD CONSTRAINT ck_obs CHECK (i > 0);";
+
+        Assert.Equal(-5, await Query(late, "SELECT MIN(i) FROM dbo.obs;"));
+        Assert.Equal(true, await Query(late, "SELECT is_not_trusted FROM sys.check_constraints WHERE name = 'ck_obs';"));
+    }
+
     // ---- null ---------------------------------------------------------------------------------------
 
     [Fact]

@@ -19,6 +19,8 @@ export const TicketRowsRowSchema = z.object({
   tag_utf8: z.string().max(12).nullable() /* varchar(12) counts bytes, and UTF-8 takes up to four per character: an upper bound */,
   pad_utf8: z.string().max(4).nullable() /* char(4) pads to 4 bytes, and UTF-8 takes up to four per character, so the length is at most 4 */,
   muted: z.int32().nullable(),
+  restored: z.int().gt(0).max(2147483647).nullable(),
+  late: z.int32().nullable(),
   owner_name: z.string().min(2).max(20).nullable(),
   owner_grade: z.string().length(1).nullable() /* one of "A", "B" as the database compares strings (case, accents and trailing spaces may differ), so not an enum */,
 })

@@ -1,6 +1,7 @@
 -- One column per kind of fact the schema can prove: alias types, value sets, ranges (inclusive and exclusive),
 -- minimum lengths, and lengths in each encoding. Some constraints are there to be ignored: one on two columns,
--- one NOT FOR REPLICATION, and one a later script disables (ticket_nocheck.sql). replicated is left out of the
+-- one NOT FOR REPLICATION, one a later script disables (ticket_nocheck.sql), and one added later WITH NOCHECK
+-- (ticket_late.sql); and one that is disabled and validated again (ticket_restored.sql), which holds. replicated is left out of the
 -- procedures: its constraint is enforced on every write but a replication agent's, so the seed can't reach the
 -- type's own edges there, and the unit tests show the constraint is not read.
 CREATE TABLE chk.ticket
@@ -23,6 +24,10 @@ CREATE TABLE chk.ticket
     pad_utf8    char(4)        COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL,
     muted       int            NULL CONSTRAINT ck_ticket_muted CHECK (muted > 0),
     replicated  int            NULL CONSTRAINT ck_ticket_replicated CHECK NOT FOR REPLICATION (replicated > 0),
+    -- Disabled and then validated again by ticket_restored.sql, so trusted.
+    restored    int            NULL CONSTRAINT ck_ticket_restored CHECK (restored > 0),
+    -- Constrained only by ticket_late.sql, WITH NOCHECK, after a row that breaks it.
+    late        int            NULL,
     CONSTRAINT ck_ticket_rate CHECK (rate > 0 AND rate < 1),
     CONSTRAINT ck_ticket_pair CHECK (score <= priority * 20)
 );

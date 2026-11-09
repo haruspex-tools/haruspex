@@ -146,7 +146,7 @@
           "nullableBecause": [
             {
               "rule": "outer-join",
-              "at": "procedures/list_tickets.sql:35:11"
+              "at": "procedures/list_tickets.sql:37:11"
             }
           ]
         },
@@ -180,7 +180,7 @@
           "nullableBecause": [
             {
               "rule": "outer-join",
-              "at": "procedures/list_tickets.sql:35:11"
+              "at": "procedures/list_tickets.sql:37:11"
             }
           ]
         }
@@ -557,7 +557,7 @@
               ],
               "from": [
                 {
-                  "check": "tables/ticket.sql:21:70"
+                  "check": "tables/ticket.sql:22:70"
                 }
               ]
             }
@@ -648,6 +648,66 @@
           ]
         },
         {
+          "name": "restored",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": 0,
+              "inclusive": false,
+              "from": {
+                "check": "chk.ck_ticket_restored"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.restored"
+            }
+          ]
+        },
+        {
+          "name": "late",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.late"
+            }
+          ]
+        },
+        {
           "name": "owner",
           "type": {
             "ref": "ListTicketsOwner"
@@ -657,7 +717,7 @@
           "nullableBecause": [
             {
               "rule": "all-fields-null",
-              "at": "procedures/list_tickets.sql:23:8"
+              "at": "procedures/list_tickets.sql:25:8"
             }
           ]
         },
@@ -674,7 +734,7 @@
           "nullableBecause": [
             {
               "rule": "empty-subquery",
-              "at": "procedures/list_tickets.sql:25:8"
+              "at": "procedures/list_tickets.sql:27:8"
             }
           ]
         }

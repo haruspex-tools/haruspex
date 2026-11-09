@@ -82,6 +82,17 @@ The SQL Server front end derives them from types (`tinyint`'s range, `decimal(p,
 comparisons combined by AND give bounds; `len(col) > n` and `col <> ''` give a minimum length. Anything else is
 ignored, which is always safe. `Haruspex.SqlServer.Semantics` (`CheckReader`) says why each form is sound.
 
+Only a **trusted** constraint is read. One disabled by `ALTER TABLE … NOCHECK CONSTRAINT` checks no row, and one
+added `WITH NOCHECK` never checked the rows already there, so neither guarantees anything; they are ignored, as is
+`NOT FOR REPLICATION`. A disabled constraint counts again only when `WITH CHECK CHECK CONSTRAINT`, which validates
+every row, follows it in the same script (across scripts the order isn't known).
+
+**The facts are about the project, not about a live database.** They hold for a database deployed from the project
+and not changed since. A database can drift from its project, for example through a constraint disabled by hand on
+the server, a column altered outside a deployment, or rows written while a constraint was off. Static analysis can't
+see that. Comparing a deployed database with its project is a job for a schema-compare or a later haruspex check,
+not for these facts.
+
 ## Decisions
 
 - **Presence is separate from nullability.** Each construct decides presence on its own: `FOR JSON` leaves

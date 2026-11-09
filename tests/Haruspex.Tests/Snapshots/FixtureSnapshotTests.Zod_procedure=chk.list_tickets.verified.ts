@@ -32,6 +32,8 @@ export const ListTicketsRowSchema = z.object({
   tagUtf8: z.string().max(12).optional() /* varchar(12) counts bytes, and UTF-8 takes up to four per character: an upper bound */,
   padUtf8: z.string().max(4).optional() /* char(4) pads to 4 bytes, and UTF-8 takes up to four per character, so the length is at most 4 */,
   muted: z.int32().optional(),
+  restored: z.int().gt(0).max(2147483647).optional(),
+  late: z.int32().optional(),
   owner: ListTicketsOwnerSchema.optional(),
   events: z.array(ListTicketsEventSchema).optional(),
 })

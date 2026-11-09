@@ -19,6 +19,8 @@ SELECT t.ticket_id AS id,
        t.tag_utf8,
        t.pad_utf8,
        t.muted,
+       t.restored,
+       t.late,
        o.name AS owner_name,
        o.grade AS owner_grade
 FROM chk.ticket AS t

@@ -20,6 +20,8 @@ SELECT t.ticket_id AS id,
        t.tag_utf8 AS tagUtf8,
        t.pad_utf8 AS padUtf8,
        t.muted,
+       t.restored,
+       t.late,
        o.name AS [owner.name],
        o.grade AS [owner.grade],
        (
