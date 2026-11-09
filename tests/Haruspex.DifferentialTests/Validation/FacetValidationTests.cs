@@ -101,6 +101,16 @@ public class FacetValidationTests
         Assert.Single(Row(Text("varchar(9)", facets), "opened").Violations);
     }
 
+    [Fact]
+    public void A_set_exact_but_for_trailing_spaces_is_matched_after_removing_them()
+    {
+        var facets = new IrFacets(Values: new IrValueSet([new IrValue("a.b", true)], IrValueMatch.Padded, [From]));
+
+        Assert.Equal(["value a.b"], Edges(Row(Text("varchar(9)", facets), "a.b   ")));
+        Assert.Single(Row(Text("varchar(9)", facets), "A.B").Violations);
+        Assert.Single(Row(Text("varchar(9)", facets), " a.b").Violations);
+    }
+
     // ---- numbers ------------------------------------------------------------------------------------
 
     private static IrFacets Bounds(string min, bool minInclusive, string max, bool maxInclusive, IrDigits? digits = null) =>
@@ -169,7 +179,7 @@ public class FacetValidationTests
         var violation = Assert.Single(Json(Number(IrFormats.Int32, "int", Bounds("1", true, "5", true)), "7").Violations);
 
         Assert.Equal("results[0][0].v", violation.Path);
-        Assert.Equal("at most 5 (int)", violation.Claim);
+        Assert.Equal("at most 5 (int; check dbo.ck)", violation.Claim);
         Assert.Equal("7", violation.Value);
     }
 }

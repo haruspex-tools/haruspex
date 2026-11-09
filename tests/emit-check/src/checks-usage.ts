@@ -37,6 +37,7 @@ export const row: TicketRowsRow = {
   title: 'T',
   note: null,
   region: null,
+  sigil: null,
   tag_utf8: null,
   pad_utf8: null,
   muted: null,

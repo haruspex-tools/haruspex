@@ -82,6 +82,14 @@ public class ZodFacetsTests
     }
 
     [Fact]
+    public void A_set_of_strings_exact_but_for_trailing_spaces_is_a_regex_with_its_items_escaped() =>
+        Assert.Equal(
+            "z.string().regex(/^(?:open|a\\u002eb|\\u002f\\u002a\\u005c|)\\u0020*$/).max(10)",
+            Json(Text("varchar(10)", new IrFacets(
+                Length: new IrLength(10, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, Type),
+                Values: Strings(IrValueMatch.Padded, "open", "a.b", "/*\\", "")))));
+
+    [Fact]
     public void A_value_in_a_comment_cannot_close_it() =>
         Assert.DoesNotContain("*/ x", Json(Text("varchar(10)", new IrFacets(Values: Strings(IrValueMatch.Collation, "*/ x")))), StringComparison.Ordinal);
 

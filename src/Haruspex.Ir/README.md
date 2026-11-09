@@ -69,7 +69,7 @@ UNKNOWN, as it is for null, so a constraint never makes a value non-null and a v
 | `minLength` | at least `value` UTF-16 code units |
 | `digits` | an exact decimal of at most `precision` digits, `scale` of them after the point |
 | `min` / `max` | a bound, `inclusive` or not. `value` is a JSON number written from exact decimal text (`99999999999999999.99`, `-9223372036854775808`), so a reader that parses decimals loses nothing |
-| `values` | the value is one of `items` (strings, or numbers as exact JSON numbers). `match` is `exact`, or `collation`: equal under the database's string comparison, which may ignore case, accents and trailing spaces, so `"Open "` can be a value of a set holding `"open"`. A `collation` set is true but not exact, and an emitter must not treat it as an enum |
+| `values` | the value is one of `items` (strings, or numbers as exact JSON numbers). `match` is `exact`, or `collation`: equal under the database's string comparison, which may ignore case, accents and trailing spaces, so `"Open "` can be a value of a set holding `"open"`. A `collation` set is true but not exact, and an emitter must not treat it as an enum. `padded`: one of the items followed by any number of spaces (U+0020), as under a binary collation, which compares exactly but, like every comparison in SQL Server, ignores trailing spaces |
 
 Facets travel with a value only while it passes through unchanged: a column reference, under aliases, through
 joins and FOR JSON nesting. Through any expression they are dropped, which leaves the type wider and still true.
@@ -84,13 +84,17 @@ ignored, which is always safe. `Haruspex.SqlServer.Semantics` (`CheckReader`) sa
 
 Only a **trusted** constraint is read. One disabled by `ALTER TABLE … NOCHECK CONSTRAINT` checks no row, and one
 added `WITH NOCHECK` never checked the rows already there, so neither guarantees anything; they are ignored, as is
-`NOT FOR REPLICATION`. A disabled constraint counts again only when `WITH CHECK CHECK CONSTRAINT`, which validates
-every row, follows it in the same script (across scripts the order isn't known).
+`NOT FOR REPLICATION`. A NOCHECK counts wherever it is in a script, under IF or in a procedure body
+(the bulk-load pattern) included, and when its table has no schema it may mean a table of that name in any schema;
+when it names a constraint the table doesn't declare, it may mean an unnamed one by its generated name. A disabled
+constraint counts again only when `WITH CHECK CHECK CONSTRAINT`, which validates every row, follows it in the same
+script as a statement of its own, naming the table with its schema (across scripts the order isn't known, and inside
+a body it may not run).
 
 **The facts are about the project, not about a live database.** They hold for a database deployed from the project
 and not changed since. A database can drift from its project, for example through a constraint disabled by hand on
-the server, a column altered outside a deployment, or rows written while a constraint was off. Static analysis can't
-see that. Comparing a deployed database with its project is a job for a schema-compare or a later haruspex check,
+the server, a column altered outside a deployment, rows written while a constraint was off, or a NOCHECK run from
+dynamic SQL (`EXEC` of a string), whose text isn't visible. Static analysis can't see any of that. Comparing a deployed database with its project is a job for a schema-compare or a later haruspex check,
 not for these facts.
 
 ## Decisions

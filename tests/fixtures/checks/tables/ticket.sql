@@ -20,6 +20,8 @@ CREATE TABLE chk.ticket
     title       nvarchar(60)   NOT NULL CONSTRAINT ck_ticket_title CHECK (len(title) > 0),
     note        varchar(30)    COLLATE Latin1_General_100_CI_AS NULL CONSTRAINT ck_ticket_note CHECK (note <> ''),
     region      char(2)        COLLATE Latin1_General_100_CI_AS NULL CHECK (region IN ('NE', 'SW')),
+    -- A binary collation: exact but for trailing spaces. The items have regular-expression characters in them.
+    sigil       varchar(6)     COLLATE Latin1_General_100_BIN2 NULL CONSTRAINT ck_ticket_sigil CHECK (sigil IN ('a.b', 'c+d', '(x)')),
     tag_utf8    varchar(12)    COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL,
     pad_utf8    char(4)        COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL,
     muted       int            NULL CONSTRAINT ck_ticket_muted CHECK (muted > 0),

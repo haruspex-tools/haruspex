@@ -411,6 +411,42 @@
           ]
         },
         {
+          "name": "sigil",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(6)"
+              }
+            },
+            "values": {
+              "match": "padded",
+              "items": [
+                "a.b",
+                "c+d",
+                "(x)"
+              ],
+              "from": [
+                {
+                  "check": "chk.ck_ticket_sigil"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.sigil"
+            }
+          ]
+        },
+        {
           "name": "tag_utf8",
           "type": {
             "kind": "string",
@@ -570,7 +606,7 @@
           "nullableBecause": [
             {
               "rule": "outer-join",
-              "at": "procedures/ticket_rows.sql:27:11"
+              "at": "procedures/ticket_rows.sql:28:11"
             }
           ]
         },
@@ -604,7 +640,7 @@
           "nullableBecause": [
             {
               "rule": "outer-join",
-              "at": "procedures/ticket_rows.sql:27:11"
+              "at": "procedures/ticket_rows.sql:28:11"
             }
           ]
         }

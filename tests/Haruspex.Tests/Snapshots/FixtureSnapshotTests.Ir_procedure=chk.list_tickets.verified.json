@@ -146,7 +146,7 @@
           "nullableBecause": [
             {
               "rule": "outer-join",
-              "at": "procedures/list_tickets.sql:37:11"
+              "at": "procedures/list_tickets.sql:38:11"
             }
           ]
         },
@@ -180,7 +180,7 @@
           "nullableBecause": [
             {
               "rule": "outer-join",
-              "at": "procedures/list_tickets.sql:37:11"
+              "at": "procedures/list_tickets.sql:38:11"
             }
           ]
         }
@@ -572,6 +572,42 @@
           ]
         },
         {
+          "name": "sigil",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(6)"
+              }
+            },
+            "values": {
+              "match": "padded",
+              "items": [
+                "a.b",
+                "c+d",
+                "(x)"
+              ],
+              "from": [
+                {
+                  "check": "chk.ck_ticket_sigil"
+                }
+              ]
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.ticket.sigil"
+            }
+          ]
+        },
+        {
           "name": "tagUtf8",
           "type": {
             "kind": "string",
@@ -717,7 +753,7 @@
           "nullableBecause": [
             {
               "rule": "all-fields-null",
-              "at": "procedures/list_tickets.sql:25:8"
+              "at": "procedures/list_tickets.sql:26:8"
             }
           ]
         },
@@ -734,7 +770,7 @@
           "nullableBecause": [
             {
               "rule": "empty-subquery",
-              "at": "procedures/list_tickets.sql:27:8"
+              "at": "procedures/list_tickets.sql:28:8"
             }
           ]
         }

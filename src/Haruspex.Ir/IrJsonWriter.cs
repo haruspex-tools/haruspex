@@ -267,6 +267,7 @@ public static class IrJsonWriter
             {
                 IrValueMatch.Exact => "exact",
                 IrValueMatch.Collation => "collation",
+                IrValueMatch.Padded => "padded",
                 _ => throw new ArgumentOutOfRangeException(nameof(facets), values.Match, "Unknown match."),
             });
             json.WriteStartArray("items");

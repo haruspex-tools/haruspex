@@ -323,9 +323,12 @@ public static partial class IrValidator
 
             if (facets.Values is { } strings)
             {
-                var match = strings.Items.FirstOrDefault(i => i.IsString && (strings.Match == IrValueMatch.Exact
-                    ? i.Text.Equals(text, StringComparison.Ordinal)
-                    : i.Text.TrimEnd(' ').Equals(text.TrimEnd(' '), StringComparison.OrdinalIgnoreCase)));
+                var match = strings.Items.FirstOrDefault(i => i.IsString && strings.Match switch
+                {
+                    IrValueMatch.Exact => i.Text.Equals(text, StringComparison.Ordinal),
+                    IrValueMatch.Padded => text.TrimEnd(' ').Equals(i.Text, StringComparison.Ordinal),
+                    _ => i.Text.TrimEnd(' ').Equals(text.TrimEnd(' '), StringComparison.OrdinalIgnoreCase),
+                });
                 if (match is null)
                     return $"one of {string.Join(", ", strings.Items.Select(i => JsonSerializer.Serialize(i.Text)))} ({strings.Match.ToString().ToLowerInvariant()})";
                 edge("value " + match.Text);
@@ -344,7 +347,7 @@ public static partial class IrValidator
         {
             var bound = Exact.Parse(min.Value);
             if (min.Inclusive ? number.CompareTo(bound) < 0 : number.CompareTo(bound) <= 0)
-                return $"{(min.Inclusive ? "at least" : "more than")} {min.Value} ({scalar.Sql})";
+                return $"{(min.Inclusive ? "at least" : "more than")} {min.Value} ({scalar.Sql}; {min.From.Kind} {min.From.Ref})";
             if (min.Inclusive ? number.CompareTo(bound) == 0 : scale is { } s && number.CompareTo(bound.Step(s, 1)) == 0)
                 edge("min");
         }
@@ -353,7 +356,7 @@ public static partial class IrValidator
         {
             var bound = Exact.Parse(max.Value);
             if (max.Inclusive ? number.CompareTo(bound) > 0 : number.CompareTo(bound) >= 0)
-                return $"{(max.Inclusive ? "at most" : "less than")} {max.Value} ({scalar.Sql})";
+                return $"{(max.Inclusive ? "at most" : "less than")} {max.Value} ({scalar.Sql}; {max.From.Kind} {max.From.Ref})";
             if (max.Inclusive ? number.CompareTo(bound) == 0 : scale is { } s && number.CompareTo(bound.Step(s, -1)) == 0)
                 edge("max");
         }

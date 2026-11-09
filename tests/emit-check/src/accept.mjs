@@ -26,8 +26,11 @@ for (const { run, schema, value } of cases) {
   if (!result.success) {
     rejected++
     console.log(`${run}: ${schema} rejected the output:`)
-    for (const issue of result.error.issues.slice(0, 10))
-      console.log(`  ${issue.path.join('.')}: ${issue.message} (got ${JSON.stringify(issue.input ?? null)})`)
+    for (const issue of result.error.issues.slice(0, 10)) {
+      // Zod 4 leaves the value out of an issue unless asked, so it is looked up by the issue's path.
+      const got = issue.path.reduce((v, key) => (v == null ? v : v[key]), value)
+      console.log(`  ${issue.path.join('.')}: ${issue.message} (got ${JSON.stringify(got)})`)
+    }
   }
 }
 

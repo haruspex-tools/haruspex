@@ -33,7 +33,9 @@ namespace Haruspex.Emit.Zod;
 /// <c>varchar(n)</c> counts bytes, which is the same in a single-byte collation and only an upper bound in UTF-8 or a
 /// double-byte one; <c>char(n)</c> pads to <c>n</c> bytes, so <c>.length(n)</c> holds only in a single-byte
 /// collation. A set of strings from a CHECK constraint matches under the database's collation (case, accents and
-/// trailing spaces may differ), so it is a comment, never <c>z.enum</c>; only an exact set is.</para>
+/// trailing spaces may differ), so it is a comment, never <c>z.enum</c>; only an exact set is. Under a binary
+/// collation it is exact but for trailing spaces, which <c>.regex(/^(?:a|b)\u0020*$/)</c> says exactly (the type stays
+/// <c>string</c>, since TypeScript can't name "a followed by spaces").</para>
 /// </remarks>
 internal static class Facets
 {
@@ -52,6 +54,9 @@ internal static class Facets
             notes.Add("one of " + string.Join(", ", set.Items.Select(i => Quote(i.Text)))
                 + " as the database compares strings (case, accents and trailing spaces may differ), so not an enum");
         }
+
+        if (facets?.Values is { Match: IrValueMatch.Padded } padded && padded.Items.All(i => i.IsString))
+            code += $".regex(/^(?:{string.Join("|", padded.Items.Select(i => RegexEscape(i.Text)))})\\u0020*$/)";
 
         if (facets?.MinLength is { } minLength)
             code += $".min({minLength.Value})";
@@ -201,6 +206,14 @@ internal static class Facets
             result = result.TrimEnd('0').TrimEnd('.');
         return unscaled.Sign < 0 ? "-" + result : result;
     }
+
+    /// <summary>
+    /// Text that matches itself in a regular expression literal: anything but a letter, digit or underscore as a
+    /// <c>\uXXXX</c> escape, which can't be a metacharacter, close the literal or break the line. Without the
+    /// <c>u</c> flag, a character outside the BMP is two such escapes, which match its UTF-16 code units in turn.
+    /// </summary>
+    private static string RegexEscape(string text) =>
+        string.Concat(text.Select(c => char.IsAsciiLetterOrDigit(c) || c == '_' ? c.ToString() : $"\\u{(int)c:x4}"));
 
     private static string Quote(string text) => "\"" + JsonEncodedText.Encode(text, JavaScriptEncoder.UnsafeRelaxedJsonEscaping) + "\"";
 }

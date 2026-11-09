@@ -72,7 +72,12 @@ internal static class SqlTypes
                     values.Numbers is { } numbers
                         ? [.. numbers.Select(n => new IrValue(n.ToString(), IsString: false))]
                         : [.. values.Strings!.Select(s => new IrValue(s, IsString: true))],
-                    values.Comparison == ValueComparison.Exact ? IrValueMatch.Exact : IrValueMatch.Collation,
+                    values.Comparison switch
+                    {
+                        ValueComparison.Exact => IrValueMatch.Exact,
+                        ValueComparison.Padded => IrValueMatch.Padded,
+                        _ => IrValueMatch.Collation,
+                    },
                     [.. values.From.Select(Source)])
                 : null);
         return irFacets.IsEmpty ? null : irFacets;

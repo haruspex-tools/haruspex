@@ -220,6 +220,12 @@ public enum IrValueMatch
     /// exact set, so an emitter must not treat it as one.
     /// </summary>
     Collation,
+
+    /// <summary>
+    /// Every value is one of the items followed by any number of spaces (U+0020): exact but for the trailing spaces
+    /// SQL Server ignores in comparisons, as under a binary collation.
+    /// </summary>
+    Padded,
 }
 
 /// <summary>Where a fact came from, for the origins graph.</summary>

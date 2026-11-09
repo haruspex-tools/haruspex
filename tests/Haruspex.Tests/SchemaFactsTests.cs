@@ -21,10 +21,10 @@ public class SchemaFactsTests
     }
 
     /// <summary>The facts about column <paramref name="column"/> of <c>dbo.t</c>.</summary>
-    private static ColumnFacts Facts(string sql, string column = "c")
+    private static ColumnFacts Facts(string sql, string column = "c", string schema = "dbo")
     {
         var model = Model(sql);
-        var table = model.FindTable(new ObjectName("dbo", "t"))!;
+        var table = model.FindTable(new ObjectName(schema, "t"))!;
         return SchemaRules.ColumnFacts(model, table, table.Column(column)!);
     }
 
@@ -185,6 +185,21 @@ public class SchemaFactsTests
         Assert.Equal(ValueComparison.Collation, values.Comparison);
         Assert.Equal("check ck_c", Source(Assert.Single(values.From)));
     }
+
+    [Theory]
+    // A binary collation compares exactly but for trailing spaces.
+    [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN ('open', 'a.b'))", ValueComparison.Padded)]
+    [InlineData("char(4) COLLATE Latin1_General_BIN NULL CHECK (c = 'NE')", ValueComparison.Padded)]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2_UTF8 NULL CHECK (c IN (N'é'))", ValueComparison.Padded)]
+    [InlineData("nvarchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN (N'é', N'ŝ'))", ValueComparison.Padded)]
+    // Not binary, or no collation declared: case, accents and more may differ.
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CS_AS NULL CHECK (c IN ('open'))", ValueComparison.Collation)]
+    [InlineData("varchar(10) NULL CHECK (c IN ('open'))", ValueComparison.Collation)]
+    // A literal outside ASCII in a code-page column could be converted to another character ('?') before comparing.
+    [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN (N'é'))", ValueComparison.Collation)]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN ('a\\b'))", ValueComparison.Collation)]
+    public void A_set_of_strings_is_exact_but_for_trailing_spaces_only_under_a_binary_collation(string definition, ValueComparison comparison) =>
+        Assert.Equal(comparison, Column(definition).Values!.Comparison);
 
     [Theory]
     [InlineData("int NULL CHECK (c IN (3, 1, 2))", "1,2,3")]
@@ -356,6 +371,41 @@ public class SchemaFactsTests
     [InlineData("ALTER TABLE dbo.t ADD CONSTRAINT ck_late CHECK (c > 0);")]
     public void A_constraint_added_by_alter_table_is_not_read(string alter) =>
         Assert.Equal("-2147483648", Bound(Facts("CREATE TABLE dbo.t (c int NULL);\nGO\n" + alter).Min));
+
+    [Theory]
+    // A NOCHECK anywhere it could run disables the constraint: under IF, in a block, in TRY/CATCH, in a loop, and in
+    // a procedure, trigger or function body (the bulk-load pattern). Whether it runs isn't knowable, so it might.
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;")]
+    [InlineData("BEGIN ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c; END")]
+    [InlineData("BEGIN TRY ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c; END TRY BEGIN CATCH END CATCH")]
+    [InlineData("WHILE 1 = 0 ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;")]
+    [InlineData("CREATE PROCEDURE dbo.load AS BEGIN ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c; INSERT dbo.t (c) VALUES (-7); ALTER TABLE dbo.t CHECK CONSTRAINT ck_c; END")]
+    [InlineData("CREATE TRIGGER dbo.tr ON dbo.t AFTER INSERT AS ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;")]
+    // A WITH CHECK CHECK inside a body may never run, so it restores nothing.
+    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nGO\nCREATE PROCEDURE dbo.fix AS ALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ck_c;")]
+    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nGO\nIF 1 = 1 ALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ck_c;")]
+    public void A_nocheck_at_any_depth_disables_the_constraint(string script) =>
+        Assert.Equal("-2147483648", Bound(Facts(Checked + script).Min));
+
+    [Fact]
+    public void An_unqualified_nocheck_disables_the_constraint_of_a_table_of_that_name_in_any_schema() =>
+        Assert.Equal("-2147483648", Bound(Facts(
+            "CREATE TABLE prb.t (c int NULL CONSTRAINT ck_c CHECK (c > 0));\nGO\nALTER TABLE t NOCHECK CONSTRAINT ck_c;", schema: "prb").Min));
+
+    [Fact]
+    public void An_unqualified_with_check_check_does_not_restore_because_which_table_it_means_is_not_known() =>
+        Assert.Equal("-2147483648", Bound(Facts(
+            "CREATE TABLE prb.t (c int NULL CONSTRAINT ck_c CHECK (c > 0));\nGO\nALTER TABLE prb.t NOCHECK CONSTRAINT ck_c;\nGO\nALTER TABLE t WITH CHECK CHECK CONSTRAINT ck_c;", schema: "prb").Min));
+
+    [Fact]
+    public void A_nocheck_of_a_name_the_table_does_not_declare_may_mean_an_unnamed_check()
+    {
+        // An unnamed check gets a system-generated name, which a script copied from a live database may use.
+        const string sql = "CREATE TABLE dbo.t (c int NULL CHECK (c > 0), d int NULL CONSTRAINT ck_d CHECK (d > 0));\nGO\nALTER TABLE dbo.t NOCHECK CONSTRAINT CK__t__c__3A81B327;";
+
+        Assert.Equal("-2147483648", Bound(Facts(sql).Min));
+        Assert.Equal("excl 0", Bound(Facts(sql, "d").Min));
+    }
 
     [Fact]
     public void Nocheck_of_another_constraint_leaves_this_one_read() =>

@@ -12,11 +12,12 @@ namespace Haruspex.SqlServer.Semantics;
 /// <para><b>Only a trusted constraint guarantees anything.</b> A constraint checks no row while it is disabled
 /// (<c>ALTER TABLE … NOCHECK CONSTRAINT</c>), and one added <c>WITH NOCHECK</c> never checked the rows already
 /// there; either way SQL Server marks it not trusted, and the data may break it. So a constraint that the source
-/// may have disabled is not read (unless <c>WITH CHECK CHECK CONSTRAINT</c>, which validates every row, follows in
-/// the same script; Haruspex.SqlServer.Sources records which), a constraint added by <c>ALTER TABLE</c> is not
+/// may have disabled, by a NOCHECK anywhere (a procedure body included), is not read (unless
+/// <c>WITH CHECK CHECK CONSTRAINT</c>, which validates every row, follows in the same script; Haruspex.SqlServer.Sources
+/// records which), a constraint added by <c>ALTER TABLE</c> is not
 /// read at all, and nor is one that is <c>NOT FOR REPLICATION</c>, which a replication agent's writes bypass. All
 /// observed, and kept as CheckConstraintObservationTests. What the source can't show is a live database that has
-/// drifted from it: a constraint disabled by hand on the server is outside static analysis, and a project's facts
+/// drifted from it: a constraint disabled by hand on the server, or by a NOCHECK in dynamic SQL, is outside static analysis, and a project's facts
 /// hold only for a database deployed from it and not changed since.</para>
 /// <para><b>What is read.</b> A constraint that refers to this column and no other, trusted as above, whose condition is built from these by AND (each conjunct on its own) and OR (only of
 /// value sets):</para>
@@ -40,9 +41,10 @@ namespace Haruspex.SqlServer.Semantics;
 /// CheckConstraintObservationTests.) Floating-point columns are not read at all: a literal is rounded to the column's binary
 /// type before comparison, and FOR JSON writes 16 significant digits, so a bound would need care this does not
 /// take. Strings compare under the column's collation with trailing spaces ignored, so a value set of strings is
-/// <see cref="ValueComparison.Collation"/>, never exact: <c>'Open '</c> passes <c>IN ('open')</c> in the default
-/// case-insensitive collation, and even a binary collation ignores trailing spaces (both observed; see the
-/// differential tests' CheckConstraintObservationTests).</para>
+/// never exact: <c>'Open '</c> passes <c>IN ('open')</c> in the default case-insensitive collation, and even a
+/// binary collation ignores trailing spaces (both observed; see the differential tests'
+/// CheckConstraintObservationTests). Under a binary collation it is <see cref="ValueComparison.Padded"/> (exact but
+/// for trailing spaces), and otherwise <see cref="ValueComparison.Collation"/>; see StringComparisonOf.</para>
 /// <para><b>Minimum length.</b> <c>LEN</c> does not count trailing spaces, and counts a character (a surrogate pair
 /// under an <c>_SC</c> collation, several bytes in UTF-8) as one, so a value's UTF-16 length is at least its
 /// <c>LEN</c>. <c>col &lt;&gt; ''</c> is FALSE for an empty string (and for spaces, which compare equal to it), so
@@ -75,7 +77,30 @@ public static class CheckReader
             return null;
 
         var reader = new Reader(column.Name, family, new CheckSource(table, check));
-        return reader.Condition(check.Expression)?.ToFacts(type, reader.Source);
+        var proved = reader.Condition(check.Expression);
+        return proved?.ToFacts(type, reader.Source, StringComparisonOf(type.BuiltIn, column.Collation, proved.Strings));
+    }
+
+    /// <summary>
+    /// How a column's strings compare with a CHECK's: exactly but for trailing spaces under a binary collation
+    /// (<c>_BIN</c>, <c>_BIN2</c>), which compares code points (or bytes) and, like every comparison in SQL Server,
+    /// ignores trailing spaces; otherwise under the collation, which may also ignore case, accents, width and more.
+    /// </summary>
+    /// <remarks>
+    /// For <c>char</c> and <c>varchar</c> in a code page, a literal is converted to the code page before comparing,
+    /// and a character the code page lacks becomes another (often <c>?</c>), so a stored value could differ from the
+    /// literal. Only printable ASCII is the same in every code page SQL Server uses, and even there <c>\</c> and
+    /// <c>~</c> are left out (code page 932 has the yen sign at 0x5C). A set with anything else stays a collation
+    /// set. UTF-8 and Unicode columns hold every character, so they need no such care.
+    /// </remarks>
+    private static ValueComparison StringComparisonOf(SqlType type, string? collation, IReadOnlyList<string>? strings)
+    {
+        if (collation is null || !collation.Split('_').Any(t => t.Equals("BIN", StringComparison.OrdinalIgnoreCase) || t.Equals("BIN2", StringComparison.OrdinalIgnoreCase)))
+            return ValueComparison.Collation;
+        var codePage = type.Name is "char" or "varchar" && SchemaRules.EncodingOf(collation) != TextEncoding.Utf8;
+        return codePage && strings is not null && strings.Any(s => s.Any(c => c is < ' ' or > '}' or '\\'))
+            ? ValueComparison.Collation
+            : ValueComparison.Padded;
     }
 
     private static bool Same(string a, string b) => a.Equals(b, StringComparison.OrdinalIgnoreCase);
@@ -111,13 +136,13 @@ public static class CheckReader
     {
         public bool IsValueSet => (Numbers is not null || Strings is not null) && Min is null && Max is null && MinLength is null;
 
-        public ColumnFacts ToFacts(ResolvedType type, FactSource from) => new(
+        public ColumnFacts ToFacts(ResolvedType type, FactSource from, ValueComparison strings) => new(
             type,
             MinLength: MinLength is { } length ? new MinLengthFact(length, from) : null,
             Min: Min is { } min ? new BoundFact(min.Value, min.Inclusive, from) : null,
             Max: Max is { } max ? new BoundFact(max.Value, max.Inclusive, from) : null,
             Values: Numbers is not null || Strings is not null
-                ? new ValueSetFact(Numbers, Strings, Strings is not null ? ValueComparison.Collation : ValueComparison.Exact, [from])
+                ? new ValueSetFact(Numbers, Strings, Strings is not null ? strings : ValueComparison.Exact, [from])
                 : null);
     }
 
