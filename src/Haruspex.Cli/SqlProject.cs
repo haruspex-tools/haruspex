@@ -13,7 +13,7 @@ namespace Haruspex.Cli;
 /// <remarks>
 /// Before slice 2b this class was the whole front end. It is kept as the composition, here in the CLI, because
 /// composing the layers is the CLI's job and no layer below may know both how a model is read and how it is
-/// inferred. Selecting by pattern will move to Haruspex.Config when that exists.
+/// inferred. Selecting by pattern (and <see cref="ObjectPattern"/>) will move to Haruspex.Config when that exists.
 /// </remarks>
 public sealed class SqlProject
 {

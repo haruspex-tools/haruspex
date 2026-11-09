@@ -1,6 +1,6 @@
 # Haruspex.SqlServer.Sources
 
-Reads a SQL Server database project into a [Haruspex.SqlServer.Model](../Haruspex.SqlServer.Model/README.md):
+Reads a SQL Server database project into a [Haruspex.SqlServer.Model](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md):
 today a folder of `.sql` scripts, such as an SSDT or `Microsoft.Build.Sql` project's; later a DACPAC's
 `model.xml` as well. It parses with [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom),
 Microsoft's own T-SQL parser (MIT), and needs neither DacFx nor a database.

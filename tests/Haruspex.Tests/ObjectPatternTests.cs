@@ -1,3 +1,4 @@
+using Haruspex.Cli;
 using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Tests;

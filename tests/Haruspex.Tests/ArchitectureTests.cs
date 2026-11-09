@@ -16,7 +16,8 @@ namespace Haruspex.Tests;
 /// published package would depend on even when unused. The second also covers what the first cannot see: a
 /// constant from another assembly is inlined, leaving no reference behind. Framework assemblies are allowed
 /// everywhere except those named in <see cref="Layer.ForbiddenFramework"/>; every other assembly must be allowed
-/// by name.
+/// by name. Some framework types share an assembly with everything else (the file system's are in
+/// System.Runtime), so for those the assembly's type references are read too (<see cref="Layer.ForbiddenTypes"/>).
 /// </remarks>
 public class ArchitectureTests
 {
@@ -37,6 +38,13 @@ public class ArchitectureTests
     private static readonly string[] SourceFormats = ["System.Xml", "System.IO.Compression", "System.IO.Packaging"];
 
     /// <summary>
+    /// The file system's types. They live in System.Runtime with everything else, so no assembly reference shows
+    /// them; the type references do.
+    /// </summary>
+    private static readonly string[] FileSystem =
+        ["System.IO.File", "System.IO.Directory", "System.IO.FileInfo", "System.IO.DirectoryInfo", "System.IO.FileStream", "System.IO.FileSystemInfo"];
+
+    /// <summary>
     /// The table of layers (docs/architecture.md, from haruspex-design.md "Layers and what each may know"). A
     /// layer may refer to the layers and packages listed for it, and to nothing else of this repository's.
     /// </summary>
@@ -46,16 +54,16 @@ public class ArchitectureTests
 
         // Bodies are kept as ScriptDom fragments, so the model needs ScriptDom; it must not know where the
         // schema came from (Sources) or what a body's references point to (Semantics).
-        new(Model, Knows: [Diagnostics], Packages: [ScriptDom], ForbiddenFramework: SourceFormats),
+        new(Model, Knows: [Diagnostics], Packages: [ScriptDom], ForbiddenFramework: SourceFormats, ForbiddenTypes: FileSystem),
 
         // The only layer that reads files, and later a DACPAC's zip and XML.
         new(Sources, Knows: [Diagnostics, Model], Packages: [ScriptDom]),
 
         // Binding needs the model, never how it was read, and never the IR.
-        new(Semantics, Knows: [Diagnostics, Model], Packages: [ScriptDom], ForbiddenFramework: SourceFormats),
+        new(Semantics, Knows: [Diagnostics, Model], Packages: [ScriptDom], ForbiddenFramework: SourceFormats, ForbiddenTypes: FileSystem),
 
         // From bound bodies into the IR: not files, zips or XML, the emitters or the config file.
-        new(Inference, Knows: [Diagnostics, Model, Semantics, Ir], Packages: [ScriptDom], ForbiddenFramework: SourceFormats),
+        new(Inference, Knows: [Diagnostics, Model, Semantics, Ir], Packages: [ScriptDom], ForbiddenFramework: SourceFormats, ForbiddenTypes: FileSystem),
 
         // The IR knows no SQL of any dialect.
         new(Ir, Knows: [], Packages: []),
@@ -131,6 +139,23 @@ public class ArchitectureTests
     }
 
     [Fact]
+    public void Each_assembly_uses_no_type_its_layer_may_not_know()
+    {
+        var violations = new List<string>();
+        foreach (var (name, project) in Projects())
+        {
+            var path = Path.Combine(AppContext.BaseDirectory, project.AssemblyName + ".dll");
+            if (Layers.FirstOrDefault(l => l.Name == name) is not { ForbiddenTypes.Length: > 0 } layer || !File.Exists(path))
+                continue;
+
+            foreach (var type in TypeReferences(path).Where(layer.ForbiddenTypes.Contains))
+                violations.Add($"{name} uses {type}, which its layer may not know.");
+        }
+
+        Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
+    }
+
+    [Fact]
     public void Each_project_file_refers_only_to_what_its_layer_may_know()
     {
         var violations = new List<string>();
@@ -162,9 +187,12 @@ public class ArchitectureTests
     /// <param name="Packages">The assemblies of third-party packages it may refer to.</param>
     /// <param name="ForbiddenFramework">Prefixes of framework assemblies it must not refer to.</param>
     /// <param name="Planned">The layer has no code yet, so its project may not exist.</param>
-    private sealed record Layer(string Name, string[] Knows, string[] Packages, string[]? ForbiddenFramework = null, bool Planned = false)
+    /// <param name="ForbiddenTypes">Full names of framework types it must not use.</param>
+    private sealed record Layer(string Name, string[] Knows, string[] Packages, string[]? ForbiddenFramework = null, bool Planned = false, string[]? ForbiddenTypes = null)
     {
         public string[] ForbiddenFramework { get; } = ForbiddenFramework ?? [];
+
+        public string[] ForbiddenTypes { get; } = ForbiddenTypes ?? [];
     }
 
     private sealed record Project(string AssemblyName, IReadOnlyList<string> ProjectReferences, IReadOnlyList<string> PackageReferences);
@@ -193,6 +221,24 @@ public class ArchitectureTests
         using var pe = new PEReader(stream);
         var metadata = pe.GetMetadataReader();
         return [.. metadata.AssemblyReferences.Select(h => metadata.GetString(metadata.GetAssemblyReference(h).Name))];
+    }
+
+    /// <summary>The full names of the types the assembly refers to in other assemblies, nested types included.</summary>
+    private static List<string> TypeReferences(string path)
+    {
+        using var stream = File.OpenRead(path);
+        using var pe = new PEReader(stream);
+        var metadata = pe.GetMetadataReader();
+        return [.. metadata.TypeReferences.Select(h => FullName(metadata, h))];
+    }
+
+    private static string FullName(MetadataReader metadata, TypeReferenceHandle handle)
+    {
+        var type = metadata.GetTypeReference(handle);
+        var name = metadata.GetString(type.Name);
+        return type.ResolutionScope.Kind == HandleKind.TypeReference
+            ? FullName(metadata, (TypeReferenceHandle)type.ResolutionScope) + "+" + name
+            : metadata.GetString(type.Namespace) is { Length: > 0 } ns ? ns + "." + name : name;
     }
 
     /// <summary>An assembly of the shared framework the tests run on, which every layer may use.</summary>

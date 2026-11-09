@@ -49,7 +49,9 @@ holds the table above as data and fails when
   assembly's metadata, so it is what the code really uses);
 - a project file has a `ProjectReference` or `PackageReference` its row doesn't allow (what a published package
   would depend on, even if unused);
-- Model, Semantics or Inference refers to the framework's XML, compression or packaging assemblies.
+- Model, Semantics or Inference refers to the framework's XML, compression or packaging assemblies, or uses the
+  file system's types (`File`, `Directory`, `FileInfo`, `DirectoryInfo`, `FileStream`, `FileSystemInfo`). Those
+  types share `System.Runtime` with everything else, so the test reads each assembly's type references for them.
 
 Adding a layer means adding it to the table here and in the test, in the same change. Dependency direction
 erodes one convenient reference at a time, which is why it is checked rather than only written down.
@@ -68,7 +70,8 @@ the type was split rather than moved whole:
 | `ProcedureAnalyzer` (scopes, sources, aliases, column resolution, and shapes) | `Binder`, `BindingScope`, `BoundSource`, `ColumnBinding`, `BindingProblem` (Semantics); the rest of `ProcedureAnalyzer` (Inference) | Binding needs no IR. A binding problem has its own kind, which Inference maps to the IR's unknown reason. An outer join's optional side is recorded as structure (`BoundSource.OptionalSideOf`); that it makes a value nullable is decided in Inference. |
 | `UnknownShape` built by `SqlProject.Changed` for ALTER/DROP | `Redefinition` (Model), turned into an unknown by Semantics (tables) and Inference (procedures) | The doubt about which definition is in effect is a fact about the source; how it surfaces in the IR is inference's. |
 | `Diagnostic`, `SourceLocation` | moved whole to `Haruspex.Diagnostics` | Already one concern. The design gives a diagnostic a code and severity too; nothing needs them yet, so they were not added. |
-| `ObjectName`, `ObjectPattern` | moved whole to Model | Names are schema data. Patterns select model objects by name; when `Haruspex.Config` exists it will use them from there. |
+| `ObjectName` | moved whole to Model | Names are schema data. |
+| `ObjectPattern` | moved whole to the CLI | Selection patterns are the config file's concern (the design gives them to `Haruspex.Config`), not schema data, so they stay out of the publishable Model. Until Config exists the CLI holds them; they move to Config with it. |
 
 Two behaviours were kept although a cleaner split would change them, because this slice changes no behaviour:
 RIGHT and FULL joins, CROSS JOIN and APPLY are left unbound by the binder (binding them is easy, but what they

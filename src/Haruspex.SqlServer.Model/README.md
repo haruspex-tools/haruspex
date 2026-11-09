@@ -7,7 +7,7 @@ synonyms and functions by name. Names are two-part (`schema.name`) and compared 
 compares them in almost every database.
 
 It is meant for tools that need to read a schema without a database and without DacFx: linters, diff tools,
-documentation generators, code generators. [Haruspex.SqlServer.Sources](../Haruspex.SqlServer.Sources/README.md)
+documentation generators, code generators. [Haruspex.SqlServer.Sources](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md)
 fills it from a folder of `.sql` scripts.
 
 ```csharp

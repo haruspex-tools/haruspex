@@ -112,7 +112,7 @@ test to let a reference through; move the code to the layer that may know it.
 | `src/Haruspex.SqlServer.Inference` | Infers the IR from bound procedure bodies. |
 | `src/Haruspex.Ir` | The IR model and its deterministic JSON form. Depends on nothing. |
 | `src/Haruspex.Emit.Zod` | The Zod emitter. Reads only the IR. |
-| `src/Haruspex.Cli` | The `haruspex` command, and `SqlProject`, which composes the layers. |
+| `src/Haruspex.Cli` | The `haruspex` command; `SqlProject`, which composes the layers; and `ObjectPattern`, until `Haruspex.Config` exists. |
 | `tests/Haruspex.Tests` | Unit, snapshot, end-to-end and architecture tests. |
 | `tests/Haruspex.DifferentialTests` | Runs the fixtures in SQL Server and checks the output against the IR. |
 | `tests/fixtures` | Invented SQL used by the tests. |
