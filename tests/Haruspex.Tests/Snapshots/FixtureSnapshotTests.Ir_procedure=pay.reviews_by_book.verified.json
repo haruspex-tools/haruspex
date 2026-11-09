@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -33,6 +33,10 @@
   "types": {
     "ReviewsByBookReview": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.reviews_by_book",
+        "path": "results[0][].reviews[]"
+      },
       "fields": [
         {
           "name": "id",
@@ -108,6 +112,10 @@
     },
     "ReviewsByBookRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.reviews_by_book",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "bookId",
@@ -193,5 +201,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -42,6 +42,10 @@
     "CategoryContentsNode": {
       "kind": "object",
       "recursive": true,
+      "identity": {
+        "function": "cat.category_contents",
+        "path": "<cat.category_contents>"
+      },
       "fields": [
         {
           "name": "items",
@@ -81,6 +85,10 @@
     },
     "CategoryContentsNodeItem": {
       "kind": "object",
+      "identity": {
+        "function": "cat.category_contents",
+        "path": "<cat.category_contents>.items[]"
+      },
       "fields": [
         {
           "name": "id",
@@ -127,6 +135,10 @@
     "CategoryTreeNode": {
       "kind": "object",
       "recursive": true,
+      "identity": {
+        "function": "cat.category_tree",
+        "path": "<cat.category_tree>"
+      },
       "fields": [
         {
           "name": "id",
@@ -180,6 +192,10 @@
     },
     "GetCategoryRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "cat.get_category",
+        "path": "results[0]"
+      },
       "fields": [
         {
           "name": "id",
@@ -249,5 +265,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

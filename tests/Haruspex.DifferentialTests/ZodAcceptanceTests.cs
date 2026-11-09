@@ -86,7 +86,7 @@ public class ZodAcceptanceTests(SqlServerFixture server)
         }
     }
 
-    private static void WriteResult(Utf8JsonWriter json, IrResult result, ObservedResultSet set)
+    internal static void WriteResult(Utf8JsonWriter json, IrResult result, ObservedResultSet set)
     {
         if (result.Encoding == IrEncoding.Json)
         {

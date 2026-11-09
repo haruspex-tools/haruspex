@@ -18,15 +18,25 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.4";
+    public const string CurrentVersion = "0.5";
+
+    /// <summary>
+    /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
+    /// declared. Empty when nothing was overridden. Kept so that what the database proves and what a person asserts stay
+    /// distinguishable in the file, though an emitter needs neither: the types already carry the result.
+    /// </summary>
+    public IReadOnlyList<IrOverride> Overrides { get; init; } = [];
 }
 
 /// <param name="Dialect">The SQL dialect of the source, such as <c>tsql</c>.</param>
 public sealed record IrSource(string Dialect);
 
 /// <summary>A typed database object.</summary>
-/// <param name="Id">The object's name in the database, such as <c>sales.get_order</c>.</param>
-/// <param name="Name">The name settled for generated code, such as <c>GetOrder</c>. Emitters use it as is.</param>
+/// <param name="Id">The object's name in the database, such as <c>sales.get_order</c>: its canonical identity.</param>
+/// <param name="Name">
+/// The name settled for generated code, such as <c>GetOrder</c>, from the config file's naming rules and overrides.
+/// Emitters use it as is. A front end leaves the id here until the names are settled.
+/// </param>
 /// <param name="Kind">What kind of object it is.</param>
 /// <param name="At">Where it is defined, as <c>path:line:column</c> relative to the source root.</param>
 /// <param name="Parameters">The declared parameters, in order.</param>
@@ -77,11 +87,61 @@ public enum IrEncoding
 public sealed record IrObjectType(IReadOnlyList<IrField> Fields)
 {
     /// <summary>
+    /// Where the type comes from in database terms, independent of its generated name: an object and the path to the
+    /// type within it. Names are generated from config and can change; this cannot. Null only in a document built by
+    /// hand (a test's).
+    /// </summary>
+    public IrTypeIdentity? Identity { get; init; }
+
+    /// <summary>
     /// Whether the type refers to itself, directly or through other types (a tree a function builds by calling itself).
     /// A reader that expands references must stop at a recursive type, or it never ends. Set by whoever builds the
     /// document; a reader may also find cycles itself, by following references with the names it is expanding.
     /// </summary>
     public bool Recursive { get; init; }
+}
+
+/// <summary>Where an object type comes from: the database object it belongs to, and the path to it there.</summary>
+/// <param name="Owner">What kind of object it belongs to.</param>
+/// <param name="Object">The object's name in the database, such as <c>sales.get_order</c> or <c>bom.part_tree</c>.</param>
+/// <param name="Path">
+/// The path to the type in the IR's path syntax (<see cref="IrPath"/>): <c>results[0][]</c> for a procedure's rows,
+/// <c>&lt;bom.part_tree&gt;</c> for a recursive function's node and <c>&lt;bom.part_tree&gt;.part</c> inside it. The
+/// variants of a union share their path, as their unknowns do, so two types may have the same identity.
+/// </param>
+public sealed record IrTypeIdentity(IrTypeOwner Owner, string Object, string Path);
+
+/// <summary>What kind of database object a type belongs to.</summary>
+public enum IrTypeOwner
+{
+    /// <summary>A procedure in the document's objects: the type is part of its results.</summary>
+    Procedure,
+
+    /// <summary>
+    /// A scalar function that calls itself: the type is its node, or inside it, and is shared by every object whose
+    /// results reach it.
+    /// </summary>
+    Function,
+}
+
+/// <summary>A claim the config file made rather than inference: see <see cref="IrDocument.Overrides"/>.</summary>
+/// <param name="Object">The id of the object it applies to.</param>
+/// <param name="Path">Where in the object, in the IR's path syntax, as an unknown's path is written.</param>
+/// <param name="Setting">One of <see cref="IrOverrideSettings"/>.</param>
+/// <param name="Why">The reason given in the config file, or null when none was needed.</param>
+public sealed record IrOverride(string Object, string Path, string Setting, string? Why);
+
+/// <summary>The settings an override can make.</summary>
+public static class IrOverrideSettings
+{
+    /// <summary>The value is declared never null, which the database does not prove.</summary>
+    public const string NotNull = "not-null";
+
+    /// <summary>The value's type is declared to be a schema the application already has (<see cref="IrImport"/>).</summary>
+    public const string Type = "type";
+
+    /// <summary>A value set the database compares under its collation is declared to hold exactly its items.</summary>
+    public const string ExactValues = "exact-values";
 }
 
 /// <summary>A field of an object type.</summary>
@@ -314,6 +374,15 @@ public sealed record IrRef(string Name) : IrType;
 /// data (a <c>json</c> column, a parameter) or its shape is unknown, which claims nothing beyond "JSON".
 /// </param>
 public sealed record IrJsonText(IrType? Content = null) : IrType;
+
+/// <summary>
+/// A value declared by the config file to be of a type the application already defines: a schema named
+/// <paramref name="Name"/>, exported by the module <paramref name="From"/>. The emitter imports and uses it as it is,
+/// so the value is still checked at runtime, by the application's own schema.
+/// </summary>
+/// <param name="Name">The exported name, an identifier (<see cref="IrIdentifiers"/>), such as <c>OrderSettingsSchema</c>.</param>
+/// <param name="From">The module to import it from, as the generated module should write it.</param>
+public sealed record IrImport(string Name, string From) : IrType;
 
 /// <summary>A value whose type is not known; the document's unknowns say why.</summary>
 /// <param name="Reason">One of <see cref="IrUnknownReasons"/>.</param>

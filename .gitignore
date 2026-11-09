@@ -23,3 +23,4 @@ tests/emit-check/accept/
 *.user
 *.swp
 .DS_Store
+tests/fixtures/*/generated/

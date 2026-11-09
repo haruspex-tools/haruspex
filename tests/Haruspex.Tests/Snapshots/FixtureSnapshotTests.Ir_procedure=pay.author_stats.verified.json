@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -33,6 +33,10 @@
   "types": {
     "AuthorStatsRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.author_stats",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "authorId",
@@ -124,5 +128,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

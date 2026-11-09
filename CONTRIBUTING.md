@@ -91,6 +91,7 @@ To run the tool from source:
 
 ```sh
 dotnet run --project src/Haruspex.Cli -- generate tests/fixtures/orders --include 'sales.*' --out out
+cd tests/fixtures/shop && dotnet run --project ../../../src/Haruspex.Cli -- generate --out ../../../out/shop  # with its haruspex.json
 ```
 
 ## Layers
@@ -112,9 +113,11 @@ test to let a reference through; move the code to the layer that may know it.
 | `src/Haruspex.SqlServer.Sources` | Reads a folder of `.sql` files into the model with ScriptDom. Packable; see its `README.md`. |
 | `src/Haruspex.SqlServer.Semantics` | Binds references in bodies to model objects, and interprets the schema. |
 | `src/Haruspex.SqlServer.Inference` | Infers the IR from bound procedure bodies. |
-| `src/Haruspex.Ir` | The IR model and its deterministic JSON form. Depends on nothing. |
+| `src/Haruspex.Ir` | The IR model, its deterministic JSON form, its path syntax and the one identifier rule. Depends on nothing. |
+| `src/Haruspex.Config` | The config file (`haruspex.json`): reading it, selection, overrides and naming applied to the IR. See its `README.md`. |
 | `src/Haruspex.Emit.Zod` | The Zod emitter. Reads only the IR. |
-| `src/Haruspex.Cli` | The `haruspex` command; `SqlProject`, which composes the layers; and `ObjectPattern`, until `Haruspex.Config` exists. |
+| `src/Haruspex.Cli` | The `haruspex` command, and `SqlProject`, which composes the layers. |
+| `schemas` | The published JSON Schema of `haruspex.json`, checked against examples by `ConfigSchemaTests`. |
 | `tests/Haruspex.Tests` | Unit, snapshot, end-to-end and architecture tests. |
 | `tests/Haruspex.DifferentialTests` | Runs the fixtures in SQL Server and checks the output against the IR and the generated Zod. |
 | `tests/Shared` | Test helpers compiled into both test projects: running the emit-check npm package. |

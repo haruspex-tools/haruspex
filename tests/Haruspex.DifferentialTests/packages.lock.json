@@ -413,6 +413,7 @@
       "haruspex": {
         "type": "Project",
         "dependencies": {
+          "Haruspex.Config": "[0.1.0-dev, )",
           "Haruspex.Diagnostics": "[0.1.0-dev, )",
           "Haruspex.Emit.Zod": "[0.1.0-dev, )",
           "Haruspex.Ir": "[0.1.0-dev, )",
@@ -420,6 +421,13 @@
           "Haruspex.SqlServer.Model": "[0.1.0-dev, )",
           "Haruspex.SqlServer.Sources": "[0.1.0-dev, )",
           "System.CommandLine": "[2.0.14, )"
+        }
+      },
+      "haruspex.config": {
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Ir": "[0.1.0-dev, )",
+          "Haruspex.SqlServer.Model": "[0.1.0-dev, )"
         }
       },
       "haruspex.diagnostics": {

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -27,6 +27,10 @@
   "types": {
     "ListCustomersRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "sales.list_customers",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "id",
@@ -125,5 +129,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

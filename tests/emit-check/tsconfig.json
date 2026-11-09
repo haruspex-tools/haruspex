@@ -8,7 +8,8 @@
     "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "skipLibCheck": false,
-    "types": []
+    "types": [],
+    "paths": { "@shop/types": ["./src/shop-types.ts"] }
   },
   "include": ["generated/**/*.ts", "src/**/*.ts"]
 }

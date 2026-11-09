@@ -14,6 +14,7 @@
     <ProjectReference Include="..\Haruspex.SqlServer.Model\Haruspex.SqlServer.Model.csproj" />
     <ProjectReference Include="..\Haruspex.SqlServer.Sources\Haruspex.SqlServer.Sources.csproj" />
     <ProjectReference Include="..\Haruspex.SqlServer.Inference\Haruspex.SqlServer.Inference.csproj" />
+    <ProjectReference Include="..\Haruspex.Config\Haruspex.Config.csproj" />
     <ProjectReference Include="..\Haruspex.Emit.Zod\Haruspex.Emit.Zod.csproj" />
   </ItemGroup>
   <ItemGroup>

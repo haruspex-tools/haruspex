@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -33,6 +33,10 @@
   "types": {
     "ListTicketsEvent": {
       "kind": "object",
+      "identity": {
+        "procedure": "chk.list_tickets",
+        "path": "results[0][].events[]"
+      },
       "fields": [
         {
           "name": "id",
@@ -121,6 +125,10 @@
     },
     "ListTicketsOwner": {
       "kind": "object",
+      "identity": {
+        "procedure": "chk.list_tickets",
+        "path": "results[0][].owner"
+      },
       "fields": [
         {
           "name": "name",
@@ -188,6 +196,10 @@
     },
     "ListTicketsRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "chk.list_tickets",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "id",
@@ -777,5 +789,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

@@ -389,7 +389,7 @@ public class JsonFunctionTests
         var doc = project.Infer(project.Select([ObjectPattern.Parse("*.*")]).Procedures);
 
         // The path starts at the type, which every procedure shares.
-        Assert.Equal(["dbo.p <TreeNode>.up", "dbo.q <TreeNode>.up"], doc.Unknowns.Select(u => $"{u.Object} {u.Path}").Order(StringComparer.Ordinal));
+        Assert.Equal(["dbo.p <dbo.tree>.up", "dbo.q <dbo.tree>.up"], doc.Unknowns.Select(u => $"{u.Object} {u.Path}").Order(StringComparer.Ordinal));
     }
 
     // ---- the IR and the Zod ---------------------------------------------------------------------------

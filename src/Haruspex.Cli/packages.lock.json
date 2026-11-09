@@ -8,6 +8,13 @@
         "resolved": "2.0.14",
         "contentHash": "15fyVO4aG6poR6IKmhM74zf7PUzaU6FZAGm2d3SQSO9yIyGAeo44e6t9qeKjjaqyMEqYdqcb2G1B0gpLoDU2cA=="
       },
+      "haruspex.config": {
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Ir": "[0.1.0-dev, )",
+          "Haruspex.SqlServer.Model": "[0.1.0-dev, )"
+        }
+      },
       "haruspex.diagnostics": {
         "type": "Project"
       },

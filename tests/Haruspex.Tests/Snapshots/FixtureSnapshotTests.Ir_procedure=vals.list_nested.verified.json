@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -33,6 +33,10 @@
   "types": {
     "ListNestedDeep": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_nested",
+        "path": "results[0][].deep"
+      },
       "fields": [
         {
           "name": "inner",
@@ -67,6 +71,10 @@
     },
     "ListNestedDeepInner": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_nested",
+        "path": "results[0][].deep.inner"
+      },
       "fields": [
         {
           "name": "whole",
@@ -117,6 +125,10 @@
     },
     "ListNestedMeta": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_nested",
+        "path": "results[0][].meta"
+      },
       "fields": [
         {
           "name": "label",
@@ -160,6 +172,10 @@
     },
     "ListNestedRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_nested",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "id",
@@ -242,6 +258,10 @@
     },
     "ListNestedTag": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_nested",
+        "path": "results[0][].tags[]"
+      },
       "fields": [
         {
           "name": "id",
@@ -309,6 +329,10 @@
     },
     "ListNestedWhen": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_nested",
+        "path": "results[0][].when"
+      },
       "fields": [
         {
           "name": "day",
@@ -343,5 +367,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

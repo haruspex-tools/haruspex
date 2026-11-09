@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -33,6 +33,10 @@
   "types": {
     "ListNestedWithNullsDeep": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_nested_with_nulls",
+        "path": "results[0][].deep"
+      },
       "fields": [
         {
           "name": "inner",
@@ -61,6 +65,10 @@
     },
     "ListNestedWithNullsDeepInner": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_nested_with_nulls",
+        "path": "results[0][].deep.inner"
+      },
       "fields": [
         {
           "name": "whole",
@@ -111,6 +119,10 @@
     },
     "ListNestedWithNullsMeta": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_nested_with_nulls",
+        "path": "results[0][].meta"
+      },
       "fields": [
         {
           "name": "label",
@@ -154,6 +166,10 @@
     },
     "ListNestedWithNullsRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_nested_with_nulls",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "id",
@@ -224,6 +240,10 @@
     },
     "ListNestedWithNullsTag": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_nested_with_nulls",
+        "path": "results[0][].tags[]"
+      },
       "fields": [
         {
           "name": "id",
@@ -291,6 +311,10 @@
     },
     "ListNestedWithNullsWhen": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_nested_with_nulls",
+        "path": "results[0][].when"
+      },
       "fields": [
         {
           "name": "day",
@@ -325,5 +349,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

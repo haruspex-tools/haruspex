@@ -1,22 +1,28 @@
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
-/// Turns inferred shapes into an <see cref="IrDocument"/>: settles a name for every procedure and object type
-/// (names are decided once, here, so every emitter agrees), and lists every unknown with its path.
+/// Turns inferred shapes into an <see cref="IrDocument"/>: gives every object type its identity (the object and the path
+/// it belongs to), and lists every unknown with its path.
 /// </summary>
+/// <remarks>
+/// Names for generated code are not inference's concern: they come from the config file's naming rules and overrides,
+/// applied by Haruspex.Config to the document this builds. So each procedure's name is left as its id, and each type is
+/// keyed by its identity (<c>sales.get_order:results[0][]</c>) until then. Before slice 4 names were settled here, with a
+/// number added to break a clash, which let adding one procedure rename another's types.
+/// </remarks>
 /// <param name="functions">The functions the procedures call, for the named type of each recursive one's node.</param>
 internal sealed class IrBuilder(FunctionSummaries functions)
 {
     private readonly Dictionary<string, IrObjectType> types = new(StringComparer.Ordinal);
-    private readonly HashSet<string> names = new(StringComparer.Ordinal);
+
+    /// <summary>Every type key given out, reserved before the type is written so that its fields can refer to it.</summary>
+    private readonly HashSet<string> reserved = new(StringComparer.Ordinal);
     private readonly List<IrUnknown> unknowns = [];
 
-    /// <summary>The name given to each recursive function's node, once its type is written.</summary>
+    /// <summary>The key given to each recursive function's node, once its type is written.</summary>
     private readonly Dictionary<ObjectName, string> nodeNames = [];
 
     /// <summary>The unknowns inside each node, with paths from the node, and the nodes each refers to.</summary>
@@ -32,20 +38,15 @@ internal sealed class IrBuilder(FunctionSummaries functions)
     public IrDocument Build(IReadOnlyList<(Procedure Source, ProcedureAnalysis Analysis)> procedures)
     {
         var ordered = procedures.OrderBy(p => p.Source.Name.ToString(), StringComparer.Ordinal).ToList();
-        var procedureNames = ProcedureNames(ordered.Select(p => p.Source.Name).ToList());
-
-        // Procedure names are taken first, so that a type can never take a procedure's name.
-        foreach (var name in procedureNames.Values)
-            names.Add(name);
 
         var objects = new List<IrObject>();
         foreach (var (source, analysis) in ordered)
         {
             var id = source.Name.ToString();
-            var name = procedureNames[source.Name];
+            var owner = new Owner(IrTypeOwner.Procedure, id);
 
             var parameters = analysis.Parameters
-                .Select(p => new IrParameter(p.Name, Convert(p.Type, "", id, $"parameters.{p.Name}"), p.HasDefault, p.IsOutput))
+                .Select(p => new IrParameter(p.Name, Convert(p.Type, owner, id, $"parameters.{p.Name}"), p.HasDefault, p.IsOutput))
                 .ToList();
 
             List<IrResult>? results = null;
@@ -53,11 +54,7 @@ internal sealed class IrBuilder(FunctionSummaries functions)
             {
                 results = [];
                 for (var i = 0; i < shapes.Count; i++)
-                {
-                    // The procedure's name is already reserved; a second result's base name must be reserved here.
-                    var root = shapes.Count == 1 ? name : Unique($"{name}Result{i + 1}");
-                    results.Add(new IrResult(shapes[i].Encoding, Root(shapes[i].Shape, root, id, $"results[{i}]"), shapes[i].AbsentBecause));
-                }
+                    results.Add(new IrResult(shapes[i].Encoding, Convert(shapes[i].Shape, owner, id, $"results[{i}]"), shapes[i].AbsentBecause));
             }
             else
             {
@@ -66,26 +63,17 @@ internal sealed class IrBuilder(FunctionSummaries functions)
             }
 
             var at = source.At;
-            objects.Add(new IrObject(id, name, IrObjectKind.Procedure, at.ToString(), parameters, results));
+            objects.Add(new IrObject(id, id, IrObjectKind.Procedure, at.ToString(), parameters, results));
         }
 
         MarkRecursive();
         return new IrDocument(new IrSource("tsql"), objects, types, unknowns);
     }
 
-    /// <summary>
-    /// A result's root type. Its object is the procedure's name plus <c>Row</c>, whether it is one of a list
-    /// or the single object of <c>WITHOUT_ARRAY_WRAPPER</c>; the procedure's own name is kept for the whole
-    /// result, which may be null. Nested names build on the procedure's name.
-    /// </summary>
-    private IrType Root(Shape shape, string name, string id, string path) => shape switch
-    {
-        ObjectShape obj => Object(obj, Unique(name + "Row"), name, id, path),
-        ArrayShape { Items: ObjectShape row } array => Array(array, Object(row, Unique(name + "Row"), name, id, path + "[]")),
-        _ => Convert(shape, name, id, path),
-    };
+    /// <summary>The object, procedure or recursive function, that the types being written belong to.</summary>
+    private sealed record Owner(IrTypeOwner Kind, string Object);
 
-    private IrType Convert(Shape shape, string objectName, string id, string path)
+    private IrType Convert(Shape shape, Owner owner, string id, string path)
     {
         switch (shape)
         {
@@ -94,27 +82,26 @@ internal sealed class IrBuilder(FunctionSummaries functions)
             case JsonTextShape text:
                 // An unknown content claims nothing more than "JSON", which the node already says; the unknown is
                 // reported where json_query makes the text live, if it does.
-                return new IrJsonText(text.Content is null or UnknownShape ? null : Convert(text.Content, objectName, id, path + "<json>"));
+                return new IrJsonText(text.Content is null or UnknownShape ? null : Convert(text.Content, owner, id, path + "<json>"));
             case RecursiveShape recursive:
                 return Node(recursive.Function, id);
             case NeverShape never:
                 Report(id, path, IrUnknownReasons.UnresolvedRecursion, "The function called here never returns a value: every return calls itself again.", never.At.ToString());
                 return new IrUnknownType(IrUnknownReasons.UnresolvedRecursion);
             case ArrayShape array:
-                return Array(array, Convert(array.Items, objectName, id, path + "[]"));
+                return Array(array, Convert(array.Items, owner, id, path + "[]"));
             case TupleShape tuple:
                 // Each position is its own path, so an unknown element is reported where it is.
                 return new IrTuple([.. tuple.Items.Select((e, i) => new IrElement(
-                    Convert(e.Type, objectName, id, path + "[" + i.ToString(System.Globalization.CultureInfo.InvariantCulture) + "]"),
+                    Convert(e.Type, owner, id, path + "[" + i.ToString(System.Globalization.CultureInfo.InvariantCulture) + "]"),
                     e.NullableBecause))]);
             case RecordShape record:
                 // A record's values have no key to name them by; {} stands for any key.
-                return new IrRecord(Convert(record.Values, objectName, id, path + "{}"), record.ValuesNullableBecause);
+                return new IrRecord(Convert(record.Values, owner, id, path + "{}"), record.ValuesNullableBecause);
             case UnionShape union:
-                return new IrUnion([.. union.Variants.Select(v => Convert(v, objectName, id, path))]);
+                return new IrUnion([.. union.Variants.Select(v => Convert(v, owner, id, path))]);
             case ObjectShape obj:
-                var name = Unique(objectName);
-                return Object(obj, name, name, id, path);
+                return Object(obj, owner, id, path);
             case UnknownShape unknown:
                 Report(id, path, unknown.Reason, unknown.Detail, unknown.At.ToString());
                 return new IrUnknownType(unknown.Reason);
@@ -125,18 +112,20 @@ internal sealed class IrBuilder(FunctionSummaries functions)
 
     /// <summary>
     /// A recursive function's node: one named type for the whole document, written the first time it is met, with its
-    /// name reserved before its fields are converted so that the fields can refer to it.
+    /// key reserved before its fields are converted so that the fields can refer to it.
     /// </summary>
     /// <remarks>
     /// The node is shared by every object that reaches it, so an unknown inside it is reported with a path that starts at
-    /// the node (<c>&lt;ComponentsNode&gt;.part.label</c>) and listed under every object whose results reach the node,
-    /// directly or through other nodes.
+    /// the node, named by the function (<c>&lt;bom.components&gt;.part.label</c>), and listed under every object whose
+    /// results reach the node, directly or through other nodes.
     /// </remarks>
     private IrRef Node(ObjectName function, string id)
     {
         if (!nodeNames.TryGetValue(function, out var name))
         {
-            name = Unique(Naming.Pascal(function.Name) + "Node");
+            var owner = new Owner(IrTypeOwner.Function, function.ToString());
+            var path = $"<{function}>";
+            name = Key(owner, path);
             nodeNames[function] = name;
             nodeUnknowns[name] = [];
             nodeEdges[name] = [];
@@ -145,7 +134,7 @@ internal sealed class IrBuilder(FunctionSummaries functions)
             enclosingNodes.Push(name);
             try
             {
-                Object(functions.Nodes[function], name, name, id, $"<{name}>");
+                Object(functions.Nodes[function], owner, id, path, name);
             }
             finally
             {
@@ -224,57 +213,29 @@ internal sealed class IrBuilder(FunctionSummaries functions)
     private static IrArray Array(ArrayShape array, IrType items) =>
         new(items) { ItemsNullableBecause = array.ItemsNullableBecause ?? [], MinItems = array.MinItems, MaxItems = array.MaxItems };
 
-    /// <param name="name">The type's name, already reserved.</param>
-    /// <param name="childBase">What nested types' names start with.</param>
-    private IrRef Object(ObjectShape obj, string name, string childBase, string id, string path)
+    /// <param name="key">The type's key, already reserved, or null to reserve one for its identity.</param>
+    private IrRef Object(ObjectShape obj, Owner owner, string id, string path, string? key = null)
     {
+        key ??= Key(owner, path);
         var fields = new List<IrField>();
         foreach (var field in obj.Fields)
-        {
-            var pascal = Naming.Pascal(field.Name);
-            var childName = childBase + (field.Type is ArrayShape or RecordShape ? Naming.Singular(pascal) : pascal);
-            fields.Add(new IrField(field.Name, Convert(field.Type, childName, id, path + Segment(field.Name)), field.Presence, field.NullableBecause));
-        }
+            fields.Add(new IrField(field.Name, Convert(field.Type, owner, id, path + IrPath.Key(field.Name)), field.Presence, field.NullableBecause));
 
-        types[name] = new IrObjectType(fields);
-        return new IrRef(name);
-    }
-
-    private string Unique(string name)
-    {
-        var candidate = name;
-        for (var n = 2; !names.Add(candidate); n++)
-            candidate = name + n.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        return candidate;
+        types[key] = new IrObjectType(fields) { Identity = new IrTypeIdentity(owner.Kind, owner.Object, path) };
+        return new IrRef(key);
     }
 
     /// <summary>
-    /// Each procedure's name: its own name in Pascal case, with the schema in front when two schemas have a
-    /// procedure of the same name.
+    /// A provisional key for a type, from its identity, reserved at once. The variants of a union share a path, so a
+    /// later one gets a number; the key is replaced by a name when names are settled, so the number never reaches
+    /// generated code.
     /// </summary>
-    private static Dictionary<ObjectName, string> ProcedureNames(IReadOnlyList<ObjectName> procedures)
+    private string Key(Owner owner, string path)
     {
-        var result = new Dictionary<ObjectName, string>();
-        foreach (var group in procedures.GroupBy(p => Naming.Pascal(p.Name), StringComparer.Ordinal))
-        {
-            foreach (var procedure in group)
-                result[procedure] = group.Count() == 1 ? group.Key : Naming.Pascal(procedure.Schema) + group.Key;
-        }
-
-        var taken = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var procedure in procedures)
-        {
-            var name = result[procedure];
-            for (var n = 2; !taken.Add(result[procedure]); n++)
-                result[procedure] = name + n.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        }
-
-        return result;
+        var key = $"{owner.Object}:{path}";
+        var candidate = key;
+        for (var n = 2; !reserved.Add(candidate); n++)
+            candidate = key + "~" + n.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return candidate;
     }
-
-    private static string Segment(string key) =>
-        IsIdentifier(key) ? "." + key : "[\"" + JsonEncodedText.Encode(key, JavaScriptEncoder.UnsafeRelaxedJsonEscaping) + "\"]";
-
-    private static bool IsIdentifier(string key) =>
-        key.Length > 0 && (char.IsAsciiLetter(key[0]) || key[0] == '_') && key.All(c => char.IsAsciiLetterOrDigit(c) || c == '_');
 }

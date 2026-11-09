@@ -4,9 +4,9 @@ haruspex is split into layers so that each can be tested alone, reused alone and
 others, published alone as a NuGet package from this repository. Each project under `src/` is one layer.
 
 ```
-.sql files ──► Sources ──► Model ──► Semantics ──► Inference ──► IR ──► emitters (Zod, …)
-  (later .dacpac)                    (binding)                    ▲
-                                                               Config (later)
+.sql files ──► Sources ──► Model ──► Semantics ──► Inference ──► IR ──► Config ──► IR ──► emitters (Zod, …)
+  (later .dacpac)                    (binding)                         (overrides,       (names settled)
+                                                                         naming)
               Diagnostics (locations and messages) is used by all of the SQL Server layers.
               The CLI composes everything.
 ```
@@ -21,7 +21,7 @@ others, published alone as a NuGet package from this repository. Each project un
 | `Haruspex.SqlServer.Semantics` | binding a body's references to model objects (scopes, aliases, ambiguity), and interpreting the schema (which columns are never null; what types, alias types and CHECK constraints guarantee about values) | result shapes, nullability inference, the IR | Diagnostics, Model; ScriptDom |
 | `Haruspex.SqlServer.Inference` | shapes, nullability, presence and JSON structure, from bound bodies into the IR | files, zips, XML; the emitters; the config file | Diagnostics, Model, Semantics, Ir; ScriptDom |
 | `Haruspex.Ir` | the IR model and its deterministic JSON | SQL of any dialect | nothing |
-| `Haruspex.Config` *(not written yet)* | the config file: selection patterns, overrides, emitter settings | SQL syntax | Diagnostics, Model, Ir |
+| `Haruspex.Config` | the config file: selection patterns, overrides as transformations of the IR, naming rules, emitter settings | SQL syntax | Diagnostics, Model, Ir |
 | `Haruspex.Emit.Zod` (later `Haruspex.Emit.JsonSchema`) | the IR and their own target | SQL, the model, the config file | Ir |
 | `Haruspex.Cli` | composing all of the above | inference or emission logic of its own | every layer; System.CommandLine |
 
@@ -39,6 +39,10 @@ Why these lines:
   "this column is never null" and "this column takes `open`, `held` or `closed`" without running inference
   (`SchemaRules.ColumnFacts`, `CheckReader`). Inference maps those facts into the IR; Semantics never sees it.
 - **Emitters see only the IR.** If an emitter needs something, the IR must carry it.
+- **Config transforms the IR; it never reaches into inference.** Overrides and naming apply to the document inference
+  produced, so they work the same however it was produced, and an emitter never needs to know they existed. Inference
+  leaves names unsettled (each object's id, each type keyed by its identity); Config settles them. The emitter is
+  handed its settings (`ZodOptions`) by the CLI and never reads the config file.
 
 ## Enforced by a test
 
@@ -54,7 +58,8 @@ holds the table above as data and fails when
   file system's types (`File`, `Directory`, `FileInfo`, `DirectoryInfo`, `FileStream`, `FileSystemInfo`). Those
   types share `System.Runtime` with everything else, so the test reads each assembly's type references for them.
 
-Adding a layer means adding it to the table here and in the test, in the same change. Dependency direction
+Adding a layer means adding it to the table here and in the test, in the same change. Slice 4 activated the reserved
+`Haruspex.Config` row: its `Planned` flag was removed, so its project must now exist; what it may know is unchanged. Dependency direction
 erodes one convenient reference at a time, which is why it is checked rather than only written down.
 
 ## Types that were split, and why
@@ -72,7 +77,7 @@ the type was split rather than moved whole:
 | `UnknownShape` built by `SqlProject.Changed` for ALTER/DROP | `Redefinition` (Model), turned into an unknown by Semantics (tables) and Inference (procedures) | The doubt about which definition is in effect is a fact about the source; how it surfaces in the IR is inference's. |
 | `Diagnostic`, `SourceLocation` | moved whole to `Haruspex.Diagnostics` | Already one concern. The design gives a diagnostic a code and severity too; nothing needs them yet, so they were not added. |
 | `ObjectName` | moved whole to Model | Names are schema data. |
-| `ObjectPattern` | moved whole to the CLI | Selection patterns are the config file's concern (the design gives them to `Haruspex.Config`), not schema data, so they stay out of the publishable Model. Until Config exists the CLI holds them; they move to Config with it. |
+| `ObjectPattern` | moved whole to the CLI, then (slice 4) to Config | Selection patterns are the config file's concern, not schema data, so they stay out of the publishable Model. |
 
 Two behaviours were kept although a cleaner split would change them, because this slice changes no behaviour:
 RIGHT and FULL joins, CROSS JOIN and APPLY are left unbound by the binder (binding them is easy, but what they

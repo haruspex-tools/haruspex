@@ -1,7 +1,7 @@
-# The haruspex IR, version 0.4
+# The haruspex IR, version 0.5
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
-each side can be written in whatever language suits it. This page describes version 0.4. A JSON Schema for
+each side can be written in whatever language suits it. This page describes version 0.5. A JSON Schema for
 it will follow.
 
 ## Why not JSON Schema
@@ -15,11 +15,11 @@ every document. It maps to JSON Schema without loss.
 
 ```jsonc
 {
-  "irVersion": "0.4",                 // versioned separately from the tool
+  "irVersion": "0.5",                 // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
-    "id": "sales.get_order",          // the name in the database
-    "name": "GetOrder",               // the name for generated code, settled once for every emitter
+    "id": "sales.get_order",          // the name in the database: the object's identity
+    "name": "GetOrder",               // the name for generated code, from the config file's naming rules
     "kind": "procedure",
     "at": "procedures/get_order.sql:1:1",
     "parameters": [{ "name": "@order_id", "type": { … }, "hasDefault": false, "output": false }],
@@ -29,7 +29,9 @@ every document. It maps to JSON Schema without loss.
     }]
   }],
   "types": {                          // named object types, sorted by name
-    "GetOrderRow": { "kind": "object", "fields": [
+    "GetOrderRow": { "kind": "object",
+      "identity": { "procedure": "sales.get_order", "path": "results[0]" },   // what it is, whatever it is named
+      "fields": [
       { "name": "shippedAt", "type": { "kind": "datetime", "format": "offset", "sql": "datetimeoffset(0)" },
         "presence": "omittedWhenNull", "nullable": true,
         "nullableBecause": [{ "rule": "nullable-column", "at": "sales.order.shipped_at" }] },
@@ -48,12 +50,17 @@ every document. It maps to JSON Schema without loss.
     { "object": "sales.order_report", "path": "results[0][].customer_name",
       "reason": "unsupported-expression", "detail": "The expression upper(c.name) is not modelled yet.",
       "at": "procedures/order_report.sql:6:8" }
+  ],
+  "overrides": [                      // claims the config file made rather than inference
+    { "object": "sales.get_order", "path": "results[0].customer.email", "setting": "not-null",
+      "why": "checkout requires an email" }
   ]
 }
 ```
 
 Type nodes are one of: a scalar (`{ "kind", "format"?, "sql", facets… }`, below), an array, a tuple, a record, a
-union (below), `{ "ref" }`, `{ "kind": "json-text", "content"? }` or `{ "kind": "unknown", "reason" }`.
+union (below), `{ "ref" }`, `{ "kind": "json-text", "content"? }`, `{ "kind": "import", "name", "from" }` or
+`{ "kind": "unknown", "reason" }`.
 
 | Node | Written as | Means |
 |---|---|---|
@@ -61,12 +68,27 @@ union (below), `{ "ref" }`, `{ "kind": "json-text", "content"? }` or `{ "kind": 
 | tuple | `{ "kind": "tuple", "items": [{ "type", "nullable", "nullableBecause"? }, …] }` | exactly these positions, in order, each with its own type and nullability |
 | record | `{ "kind": "record", "values", "valuesNullable", "valuesNullableBecause"? }` | an object whose keys are data: any string keys (possibly repeated in the text, which `JSON.parse` reads as the last), each to a value of `values` |
 | union | `{ "kind": "union", "variants": […] }` | a value of one of the variants: at least two, all different |
+| import | `{ "kind": "import", "name", "from" }` | a value the config file declares to be of the application's own schema: `name`, exported by the module `from` (as the generated module writes it). Emitters import and use it as it is, so the value is still checked, by that schema |
 | JSON text | `{ "kind": "json-text", "content"? }` | a string holding JSON, which the consumer parses. With `content`, a non-null string parses to a value of that type (the JSON was built here: a column of live JSON in a rowset, a `FOR JSON` subquery `WITHOUT_ARRAY_WRAPPER`, a call of a function returning JSON). Without it, only "JSON" is claimed (a `json` column, a parameter) |
 
-An unknown's path names a tuple's position as `[0]`, a record's values as `{}`, an array's items as `[]` and what JSON
-text parses to as `<json>`; a union's variants share their path. Inside a recursive type the path starts at the type,
-`<ComponentsNode>.part.label`, because the type is shared: the unknown is listed under every object whose results
-reach it.
+## Paths
+
+Unknowns, type identities and the config file's overrides write a place the same way (`IrPath.cs`): keys as `.key`, or
+`["a key"]` (its text a JSON string) when the key is not an identifier; a tuple's position as `[0]`, a record's values as
+`{}`, an array's items as `[]` and what JSON text parses to as `<json>`; a union's variants share their path. Inside a
+recursive type the path starts at the type, named by its function, `<bom.components>.part.label`, because the type is
+shared: the unknown is listed under every object whose results reach it.
+
+An identifier, here and in every emitter's output, is an ASCII letter, `_` or `$` followed by letters, digits, `_` or
+`$` (`IrIdentifiers.cs`): one rule, where the path renderer and the Zod emitter used to disagree about `$`.
+
+## Names and identity
+
+The IR keeps SQL names as the canonical identity: each object's `id`, and each object type's `identity`, the object
+(`procedure`, or `function` for a recursive function's types) and the path that own it. Generated names (`name`, and
+the keys of `types`) come from the config file's naming rules and overrides, applied by Haruspex.Config after
+inference; an emitter uses them as they are and never reads the config file. Two types can share an identity: the
+variants of a union share a path.
 
 ## Recursive types
 
@@ -170,8 +192,8 @@ not for these facts.
   `INCLUDE_NULL_VALUES` an object whose values are all null is left out, so it is `omittedWhenNull` with the
   reason `all-fields-null` when every field in it can be null. With `INCLUDE_NULL_VALUES` it is always
   written, its keys null, however deeply nested: `{"a":{"b":{"y":null}}}`. Both observed (see "Scalars in JSON").
-- **Types live in a named table.** Names are decided once, by the front end, so every emitter agrees on them.
-  Identical shapes are not merged yet.
+- **Types live in a named table.** Names are decided once, from the config file, before any emitter runs, so every
+  emitter agrees on them. Identical shapes are not merged yet.
 - **Unknowns are listed at the top level** with the object, a path, a reason code and the source location,
   so a CI check can count and report them. The type node in place carries the reason code too.
 - **Deterministic.** Keys in a fixed order, collections sorted, LF line endings, no byte order mark, no
@@ -262,6 +284,12 @@ in `tests/Haruspex.DifferentialTests/JsonFunctionObservationTests.cs`:
 - An altered or dropped function is unknown (`redefined`), as a procedure is; a function not in the project, or a
   table-valued one called as a scalar, is unknown (`unsupported-expression`).
 
+Changes in 0.5 (slice 4, the config file): an object type's `identity`; the `import` node; the document's `overrides`;
+names settled from the config file (the schema left out unless its block gives a `prefix`), with no number added to
+break a clash between objects, which is an error instead; a path inside a recursive type starts with the function's name
+(`<bom.components>`), not the type's; and `$` counts as an identifier character in paths (`.a$b`, not `["a$b"]`). A 0.4
+reader that ignores unknown keys would miss the `import` node and the overrides, which is why the version changed.
+
 Changes in 0.4: an object type's `recursive` flag, and references that form cycles; JSON text's `content`; the null
 rules `function-result`, `parameter` and `null-input`; the unknown reason `unresolved-recursion`. A 0.3 reader that
 expands references would loop on a recursive type, which is why the version changed.
@@ -274,4 +302,4 @@ Changes in 0.2: scalars gained facets (`maxLength`, `length`, `minLength`, `digi
 each with its `from`. A reader of 0.1 that ignores unknown keys reads 0.2 documents unchanged, but the version
 changed because the facets are claims a 0.2 reader may rely on.
 
-Not in 0.4, but planned: origins (column lineage) beyond each facet's `from`, documentation, and a source hash.
+Not in 0.5, but planned: origins (column lineage) beyond each facet's `from`, documentation, and a source hash.

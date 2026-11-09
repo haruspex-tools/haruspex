@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -27,6 +27,10 @@
   "types": {
     "ItemRowsRelated": {
       "kind": "object",
+      "identity": {
+        "procedure": "cat.item_rows",
+        "path": "results[0][].related<json>"
+      },
       "fields": [
         {
           "name": "id",
@@ -110,6 +114,10 @@
     },
     "ItemRowsRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "cat.item_rows",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "id",
@@ -155,5 +163,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

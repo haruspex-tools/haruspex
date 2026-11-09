@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -33,6 +33,10 @@
   "types": {
     "ListBooksFirstReview": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.list_books",
+        "path": "results[0][].firstReview"
+      },
       "fields": [
         {
           "name": "text",
@@ -69,6 +73,10 @@
     },
     "ListBooksFirstReviewLive": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.list_books",
+        "path": "results[0][].firstReview.live"
+      },
       "fields": [
         {
           "name": "id",
@@ -122,6 +130,10 @@
     },
     "ListBooksFirstReviewText": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.list_books",
+        "path": "results[0][].firstReviewText<json>"
+      },
       "fields": [
         {
           "name": "id",
@@ -175,6 +187,10 @@
     },
     "ListBooksFirstReviewText2": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.list_books",
+        "path": "results[0][].firstReview.text<json>"
+      },
       "fields": [
         {
           "name": "id",
@@ -228,6 +244,10 @@
     },
     "ListBooksMeta": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.list_books",
+        "path": "results[0][].meta"
+      },
       "fields": [
         {
           "name": "author",
@@ -241,6 +261,10 @@
     },
     "ListBooksMetaAuthor": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.list_books",
+        "path": "results[0][].meta.author"
+      },
       "fields": [
         {
           "name": "id",
@@ -286,6 +310,10 @@
     },
     "ListBooksReviews": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.list_books",
+        "path": "results[0][].reviews"
+      },
       "fields": [
         {
           "name": "stars",
@@ -380,6 +408,10 @@
     },
     "ListBooksReviewsLatest": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.list_books",
+        "path": "results[0][].reviews.latest"
+      },
       "fields": [
         {
           "name": "stars",
@@ -419,6 +451,10 @@
     },
     "ListBooksRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.list_books",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "id",
@@ -687,5 +723,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

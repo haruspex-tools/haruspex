@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -33,6 +33,10 @@
   "types": {
     "ListCustomerOrdersAddress": {
       "kind": "object",
+      "identity": {
+        "procedure": "sales.list_customer_orders",
+        "path": "results[0][].address"
+      },
       "fields": [
         {
           "name": "region",
@@ -60,6 +64,10 @@
     },
     "ListCustomerOrdersOrder": {
       "kind": "object",
+      "identity": {
+        "procedure": "sales.list_customer_orders",
+        "path": "results[0][].orders[]"
+      },
       "fields": [
         {
           "name": "id",
@@ -146,6 +154,10 @@
     },
     "ListCustomerOrdersRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "sales.list_customer_orders",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "customerId",
@@ -237,5 +249,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

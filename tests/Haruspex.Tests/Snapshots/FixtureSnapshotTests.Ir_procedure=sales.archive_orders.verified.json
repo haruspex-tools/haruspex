@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -33,5 +33,6 @@
       "detail": "IF is not modelled yet, so the procedure's result sets cannot be listed.",
       "at": "procedures/archive_orders.sql:6:1"
     }
-  ]
+  ],
+  "overrides": []
 }

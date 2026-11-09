@@ -1,0 +1,31 @@
+// Every setting, with comments and trailing commas.
+{
+  "$schema": "../../../../schemas/haruspex.schema.json",
+  "source": "database",
+  "out": "generated",
+  "objects": "strip",
+  "naming": {
+    "replace": [{ "pattern": "#$", "with": "Row" }],
+    "case": "camel",
+  },
+  "schemas": {
+    "sales": { "include": ["get_*", "list_*"], "exclude": ["*_internal"] },
+    "audit": { "include": ["*"], "prefix": "Audit" },
+    "RDF.": { "include": ["GetPropertyList"], "naming": { "case": "preserve", "replace": [{ "pattern": "^Get", "with": "" }] } },
+    "reference": {},
+  },
+  "procedures": {
+    "sales.get_order": {
+      "name": "OrderDetail",
+      "paths": {
+        "lines[]": { "name": "OrderLine" },
+        "note": { "nullable": false, "why": "always written by the application" },
+        "status": { "values": "exact", "why": "lower case only" },
+        "settings": { "type": "SettingsSchema", "import": "./settings", "why": "the application's own format" },
+        "tags": { "type": "TagSchema[]", "import": "@app/tags" },
+        "results[0][\"unit price\"]": { "nullable": false, "why": "priced on insert" },
+      },
+    },
+    "[RDF.].GetPropertyList": { "name": "PropertyList" },
+  },
+}

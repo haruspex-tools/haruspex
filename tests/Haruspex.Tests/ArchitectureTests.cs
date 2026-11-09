@@ -68,8 +68,9 @@ public class ArchitectureTests
         // The IR knows no SQL of any dialect.
         new(Ir, Knows: [], Packages: []),
 
-        // Not written yet. Selection patterns name model objects, so it may see the model, but not SQL syntax.
-        new(Config, Knows: [Diagnostics, Model, Ir], Packages: [], Planned: true),
+        // The config file: selection patterns name model objects, so it may see the model, and overrides and naming
+        // transform the IR; but not SQL syntax (no ScriptDom), and not the emitters, which are handed their settings.
+        new(Config, Knows: [Diagnostics, Model, Ir], Packages: []),
 
         // Emitters see only the IR.
         new(EmitZod, Knows: [Ir], Packages: []),

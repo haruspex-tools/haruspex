@@ -5,11 +5,13 @@ namespace Haruspex.Tests;
 
 public class CliTests
 {
+    /// <summary>Runs the CLI from an empty folder, so no haruspex.json above the test binaries can be found.</summary>
     private static (int ExitCode, string Output, string Error) Run(params string[] args)
     {
+        using var cwd = new TempDirectory();
         using var output = new StringWriter();
         using var error = new StringWriter();
-        var exitCode = HaruspexCli.Run(args, output, error);
+        var exitCode = HaruspexCli.Run(args, output, error, cwd.Path);
         return (exitCode, output.ToString(), error.ToString());
     }
 
@@ -78,13 +80,36 @@ public class CliTests
     }
 
     [Fact]
-    public void Missing_required_options_are_a_usage_error()
+    public void Without_a_config_file_out_is_required()
     {
-        var (exitCode, output, error) = Run("generate", TestPaths.Fixture("orders"));
+        var (exitCode, output, error) = Run("generate", TestPaths.Fixture("orders"), "--include", "*.*");
 
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);
-        Assert.Contains("--include", error, StringComparison.Ordinal);
+        Assert.Equal("haruspex: give --out, the folder to write to, or a config file with \"out\".\n", error.ReplaceLineEndings("\n"));
+    }
+
+    [Fact]
+    public void Without_a_config_file_include_is_required()
+    {
+        using var outDir = new TempDirectory();
+
+        var (exitCode, output, error) = Run("generate", TestPaths.Fixture("orders"), "--out", outDir.Path);
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal("", output);
+        Assert.Equal("haruspex: nothing is selected: give --include, or a config file whose \"schemas\" include procedures. Use '*.*' to type every procedure.\n", error.ReplaceLineEndings("\n"));
+    }
+
+    [Fact]
+    public void Without_a_config_file_the_folder_is_required()
+    {
+        using var outDir = new TempDirectory();
+
+        var (exitCode, _, error) = Run("generate", "--include", "*.*", "--out", outDir.Path);
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal("haruspex: give the folder of .sql files to read, or a config file with \"source\".\n", error.ReplaceLineEndings("\n"));
     }
 
     [Fact]

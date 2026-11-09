@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
+  "title": "haruspex.json",
+  "description": "The haruspex config file: which procedures are typed, per schema; overrides of what inference found; naming rules and emitter settings. Paths in it are relative to the file. JSON with comments and trailing commas is allowed.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "description": "This schema, for editors.",
+      "type": "string"
+    },
+    "source": {
+      "description": "The folder of .sql files to read, including subfolders. The command line's folder argument overrides it.",
+      "type": "string",
+      "minLength": 1
+    },
+    "out": {
+      "description": "The folder to write haruspex.ir.json and haruspex.zod.ts to. --out overrides it.",
+      "type": "string",
+      "minLength": 1
+    },
+    "schemas": {
+      "description": "Settings per schema, keyed by the schema's name exactly as in the database (no brackets; dots allowed). Nothing is selected unless its schema has a block with include. A key that names no schema of the project is an error.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/schema"
+      }
+    },
+    "objects": {
+      "description": "How result objects treat keys their type doesn't list. \"strip\" (the default) removes them when parsing (z.object), so a column the database adds before the application redeploys doesn't break it. \"strict\" fails on them (z.strictObject), for applications that deploy first or together with the database.",
+      "enum": [
+        "strip",
+        "strict"
+      ]
+    },
+    "naming": {
+      "$ref": "#/$defs/naming"
+    },
+    "procedures": {
+      "description": "Overrides per procedure, keyed by its two-part name (schema.name, with T-SQL brackets around a part that holds a dot). Each must be a selected procedure.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/procedure"
+      }
+    }
+  },
+  "$defs": {
+    "pattern": {
+      "type": "string",
+      "minLength": 1
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+    },
+    "procedure": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "The procedure's generated name, instead of the naming rules'.",
+          "$ref": "#/$defs/identifier"
+        },
+        "paths": {
+          "description": "Overrides of places in the procedure's results, keyed by path: \"lines[].sku\", \"[].status\", \"settings<json>.mode\", or \"results[1][].id\" when it returns several result sets.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/path"
+          }
+        }
+      }
+    },
+    "path": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "The name of the object type at the path.",
+          "$ref": "#/$defs/identifier"
+        },
+        "nullable": {
+          "description": "false declares the value never null, which the database doesn't prove. Still checked at runtime.",
+          "const": false
+        },
+        "why": {
+          "description": "Why the claim holds. Required with nullable and values.",
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "description": "An exported schema to use for the value, with [] for each level of array, such as \"TagSchema[]\".",
+          "type": "string",
+          "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*(\\[\\])*$"
+        },
+        "import": {
+          "description": "The module that exports type: a package or alias such as \"@app/types\", or a path relative to this file.",
+          "type": "string",
+          "minLength": 1
+        },
+        "values": {
+          "description": "\"exact\" declares that a value set the database compares under its collation holds exactly its items, giving z.enum. Still checked at runtime.",
+          "const": "exact"
+        }
+      },
+      "dependentRequired": {
+        "nullable": [
+          "why"
+        ],
+        "values": [
+          "why"
+        ],
+        "type": [
+          "import"
+        ],
+        "import": [
+          "type"
+        ]
+      },
+      "dependentSchemas": {
+        "why": {
+          "anyOf": [
+            {
+              "required": [
+                "nullable"
+              ]
+            },
+            {
+              "required": [
+                "type"
+              ]
+            },
+            {
+              "required": [
+                "values"
+              ]
+            }
+          ]
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "name"
+          ]
+        },
+        {
+          "required": [
+            "nullable"
+          ]
+        },
+        {
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "required": [
+            "values"
+          ]
+        }
+      ]
+    },
+    "naming": {
+      "description": "How generated names are made from objects' own names (never their schemas), applied in order: replace, then the schema's prefix, then case. A schema's own naming merges over this one.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "replace": {
+          "description": "Regular expressions replaced in the object's name, in order, such as { \"pattern\": \"#$\", \"with\": \"Row\" }. A schema's own rules run after the top-level ones.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "pattern",
+              "with"
+            ],
+            "properties": {
+              "pattern": {
+                "description": "A .NET regular expression without backreferences or lookarounds.",
+                "type": "string",
+                "minLength": 1
+              },
+              "with": {
+                "description": "The replacement; $1 names a group. \"\" removes the match.",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "case": {
+          "description": "\"pascal\" (the default): GetOrder, with $, # and _ as word breaks. \"camel\": getOrder. \"preserve\": the name as it is, which must then be a valid identifier. A schema's own case replaces the top-level one.",
+          "enum": [
+            "pascal",
+            "camel",
+            "preserve"
+          ]
+        }
+      }
+    },
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "include": {
+          "description": "The schema's procedures to type, by their own names: \"get_order\", \"list_*\", \"*\". * and ? match any characters and one character; brackets make what they hold literal; matching ignores case. A pattern that matches nothing is an error. --include (schema.pattern) overrides the file's includes for one run.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/pattern"
+          }
+        },
+        "exclude": {
+          "description": "Procedures to leave out of those include selects, by their own names. Exclude wins over include. A pattern that excludes nothing is an error.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pattern"
+          }
+        },
+        "prefix": {
+          "description": "Put in front of the generated names of the schema's objects, before the case rules: \"Audit\" makes audit.get_order AuditGetOrder. Empty by default: names leave the schema out, and a clash between schemas is an error that a prefix resolves.",
+          "type": "string"
+        },
+        "naming": {
+          "description": "Naming for this schema, merged over the top-level naming: its case replaces the top-level case, and its replace rules run after the top-level ones.",
+          "$ref": "#/$defs/naming"
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -33,6 +33,10 @@
   "types": {
     "ListItemsLabel": {
       "kind": "object",
+      "identity": {
+        "procedure": "cat.list_items",
+        "path": "results[0][].label"
+      },
       "fields": [
         {
           "name": "id",
@@ -78,6 +82,10 @@
     },
     "ListItemsNoteLabel": {
       "kind": "object",
+      "identity": {
+        "procedure": "cat.list_items",
+        "path": "results[0][].noteLabel"
+      },
       "fields": [
         {
           "name": "id",
@@ -123,6 +131,10 @@
     },
     "ListItemsRelated": {
       "kind": "object",
+      "identity": {
+        "procedure": "cat.list_items",
+        "path": "results[0][].related"
+      },
       "fields": [
         {
           "name": "id",
@@ -206,6 +218,10 @@
     },
     "ListItemsRelatedText": {
       "kind": "object",
+      "identity": {
+        "procedure": "cat.list_items",
+        "path": "results[0][].relatedText<json>"
+      },
       "fields": [
         {
           "name": "id",
@@ -289,6 +305,10 @@
     },
     "ListItemsRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "cat.list_items",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "id",
@@ -379,6 +399,10 @@
     },
     "ListItemsTag": {
       "kind": "object",
+      "identity": {
+        "procedure": "cat.list_items",
+        "path": "results[0][].tag"
+      },
       "fields": [
         {
           "name": "id",
@@ -435,5 +459,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

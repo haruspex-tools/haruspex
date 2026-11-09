@@ -1,0 +1,44 @@
+// The config file of an invented shop, used end to end by ConfigCliTests: selection, overrides, strict objects and
+// naming. Comments and trailing commas are allowed, as in tsconfig.json.
+{
+  "$schema": "../../../schemas/haruspex.schema.json",
+  "source": "database",
+  "out": "generated",
+
+  // The application deploys together with the database, so an unexpected key should fail loudly.
+  "objects": "strict",
+
+  // Naming for every schema: a trailing # marks a procedure returning one row.
+  "naming": {
+    "replace": [{ "pattern": "#$", "with": "Row" }],
+    "case": "pascal",
+  },
+
+  // Selection, prefixes and naming per schema. A key is the schema's name as it is.
+  "schemas": {
+    "shop": { "include": ["*"], "exclude": ["*_internal"] },
+    // Admin's reports are prefixed, so they can never clash with the shop's names, and lose their report_ (this rule
+    // runs after the top-level ones): shop_admin.report_sales is AdminSales.
+    "shop_admin": {
+      "include": ["report_*"],
+      "prefix": "Admin",
+      "naming": { "replace": [{ "pattern": "^report_", "with": "" }] },
+    },
+  },
+
+  "procedures": {
+    "shop.get_basket": {
+      "name": "Basket",
+      "paths": {
+        "customerName": { "nullable": false, "why": "every basket belongs to a customer: there is no guest checkout" },
+        "lines[]": { "name": "BasketItem" },
+      },
+    },
+    "shop.list_products": {
+      "paths": {
+        "[].status": { "values": "exact", "why": "the application writes the status in lower case only" },
+        "[].attributes": { "type": "ProductAttributesSchema", "import": "@shop/types" },
+      },
+    },
+  },
+}

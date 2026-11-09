@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -42,6 +42,10 @@
     "ComponentsNode": {
       "kind": "object",
       "recursive": true,
+      "identity": {
+        "function": "bom.components",
+        "path": "<bom.components>"
+      },
       "fields": [
         {
           "name": "quantity",
@@ -96,6 +100,10 @@
     },
     "ComponentsNodePart": {
       "kind": "object",
+      "identity": {
+        "function": "bom.components",
+        "path": "<bom.components>.part"
+      },
       "fields": [
         {
           "name": "id",
@@ -206,6 +214,10 @@
     },
     "GetAssemblyRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "bom.get_assembly",
+        "path": "results[0]"
+      },
       "fields": [
         {
           "name": "id",
@@ -295,5 +307,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

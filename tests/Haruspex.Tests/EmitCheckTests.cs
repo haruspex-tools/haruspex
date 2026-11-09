@@ -8,7 +8,8 @@ namespace Haruspex.Tests;
 /// Compiles the Zod generated from every procedure of the fixtures with <c>tsc --noEmit</c>, against the zod and
 /// TypeScript versions pinned in <c>tests/emit-check/package-lock.json</c>. <c>src/usage.ts</c> and
 /// <c>src/checks-usage.ts</c> there also check the inferred types: that an omitted key is optional, a kept null is
-/// nullable, and a value set is a union of literals.
+/// nullable, and a value set is a union of literals; <c>src/shop-usage.ts</c> checks what the shop fixture's config file
+/// changes.
 /// </summary>
 public class EmitCheckTests
 {
@@ -24,6 +25,15 @@ public class EmitCheckTests
             var project = SqlProject.Load(TestPaths.Fixture(fixture));
             var selection = project.Select([ObjectPattern.Parse("*.*")]);
             File.WriteAllText(Path.Combine(generated, file), ZodEmitter.Emit(project.Infer(selection.Procedures)));
+        }
+
+        // The shop fixture through the CLI, with its config file: strict objects, overrides and an import that
+        // tsconfig.json maps to src/shop-types.ts.
+        using (var output = new StringWriter())
+        using (var error = new StringWriter())
+        {
+            var exitCode = HaruspexCli.Run(["generate", "--out", Path.Combine(generated, "shop")], output, error, TestPaths.Fixture("shop"));
+            Assert.True(exitCode == 0, error.ToString());
         }
 
         EmitCheckPackage.EnsureInstalled(TestPaths.EmitCheck);

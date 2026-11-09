@@ -68,6 +68,23 @@ public static class IrJsonWriter
             }
 
             json.WriteEndArray();
+
+            json.WriteStartArray("overrides");
+            foreach (var claim in document.Overrides
+                         .OrderBy(o => o.Object, StringComparer.Ordinal)
+                         .ThenBy(o => o.Path, StringComparer.Ordinal)
+                         .ThenBy(o => o.Setting, StringComparer.Ordinal))
+            {
+                json.WriteStartObject();
+                json.WriteString("object", claim.Object);
+                json.WriteString("path", claim.Path);
+                json.WriteString("setting", claim.Setting);
+                if (claim.Why is not null)
+                    json.WriteString("why", claim.Why);
+                json.WriteEndObject();
+            }
+
+            json.WriteEndArray();
             json.WriteEndObject();
         }
 
@@ -139,6 +156,19 @@ public static class IrJsonWriter
         // Written only when true, so a type that is not recursive reads as in 0.3.
         if (type.Recursive)
             json.WriteBoolean("recursive", true);
+        if (type.Identity is { } identity)
+        {
+            json.WriteStartObject("identity");
+            json.WriteString(identity.Owner switch
+            {
+                IrTypeOwner.Procedure => "procedure",
+                IrTypeOwner.Function => "function",
+                _ => throw new ArgumentOutOfRangeException(nameof(type), identity.Owner, "Unknown owner."),
+            }, identity.Object);
+            json.WriteString("path", identity.Path);
+            json.WriteEndObject();
+        }
+
         json.WriteStartArray("fields");
         foreach (var field in type.Fields)
         {
@@ -249,6 +279,11 @@ public static class IrJsonWriter
                     WriteType(json, content);
                 }
 
+                break;
+            case IrImport import:
+                json.WriteString("kind", "import");
+                json.WriteString("name", import.Name);
+                json.WriteString("from", import.From);
                 break;
             case IrUnknownType unknown:
                 json.WriteString("kind", "unknown");

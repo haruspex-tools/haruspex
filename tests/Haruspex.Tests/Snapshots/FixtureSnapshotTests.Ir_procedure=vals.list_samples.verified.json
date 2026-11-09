@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -44,6 +44,10 @@
   "types": {
     "ListSamplesRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "vals.list_samples",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "id",
@@ -761,5 +765,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

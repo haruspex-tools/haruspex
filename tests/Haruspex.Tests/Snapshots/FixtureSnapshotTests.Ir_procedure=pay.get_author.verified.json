@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -41,6 +41,10 @@
   "types": {
     "GetAuthorAuthor": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.get_author",
+        "path": "results[0].author"
+      },
       "fields": [
         {
           "name": "id",
@@ -162,6 +166,10 @@
     },
     "GetAuthorAuthorBook": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.get_author",
+        "path": "results[0].author.books[]"
+      },
       "fields": [
         {
           "name": "id",
@@ -275,6 +283,10 @@
     },
     "GetAuthorAuthorReview": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.get_author",
+        "path": "results[0].author.reviews[]"
+      },
       "fields": [
         {
           "name": "id",
@@ -350,6 +362,10 @@
     },
     "GetAuthorRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.get_author",
+        "path": "results[0]"
+      },
       "fields": [
         {
           "name": "author",
@@ -370,5 +386,6 @@
       "detail": "pay.author.profile is a json column: its shape is in the data, not the schema.",
       "at": "tables/author.sql:7:5"
     }
-  ]
+  ],
+  "overrides": []
 }

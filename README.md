@@ -30,7 +30,20 @@ haruspex generate path/to/database --include 'sales.*' --out src/db
 ```
 
 This writes `haruspex.ir.json` (the inferred shapes) and `haruspex.zod.ts` (a Zod schema and a type per
-procedure) to `src/db`.
+procedure) to `src/db`. A project keeps its settings in a `haruspex.json` beside it, found by walking up from the
+working directory, so `haruspex generate` alone is enough:
+
+```jsonc
+{
+  "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
+  "source": "database",
+  "out": "src/db",
+  "schemas": { "sales": { "include": ["get_*", "list_*"] } }
+}
+```
+
+It also holds per-schema exclusions and name prefixes, overrides of what was inferred (each still checked at runtime), naming rules and strict
+objects: see [docs/configuration.md](docs/configuration.md).
 
 ## Who it is not for
 

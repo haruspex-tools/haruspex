@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>The haruspex config file (haruspex.json): which procedures are typed, overrides applied to the IR, naming rules and emitter settings. It knows the IR, not SQL syntax.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Haruspex.Ir\Haruspex.Ir.csproj" />
+    <ProjectReference Include="..\Haruspex.SqlServer.Model\Haruspex.SqlServer.Model.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Haruspex.Tests" />
+  </ItemGroup>
+</Project>

@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Haruspex.SqlServer.Model;
 
-namespace Haruspex.Cli;
+namespace Haruspex.Config;
 
 /// <summary>
 /// Selects objects by two-part name: <c>sales.get_order</c>, <c>sales.*</c>, <c>*.list_?</c>. <c>*</c> and
@@ -12,8 +12,8 @@ namespace Haruspex.Cli;
 /// case-insensitive, like the names themselves.
 /// </summary>
 /// <remarks>
-/// Selection is the config file's concern, not the schema's, so this is not in the publishable Model. It lives
-/// here until Haruspex.Config exists, and moves there with it (docs/architecture.md).
+/// Selection is the config file's concern, not the schema's, so this is not in the publishable Model. It lived in the
+/// CLI until Haruspex.Config existed (slice 4).
 /// </remarks>
 public sealed class ObjectPattern
 {

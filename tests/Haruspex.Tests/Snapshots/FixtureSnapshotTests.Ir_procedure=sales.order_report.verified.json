@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -27,6 +27,10 @@
   "types": {
     "OrderReportRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "sales.order_report",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "order_id",
@@ -188,5 +192,6 @@
       "detail": "There is no table sales.voucher in the project.",
       "at": "procedures/order_report.sql:11:8"
     }
-  ]
+  ],
+  "overrides": []
 }

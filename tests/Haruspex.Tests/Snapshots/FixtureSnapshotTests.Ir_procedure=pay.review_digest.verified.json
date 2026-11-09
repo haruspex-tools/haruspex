@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -27,6 +27,10 @@
   "types": {
     "ReviewDigestRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "pay.review_digest",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "ids",
@@ -105,5 +109,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

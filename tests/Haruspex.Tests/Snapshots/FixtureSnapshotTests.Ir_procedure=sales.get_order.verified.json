@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -41,6 +41,10 @@
   "types": {
     "GetOrderCustomer": {
       "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0].customer"
+      },
       "fields": [
         {
           "name": "id",
@@ -108,6 +112,10 @@
     },
     "GetOrderLine": {
       "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0].lines[]"
+      },
       "fields": [
         {
           "name": "id",
@@ -222,6 +230,10 @@
     },
     "GetOrderLineProduct": {
       "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0].lines[].product"
+      },
       "fields": [
         {
           "name": "sku",
@@ -296,6 +308,10 @@
     },
     "GetOrderRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0]"
+      },
       "fields": [
         {
           "name": "id",
@@ -470,6 +486,10 @@
     },
     "GetOrderSalesperson": {
       "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0].salesperson"
+      },
       "fields": [
         {
           "name": "id",
@@ -541,5 +561,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }

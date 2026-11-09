@@ -155,6 +155,86 @@ public class ZodEmitterTests
             new Dictionary<string, IrObjectType>(),
             []);
 
-        Assert.Throws<ArgumentException>(() => ZodEmitter.Emit(doc));
+        Assert.Throws<ZodEmitException>(() => ZodEmitter.Emit(doc));
+    }
+
+    [Theory]
+    [InlineData("$money")]
+    [InlineData("a$b")]
+    public void Accepts_a_name_with_a_dollar(string name)
+    {
+        var doc = new IrDocument(new IrSource("tsql"), [new IrObject("s.p", name, IrObjectKind.Procedure, "p.sql:1:1", [], null)], new Dictionary<string, IrObjectType>(), []);
+
+        Assert.Contains($"export const {name}Schema = z.unknown()\n", ZodEmitter.Emit(doc), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Rejects_a_reserved_word_as_a_name()
+    {
+        var doc = new IrDocument(new IrSource("tsql"), [new IrObject("s.p", "string", IrObjectKind.Procedure, "p.sql:1:1", [], null)], new Dictionary<string, IrObjectType>(), []);
+
+        Assert.Equal("The IR name 'string' is not a valid TypeScript identifier.", Assert.Throws<ZodEmitException>(() => ZodEmitter.Emit(doc)).Message);
+    }
+
+    [Fact]
+    public void Objects_strip_unknown_keys_by_default()
+    {
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("v", new IrScalar(IrScalarKind.Boolean, null, "bit"))));
+
+        Assert.Contains("export const PRowSchema = z.object({\n", ts, StringComparison.Ordinal);
+        Assert.DoesNotContain("strictObject", ts, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(IrEncoding.Json)]
+    [InlineData(IrEncoding.Rowset)]
+    public void Strict_objects_reject_unknown_keys_in_every_result(IrEncoding encoding)
+    {
+        var ts = ZodEmitter.Emit(OneResult(encoding, Field("v", new IrScalar(IrScalarKind.Boolean, null, "bit"))), new ZodOptions { Objects = ZodObjects.Strict });
+
+        Assert.Contains("export const PRowSchema = z.strictObject({\n", ts, StringComparison.Ordinal);
+        Assert.DoesNotContain("z.object(", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Imports_each_module_once_with_its_names_sorted()
+    {
+        var ts = ZodEmitter.Emit(OneResult(
+            IrEncoding.Json,
+            Field("b", new IrImport("BSchema", "@app/types")),
+            Field("a", new IrArray(new IrImport("ASchema", "@app/types"))),
+            Field("c", new IrImport("CSchema", "./c")),
+            Field("again", new IrImport("BSchema", "@app/types"))));
+
+        Assert.Contains("import { z } from 'zod'\nimport { CSchema } from './c'\nimport { ASchema, BSchema } from '@app/types'\n", ts, StringComparison.Ordinal);
+        Assert.Contains("  b: BSchema,\n  a: z.array(ASchema),\n  c: CSchema,\n", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_imported_name_from_two_modules_is_refused()
+    {
+        var doc = OneResult(IrEncoding.Json, Field("a", new IrImport("TagSchema", "./a")), Field("b", new IrImport("TagSchema", "./b")));
+
+        Assert.Equal("'TagSchema' is imported from both './a' and './b'.", Assert.Throws<ZodEmitException>(() => ZodEmitter.Emit(doc)).Message);
+    }
+
+    [Theory]
+    [InlineData("PRowSchema")]
+    [InlineData("PRow")]
+    [InlineData("z")]
+    [InlineData("jsonText")]
+    public void An_imported_name_the_module_defines_is_refused(string name)
+    {
+        var doc = OneResult(IrEncoding.Json, Field("a", new IrImport(name, "./a")));
+
+        Assert.Equal($"The imported name '{name}' is also a name this module defines or uses.", Assert.Throws<ZodEmitException>(() => ZodEmitter.Emit(doc)).Message);
+    }
+
+    [Fact]
+    public void An_import_specifier_is_quoted_safely()
+    {
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("a", new IrImport("ASchema", "./it's"))));
+
+        Assert.Contains("import { ASchema } from './it\\'s'\n", ts, StringComparison.Ordinal);
     }
 }

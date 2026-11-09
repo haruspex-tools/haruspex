@@ -1,0 +1,4 @@
+CREATE SCHEMA shop;
+GO
+CREATE SCHEMA shop_admin;
+GO

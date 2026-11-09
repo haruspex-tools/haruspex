@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.4",
+  "irVersion": "0.5",
   "source": {
     "dialect": "tsql"
   },
@@ -38,6 +38,10 @@
   "types": {
     "ListOrdersRow": {
       "kind": "object",
+      "identity": {
+        "procedure": "sales.list_orders",
+        "path": "results[0][]"
+      },
       "fields": [
         {
           "name": "order_id",
@@ -210,5 +214,6 @@
       ]
     }
   },
-  "unknowns": []
+  "unknowns": [],
+  "overrides": []
 }
