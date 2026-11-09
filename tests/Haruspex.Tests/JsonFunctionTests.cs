@@ -347,6 +347,19 @@ public class JsonFunctionTests
     }
 
     [Fact]
+    public void A_recursive_type_with_no_finite_value_through_a_plain_call_is_unknown()
+    {
+        // The call is text, but text holding a value that never ends: the server raises error 217 every time.
+        var doc = Infer(
+            "CREATE FUNCTION dbo.forever_text(@x int) RETURNS nvarchar(max) AS BEGIN RETURN json_object('c': dbo.forever_text(@x)); END\nGO\n",
+            "SELECT json_query(dbo.forever_text(t.id)) AS v, dbo.forever_text(t.id) AS w FROM dbo.t AS t FOR JSON PATH;");
+
+        Assert.Equal(IrUnknownReasons.UnresolvedRecursion, Assert.Single(doc.Unknowns, u => u.Path == "results[0][].v").Reason);
+        Assert.Null(Assert.IsType<IrJsonText>(Field(doc, "w").Type).Content);
+        Assert.DoesNotContain("ForeverTextNode", doc.Types.Keys);
+    }
+
+    [Fact]
     public void A_recursive_type_whose_cycle_can_end_in_null_is_kept()
     {
         // A null argument makes the call NULL, which is where a chain ends; ABSENT ON NULL then leaves the key out.

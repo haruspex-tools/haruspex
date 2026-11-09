@@ -186,7 +186,8 @@ internal sealed class FunctionSummaries
     /// <summary>
     /// The functions of a settled component whose node has a finite value: a least fixed point, starting from none. A
     /// node has one when each of its keys can be left out or null, or has a type with a finite value; an array without
-    /// a fewest number of items always has one (<c>[]</c>), and a scalar or JSON text always has one.
+    /// a fewest number of items always has one (<c>[]</c>), a scalar always has one, and JSON text has one when its content
+    /// does (or its content is unknown).
     /// </summary>
     private static HashSet<ObjectName> Finite(Dictionary<ObjectName, FunctionReturn> results)
     {
@@ -199,6 +200,10 @@ internal sealed class FunctionSummaries
             ArrayShape array => array.MinItems is null or 0 || Has(array.Items),
             TupleShape tuple => tuple.Items.All(e => e.NullableBecause.Count > 0 || Has(e.Type)),
             UnionShape union => union.Variants.Any(Has),
+
+            // Text built here holds its content, so it has a finite value only when the content does (a plain call of
+            // an endless function is endless too); text whose content is unknown claims only "JSON".
+            JsonTextShape { Content: { } content } => Has(content),
             _ => true,
         };
 
