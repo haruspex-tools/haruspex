@@ -53,7 +53,11 @@ public class JsonFunctionObservationTests(SqlServerFixture server)
 
     private const string Narrow = "CREATE FUNCTION dbo.obs_narrow(@s nvarchar(3), @d decimal(5,2)) RETURNS nvarchar(max) AS BEGIN RETURN json_object('s': @s, 'd': @d); END";
 
-    private static readonly string[] Functions = [Children, Card, JsonCard, NullCard, Short, Variable, Tree, Endless, Narrow];
+    private const string TopZero = "CREATE FUNCTION dbo.obs_top_zero() RETURNS nvarchar(max) AS BEGIN DECLARE @r nvarchar(max); SELECT TOP (0) @r = json_object('a': 1); RETURN @r; END";
+
+    private const string NoGroup = "CREATE FUNCTION dbo.obs_no_group() RETURNS nvarchar(max) AS BEGIN DECLARE @r nvarchar(max); SELECT @r = json_object('a': 1) HAVING 1 = 0; RETURN @r; END";
+
+    private static readonly string[] Functions = [Children, Card, JsonCard, NullCard, Short, Variable, Tree, Endless, Narrow, TopZero, NoGroup];
 
     /// <summary>Creates the table and the functions, then returns the first column of the first row of <paramref name="query"/>, as text; rolled back.</summary>
     private async Task<string?> Query(string query)
@@ -112,6 +116,9 @@ public class JsonFunctionObservationTests(SqlServerFixture server)
     // RETURNS NULL ON NULL INPUT: a null argument gives NULL without running the body, which would return {"id":null}.
     [InlineData("SELECT ISNULL(dbo.obs_null_card(NULL), N'NULL');", "NULL")]
     [InlineData("SELECT dbo.obs_card(NULL);", """{"id":null}""")]
+    // A SELECT that assigns nothing leaves the variable NULL, so the function returns NULL.
+    [InlineData("SELECT ISNULL(dbo.obs_top_zero(), N'NULL');", "NULL")]
+    [InlineData("SELECT ISNULL(dbo.obs_no_group(), N'NULL');", "NULL")]
     public async Task A_function_returns_null_when_for_json_finds_no_rows_or_an_argument_is_null(string query, string expected) =>
         Assert.Equal(expected, await Query(query));
 

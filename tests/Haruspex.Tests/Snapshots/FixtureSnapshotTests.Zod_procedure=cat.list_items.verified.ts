@@ -2,6 +2,24 @@
 // Rowset results follow the default type mapping of the mssql (tedious) driver.
 import { z } from 'zod'
 
+// JSON text: a string that must parse to a value of its content's schema. Its type stays string.
+const jsonText = (content: () => z.ZodType) =>
+  z.string().refine((text) => {
+    try {
+      return content().safeParse(JSON.parse(text)).success
+    } catch {
+      return false
+    }
+  }, { error: 'Expected JSON text holding a value of its content type' })
+
+export const ListItemsRelatedTextSchema = z.object({
+  id: z.int32(),
+  title: z.string().max(20),
+  note: z.string().max(20).optional(),
+  category: z.string().max(20),
+})
+export type ListItemsRelatedText = z.infer<typeof ListItemsRelatedTextSchema>
+
 export const ListItemsRelatedSchema = z.object({
   id: z.int32(),
   title: z.string().max(20),
@@ -22,12 +40,19 @@ export const ListItemsNoteLabelSchema = z.object({
 })
 export type ListItemsNoteLabel = z.infer<typeof ListItemsNoteLabelSchema>
 
+export const ListItemsTagSchema = z.object({
+  id: z.int32().nullable(),
+  note: z.string().max(20).nullable(),
+})
+export type ListItemsTag = z.infer<typeof ListItemsTagSchema>
+
 export const ListItemsRowSchema = z.object({
   id: z.int32(),
-  relatedText: z.string().optional() /* JSON text */,
+  relatedText: jsonText(() => ListItemsRelatedTextSchema).optional() /* JSON text */,
   related: ListItemsRelatedSchema.optional(),
   label: ListItemsLabelSchema,
   noteLabel: ListItemsNoteLabelSchema.optional(),
+  tag: ListItemsTagSchema,
 })
 export type ListItemsRow = z.infer<typeof ListItemsRowSchema>
 

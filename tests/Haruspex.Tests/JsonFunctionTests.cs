@@ -166,6 +166,11 @@ public class JsonFunctionTests
     [InlineData("varchar(max)", "RETURN json_object('a': 1);")]
     // Not JSON at all.
     [InlineData("nvarchar(max)", "RETURN N'plain';")]
+    // A SELECT that may assign nothing leaves the variable NULL (observed for TOP (0) and HAVING 1 = 0).
+    [InlineData("nvarchar(max)", "DECLARE @r nvarchar(max); SELECT TOP (0) @r = json_object('a': 1); RETURN @r;")]
+    [InlineData("nvarchar(max)", "DECLARE @r nvarchar(max); SELECT @r = json_object('a': 1) HAVING 1 = 0; RETURN @r;")]
+    [InlineData("nvarchar(max)", "DECLARE @r nvarchar(max); SELECT @r = json_object('a': 1) ORDER BY (SELECT 1) OFFSET 1 ROWS; RETURN @r;")]
+    [InlineData("nvarchar(max)", "DECLARE @r nvarchar(max); SELECT @r = json_object('a': 1) GROUP BY (); RETURN @r;")]
     public void Any_other_body_gives_the_declared_return_type(string returns, string body)
     {
         var doc = Infer($"CREATE FUNCTION dbo.f(@id int) RETURNS {returns} AS\nBEGIN\n{body}\nEND\nGO\n", "SELECT dbo.f(t.id) AS v, json_query(dbo.f(t.id)) AS q FROM dbo.t AS t FOR JSON PATH;");
@@ -329,6 +334,51 @@ public class JsonFunctionTests
         Assert.Single(doc.Unknowns, u => u.Path == "results[0][].v");
     }
 
+    [Fact]
+    public void A_recursive_type_with_no_finite_value_is_unknown()
+    {
+        // Every call makes another, through a key always present and never null: the server always raises error 217.
+        var doc = Infer(
+            "CREATE FUNCTION dbo.forever(@x int) RETURNS nvarchar(max) AS BEGIN RETURN json_object('c': json_query(dbo.forever(@x))); END\nGO\n",
+            "SELECT json_query(dbo.forever(t.id)) AS v FROM dbo.t AS t FOR JSON PATH;");
+
+        Assert.Equal(IrUnknownReasons.UnresolvedRecursion, Assert.Single(doc.Unknowns, u => u.Path == "results[0][].v").Reason);
+        Assert.DoesNotContain("ForeverNode", doc.Types.Keys);
+    }
+
+    [Fact]
+    public void A_recursive_type_whose_cycle_can_end_in_null_is_kept()
+    {
+        // A null argument makes the call NULL, which is where a chain ends; ABSENT ON NULL then leaves the key out.
+        var doc = Infer(
+            "CREATE FUNCTION dbo.chain(@x int) RETURNS nvarchar(max) WITH RETURNS NULL ON NULL INPUT AS BEGIN RETURN json_object('next': json_query(dbo.chain(NULLIF(@x, 0))), 'at': @x ABSENT ON NULL); END\nGO\n",
+            "SELECT json_query(dbo.chain(t.id)) AS v FROM dbo.t AS t FOR JSON PATH;");
+
+        Assert.Empty(doc.Unknowns);
+        Assert.True(doc.Types["ChainNode"].Recursive);
+    }
+
+    [Fact]
+    public void An_unknown_inside_a_recursive_type_is_listed_under_every_procedure_that_reaches_it()
+    {
+        using var dir = new TempDirectory();
+        dir.File("tables.sql", Tables);
+        dir.File("functions.sql", """
+            CREATE FUNCTION dbo.tree(@id int) RETURNS nvarchar(max) AS
+            BEGIN
+                RETURN (SELECT c.id, upper(c.name) AS up, json_query(dbo.tree(c.id)) AS children FROM dbo.t AS c WHERE c.parent_id = @id FOR JSON PATH);
+            END
+            GO
+            """);
+        dir.File("p.sql", "CREATE PROCEDURE dbo.p AS\nSELECT json_query(dbo.tree(t.id)) AS v FROM dbo.t AS t FOR JSON PATH;");
+        dir.File("q.sql", "CREATE PROCEDURE dbo.q AS\nSELECT json_query(dbo.tree(t.id)) AS w FROM dbo.t AS t FOR JSON PATH;");
+        var project = SqlProject.Load(dir.Path);
+        var doc = project.Infer(project.Select([ObjectPattern.Parse("*.*")]).Procedures);
+
+        // The path starts at the type, which every procedure shares.
+        Assert.Equal(["dbo.p <TreeNode>.up", "dbo.q <TreeNode>.up"], doc.Unknowns.Select(u => $"{u.Object} {u.Path}").Order(StringComparer.Ordinal));
+    }
+
     // ---- the IR and the Zod ---------------------------------------------------------------------------
 
     [Fact]
@@ -350,6 +400,19 @@ public class JsonFunctionTests
         Assert.Contains("  get children() { return z.array(TreeNodeSchema).optional() },\n", zod, StringComparison.Ordinal);
         Assert.Contains("  id: z.int32(),\n", zod, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Zod_checks_json_text_against_its_content_and_keeps_it_a_string()
+    {
+        var zod = ZodEmitter.Emit(Infer(Children, "SELECT dbo.children(t.id) AS kids FROM dbo.t AS t FOR JSON PATH;"));
+
+        Assert.Contains("const jsonText = (content: () => z.ZodType) =>", zod, StringComparison.Ordinal);
+        Assert.Contains("  kids: jsonText(() => z.array(PKidsSchema)).optional() /* JSON text */,\n", zod, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Zod_writes_no_helper_when_no_json_text_has_content() =>
+        Assert.DoesNotContain("jsonText", ZodEmitter.Emit(Infer(Children, "SELECT json_query(dbo.children(t.id)) AS kids FROM dbo.t AS t FOR JSON PATH;")), StringComparison.Ordinal);
 
     [Fact]
     public void Zod_writes_every_reference_within_a_cycle_as_a_getter()

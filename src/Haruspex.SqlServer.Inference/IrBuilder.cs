@@ -19,6 +19,16 @@ internal sealed class IrBuilder(FunctionSummaries functions)
     /// <summary>The name given to each recursive function's node, once its type is written.</summary>
     private readonly Dictionary<ObjectName, string> nodeNames = [];
 
+    /// <summary>The unknowns inside each node, with paths from the node, and the nodes each refers to.</summary>
+    private readonly Dictionary<string, List<(string Path, string Reason, string Detail, string At)>> nodeUnknowns = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, HashSet<string>> nodeEdges = new(StringComparer.Ordinal);
+
+    /// <summary>The nodes being written, innermost on top.</summary>
+    private readonly Stack<string> enclosingNodes = new();
+
+    /// <summary>Which object has had which node's unknowns listed.</summary>
+    private readonly HashSet<(string Object, string Node)> listedNodes = [];
+
     public IrDocument Build(IReadOnlyList<(Procedure Source, ProcedureAnalysis Analysis)> procedures)
     {
         var ordered = procedures.OrderBy(p => p.Source.Name.ToString(), StringComparer.Ordinal).ToList();
@@ -86,9 +96,9 @@ internal sealed class IrBuilder(FunctionSummaries functions)
                 // reported where json_query makes the text live, if it does.
                 return new IrJsonText(text.Content is null or UnknownShape ? null : Convert(text.Content, objectName, id, path + "<json>"));
             case RecursiveShape recursive:
-                return Node(recursive.Function, id, path);
+                return Node(recursive.Function, id);
             case NeverShape never:
-                unknowns.Add(new IrUnknown(id, path, IrUnknownReasons.UnresolvedRecursion, "The function called here never returns a value: every return calls itself again.", never.At.ToString()));
+                Report(id, path, IrUnknownReasons.UnresolvedRecursion, "The function called here never returns a value: every return calls itself again.", never.At.ToString());
                 return new IrUnknownType(IrUnknownReasons.UnresolvedRecursion);
             case ArrayShape array:
                 return Array(array, Convert(array.Items, objectName, id, path + "[]"));
@@ -106,7 +116,7 @@ internal sealed class IrBuilder(FunctionSummaries functions)
                 var name = Unique(objectName);
                 return Object(obj, name, name, id, path);
             case UnknownShape unknown:
-                unknowns.Add(new IrUnknown(id, path, unknown.Reason, unknown.Detail, unknown.At.ToString()));
+                Report(id, path, unknown.Reason, unknown.Detail, unknown.At.ToString());
                 return new IrUnknownType(unknown.Reason);
             default:
                 throw new ArgumentOutOfRangeException(nameof(shape), shape, "Unknown shape.");
@@ -117,14 +127,63 @@ internal sealed class IrBuilder(FunctionSummaries functions)
     /// A recursive function's node: one named type for the whole document, written the first time it is met, with its
     /// name reserved before its fields are converted so that the fields can refer to it.
     /// </summary>
-    private IrRef Node(ObjectName function, string id, string path)
+    /// <remarks>
+    /// The node is shared by every object that reaches it, so an unknown inside it is reported with a path that starts at
+    /// the node (<c>&lt;ComponentsNode&gt;.part.label</c>) and listed under every object whose results reach the node,
+    /// directly or through other nodes.
+    /// </remarks>
+    private IrRef Node(ObjectName function, string id)
     {
-        if (nodeNames.TryGetValue(function, out var known))
-            return new IrRef(known);
+        if (!nodeNames.TryGetValue(function, out var name))
+        {
+            name = Unique(Naming.Pascal(function.Name) + "Node");
+            nodeNames[function] = name;
+            nodeUnknowns[name] = [];
+            nodeEdges[name] = [];
+            if (enclosingNodes.TryPeek(out var outer))
+                nodeEdges[outer].Add(name);
+            enclosingNodes.Push(name);
+            try
+            {
+                Object(functions.Nodes[function], name, name, id, $"<{name}>");
+            }
+            finally
+            {
+                enclosingNodes.Pop();
+            }
+        }
+        else if (enclosingNodes.TryPeek(out var outer))
+        {
+            nodeEdges[outer].Add(name);
+        }
 
-        var name = Unique(Naming.Pascal(function.Name) + "Node");
-        nodeNames[function] = name;
-        return Object(functions.Nodes[function], name, name, id, path);
+        if (enclosingNodes.Count == 0)
+            ListNodeUnknowns(id, name);
+        return new IrRef(name);
+    }
+
+    /// <summary>Lists, under the object <paramref name="id"/>, the unknowns of a node and of every node it reaches.</summary>
+    private void ListNodeUnknowns(string id, string node)
+    {
+        var queue = new Queue<string>([node]);
+        while (queue.TryDequeue(out var next))
+        {
+            if (!listedNodes.Add((id, next)))
+                continue;
+            foreach (var (path, reason, detail, at) in nodeUnknowns[next])
+                unknowns.Add(new IrUnknown(id, path, reason, detail, at));
+            foreach (var further in nodeEdges[next])
+                queue.Enqueue(further);
+        }
+    }
+
+    /// <summary>An unknown at <paramref name="path"/>: kept with the node being written, if any, to list under each object that reaches it.</summary>
+    private void Report(string id, string path, string reason, string detail, string at)
+    {
+        if (enclosingNodes.TryPeek(out var node))
+            nodeUnknowns[node].Add((path, reason, detail, at));
+        else
+            unknowns.Add(new IrUnknown(id, path, reason, detail, at));
     }
 
     /// <summary>

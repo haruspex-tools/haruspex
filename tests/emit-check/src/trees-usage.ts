@@ -46,7 +46,10 @@ export const noContents: CategoryTreeNode = { id: 4, name: 'Empty' }
 export const wrongSubcategory: CategoryTreeNode = { ...garden, contents: { subcategories: [{ id: 1, name: 'Tools' }] } }
 
 // A plain call is text; json_query over it is the object. A label is never absent when its arguments are never null.
-export const item: ListItemsRow = { id: 8, relatedText: '{"id":7,"title":"Hose","category":"Garden"}', related: { id: 7, title: 'Hose', category: 'Garden' }, label: { id: 8, text: 'Gloves' } }
+export const item: ListItemsRow = { id: 8, relatedText: '{"id":7,"title":"Hose","category":"Garden"}', related: { id: 7, title: 'Hose', category: 'Garden' }, label: { id: 8, text: 'Gloves' }, tag: { id: 7, note: null } }
+
+// @ts-expect-error Without RETURNS NULL ON NULL INPUT a null parameter is a key kept as null, never left out.
+export const tagWithoutNote: ListItemsRow = { ...item, tag: { id: 7 } }
 
 // @ts-expect-error The text is a string, not the object.
 export const textAsObject: ListItemsRow = { ...item, relatedText: { id: 7, title: 'Hose', category: 'Garden' } }

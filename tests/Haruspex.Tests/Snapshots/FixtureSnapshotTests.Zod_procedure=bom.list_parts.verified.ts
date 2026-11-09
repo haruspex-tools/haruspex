@@ -2,6 +2,16 @@
 // Rowset results follow the default type mapping of the mssql (tedious) driver.
 import { z } from 'zod'
 
+// JSON text: a string that must parse to a value of its content's schema. Its type stays string.
+const jsonText = (content: () => z.ZodType) =>
+  z.string().refine((text) => {
+    try {
+      return content().safeParse(JSON.parse(text)).success
+    } catch {
+      return false
+    }
+  }, { error: 'Expected JSON text holding a value of its content type' })
+
 export const ComponentsNodePartSchema = z.object({
   id: z.int32(),
   name: z.string().max(30),
@@ -21,7 +31,7 @@ export const ListPartsRowSchema = z.object({
   id: z.int32(),
   name: z.string().max(30),
   components: z.array(ComponentsNodeSchema).optional(),
-  componentsText: z.string().optional() /* JSON text */,
+  componentsText: jsonText(() => z.array(ComponentsNodeSchema)).optional() /* JSON text */,
 })
 export type ListPartsRow = z.infer<typeof ListPartsRowSchema>
 

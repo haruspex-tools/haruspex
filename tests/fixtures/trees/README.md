@@ -16,10 +16,11 @@ Two invented domains, with the seed in `tests/Haruspex.DifferentialTests/Seeds/t
 | `cat.category_tree`, `cat.category_contents` | mutual recursion: two recursive named types, one an array of objects (FOR JSON), one an object (`json_object … ABSENT ON NULL`, never NULL) |
 | `cat.item_card` | not recursive: FOR JSON `WITHOUT_ARRAY_WRAPPER` through a variable, NULL for no item |
 | `cat.item_label` | a constructor with `RETURNS NULL ON NULL INPUT`: non-null parameters inside, NULL for a null argument |
+| `cat.item_tag` | a constructor without it: a parameter inside is null when the argument is, and its key is kept as `null` |
 | `bom.get_assembly` | one part and its tree; absent when there is no such part |
 | `bom.list_parts` | every part's tree, live through `json_query` and as escaped text from a plain call |
 | `cat.get_category` | the two mutually recursive functions from a procedure |
-| `cat.list_items` | the non-recursive functions with and without `json_query`; null-input |
+| `cat.list_items` | the non-recursive functions with and without `json_query`; null-input; a null parameter inside a body |
 | `cat.item_rows` | a JSON function as a rowset column: text whose content the IR states |
 
 The types do not say how deep a tree goes: SQL Server stops at 32 nested calls with error 217.

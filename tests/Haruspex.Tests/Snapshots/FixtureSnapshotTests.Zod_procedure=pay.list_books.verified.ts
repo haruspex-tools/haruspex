@@ -2,6 +2,16 @@
 // Rowset results follow the default type mapping of the mssql (tedious) driver.
 import { z } from 'zod'
 
+// JSON text: a string that must parse to a value of its content's schema. Its type stays string.
+const jsonText = (content: () => z.ZodType) =>
+  z.string().refine((text) => {
+    try {
+      return content().safeParse(JSON.parse(text)).success
+    } catch {
+      return false
+    }
+  }, { error: 'Expected JSON text holding a value of its content type' })
+
 export const ListBooksReviewsLatestSchema = z.object({
   stars: z.int().min(1).max(5),
   posted: z.iso.datetime({ offset: true }),
@@ -15,6 +25,18 @@ export const ListBooksReviewsSchema = z.object({
 })
 export type ListBooksReviews = z.infer<typeof ListBooksReviewsSchema>
 
+export const ListBooksFirstReviewTextSchema = z.object({
+  id: z.int32(),
+  stars: z.int().min(1).max(5),
+})
+export type ListBooksFirstReviewText = z.infer<typeof ListBooksFirstReviewTextSchema>
+
+export const ListBooksFirstReviewText2Schema = z.object({
+  id: z.int32(),
+  stars: z.int().min(1).max(5),
+})
+export type ListBooksFirstReviewText2 = z.infer<typeof ListBooksFirstReviewText2Schema>
+
 export const ListBooksFirstReviewLiveSchema = z.object({
   id: z.int32(),
   stars: z.int().min(1).max(5),
@@ -22,7 +44,7 @@ export const ListBooksFirstReviewLiveSchema = z.object({
 export type ListBooksFirstReviewLive = z.infer<typeof ListBooksFirstReviewLiveSchema>
 
 export const ListBooksFirstReviewSchema = z.object({
-  text: z.string().nullable() /* JSON text */,
+  text: jsonText(() => ListBooksFirstReviewText2Schema).nullable() /* JSON text */,
   live: ListBooksFirstReviewLiveSchema.nullable(),
 })
 export type ListBooksFirstReview = z.infer<typeof ListBooksFirstReviewSchema>
@@ -45,7 +67,7 @@ export const ListBooksRowSchema = z.object({
   slots: z.tuple([z.string().max(60), z.string().max(13).nullable(), z.iso.date().nullable()]) /* char(13) pads to 13 bytes: 13 characters in a single-byte collation, at most 13 otherwise; no collation is declared */,
   reviews: ListBooksReviewsSchema,
   tags: z.record(z.string(), z.int().min(1).max(100).nullable()).optional(),
-  firstReviewText: z.string().optional() /* JSON text */,
+  firstReviewText: jsonText(() => ListBooksFirstReviewTextSchema).optional() /* JSON text */,
   firstReview: ListBooksFirstReviewSchema,
   meta: ListBooksMetaSchema,
 })

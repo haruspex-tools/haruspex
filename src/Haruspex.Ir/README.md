@@ -64,7 +64,9 @@ union (below), `{ "ref" }`, `{ "kind": "json-text", "content"? }` or `{ "kind": 
 | JSON text | `{ "kind": "json-text", "content"? }` | a string holding JSON, which the consumer parses. With `content`, a non-null string parses to a value of that type (the JSON was built here: a column of live JSON in a rowset, a `FOR JSON` subquery `WITHOUT_ARRAY_WRAPPER`, a call of a function returning JSON). Without it, only "JSON" is claimed (a `json` column, a parameter) |
 
 An unknown's path names a tuple's position as `[0]`, a record's values as `{}`, an array's items as `[]` and what JSON
-text parses to as `<json>`; a union's variants share their path.
+text parses to as `<json>`; a union's variants share their path. Inside a recursive type the path starts at the type,
+`<ComponentsNode>.part.label`, because the type is shared: the unknown is listed under every object whose results
+reach it.
 
 ## Recursive types
 

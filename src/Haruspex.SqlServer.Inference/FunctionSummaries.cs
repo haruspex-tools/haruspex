@@ -26,7 +26,8 @@ internal sealed record FunctionReturn(Shape Declared, bool ReturnsJson, Shape? C
 /// <b>Which bodies are read.</b> Only a return type that holds any JSON text unchanged: <c>nvarchar(max)</c> or <c>json</c>.
 /// A shorter type cuts the text short (observed: <c>nvarchar(10)</c> returns <c>[{"id":1,"</c>), and <c>varchar</c> may
 /// replace characters its code page lacks. The body is one of:
-/// <c>RETURN expression</c>; or a straight run of <c>DECLARE @v</c>, <c>SET @v = …</c> and <c>SELECT @v = …</c> (no FROM)
+/// <c>RETURN expression</c>; or a straight run of <c>DECLARE @v</c>, <c>SET @v = …</c> and <c>SELECT @v = …</c> (with no other
+/// clause: no FROM, WHERE, TOP, GROUP BY, HAVING, ORDER BY or OFFSET, any of which can make it assign nothing)
 /// ending in <c>RETURN @v</c>, where the last value given to <c>@v</c> is the result and <c>@v</c> is <c>nvarchar(max)</c>
 /// or <c>json</c>. The expression must be live JSON (a FOR JSON subquery, a constructor, <c>json_query</c>) or JSON text
 /// whose content is known. Anything else (control flow, a compound assignment, an assignment to a parameter, a
@@ -142,11 +143,24 @@ internal sealed class FunctionSummaries
             assumed = outer;
         }
 
+        // A node that no finite value can have (every cycle through it goes through keys that are always present and
+        // never null, such as json_object('c': json_query(f(@x)))) means the call never returns: SQL Server raises error
+        // 217 at 32 levels. The whole component is withdrawn rather than typed with a type that has no value.
+        var finite = settled ? Finite(current) : [];
+        var endless = settled && current.Any(p => Node(p.Value.Content) is not null && !finite.Contains(p.Key));
+
         foreach (var function in functions)
         {
             var result = current[function.Name];
             var at = function.At;
-            if (!settled)
+            if (endless && result.Content is not null)
+            {
+                result = Unresolved(result, new UnknownShape(
+                    IrUnknownReasons.UnresolvedRecursion,
+                    $"{function.Name} calls itself through keys that are always present and never null, so no call ends: it never returns a value.",
+                    at));
+            }
+            else if (!settled)
             {
                 result = Unresolved(result, new UnknownShape(
                     IrUnknownReasons.UnresolvedRecursion,
@@ -167,6 +181,38 @@ internal sealed class FunctionSummaries
 
             done[function.Name] = Abstract(function.Name, result);
         }
+    }
+
+    /// <summary>
+    /// The functions of a settled component whose node has a finite value: a least fixed point, starting from none. A
+    /// node has one when each of its keys can be left out or null, or has a type with a finite value; an array without
+    /// a fewest number of items always has one (<c>[]</c>), and a scalar or JSON text always has one.
+    /// </summary>
+    private static HashSet<ObjectName> Finite(Dictionary<ObjectName, FunctionReturn> results)
+    {
+        var finite = new HashSet<ObjectName>();
+        bool Has(Shape shape) => shape switch
+        {
+            RecursiveShape recursive => finite.Contains(recursive.Function),
+            NeverShape => false,
+            ObjectShape obj => obj.Fields.All(f => f.NullableBecause.Count > 0 || Has(f.Type)),
+            ArrayShape array => array.MinItems is null or 0 || Has(array.Items),
+            TupleShape tuple => tuple.Items.All(e => e.NullableBecause.Count > 0 || Has(e.Type)),
+            UnionShape union => union.Variants.Any(Has),
+            _ => true,
+        };
+
+        for (var changed = true; changed;)
+        {
+            changed = false;
+            foreach (var (name, result) in results)
+            {
+                if (!finite.Contains(name) && Node(result.Content) is { } node && Has(node))
+                    changed = finite.Add(name) || changed;
+            }
+        }
+
+        return finite;
     }
 
     /// <summary>No information: the result before any step.</summary>
@@ -298,7 +344,20 @@ internal sealed class FunctionSummaries
                     break;
                 case SetVariableStatement { AssignmentKind: AssignmentKind.Equals, FunctionCallExists: false, Identifier: null, Expression: { } value, Variable: { } target } when Assign(target.Name, value):
                     break;
-                case SelectStatement { Into: null, QueryExpression: QuerySpecification { FromClause: null, WhereClause: null, ForClause: null, SelectElements: [SelectSetVariable { AssignmentKind: AssignmentKind.Equals } set] } }
+                // Only a SELECT that assigns exactly once: TOP (0), HAVING, OFFSET … FETCH or a WHERE can make it assign
+                // nothing, leaving the variable as it was (observed: TOP (0) and HAVING 1 = 0 return NULL).
+                case SelectStatement
+                {
+                    Into: null,
+                    WithCtesAndXmlNamespaces: null,
+                    ComputeClauses.Count: 0,
+                    QueryExpression: QuerySpecification
+                    {
+                        FromClause: null, WhereClause: null, ForClause: null, TopRowFilter: null, GroupByClause: null,
+                        HavingClause: null, OrderByClause: null, OffsetClause: null, UniqueRowFilter: UniqueRowFilter.NotSpecified,
+                        SelectElements: [SelectSetVariable { AssignmentKind: AssignmentKind.Equals } set],
+                    },
+                }
                     when Assign(set.Variable.Name, set.Expression):
                     break;
                 default:
