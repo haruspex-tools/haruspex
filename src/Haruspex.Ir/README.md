@@ -1,7 +1,7 @@
-# The haruspex IR, version 0.2
+# The haruspex IR, version 0.3
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
-each side can be written in whatever language suits it. This page describes version 0.2. A JSON Schema for
+each side can be written in whatever language suits it. This page describes version 0.3. A JSON Schema for
 it will follow.
 
 ## Why not JSON Schema
@@ -15,7 +15,7 @@ every document. It maps to JSON Schema without loss.
 
 ```jsonc
 {
-  "irVersion": "0.2",                 // versioned separately from the tool
+  "irVersion": "0.3",                 // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database
@@ -52,8 +52,18 @@ every document. It maps to JSON Schema without loss.
 }
 ```
 
-Type nodes are one of: a scalar (`{ "kind", "format"?, "sql", facets… }`, below), `{ "kind": "array", "items" }`,
-`{ "ref" }`, `{ "kind": "json-text" }` or `{ "kind": "unknown", "reason" }`.
+Type nodes are one of: a scalar (`{ "kind", "format"?, "sql", facets… }`, below), an array, a tuple, a record, a
+union (below), `{ "ref" }`, `{ "kind": "json-text" }` or `{ "kind": "unknown", "reason" }`.
+
+| Node | Written as | Means |
+|---|---|---|
+| array | `{ "kind": "array", "items", "itemsNullable"?, "itemsNullableBecause"?, "minItems"?, "maxItems"? }` | any number of items of one type. Items are never null unless `itemsNullable` is `true`, with its reasons; `minItems` and `maxItems`, when there, bound how many there are |
+| tuple | `{ "kind": "tuple", "items": [{ "type", "nullable", "nullableBecause"? }, …] }` | exactly these positions, in order, each with its own type and nullability |
+| record | `{ "kind": "record", "values", "valuesNullable", "valuesNullableBecause"? }` | an object whose keys are data: any string keys (possibly repeated in the text, which `JSON.parse` reads as the last), each to a value of `values` |
+| union | `{ "kind": "union", "variants": […] }` | a value of one of the variants: at least two, all different |
+
+An unknown's path names a tuple's position as `[0]`, a record's values as `{}` and an array's items as `[]`; a union's
+variants share their path.
 
 ## Facets: what a scalar's values are guaranteed to be
 
@@ -72,7 +82,7 @@ UNKNOWN, as it is for null, so a constraint never makes a value non-null and a v
 | `values` | the value is one of `items` (strings, or numbers as exact JSON numbers). `match` is `exact`, or `collation`: equal under the database's string comparison, which may ignore case, accents and trailing spaces, so `"Open "` can be a value of a set holding `"open"`. A `collation` set is true but not exact, and an emitter must not treat it as an enum. `padded`: one of the items followed by any number of spaces (U+0020), as under a binary collation, which compares exactly but, like every comparison in SQL Server, ignores trailing spaces. String items never end in a space: SQL Server pads the shorter side before comparing, so `'a'` passes `IN ('a ')`, and the front end removes an item's trailing spaces |
 
 Facets travel with a value only while it passes through unchanged: a column reference, under aliases, through
-joins and FOR JSON nesting. Through any expression they are dropped, which leaves the type wider and still true.
+joins, FOR JSON nesting and the JSON constructors. Through any expression they are dropped, which leaves the type wider and still true.
 Parameters carry no facets: a parameter's type converts what the caller sends (a string too long is cut short),
 so its facets describe the value after conversion, not what a caller may pass.
 
@@ -128,8 +138,13 @@ not for these facts.
   constraints) or dropped after its `CREATE TABLE` becomes unknown (`unsupported-source`), and a procedure
   altered or dropped has unknown results (`redefined`), because which definition applies depends on the
   order scripts run. A CLR procedure's results are unknown (`external-code`).
-- **Live JSON versus JSON text.** JSON built by `FOR JSON` nests as JSON. Once it is returned as a column
-  it is a string holding JSON (`json-text`), which the consumer must parse.
+- **Live JSON versus JSON text.** JSON built by `FOR JSON` or a JSON constructor, `json_query` over either, and a
+  value of the native `json` type nest as JSON, in `FOR JSON` and in the constructors, also through a scalar
+  subquery. Any other string is escaped as text, even one holding JSON, and so is JSON once it passes through a
+  variable (observed). Once JSON is returned as a column it is a string holding JSON (`json-text`), which the
+  consumer must parse; a `json` column and a `json` parameter are `json-text` too. A `json` value inside JSON is
+  live but of unknown shape (`json-shape-unknown`): its shape is in the data.
+- **The JSON constructors** (see "JSON constructors" below) give objects, tuples, arrays and records.
 - **A nested object that may be absent.** `FOR JSON PATH` builds nested objects from dotted aliases. Without
   `INCLUDE_NULL_VALUES` an object whose values are all null is left out, so it is `omittedWhenNull` with the
   reason `all-fields-null` when every field in it can be null. With `INCLUDE_NULL_VALUES` it is always
@@ -175,8 +190,36 @@ is kept as tests in `tests/Haruspex.DifferentialTests/ForJsonObservationTests.cs
 - `char(n)` and `nchar(n)` arrive padded with spaces to `n`: UTF-16 code units for `nchar`, bytes for `char`, so
   in a UTF-8 collation `char(3)` holding `é` arrives as `"é "` (kept as a test in `CheckConstraintObservationTests`).
 
+## JSON constructors
+
+What each constructor gives, every rule observed on SQL Server 2025 RTM-CU10 and kept as a test in
+`tests/Haruspex.DifferentialTests/JsonConstructorObservationTests.cs`:
+
+| Constructor | Default null option | IR |
+|---|---|---|
+| `json_object('k': v, …)` | `NULL ON NULL`: a null value's key is kept, with null | an object; each field's presence is `always`, or `omittedWhenNull` under `ABSENT ON NULL`. Never null. Keys must be literals: a key that is an expression makes the keys data (`unsupported-expression`), and a repeated key is written twice (`duplicate-column`). Keys differing in case are two keys |
+| `json_array(v, …)` | `ABSENT ON NULL`: a null element is dropped and the rest close up | under `NULL ON NULL`, or when no element can be null, a tuple; otherwise an array of the elements' types (a union when they differ) with `minItems` the elements never null and `maxItems` all of them. Never null |
+| `json_arrayagg(v [ORDER BY …])` | `ABSENT ON NULL` | an array of v; items nullable only under `NULL ON NULL`; `minItems` 1 when no item can be dropped |
+| `json_objectagg(k: v)` | `NULL ON NULL` | a record of v; values nullable only under `NULL ON NULL`. Every key is a string, whatever k's type; a repeated key is written each time |
+
+- **The aggregates over no rows are `NULL`**, not `[]` or `{}`, so without `GROUP BY` they are nullable with the reason
+  `empty-aggregate`. Under `GROUP BY` (with `ROLLUP` and `GROUP BY ()` too) no rows give no groups at all, so there
+  they are never null. A correlated subquery around one adds `empty-subquery`.
+- **Scalars are written as `FOR JSON` writes them** ("Scalars in JSON" below holds for the constructors too): the
+  same strings for `date`, `time(n)`, `datetime2(n)`, `datetimeoffset(n)`, `datetime`, `smalldatetime` and
+  `uniqueidentifier`, `true`/`false` for `bit`, decimals and money with their scale, `bigint` in full, `char(n)`
+  padded. A value keeps its facets while it passes through unchanged.
+- `RETURNING json` changes the value's SQL type (`json` rather than `nvarchar(max)`), not what is written.
+- **Availability:** `json_object` and `json_array` exist from SQL Server 2022, `json_arrayagg`, `json_objectagg` and
+  the `json` type from SQL Server 2025 and Azure SQL. haruspex does not know the target's version yet, so it types
+  them whatever the target; a procedure using one the target lacks fails when it is created.
+
+Changes in 0.3: the array's `itemsNullable`, `itemsNullableBecause`, `minItems` and `maxItems`; the `tuple`, `record` and
+`union` nodes; the null rule `empty-aggregate`. An array FOR JSON builds is written as in 0.2. A 0.2 reader that ignores
+unknown keys would read an array's possibly-null items as never null, which is why the version changed.
+
 Changes in 0.2: scalars gained facets (`maxLength`, `length`, `minLength`, `digits`, `min`, `max`, `values`),
 each with its `from`. A reader of 0.1 that ignores unknown keys reads 0.2 documents unchanged, but the version
 changed because the facets are claims a 0.2 reader may rely on.
 
-Not in 0.2, but planned: origins (column lineage) beyond each facet's `from`, documentation, and a source hash.
+Not in 0.3, but planned: origins (column lineage) beyond each facet's `from`, documentation, and a source hash.

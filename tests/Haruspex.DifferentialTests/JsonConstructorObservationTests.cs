@@ -160,6 +160,17 @@ public class JsonConstructorObservationTests(SqlServerFixture server)
         Assert.Equal(expected, await One($"SELECT {expression};"));
 
     [Fact]
+    public async Task A_scalar_subquery_returning_json_keeps_it_json() =>
+        // So a subquery whose one column is live JSON is live JSON itself, and null when it has no row.
+        Assert.Equal(
+            """{"a":[1],"b":{"x":1},"c":[{"x":1}],"d":null,"e":{"k":1}}""",
+            await One("""
+                DECLARE @j json = '{"x":1}';
+                SELECT json_object('a': (SELECT json_query(N'[1]')), 'b': (SELECT @j), 'c': (SELECT (SELECT 1 AS x FOR JSON PATH)),
+                                   'd': (SELECT json_array(1) WHERE 1 = 0), 'e': (SELECT json_object('k': 1)));
+                """));
+
+    [Fact]
     public async Task A_constructor_through_a_variable_is_text() =>
         // The JSON-ness of a value does not survive a variable: it is an nvarchar(max) like any other.
         Assert.Equal("""{"v":"{\"a\":1}"}""", await One("DECLARE @s nvarchar(max) = json_object('a': 1); SELECT json_object('v': @s);"));

@@ -1,0 +1,63 @@
+{
+  "irVersion": "0.3",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "pay.review_digest",
+      "name": "ReviewDigest",
+      "kind": "procedure",
+      "at": "procedures/review_digest.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ReviewDigestRow"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ReviewDigestRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "ids",
+          "type": {
+            "kind": "json-text"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/review_digest.sql:7:8"
+            }
+          ]
+        },
+        {
+          "name": "stars",
+          "type": {
+            "kind": "json-text"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/review_digest.sql:8:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": []
+}

@@ -91,6 +91,8 @@ public static class Runs
         new("payloads: reviews_by_book", "payloads", "pay.reviews_by_book", None),
         new("payloads: reviews_by_book, no reviews", "payloads", "pay.reviews_by_book", None, NoReviews),
         new("payloads: author_documents", "payloads", "pay.author_documents", None),
+        new("payloads: review_digest", "payloads", "pay.review_digest", None),
+        new("payloads: review_digest, no reviews", "payloads", "pay.review_digest", None, NoReviews),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

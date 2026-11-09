@@ -41,6 +41,7 @@ public class FixtureSnapshotTests
         ["pay.author_stats"] = "payloads",
         ["pay.reviews_by_book"] = "payloads",
         ["pay.author_documents"] = "payloads",
+        ["pay.review_digest"] = "payloads",
     };
 
     public static TheoryData<string> Procedures { get; } = [.. FixtureOf.Keys];

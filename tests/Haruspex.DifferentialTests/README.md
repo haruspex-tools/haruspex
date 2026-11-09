@@ -31,13 +31,17 @@ emitter's mistakes. It checks what the IR claims:
 - every scalar has the form its kind claims: in JSON, integers within their format's range, dates, times,
   date-times (with or without an offset) and GUIDs as strings of the right form; in a rowset, the .NET type
   SqlClient returns for that kind;
+- a tuple has exactly its positions, an array's items are null only when the IR says they may be and their number
+  is within its bounds, a record's every value has its type (any key, even repeated), and a union's value is one of
+  its variants (IR 0.3);
 - every scalar keeps its facets (IR 0.2): a length in its unit (UTF-16 code units, or UTF-8 bytes when the IR
   says so, and otherwise only as an upper bound), a minimum length, digits, bounds compared exactly from the
   decimal text (never through a double), and value sets. An `exact` set is matched exactly; a `collation` set
   ignoring case and trailing spaces, which is what the fixtures' collations ignore.
 
 It does not check what the IR leaves open, such as fractional-second precision: that is pinned separately,
-as observed fact, by `ForJsonObservationTests`. The engine rules the facets rely on (a string CHECK admits
+as observed fact, by `ForJsonObservationTests`, and what the JSON constructors write (null options, empty
+aggregates, duplicate keys, what nests as JSON, scalar formats) by `JsonConstructorObservationTests`. The engine rules the facets rely on (a string CHECK admits
 other cases and trailing spaces, `char(n)` pads to bytes, an alias type's NOT NULL) are pinned the same way by
 `CheckConstraintObservationTests`.
 
@@ -63,11 +67,15 @@ each path, and `The_seed_reaches_every_case_the_ir_allows` fails unless, across 
 nullable field was seen null, every field was seen with a value, and every result that may be absent was
 seen absent. A nested object that FOR JSON leaves out because all its values are null counts as each of its
 fields being null: the columns of a left join are null together, so they are never seen null one at a time.
+The same holds inside what the constructors build: each position of a tuple, each record's values and each array
+whose items may be null must be seen null (when they can be) and with a value. Tuple positions are paths of their
+own (`v[0]`, `v[1]`), a record's values share `v{}`, and a union's variants share their path; a value counts as seen
+for every variant it satisfies.
 
-For the fixtures about scalar facts (`Runs.EdgeFixtures`: `values` and `checks`), `The_seed_reaches_every_edge_the_ir_claims`
+For the fixtures about scalar facts (`Runs.EdgeFixtures`: `values`, `checks` and `payloads`), `The_seed_reaches_every_edge_the_ir_claims`
 also fails unless the data reached every edge of every facet: each bound (or, when exclusive, the nearest step
-inside it), each full length, each minimum length and each value of each set. A maximum of 255 is not shown to
-hold by values of 7. `orders` is about query shapes, and its scalars are the types `values` covers at their edges.
+inside it), each full length, each minimum length and each value of each set, and each array's fewest and most
+items when the IR bounds them. A maximum of 255 is not shown to hold by values of 7. `orders` is about query shapes, and its scalars are the types `values` covers at their edges.
 `Every_procedure_is_run_or_excluded_with_a_reason` makes sure a new fixture procedure is not forgotten.
 
 ## Where SQL Server comes from

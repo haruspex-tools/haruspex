@@ -19,7 +19,9 @@ change without notice. Do not depend on it yet.
 What works today: `CREATE TABLE` and `CREATE PROCEDURE` in a folder of `.sql` files; procedures whose
 result is a plain `SELECT` over tables, with inner and left joins; `FOR JSON PATH` with nested objects
 from dotted aliases, `WITHOUT_ARRAY_WRAPPER`, `INCLUDE_NULL_VALUES`, and nested arrays from correlated
-`FOR JSON` subqueries. Anything else is reported as unknown, with a reason.
+`FOR JSON` subqueries; the JSON constructors `json_object`, `json_array`, `json_arrayagg` and `json_objectagg`
+(SQL Server 2022 for the first two, 2025 or Azure SQL for the aggregates), alone, nested, inside `FOR JSON` and in
+correlated subqueries; and the native `json` type. Anything else is reported as unknown, with a reason.
 
 ```sh
 haruspex generate path/to/database --include 'sales.*' --out src/db
