@@ -6,7 +6,7 @@ using Haruspex.SqlServer;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// Compiles the Zod generated from every fixture procedure with <c>tsc --noEmit</c>, against the zod and
+/// Compiles the Zod generated from every procedure of the orders and values fixtures with <c>tsc --noEmit</c>, against the zod and
 /// TypeScript versions pinned in <c>tests/emit-check/package-lock.json</c>. <c>src/usage.ts</c> there also
 /// checks the inferred types: that an omitted key is optional and a kept null is nullable.
 /// </summary>
@@ -26,11 +26,14 @@ public class EmitCheckTests
             Assert.Skip($"Node.js could not be run ({why}), so the generated Zod was not type-checked. Install Node.js LTS to run this test.");
         }
 
-        var project = SqlProject.Load(TestPaths.Fixture("orders"));
-        var selection = project.Select([ObjectPattern.Parse("*.*")]);
         var generated = Path.Combine(TestPaths.EmitCheck, "generated");
         Directory.CreateDirectory(generated);
-        File.WriteAllText(Path.Combine(generated, "haruspex.zod.ts"), ZodEmitter.Emit(project.Infer(selection.Procedures)));
+        foreach (var (fixture, file) in new[] { ("orders", "haruspex.zod.ts"), ("values", "values.zod.ts") })
+        {
+            var project = SqlProject.Load(TestPaths.Fixture(fixture));
+            var selection = project.Select([ObjectPattern.Parse("*.*")]);
+            File.WriteAllText(Path.Combine(generated, file), ZodEmitter.Emit(project.Infer(selection.Procedures)));
+        }
 
         if (!Directory.Exists(Path.Combine(TestPaths.EmitCheck, "node_modules")))
         {

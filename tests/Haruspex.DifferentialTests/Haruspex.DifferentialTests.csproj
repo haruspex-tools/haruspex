@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Differential tests: run the fixtures in a real SQL Server and check the output against the IR. A
+       project of its own so that SqlClient and Testcontainers stay out of the other tests. See README.md. -->
+  <PropertyGroup>
+    <!-- xunit v3 test projects are executables. -->
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- SqlClient throws NotSupportedException in invariant globalization mode (it needs culture data for
+         collations), so this project, unlike the rest of the repository, runs with ICU. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="Testcontainers.MsSql" />
+    <!-- Overrides a vulnerable transitive version: see Directory.Packages.props. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Haruspex.Ir\Haruspex.Ir.csproj" />
+    <ProjectReference Include="..\..\src\Haruspex.SqlServer\Haruspex.SqlServer.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Seeds\*.sql" />
+  </ItemGroup>
+</Project>

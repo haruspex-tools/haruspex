@@ -11,26 +11,43 @@ namespace Haruspex.Tests;
 /// </summary>
 public class FixtureSnapshotTests
 {
-    private static readonly Lazy<SqlProject> Orders = new(() => SqlProject.Load(TestPaths.Fixture("orders")));
-
-    public static TheoryData<string> Procedures { get; } = new()
+    private static readonly Dictionary<string, Lazy<SqlProject>> Fixtures = new(StringComparer.Ordinal)
     {
-        "sales.list_customers",
-        "sales.list_orders",
-        "sales.get_order",
-        "sales.list_customer_orders",
-        "sales.order_report",
-        "sales.archive_orders",
+        ["orders"] = new(() => SqlProject.Load(TestPaths.Fixture("orders"))),
+        ["values"] = new(() => SqlProject.Load(TestPaths.Fixture("values"))),
     };
 
-    [Fact]
-    public void The_fixture_loads_without_diagnostics() => Assert.Empty(Orders.Value.Diagnostics);
+    /// <summary>Every fixture procedure, with its fixture. Procedure ids are unique across fixtures.</summary>
+    private static readonly Dictionary<string, string> FixtureOf = new(StringComparer.Ordinal)
+    {
+        ["sales.list_customers"] = "orders",
+        ["sales.list_orders"] = "orders",
+        ["sales.get_order"] = "orders",
+        ["sales.list_customer_orders"] = "orders",
+        ["sales.order_report"] = "orders",
+        ["sales.archive_orders"] = "orders",
+        ["vals.list_samples"] = "values",
+        ["vals.list_samples_with_nulls"] = "values",
+        ["vals.get_sample"] = "values",
+        ["vals.sample_rows"] = "values",
+        ["vals.list_nested"] = "values",
+        ["vals.list_nested_with_nulls"] = "values",
+    };
 
-    [Fact]
-    public void Every_fixture_procedure_has_snapshots() =>
+    public static TheoryData<string> Procedures { get; } = [.. FixtureOf.Keys];
+
+    public static TheoryData<string> FixtureNames { get; } = [.. Fixtures.Keys];
+
+    [Theory]
+    [MemberData(nameof(FixtureNames))]
+    public void The_fixture_loads_without_diagnostics(string fixture) => Assert.Empty(Fixtures[fixture].Value.Diagnostics);
+
+    [Theory]
+    [MemberData(nameof(FixtureNames))]
+    public void Every_fixture_procedure_has_snapshots(string fixture) =>
         Assert.Equal(
-            Procedures.Select(p => (string)p.Data).Order(StringComparer.Ordinal),
-            Orders.Value.Procedures.Select(p => p.ToString()).Order(StringComparer.Ordinal));
+            FixtureOf.Where(p => p.Value == fixture).Select(p => p.Key).Order(StringComparer.Ordinal),
+            Fixtures[fixture].Value.Procedures.Select(p => p.ToString()).Order(StringComparer.Ordinal));
 
     [Theory]
     [MemberData(nameof(Procedures))]
@@ -44,8 +61,9 @@ public class FixtureSnapshotTests
 
     private static IrDocument Infer(string procedure)
     {
-        var selection = Orders.Value.Select([ObjectPattern.Parse(procedure)]);
+        var project = Fixtures[FixtureOf[procedure]].Value;
+        var selection = project.Select([ObjectPattern.Parse(procedure)]);
         Assert.Empty(selection.Unmatched);
-        return Orders.Value.Infer(selection.Procedures);
+        return project.Infer(selection.Procedures);
     }
 }

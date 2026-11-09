@@ -7,5 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Haruspex.Tests/Haruspex.Tests.csproj" />
+    <Project Path="tests/Haruspex.DifferentialTests/Haruspex.DifferentialTests.csproj" />
   </Folder>
 </Solution>

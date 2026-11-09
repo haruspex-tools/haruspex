@@ -72,7 +72,7 @@ export const ListCustomerOrdersRowSchema = z.object({
   customerId: z.int(),
   name: z.string(),
   email: z.string().nullable(),
-  address: ListCustomerOrdersAddressSchema.optional(),
+  address: ListCustomerOrdersAddressSchema,
   orders: z.array(ListCustomerOrdersOrderSchema).nullable(),
 })
 export type ListCustomerOrdersRow = z.infer<typeof ListCustomerOrdersRowSchema>

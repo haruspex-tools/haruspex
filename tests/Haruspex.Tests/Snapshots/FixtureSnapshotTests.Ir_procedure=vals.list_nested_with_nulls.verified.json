@@ -1,0 +1,259 @@
+{
+  "irVersion": "0.1",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "vals.list_nested_with_nulls",
+      "name": "ListNestedWithNulls",
+      "kind": "procedure",
+      "at": "procedures/list_nested_with_nulls.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListNestedWithNullsRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/list_nested_with_nulls.sql:7:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListNestedWithNullsDeep": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "inner",
+          "type": {
+            "ref": "ListNestedWithNullsDeepInner"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "guid",
+          "type": {
+            "kind": "uuid",
+            "sql": "uniqueidentifier"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.guid"
+            }
+          ]
+        }
+      ]
+    },
+    "ListNestedWithNullsDeepInner": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "whole",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.whole"
+            }
+          ]
+        },
+        {
+          "name": "flag",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.flag"
+            }
+          ]
+        }
+      ]
+    },
+    "ListNestedWithNullsMeta": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "label",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(5)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.code"
+            }
+          ]
+        }
+      ]
+    },
+    "ListNestedWithNullsRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "when",
+          "type": {
+            "ref": "ListNestedWithNullsWhen"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "meta",
+          "type": {
+            "ref": "ListNestedWithNullsMeta"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "deep",
+          "type": {
+            "ref": "ListNestedWithNullsDeep"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "tags",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListNestedWithNullsTag"
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/list_nested_with_nulls.sql:15:12"
+            }
+          ]
+        }
+      ]
+    },
+    "ListNestedWithNullsTag": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample_tag.note"
+            }
+          ]
+        }
+      ]
+    },
+    "ListNestedWithNullsWhen": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "day",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.day"
+            }
+          ]
+        },
+        {
+          "name": "time",
+          "type": {
+            "kind": "time",
+            "sql": "time(0)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.t0"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": []
+}

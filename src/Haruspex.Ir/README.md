@@ -63,8 +63,9 @@ Type nodes are one of: a scalar (`{ "kind", "format"?, "sql" }`), `{ "kind": "ar
   offset: `datetime`, `datetime2`, `smalldatetime`) or `offset` (`datetimeoffset`), and `uuid` (8-4-4-4-12
   hex, not necessarily an RFC 9562 UUID). JSON *text* in a column (`json-text`) is unaffected: it is a
   string to parse.
-- **A result can be absent.** A top-level `FOR JSON` query that matches no rows returns no row at all, not
-  `[]` or `{}`, so a JSON result has `mayBeAbsent: true` with the reason `no-rows`. A rowset is always
+- **A result can be absent.** A top-level `FOR JSON` query that matches no rows returns a result set with no
+  row in it, not `[]`, `{}` or a NULL (observed, with and without `WITHOUT_ARRAY_WRAPPER` and
+  `INCLUDE_NULL_VALUES`), so a JSON result has `mayBeAbsent: true` with the reason `no-rows`. A rowset is always
   present (with no rows, it is an empty result set). **Reader convention:** a reader that finds no row for
   a result that may be absent yields `[]` when the result's type is an array, and `null` otherwise. Emitters
   rely on it: a single-object result is nullable, an array result is not.
@@ -78,6 +79,10 @@ Type nodes are one of: a scalar (`{ "kind", "format"?, "sql" }`), `{ "kind": "ar
   order scripts run. A CLR procedure's results are unknown (`external-code`).
 - **Live JSON versus JSON text.** JSON built by `FOR JSON` nests as JSON. Once it is returned as a column
   it is a string holding JSON (`json-text`), which the consumer must parse.
+- **A nested object that may be absent.** `FOR JSON PATH` builds nested objects from dotted aliases. Without
+  `INCLUDE_NULL_VALUES` an object whose values are all null is left out, so it is `omittedWhenNull` with the
+  reason `all-fields-null` when every field in it can be null. With `INCLUDE_NULL_VALUES` it is always
+  written, its keys null, however deeply nested: `{"a":{"b":{"y":null}}}`. Both observed (see "Scalars in JSON").
 - **Types live in a named table.** Names are decided once, by the front end, so every emitter agrees on them.
   Identical shapes are not merged yet.
 - **Unknowns are listed at the top level** with the object, a path, a reason code and the source location,
@@ -85,12 +90,37 @@ Type nodes are one of: a scalar (`{ "kind", "format"?, "sql" }`), `{ "kind": "ar
 - **Deterministic.** Keys in a fixed order, collections sorted, LF line endings, no byte order mark, no
   timestamps and no absolute paths: the same input gives the same bytes on every machine.
 
-Changes within 0.1, before any release: the `time` kind was added, and SQL `time` is typed with it
+Changes within 0.1, before any release: with `INCLUDE_NULL_VALUES`, a nested object is now always present and
+never null, as observed, where it was claimed only as possibly absent; the `time` kind was added, and SQL `time` is typed with it
 instead of being unknown; results gained `mayBeAbsent` and `absentBecause`; the reasons `no-rows`,
 `external-code` and `redefined` were added; a result's root object is named `<Procedure>Row` in every case.
 
-Open point: the exact strings `FOR JSON` writes for each date and time type and scale (fractional digits,
-how a zero offset is written) are for the differential tests to pin down. Until then emitters should not
-constrain precision.
+## Scalars in JSON
+
+What each kind claims about a JSON value, which the differential tests' validator checks:
+
+| Kind | JSON value |
+|---|---|
+| `string` | a string |
+| `number` | a number; with `uint8`, `int16`, `int32` or `int64`, an integer in that range (read exactly, not as a double) |
+| `boolean` | `true` or `false` |
+| `date` | `"YYYY-MM-DD"` |
+| `time` | `"hh:mm:ss"`, optionally with a fraction of a second |
+| `datetime`, `local` | `"YYYY-MM-DDThh:mm:ss"`, optionally with a fraction, never an offset |
+| `datetime`, `offset` | the same followed by `Z` or `+hh:mm`/`-hh:mm` |
+| `uuid` | `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"` in hex digits |
+
+The IR does not claim a precision. SQL Server's exact output was observed on SQL Server 2025 (RTM-CU10) and
+is kept as tests in `tests/Haruspex.DifferentialTests/ForJsonObservationTests.cs`:
+
+- A fraction of a second has exactly the type's scale in digits (`time(3)` gives `.100`, `datetime2(7)`
+  `.1000000`, `datetime` three), and is **left out entirely when it is zero**: `datetime2(7)` can give
+  `"2026-03-04T05:06:07"`. So a fraction may be absent whatever the scale; scale 0 never has one.
+- `smalldatetime` always has `:00` seconds and no fraction.
+- `datetimeoffset` writes a zero offset as **`Z`**, any other as `+hh:mm` or `-hh:mm`.
+- `uniqueidentifier` is written in upper case.
+- `decimal`, `numeric`, `money` and `smallmoney` keep their scale (`12.50`, `12.5000`); `bigint` is written in
+  full, beyond 2^53; `float` and `real` in exponent form (`1.000000000000000e+000`). All are JSON numbers.
+- `char(n)` and `nchar(n)` arrive padded with spaces to `n`.
 
 Not in 0.1, but planned: origins (column lineage), closed value sets, documentation, and a source hash.

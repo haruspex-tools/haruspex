@@ -1,0 +1,277 @@
+{
+  "irVersion": "0.1",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "vals.list_nested",
+      "name": "ListNested",
+      "kind": "procedure",
+      "at": "procedures/list_nested.sql:4:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListNestedRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/list_nested.sql:8:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListNestedDeep": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "inner",
+          "type": {
+            "ref": "ListNestedDeepInner"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "all-fields-null",
+              "at": "procedures/list_nested.sql:13:12"
+            }
+          ]
+        },
+        {
+          "name": "guid",
+          "type": {
+            "kind": "uuid",
+            "sql": "uniqueidentifier"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.guid"
+            }
+          ]
+        }
+      ]
+    },
+    "ListNestedDeepInner": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "whole",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.whole"
+            }
+          ]
+        },
+        {
+          "name": "flag",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.flag"
+            }
+          ]
+        }
+      ]
+    },
+    "ListNestedMeta": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "label",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(5)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.code"
+            }
+          ]
+        }
+      ]
+    },
+    "ListNestedRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "when",
+          "type": {
+            "ref": "ListNestedWhen"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "all-fields-null",
+              "at": "procedures/list_nested.sql:9:12"
+            }
+          ]
+        },
+        {
+          "name": "meta",
+          "type": {
+            "ref": "ListNestedMeta"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "deep",
+          "type": {
+            "ref": "ListNestedDeep"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "all-fields-null",
+              "at": "procedures/list_nested.sql:13:12"
+            }
+          ]
+        },
+        {
+          "name": "tags",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListNestedTag"
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/list_nested.sql:16:12"
+            }
+          ]
+        }
+      ]
+    },
+    "ListNestedTag": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample_tag.note"
+            }
+          ]
+        }
+      ]
+    },
+    "ListNestedWhen": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "day",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.day"
+            }
+          ]
+        },
+        {
+          "name": "time",
+          "type": {
+            "kind": "time",
+            "sql": "time(0)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.t0"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": []
+}

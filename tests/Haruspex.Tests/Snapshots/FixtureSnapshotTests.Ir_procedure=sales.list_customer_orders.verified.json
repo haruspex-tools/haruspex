@@ -144,14 +144,8 @@
           "type": {
             "ref": "ListCustomerOrdersAddress"
           },
-          "presence": "omittedWhenNull",
-          "nullable": true,
-          "nullableBecause": [
-            {
-              "rule": "all-fields-null",
-              "at": "procedures/list_customer_orders.sql:8:8"
-            }
-          ]
+          "presence": "always",
+          "nullable": false
         },
         {
           "name": "orders",

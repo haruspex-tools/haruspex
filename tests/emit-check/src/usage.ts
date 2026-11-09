@@ -60,10 +60,19 @@ export const orderWithLines: GetOrderRow = {
 }
 
 // INCLUDE_NULL_VALUES keeps a null key, so it is present and may be null...
-export const customerOrders: ListCustomerOrdersRow = { customerId: 1, name: 'A customer', email: null, orders: null }
+export const customerOrders: ListCustomerOrdersRow = {
+  customerId: 1,
+  name: 'A customer',
+  email: null,
+  address: { region: null },
+  orders: null,
+}
 
 // @ts-expect-error ...and never absent.
-export const customerOrdersWithoutEmail: ListCustomerOrdersRow = { customerId: 1, name: 'A customer', orders: null }
+export const customerOrdersWithoutEmail: ListCustomerOrdersRow = { ...customerOrders, email: undefined }
+
+// @ts-expect-error With INCLUDE_NULL_VALUES a nested object is written even when its values are all null.
+export const customerOrdersWithoutAddress: ListCustomerOrdersRow = { ...customerOrders, address: undefined }
 
 // Rowset columns are always present; the mssql driver returns dates as Date and bigint as a string.
 export const customer: ListCustomersRow = { id: 1, name: 'A customer', email: null, region: null, createdAt: new Date() }

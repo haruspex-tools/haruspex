@@ -93,6 +93,34 @@ public class ConstructTests
         Assert.Equal(["x", "y"], doc.Types[Assert.IsType<IrRef>(a.Type).Name].Fields.Select(f => f.Name));
     }
 
+    [Fact]
+    public void Without_include_null_values_a_nested_object_whose_values_can_all_be_null_may_be_left_out()
+    {
+        // Observed in ForJsonObservationTests (differential tests): [{"x":1}] when every value is null.
+        var doc = Procedure("SELECT t.id AS x, t.name AS [a.y], t.name AS [a.z] FROM dbo.t AS t FOR JSON PATH;");
+
+        var a = RowFields(doc)[1];
+        Assert.Equal(IrPresence.OmittedWhenNull, a.Presence);
+        Assert.Equal(IrNullRules.AllFieldsNull, Assert.Single(a.NullableBecause).Rule);
+    }
+
+    [Theory]
+    [InlineData("t.name AS [a.y], t.name AS [a.z]")]
+    [InlineData("t.name AS [a.b.y]")]
+    public void With_include_null_values_a_nested_object_is_always_present_and_never_null(string columns)
+    {
+        // Observed in ForJsonObservationTests (differential tests): [{"x":1,"a":{"y":null,"z":null}}], and
+        // {"a":{"b":{"y":null}}} however deep.
+        var doc = Procedure($"SELECT t.id AS x, {columns} FROM dbo.t AS t FOR JSON PATH, INCLUDE_NULL_VALUES;");
+
+        var a = RowFields(doc)[1];
+        Assert.Equal(IrPresence.Always, a.Presence);
+        Assert.False(a.Nullable);
+        var inner = doc.Types[Assert.IsType<IrRef>(a.Type).Name].Fields[0];
+        Assert.Equal(IrPresence.Always, inner.Presence);
+        Assert.Equal(inner.Type is IrRef, !inner.Nullable);
+    }
+
     [Theory]
     [InlineData("[a..b]")]
     [InlineData("[.a]")]

@@ -276,10 +276,10 @@ internal sealed class ProcedureAnalyzer(Catalog catalog, string file)
 
             var nested = JsonObject(child!, includeNulls);
 
-            // A nested object whose every value is null is left out of the output. With INCLUDE_NULL_VALUES SQL
-            // Server is believed to keep it, with its keys as null; until the differential tests confirm that,
-            // the object is claimed only as possibly absent, which holds either way.
-            var allNull = nested.Fields.All(f => f.NullableBecause.Count > 0);
+            // A nested object whose every value is null is left out of the output. With INCLUDE_NULL_VALUES it is
+            // always written, with each key null, however deep it is nested: {"a":{"b":{"y":null}}}. Both were
+            // observed on SQL Server 2025 and are kept as tests (ForJsonObservationTests, differential tests).
+            var allNull = !includeNulls && nested.Fields.All(f => f.NullableBecause.Count > 0);
             fields.Add(allNull
                 ? new FieldShape(key, nested, IrPresence.OmittedWhenNull, [new IrNullReason(IrNullRules.AllFieldsNull, at.ToString())])
                 : new FieldShape(key, nested, IrPresence.Always, []));

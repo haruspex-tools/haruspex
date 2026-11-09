@@ -1,0 +1,541 @@
+{
+  "irVersion": "0.1",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "vals.list_samples",
+      "name": "ListSamples",
+      "kind": "procedure",
+      "at": "procedures/list_samples.sql:2:1",
+      "parameters": [
+        {
+          "name": "@sample_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListSamplesRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/list_samples.sql:7:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListSamplesRow": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "label",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "tiny",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.tiny"
+            }
+          ]
+        },
+        {
+          "name": "small",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.small"
+            }
+          ]
+        },
+        {
+          "name": "whole",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.whole"
+            }
+          ]
+        },
+        {
+          "name": "big",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.big"
+            }
+          ]
+        },
+        {
+          "name": "dec19_2",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,2)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.dec_19_2"
+            }
+          ]
+        },
+        {
+          "name": "dec38_0",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,0)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.dec_38_0"
+            }
+          ]
+        },
+        {
+          "name": "num9_3",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "numeric(9,3)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.num_9_3"
+            }
+          ]
+        },
+        {
+          "name": "dec5_5",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(5,5)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.dec_5_5"
+            }
+          ]
+        },
+        {
+          "name": "cash",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.cash"
+            }
+          ]
+        },
+        {
+          "name": "smallCash",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "smallmoney"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.small_cash"
+            }
+          ]
+        },
+        {
+          "name": "approx",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.approx"
+            }
+          ]
+        },
+        {
+          "name": "approxReal",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "real"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.approx_real"
+            }
+          ]
+        },
+        {
+          "name": "flag",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.flag"
+            }
+          ]
+        },
+        {
+          "name": "day",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.day"
+            }
+          ]
+        },
+        {
+          "name": "t0",
+          "type": {
+            "kind": "time",
+            "sql": "time(0)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.t0"
+            }
+          ]
+        },
+        {
+          "name": "t3",
+          "type": {
+            "kind": "time",
+            "sql": "time(3)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.t3"
+            }
+          ]
+        },
+        {
+          "name": "t7",
+          "type": {
+            "kind": "time",
+            "sql": "time(7)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.t7"
+            }
+          ]
+        },
+        {
+          "name": "dt2_0",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.dt2_0"
+            }
+          ]
+        },
+        {
+          "name": "dt2_3",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(3)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.dt2_3"
+            }
+          ]
+        },
+        {
+          "name": "dt2_7",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(7)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.dt2_7"
+            }
+          ]
+        },
+        {
+          "name": "dto0",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(0)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.dto_0"
+            }
+          ]
+        },
+        {
+          "name": "dto3",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(3)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.dto_3"
+            }
+          ]
+        },
+        {
+          "name": "dto7",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(7)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.dto_7"
+            }
+          ]
+        },
+        {
+          "name": "smallDt",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "smalldatetime"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.small_dt"
+            }
+          ]
+        },
+        {
+          "name": "legacyDt",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.legacy_dt"
+            }
+          ]
+        },
+        {
+          "name": "guid",
+          "type": {
+            "kind": "uuid",
+            "sql": "uniqueidentifier"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.guid"
+            }
+          ]
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(5)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.code"
+            }
+          ]
+        },
+        {
+          "name": "ncode",
+          "type": {
+            "kind": "string",
+            "sql": "nchar(5)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.ncode"
+            }
+          ]
+        },
+        {
+          "name": "vcode",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(5)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.vcode"
+            }
+          ]
+        },
+        {
+          "name": "body",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "vals.sample.body"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": []
+}

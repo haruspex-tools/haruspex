@@ -51,6 +51,40 @@ The emit-check test (`tests/emit-check`) writes the Zod generated from the fixtu
 `tsc --noEmit` against a pinned `zod`. It runs `npm ci` there the first time. CI sets
 `HARUSPEX_REQUIRE_NODE=1`, which turns a missing Node into a failure rather than a skip.
 
+### Differential tests against SQL Server
+
+`tests/Haruspex.DifferentialTests` deploys the fixtures into a real SQL Server, seeds them, runs every
+procedure and checks the output against the inferred IR; its `README.md` explains how. It needs a SQL
+Server, found in this order:
+
+1. `HARUSPEX_TEST_SQLSERVER`, a connection string to a server of your own. Each run creates a database
+   with a random name (`haruspex_test_…`) and drops it afterwards, even when tests fail, so the login needs
+   rights to create and drop databases. **Never point it at a shared server or one holding real data.**
+2. Otherwise Testcontainers starts SQL Server in Docker, which needs Docker reachable through a local
+   socket, a named pipe or TCP. It cannot use a Docker host reached over SSH.
+3. Otherwise these tests are skipped, saying why. CI sets `HARUSPEX_REQUIRE_SQLSERVER=1`, which turns the
+   skip into a failure.
+
+SQL Server's images are x64 only, so on an Apple Silicon Mac, or wherever Docker is on another machine, a
+long-running server of your own is the simplest route. On any x64 machine with Docker:
+
+```sh
+docker run -d --name haruspex-mssql --restart unless-stopped \
+  -p 14330:1433 -e ACCEPT_EULA=Y -e MSSQL_PID=Developer \
+  -e MSSQL_SA_PASSWORD="$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c 32)Aa1" \
+  mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04
+```
+
+Read the password back with `docker exec haruspex-mssql printenv MSSQL_SA_PASSWORD`, keep it in a file
+outside the repository that only you can read, and export the connection string from there before testing:
+
+```sh
+export HARUSPEX_TEST_SQLSERVER='Server=<host>,14330;User ID=sa;Password=<password>;Encrypt=true;TrustServerCertificate=true'
+```
+
+Use the same image as `SqlServerFixture.Image`, so local runs see what CI sees. `TrustServerCertificate`
+is there because the container's certificate is self-signed; use it only for a server of your own.
+
 To run the tool from source:
 
 ```sh
@@ -66,6 +100,7 @@ dotnet run --project src/Haruspex.Cli -- generate tests/fixtures/orders --includ
 | `src/Haruspex.Emit.Zod` | The Zod emitter. Reads only the IR, never the front end. |
 | `src/Haruspex.Cli` | The `haruspex` command. |
 | `tests/Haruspex.Tests` | Unit, snapshot and end-to-end tests. |
+| `tests/Haruspex.DifferentialTests` | Runs the fixtures in SQL Server and checks the output against the IR. |
 | `tests/fixtures` | Invented SQL used by the tests. |
 | `tests/emit-check` | A small npm package that type-checks the generated Zod. |
 
@@ -81,6 +116,16 @@ the maintainer's agreement.
 | `xunit.v3` | Apache-2.0 | tests | The test framework; runs on Microsoft.Testing.Platform (opted into in `global.json`). |
 | `typescript` (npm) | Apache-2.0 | emit-check | Compiles the generated Zod, to prove it type-checks. |
 | `zod` (npm) | MIT | emit-check | The library the generated code targets, pinned so the check is repeatable. |
+| `Microsoft.Data.SqlClient` | MIT | differential tests | Microsoft's SQL Server driver for .NET: the tests must run procedures and read their results as SQL Server returns them. |
+| `Testcontainers.MsSql` | MIT | differential tests | Starts a throwaway SQL Server in Docker when no server is configured, as in CI; it can later run a matrix of SQL Server versions. |
+| `System.Security.Cryptography.Pkcs` | MIT | differential tests | Not used directly: pinned to a patched version because the one SqlClient brings has two advisories (see `Directory.Packages.props`). |
+
+These three are used only by the differential tests, and nothing in them is shipped. Their transitive
+packages are MIT, with one exception: `Microsoft.Data.SqlClient.SNI.runtime`, SqlClient's native network
+layer for Windows, is under the Microsoft Software License Terms. They allow it to be used freely "to develop
+and test your applications", which is all the tests do; like DacFx's, they ask anyone who *redistributes* it to
+indemnify Microsoft. So it must never reach anything haruspex ships: the shipped projects under `src/` must
+not reference SqlClient.
 
 ScriptDom (MIT) is the only SQL dependency. **DacFx must not be added**: its licence requires anyone who
 redistributes it to indemnify Microsoft, which no maintainer of a free tool should take on. DACPACs will

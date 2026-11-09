@@ -1,0 +1,37 @@
+-- One column per scalar type and precision whose FOR JSON form the differential tests pin down. Every column
+-- but the key is nullable, so the seed can make each one null.
+CREATE TABLE vals.sample
+(
+    sample_id       int               NOT NULL CONSTRAINT pk_sample PRIMARY KEY,
+    label           nvarchar(40)      NOT NULL,
+    tiny            tinyint           NULL,
+    small           smallint          NULL,
+    whole           int               NULL,
+    big             bigint            NULL,
+    dec_19_2        decimal(19, 2)    NULL,
+    dec_38_0        decimal(38, 0)    NULL,
+    num_9_3         numeric(9, 3)     NULL,
+    dec_5_5         decimal(5, 5)     NULL,
+    cash            money             NULL,
+    small_cash      smallmoney        NULL,
+    approx          float             NULL,
+    approx_real     real              NULL,
+    flag            bit               NULL,
+    day             date              NULL,
+    t0              time(0)           NULL,
+    t3              time(3)           NULL,
+    t7              time(7)           NULL,
+    dt2_0           datetime2(0)      NULL,
+    dt2_3           datetime2(3)      NULL,
+    dt2_7           datetime2(7)      NULL,
+    dto_0           datetimeoffset(0) NULL,
+    dto_3           datetimeoffset(3) NULL,
+    dto_7           datetimeoffset(7) NULL,
+    small_dt        smalldatetime     NULL,
+    legacy_dt       datetime          NULL,
+    guid            uniqueidentifier  NULL,
+    code            char(5)           NULL,
+    ncode           nchar(5)          NULL,
+    vcode           varchar(5)        NULL,
+    body            nvarchar(max)     NULL
+);

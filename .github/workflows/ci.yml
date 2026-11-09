@@ -17,12 +17,16 @@ jobs:
   build-and-test:
     # Linux only for now; the Windows, Linux and macOS matrix comes in a later change.
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Includes pulling the SQL Server image (about 1.5 GB) for the differential tests.
+    timeout-minutes: 20
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       DOTNET_NOLOGO: "1"
       # Fail, rather than skip, the test that type-checks the generated Zod if Node is missing.
       HARUSPEX_REQUIRE_NODE: "1"
+      # Fail, rather than skip, the differential tests if SQL Server cannot be started. HARUSPEX_TEST_SQLSERVER
+      # is not set, so they use Testcontainers with the runner's Docker (ubuntu-latest has it).
+      HARUSPEX_REQUIRE_SQLSERVER: "1"
     steps:
       # Actions are pinned to commit SHAs, not tags, because a tag can be moved.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

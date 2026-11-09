@@ -158,10 +158,11 @@ public static class ZodEmitter
         /// strings in a fixed format, so those are validated strings. They are deliberately not converted to
         /// <c>Date</c>: a <c>date</c> or an offset-less <c>datetime2</c> has no time zone, and
         /// <c>new Date('2026-11-09')</c> is UTC midnight, which shows as the previous day west of Greenwich.
-        /// Conversion could become an emitter option later. Fractional-second precision is not constrained:
-        /// the exact strings FOR JSON writes for each type and scale are an open point for the differential
-        /// tests to pin down. A uniqueidentifier is <c>z.guid()</c>, not <c>z.uuid()</c>, because its value
-        /// need not be an RFC 9562 UUID.
+        /// Conversion could become an emitter option later. Fractional-second precision is not constrained.
+        /// The differential tests pinned what FOR JSON writes (the IR's README, "Scalars in JSON"): a fraction
+        /// of exactly the type's scale, left out when zero, and a zero offset as <c>Z</c>. These validators accept
+        /// every such string (checked against zod 4.6.7). A uniqueidentifier is <c>z.guid()</c>, not
+        /// <c>z.uuid()</c>, because its value need not be an RFC 9562 UUID.
         /// </para>
         /// <para>
         /// In a rowset, the mssql driver returns dates and times as <c>Date</c> and <c>bigint</c> as a string,
