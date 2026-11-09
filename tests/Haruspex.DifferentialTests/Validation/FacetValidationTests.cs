@@ -111,6 +111,15 @@ public class FacetValidationTests
         Assert.Single(Row(Text("varchar(9)", facets), " a.b").Violations);
     }
 
+    [Fact]
+    public void A_padded_items_own_trailing_spaces_are_ignored_too()
+    {
+        var facets = new IrFacets(Values: new IrValueSet([new IrValue("a ", true)], IrValueMatch.Padded, [From]));
+
+        Assert.Empty(Row(Text("varchar(6)", facets), "a").Violations);
+        Assert.Empty(Row(Text("varchar(6)", facets), "a   ").Violations);
+    }
+
     // ---- numbers ------------------------------------------------------------------------------------
 
     private static IrFacets Bounds(string min, bool minInclusive, string max, bool maxInclusive, IrDigits? digits = null) =>

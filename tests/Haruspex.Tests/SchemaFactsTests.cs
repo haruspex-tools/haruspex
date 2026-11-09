@@ -202,6 +202,15 @@ public class SchemaFactsTests
         Assert.Equal(comparison, Column(definition).Values!.Comparison);
 
     [Theory]
+    // SQL Server pads the shorter side before comparing, so 'a' passes IN ('a '): an item's own trailing spaces
+    // mean nothing, and are removed (duplicates with them).
+    [InlineData("varchar(6) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN ('a ', 'b', 'b  '))", "a|b")]
+    [InlineData("varchar(6) COLLATE Latin1_General_100_BIN2 NULL CHECK (c = 'a  ')", "a")]
+    [InlineData("varchar(6) NULL CHECK (c IN ('a ', ' b'))", "a| b")]
+    public void A_strings_trailing_spaces_are_removed_from_the_set(string definition, string items) =>
+        Assert.Equal(items, string.Join("|", Column(definition).Values!.Strings!));
+
+    [Theory]
     [InlineData("int NULL CHECK (c IN (3, 1, 2))", "1,2,3")]
     [InlineData("int NULL CHECK (c = 1 OR c = 2 OR (c = 4))", "1,2,4")]
     [InlineData("int NULL CHECK (c IN (1, 2) OR c = -3)", "-3,1,2")]

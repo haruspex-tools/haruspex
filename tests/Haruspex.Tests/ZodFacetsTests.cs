@@ -90,6 +90,12 @@ public class ZodFacetsTests
                 Values: Strings(IrValueMatch.Padded, "open", "a.b", "/*\\", "")))));
 
     [Fact]
+    public void A_padded_items_own_trailing_spaces_do_not_make_the_regex_require_them() =>
+        Assert.Equal(
+            "z.string().regex(/^(?:a|b)\\u0020*$/)",
+            Json(Text("varchar(6)", new IrFacets(Values: Strings(IrValueMatch.Padded, "a ", "b")))));
+
+    [Fact]
     public void A_value_in_a_comment_cannot_close_it() =>
         Assert.DoesNotContain("*/ x", Json(Text("varchar(10)", new IrFacets(Values: Strings(IrValueMatch.Collation, "*/ x")))), StringComparison.Ordinal);
 

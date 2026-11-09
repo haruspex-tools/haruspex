@@ -56,7 +56,12 @@ internal static class Facets
         }
 
         if (facets?.Values is { Match: IrValueMatch.Padded } padded && padded.Items.All(i => i.IsString))
-            code += $".regex(/^(?:{string.Join("|", padded.Items.Select(i => RegexEscape(i.Text)))})\\u0020*$/)";
+        {
+            // Trimmed again, although the IR stores them trimmed: an item's own trailing spaces would make the regex
+            // require them, and a value without them is in the set ('a' = 'a ').
+            var items = padded.Items.Select(i => i.Text.TrimEnd(' ')).Distinct(StringComparer.Ordinal);
+            code += $".regex(/^(?:{string.Join("|", items.Select(RegexEscape))})\\u0020*$/)";
+        }
 
         if (facets?.MinLength is { } minLength)
             code += $".min({minLength.Value})";

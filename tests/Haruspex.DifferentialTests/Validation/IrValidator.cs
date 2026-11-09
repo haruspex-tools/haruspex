@@ -326,7 +326,7 @@ public static partial class IrValidator
                 var match = strings.Items.FirstOrDefault(i => i.IsString && strings.Match switch
                 {
                     IrValueMatch.Exact => i.Text.Equals(text, StringComparison.Ordinal),
-                    IrValueMatch.Padded => text.TrimEnd(' ').Equals(i.Text, StringComparison.Ordinal),
+                    IrValueMatch.Padded => text.TrimEnd(' ').Equals(i.Text.TrimEnd(' '), StringComparison.Ordinal),
                     _ => i.Text.TrimEnd(' ').Equals(text.TrimEnd(' '), StringComparison.OrdinalIgnoreCase),
                 });
                 if (match is null)

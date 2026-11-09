@@ -2,7 +2,7 @@
 -- the nearest step inside it), each value of each CHECK set, each maximum and minimum length, and null in every
 -- nullable column. Some values pass a string CHECK without being one of its strings exactly ('CLOSED',
 -- 'open      ', 'sw', 'b'): the database compares under the collation and ignores trailing spaces, as it does
--- under a binary one ('c+d   '). Ticket 5,
+-- under a binary one ('c+d   '), and on the literal's side too ('(x)' passes IN ('(x) ')). Ticket 5,
 -- written by tests/fixtures/checks/tables/ticket_late.sql, breaks a constraint added after it WITH NOCHECK.
 INSERT INTO chk.owner (owner_id, name, grade)
 VALUES (1, N'Al', N'A'),
