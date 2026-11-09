@@ -42,7 +42,7 @@ public static class ProcedureSelection
                 continue;
 
             foreach (var pattern in include.Where(i => !own.Any(p => i.Pattern.Matches(p.Name))))
-                problems.Add(new ConfigProblem(ConfigSeverity.Error, config.File, pattern.At, $"'{pattern.Pattern.Text}' matches no procedure in the schema \"{schema.Name}\"."));
+                problems.Add(new ConfigProblem(ConfigSeverity.Error, config.File, pattern.At, $"'{pattern.Pattern.Text}' matches no procedure in the schema \"{schema.Name}\". Correct it, or remove it."));
 
             var included = own.Where(p => include.Any(i => i.Pattern.Matches(p.Name))).ToList();
             foreach (var pattern in schema.Exclude.Where(e => !included.Any(p => e.Pattern.Matches(p.Name))))
@@ -51,7 +51,15 @@ public static class ProcedureSelection
                     $"'{pattern.Pattern.Text}' excludes nothing: it matches no procedure that \"include\" selects in the schema \"{schema.Name}\". Remove it."));
             }
 
-            selected.AddRange(included.Where(p => !schema.Exclude.Any(e => e.Pattern.Matches(p.Name))));
+            // A block whose exclude removes all its include selected types nothing, which is as silent as a typo.
+            var kept = included.Where(p => !schema.Exclude.Any(e => e.Pattern.Matches(p.Name))).ToList();
+            if (included.Count > 0 && kept.Count == 0)
+            {
+                problems.Add(new ConfigProblem(ConfigSeverity.Error, config.File, schema.At,
+                    $"the schema \"{schema.Name}\" selects nothing: its \"exclude\" removes every procedure its \"include\" selects. Narrow the exclude, or remove the block."));
+            }
+
+            selected.AddRange(kept);
         }
 
         return new SelectionResult([.. procedures.Where(selected.Contains)], problems);
@@ -59,20 +67,33 @@ public static class ProcedureSelection
 
     /// <summary>
     /// Selects by command line patterns (<c>schema.pattern</c>), a one-off override of the file's includes. A schema's
-    /// exclude still applies, but isn't required to exclude anything: the run may leave out what it is for. A pattern that
-    /// matches nothing is reported with no location.
+    /// exclude still applies, but isn't required to exclude anything: the run may leave out what it is for. Each problem
+    /// is a message for the command line: a pattern that matches no procedure, or one whose every match the file's
+    /// excludes leave out (which would otherwise type nothing, silently).
     /// </summary>
-    public static (IReadOnlyList<ObjectName> Procedures, IReadOnlyList<ObjectPattern> Unmatched) Select(
+    public static (IReadOnlyList<ObjectName> Procedures, IReadOnlyList<string> Problems) Select(
         IReadOnlyList<ObjectName> procedures, IReadOnlyList<ObjectPattern> include, HaruspexConfig config)
     {
         ArgumentNullException.ThrowIfNull(procedures);
         ArgumentNullException.ThrowIfNull(include);
         ArgumentNullException.ThrowIfNull(config);
 
-        var selected = procedures
-            .Where(p => include.Any(i => i.Matches(p)))
-            .Where(p => config.Schema(p.Schema) is not { } schema || !schema.Exclude.Any(e => e.Pattern.Matches(p.Name)))
-            .ToList();
-        return (selected, [.. include.Where(i => !procedures.Any(i.Matches))]);
+        bool Excluded(ObjectName p) => config.Schema(p.Schema) is { } schema && schema.Exclude.Any(e => e.Pattern.Matches(p.Name));
+        var problems = new List<string>();
+        foreach (var pattern in include)
+        {
+            var matches = procedures.Where(pattern.Matches).ToList();
+            if (matches.Count == 0)
+            {
+                problems.Add($"--include '{pattern.Text}' matches no procedure. Correct it, or remove it.");
+            }
+            else if (matches.All(Excluded))
+            {
+                var schemas = string.Join(", ", matches.Select(m => config.Schema(m.Schema)!.Name).Distinct(StringComparer.Ordinal).Select(s => $"schemas.{s}.exclude"));
+                problems.Add($"--include '{pattern.Text}' matches only procedures that {schemas} leaves out, so it selects nothing.");
+            }
+        }
+
+        return ([.. procedures.Where(p => include.Any(i => i.Matches(p)) && !Excluded(p))], problems);
     }
 }

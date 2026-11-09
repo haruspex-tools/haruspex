@@ -70,7 +70,7 @@ public static class ConfigReader
         }
         catch (ConfigJsonException e)
         {
-            return new(null, [new ConfigProblem(ConfigSeverity.Error, file, new ConfigLocation("", e.Line, e.Column), e.Message)]);
+            return new(null, [new ConfigProblem(ConfigSeverity.Error, file, new ConfigLocation(e.Path, e.Line, e.Column), e.Message)]);
         }
 
         var reader = new Checker(file);
@@ -113,7 +113,7 @@ public static class ConfigReader
                         break;
                     case "naming":
                         var naming = Naming(member.Value, path);
-                        config = config with { Naming = new NamingRules(naming.Replace, naming.Case ?? NamingCase.Pascal) };
+                        config = config with { Naming = new NamingRules(naming.Replace, naming.Case ?? NamingCase.Pascal), NamingAt = naming.At };
                         break;
                     case "procedures":
                         config = config with { Procedures = Procedures(member.Value, path) };
@@ -154,6 +154,7 @@ public static class ConfigReader
                     continue;
 
                 var schema = new SchemaSettings(member.Name, at);
+                JsonMember? exclude = null;
                 foreach (var setting in block.Members)
                 {
                     var settingPath = Child(schemaPath, setting.Name);
@@ -163,6 +164,7 @@ public static class ConfigReader
                             schema = schema with { Include = Patterns(setting.Value, settingPath, requireOne: true) };
                             break;
                         case "exclude":
+                            exclude = setting;
                             schema = schema with { Exclude = Patterns(setting.Value, settingPath, requireOne: false) };
                             break;
                         case "prefix":
@@ -175,6 +177,13 @@ public static class ConfigReader
                             Unknown(setting, settingPath, "include, exclude, prefix, naming");
                             break;
                     }
+                }
+
+                // Without an include nothing in the schema is selected, so an exclude there could only ever be stale.
+                if (exclude is not null && schema.Include is null)
+                {
+                    Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, new ConfigLocation(Child(schemaPath, "exclude"), exclude.Line, exclude.Column),
+                        "does nothing without an \"include\" in the same block, since nothing in the schema is selected. Add the include, or remove the exclude."));
                 }
 
                 schemas.Add(schema);
@@ -212,7 +221,7 @@ public static class ConfigReader
         /// <summary>A <c>naming</c> object, top-level or a schema's: the case is null when it doesn't say.</summary>
         private SchemaNaming Naming(JsonValue value, string path)
         {
-            var naming = new SchemaNaming([], null);
+            var naming = new SchemaNaming([], null) { At = At(value, path) };
             if (Object(value, path) is not { } members)
                 return naming;
 
@@ -505,15 +514,8 @@ public static class ConfigReader
 
         private static ConfigLocation At(JsonValue value, string path) => new(path, value.Line, value.Column);
 
-        private static string Child(string path, string key)
-        {
-            var segment = IrIdentifiers.IsIdentifier(key) ? key : "[" + JsonSerializerQuote(key) + "]";
-            return path.Length == 0 || segment.StartsWith('[') ? path + segment : path + "." + segment;
-        }
+        private static string Child(string path, string key) => ConfigPath.Child(path, key);
 
-        private static string Index(string path, int index) => path + "[" + index.ToString(CultureInfo.InvariantCulture) + "]";
-
-        private static string JsonSerializerQuote(string key) =>
-            "\"" + JsonEncodedText.Encode(key, System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping) + "\"";
+        private static string Index(string path, int index) => ConfigPath.Index(path, index);
     }
 }

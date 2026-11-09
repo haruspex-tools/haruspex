@@ -116,7 +116,8 @@ public class ConfigReaderTests
     [Theory]
     [InlineData("{\n  \"include\": [\"a.b\"\n}", "haruspex.json:3:1: error: '}' is invalid without a matching open.")]
     [InlineData("{} {}", "haruspex.json:1:4: error: '{' is invalid after a single JSON value. Expected end of data.")]
-    [InlineData("{\n  \"objects\": \"strip\",\n  \"objects\": \"strict\"\n}", "haruspex.json:3:3: error: The key \"objects\" is written twice in one object.")]
+    [InlineData("{\n  \"objects\": \"strip\",\n  \"objects\": \"strict\"\n}", "haruspex.json:3:3: error: objects: The key \"objects\" is written twice in one object.")]
+    [InlineData("{ \"schemas\": { \"sales\": { \"include\": [\"*\"], \"include\": [\"x\"] } } }", "haruspex.json:1:45: error: schemas.sales.include: The key \"include\" is written twice in one object.")]
     public void Text_that_is_not_json_is_an_error_with_its_line(string text, string expected) =>
         Assert.Equal(expected, Single(text));
 
@@ -149,7 +150,8 @@ public class ConfigReaderTests
         { """{ "schemas": { "sales": { "include": [] } } }""", "haruspex.json:1:38: error: schemas.sales.include: must list at least one pattern; with none, nothing is selected. Use \"*\" to select every procedure of the schema." },
         { """{ "schemas": { "sales": { "include": [1] } } }""", "haruspex.json:1:39: error: schemas.sales.include[0]: must be a string." },
         { """{ "schemas": { "sales": { "include": [""] } } }""", "haruspex.json:1:39: error: schemas.sales.include[0]: '' is empty: a pattern names procedures of its schema, such as get_order, list_* or *." },
-        { """{ "schemas": { "sales": { "exclude": ["[x"] } } }""", "haruspex.json:1:39: error: schemas.sales.exclude[0]: '[x' has a '[' without its closing ']'." },
+        { """{ "schemas": { "sales": { "include": ["*"], "exclude": ["[x"] } } }""", "haruspex.json:1:57: error: schemas.sales.exclude[0]: '[x' has a '[' without its closing ']'." },
+        { """{ "schemas": { "audit": { "exclude": ["nothing_here"] } } }""", "haruspex.json:1:27: error: schemas.audit.exclude: does nothing without an \"include\" in the same block, since nothing in the schema is selected. Add the include, or remove the exclude." },
         { """{ "schemas": { "sales": { "prefix": 1 } } }""", "haruspex.json:1:37: error: schemas.sales.prefix: must be a string." },
         { """{ "schemas": { "sales": { "naming": { "prefix": "S" } } } }""", "haruspex.json:1:39: error: schemas.sales.naming.prefix: unknown setting \"prefix\". The settings here are replace, case." },
 

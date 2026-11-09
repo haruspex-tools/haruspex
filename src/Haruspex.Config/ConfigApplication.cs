@@ -78,7 +78,7 @@ public static class ConfigApplication
                 results[index] = applier.Apply(obj, results[index], path);
         }
 
-        var settler = new NameSettler(config.File, config.NamingFor, types, procedureNames, applier.Names, problems);
+        var settler = new NameSettler(config, types, procedureNames, applier.Names, problems);
         var named = problems.Any(p => p.Severity == ConfigSeverity.Error) ? null : settler.Settle(document with { Unknowns = unknowns }, results);
         return new ConfigApplied(named is null ? null : named with { Overrides = claims }, problems);
     }

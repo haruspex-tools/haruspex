@@ -134,4 +134,20 @@ public class CliTests
         Assert.Equal(0, exitCode);
         Assert.Contains("--include", output, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Without_a_config_file_a_clash_is_the_command_line_s_error_and_says_where_settings_go()
+    {
+        using var source = new TempDirectory();
+        using var outDir = new TempDirectory();
+        source.File("p.sql", "CREATE PROCEDURE dbo.person AS SELECT 1 AS a;\nGO\nCREATE PROCEDURE [dbo].[person#] AS SELECT 2 AS a;\nGO\n");
+
+        var (exitCode, _, error) = Run("generate", source.Path, "--include", "dbo.*", "--out", outDir.Path);
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal(
+            "haruspex: error: \"Person\" would name both the procedure dbo.person and the procedure dbo.person#. Generated names must not clash: add a naming \"replace\" rule that tells their names apart (such as { \"pattern\": \"#$\", \"with\": \"Row\" }), or give one of them its own name with a \"name\" override in \"procedures\". These settings go in a haruspex.json beside the project, which it doesn't have yet.\n",
+            error.ReplaceLineEndings("\n"));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(outDir.Path));
+    }
 }

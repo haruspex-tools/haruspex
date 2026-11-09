@@ -24,8 +24,7 @@ namespace Haruspex.Config;
 /// (<c>GetOrderTag2</c>).</para>
 /// </remarks>
 internal sealed class NameSettler(
-    string file,
-    Func<string, NamingRules> rulesFor,
+    HaruspexConfig config,
     IReadOnlyDictionary<string, IrObjectType> types,
     IReadOnlyDictionary<string, (string Name, ConfigLocation? At)> procedureNames,
     IReadOnlyDictionary<(string Object, string Path), (string Name, ConfigLocation At)> pathNames,
@@ -35,9 +34,24 @@ internal sealed class NameSettler(
     private readonly Dictionary<string, string> named = new(StringComparer.Ordinal);
 
     /// <summary>Settled name to what holds it: the object it belongs to, and a description for errors.</summary>
-    private readonly Dictionary<string, (string Owner, string Description)> holders = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Holder> holders = new(StringComparer.Ordinal);
+
+    private string ConfigFile => config.File;
+
+    /// <summary>What holds a name: the object it belongs to, a description for errors, whether it is a type, and the setting to change.</summary>
+    private sealed record Holder(string Owner, string Description, bool IsType, ConfigLocation? At);
+
+    /// <summary>
+    /// The setting a clash or a naming problem of <paramref name="id"/> points at: its name override, or else its schema's
+    /// block (where a prefix or a replacement would go), or else the top-level naming.
+    /// </summary>
+    private ConfigLocation? SettingFor(string id) =>
+        procedureNames.TryGetValue(id, out var given) && given.At is not null
+            ? given.At
+            : TrySplit(id, out var schema, out _) ? config.Schema(schema)?.At ?? config.NamingAt : null;
 
     private readonly HashSet<string> reportedClashes = new(StringComparer.Ordinal);
+
 
     /// <summary>The document with every name settled, or null when a name could not be (the problems say why).</summary>
     public IrDocument? Settle(IrDocument document, IReadOnlyList<IrResult>?[] results)
@@ -54,10 +68,10 @@ internal sealed class NameSettler(
             // A procedure whose own name clashes is not walked: its types' names build on that name, so each would
             // clash too, and one error says it all.
             var name = ProcedureName(obj.Id);
-            if (name is null || !Claim(name, obj.Id, $"the procedure {obj.Id}"))
+            if (name is null || !Claim(name, new Holder(obj.Id, $"the procedure {obj.Id}", false, SettingFor(obj.Id))))
                 continue;
-            foreach (var ((owner, path), (pathName, _)) in pathNames.Where(p => p.Key.Object == obj.Id).OrderBy(p => p.Key.Path, StringComparer.Ordinal))
-                Claim(pathName, owner, $"the type at {path} in {owner}");
+            foreach (var ((owner, path), (pathName, at)) in pathNames.Where(p => p.Key.Object == obj.Id).OrderBy(p => p.Key.Path, StringComparer.Ordinal))
+                Claim(pathName, new Holder(owner, $"the type at {path} in {owner}", true, at));
             settledNames.Add((obj, objectResults, name));
         }
 
@@ -100,12 +114,12 @@ internal sealed class NameSettler(
         if (procedureNames.TryGetValue(id, out var given))
         {
             if (given.Name == generated)
-                problems.Add(new ConfigProblem(ConfigSeverity.Warning, file, given.At, $"the name \"{given.Name}\" is what the naming rules give {id} already. Remove it."));
+                problems.Add(new ConfigProblem(ConfigSeverity.Warning, ConfigFile, given.At, $"the name \"{given.Name}\" is what the naming rules give {id} already. Remove it."));
             return given.Name;
         }
 
         if (generated is null)
-            problems.Add(new ConfigProblem(ConfigSeverity.Error, file, null, $"the procedure {id} cannot be named: {why}"));
+            problems.Add(new ConfigProblem(ConfigSeverity.Error, ConfigFile, TrySplit(id, out var schema, out _) ? config.NamingLocation(schema) : null, $"the procedure {id} cannot be named: {why}"));
         return generated;
     }
 
@@ -117,7 +131,7 @@ internal sealed class NameSettler(
             return null;
         }
 
-        return rulesFor(schema).Name(name, out why);
+        return config.NamingFor(schema).Name(name, out why);
     }
 
     /// <summary>A result's root: its object, or its rows' object, is <c>…Row</c>, and nested names build on the stem.</summary>
@@ -180,11 +194,11 @@ internal sealed class NameSettler(
         {
             name = given.Name;
             if (name == generated)
-                problems.Add(new ConfigProblem(ConfigSeverity.Warning, file, given.At, $"the name \"{name}\" is what the naming rules give the type at {path} already. Remove it."));
+                problems.Add(new ConfigProblem(ConfigSeverity.Warning, ConfigFile, given.At, $"the name \"{name}\" is what the naming rules give the type at {path} already. Remove it."));
         }
         else
         {
-            name = Unique(generated, owner, $"the type at {path} in {owner}");
+            name = Unique(generated, new Holder(owner, $"the type at {path} in {owner}", true, SettingFor(owner)));
         }
 
         named[key] = name;
@@ -202,13 +216,14 @@ internal sealed class NameSettler(
         var generated = Generated(function, out var why);
         if (generated is null)
         {
-            problems.Add(new ConfigProblem(ConfigSeverity.Error, file, null, $"the recursive function {function}'s type cannot be named: {why} Change the naming rules so that they name it."));
+            problems.Add(new ConfigProblem(ConfigSeverity.Error, ConfigFile, TrySplit(function, out var schema, out _) ? config.NamingLocation(schema) : null,
+                $"the recursive function {function}'s type cannot be named: {why} Change the naming rules so that they name it."));
             named[key] = key;
             return;
         }
 
         var name = generated + "Node";
-        Claim(name, function, $"the type of the recursive function {function}");
+        Claim(name, new Holder(function, $"the type of the recursive function {function}", true, SettingFor(function)));
         named[key] = name;
         Fields(type, name, type.Identity.Path, function);
     }
@@ -228,44 +243,59 @@ internal sealed class NameSettler(
         types[reference.Name].Identity is { Owner: IrTypeOwner.Function } identity && identity.Path == $"<{identity.Object}>";
 
     /// <summary>The name, or the first free one with a number when the same object already holds it.</summary>
-    private string Unique(string name, string owner, string description)
+    private string Unique(string name, Holder claimant)
     {
         for (var n = 1; ; n++)
         {
             var candidate = n == 1 ? name : name + n.ToString(CultureInfo.InvariantCulture);
             if (!holders.TryGetValue(candidate, out var holder))
             {
-                holders[candidate] = (owner, description);
+                holders[candidate] = claimant;
                 return candidate;
             }
 
-            if (holder.Owner != owner)
+            if (holder.Owner != claimant.Owner)
             {
-                Clash(candidate, holder.Description, description);
+                Clash(candidate, holder, claimant);
                 return candidate;
             }
         }
     }
 
-    private bool Claim(string name, string owner, string description)
+    private bool Claim(string name, Holder claimant)
     {
         if (holders.TryGetValue(name, out var holder))
         {
-            Clash(name, holder.Description, description);
+            Clash(name, holder, claimant);
             return false;
         }
 
-        holders[name] = (owner, description);
+        holders[name] = claimant;
         return true;
     }
 
-    private void Clash(string name, string first, string second)
+    /// <summary>
+    /// A clash, with the advice that fits it: a prefix tells two schemas apart, but not two objects of one schema, where a
+    /// replacement rule or a name override does; a type in a procedure's results is named by a path override.
+    /// </summary>
+    private void Clash(string name, Holder first, Holder second)
     {
         if (!reportedClashes.Add(name))
             return;
-        problems.Add(new ConfigProblem(ConfigSeverity.Error, file, null,
-            $"\"{name}\" would name both {first} and {second}. Generated names must not clash: give one of their schemas a \"prefix\" in \"schemas\", "
-            + "or one of them its own name with an override in \"procedures\" (\"name\" for a procedure, \"paths\": { \"<path>\": { \"name\": … } } for a type in its results)."));
+
+        var sameSchema = TrySplit(first.Owner, out var a, out _) && TrySplit(second.Owner, out var b, out _) && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+        var ways = new List<string>
+        {
+            sameSchema
+                ? "add a naming \"replace\" rule that tells their names apart (such as { \"pattern\": \"#$\", \"with\": \"Row\" })"
+                : "give one of their schemas a \"prefix\" in \"schemas\"",
+            first.IsType || second.IsType
+                ? "give one its own name with an override in \"procedures\" (\"name\" for a procedure, \"paths\": { \"<path>\": { \"name\": … } } for a type in its results)"
+                : "give one of them its own name with a \"name\" override in \"procedures\"",
+        };
+        var noFile = ConfigFile.Length == 0 ? " These settings go in a haruspex.json beside the project, which it doesn't have yet." : "";
+        problems.Add(new ConfigProblem(ConfigSeverity.Error, ConfigFile, second.At ?? first.At,
+            $"\"{name}\" would name both {first.Description} and {second.Description}. Generated names must not clash: {string.Join(", or ", ways)}.{noFile}"));
     }
 
     private IrType Rename(IrType type) => type switch

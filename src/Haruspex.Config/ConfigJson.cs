@@ -1,5 +1,8 @@
+using System.Globalization;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using Haruspex.Ir;
 
 namespace Haruspex.Config;
 
@@ -21,9 +24,23 @@ internal sealed record JsonStringValue(string Value, int Line, int Column) : Jso
 
 internal sealed record JsonOtherValue(JsonTokenType Kind, string Text, int Line, int Column) : JsonValue(Line, Column);
 
-/// <summary>Text that is not JSON with comments, and where.</summary>
-internal sealed class ConfigJsonException(string message, int line, int column) : Exception(message)
+/// <summary>How a place in the config file is written in problems: <c>schemas.sales.include[0]</c>, <c>procedures["sales.get_order"]</c>.</summary>
+internal static class ConfigPath
 {
+    public static string Child(string path, string key)
+    {
+        var segment = IrIdentifiers.IsIdentifier(key) ? key : "[\"" + JsonEncodedText.Encode(key, JavaScriptEncoder.UnsafeRelaxedJsonEscaping) + "\"]";
+        return path.Length == 0 || segment.StartsWith('[') ? path + segment : path + "." + segment;
+    }
+
+    public static string Index(string path, int index) => path + "[" + index.ToString(CultureInfo.InvariantCulture) + "]";
+}
+
+/// <summary>Text that is not JSON with comments, and where.</summary>
+internal sealed class ConfigJsonException(string message, int line, int column, string path = "") : Exception(message)
+{
+    public string Path { get; } = path;
+
     public int Line { get; } = line;
 
     public int Column { get; } = column;
@@ -51,7 +68,7 @@ internal static class ConfigJson
         {
             if (!reader.Read())
                 throw new ConfigJsonException("The file is empty; it must hold a JSON object.", 1, 1);
-            var value = Read(ref reader, positions);
+            var value = Read(ref reader, positions, "");
 
             // The reader itself refuses anything after the value, with its position; this only guards that it does.
             if (reader.Read())
@@ -71,7 +88,7 @@ internal static class ConfigJson
         }
     }
 
-    private static JsonValue Read(ref Utf8JsonReader reader, Positions positions)
+    private static JsonValue Read(ref Utf8JsonReader reader, Positions positions, string path)
     {
         var (line, column) = positions.Of(reader.TokenStartIndex);
         switch (reader.TokenType)
@@ -83,17 +100,18 @@ internal static class ConfigJson
                 {
                     var (keyLine, keyColumn) = positions.Of(reader.TokenStartIndex);
                     var name = reader.GetString()!;
+                    var memberPath = ConfigPath.Child(path, name);
                     if (!seen.Add(name))
-                        throw new ConfigJsonException($"The key \"{name}\" is written twice in one object.", keyLine, keyColumn);
+                        throw new ConfigJsonException($"The key \"{name}\" is written twice in one object.", keyLine, keyColumn, memberPath);
                     reader.Read();
-                    members.Add(new JsonMember(name, Read(ref reader, positions), keyLine, keyColumn));
+                    members.Add(new JsonMember(name, Read(ref reader, positions, memberPath), keyLine, keyColumn));
                 }
 
                 return new JsonObjectValue(members, line, column);
             case JsonTokenType.StartArray:
                 var items = new List<JsonValue>();
                 while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
-                    items.Add(Read(ref reader, positions));
+                    items.Add(Read(ref reader, positions, ConfigPath.Index(path, items.Count)));
                 return new JsonArrayValue(items, line, column);
             case JsonTokenType.String:
                 return new JsonStringValue(reader.GetString()!, line, column);

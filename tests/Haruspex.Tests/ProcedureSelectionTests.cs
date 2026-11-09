@@ -70,7 +70,7 @@ public class ProcedureSelectionTests
     {
         var result = Select("""{ "sales": { "include": ["*", "get_ordr"] } }""");
 
-        Assert.Equal("haruspex.json:1:44: error: schemas.sales.include[1]: 'get_ordr' matches no procedure in the schema \"sales\".", Assert.Single(result.Problems).ToString());
+        Assert.Equal("haruspex.json:1:44: error: schemas.sales.include[1]: 'get_ordr' matches no procedure in the schema \"sales\". Correct it, or remove it.", Assert.Single(result.Problems).ToString());
     }
 
     [Fact]
@@ -80,6 +80,17 @@ public class ProcedureSelectionTests
 
         Assert.Equal(
             "haruspex.json:1:61: error: schemas.sales.exclude[0]: '*_internal' excludes nothing: it matches no procedure that \"include\" selects in the schema \"sales\". Remove it.",
+            Assert.Single(result.Problems).ToString());
+    }
+
+    [Fact]
+    public void A_schema_whose_exclude_removes_everything_is_an_error()
+    {
+        var result = Select("""{ "sales": { "include": ["list_*"], "exclude": ["list_*"] } }""");
+
+        Assert.Empty(result.Procedures);
+        Assert.Equal(
+            "haruspex.json:1:16: error: schemas.sales: the schema \"sales\" selects nothing: its \"exclude\" removes every procedure its \"include\" selects. Narrow the exclude, or remove the block.",
             Assert.Single(result.Problems).ToString());
     }
 
@@ -98,9 +109,15 @@ public class ProcedureSelectionTests
     {
         var read = ConfigReader.Read(Encoding.UTF8.GetBytes("""{ "schemas": { "sales": { "include": ["get_*"], "exclude": ["*_internal"] } } }"""), "haruspex.json", Path.GetTempPath());
 
-        var (procedures, unmatched) = ProcedureSelection.Select(Procedures, [ObjectPattern.Parse("sales.list_*"), ObjectPattern.Parse("hr.nobody")], read.Config!);
+        var (procedures, problems) = ProcedureSelection.Select(
+            Procedures, [ObjectPattern.Parse("sales.list_*"), ObjectPattern.Parse("hr.nobody"), ObjectPattern.Parse("sales.*_internal")], read.Config!);
 
         Assert.Equal(["sales.list_orders"], procedures.Select(p => p.ToString()));
-        Assert.Equal(["hr.nobody"], unmatched.Select(p => p.Text));
+        Assert.Equal(
+            [
+                "--include 'hr.nobody' matches no procedure. Correct it, or remove it.",
+                "--include 'sales.*_internal' matches only procedures that schemas.sales.exclude leaves out, so it selects nothing.",
+            ],
+            problems);
     }
 }

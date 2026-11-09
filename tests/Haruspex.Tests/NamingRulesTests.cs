@@ -14,7 +14,7 @@ public class NamingRulesTests
 
     [Theory]
     [InlineData("get_order", "GetOrder")]
-    [InlineData("orders$pipeline$velocity", "OrdersPipelineVelocity")]
+    [InlineData("stock$level$history", "StockLevelHistory")]
     [InlineData("person#", "Person")]
     [InlineData("placedAt", "PlacedAt")]
     [InlineData("GetPropertyList", "GetPropertyList")]
@@ -66,12 +66,12 @@ public class NamingRulesTests
     [Theory]
     [InlineData("get_order", "getOrder")]
     [InlineData("GetOrder", "getOrder")]
-    [InlineData("orders$pipeline$velocity", "ordersPipelineVelocity")]
+    [InlineData("stock$level$history", "stockLevelHistory")]
     public void Camel_lowers_the_first_letter(string name, string expected) =>
         Assert.Equal(expected, Name(Rules(NamingCase.Camel), name));
 
     [Theory]
-    [InlineData("orders$pipeline$velocity")]
+    [InlineData("stock$level$history")]
     [InlineData("get_order")]
     [InlineData("$x")]
     public void Preserve_keeps_the_name_as_it_is(string name) =>

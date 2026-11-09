@@ -141,7 +141,7 @@ public class ConfigApplicationTests
 
         Assert.Null(run.Applied.Document);
         Assert.Equal(
-            "haruspex.json: error: \"Person\" would name both the procedure dbo.person and the procedure dbo.person#. Generated names must not clash: give one of their schemas a \"prefix\" in \"schemas\", or one of them its own name with an override in \"procedures\" (\"name\" for a procedure, \"paths\": { \"<path>\": { \"name\": … } } for a type in its results).",
+            "haruspex.json: error: \"Person\" would name both the procedure dbo.person and the procedure dbo.person#. Generated names must not clash: add a naming \"replace\" rule that tells their names apart (such as { \"pattern\": \"#$\", \"with\": \"Row\" }), or give one of them its own name with a \"name\" override in \"procedures\".",
             run.Error);
     }
 
@@ -159,8 +159,24 @@ public class ConfigApplicationTests
     {
         const string Two = "CREATE PROCEDURE sales.get_customer2 AS SELECT 1 AS a;\nGO\nCREATE SCHEMA audit;\nGO\nCREATE PROCEDURE audit.get_customer2 AS SELECT 2 AS a;\nGO\n";
 
-        Assert.StartsWith("haruspex.json: error: \"GetCustomer2\" would name both the procedure audit.get_customer2 and the procedure sales.get_customer2.", Apply(Two, "{}").Error, StringComparison.Ordinal);
+        // A prefix tells two schemas apart, so that is the advice here.
+        Assert.Equal(
+            "haruspex.json: error: \"GetCustomer2\" would name both the procedure audit.get_customer2 and the procedure sales.get_customer2. Generated names must not clash: give one of their schemas a \"prefix\" in \"schemas\", or give one of them its own name with a \"name\" override in \"procedures\".",
+            Apply(Two, "{}").Error);
+
+        // With a block for a schema, the problem points at it, where the prefix would go.
+        Assert.StartsWith("haruspex.json:1:16: error: schemas.sales: \"GetCustomer2\" would name both", Apply(Two, """{ "schemas": { "sales": { "include": ["*"] } } }""").Error, StringComparison.Ordinal);
         Assert.Equal(["AuditGetCustomer2", "GetCustomer2"], Apply(Two, """{ "schemas": { "audit": { "prefix": "Audit" } } }""").Document.Objects.Select(o => o.Name));
+    }
+
+    [Fact]
+    public void A_name_the_rules_cannot_make_points_at_the_naming_that_decides_it()
+    {
+        var run = Apply("CREATE PROCEDURE [dbo].[person#] AS SELECT 1 AS a;\nGO\n", "{\n  \"naming\": { \"case\": \"preserve\" }\n}");
+
+        Assert.Equal(
+            "haruspex.json:2:13: error: naming: the procedure dbo.person# cannot be named: \"case\": \"preserve\" gives 'person#', which is not a valid identifier (an ASCII letter, _ or $, then letters, digits, _ or $). Add a replacement, or give it a name in \"procedures\".",
+            run.Error);
     }
 
     [Fact]
@@ -210,7 +226,8 @@ public class ConfigApplicationTests
         var run = Apply(GetCustomer + "CREATE PROCEDURE sales.other AS SELECT 1 AS a;\nGO\n",
             """{ "procedures": { "sales.other": { "name": "GetCustomerRow" } } }""");
 
-        Assert.StartsWith("haruspex.json: error: \"GetCustomerRow\" would name both the procedure sales.other and the type at results[0][] in sales.get_customer.", run.Error, StringComparison.Ordinal);
+        // It points at the override, the setting to change.
+        Assert.StartsWith("haruspex.json:1:44: error: procedures[\"sales.other\"].name: \"GetCustomerRow\" would name both the procedure sales.other and the type at results[0][] in sales.get_customer.", run.Error, StringComparison.Ordinal);
     }
 
     [Fact]

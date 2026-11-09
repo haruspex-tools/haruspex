@@ -68,7 +68,7 @@ union (below), `{ "ref" }`, `{ "kind": "json-text", "content"? }`, `{ "kind": "i
 | tuple | `{ "kind": "tuple", "items": [{ "type", "nullable", "nullableBecause"? }, …] }` | exactly these positions, in order, each with its own type and nullability |
 | record | `{ "kind": "record", "values", "valuesNullable", "valuesNullableBecause"? }` | an object whose keys are data: any string keys (possibly repeated in the text, which `JSON.parse` reads as the last), each to a value of `values` |
 | union | `{ "kind": "union", "variants": […] }` | a value of one of the variants: at least two, all different |
-| import | `{ "kind": "import", "name", "from" }` | a value the config file declares to be of the application's own schema: `name`, exported by the module `from` (as the generated module writes it). Emitters import and use it as it is, so the value is still checked, by that schema |
+| import | `{ "kind": "import", "name", "from" }` | a value the config file declares to be of the application's own schema: `name`, exported by the module `from` (as the generated module writes it). Emitters import and use it as it is, so the value is still checked, by that schema, which receives the value as it arrives: the string, where it replaces JSON text |
 | JSON text | `{ "kind": "json-text", "content"? }` | a string holding JSON, which the consumer parses. With `content`, a non-null string parses to a value of that type (the JSON was built here: a column of live JSON in a rowset, a `FOR JSON` subquery `WITHOUT_ARRAY_WRAPPER`, a call of a function returning JSON). Without it, only "JSON" is claimed (a `json` column, a parameter) |
 
 ## Paths

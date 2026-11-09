@@ -35,7 +35,7 @@ otherwise silently do nothing.
         "lines[]": { "name": "OrderLine" },
         "customer.email": { "nullable": false, "why": "checkout requires an email" },
         "status": { "values": "exact", "why": "the application writes lower case only" },
-        "settings": { "type": "OrderSettingsSchema", "import": "@app/orders/settings" }
+        "settings": { "type": "OrderSettingsSchema", "import": "@app/orders/settings" }   // see "type" below
       }
     }
   }
@@ -60,7 +60,9 @@ allowed (`"RDF."`). Its block holds:
 **Nothing is selected unless its schema has a block with `include`**: typing every procedure is something you ask for
 (`"include": ["*"]` per schema), never the default. Whatever matches nothing is an error: a schema key that names no
 schema of the project, an include that selects nothing in its schema (a typo would otherwise drop an interface without
-anyone noticing), and an exclude that removes nothing its include selected.
+anyone noticing), an exclude that removes nothing its include selected, an exclude in a block without an include, and a
+block whose exclude removes everything its include selects. A one-off `--include` whose every match a schema's
+exclude leaves out is an error too: a run that would type nothing fails rather than writing an empty module.
 
 A block is an object so that settings can be added to it later (one output module per schema is planned) without
 breaking a file written today.
@@ -82,7 +84,11 @@ a silent cast. The IR lists every claim an override made under `overrides`, with
   - `type` and `import`: the value is the application's own schema, `type` exported by the module `import`, with
     `[]` for each level of array (`"TagSchema[]"`). Any unknowns there are then declared, not reported. A relative
     `import` (`./`, `../`) is relative to this file, and is rewritten relative to `out`; a package or alias is kept as
-    written.
+    written. **The imported schema receives the value as it arrives.** At JSON text (a `json` or JSON-holding column
+    returned in a rowset, a `FOR JSON` subquery `WITHOUT_ARRAY_WRAPPER`) that is the string, not what it parses to, so
+    the schema must parse it itself, as `z.string().transform((t) => JSON.parse(t)).pipe(OrderSettings)` does; a plain
+    `z.object(…)` there would reject every row. Inside live JSON (`FOR JSON`, `json_query`) it receives the parsed
+    value.
   - `values: "exact"` with a required `why`: a value set that the database compares under its collation (where `'Open'`
     can pass a check for `'open'`) holds exactly its items, giving a `z.enum`. It needs a value set the IR already has,
     from a CHECK constraint on a column the value passes through unchanged.
@@ -110,8 +116,8 @@ Generated names come from each object's own name, **never its schema**, by decla
 2. `prefix`: the schema's prefix, if any, goes in front as words of its own: `"prefix": "Audit"` makes
    `audit.get_order` `AuditGetOrder`.
 3. `case` (the schema's, or else the top level's): `pascal` (the default) breaks words at every character that isn't a
-   letter or digit (`$`, `#`, `_`), so `orders$pipeline$velocity` gives `OrdersPipelineVelocity`. `camel` gives
-   `ordersPipelineVelocity`. `preserve` keeps the prefix and the name as they are, `$` included; anything that is still
+   letter or digit (`$`, `#`, `_`), so `stock$level$history` gives `StockLevelHistory`. `camel` gives
+   `stockLevelHistory`. `preserve` keeps the prefix and the name as they are, `$` included; anything that is still
    not a valid identifier is an error naming the object.
 
 Nested types build on their procedure's name: `GetOrderRow` for its rows, `GetOrderLine` for the items of `lines`,

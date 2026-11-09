@@ -202,10 +202,10 @@ public static class HaruspexCli
         IReadOnlyCollection<ObjectName>? selectedByFile = null;
         if (fromCommandLine)
         {
-            var (oneOff, unmatched) = ProcedureSelection.Select(project.Procedures, include, config);
-            foreach (var pattern in unmatched)
-                error.WriteLine($"haruspex: --include '{pattern.Text}' matches no procedure in {directory}");
-            if (unmatched.Count > 0)
+            var (oneOff, problems) = ProcedureSelection.Select(project.Procedures, include, config);
+            foreach (var problem in problems)
+                error.WriteLine($"haruspex: error: {problem}");
+            if (problems.Count > 0)
                 return ExitCodes.Usage;
             selected = oneOff;
 

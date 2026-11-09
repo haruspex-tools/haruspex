@@ -16,7 +16,7 @@ internal sealed class SchemaSubset(JsonElement root)
     private static readonly HashSet<string> Implemented = new(StringComparer.Ordinal)
     {
         "type", "enum", "const", "properties", "additionalProperties", "required", "items", "minItems", "minLength", "pattern",
-        "$ref", "dependentRequired", "dependentSchemas", "anyOf",
+        "$ref", "dependentRequired", "dependentSchemas", "anyOf", "propertyNames",
     };
 
     /// <summary>The ways <paramref name="instance"/> fails the schema, as JSON pointers with a reason; empty when it is valid.</summary>
@@ -109,6 +109,14 @@ internal sealed class SchemaSubset(JsonElement root)
                 case "dependentSchemas" when value.ValueKind == JsonValueKind.Object:
                     foreach (var dependency in k.EnumerateObject().Where(d => value.TryGetProperty(d.Name, out _)))
                         Check(dependency.Value, value, at, errors);
+                    break;
+                case "propertyNames" when value.ValueKind == JsonValueKind.Object:
+                    foreach (var property in value.EnumerateObject())
+                    {
+                        using var name = JsonDocument.Parse(JsonSerializer.Serialize(property.Name));
+                        Check(k, name.RootElement, $"{at}/{property.Name} (its name)", errors);
+                    }
+
                     break;
                 case "anyOf":
                     if (!k.EnumerateArray().Any(option => { var none = new List<string>(); Check(option, value, at, none); return none.Count == 0; }))

@@ -187,7 +187,7 @@ public class ConfigCliTests
         var (exitCode, _, error) = Run(copy.Path, "generate", "--out", Path.Combine(copy.Path, "out"));
 
         Assert.Equal(2, exitCode);
-        Assert.Equal($"{Path.Combine(copy.Path, "haruspex.json")}:4:5: error: schemas.shop.include[1]: 'get_baskte' matches no procedure in the schema \"shop\".\n", error);
+        Assert.Equal($"{Path.Combine(copy.Path, "haruspex.json")}:4:5: error: schemas.shop.include[1]: 'get_baskte' matches no procedure in the schema \"shop\". Correct it, or remove it.\n", error);
     }
 
     [Fact]
@@ -226,10 +226,38 @@ public class ConfigCliTests
 
         Assert.Equal(2, exitCode);
         Assert.StartsWith(
-            $"{Path.Combine(copy.Path, "haruspex.json")}: error: \"Sales\" would name both the procedure shop.list_products and the procedure shop_admin.report_sales. Generated names must not clash: give one of their schemas a \"prefix\"",
+            $"{Path.Combine(copy.Path, "haruspex.json")}:2:58: error: schemas.shop_admin: \"Sales\" would name both the procedure shop.list_products and the procedure shop_admin.report_sales. Generated names must not clash: give one of their schemas a \"prefix\"",
             error,
             StringComparison.Ordinal);
         Assert.False(Directory.Exists(Path.Combine(copy.Path, "out")));
+    }
+
+    [Fact]
+    public void A_schema_whose_exclude_removes_everything_it_includes_is_an_error()
+    {
+        using var copy = ShopWith("""{ "source": "database", "schemas": { "shop": { "include": ["recalculate_*"], "exclude": ["*_internal"] } } }""");
+
+        var (exitCode, output, error) = Run(copy.Path, "generate", "--out", Path.Combine(copy.Path, "out"));
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal("", output);
+        Assert.Equal(
+            $"{Path.Combine(copy.Path, "haruspex.json")}:1:38: error: schemas.shop: the schema \"shop\" selects nothing: its \"exclude\" removes every procedure its \"include\" selects. Narrow the exclude, or remove the block.\n",
+            error);
+        Assert.False(Directory.Exists(Path.Combine(copy.Path, "out")));
+    }
+
+    [Fact]
+    public void A_command_line_include_whose_matches_the_file_excludes_is_an_error()
+    {
+        using var outDir = new TempDirectory();
+
+        var (exitCode, output, error) = Run(Shop, "generate", "--include", "shop.recalculate_internal", "--out", outDir.Path);
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal("", output);
+        Assert.Equal("haruspex: error: --include 'shop.recalculate_internal' matches only procedures that schemas.shop.exclude leaves out, so it selects nothing.\n", error);
+        Assert.Empty(Directory.EnumerateFileSystemEntries(outDir.Path));
     }
 
     [Fact]

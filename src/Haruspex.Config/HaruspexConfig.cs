@@ -29,6 +29,15 @@ public sealed record HaruspexConfig
     /// <summary>The naming rules every schema starts from (the top-level <c>naming</c>).</summary>
     public NamingRules Naming { get; init; } = NamingRules.Default;
 
+    /// <summary>Where the top-level <c>naming</c> is written, or null.</summary>
+    public ConfigLocation? NamingAt { get; init; }
+
+    /// <summary>
+    /// The setting that decides how objects of <paramref name="schema"/> are named, for a problem with a name: the schema's
+    /// own <c>naming</c>, else the top-level one, else the schema's block. Null when the file says nothing about it.
+    /// </summary>
+    public ConfigLocation? NamingLocation(string schema) => Schema(schema) is { } settings ? settings.Naming?.At ?? NamingAt ?? settings.At : NamingAt;
+
     /// <summary>Whether any schema has an include, without which nothing is selected.</summary>
     public bool SelectsAnything => Schemas.Any(s => s.Include is not null);
 
@@ -70,7 +79,11 @@ public sealed record SchemaSettings(string Name, ConfigLocation At)
 }
 
 /// <summary>A schema's <c>naming</c>: its <c>case</c> replaces the top-level one, its <c>replace</c> rules run after the top-level ones.</summary>
-public sealed record SchemaNaming(IReadOnlyList<NamingReplacement> Replace, NamingCase? Case);
+public sealed record SchemaNaming(IReadOnlyList<NamingReplacement> Replace, NamingCase? Case)
+{
+    /// <summary>Where it is written.</summary>
+    public ConfigLocation? At { get; init; }
+}
 
 /// <summary>How result objects treat keys their type does not list (<c>"objects"</c>).</summary>
 public enum ObjectsPolicy

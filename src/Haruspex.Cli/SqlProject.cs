@@ -48,8 +48,8 @@ public sealed class SqlProject
     public Selection Select(IReadOnlyList<ObjectPattern> include)
     {
         ArgumentNullException.ThrowIfNull(include);
-        var (procedures, unmatched) = ProcedureSelection.Select(Procedures, include, HaruspexConfig.None("."));
-        return new Selection(procedures, unmatched);
+        var (procedures, _) = ProcedureSelection.Select(Procedures, include, HaruspexConfig.None("."));
+        return new Selection(procedures, [.. include.Where(i => !Procedures.Any(i.Matches))]);
     }
 
     /// <summary>

@@ -25,6 +25,9 @@
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/schema"
+      },
+      "propertyNames": {
+        "minLength": 1
       }
     },
     "objects": {
@@ -42,6 +45,11 @@
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/procedure"
+      },
+      "propertyNames": {
+        "description": "A two-part name, without * or ? outside brackets: an override names one procedure.",
+        "minLength": 3,
+        "pattern": "^(?:[^\\[*?]|\\[(?:[^\\]]|\\]\\])*\\])*$"
       }
     }
   },
@@ -226,6 +234,11 @@
           "description": "Naming for this schema, merged over the top-level naming: its case replaces the top-level case, and its replace rules run after the top-level ones.",
           "$ref": "#/$defs/naming"
         }
+      },
+      "dependentRequired": {
+        "exclude": [
+          "include"
+        ]
       }
     }
   }
