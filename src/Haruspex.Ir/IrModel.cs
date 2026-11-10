@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.9";
+    public const string CurrentVersion = "0.10";
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
@@ -487,6 +487,13 @@ public static class IrNullRules
 
     /// <summary>It comes from the optional side of an outer join, which has no row when nothing matches.</summary>
     public const string OuterJoin = "outer-join";
+
+    /// <summary>
+    /// It comes from the right side of an <c>OUTER APPLY</c>, which has no row for an outer row when the applied query returns
+    /// none. An applied query that always returns a row (an aggregate without <c>GROUP BY</c>, a query without <c>FROM</c>, a
+    /// <c>VALUES</c> list) never gives it.
+    /// </summary>
+    public const string OuterApply = "outer-apply";
 
     /// <summary>It is a subquery, which is null when it returns no rows.</summary>
     public const string EmptySubquery = "empty-subquery";

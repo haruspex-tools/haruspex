@@ -1,0 +1,230 @@
+{
+  "irVersion": "0.10",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "mart.purchases_json",
+      "name": "PurchasesJson",
+      "kind": "procedure",
+      "at": "procedures/purchases_json.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PurchasesJsonRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/purchases_json.sql:6:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "PurchasesJsonCustomer": {
+      "kind": "object",
+      "identity": {
+        "procedure": "mart.purchases_json",
+        "path": "results[0][].customer"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(50)",
+            "maxLength": {
+              "value": 50,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(50)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "email",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(100)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "mart.customer.email"
+            }
+          ]
+        }
+      ]
+    },
+    "PurchasesJsonLine": {
+      "kind": "object",
+      "identity": {
+        "procedure": "mart.purchases_json",
+        "path": "results[0][].lines[]"
+      },
+      "fields": [
+        {
+          "name": "no",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "PurchasesJsonRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "mart.purchases_json",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(4)",
+            "maxLength": {
+              "value": 4,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(4)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "open",
+                "paid",
+                "sent"
+              ],
+              "from": [
+                {
+                  "check": "mart.ck_purchase_status"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "customer",
+          "type": {
+            "ref": "PurchasesJsonCustomer"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "lines",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PurchasesJsonLine"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/purchases_json.sql:14:23"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

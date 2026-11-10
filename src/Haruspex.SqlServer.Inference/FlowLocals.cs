@@ -23,6 +23,18 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
     public LocalRelation? Derived(QueryDerivedTable table, BindingScope? outer) =>
         ReadDerived is null ? null : Register(table.Alias?.Value ?? "", ReadDerived(table, outer));
 
+    /// <summary>Reads a VALUES list's rows; null leaves VALUES lists unmodelled.</summary>
+    public Func<InlineDerivedTable, BindingScope?, LocalRelationValues>? ReadValues { get; init; }
+
+    public LocalRelation? Values(InlineDerivedTable table, BindingScope? outer) =>
+        ReadValues is null ? null : Register(table.Alias?.Value ?? "", ReadValues(table, outer));
+
+    /// <summary>Reads a view's definition; null leaves views unmodelled.</summary>
+    public Func<NamedObject, LocalRelationValues>? ReadView { get; init; }
+
+    public LocalRelation? View(NamedObject view) =>
+        ReadView is null ? null : Register(view.Name.ToString(), ReadView(view));
+
     /// <summary>Whether a relation handed out is a temporary table (#t), rather than a CTE, derived table or table variable.</summary>
     public bool IsTemporary(LocalRelation relation) => temporary.Contains(relation);
     private readonly List<Dictionary<string, LocalRelation>> cteFrames = [];
@@ -106,4 +118,24 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
 internal sealed record LocalRelationValues(IReadOnlyList<string>? Names, IReadOnlyList<Value>? Values, UnknownShape? Why)
 {
     public static LocalRelationValues Unknown(UnknownShape why) => new(null, null, why);
+
+    /// <summary>
+    /// How many rows it has where it is read (for an APPLY's right side, for each outer row): set for derived tables,
+    /// VALUES lists and views from their query (Cardinality.cs); any number for the others, which claims nothing.
+    /// </summary>
+    public IrCardinality Rows { get; init; } = IrCardinality.Many;
+
+    /// <summary>
+    /// Whether it always has a row: a query of exactly one row, or a VALUES list. On an OUTER APPLY's right side it is never
+    /// null-extended (observed: An_ungrouped_aggregate_applied_gives_one_row_for_every_outer_row).
+    /// </summary>
+    public bool AtLeastOne { get; init; }
+
+    /// <summary>Its unique keys, which only a view has here (see <see cref="ProcedureAnalyzer"/>'s <c>ViewKeys</c>).</summary>
+    public IReadOnlyList<RelationKey> Keys { get; init; } = [];
 }
+
+/// <summary>A relation's unique key: columns whose values no two of its rows share, at most one row holding NULL in all.</summary>
+/// <param name="Ordinals">The key's columns, by position in the relation.</param>
+/// <param name="Types">Each column's built-in SQL type, for comparing it with a value in its own type (Cardinality.cs).</param>
+internal sealed record RelationKey(IReadOnlyList<int> Ordinals, IReadOnlyList<string> Types);

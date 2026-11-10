@@ -86,46 +86,92 @@ public sealed class Binder(DatabaseModel model, string file)
             : Unbound(BindingProblemKind.UnresolvedColumn, $"The table {source.Table.Name} has no column {name}.", at);
     }
 
-    private void AddSources(TableReference reference, BindingScope scope, SourceLocation? optionalSideOf)
+    /// <param name="reference">The table reference.</param>
+    /// <param name="scope">The query's scope, which its sources are added to.</param>
+    /// <param name="optionalSideOf">The outermost optional side it is inside, if any.</param>
+    /// <param name="lateral">
+    /// Inside an APPLY's right side, the scope it reads outer columns from (its left input's sources, then the enclosing
+    /// query's); null elsewhere, where a derived table reads only the enclosing query's.
+    /// </param>
+    /// <param name="side">How <paramref name="optionalSideOf"/> came about: <see cref="Side.Applied"/> for the right side of an
+    /// OUTER APPLY itself, <see cref="Side.InsideApplied"/> for a source joined inside it.</param>
+    private void AddSources(TableReference reference, BindingScope scope, SourceLocation? optionalSideOf, BindingScope? lateral = null, Side side = Side.Join)
     {
+        // A source joined inside an OUTER APPLY's right side is on that side, but is not the whole of it.
+        var inside = side == Side.Applied ? Side.InsideApplied : side;
+        BoundSource Sided(BoundSource source) =>
+            side == Side.Join ? source : source with { OuterApply = true, WholeApplied = side == Side.Applied };
+
         switch (reference)
         {
             case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.Inner } join:
-                AddSources(join.FirstTableReference, scope, optionalSideOf);
-                AddSources(join.SecondTableReference, scope, optionalSideOf);
+                AddSources(join.FirstTableReference, scope, optionalSideOf, lateral, inside);
+                AddSources(join.SecondTableReference, scope, optionalSideOf, lateral, inside);
                 break;
             case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.LeftOuter } join:
                 // The right side has no row when nothing matches. Recorded on each of its sources, so a reader
                 // can tell that any column read from them may have no value, whatever its declaration says.
-                AddSources(join.FirstTableReference, scope, optionalSideOf);
-                AddSources(join.SecondTableReference, scope, optionalSideOf ?? At(join.SecondTableReference));
+                AddSources(join.FirstTableReference, scope, optionalSideOf, lateral, inside);
+                AddSources(join.SecondTableReference, scope, optionalSideOf ?? At(join.SecondTableReference), lateral, optionalSideOf is null ? Side.Join : inside);
                 break;
-            // Not bound, although binding them is easy: what a RIGHT or FULL join or an APPLY means for nulls is
-            // not modelled yet, so their sources stay unresolved, which makes every column read from them unknown
-            // rather than wrongly non-null. Binding them comes with modelling them.
+            case UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossApply or UnqualifiedJoinType.OuterApply } apply:
+            {
+                // The right side is read once for each row of the left input, and may read its columns; not those of a
+                // source listed before it with a comma, which is not part of its left input (observed:
+                // An_applied_query_sees_its_left_input_only). OUTER APPLY null-extends an outer row the right side gives
+                // no row for, as a left join does; CROSS APPLY drops it, so its right side is optional only as the APPLY is.
+                var first = scope.Sources.Count;
+                AddSources(apply.FirstTableReference, scope, optionalSideOf, lateral, inside);
+                var left = scope.Lateral(first, lateral);
+                if (apply.UnqualifiedJoinType == UnqualifiedJoinType.OuterApply && optionalSideOf is null)
+                    AddSources(apply.SecondTableReference, scope, At(apply.SecondTableReference), left, Side.Applied);
+                else
+                    AddSources(apply.SecondTableReference, scope, optionalSideOf, left, inside);
+                break;
+            }
+
+            // Not bound, although binding them is easy: what a RIGHT or FULL join means for nulls is not modelled yet, so
+            // their sources stay unresolved, which makes every column read from them unknown rather than wrongly non-null.
+            // Binding them comes with modelling them. A CROSS JOIN is not modelled yet either.
             case QualifiedJoin or UnqualifiedJoin:
                 AddUnresolved(reference, scope, Problem(BindingProblemKind.UnsupportedSource, $"{JoinKeyword(reference)} is not modelled yet.", At(reference)));
                 break;
             case JoinParenthesisTableReference parenthesis:
-                AddSources(parenthesis.Join, scope, optionalSideOf);
+                AddSources(parenthesis.Join, scope, optionalSideOf, lateral, inside);
                 break;
             case NamedTableReference named:
-                scope.Add(Named(named, optionalSideOf, scope.Locals));
+                scope.Add(Sided(Named(named, optionalSideOf, scope.Locals)));
                 break;
-            case QueryDerivedTable derived when scope.Locals?.Derived(derived, scope.Parent) is { } derivedRelation:
+            case QueryDerivedTable derived when scope.Locals?.Derived(derived, lateral ?? scope.Parent) is { } derivedRelation:
                 // Its alias is required, and names it in this scope only.
-                scope.Add(new BoundSource(derived.Alias?.Value, null, null, optionalSideOf, derivedRelation));
+                scope.Add(Sided(new BoundSource(derived.Alias?.Value, null, null, optionalSideOf, derivedRelation)));
+                break;
+            case InlineDerivedTable values when scope.Locals?.Values(values, lateral ?? scope.Parent) is { } valuesRelation:
+                scope.Add(Sided(new BoundSource(values.Alias?.Value, null, null, optionalSideOf, valuesRelation)));
                 break;
             case VariableTableReference variable:
                 // A table variable is the body's own; without a definition of it in hand it is not modelled.
-                scope.Add(scope.Locals?.Find(variable.Variable.Name) is { } relation
+                scope.Add(Sided(scope.Locals?.Find(variable.Variable.Name) is { } relation
                     ? new BoundSource(variable.Alias?.Value ?? variable.Variable.Name, null, null, optionalSideOf, relation)
-                    : new BoundSource(variable.Alias?.Value ?? variable.Variable.Name, null, Problem(BindingProblemKind.UnsupportedSource, $"The table variable {variable.Variable.Name} is not modelled here.", At(reference)), optionalSideOf));
+                    : new BoundSource(variable.Alias?.Value ?? variable.Variable.Name, null, Problem(BindingProblemKind.UnsupportedSource, $"The table variable {variable.Variable.Name} is not modelled here.", At(reference)), optionalSideOf)));
                 break;
             default:
                 AddUnresolved(reference, scope, Problem(BindingProblemKind.UnsupportedSource, $"The table source {FragmentText.OneLine(reference)} is not modelled yet.", At(reference)));
                 break;
         }
+    }
+
+    /// <summary>What kind of optional side a source is added on.</summary>
+    private enum Side
+    {
+        /// <summary>None, or an outer join's.</summary>
+        Join,
+
+        /// <summary>An OUTER APPLY's right side, which the source is the whole of.</summary>
+        Applied,
+
+        /// <summary>An OUTER APPLY's right side, which the source is joined inside.</summary>
+        InsideApplied,
     }
 
     private BoundSource Named(NamedTableReference named, SourceLocation? optionalSideOf, ILocalRelations? locals)
@@ -156,7 +202,7 @@ public sealed class Binder(DatabaseModel model, string file)
             // SQL Server resolves an unqualified name in the caller's default schema, then in dbo, and the
             // source cannot tell which caller. When exactly one object in the model could be read by that
             // name, a query that runs at all has read that one; with more, which is read depends on the caller.
-            // Views, synonyms and functions count too: they are not modelled, but a caller may read one of them.
+            // Views, synonyms and functions count too: a caller may read one of them instead.
             var candidates = ReadableNamed(name.BaseIdentifier.Value);
             if (candidates.Count > 1)
             {
@@ -171,6 +217,9 @@ public sealed class Binder(DatabaseModel model, string file)
         if (model.FindTableRedefinition(objectName) is { } change)
             return new BoundSource(alias, null, Problem(BindingProblemKind.TableRedefined, change.Message, change.At), optionalSideOf);
 
+        // A view is read from its definition, by whoever supplies the body's relations (it may say why it cannot be).
+        if (model.FindNamedObject(objectName) is { Kind: NamedObjectKind.View } view && locals?.View(view) is { } viewRelation)
+            return new BoundSource(alias, null, null, optionalSideOf, viewRelation);
         if (model.FindNamedObject(objectName) is { } other)
             return Unresolved(BindingProblemKind.UnresolvedTable, $"{objectName} is a {KindName(other.Kind)}, which is not modelled yet.");
 
@@ -200,7 +249,7 @@ public sealed class Binder(DatabaseModel model, string file)
 
     /// <summary>
     /// Every object with this name, in any schema, that a FROM clause could read: tables, and the views,
-    /// synonyms and functions that are not modelled. In a stable order.
+    /// synonyms and functions. In a stable order.
     /// </summary>
     private List<(ObjectName Name, string Kind)> ReadableNamed(string name) =>
     [

@@ -22,6 +22,7 @@ public class FixtureSnapshotTests
         ["calls"] = new(() => SqlProject.Load(TestPaths.Fixture("calls"))),
         ["refine"] = new(() => SqlProject.Load(TestPaths.Fixture("refine"))),
         ["dml"] = new(() => SqlProject.Load(TestPaths.Fixture("dml"))),
+        ["apply"] = new(() => SqlProject.Load(TestPaths.Fixture("apply"))),
     };
 
     /// <summary>Every fixture procedure, with its fixture. Procedure ids are unique across fixtures.</summary>
@@ -80,6 +81,18 @@ public class FixtureSnapshotTests
         ["depot.low_floor"] = "dml",
         ["depot.add_note_by_synonym"] = "dml",
         ["depot.pick_order_lines"] = "dml",
+        ["mart.customer_activity"] = "apply",
+        ["mart.customer_purchases"] = "apply",
+        ["mart.customer_tree"] = "apply",
+        ["mart.get_purchase"] = "apply",
+        ["mart.last_purchase"] = "apply",
+        ["mart.list_products"] = "apply",
+        ["mart.list_purchases"] = "apply",
+        ["mart.open_contacts"] = "apply",
+        ["mart.open_purchase_by_id"] = "apply",
+        ["mart.product_sizes"] = "apply",
+        ["mart.purchase_overview"] = "apply",
+        ["mart.purchases_json"] = "apply",
         ["flow.region_report"] = "flow",
         ["flow.region_sales"] = "flow",
         ["flow.sales_by_mode"] = "flow",

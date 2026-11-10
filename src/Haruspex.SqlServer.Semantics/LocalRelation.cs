@@ -1,10 +1,11 @@
+using Haruspex.SqlServer.Model;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Semantics;
 
 /// <summary>
 /// A relation a body defines for itself rather than one in the schema: a common table expression, a derived table, a
-/// temporary table (<c>#t</c>) or a table variable (<c>@t</c>). The binder binds references to it by name and its columns by name; what
+/// <c>VALUES</c> list, a temporary table (<c>#t</c>) or a table variable (<c>@t</c>); or a view, read from its definition. The binder binds references to it by name and its columns by name; what
 /// its columns hold is not binding's concern, so a relation carries only names, and whoever supplies it
 /// (<see cref="ILocalRelations"/>) keeps the rest, keyed by the relation itself.
 /// </summary>
@@ -66,4 +67,19 @@ public interface ILocalRelations
     /// <param name="table">The derived table.</param>
     /// <param name="outer">The scope of the query enclosing the one whose FROM it is in, or null.</param>
     LocalRelation? Derived(QueryDerivedTable table, BindingScope? outer) => null;
+
+    /// <summary>
+    /// The relation a <c>VALUES</c> list (<c>FROM (VALUES (…), (…)) AS v (columns)</c>) is, or null when it is not modelled.
+    /// Its rows may read the enclosing queries' columns, or an <c>APPLY</c>'s left input's, so it is given that scope.
+    /// </summary>
+    /// <param name="table">The list.</param>
+    /// <param name="outer">The scope its values may read beyond their own, or null.</param>
+    LocalRelation? Values(InlineDerivedTable table, BindingScope? outer) => null;
+
+    /// <summary>
+    /// The relation a view of the project is, read from its definition, or null when views are not modelled here. A view
+    /// is bound where it is defined, so it is not given a scope.
+    /// </summary>
+    /// <param name="view">The view; its <see cref="NamedObject.View"/> is its definition.</param>
+    LocalRelation? View(NamedObject view) => null;
 }

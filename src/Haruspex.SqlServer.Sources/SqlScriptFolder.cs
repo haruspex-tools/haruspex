@@ -59,7 +59,7 @@ public static class SqlScriptFolder
         var functionChanges = new Dictionary<ObjectName, (Redefinition Why, UserFunction? Alter)>();
         var triggers = new List<Trigger>();
         var cascadingKeys = new List<CascadingKey>();
-        var views = new Dictionary<ObjectName, List<ViewStatementBody>>();
+        var views = new Dictionary<ObjectName, List<(ViewStatementBody Body, string File, bool AnsiNullsOff)>>();
 
         // ALTER TABLE … NOCHECK CONSTRAINT and … WITH CHECK CHECK CONSTRAINT, wherever they are, in the order read.
         var enforcement = new List<Enforcement>();
@@ -119,7 +119,7 @@ public static class SqlScriptFolder
                         TryAddNamed(others, ObjectName.From(view.SchemaObjectName), NamedObjectKind.View);
                         if (!views.TryGetValue(ObjectName.From(view.SchemaObjectName), out var definitions))
                             views[ObjectName.From(view.SchemaObjectName)] = definitions = [];
-                        definitions.Add(view);
+                        definitions.Add((view, relative, ansiNullsOff));
                         break;
                     case CreateSynonymStatement synonym:
                         others.TryAdd(ObjectName.From(synonym.Name), new NamedObject(ObjectName.From(synonym.Name), NamedObjectKind.Synonym) { SynonymFor = synonym.ForName });
@@ -195,7 +195,7 @@ public static class SqlScriptFolder
         foreach (var (name, definitions) in views)
         {
             if (definitions.Count == 1 && others.TryGetValue(name, out var view) && view.Kind == NamedObjectKind.View)
-                others[name] = view with { View = definitions[0] };
+                others[name] = view with { View = definitions[0].Body, File = definitions[0].File, AnsiNullsOff = definitions[0].AnsiNullsOff };
         }
 
         var model = new DatabaseModel(tables.Values, procedures.Values, others.Values, tableChanges.Values, userTypes.Values, functions.Values, triggers, cascadingKeys);
@@ -250,7 +250,7 @@ public static class SqlScriptFolder
     }
 
     private static Table ReadTable(CreateTableStatement statement, string file) =>
-        Table.FromDefinition(ObjectName.From(statement.SchemaObjectName), statement.Definition, file, new SourceLocation(file, statement.StartLine, statement.StartColumn));
+        Table.FromDefinition(ObjectName.From(statement.SchemaObjectName), statement.Definition, file, new SourceLocation(file, statement.StartLine, statement.StartColumn), statement.AsNode || statement.AsEdge);
 
     /// <summary>ALTER TABLE … NOCHECK CONSTRAINT, or … WITH CHECK CHECK CONSTRAINT.</summary>
     /// <param name="Table">The table it names; in <c>dbo</c> when <paramref name="Qualified"/> is false.</param>
@@ -336,7 +336,7 @@ public static class SqlScriptFolder
         var keys = Disabled(table, disables);
         var relevant = changes.Where(c => c.May(table)).ToList();
         if (relevant.Count == 0)
-            return keys == table.UniqueKeys ? table : new Table(table.Name, table.Columns, table.PrimaryKey, table.At, table.Checks, keys);
+            return keys == table.UniqueKeys ? table : new Table(table.Name, table.Columns, table.PrimaryKey, table.At, table.Checks, keys) { IsGraph = table.IsGraph };
 
         var checks = table.Checks.Select(check =>
         {
@@ -345,7 +345,7 @@ public static class SqlScriptFolder
                     && v.At.File == d.At.File && v.Order > d.Order)));
             return disabled is null ? check : check.WithDisabledAt(disabled.At);
         }).ToList();
-        return new Table(table.Name, table.Columns, table.PrimaryKey, table.At, checks, keys);
+        return new Table(table.Name, table.Columns, table.PrimaryKey, table.At, checks, keys) { IsGraph = table.IsGraph };
     }
 
     /// <summary><c>ALTER INDEX name ON t DISABLE</c> or <c>ALTER INDEX ALL ON t DISABLE</c>.</summary>

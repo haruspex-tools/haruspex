@@ -24,6 +24,19 @@ public sealed class BindingScope
     public IReadOnlyList<BoundSource> Sources => sources;
 
     internal void Add(BoundSource source) => sources.Add(source);
+
+    /// <summary>
+    /// The scope an <c>APPLY</c>'s right side reads its outer columns from: the sources of the APPLY's left input, from
+    /// <paramref name="first"/> on, as the same objects, with this scope's parent beyond them.
+    /// </summary>
+    /// <param name="first">The position of the left input's first source.</param>
+    /// <param name="outer">The scope an enclosing APPLY's right side reads, when this APPLY is inside one; else the parent.</param>
+    internal BindingScope Lateral(int first, BindingScope? outer)
+    {
+        var lateral = new BindingScope(outer ?? Parent, Locals);
+        lateral.sources.AddRange(sources.Skip(first));
+        return lateral;
+    }
 }
 
 /// <summary>A table source in a FROM clause, bound to a table or not.</summary>
@@ -34,8 +47,25 @@ public sealed class BindingScope
 /// Set when the source is on the optional side of an outer join: the location of that side, in the outermost such
 /// join. This is structure, not nullability; what it implies for values is the reader's to decide.
 /// </param>
-/// <param name="Local">The CTE, temporary table or table variable it reads, when it is one.</param>
-public sealed record BoundSource(string? Alias, Table? Table, BindingProblem? Unresolved, SourceLocation? OptionalSideOf, LocalRelation? Local = null);
+/// <param name="Local">The CTE, derived table, <c>VALUES</c> list, view, temporary table or table variable it reads, when it is one.</param>
+/// <param name="OuterApply">
+/// Whether <paramref name="OptionalSideOf"/> is the right side of an <c>OUTER APPLY</c> rather than of an outer join. False
+/// when an outer join encloses the APPLY, whose optional side it then is.
+/// </param>
+/// <param name="WholeApplied">
+/// With <paramref name="OuterApply"/>: whether the source is that right side whole (an applied query, a <c>VALUES</c> list, a
+/// view or a table), rather than one of the sources joined inside it. Only then is the side null-extended exactly when this
+/// source has no row, so a relation that always has one is never null-extended; which relations those are is the reader's
+/// to decide.
+/// </param>
+public sealed record BoundSource(
+    string? Alias,
+    Table? Table,
+    BindingProblem? Unresolved,
+    SourceLocation? OptionalSideOf,
+    LocalRelation? Local = null,
+    bool OuterApply = false,
+    bool WholeApplied = false);
 
 /// <summary>What a column reference binds to.</summary>
 public abstract record ColumnBinding;

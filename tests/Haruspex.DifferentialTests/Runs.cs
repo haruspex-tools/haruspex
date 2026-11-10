@@ -28,7 +28,7 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
@@ -53,6 +53,8 @@ public static class Runs
     private const string NoBakery = "DELETE FROM calls.delivery; DELETE FROM calls.batch; DELETE FROM calls.oven;";
     private const string NoLibrary = "DELETE FROM lend.loan; DELETE FROM lend.copy; DELETE FROM lend.title; DELETE FROM lend.member;";
     private const string NoLoans = "DELETE FROM lend.loan;";
+    private const string NoMarket = "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase; DELETE FROM mart.product; DELETE FROM mart.customer;";
+    private const string NoPurchases = "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -244,6 +246,29 @@ public static class Runs
         new("dml: add_note_by_synonym", "dml", "depot.add_note_by_synonym", new Dictionary<string, object?> { ["@note_id"] = 3, ["@text"] = "via" }, Writes),
         new("dml: pick_order_lines, no note", "dml", "depot.pick_order_lines", new Dictionary<string, object?> { ["@order_id"] = 1 }, Writes),
         new("dml: pick_order_lines, a note", "dml", "depot.pick_order_lines", new Dictionary<string, object?> { ["@order_id"] = 2 }, Writes),
+        new("apply: list_purchases", "apply", "mart.list_purchases", None),
+        new("apply: list_purchases, none", "apply", "mart.list_purchases", None, NoMarket),
+        new("apply: purchases_json", "apply", "mart.purchases_json", None),
+        new("apply: purchases_json, none", "apply", "mart.purchases_json", None, NoMarket),
+        new("apply: customer_tree", "apply", "mart.customer_tree", None),
+        new("apply: customer_tree, no purchases", "apply", "mart.customer_tree", None, NoPurchases),
+        new("apply: customer_tree, no customers", "apply", "mart.customer_tree", None, NoMarket),
+        new("apply: get_purchase, two lines", "apply", "mart.get_purchase", new Dictionary<string, object?> { ["@purchase_id"] = 10 }),
+        new("apply: get_purchase, no lines", "apply", "mart.get_purchase", new Dictionary<string, object?> { ["@purchase_id"] = 11 }),
+        new("apply: get_purchase, no such purchase", "apply", "mart.get_purchase", new Dictionary<string, object?> { ["@purchase_id"] = 99 }),
+        new("apply: customer_purchases", "apply", "mart.customer_purchases", None),
+        new("apply: last_purchase", "apply", "mart.last_purchase", None),
+        new("apply: last_purchase, no purchases", "apply", "mart.last_purchase", None, NoPurchases),
+        new("apply: customer_activity", "apply", "mart.customer_activity", None),
+        new("apply: customer_activity, no purchases", "apply", "mart.customer_activity", None, NoPurchases),
+        new("apply: product_sizes", "apply", "mart.product_sizes", None),
+        new("apply: open_purchase_by_id, open", "apply", "mart.open_purchase_by_id", new Dictionary<string, object?> { ["@purchase_id"] = 10 }),
+        new("apply: open_purchase_by_id, with a note", "apply", "mart.open_purchase_by_id", new Dictionary<string, object?> { ["@purchase_id"] = 12 }),
+        new("apply: open_purchase_by_id, paid", "apply", "mart.open_purchase_by_id", new Dictionary<string, object?> { ["@purchase_id"] = 11 }),
+        new("apply: open_contacts", "apply", "mart.open_contacts", None),
+        new("apply: list_products", "apply", "mart.list_products", None),
+        new("apply: purchase_overview", "apply", "mart.purchase_overview", None),
+        new("apply: purchase_overview, none", "apply", "mart.purchase_overview", None, NoMarket),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

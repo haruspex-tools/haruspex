@@ -99,4 +99,6 @@ schema rules (`SchemaRules.IsNeverNull`, `ColumnFacts`) apply to it unchanged.
 Two behaviours were kept although a cleaner split would change them, because this slice changes no behaviour:
 RIGHT and FULL joins, CROSS JOIN and APPLY are left unbound by the binder (binding them is easy, but what they
 mean for nulls is not modelled, and binding them would change which unknowns are reported); and a table changed
-by `ALTER TABLE` is still reported with the reason `unsupported-source`.
+by `ALTER TABLE` is still reported with the reason `unsupported-source`. (Slice 6e binds APPLY, `VALUES` lists and
+views: the binder gives an APPLY's right side a scope of its left input's sources and records which side a source is on;
+Inference supplies the relations, a view's read from its definition, as for derived tables.)

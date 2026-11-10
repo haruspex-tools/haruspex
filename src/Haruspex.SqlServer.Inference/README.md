@@ -1,8 +1,9 @@
 # Haruspex.SqlServer.Inference: statement flow and refinement
 
 How a procedure's statements are read in order (slice 6), calls followed (slice 6b, "Calls" below), what filters and
-single-row queries prove (slice 6c, "Refinement" below), and writes, triggers and cursors (slice 6d, "DML", "Triggers" and
-"Cursors" below). The code is `ProcedureAnalyzer.Flow.cs` (the walk),
+single-row queries prove (slice 6c, "Refinement" below), writes, triggers and cursors (slice 6d, "DML", "Triggers" and
+"Cursors" below), and `APPLY`, `VALUES` lists and views (slice 6e, "APPLY" and "Views" below, observed in
+`ApplyViewObservationTests`). The code is `ProcedureAnalyzer.Flow.cs` (the walk),
 `FlowState.cs` (the state and its join), `FlowLocals.cs` (what the binder sees), and `ShapeJoin.cs` (joins of values).
 Every engine rule it leans on is observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`; the test names are given below.
@@ -464,7 +465,9 @@ and a disabled one allows them, `A_disabled_unique_index_allows_duplicates`) is 
 column of a source already fixed; or is tested `IS NULL`, since a key holds one NULL at most
 (`A_unique_constraint_allows_one_null_only`). When every source is fixed, there is at most one row. A condition counts
 from `WHERE`'s top-level conjuncts, or from a join's `ON` for the sources inside that join (the optional side, for an
-outer join, which then matches at most one row per kept row); never under `OR`. Only tables are keyed.
+outer join, which then matches at most one row per kept row); never under `OR`. Tables are keyed, and views by the rule
+in "Views" below; a derived table, `VALUES` list or view of at most one row (for an `APPLY`'s right side, at most one per
+outer row) counts as fixed already.
 
 The comparison must be the key's own equality: when SQL Server converts the key to the value's type, several rows can
 match. `'5'` and `'05'` both equal 5 (`A_comparison_that_converts_the_key_can_match_several_rows`), and a `varchar` key
@@ -473,6 +476,81 @@ under a SQL collation compared with an `nvarchar` value is compared by Unicode r
 type, a narrower integer or decimal, a `varchar` for an `nvarchar` key, or a string for a key that is not a string, and
 carry no `COLLATE` of its own (`InKeysType` lists them).
 
-Not modelled yet: keys of temporary tables, table variables, CTEs and derived tables; `CREATE UNIQUE INDEX` (a separate
+Not modelled yet: keys of temporary tables, table variables, CTEs and derived tables (a derived table's at-most-one
+bound is); `CREATE UNIQUE INDEX` (a separate
 statement) and `ALTER TABLE … ADD CONSTRAINT … UNIQUE`; `SUM` and `AVG`; refinement of `UPDATE … FROM` and
 `SELECT @v = …` by their filters. Each only claims less.
+
+## APPLY
+
+`CROSS APPLY` and `OUTER APPLY` (slice 6e) are bound by the binder (`Binder.AddSources`) and read like a join whose right
+side is evaluated once for each row of its left input. Each rule is observed in `ApplyViewObservationTests`.
+
+- **What the right side sees.** Its left input's sources (joins included) and the enclosing queries' columns, never a
+  source listed before it with a comma (`An_applied_query_sees_its_left_input_only`, 4104). The binder gives it a scope of
+  exactly those sources (`BindingScope.Lateral`), the same objects, so facts about them stay keyed to them; a derived table
+  nested inside the right side sees them too.
+- **Rows.** `CROSS APPLY` keeps only outer rows with a right-side row; `OUTER APPLY` keeps every outer row and null-extends
+  the ones without (`Cross_apply_keeps_only_outer_rows_with_a_right_row_and_outer_apply_fills_the_others_with_null`). So
+  `CROSS APPLY` leaves the right side's columns their own nullability, and `OUTER APPLY` makes each of them nullable with the
+  null rule `outer-apply`, at the right side, exactly as a left join's optional side gets `outer-join`. Inside an outer
+  join's optional side the enclosing join's rule is used, as for nested outer joins.
+- **A right side that always has a row is never null-extended.** An aggregate without `GROUP BY` returns one row over no
+  rows (`An_ungrouped_aggregate_applied_gives_one_row_for_every_outer_row`), a query without `FROM` one row
+  (`A_for_json_subquery_applied_without_from_is_one_row_whose_json_is_null_when_there_are_no_rows`), and a `VALUES` list its
+  rows; so under either APPLY their columns keep their own nullability, and `CROSS APPLY` removes no outer row. Which queries
+  are one row is slice 6c's cardinality (`Cardinality.cs`): a relation records its query's `Rows` and `AtLeastOne`
+  (`LocalRelationValues`), and the null-extension is skipped only for a source that *is* the whole right side
+  (`BoundSource.WholeApplied`): one joined inside it may have a row while the side as a whole has none. With `GROUP BY` (even
+  `GROUP BY ()`) or `HAVING` the right side may have no row (`A_grouped_aggregate_applied_gives_no_row_for_an_outer_row_without_rows`).
+- **Filters.** The applied query's `WHERE` is its own: its facts are pushed only while its select list is read (as for any
+  subquery), so they refine its own columns and never the outer columns read outside it. Inside it, an outer column read in
+  an aggregate query is not refined either (6c's rule, `An_outer_column_read_in_an_applied_aggregate_is_not_filtered_by_its_where`).
+  An outer `WHERE` on a right-side column proves the row matched, as for a left join, and drops `outer-apply`. Joins inside an
+  `OUTER APPLY`'s right side refine as an outer join's optional side does.
+- **Cardinality.** A right side of at most one row per outer row (`TOP (1)`, an aggregate, a key fixed by the outer row,
+  a one-row `VALUES`) counts as fixed in `Keyed`, so the query keeps the outer side's bound: at most one stays at most one,
+  for `OUTER APPLY` (one null-extended row at most) and `CROSS APPLY` alike (`Top_1_applied_gives_at_most_one_row_for_every_outer_row`).
+  Otherwise many.
+- **Claims less, written down.** The outer query's own `WHERE` facts are not yet pushed while the right side is read
+  (binding happens before), so an outer column read *inside* the applied query is not refined by the outer `WHERE`. An
+  `APPLY` of a table-valued function stays `unsupported-source` (slice 6f); `CROSS JOIN` stays unmodelled, as before.
+
+### `VALUES`
+
+A `VALUES` list (`ValuesList`) is a relation wherever it is a table source, under `APPLY` (the unpivot and
+name-an-expression idioms) or in `FROM`. It has as many rows as it lists, every time it is read, so it always has one.
+A column's type is the one of highest precedence among its rows', to which each value is converted
+(`A_values_column_takes_the_type_of_highest_precedence_among_its_rows`: `int` and `2.5` give `numeric(2,1)`), which is not
+modelled: so a column is typed only when it has one row, or every row's value has the same shape (then each value's claims
+hold whatever the common type), and is nullable when any row's value is. JSON passes through it as JSON
+(`Json_passes_through_a_values_list_as_json`). Anything else is `unsupported-expression`.
+
+## Views
+
+A view of the project (`ViewSummaries`, `ProcedureAnalyzer.ReadView`) is read from its definition once per document, as a
+derived table would be, in its own file and with its own `ANSI_NULLS` (kept from its creation, as a procedure's:
+`A_view_keeps_ansi_nulls_as_it_was_when_it_was_created`). Its column list names its columns
+(`A_view_column_list_names_every_column_and_no_more`); views over views, joins, `APPLY` and CTEs inside it follow the
+rules above. `WITH SCHEMABINDING` only stops its tables changing; table hints such as `NOEXPAND` change how it is read,
+not what it returns (`Noexpand_is_refused_on_a_view_without_an_index_and_on_one_with_it_returns_the_same_rows`). A view
+outside the project stays `unresolved-table`, as does one defined more than once (created and altered: which definition
+applies depends on the order the scripts run), and one that reads itself through other views (SQL Server refuses it). A
+view whose query is a `UNION` or has `FOR XML`/`FOR JSON` is `unsupported-query`. Views are read in procedures only; a
+function's body still leaves them unresolved.
+
+**`SELECT *` in a view** is expanded (`Expand`): each source's columns in order, a table's as declared and a relation's as
+named, and `alias.*` for one source. SQL Server binds it when the view is created and keeps that list until the view is
+refreshed (`A_view_binds_select_star_when_it_is_created`: a column added later is not in it). The project shows each table
+as it is after deployment, so **haruspex assumes each view is bound against that**: created after its tables reached their
+final form, or refreshed since, which is what a deployment that recreates or refreshes dependent views gives. A table
+whose `*` differs from its declared columns (a `HIDDEN` period column, or a graph table's pseudo-columns) is not expanded.
+`SELECT *` in a procedure is still not expanded: the brief asked for views only.
+
+**Keys pass through a view only when proved** (`ViewKeys`). A view that reads one table, with no join, `APPLY` or
+`GROUP BY`, returns some of the table's rows, each once (`A_view_over_one_table_returns_each_of_its_rows_at_most_once`);
+`WHERE`, `TOP` and `DISTINCT` only drop rows. So each enforced key of the table whose columns the view selects whole, as
+bare columns without `COLLATE`, is a key of the view, compared in the base column's type (`InKeysType`). Left out, each
+only claiming less: a view grouped by a whole key (`ROLLUP` and its kind would repeat it, and telling them apart is not
+worth it yet), and a view with a join that matches at most one row (proving that needs the joined side's key fixed by its
+`ON`). A view's relation also carries its query's cardinality, so a view of at most one row counts as fixed.

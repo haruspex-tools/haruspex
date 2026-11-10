@@ -1,0 +1,236 @@
+{
+  "irVersion": "0.10",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "mart.list_purchases",
+      "name": "ListPurchases",
+      "kind": "procedure",
+      "at": "procedures/list_purchases.sql:4:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListPurchasesRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListPurchasesLines": {
+      "kind": "object",
+      "identity": {
+        "procedure": "mart.list_purchases",
+        "path": "results[0][].lines<json>[]"
+      },
+      "fields": [
+        {
+          "name": "line_no",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "unit_price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": -9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "discount",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(5,2)",
+            "digits": {
+              "precision": 5,
+              "scale": 2,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            },
+            "min": {
+              "value": -999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            },
+            "max": {
+              "value": 999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "mart.purchase_line.discount"
+            }
+          ]
+        },
+        {
+          "name": "title",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(80)",
+            "maxLength": {
+              "value": 80,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(80)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ListPurchasesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "mart.list_purchases",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "purchase_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "placed_on",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "lines",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "ref": "ListPurchasesLines"
+              },
+              "minItems": 1
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/list_purchases.sql:13:23"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

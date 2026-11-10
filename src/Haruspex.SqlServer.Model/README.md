@@ -3,7 +3,7 @@
 A SQL Server database's schema as plain .NET data: tables with their columns, declared types, collations, NULL or
 NOT NULL, identity, primary keys, unique keys and CHECK constraints; alias and CLR types (`CREATE TYPE`); stored procedures, user-defined functions and DML triggers, with their definitions as
 [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom) fragments; foreign keys whose actions
-change the referencing table (`CascadingKey`); and views (with their definitions), synonyms and functions by name. Names are two-part (`schema.name`) and compared case-insensitively, as SQL Server
+change the referencing table (`CascadingKey`); and views (with their definitions, files and `ANSI_NULLS`), synonyms and functions by name. A column records whether it is `HIDDEN`, and a table whether it is a graph table, since both change what `SELECT *` returns. Names are two-part (`schema.name`) and compared case-insensitively, as SQL Server
 compares them in almost every database.
 
 `Table.FromDefinition` reads a table definition as written, so a body's own tables (`CREATE TABLE #t`,

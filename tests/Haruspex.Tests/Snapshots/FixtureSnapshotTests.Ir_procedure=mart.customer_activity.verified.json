@@ -1,0 +1,179 @@
+{
+  "irVersion": "0.10",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "mart.customer_activity",
+      "name": "CustomerActivity",
+      "kind": "procedure",
+      "at": "procedures/customer_activity.sql:5:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CustomerActivityResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CustomerActivityResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "CustomerActivityResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "mart.customer_activity",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "customer_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "contact",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(100)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "mart.customer.email"
+            }
+          ]
+        },
+        {
+          "name": "purchases",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "last_placed",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/customer_activity.sql:15:59"
+            }
+          ]
+        }
+      ]
+    },
+    "CustomerActivityResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "mart.customer_activity",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "customer_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "last_placed",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

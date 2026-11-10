@@ -172,8 +172,6 @@ public class ConstructTests
     [InlineData("dbo.t AS t RIGHT JOIN dbo.u AS u ON u.t_id = t.id")]
     [InlineData("dbo.t AS t FULL OUTER JOIN dbo.u AS u ON u.t_id = t.id")]
     [InlineData("dbo.t AS t CROSS JOIN dbo.u AS u")]
-    [InlineData("dbo.t AS t CROSS APPLY (SELECT x.name FROM dbo.u AS x WHERE x.t_id = t.id) AS u")]
-    [InlineData("dbo.t AS t OUTER APPLY (SELECT x.name FROM dbo.u AS x WHERE x.t_id = t.id) AS u")]
     public void A_join_not_modelled_makes_columns_from_both_sides_unknown(string from)
     {
         var doc = Procedure($"SELECT t.id, u.name FROM {from};");
@@ -183,7 +181,7 @@ public class ConstructTests
     }
 
     [Theory]
-    [InlineData("(VALUES (1)) AS s (id)")]
+    [InlineData("OPENJSON(N'[]') WITH (id int) AS s")]
     [InlineData("dbo.f(1) AS s")]
     [InlineData("otherdb.dbo.t AS s")]
     public void A_source_not_modelled_makes_its_columns_unknown(string from) =>
@@ -247,15 +245,15 @@ public class ConstructTests
     [Theory]
     [InlineData("customer")]
     [InlineData("dbo.customer")]
-    public void A_view_read_by_name_is_unresolved(string reference)
+    public void A_view_read_by_name_is_typed_from_its_definition(string reference)
     {
+        // Slice 6e: a view of the project is read like a derived table (ApplyViewTests has the rules).
         var doc = Infer(
             ("tables.sql", "CREATE TABLE dbo.customer_base (name nvarchar(10) NOT NULL);\nGO\nCREATE VIEW dbo.customer AS SELECT b.name FROM dbo.customer_base AS b;"),
             ("p.sql", $"CREATE PROCEDURE dbo.p AS SELECT c.name FROM {reference} AS c;"));
 
-        var unknown = Unknown(doc, "results[0][].name");
-        Assert.Equal(IrUnknownReasons.UnresolvedTable, unknown.Reason);
-        Assert.Contains("dbo.customer is a view", unknown.Detail, StringComparison.Ordinal);
+        Assert.Empty(doc.Unknowns);
+        Assert.False(Assert.Single(RowFields(doc)).Nullable);
     }
 
     [Fact]

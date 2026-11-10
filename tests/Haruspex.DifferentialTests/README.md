@@ -92,7 +92,9 @@ typed) is pinned by `StatementFlowObservationTests`. What following `EXEC` relie
 what it can do to its caller's temporary tables, what `INSERT … EXEC` accepts, how deep calls nest, which procedure an
 `sp_` name runs) is pinned by `ExecObservationTests`. What refinement relies on (which rows a filter keeps when a column is
 NULL, under three-valued logic and ANSI_NULLS; what aggregates give over no rows; how many rows TOP, FETCH and a unique key
-allow; when COUNT overflows to NULL) is pinned by `RefinementObservationTests`. A field whose only reason to be null is
+allow; when COUNT overflows to NULL) is pinned by `RefinementObservationTests`. What APPLY, `VALUES` lists and views rely on
+(which outer rows each APPLY keeps, what an applied aggregate gives, what an applied query can see, a `VALUES` column's type,
+what a view binds when it is created, its `ANSI_NULLS`, `NOEXPAND`) is pinned by `ApplyViewObservationTests`. A field whose only reason to be null is
 `count-overflow` need not be seen null: no seed has 2,147,483,648 rows. Both make their calls through `Server/ObservedCall.cs`.
 
 A fixture may have a `haruspex.json` beside its SQL: its IR is then inferred with it applied, so results it declares

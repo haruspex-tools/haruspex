@@ -36,7 +36,8 @@ public sealed class Table
     /// <param name="definition">Its columns and constraints.</param>
     /// <param name="file">The file it is in, for locations.</param>
     /// <param name="at">Where the table is defined.</param>
-    public static Table FromDefinition(ObjectName name, TableDefinition definition, string file, SourceLocation at)
+    /// <param name="isGraph">Whether it is declared <c>AS NODE</c> or <c>AS EDGE</c> (see <see cref="IsGraph"/>).</param>
+    public static Table FromDefinition(ObjectName name, TableDefinition definition, string file, SourceLocation at, bool isGraph = false)
     {
         ArgumentNullException.ThrowIfNull(definition);
 
@@ -71,7 +72,10 @@ public sealed class Table
                 isIdentity: column.IdentityOptions is not null,
                 column.ComputedColumnExpression,
                 new SourceLocation(file, column.StartLine, column.StartColumn),
-                column.Collation?.Value));
+                column.Collation?.Value)
+            {
+                IsHidden = column.IsHidden,
+            });
         }
 
         // Column constraints first, then table constraints, each in declaration order. ALTER TABLE … ADD CONSTRAINT
@@ -99,7 +103,7 @@ public sealed class Table
                 new SourceLocation(file, i.StartLine, i.StartColumn))))
             .ToList();
 
-        return new Table(name, columns, primaryKey, at, checks, keys);
+        return new Table(name, columns, primaryKey, at, checks, keys) { IsGraph = isGraph };
     }
 
     private static CheckConstraint Check(CheckConstraintDefinition check, string? column, string file) =>
@@ -128,6 +132,12 @@ public sealed class Table
     /// NULLs as equal there, so one NULL at most). Only what the table's definition declares; see <see cref="UniqueKey.DisabledAt"/>.
     /// </summary>
     public IReadOnlyList<UniqueKey> UniqueKeys { get; }
+
+    /// <summary>
+    /// Whether it is a graph table (<c>AS NODE</c> or <c>AS EDGE</c>), whose <c>SELECT *</c> includes pseudo-columns the
+    /// definition does not list.
+    /// </summary>
+    public bool IsGraph { get; init; }
 
     /// <summary>The column with this name, ignoring case as SQL Server does, or null.</summary>
     public Column? Column(string name) =>
@@ -188,6 +198,9 @@ public sealed class Column
     /// database's default applies, which a folder of scripts does not record.
     /// </summary>
     public string? Collation { get; }
+
+    /// <summary>Whether it is declared <c>HIDDEN</c> (a period column of a temporal table), which <c>SELECT *</c> leaves out.</summary>
+    public bool IsHidden { get; init; }
 
     /// <summary>The column's name.</summary>
     public override string ToString() => Name;

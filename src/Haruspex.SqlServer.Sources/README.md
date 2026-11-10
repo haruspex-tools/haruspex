@@ -20,7 +20,7 @@ disable says so), their primary key, unique constraints and unfiltered unique in
 whether `SET ANSI_NULLS OFF` came before it in its file, since SQL Server keeps the setting it was created with. DML
 triggers are read from `CREATE`, `CREATE OR ALTER` and `ALTER TRIGGER`, every definition kept, since which applies depends on
 the order the scripts run; foreign keys with an `ON DELETE` or `ON UPDATE` action from `CREATE TABLE` and `ALTER TABLE …
-ADD`, as their actions fire the referencing table's triggers; a view defined once keeps its definition; and a synonym keeps the name it stands for. Parse errors and objects defined twice are reported as diagnostics, with their file, line and column.
+ADD`, as their actions fire the referencing table's triggers; a view defined once keeps its definition, its file and whether `SET ANSI_NULLS OFF` came before it in that file; and a synonym keeps the name it stands for. Parse errors and objects defined twice are reported as diagnostics, with their file, line and column.
 
 ## What it deliberately doesn't do
 

@@ -140,13 +140,39 @@ internal sealed partial class ProcedureAnalyzer
     /// A_varchar_key_under_a_sql_collation_compared_with_nvarchar_can_match_several_rows). See <see cref="InKeysType"/>.</para>
     /// <para>Only a WHERE conjunct, or an ON conjunct of a join that fixes a source inside it, counts: a row an inner join
     /// keeps passed its ON, and an outer join matches at most one optional row per kept row when its ON fixes the optional
-    /// side's key, and gives one null-extended row otherwise. Under OR nothing is fixed. Only tables are keyed here; a CTE,
-    /// derived table, temporary table or table variable source makes the answer many.</para>
+    /// side's key, and gives one null-extended row otherwise. Under OR nothing is fixed. Tables and views (ViewKeys) are
+    /// keyed here, and a relation of at most one row is fixed already; a CTE, temporary table or table variable source, or a
+    /// derived table of more rows, makes the answer many.</para>
     /// </summary>
     private bool Keyed(QuerySpecification query, BindingScope scope)
     {
-        if (scope.Sources.Count == 0 || scope.Sources.Any(s => s.Table is null))
+        if (scope.Sources.Count == 0)
             return false;
+
+        // Each source's keys: a table's enforced ones, a view's (ViewKeys). A relation of at most one row is fixed from the
+        // start: it matches at most one row for each combination of the others' rows, and for an APPLY's right side, read for
+        // each outer row, at most one for each (observed: Top_1_applied_gives_at_most_one_row_for_every_outer_row). A temporary
+        // table, table variable, CTE or unresolved source makes the answer many.
+        var fixedSources = new HashSet<BoundSource>(ReferenceEqualityComparer.Instance);
+        var keys = new Dictionary<BoundSource, List<List<KeyColumn>>>(ReferenceEqualityComparer.Instance);
+        foreach (var source in scope.Sources)
+        {
+            if (source.Table is { } table)
+            {
+                keys[source] = [.. SchemaRules.EnforcedKeys(table).Select(k => k.Columns
+                    .Select(c => new KeyColumn(c, -1, SchemaRules.ResolveType(model, table.Column(c)?.Type)?.BuiltIn.Name)).ToList())];
+            }
+            else if (source.Local is { } local && locals?.Values(local) is { Why: null } values)
+            {
+                if (values.Rows != IrCardinality.Many)
+                    fixedSources.Add(source);
+                keys[source] = [.. values.Keys.Select(k => k.Ordinals.Zip(k.Types, (o, t) => new KeyColumn(null, o, t)).ToList())];
+            }
+            else
+            {
+                return false;
+            }
+        }
 
         var conditions = new List<Fixing>();
         if (query.WhereClause?.SearchCondition is { } where)
@@ -154,14 +180,13 @@ internal sealed partial class ProcedureAnalyzer
         foreach (var reference in query.FromClause?.TableReferences ?? [])
             JoinConditions(reference, scope, conditions);
 
-        var fixedSources = new HashSet<BoundSource>(ReferenceEqualityComparer.Instance);
         bool progress;
         do
         {
             progress = false;
             foreach (var source in scope.Sources.Where(s => !fixedSources.Contains(s)))
             {
-                if (SchemaRules.EnforcedKeys(source.Table!).Any(key => key.Columns.All(column => conditions.Any(c => Fixes(c, source, column, scope, fixedSources)))))
+                if (keys[source].Any(key => key.All(column => conditions.Any(c => Fixes(c, source, column, scope, fixedSources)))))
                 {
                     fixedSources.Add(source);
                     progress = true;
@@ -187,11 +212,20 @@ internal sealed partial class ProcedureAnalyzer
                 JoinConditions(join.SecondTableReference, scope, into);
                 into.AddRange(Conjuncts(join.SearchCondition).Select(c => new Fixing(c, Sources(join.SecondTableReference, scope))));
                 break;
+            case UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossApply or UnqualifiedJoinType.OuterApply } apply:
+                // No ON of its own; the joins on either side keep theirs. An OUTER APPLY's right side gives one null-extended
+                // row when it has none, so one that matches at most one row per outer row keeps the bound, as a left join's.
+                JoinConditions(apply.FirstTableReference, scope, into);
+                JoinConditions(apply.SecondTableReference, scope, into);
+                break;
             case JoinParenthesisTableReference parenthesis:
                 JoinConditions(parenthesis.Join, scope, into);
                 break;
         }
     }
+
+    /// <summary>A column of a source's key: a table's by name, a relation's by position; with its built-in type, when known.</summary>
+    private sealed record KeyColumn(string? Name, int Ordinal, string? Type);
 
     /// <summary>The conjuncts of a condition joined by AND, through parentheses.</summary>
     private static IEnumerable<BooleanExpression> Conjuncts(BooleanExpression condition) => condition switch
@@ -202,16 +236,20 @@ internal sealed partial class ProcedureAnalyzer
     };
 
     /// <summary>Whether a condition fixes this column of this source, given the sources already fixed.</summary>
-    private bool Fixes(Fixing fixing, BoundSource source, string column, BindingScope scope, HashSet<BoundSource> fixedSources)
+    private bool Fixes(Fixing fixing, BoundSource source, KeyColumn column, BindingScope scope, HashSet<BoundSource> fixedSources)
     {
         if (fixing.Within is { } within && !within.Contains(source))
             return false;
 
+        // A view's key column is its table's, unchanged (ViewKeys), so it compares in that column's type and collation.
         bool IsKeyColumn(ScalarExpression e) =>
             Strip(e) is ColumnReferenceExpression { Collation: null } reference
-            && binder.BindColumn(reference, scope) is BoundColumn bound
-            && ReferenceEquals(bound.Source, source)
-            && bound.Column.Name.Equals(column, StringComparison.OrdinalIgnoreCase);
+            && binder.BindColumn(reference, scope) switch
+            {
+                BoundColumn bound => ReferenceEquals(bound.Source, source) && column.Name is { } name && bound.Column.Name.Equals(name, StringComparison.OrdinalIgnoreCase),
+                BoundLocalColumn local => ReferenceEquals(local.Source, source) && column.Name is null && local.Ordinal == column.Ordinal,
+                _ => false,
+            };
 
         switch (fixing.Condition)
         {
@@ -227,8 +265,7 @@ internal sealed partial class ProcedureAnalyzer
                 else
                     return false;
 
-                var key = source.Table!.Column(column)!;
-                return SchemaRules.ResolveType(model, key.Type)?.BuiltIn.Name is { } keyType
+                return column.Type is { } keyType
                     && ValueType(Strip(other), source, scope, fixedSources) is { } valueType
                     && InKeysType(keyType, valueType);
             }

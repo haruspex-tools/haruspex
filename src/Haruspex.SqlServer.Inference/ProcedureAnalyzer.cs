@@ -39,6 +39,9 @@ internal sealed partial class ProcedureAnalyzer
     private readonly string file;
     private readonly FunctionSummaries functions;
 
+    /// <summary>What each view holds (ProcedureAnalyzer.Views.cs); null leaves views unmodelled.</summary>
+    private readonly ViewSummaries? views;
+
     /// <summary>Inside a function's body, its parameters by name; empty in a procedure, whose parameters are not followed yet.</summary>
     private readonly IReadOnlyDictionary<string, Value> parameters;
 
@@ -52,6 +55,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <param name="calls">The calls being followed, inside a procedure; null inside a function, which cannot call one.</param>
     /// <param name="context">What a procedure's walk starts from: its caller's temporary tables, and how it is called.</param>
     /// <param name="ansiNullsOff">Whether the body was created with ANSI_NULLS off (see <see cref="Refinement"/>).</param>
+    /// <param name="views">What each view of the project holds, read from its definition; null leaves views unmodelled.</param>
     public ProcedureAnalyzer(
         DatabaseModel model,
         string file,
@@ -59,8 +63,10 @@ internal sealed partial class ProcedureAnalyzer
         IReadOnlyDictionary<string, Value>? parameters = null,
         ProcedureCalls? calls = null,
         CallContext? context = null,
-        bool ansiNullsOff = false)
+        bool ansiNullsOff = false,
+        ViewSummaries? views = null)
     {
+        this.views = views;
         this.ansiNullsOff = ansiNullsOff;
         this.model = model;
         binder = new Binder(model, file);
@@ -137,7 +143,8 @@ internal sealed partial class ProcedureAnalyzer
     // ---- queries ------------------------------------------------------------------------------------
 
     /// <param name="Rows">How many rows the query returns.</param>
-    private sealed record Row(IReadOnlyList<RowColumn> Columns, SourceLocation? Star, IrCardinality Rows = IrCardinality.Many);
+    /// <param name="Sources">The sources of its FROM, for a view's keys.</param>
+    private sealed record Row(IReadOnlyList<RowColumn> Columns, SourceLocation? Star, IrCardinality Rows = IrCardinality.Many, IReadOnlyList<BoundSource>? Sources = null);
 
     private Row Query(QuerySpecification query, BindingScope? parent)
     {
@@ -171,7 +178,10 @@ internal sealed partial class ProcedureAnalyzer
                         var name = scalar.ColumnName?.Value
                             ?? (scalar.Expression is ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnAction } ? "$action" : null)
                             ?? (scalar.Expression as ColumnReferenceExpression)?.MultiPartIdentifier?.Identifiers[^1].Value;
-                        columns.Add(new RowColumn(name, Expression(scalar.Expression, scope), At(scalar)));
+                        columns.Add(new RowColumn(name, Expression(scalar.Expression, scope), At(scalar), Origin(scalar.Expression, scope)));
+                        break;
+                    case SelectStarExpression all when expandStars && Expand(all, scope) is { } expanded:
+                        columns.AddRange(expanded);
                         break;
                     case SelectStarExpression:
                         star ??= At(element);
@@ -185,8 +195,14 @@ internal sealed partial class ProcedureAnalyzer
             current = outer;
         }
 
-        return new Row(columns, star, Cardinality(query, scope));
+        return new Row(columns, star, Cardinality(query, scope), scope.Sources);
     }
+
+    /// <summary>The table column a select-list expression is, unchanged: a bare column reference without COLLATE.</summary>
+    private BoundColumn? Origin(ScalarExpression expression, BindingScope scope) =>
+        expression is ColumnReferenceExpression { Collation: null, ColumnType: ColumnType.Regular } column && binder.BindColumn(column, scope) is BoundColumn bound
+            ? bound
+            : null;
 
     private static Shape Rowset(Row row)
     {
@@ -363,10 +379,10 @@ internal sealed partial class ProcedureAnalyzer
         if (!SchemaRules.IsNeverNull(model, table, column) && !Proved(source, Key(bound)))
             because.Add(new IrNullReason(IrNullRules.NullableColumn, $"{table.Name}.{column.Name}"));
 
-        // The optional side of an outer join has no row when nothing matches, so every column read from it can
-        // be null, whatever its declaration says; unless a filter proves the row matched.
+        // The optional side of an outer join, or of an OUTER APPLY, has no row when nothing matches, so every column read
+        // from it can be null, whatever its declaration says; unless a filter proves the row matched.
         if (source.OptionalSideOf is { } optional && !Matched(source))
-            because.Add(new IrNullReason(IrNullRules.OuterJoin, optional.ToString()));
+            because.Add(new IrNullReason(source.OuterApply ? IrNullRules.OuterApply : IrNullRules.OuterJoin, optional.ToString()));
         if (Rolled(source) is { } rolled)
             because.Add(rolled);
         if (Unmatched(source) is { } unmatched)

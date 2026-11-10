@@ -85,6 +85,15 @@ public sealed record NamedObject(ObjectName Name, NamedObjectKind Kind)
     /// </summary>
     public ViewStatementBody? View { get; init; }
 
+    /// <summary>The file a view's <see cref="View"/> is in, for locations; null for other objects.</summary>
+    public string? File { get; init; }
+
+    /// <summary>
+    /// Whether a view was created with ANSI_NULLS off, which it keeps (as a procedure does): set by <c>SET ANSI_NULLS OFF</c>
+    /// before its definition in the same file.
+    /// </summary>
+    public bool AnsiNullsOff { get; init; }
+
     /// <summary>
     /// A synonym's object, as written (possibly in another database or on a linked server); null for other objects. A write
     /// through a synonym writes its object and fires that object's triggers.

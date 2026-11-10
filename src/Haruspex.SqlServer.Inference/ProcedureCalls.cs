@@ -61,7 +61,7 @@ internal sealed record Walked(FlowState? End, IReadOnlyList<FlowState> Escapes, 
 /// rested on an assumption about a procedure further down the stack of calls; those are walked again.
 /// </para>
 /// </remarks>
-internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries functions, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations, DmlTriggers triggers)
+internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries functions, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations, DmlTriggers triggers, ViewSummaries views)
 {
     /// <summary>What the triggers a write fires may return, shared by every walk so that each gap is warned of once.</summary>
     public DmlTriggers Triggers => triggers;
@@ -180,7 +180,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
             {
                 frame.Recursive = false;
                 frame.Widened = false;
-                var walked = new ProcedureAnalyzer(model, procedure.File, functions, calls: this, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff).Walk(procedure.Body);
+                var walked = new ProcedureAnalyzer(model, procedure.File, functions, calls: this, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff, views: views).Walk(procedure.Body);
                 if (!frame.Recursive || walked.Blocker is not null)
                 {
                     if (!frame.Dependent)

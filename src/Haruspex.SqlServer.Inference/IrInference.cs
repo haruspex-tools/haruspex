@@ -26,7 +26,7 @@ public static class IrInference
         ArgumentNullException.ThrowIfNull(procedures);
         declarations ??= new Dictionary<ObjectName, DeclaredResults>();
         var functions = new FunctionSummaries(model);
-        var calls = new ProcedureCalls(model, functions, declarations, new DmlTriggers(model, warnings));
+        var calls = new ProcedureCalls(model, functions, declarations, new DmlTriggers(model, warnings), new ViewSummaries(model, functions));
         var analysed = procedures
             .Distinct()
             .Select(name => model.FindProcedure(name)

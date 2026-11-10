@@ -1,7 +1,7 @@
-# The haruspex IR, version 0.9
+# The haruspex IR, version 0.10
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
-each side can be written in whatever language suits it. This page describes version 0.9. A JSON Schema for
+each side can be written in whatever language suits it. This page describes version 0.10. A JSON Schema for
 it will follow.
 
 ## Why not JSON Schema
@@ -15,7 +15,7 @@ every document. It maps to JSON Schema without loss.
 
 ```jsonc
 {
-  "irVersion": "0.9",                 // versioned separately from the tool
+  "irVersion": "0.10",                // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database: the object's identity
@@ -358,6 +358,22 @@ Statements that write tables are read (slice 6d); the engine rules, each observe
 - `FETCH` without `INTO` makes the results unknown, `hidden-column`: its row carries `ROWSTAT`, a column the server marks
   hidden, which some drivers list and others leave out, so the row's keys depend on the client.
 
+## APPLY and views (0.10)
+
+`CROSS APPLY`, `OUTER APPLY`, `VALUES` lists and views of the project are read (slice 6e); the engine rules, each observed,
+are in `Haruspex.SqlServer.Inference/README.md` ("APPLY", "Views"). For the IR:
+
+- A column from the right side of an `OUTER APPLY` has the null rule `outer-apply`, at the right side, unless the applied
+  query always returns a row (an aggregate without `GROUP BY`, a query without `FROM`, a `VALUES` list) or a filter proves
+  the row matched. It is the `OUTER APPLY` counterpart of `outer-join`, kept apart because the fix differs: an applied query
+  that always returns a row removes it.
+- A view's columns carry their reasons from its definition: a `nullable-column` names the base table's column, an
+  `outer-join` or `outer-apply` inside the view points into the view's file.
+
+Changes in 0.10 (slice 6e, APPLY and views): the null rule `outer-apply`. APPLY, `VALUES` and views were unknown
+(`unsupported-source`, `unresolved-table`) before; a result may now be `atMostOne` through an APPLY or a keyed view. A 0.9
+reader would meet a null rule it does not know, which is why the version changed.
+
 Changes in 0.9 (slice 6d, writes): the unknown reasons `trigger-results` and `hidden-column`; the null rule
 `merge-action`; the fact source `engine`. Writes to permanent tables, `OUTPUT`, `WITH` before a write and cursors were
 `unsupported-statement` before. A 0.8 reader that does not know `engine` would read a `values` facet's `from` it cannot
@@ -398,4 +414,4 @@ Changes in 0.2: scalars gained facets (`maxLength`, `length`, `minLength`, `digi
 each with its `from`. A reader of 0.1 that ignores unknown keys reads 0.2 documents unchanged, but the version
 changed because the facets are claims a 0.2 reader may rely on.
 
-Not in 0.9, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.
+Not in 0.10, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.

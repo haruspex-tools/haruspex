@@ -96,7 +96,7 @@ internal sealed partial class ProcedureAnalyzer
                 null);
         }
 
-        locals = new FlowLocals(tableVariables) { ReadDerived = Derived };
+        locals = Locals(tableVariables);
         var walked = Walk(procedure.StatementList.Statements, FlowState.Start(start).WithTemps(context.Temps));
         if (blocker is not null)
             return new Walked(null, [], blocker, declaredUsed);
@@ -928,8 +928,8 @@ internal sealed partial class ProcedureAnalyzer
         var value = locals!.Column(bound.Relation, bound.Ordinal, at);
         if (value.Shape is not UnknownShape && bound.Ordinal >= 0 && Proved(bound.Source, Key(bound)))
             value = value with { NullableBecause = [] };
-        if (bound.Source.OptionalSideOf is { } optional && !Matched(bound.Source))
-            value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.OuterJoin, optional.ToString())]) };
+        if (bound.Source.OptionalSideOf is { } optional && !Matched(bound.Source) && !AlwaysApplied(bound))
+            value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(bound.Source.OuterApply ? IrNullRules.OuterApply : IrNullRules.OuterJoin, optional.ToString())]) };
         if (Unmatched(bound.Source) is { } unmatched && value.Shape is not UnknownShape)
             value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [unmatched]) };
         return Rolled(bound.Source) is { } rolled && value.Shape is not UnknownShape
@@ -939,7 +939,9 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// A derived table, <c>FROM (SELECT …) AS d (columns)</c>: read like a CTE of its own, so its values pass through
-    /// unchanged and keep what its query proves of them. It may read the enclosing queries' columns.
+    /// unchanged and keep what its query proves of them. It may read the enclosing queries' columns, and an APPLY's left
+    /// input's when it is (or is inside) the APPLY's right side. Its row count is its query's (Cardinality.cs), where it is
+    /// read: for an APPLY's right side, for each outer row.
     /// </summary>
     private LocalRelationValues Derived(QueryDerivedTable derived, BindingScope? outer)
     {
@@ -947,8 +949,10 @@ internal sealed partial class ProcedureAnalyzer
         var name = derived.Alias?.Value ?? "(derived table)";
         if (derived.QueryExpression is not QuerySpecification query)
             return LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: a derived table whose query is a UNION, INTERSECT, EXCEPT or parenthesised query is not modelled yet.", at));
-        return Relation(derived.Columns, Query(query, outer))
-            ?? LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.", at));
+        var row = Query(query, outer);
+        return Relation(derived.Columns, row) is { } relation
+            ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One }
+            : LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.", at));
     }
 
     /// <summary>

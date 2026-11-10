@@ -154,6 +154,13 @@ internal sealed partial class ProcedureAnalyzer
                 Joins(join.SecondTableReference, scope, found, insideOptional: true, own);
                 Refine(join.SearchCondition, scope, found, rows: false, only: Sources(join.SecondTableReference, scope));
                 break;
+            case UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossApply or UnqualifiedJoinType.OuterApply } apply:
+                // An APPLY has no ON. What its right side's joins prove holds of its rows; under OUTER APPLY they may be
+                // null-extended, as an outer join's optional side. What the applied query's own WHERE proves stays inside it
+                // (its facts are its own, read while it is), so it never refines the outer columns it reads.
+                Joins(apply.FirstTableReference, scope, found, insideOptional, own);
+                Joins(apply.SecondTableReference, scope, found, insideOptional || apply.UnqualifiedJoinType == UnqualifiedJoinType.OuterApply, own);
+                break;
             case JoinParenthesisTableReference parenthesis:
                 Joins(parenthesis.Join, scope, found, insideOptional, own);
                 break;

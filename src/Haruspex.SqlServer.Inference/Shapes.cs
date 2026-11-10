@@ -1,5 +1,6 @@
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -75,4 +76,8 @@ internal sealed record Value(Shape Shape, IReadOnlyList<IrNullReason> NullableBe
 }
 
 /// <summary>A result column before it is shaped into a rowset or JSON.</summary>
-internal sealed record RowColumn(string? Name, Value Value, SourceLocation At);
+/// <param name="Origin">
+/// The table column it is, unchanged, when it is one (a bare column reference without COLLATE, or a column of
+/// <c>SELECT *</c>): what a view's keys are found from.
+/// </param>
+internal sealed record RowColumn(string? Name, Value Value, SourceLocation At, BoundColumn? Origin = null);
