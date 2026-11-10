@@ -58,7 +58,10 @@ public class ExpressionTests
     public void Literals_are_of_their_own_length_and_digits_and_never_null()
     {
         // A_literals_type_is_its_own_digits_or_characters.
-        var doc = Procedure("SELECT 'abc' AS s, N'ab' AS w, '' AS e, 2.5 AS d, 007.10 AS z, 2147483648 AS big, 1 AS i;");
+        var doc = Procedure("SELECT 'abc' AS s, N'ab' AS w, '' AS e, 2.5 AS d, 007.10 AS z, 2147483648 AS big, 1 AS i, -2147483648 AS least, -(2147483648) AS paren, -2147483649 AS below;");
+        Assert.Equal("int", Typed(doc, "least"));
+        Assert.Equal("int", Typed(doc, "paren"));
+        Assert.Equal("numeric(10,0)", Typed(doc, "below"));
         Assert.Equal("varchar(3)", Typed(doc, "s"));
         Assert.Equal("nvarchar(2)", Typed(doc, "w"));
         Assert.Equal("varchar(1)", Typed(doc, "e"));
@@ -289,6 +292,17 @@ public class ExpressionTests
         Assert.Equal("nvarchar(15) nullable-column", Typed(doc, "c"));
         Assert.Equal("varchar(9) nullable-column nullable-column", Typed(doc, "d"));
         Assert.StartsWith("unknown", Sql(doc, "e"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_plus_of_fixed_length_strings_is_fixed_length()
+    {
+        // Fixed_length_strings_plus_is_fixed_length (review round 1): char + char is char, nchar + char nchar; with a
+        // varying operand it varies.
+        var doc = Procedure("DECLARE @n nchar(2) = N'ab'; SELECT code + code AS a, @n + code AS b, code + 'x' AS c FROM dbo.t;");
+        Assert.Equal("char(8) nullable-column", Typed(doc, "a"));
+        Assert.Equal("nchar(6) nullable-column", Typed(doc, "b"));
+        Assert.Equal("varchar(5) nullable-column", Typed(doc, "c"));
     }
 
     // ---- arithmetic ------------------------------------------------------------------------------------------------

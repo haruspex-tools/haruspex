@@ -58,7 +58,7 @@ internal sealed partial class ProcedureAnalyzer
         var arguments = new Dictionary<string, Value>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < parameters.Count; i++)
             arguments[parameters[i].VariableName.Value] = Argument(function, parameters[i], call.Parameters[i], scope);
-        return views!.Function(function, arguments);
+        return views!.Function(function, arguments, ReadUncommitted);
     }
 
     /// <summary>

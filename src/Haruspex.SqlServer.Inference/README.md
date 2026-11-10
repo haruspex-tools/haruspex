@@ -353,7 +353,7 @@ read, except where it is that value unchanged (a conversion to its own type, `IS
 ### Literals
 
 `'abc'` is `varchar(3)`, `N'ab'` `nvarchar(2)`, `''` `varchar(1)`; an integer within `int` is `int`, a larger one
-`numeric(digits,0)`; `2.50` is `numeric(3,2)`: the scale counts the digits after the point, trailing zeros too, and the
+`numeric(digits,0)`, except that `-2147483648` (int's least value, through parentheses too) is `int`; `2.50` is `numeric(3,2)`: the scale counts the digits after the point, trailing zeros too, and the
 precision adds those before it, less leading zeros (`A_literals_type_is_its_own_digits_or_characters`). None is ever null. A
 `varchar` literal beyond ASCII, or one with `COLLATE`, is not typed: its length in bytes depends on the code page.
 
@@ -421,7 +421,9 @@ modelled.
   counting nothing; max if any is, otherwise cut at 8000 bytes (4000 characters for `nvarchar`), which the value is too
   (`Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null`). A string argument counts its length, an
   `int` 12 and a `bit` 1; an argument of another type is not modelled.
-- **String `+`** is described the same way (a `NULL` literal counts 1) and is null when an operand is. With
+- **String `+`** is described the same way, except that two fixed-length operands give a fixed-length string, `nchar` if
+  either is (`Fixed_length_strings_plus_is_fixed_length`), and is null when an operand is. A `+` with the `NULL` literal is
+  always NULL under the default setting and is not modelled. With
   `CONCAT_NULL_YIELDS_NULL` off, `NULL + 'x'` is `'x'` (`With_concat_null_yields_null_off_a_string_plus_null_is_the_string`):
   less often null, so the claim holds under either setting, and nothing needs assuming about it. On is SQL Server's default,
   and off is deprecated; a procedure that sets it off is unknown, as before (`IsHarmless`). `+` of a string and a number is

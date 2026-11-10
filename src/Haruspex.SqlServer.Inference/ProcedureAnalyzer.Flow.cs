@@ -962,13 +962,14 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// An integer literal within int's range is an int, never null; a larger one is numeric of its own digits (observed:
-    /// A_literals_type_is_its_own_digits_or_characters).
+    /// A_literals_type_is_its_own_digits_or_characters). The parser gives <c>-2147483648</c> as one literal, which is int's
+    /// least value, an int (observed in the same test).
     /// </summary>
     private Value Integer(IntegerLiteral literal)
     {
-        if (long.TryParse(literal.Value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n) && n <= int.MaxValue)
+        if (long.TryParse(literal.Value, System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out var n) && n is >= int.MinValue and <= int.MaxValue)
             return new Value(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "int", []), At(literal)), []);
-        var digits = literal.Value.TrimStart('0').Length;
+        var digits = literal.Value.TrimStart('-', '+').TrimStart('0').Length;
         return digits <= 38
             ? new Value(SqlTypes.ToConvertedShape(model, new ScalarType("numeric", Precision: digits).ToSqlType(), At(literal)), [])
             : Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The literal {literal.Value} has more than 38 digits.", At(literal)));

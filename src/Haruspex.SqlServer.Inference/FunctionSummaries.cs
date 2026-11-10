@@ -77,8 +77,21 @@ internal sealed class FunctionSummaries
     /// <summary>The views a body may read, once they are known (<see cref="ViewSummaries"/> sets it); null leaves them unread.</summary>
     public ViewSummaries? Views { get; set; }
 
-    public FunctionSummaries(DatabaseModel model)
+    /// <summary>Whether every body is read uncommitted, so that no key of what it reads holds.</summary>
+    private readonly bool uncommitted;
+
+    private FunctionSummaries? uncommittedSibling;
+
+    /// <summary>
+    /// The same functions read uncommitted, for calls in a statement that reads uncommitted (review round 1 of slice 6f). A
+    /// recursive function is not read there: it gives its declared type only, so that its named node (<see cref="Nodes"/>,
+    /// which the IR's type table holds once) comes from the committed reading alone. That only claims less.
+    /// </summary>
+    public FunctionSummaries Uncommitted => uncommitted ? this : uncommittedSibling ??= new FunctionSummaries(model, uncommitted: true) { Views = Views };
+
+    public FunctionSummaries(DatabaseModel model, bool uncommitted = false)
     {
+        this.uncommitted = uncommitted;
         this.model = model;
         FindComponents();
     }
@@ -123,6 +136,13 @@ internal sealed class FunctionSummaries
         {
             var only = model.FindFunction(members[0])!;
             done[only.Name] = Read(only);
+            return;
+        }
+
+        if (uncommitted)
+        {
+            foreach (var member in members.Select(m => model.FindFunction(m)!))
+                done[member.Name] = Read(member, header: true) with { Content = null, NullableBecause = [new IrNullReason(IrNullRules.FunctionResult, member.At.ToString())] };
             return;
         }
 
@@ -281,7 +301,7 @@ internal sealed class FunctionSummaries
             p => p.VariableName.Value,
             p => Parameter(p, nullOnNull, function.File),
             StringComparer.OrdinalIgnoreCase);
-        var value = new ProcedureAnalyzer(model, function.File, this, parameters, ansiNullsOff: function.AnsiNullsOff, views: Views).Return(expression);
+        var value = new ProcedureAnalyzer(model, function.File, this, parameters, ansiNullsOff: function.AnsiNullsOff, views: Views, uncommittedReads: uncommitted).Return(expression, body.Parameters);
 
         Shape? content = value switch
         {

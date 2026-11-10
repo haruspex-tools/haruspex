@@ -147,7 +147,7 @@ public sealed class Binder(DatabaseModel model, string file)
                 scope.Add(Sided(Named(named, optionalSideOf, scope.Locals)) with
                 {
                     History = named.TemporalClause is { TemporalClauseType: not TemporalClauseType.AsOf },
-                    Uncommitted = named.TableHints.Any(h => h.HintKind is TableHintKind.NoLock or TableHintKind.ReadUncommitted),
+                    Uncommitted = Uncommitted(named),
                 });
                 break;
             case QueryDerivedTable derived when scope.Locals?.Derived(derived, lateral ?? scope.Parent) is { } derivedRelation:
@@ -172,6 +172,10 @@ public sealed class Binder(DatabaseModel model, string file)
                 break;
         }
     }
+
+    /// <summary>Whether a table or view is read with a <c>NOLOCK</c> or <c>READUNCOMMITTED</c> hint.</summary>
+    private static bool Uncommitted(NamedTableReference named) =>
+        named.TableHints.Any(h => h.HintKind is TableHintKind.NoLock or TableHintKind.ReadUncommitted);
 
     /// <summary>What kind of optional side a source is added on.</summary>
     private enum Side
@@ -230,7 +234,7 @@ public sealed class Binder(DatabaseModel model, string file)
             return new BoundSource(alias, null, Problem(BindingProblemKind.TableRedefined, change.Message, change.At), optionalSideOf);
 
         // A view is read from its definition, by whoever supplies the body's relations (it may say why it cannot be).
-        if (model.FindNamedObject(objectName) is { Kind: NamedObjectKind.View } view && locals?.View(view) is { } viewRelation)
+        if (model.FindNamedObject(objectName) is { Kind: NamedObjectKind.View } view && locals?.View(view, Uncommitted(named)) is { } viewRelation)
             return new BoundSource(alias, null, null, optionalSideOf, viewRelation);
         if (model.FindNamedObject(objectName) is { } other)
             return Unresolved(BindingProblemKind.UnresolvedTable, $"{objectName} is a {KindName(other.Kind)}, which is not modelled yet.");

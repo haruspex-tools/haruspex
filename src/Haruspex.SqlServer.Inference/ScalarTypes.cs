@@ -281,7 +281,7 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
         if (literal is Microsoft.SqlServer.TransactSql.ScriptDom.StringLiteral)
             return to.IsString ? true : null;
         if (literal is not (Microsoft.SqlServer.TransactSql.ScriptDom.IntegerLiteral or Microsoft.SqlServer.TransactSql.ScriptDom.NumericLiteral)
-            || !decimal.TryParse(literal.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
+            || !decimal.TryParse(literal.Value, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var value))
             return null;
         if (negative)
             value = -value;

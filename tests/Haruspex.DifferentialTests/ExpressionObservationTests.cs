@@ -39,10 +39,11 @@ public class ExpressionObservationTests(SqlServerFixture server)
     {
         // A decimal literal is numeric of its own digits: the scale counts the digits after the point, trailing zeros too, and
         // the precision adds the digits before it, less leading zeros. An integer literal beyond int is numeric too. A string
-        // literal is varchar or nvarchar of its length, at least 1.
+        // literal is varchar or nvarchar of its length, at least 1. Negated, 2147483648 is int's least value, an int.
         Assert.Equal(
-            "a numeric(2,1), b numeric(1,1), c numeric(4,3), d numeric(5,2), e numeric(2,2), f numeric(3,2), g numeric(10,0), h int, i varchar(3), j nvarchar(2), k varchar(1)",
-            await Describe("SELECT 2.5 AS a, 0.5 AS b, 1.234 AS c, 100.00 AS d, 0.05 AS e, 007.10 AS f, 2147483648 AS g, 2147483647 AS h, 'abc' AS i, N'ab' AS j, '' AS k"));
+            "a numeric(2,1), b numeric(1,1), c numeric(4,3), d numeric(5,2), e numeric(2,2), f numeric(3,2), g numeric(10,0), h int, i varchar(3), j nvarchar(2), k varchar(1), "
+            + "l int, m int, n numeric(10,0)",
+            await Describe("SELECT 2.5 AS a, 0.5 AS b, 1.234 AS c, 100.00 AS d, 0.05 AS e, 007.10 AS f, 2147483648 AS g, 2147483647 AS h, 'abc' AS i, N'ab' AS j, '' AS k, -2147483648 AS l, -(2147483648) AS m, -2147483649 AS n"));
     }
 
     // ---- COALESCE and ISNULL -----------------------------------------------------------------------------------------
@@ -217,6 +218,17 @@ public class ExpressionObservationTests(SqlServerFixture server)
                        LEN(CONCAT(REPLICATE(CAST(N'a' AS nvarchar(4000)), 4000), N'b')) AS c4000, CONCAT(NULL, NULL) AS cnull, CONCAT_WS('-', 'a', NULL, 'c') AS wsnull,
                        CONCAT_WS('-', NULL, NULL) AS wsallnull, CONCAT_WS(NULL, 'a', 'b') AS wsnullsep, 'a' + NULL AS plusnull;
                 """)).ToString());
+    }
+
+    [Fact]
+    public async Task Fixed_length_strings_plus_is_fixed_length()
+    {
+        // char + char is char, and nchar if either is nchar, as long as both together up to 8000 bytes (4000 characters),
+        // where the value is cut too; a varying operand makes it varying (Concat_is_as_long_as_its_arguments_…).
+        Assert.Equal(
+            "d char(6), e nchar(6), f char(8000), g nchar(4000), h nchar(6)",
+            await Describe($"SELECT c3 + c3 AS d, nc3 + c3 AS e, c5k + c5k AS f, n3k + n3k AS g, c3 + nc3 AS h FROM (SELECT CAST('a' AS char(3)) AS c3, CAST(N'a' AS nchar(3)) AS nc3, CAST('a' AS char(5000)) AS c5k, CAST(N'a' AS nchar(3000)) AS n3k) AS x"));
+        Assert.Equal("n: 8000", (await Run("SELECT DATALENGTH(c + c) AS n FROM (SELECT CAST('a' AS char(5000)) AS c) AS x;")).ToString());
     }
 
     [Fact]

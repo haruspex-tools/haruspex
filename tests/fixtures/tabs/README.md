@@ -25,4 +25,4 @@ number and one that is not, and a menu item without a short code; every nullable
 | `cafe.dirty_tab` | `WITH (NOLOCK)` on a lookup by key, then `READ UNCOMMITTED` before a function's lookup: many rows, not at most one |
 | `cafe.open_tabs_payload` | `JSON_QUERY` of `open_tabs_json`: null when no tab is open |
 | `cafe.guest_spending` | per guest, `CONVERT(decimal(19,2), COALESCE(SUM(…), 0))`, `MAX` of a left join's column, `COALESCE(MAX(tinyint), 0)` |
-| `cafe.menu_prices` | a label built with `+` and `CONVERT(nvarchar(12), price)`, `price * 1.2` (numeric), `CAST(… AS int)` that may overflow, `ISNULL(char(4), '----')`, `CONCAT` with an `int` |
+| `cafe.menu_prices` | a label built with `+` and `CONVERT(nvarchar(12), price)`, `price * 1.2` (numeric), `CAST(… AS int)` that may overflow, `ISNULL(char(4), '----')`, `CONCAT` with an `int`, `TRY_CAST` of a column never null (`failed-conversion`, seen both ways) |

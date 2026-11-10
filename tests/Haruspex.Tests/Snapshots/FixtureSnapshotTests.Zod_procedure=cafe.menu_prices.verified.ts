@@ -9,6 +9,7 @@ export const MenuPricesRowSchema = z.object({
   pence: z.int32().nullable(),
   code: z.string().max(4) /* char(4) pads to 4 bytes: 4 characters in a single-byte collation, at most 4 otherwise; no collation is declared */,
   ref: z.string().max(17) /* varchar(17) counts bytes: exact in a single-byte collation, an upper bound otherwise; no collation is declared */,
+  title_number: z.int32().nullable(),
 })
 export type MenuPricesRow = z.infer<typeof MenuPricesRowSchema>
 

@@ -18,7 +18,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         ReadDerived = Derived,
         ReadValues = ValuesList,
-        ReadView = views is null ? null : views.Read,
+        ReadView = views is null ? null : (view, hinted) => views.Read(view, hinted || ReadUncommitted),
         ReadFunction = views is null ? null : TableFunction,
     };
 
@@ -160,7 +160,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private List<RelationKey> ViewKeys(QuerySpecification query, Row row)
     {
-        if (query.GroupByClause is not null || row.Sources is not [{ Table: { } table, OptionalSideOf: null, History: false, Uncommitted: false } source])
+        if (ReadUncommitted || query.GroupByClause is not null || row.Sources is not [{ Table: { } table, OptionalSideOf: null, History: false, Uncommitted: false } source])
             return [];
 
         var keys = new List<RelationKey>();
@@ -242,7 +242,7 @@ internal sealed class ViewSummaries
 {
     private readonly DatabaseModel model;
     private readonly FunctionSummaries functions;
-    private readonly Dictionary<ObjectName, LocalRelationValues> done = [];
+    private readonly Dictionary<(ObjectName, bool), LocalRelationValues> done = [];
     private readonly HashSet<ObjectName> reading = [];
     private readonly Dictionary<string, LocalRelationValues> calls = new(StringComparer.Ordinal);
 
@@ -260,9 +260,10 @@ internal sealed class ViewSummaries
     /// function's query read with them (<see cref="ProcedureAnalyzer.ReadInline"/>), a multi-statement one's declared return
     /// table (<see cref="ProcedureAnalyzer.ReadReturnTable"/>).
     /// </summary>
-    public LocalRelationValues Function(UserFunction function, IReadOnlyDictionary<string, Value> arguments)
+    /// <param name="uncommitted">Whether it is read uncommitted (Cardinality.cs), so that no key of what it reads holds.</param>
+    public LocalRelationValues Function(UserFunction function, IReadOnlyDictionary<string, Value> arguments, bool uncommitted)
     {
-        var key = function.Name + "(" + string.Join(",", arguments.OrderBy(a => a.Key, StringComparer.OrdinalIgnoreCase).Select(a => a.Key + "=" + ShapeText.Of(a.Value))) + ")";
+        var key = (uncommitted ? "uncommitted " : "") + function.Name + "(" + string.Join(",", arguments.OrderBy(a => a.Key, StringComparer.OrdinalIgnoreCase).Select(a => a.Key + "=" + ShapeText.Of(a.Value))) + ")";
         if (calls.TryGetValue(key, out var found))
             return found;
         if (!reading.Add(function.Name))
@@ -270,7 +271,7 @@ internal sealed class ViewSummaries
 
         try
         {
-            var analyzer = new ProcedureAnalyzer(model, function.File, functions, arguments, ansiNullsOff: function.AnsiNullsOff, views: this);
+            var analyzer = new ProcedureAnalyzer(model, function.File, Functions(uncommitted), arguments, ansiNullsOff: function.AnsiNullsOff, views: this, uncommittedReads: uncommitted);
             found = function.Body.ReturnType switch
             {
                 SelectFunctionReturnType inline => analyzer.ReadInline(function, inline.SelectStatement),
@@ -290,9 +291,17 @@ internal sealed class ViewSummaries
     /// <summary>A placeholder location for an unknown about the view as a whole; each read reports its own location instead.</summary>
     private static readonly Haruspex.Diagnostics.SourceLocation Nowhere = new("", 0, 0);
 
-    public LocalRelationValues Read(NamedObject view)
+    /// <summary>The scalar functions' summaries for a body read committed or uncommitted (<see cref="FunctionSummaries.Uncommitted"/>).</summary>
+    private FunctionSummaries Functions(bool uncommitted) => uncommitted ? functions.Uncommitted : functions;
+
+    /// <summary>A view's rows, read once per document and per way of reading it: committed, or uncommitted inside too.</summary>
+    /// <param name="uncommitted">
+    /// Whether it is read uncommitted: under a NOLOCK or READUNCOMMITTED hint on it, which applies to every table under it, or
+    /// in a statement that reads uncommitted. Then no key of the tables inside holds (review round 1 of slice 6f).
+    /// </param>
+    public LocalRelationValues Read(NamedObject view, bool uncommitted)
     {
-        if (done.TryGetValue(view.Name, out var found))
+        if (done.TryGetValue((view.Name, uncommitted), out var found))
             return found;
 
         // A view created and altered, or defined twice, depends on the order the scripts run (Sources).
@@ -303,14 +312,14 @@ internal sealed class ViewSummaries
 
         try
         {
-            found = new ProcedureAnalyzer(model, view.File, functions, ansiNullsOff: view.AnsiNullsOff, views: this).ReadView(view);
+            found = new ProcedureAnalyzer(model, view.File, Functions(uncommitted), ansiNullsOff: view.AnsiNullsOff, views: this, uncommittedReads: uncommitted).ReadView(view);
         }
         finally
         {
             reading.Remove(view.Name);
         }
 
-        done[view.Name] = found;
+        done[(view.Name, uncommitted)] = found;
         return found;
     }
 }

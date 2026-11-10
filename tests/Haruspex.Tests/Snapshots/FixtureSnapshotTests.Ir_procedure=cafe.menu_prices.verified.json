@@ -8,7 +8,7 @@
       "id": "cafe.menu_prices",
       "name": "MenuPrices",
       "kind": "procedure",
-      "at": "procedures/menu_prices.sql:3:1",
+      "at": "procedures/menu_prices.sql:4:1",
       "parameters": [],
       "results": [
         {
@@ -130,7 +130,7 @@
           "nullableBecause": [
             {
               "rule": "arithmetic-overflow",
-              "at": "procedures/menu_prices.sql:10:8"
+              "at": "procedures/menu_prices.sql:11:8"
             }
           ]
         },
@@ -165,6 +165,36 @@
           },
           "presence": "always",
           "nullable": false
+        },
+        {
+          "name": "title_number",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "failed-conversion",
+              "at": "procedures/menu_prices.sql:14:8"
+            }
+          ]
         }
       ]
     }

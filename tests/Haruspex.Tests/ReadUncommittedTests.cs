@@ -20,6 +20,12 @@ public class ReadUncommittedTests
         GO
         CREATE VIEW dbo.tv_dirty AS SELECT t.id, t.name FROM dbo.t AS t WITH (NOLOCK);
         GO
+        CREATE VIEW dbo.u_json AS SELECT u.id, (SELECT t.name FROM dbo.t AS t WHERE t.id = u.t_id FOR JSON PATH) AS names FROM dbo.u AS u;
+        GO
+        CREATE FUNCTION dbo.f_json (@id int) RETURNS TABLE AS RETURN SELECT (SELECT t.name FROM dbo.t AS t WHERE t.id = @id FOR JSON PATH) AS names;
+        GO
+        CREATE FUNCTION dbo.sf_json (@id int) RETURNS nvarchar(max) AS BEGIN RETURN (SELECT t.name FROM dbo.t AS t WHERE t.id = @id FOR JSON PATH); END
+        GO
         """;
 
     private static IrDocument Infer(string procedures, string name = "dbo.p")
@@ -87,6 +93,46 @@ public class ReadUncommittedTests
         var row = (IrRef)((IrArray)Assert.Single(doc.Objects[0].Results!).Type).Items;
         var notes = (IrArray)Assert.Single(doc.Types[row.Name].Fields, f => f.Name == "notes").Type;
         Assert.Null(notes.MaxItems);
+    }
+
+    /// <summary>The most items of each result's one JSON column, through JSON text's content too; null when unbounded.</summary>
+    private static int?[] MaxItems(IrDocument doc) =>
+    [
+        .. doc.Objects[0].Results!.Select(r =>
+        {
+            var row = (IrRef)((IrArray)r.Type).Items;
+            var type = Assert.Single(doc.Types[row.Name].Fields).Type;
+            return ((IrArray)(type is IrJsonText { Content: { } content } ? content : type)).MaxItems;
+        }),
+    ];
+
+    private const string JsonReads = """
+        SELECT v.names FROM dbo.u_json AS v WHERE v.id = @id;
+        SELECT f.names FROM dbo.u AS u CROSS APPLY dbo.f_json(u.t_id) AS f;
+        SELECT JSON_QUERY(dbo.sf_json(u.t_id)) AS names FROM dbo.u AS u;
+        SELECT (SELECT t.name FROM dbo.t AS t WHERE t.id = u.t_id FOR JSON PATH) AS names FROM dbo.u AS u;
+        """;
+
+    [Fact]
+    public void A_key_inside_a_view_or_function_bounds_its_json_when_read_committed()
+    {
+        Assert.Equal([1, 1, 1, 1], MaxItems(Procedure(JsonReads)));
+    }
+
+    [Fact]
+    public void Read_uncommitted_reaches_inside_views_and_functions()
+    {
+        // A view, an inline function and a scalar function read under the procedure's READ UNCOMMITTED read their own tables
+        // so too (review round 1): their keys bound nothing, as the same subquery written directly does not.
+        Assert.Equal([null, null, null, null], MaxItems(Procedure("SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\n" + JsonReads)));
+    }
+
+    [Fact]
+    public void Nolock_on_a_view_reaches_inside_it()
+    {
+        // NOLOCK on a view applies to every table under it.
+        Assert.Equal([null], MaxItems(Procedure("SELECT v.names FROM dbo.u_json AS v WITH (NOLOCK) WHERE v.id = @id;")));
+        Assert.Equal([1], MaxItems(Procedure("SELECT v.names FROM dbo.u_json AS v WHERE v.id = @id;")));
     }
 
     [Fact]

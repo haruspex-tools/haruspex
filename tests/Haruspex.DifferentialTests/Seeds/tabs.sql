@@ -1,6 +1,7 @@
 -- Seed for tests/fixtures/tabs. Invented data: a small café's tabs. Guest 3 has no tabs; tab 13 has no items; tab 11's note
 -- is not a number and tab 12 has none; one menu item has no short code. Every nullable value is null in some row returned:
--- a nickname, a phone, a closing time, a table number, a tip, a note, a discount and a short code.
+-- a nickname, a phone, a closing time, a table number, a tip, a note, a discount and a short code. One menu item, the house
+-- blend, is titled with a number, so that TRY_CAST of a title is seen both ways.
 INSERT INTO cafe.guest (guest_id, name, nickname, phone)
 VALUES (1, N'Ada', N'Ace', '0123 456'),
        (2, N'Bo', NULL, NULL),
@@ -9,7 +10,8 @@ VALUES (1, N'Ada', N'Ace', '0123 456'),
 INSERT INTO cafe.menu_item (item_id, title, price, short_code)
 VALUES (100, N'Flat white', 3.25, 'FLAT'),
        (101, N'Toast', 2.50, NULL),
-       (102, N'Soup', 6.75, 'SOUP');
+       (102, N'Soup', 6.75, 'SOUP'),
+       (103, N'1920', 4.10, 'BLND');
 
 INSERT INTO cafe.tab (tab_id, guest_id, opened_at, closed_at, table_no, tip, note)
 VALUES (10, 1, '2026-11-01T08:00:00', '2026-11-01T09:00:00', 4, 1.50, '12'),

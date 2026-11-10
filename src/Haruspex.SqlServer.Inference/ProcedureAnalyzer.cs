@@ -39,6 +39,9 @@ internal sealed partial class ProcedureAnalyzer
     private readonly string file;
     private readonly FunctionSummaries functions;
 
+    /// <summary>Whether the body is read uncommitted where it is used (see <see cref="ReadUncommitted"/>).</summary>
+    private readonly bool uncommittedReads;
+
     /// <summary>What each view holds (ProcedureAnalyzer.Views.cs); null leaves views unmodelled.</summary>
     private readonly ViewSummaries? views;
 
@@ -56,6 +59,9 @@ internal sealed partial class ProcedureAnalyzer
     /// <param name="context">What a procedure's walk starts from: its caller's temporary tables, and how it is called.</param>
     /// <param name="ansiNullsOff">Whether the body was created with ANSI_NULLS off (see <see cref="Refinement"/>).</param>
     /// <param name="views">What each view of the project holds, read from its definition; null leaves views unmodelled.</param>
+    /// <param name="uncommittedReads">
+    /// Whether the body (a view's, a function's) is read uncommitted where it is used, so that no key of what it reads holds.
+    /// </param>
     public ProcedureAnalyzer(
         DatabaseModel model,
         string file,
@@ -64,8 +70,10 @@ internal sealed partial class ProcedureAnalyzer
         ProcedureCalls? calls = null,
         CallContext? context = null,
         bool ansiNullsOff = false,
-        ViewSummaries? views = null)
+        ViewSummaries? views = null,
+        bool uncommittedReads = false)
     {
+        this.uncommittedReads = uncommittedReads;
         this.views = views;
         this.ansiNullsOff = ansiNullsOff;
         this.model = model;
@@ -82,8 +90,15 @@ internal sealed partial class ProcedureAnalyzer
     /// The value a function's <c>RETURN</c> expression gives, read with no FROM in scope; its subqueries may read views and
     /// table-valued functions (slice 6f; views in function bodies were unresolved before).
     /// </summary>
-    public Value Return(ScalarExpression expression)
+    /// <param name="expression">The returned expression.</param>
+    /// <param name="parameters">
+    /// The function's parameters, which are the same for every row its queries read, so a key compared with one is fixed, as
+    /// in an inline function.
+    /// </param>
+    public Value Return(ScalarExpression expression, IEnumerable<ProcedureParameter> parameters)
     {
+        foreach (var parameter in parameters)
+            variableTypes[parameter.VariableName.Value] = SqlType.From(parameter.DataType);
         locals = Locals(new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase));
         return Expression(expression, binder.BindFrom(new QuerySpecification(), null, locals));
     }
@@ -507,7 +522,8 @@ internal sealed partial class ProcedureAnalyzer
         if (call.OverClause is not null || call.WithinGroupClause is not null)
             return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"This form of call is not modelled: {Text(call)}", at));
 
-        var (result, why) = functions.Find(callee, at);
+        // A function's body read in a statement that reads uncommitted reads its tables so too.
+        var (result, why) = (ReadUncommitted ? functions.Uncommitted : functions).Find(callee, at);
         if (result is null)
             return Value.Unknown(why!);
 

@@ -13,8 +13,11 @@ namespace Haruspex.SqlServer.Inference;
 /// </summary>
 internal sealed partial class ProcedureAnalyzer
 {
-    /// <summary>Whether the statement being read may read uncommitted, by the procedure's isolation level (FlowState).</summary>
-    private bool ReadUncommitted => locals?.State.ReadUncommitted == true;
+    /// <summary>
+    /// Whether the statement being read may read uncommitted: by the procedure's isolation level (FlowState), or because the
+    /// view or function body being read is read so where it is used.
+    /// </summary>
+    private bool ReadUncommitted => uncommittedReads || locals?.State.ReadUncommitted == true;
 
     private IrCardinality Cardinality(QuerySpecification query, BindingScope scope)
     {

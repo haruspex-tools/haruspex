@@ -55,7 +55,7 @@ internal sealed partial class ProcedureAnalyzer
             JsonTextShape => new ScalarType("nvarchar", -1),
             _ => null,
         };
-        return type is not null && IntegerLiteralOf(expression) is { } literal ? type with { Digits = literal.Value.TrimStart('0').Length is var n and > 0 ? n : 1 } : type;
+        return type is not null && IntegerLiteralOf(expression) is { } literal ? type with { Digits = literal.Value.TrimStart('-', '+').TrimStart('0').Length is var n and > 0 ? n : 1 } : type;
     }
 
     /// <summary>An integer literal, through parentheses and a sign.</summary>
@@ -249,13 +249,14 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>
-    /// String <c>a + b</c>: as CONCAT for its type, a NULL literal counting 1 (observed), and null when either operand is. With
+    /// String <c>a + b</c>: as CONCAT for its type, but fixed-length when both operands are (char, or nchar if either is:
+    /// observed, Fixed_length_strings_plus_is_fixed_length), and null when either operand is. With
     /// CONCAT_NULL_YIELDS_NULL off, which only a session can set and is deprecated, NULL + 'x' is 'x'
     /// (With_concat_null_yields_null_off_a_string_plus_null_is_the_string): less often null, so the claim holds either way.
     /// </summary>
     private Value Plus(BinaryExpression plus, Value left, Value right, ScalarType l, ScalarType r) =>
         Typed(
-            ScalarType.String(l.IsNational || r.IsNational, varying: true, l.IsMax || r.IsMax ? -1 : l.Length + r.Length),
+            ScalarType.String(l.IsNational || r.IsNational, varying: l.Name.EndsWith("varchar", StringComparison.Ordinal) || r.Name.EndsWith("varchar", StringComparison.Ordinal), l.IsMax || r.IsMax ? -1 : l.Length + r.Length),
             ShapeJoin.Reasons(left.NullableBecause, right.NullableBecause),
             plus);
 
@@ -305,9 +306,15 @@ internal sealed partial class ProcedureAnalyzer
     {
         if (unary.UnaryExpressionType is not (UnaryExpressionType.Negative or UnaryExpressionType.Positive))
             return NotModelled(unary, "this operator is not modelled yet.");
-        // A negated literal is the literal's type: it cannot overflow.
+        // A negated literal is the literal's type, and cannot overflow; but negated, 2147483648 is int's least value, an int
+        // (observed: A_literals_type_is_its_own_digits_or_characters).
         if (LiteralOf(unary) is ({ } literal, true) && literal is IntegerLiteral or NumericLiteral)
-            return Expression(literal, scope);
+        {
+            // The parser gives 2147483648 as a numeric literal, being beyond int.
+            return literal.Value.TrimStart('0') == "2147483648"
+                ? Typed(new ScalarType("int"), [], unary)
+                : Expression(literal, scope);
+        }
 
         var operand = Expression(unary.Expression, scope);
         if (operand.Shape is UnknownShape || unary.UnaryExpressionType == UnaryExpressionType.Positive)
