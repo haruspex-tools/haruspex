@@ -95,4 +95,12 @@ public interface ILocalRelations
     /// <param name="reference">The call.</param>
     /// <param name="outer">The scope its arguments may read beyond their own, or null.</param>
     LocalRelation? TableFunction(SchemaObjectFunctionTableReference reference, BindingScope? outer) => null;
+
+    /// <summary>
+    /// The relation an <c>OPENJSON</c> call in FROM (<c>OPENJSON(t.doc) WITH (…) AS j</c>) is, or null when it is not modelled.
+    /// Its arguments may read the enclosing queries' columns, or an <c>APPLY</c>'s left input's, so it is given that scope.
+    /// </summary>
+    /// <param name="reference">The call.</param>
+    /// <param name="outer">The scope its arguments may read beyond their own, or null.</param>
+    LocalRelation? OpenJson(OpenJsonTableReference reference, BindingScope? outer) => null;
 }

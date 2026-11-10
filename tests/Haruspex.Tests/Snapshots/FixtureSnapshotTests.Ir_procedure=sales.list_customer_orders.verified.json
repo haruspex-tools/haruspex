@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.12",
+  "irVersion": "0.13",
   "source": {
     "dialect": "tsql"
   },

@@ -35,6 +35,10 @@ internal sealed partial class ProcedureAnalyzer
             // No FROM: one row, which WHERE may filter out (A_scalar_subquery_of_an_aggregate_without_group_by_always_has_a_value_for_count).
             rows = query.WhereClause is null && query.HavingClause is null ? IrCardinality.One : IrCardinality.AtMostOne;
         }
+        else if (query.GroupByClause is null && AllOneRow(query, scope))
+        {
+            rows = query.WhereClause is null ? IrCardinality.One : IrCardinality.AtMostOne;
+        }
         else
         {
             // Grouping never makes more rows than it reads, so a filter that fixes every source's key bounds it too; but
@@ -155,6 +159,13 @@ internal sealed partial class ProcedureAnalyzer
         if (scope.Sources.Count == 0)
             return false;
 
+        // A FULL JOIN is never bounded by its sides: two sides of one row each that do not match give two rows, and a key
+        // tested IS NULL matches every row the other side null-extends (observed:
+        // A_full_join_of_two_queries_of_at_most_one_row_can_return_two). A WHERE that fixes a key of each side by = would
+        // bound it, which is not worth the care yet, so a query with one is many.
+        if (query.FromClause?.TableReferences.Any(HasFullJoin) == true)
+            return false;
+
         // Each source's keys: a table's enforced ones, a view's (ViewKeys). A relation of at most one row is fixed from the
         // start: it matches at most one row for each combination of the others' rows, and for an APPLY's right side, read for
         // each outer row, at most one for each (observed: Top_1_applied_gives_at_most_one_row_for_every_outer_row). A temporary
@@ -218,6 +229,34 @@ internal sealed partial class ProcedureAnalyzer
         return fixedSources.Count == scope.Sources.Count;
     }
 
+    private static bool HasFullJoin(TableReference reference) => reference switch
+    {
+        QualifiedJoin { QualifiedJoinType: QualifiedJoinType.FullOuter } => true,
+        JoinTableReference join => HasFullJoin(join.FirstTableReference) || HasFullJoin(join.SecondTableReference),
+        JoinParenthesisTableReference parenthesis => HasFullJoin(parenthesis.Join),
+        _ => false,
+    };
+
+    /// <summary>
+    /// Whether a FROM clause is only cross joins (or commas) of relations of exactly one row each, which is one row (observed:
+    /// A_cross_join_of_two_one_row_queries_is_one_row_and_with_an_empty_side_none). An inner join's ON or an APPLY may drop it.
+    /// </summary>
+    private bool AllOneRow(QuerySpecification query, BindingScope scope)
+    {
+        static bool Crossed(TableReference reference) => reference switch
+        {
+            UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossJoin } cross => Crossed(cross.FirstTableReference) && Crossed(cross.SecondTableReference),
+            JoinParenthesisTableReference parenthesis => Crossed(parenthesis.Join),
+            JoinTableReference => false,
+            _ => true,
+        };
+
+        return query.FromClause is { TableReferences: var references }
+            && references.All(Crossed)
+            && scope.Sources.Count > 0
+            && scope.Sources.All(s => s.Local is { } local && locals?.Values(local) is { Why: null, Rows: IrCardinality.One, AtLeastOne: true });
+    }
+
     private static void JoinConditions(TableReference reference, BindingScope scope, List<Fixing> into)
     {
         switch (reference)
@@ -231,6 +270,10 @@ internal sealed partial class ProcedureAnalyzer
                 JoinConditions(join.FirstTableReference, scope, into);
                 JoinConditions(join.SecondTableReference, scope, into);
                 into.AddRange(Conjuncts(join.SearchCondition).Select(c => new Fixing(c, Sources(join.SecondTableReference, scope))));
+                break;
+            case UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossJoin } cross:
+                JoinConditions(cross.FirstTableReference, scope, into);
+                JoinConditions(cross.SecondTableReference, scope, into);
                 break;
             case UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossApply or UnqualifiedJoinType.OuterApply } apply:
                 // No ON of its own; the joins on either side keep theirs. An OUTER APPLY's right side gives one null-extended

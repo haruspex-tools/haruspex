@@ -20,6 +20,7 @@ internal sealed partial class ProcedureAnalyzer
         ReadValues = ValuesList,
         ReadView = views is null ? null : (view, hinted) => views.Read(view, hinted || ReadUncommitted),
         ReadFunction = views is null ? null : TableFunction,
+        ReadOpenJson = OpenJsonRelation,
     };
 
     /// <summary>
@@ -140,15 +141,18 @@ internal sealed partial class ProcedureAnalyzer
             select.WithCtesAndXmlNamespaces,
             () =>
             {
-                if (select.QueryExpression is not QuerySpecification { ForClause: null } query)
-                    return Fails("a view whose query is a UNION, INTERSECT, EXCEPT or parenthesised query, or FOR XML or FOR JSON, is not modelled yet.");
+                if (select.QueryExpression is not { } query || ForOf(query) is not null)
+                    return Fails("a view whose query is FOR XML or FOR JSON is not modelled yet.");
                 var row = Query(query, parent: null);
                 return Relation(view.Columns, row) is { } relation
-                    ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One, Keys = ViewKeys(query, row) }
+                    ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One, Keys = Keys(query, row) }
                     : Fails("its columns cannot be listed: a SELECT * over a source whose columns are not known, or over a table whose * differs from its columns (hidden or graph columns), or a column without a name of its own.");
             },
             LocalRelationValues.Unknown);
     }
+
+    /// <summary>A set operation keeps no key (UNION ALL repeats one); a query specification's are <see cref="ViewKeys"/>.</summary>
+    private List<RelationKey> Keys(QueryExpression query, Row row) => query is QuerySpecification specification ? ViewKeys(specification, row) : [];
 
     /// <summary>
     /// The keys a view has: those of its one table that it selects whole, unchanged. A view that reads one table, without a

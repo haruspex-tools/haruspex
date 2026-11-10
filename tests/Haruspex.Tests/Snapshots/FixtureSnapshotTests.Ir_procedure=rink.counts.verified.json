@@ -1,0 +1,239 @@
+{
+  "irVersion": "0.13",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "rink.counts",
+      "name": "Counts",
+      "kind": "procedure",
+      "at": "procedures/counts.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CountsResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CountsResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CountsResult3Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "CountsResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.counts",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "members",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "guests",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "CountsResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.counts",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "person_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "contact",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(80)",
+            "maxLength": {
+              "value": 80,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(80)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "CountsResult3Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.counts",
+        "path": "results[2][]"
+      },
+      "fields": [
+        {
+          "name": "session_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "coach_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "rink.session.coach_id"
+            }
+          ]
+        },
+        {
+          "name": "size",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(1)",
+            "maxLength": {
+              "value": 1,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(1)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

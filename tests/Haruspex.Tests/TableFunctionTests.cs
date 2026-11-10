@@ -176,9 +176,10 @@ public class TableFunctionTests
     [Fact]
     public void What_is_not_modelled_is_unknown()
     {
-        // A column list at the call is refused (317); a body that is a UNION is not modelled; a scalar function is not a table.
+        // A column list at the call is refused (317); a scalar function is not a table. A body that is a UNION is read since
+        // slice 6h.
         Assert.StartsWith("unknown: unsupported-source", Typed(Procedure("SELECT f.a FROM dbo.t_by_id(@id) AS f (a, b, c);"), "a"), StringComparison.Ordinal);
-        Assert.StartsWith("unknown: unsupported-query", Typed(Procedure("SELECT f.a FROM dbo.both(@id) AS f;"), "a"), StringComparison.Ordinal);
+        Assert.Equal("int parameter", Typed(Procedure("SELECT f.a FROM dbo.both(@id) AS f;"), "a"));
         Assert.StartsWith("unknown: unresolved-table", Typed(Procedure("SELECT f.x FROM dbo.scalar(@id) AS f;"), "x"), StringComparison.Ordinal);
         Assert.StartsWith("unknown: unresolved-table", Typed(Procedure("SELECT f.x FROM dbo.missing(@id) AS f;"), "x"), StringComparison.Ordinal);
     }

@@ -1,0 +1,329 @@
+{
+  "irVersion": "0.13",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "rink.member_prefs",
+      "name": "MemberPrefs",
+      "kind": "procedure",
+      "at": "procedures/member_prefs.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MemberPrefsResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MemberPrefsResult2Row"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/member_prefs.sql:15:1"
+            }
+          ],
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MemberPrefsResult3Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "MemberPrefsResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.member_prefs",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "member_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "theme",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(10)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-value",
+              "at": "procedures/member_prefs.sql:10:5"
+            }
+          ]
+        },
+        {
+          "name": "skate_size",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-value",
+              "at": "procedures/member_prefs.sql:11:5"
+            }
+          ]
+        },
+        {
+          "name": "notify",
+          "type": {
+            "kind": "json-text"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-value",
+              "at": "procedures/member_prefs.sql:12:5"
+            }
+          ]
+        }
+      ]
+    },
+    "MemberPrefsResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.member_prefs",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "notify",
+          "type": {
+            "kind": "unknown",
+            "reason": "json-shape-unknown"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-value",
+              "at": "procedures/member_prefs.sql:17:37"
+            }
+          ]
+        }
+      ]
+    },
+    "MemberPrefsResult3Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.member_prefs",
+        "path": "results[2][]"
+      },
+      "fields": [
+        {
+          "name": "booking_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "key",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "outer-apply",
+              "at": "procedures/member_prefs.sql:23:13"
+            }
+          ]
+        },
+        {
+          "name": "value",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-value",
+              "at": "procedures/member_prefs.sql:23:13"
+            },
+            {
+              "rule": "outer-apply",
+              "at": "procedures/member_prefs.sql:23:13"
+            }
+          ]
+        },
+        {
+          "name": "type",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [0,1,2,3,4,5
+              ],
+              "from": [
+                {
+                  "engine": "OPENJSON type"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "outer-apply",
+              "at": "procedures/member_prefs.sql:23:13"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "rink.member_prefs",
+      "path": "results[1][].notify",
+      "reason": "json-shape-unknown",
+      "detail": "p.notify is JSON read from a document: its shape is in the data.",
+      "at": "procedures/member_prefs.sql:17:37"
+    }
+  ],
+  "overrides": []
+}

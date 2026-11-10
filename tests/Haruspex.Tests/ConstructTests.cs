@@ -52,7 +52,6 @@ public class ConstructTests
     // ---- queries ------------------------------------------------------------------------------------
 
     [Theory]
-    [InlineData("SELECT t.id FROM dbo.t AS t UNION ALL SELECT u.id FROM dbo.u AS u;")]
     [InlineData("SELECT t.id FROM dbo.t AS t FOR XML PATH;")]
     [InlineData("SELECT t.id FROM dbo.t AS t FOR JSON AUTO;")]
     [InlineData("SELECT t.id FROM dbo.t AS t FOR JSON PATH, ROOT('items');")]
@@ -168,10 +167,10 @@ public class ConstructTests
 
     // ---- sources and joins --------------------------------------------------------------------------
 
+    // FULL OUTER JOIN and CROSS JOIN are modelled since slice 6h (SetJoinTests).
     [Theory]
     [InlineData("dbo.t AS t RIGHT JOIN dbo.u AS u ON u.t_id = t.id")]
-    [InlineData("dbo.t AS t FULL OUTER JOIN dbo.u AS u ON u.t_id = t.id")]
-    [InlineData("dbo.t AS t CROSS JOIN dbo.u AS u")]
+    [InlineData("dbo.t AS t RIGHT OUTER JOIN dbo.u AS u ON u.t_id = t.id")]
     public void A_join_not_modelled_makes_columns_from_both_sides_unknown(string from)
     {
         var doc = Procedure($"SELECT t.id, u.name FROM {from};");
@@ -181,7 +180,7 @@ public class ConstructTests
     }
 
     [Theory]
-    [InlineData("OPENJSON(N'[]') WITH (id int) AS s")]
+    [InlineData("STRING_SPLIT(N'a,b', N',') AS s")]
     [InlineData("otherdb.dbo.t AS s")]
     [InlineData("otherdb.dbo.f(1) AS s")]
     public void A_source_not_modelled_makes_its_columns_unknown(string from) =>

@@ -28,7 +28,7 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs", "cases"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs", "cases", "sets"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
@@ -58,6 +58,7 @@ public static class Runs
     private const string NoOpenTabs = "UPDATE cafe.tab SET closed_at = DATEADD(hour, 1, opened_at) WHERE closed_at IS NULL;";
     private const string NoCafe = "DELETE FROM cafe.tab_item; DELETE FROM cafe.tab; DELETE FROM cafe.menu_item; DELETE FROM cafe.guest;";
     private const string NoDesk = "DELETE FROM desk.part_line; DELETE FROM desk.job_note; DELETE FROM desk.job; DELETE FROM desk.customer;";
+    private const string NoRink = "DELETE FROM rink.booking; DELETE FROM rink.locker; DELETE FROM rink.session; DELETE FROM rink.guest; DELETE FROM rink.member;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -309,6 +310,21 @@ public static class Runs
         new("cases: status_totals", "cases", "desk.status_totals", None),
         new("cases: status_totals, done", "cases", "desk.status_totals", new Dictionary<string, object?> { ["@status"] = "D" }),
         new("cases: status_totals, no jobs", "cases", "desk.status_totals", None, NoDesk),
+        new("sets: everyone", "sets", "rink.everyone", None),
+        new("sets: session_board", "sets", "rink.session_board", None),
+        new("sets: session_board, empty rink", "sets", "rink.session_board", None, NoRink),
+        new("sets: regulars, a member who booked", "sets", "rink.regulars", new Dictionary<string, object?> { ["@member_id"] = 1 }),
+        new("sets: regulars, a member who did not", "sets", "rink.regulars", new Dictionary<string, object?> { ["@member_id"] = 5 }),
+        new("sets: counts", "sets", "rink.counts", None),
+        new("sets: counts, empty rink", "sets", "rink.counts", None, NoRink),
+        new("sets: lockers", "sets", "rink.lockers", None),
+        new("sets: member_prefs", "sets", "rink.member_prefs", None),
+        new("sets: member_prefs, empty rink", "sets", "rink.member_prefs", None, NoRink),
+        new("sets: reach, a member and a guest", "sets", "rink.reach", new Dictionary<string, object?> { ["@person_id"] = 1, ["@session_id"] = 1 }),
+        new("sets: reach, a member only, a lesson", "sets", "rink.reach", new Dictionary<string, object?> { ["@person_id"] = 3, ["@session_id"] = 2 }),
+        new("sets: reach, a member and a guest without contacts", "sets", "rink.reach", new Dictionary<string, object?> { ["@person_id"] = 2, ["@session_id"] = 3 }),
+        new("sets: reach, nobody", "sets", "rink.reach", new Dictionary<string, object?> { ["@person_id"] = 99, ["@session_id"] = 4 }),
+        new("sets: busy_people", "sets", "rink.busy_people", None),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

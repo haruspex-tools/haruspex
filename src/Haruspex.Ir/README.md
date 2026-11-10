@@ -1,7 +1,7 @@
-# The haruspex IR, version 0.12
+# The haruspex IR, version 0.13
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
-each side can be written in whatever language suits it. This page describes version 0.12. A JSON Schema for
+each side can be written in whatever language suits it. This page describes version 0.13. A JSON Schema for
 it will follow.
 
 ## Why not JSON Schema
@@ -15,7 +15,7 @@ every document. It maps to JSON Schema without loss.
 
 ```jsonc
 {
-  "irVersion": "0.12",                // versioned separately from the tool
+  "irVersion": "0.13",                // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database: the object's identity
@@ -110,8 +110,8 @@ express the bound.
 
 A scalar may carry facets, each a guarantee about its **non-null** values, and each with `from`: where it came
 from, `{ "type": "<type or alias type>" }` or `{ "check": "<schema.constraint>" }` (the constraint's location
-when it has no name), or `{ "engine": "<what>" }` for a closed set SQL Server itself writes (0.9: `$action`), or `{ "expression":
-"<location>" }` for the literals a `CASE`, `IIF` or `CHOOSE` gives (0.12), for the origins graph. A facet that is not proved is left out: absence claims nothing.
+when it has no name), or `{ "engine": "<what>" }` for a closed set SQL Server itself writes (0.9: `$action`; 0.13: `OPENJSON type`), or `{ "expression":
+"<location>" }` for the literals a `CASE`, `IIF` or `CHOOSE` gives (0.12) or a set operation's queries give (0.13), for the origins graph. A facet that is not proved is left out: absence claims nothing.
 None says anything about null, which is the field's `nullable`: a CHECK constraint passes when its condition is
 UNKNOWN, as it is for null, so a constraint never makes a value non-null and a value set never excludes null.
 
@@ -422,6 +422,33 @@ For the IR:
   the same content, and never null with a literal fallback. A `CASE`, `IIF`, `CHOOSE` or `NULLIF` over JSON is unknown
   (`unsupported-expression`): whether it nests as JSON depends on whether the server folds it.
 
+## Set operations, CROSS JOIN, FULL OUTER JOIN and OPENJSON (0.13)
+
+`UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT` and parenthesised queries, `CROSS JOIN`, `FULL OUTER JOIN` and `OPENJSON` are read
+(slice 6h); the engine rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Set operations", "CROSS JOIN and
+FULL OUTER JOIN", "OPENJSON"). For the IR:
+
+- A set operation's column is named by its first query and has the SQL type SQL Server gives it, the one of highest
+  precedence over every query's. Its facets are those every query whose values come out shares when each is already of
+  that type, and otherwise the type's; its `values` are the union of those queries' sets (a `CHECK`'s, or the literal a
+  query gives, `from` `{ "expression": "<location>" }` as for `CASE`), left out when any has none or they are of different
+  `match`. `INTERSECT` and `EXCEPT` give the left side's values only.
+- Its nullability: `UNION` and `UNION ALL` give every query's reasons (a `NULL` literal as `null-literal`), `INTERSECT` none
+  when either side has none and otherwise the left side's, `EXCEPT` the left side's. Its `cardinality` is `many` for a
+  `UNION`, at most the left side's for `EXCEPT` and the fewer side's for `INTERSECT`; no key passes through one.
+- A `FULL OUTER JOIN` makes both sides' columns nullable with **`outer-join`**, at each side, removed by a `WHERE` that proves
+  the side's row, as for a left join; such a query is `many`. A `CROSS JOIN` reads both sides as they are; it is `one` when
+  both sides are one row.
+- New null rule **`json-value`**: a column `OPENJSON` reads, NULL where the JSON holds `null` (under a `strict` path too) or,
+  under a lax path, where nothing is there. `OPENJSON` without `WITH` gives `key` (`nvarchar(4000)`, never null), `value`
+  (`nvarchar(max)`, `json-value`) and `type` (`tinyint`, never null, `values` 0 to 5 `from` `{ "engine": "OPENJSON type" }`);
+  with `WITH`, each column of its declared type with that type's facets and `json-value`; an `AS JSON` column is JSON text
+  in a rowset and unknown (`json-shape-unknown`) where it nests, since its shape is in the data.
+
+Changes in 0.13 (slice 6h, set operations, the other joins and OPENJSON): the null rule `json-value`. Set operations, `CROSS
+JOIN`, `FULL OUTER JOIN` and `OPENJSON` were unknown (`unsupported-query`, `unsupported-source`) before; `outer-join` now also
+names a side of a `FULL OUTER JOIN`. A 0.12 reader would meet a null rule it does not know, which is why the version changed.
+
 Changes in 0.12 (slice 6g, CASE and COALESCE over JSON): the null rules `no-else`, `null-literal`, `out-of-range`, `nullif`
 and `read-twice`; the fact source `expression`. These expressions were unknown (`unsupported-expression`) before, and a
 `COALESCE` read twice gave its argument's reasons instead of `read-twice`. A 0.11 reader would meet null rules and a fact
@@ -476,4 +503,4 @@ Changes in 0.2: scalars gained facets (`maxLength`, `length`, `minLength`, `digi
 each with its `from`. A reader of 0.1 that ignores unknown keys reads 0.2 documents unchanged, but the version
 changed because the facets are claims a 0.2 reader may rely on.
 
-Not in 0.12, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.
+Not in 0.13, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.

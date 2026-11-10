@@ -1,0 +1,159 @@
+{
+  "irVersion": "0.13",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "rink.busy_people",
+      "name": "BusyPeople",
+      "kind": "procedure",
+      "at": "procedures/busy_people.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "BusyPeopleResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "BusyPeopleResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "BusyPeopleResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.busy_people",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "person_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "kind",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(6)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "BusyPeopleResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.busy_people",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "other",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "rink.session.coach_id"
+            },
+            {
+              "rule": "nullable-column",
+              "at": "rink.locker.member_id"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

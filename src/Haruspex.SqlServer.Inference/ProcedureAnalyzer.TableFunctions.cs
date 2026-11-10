@@ -119,11 +119,11 @@ internal sealed partial class ProcedureAnalyzer
             select.WithCtesAndXmlNamespaces,
             () =>
             {
-                if (select.QueryExpression is not QuerySpecification { ForClause: null } query)
-                    return Fails("a function whose query is a UNION, INTERSECT, EXCEPT or parenthesised query, or FOR XML or FOR JSON, is not modelled yet.");
+                if (select.QueryExpression is not { } query || ForOf(query) is not null)
+                    return Fails("a function whose query is FOR XML or FOR JSON is not modelled yet.");
                 var row = Query(query, parent: null);
                 return Relation([], row) is { } relation
-                    ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One, Keys = ViewKeys(query, row) }
+                    ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One, Keys = Keys(query, row) }
                     : Fails("its columns cannot be listed: SELECT * is not expanded in a function, and every column needs one name of its own.");
             },
             LocalRelationValues.Unknown);

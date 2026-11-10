@@ -222,7 +222,7 @@ internal sealed partial class ProcedureAnalyzer
 
             // Under INSERT … EXEC a FOR JSON query fails when it runs (13602), and so does another INSERT … EXEC (8164), both
             // observed: the path ends there.
-            case SelectStatement { Into: null, QueryExpression.ForClause: JsonForClause } when context.Inserting:
+            case SelectStatement { Into: null } forJson when context.Inserting && ForOf(forJson.QueryExpression) is JsonForClause:
                 return Outcome.Ends;
             case InsertStatement { InsertSpecification.InsertSource: ExecuteInsertSource } when context.Inserting:
                 return Outcome.Ends;
@@ -454,14 +454,13 @@ internal sealed partial class ProcedureAnalyzer
         var name = select.Into.BaseIdentifier.Value;
         var table = WithCtes<TempTable>(select.WithCtesAndXmlNamespaces, () =>
         {
-            if (select.QueryExpression is not QuerySpecification query)
-                return Unknown(name, Unsupported(IrUnknownReasons.UnsupportedQuery, "A UNION, INTERSECT, EXCEPT or parenthesised query is not modelled yet.", at));
-            var row = Query(query, parent: null);
+            var row = Query(select.QueryExpression, parent: null);
             if (row.Star is { } star)
                 return Unknown(name, Unsupported(IrUnknownReasons.UnsupportedQuery, "SELECT * is not expanded yet.", star));
             if (row.Columns.Any(c => string.IsNullOrEmpty(c.Name)) || row.Columns.GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
                 return Unknown(name, Unsupported(IrUnknownReasons.UnnamedColumn, $"SELECT … INTO {name} has a column without a name, or two of one name, which SQL Server refuses.", at));
-            var identity = Identities(query);
+            // Through a set operation SQL Server does not copy IDENTITY (observed: Select_into_from_a_union_does_not_copy_an_identity).
+            var identity = select.QueryExpression is QuerySpecification query ? Identities(query) : new bool?[row.Columns.Count];
             return new KnownTable(name, [.. row.Columns.Select((c, i) => new TempColumn(c.Name!, Stored(c.Value, $"{name}.{c.Name}", c.At), null, identity[i]))]);
         }, why => Unknown(name, why));
         return state.WithTemp(name, table);
@@ -582,7 +581,7 @@ internal sealed partial class ProcedureAnalyzer
             case ValuesInsertSource values:
                 var rows = values.RowValues.Select(r => (IReadOnlyList<Value>)[.. r.ColumnValues.Select(v => Expression(v, NoFrom()))]).ToList();
                 return rows.All(r => r.Count == count) ? rows : null;
-            case SelectInsertSource { Select: QuerySpecification query }:
+            case SelectInsertSource { Select: { } query }:
                 var row = Query(query, parent: null);
                 if (row.Star is { } star)
                     return [[.. Enumerable.Range(0, count).Select(_ => Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, "SELECT * is not expanded yet.", star)))]];
@@ -840,9 +839,7 @@ internal sealed partial class ProcedureAnalyzer
 
         if (!recursive.Contains(true))
         {
-            if (cte.QueryExpression is not QuerySpecification query)
-                return Fails(IrUnknownReasons.UnsupportedQuery, "a CTE whose query is a UNION, INTERSECT, EXCEPT or parenthesised query is not modelled yet.");
-            return Relation(cte, Query(query, parent: null)) ?? Fails(IrUnknownReasons.UnsupportedQuery, "its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
+            return Relation(cte, Query(cte.QueryExpression, parent: null)) ?? Fails(IrUnknownReasons.UnsupportedQuery, "its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
         }
 
         // A recursive CTE is an anchor member, then recursive members, each joined by UNION ALL; SQL Server refuses any
@@ -956,9 +953,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = At(derived);
         var name = derived.Alias?.Value ?? "(derived table)";
-        if (derived.QueryExpression is not QuerySpecification query)
-            return LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: a derived table whose query is a UNION, INTERSECT, EXCEPT or parenthesised query is not modelled yet.", at));
-        var row = Query(query, outer);
+        var row = Query(derived.QueryExpression, outer);
         return Relation(derived.Columns, row) is { } relation
             ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One }
             : LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.", at));

@@ -136,7 +136,7 @@ internal sealed partial class ProcedureAnalyzer
             return null;
 
         var at = At(select);
-        var encoding = select.QueryExpression.ForClause is JsonForClause ? IrEncoding.Json : IrEncoding.Rowset;
+        var encoding = ForOf(select.QueryExpression) is JsonForClause ? IrEncoding.Json : IrEncoding.Rowset;
 
         // A top-level FOR JSON query that matches no rows returns no row at all, rather than [] or {}. A
         // rowset that matches no rows is still a result set, with no rows. A query that always returns exactly one row
@@ -148,15 +148,15 @@ internal sealed partial class ProcedureAnalyzer
             select.WithCtesAndXmlNamespaces,
             () =>
             {
-                if (select.QueryExpression is not QuerySpecification query)
-                    return new ResultShape(encoding, Unsupported(IrUnknownReasons.UnsupportedQuery, "A UNION, INTERSECT, EXCEPT or parenthesised query is not modelled yet.", at), absent);
-
+                // A set operation's FOR, ORDER BY and OFFSET belong to the whole (observed:
+                // Order_by_and_offset_apply_to_the_whole_set_operation_and_top_to_its_first_query).
+                var query = select.QueryExpression;
                 var row = Query(query, parent: null);
-                return query.ForClause switch
+                return ForOf(query) switch
                 {
                     JsonForClause json => new ResultShape(IrEncoding.Json, ForJson(row, json, at, subquery: false), NoRows(row), row.Rows),
                     null => new ResultShape(IrEncoding.Rowset, Rowset(row), [], row.Rows),
-                    _ => new ResultShape(IrEncoding.Rowset, Unsupported(IrUnknownReasons.UnsupportedQuery, $"{Text(query.ForClause)} is not modelled yet.", at), []),
+                    var other => new ResultShape(IrEncoding.Rowset, Unsupported(IrUnknownReasons.UnsupportedQuery, $"{Text(other)} is not modelled yet.", at), []),
                 };
             },
             why => new ResultShape(encoding, why, absent));
@@ -200,7 +200,7 @@ internal sealed partial class ProcedureAnalyzer
                         var name = scalar.ColumnName?.Value
                             ?? (scalar.Expression is ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnAction } ? "$action" : null)
                             ?? (scalar.Expression as ColumnReferenceExpression)?.MultiPartIdentifier?.Identifiers[^1].Value;
-                        columns.Add(new RowColumn(name, Expression(scalar.Expression, scope), At(scalar), Origin(scalar.Expression, scope)));
+                        columns.Add(new RowColumn(name, Expression(scalar.Expression, scope), At(scalar), Origin(scalar.Expression, scope), scalar.Expression));
                         break;
                     case SelectStarExpression all when expandStars && Expand(all, scope) is { } expanded:
                         columns.AddRange(expanded);
@@ -477,8 +477,9 @@ internal sealed partial class ProcedureAnalyzer
         // FROM) is never empty (observed: A_scalar_subquery_of_an_aggregate_without_group_by_always_has_a_value_for_count).
         // JSON stays live through it: observed for a constructor, an aggregate, json_query, a json value and a FOR JSON
         // subquery (with its wrapper) inside it.
-        if (subquery.QueryExpression is QuerySpecification { ForClause: null } plain)
+        if (ForOf(subquery.QueryExpression) is null)
         {
+            var plain = subquery.QueryExpression;
             var row = Query(plain, scope);
             if (row is not { Star: null, Columns: [var only] })
                 return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"A subquery of other than one listed column is not modelled: {Text(subquery)}", at));
@@ -489,8 +490,9 @@ internal sealed partial class ProcedureAnalyzer
                 : only.Value with { NullableBecause = [.. only.Value.NullableBecause, new IrNullReason(IrNullRules.EmptySubquery, at.ToString())] };
         }
 
-        if (subquery.QueryExpression is not QuerySpecification { ForClause: JsonForClause json } query)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"A subquery that is a UNION, INTERSECT, EXCEPT or parenthesised query, or FOR XML, is not modelled yet: {Text(subquery)}", at));
+        var query = subquery.QueryExpression;
+        if (ForOf(query) is not JsonForClause json)
+            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"A FOR XML subquery is not modelled yet: {Text(subquery)}", at));
 
         // A FOR JSON subquery is JSON that an enclosing FOR JSON or constructor embeds without escaping, but only with
         // its array wrapper: WITHOUT_ARRAY_WRAPPER makes it text, escaped as a string wherever it nests, until json_query

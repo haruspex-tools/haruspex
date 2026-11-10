@@ -41,6 +41,12 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
     public LocalRelation? TableFunction(SchemaObjectFunctionTableReference reference, BindingScope? outer) =>
         ReadFunction is null ? null : Register(reference.Alias?.Value ?? reference.SchemaObject.BaseIdentifier.Value, ReadFunction(reference, outer));
 
+    /// <summary>Reads an OPENJSON call's columns; null leaves OPENJSON unmodelled.</summary>
+    public Func<OpenJsonTableReference, BindingScope?, LocalRelationValues>? ReadOpenJson { get; init; }
+
+    public LocalRelation? OpenJson(OpenJsonTableReference reference, BindingScope? outer) =>
+        ReadOpenJson is null ? null : Register(reference.Alias?.Value ?? "openjson", ReadOpenJson(reference, outer));
+
     /// <summary>Whether a relation handed out is a temporary table (#t), rather than a CTE, derived table or table variable.</summary>
     public bool IsTemporary(LocalRelation relation) => temporary.Contains(relation);
     private readonly List<Dictionary<string, LocalRelation>> cteFrames = [];

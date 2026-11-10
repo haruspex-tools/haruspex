@@ -1,0 +1,226 @@
+{
+  "irVersion": "0.13",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "rink.reach",
+      "name": "Reach",
+      "kind": "procedure",
+      "at": "procedures/reach.sql:2:1",
+      "parameters": [
+        {
+          "name": "@person_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@session_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ReachResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ReachResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ReachResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.reach",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "person_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "contact",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(80)",
+            "maxLength": {
+              "value": 80,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(80)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "rink.member.email"
+            },
+            {
+              "rule": "nullable-column",
+              "at": "rink.guest.phone"
+            }
+          ]
+        },
+        {
+          "name": "kind",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(6)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "guest",
+                "member"
+              ],
+              "from": [
+                {
+                  "expression": "views/contacts.sql:4:62"
+                },
+                {
+                  "expression": "views/contacts.sql:7:37"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ReachResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.reach",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "kind",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(6)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "guest",
+                "member"
+              ],
+              "from": [
+                {
+                  "expression": "functions/session_people.sql:6:20"
+                },
+                {
+                  "expression": "functions/session_people.sql:11:20"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

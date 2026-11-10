@@ -154,6 +154,16 @@ internal sealed partial class ProcedureAnalyzer
                 Joins(join.SecondTableReference, scope, found, insideOptional: true, own);
                 Refine(join.SearchCondition, scope, found, rows: false, only: Sources(join.SecondTableReference, scope));
                 break;
+            case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.FullOuter } join:
+                // Both sides are optional, and its ON proves nothing of either: a row of one side that fails it comes back
+                // unmatched, with whatever it holds (observed: A_full_outer_joins_on_proves_nothing_of_either_side).
+                Joins(join.FirstTableReference, scope, found, insideOptional: true, own);
+                Joins(join.SecondTableReference, scope, found, insideOptional: true, own);
+                break;
+            case UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossJoin } cross:
+                Joins(cross.FirstTableReference, scope, found, insideOptional, own);
+                Joins(cross.SecondTableReference, scope, found, insideOptional, own);
+                break;
             case UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossApply or UnqualifiedJoinType.OuterApply } apply:
                 // An APPLY has no ON. What its right side's joins prove holds of its rows; under OUTER APPLY they may be
                 // null-extended, as an outer join's optional side. What the applied query's own WHERE proves stays inside it

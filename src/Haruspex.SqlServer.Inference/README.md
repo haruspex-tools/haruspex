@@ -114,8 +114,8 @@ nullability and the facets the members share need a fixed point: the recursive m
 stands, joined in by `ShapeJoin.Converted`, and read again until nothing changes (at most 20 passes). A recursive
 member's column that is not modelled (`depth + 1`) is still of the anchor's type; only its nullability is unknown.
 
-Not modelled yet: a CTE whose query is a `UNION` (other than a recursive one), several anchor members, `SELECT *`
-inside one, and `WITH XMLNAMESPACES`.
+A CTE whose query is a set operation is read as any set operation is (below, "Set operations", since slice 6h). Not modelled
+yet: a recursive CTE with several anchor members, `SELECT *` inside one, and `WITH XMLNAMESPACES`.
 
 ## Calls
 
@@ -715,7 +715,7 @@ side is evaluated once for each row of its left input. Each rule is observed in 
   Otherwise many.
 - **Claims less, written down.** The outer query's own `WHERE` facts are not yet pushed while the right side is read
   (binding happens before), so an outer column read *inside* the applied query is not refined by the outer `WHERE`. An
-  `APPLY` of a table-valued function is read since slice 6f ("Table-valued functions" below); `CROSS JOIN` stays unmodelled.
+  `APPLY` of a table-valued function is read since slice 6f ("Table-valued functions" below), and `CROSS JOIN` since 6h.
 
 ### `VALUES`
 
@@ -740,7 +740,8 @@ rules above. `WITH SCHEMABINDING` only stops its tables changing; table hints su
 not what it returns (`Noexpand_is_refused_on_a_view_without_an_index_and_on_one_with_it_returns_the_same_rows`). A view
 outside the project stays `unresolved-table`, as does one defined more than once (created and altered: which definition
 applies depends on the order the scripts run), and one that reads itself through other views (SQL Server refuses it). A
-view whose query is a `UNION` or has `FOR XML`/`FOR JSON` is `unsupported-query`. Views are read in procedures and, since
+view whose query has `FOR XML`/`FOR JSON` is `unsupported-query`; one whose query is a set operation is read as one, and has no
+key (slice 6h). Views are read in procedures and, since
 slice 6f, in functions' bodies too (a table-valued function's, and a scalar function's subqueries).
 
 **`SELECT *` in a view** is expanded (`Expand`): each source's columns in order, a table's as declared and a relation's as
@@ -788,5 +789,98 @@ bound like a derived table: its arguments read the enclosing queries' columns, a
   `A_call_takes_no_column_alias_and_no_table_hint`. A column list is `unsupported-source`.
 - **Not modelled**, each unknown with a reason: a function the project does not define or defines twice, a scalar function
   in `FROM` (`unresolved-table`), a CLR function (`external-code`), a function of another database, an inline function whose
-  query is a `UNION` or uses `SELECT *` (`unsupported-query`: a view's star is bound when it is created, and whether a
+  query uses `SELECT *` (`unsupported-query`: a view's star is bound when it is created, and whether a
   function's is too was not observed), and one that reads itself through others.
+
+## Set operations
+
+`UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT` and parenthesised queries (`ProcedureAnalyzer.SetOperations.cs`, slice 6h) are read
+wherever a query stands: a result, a derived table, a CTE, a view, an inline function, a scalar subquery, `INSERT … SELECT`
+and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
+
+- **Each query is read on its own**, with its own scope and filters, so what one query's `WHERE` proves holds of its own
+  columns only. A recursive CTE is still read as before ("CTEs").
+- **Grouping.** `INTERSECT` binds tighter than `UNION` and `EXCEPT`, which apply left to right
+  (`Intersect_binds_tighter_than_union_and_except_whatever_the_parser_shows`). ScriptDom gives the chain left to right
+  whatever the operators, so `Combine` flattens it (never through parentheses) and regroups it before reading nulls.
+- **Names** are the first query's. **Types** are the one of highest precedence over every query's at once, as `COALESCE`'s
+  (`ScalarType.Union`): over the whole chain, not pairwise, so an integer literal keeps its own digits
+  (`A_chain_of_set_operations_is_typed_over_all_its_queries_at_once_so_an_integer_literal_keeps_its_digits`:
+  `1 UNION ALL 2 UNION ALL 2.5` is `numeric(2,1)`); `INTERSECT` and `EXCEPT` are typed the same way
+  (`A_set_operations_columns_are_named_by_its_first_query_and_typed_by_precedence_over_every_query`). A `NULL` literal adds
+  nothing to the type (`A_null_literal_adds_nothing_to_a_set_operations_type_and_alone_is_int`) and gives `null-literal`; a
+  column that is `NULL` in every query is not modelled. Types `ScalarType.Union` does not model (a string with a number) are
+  unknown.
+- **Which values come out**: every query's for `UNION` and `UNION ALL`; the left side's for `INTERSECT` and `EXCEPT`, which
+  compare under the collation and return the left side's spelling and trailing spaces
+  (`Intersect_and_except_return_the_left_sides_values_and_compare_under_the_collation`).
+- **Nulls.** `UNION` and `UNION ALL`: null when any query's column may be (the reasons of all). Set operations compare NULLs
+  as equal (`Intersect_and_except_treat_nulls_as_equal_so_intersect_with_a_non_null_side_has_no_null`), so `INTERSECT` keeps a
+  left NULL only when the right side has one: never null when either side is never null, otherwise the left side's reasons.
+  `EXCEPT`: the left side's.
+- **Facets.** When every query whose values come out is already of the column's type, nothing is converted, and the facets
+  they all prove hold (each the looser, as at a join of paths: `ShapeJoin.Either`); otherwise only the type's. A closed set
+  is the union of those queries' sets, each a `CHECK`'s set its value carries or the literal it is; none when any has none,
+  or the sets are of different kinds (a `CHECK`'s `collation` set beside a literal's `exact` one), or the type is
+  `char`/`nchar` and some query is not of it, since a fixed-length type pads a shorter value
+  (`A_fixed_length_string_pads_a_shorter_one_through_a_set_operation`). A `UNION` that drops duplicates under the collation
+  keeps one of them, still an item. `INTERSECT` and `EXCEPT` keep the left side's set: intersecting the sets would not be
+  sound under a collation that ignores case.
+- **JSON.** A `FOR JSON` subquery or a constructor comes out of a set operation as text, but `json_query`'s stays JSON
+  (`Json_through_a_set_operation_is_text_except_json_query`), which a value does not record, so a set operation over live JSON
+  is unknown. JSON text stays JSON text, its content kept when every query's is the same. `FOR JSON` on a set operation is
+  refused anywhere but a statement (1086, `A_for_json_subquery_over_a_set_operation_needs_a_derived_table`); over a derived
+  table that is one it is the usual `FOR JSON`.
+- **Where the parser puts ORDER BY, OFFSET and FOR.** On the set operation in a statement, but on its last query in a subquery
+  or derived table (`ForOf`, `OffsetOf`); they belong to the whole either way
+  (`Order_by_and_offset_apply_to_the_whole_set_operation_and_top_to_its_first_query`). `TOP` belongs to its own query.
+- **Rows.** `UNION` and `UNION ALL` are many (two queries of at most one row each give two). `INTERSECT` is at most one when
+  either side is, `EXCEPT` when its left side is; one row is never claimed, since either may give none. `OFFSET … FETCH` on
+  the whole applies as on a query. No key passes through a set operation (`UNION ALL` repeats one), so a view or inline
+  function over one has none, and `SELECT … INTO` from one copies no `IDENTITY`
+  (`Select_into_from_a_union_does_not_copy_an_identity`).
+
+## CROSS JOIN and FULL OUTER JOIN
+
+Bound by the binder since slice 6h; observed in `SetJoinObservationTests`.
+
+- **`CROSS JOIN`** reads both sides as they are: every row of one with every row of the other, so neither side's columns gain
+  a reason. It has no `ON`. A `FROM` of only cross joins (or commas) of relations of exactly one row each is one row, at most
+  one with a `WHERE`; with an empty side none (`A_cross_join_of_two_one_row_queries_is_one_row_and_with_an_empty_side_none`).
+  Otherwise keys bound it as for any join.
+- **`FULL OUTER JOIN`** null-extends each side where nothing on the other matches
+  (`A_full_outer_join_null_extends_both_sides_where_nothing_matches`), so both sides are optional, each at its own location,
+  with the null rule `outer-join`, as a left join's right side is. Inside an outer join's optional side the enclosing one is
+  kept, as for nested left joins.
+  - Its `ON` proves nothing of either side: a row of one side that fails it comes back unmatched with whatever it holds
+    (`A_full_outer_joins_on_proves_nothing_of_either_side`). Joins inside it are read as inside an optional side.
+  - A `WHERE` (or an inner join after it) that proves a column of one side non-null proves that side's row and drops
+    `outer-join` for that side only (`A_where_on_one_side_of_a_full_join_drops_that_sides_unmatched_rows_only`), as 6c's row
+    facts do.
+  - It is never bounded by its sides: two sides of one row each that do not match give two rows, and a key tested `IS NULL`
+    matches every row the other side null-extends (`A_full_join_of_two_queries_of_at_most_one_row_can_return_two`). A
+    `WHERE` fixing a key of each side by `=` would bound it; that is left out, so a query with a full join is many.
+- `RIGHT JOIN` stays unbound (`unsupported-source`).
+
+## OPENJSON
+
+`OPENJSON(doc [, path]) [WITH (…)]` in `FROM`, a join or `APPLY` is a relation (`OpenJsonRelation`, slice 6h), bound like a
+table-valued function's call; its arguments are not read. How many rows it gives is the data's (none for a NULL document or a
+lax path that finds nothing), so it is many and never sure to have a row. Observed in `SetJoinObservationTests`.
+
+- **Without `WITH`**: `key` `nvarchar(4000)` and `type` `tinyint`, never null, and `value` `nvarchar(max)`, NULL for a JSON
+  `null` (`json-value`); `type` is 0 to 5 (null, string, number, true/false, array, object), an exact set from the engine
+  (`Openjson_without_with_gives_key_value_and_type`). `value` nests in `FOR JSON` as escaped text, as any string.
+- **With `WITH`**: each column of its declared type, the value converted to it as `CAST` does: a longer string is cut to its
+  length, a failed conversion is an error, and a number too large is an error, or NULL under the caller's `ANSI_WARNINGS`
+  and `ARITHABORT` off (`Openjson_with_converts_as_cast_does_a_failure_an_error_and_an_overflow_null_under_the_callers_options`).
+  So it has its type's facets, and is nullable with `json-value`: NULL where the JSON holds `null` or, under a lax path,
+  where nothing is there or an object or array stands where a scalar is declared.
+- **`strict` does not make a column non-null** (a deviation from the brief, which expected it to): it turns a missing
+  property into an error (13608), but a JSON `null` under a strict path is still NULL
+  (`Openjson_with_columns_are_of_their_declared_types_and_null_for_a_missing_path_or_a_json_null`,
+  `Openjson_with_a_strict_path_that_is_missing_is_an_error_not_a_null`). Whether the document holds `null` is the data's.
+- **`AS JSON`** (only on `nvarchar(max)`, 13618) holds an object or array, or NULL for a scalar, a missing path or a JSON
+  `null`; `FOR JSON` nests it as JSON (`Openjson_as_json_is_nvarchar_max_holding_an_object_or_array_that_nests_as_json`). Its
+  shape is in the data, so it is live JSON of unknown shape (`json-shape-unknown`), as a `json` column is: JSON text in a
+  rowset, unknown where it nests.

@@ -25,6 +25,7 @@ public class FixtureSnapshotTests
         ["apply"] = new(() => SqlProject.Load(TestPaths.Fixture("apply"))),
         ["tabs"] = new(() => SqlProject.Load(TestPaths.Fixture("tabs"))),
         ["cases"] = new(() => SqlProject.Load(TestPaths.Fixture("cases"))),
+        ["sets"] = new(() => SqlProject.Load(TestPaths.Fixture("sets"))),
     };
 
     /// <summary>Every fixture procedure, with its fixture. Procedure ids are unique across fixtures.</summary>
@@ -111,6 +112,14 @@ public class FixtureSnapshotTests
         ["desk.job_card"] = "cases",
         ["desk.customer_jobs"] = "cases",
         ["desk.status_totals"] = "cases",
+        ["rink.everyone"] = "sets",
+        ["rink.session_board"] = "sets",
+        ["rink.regulars"] = "sets",
+        ["rink.counts"] = "sets",
+        ["rink.lockers"] = "sets",
+        ["rink.member_prefs"] = "sets",
+        ["rink.reach"] = "sets",
+        ["rink.busy_people"] = "sets",
         ["flow.region_report"] = "flow",
         ["flow.region_sales"] = "flow",
         ["flow.sales_by_mode"] = "flow",

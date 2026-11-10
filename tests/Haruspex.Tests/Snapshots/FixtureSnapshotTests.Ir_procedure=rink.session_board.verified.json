@@ -1,0 +1,272 @@
+{
+  "irVersion": "0.13",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "rink.session_board",
+      "name": "SessionBoard",
+      "kind": "procedure",
+      "at": "procedures/session_board.sql:4:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SessionBoardResult1Row"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/session_board.sql:8:1"
+            }
+          ],
+          "cardinality": "many"
+        },
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SessionBoardResult2Row"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/session_board.sql:25:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "SessionBoardResult1PeopleItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.session_board",
+        "path": "results[0][].people[]"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "skates",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "rink.booking.skates"
+            }
+          ]
+        }
+      ]
+    },
+    "SessionBoardResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.session_board",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "kind",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "public",
+                "lesson",
+                "hockey"
+              ],
+              "from": [
+                {
+                  "check": "rink.ck_session_kind"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "people",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SessionBoardResult1PeopleItem"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/session_board.sql:9:8"
+            }
+          ]
+        }
+      ]
+    },
+    "SessionBoardResult2Reach": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.session_board",
+        "path": "results[1][].reach"
+      },
+      "fields": [
+        {
+          "name": "contact",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(80)",
+            "maxLength": {
+              "value": 80,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(80)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "rink.member.email"
+            },
+            {
+              "rule": "nullable-column",
+              "at": "rink.guest.phone"
+            }
+          ]
+        }
+      ]
+    },
+    "SessionBoardResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.session_board",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "reach",
+          "type": {
+            "ref": "SessionBoardResult2Reach"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "all-fields-null",
+              "at": "procedures/session_board.sql:25:27"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

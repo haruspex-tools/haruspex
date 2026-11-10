@@ -857,11 +857,12 @@ public class StatementFlowTests
     }
 
     [Fact]
-    public void A_cte_whose_query_is_a_union_is_not_modelled_yet()
+    public void A_cte_whose_query_is_a_union_is_read_as_a_set_operation()
     {
+        // Since slice 6h (SetJoinTests has the rules).
         var doc = Procedure("WITH x AS (SELECT t.id FROM dbo.t AS t UNION SELECT u.id FROM dbo.u AS u) SELECT x.id FROM x;");
 
-        AssertUnknown(doc, "results[0][].id", IrUnknownReasons.UnsupportedQuery);
+        Assert.Empty(doc.Unknowns);
     }
 
     [Fact]

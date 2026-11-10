@@ -437,7 +437,6 @@ public class ApplyViewTests
     }
 
     [Theory]
-    [InlineData("CREATE VIEW dbo.w AS SELECT t.id FROM dbo.t AS t UNION ALL SELECT u.id FROM dbo.u AS u;", IrUnknownReasons.UnsupportedQuery)]
     [InlineData("CREATE VIEW dbo.w AS SELECT t.id FROM dbo.t AS t;\nGO\nALTER VIEW dbo.w AS SELECT u.id FROM dbo.u AS u;", IrUnknownReasons.UnresolvedTable)]
     [InlineData("CREATE VIEW dbo.w AS SELECT y.id FROM dbo.y AS y;\nGO\nCREATE VIEW dbo.y AS SELECT w.id FROM dbo.w AS w;", IrUnknownReasons.UnresolvedTable)]
     public void A_view_that_cannot_be_read_is_unknown(string views, string reason) =>

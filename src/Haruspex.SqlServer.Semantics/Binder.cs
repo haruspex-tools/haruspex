@@ -130,9 +130,22 @@ public sealed class Binder(DatabaseModel model, string file)
                 break;
             }
 
-            // Not bound, although binding them is easy: what a RIGHT or FULL join means for nulls is not modelled yet, so
-            // their sources stay unresolved, which makes every column read from them unknown rather than wrongly non-null.
-            // Binding them comes with modelling them. A CROSS JOIN is not modelled yet either.
+            case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.FullOuter } join:
+                // Each side has no row where nothing on the other matches, so both are optional, each at its own location
+                // (observed: A_full_outer_join_null_extends_both_sides_where_nothing_matches). Inside an outer join's optional
+                // side the enclosing one is kept, as for nested left joins.
+                AddSources(join.FirstTableReference, scope, optionalSideOf ?? At(join.FirstTableReference), lateral, optionalSideOf is null ? Side.Join : inside);
+                AddSources(join.SecondTableReference, scope, optionalSideOf ?? At(join.SecondTableReference), lateral, optionalSideOf is null ? Side.Join : inside);
+                break;
+            case UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossJoin } cross:
+                // Every row of one with every row of the other: both sides read as they are.
+                AddSources(cross.FirstTableReference, scope, optionalSideOf, lateral, inside);
+                AddSources(cross.SecondTableReference, scope, optionalSideOf, lateral, inside);
+                break;
+
+            // Not bound, although binding it is easy: what a RIGHT join means for nulls is not modelled yet, so its sources
+            // stay unresolved, which makes every column read from them unknown rather than wrongly non-null. Binding it comes
+            // with modelling it.
             case QualifiedJoin or UnqualifiedJoin:
                 AddUnresolved(reference, scope, Problem(BindingProblemKind.UnsupportedSource, $"{JoinKeyword(reference)} is not modelled yet.", At(reference)));
                 break;
@@ -160,6 +173,9 @@ public sealed class Binder(DatabaseModel model, string file)
                 break;
             case InlineDerivedTable values when scope.Locals?.Values(values, lateral ?? scope.Parent) is { } valuesRelation:
                 scope.Add(Sided(new BoundSource(values.Alias?.Value, null, null, optionalSideOf, valuesRelation)));
+                break;
+            case OpenJsonTableReference openJson when scope.Locals?.OpenJson(openJson, lateral ?? scope.Parent) is { } openJsonRelation:
+                scope.Add(Sided(new BoundSource(openJson.Alias?.Value, null, null, optionalSideOf, openJsonRelation)));
                 break;
             case VariableTableReference variable:
                 // A table variable is the body's own; without a definition of it in hand it is not modelled.

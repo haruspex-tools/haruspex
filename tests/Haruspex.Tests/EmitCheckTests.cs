@@ -20,7 +20,7 @@ public class EmitCheckTests
 
         var generated = Path.Combine(TestPaths.EmitCheck, "generated");
         Directory.CreateDirectory(generated);
-        foreach (var (fixture, file) in new[] { ("orders", "haruspex.zod.ts"), ("values", "values.zod.ts"), ("checks", "checks.zod.ts"), ("payloads", "payloads.zod.ts"), ("trees", "trees.zod.ts"), ("flow", "flow.zod.ts"), ("refine", "refine.zod.ts"), ("dml", "dml.zod.ts"), ("apply", "apply.zod.ts"), ("tabs", "tabs.zod.ts"), ("cases", "cases.zod.ts") })
+        foreach (var (fixture, file) in new[] { ("orders", "haruspex.zod.ts"), ("values", "values.zod.ts"), ("checks", "checks.zod.ts"), ("payloads", "payloads.zod.ts"), ("trees", "trees.zod.ts"), ("flow", "flow.zod.ts"), ("refine", "refine.zod.ts"), ("dml", "dml.zod.ts"), ("apply", "apply.zod.ts"), ("tabs", "tabs.zod.ts"), ("cases", "cases.zod.ts"), ("sets", "sets.zod.ts") })
         {
             var project = SqlProject.Load(TestPaths.Fixture(fixture));
             var selection = project.Select([ObjectPattern.Parse("*.*")]);

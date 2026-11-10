@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.12";
+    public const string CurrentVersion = "0.13";
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
@@ -357,7 +357,8 @@ public static class IrFactSources
 
     /// <summary>
     /// An expression of the procedure whose every result is a literal: a <c>CASE</c>, <c>IIF</c> or <c>CHOOSE</c> gives one of
-    /// them, exactly as written. The ref is the expression's location.
+    /// them, exactly as written, and so does a column of a set operation each of whose queries gives a literal (0.13). The ref
+    /// is the expression's (or the literal's) location.
     /// </summary>
     public const string Expression = "expression";
 }
@@ -491,7 +492,10 @@ public static class IrNullRules
     /// <summary>The column it reads is declared nullable (or not declared <c>NOT NULL</c>).</summary>
     public const string NullableColumn = "nullable-column";
 
-    /// <summary>It comes from the optional side of an outer join, which has no row when nothing matches.</summary>
+    /// <summary>
+    /// It comes from the optional side of an outer join, which has no row when nothing matches: a left join's right side, or
+    /// either side of a full join (0.13).
+    /// </summary>
     public const string OuterJoin = "outer-join";
 
     /// <summary>
@@ -583,6 +587,14 @@ public static class IrNullRules
 
     /// <summary>It is a <c>NULLIF</c>, NULL when its two arguments compare equal.</summary>
     public const string NullIf = "nullif";
+
+    /// <summary>
+    /// It is a column <c>OPENJSON</c> reads from JSON (0.13): NULL where the JSON holds <c>null</c> there, under a <c>strict</c>
+    /// path too, and, under a lax path, where nothing is there, or an <c>AS JSON</c> column finds a scalar, or a scalar column an
+    /// object or array. (A number too large for the column is NULL as well under the caller's <c>ANSI_WARNINGS</c> and
+    /// <c>ARITHABORT</c> off.)
+    /// </summary>
+    public const string JsonValue = "json-value";
 
     /// <summary>Its type is unknown, so nothing is proved about it.</summary>
     public const string Unknown = "unknown";
