@@ -519,7 +519,8 @@ observed in each position before it was typed (`CaseObservationTests`):
   folded, even one without FROM.
 - **`ISNULL` keeps its first argument's JSON**: over live JSON it nests as JSON, and its fallback is written into the JSON as
   it is, unchecked (`Isnull_writes_its_fallback_into_the_json_as_it_is`): `'[]'` the empty array (so the array may have no
-  items), `'{}'` the empty object (a union), another JSON value its JSON. Others are not modelled: `'null'` is JSON `null`,
+  items), `'{}'` the empty object (a union), a live JSON value (another FOR JSON subquery, say) its JSON. Any other literal is not
+  modelled, valid JSON (`'[1]'`) or not: `'null'` is JSON `null`,
   which is not SQL NULL, so the key stays even under `ABSENT ON NULL` and the IR's "null means left out" for FOR JSON does not
   hold; `''`, `'x'` or a column's text make output that is not JSON. It reads its argument once, so it is NULL only when the
   fallback is: never for a literal. Over JSON text (a subquery `WITHOUT_ARRAY_WRAPPER`) it is text, with the same content rule

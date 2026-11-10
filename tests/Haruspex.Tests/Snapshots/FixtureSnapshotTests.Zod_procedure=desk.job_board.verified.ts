@@ -13,6 +13,7 @@ export const JobBoardRowSchema = z.object({
   live_job: z.int32().nullable(),
   tier_name: z.enum(["bronze", "gold", "silver"]),
   priority_name: z.enum(["high", "low", "mid"]).nullable(),
+  service: z.enum(["priority", "standard"]).nullable(),
   phone: z.string().max(20).nullable() /* varchar(20) counts bytes: exact in a single-byte collation, an upper bound otherwise; no collation is declared */,
   one_unless_priority: z.int().min(0).max(255).nullable(),
   note: z.string().max(100),

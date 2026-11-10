@@ -431,7 +431,8 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>
     /// <c>ISNULL(a, b)</c> with a JSON and maybe null. ISNULL takes a's JSON-ness: over live JSON it is live, and b is written
     /// into the JSON as it is, unchecked (observed: Isnull_writes_its_fallback_into_the_json_as_it_is), so only a b that is JSON
-    /// is modelled, <c>'[]'</c>, <c>'{}'</c> or a JSON value; <c>'null'</c> is JSON null that is not SQL NULL, so a key holding it
+    /// is modelled: the literal <c>'[]'</c> or <c>'{}'</c>, or a live JSON value or JSON text whose content is known (any other
+    /// literal, even valid JSON such as <c>'[1]'</c>, is not); <c>'null'</c> is JSON null that is not SQL NULL, so a key holding it
     /// is never left out, which is not modelled. Over JSON text (WITHOUT_ARRAY_WRAPPER) it is text. It reads a once, so it is
     /// NULL only when b is too: b's reasons say why.
     /// </summary>

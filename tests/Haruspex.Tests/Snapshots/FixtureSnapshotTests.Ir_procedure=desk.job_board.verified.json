@@ -333,6 +333,40 @@
           ]
         },
         {
+          "name": "service",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "priority",
+                "standard"
+              ],
+              "from": [
+                {
+                  "expression": "procedures/job_board.sql:17:8"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "out-of-range",
+              "at": "procedures/job_board.sql:17:8"
+            }
+          ]
+        },
+        {
           "name": "phone",
           "type": {
             "kind": "string",
@@ -354,7 +388,7 @@
             },
             {
               "rule": "nullif",
-              "at": "procedures/job_board.sql:17:8"
+              "at": "procedures/job_board.sql:18:8"
             }
           ]
         },
@@ -384,7 +418,7 @@
           "nullableBecause": [
             {
               "rule": "nullif",
-              "at": "procedures/job_board.sql:18:8"
+              "at": "procedures/job_board.sql:19:8"
             }
           ]
         },
