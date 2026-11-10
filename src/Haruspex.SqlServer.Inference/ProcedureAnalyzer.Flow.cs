@@ -30,6 +30,9 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>Each scalar variable's declared type, from every DECLARE in the body.</summary>
     private readonly Dictionary<string, Shape> variableShapes = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Each parameter's and variable's declared type, for comparing it with a key (Cardinality.cs).</summary>
+    private readonly Dictionary<string, SqlType?> variableTypes = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>The most passes a loop or a recursive CTE gets to reach a fixed point. Each joins only upwards, so a few are enough.</summary>
     private const int MostPasses = 20;
 
@@ -51,6 +54,7 @@ internal sealed partial class ProcedureAnalyzer
         foreach (var parameter in procedure.Parameters)
         {
             var name = parameter.VariableName.Value;
+            variableTypes[name] = SqlType.From(parameter.DataType);
             variableShapes[name] = DeclaredShape(SqlType.From(parameter.DataType), At(parameter), name, out var live);
             start.Add(new(name, new Value(variableShapes[name], Because(IrNullRules.Parameter, name, variableShapes[name]), live)));
         }
@@ -62,6 +66,7 @@ internal sealed partial class ProcedureAnalyzer
             var name = element.VariableName.Value;
             if (variableShapes.ContainsKey(name))
                 continue;
+            variableTypes[name] = SqlType.From(element.DataType);
             variableShapes[name] = DeclaredShape(SqlType.From(element.DataType), At(element), name, out var live);
 
             // A variable holds NULL until it is assigned.
@@ -80,7 +85,7 @@ internal sealed partial class ProcedureAnalyzer
                 null);
         }
 
-        locals = new FlowLocals(tableVariables);
+        locals = new FlowLocals(tableVariables) { ReadDerived = Derived };
         var walked = Walk(procedure.StatementList.Statements, FlowState.Start(start).WithTemps(context.Temps));
         if (blocker is not null)
             return new Walked(null, [], blocker, declaredUsed);
@@ -443,8 +448,8 @@ internal sealed partial class ProcedureAnalyzer
             bool? identity = binding switch
             {
                 BoundColumn column => column.Column.IsIdentity,
-                BoundLocalColumn { Relation.Name: var local, Ordinal: >= 0 and var ordinal } when local.StartsWith('#')
-                    && locals!.State.Temp(local) is KnownTable known => known.Columns[ordinal].Identity,
+                BoundLocalColumn { Relation: var relation, Ordinal: >= 0 and var ordinal } when locals!.IsTemporary(relation)
+                    && locals.State.Temp(relation.Name) is KnownTable known => known.Columns[ordinal].Identity,
                 _ => null,
             };
 
@@ -824,7 +829,7 @@ internal sealed partial class ProcedureAnalyzer
             if (c.Declaration is not { } declaration)
                 return c;
             var changed = drop
-                ? new Table(declaration.Name, declaration.Columns, declaration.PrimaryKey, declaration.At, [.. declaration.Checks.Where(k => !Matches(k))])
+                ? new Table(declaration.Name, declaration.Columns, declaration.PrimaryKey, declaration.At, [.. declaration.Checks.Where(k => !Matches(k))], declaration.UniqueKeys)
                 : Disabled(declaration, k => Matches(k), at);
             return c with { Value = Declared(changed, changed.Column(c.Name)!, name, temporary: true), Declaration = changed };
         })];
@@ -915,11 +920,14 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>A CTE's columns from its query's row, named by its column list when it has one; null when they cannot be listed.</summary>
-    private static LocalRelationValues? Relation(CommonTableExpression cte, Row row)
+    private static LocalRelationValues? Relation(CommonTableExpression cte, Row row) => Relation(cte.Columns, row);
+
+    /// <summary>A CTE's or derived table's columns from its query's row, named by its column list when it has one.</summary>
+    private static LocalRelationValues? Relation(IList<Identifier> columns, Row row)
     {
         if (row.Star is not null)
             return null;
-        List<string?> names = cte.Columns.Count > 0 ? [.. cte.Columns.Select(c => c.Value)] : [.. row.Columns.Select(c => c.Name)];
+        List<string?> names = columns.Count > 0 ? [.. columns.Select(c => c.Value)] : [.. row.Columns.Select(c => c.Name)];
         if (names.Count != row.Columns.Count || names.Any(string.IsNullOrEmpty) || names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Count)
             return null;
         return new LocalRelationValues([.. names.Select(n => n!)], [.. row.Columns.Select(c => c.Value)], null);
@@ -958,13 +966,32 @@ internal sealed partial class ProcedureAnalyzer
 
     // ---- reading the body's own relations and expressions it needs ----------------------------------------------------
 
-    /// <summary>A column of a CTE, temporary table or table variable: what it holds, and null too on an outer join's optional side.</summary>
+    /// <summary>
+    /// A column of a CTE, derived table, temporary table or table variable: what it holds, never null where a filter proves
+    /// it (Refinement.cs), and null too on an outer join's optional side unless a filter proves the row matched.
+    /// </summary>
     private Value FromLocal(BoundLocalColumn bound, SourceLocation at)
     {
         var value = locals!.Column(bound.Relation, bound.Ordinal, at);
-        return bound.Source.OptionalSideOf is { } optional
+        if (value.Shape is not UnknownShape && bound.Ordinal >= 0 && Proved(bound.Source, Key(bound)))
+            value = value with { NullableBecause = [] };
+        return bound.Source.OptionalSideOf is { } optional && !Matched(bound.Source)
             ? value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.OuterJoin, optional.ToString())]) }
             : value;
+    }
+
+    /// <summary>
+    /// A derived table, <c>FROM (SELECT …) AS d (columns)</c>: read like a CTE of its own, so its values pass through
+    /// unchanged and keep what its query proves of them. It may read the enclosing queries' columns.
+    /// </summary>
+    private LocalRelationValues Derived(QueryDerivedTable derived, BindingScope? outer)
+    {
+        var at = At(derived);
+        var name = derived.Alias?.Value ?? "(derived table)";
+        if (derived.QueryExpression is not QuerySpecification query)
+            return LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: a derived table whose query is a UNION, INTERSECT, EXCEPT or parenthesised query is not modelled yet.", at));
+        return Relation(derived.Columns, Query(query, outer))
+            ?? LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.", at));
     }
 
     /// <summary>
@@ -1022,7 +1049,9 @@ internal sealed partial class ProcedureAnalyzer
             var absent = produced.SelectMany(p => p.Result.AbsentBecause).ToList();
             if (i >= always)
                 absent.AddRange(produced.Select(p => new IrNullReason(IrNullRules.NotRun, p.At.ToString())));
-            results.Add(new ResultShape(encoding, Union(shapes), [.. absent.Distinct()]));
+            // The fewest rows any statement here proves at most: a statement that may return many makes the position many.
+            var cardinality = produced.Select(p => p.Result.Cardinality).Min();
+            results.Add(new ResultShape(encoding, Union(shapes), [.. absent.Distinct()], cardinality));
         }
 
         return (results, null);

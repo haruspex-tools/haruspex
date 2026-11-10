@@ -61,6 +61,9 @@ public static class SqlScriptFolder
         // ALTER TABLE … NOCHECK CONSTRAINT and … WITH CHECK CHECK CONSTRAINT, wherever they are, in the order read.
         var enforcement = new List<Enforcement>();
 
+        // ALTER INDEX … DISABLE, wherever it is.
+        var disables = new List<IndexDisable>();
+
         // Sorted by relative path so that which of two duplicate definitions is reported does not depend on
         // the file system's enumeration order.
         var files = Directory.EnumerateFiles(directory, "*.sql", SearchOption.AllDirectories)
@@ -73,22 +76,31 @@ public static class SqlScriptFolder
                 continue;
 
             ReadEnforcement(script, relative, enforcement);
+            ReadIndexDisables(script, relative, disables);
 
+            // ANSI_NULLS is kept with a procedure or function as it was when it was created (observed), so a SET before its
+            // definition in the same file is the one it runs with. Another file's SET may run before it too, in an order
+            // the folder does not say; that is not followed, and the default, on, is assumed.
+            var ansiNullsOff = false;
             foreach (var statement in script.Batches.SelectMany(b => b.Statements))
             {
                 switch (statement)
                 {
+                    case PredicateSetStatement set when (set.Options & (SetOptions.AnsiNulls | SetOptions.AnsiDefaults)) != 0:
+                        // ANSI_DEFAULTS ON sets ANSI_NULLS on, and OFF off, as SET ANSI_NULLS does.
+                        ansiNullsOff = !set.IsOn;
+                        break;
                     case CreateTableStatement table when !table.SchemaObjectName.BaseIdentifier.Value.StartsWith('#'):
                         Add(tables, ObjectName.From(table.SchemaObjectName), ReadTable(table, relative), table, relative, diagnostics);
                         break;
                     case CreateProcedureStatement or CreateOrAlterProcedureStatement:
                         var body = (ProcedureStatementBody)statement;
                         var name = ObjectName.From(body.ProcedureReference.Name);
-                        Add(procedures, name, new Procedure(name, body, relative), body, relative, diagnostics);
+                        Add(procedures, name, new Procedure(name, body, relative) { AnsiNullsOff = ansiNullsOff }, body, relative, diagnostics);
                         break;
                     case AlterProcedureStatement alter:
                         var altered = ObjectName.From(alter.ProcedureReference.Name);
-                        procedureChanges.TryAdd(altered, (Changed(altered, "ALTER PROCEDURE", alter, relative), new Procedure(altered, alter, relative)));
+                        procedureChanges.TryAdd(altered, (Changed(altered, "ALTER PROCEDURE", alter, relative), new Procedure(altered, alter, relative) { AnsiNullsOff = ansiNullsOff }));
                         break;
                     case DropProcedureStatement drop:
                         foreach (var dropped in drop.Objects.Select(ObjectName.From))
@@ -106,12 +118,12 @@ public static class SqlScriptFolder
                         var function = (FunctionStatementBody)statement;
                         var functionName = ObjectName.From(function.Name);
                         TryAddNamed(others, functionName, NamedObjectKind.Function);
-                        Add(functions, functionName, new UserFunction(functionName, function, relative), function, relative, diagnostics);
+                        Add(functions, functionName, new UserFunction(functionName, function, relative) { AnsiNullsOff = ansiNullsOff }, function, relative, diagnostics);
                         break;
                     case AlterFunctionStatement alterFunction:
                         var alteredFunction = ObjectName.From(alterFunction.Name);
                         TryAddNamed(others, alteredFunction, NamedObjectKind.Function);
-                        functionChanges.TryAdd(alteredFunction, (Changed(alteredFunction, "ALTER FUNCTION", alterFunction, relative), new UserFunction(alteredFunction, alterFunction, relative)));
+                        functionChanges.TryAdd(alteredFunction, (Changed(alteredFunction, "ALTER FUNCTION", alterFunction, relative), new UserFunction(alteredFunction, alterFunction, relative) { AnsiNullsOff = ansiNullsOff }));
                         break;
                     case DropFunctionStatement dropFunction:
                         foreach (var dropped in dropFunction.Objects.Select(ObjectName.From))
@@ -147,22 +159,22 @@ public static class SqlScriptFolder
         foreach (var (name, (why, alter)) in procedureChanges)
         {
             if (procedures.TryGetValue(name, out var created))
-                procedures[name] = new Procedure(created.Name, created.Body, created.File, why);
+                procedures[name] = new Procedure(created.Name, created.Body, created.File, why) { AnsiNullsOff = created.AnsiNullsOff };
             else if (alter is not null)
-                procedures[name] = new Procedure(alter.Name, alter.Body, alter.File, why);
+                procedures[name] = new Procedure(alter.Name, alter.Body, alter.File, why) { AnsiNullsOff = alter.AnsiNullsOff };
         }
 
         // Functions follow the same rule as procedures.
         foreach (var (name, (why, alter)) in functionChanges)
         {
             if (functions.TryGetValue(name, out var created))
-                functions[name] = new UserFunction(created.Name, created.Body, created.File, why);
+                functions[name] = new UserFunction(created.Name, created.Body, created.File, why) { AnsiNullsOff = created.AnsiNullsOff };
             else if (alter is not null)
-                functions[name] = new UserFunction(alter.Name, alter.Body, alter.File, why);
+                functions[name] = new UserFunction(alter.Name, alter.Body, alter.File, why) { AnsiNullsOff = alter.AnsiNullsOff };
         }
 
         foreach (var name in tables.Keys.ToList())
-            tables[name] = Untrusted(tables[name], enforcement);
+            tables[name] = Untrusted(tables[name], enforcement, disables);
 
         var model = new DatabaseModel(tables.Values, procedures.Values, others.Values, tableChanges.Values, userTypes.Values, functions.Values);
         return new SchemaReadResult(model, diagnostics);
@@ -250,11 +262,12 @@ public static class SqlScriptFolder
     /// after it on that check. Across scripts the order isn't known. (A constraint added later by ALTER TABLE, with or
     /// without WITH NOCHECK, is not read at all; see OnlyTightens.)
     /// </remarks>
-    private static Table Untrusted(Table table, List<Enforcement> changes)
+    private static Table Untrusted(Table table, List<Enforcement> changes, List<IndexDisable> disables)
     {
+        var keys = Disabled(table, disables);
         var relevant = changes.Where(c => c.May(table)).ToList();
         if (relevant.Count == 0)
-            return table;
+            return keys == table.UniqueKeys ? table : new Table(table.Name, table.Columns, table.PrimaryKey, table.At, table.Checks, keys);
 
         var checks = table.Checks.Select(check =>
         {
@@ -263,7 +276,63 @@ public static class SqlScriptFolder
                     && v.At.File == d.At.File && v.Order > d.Order)));
             return disabled is null ? check : check.WithDisabledAt(disabled.At);
         }).ToList();
-        return new Table(table.Name, table.Columns, table.PrimaryKey, table.At, checks);
+        return new Table(table.Name, table.Columns, table.PrimaryKey, table.At, checks, keys);
+    }
+
+    /// <summary><c>ALTER INDEX name ON t DISABLE</c> or <c>ALTER INDEX ALL ON t DISABLE</c>.</summary>
+    /// <param name="Table">The table it names; in <c>dbo</c> when <paramref name="Qualified"/> is false.</param>
+    /// <param name="Qualified">Whether the table's name has its schema.</param>
+    /// <param name="Index">The index named, or null for ALL.</param>
+    /// <param name="At">Where it is.</param>
+    private sealed record IndexDisable(ObjectName Table, bool Qualified, string? Index, SourceLocation At)
+    {
+        public bool May(Table table) => Qualified
+            ? Table == table.Name
+            : Table.Name.Equals(table.Name.Name, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Every <c>ALTER INDEX … DISABLE</c> in a script, at any depth, as for NOCHECK: whether a statement in a body or under IF
+    /// runs is not knowable. A disabled unique index enforces nothing, so rows written meanwhile may share a key.
+    /// </summary>
+    private static void ReadIndexDisables(TSqlScript script, string file, List<IndexDisable> into)
+    {
+        var visitor = new IndexVisitor();
+        script.Accept(visitor);
+        foreach (var alter in visitor.Found.Where(a => a.AlterIndexType == AlterIndexType.Disable))
+        {
+            into.Add(new IndexDisable(
+                ObjectName.From(alter.OnName),
+                alter.OnName.SchemaIdentifier is not null,
+                alter.All ? null : alter.Name?.Value,
+                new SourceLocation(file, alter.StartLine, alter.StartColumn)));
+        }
+    }
+
+    private sealed class IndexVisitor : TSqlFragmentVisitor
+    {
+        public List<AlterIndexStatement> Found { get; } = [];
+
+        public override void Visit(AlterIndexStatement node) => Found.Add(node);
+    }
+
+    /// <summary>
+    /// The table's keys, each one a disable may name marked as possibly disabled: ALL, its name (a key's index has the
+    /// constraint's name), or, for a key declared without a name, any name the table doesn't declare, since SQL Server
+    /// generates one. Re-enabling (a rebuild) is not followed, which only claims less.
+    /// </summary>
+    private static IReadOnlyList<UniqueKey> Disabled(Table table, List<IndexDisable> disables)
+    {
+        var relevant = disables.Where(d => d.May(table)).ToList();
+        if (relevant.Count == 0)
+            return table.UniqueKeys;
+
+        bool Names(IndexDisable d, UniqueKey key) =>
+            d.Index is null
+            || (key.Name is not null && key.Name.Equals(d.Index, StringComparison.OrdinalIgnoreCase))
+            || (key.Name is null && !table.UniqueKeys.Any(k => d.Index.Equals(k.Name, StringComparison.OrdinalIgnoreCase)));
+
+        return [.. table.UniqueKeys.Select(key => relevant.FirstOrDefault(d => Names(d, key)) is { } disable ? key with { DisabledAt = disable.At } : key)];
     }
 
     /// <summary>

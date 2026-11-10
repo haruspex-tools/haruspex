@@ -2,6 +2,7 @@ using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -14,6 +15,16 @@ namespace Haruspex.SqlServer.Inference;
 internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues> tableVariables) : ILocalRelations
 {
     private readonly Dictionary<LocalRelation, LocalRelationValues> registry = [];
+    private readonly HashSet<LocalRelation> temporary = [];
+
+    /// <summary>Reads a derived table's query; null leaves derived tables unmodelled.</summary>
+    public Func<QueryDerivedTable, BindingScope?, LocalRelationValues>? ReadDerived { get; init; }
+
+    public LocalRelation? Derived(QueryDerivedTable table, BindingScope? outer) =>
+        ReadDerived is null ? null : Register(table.Alias?.Value ?? "", ReadDerived(table, outer));
+
+    /// <summary>Whether a relation handed out is a temporary table (#t), rather than a CTE, derived table or table variable.</summary>
+    public bool IsTemporary(LocalRelation relation) => temporary.Contains(relation);
     private readonly List<Dictionary<string, LocalRelation>> cteFrames = [];
 
     /// <summary>The state the statement being read starts from.</summary>
@@ -37,7 +48,7 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
         if (name.StartsWith("##", StringComparison.Ordinal))
             return Register(name, LocalRelationValues.Unknown(new UnknownShape(IrUnknownReasons.UnsupportedSource, $"{name} is a global temporary table, which any session may change.", Nowhere)));
 
-        return State.Temp(name) switch
+        var found = State.Temp(name) switch
         {
             KnownTable known => Register(name, new LocalRelationValues([.. known.Columns.Select(c => c.Name)], [.. known.Columns.Select(c => c.Value)], null)),
             UnknownTable unknown => Register(name, LocalRelationValues.Unknown(unknown.Why)),
@@ -47,6 +58,8 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
                 $"{name} is not created by the procedure before this, so it is the caller's, whose shape depends on who calls.",
                 Nowhere))),
         };
+        temporary.Add(found);
+        return found;
     }
 
     /// <summary>A placeholder location for an unknown that has none of its own; each read reports its own location instead.</summary>

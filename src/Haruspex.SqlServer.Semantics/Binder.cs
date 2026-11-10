@@ -112,6 +112,10 @@ public sealed class Binder(DatabaseModel model, string file)
             case NamedTableReference named:
                 scope.Add(Named(named, optionalSideOf, scope.Locals));
                 break;
+            case QueryDerivedTable derived when scope.Locals?.Derived(derived, scope.Parent) is { } derivedRelation:
+                // Its alias is required, and names it in this scope only.
+                scope.Add(new BoundSource(derived.Alias?.Value, null, null, optionalSideOf, derivedRelation));
+                break;
             case VariableTableReference variable:
                 // A table variable is the body's own; without a definition of it in hand it is not modelled.
                 scope.Add(scope.Locals?.Find(variable.Variable.Name) is { } relation

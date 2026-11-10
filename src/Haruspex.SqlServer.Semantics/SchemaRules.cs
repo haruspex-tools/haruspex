@@ -35,6 +35,18 @@ public static class SchemaRules
     }
 
     /// <summary>
+    /// The table's keys that hold for every row: its primary key, unique constraints and unique indexes, less any an
+    /// <c>ALTER INDEX … DISABLE</c> may have disabled, since rows written while it is disabled need not be unique. Each is a
+    /// set of columns that no two rows share; SQL Server counts NULLs as equal in them, so at most one row has NULL in all
+    /// of a key's nullable columns (observed).
+    /// </summary>
+    public static IEnumerable<UniqueKey> EnforcedKeys(Table table)
+    {
+        ArgumentNullException.ThrowIfNull(table);
+        return table.UniqueKeys.Where(k => k.DisabledAt is null);
+    }
+
+    /// <summary>
     /// The built-in type a declared type stands for, resolving an alias type (<c>sysname</c> included); null when
     /// it is none or cannot be resolved for certain (a CLR type, <c>xml</c>, a name that is not defined, or an
     /// unqualified name that more than one schema defines).

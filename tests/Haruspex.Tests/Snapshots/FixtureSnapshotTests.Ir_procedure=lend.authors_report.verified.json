@@ -1,0 +1,132 @@
+{
+  "irVersion": "0.8",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "lend.authors_report",
+      "name": "AuthorsReport",
+      "kind": "procedure",
+      "at": "procedures/authors_report.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "AuthorsReportRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "AuthorsReportRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "lend.authors_report",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "author",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(60)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "titles",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "genre",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(10)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "fiction",
+                "history",
+                "science"
+              ],
+              "from": [
+                {
+                  "check": "lend.ck_title_genre"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "first_isbn",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(13)",
+            "maxLength": {
+              "value": 13,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(13)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "lend.title.isbn"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

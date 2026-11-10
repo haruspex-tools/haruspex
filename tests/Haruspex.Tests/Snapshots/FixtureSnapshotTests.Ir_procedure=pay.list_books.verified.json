@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -25,7 +25,8 @@
               "rule": "no-rows",
               "at": "procedures/list_books.sql:7:1"
             }
-          ]
+          ],
+          "cardinality": "many"
         }
       ]
     }
@@ -346,10 +347,6 @@
             {
               "rule": "empty-aggregate",
               "at": "procedures/list_books.sql:12:29"
-            },
-            {
-              "rule": "empty-subquery",
-              "at": "procedures/list_books.sql:12:21"
             }
           ]
         },
@@ -383,10 +380,6 @@
             {
               "rule": "empty-aggregate",
               "at": "procedures/list_books.sql:13:32"
-            },
-            {
-              "rule": "empty-subquery",
-              "at": "procedures/list_books.sql:13:24"
             }
           ]
         },

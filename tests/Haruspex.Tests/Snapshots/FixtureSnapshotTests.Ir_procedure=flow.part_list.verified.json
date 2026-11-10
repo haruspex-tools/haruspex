@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -29,7 +29,8 @@
               "ref": "PartListRow"
             }
           },
-          "mayBeAbsent": false
+          "mayBeAbsent": false,
+          "cardinality": "many"
         }
       ]
     }

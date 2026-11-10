@@ -33,6 +33,14 @@ public sealed class UserFunction
     /// </summary>
     public FunctionStatementBody Body { get; }
 
+    /// <summary>
+    /// Whether <c>ANSI_NULLS</c> was off when the function was created: SQL Server keeps the setting in force then, and with it
+    /// off, <c>= NULL</c> and <c>&lt;&gt; NULL</c> against a variable or a literal are TRUE or FALSE rather than UNKNOWN. True only
+    /// when <c>SET ANSI_NULLS OFF</c> (or <c>SET ANSI_DEFAULTS OFF</c>) comes before the definition in its file, with no
+    /// <c>SET ANSI_NULLS ON</c> between; otherwise it is on, the default of every client library and of SSDT.
+    /// </summary>
+    public bool AnsiNullsOff { get; init; }
+
     /// <summary>The file the definition is in, relative to the source root.</summary>
     public string File { get; }
 

@@ -115,8 +115,26 @@ public static partial class IrValidator
             using (json)
             {
                 seen.Add((path, Seen.Value));
+
+                // Its objects are the query's rows: the items of its array, or one object without the array wrapper (IR 0.8).
+                if (result.Type is not IrUnknownType)
+                    Cardinality(result, json.RootElement.ValueKind == JsonValueKind.Array ? json.RootElement.GetArrayLength() : 1, path);
                 Json(result.Type, json.RootElement, path, path);
             }
+        }
+
+        /// <summary>
+        /// Checks the number of rows a result returned against its cardinality (IR 0.8), and records reaching one row, the
+        /// bound, for the coverage. A JSON result with no row is checked as absent, before this.
+        /// </summary>
+        private void Cardinality(IrResult result, int rows, string path)
+        {
+            if (result.Cardinality == IrCardinality.Many)
+                return;
+            if (rows == 1)
+                edges.Add((path, "one row"));
+            if (rows > 1 || (result.Cardinality == IrCardinality.One && rows != 1))
+                Violation(path, result.Cardinality == IrCardinality.One ? "exactly one row" : "at most one row", $"{rows.ToString(CultureInfo.InvariantCulture)} rows");
         }
 
         /// <param name="path">The path with array indexes, for messages.</param>
@@ -377,6 +395,7 @@ public static partial class IrValidator
         public void RowsetResult(IrResult result, ObservedResultSet set, string path)
         {
             seen.Add((path, Seen.Value));
+            Cardinality(result, set.Rows.Count, path);
             switch (result.Type)
             {
                 case IrUnknownType:

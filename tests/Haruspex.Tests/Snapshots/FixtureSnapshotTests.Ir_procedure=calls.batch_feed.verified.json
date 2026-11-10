@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -36,7 +36,8 @@
               "rule": "no-rows",
               "at": "procedures/batch_feed.sql:10:1"
             }
-          ]
+          ],
+          "cardinality": "many"
         },
         {
           "encoding": "json",
@@ -52,7 +53,8 @@
               "rule": "no-rows",
               "at": "procedures/batch_feed.sql:11:1"
             }
-          ]
+          ],
+          "cardinality": "many"
         }
       ]
     }

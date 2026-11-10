@@ -1,0 +1,382 @@
+using Haruspex.Ir;
+using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Semantics;
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+
+namespace Haruspex.SqlServer.Inference;
+
+/// <summary>
+/// Refinement (slice 6c): what a query's filters prove about the rows they keep. WHERE, an inner join's ON and HAVING keep
+/// only rows for which their condition is TRUE, so a condition that cannot be TRUE when a column is NULL proves the column
+/// non-null in every row kept. Which conditions those are is decided by three-valued logic (<see cref="Possible"/>), and
+/// each engine rule it uses is observed in <c>RefinementObservationTests</c>. The README beside this file says why each
+/// step is sound.
+/// </summary>
+internal sealed partial class ProcedureAnalyzer
+{
+    /// <summary>Whether the body was created with ANSI_NULLS off, under which <c>c = @x</c> is TRUE when both are null.</summary>
+    private readonly bool ansiNullsOff;
+
+    /// <summary>The facts of each query whose select list is being read, outermost first; a subquery's are above its query's.</summary>
+    private readonly List<QueryFacts> facts = [];
+
+    /// <summary>
+    /// What a query's filters prove, for reading its select list. A fact about a column holds only while that query's row is
+    /// read: in its select list and in the subqueries there, which see the outer row as it was filtered.
+    /// </summary>
+    private sealed class QueryFacts(QuerySpecification query)
+    {
+        public QuerySpecification Query { get; } = query;
+
+        /// <summary>
+        /// Columns proved non-null whenever their source's row is there: by source (compared by reference, since two
+        /// sources of one table in two scopes are equal as records), the columns' keys.
+        /// </summary>
+        public Dictionary<BoundSource, HashSet<string>> Values { get; } = new(ReferenceEqualityComparer.Instance);
+
+        /// <summary>Sources whose row is proved there: not null-extended by an outer join.</summary>
+        public HashSet<BoundSource> Rows { get; } = new(ReferenceEqualityComparer.Instance);
+
+        /// <summary>Aggregates of this query proved non-null by HAVING, by their text.</summary>
+        public HashSet<string> Aggregates { get; } = new(StringComparer.Ordinal);
+
+        public void Value(BoundSource source, string key)
+        {
+            if (!Values.TryGetValue(source, out var keys))
+                Values[source] = keys = new HashSet<string>(StringComparer.Ordinal);
+            keys.Add(key);
+        }
+    }
+
+    /// <summary>A bound column's key among its source's columns: a table's column by name as declared, a relation's by position.</summary>
+    private static string Key(BoundColumn bound) => "c:" + bound.Column.Name;
+
+    private static string Key(BoundLocalColumn bound) => "#" + bound.Ordinal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>Whether a filter of a query being read proves this column non-null whenever its source's row is there.</summary>
+    private bool Proved(BoundSource source, string key) =>
+        facts.Any(f => f.Values.TryGetValue(source, out var keys) && keys.Contains(key));
+
+    /// <summary>Whether a filter of a query being read proves the source's row is there, not null-extended by an outer join.</summary>
+    private bool Matched(BoundSource source) => facts.Any(f => f.Rows.Contains(source));
+
+    /// <summary>Whether HAVING proves this aggregate of the query whose select list is being read non-null.</summary>
+    private bool ProvedAggregate(FunctionCall call) =>
+        facts.Count > 0 && ReferenceEquals(facts[^1].Query, current) && facts[^1].Aggregates.Contains(Text(call));
+
+    // ---- what a query's filters prove ---------------------------------------------------------------------------------
+
+    private QueryFacts Facts(QuerySpecification query, BindingScope scope)
+    {
+        var found = new QueryFacts(query);
+        if (query.WhereClause?.SearchCondition is { } where)
+            Refine(where, scope, found, rows: true, only: null);
+        foreach (var reference in query.FromClause?.TableReferences ?? [])
+            Joins(reference, scope, found, insideOptional: false);
+
+        // HAVING keeps the groups for which it is TRUE: a grouped column or an aggregate it proves non-null is non-null in
+        // every group kept (observed: Having_over_no_groups_returns_no_row_and_without_group_by_at_most_one).
+        if (query.HavingClause?.SearchCondition is { } having)
+        {
+            Refine(having, scope, found, rows: true, only: null);
+            foreach (var aggregate in Operands(having).OfType<FunctionCall>().Where(IsAggregate).Select(Text).Distinct(StringComparer.Ordinal))
+            {
+                if (!Possible(having, e => e is FunctionCall call && IsAggregate(call) && Text(call) == aggregate).HasFlag(Truth.True))
+                    found.Aggregates.Add(aggregate);
+            }
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    /// The ON conditions of a FROM clause's joins. An inner join keeps the rows of its two inputs for which ON is TRUE: what
+    /// it proves holds wherever those rows are, so also for a row matched there and then null-extended by an outer join
+    /// around it, but not that the row is there. An outer join's ON never removes a row of its kept side (observed:
+    /// A_condition_in_the_on_of_an_outer_join_never_drops_a_row_of_the_kept_side), so it proves only what holds of its
+    /// optional side's row when it matched.
+    /// </summary>
+    private void Joins(TableReference reference, BindingScope scope, QueryFacts found, bool insideOptional)
+    {
+        switch (reference)
+        {
+            case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.Inner } join:
+                Joins(join.FirstTableReference, scope, found, insideOptional);
+                Joins(join.SecondTableReference, scope, found, insideOptional);
+                Refine(join.SearchCondition, scope, found, rows: !insideOptional, only: null);
+                break;
+            case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.LeftOuter } join:
+                Joins(join.FirstTableReference, scope, found, insideOptional);
+                Joins(join.SecondTableReference, scope, found, insideOptional: true);
+                Refine(join.SearchCondition, scope, found, rows: false, only: Sources(join.SecondTableReference, scope));
+                break;
+            case JoinParenthesisTableReference parenthesis:
+                Joins(parenthesis.Join, scope, found, insideOptional);
+                break;
+        }
+    }
+
+    /// <summary>The sources of this scope that a table reference binds.</summary>
+    private static HashSet<BoundSource> Sources(TableReference reference, BindingScope scope)
+    {
+        var aliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        Collect(reference);
+        var found = new HashSet<BoundSource>(ReferenceEqualityComparer.Instance);
+        foreach (var source in scope.Sources.Where(s => s.Alias is not null && aliases.Contains(s.Alias)))
+            found.Add(source);
+        return found;
+
+        void Collect(TableReference r)
+        {
+            switch (r)
+            {
+                case JoinTableReference join:
+                    Collect(join.FirstTableReference);
+                    Collect(join.SecondTableReference);
+                    break;
+                case JoinParenthesisTableReference parenthesis:
+                    Collect(parenthesis.Join);
+                    break;
+                case NamedTableReference named:
+                    aliases.Add(named.Alias?.Value ?? named.SchemaObject.BaseIdentifier.Value);
+                    break;
+                case TableReferenceWithAlias { Alias: { } alias }:
+                    aliases.Add(alias.Value);
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Records every column that <paramref name="condition"/> proves non-null in the rows it keeps: those for which it is
+    /// never TRUE when the column is NULL. With <paramref name="rows"/>, the column's source's row is proved there too: an
+    /// outer join's null-extended row has every column NULL, so it is never kept. With <paramref name="only"/>, only
+    /// columns of those sources are recorded.
+    /// </summary>
+    private void Refine(BooleanExpression condition, BindingScope scope, QueryFacts found, bool rows, HashSet<BoundSource>? only)
+    {
+        var bindings = new Dictionary<ColumnReferenceExpression, (BoundSource Source, string Key)?>(ReferenceEqualityComparer.Instance);
+        (BoundSource Source, string Key)? Bind(ColumnReferenceExpression column)
+        {
+            if (!bindings.TryGetValue(column, out var bound))
+            {
+                bound = binder.BindColumn(column, scope) switch
+                {
+                    BoundColumn c => (c.Source, Key(c)),
+                    BoundLocalColumn { Ordinal: >= 0 } l => (l.Source, Key(l)),
+                    _ => null,
+                };
+                bindings[column] = bound;
+            }
+
+            return bound;
+        }
+
+        var candidates = Operands(condition).OfType<ColumnReferenceExpression>().Select(Bind).OfType<(BoundSource Source, string Key)>()
+            .Distinct().ToList();
+        foreach (var (source, key) in candidates)
+        {
+            if (only is not null && !only.Contains(source))
+                continue;
+            var possible = Possible(condition, e => e is ColumnReferenceExpression column && Bind(column) is { } b && ReferenceEquals(b.Source, source) && b.Key == key);
+            if (possible.HasFlag(Truth.True))
+                continue;
+            found.Value(source, key);
+            if (rows)
+                found.Rows.Add(source);
+        }
+    }
+
+    // ---- three-valued logic ---------------------------------------------------------------------------------------
+
+    /// <summary>A set of truth values: what a condition can be.</summary>
+    [Flags]
+    private enum Truth
+    {
+        None = 0,
+        True = 1,
+        False = 2,
+        Unknown = 4,
+        Any = True | False | Unknown,
+    }
+
+    /// <summary>
+    /// What <paramref name="condition"/> can be when the value <paramref name="target"/> recognises is NULL, whatever every
+    /// other value is. Only a comparison, LIKE, BETWEEN or IN with the value itself as an operand is UNKNOWN for it (observed:
+    /// A_comparison_with_a_null_column_is_unknown_and_keeps_no_row, Like_is_unknown_when_the_value_or_the_pattern_is_null);
+    /// <c>IS NULL</c> is TRUE and <c>IS NOT NULL</c> FALSE; anything else, the value inside ISNULL, COALESCE, CASE, an
+    /// expression or a subquery included, can be anything (observed:
+    /// A_null_inside_isnull_coalesce_or_case_can_make_the_predicate_true). AND, OR and NOT combine the sets by SQL's
+    /// three-valued logic (observed: Not_of_an_unknown_comparison_is_unknown_and_keeps_no_null,
+    /// Or_keeps_a_null_when_any_disjunct_can_be_true); treating their operands as independent can only add values.
+    /// </summary>
+    private Truth Possible(BooleanExpression condition, Func<ScalarExpression, bool> target)
+    {
+        bool Is(ScalarExpression? e) => e is not null && target(Strip(e));
+
+        switch (condition)
+        {
+            case BooleanParenthesisExpression parenthesis:
+                return Possible(parenthesis.Expression, target);
+            case BooleanNotExpression not:
+                return Not(Possible(not.Expression, target));
+            case BooleanBinaryExpression { BinaryExpressionType: BooleanBinaryExpressionType.And } and:
+                return Combine(Possible(and.FirstExpression, target), Possible(and.SecondExpression, target), And);
+            case BooleanBinaryExpression { BinaryExpressionType: BooleanBinaryExpressionType.Or } or:
+                return Combine(Possible(or.FirstExpression, target), Possible(or.SecondExpression, target), Or);
+            case BooleanIsNullExpression isNull when Is(isNull.Expression):
+                return isNull.IsNot ? Truth.False : Truth.True;
+            case BooleanComparisonExpression comparison when Is(comparison.FirstExpression) || Is(comparison.SecondExpression):
+                return Comparison(comparison.ComparisonType, Is(comparison.FirstExpression) ? comparison.SecondExpression : comparison.FirstExpression);
+            case LikePredicate like when Is(like.FirstExpression) || Is(like.SecondExpression):
+                return like.NotDefined ? Not(Truth.Unknown) : Truth.Unknown;
+            case BooleanTernaryExpression between:
+            {
+                // x BETWEEN a AND b is x >= a AND x <= b; NOT BETWEEN is its negation.
+                var low = Is(between.FirstExpression) || Is(between.SecondExpression) ? Truth.Unknown : Truth.Any;
+                var high = Is(between.FirstExpression) || Is(between.ThirdExpression) ? Truth.Unknown : Truth.Any;
+                var result = Combine(low, high, And);
+                return between.TernaryExpressionType == BooleanTernaryExpressionType.NotBetween ? Not(result) : result;
+            }
+
+            case InPredicate @in:
+            {
+                // x IN (a, b) is x = a OR x = b. x IN (subquery) is FALSE when the subquery returns no rows, even for a
+                // null x, and UNKNOWN otherwise (observed: In_a_subquery_with_no_rows_is_false_and_not_in_it_is_true_even_for_a_null).
+                Truth result;
+                if (@in.Subquery is not null)
+                    result = Is(@in.Expression) ? Truth.False | Truth.Unknown : Truth.Any;
+                else if (Is(@in.Expression))
+                    result = @in.Values.Select(v => Comparison(BooleanComparisonType.Equals, v)).Aggregate((a, b) => Combine(a, b, Or));
+                else
+                    result = @in.Values.Select(v => Is(v) ? Truth.Unknown : Truth.Any).Aggregate((a, b) => Combine(a, b, Or));
+                return @in.NotDefined ? Not(result) : result;
+            }
+
+            default:
+                return Truth.Any;
+        }
+    }
+
+    /// <summary>
+    /// A comparison of the null value with <paramref name="other"/>: UNKNOWN. With ANSI_NULLS off when the body was created,
+    /// <c>=</c> and <c>&lt;&gt;</c> against anything but a column are TRUE or FALSE instead (observed:
+    /// A_procedure_created_with_ansi_nulls_off_keeps_a_null_that_equals_a_null_variable); a comparison of two columns is not
+    /// affected.
+    /// </summary>
+    private Truth Comparison(BooleanComparisonType type, ScalarExpression other)
+    {
+        if (!ansiNullsOff || Strip(other) is ColumnReferenceExpression)
+            return Truth.Unknown;
+        return type is BooleanComparisonType.Equals or BooleanComparisonType.NotEqualToBrackets or BooleanComparisonType.NotEqualToExclamation
+            ? Truth.Any
+            : Truth.Unknown;
+    }
+
+    private static Truth Not(Truth a) =>
+        (a.HasFlag(Truth.True) ? Truth.False : Truth.None) | (a.HasFlag(Truth.False) ? Truth.True : Truth.None) | (a & Truth.Unknown);
+
+    private static Truth And(Truth a, Truth b) =>
+        a == Truth.False || b == Truth.False ? Truth.False : a == Truth.True && b == Truth.True ? Truth.True : Truth.Unknown;
+
+    private static Truth Or(Truth a, Truth b) =>
+        a == Truth.True || b == Truth.True ? Truth.True : a == Truth.False && b == Truth.False ? Truth.False : Truth.Unknown;
+
+    /// <summary>Every value <paramref name="op"/> gives for some value of each set.</summary>
+    private static Truth Combine(Truth a, Truth b, Func<Truth, Truth, Truth> op)
+    {
+        var result = Truth.None;
+        foreach (var x in new[] { Truth.True, Truth.False, Truth.Unknown }.Where(x => a.HasFlag(x)))
+        {
+            foreach (var y in new[] { Truth.True, Truth.False, Truth.Unknown }.Where(y => b.HasFlag(y)))
+                result |= op(x, y);
+        }
+
+        return result;
+    }
+
+    private static ScalarExpression Strip(ScalarExpression e)
+    {
+        while (e is ParenthesisExpression p)
+            e = p.Expression;
+        return e;
+    }
+
+    /// <summary>
+    /// The direct operands of a condition's comparisons, LIKE, BETWEEN, IN and IS NULL, through AND, OR, NOT and
+    /// parentheses, without parentheses: the only values <see cref="Possible"/> can find UNKNOWN or FALSE for.
+    /// </summary>
+    private static IEnumerable<ScalarExpression> Operands(BooleanExpression condition)
+    {
+        IEnumerable<ScalarExpression?> found = condition switch
+        {
+            BooleanParenthesisExpression p => Operands(p.Expression),
+            BooleanNotExpression n => Operands(n.Expression),
+            BooleanBinaryExpression b => Operands(b.FirstExpression).Concat(Operands(b.SecondExpression)),
+            BooleanIsNullExpression n => [n.Expression],
+            BooleanComparisonExpression c => [c.FirstExpression, c.SecondExpression],
+            LikePredicate l => [l.FirstExpression, l.SecondExpression],
+            BooleanTernaryExpression t => [t.FirstExpression, t.SecondExpression, t.ThirdExpression],
+            InPredicate i => [i.Expression, .. i.Values],
+            _ => [],
+        };
+        return found.OfType<ScalarExpression>().Select(Strip);
+    }
+
+    // ---- built-in aggregates ----------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Built-in aggregates, which make a query without GROUP BY return exactly one row. A user's function is always called
+    /// with its schema, so a name without one is the built-in. The JSON aggregates are among them.
+    /// </summary>
+    private static readonly HashSet<string> Aggregates = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "count", "count_big", "sum", "avg", "min", "max", "stdev", "stdevp", "var", "varp", "string_agg", "checksum_agg",
+        "grouping", "grouping_id", "approx_count_distinct", "json_arrayagg", "json_objectagg",
+    };
+
+    /// <summary>A call of a built-in aggregate as an aggregate: with a window (OVER) it is computed per row instead.</summary>
+    private static bool IsAggregate(FunctionCall call) =>
+        call is { CallTarget: null, OverClause: null } && Aggregates.Contains(call.FunctionName.Value);
+
+    /// <summary>
+    /// COUNT, COUNT_BIG, MIN and MAX. COUNT and COUNT_BIG are 0 over no rows and never NULL, except that COUNT overflows
+    /// int to NULL under a caller's ANSI_WARNINGS and ARITHABORT off (observed:
+    /// Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off). MIN and MAX return
+    /// one of their argument's values, so its type and facets, and are NULL over no rows (without GROUP BY) and when every
+    /// value is (observed: An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows,
+    /// An_aggregate_with_group_by_returns_no_row_over_no_rows). The others change the type (SUM, AVG) or are not needed yet.
+    /// </summary>
+    private Value BuiltInAggregate(FunctionCall call, BindingScope scope)
+    {
+        var at = At(call);
+        var name = call.FunctionName.Value.ToLowerInvariant();
+        if (name is "json_arrayagg" or "json_objectagg")
+            return Constructor(call, scope);
+
+        switch (name)
+        {
+            case "count" or "count_big" when call.Parameters.Count == 1:
+            {
+                var type = new SqlType(SqlTypeKind.BuiltIn, name == "count" ? "int" : "bigint", []);
+                IReadOnlyList<IrNullReason> because = name == "count" && !ProvedAggregate(call) ? [new IrNullReason(IrNullRules.CountOverflow, at.ToString())] : [];
+                return new Value(SqlTypes.ToConvertedShape(model, type, at), because);
+            }
+
+            case "min" or "max" when call.Parameters.Count == 1:
+            {
+                var argument = Expression(call.Parameters[0], scope);
+                if (argument.Shape is UnknownShape unknown)
+                    return Value.Unknown(unknown);
+                if (argument.IsLiveJson || argument.Shape is not ScalarShape)
+                    return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"{name.ToUpperInvariant()} of a value that is not a scalar is not modelled: {Text(call)}", at));
+                return ProvedAggregate(call)
+                    ? argument with { NullableBecause = [] }
+                    : argument with { NullableBecause = [.. argument.NullableBecause, .. Aggregate(call)] };
+            }
+
+            default:
+                return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The aggregate {Text(call)} is not modelled yet.", at));
+        }
+    }
+}

@@ -1,0 +1,317 @@
+using System.Globalization;
+using Haruspex.Ir;
+using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Semantics;
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+
+namespace Haruspex.SqlServer.Inference;
+
+/// <summary>
+/// How many rows a query returns (slice 6c): exactly one, at most one, or any number. Each rule is observed in
+/// <c>RefinementObservationTests</c>, and the README beside this file says why each is sound. Anything not recognised is
+/// <see cref="IrCardinality.Many"/>, which claims nothing.
+/// </summary>
+internal sealed partial class ProcedureAnalyzer
+{
+    private IrCardinality Cardinality(QuerySpecification query, BindingScope scope)
+    {
+        IrCardinality rows;
+        if (query.GroupByClause is null && (query.HavingClause is not null || HasAggregate(query, scope)))
+        {
+            // An aggregate query without GROUP BY returns exactly one row, over no rows too; HAVING may filter it out
+            // (observed: An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows,
+            // Having_over_no_groups_returns_no_row_and_without_group_by_at_most_one). With GROUP BY, even GROUP BY (), no
+            // rows means no groups (An_aggregate_with_group_by_returns_no_row_over_no_rows).
+            rows = query.HavingClause is null ? IrCardinality.One : IrCardinality.AtMostOne;
+        }
+        else if (query.FromClause is null && query.GroupByClause is null)
+        {
+            // No FROM: one row, which WHERE may filter out (A_scalar_subquery_of_an_aggregate_without_group_by_always_has_a_value_for_count).
+            rows = query.WhereClause is null && query.HavingClause is null ? IrCardinality.One : IrCardinality.AtMostOne;
+        }
+        else
+        {
+            // Grouping never makes more rows than it reads, so a filter that fixes every source's key bounds it too.
+            rows = Keyed(query, scope) ? IrCardinality.AtMostOne : IrCardinality.Many;
+        }
+
+        return Limited(Limited(rows, query.TopRowFilter), query.OffsetClause);
+    }
+
+    /// <summary>
+    /// TOP never adds rows. <c>TOP (0)</c> or <c>(1)</c>, without PERCENT or WITH TIES, keeps at most one; any TOP may keep
+    /// none, unless it is a literal of one or more, which keeps a row that is always there (observed:
+    /// Top_1_and_fetch_1_give_at_most_one_row_but_with_ties_gives_more).
+    /// </summary>
+    private static IrCardinality Limited(IrCardinality rows, TopRowFilter? top)
+    {
+        if (top is null)
+            return rows;
+        var n = top.Percent ? null : Literal(top.Expression);
+        if (rows == IrCardinality.One)
+            return n >= 1 ? IrCardinality.One : IrCardinality.AtMostOne;
+        return n <= 1 && !top.WithTies ? IrCardinality.AtMostOne : rows;
+    }
+
+    /// <summary>OFFSET skips rows, so only <c>OFFSET 0</c> keeps one that is always there; FETCH of 0 or 1 keeps at most one.</summary>
+    private static IrCardinality Limited(IrCardinality rows, OffsetClause? offset)
+    {
+        if (offset is null)
+            return rows;
+        var skip = Literal(offset.OffsetExpression);
+        var fetch = offset.FetchExpression is null ? null : Literal(offset.FetchExpression);
+        if (rows == IrCardinality.One)
+            return skip == 0 && (offset.FetchExpression is null || fetch >= 1) ? IrCardinality.One : IrCardinality.AtMostOne;
+        return fetch <= 1 ? IrCardinality.AtMostOne : rows;
+    }
+
+    private static long? Literal(ScalarExpression? expression) =>
+        Strip(expression ?? new NullLiteral()) is IntegerLiteral literal
+        && long.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : null;
+
+    /// <summary>
+    /// Whether the select list has an aggregate of this query, which makes it an aggregate query. COUNT(*) is always
+    /// this query's. An aggregate whose argument reads only an enclosing query's columns is that query's in SQL, so one
+    /// counts only when every column its arguments read is of this query's own sources; an argument that reads none is not
+    /// counted, which only claims less. A subquery's aggregates are its own.
+    /// </summary>
+    private bool HasAggregate(QuerySpecification query, BindingScope scope)
+    {
+        var finder = new AggregateFinder();
+        foreach (var element in query.SelectElements.OfType<SelectScalarExpression>())
+            element.Expression.Accept(finder);
+        return finder.Found.Any(call =>
+        {
+            if (call.Parameters is [ColumnReferenceExpression { ColumnType: ColumnType.Wildcard }])
+                return true;
+            var columns = new ColumnFinder();
+            foreach (var parameter in call.Parameters)
+                parameter.Accept(columns);
+            return columns.Found.Count > 0 && columns.Found.All(c => binder.BindColumn(c, scope) switch
+            {
+                BoundColumn b => scope.Sources.Contains(b.Source, ReferenceEqualityComparer.Instance),
+                BoundLocalColumn l => scope.Sources.Contains(l.Source, ReferenceEqualityComparer.Instance),
+                _ => false,
+            });
+        });
+    }
+
+    /// <summary>The aggregates in an expression, not inside a subquery.</summary>
+    private sealed class AggregateFinder : TSqlFragmentVisitor
+    {
+        public List<FunctionCall> Found { get; } = [];
+
+        public override void ExplicitVisit(ScalarSubquery node)
+        {
+        }
+
+        public override void Visit(FunctionCall node)
+        {
+            if (IsAggregate(node))
+                Found.Add(node);
+        }
+    }
+
+    /// <summary>The column references in an expression, a subquery's included (they may read this query's columns too).</summary>
+    private sealed class ColumnFinder : TSqlFragmentVisitor
+    {
+        public List<ColumnReferenceExpression> Found { get; } = [];
+
+        public override void Visit(ColumnReferenceExpression node) => Found.Add(node);
+    }
+
+    // ---- keys ----------------------------------------------------------------------------------------------------------
+
+    /// <summary>A condition that must be TRUE for a row to be kept, and the sources whose key it may fix.</summary>
+    /// <param name="Condition">A conjunct of WHERE, or of a join's ON.</param>
+    /// <param name="Within">The sources it may fix: any for WHERE; those of its join for ON, the optional side's for an outer join.</param>
+    private sealed record Fixing(BooleanExpression Condition, HashSet<BoundSource>? Within);
+
+    /// <summary>
+    /// Whether the filters fix a whole unique key of every source, so that the query returns at most one row. A source is
+    /// fixed when each column of one of its keys is compared with <c>=</c> to a value that is the same for every row of the
+    /// query: a literal, a variable, an enclosing query's column, or a column of a source already fixed; or tested with
+    /// <c>IS NULL</c>, since a key holds one NULL at most (observed: A_unique_constraint_allows_one_null_only). Then each
+    /// combination of fixed sources' rows matches at most one row of the next, and there is one combination at most.
+    /// <para>The comparison must be made in the key's own type and collation, which is what makes it the key's equality:
+    /// one that converts the key can match several rows (observed: A_comparison_that_converts_the_key_can_match_several_rows,
+    /// A_varchar_key_under_a_sql_collation_compared_with_nvarchar_can_match_several_rows). See <see cref="InKeysType"/>.</para>
+    /// <para>Only a WHERE conjunct, or an ON conjunct of a join that fixes a source inside it, counts: a row an inner join
+    /// keeps passed its ON, and an outer join matches at most one optional row per kept row when its ON fixes the optional
+    /// side's key, and gives one null-extended row otherwise. Under OR nothing is fixed. Only tables are keyed here; a CTE,
+    /// derived table, temporary table or table variable source makes the answer many.</para>
+    /// </summary>
+    private bool Keyed(QuerySpecification query, BindingScope scope)
+    {
+        if (scope.Sources.Count == 0 || scope.Sources.Any(s => s.Table is null))
+            return false;
+
+        var conditions = new List<Fixing>();
+        if (query.WhereClause?.SearchCondition is { } where)
+            conditions.AddRange(Conjuncts(where).Select(c => new Fixing(c, null)));
+        foreach (var reference in query.FromClause?.TableReferences ?? [])
+            JoinConditions(reference, scope, conditions);
+
+        var fixedSources = new HashSet<BoundSource>(ReferenceEqualityComparer.Instance);
+        bool progress;
+        do
+        {
+            progress = false;
+            foreach (var source in scope.Sources.Where(s => !fixedSources.Contains(s)))
+            {
+                if (SchemaRules.EnforcedKeys(source.Table!).Any(key => key.Columns.All(column => conditions.Any(c => Fixes(c, source, column, scope, fixedSources)))))
+                {
+                    fixedSources.Add(source);
+                    progress = true;
+                }
+            }
+        }
+        while (progress);
+
+        return fixedSources.Count == scope.Sources.Count;
+    }
+
+    private static void JoinConditions(TableReference reference, BindingScope scope, List<Fixing> into)
+    {
+        switch (reference)
+        {
+            case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.Inner } join:
+                JoinConditions(join.FirstTableReference, scope, into);
+                JoinConditions(join.SecondTableReference, scope, into);
+                into.AddRange(Conjuncts(join.SearchCondition).Select(c => new Fixing(c, Sources(join, scope))));
+                break;
+            case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.LeftOuter } join:
+                JoinConditions(join.FirstTableReference, scope, into);
+                JoinConditions(join.SecondTableReference, scope, into);
+                into.AddRange(Conjuncts(join.SearchCondition).Select(c => new Fixing(c, Sources(join.SecondTableReference, scope))));
+                break;
+            case JoinParenthesisTableReference parenthesis:
+                JoinConditions(parenthesis.Join, scope, into);
+                break;
+        }
+    }
+
+    /// <summary>The conjuncts of a condition joined by AND, through parentheses.</summary>
+    private static IEnumerable<BooleanExpression> Conjuncts(BooleanExpression condition) => condition switch
+    {
+        BooleanParenthesisExpression p => Conjuncts(p.Expression),
+        BooleanBinaryExpression { BinaryExpressionType: BooleanBinaryExpressionType.And } and => Conjuncts(and.FirstExpression).Concat(Conjuncts(and.SecondExpression)),
+        _ => [condition],
+    };
+
+    /// <summary>Whether a condition fixes this column of this source, given the sources already fixed.</summary>
+    private bool Fixes(Fixing fixing, BoundSource source, string column, BindingScope scope, HashSet<BoundSource> fixedSources)
+    {
+        if (fixing.Within is { } within && !within.Contains(source))
+            return false;
+
+        bool IsKeyColumn(ScalarExpression e) =>
+            Strip(e) is ColumnReferenceExpression { Collation: null } reference
+            && binder.BindColumn(reference, scope) is BoundColumn bound
+            && ReferenceEquals(bound.Source, source)
+            && bound.Column.Name.Equals(column, StringComparison.OrdinalIgnoreCase);
+
+        switch (fixing.Condition)
+        {
+            case BooleanIsNullExpression { IsNot: false } isNull:
+                return IsKeyColumn(isNull.Expression);
+            case BooleanComparisonExpression { ComparisonType: BooleanComparisonType.Equals } equals:
+            {
+                ScalarExpression other;
+                if (IsKeyColumn(equals.FirstExpression))
+                    other = equals.SecondExpression;
+                else if (IsKeyColumn(equals.SecondExpression))
+                    other = equals.FirstExpression;
+                else
+                    return false;
+
+                var key = source.Table!.Column(column)!;
+                return SchemaRules.ResolveType(model, key.Type)?.BuiltIn.Name is { } keyType
+                    && ValueType(Strip(other), source, scope, fixedSources) is { } valueType
+                    && InKeysType(keyType, valueType);
+            }
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// The built-in type of a value that is the same for every row of the query, with no COLLATE of its own; null when it
+    /// is not such a value, or its type is not known. A null literal is "null": it matches no row.
+    /// </summary>
+    private string? ValueType(ScalarExpression value, BoundSource keySource, BindingScope scope, HashSet<BoundSource> fixedSources)
+    {
+        switch (value)
+        {
+            case PrimaryExpression { Collation: not null }:
+                return null;
+            case NullLiteral:
+                return "null";
+            case IntegerLiteral literal:
+                return long.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n <= int.MaxValue ? "int" : "numeric";
+            case NumericLiteral:
+                return "numeric";
+            case StringLiteral literal:
+                return literal.IsNational ? "nvarchar" : "varchar";
+            case VariableReference variable:
+                return variableTypes.TryGetValue(variable.Name, out var declared)
+                    ? SchemaRules.ResolveType(model, declared)?.BuiltIn.Name
+                    : null;
+            case ColumnReferenceExpression reference:
+                return binder.BindColumn(reference, scope) switch
+                {
+                    // A column of an enclosing query is one value while this query runs; one of this query is, once its
+                    // source is fixed. Never the key's own source: t.id = t.n fixes nothing.
+                    BoundColumn bound when !ReferenceEquals(bound.Source, keySource)
+                        && (!scope.Sources.Contains(bound.Source, ReferenceEqualityComparer.Instance) || fixedSources.Contains(bound.Source))
+                        => SchemaRules.ResolveType(model, bound.Column.Type)?.BuiltIn.Name,
+                    _ => null,
+                };
+            default:
+                return null;
+        }
+    }
+
+    private static readonly HashSet<string> Integers = new(StringComparer.OrdinalIgnoreCase) { "tinyint", "smallint", "int", "bigint" };
+
+    private static readonly HashSet<string> Exact = new(StringComparer.OrdinalIgnoreCase) { "decimal", "numeric" };
+
+    private static readonly HashSet<string> Narrow = new(StringComparer.OrdinalIgnoreCase) { "char", "varchar" };
+
+    private static readonly HashSet<string> Wide = new(StringComparer.OrdinalIgnoreCase) { "nchar", "nvarchar" };
+
+    /// <summary>
+    /// Whether <c>key = value</c> compares in the key's own terms, so that it matches only rows whose key equals one value,
+    /// of which a unique key has one at most. SQL Server converts the side of lower precedence to the other's type, and
+    /// compares strings under the key's collation when the value is a literal or variable (its collation is the database's
+    /// default, and the column's wins) or a column (a different one is an error, 468). So it is enough that the key is
+    /// not converted, or only widened without merging values:
+    /// <list type="bullet">
+    /// <item>the same type, or both integers, or both exact decimals, or an integer with a decimal (each widens exactly);</item>
+    /// <item>varchar or char with varchar or char;</item>
+    /// <item>nvarchar or nchar with any of the four string types: a varchar value becomes nvarchar, the key is unchanged;</item>
+    /// <item>a key of any type but a string or binary type with a string value, which is converted to the key's type.</item>
+    /// </list>
+    /// A varchar key with an nvarchar value is not: the key becomes nvarchar, compared by Unicode rules, under which a SQL
+    /// collation's distinct varchar values can be equal (observed). Nor is a string key with a number (observed). sql_variant
+    /// compares across types, and is left out.
+    /// </summary>
+    private static bool InKeysType(string key, string value)
+    {
+        if (value == "null")
+            return true;
+        if (key.Equals("sql_variant", StringComparison.OrdinalIgnoreCase) || value.Equals("sql_variant", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (key.Equals(value, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if ((Integers.Contains(key) || Exact.Contains(key)) && (Integers.Contains(value) || Exact.Contains(value)))
+            return true;
+        if (Narrow.Contains(key) && Narrow.Contains(value))
+            return true;
+        if (Wide.Contains(key) && (Narrow.Contains(value) || Wide.Contains(value)))
+            return true;
+        var strings = Narrow.Contains(key) || Wide.Contains(key) || key is "binary" or "varbinary";
+        return !strings && (Narrow.Contains(value) || Wide.Contains(value));
+    }
+}

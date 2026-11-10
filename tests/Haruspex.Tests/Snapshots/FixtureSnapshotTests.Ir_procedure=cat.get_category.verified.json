@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -33,7 +33,8 @@
               "rule": "no-rows",
               "at": "procedures/get_category.sql:7:1"
             }
-          ]
+          ],
+          "cardinality": "atMostOne"
         }
       ]
     }
@@ -53,7 +54,8 @@
             "kind": "array",
             "items": {
               "ref": "CategoryContentsNodeItem"
-            }
+            },
+            "minItems": 1
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -70,7 +72,8 @@
             "kind": "array",
             "items": {
               "ref": "CategoryTreeNode"
-            }
+            },
+            "minItems": 1
           },
           "presence": "omittedWhenNull",
           "nullable": true,
@@ -243,7 +246,8 @@
             "kind": "array",
             "items": {
               "ref": "CategoryTreeNode"
-            }
+            },
+            "minItems": 1
           },
           "presence": "omittedWhenNull",
           "nullable": true,

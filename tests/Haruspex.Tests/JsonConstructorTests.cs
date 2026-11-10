@@ -336,7 +336,7 @@ public class JsonConstructorTests
     }
 
     [Fact]
-    public void An_aggregate_subquery_is_live_json_and_null_when_it_has_no_rows()
+    public void An_aggregate_subquery_is_live_json_and_null_over_no_rows()
     {
         var doc = Procedure("""
             SELECT t.id, (SELECT json_arrayagg(u.qty) FROM dbo.u AS u WHERE u.t_id = t.id) AS lines
@@ -347,15 +347,19 @@ public class JsonConstructorTests
         Assert.IsType<IrArray>(lines.Type);
         Assert.Equal(IrPresence.OmittedWhenNull, lines.Presence);
         Assert.Contains("empty-aggregate", Rules(lines.NullableBecause));
-        Assert.Contains("empty-subquery", Rules(lines.NullableBecause));
+
+        // An aggregate without GROUP BY always returns its one row, so the subquery is never empty (slice 6c).
+        Assert.DoesNotContain("empty-subquery", Rules(lines.NullableBecause));
     }
 
     [Fact]
-    public void A_subquery_that_is_not_json_is_still_unknown()
+    public void A_subquery_that_is_not_json_has_its_columns_type_and_is_null_when_it_has_no_row()
     {
+        // Slice 6c: a scalar subquery is its one column's value, or null when it returns no row.
         var doc = Procedure("SELECT t.id, (SELECT u.qty FROM dbo.u AS u WHERE u.id = t.id) AS q FROM dbo.t AS t FOR JSON PATH;");
 
-        Assert.Equal(IrUnknownReasons.UnsupportedExpression, Unknown(doc, "results[0][].q").Reason);
+        Assert.Empty(doc.Unknowns);
+        Assert.Contains("empty-subquery", Rules(Field(doc, "q").NullableBecause));
     }
 
     // ---- json_objectagg ------------------------------------------------------------------------------

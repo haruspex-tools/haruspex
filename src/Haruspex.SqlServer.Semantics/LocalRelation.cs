@@ -1,8 +1,10 @@
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+
 namespace Haruspex.SqlServer.Semantics;
 
 /// <summary>
-/// A relation a body defines for itself rather than one in the schema: a common table expression, a temporary table
-/// (<c>#t</c>) or a table variable (<c>@t</c>). The binder binds references to it by name and its columns by name; what
+/// A relation a body defines for itself rather than one in the schema: a common table expression, a derived table, a
+/// temporary table (<c>#t</c>) or a table variable (<c>@t</c>). The binder binds references to it by name and its columns by name; what
 /// its columns hold is not binding's concern, so a relation carries only names, and whoever supplies it
 /// (<see cref="ILocalRelations"/>) keeps the rest, keyed by the relation itself.
 /// </summary>
@@ -55,4 +57,13 @@ public interface ILocalRelations
     /// </summary>
     /// <param name="name">The name as written, with its sigil.</param>
     LocalRelation? Find(string name);
+
+    /// <summary>
+    /// The relation a derived table (<c>FROM (SELECT …) AS d</c>) is, or null when it is not modelled. Its query is read
+    /// by whoever supplies the relations, since what its columns hold is not binding's concern; it may read the enclosing
+    /// queries' columns, so it is given their scope.
+    /// </summary>
+    /// <param name="table">The derived table.</param>
+    /// <param name="outer">The scope of the query enclosing the one whose FROM it is in, or null.</param>
+    LocalRelation? Derived(QueryDerivedTable table, BindingScope? outer) => null;
 }

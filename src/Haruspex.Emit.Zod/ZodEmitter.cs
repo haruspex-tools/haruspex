@@ -85,6 +85,20 @@ public static class ZodEmitter
         private string Result(IrResult result)
         {
             var code = Expression(result.Type, result.Encoding).Code;
+
+            // A result of rows (a rowset, or FOR JSON's array) has no more rows than its cardinality, and exactly one when it
+            // is one and always there. A result that may be absent reads as [] (the reader convention), so it is only bounded
+            // above. A union of arrays is not bounded, which only claims less.
+            if (result.Type is IrArray)
+            {
+                code += result.Cardinality switch
+                {
+                    IrCardinality.One when !result.MayBeAbsent => ".length(1)",
+                    IrCardinality.One or IrCardinality.AtMostOne => ".max(1)",
+                    _ => "",
+                };
+            }
+
             // A rowset reads as no rows when absent, whatever its type (a union of arrays when branches return different rows).
             return result.MayBeAbsent && result.Encoding == IrEncoding.Json && result.Type is not (IrArray or IrUnknownType) ? code + ".nullable()" : code;
         }

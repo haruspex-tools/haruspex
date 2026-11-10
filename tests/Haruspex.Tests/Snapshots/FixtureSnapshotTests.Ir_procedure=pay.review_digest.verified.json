@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -19,7 +19,8 @@
               "ref": "ReviewDigestRow"
             }
           },
-          "mayBeAbsent": false
+          "mayBeAbsent": false,
+          "cardinality": "one"
         }
       ]
     }

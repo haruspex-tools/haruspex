@@ -15,7 +15,9 @@ var orders = read.Model.FindTable(new ObjectName("sales", "orders"));
 Files are read in order of their relative path, so the result doesn't depend on the file system. Each file is
 UTF-8 unless a byte order mark says otherwise (SSMS writes UTF-16), and is parsed with the SQL Server 2025
 grammar. Tables come with their CHECK constraints (a check that a later `ALTER TABLE … NOCHECK CONSTRAINT` may
-disable says so) and alias and CLR types from `CREATE TYPE`. Parse errors and objects defined twice are reported as diagnostics, with their file, line and column.
+disable says so), their primary key, unique constraints and unfiltered unique indexes (a key whose index a later
+`ALTER INDEX … DISABLE` may disable says so), and alias and CLR types from `CREATE TYPE`. A procedure or function records
+whether `SET ANSI_NULLS OFF` came before it in its file, since SQL Server keeps the setting it was created with. Parse errors and objects defined twice are reported as diagnostics, with their file, line and column.
 
 ## What it deliberately doesn't do
 

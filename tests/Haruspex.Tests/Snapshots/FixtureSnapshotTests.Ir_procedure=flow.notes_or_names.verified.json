@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -50,7 +50,8 @@
               "rule": "no-rows",
               "at": "procedures/notes_or_names.sql:12:5"
             }
-          ]
+          ],
+          "cardinality": "many"
         }
       ]
     }

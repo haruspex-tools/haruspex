@@ -278,7 +278,7 @@ internal sealed class FunctionSummaries
             p => p.VariableName.Value,
             p => Parameter(p, nullOnNull, function.File),
             StringComparer.OrdinalIgnoreCase);
-        var value = new ProcedureAnalyzer(model, function.File, this, parameters).Return(expression);
+        var value = new ProcedureAnalyzer(model, function.File, this, parameters, ansiNullsOff: function.AnsiNullsOff).Return(expression);
 
         Shape? content = value switch
         {

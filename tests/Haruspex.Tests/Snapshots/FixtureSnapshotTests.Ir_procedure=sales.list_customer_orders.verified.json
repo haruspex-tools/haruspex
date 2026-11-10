@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -25,7 +25,8 @@
               "rule": "no-rows",
               "at": "procedures/list_customer_orders.sql:5:1"
             }
-          ]
+          ],
+          "cardinality": "many"
         }
       ]
     }
@@ -235,7 +236,8 @@
             "kind": "array",
             "items": {
               "ref": "ListCustomerOrdersOrder"
-            }
+            },
+            "minItems": 1
           },
           "presence": "always",
           "nullable": true,

@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.7";
+    public const string CurrentVersion = "0.8";
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
@@ -71,6 +71,26 @@ public sealed record IrParameter(string Name, IrType Type, bool HasDefault, bool
 public sealed record IrResult(IrEncoding Encoding, IrType Type, IReadOnlyList<IrNullReason> AbsentBecause)
 {
     public bool MayBeAbsent => AbsentBecause.Count > 0;
+
+    /// <summary>
+    /// How many rows the result's query returns when it runs: a rowset's rows, or the objects of a FOR JSON result (the
+    /// items of its array, or its one object without the array wrapper). Whether the result set may be missing is
+    /// <see cref="AbsentBecause"/>, not this. <see cref="IrCardinality.Many"/> claims nothing.
+    /// </summary>
+    public IrCardinality Cardinality { get; init; } = IrCardinality.Many;
+}
+
+/// <summary>How many rows a query returns: what a generated client needs to return one row or a list.</summary>
+public enum IrCardinality
+{
+    /// <summary>Any number, none included: nothing is proved.</summary>
+    Many,
+
+    /// <summary>None or one: <c>TOP (1)</c>, <c>FETCH NEXT 1</c>, or a filter that fixes every column of a key.</summary>
+    AtMostOne,
+
+    /// <summary>Exactly one: an aggregate query without <c>GROUP BY</c> or <c>HAVING</c>, or a query without <c>FROM</c> or a filter.</summary>
+    One,
 }
 
 public enum IrEncoding
@@ -468,7 +488,7 @@ public static class IrNullRules
     /// <summary>It is a nested object that is left out when every one of its fields is null.</summary>
     public const string AllFieldsNull = "all-fields-null";
 
-    /// <summary>It is an aggregate (<c>json_arrayagg</c>, <c>json_objectagg</c>) without GROUP BY, which is null over no rows.</summary>
+    /// <summary>It is an aggregate (<c>MIN</c>, <c>MAX</c>, <c>json_arrayagg</c>, <c>json_objectagg</c>) without GROUP BY, which is null over no rows.</summary>
     public const string EmptyAggregate = "empty-aggregate";
 
     /// <summary>It is a scalar function's result, typed from the declared return type only, so it may be NULL.</summary>
@@ -495,6 +515,13 @@ public static class IrNullRules
 
     /// <summary>It is a procedure's variable, which holds null until a value that is never null is assigned on every path.</summary>
     public const string Variable = "variable";
+
+    /// <summary>
+    /// It is a <c>COUNT</c>, an <c>int</c>, which over more than 2,147,483,647 rows overflows: an error by default, but NULL
+    /// when the caller's session has <c>ANSI_WARNINGS</c> and <c>ARITHABORT</c> off, which a procedure cannot prevent.
+    /// <c>COUNT_BIG</c> does not.
+    /// </summary>
+    public const string CountOverflow = "count-overflow";
 
     /// <summary>Its type is unknown, so nothing is proved about it.</summary>
     public const string Unknown = "unknown";

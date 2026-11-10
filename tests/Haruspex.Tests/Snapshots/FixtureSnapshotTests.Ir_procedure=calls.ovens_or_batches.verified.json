@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -50,7 +50,8 @@
               }
             ]
           },
-          "mayBeAbsent": false
+          "mayBeAbsent": false,
+          "cardinality": "many"
         },
         {
           "encoding": "rowset",
@@ -66,7 +67,8 @@
               "rule": "not-run",
               "at": "procedures/batch_rows.sql:5:1"
             }
-          ]
+          ],
+          "cardinality": "atMostOne"
         }
       ]
     }

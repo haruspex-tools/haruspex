@@ -17,13 +17,15 @@ public sealed class Table
     /// <param name="primaryKey">The names of its primary key's columns, or none.</param>
     /// <param name="at">Where it is defined.</param>
     /// <param name="checks">Its CHECK constraints, on the table or on a column, in declaration order.</param>
-    public Table(ObjectName name, IReadOnlyList<Column> columns, IReadOnlyList<string> primaryKey, SourceLocation at, IReadOnlyList<CheckConstraint>? checks = null)
+    /// <param name="uniqueKeys">Its primary key and unique constraints, and unique indexes without a filter declared with it.</param>
+    public Table(ObjectName name, IReadOnlyList<Column> columns, IReadOnlyList<string> primaryKey, SourceLocation at, IReadOnlyList<CheckConstraint>? checks = null, IReadOnlyList<UniqueKey>? uniqueKeys = null)
     {
         Name = name;
         Columns = columns ?? throw new ArgumentNullException(nameof(columns));
         PrimaryKey = primaryKey ?? throw new ArgumentNullException(nameof(primaryKey));
         At = at ?? throw new ArgumentNullException(nameof(at));
         Checks = checks ?? [];
+        UniqueKeys = uniqueKeys ?? [];
     }
 
     /// <summary>
@@ -79,7 +81,25 @@ public sealed class Table
             .Concat(definition.TableConstraints.OfType<CheckConstraintDefinition>().Select(k => Check(k, null, file)))
             .ToList();
 
-        return new Table(name, columns, primaryKey, at, checks);
+        // Unique constraints and the primary key, on the table or on a column, and unique indexes declared in the table
+        // (INDEX … UNIQUE) without a filter: a filtered index is unique only among the rows its filter keeps.
+        // CREATE UNIQUE INDEX and ALTER TABLE … ADD CONSTRAINT are not read here, which only claims less.
+        var keys = definition.ColumnDefinitions
+            .SelectMany(c => c.Constraints.OfType<UniqueConstraintDefinition>().Select(u => new UniqueKey(
+                u.ConstraintIdentifier?.Value, [c.ColumnIdentifier.Value], u.IsPrimaryKey, new SourceLocation(file, u.StartLine, u.StartColumn))))
+            .Concat(definition.TableConstraints.OfType<UniqueConstraintDefinition>().Select(u => new UniqueKey(
+                u.ConstraintIdentifier?.Value,
+                [.. u.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)],
+                u.IsPrimaryKey,
+                new SourceLocation(file, u.StartLine, u.StartColumn))))
+            .Concat(definition.Indexes.Where(i => i.Unique && i.FilterPredicate is null).Select(i => new UniqueKey(
+                i.Name?.Value,
+                [.. i.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)],
+                false,
+                new SourceLocation(file, i.StartLine, i.StartColumn))))
+            .ToList();
+
+        return new Table(name, columns, primaryKey, at, checks, keys);
     }
 
     private static CheckConstraint Check(CheckConstraintDefinition check, string? column, string file) =>
@@ -102,6 +122,12 @@ public sealed class Table
 
     /// <summary>Where the table is defined.</summary>
     public SourceLocation At { get; }
+
+    /// <summary>
+    /// Its primary key, unique constraints and unique indexes, each a set of columns no two rows share (SQL Server counts
+    /// NULLs as equal there, so one NULL at most). Only what the table's definition declares; see <see cref="UniqueKey.DisabledAt"/>.
+    /// </summary>
+    public IReadOnlyList<UniqueKey> UniqueKeys { get; }
 
     /// <summary>The column with this name, ignoring case as SQL Server does, or null.</summary>
     public Column? Column(string name) =>
@@ -182,6 +208,17 @@ public enum DeclaredNullability
     /// <summary><c>NOT NULL</c>.</summary>
     NotNull,
 }
+
+/// <summary>A primary key, unique constraint or unique index as declared: columns whose values no two rows share.</summary>
+/// <param name="Name">Its name, or null when SQL Server is left to generate one.</param>
+/// <param name="Columns">Its columns' names, in key order.</param>
+/// <param name="IsPrimaryKey">Whether it is the primary key.</param>
+/// <param name="At">Where it is declared.</param>
+/// <param name="DisabledAt">
+/// Where a statement may disable its index (<c>ALTER INDEX … DISABLE</c>), so that rows written meanwhile need not be
+/// unique; null when none does. Which runs last depends on the order of the scripts, which the source does not say.
+/// </param>
+public sealed record UniqueKey(string? Name, IReadOnlyList<string> Columns, bool IsPrimaryKey, SourceLocation At, SourceLocation? DisabledAt = null);
 
 /// <summary>A CHECK constraint as declared.</summary>
 /// <remarks>

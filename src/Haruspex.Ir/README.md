@@ -1,7 +1,7 @@
-# The haruspex IR, version 0.7
+# The haruspex IR, version 0.8
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
-each side can be written in whatever language suits it. This page describes version 0.7. A JSON Schema for
+each side can be written in whatever language suits it. This page describes version 0.8. A JSON Schema for
 it will follow.
 
 ## Why not JSON Schema
@@ -15,7 +15,7 @@ every document. It maps to JSON Schema without loss.
 
 ```jsonc
 {
-  "irVersion": "0.7",                 // versioned separately from the tool
+  "irVersion": "0.8",                 // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database: the object's identity
@@ -25,7 +25,8 @@ every document. It maps to JSON Schema without loss.
     "parameters": [{ "name": "@order_id", "type": { … }, "hasDefault": false, "output": false }],
     "results": [{                     // null when they cannot be listed
       "encoding": "json", "type": { "ref": "GetOrderRow" },
-      "mayBeAbsent": true, "absentBecause": [{ "rule": "no-rows", "at": "procedures/get_order.sql:7:5" }]
+      "mayBeAbsent": true, "absentBecause": [{ "rule": "no-rows", "at": "procedures/get_order.sql:7:5" }],
+      "cardinality": "atMostOne"      // how many rows: "one", "atMostOne" or "many"
     }]
   }],
   "types": {                          // named object types, sorted by name
@@ -180,10 +181,24 @@ not for these facts.
 - **The IR describes calls that succeed.** A path that ends in an error the caller sees (`THROW`, `RAISERROR` of
   severity 11 or more, observed to fail the call even where the procedure goes on) describes no call that returns,
   and is left out: `IF @x IS NULL THROW …` is a guard, after which the results always run.
-- **`WITHOUT_ARRAY_WRAPPER` is claimed as one object** without proving the query returns at most one row
-  (WHERE is not read yet, so single-row queries are not recognised). The claim is accepted because it cannot
-  be silently wrong: several rows produce `{...},{...}`, which is not valid JSON, so parsing fails loudly
-  before any schema is applied.
+- **A result says how many rows it returns** (`cardinality`, 0.8): `one`, `atMostOne` or `many`, counting a rowset's
+  rows, or a `FOR JSON` result's objects (its array's items, or its one object without the array wrapper). It is how many
+  the query returns when it runs; whether the result set may be missing is `absentBecause`. `one` is an aggregate query
+  without `GROUP BY` or `HAVING`, or a query with no `FROM` and no filter; `atMostOne` adds `TOP (1)`, `FETCH NEXT 1`, and
+  a filter that fixes every column of a primary key or unique constraint with `=` in the key's own type (or `IS NULL`: a
+  key holds one NULL at most); `many` claims nothing. A generated client can return one row, or a row or null, rather
+  than a list. Emitters bound an array result by it, except one that may be absent, which reads as `[]` and is only
+  bounded above. A `FOR JSON` query that always returns exactly one row is never absent (observed).
+- **`WITHOUT_ARRAY_WRAPPER` is claimed as one object** even where the query is not proved to return at most one row
+  (`cardinality` is `many`). The claim is accepted because it cannot be silently wrong: several rows produce
+  `{...},{...}`, which is not valid JSON, so parsing fails loudly before any schema is applied. Where `cardinality` is
+  `one` or `atMostOne`, it is proved and the caveat does not apply.
+- **Filters refine.** A column is non-null where a `WHERE`, an inner join's `ON` or a `HAVING` keeps only rows in which
+  it cannot be null, by three-valued logic (`@x IS NULL OR c = @x` does not narrow `c`); an outer join's optional side
+  is not null-extended where a filter proves its row matched; an aggregate query's scalar subquery is never empty;
+  `COUNT_BIG` is never null, and `COUNT` only for `count-overflow`. The rules, each observed, are in
+  `Haruspex.SqlServer.Inference/README.md` ("Refinement"). A `FOR JSON` subquery that is not null has at least one item,
+  since over no rows it is NULL, not `[]`.
 - **Changes after a definition withdraw claims.** A table altered (other than by adding or checking
   constraints) or dropped after its `CREATE TABLE` becomes unknown (`unsupported-source`), and a procedure
   altered or dropped has unknown results (`redefined`), because which definition applies depends on the
@@ -257,7 +272,8 @@ What each constructor gives, every rule observed on SQL Server 2025 RTM-CU10 and
 
 - **The aggregates over no rows are `NULL`**, not `[]` or `{}`, so without `GROUP BY` they are nullable with the reason
   `empty-aggregate`. Under `GROUP BY` (with `ROLLUP` and `GROUP BY ()` too) no rows give no groups at all, so there
-  they are never null. A correlated subquery around one adds `empty-subquery`.
+  they are never null. A correlated subquery around one without `GROUP BY` always has its one row, so it adds nothing
+  (0.8; it added `empty-subquery` before); with `GROUP BY` it adds `empty-subquery`.
 - **Scalars are written as `FOR JSON` writes them** ("Scalars in JSON" below holds for the constructors too): the
   same strings for `date`, `time(n)`, `datetime2(n)`, `datetimeoffset(n)`, `datetime`, `smalldatetime` and
   `uniqueidentifier`, `true`/`false` for `bit`, decimals and money with their scale, `bigint` in full, `char(n)`
@@ -326,6 +342,10 @@ point, as if its statements were there, so they carry the callee's locations (a 
   reason `declared`, at the procedure declared. A declared scalar has no SQL type, so it has no `sql`: that key is the
   database's type, which other dialects and backends read, and a JSON Schema type is not one.
 
+Changes in 0.8 (slice 6c, refinement): a result's `cardinality`; the null rule `count-overflow`. Refinement tightens
+nullability and adds `minItems`/`maxItems` to `FOR JSON` subqueries' arrays, which 0.7 readers read as before, but a 0.7
+reader would not know a result is one row, and a document always writes `cardinality`, which is why the version changed.
+
 Changes in 0.7 (slice 6b, calls): the unknown reasons `dynamic-sql`, `procedure-variable`, `system-procedure`,
 `missing-procedure` and `ambiguous-procedure`; the null rule `declared`; the override setting `results` and an override's
 `via`; a scalar's `sql` may be left out (in declared results). A 0.6 reader that ignores unknown keys would read a caller's declared results as inferred, which is why the version
@@ -355,4 +375,4 @@ Changes in 0.2: scalars gained facets (`maxLength`, `length`, `minLength`, `digi
 each with its `from`. A reader of 0.1 that ignores unknown keys reads 0.2 documents unchanged, but the version
 changed because the facets are claims a 0.2 reader may rely on.
 
-Not in 0.7, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.
+Not in 0.8, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.

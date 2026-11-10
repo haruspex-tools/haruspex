@@ -68,6 +68,8 @@ emitter's mistakes. It checks what the IR claims:
 - every key present is one the type has, at most once, and every key whose presence is `always` is there;
   a key that is `omittedWhenNull` is never present with a null;
 - a result without `mayBeAbsent` always comes back (a FOR JSON result with no row is absent, which needs `no-rows`);
+- a result returns no more rows than its `cardinality` allows, and exactly one when it is `one` (IR 0.8): a rowset's rows,
+  or a FOR JSON result's objects;
 - the number of result sets is the number of results, less any trailing ones that may not run (`not-run`, IR 0.6),
   which then count as absent;
 - a rowset that is a `union` of arrays (several statements may return it) fits one variant whole;
@@ -88,7 +90,10 @@ What the statement walk relies on (which result sets arrive when a branch is not
 error is raised; what temporary tables, table variables and `SELECT … INTO` give; how a recursive CTE's columns are
 typed) is pinned by `StatementFlowObservationTests`. What following `EXEC` relies on (where a callee's result sets arrive,
 what it can do to its caller's temporary tables, what `INSERT … EXEC` accepts, how deep calls nest, which procedure an
-`sp_` name runs) is pinned by `ExecObservationTests`. Both make their calls through `Server/ObservedCall.cs`.
+`sp_` name runs) is pinned by `ExecObservationTests`. What refinement relies on (which rows a filter keeps when a column is
+NULL, under three-valued logic and ANSI_NULLS; what aggregates give over no rows; how many rows TOP, FETCH and a unique key
+allow; when COUNT overflows to NULL) is pinned by `RefinementObservationTests`. A field whose only reason to be null is
+`count-overflow` need not be seen null: no seed has 2,147,483,648 rows. Both make their calls through `Server/ObservedCall.cs`.
 
 A fixture may have a `haruspex.json` beside its SQL: its IR is then inferred with it applied, so results it declares
 (the `calls` fixture's dynamic SQL) are checked against the server like everything inferred.

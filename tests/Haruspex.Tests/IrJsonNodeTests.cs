@@ -22,7 +22,7 @@ public class IrJsonNodeTests
     }
 
     [Fact]
-    public void The_version_is_0_7() => Assert.Equal("0.7", IrDocument.CurrentVersion);
+    public void The_version_is_0_8() => Assert.Equal("0.8", IrDocument.CurrentVersion);
 
     [Fact]
     public void A_plain_array_is_written_as_before()

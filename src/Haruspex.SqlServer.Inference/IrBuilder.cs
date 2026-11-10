@@ -54,7 +54,7 @@ internal sealed class IrBuilder(FunctionSummaries functions)
             {
                 results = [];
                 for (var i = 0; i < shapes.Count; i++)
-                    results.Add(new IrResult(shapes[i].Encoding, Convert(shapes[i].Shape, owner, id, $"results[{i}]"), shapes[i].AbsentBecause));
+                    results.Add(new IrResult(shapes[i].Encoding, Convert(shapes[i].Shape, owner, id, $"results[{i}]"), shapes[i].AbsentBecause) { Cardinality = shapes[i].Cardinality });
             }
             else
             {

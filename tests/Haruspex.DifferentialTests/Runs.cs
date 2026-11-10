@@ -28,7 +28,7 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
@@ -51,6 +51,8 @@ public static class Runs
     private const string NoEmployees = "DELETE FROM flow.employee;";
     private const string NoRegions = "DELETE FROM flow.region;";
     private const string NoBakery = "DELETE FROM calls.delivery; DELETE FROM calls.batch; DELETE FROM calls.oven;";
+    private const string NoLibrary = "DELETE FROM lend.loan; DELETE FROM lend.copy; DELETE FROM lend.title; DELETE FROM lend.member;";
+    private const string NoLoans = "DELETE FROM lend.loan;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -109,6 +111,7 @@ public static class Runs
         new("trees: get_assembly, a part with no components, lowest key", "trees", "bom.get_assembly", new Dictionary<string, object?> { ["@part_id"] = int.MinValue }),
         new("trees: get_assembly, a part used in three assemblies, highest key", "trees", "bom.get_assembly", new Dictionary<string, object?> { ["@part_id"] = int.MaxValue }),
         new("trees: get_assembly, an assembly with no components", "trees", "bom.get_assembly", new Dictionary<string, object?> { ["@part_id"] = 12 }),
+        new("trees: get_assembly, an assembly of one component", "trees", "bom.get_assembly", new Dictionary<string, object?> { ["@part_id"] = 11 }),
         new("trees: get_assembly, the longest name", "trees", "bom.get_assembly", new Dictionary<string, object?> { ["@part_id"] = 21 }),
         new("trees: get_assembly, no such part", "trees", "bom.get_assembly", new Dictionary<string, object?> { ["@part_id"] = 999 }),
         new("trees: list_parts", "trees", "bom.list_parts", None),
@@ -123,6 +126,33 @@ public static class Runs
         new("trees: list_items, no items", "trees", "cat.list_items", None, NoItems),
         new("trees: item_rows", "trees", "cat.item_rows", None),
 
+        new("refine: search_titles, no filter", "refine", "lend.search_titles", None),
+        new("refine: search_titles, by author", "refine", "lend.search_titles", new Dictionary<string, object?> { ["@author"] = "A. Writer" }),
+        new("refine: search_titles, by genre and name", "refine", "lend.search_titles", new Dictionary<string, object?> { ["@genre"] = "fiction", ["@name"] = "T" }),
+        new("refine: authors_report", "refine", "lend.authors_report", None),
+        new("refine: authors_report, no titles", "refine", "lend.authors_report", None, NoLibrary),
+        new("refine: get_member, with a home branch", "refine", "lend.get_member", new Dictionary<string, object?> { ["@member_id"] = 1 }),
+        new("refine: get_member, no email or home branch", "refine", "lend.get_member", new Dictionary<string, object?> { ["@member_id"] = 2 }),
+        new("refine: get_member, never borrowed", "refine", "lend.get_member", new Dictionary<string, object?> { ["@member_id"] = 4 }),
+        new("refine: get_member, no such member", "refine", "lend.get_member", new Dictionary<string, object?> { ["@member_id"] = 999 }),
+        new("refine: member_by_email", "refine", "lend.member_by_email", new Dictionary<string, object?> { ["@email"] = "cy@example.test" }),
+        new("refine: member_by_email, with a nickname", "refine", "lend.member_by_email", new Dictionary<string, object?> { ["@email"] = "ann@example.test" }),
+        new("refine: member_by_email, no such email", "refine", "lend.member_by_email", new Dictionary<string, object?> { ["@email"] = "none@example.test" }),
+        new("refine: member_by_email, null", "refine", "lend.member_by_email", new Dictionary<string, object?> { ["@email"] = null }),
+        new("refine: copy_at, shelved", "refine", "lend.copy_at", new Dictionary<string, object?> { ["@branch_id"] = 1, ["@copy_no"] = 1 }),
+        new("refine: copy_at, no author", "refine", "lend.copy_at", new Dictionary<string, object?> { ["@branch_id"] = 2, ["@copy_no"] = 1 }),
+        new("refine: copy_at, no shelf", "refine", "lend.copy_at", new Dictionary<string, object?> { ["@branch_id"] = 1, ["@copy_no"] = 2 }),
+        new("refine: copy_at, no such copy", "refine", "lend.copy_at", new Dictionary<string, object?> { ["@branch_id"] = 9, ["@copy_no"] = 9 }),
+        new("refine: open_loans", "refine", "lend.open_loans", None),
+        new("refine: branch_stats", "refine", "lend.branch_stats", None),
+        new("refine: branch_stats, no loans", "refine", "lend.branch_stats", None, NoLoans),
+        new("refine: overdue_members", "refine", "lend.overdue_members", new Dictionary<string, object?> { ["@today"] = new DateTime(2026, 11, 10) }),
+        new("refine: overdue_members, none yet", "refine", "lend.overdue_members", new Dictionary<string, object?> { ["@today"] = new DateTime(2026, 1, 1) }),
+        new("refine: catalogue_summary", "refine", "lend.catalogue_summary", None),
+        new("refine: catalogue_summary, an empty library", "refine", "lend.catalogue_summary", None, NoLibrary),
+        new("refine: latest_loan, returned and not", "refine", "lend.latest_loan", new Dictionary<string, object?> { ["@member_id"] = 1 }),
+        new("refine: latest_loan, never borrowed", "refine", "lend.latest_loan", new Dictionary<string, object?> { ["@member_id"] = 4 }),
+        new("refine: latest_loan, back with no fine", "refine", "lend.latest_loan", new Dictionary<string, object?> { ["@member_id"] = 3 }),
         new("flow: region_report", "flow", "flow.region_report", None),
         new("flow: region_report, web only", "flow", "flow.region_report", new Dictionary<string, object?> { ["@channel"] = "web" }),
         new("flow: region_report, a channel with no sales", "flow", "flow.region_report", new Dictionary<string, object?> { ["@channel"] = "post" }),

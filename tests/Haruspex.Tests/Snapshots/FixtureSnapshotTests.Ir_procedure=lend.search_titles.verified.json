@@ -1,0 +1,188 @@
+{
+  "irVersion": "0.8",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "lend.search_titles",
+      "name": "SearchTitles",
+      "kind": "procedure",
+      "at": "procedures/search_titles.sql:2:1",
+      "parameters": [
+        {
+          "name": "@name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(60)"
+          },
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@author",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(60)"
+          },
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@genre",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SearchTitlesRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "SearchTitlesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "lend.search_titles",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "title_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(60)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "author",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(60)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "lend.title.author"
+            }
+          ]
+        },
+        {
+          "name": "genre",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(10)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "fiction",
+                "history",
+                "science"
+              ],
+              "from": [
+                {
+                  "check": "lend.ck_title_genre"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "lend.title.genre"
+            }
+          ]
+        },
+        {
+          "name": "isbn",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(13)",
+            "maxLength": {
+              "value": 13,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(13)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "lend.title.isbn"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

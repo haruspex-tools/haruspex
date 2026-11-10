@@ -410,7 +410,7 @@ public class JsonFunctionTests
         var zod = ZodEmitter.Emit(Infer(Tree, "SELECT json_query(dbo.tree(t.id)) AS children FROM dbo.t AS t FOR JSON PATH;"));
 
         Assert.Contains("export const TreeNodeSchema = z.object({\n", zod, StringComparison.Ordinal);
-        Assert.Contains("  get children() { return z.array(TreeNodeSchema).optional() },\n", zod, StringComparison.Ordinal);
+        Assert.Contains("  get children() { return z.array(TreeNodeSchema).min(1).optional() },\n", zod, StringComparison.Ordinal);
         Assert.Contains("  id: z.int32(),\n", zod, StringComparison.Ordinal);
     }
 
@@ -420,7 +420,7 @@ public class JsonFunctionTests
         var zod = ZodEmitter.Emit(Infer(Children, "SELECT dbo.children(t.id) AS kids FROM dbo.t AS t FOR JSON PATH;"));
 
         Assert.Contains("const jsonText = (content: () => z.ZodType) =>", zod, StringComparison.Ordinal);
-        Assert.Contains("  kids: jsonText(() => z.array(PKidsSchema)).optional() /* JSON text */,\n", zod, StringComparison.Ordinal);
+        Assert.Contains("  kids: jsonText(() => z.array(PKidsSchema).min(1)).optional() /* JSON text */,\n", zod, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -434,8 +434,8 @@ public class JsonFunctionTests
 
         // Whichever is written first, each refers to the other inside the cycle, so both are getters; the row, outside
         // the cycle, refers to it plainly.
-        Assert.Contains("  get subcategories() { return z.array(CategoriesNodeSchema).optional() },\n", zod, StringComparison.Ordinal);
+        Assert.Contains("  get subcategories() { return z.array(CategoriesNodeSchema).min(1).optional() },\n", zod, StringComparison.Ordinal);
         Assert.Contains("  get items() { return ItemsNodeSchema },\n", zod, StringComparison.Ordinal);
-        Assert.Contains("  tree: z.array(CategoriesNodeSchema).optional(),\n", zod, StringComparison.Ordinal);
+        Assert.Contains("  tree: z.array(CategoriesNodeSchema).min(1).optional(),\n", zod, StringComparison.Ordinal);
     }
 }

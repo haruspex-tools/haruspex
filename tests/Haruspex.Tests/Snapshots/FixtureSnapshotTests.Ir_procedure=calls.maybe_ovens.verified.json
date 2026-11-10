@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -35,7 +35,8 @@
               "rule": "not-run",
               "at": "procedures/maybe_ovens.sql:5:5"
             }
-          ]
+          ],
+          "cardinality": "many"
         }
       ]
     }

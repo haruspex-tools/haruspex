@@ -1,7 +1,7 @@
 # Haruspex.SqlServer.Model
 
 A SQL Server database's schema as plain .NET data: tables with their columns, declared types, collations, NULL or
-NOT NULL, identity, primary keys and CHECK constraints; alias and CLR types (`CREATE TYPE`); stored procedures and user-defined functions, with their definitions as
+NOT NULL, identity, primary keys, unique keys and CHECK constraints; alias and CLR types (`CREATE TYPE`); stored procedures and user-defined functions, with their definitions as
 [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom) fragments; and views,
 synonyms and functions by name. Names are two-part (`schema.name`) and compared case-insensitively, as SQL Server
 compares them in almost every database.

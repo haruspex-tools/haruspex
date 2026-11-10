@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -41,7 +41,8 @@
               }
             ]
           },
-          "mayBeAbsent": false
+          "mayBeAbsent": false,
+          "cardinality": "many"
         },
         {
           "encoding": "rowset",
@@ -72,7 +73,8 @@
               "rule": "not-run",
               "at": "procedures/caught_report.sql:16:5"
             }
-          ]
+          ],
+          "cardinality": "many"
         },
         {
           "encoding": "rowset",
@@ -88,7 +90,8 @@
               "rule": "not-run",
               "at": "procedures/caught_report.sql:16:5"
             }
-          ]
+          ],
+          "cardinality": "many"
         }
       ]
     }

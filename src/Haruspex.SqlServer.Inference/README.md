@@ -1,6 +1,7 @@
-# Haruspex.SqlServer.Inference: statement flow
+# Haruspex.SqlServer.Inference: statement flow and refinement
 
-How a procedure's statements are read in order (slice 6), and calls followed (slice 6b, "Calls" below). The code is `ProcedureAnalyzer.Flow.cs` (the walk),
+How a procedure's statements are read in order (slice 6), calls followed (slice 6b, "Calls" below), and what filters and
+single-row queries prove (slice 6c, "Refinement" below). The code is `ProcedureAnalyzer.Flow.cs` (the walk),
 `FlowState.cs` (the state and its join), `FlowLocals.cs` (what the binder sees), and `ShapeJoin.cs` (joins of values).
 Every engine rule it leans on is observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`; the test names are given below.
@@ -222,3 +223,119 @@ a non-null `int`, and `CAST`/`CONVERT` (without a style) of a string to a string
 when its operand is (it cuts a longer string short without an error). A string type without a length is 30 long in a
 `CAST` or `CONVERT`, and 1 in a declaration (`A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration`). Arithmetic is not modelled: under a caller's
 `ANSI_WARNINGS OFF` an overflow gives NULL rather than an error.
+
+## Refinement
+
+What a query's filters prove about the rows they keep (slice 6c): `Refinement.cs` (facts and three-valued logic) and
+`Cardinality.cs` (how many rows). Every engine rule is observed on SQL Server 2025 RTM-CU10 and kept as a test in
+`tests/Haruspex.DifferentialTests/RefinementObservationTests.cs`; the test names are given below.
+
+### Which conditions prove a column non-null
+
+`WHERE`, an inner join's `ON` and `HAVING` keep only rows for which their condition is TRUE. So a condition that cannot be
+TRUE when a column is NULL proves it non-null in every row kept. `Possible` computes, for a column, the set of truth values
+the condition can take when that column is NULL and everything else is anything:
+
+| Form | When the column is NULL |
+|---|---|
+| a comparison (`=`, `<>`, `!=`, `<`, `>`, `<=`, `>=`, `!<`, `!>`) with the column as an operand, either side | UNKNOWN (`A_comparison_with_a_null_column_is_unknown_and_keeps_no_row`) |
+| `LIKE` with the column as the value or the pattern | UNKNOWN (`Like_is_unknown_when_the_value_or_the_pattern_is_null`) |
+| `BETWEEN`, as `x >= a AND x <= b`; `IN (list)`, as `x = a OR x = b …` | from those |
+| `x IN (subquery)` | FALSE or UNKNOWN: FALSE when the subquery is empty (`In_a_subquery_with_no_rows_is_false_and_not_in_it_is_true_even_for_a_null`) |
+| `IS NULL` / `IS NOT NULL` | TRUE / FALSE |
+| anything else: the column inside `ISNULL`, `COALESCE`, `CASE` or any expression, `IS [NOT] DISTINCT FROM`, `EXISTS` | anything (`A_null_inside_isnull_coalesce_or_case_can_make_the_predicate_true`, `Is_distinct_from_is_never_unknown`) |
+
+`AND`, `OR` and `NOT` combine the sets by three-valued logic, treating their operands as independent, which can only add
+values. The column is proved non-null when TRUE is not in the set. This gives every rule the brief listed and nothing more:
+
+- conjuncts at the top refine, each on its own (`UNKNOWN AND x` is never TRUE);
+- under `OR`, only what every disjunct proves (`Or_keeps_a_null_when_any_disjunct_can_be_true`);
+- `IS NULL`, `ISNULL()`, `COALESCE` and `CASE` never refine;
+- **the catch-all filter `@x IS NULL OR c = @x` does not narrow `c`**: `@x IS NULL` can be TRUE whatever `c` is
+  (`The_catch_all_filter_keeps_every_row_when_its_parameter_is_null`);
+- `NOT` refines exactly where three-valued logic says so: `NOT (c = 1)` is UNKNOWN for a null `c`, so it refines, as do
+  `NOT (c IS NULL)`, `NOT IN (list)`, `NOT BETWEEN` and `NOT LIKE`; `NOT IN (subquery)` is TRUE over an empty subquery, so it
+  does not (`Not_of_an_unknown_comparison_is_unknown_and_keeps_no_null`). This is wider than "NOT never refines", and as
+  sound, since it is the engine's own logic.
+
+**ANSI_NULLS.** A procedure keeps the setting in force when it was created, and with it off `c = @x` is TRUE when both are
+null (`A_procedure_created_with_ansi_nulls_off_keeps_a_null_that_equals_a_null_variable`). So under it `=` and `<>` against
+anything but a column refine nothing; a comparison of two columns is not affected. Sources records `AnsiNullsOff` when a
+`SET ANSI_NULLS OFF` (or `ANSI_DEFAULTS OFF`) precedes the definition in its file; otherwise it is assumed on, the default
+of every client library and of SSDT. A `SET` in another file that runs first in the same session is not seen.
+
+### Where a fact holds
+
+A fact is recorded per query (`QueryFacts`) and holds while that query's select list is read, including the subqueries in
+it, which see the outer row as it was filtered. A subquery's own filter never refines the outer query's columns. Sources are
+compared by reference, since one table read twice is two sources.
+
+- **A column fact** (`Values`): the column is non-null whenever its source's row is there. It removes `nullable-column`, or
+  every reason of a CTE's, derived table's or temporary table's column (whatever made it nullable inside, the filter
+  proves it is not), but not `outer-join`.
+- **A row fact** (`Rows`): the source's row is there, not null-extended by an outer join. A null-extended row has every
+  column NULL, so a filter that proves any of the source's columns non-null removes it; the source's columns lose
+  `outer-join` and keep `nullable-column` (`A_where_condition_on_the_optional_side_of_an_outer_join_drops_the_rows_that_did_not_match`).
+  It is the soundest model of "the outer join became an inner join for that side": only the source whose column is
+  tested is proved there. In `a LEFT JOIN (b LEFT JOIN c …) …` a test of `b` says nothing of `c`, which shares `b`'s
+  optional side in the binder's terms but has an outer join of its own.
+
+| Condition | Column facts | Row facts |
+|---|---|---|
+| `WHERE`, `HAVING` | any source | yes |
+| an inner join's `ON`, outside any optional side | any source | yes (`An_inner_join_after_an_outer_join_drops_its_unmatched_rows`) |
+| an inner join's `ON`, inside an optional side | any source | no: the rows it kept may be null-extended around it |
+| an outer join's `ON` | the optional side's only | no: it never removes a row of the kept side (`A_condition_in_the_on_of_an_outer_join_never_drops_a_row_of_the_kept_side`) |
+
+`HAVING` also proves aggregates non-null: one compared there (`MAX(c) > 0`) is non-null in every group kept, matched in the
+select list by its text. Refinement passes through CTEs, derived tables and `SELECT … INTO` tables with the values
+themselves: what a query proved is what its row holds.
+
+### Aggregates and scalar subqueries
+
+- `COUNT` and `COUNT_BIG` are `int` and `bigint`, 0 over no rows. `COUNT` overflows past 2,147,483,647 rows, which is an
+  error by default but NULL under a caller's `ANSI_WARNINGS` and `ARITHABORT` off
+  (`Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off`), and a procedure cannot
+  prevent it, so `COUNT` is nullable with `count-overflow`, and `COUNT_BIG` never null. A `HAVING` that compares the count
+  removes it.
+- `MIN` and `MAX` return one of their argument's values: its type and facets, null when the argument can be, and
+  `empty-aggregate` without `GROUP BY` (`An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows`,
+  `An_aggregate_with_group_by_returns_no_row_over_no_rows`). `SUM`, `AVG` and the rest are not modelled yet: they change
+  the type, and `SUM` can overflow as `COUNT` does.
+- A scalar subquery is its one column's value, with its type and facets, and `empty-subquery` unless its query returns
+  exactly one row (`A_scalar_subquery_of_an_aggregate_without_group_by_always_has_a_value_for_count`). A `FOR JSON` subquery
+  is NULL over no rows, so an array it builds has at least one item, and at most one where its query returns at most one.
+
+### How many rows (`Cardinality.cs`)
+
+| Query | Rows |
+|---|---|
+| an aggregate in the select list, or `HAVING`, without `GROUP BY` | one; at most one with `HAVING` (`Having_over_no_groups_returns_no_row_and_without_group_by_at_most_one`) |
+| no `FROM` | one; at most one with `WHERE` |
+| `GROUP BY`, even `GROUP BY ()` | many, and none over no rows (`An_aggregate_with_group_by_returns_no_row_over_no_rows`) |
+| a filter fixing a key of every source | at most one |
+| `TOP (0)` or `(1)` without `PERCENT` or `WITH TIES`; `FETCH NEXT 0` or `1` | at most one (`Top_1_and_fetch_1_give_at_most_one_row_but_with_ties_gives_more`) |
+
+`TOP` and `OFFSET` never add rows; over a query of exactly one row they keep it only as a literal `TOP` of one or more, and
+`OFFSET 0`. An aggregate counts for the query only when it is `COUNT(*)`, or every column its arguments read is of the
+query's own sources: an aggregate of only an enclosing query's columns is that query's in SQL, and would not make the
+subquery an aggregate query.
+
+**Keys.** A source is fixed when every column of one of its enforced keys (`SchemaRules.EnforcedKeys`: the primary key,
+unique constraints and unfiltered unique indexes of its definition, less any an `ALTER INDEX … DISABLE` anywhere may have
+disabled) is compared with `=` to a value the same for every row: a literal, a variable, an enclosing query's column, or a
+column of a source already fixed; or is tested `IS NULL`, since a key holds one NULL at most
+(`A_unique_constraint_allows_one_null_only`). When every source is fixed, there is at most one row. A condition counts
+from `WHERE`'s top-level conjuncts, or from a join's `ON` for the sources inside that join (the optional side, for an
+outer join, which then matches at most one row per kept row); never under `OR`. Only tables are keyed.
+
+The comparison must be the key's own equality: when SQL Server converts the key to the value's type, several rows can
+match. `'5'` and `'05'` both equal 5 (`A_comparison_that_converts_the_key_can_match_several_rows`), and a `varchar` key
+under a SQL collation compared with an `nvarchar` value is compared by Unicode rules, under which `'ss'` and `'ß'` are equal
+(`A_varchar_key_under_a_sql_collation_compared_with_nvarchar_can_match_several_rows`). So the value must be of the key's
+type, a narrower integer or decimal, a `varchar` for an `nvarchar` key, or a string for a key that is not a string, and
+carry no `COLLATE` of its own (`InKeysType` lists them).
+
+Not modelled yet: keys of temporary tables, table variables, CTEs and derived tables; `CREATE UNIQUE INDEX` (a separate
+statement) and `ALTER TABLE … ADD CONSTRAINT … UNIQUE`; `SUM` and `AVG`; refinement of `UPDATE … FROM` and
+`SELECT @v = …` by their filters. Each only claims less.

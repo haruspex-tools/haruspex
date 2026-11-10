@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -38,7 +38,8 @@
               "ref": "DailyReportResult1Row"
             }
           },
-          "mayBeAbsent": false
+          "mayBeAbsent": false,
+          "cardinality": "many"
         },
         {
           "encoding": "rowset",
@@ -48,7 +49,8 @@
               "ref": "DailyReportResult2Row"
             }
           },
-          "mayBeAbsent": false
+          "mayBeAbsent": false,
+          "cardinality": "many"
         }
       ]
     }

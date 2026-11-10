@@ -20,6 +20,7 @@ public class FixtureSnapshotTests
         ["trees"] = new(() => SqlProject.Load(TestPaths.Fixture("trees"))),
         ["flow"] = new(() => SqlProject.Load(TestPaths.Fixture("flow"))),
         ["calls"] = new(() => SqlProject.Load(TestPaths.Fixture("calls"))),
+        ["refine"] = new(() => SqlProject.Load(TestPaths.Fixture("refine"))),
     };
 
     /// <summary>Every fixture procedure, with its fixture. Procedure ids are unique across fixtures.</summary>
@@ -50,6 +51,16 @@ public class FixtureSnapshotTests
         ["cat.get_category"] = "trees",
         ["cat.list_items"] = "trees",
         ["cat.item_rows"] = "trees",
+        ["lend.search_titles"] = "refine",
+        ["lend.authors_report"] = "refine",
+        ["lend.get_member"] = "refine",
+        ["lend.member_by_email"] = "refine",
+        ["lend.copy_at"] = "refine",
+        ["lend.open_loans"] = "refine",
+        ["lend.branch_stats"] = "refine",
+        ["lend.overdue_members"] = "refine",
+        ["lend.catalogue_summary"] = "refine",
+        ["lend.latest_loan"] = "refine",
         ["flow.region_report"] = "flow",
         ["flow.region_sales"] = "flow",
         ["flow.sales_by_mode"] = "flow",

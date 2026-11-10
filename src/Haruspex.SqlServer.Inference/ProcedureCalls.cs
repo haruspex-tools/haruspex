@@ -177,7 +177,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
             {
                 frame.Recursive = false;
                 frame.Widened = false;
-                var walked = new ProcedureAnalyzer(model, procedure.File, functions, calls: this, context: frame.Context).Walk(procedure.Body);
+                var walked = new ProcedureAnalyzer(model, procedure.File, functions, calls: this, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff).Walk(procedure.Body);
                 if (!frame.Recursive || walked.Blocker is not null)
                 {
                     if (!frame.Dependent)

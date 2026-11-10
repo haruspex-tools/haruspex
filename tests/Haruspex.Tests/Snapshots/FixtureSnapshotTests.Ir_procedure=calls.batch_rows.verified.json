@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -30,7 +30,8 @@
               "ref": "BatchRowsResult1Row"
             }
           },
-          "mayBeAbsent": false
+          "mayBeAbsent": false,
+          "cardinality": "many"
         },
         {
           "encoding": "rowset",
@@ -40,7 +41,8 @@
               "ref": "BatchRowsResult2Row"
             }
           },
-          "mayBeAbsent": false
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
         }
       ]
     }

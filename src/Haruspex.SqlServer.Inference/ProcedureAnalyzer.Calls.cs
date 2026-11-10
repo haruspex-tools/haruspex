@@ -287,7 +287,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var track = ResultTrack.None;
         foreach (var result in declaration.Results)
-            track = track.Append(new ResultShape(result.Encoding, IrShapes.ToShape(result.Type, declaration.Types, name, at), result.AbsentBecause), at);
+            track = track.Append(new ResultShape(result.Encoding, IrShapes.ToShape(result.Type, declaration.Types, name, at), result.AbsentBecause, result.Cardinality), at);
         return track;
     }
 

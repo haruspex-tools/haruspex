@@ -183,7 +183,7 @@ public class ConstructTests
     }
 
     [Theory]
-    [InlineData("(SELECT t.id FROM dbo.t AS t) AS s")]
+    [InlineData("(VALUES (1)) AS s (id)")]
     [InlineData("dbo.f(1) AS s")]
     [InlineData("otherdb.dbo.t AS s")]
     public void A_source_not_modelled_makes_its_columns_unknown(string from) =>

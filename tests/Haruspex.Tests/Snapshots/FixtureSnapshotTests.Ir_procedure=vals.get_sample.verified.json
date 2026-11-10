@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.7",
+  "irVersion": "0.8",
   "source": {
     "dialect": "tsql"
   },
@@ -33,7 +33,8 @@
               "rule": "no-rows",
               "at": "procedures/get_sample.sql:7:1"
             }
-          ]
+          ],
+          "cardinality": "atMostOne"
         }
       ]
     }

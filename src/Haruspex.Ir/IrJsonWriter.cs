@@ -142,6 +142,13 @@ public static class IrJsonWriter
                 json.WriteBoolean("mayBeAbsent", result.MayBeAbsent);
                 if (result.MayBeAbsent)
                     WriteReasons(json, "absentBecause", result.AbsentBecause);
+                json.WriteString("cardinality", result.Cardinality switch
+                {
+                    IrCardinality.Many => "many",
+                    IrCardinality.AtMostOne => "atMostOne",
+                    IrCardinality.One => "one",
+                    _ => throw new ArgumentOutOfRangeException(nameof(obj), result.Cardinality, "Unknown cardinality."),
+                });
                 json.WriteEndObject();
             }
 

@@ -20,7 +20,8 @@ internal sealed record ProcedureAnalysis(
 internal sealed record ParameterShape(string Name, Shape Type, bool HasDefault, bool IsOutput);
 
 /// <param name="AbsentBecause">Why the result can arrive with no value at all (see <see cref="IrResult"/>).</param>
-internal sealed record ResultShape(IrEncoding Encoding, Shape Shape, IReadOnlyList<IrNullReason> AbsentBecause);
+/// <param name="Cardinality">How many rows its query returns when it runs (see <see cref="IrResult.Cardinality"/>).</param>
+internal sealed record ResultShape(IrEncoding Encoding, Shape Shape, IReadOnlyList<IrNullReason> AbsentBecause, IrCardinality Cardinality = IrCardinality.Many);
 
 /// <summary>
 /// Infers the result sets of one procedure. Every construct it does not model becomes an
@@ -50,14 +51,17 @@ internal sealed partial class ProcedureAnalyzer
     /// <param name="parameters">Inside a function, its parameters' values.</param>
     /// <param name="calls">The calls being followed, inside a procedure; null inside a function, which cannot call one.</param>
     /// <param name="context">What a procedure's walk starts from: its caller's temporary tables, and how it is called.</param>
+    /// <param name="ansiNullsOff">Whether the body was created with ANSI_NULLS off (see <see cref="Refinement"/>).</param>
     public ProcedureAnalyzer(
         DatabaseModel model,
         string file,
         FunctionSummaries functions,
         IReadOnlyDictionary<string, Value>? parameters = null,
         ProcedureCalls? calls = null,
-        CallContext? context = null)
+        CallContext? context = null,
+        bool ansiNullsOff = false)
     {
+        this.ansiNullsOff = ansiNullsOff;
         this.model = model;
         binder = new Binder(model, file);
         this.file = file;
@@ -107,7 +111,9 @@ internal sealed partial class ProcedureAnalyzer
         var encoding = select.QueryExpression.ForClause is JsonForClause ? IrEncoding.Json : IrEncoding.Rowset;
 
         // A top-level FOR JSON query that matches no rows returns no row at all, rather than [] or {}. A
-        // rowset that matches no rows is still a result set, with no rows.
+        // rowset that matches no rows is still a result set, with no rows. A query that always returns exactly one row
+        // always returns its JSON (observed: For_json_over_an_aggregate_without_group_by_always_returns_its_one_object).
+        IReadOnlyList<IrNullReason> NoRows(Row row) => encoding == IrEncoding.Json && row.Rows != IrCardinality.One ? [new IrNullReason(IrNullRules.NoRows, at.ToString())] : [];
         IReadOnlyList<IrNullReason> absent = encoding == IrEncoding.Json ? [new IrNullReason(IrNullRules.NoRows, at.ToString())] : [];
 
         return WithCtes(
@@ -120,8 +126,8 @@ internal sealed partial class ProcedureAnalyzer
                 var row = Query(query, parent: null);
                 return query.ForClause switch
                 {
-                    JsonForClause json => new ResultShape(IrEncoding.Json, ForJson(row, json, at), absent),
-                    null => new ResultShape(IrEncoding.Rowset, Rowset(row), absent),
+                    JsonForClause json => new ResultShape(IrEncoding.Json, ForJson(row, json, at, subquery: false), NoRows(row), row.Rows),
+                    null => new ResultShape(IrEncoding.Rowset, Rowset(row), [], row.Rows),
                     _ => new ResultShape(IrEncoding.Rowset, Unsupported(IrUnknownReasons.UnsupportedQuery, $"{Text(query.ForClause)} is not modelled yet.", at), []),
                 };
             },
@@ -130,19 +136,21 @@ internal sealed partial class ProcedureAnalyzer
 
     // ---- queries ------------------------------------------------------------------------------------
 
-    private sealed record Row(IReadOnlyList<RowColumn> Columns, SourceLocation? Star);
+    /// <param name="Rows">How many rows the query returns.</param>
+    private sealed record Row(IReadOnlyList<RowColumn> Columns, SourceLocation? Star, IrCardinality Rows = IrCardinality.Many);
 
     private Row Query(QuerySpecification query, BindingScope? parent)
     {
         // An outermost query sees the body's own relations; a subquery inherits them through its parent's scope.
         var scope = binder.BindFrom(query, parent, parent is null ? locals : null);
 
-        // WHERE, GROUP BY and HAVING are not read. They can only remove rows or make values non-null, so
-        // ignoring them can leave a field nullable that is not, but never the reverse.
+        // WHERE, the joins' ON and HAVING prove columns and aggregates non-null in the rows they keep (Refinement.cs), for
+        // the select list and every subquery in it; GROUP BY is not read beyond what cardinality needs.
         var columns = new List<RowColumn>();
         SourceLocation? star = null;
         var outer = current;
         current = query;
+        facts.Add(Facts(query, scope));
         try
         {
             foreach (var element in query.SelectElements)
@@ -162,10 +170,11 @@ internal sealed partial class ProcedureAnalyzer
         }
         finally
         {
+            facts.RemoveAt(facts.Count - 1);
             current = outer;
         }
 
-        return new Row(columns, star);
+        return new Row(columns, star, Cardinality(query, scope));
     }
 
     private static Shape Rowset(Row row)
@@ -201,7 +210,12 @@ internal sealed partial class ProcedureAnalyzer
     /// The shape <c>FOR JSON PATH</c> builds from a row: one object per row, with a dotted alias such as
     /// <c>customer.name</c> nesting a key inside an object.
     /// </summary>
-    private Shape ForJson(Row row, JsonForClause clause, SourceLocation at)
+    /// <param name="subquery">
+    /// Whether it is a subquery's value, which is NULL over no rows (observed), so that an array it builds has at least one
+    /// item, and at most one when the query returns at most one row. A result's bounds are its cardinality instead, since
+    /// a result that may be absent reads as [] (the IR's reader convention).
+    /// </param>
+    private Shape ForJson(Row row, JsonForClause clause, SourceLocation at, bool subquery)
     {
         var options = clause.Options.Select(o => o.OptionKind).ToHashSet();
         if (options.Contains(JsonForClauseOptions.Auto))
@@ -250,11 +264,14 @@ internal sealed partial class ProcedureAnalyzer
         var includeNulls = options.Contains(JsonForClauseOptions.IncludeNullValues);
         var shape = JsonObject(root, includeNulls);
 
-        // WITHOUT_ARRAY_WRAPPER is claimed as one object although nothing here proves the query returns at most
-        // one row (WHERE is not read; recognising single-row queries is a known gap). The claim is accepted
-        // because it cannot be silently wrong: several rows produce "{...},{...}", which is not valid JSON, so
-        // the caller's parse fails loudly before any schema sees it. No rows are covered by AbsentBecause.
-        return options.Contains(JsonForClauseOptions.WithoutArrayWrapper) ? shape : new ArrayShape(shape);
+        // WITHOUT_ARRAY_WRAPPER is claimed as one object even where the query is not proven to return at most one row
+        // (Row.Rows is Many). The claim is accepted because it cannot be silently wrong: several rows produce
+        // "{...},{...}", which is not valid JSON, so the caller's parse fails loudly before any schema sees it. Where the
+        // query is proven to return at most one row, the result's cardinality says so and the caveat does not apply. No
+        // rows are covered by AbsentBecause.
+        if (options.Contains(JsonForClauseOptions.WithoutArrayWrapper))
+            return shape;
+        return subquery ? new ArrayShape(shape, MinItems: 1, MaxItems: row.Rows == IrCardinality.Many ? null : 1) : new ArrayShape(shape);
     }
 
     private static UnknownShape KeyConflict(RowColumn column) =>
@@ -300,6 +317,7 @@ internal sealed partial class ProcedureAnalyzer
         FunctionCall { CallTarget: null } call when IsConstructor(call) => Constructor(call, scope),
         FunctionCall { CallTarget: null, Parameters.Count: 1 } call
             when call.FunctionName.Value.Equals("json_query", StringComparison.OrdinalIgnoreCase) => JsonQuery(call, scope),
+        FunctionCall { CallTarget: null } call when IsAggregate(call) => BuiltInAggregate(call, scope),
         FunctionCall call when FunctionSummaries.Callee(call) is { } callee => CallFunction(call, callee, scope),
         VariableReference variable when parameters.TryGetValue(variable.Name, out var parameter) => parameter,
         VariableReference variable when locals is not null => Variable(variable),
@@ -326,12 +344,12 @@ internal sealed partial class ProcedureAnalyzer
     {
         var (source, table, column) = bound;
         var because = new List<IrNullReason>();
-        if (!SchemaRules.IsNeverNull(model, table, column))
+        if (!SchemaRules.IsNeverNull(model, table, column) && !Proved(source, Key(bound)))
             because.Add(new IrNullReason(IrNullRules.NullableColumn, $"{table.Name}.{column.Name}"));
 
         // The optional side of an outer join has no row when nothing matches, so every column read from it can
-        // be null, whatever its declaration says.
-        if (source.OptionalSideOf is { } optional)
+        // be null, whatever its declaration says; unless a filter proves the row matched.
+        if (source.OptionalSideOf is { } optional && !Matched(source))
             because.Add(new IrNullReason(IrNullRules.OuterJoin, optional.ToString()));
 
         // A json column nests as JSON inside FOR JSON and the constructors (observed), but what it holds is data.
@@ -373,27 +391,35 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = At(subquery);
 
-        // A subquery returning one JSON value, typically a correlated aggregate, keeps it live: observed for a
-        // constructor, an aggregate, json_query, a json value and a FOR JSON subquery (with its wrapper) inside it. With no rows it is
-        // null; more than one row is an error, not a value. Any other subquery is not modelled.
+        // A scalar subquery's value is its one column's, with its type and facts, and null when it returns no row; more
+        // than one row is an error, not a value. A query that returns exactly one row (an aggregate without GROUP BY, or no
+        // FROM) is never empty (observed: A_scalar_subquery_of_an_aggregate_without_group_by_always_has_a_value_for_count).
+        // JSON stays live through it: observed for a constructor, an aggregate, json_query, a json value and a FOR JSON
+        // subquery (with its wrapper) inside it.
         if (subquery.QueryExpression is QuerySpecification { ForClause: null } plain)
         {
             var row = Query(plain, scope);
-            if (row is { Star: null, Columns: [{ Value.IsLiveJson: true } only] })
-                return new Value(only.Value.Shape, [.. only.Value.NullableBecause, new IrNullReason(IrNullRules.EmptySubquery, at.ToString())], IsLiveJson: true);
+            if (row is not { Star: null, Columns: [var only] })
+                return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"A subquery of other than one listed column is not modelled: {Text(subquery)}", at));
+            if (only.Value.Shape is UnknownShape)
+                return only.Value;
+            return row.Rows == IrCardinality.One
+                ? only.Value
+                : only.Value with { NullableBecause = [.. only.Value.NullableBecause, new IrNullReason(IrNullRules.EmptySubquery, at.ToString())] };
         }
 
         if (subquery.QueryExpression is not QuerySpecification { ForClause: JsonForClause json } query)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"A subquery that returns neither FOR JSON nor one JSON value is not modelled yet: {Text(subquery)}", at));
+            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"A subquery that is a UNION, INTERSECT, EXCEPT or parenthesised query, or FOR XML, is not modelled yet: {Text(subquery)}", at));
 
         // A FOR JSON subquery is JSON that an enclosing FOR JSON or constructor embeds without escaping, but only with
         // its array wrapper: WITHOUT_ARRAY_WRAPPER makes it text, escaped as a string wherever it nests, until json_query
-        // makes it JSON again (both observed). Either is null when the subquery returns no rows, which nothing here can
-        // rule out.
-        var shape = ForJson(Query(query, scope), json, at);
+        // makes it JSON again (both observed). Either is null when the subquery returns no rows, unless its query always
+        // returns exactly one.
+        var forJson = Query(query, scope);
+        var shape = ForJson(forJson, json, at, subquery: true);
         if (shape is UnknownShape unknown)
             return Value.Unknown(unknown);
-        IReadOnlyList<IrNullReason> empty = [new IrNullReason(IrNullRules.EmptySubquery, at.ToString())];
+        IReadOnlyList<IrNullReason> empty = forJson.Rows == IrCardinality.One ? [] : [new IrNullReason(IrNullRules.EmptySubquery, at.ToString())];
         return json.Options.Any(o => o.OptionKind == JsonForClauseOptions.WithoutArrayWrapper)
             ? new Value(new JsonTextShape(shape), empty)
             : new Value(shape, empty, IsLiveJson: true);
@@ -594,7 +620,7 @@ internal sealed partial class ProcedureAnalyzer
     /// GROUP BY, no rows means no groups at all).
     /// </summary>
     private IReadOnlyList<IrNullReason> Aggregate(FunctionCall call) =>
-        current?.GroupByClause is null ? [new IrNullReason(IrNullRules.EmptyAggregate, At(call).ToString())] : [];
+        current?.GroupByClause is null && !ProvedAggregate(call) ? [new IrNullReason(IrNullRules.EmptyAggregate, At(call).ToString())] : [];
 
     // ---- helpers ------------------------------------------------------------------------------------
 

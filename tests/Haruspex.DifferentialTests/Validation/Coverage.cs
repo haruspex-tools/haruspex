@@ -87,7 +87,7 @@ public static class Coverage
                         continue;
                     var fieldPath = $"{path}.{field.Name}";
                     need(fieldPath, Seen.Value);
-                    if (field.Nullable)
+                    if (field.Nullable && !field.NullableBecause.All(r => Unseedable.Contains(r.Rule)))
                         need(fieldPath, Seen.Null);
                     Walk(document, field.Type, fieldPath, need, walked);
                 }
@@ -95,6 +95,12 @@ public static class Coverage
                 break;
         }
     }
+
+    /// <summary>
+    /// Reasons to be null that no seed can reach: COUNT's overflow needs more than 2,147,483,647 rows and a caller's session
+    /// options. It is observed instead (RefinementObservationTests), and a field null only for it need not be seen null.
+    /// </summary>
+    private static readonly HashSet<string> Unseedable = [IrNullRules.CountOverflow];
 
     private static void Element(IrDocument document, IrType type, bool nullable, string path, Action<string, Seen> need, HashSet<string> walked)
     {
@@ -127,6 +133,10 @@ public static class Coverage
             var saw = reached.GetValueOrDefault(procedure.Id) ?? new HashSet<(string, string)>();
             for (var i = 0; i < results.Count; i++)
             {
+                // A result of at most one row is tested at its bound only by a run that returns one (IR 0.8).
+                if (results[i].Cardinality != IrCardinality.Many && !saw.Contains(($"results[{i}]", "one row")))
+                    missing.Add($"{procedure.Id} results[{i}]: one row");
+
                 WalkScalars(document, results[i].Type, $"results[{i}]", [], (path, scalar) =>
                 {
                     foreach (var edge in Edges(scalar))
