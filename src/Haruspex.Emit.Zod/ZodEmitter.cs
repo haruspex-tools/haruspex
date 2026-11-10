@@ -315,13 +315,52 @@ public static class ZodEmitter
             IrArray array => Array(array, encoding),
             IrTuple tuple => Combine("z.tuple([", tuple.Items.Select(e => Nullable(Expression(e.Type, encoding), e.Nullable, e.Type)), "])"),
             IrRecord record => Combine("z.record(z.string(), ", [Nullable(Expression(record.Values, encoding), record.ValuesNullable, record.Values)], ")"),
-            IrUnion union => Combine("z.union([", SupersetsFirst(union.Variants).Select(v => Expression(v, encoding)), "])"),
+            IrUnion union => Union(union, encoding),
             IrRef reference => ($"{reference.Name}Schema", null),
             IrImport import => (import.Name, null),
             IrJsonText { Content: { } content } => JsonText(Expression(content, IrEncoding.Json)),
             IrJsonText => ("z.string()", "JSON text"),
             IrUnknownType unknown => ("z.unknown()", unknown.Reason),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown IR type node."),
+        };
+
+        /// <summary>
+        /// A union. <c>z.union</c> returns the first variant that accepts a value, and a <c>z.object</c> strips the keys it
+        /// doesn't know, so a variant would accept another's object and drop its keys: a key left out when null is
+        /// <c>.optional()</c>, so even a variant with more keys accepts an object of fewer, and no order prevents it. So each
+        /// object variant (or array of one) also rejects every key that only the other variants have,
+        /// <c>.extend({ k: z.never().optional() })</c>: an object takes the variant whose keys it has, and keeps them all.
+        /// Keys no variant knows are still stripped (or refused, for strict objects), as everywhere else.
+        /// </summary>
+        private (string Code, string? Comment) Union(IrUnion union, IrEncoding encoding)
+        {
+            var keys = union.Variants.Select(ObjectKeys).ToList();
+            var parts = SupersetsFirst(union.Variants).Select(variant =>
+            {
+                var index = union.Variants.ToList().IndexOf(variant);
+                var mine = keys[index];
+                var others = keys.Where((k, i) => i != index && k is not null).SelectMany(k => k!)
+                    .Where(k => mine is not null && !mine.Contains(k, StringComparer.Ordinal))
+                    .Distinct(StringComparer.Ordinal).ToList();
+                if (others.Count == 0)
+                    return Expression(variant, encoding);
+                var never = ".extend({ " + string.Join(", ", others.Select(k => $"{Key(k)}: z.never().optional()")) + " })";
+                return variant switch
+                {
+                    IrRef reference => ($"{reference.Name}Schema{never}", null),
+                    IrArray { Items: IrRef item } => ($"z.array({item.Name}Schema{never})", null),
+                    _ => Expression(variant, encoding),
+                };
+            });
+            return Combine("z.union([", parts, "])");
+        }
+
+        /// <summary>The keys of a variant that is an object, or a plain array of one; null for any other.</summary>
+        private List<string>? ObjectKeys(IrType type) => type switch
+        {
+            IrRef reference when document.Types.TryGetValue(reference.Name, out var target) => [.. target.Fields.Select(f => f.Name)],
+            IrArray { Items: IrRef reference, MinItems: null, MaxItems: null, ItemsNullable: false } => ObjectKeys(reference),
+            _ => null,
         };
 
         /// <summary>

@@ -49,6 +49,7 @@ public static class Runs
     private const string NoItems = "DELETE FROM cat.item;";
     private const string NoSales = "DELETE FROM flow.sale;";
     private const string NoEmployees = "DELETE FROM flow.employee;";
+    private const string NoRegions = "DELETE FROM flow.region;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -142,6 +143,9 @@ public static class Runs
         new("flow: caught_report, error before the sales", "flow", "flow.caught_report", new Dictionary<string, object?> { ["@fail_at"] = (byte)1 }),
         new("flow: caught_report, error before the regions", "flow", "flow.caught_report", new Dictionary<string, object?> { ["@fail_at"] = (byte)2 }),
         new("flow: caught_report, error at the end", "flow", "flow.caught_report", new Dictionary<string, object?> { ["@fail_at"] = (byte)3 }),
+        new("flow: notes_or_names, notes", "flow", "flow.notes_or_names", None),
+        new("flow: notes_or_names, names", "flow", "flow.notes_or_names", new Dictionary<string, object?> { ["@notes"] = false }),
+        new("flow: notes_or_names, no regions", "flow", "flow.notes_or_names", new Dictionary<string, object?> { ["@notes"] = false }, NoRegions),
         new("flow: bill_of_materials, two levels", "flow", "flow.bill_of_materials", new Dictionary<string, object?> { ["@assembly"] = 1 }),
         new("flow: bill_of_materials, a part with no components", "flow", "flow.bill_of_materials", new Dictionary<string, object?> { ["@assembly"] = 6 }),
     ];

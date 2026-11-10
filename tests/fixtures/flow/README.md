@@ -12,5 +12,6 @@ through temporary tables, table variables, control flow and CTEs. No part of it 
 | `flow.org_chart` | an employee hierarchy by a recursive CTE; `lead` is never null in the anchor and null only through the recursive member |
 | `flow.staff_moves` | a `SELECT … INTO` column from a variable (never null here, nullable to SQL Server) made nullable by an `UPDATE` on one path only, read after the paths join |
 | `flow.chain_up` | a `WHILE` loop that inserts into a temporary table, writing nulls into a column that started never null |
+| `flow.notes_or_names` | two branches returning JSON objects of different keys, one left out when null: the Zod union keeps each object's keys whichever branch produced it |
 | `flow.caught_report` | `TRY … CATCH` whose `CATCH` returns a result after an error at any of three points: unions at each position, and later results that may not run |
 | `flow.bill_of_materials` | a bill of materials by a recursive CTE with a column list, read by a second CTE; the quantity's check carried through both |

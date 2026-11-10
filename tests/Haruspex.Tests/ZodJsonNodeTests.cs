@@ -60,6 +60,7 @@ public class ZodJsonNodeTests
 
         var row = ts.IndexOf("export const PRowSchema", StringComparison.Ordinal);
         Assert.All(["ASchema =", "BSchema =", "CSchema ="], s => Assert.InRange(ts.IndexOf(s, StringComparison.Ordinal), 0, row));
-        Assert.Contains("v: z.tuple([z.record(z.string(), ASchema), z.union([BSchema, CSchema])]),", ts, StringComparison.Ordinal);
+        // Each object variant rejects the keys only the other has, so neither strips the other's (slice 6, review round 2).
+        Assert.Contains("v: z.tuple([z.record(z.string(), ASchema), z.union([BSchema.extend({ c: z.never().optional() }), CSchema.extend({ b: z.never().optional() })])]),", ts, StringComparison.Ordinal);
     }
 }

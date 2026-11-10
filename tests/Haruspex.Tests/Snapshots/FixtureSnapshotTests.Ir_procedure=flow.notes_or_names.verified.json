@@ -1,0 +1,166 @@
+{
+  "irVersion": "0.6",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "flow.notes_or_names",
+      "name": "NotesOrNames",
+      "kind": "procedure",
+      "at": "procedures/notes_or_names.sql:4:1",
+      "parameters": [
+        {
+          "name": "@notes",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "NotesOrNamesRow"
+                }
+              },
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "NotesOrNamesRow2"
+                }
+              }
+            ]
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/notes_or_names.sql:10:5"
+            },
+            {
+              "rule": "no-rows",
+              "at": "procedures/notes_or_names.sql:12:5"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "NotesOrNamesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.notes_or_names",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "flow.sale.note"
+            }
+          ]
+        }
+      ]
+    },
+    "NotesOrNamesRow2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.notes_or_names",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}
