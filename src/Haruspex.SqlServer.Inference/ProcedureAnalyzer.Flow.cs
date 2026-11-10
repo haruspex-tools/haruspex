@@ -18,6 +18,9 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>The first statement that makes the results impossible to list, once found.</summary>
     private UnknownShape? blocker;
 
+    /// <summary>The procedure's statements, while it is walked.</summary>
+    private StatementList? body;
+
     /// <summary>For each TRY being walked, innermost on top, every state an error inside it can reach its CATCH with.</summary>
     private readonly Stack<List<FlowState>> catchEntries = new();
 
@@ -59,8 +62,16 @@ internal sealed partial class ProcedureAnalyzer
             start.Add(new(name, new Value(variableShapes[name], Because(IrNullRules.Parameter, name, variableShapes[name]), live)));
         }
 
+        body = procedure.StatementList;
         var declarations = new DeclarationCollector();
         procedure.StatementList.Accept(declarations);
+        foreach (var cursor in declarations.Cursors)
+        {
+            if (!cursors.TryGetValue(cursor.Name.Value, out var same))
+                cursors[cursor.Name.Value] = same = [];
+            same.Add(cursor);
+        }
+
         foreach (var element in declarations.Variables)
         {
             var name = element.VariableName.Value;
@@ -119,7 +130,11 @@ internal sealed partial class ProcedureAnalyzer
 
         public List<DeclareTableVariableBody> Tables { get; } = [];
 
+        public List<DeclareCursorStatement> Cursors { get; } = [];
+
         public override void Visit(DeclareVariableElement node) => Variables.Add(node);
+
+        public override void Visit(DeclareCursorStatement node) => Cursors.Add(node);
 
         public override void Visit(DeclareTableVariableBody node) => Tables.Add(node);
     }
@@ -211,17 +226,31 @@ internal sealed partial class ProcedureAnalyzer
             case InsertStatement { InsertSpecification.InsertSource: ExecuteInsertSource } insert:
                 return InsertExecute(insert, state);
             case InsertStatement insert:
-                return Continue(Insert(insert, state));
+                return Modify(insert, insert.InsertSpecification, null, null, insert.WithCtesAndXmlNamespaces, DmlEvents.Insert, state, target => Insert(insert, target, state));
             case ExecuteStatement execute:
                 return Execute(execute, state);
             case UpdateStatement update:
-                return Continue(Update(update, state));
+                return Modify(update, update.UpdateSpecification, update.UpdateSpecification.FromClause, update.UpdateSpecification.WhereClause?.SearchCondition, update.WithCtesAndXmlNamespaces, DmlEvents.Update, state, target => Update(update, target, state));
             case DeleteStatement delete:
-                return Continue(Delete(delete, state));
+                return Modify(delete, delete.DeleteSpecification, delete.DeleteSpecification.FromClause, delete.DeleteSpecification.WhereClause?.SearchCondition, delete.WithCtesAndXmlNamespaces, DmlEvents.Delete, state, _ => state);
             case MergeStatement merge:
-                return Continue(Merge(merge, state));
-            case TruncateTableStatement truncate when IsTemporary(truncate.TableName):
+                return Modify(merge, merge.MergeSpecification, null, null, merge.WithCtesAndXmlNamespaces, DmlTriggers.MergeEvents(merge.MergeSpecification), state, target => Merge(merge, target, state));
+
+            // TRUNCATE fires no trigger (observed: Truncate_does_not_fire_a_delete_trigger) and returns nothing, and removing
+            // rows changes nothing a column may hold.
+            case TruncateTableStatement:
                 return Continue(state);
+
+            // Cursors (observed: Cursor_statements_and_fetch_into_return_nothing_and_fetch_without_into_returns_one_row). A
+            // cursor variable's query (SET @c = CURSOR …) is not followed: a FETCH from it reads values not known.
+            case DeclareCursorStatement:
+            case SetVariableStatement { CursorDefinition: not null }:
+            case OpenCursorStatement:
+            case CloseCursorStatement:
+            case DeallocateCursorStatement:
+                return Continue(state);
+            case FetchCursorStatement fetch:
+                return Fetch(fetch, state);
             case CreateTableStatement create when IsTemporary(create.SchemaObjectName):
                 return Continue(state.WithTemp(create.SchemaObjectName.BaseIdentifier.Value, Created(create)));
             case DropTableStatement drop when drop.Objects.All(IsTemporary):
@@ -473,32 +502,14 @@ internal sealed partial class ProcedureAnalyzer
     // ---- writes to temporary tables -------------------------------------------------------------------------------
 
     /// <summary>
-    /// INSERT. A declared column is unchanged by it. A column SELECT … INTO made takes each value converted to its type, and
-    /// null when the insert leaves it out. Only temporary tables and table variables are modelled: a permanent table may
-    /// have a trigger that returns results of its own.
+    /// What an INSERT does to the temporary table it writes directly: a declared column is unchanged by it, and a column
+    /// SELECT … INTO made takes each value converted to its type, and null when the insert leaves it out. A table variable
+    /// is its declaration, and any other target holds no state here.
     /// </summary>
-    private FlowState Insert(InsertStatement insert, FlowState state)
+    private FlowState Insert(InsertStatement insert, DmlTarget target, FlowState state)
     {
         var spec = insert.InsertSpecification;
-        if (spec.OutputClause is not null || spec.OutputIntoClause is not null)
-        {
-            Blocked(insert);
-            return state;
-        }
-
-        switch (spec.Target)
-        {
-            case VariableTableReference:
-                return state;
-            case NamedTableReference named when IsTemporary(named.SchemaObject):
-                break;
-            default:
-                Blocked(insert);
-                return state;
-        }
-
-        var name = ((NamedTableReference)spec.Target).SchemaObject.BaseIdentifier.Value;
-        if (state.Temp(name) is not KnownTable table)
+        if (target.Direct is not { } name || !name.StartsWith('#') || state.Temp(name) is not KnownTable table)
             return state;
 
         var at = At(insert);
@@ -571,18 +582,15 @@ internal sealed partial class ProcedureAnalyzer
         table.Columns.ToList().FindIndex(c => c.Name.Equals(column, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
-    /// UPDATE. A column SELECT … INTO made joins with each value written to it; a declared one is unchanged. A variable set
-    /// by it may not be (no rows), so it joins with its value before.
+    /// What an UPDATE does: to the temporary table it writes directly, a column SELECT … INTO made joins with each value
+    /// written to it, and a declared one is unchanged. A variable set by it, whatever its target, may not be (no rows), so
+    /// it joins with its value before.
     /// </summary>
-    private FlowState Update(UpdateStatement update, FlowState state)
+    private FlowState Update(UpdateStatement update, DmlTarget written, FlowState state)
     {
         var spec = update.UpdateSpecification;
         var at = At(update);
-        if (spec.OutputClause is not null || spec.OutputIntoClause is not null || Target(spec.Target, spec.FromClause) is not { } target)
-        {
-            Blocked(update);
-            return state;
-        }
+        var target = written.Direct ?? "";
 
         return WithCtes(update.WithCtesAndXmlNamespaces, () =>
         {
@@ -616,75 +624,11 @@ internal sealed partial class ProcedureAnalyzer
         }, why => target.StartsWith('#') ? state.WithTemp(target, Unknown(target, why)) : state);
     }
 
-    /// <summary>
-    /// The name of the temporary table or table variable a write changes, through its alias in FROM when it has one; null
-    /// when it is anything else, a permanent table included.
-    /// </summary>
-    private static string? Target(TableReference target, FromClause? from)
-    {
-        switch (target)
-        {
-            case VariableTableReference variable:
-                return variable.Variable.Name;
-            case NamedTableReference { SchemaObject: { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null } name } named:
-                // UPDATE x … FROM #t AS x: the target is an alias of a source in FROM.
-                var aliased = from is null ? null : Sources(from.TableReferences).FirstOrDefault(s => s.Alias?.Value.Equals(name.BaseIdentifier.Value, StringComparison.OrdinalIgnoreCase) == true);
-                return aliased switch
-                {
-                    null when IsTemporary(name) => name.BaseIdentifier.Value,
-                    NamedTableReference n when IsTemporary(n.SchemaObject) => n.SchemaObject.BaseIdentifier.Value,
-                    VariableTableReference v => v.Variable.Name,
-                    _ => null,
-                };
-            default:
-                return null;
-        }
-    }
-
-    private static IEnumerable<TableReferenceWithAlias> Sources(IEnumerable<TableReference> references)
-    {
-        foreach (var reference in references)
-        {
-            switch (reference)
-            {
-                case JoinTableReference join:
-                    foreach (var source in Sources([join.FirstTableReference, join.SecondTableReference]))
-                        yield return source;
-                    break;
-                case JoinParenthesisTableReference parenthesis:
-                    foreach (var source in Sources([parenthesis.Join]))
-                        yield return source;
-                    break;
-                case TableReferenceWithAlias aliased:
-                    yield return aliased;
-                    break;
-            }
-        }
-    }
-
-    /// <summary>DELETE removes rows, which changes nothing a column may hold.</summary>
-    private FlowState Delete(DeleteStatement delete, FlowState state)
-    {
-        var spec = delete.DeleteSpecification;
-        if (spec.OutputClause is not null || spec.OutputIntoClause is not null || Target(spec.Target, spec.FromClause) is null)
-            Blocked(delete);
-        return state;
-    }
-
     /// <summary>MERGE into a temporary table is not modelled, so the table becomes unknown; a table variable is as declared.</summary>
-    private FlowState Merge(MergeStatement merge, FlowState state)
-    {
-        var spec = merge.MergeSpecification;
-        if (spec.OutputClause is not null || spec.OutputIntoClause is not null || Target(spec.Target, null) is not { } target)
-        {
-            Blocked(merge);
-            return state;
-        }
-
-        return target.StartsWith('#')
-            ? state.WithTemp(target, Unknown(target, Unsupported(IrUnknownReasons.UnsupportedStatement, $"MERGE at {At(merge)} is not modelled yet.", At(merge))))
+    private FlowState Merge(MergeStatement merge, DmlTarget target, FlowState state) =>
+        target.Direct is { } name && name.StartsWith('#') && state.Temp(name) is KnownTable
+            ? state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReasons.UnsupportedStatement, $"MERGE at {At(merge)} is not modelled yet.", At(merge))))
             : state;
-    }
 
     // ---- creating and altering temporary tables -----------------------------------------------------------------
 
@@ -977,6 +921,8 @@ internal sealed partial class ProcedureAnalyzer
             value = value with { NullableBecause = [] };
         if (bound.Source.OptionalSideOf is { } optional && !Matched(bound.Source))
             value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.OuterJoin, optional.ToString())]) };
+        if (Unmatched(bound.Source) is { } unmatched && value.Shape is not UnknownShape)
+            value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [unmatched]) };
         return Rolled(bound.Source) is { } rolled && value.Shape is not UnknownShape
             ? value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [rolled]) }
             : value;

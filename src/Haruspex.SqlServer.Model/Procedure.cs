@@ -76,7 +76,15 @@ public sealed record Redefinition(ObjectName Name, string Statement, SourceLocat
 /// </summary>
 /// <param name="Name">The object's name.</param>
 /// <param name="Kind">What it is.</param>
-public sealed record NamedObject(ObjectName Name, NamedObjectKind Kind);
+public sealed record NamedObject(ObjectName Name, NamedObjectKind Kind)
+{
+    /// <summary>
+    /// A view's definition, as ScriptDom parsed it; null for other objects, and for a view defined more than once, whose
+    /// definition depends on the order the scripts run. What it reads matters to DML through it, which changes the tables
+    /// underneath and fires their triggers.
+    /// </summary>
+    public ViewStatementBody? View { get; init; }
+}
 
 /// <summary>What a <see cref="NamedObject"/> is.</summary>
 public enum NamedObjectKind

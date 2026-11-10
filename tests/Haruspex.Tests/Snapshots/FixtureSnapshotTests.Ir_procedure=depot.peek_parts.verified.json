@@ -1,0 +1,27 @@
+{
+  "irVersion": "0.9",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "depot.peek_parts",
+      "name": "PeekParts",
+      "kind": "procedure",
+      "at": "procedures/peek_parts.sql:2:1",
+      "parameters": [],
+      "results": null
+    }
+  ],
+  "types": {},
+  "unknowns": [
+    {
+      "object": "depot.peek_parts",
+      "path": "results",
+      "reason": "hidden-column",
+      "detail": "FETCH without INTO at procedures/peek_parts.sql:8:1 returns the row with a hidden ROWSTAT column, which some drivers list among its columns and others leave out.",
+      "at": "procedures/peek_parts.sql:8:1"
+    }
+  ],
+  "overrides": []
+}

@@ -57,9 +57,16 @@ public sealed class SqlProject
     /// config file.
     /// </summary>
     /// <exception cref="InvalidOperationException">The default rules cannot name them (two names clash).</exception>
-    public IrDocument Infer(IReadOnlyList<ObjectName> selected)
+    public IrDocument Infer(IReadOnlyList<ObjectName> selected) => Infer(selected, warnings: null);
+
+    /// <summary>
+    /// Infers the IR for the given procedures and settles their names with the default naming rules, as when there is no
+    /// config file, adding to <paramref name="warnings"/> what inference could not check.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The default rules cannot name them (two names clash).</exception>
+    public IrDocument Infer(IReadOnlyList<ObjectName> selected, ICollection<Diagnostic>? warnings)
     {
-        var applied = Infer(selected, HaruspexConfig.None("."));
+        var applied = Infer(selected, HaruspexConfig.None("."), warnings: warnings);
         return applied.Document ?? throw new InvalidOperationException(string.Join(Environment.NewLine, applied.Problems));
     }
 
@@ -68,13 +75,17 @@ public sealed class SqlProject
     /// <param name="config">The config.</param>
     /// <param name="selectedByFile">See <see cref="ConfigApplication.Apply"/>.</param>
     /// <param name="outputDirectory">See <see cref="ConfigApplication.Apply"/>.</param>
+    /// <param name="warnings">
+    /// Where to add what inference could not check, such as a write to a table the project does not define, whose triggers
+    /// it cannot see. They do not stop generation.
+    /// </param>
     /// <remarks>
     /// The config file's declared results (<c>procedures["s.p"].results</c>) are handed to inference, in the IR's terms, so that
     /// a call of a declared procedure contributes them to its caller; a procedure's own declaration is applied by the config
     /// layer, which checks it against what is inferred. The declared procedures of the project that are not selected are
     /// inferred too, for that check alone.
     /// </remarks>
-    public ConfigApplied Infer(IReadOnlyList<ObjectName> selected, HaruspexConfig config, IReadOnlyCollection<ObjectName>? selectedByFile = null, string? outputDirectory = null)
+    public ConfigApplied Infer(IReadOnlyList<ObjectName> selected, HaruspexConfig config, IReadOnlyCollection<ObjectName>? selectedByFile = null, string? outputDirectory = null, ICollection<Diagnostic>? warnings = null)
     {
         ArgumentNullException.ThrowIfNull(selected);
         ArgumentNullException.ThrowIfNull(config);
@@ -85,7 +96,7 @@ public sealed class SqlProject
                 declarations.TryAdd(name, new DeclaredResults(declared.Results, declared.Types, declared.Why));
         }
 
-        var document = IrInference.Infer(model, selected, declarations);
+        var document = IrInference.Infer(model, selected, declarations, warnings);
         var others = declarations.Keys
             .Select(name => model.FindProcedure(name)?.Name)
             .OfType<ObjectName>()

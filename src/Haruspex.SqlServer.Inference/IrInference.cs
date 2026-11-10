@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 
@@ -14,14 +15,18 @@ public static class IrInference
     /// making its caller's results unknown. A procedure's own declaration is not applied to it here; that is the config
     /// layer's, which also checks it against what is inferred.
     /// </param>
+    /// <param name="warnings">
+    /// Where to add what could not be checked, once each: a write to a table the project does not define, whose triggers
+    /// (which could return result sets) are not in the project.
+    /// </param>
     /// <exception cref="ArgumentException">A name is not a procedure of the model.</exception>
-    public static IrDocument Infer(DatabaseModel model, IReadOnlyList<ObjectName> procedures, IReadOnlyDictionary<ObjectName, DeclaredResults>? declarations = null)
+    public static IrDocument Infer(DatabaseModel model, IReadOnlyList<ObjectName> procedures, IReadOnlyDictionary<ObjectName, DeclaredResults>? declarations = null, ICollection<Diagnostic>? warnings = null)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(procedures);
         declarations ??= new Dictionary<ObjectName, DeclaredResults>();
         var functions = new FunctionSummaries(model);
-        var calls = new ProcedureCalls(model, functions, declarations);
+        var calls = new ProcedureCalls(model, functions, declarations, new DmlTriggers(model, warnings));
         var analysed = procedures
             .Distinct()
             .Select(name => model.FindProcedure(name)

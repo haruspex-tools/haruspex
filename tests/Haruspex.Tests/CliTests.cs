@@ -127,6 +127,22 @@ public class CliTests
     }
 
     [Fact]
+    public void A_write_to_a_table_outside_the_project_is_a_warning_with_its_location_and_the_output_is_written()
+    {
+        // A trigger on it could return result sets, which haruspex cannot see (slice 6d). Once per table.
+        using var source = new TempDirectory();
+        using var outDir = new TempDirectory();
+        source.File("p.sql", "CREATE PROCEDURE dbo.p AS\nINSERT INTO audit.trail (what) VALUES (1);\nDELETE FROM audit.trail;\n");
+
+        var (exitCode, _, error) = Run("generate", source.Path, "--include", "*.*", "--out", outDir.Path);
+
+        Assert.Equal(0, exitCode);
+        Assert.Single(error.Split('\n'), l => l.Contains("warning:", StringComparison.Ordinal));
+        Assert.Contains("p.sql:2:1: warning: audit.trail is written here but is not defined in the project", error, StringComparison.Ordinal);
+        Assert.NotEmpty(Directory.EnumerateFileSystemEntries(outDir.Path));
+    }
+
+    [Fact]
     public void Help_succeeds()
     {
         var (exitCode, output, _) = Run("generate", "--help");

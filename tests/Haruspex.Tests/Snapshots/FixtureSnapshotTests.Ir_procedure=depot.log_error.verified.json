@@ -1,0 +1,38 @@
+{
+  "irVersion": "0.9",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "depot.log_error",
+      "name": "LogError",
+      "kind": "procedure",
+      "at": "procedures/log_error.sql:2:1",
+      "parameters": [
+        {
+          "name": "@procedure",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(128)"
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@message",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": []
+    }
+  ],
+  "types": {},
+  "unknowns": [],
+  "overrides": []
+}

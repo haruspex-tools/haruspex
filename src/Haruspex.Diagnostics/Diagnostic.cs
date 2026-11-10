@@ -10,15 +10,33 @@ public sealed record SourceLocation(string File, int Line, int Column)
     public override string ToString() => $"{File}:{Line}:{Column}";
 }
 
-/// <summary>An error in the source that stops analysis, such as a parse error.</summary>
+/// <summary>
+/// Something found in the source: an error that stops analysis, such as a parse error, or a warning about a gap the
+/// results cannot show, such as a table the project does not define.
+/// </summary>
 /// <remarks>
-/// The design gives a diagnostic a code and a severity too. Every diagnostic today is an error without a code,
-/// so they are left for the slice that needs them rather than invented here (slice 2b moved this type only).
+/// The design gives a diagnostic a code too. None needs one yet, so it is left for the slice that does rather than invented
+/// here. The severity came with slice 6d, the first warning.
 /// </remarks>
 /// <param name="Message">What is wrong, in a sentence.</param>
 /// <param name="At">Where, when it is known.</param>
-public sealed record Diagnostic(string Message, SourceLocation? At)
+/// <param name="Severity">Whether it stops analysis.</param>
+public sealed record Diagnostic(string Message, SourceLocation? At, DiagnosticSeverity Severity = DiagnosticSeverity.Error)
 {
-    /// <summary><c>file:line:column: error: message</c>.</summary>
-    public override string ToString() => At is null ? $"error: {Message}" : $"{At}: error: {Message}";
+    /// <summary><c>file:line:column: error: message</c>, or <c>warning</c>.</summary>
+    public override string ToString()
+    {
+        var severity = Severity == DiagnosticSeverity.Warning ? "warning" : "error";
+        return At is null ? $"{severity}: {Message}" : $"{At}: {severity}: {Message}";
+    }
+}
+
+/// <summary>How serious a <see cref="Diagnostic"/> is.</summary>
+public enum DiagnosticSeverity
+{
+    /// <summary>It stops analysis: nothing inferred despite it is trustworthy.</summary>
+    Error,
+
+    /// <summary>The results stand, but something they rest on could not be checked.</summary>
+    Warning,
 }

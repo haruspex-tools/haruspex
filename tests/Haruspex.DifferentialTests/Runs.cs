@@ -28,7 +28,7 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
@@ -55,6 +55,11 @@ public static class Runs
     private const string NoLoans = "DELETE FROM lend.loan;";
 
     private static readonly Dictionary<string, object?> None = [];
+
+    // Runs of procedures that write permanent tables need a write session, which a setup asks for; this one changes nothing.
+    private const string Writes = "SET NOCOUNT ON;";
+    private const string NothingLow = "UPDATE depot.stock SET qty = 100;";
+    private const string ShelvedLow = "UPDATE depot.stock SET qty = 1 WHERE part_id = 2;";
 
     public static IReadOnlyList<ProcedureRun> All { get; } =
     [
@@ -214,6 +219,25 @@ public static class Runs
         new("calls: maybe_then_batches, ovens first", "calls", "calls.maybe_then_batches", new Dictionary<string, object?> { ["@show"] = true }),
         new("calls: maybe_then_batches, no ovens", "calls", "calls.maybe_then_batches", new Dictionary<string, object?> { ["@show"] = false }),
         new("calls: search_with_ovens", "calls", "calls.search_with_ovens", new Dictionary<string, object?> { ["@product"] = "%e%" }),
+        new("dml: list_parts, every part", "dml", "depot.list_parts", None),
+        new("dml: list_parts, by code", "dml", "depot.list_parts", new Dictionary<string, object?> { ["@code"] = "B-200" }),
+        new("dml: get_order, with lines and no note", "dml", "depot.get_order", new Dictionary<string, object?> { ["@order_id"] = 1 }),
+        new("dml: get_order, no lines", "dml", "depot.get_order", new Dictionary<string, object?> { ["@order_id"] = 3 }),
+        new("dml: get_order, no such order", "dml", "depot.get_order", new Dictionary<string, object?> { ["@order_id"] = 999 }),
+        new("dml: log_error", "dml", "depot.log_error", new Dictionary<string, object?> { ["@procedure"] = "depot.test", ["@message"] = null }, Writes),
+        new("dml: place_order", "dml", "depot.place_order", new Dictionary<string, object?> { ["@part_id"] = 2, ["@qty"] = 5 }, Writes),
+        new("dml: place_order, a part with no stock, a note", "dml", "depot.place_order", new Dictionary<string, object?> { ["@part_id"] = 3, ["@qty"] = 1, ["@note"] = "call first" }, Writes),
+        new("dml: cancel_order, no note", "dml", "depot.cancel_order", new Dictionary<string, object?> { ["@order_id"] = 1 }, Writes),
+        new("dml: cancel_order, a note", "dml", "depot.cancel_order", new Dictionary<string, object?> { ["@order_id"] = 2 }, Writes),
+        new("dml: cancel_order, no such order", "dml", "depot.cancel_order", new Dictionary<string, object?> { ["@order_id"] = 999 }, Writes),
+        new("dml: sync_prices", "dml", "depot.sync_prices", None, Writes),
+        new("dml: restock, one low part", "dml", "depot.restock", None, Writes),
+        new("dml: restock, nothing low", "dml", "depot.restock", None, NothingLow),
+        new("dml: restock, a shelved part last", "dml", "depot.restock", None, ShelvedLow),
+        new("dml: purge", "dml", "depot.purge", None, Writes),
+        new("dml: recent_note", "dml", "depot.recent_note", None),
+        new("dml: add_note", "dml", "depot.add_note", new Dictionary<string, object?> { ["@note_id"] = 2, ["@text"] = "new" }, Writes),
+        new("dml: peek_parts", "dml", "depot.peek_parts", None),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

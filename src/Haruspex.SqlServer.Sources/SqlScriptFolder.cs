@@ -57,6 +57,9 @@ public static class SqlScriptFolder
         var userTypes = new Dictionary<ObjectName, UserType>();
         var functions = new Dictionary<ObjectName, UserFunction>();
         var functionChanges = new Dictionary<ObjectName, (Redefinition Why, UserFunction? Alter)>();
+        var triggers = new List<Trigger>();
+        var cascadingKeys = new List<CascadingKey>();
+        var views = new Dictionary<ObjectName, List<ViewStatementBody>>();
 
         // ALTER TABLE … NOCHECK CONSTRAINT and … WITH CHECK CHECK CONSTRAINT, wherever they are, in the order read.
         var enforcement = new List<Enforcement>();
@@ -92,6 +95,10 @@ public static class SqlScriptFolder
                         break;
                     case CreateTableStatement table when !table.SchemaObjectName.BaseIdentifier.Value.StartsWith('#'):
                         Add(tables, ObjectName.From(table.SchemaObjectName), ReadTable(table, relative), table, relative, diagnostics);
+                        CascadingKeys(ObjectName.From(table.SchemaObjectName), table.Definition, relative, cascadingKeys);
+                        break;
+                    case TriggerStatementBody trigger when ReadTrigger(trigger, relative) is { } read:
+                        triggers.Add(read);
                         break;
                     case CreateProcedureStatement or CreateOrAlterProcedureStatement:
                         var body = (ProcedureStatementBody)statement;
@@ -110,6 +117,9 @@ public static class SqlScriptFolder
                     // because an unqualified name may resolve to one of them instead of to a table.
                     case ViewStatementBody view:
                         TryAddNamed(others, ObjectName.From(view.SchemaObjectName), NamedObjectKind.View);
+                        if (!views.TryGetValue(ObjectName.From(view.SchemaObjectName), out var definitions))
+                            views[ObjectName.From(view.SchemaObjectName)] = definitions = [];
+                        definitions.Add(view);
                         break;
                     case CreateSynonymStatement synonym:
                         TryAddNamed(others, ObjectName.From(synonym.Name), NamedObjectKind.Synonym);
@@ -141,9 +151,14 @@ public static class SqlScriptFolder
                         var clrName = ObjectName.From(clr.Name);
                         Add(userTypes, clrName, new UserType(clrName, null, DeclaredNullability.NotDeclared, new SourceLocation(relative, clr.StartLine, clr.StartColumn)), clr, relative, diagnostics);
                         break;
+                    case AlterTableAddTableElementStatement addKey when OnlyTightens(addKey):
+                        CascadingKeys(ObjectName.From(addKey.SchemaObjectName), addKey.Definition, relative, cascadingKeys);
+                        break;
                     case AlterTableStatement alterTable when !OnlyTightens(alterTable):
                         var changedTable = ObjectName.From(alterTable.SchemaObjectName);
                         tableChanges.TryAdd(changedTable, Changed(changedTable, "ALTER TABLE", alterTable, relative));
+                        if (alterTable is AlterTableAddTableElementStatement addColumn)
+                            CascadingKeys(changedTable, addColumn.Definition, relative, cascadingKeys);
                         break;
                     case DropTableStatement dropTable:
                         foreach (var dropped in dropTable.Objects.Select(ObjectName.From))
@@ -176,8 +191,62 @@ public static class SqlScriptFolder
         foreach (var name in tables.Keys.ToList())
             tables[name] = Untrusted(tables[name], enforcement, disables);
 
-        var model = new DatabaseModel(tables.Values, procedures.Values, others.Values, tableChanges.Values, userTypes.Values, functions.Values);
+        // A view defined once keeps its definition; one created and altered depends on the order the scripts run.
+        foreach (var (name, definitions) in views)
+        {
+            if (definitions.Count == 1 && others.TryGetValue(name, out var view) && view.Kind == NamedObjectKind.View)
+                others[name] = view with { View = definitions[0] };
+        }
+
+        var model = new DatabaseModel(tables.Values, procedures.Values, others.Values, tableChanges.Values, userTypes.Values, functions.Values, triggers, cascadingKeys);
         return new SchemaReadResult(model, diagnostics);
+    }
+
+    /// <summary>
+    /// A DML trigger (<c>CREATE</c>, <c>CREATE OR ALTER</c> or <c>ALTER TRIGGER</c>); null for a DDL or logon trigger, which no
+    /// DML fires. Every definition is kept, an <c>ALTER</c> included, since which applies depends on the order the scripts run
+    /// and a reader asking what triggers may do needs them all.
+    /// </summary>
+    private static Trigger? ReadTrigger(TriggerStatementBody trigger, string file)
+    {
+        if (trigger.TriggerObject is not { TriggerScope: TriggerScope.Normal, Name: { } on })
+            return null;
+        var events = DmlEvents.None;
+        foreach (var action in trigger.TriggerActions)
+        {
+            events |= action.TriggerActionType switch
+            {
+                TriggerActionType.Insert => DmlEvents.Insert,
+                TriggerActionType.Update => DmlEvents.Update,
+                TriggerActionType.Delete => DmlEvents.Delete,
+                _ => DmlEvents.None,
+            };
+        }
+
+        var parent = ObjectName.From(on);
+
+        // A trigger is in its table's schema, whatever its own name says.
+        var name = new ObjectName(parent.Schema, trigger.Name.BaseIdentifier.Value);
+        return new Trigger(name, parent, trigger.TriggerType == TriggerType.InsteadOf, events, trigger.MethodSpecifier is null ? trigger.StatementList : null, new SourceLocation(file, trigger.StartLine, trigger.StartColumn));
+    }
+
+    /// <summary>
+    /// The foreign keys of a table definition (of <c>CREATE TABLE</c> or <c>ALTER TABLE … ADD</c>) that have an <c>ON DELETE</c>
+    /// or <c>ON UPDATE</c> action: a change to the referenced table's rows changes this table's, and fires its triggers.
+    /// </summary>
+    private static void CascadingKeys(ObjectName table, TableDefinition? definition, string file, List<CascadingKey> into)
+    {
+        if (definition is null)
+            return;
+        var keys = definition.TableConstraints.OfType<ForeignKeyConstraintDefinition>()
+            .Concat(definition.ColumnDefinitions.SelectMany(c => c.Constraints.OfType<ForeignKeyConstraintDefinition>()));
+        foreach (var key in keys)
+        {
+            if (key.DeleteAction is DeleteUpdateAction.NotSpecified or DeleteUpdateAction.NoAction
+                && key.UpdateAction is DeleteUpdateAction.NotSpecified or DeleteUpdateAction.NoAction)
+                continue;
+            into.Add(new CascadingKey(table, ObjectName.From(key.ReferenceTableName), new SourceLocation(file, key.StartLine, key.StartColumn)));
+        }
     }
 
     private static Table ReadTable(CreateTableStatement statement, string file) =>

@@ -1,7 +1,8 @@
 # Haruspex.SqlServer.Inference: statement flow and refinement
 
-How a procedure's statements are read in order (slice 6), calls followed (slice 6b, "Calls" below), and what filters and
-single-row queries prove (slice 6c, "Refinement" below). The code is `ProcedureAnalyzer.Flow.cs` (the walk),
+How a procedure's statements are read in order (slice 6), calls followed (slice 6b, "Calls" below), what filters and
+single-row queries prove (slice 6c, "Refinement" below), and writes, triggers and cursors (slice 6d, "DML", "Triggers" and
+"Cursors" below). The code is `ProcedureAnalyzer.Flow.cs` (the walk),
 `FlowState.cs` (the state and its join), `FlowLocals.cs` (what the binder sees), and `ShapeJoin.cs` (joins of values).
 Every engine rule it leans on is observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`; the test names are given below.
@@ -49,8 +50,8 @@ always its declaration: nothing a statement does changes what its columns may ho
   at least the type's own, and unions the reasons to be null. A column an `INSERT` leaves out gets null.
 - **JSON** stored in a column is text once stored (`Json_stored_in_a_temporary_table_is_text_but_json_through_a_cte_stays_json`),
   unless its SQL type is `json`, which is not tracked, so live JSON selected into a table is unknown.
-- `DELETE` and `TRUNCATE` remove rows, which changes nothing a column may hold. `MERGE` into one, or an `ALTER TABLE`
-  form not listed, makes it unknown.
+- `DELETE` and `TRUNCATE` remove rows, which changes nothing a column may hold. `MERGE` into one, a write through a CTE
+  over it, or an `ALTER TABLE` form not listed, makes it unknown.
 - `CREATE TABLE #t` always makes a new table, hiding a caller's of that name
   (`A_temporary_table_a_procedure_creates_hides_the_callers_of_the_same_name`). A procedure that creates one name
   twice, even after a drop or in two branches, is refused when it is created (error 2714,
@@ -58,9 +59,9 @@ always its declaration: nothing a statement does changes what its columns may ho
   modelled as the new table all the same.
 - `ROLLBACK` undoes what was done to temporary tables in the transaction (`A_rollback_undoes_a_temporary_tables_creation`),
   which the caller may have begun, so after one every temporary table the procedure touched is unknown.
-- Writes to permanent tables are not modelled (a trigger may return result sets), nor is an `OUTPUT` clause: each makes
-  the results unknown (`unsupported-statement`), as any statement not listed does. `EXEC` and `INSERT … EXEC` into a
-  temporary table or table variable are followed (below, "Calls").
+- Writes to permanent tables, `OUTPUT`, `WITH` before a write, and cursors are read too (below, "DML", "Triggers" and
+  "Cursors"). `EXEC` and `INSERT … EXEC` are followed (below, "Calls"). Any other statement makes the results unknown
+  (`unsupported-statement`).
 
 ## Joins, where paths meet
 
@@ -168,7 +169,7 @@ in FROM, listed once, and may be one otherwise (a join, a CTE, a column listed t
 columns an insert without a column list fills is not known, and the table becomes unknown.
 
 `INSERT … EXEC` into a table variable works (`Insert_exec_into_a_table_variable_works`), and changes nothing it may hold.
-Into a permanent table it is not followed (a trigger may return result sets).
+Into a permanent table the callee is followed the same way, and the insert is a write like any other (below, "DML").
 
 ### What stays unknown
 
@@ -215,6 +216,114 @@ is a call the IR does not describe; the IR does not express the bound.
 A callee is walked at each call, and a call inside a loop at each of the loop's passes. The walk of a procedure from the
 same temporary tables, with the same flags, is cached, unless it rested on an assumption about a recursive procedure below
 it on the stack of calls.
+
+## DML
+
+`ProcedureAnalyzer.Dml.cs` (slice 6d). Every engine rule here is observed and kept as a test in
+`tests/Haruspex.DifferentialTests/DmlObservationTests.cs`; the test names are given below.
+
+- **A write returns no result set**, on any table: `INSERT` (`VALUES`, `SELECT`, `EXEC`, `DEFAULT VALUES`), `UPDATE` (with
+  `FROM` and joins), `DELETE` (with `FROM`), `MERGE` and `TRUNCATE TABLE`, each also behind a `WITH`
+  (`Dml_on_a_permanent_table_returns_no_result_set`). A row count is not a result set: a client sees no columns. So a
+  procedure's results are whatever the rest of it returns, and a shared logger that inserts, called from every `CATCH`,
+  no longer hides them. Two things change this: an `OUTPUT` without `INTO`, and a trigger that returns results (below).
+- **What a write does to the body's own tables** is as before for a temporary table or table variable it writes directly.
+  A write through a CTE (`WITH c AS (SELECT … FROM #t) UPDATE c …`) or a derived table changes the table underneath
+  (`Dml_through_a_view_or_a_cte_fires_the_triggers_of_the_table_underneath` shows it for a permanent one), which is not
+  followed: every temporary table the CTE's query names becomes unknown.
+- **The target** is resolved as written (`DmlTarget`): an alias of a source in `FROM` (`UPDATE x … FROM t AS x`), a CTE of
+  the statement's `WITH`, whose query's tables are all taken as possibly written (more than are, which only claims less),
+  a temporary table, a table variable, or a permanent object, resolved by the binder's rule for table names
+  (`Binder.ResolveWritten`). A target of another form (`OPENROWSET`, `OPENQUERY`) is not modelled and makes the results
+  unknown.
+
+### OUTPUT
+
+- **Without `INTO`** a write returns one result set of the rows it wrote, many of them, and there even when it wrote none
+  (`Output_without_into_returns_a_result_set_even_when_no_row_is_affected`). Its columns are named as a select list's.
+- It is read as a select list over the write's `FROM` sources (`MERGE`'s `USING` source), filtered by its `WHERE`, with two
+  relations added: `inserted`, the target after the write, and `deleted`, before it. For a permanent table they are its
+  declared columns: every value is converted to the column, and a NOT NULL column is never null
+  (`Output_columns_are_the_values_converted_to_the_target_columns`). For a temporary table, the table as tracked after and
+  before the write; for a table variable, its declaration. `inserted.*` and `deleted.*` list the target's columns. `INSERT`
+  has no `deleted`, `DELETE` no `inserted`. Refinement works as for any query: a `WHERE` on a `FROM` source proves its
+  columns.
+- **`MERGE`** (`Merge_output_has_null_deleted_columns_for_inserted_rows_null_inserted_columns_for_deleted_rows_and_null_source_columns_when_not_matched_by_source`):
+  `deleted` is null for the rows it inserts, `inserted` for the rows it deletes, and the source's columns for the rows it
+  changes under `WHEN NOT MATCHED BY SOURCE`. Each such column has the null rule `merge-action`, when the statement has that
+  action. `$action` is an `nvarchar(10)` (`Merge_action_is_an_nvarchar_10`), never null, whose values are the actions the
+  statement has: an exact set, from `engine`.
+- A column read through the target's own alias in `FROM` (`UPDATE i … OUTPUT i.label FROM t AS i`) is unknown: whether it
+  is the row before or after the write is not observed, and a filter about it may not hold after it. `inserted` and
+  `deleted` say which.
+- **`OUTPUT … INTO`** returns nothing and writes its rows into the table (`Output_into_returns_nothing_and_writes_its_rows`):
+  a temporary table takes them as an `INSERT` would, a table variable is its declaration, and a permanent table is not
+  tracked. The `INTO` table's triggers are not consulted: `OUTPUT … INTO` a table with an enabled trigger fails, 331
+  (`Output_into_a_table_with_an_enabled_trigger_fails`).
+- `OUTPUT` without `INTO` on a table with an enabled trigger fails, 334, and works when the trigger is disabled
+  (`Output_without_into_fails_on_a_table_with_an_enabled_trigger_and_works_when_it_is_disabled`), which a folder of scripts
+  cannot tell. So it is typed as the `OUTPUT` result whatever triggers the table has: the call either returns it or fails,
+  and a call that fails is not described. A trigger that may return results makes the results unknown first (below).
+- `INSERT … EXEC` with `OUTPUT` into a temporary table or table variable is not modelled.
+
+## Triggers
+
+`DmlTriggers.cs`. An `AFTER` trigger fires once per statement, rows or not, and its result sets arrive among the caller's
+where the statement is (`A_triggers_select_reaches_the_client_even_when_no_row_is_affected`). SQL Server allows this unless
+the server's `disallow results from triggers` option is on, and it is off by default
+(`Results_from_triggers_are_allowed_by_default`). The feature is deprecated, but not removed, and the option is the server
+administrator's, which a database project does not record. So a write that fires a trigger of the project that may return
+result sets makes the procedure's results unknown, `trigger-results`, naming the trigger and its statement; and a trigger
+that returns nothing adds nothing.
+
+Which triggers a write may fire is followed transitively, each step observed:
+
+| Step | Triggers |
+|---|---|
+| `INSERT`, `UPDATE`, `DELETE` of a table | those on it for that statement, `AFTER` or `INSTEAD OF` |
+| `MERGE` | those for each action it has (`Merge_fires_the_trigger_of_each_action_it_has`) |
+| `TRUNCATE TABLE` | none (`Truncate_does_not_fire_a_delete_trigger`) |
+| a view | its `INSTEAD OF` triggers (`An_instead_of_trigger_on_a_view_returns_its_result_set`), and for the statements none covers, the triggers of every table its definition reads (`Dml_through_a_view_or_a_cte_fires_the_triggers_of_the_table_underneath`); a view defined more than once is not known, and counts |
+| a CTE or derived table | the triggers of every table its query reads |
+| a `DELETE` or `UPDATE` of a table that foreign keys reference with an action (`ON DELETE CASCADE`, `SET NULL`, `SET DEFAULT`, or `ON UPDATE` ones) | the `DELETE` and `UPDATE` triggers of the referencing table (`A_cascading_delete_fires_the_triggers_of_the_referencing_table`), from `CREATE TABLE` or `ALTER TABLE … ADD` |
+| inside a trigger, its own writes and calls | followed the same way (`A_triggers_own_dml_fires_other_triggers_whose_results_reach_the_client`): nested triggers are on by default |
+
+Every trigger reachable is checked, which is more than fire; that only claims less. A trigger **may return results**
+unless every statement in it, at any depth, is one known to return none: control flow, declarations and assignments
+(`SELECT @v = …` included), `PRINT`, `RAISERROR`, `THROW`, transactions, `SET` options, temporary tables and indexes,
+`TRUNCATE`, cursor statements with `FETCH … INTO`, writes (each followed as above, with no `OUTPUT` without `INTO`), and
+calls of the project's procedures, read the same way. A `SELECT` that returns rows, a `FETCH` without `INTO`, dynamic SQL, a
+system procedure, a CLR trigger or procedure, and any other statement (`WAITFOR`, `DBCC`, …) count. A trigger's `SELECT`
+that defines a cursor returns nothing.
+
+**A table the project does not define** may have a trigger the project cannot show. Its results are not withdrawn for that,
+which would make every procedure that writes a table of another database unknown, but haruspex warns, once per table: the
+CLI writes `file:line:column: warning: … is written here but is not defined in the project, …`. The same goes for a table
+of another database, a synonym, and a table a view reads that the project does not define. DDL triggers are not read: no
+write fires them. A trigger disabled by `DISABLE TRIGGER` is still counted, which only claims less.
+
+## Cursors
+
+- `DECLARE … CURSOR` (local or global, with any options), `SET @c = CURSOR …`, `OPEN`, `CLOSE`, `DEALLOCATE` and `FETCH …
+  INTO` return nothing (`Cursor_statements_and_fetch_into_return_nothing_and_fetch_without_into_returns_one_row`).
+- **`FETCH` without `INTO`** returns the row as a result set of one row at most, none past the end; but each carries
+  `ROWSTAT`, a column the server marks hidden, which SqlClient lists among the columns and a driver that honours the flag
+  leaves out. Which keys the row has depends on the client, so the results are unknown, `hidden-column`. Inside a loop it
+  would be `varying-results` anyway.
+- **`FETCH … INTO`** assigns each variable, or leaves it as it was when there is no row
+  (`Fetch_into_leaves_the_variables_as_they_were_past_the_end`), so each joins its value before with the cursor's column,
+  converted to the variable's declared type. The cursor is the one declaration of its name in the procedure (`FETCH
+  GLOBAL c` only one declared `GLOBAL`, since a declaration without the option takes the database's default); its query is
+  read where the `FETCH` is, with no filter proving anything: a keyset cursor fetches a row changed after `OPEN` that its
+  `WHERE` no longer keeps (`A_keyset_cursor_fetches_a_row_changed_after_open_that_its_where_no_longer_keeps`), and a
+  dynamic one reads a temporary table as it is when fetched
+  (`A_dynamic_cursor_fetches_a_temporary_tables_rows_as_they_are_when_fetched`). A static cursor's rows are those of `OPEN`,
+  which writes since then only widened; unless the table was altered, dropped or created again after the declaration, by
+  the procedure or one it calls, when the row is unknown. A cursor variable, one declared elsewhere, or one declared more
+  than once reads unknown values. A cursor is declared when its `DECLARE` runs, not at compile time
+  (`A_cursor_is_declared_when_its_declare_runs_not_when_the_procedure_is_compiled`): a `FETCH` where none ran fails the call.
+- `@@FETCH_STATUS` loops are ordinary `WHILE` loops: conditions are not read, and the loop's fixed point joins the
+  variables.
 
 ## Expressions this needs
 

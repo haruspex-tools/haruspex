@@ -1,7 +1,7 @@
-# The haruspex IR, version 0.8
+# The haruspex IR, version 0.9
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
-each side can be written in whatever language suits it. This page describes version 0.8. A JSON Schema for
+each side can be written in whatever language suits it. This page describes version 0.9. A JSON Schema for
 it will follow.
 
 ## Why not JSON Schema
@@ -15,7 +15,7 @@ every document. It maps to JSON Schema without loss.
 
 ```jsonc
 {
-  "irVersion": "0.8",                 // versioned separately from the tool
+  "irVersion": "0.9",                 // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database: the object's identity
@@ -110,7 +110,8 @@ express the bound.
 
 A scalar may carry facets, each a guarantee about its **non-null** values, and each with `from`: where it came
 from, `{ "type": "<type or alias type>" }` or `{ "check": "<schema.constraint>" }` (the constraint's location
-when it has no name), for the origins graph. A facet that is not proved is left out: absence claims nothing.
+when it has no name), or `{ "engine": "<what>" }` for a closed set SQL Server itself writes (0.9: `$action`), for the
+origins graph. A facet that is not proved is left out: absence claims nothing.
 None says anything about null, which is the field's `nullable`: a CHECK constraint passes when its condition is
 UNKNOWN, as it is for null, so a constraint never makes a value non-null and a value set never excludes null.
 
@@ -342,6 +343,26 @@ point, as if its statements were there, so they carry the callee's locations (a 
   reason `declared`, at the procedure declared. A declared scalar has no SQL type, so it has no `sql`: that key is the
   database's type, which other dialects and backends read, and a JSON Schema type is not one.
 
+## Writes, triggers and cursors (0.9)
+
+Statements that write tables are read (slice 6d); the engine rules, each observed, are in
+`Haruspex.SqlServer.Inference/README.md` ("DML", "Triggers", "Cursors"). For the IR:
+
+- A write returns no result set, on any table, unless it has an `OUTPUT` without `INTO`, which is a rowset result of
+  `cardinality` `many`, always there (with no rows when nothing was written).
+- In a `MERGE`'s `OUTPUT`, `$action` is a string whose `values` are the actions the statement has, `match` `exact`, from
+  `{ "engine": "$action" }`; a column with no value for some of its actions (`deleted` for rows inserted, `inserted` for
+  rows deleted, the source's for rows not matched by the source) has the null rule `merge-action`, at the statement.
+- A write that fires a trigger of the project that may return result sets makes the results unknown,
+  `trigger-results`, its detail naming the trigger and the statement in it.
+- `FETCH` without `INTO` makes the results unknown, `hidden-column`: its row carries `ROWSTAT`, a column the server marks
+  hidden, which some drivers list and others leave out, so the row's keys depend on the client.
+
+Changes in 0.9 (slice 6d, writes): the unknown reasons `trigger-results` and `hidden-column`; the null rule
+`merge-action`; the fact source `engine`. Writes to permanent tables, `OUTPUT`, `WITH` before a write and cursors were
+`unsupported-statement` before. A 0.8 reader that does not know `engine` would read a `values` facet's `from` it cannot
+place, which is why the version changed.
+
 Changes in 0.8 (slice 6c, refinement): a result's `cardinality`; the null rules `count-overflow` and `grouping-set` (a
 grouped column of a query grouped by `ROLLUP`, `CUBE` or `GROUPING SETS`, NULL in its super-aggregate rows; such a query's
 grouped columns were wrongly claimed non-null before). Refinement tightens
@@ -377,4 +398,4 @@ Changes in 0.2: scalars gained facets (`maxLength`, `length`, `minLength`, `digi
 each with its `from`. A reader of 0.1 that ignores unknown keys reads 0.2 documents unchanged, but the version
 changed because the facets are claims a 0.2 reader may rely on.
 
-Not in 0.8, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.
+Not in 0.9, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.

@@ -412,20 +412,23 @@ public class StatementFlowTests
     }
 
     [Fact]
-    public void An_output_clause_returns_a_result_set_so_it_is_not_modelled()
+    public void An_output_clause_returns_a_result_set_of_the_rows_written()
     {
+        // Slice 6d: OUTPUT without INTO is the rows written, typed from inserted (DmlTests has the rest).
         var doc = Procedure("CREATE TABLE #t (a int NOT NULL);\nINSERT INTO #t (a) OUTPUT inserted.a SELECT t.id FROM dbo.t AS t;");
 
-        AssertUnknown(doc, "results", IrUnknownReasons.UnsupportedStatement);
+        Assert.Empty(doc.Unknowns);
+        Assert.False(Field(doc, "a").Nullable);
     }
 
     [Fact]
-    public void A_write_to_a_permanent_table_is_not_modelled_yet()
+    public void A_write_to_a_permanent_table_returns_no_result_set()
     {
-        // A trigger may return result sets of its own.
+        // Slice 6d: no trigger in the project returns results, so the write returns none (DmlTests has the rest).
         var doc = Procedure("INSERT INTO dbo.u (id, t_id, name) SELECT t.id, t.id, N'x' FROM dbo.t AS t;\nSELECT t.id FROM dbo.t AS t;");
 
-        AssertUnknown(doc, "results", IrUnknownReasons.UnsupportedStatement);
+        Assert.Empty(doc.Unknowns);
+        Assert.Single(Assert.IsType<List<IrResult>>(doc.Objects[0].Results, exactMatch: false));
     }
 
     // ---- table variables ---------------------------------------------------------------------------------

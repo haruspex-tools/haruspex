@@ -181,6 +181,24 @@ public sealed class Binder(DatabaseModel model, string file)
     }
 
     /// <summary>
+    /// The objects a name written as the target of a write may mean, by the rule <see cref="BindFrom"/> resolves table names
+    /// with: a schema-qualified name means itself; an unqualified one, the one table, view or synonym of that name if exactly
+    /// one schema has it, every one of them if more do (which is written depends on the caller's default schema), and
+    /// <c>dbo</c>'s when none does. Empty for a name in another database or on a linked server, which the project cannot show.
+    /// </summary>
+    /// <param name="name">The name as written; a temporary table's or a body's own relation's is not asked about.</param>
+    public IReadOnlyList<ObjectName> ResolveWritten(SchemaObjectName name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
+            return [];
+        if (name.SchemaIdentifier is not null)
+            return [ObjectName.From(name)];
+        var candidates = ReadableNamed(name.BaseIdentifier.Value).Where(c => c.Kind != "function").Select(c => c.Name).Distinct().ToList();
+        return candidates.Count > 0 ? candidates : [ObjectName.From(name)];
+    }
+
+    /// <summary>
     /// Every object with this name, in any schema, that a FROM clause could read: tables, and the views,
     /// synonyms and functions that are not modelled. In a stable order.
     /// </summary>

@@ -17,6 +17,8 @@ public sealed class DatabaseModel
     private readonly Dictionary<ObjectName, Redefinition> tableRedefinitions = [];
     private readonly Dictionary<ObjectName, UserType> userTypes = [];
     private readonly Dictionary<ObjectName, UserFunction> functions = [];
+    private readonly ILookup<ObjectName, Trigger> triggersOn;
+    private readonly ILookup<ObjectName, CascadingKey> keysTo;
 
     /// <summary>Creates a model.</summary>
     /// <param name="tables">The tables.</param>
@@ -28,6 +30,11 @@ public sealed class DatabaseModel
     /// </param>
     /// <param name="userTypes">The alias and CLR types (<c>CREATE TYPE</c>).</param>
     /// <param name="functions">The user-defined functions with their definitions. Each is also among the named objects.</param>
+    /// <param name="triggers">
+    /// The DML triggers. A name may appear more than once: a source that creates and alters one has two definitions, and
+    /// which applies depends on the order the scripts run, so a reader should take every one.
+    /// </param>
+    /// <param name="cascadingKeys">The foreign keys whose actions change their table's rows.</param>
     /// <exception cref="ArgumentException">A name appears twice in one collection.</exception>
     public DatabaseModel(
         IEnumerable<Table> tables,
@@ -35,7 +42,9 @@ public sealed class DatabaseModel
         IEnumerable<NamedObject> namedObjects,
         IEnumerable<Redefinition> tableRedefinitions,
         IEnumerable<UserType>? userTypes = null,
-        IEnumerable<UserFunction>? functions = null)
+        IEnumerable<UserFunction>? functions = null,
+        IEnumerable<Trigger>? triggers = null,
+        IEnumerable<CascadingKey>? cascadingKeys = null)
     {
         ArgumentNullException.ThrowIfNull(tables);
         ArgumentNullException.ThrowIfNull(procedures);
@@ -62,7 +71,23 @@ public sealed class DatabaseModel
         NamedObjects = [.. this.namedObjects.Values];
         TableRedefinitions = [.. this.tableRedefinitions.Values];
         Functions = [.. this.functions.Values.OrderBy(f => f.Name.ToString(), StringComparer.Ordinal)];
+        Triggers = [.. triggers ?? []];
+        CascadingKeys = [.. cascadingKeys ?? []];
+        triggersOn = Triggers.ToLookup(t => t.Parent);
+        keysTo = CascadingKeys.ToLookup(k => k.Referenced);
     }
+
+    /// <summary>The DML triggers, in the order given; a name may appear more than once (see the constructor).</summary>
+    public IReadOnlyList<Trigger> Triggers { get; }
+
+    /// <summary>The DML triggers on this table or view, in the order given.</summary>
+    public IEnumerable<Trigger> TriggersOn(ObjectName parent) => triggersOn[parent];
+
+    /// <summary>The foreign keys whose actions change their table's rows, in the order given.</summary>
+    public IReadOnlyList<CascadingKey> CascadingKeys { get; }
+
+    /// <summary>The foreign keys with actions that reference this table: deleting or updating its rows changes theirs.</summary>
+    public IEnumerable<CascadingKey> CascadingKeysTo(ObjectName referenced) => keysTo[referenced];
 
     /// <summary>The user-defined functions, in a stable order: by name, ordinally.</summary>
     public IReadOnlyList<UserFunction> Functions { get; }

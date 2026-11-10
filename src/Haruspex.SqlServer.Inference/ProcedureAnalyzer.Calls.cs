@@ -58,32 +58,33 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>INSERT … EXEC</c>: the rows of every result set the callee returns go into the table, and none reaches the client
     /// (observed). A result set of another width than the insert's columns fails the statement, even with no rows (213), and
     /// so does a FOR JSON query (13602), both observed, so a successful insert received neither and nothing of them is written.
-    /// Only temporary tables and table variables are followed: a permanent table may have a trigger that returns results.
+    /// Into a permanent table it returns nothing either, unless a trigger it fires may (slice 6d), or it has an OUTPUT.
     /// </summary>
     private Outcome InsertExecute(InsertStatement insert, FlowState state)
     {
         var spec = insert.InsertSpecification;
         var execute = ((ExecuteInsertSource)spec.InsertSource).Execute;
         var at = At(insert);
-        string? target;
-        switch (spec.Target)
+        var written = DmlTarget.Of(spec.Target, null, insert.WithCtesAndXmlNamespaces);
+        if (written.Unmodelled is not null || (written.Direct is not null && (spec.OutputClause is not null || spec.OutputIntoClause is not null)))
+            return Blocked(insert);
+
+        // Into a permanent table: what its triggers may return (DmlTriggers), then the rows of its OUTPUT, if it has one.
+        if (calls?.Triggers.Check(written, binder, DmlEvents.Insert, at) is { } fired)
         {
-            case VariableTableReference:
-                target = null;
-                break;
-            case NamedTableReference named when IsTemporary(named.SchemaObject) && spec.OutputClause is null && spec.OutputIntoClause is null:
-                target = named.SchemaObject.BaseIdentifier.Value;
-                break;
-            default:
-                return Blocked(insert);
+            blocker ??= fired;
+            return Outcome.Ends;
         }
 
         var called = Call(execute, state, inserting: true);
         if (called.Unknowable is { } why)
-            return Continue(Assigned(execute, Forgotten(state, why, at)));
+            return Continue(Output(insert, spec, null, null, insert.WithCtesAndXmlNamespaces, written, state, Assigned(execute, Forgotten(state, why, at))));
         if (called.After is not { } after)
             return Outcome.Ends;
         after = Assigned(execute, after);
+        if (written.Direct is null)
+            return Continue(Output(insert, spec, null, null, insert.WithCtesAndXmlNamespaces, written, state, after));
+        var target = written.Direct.StartsWith('#') ? written.Direct : null;
         if (target is null || after.Temp(target) is not KnownTable table)
             return Continue(after);
 

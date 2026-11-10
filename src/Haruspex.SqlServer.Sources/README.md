@@ -17,7 +17,10 @@ UTF-8 unless a byte order mark says otherwise (SSMS writes UTF-16), and is parse
 grammar. Tables come with their CHECK constraints (a check that a later `ALTER TABLE … NOCHECK CONSTRAINT` may
 disable says so), their primary key, unique constraints and unfiltered unique indexes (a key whose index a later
 `ALTER INDEX … DISABLE` may disable says so), and alias and CLR types from `CREATE TYPE`. A procedure or function records
-whether `SET ANSI_NULLS OFF` came before it in its file, since SQL Server keeps the setting it was created with. Parse errors and objects defined twice are reported as diagnostics, with their file, line and column.
+whether `SET ANSI_NULLS OFF` came before it in its file, since SQL Server keeps the setting it was created with. DML
+triggers are read from `CREATE`, `CREATE OR ALTER` and `ALTER TRIGGER`, every definition kept, since which applies depends on
+the order the scripts run; foreign keys with an `ON DELETE` or `ON UPDATE` action from `CREATE TABLE` and `ALTER TABLE …
+ADD`, as their actions fire the referencing table's triggers; and a view defined once keeps its definition. Parse errors and objects defined twice are reported as diagnostics, with their file, line and column.
 
 ## What it deliberately doesn't do
 

@@ -61,8 +61,11 @@ internal sealed record Walked(FlowState? End, IReadOnlyList<FlowState> Escapes, 
 /// rested on an assumption about a procedure further down the stack of calls; those are walked again.
 /// </para>
 /// </remarks>
-internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries functions, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations)
+internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries functions, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations, DmlTriggers triggers)
 {
+    /// <summary>What the triggers a write fires may return, shared by every walk so that each gap is warned of once.</summary>
+    public DmlTriggers Triggers => triggers;
+
     /// <summary>The most walks a recursive procedure gets to reach a fixed point.</summary>
     public const int MostPasses = 20;
 
@@ -247,6 +250,9 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     /// The temporary tables a procedure writes, creates, alters or drops, or any procedure it calls does, at any depth: what
     /// a call of it may change, read from the bodies alone.
     /// </summary>
+    public ImmutableSortedSet<string> TempWrites(ObjectName name) => Writes(name);
+
+    /// <inheritdoc cref="TempWrites"/>
     private ImmutableSortedSet<string> Writes(ObjectName name)
     {
         if (writes.TryGetValue(name, out var known))
@@ -276,11 +282,14 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
 
         public List<ExecuteSpecification> Calls { get; } = [];
 
-        public override void Visit(InsertSpecification node) => Add(node.Target);
+        // A write's target as DmlTarget resolves it: directly, or through an alias, a CTE or a derived table (slice 6d).
+        public override void Visit(InsertStatement node) => Add(DmlTarget.Of(node.InsertSpecification.Target, null, node.WithCtesAndXmlNamespaces));
 
-        public override void Visit(UpdateSpecification node) => Add(node.Target);
+        public override void Visit(UpdateStatement node) => Add(DmlTarget.Of(node.UpdateSpecification.Target, node.UpdateSpecification.FromClause, node.WithCtesAndXmlNamespaces));
 
-        public override void Visit(MergeSpecification node) => Add(node.Target);
+        public override void Visit(MergeStatement node) => Add(DmlTarget.Of(node.MergeSpecification.Target, null, node.WithCtesAndXmlNamespaces));
+
+        public override void Visit(OutputIntoClause node) => Add(node.IntoTable);
 
         public override void Visit(CreateTableStatement node) => Add(node.SchemaObjectName);
 
@@ -299,6 +308,14 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
         }
 
         public override void Visit(ExecuteSpecification node) => Calls.Add(node);
+
+        private void Add(DmlTarget target)
+        {
+            foreach (var name in target.Temps)
+                Tables.Add(name);
+            if (target.Direct is { } direct && direct.StartsWith('#'))
+                Tables.Add(direct);
+        }
 
         private void Add(TableReference target)
         {

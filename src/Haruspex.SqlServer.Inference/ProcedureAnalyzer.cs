@@ -150,7 +150,16 @@ internal sealed partial class ProcedureAnalyzer
         SourceLocation? star = null;
         var outer = current;
         current = query;
-        facts.Add(Facts(query, scope));
+        var found = Facts(query, scope);
+        if (unfiltered)
+        {
+            // A cursor's row is read again when it is fetched, so its query's filters prove nothing of it (FetchRow).
+            found.Values.Clear();
+            found.Rows.Clear();
+            found.Aggregates.Clear();
+        }
+
+        facts.Add(found);
         try
         {
             foreach (var element in query.SelectElements)
@@ -158,7 +167,9 @@ internal sealed partial class ProcedureAnalyzer
                 switch (element)
                 {
                     case SelectScalarExpression scalar:
+                        // $action is named so, as the server names it (observed: Merge_action_is_an_nvarchar_10).
                         var name = scalar.ColumnName?.Value
+                            ?? (scalar.Expression is ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnAction } ? "$action" : null)
                             ?? (scalar.Expression as ColumnReferenceExpression)?.MultiPartIdentifier?.Identifiers[^1].Value;
                         columns.Add(new RowColumn(name, Expression(scalar.Expression, scope), At(scalar)));
                         break;
@@ -311,6 +322,7 @@ internal sealed partial class ProcedureAnalyzer
 
     private Value Expression(ScalarExpression expression, BindingScope scope) => expression switch
     {
+        ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnAction } action => MergeAction(action),
         ColumnReferenceExpression column => Column(column, scope),
         ParenthesisExpression parenthesis => Expression(parenthesis.Expression, scope),
         ScalarSubquery subquery => Subquery(subquery, scope),
@@ -329,6 +341,10 @@ internal sealed partial class ProcedureAnalyzer
 
     private Value Column(ColumnReferenceExpression column, BindingScope scope) => binder.BindColumn(column, scope) switch
     {
+        var target when ReadsOutputTarget(target) => Value.Unknown(Unsupported(
+            IrUnknownReasons.UnsupportedExpression,
+            $"{Text(column)} names the table the write changes, which OUTPUT may read before or after the change; read inserted or deleted instead.",
+            At(column))),
         BoundColumn bound => FromColumn(bound),
         BoundLocalColumn local => FromLocal(local, At(column)),
         UnboundColumn unbound => Value.Unknown(Unknown(unbound.Problem)),
@@ -353,6 +369,8 @@ internal sealed partial class ProcedureAnalyzer
             because.Add(new IrNullReason(IrNullRules.OuterJoin, optional.ToString()));
         if (Rolled(source) is { } rolled)
             because.Add(rolled);
+        if (Unmatched(source) is { } unmatched)
+            because.Add(unmatched);
 
         // A json column nests as JSON inside FOR JSON and the constructors (observed), but what it holds is data.
         // Through a driver it is text, which Rowset makes of any live value.

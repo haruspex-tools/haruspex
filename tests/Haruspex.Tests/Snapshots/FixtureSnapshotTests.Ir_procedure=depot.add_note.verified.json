@@ -1,0 +1,47 @@
+{
+  "irVersion": "0.9",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "depot.add_note",
+      "name": "AddNote",
+      "kind": "procedure",
+      "at": "procedures/add_note.sql:2:1",
+      "parameters": [
+        {
+          "name": "@note_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@text",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": null
+    }
+  ],
+  "types": {},
+  "unknowns": [
+    {
+      "object": "depot.add_note",
+      "path": "results",
+      "reason": "trigger-results",
+      "detail": "The write at procedures/add_note.sql:8:1 fires the trigger depot.legacy_note_echo on depot.legacy_note (triggers/legacy_note_echo.sql:2:1), which returns a result set at triggers/legacy_note_echo.sql:5:1",
+      "at": "procedures/add_note.sql:8:1"
+    }
+  ],
+  "overrides": []
+}

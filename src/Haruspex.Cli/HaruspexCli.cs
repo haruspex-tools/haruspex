@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Haruspex.Config;
+using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
@@ -222,7 +223,15 @@ public static class HaruspexCli
             selected = fromFile.Procedures;
         }
 
-        var applied = project.Infer(selected, config, selectedByFile, outDirectory);
+        var warnings = new List<Diagnostic>();
+        var applied = project.Infer(selected, config, selectedByFile, outDirectory, warnings);
+        foreach (var warning in warnings)
+        {
+            error.WriteLine(warning.At is { } at
+                ? $"{Path.Join(directory, at.File)}:{at.Line}:{at.Column}: warning: {warning.Message}"
+                : $"haruspex: warning: {warning.Message}");
+        }
+
         foreach (var problem in applied.Problems)
             error.WriteLine(problem);
         if (applied.Document is not { } document)

@@ -72,6 +72,9 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
         return relation;
     }
 
+    /// <summary>What every column of a relation handed out holds, or why it is not known.</summary>
+    public LocalRelationValues Values(LocalRelation relation) => registry[relation];
+
     /// <summary>What a column of a relation handed out holds, read at <paramref name="at"/>.</summary>
     public Value Column(LocalRelation relation, int ordinal, SourceLocation at)
     {

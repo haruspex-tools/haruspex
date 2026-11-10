@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.8";
+    public const string CurrentVersion = "0.9";
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
@@ -348,6 +348,12 @@ public static class IrFactSources
 
     /// <summary>A check constraint.</summary>
     public const string Check = "check";
+
+    /// <summary>
+    /// The engine itself: a value it writes from a closed set, such as <c>$action</c> in a <c>MERGE</c>'s <c>OUTPUT</c>. The
+    /// ref names the value.
+    /// </summary>
+    public const string Engine = "engine";
 }
 
 /// <summary>An array of items.</summary>
@@ -529,6 +535,13 @@ public static class IrNullRules
     /// </summary>
     public const string GroupingSet = "grouping-set";
 
+    /// <summary>
+    /// It is a column of a <c>MERGE</c>'s <c>OUTPUT</c> that has no value for some of the actions the statement takes: a
+    /// <c>deleted</c> column for the rows it inserts, an <c>inserted</c> column for the rows it deletes, and a column of its
+    /// source for the rows it changes because they are not matched by the source.
+    /// </summary>
+    public const string MergeAction = "merge-action";
+
     /// <summary>Its type is unknown, so nothing is proved about it.</summary>
     public const string Unknown = "unknown";
 
@@ -616,4 +629,17 @@ public static class IrUnknownReasons
 
     /// <summary>An unqualified procedure name that more than one schema has: which runs depends on the caller's default schema.</summary>
     public const string AmbiguousProcedure = "ambiguous-procedure";
+
+    /// <summary>
+    /// A statement fires a trigger of the project that may return result sets of its own, which arrive among the
+    /// procedure's. SQL Server allows it unless the server's <c>disallow results from triggers</c> option is on, which it is
+    /// not by default.
+    /// </summary>
+    public const string TriggerResults = "trigger-results";
+
+    /// <summary>
+    /// A result set carries a column the server marks hidden, which some drivers list among the columns and others leave
+    /// out, so its keys depend on the client: <c>FETCH</c> without <c>INTO</c>, whose row has <c>ROWSTAT</c>.
+    /// </summary>
+    public const string HiddenColumn = "hidden-column";
 }
