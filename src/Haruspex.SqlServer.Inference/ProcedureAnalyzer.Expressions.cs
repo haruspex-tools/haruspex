@@ -306,10 +306,19 @@ internal sealed partial class ProcedureAnalyzer
     {
         if (unary.UnaryExpressionType is not (UnaryExpressionType.Negative or UnaryExpressionType.Positive))
             return NotModelled(unary, "this operator is not modelled yet.");
+        // A literal signed twice, -(-2147483648), is numeric(38,0) on the server, whichever way the parser splits the signs
+        // (observed, A_literals_type_is_its_own_digits_or_characters), and is not modelled (review round 2).
+        if (Strip(unary.Expression) is UnaryExpression && LiteralOf(unary) is not null)
+            return NotModelled(unary, "a literal signed more than once is not modelled.");
+
         // A negated literal is the literal's type, and cannot overflow; but negated, 2147483648 is int's least value, an int
         // (observed: A_literals_type_is_its_own_digits_or_characters).
         if (LiteralOf(unary) is ({ } literal, true) && literal is IntegerLiteral or NumericLiteral)
         {
+            // The parser gives -2147483648 as one signed literal; negating that again is numeric(38,0) on the server
+            // (observed, same test), not the literal's type, and is not modelled (review round 2).
+            if (literal.Value.StartsWith('-') || literal.Value.StartsWith('+'))
+                return NotModelled(unary, "negating a signed literal is not modelled.");
             // The parser gives 2147483648 as a numeric literal, being beyond int.
             return literal.Value.TrimStart('0') == "2147483648"
                 ? Typed(new ScalarType("int"), [], unary)

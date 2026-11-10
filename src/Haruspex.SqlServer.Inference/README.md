@@ -353,7 +353,8 @@ read, except where it is that value unchanged (a conversion to its own type, `IS
 ### Literals
 
 `'abc'` is `varchar(3)`, `N'ab'` `nvarchar(2)`, `''` `varchar(1)`; an integer within `int` is `int`, a larger one
-`numeric(digits,0)`, except that `-2147483648` (int's least value, through parentheses too) is `int`; `2.50` is `numeric(3,2)`: the scale counts the digits after the point, trailing zeros too, and the
+`numeric(digits,0)`, except that `-2147483648` (int's least value, through parentheses too) is `int`; a literal signed twice
+(`-(-2147483648)`, `numeric(38,0)` on the server) is not modelled; `2.50` is `numeric(3,2)`: the scale counts the digits after the point, trailing zeros too, and the
 precision adds those before it, less leading zeros (`A_literals_type_is_its_own_digits_or_characters`). None is ever null. A
 `varchar` literal beyond ASCII, or one with `COLLATE`, is not typed: its length in bytes depends on the code page.
 

@@ -42,8 +42,8 @@ public class ExpressionObservationTests(SqlServerFixture server)
         // literal is varchar or nvarchar of its length, at least 1. Negated, 2147483648 is int's least value, an int.
         Assert.Equal(
             "a numeric(2,1), b numeric(1,1), c numeric(4,3), d numeric(5,2), e numeric(2,2), f numeric(3,2), g numeric(10,0), h int, i varchar(3), j nvarchar(2), k varchar(1), "
-            + "l int, m int, n numeric(10,0)",
-            await Describe("SELECT 2.5 AS a, 0.5 AS b, 1.234 AS c, 100.00 AS d, 0.05 AS e, 007.10 AS f, 2147483648 AS g, 2147483647 AS h, 'abc' AS i, N'ab' AS j, '' AS k, -2147483648 AS l, -(2147483648) AS m, -2147483649 AS n"));
+            + "l int, m int, n numeric(10,0), o numeric(38,0), p numeric(38,0)",
+            await Describe("SELECT 2.5 AS a, 0.5 AS b, 1.234 AS c, 100.00 AS d, 0.05 AS e, 007.10 AS f, 2147483648 AS g, 2147483647 AS h, 'abc' AS i, N'ab' AS j, '' AS k, -2147483648 AS l, -(2147483648) AS m, -2147483649 AS n, -(-2147483648) AS o, - -2147483648 AS p"));
     }
 
     // ---- COALESCE and ISNULL -----------------------------------------------------------------------------------------

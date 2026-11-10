@@ -62,6 +62,11 @@ public class ExpressionTests
         Assert.Equal("int", Typed(doc, "least"));
         Assert.Equal("int", Typed(doc, "paren"));
         Assert.Equal("numeric(10,0)", Typed(doc, "below"));
+
+        // Negated again it is numeric(38,0) on the server, which is not modelled (review round 2).
+        var twice = Procedure("SELECT -(-2147483648) AS a, - -2147483648 AS b, -(-5) AS c;");
+        Assert.StartsWith("unknown", Sql(twice, "a"), StringComparison.Ordinal);
+        Assert.StartsWith("unknown", Sql(twice, "b"), StringComparison.Ordinal);
         Assert.Equal("varchar(3)", Typed(doc, "s"));
         Assert.Equal("nvarchar(2)", Typed(doc, "w"));
         Assert.Equal("varchar(1)", Typed(doc, "e"));
