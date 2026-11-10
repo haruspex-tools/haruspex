@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.11";
+    public const string CurrentVersion = "0.12";
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
@@ -354,6 +354,12 @@ public static class IrFactSources
     /// ref names the value.
     /// </summary>
     public const string Engine = "engine";
+
+    /// <summary>
+    /// An expression of the procedure whose every result is a literal: a <c>CASE</c>, <c>IIF</c> or <c>CHOOSE</c> gives one of
+    /// them, exactly as written. The ref is the expression's location.
+    /// </summary>
+    public const string Expression = "expression";
 }
 
 /// <summary>An array of items.</summary>
@@ -558,6 +564,25 @@ public static class IrNullRules
     /// source for the rows it changes because they are not matched by the source.
     /// </summary>
     public const string MergeAction = "merge-action";
+
+    /// <summary>It is a <c>CASE</c> without <c>ELSE</c>, which is NULL when no <c>WHEN</c> holds.</summary>
+    public const string NoElse = "no-else";
+
+    /// <summary>A result of a <c>CASE</c>, <c>IIF</c> or <c>CHOOSE</c> it may give is the <c>NULL</c> literal.</summary>
+    public const string NullLiteral = "null-literal";
+
+    /// <summary>It is a <c>CHOOSE</c> whose index may be below 1 or above its count of values, which gives NULL.</summary>
+    public const string OutOfRange = "out-of-range";
+
+    /// <summary>
+    /// It is a <c>COALESCE</c> one of whose arguments, a subquery or a call, is tested and then read again: the second read may
+    /// be NULL (another statement changed the rows between them, or the call gives another value). Before 0.12 the argument's
+    /// own reasons were given instead. No seed reaches it; it is observed.
+    /// </summary>
+    public const string ReadTwice = "read-twice";
+
+    /// <summary>It is a <c>NULLIF</c>, NULL when its two arguments compare equal.</summary>
+    public const string NullIf = "nullif";
 
     /// <summary>Its type is unknown, so nothing is proved about it.</summary>
     public const string Unknown = "unknown";

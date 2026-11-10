@@ -99,9 +99,12 @@ expressions rely on (the types of literals, `COALESCE`, `ISNULL`, conversions, `
 which overflow NULL under a caller's `ANSI_WARNINGS` and `ARITHABORT` off and which conversions cannot overflow; `COALESCE`
 reading a subquery twice) is pinned by `ExpressionObservationTests`; what table-valued functions rely on (arguments converted
 as assignments are, a multi-statement function's return table enforcing its constraints, `DEFAULT`) by
-`TableFunctionObservationTests`; and how far a procedure's isolation level reaches by `ReadUncommittedObservationTests`. A
-field whose only reasons to be null are `count-overflow` or `arithmetic-overflow` need not be seen null: no seed has
-2,147,483,648 rows, and the runs use the default session options, under which an overflow is an error. They all make their
+`TableFunctionObservationTests`; how far a procedure's isolation level reaches by `ReadUncommittedObservationTests`; and what
+`CASE`, `IIF`, `CHOOSE`, `NULLIF`, and `COALESCE` and `ISNULL` over JSON rely on (their types, what makes them NULL, how a
+branch knows its condition, how each nests in JSON, and when the server folds one) by `CaseObservationTests`. A field whose
+only reasons to be null are `count-overflow`, `arithmetic-overflow` or `read-twice` need not be seen null: no seed has
+2,147,483,648 rows, the runs use the default session options, under which an overflow is an error, and a COALESCE's second
+read differs from its first only when another statement changes the rows between them. They all make their
 calls through `Server/ObservedCall.cs`.
 
 `DescribedTypeTests` checks what the validator cannot see in a value: that the SQL type the IR gives each column of every

@@ -937,8 +937,12 @@ internal sealed partial class ProcedureAnalyzer
             value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(bound.Source.OuterApply ? IrNullRules.OuterApply : IrNullRules.OuterJoin, optional.ToString())]) };
         if (Unmatched(bound.Source) is { } unmatched && value.Shape is not UnknownShape)
             value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [unmatched]) };
-        return Rolled(bound.Source) is { } rolled && value.Shape is not UnknownShape
-            ? value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [rolled]) }
+        if (Rolled(bound.Source) is { } rolled && value.Shape is not UnknownShape)
+            value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [rolled]) };
+
+        // A CASE branch that tested this very value proves it, whatever made it nullable (ProcedureAnalyzer.Case.cs).
+        return value.Shape is not UnknownShape && bound.Ordinal >= 0 && BranchProved(bound.Source, Key(bound))
+            ? value with { NullableBecause = [] }
             : value;
     }
 

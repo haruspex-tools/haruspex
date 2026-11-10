@@ -1,7 +1,7 @@
-# The haruspex IR, version 0.11
+# The haruspex IR, version 0.12
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
-each side can be written in whatever language suits it. This page describes version 0.11. A JSON Schema for
+each side can be written in whatever language suits it. This page describes version 0.12. A JSON Schema for
 it will follow.
 
 ## Why not JSON Schema
@@ -15,7 +15,7 @@ every document. It maps to JSON Schema without loss.
 
 ```jsonc
 {
-  "irVersion": "0.11",                // versioned separately from the tool
+  "irVersion": "0.12",                // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database: the object's identity
@@ -110,8 +110,8 @@ express the bound.
 
 A scalar may carry facets, each a guarantee about its **non-null** values, and each with `from`: where it came
 from, `{ "type": "<type or alias type>" }` or `{ "check": "<schema.constraint>" }` (the constraint's location
-when it has no name), or `{ "engine": "<what>" }` for a closed set SQL Server itself writes (0.9: `$action`), for the
-origins graph. A facet that is not proved is left out: absence claims nothing.
+when it has no name), or `{ "engine": "<what>" }` for a closed set SQL Server itself writes (0.9: `$action`), or `{ "expression":
+"<location>" }` for the literals a `CASE`, `IIF` or `CHOOSE` gives (0.12), for the origins graph. A facet that is not proved is left out: absence claims nothing.
 None says anything about null, which is the field's `nullable`: a CHECK constraint passes when its condition is
 UNKNOWN, as it is for null, so a constraint never makes a value non-null and a value set never excludes null.
 
@@ -121,7 +121,7 @@ UNKNOWN, as it is for null, so a constraint never makes a value non-null and a v
 | `minLength` | at least `value` UTF-16 code units |
 | `digits` | an exact decimal of at most `precision` digits, `scale` of them after the point |
 | `min` / `max` | a bound, `inclusive` or not. `value` is a JSON number written from exact decimal text (`99999999999999999.99`, `-9223372036854775808`), so a reader that parses decimals loses nothing |
-| `values` | the value is one of `items` (strings, or numbers as exact JSON numbers). `match` is `exact`, or `collation`: equal under the database's string comparison, which may ignore case, accents and trailing spaces, so `"Open "` can be a value of a set holding `"open"`. A `collation` set is true but not exact, and an emitter must not treat it as an enum. `padded`: one of the items followed by any number of spaces (U+0020), as under a binary collation, which compares exactly but, like every comparison in SQL Server, ignores trailing spaces. String items never end in a space: SQL Server pads the shorter side before comparing, so `'a'` passes `IN ('a ')`, and the front end removes an item's trailing spaces |
+| `values` | the value is one of `items` (strings, or numbers as exact JSON numbers). `match` is `exact`, or `collation`: equal under the database's string comparison, which may ignore case, accents and trailing spaces, so `"Open "` can be a value of a set holding `"open"`. A `collation` set is true but not exact, and an emitter must not treat it as an enum. `padded`: one of the items followed by any number of spaces (U+0020), as under a binary collation, which compares exactly but, like every comparison in SQL Server, ignores trailing spaces. String items of a `CHECK`'s set never end in a space: SQL Server pads the shorter side before comparing, so `'a'` passes `IN ('a ')`, and the front end removes an item's trailing spaces. Those of an `expression`'s set (0.12) are the values written, trailing spaces and all |
 
 Facets travel with a value only while it passes through unchanged: a column reference, under aliases, through
 joins, FOR JSON nesting and the JSON constructors. Through any expression they are dropped, which leaves the type wider and still true.
@@ -397,6 +397,36 @@ rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Expressi
   reads, so a result once `atMostOne` by a key is `many`. An isolation level the outermost caller sets is not seen: the
   IR assumes it does not read uncommitted.
 
+## CASE, IIF, CHOOSE, NULLIF and COALESCE over JSON (0.12)
+
+`CASE`, `IIF`, `CHOOSE` and `NULLIF`, and `COALESCE` and `ISNULL` over JSON, are read (slice 6g); the engine rules, each
+observed, are in `Haruspex.SqlServer.Inference/README.md` ("CASE, IIF, CHOOSE and NULLIF", "COALESCE and ISNULL over JSON").
+For the IR:
+
+- A `CASE`, `IIF` or `CHOOSE` has the SQL type SQL Server gives it, with that type's facets. When every result other than
+  `NULL` is a literal, it has a `values` facet of those literals, `match` `exact`, `from` `{ "expression": "<location>" }`.
+  These are values the procedure writes, so they are exact, not compared under a collation, and a string item keeps its
+  trailing spaces: `CASE … THEN 'a ' …` gives `"a "` (a literal is `varchar`, never padded). The rule above that string items
+  never end in a space is about the sets a `CHECK` gives.
+- New null rules: **`no-else`** (a `CASE` without `ELSE`, NULL when no `WHEN` holds), **`null-literal`** (a result that is the
+  `NULL` literal, at it), **`out-of-range`** (a `CHOOSE` whose index may be below 1 or above its count), **`nullif`** (a
+  `NULLIF`, NULL when its arguments are equal; otherwise it is its first argument with its facets).
+- **`read-twice`**: a `COALESCE` whose argument holding a subquery or a call, before one never null, is read a second time
+  after it was tested, and may then be NULL. It replaces the reasons that argument had: an argument tested NULL is passed
+  over, so only its second read can make the `COALESCE` NULL. In 0.11 the argument's own reasons were given, which was
+  sound but named the wrong cause. No seed can reach it, as for `arithmetic-overflow`.
+- A branch knows its condition: in `CASE WHEN x IS NULL THEN 0 ELSE x END` the `ELSE`'s `x` is never null, whatever made it
+  nullable (a column, an outer join, a `ROLLUP`), so the `CASE` is not.
+- `COALESCE` over JSON is `json-text` wherever it nests, its `content` what the arguments hold (a fallback `'[]'` removes the
+  array's `minItems`, `'{}'` adds the empty object as a variant of a `union`); `ISNULL` over JSON is JSON where it nests, with
+  the same content, and never null with a literal fallback. A `CASE`, `IIF`, `CHOOSE` or `NULLIF` over JSON is unknown
+  (`unsupported-expression`): whether it nests as JSON depends on whether the server folds it.
+
+Changes in 0.12 (slice 6g, CASE and COALESCE over JSON): the null rules `no-else`, `null-literal`, `out-of-range`, `nullif`
+and `read-twice`; the fact source `expression`. These expressions were unknown (`unsupported-expression`) before, and a
+`COALESCE` read twice gave its argument's reasons instead of `read-twice`. A 0.11 reader would meet null rules and a fact
+source it does not know, which is why the version changed.
+
 Changes in 0.11 (slice 6f, expressions and table-valued functions): the null rules `arithmetic-overflow` and
 `failed-conversion`. Expressions and table-valued functions were unknown (`unsupported-expression`, `unsupported-source`)
 before; a key read uncommitted no longer bounds a result. A 0.10 reader would meet a null rule it does not know, which is why
@@ -446,4 +476,4 @@ Changes in 0.2: scalars gained facets (`maxLength`, `length`, `minLength`, `digi
 each with its `from`. A reader of 0.1 that ignores unknown keys reads 0.2 documents unchanged, but the version
 changed because the facets are claims a 0.2 reader may rely on.
 
-Not in 0.11, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.
+Not in 0.12, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.

@@ -408,8 +408,11 @@ modelled.
   money, other mixes of dates) are not modelled. It is never null when an argument is never null, except: it is
   `CASE WHEN a IS NOT NULL THEN a …`, which reads an argument twice, so a subquery or a call before the never-null argument may
   be NULL the second time (`Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot`: NULL a quarter of the time
-  over a subquery NULL half the time); such an argument's reasons stay. An aggregate is computed once for its group and is
-  safe to read twice (the same test). A `NULL` literal adds nothing but its place.
+  over a subquery NULL half the time). Since 6g that is the rule `read-twice`, at the argument, in place of the argument's own
+  reasons: an argument found NULL is passed over, so only its second read can make the COALESCE NULL. No seed reaches it
+  (another statement must change the rows between the two reads), so the differential coverage does not ask to see it, as for
+  the overflows. An aggregate is computed once for its group and is safe to read twice (the same test). A `NULL` literal adds
+  nothing but its place.
 - **`ISNULL(a, b)`** is `a`'s type (`b`'s when `a` is the `NULL` literal), to which `b` is converted, a longer string cut short
   (`Isnull_converts_its_second_argument_to_the_firsts_type_cutting_a_string_short`). It reads `a` once: never null when `a` is
   never null (then it is `a`, with its facets), or when `b` is never null and converts to `a`'s type without overflow
@@ -444,6 +447,84 @@ modelled.
   except a decimal of at most 19 digits: fewer than 2^63 values below 10^(p − s) each sum to less than 10^(38 − s), and no
   query reads 2^63 rows (at a billion a second, 292 years), an assumption written here rather than observed. So
   `COALESCE(SUM(x), 0)` is never null, and `CONVERT(decimal(19,2), COALESCE(SUM(x), 0))` may overflow.
+
+## CASE, IIF, CHOOSE and NULLIF
+
+`ProcedureAnalyzer.Case.cs` reads them (slice 6g). Every rule is observed in `CaseObservationTests`.
+
+- **Type.** A `CASE` (searched or simple), `IIF` or `CHOOSE` is of the type of highest precedence over its *results*, by the
+  same rule as `COALESCE` (`ScalarType.Union`, above): `CASE … THEN 'a' ELSE 'longer' END` is `varchar(6)`, a `char(4)`
+  beside a varchar literal is `varchar(4)`, only `char` results give `char`
+  (`Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results`). Conditions, a simple CASE's input and
+  CHOOSE's index do not count; `IIF(c, a, b)` is `CASE WHEN c THEN a ELSE b END`. A `NULL` result adds nothing to the type;
+  a CASE or IIF of `NULL` results only is error 8133 and CHOOSE of them an `int` NULL, neither modelled
+  (`A_case_whose_results_are_all_null_is_an_error_but_choose_of_nulls_is_null`). Every result then converts without overflow.
+  Results of types with no modelled precedence (a string beside a number, which converts the string and may fail) are not
+  modelled.
+- **What makes it NULL.** A result that may be (with that result's reasons), a `NULL` result (`null-literal`, at it), no
+  `ELSE` (`no-else`: NULL when no `WHEN` holds), and for `CHOOSE` an index that is NULL (its reasons) or below 1 or above the
+  count (`out-of-range`; a decimal index is truncated, a string one converted)
+  (`Case_without_else_choose_out_of_range_and_nullif_of_equal_values_are_null`). `CHOOSE` is not `out-of-range` when its
+  index is an integer literal in range, or an integer whose bounds (a `CHECK … BETWEEN 1 AND n`) keep it in range.
+- **Branches refine** (`A_case_branch_runs_only_when_its_condition_is_true_and_later_ones_only_when_earlier_were_not`). A
+  `THEN` is read knowing its `WHEN` was TRUE, and every branch after it, `ELSE` included, knowing each earlier `WHEN` was FALSE
+  or UNKNOWN. A value is proved non-null where, were it NULL, the condition could not have taken that truth value, decided by
+  refinement's three-valued logic (`Possible` in `Refinement.cs`, the same as for WHERE). So `CASE WHEN x IS NULL THEN 0
+  ELSE x END` is never NULL, but `CASE WHEN x = 1 THEN 0 ELSE x END` may be: `x = 1` is UNKNOWN for a NULL `x`, which is not
+  TRUE either. A simple CASE's `WHEN v` is read as `input = v`; `WHEN NULL` never matches. What is proved is the value itself
+  in the row being read, after grouping, so it removes every reason the value had, not only `nullable-column`: an outer
+  join's (and that source's row is proved there, as by WHERE), and a ROLLUP's `grouping-set`. Only values that are the same
+  wherever they are read in a row are proved: a column, a variable or parameter (one value throughout an expression), and an
+  aggregate of the query being read (computed once per group, so `CASE WHEN SUM(x) IS NULL THEN 0 ELSE SUM(x) END` is never
+  NULL). A subquery or a call may give another value when read again, so testing one proves nothing about it. CHOOSE's
+  values are not refined: which one is taken is a number, not a condition.
+- **Closed sets.** When every result other than `NULL` is a string literal, or every one a number, the value is one of them,
+  exactly: a `values` facet with `match` `exact` and `from` `{ "expression": <location> }`. A literal is `varchar` or
+  `nvarchar`, never padded, so `'a '` keeps its space (`A_literal_result_keeps_its_trailing_spaces_and_a_fixed_length_result_pads`);
+  only `char` results pad, and those are columns, not literals. These are output values, so no collation applies. Literals in
+  conditions do not count; a value written twice is one item; numbers are converted to the type exactly, which is wide enough
+  for each.
+- **JSON.** A CASE, IIF or CHOOSE with a JSON result is not modelled. Over JSON it is text, escaped where it nests, unless the
+  server folds it to the one result a constant condition picks, when it keeps that result's JSON
+  (`Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch`). Which is up to the
+  optimiser, and `OPTION (RECOMPILE)` folds a parameter's value too, so the shape cannot be known from the code.
+- **`NULLIF(a, b)`** is `a`, unchanged, or NULL when `a` and `b` compare equal (`nullif`): `a`'s type and facets, a CHECK set
+  included. `a`'s type, except that an integer literal `a` is the smallest integer type that holds it, `tinyint` for `1`,
+  `smallint` for `-1` or `1000` (`Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it`;
+  everywhere else such a literal is `int`). With the `NULL` literal as `b` nothing is equal, and it is `a`. Of the `NULL`
+  literal it is error 4151, and over JSON it is text unless folded, as CASE: neither is modelled.
+
+## COALESCE and ISNULL over JSON
+
+The idiom `COALESCE((SELECT … FOR JSON PATH), '[]')` for "the lines, or none" behaves differently from `ISNULL`, and was
+observed in each position before it was typed (`CaseObservationTests`):
+
+| Expression | Where it nests (FOR JSON, json_object, json_array) | In a rowset | Null |
+|---|---|---|---|
+| `COALESCE(sub, '[]')` | escaped text, the subquery's array and `'[]'` alike | JSON text, `nvarchar(max)` | `read-twice`: the subquery is read again |
+| `ISNULL(sub, '[]')` | JSON: the array, or `[]` | JSON text | never |
+| `JSON_QUERY(COALESCE(sub, '[]'))` | JSON | JSON text | `read-twice` |
+| `ISNULL(sub WITHOUT_ARRAY_WRAPPER, '{}')` | escaped text | JSON text | never |
+
+- **`COALESCE` over JSON is text**, never live JSON, wherever it nests, even when every argument is JSON
+  (`Coalesce_over_a_for_json_subquery_nests_as_escaped_text_and_isnull_as_json`), so it is JSON text (`json-text`) whose
+  content is what its arguments hold: the subquery's array, with no `minItems` when `'[]'` may stand in for it; a union with
+  the empty object for `'{}'`; unknown content for `'null'` (it parses, but to `null`, which the IR's content cannot say); a
+  plain `nvarchar(max)` when an argument is a string that may not be JSON. `JSON_QUERY` over it makes that content live again
+  (`Json_query_over_coalesce_makes_it_json_again`; over `'null'` it is error 13609). It is still read twice
+  (`Coalesce_reads_a_for_json_subquery_twice_so_it_can_be_null_though_its_fallback_is_not`, the subquery reading its outer
+  row, as real ones do: one that does not may be read once and spooled). One exception: `COALESCE` whose first argument is a
+  constant never NULL is folded to it and keeps its JSON (`COALESCE(JSON_QUERY(N'[1]'), '[]')` nests `[1]`), so a COALESCE
+  with a live argument that is not a FOR JSON subquery (perhaps in `JSON_QUERY`) is not modelled. A FOR JSON subquery is never
+  folded, even one without FROM.
+- **`ISNULL` keeps its first argument's JSON**: over live JSON it nests as JSON, and its fallback is written into the JSON as
+  it is, unchecked (`Isnull_writes_its_fallback_into_the_json_as_it_is`): `'[]'` the empty array (so the array may have no
+  items), `'{}'` the empty object (a union), another JSON value its JSON. Others are not modelled: `'null'` is JSON `null`,
+  which is not SQL NULL, so the key stays even under `ABSENT ON NULL` and the IR's "null means left out" for FOR JSON does not
+  hold; `''`, `'x'` or a column's text make output that is not JSON. It reads its argument once, so it is NULL only when the
+  fallback is: never for a literal. Over JSON text (a subquery `WITHOUT_ARRAY_WRAPPER`) it is text, with the same content rule
+  as `COALESCE` (`Without_its_array_wrapper_the_subquery_is_text_in_coalesce_and_isnull_until_json_query`).
+- In a rowset each is `nvarchar(max)` text (`In_a_rowset_coalesce_and_isnull_over_json_are_nvarchar_max_text`), as any JSON is.
 
 ## Refinement
 

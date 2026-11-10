@@ -1,0 +1,501 @@
+{
+  "irVersion": "0.12",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "desk.job_card",
+      "name": "JobCard",
+      "kind": "procedure",
+      "at": "procedures/job_card.sql:4:1",
+      "parameters": [
+        {
+          "name": "@job_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "JobCardRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/job_card.sql:9:1"
+            }
+          ],
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "JobCardFirstLine": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.job_card",
+        "path": "results[0].first_line"
+      },
+      "fields": [
+        {
+          "name": "part",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "JobCardFirstLine2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.job_card",
+        "path": "results[0].first_line"
+      },
+      "fields": []
+    },
+    "JobCardFirstText": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.job_card",
+        "path": "results[0].first_text<json>"
+      },
+      "fields": [
+        {
+          "name": "part",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "JobCardFirstText2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.job_card",
+        "path": "results[0].first_text<json>"
+      },
+      "fields": []
+    },
+    "JobCardLine": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.job_card",
+        "path": "results[0].lines[]"
+      },
+      "fields": [
+        {
+          "name": "part",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "qty",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "line_total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(15,2)",
+            "digits": {
+              "precision": 15,
+              "scale": 2,
+              "from": {
+                "type": "decimal(15,2)"
+              }
+            },
+            "min": {
+              "value": -9999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(15,2)"
+              }
+            },
+            "max": {
+              "value": 9999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(15,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "free",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(3)",
+            "maxLength": {
+              "value": 3,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(3)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "no",
+                "yes"
+              ],
+              "from": [
+                {
+                  "expression": "procedures/job_card.sql:15:23"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "JobCardLineId": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.job_card",
+        "path": "results[0].line_ids[]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "JobCardLinesText": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.job_card",
+        "path": "results[0].lines_text<json>[]"
+      },
+      "fields": [
+        {
+          "name": "part",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "qty",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "JobCardPartsOrNone": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.job_card",
+        "path": "results[0].parts_or_none[]"
+      },
+      "fields": [
+        {
+          "name": "part",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "JobCardPartsOrNone2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.job_card",
+        "path": "results[0].parts_or_none"
+      },
+      "fields": []
+    },
+    "JobCardRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.job_card",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(9)",
+            "maxLength": {
+              "value": 9,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(9)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "Cancelled",
+                "Done",
+                "In work",
+                "New"
+              ],
+              "from": [
+                {
+                  "expression": "procedures/job_card.sql:10:8"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "lines_text",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "ref": "JobCardLinesText"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "read-twice",
+              "at": "procedures/job_card.sql:11:17"
+            }
+          ]
+        },
+        {
+          "name": "lines",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "JobCardLine"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "line_ids",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "JobCardLineId"
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "read-twice",
+              "at": "procedures/job_card.sql:20:28"
+            }
+          ]
+        },
+        {
+          "name": "parts_or_none",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "JobCardPartsOrNone"
+                },
+                "minItems": 1
+              },
+              {
+                "ref": "JobCardPartsOrNone2"
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "first_text",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "union",
+              "variants": [
+                {
+                  "ref": "JobCardFirstText"
+                },
+                {
+                  "ref": "JobCardFirstText2"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "first_line",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "ref": "JobCardFirstLine"
+              },
+              {
+                "ref": "JobCardFirstLine2"
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

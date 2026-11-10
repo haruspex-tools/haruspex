@@ -369,12 +369,18 @@ internal sealed partial class ProcedureAnalyzer
             when call.FunctionName.Value.Equals("json_query", StringComparison.OrdinalIgnoreCase) => JsonQuery(call, scope),
         FunctionCall { CallTarget: null } call when IsAggregate(call) => BuiltInAggregate(call, scope),
         FunctionCall call when FunctionSummaries.Callee(call) is { } callee => CallFunction(call, callee, scope),
-        VariableReference variable when parameters.TryGetValue(variable.Name, out var parameter) => parameter,
-        VariableReference variable when locals is not null => Variable(variable),
+        VariableReference variable when parameters.TryGetValue(variable.Name, out var parameter) => Branched(variable, parameter),
+        VariableReference variable when locals is not null => Branched(variable, Variable(variable)),
         IntegerLiteral literal => Integer(literal),
         StringLiteral literal => FromString(literal),
         NumericLiteral literal => FromNumeric(literal),
         CoalesceExpression coalesce => Coalesce(coalesce, scope),
+        SearchedCaseExpression searched => Case(searched, scope),
+        SimpleCaseExpression simple => Case(simple, scope),
+        IIfCall iif => Iif(iif, scope),
+        NullIfExpression nullIf => NullIf(nullIf, scope),
+        FunctionCall { CallTarget: null, OverClause: null, Parameters.Count: >= 2 } call
+            when call.FunctionName.Value.Equals("choose", StringComparison.OrdinalIgnoreCase) => Choose(call, scope),
         FunctionCall { CallTarget: null, Parameters.Count: 2 } call
             when call.FunctionName.Value.Equals("isnull", StringComparison.OrdinalIgnoreCase) => IsNull(call, scope),
         FunctionCall { CallTarget: null, OverClause: null } call
@@ -422,6 +428,10 @@ internal sealed partial class ProcedureAnalyzer
             because.Add(rolled);
         if (Unmatched(source) is { } unmatched)
             because.Add(unmatched);
+
+        // A CASE branch that tested this very value proves it, whatever made it nullable (ProcedureAnalyzer.Case.cs).
+        if (BranchProved(source, Key(bound)))
+            because.Clear();
 
         // A json column nests as JSON inside FOR JSON and the constructors (observed), but what it holds is data.
         // Through a driver it is text, which Rowset makes of any live value.

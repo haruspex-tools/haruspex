@@ -1,0 +1,195 @@
+{
+  "irVersion": "0.12",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "desk.customer_jobs",
+      "name": "CustomerJobs",
+      "kind": "procedure",
+      "at": "procedures/customer_jobs.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CustomerJobsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "CustomerJobsJobIds": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.customer_jobs",
+        "path": "results[0][].job_ids<json>[]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "CustomerJobsJobs": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.customer_jobs",
+        "path": "results[0][].jobs<json>[]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": {
+            "kind": "string",
+            "sql": "char(1)",
+            "length": {
+              "value": 1,
+              "unit": "bytes",
+              "from": {
+                "type": "char(1)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "N",
+                "W",
+                "D",
+                "X"
+              ],
+              "from": [
+                {
+                  "check": "desk.ck_job_status"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "CustomerJobsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.customer_jobs",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "customer_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "jobs",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "ref": "CustomerJobsJobs"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "job_ids",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "ref": "CustomerJobsJobIds"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "read-twice",
+              "at": "procedures/customer_jobs.sql:8:17"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

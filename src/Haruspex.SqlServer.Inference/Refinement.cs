@@ -67,7 +67,7 @@ internal sealed partial class ProcedureAnalyzer
         facts.Any(f => f.Values.TryGetValue(source, out var keys) && keys.Contains(key));
 
     /// <summary>Whether a filter of a query being read proves the source's row is there, not null-extended by an outer join.</summary>
-    private bool Matched(BoundSource source) => facts.Any(f => f.Rows.Contains(source));
+    private bool Matched(BoundSource source) => facts.Any(f => f.Rows.Contains(source)) || BranchMatched(source);
 
     /// <summary>The queries whose aggregate's arguments are being read: a column read there is a row's, not a group's.</summary>
     private readonly List<QuerySpecification?> aggregating = [];
@@ -95,7 +95,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>Whether HAVING proves this aggregate of the query whose select list is being read non-null.</summary>
     private bool ProvedAggregate(FunctionCall call) =>
-        facts.Count > 0 && ReferenceEquals(facts[^1].Query, current) && facts[^1].Aggregates.Contains(Text(call));
+        (facts.Count > 0 && ReferenceEquals(facts[^1].Query, current) && facts[^1].Aggregates.Contains(Text(call))) || BranchProvedAggregate(call);
 
     // ---- what a query's filters prove ---------------------------------------------------------------------------------
 

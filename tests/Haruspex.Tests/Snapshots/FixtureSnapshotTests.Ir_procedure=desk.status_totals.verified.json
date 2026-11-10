@@ -1,0 +1,168 @@
+{
+  "irVersion": "0.12",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "desk.status_totals",
+      "name": "StatusTotals",
+      "kind": "procedure",
+      "at": "procedures/status_totals.sql:3:1",
+      "parameters": [
+        {
+          "name": "@status",
+          "type": {
+            "kind": "string",
+            "sql": "char(1)"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "StatusTotalsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "StatusTotalsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "desk.status_totals",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "status",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(3)",
+            "maxLength": {
+              "value": 3,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(3)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "filter",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(3)",
+            "maxLength": {
+              "value": 3,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(3)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "line_rows",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "priced",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,2)",
+            "digits": {
+              "precision": 38,
+              "scale": 2,
+              "from": {
+                "type": "decimal(38,2)"
+              }
+            },
+            "min": {
+              "value": -999999999999999999999999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,2)"
+              }
+            },
+            "max": {
+              "value": 999999999999999999999999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "most",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "no-else",
+              "at": "procedures/status_totals.sql:12:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

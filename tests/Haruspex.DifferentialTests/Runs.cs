@@ -28,7 +28,7 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs", "cases"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
@@ -57,6 +57,7 @@ public static class Runs
     private const string NoPurchases = "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase;";
     private const string NoOpenTabs = "UPDATE cafe.tab SET closed_at = DATEADD(hour, 1, opened_at) WHERE closed_at IS NULL;";
     private const string NoCafe = "DELETE FROM cafe.tab_item; DELETE FROM cafe.tab; DELETE FROM cafe.menu_item; DELETE FROM cafe.guest;";
+    private const string NoDesk = "DELETE FROM desk.part_line; DELETE FROM desk.job_note; DELETE FROM desk.job; DELETE FROM desk.customer;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -299,6 +300,15 @@ public static class Runs
         new("tabs: guest_spending", "tabs", "cafe.guest_spending", None),
         new("tabs: guest_spending, no guests", "tabs", "cafe.guest_spending", None, NoCafe),
         new("tabs: menu_prices", "tabs", "cafe.menu_prices", None),
+        new("cases: job_board", "cases", "desk.job_board", None),
+        new("cases: job_card, two lines, one without a price", "cases", "desk.job_card", new Dictionary<string, object?> { ["@job_id"] = 11 }),
+        new("cases: job_card, one free line", "cases", "desk.job_card", new Dictionary<string, object?> { ["@job_id"] = 12 }),
+        new("cases: job_card, no lines", "cases", "desk.job_card", new Dictionary<string, object?> { ["@job_id"] = 10 }),
+        new("cases: job_card, no such job", "cases", "desk.job_card", new Dictionary<string, object?> { ["@job_id"] = 99 }),
+        new("cases: customer_jobs", "cases", "desk.customer_jobs", None),
+        new("cases: status_totals", "cases", "desk.status_totals", None),
+        new("cases: status_totals, done", "cases", "desk.status_totals", new Dictionary<string, object?> { ["@status"] = "D" }),
+        new("cases: status_totals, no jobs", "cases", "desk.status_totals", None, NoDesk),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

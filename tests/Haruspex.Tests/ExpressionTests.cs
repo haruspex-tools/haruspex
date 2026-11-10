@@ -127,9 +127,9 @@ public class ExpressionTests
                    COALESCE(t.n, (SELECT MAX(u.qty) FROM dbo.u AS u WHERE u.t_id = t.id), 0) AS after
             FROM dbo.t AS t;
             """);
-        Assert.Equal("int nullable-column empty-aggregate", Typed(doc, "c"));
+        Assert.Equal("int read-twice", Typed(doc, "c"));
         Assert.Equal("int", Typed(doc, "i"));
-        Assert.Equal("int nullable-column empty-aggregate", Typed(doc, "after"));
+        Assert.Equal("int read-twice", Typed(doc, "after"));
     }
 
     [Fact]

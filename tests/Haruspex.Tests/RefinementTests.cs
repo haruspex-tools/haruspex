@@ -716,7 +716,7 @@ public class RefinementTests
     {
         var json = IrJsonWriter.Write(Procedure("SELECT t.name FROM dbo.t AS t WHERE t.id = @x;", "@x int"));
 
-        Assert.Contains("\"irVersion\": \"0.11\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"irVersion\": \"0.12\"", json, StringComparison.Ordinal);
         Assert.Contains("\"cardinality\": \"atMostOne\"", json, StringComparison.Ordinal);
     }
 

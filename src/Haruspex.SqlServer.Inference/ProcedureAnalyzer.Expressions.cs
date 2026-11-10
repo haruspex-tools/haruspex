@@ -94,7 +94,8 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>COALESCE(a, b, …)</c>: the type of highest precedence (<see cref="ScalarType.Union"/>), to which every argument
     /// converts without an overflow. It is <c>CASE WHEN a IS NOT NULL THEN a …</c>, so it is never null when an argument is
     /// never null, except that an argument before it that is a subquery or a call is read twice and may be NULL the second
-    /// time (observed: Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot); such an argument's reasons stay.
+    /// time (observed: Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot), which is <c>read-twice</c>: a value
+    /// tested NULL is passed over, so only the second read can make it NULL. No seed reaches it, so it has a rule of its own.
     /// A NULL literal adds nothing but its place.
     /// </summary>
     private Value Coalesce(CoalesceExpression coalesce, BindingScope scope)
@@ -105,14 +106,18 @@ internal sealed partial class ProcedureAnalyzer
         var values = arguments.Select(a => Expression(a, scope)).ToList();
         if (values.FirstOrDefault(v => v.Shape is UnknownShape) is { } unknown)
             return unknown;
-        var types = values.Select((v, i) => TypeOf(v, arguments[i])).ToList();
-        if (types.Any(t => t is null) || ScalarType.Union(types!) is not { } type)
-            return NotModelled(coalesce, "COALESCE of these types is not modelled yet.");
-
         var first = values.FindIndex(v => v.NullableBecause.Count == 0);
         var because = first < 0
             ? values.Select(v => v.NullableBecause).Aggregate(ShapeJoin.Reasons)
-            : values.Take(first).Where((v, i) => ReadTwice(arguments[i])).Select(v => v.NullableBecause).Aggregate((IReadOnlyList<IrNullReason>)[], ShapeJoin.Reasons);
+            : values.Take(first).Select((v, i) => i).Where(i => ReadTwice(arguments[i]))
+                .Select(i => (IReadOnlyList<IrNullReason>)[new IrNullReason(IrNullRules.ReadTwice, At(arguments[i]).ToString())])
+                .Aggregate((IReadOnlyList<IrNullReason>)[], ShapeJoin.Reasons);
+        if (values.Any(IsJson))
+            return CoalesceJson(coalesce, arguments, values, because);
+
+        var types = values.Select((v, i) => TypeOf(v, arguments[i])).ToList();
+        if (types.Any(t => t is null) || ScalarType.Union(types!) is not { } type)
+            return NotModelled(coalesce, "COALESCE of these types is not modelled yet.");
         return Typed(type, because, coalesce);
     }
 
@@ -129,7 +134,7 @@ internal sealed partial class ProcedureAnalyzer
 
     private sealed class VolatileFinder : TSqlFragmentVisitor
     {
-        private static readonly HashSet<string> Pure = new(StringComparer.OrdinalIgnoreCase) { "isnull", "concat", "concat_ws" };
+        private static readonly HashSet<string> Pure = new(StringComparer.OrdinalIgnoreCase) { "isnull", "concat", "concat_ws", "choose" };
 
         public bool Found { get; private set; }
 
@@ -154,6 +159,8 @@ internal sealed partial class ProcedureAnalyzer
         var first = Expression(a, scope);
         if (first.Shape is UnknownShape || first.NullableBecause.Count == 0)
             return first;
+        if (IsJson(first))
+            return Strip(b) is NullLiteral ? first : IsNullJson(call, a, first, b, scope);
         if (TypeOf(first, a) is not { } type)
             return NotModelled(call, "ISNULL of a value of this type is not modelled yet.");
         if (Strip(b) is NullLiteral)
