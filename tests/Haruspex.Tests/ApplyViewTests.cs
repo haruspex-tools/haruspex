@@ -476,6 +476,10 @@ public class ApplyViewTests
         GO
         CREATE VIEW dbo.h_now AS SELECT h.id, h.name FROM dbo.h AS h;
         GO
+        CREATE VIEW dbo.h_one AS SELECT h.id, h.name FROM dbo.h AS h WHERE h.id = 1;
+        GO
+        CREATE VIEW dbo.h_count AS SELECT COUNT_BIG(*) AS id, MAX(h.name) AS name FROM dbo.h AS h;
+        GO
         """;
 
     [Theory]
@@ -489,10 +493,16 @@ public class ApplyViewTests
     [InlineData("dbo.h_now FOR SYSTEM_TIME ALL AS x", IrCardinality.Many)]
     [InlineData("dbo.h_now FOR SYSTEM_TIME AS OF '2020-01-01' AS x", IrCardinality.AtMostOne)]
     [InlineData("dbo.h_now AS x", IrCardinality.AtMostOne)]
+    [InlineData("(SELECT 1 AS id) AS k CROSS APPLY (SELECT o.name FROM dbo.h_one AS o) AS x", IrCardinality.AtMostOne)]
+    [InlineData("(SELECT 1 AS id) AS k CROSS APPLY (SELECT o.name FROM dbo.h_one FOR SYSTEM_TIME ALL AS o) AS x", IrCardinality.Many)]
+    [InlineData("(SELECT 1 AS id) AS k CROSS APPLY (SELECT c.name FROM dbo.h_count FOR SYSTEM_TIME ALL AS c) AS x", IrCardinality.AtMostOne)]
     public void A_key_does_not_hold_over_history(string from, IrCardinality expected)
     {
         // For_system_time_other_than_as_of_repeats_a_key_through_a_table_or_a_view.
-        var doc = Infer(("tables.sql", Tables + "\n" + Temporal), ("p.sql", $"CREATE PROCEDURE dbo.p @id int AS SELECT x.name FROM {from} WHERE x.id = @id;"));
+        // A view of at most one row because its WHERE fixes a key repeats that row once per version under history; one of
+        // exactly one row (an ungrouped aggregate) stays one. Where the filter names k, the outer source is fixed already.
+        var where = from.StartsWith("(SELECT", StringComparison.Ordinal) ? "k.id = @id" : "x.id = @id";
+        var doc = Infer(("tables.sql", Tables + "\n" + Temporal), ("p.sql", $"CREATE PROCEDURE dbo.p @id int AS SELECT x.name FROM {from} WHERE {where};"));
 
         Assert.Equal(expected, Rows(doc));
     }

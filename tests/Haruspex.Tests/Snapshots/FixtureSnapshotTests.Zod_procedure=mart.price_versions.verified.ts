@@ -17,6 +17,17 @@ export const PriceVersionsResult3RowSchema = z.object({
 })
 export type PriceVersionsResult3Row = z.infer<typeof PriceVersionsResult3RowSchema>
 
-/** mart.price_versions: returns 3 result sets: rows; rows; rows. */
-export const PriceVersionsSchema = z.tuple([z.array(PriceVersionsResult1RowSchema), z.array(PriceVersionsResult2RowSchema), z.array(PriceVersionsResult3RowSchema)])
+export const PriceVersionsResult4RowSchema = z.object({
+  amount: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2),
+})
+export type PriceVersionsResult4Row = z.infer<typeof PriceVersionsResult4RowSchema>
+
+export const PriceVersionsResult5RowSchema = z.object({
+  product_id: z.int32(),
+  amount: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2),
+})
+export type PriceVersionsResult5Row = z.infer<typeof PriceVersionsResult5RowSchema>
+
+/** mart.price_versions: returns 5 result sets: rows; rows; rows; rows; rows. */
+export const PriceVersionsSchema = z.tuple([z.array(PriceVersionsResult1RowSchema), z.array(PriceVersionsResult2RowSchema), z.array(PriceVersionsResult3RowSchema), z.array(PriceVersionsResult4RowSchema), z.array(PriceVersionsResult5RowSchema)])
 export type PriceVersions = z.infer<typeof PriceVersionsSchema>

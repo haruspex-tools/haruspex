@@ -159,10 +159,12 @@ internal sealed partial class ProcedureAnalyzer
         {
             if (source.History)
             {
-                // History rows repeat every key; a relation of at most one row still is one (its TOP or aggregate is
-                // applied over the history), so only its keys go.
+                // History rows repeat every key. A relation of exactly one row (an ungrouped aggregate, no FROM) stays one,
+                // since its aggregate is applied over the history; one of at most one row may owe its bound to a key its
+                // WHERE fixes, which the history repeats (FOR SYSTEM_TIME on a view applies to every temporal table under
+                // it), so it bounds nothing here. TOP (1) would still bound it, but the cardinality does not say why.
                 keys[source] = [];
-                if (source.Local is { } historic && locals?.Values(historic) is { Why: null, Rows: not IrCardinality.Many })
+                if (source.Local is { } historic && locals?.Values(historic) is { Why: null, Rows: IrCardinality.One })
                     fixedSources.Add(source);
                 else if (source.Table is null && source.Local is null)
                     return false;

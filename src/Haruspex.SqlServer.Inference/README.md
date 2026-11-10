@@ -468,7 +468,9 @@ from `WHERE`'s top-level conjuncts, or from a join's `ON` for the sources inside
 outer join, which then matches at most one row per kept row); never under `OR`. Tables are keyed, and views by the rule
 in "Views" below, except a source read `FOR SYSTEM_TIME` `ALL`, `BETWEEN`, `FROM … TO` or `CONTAINED IN`, table or view,
 whose history rows repeat every key (`For_system_time_other_than_as_of_repeats_a_key_through_a_table_or_a_view`; `AS OF`
-returns one version and keeps it; slice 6e, which fixed this for tables read directly too); a derived table, `VALUES` list or view of at most one row (for an `APPLY`'s right side, at most one per
+returns one version and keeps it; slice 6e, which fixed this for tables read directly too); such a source counts as fixed
+only when it is exactly one row (an aggregate without `GROUP BY`), never for an at-most-one bound, which may come from a key
+its own `WHERE` fixes and the history repeats; a derived table, `VALUES` list or view of at most one row (for an `APPLY`'s right side, at most one per
 outer row) counts as fixed already.
 
 The comparison must be the key's own equality: when SQL Server converts the key to the value's type, several rows can

@@ -17,7 +17,7 @@ claim about an APPLY's right side meets data that could break it. Every nullable
 | `mart.customer_activity` | `OUTER APPLY` of an ungrouped aggregate whose `WHERE` tests the outer column it returns (still nullable); an outer `WHERE` on the right side's column proving it |
 | `mart.product_sizes` | `VALUES`: one row naming two columns, and an unpivot of two `int` columns labelled by string literals |
 | `mart.purchase_lines` | a view joining a purchase to its lines, filtered on the purchase's key: many rows, no key passes through |
-| `mart.price_versions` | a system-versioned table read `FOR SYSTEM_TIME ALL` directly, through a view, and on a keyed view: a key filter gives every version |
+| `mart.price_versions` | a system-versioned table read `FOR SYSTEM_TIME ALL` directly, through a view, and on a keyed view: a key filter gives every version; and a view of one row by its own key filter read `ALL`, directly and through `CROSS APPLY` |
 | `mart.open_purchase_by_id` | a schema-bound, indexed view over one table with its whole key, read `WITH (NOEXPAND)`: at most one row by that key |
 | `mart.open_contacts` | a view over two views, one with a column list |
 | `mart.list_products` | a view whose query is `SELECT *` |
