@@ -325,6 +325,8 @@ public static class Runs
         new("sets: reach, a member and a guest without contacts", "sets", "rink.reach", new Dictionary<string, object?> { ["@person_id"] = 2, ["@session_id"] = 3 }),
         new("sets: reach, nobody", "sets", "rink.reach", new Dictionary<string, object?> { ["@person_id"] = 99, ["@session_id"] = 4 }),
         new("sets: busy_people", "sets", "rink.busy_people", None),
+        new("sets: overlaps, counts kept", "sets", "rink.overlaps", new Dictionary<string, object?> { ["@min"] = 0L }),
+        new("sets: overlaps, counts filtered out", "sets", "rink.overlaps", new Dictionary<string, object?> { ["@min"] = 100L }),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

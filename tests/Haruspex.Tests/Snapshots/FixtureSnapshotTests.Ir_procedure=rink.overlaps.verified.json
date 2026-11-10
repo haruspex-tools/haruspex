@@ -1,0 +1,235 @@
+{
+  "irVersion": "0.13",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "rink.overlaps",
+      "name": "Overlaps",
+      "kind": "procedure",
+      "at": "procedures/overlaps.sql:5:1",
+      "parameters": [
+        {
+          "name": "@min",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OverlapsResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OverlapsResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OverlapsResult3Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OverlapsResult4Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "OverlapsResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.overlaps",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "email",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(80)",
+            "maxLength": {
+              "value": 80,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(80)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "rink.member.email"
+            }
+          ]
+        }
+      ]
+    },
+    "OverlapsResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.overlaps",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "kind",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "hockey",
+                "lesson",
+                "public"
+              ],
+              "from": [
+                {
+                  "check": "rink.ck_session_kind"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OverlapsResult3Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.overlaps",
+        "path": "results[2][]"
+      },
+      "fields": [
+        {
+          "name": "member_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OverlapsResult4Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "rink.overlaps",
+        "path": "results[3][]"
+      },
+      "fields": [
+        {
+          "name": "members",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "guests",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

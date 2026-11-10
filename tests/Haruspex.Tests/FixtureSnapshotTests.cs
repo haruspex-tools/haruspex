@@ -120,6 +120,7 @@ public class FixtureSnapshotTests
         ["rink.member_prefs"] = "sets",
         ["rink.reach"] = "sets",
         ["rink.busy_people"] = "sets",
+        ["rink.overlaps"] = "sets",
         ["flow.region_report"] = "flow",
         ["flow.region_sales"] = "flow",
         ["flow.sales_by_mode"] = "flow",

@@ -16,4 +16,5 @@ type. Session 4 has no bookings.
 | `rink.lockers` | `FULL OUTER JOIN`: both sides `outer-join`; a `WHERE` on the locker's side proves its row; two sides of one row each that do not match give two rows (never bounded) |
 | `rink.member_prefs` | `OPENJSON … WITH` (declared types, `json-value` under a lax and a `strict` path, `AS JSON` as text in a rowset and as unknown JSON in `FOR JSON`); `OPENJSON` without `WITH` under `OUTER APPLY` (`key`, `value`, `type` 0 to 5) |
 | `rink.reach` | a view over `UNION ALL` (no key, so many rows for one id) and an inline function over `UNION` |
+| `rink.overlaps` | made visible in a run (review round 1): an `INTERSECT` of two nullable columns keeping a NULL that is on both sides; an `INTERSECT` of a `CHECK`ed column with literals in another case, giving the left side's spelling and set; a `UNION` of two queries of at most one row each giving two rows; a `CROSS JOIN` of one-row sides under a `WHERE` (at most one: kept, and filtered out) |
 | `rink.busy_people` | a `UNION` feeding `INSERT … SELECT` into a temporary table, and a `UNION ALL` feeding `SELECT … INTO` |
