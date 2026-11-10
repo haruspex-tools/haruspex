@@ -156,12 +156,21 @@ internal sealed class FlowState
 {
     private static readonly StringComparer Names = StringComparer.OrdinalIgnoreCase;
 
-    private FlowState(ImmutableDictionary<string, TempTable> temps, ImmutableDictionary<string, Value> variables, ResultTrack results)
+    private FlowState(ImmutableDictionary<string, TempTable> temps, ImmutableDictionary<string, Value> variables, ResultTrack results, bool readUncommitted = false)
     {
         Temps = temps;
         Variables = variables;
         Results = results;
+        ReadUncommitted = readUncommitted;
     }
+
+    /// <summary>
+    /// Whether the procedure may read uncommitted here: <c>SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED</c> came first on some
+    /// path, here or in a caller (observed: A_procedures_isolation_level_holds_in_the_procedures_it_calls_and_ends_when_it_returns).
+    /// An isolation level the outermost caller set is not seen: haruspex assumes it does not read uncommitted
+    /// (haruspex-design.md, "What can and cannot be typed").
+    /// </summary>
+    public bool ReadUncommitted { get; }
 
     /// <summary>The temporary tables the procedure has touched. One it has not is the caller's, if there is one.</summary>
     public ImmutableDictionary<string, TempTable> Temps { get; }
@@ -177,13 +186,15 @@ internal sealed class FlowState
     /// <summary>The table's state; null when the procedure has not touched it, which makes it the caller's.</summary>
     public TempTable? Temp(string name) => Temps.GetValueOrDefault(name);
 
-    public FlowState WithTemp(string name, TempTable table) => new(Temps.SetItem(name, table), Variables, Results);
+    public FlowState WithTemp(string name, TempTable table) => new(Temps.SetItem(name, table), Variables, Results, ReadUncommitted);
 
-    public FlowState WithTemps(ImmutableDictionary<string, TempTable> temps) => new(temps, Variables, Results);
+    public FlowState WithTemps(ImmutableDictionary<string, TempTable> temps) => new(temps, Variables, Results, ReadUncommitted);
 
-    public FlowState WithVariable(string name, Value value) => new(Temps, Variables.SetItem(name, value), Results);
+    public FlowState WithVariable(string name, Value value) => new(Temps, Variables.SetItem(name, value), Results, ReadUncommitted);
 
-    public FlowState WithResults(ResultTrack results) => new(Temps, Variables, results);
+    public FlowState WithResults(ResultTrack results) => new(Temps, Variables, results, ReadUncommitted);
+
+    public FlowState WithReadUncommitted(bool readUncommitted) => new(Temps, Variables, Results, readUncommitted);
 
     /// <summary>The state after either of two groups of paths; null stands for no path (every one ended before here).</summary>
     public static FlowState? Join(FlowState? a, FlowState? b, SourceLocation at)
@@ -205,7 +216,8 @@ internal sealed class FlowState
                 : variables.SetItem(name, value);
         }
 
-        return new FlowState(temps, variables, a.Results.Join(b.Results));
+        // Uncommitted on either path may be uncommitted here.
+        return new FlowState(temps, variables, a.Results.Join(b.Results), a.ReadUncommitted || b.ReadUncommitted);
     }
 
     public static FlowState? Join(IEnumerable<FlowState?> states, SourceLocation at) =>
@@ -256,6 +268,7 @@ internal sealed class FlowState
     public string Text()
     {
         var text = new StringBuilder(TempsText());
+        text.Append(ReadUncommitted ? "uncommitted\n" : "");
         foreach (var (name, value) in Variables.OrderBy(v => v.Key, StringComparer.Ordinal))
             text.Append(name).Append('=').Append(ShapeText.Of(value)).Append('\n');
         Results.Write(text);

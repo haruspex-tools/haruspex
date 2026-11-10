@@ -159,7 +159,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private List<RelationKey> ViewKeys(QuerySpecification query, Row row)
     {
-        if (query.GroupByClause is not null || row.Sources is not [{ Table: { } table, OptionalSideOf: null, History: false } source])
+        if (query.GroupByClause is not null || row.Sources is not [{ Table: { } table, OptionalSideOf: null, History: false, Uncommitted: false } source])
             return [];
 
         var keys = new List<RelationKey>();

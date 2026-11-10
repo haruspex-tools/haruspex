@@ -25,7 +25,7 @@ public sealed record DeclaredResults(IReadOnlyList<IrResult> Results, IReadOnlyD
 /// Whether the procedure runs under <c>INSERT … EXEC</c>, its result sets going into a table: FOR JSON fails there (13602)
 /// and so does another <c>INSERT … EXEC</c> (8164), both observed.
 /// </param>
-internal sealed record CallContext(ImmutableDictionary<string, TempTable> Temps, bool Escapes, bool Inserting)
+internal sealed record CallContext(ImmutableDictionary<string, TempTable> Temps, bool Escapes, bool Inserting, bool ReadUncommitted = false)
 {
     public static CallContext Top { get; } = new(ImmutableDictionary.Create<string, TempTable>(StringComparer.OrdinalIgnoreCase), false, false);
 }
@@ -145,7 +145,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
         }
 
         var joined = FlowState.Join(FlowState.Start([]).WithTemps(frame.Context.Temps), FlowState.Start([]).WithTemps(context.Temps), at)!.Temps;
-        var wider = frame.Context with { Temps = joined };
+        var wider = frame.Context with { Temps = joined, ReadUncommitted = frame.Context.ReadUncommitted || context.ReadUncommitted };
         if (Key(callee.Name, wider) != Key(callee.Name, frame.Context))
         {
             frame.Context = wider;
@@ -346,7 +346,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     private static string Key(ObjectName name, CallContext context)
     {
         var text = new StringBuilder();
-        text.Append(name).Append('|').Append(context.Escapes).Append('|').Append(context.Inserting).Append('\n');
+        text.Append(name).Append('|').Append(context.Escapes).Append('|').Append(context.Inserting).Append('|').Append(context.ReadUncommitted).Append('\n');
         text.Append(FlowState.Start([]).WithTemps(context.Temps).TempsText());
         foreach (var (table, state) in context.Temps.OrderBy(t => t.Key, StringComparer.Ordinal))
         {

@@ -13,6 +13,9 @@ namespace Haruspex.SqlServer.Inference;
 /// </summary>
 internal sealed partial class ProcedureAnalyzer
 {
+    /// <summary>Whether the statement being read may read uncommitted, by the procedure's isolation level (FlowState).</summary>
+    private bool ReadUncommitted => locals?.State.ReadUncommitted == true;
+
     private IrCardinality Cardinality(QuerySpecification query, BindingScope scope)
     {
         IrCardinality rows;
@@ -157,8 +160,10 @@ internal sealed partial class ProcedureAnalyzer
         var keys = new Dictionary<BoundSource, List<List<KeyColumn>>>(ReferenceEqualityComparer.Instance);
         foreach (var source in scope.Sources)
         {
-            if (source.History)
+            if (source.History || source.Uncommitted || ReadUncommitted)
             {
+                // Read uncommitted (a NOLOCK or READUNCOMMITTED hint, or the procedure's isolation level), a scan can return a
+                // row twice, so no key holds either; the same rule as history.
                 // History rows repeat every key. A relation of exactly one row (an ungrouped aggregate, no FROM) stays one,
                 // since its aggregate is applied over the history; one of at most one row may owe its bound to a key its
                 // WHERE fixes, which the history repeats (FOR SYSTEM_TIME on a view applies to every temporal table under

@@ -196,12 +196,13 @@ public class StatementFlowTests
             SELECT y.status FROM #t AS y;
             """);
 
-        // The literal is not modelled, so nothing is known of it beyond the column's type, which the write converts to.
+        // The literal is a varchar(1) never null, outside the CHECK set: the column keeps its type, which the write converts
+        // to, and loses the set.
         var status = Scalar(Field(doc, "status"));
         Assert.Equal("varchar(6)", status.Sql);
         Assert.Null(status.Facets!.Values);
         Assert.Equal(6, status.Facets.Length!.Value);
-        Assert.True(Field(doc, "status").Nullable);
+        Assert.False(Field(doc, "status").Nullable);
     }
 
     [Fact]
@@ -526,9 +527,12 @@ public class StatementFlowTests
     }
 
     [Fact]
-    public void A_larger_integer_literal_is_not_an_int_and_is_not_modelled()
+    public void A_larger_integer_literal_is_numeric_of_its_digits()
     {
-        AssertUnknown(Procedure("SELECT 2147483648 AS big;"), "results[0][].big", IrUnknownReasons.UnsupportedExpression);
+        // Observed: A_literals_type_is_its_own_digits_or_characters (slice 6f; it was not modelled before).
+        var doc = Procedure("SELECT 2147483648 AS big;");
+        Assert.Equal("numeric(10,0)", Scalar(Field(doc, "big")).Sql);
+        Assert.False(Field(doc, "big").Nullable);
     }
 
     [Fact]
@@ -556,9 +560,10 @@ public class StatementFlowTests
     }
 
     [Fact]
-    public void A_cast_of_anything_else_is_not_modelled_yet()
+    public void A_cast_to_a_type_not_modelled_is_not_modelled_yet()
     {
-        AssertUnknown(Procedure("SELECT CAST(t.id AS nvarchar(5)) AS a FROM dbo.t AS t;"), "results[0][].a", IrUnknownReasons.UnsupportedExpression);
+        // Other casts are typed since slice 6f (ExpressionTests); a binary type is not modelled at all.
+        AssertUnknown(Procedure("SELECT CAST(t.id AS varbinary(5)) AS a FROM dbo.t AS t;"), "results[0][].a", IrUnknownReasons.UnsupportedExpression);
     }
 
     // ---- control flow --------------------------------------------------------------------------------------
@@ -877,10 +882,10 @@ public class StatementFlowTests
         Assert.True(Field(doc, "a").Nullable);
         Assert.True(Field(doc, "b").Nullable);
 
-        // The recursive member's depth + 1 is not modelled, but a recursive column has its anchor's type exactly
-        // (observed: A_recursive_member_of_another_type_than_the_anchor_is_an_error), so only its nullability is unknown.
+        // A recursive column has its anchor's type exactly (observed: A_recursive_member_of_another_type_than_the_anchor_is_an_error).
+        // The recursive member's depth + 1 is an int that can overflow (slice 6f), so it is null only for that.
         Assert.Equal("int", Scalar(Field(doc, "depth")).Sql);
-        Assert.Equal([IrNullRules.Unknown], Rules(Field(doc, "depth")));
+        Assert.Equal([IrNullRules.ArithmeticOverflow], Rules(Field(doc, "depth")));
     }
 
     [Fact]

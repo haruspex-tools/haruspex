@@ -63,6 +63,10 @@ public sealed class BindingScope
 /// a system-versioned table's history rows too, one per version of a key; so no key of it holds. <c>AS OF</c> returns one
 /// version, and is not history.
 /// </param>
+/// <param name="Uncommitted">
+/// Whether it is read with a <c>NOLOCK</c> or <c>READUNCOMMITTED</c> hint, which on a view applies to every table under it. A
+/// scan under read-uncommitted can return a row twice, or miss one, while pages split, so no key of it holds.
+/// </param>
 public sealed record BoundSource(
     string? Alias,
     Table? Table,
@@ -71,7 +75,8 @@ public sealed record BoundSource(
     LocalRelation? Local = null,
     bool OuterApply = false,
     bool WholeApplied = false,
-    bool History = false);
+    bool History = false,
+    bool Uncommitted = false);
 
 /// <summary>What a column reference binds to.</summary>
 public abstract record ColumnBinding;

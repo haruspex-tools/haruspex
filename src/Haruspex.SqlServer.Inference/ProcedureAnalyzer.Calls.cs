@@ -144,7 +144,7 @@ internal sealed partial class ProcedureAnalyzer
         switch (target)
         {
             case ProcedureCall { Procedure: var callee }:
-                walked = calls!.Follow(callee, new CallContext(temps, needEscapes, inserting), at);
+                walked = calls!.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted), at);
                 name = callee.Name;
                 break;
             case UnknowableCall unknowable:

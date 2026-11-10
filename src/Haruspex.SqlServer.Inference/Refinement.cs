@@ -455,6 +455,9 @@ internal sealed partial class ProcedureAnalyzer
                     : argument with { NullableBecause = [.. argument.NullableBecause, .. Aggregate(call)] };
             }
 
+            case "sum" when call.Parameters.Count == 1:
+                return Sum(call, scope);
+
             default:
                 return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The aggregate {Text(call)} is not modelled yet.", at));
         }

@@ -80,12 +80,25 @@ public class FactFlowTests
         Assert.Equal(1, Facts(doc, "PTitle", "title").MinLength!.Value);
     }
 
+    [Fact]
+    public void An_expression_not_modelled_drops_the_facts_with_the_type() =>
+        Assert.IsType<IrUnknownType>(Field(Procedure("SELECT upper(t.status) AS v FROM dbo.t AS t;"), "PRow", "v").Type);
+
     [Theory]
-    [InlineData("SELECT upper(t.status) AS v FROM dbo.t AS t;")]
-    [InlineData("SELECT t.score + 1 AS v FROM dbo.t AS t;")]
-    [InlineData("SELECT CAST(t.score AS int) AS v FROM dbo.t AS t;")]
-    public void An_expression_drops_the_facts_with_the_type(string body) =>
-        Assert.IsType<IrUnknownType>(Field(Procedure(body), "PRow", "v").Type);
+    [InlineData("SELECT t.score + 1 AS v FROM dbo.t AS t;", "-2147483648")]
+    [InlineData("SELECT CAST(t.score AS int) AS v FROM dbo.t AS t;", "-2147483648")]
+    [InlineData("SELECT ISNULL(t.score, 0) AS v FROM dbo.t AS t;", "-32768")]
+    public void An_expression_keeps_only_its_types_facts(string body, string min)
+    {
+        // A value computed from a column is any value of the expression's type (slice 6f): the column's CHECK does not hold.
+        var facets = Facets(Field(Procedure(body), "PRow", "v"))!;
+        Assert.Equal(min, facets.Min!.Value);
+        Assert.Null(facets.Values);
+    }
+
+    [Fact]
+    public void A_cast_to_the_columns_own_type_keeps_its_facts() =>
+        Assert.Equal("5", Facets(Field(Procedure("SELECT CAST(t.score AS smallint) AS v FROM dbo.t AS t;"), "PRow", "v"))!.Max!.Value);
 
     [Fact]
     public void Json_text_carries_no_facts() =>

@@ -537,6 +537,16 @@ public static class IrNullRules
     public const string CountOverflow = "count-overflow";
 
     /// <summary>
+    /// It is arithmetic, a <c>SUM</c> or a conversion that can overflow its type or divide by zero: an error by default, but NULL
+    /// when the caller's session has <c>ANSI_WARNINGS</c> and <c>ARITHABORT</c> off, which a procedure cannot prevent.
+    /// <c>COALESCE</c> or <c>ISNULL</c> with a value never null removes it.
+    /// </summary>
+    public const string ArithmeticOverflow = "arithmetic-overflow";
+
+    /// <summary>It is <c>TRY_CAST</c> or <c>TRY_CONVERT</c> of a value that may not convert, which gives NULL instead of an error.</summary>
+    public const string FailedConversion = "failed-conversion";
+
+    /// <summary>
     /// It is a grouped column of a query grouped by <c>ROLLUP</c>, <c>CUBE</c> or <c>GROUPING SETS</c>, whose super-aggregate
     /// rows hold NULL in the columns they roll up, whatever the filters proved of them.
     /// </summary>

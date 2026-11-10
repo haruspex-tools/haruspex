@@ -3,7 +3,7 @@
 import { z } from 'zod'
 
 export const RecentNoteRowSchema = z.object({
-  procedure_name: z.unknown() /* unsupported-expression */,
+  procedure_name: z.string().max(128),
   message: z.string().max(200),
 })
 export type RecentNoteRow = z.infer<typeof RecentNoteRowSchema>

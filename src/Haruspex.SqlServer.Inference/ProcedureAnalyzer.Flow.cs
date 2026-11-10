@@ -97,7 +97,7 @@ internal sealed partial class ProcedureAnalyzer
         }
 
         locals = Locals(tableVariables);
-        var walked = Walk(procedure.StatementList.Statements, FlowState.Start(start).WithTemps(context.Temps));
+        var walked = Walk(procedure.StatementList.Statements, FlowState.Start(start).WithTemps(context.Temps).WithReadUncommitted(context.ReadUncommitted));
         if (blocker is not null)
             return new Walked(null, [], blocker, declaredUsed);
 
@@ -175,6 +175,11 @@ internal sealed partial class ProcedureAnalyzer
         {
             case PredicateSetStatement harmless when IsHarmless(harmless):
                 return Continue(state);
+
+            // The isolation level changes no result's shape, only whether a key holds (Cardinality.cs); it lasts until the
+            // procedure returns (observed: A_procedures_isolation_level_holds_in_the_procedures_it_calls_and_ends_when_it_returns).
+            case SetTransactionIsolationLevelStatement isolation:
+                return Continue(state.WithReadUncommitted(isolation.Level == IsolationLevel.ReadUncommitted));
             case PrintStatement:
             case DeclareTableVariableStatement:
             // A transaction's start and end change nothing here; only a rollback undoes what the procedure did.
@@ -384,7 +389,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         if (!variableShapes.TryGetValue(name, out var shape) || !state.Variables.TryGetValue(name, out var old))
             return state;
-        var because = shape is UnknownShape unknown ? ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.Unknown, unknown.At.ToString())]) : value.NullableBecause;
+        var because = shape is UnknownShape unknown ? ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.Unknown, unknown.At.ToString())]) : Converting(value, shape, at);
         var assigned = new Value(shape, because, old.IsLiveJson);
         return state.WithVariable(name, definitely ? assigned : ShapeJoin.Either(old, assigned, at, name));
     }
@@ -956,30 +961,17 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>
-    /// An integer literal within int's range is an int, never null. A larger one is a decimal of its own precision in SQL
-    /// Server, which is not modelled yet.
+    /// An integer literal within int's range is an int, never null; a larger one is numeric of its own digits (observed:
+    /// A_literals_type_is_its_own_digits_or_characters).
     /// </summary>
-    private Value Integer(IntegerLiteral literal) =>
-        long.TryParse(literal.Value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n) && n <= int.MaxValue
-            ? new Value(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "int", []), At(literal)), [])
-            : Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The literal {literal.Value} is beyond int, which is not modelled yet.", At(literal)));
-
-    /// <summary>
-    /// <c>CAST(s AS t)</c> or <c>CONVERT(t, s)</c> of a string to a string type: of type t, cutting a longer string short
-    /// without an error, and null exactly when s is. Any other conversion may fail, round, or be null under the caller's
-    /// session options, and is not modelled yet.
-    /// </summary>
-    private Value Cast(DataTypeReference target, ScalarExpression operand, TSqlFragment call, BindingScope scope)
+    private Value Integer(IntegerLiteral literal)
     {
-        // Without a length, a string type in CAST or CONVERT is 30 long (observed), where a declaration's is 1.
-        var type = SqlType.From(target);
-        if (type is { Kind: SqlTypeKind.BuiltIn, Name: "char" or "varchar" or "nchar" or "nvarchar", Arguments.Count: 0 })
-            type = new SqlType(SqlTypeKind.BuiltIn, type.Name, ["30"]);
-        var value = Expression(operand, scope);
-        var to = SchemaRules.ResolveType(model, type)?.BuiltIn.Name;
-        return to is "char" or "varchar" or "nchar" or "nvarchar" && value is { IsLiveJson: false, Shape: ScalarShape { Type.Kind: IrScalarKind.String } }
-            ? new Value(SqlTypes.ToConvertedShape(model, type, At(call)), value.NullableBecause)
-            : Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The expression {Text(call)} is not modelled yet.", At(call)));
+        if (long.TryParse(literal.Value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n) && n <= int.MaxValue)
+            return new Value(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "int", []), At(literal)), []);
+        var digits = literal.Value.TrimStart('0').Length;
+        return digits <= 38
+            ? new Value(SqlTypes.ToConvertedShape(model, new ScalarType("numeric", Precision: digits).ToSqlType(), At(literal)), [])
+            : Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The literal {literal.Value} has more than 38 digits.", At(literal)));
     }
 
     // ---- the results ----------------------------------------------------------------------------------------------

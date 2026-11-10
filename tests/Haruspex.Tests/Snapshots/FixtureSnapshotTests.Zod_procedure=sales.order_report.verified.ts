@@ -5,7 +5,7 @@ import { z } from 'zod'
 export const OrderReportRowSchema = z.object({
   order_id: z.int32(),
   customer_name: z.unknown() /* unsupported-expression */,
-  total_with_tax: z.unknown() /* unsupported-expression */,
+  total_with_tax: z.number().multipleOf(1e-3) /* the mssql driver may round numeric(22,3) past its bounds, so they are not checked in a row */,
   notes: z.unknown() /* json-shape-unknown */,
   nickname: z.unknown() /* unresolved-column */,
   picture: z.unknown() /* unsupported-sql-type */,

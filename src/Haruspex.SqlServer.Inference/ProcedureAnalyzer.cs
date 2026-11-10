@@ -350,8 +350,21 @@ internal sealed partial class ProcedureAnalyzer
         VariableReference variable when parameters.TryGetValue(variable.Name, out var parameter) => parameter,
         VariableReference variable when locals is not null => Variable(variable),
         IntegerLiteral literal => Integer(literal),
+        StringLiteral literal => FromString(literal),
+        NumericLiteral literal => FromNumeric(literal),
+        CoalesceExpression coalesce => Coalesce(coalesce, scope),
+        FunctionCall { CallTarget: null, Parameters.Count: 2 } call
+            when call.FunctionName.Value.Equals("isnull", StringComparison.OrdinalIgnoreCase) => IsNull(call, scope),
+        FunctionCall { CallTarget: null, OverClause: null } call
+            when call.FunctionName.Value.Equals("concat", StringComparison.OrdinalIgnoreCase) => Concat(call, scope, separated: false),
+        FunctionCall { CallTarget: null, OverClause: null } call
+            when call.FunctionName.Value.Equals("concat_ws", StringComparison.OrdinalIgnoreCase) => Concat(call, scope, separated: true),
         CastCall cast => Cast(cast.DataType, cast.Parameter, cast, scope),
-        ConvertCall { Style: null } convert => Cast(convert.DataType, convert.Parameter, convert, scope),
+        ConvertCall convert => Cast(convert.DataType, convert.Parameter, convert, scope, styled: convert.Style is not null),
+        TryCastCall cast => Cast(cast.DataType, cast.Parameter, cast, scope, attempt: true),
+        TryConvertCall convert => Cast(convert.DataType, convert.Parameter, convert, scope, styled: convert.Style is not null, attempt: true),
+        BinaryExpression binary => Binary(binary, scope),
+        UnaryExpression unary => Unary(unary, scope),
         _ => Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
     };
 

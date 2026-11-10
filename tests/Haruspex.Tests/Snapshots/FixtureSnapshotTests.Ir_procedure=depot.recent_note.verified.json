@@ -36,17 +36,18 @@
         {
           "name": "procedure_name",
           "type": {
-            "kind": "unknown",
-            "reason": "unsupported-expression"
+            "kind": "string",
+            "sql": "nvarchar(128)",
+            "maxLength": {
+              "value": 128,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(128)"
+              }
+            }
           },
           "presence": "always",
-          "nullable": true,
-          "nullableBecause": [
-            {
-              "rule": "unknown",
-              "at": "procedures/recent_note.sql:5:8"
-            }
-          ]
+          "nullable": false
         },
         {
           "name": "message",
@@ -67,14 +68,6 @@
       ]
     }
   },
-  "unknowns": [
-    {
-      "object": "depot.recent_note",
-      "path": "results[0][].procedure_name",
-      "reason": "unsupported-expression",
-      "detail": "The expression CAST(N'depot.purge' AS nvarchar(128)) is not modelled yet.",
-      "at": "procedures/recent_note.sql:5:8"
-    }
-  ],
+  "unknowns": [],
   "overrides": []
 }

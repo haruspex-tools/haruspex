@@ -75,17 +75,33 @@
         {
           "name": "total_with_tax",
           "type": {
-            "kind": "unknown",
-            "reason": "unsupported-expression"
+            "kind": "number",
+            "format": "decimal",
+            "sql": "numeric(22,3)",
+            "digits": {
+              "precision": 22,
+              "scale": 3,
+              "from": {
+                "type": "numeric(22,3)"
+              }
+            },
+            "min": {
+              "value": -9999999999999999999.999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(22,3)"
+              }
+            },
+            "max": {
+              "value": 9999999999999999999.999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(22,3)"
+              }
+            }
           },
           "presence": "always",
-          "nullable": true,
-          "nullableBecause": [
-            {
-              "rule": "unknown",
-              "at": "procedures/order_report.sql:7:8"
-            }
-          ]
+          "nullable": false
         },
         {
           "name": "notes",
@@ -178,13 +194,6 @@
       "reason": "unsupported-sql-type",
       "detail": "The type varbinary(max) is not modelled yet.",
       "at": "tables/product.sql:8:5"
-    },
-    {
-      "object": "sales.order_report",
-      "path": "results[0][].total_with_tax",
-      "reason": "unsupported-expression",
-      "detail": "The expression o.total * 1.2 is not modelled yet.",
-      "at": "procedures/order_report.sql:7:8"
     },
     {
       "object": "sales.order_report",
