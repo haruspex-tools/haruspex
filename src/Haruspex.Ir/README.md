@@ -1,4 +1,4 @@
-# The haruspex IR, version 0.13
+# The haruspex IR, version 0.14
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
 each side can be written in whatever language suits it. This page describes version 0.13. A JSON Schema for
@@ -444,6 +444,30 @@ FULL OUTER JOIN", "OPENJSON"). For the IR:
   (`nvarchar(max)`, `json-value`) and `type` (`tinyint`, never null, `values` 0 to 5 `from` `{ "engine": "OPENJSON type" }`);
   with `WITH`, each column of its declared type with that type's facets and `json-value`; an `AS JSON` column is JSON text
   in a rowset and unknown (`json-shape-unknown`) where it nests, since its shape is in the data.
+
+## Built-in and window functions (0.14)
+
+Date and string functions, `STRING_AGG`, `JSON_VALUE`, window functions, arithmetic and precedence over `float`, `real`,
+`money`, `smallmoney`, `datetime` and `smalldatetime`, the bare `NULL` and `GENERATE_SERIES` are read (slice 6i); the engine
+rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Built-in functions", "Window functions", "Arithmetic
+and `SUM`"). For the IR:
+
+- Each has the SQL type SQL Server gives it, with that type's facets; `MIN`, `MAX`, `FIRST_VALUE`, `LAST_VALUE`,
+  `PERCENTILE_DISC` and `LAG`/`LEAD` without a default give their argument's values and keep its facets. `DATENAME` has no
+  `values`: the names depend on the session's language.
+- New null rules: **`empty-frame`** (an aggregate, `FIRST_VALUE` or `LAST_VALUE` over a `ROWS` frame that may leave out the
+  current row, NULL there over a column never null too) and **`window-edge`** (`LAG` or `LEAD` without a default, NULL past
+  the partition's edge). `json-value` also names a `JSON_VALUE`, always nullable; `null-literal` also names a bare `NULL` (an
+  `int`) or a converted one; `arithmetic-overflow` also names arithmetic over `float`, `real`, `money`, `smallmoney`,
+  `datetime` and `smalldatetime`, unary minus over `money`, and a `LAG`/`LEAD` default that may not fit.
+- The date functions never have `arithmetic-overflow`: their overflows are errors under any session options. Ranking
+  functions are never null; `COUNT` over a window keeps `count-overflow` as `COUNT` does.
+- `GENERATE_SERIES` is a table source of one column, `value`, never null, of its arguments' type.
+
+Changes in 0.14 (slice 6i, built-in and window functions): the null rules `empty-frame` and `window-edge`. These functions,
+float, money and date arithmetic, and `GENERATE_SERIES` were unknown (`unsupported-expression`, `unsupported-source`) before;
+a negated `tinyint` was typed `tinyint` and is now `smallint`, as the server types it. A 0.13 reader would meet null rules it
+does not know, which is why the version changed.
 
 Changes in 0.13 (slice 6h, set operations, the other joins and OPENJSON): the null rule `json-value`. Set operations, `CROSS
 JOIN`, `FULL OUTER JOIN` and `OPENJSON` were unknown (`unsupported-query`, `unsupported-source`) before; `outer-join` now also

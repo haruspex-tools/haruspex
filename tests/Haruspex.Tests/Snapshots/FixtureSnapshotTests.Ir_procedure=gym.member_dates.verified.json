@@ -1,0 +1,492 @@
+{
+  "irVersion": "0.14",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "gym.member_dates",
+      "name": "MemberDates",
+      "kind": "procedure",
+      "at": "procedures/member_dates.sql:1:1",
+      "parameters": [
+        {
+          "name": "@offset",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MemberDatesRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "MemberDatesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "gym.member_dates",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "member_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "days_member",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gym.member.last_seen"
+            }
+          ]
+        },
+        {
+          "name": "minutes_alive",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gym.member.born"
+            }
+          ]
+        },
+        {
+          "name": "day_number",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "renews_on",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "seen_later",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gym.member.last_seen"
+            }
+          ]
+        },
+        {
+          "name": "adult_on",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "smalldatetime"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gym.member.born"
+            }
+          ]
+        },
+        {
+          "name": "shifted",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@offset"
+            }
+          ]
+        },
+        {
+          "name": "from_text",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "joined_quarter",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "joined_year",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "seen_month",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gym.member.last_seen"
+            }
+          ]
+        },
+        {
+          "name": "born_day",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gym.member.born"
+            }
+          ]
+        },
+        {
+          "name": "joined_weekday",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "month_end",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "month_end_shifted",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "seen_month_end",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gym.member.last_seen"
+            }
+          ]
+        },
+        {
+          "name": "year_start",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "offset_month",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@offset"
+            }
+          ]
+        },
+        {
+          "name": "opening",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(2)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "born_hour",
+          "type": {
+            "kind": "time",
+            "sql": "time(0)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gym.member.born"
+            }
+          ]
+        },
+        {
+          "name": "now_local",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(7)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "now_old",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "now_utc_old",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "now_utc",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(7)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "now_offset",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(7)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "now_standard",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

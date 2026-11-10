@@ -36,6 +36,15 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
 
     public bool IsDateOrTime => Name is "date" or "time" or "datetime" or "datetime2" or "smalldatetime" or "datetimeoffset";
 
+    /// <summary>money or smallmoney.</summary>
+    public bool IsMoney => Name is "money" or "smallmoney";
+
+    /// <summary>float or real.</summary>
+    public bool IsApproximate => Name is "float" or "real";
+
+    /// <summary>A number data type precedence ranks: an integer, decimal, money or approximate number (not bit).</summary>
+    public bool IsNumber => IsInteger || IsDecimal || IsMoney || IsApproximate;
+
     /// <summary>The type as the IR writes it, <c>decimal(19,2)</c>.</summary>
     public string Text => Name switch
     {
@@ -118,26 +127,42 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
 
     /// <summary>
     /// The type <c>COALESCE</c> gives, the one of highest precedence wide enough for every argument, or null when it is not
-    /// modelled (observed: <c>Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments</c>):
+    /// modelled (observed: <c>Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments</c>,
+    /// <c>Coalesce_over_float_money_and_dates_follows_data_type_precedence</c>):
     /// <list type="bullet">
     /// <item>strings: nvarchar if any is national, varchar if any varies, of the longest length, max if any is;</item>
-    /// <item>exact numbers with a decimal: a decimal holding every argument's integer digits and the largest scale, named as its
-    /// first decimal argument; without one, the widest integer;</item>
-    /// <item>a date with datetime2 of one precision: that datetime2; otherwise one type, the same for all.</item>
+    /// <item>numbers with a float: float; with a real: real;</item>
+    /// <item>exact numbers with a decimal: a decimal holding every argument's integer digits and the largest scale (money as
+    /// decimal(19,4), smallmoney as decimal(10,4)), named as its first decimal argument; without one, money if any argument is,
+    /// smallmoney if any is, and otherwise the widest integer;</item>
+    /// <item>date, smalldatetime, datetime and datetime2: datetime2 if any is, of the largest precision among them and 3 for a
+    /// datetime; otherwise datetime, smalldatetime, date in that order; otherwise one type, the same for all.</item>
     /// </list>
-    /// Every argument then converts to it without an overflow.
+    /// Null too unless every argument converts to it without an overflow (<see cref="Converts"/>): an overflow is NULL under the
+    /// caller's ANSI_WARNINGS and ARITHABORT off (observed:
+    /// <c>Coalesce_converting_to_a_narrower_range_overflows_to_null_under_the_callers_ansi_warnings_and_arithabort_off</c>), and
+    /// every caller (COALESCE, CASE, set operations) counts on a value that is not NULL staying so.
     /// </summary>
     public static ScalarType? Union(IReadOnlyList<ScalarType> types)
     {
         if (types.Count == 0)
             return null;
+        var union = Precedence(types);
+        return union is not null && types.All(t => Converts(t, union)) ? union : null;
+    }
+
+    private static ScalarType? Precedence(IReadOnlyList<ScalarType> types)
+    {
         if (types.All(t => t.IsString))
         {
             var varying = types.Any(t => t.Name.EndsWith("varchar", StringComparison.Ordinal));
             return String(types.Any(t => t.IsNational), varying, types.Any(t => t.IsMax) ? -1 : types.Max(t => t.Length));
         }
 
-        if (types.All(t => t.IsInteger || t.IsDecimal) && types.FirstOrDefault(t => t.IsDecimal) is { } first)
+        if (types.All(t => t.IsNumber) && types.Any(t => t.IsApproximate))
+            return new ScalarType(types.Any(t => t.Name == "float") ? "float" : "real");
+
+        if (types.All(t => t.IsInteger || t.IsDecimal || t.IsMoney) && types.FirstOrDefault(t => t.IsDecimal) is { } first)
         {
             var decimals = types.Select(t => t.AsDecimal()).ToList();
             var scale = decimals.Max(d => d.Scale);
@@ -145,27 +170,57 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
             return precision > 38 ? null : new ScalarType(first.Name, Precision: precision, Scale: scale);
         }
 
+        if (types.All(t => t.IsInteger || t.IsMoney) && types.Any(t => t.IsMoney))
+            return Parse(types.Any(t => t.Name == "money") ? "money" : "smallmoney");
         if (types.All(t => t.IsInteger))
             return types.MaxBy(t => Rank(t.Name))! with { Digits = null };
-        if (types.All(t => t.Name is "date" or "datetime2") && types.Where(t => t.Name == "datetime2").Select(t => t.Precision).Distinct().Count() == 1)
-            return types.First(t => t.Name == "datetime2");
+        if (types.All(t => t.Name is "date" or "smalldatetime" or "datetime" or "datetime2"))
+        {
+            if (types.Any(t => t.Name == "datetime2"))
+                return new ScalarType("datetime2", Precision: types.Max(t => t.Name switch { "datetime2" => t.Precision, "datetime" => 3, _ => 0 }));
+            return new ScalarType(types.Any(t => t.Name == "datetime") ? "datetime" : types.Any(t => t.Name == "smalldatetime") ? "smalldatetime" : "date");
+        }
+
         return types.Select(t => t.Text).Distinct().Count() == 1 ? types[0] with { Digits = null } : null;
     }
 
     // ---- arithmetic ---------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// The type of <c>l op r</c> for exact numbers, or null when it is not modelled (observed:
-    /// <c>Decimal_arithmetic_has_the_documented_precision_and_scale</c>). Two integers give the wider. With a decimal: + and -
-    /// give scale max(s1, s2), precision max(p1 - s1, p2 - s2) + scale + 1; * gives p1 + p2 + 1, s1 + s2; / gives scale
-    /// max(6, s1 + p2 + 1), precision p1 - s1 + s2 + scale; numeric when either is. Beyond 38 digits SQL Server cuts the scale,
-    /// which is not modelled. Money, float and dates are not modelled.
+    /// The type of <c>l op r</c>, or null when it is not modelled (observed:
+    /// <c>Decimal_arithmetic_has_the_documented_precision_and_scale</c>,
+    /// <c>Arithmetic_over_float_real_money_and_dates_follows_data_type_precedence</c>):
+    /// <list type="bullet">
+    /// <item>datetime or smalldatetime + or - a number, or each other: datetime if either is, else smalldatetime (datetime2,
+    /// date, time and datetimeoffset take no arithmetic: an error);</item>
+    /// <item>a float with any number: float; a real: real;</item>
+    /// <item>money or smallmoney with an integer or each other: money if either is, else smallmoney (even beside bigint);</item>
+    /// <item>two integers: the wider;</item>
+    /// <item>with a decimal (money as decimal(19,4), smallmoney decimal(10,4)): + and - give scale max(s1, s2), precision
+    /// max(p1 - s1, p2 - s2) + scale + 1; * gives p1 + p2 + 1, s1 + s2; / gives scale max(6, s1 + p2 + 1), precision
+    /// p1 - s1 + s2 + scale; numeric when either is. Beyond 38 digits SQL Server cuts the scale, which is not modelled.</item>
+    /// </list>
     /// </summary>
     public static ScalarType? Arithmetic(char op, ScalarType left, ScalarType right)
     {
+        if (left.Name is "datetime" or "smalldatetime" || right.Name is "datetime" or "smalldatetime")
+        {
+            static bool Operand(ScalarType t) => t.Name is "datetime" or "smalldatetime" or "bit" || t.IsNumber;
+            return op is '+' or '-' && Operand(left) && Operand(right)
+                ? new ScalarType(left.Name == "datetime" || right.Name == "datetime" ? "datetime" : "smalldatetime")
+                : null;
+        }
+
+        static bool Numeric(ScalarType t) => t.IsNumber || t.Name == "bit";
+        if (!Numeric(left) || !Numeric(right))
+            return null;
+        if (left.IsApproximate || right.IsApproximate)
+            return new ScalarType(left.Name == "float" || right.Name == "float" ? "float" : "real");
+        if ((left.IsMoney || right.IsMoney) && !left.IsDecimal && !right.IsDecimal)
+            return Parse(left.Name == "money" || right.Name == "money" ? "money" : "smallmoney");
         if (left.IsInteger && right.IsInteger)
             return (Rank(left.Name) >= Rank(right.Name) ? left : right) with { Digits = null };
-        if (!(left.IsInteger || left.IsDecimal) || !(right.IsInteger || right.IsDecimal))
+        if (!(left.IsInteger || left.IsDecimal || left.IsMoney) || !(right.IsInteger || right.IsDecimal || right.IsMoney))
             return null;
 
         var (p1, s1) = left.AsDecimal();
@@ -254,10 +309,12 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
         return to.Name switch
         {
             "bit" => from.IsExact,
+            "smallmoney" => from.Name is "tinyint" or "smallint" or "bit" or "smallmoney" || (from.IsDecimal && from.Precision - from.Scale <= 5),
             "float" => from.IsExact || from.Name is "real" or "float",
             "real" => from.IsExact || from.Name == "real",
             "money" => (from.IsInteger && from.Name != "bigint") || from.Name is "bit" or "smallmoney" || (from.IsDecimal && from.Precision - from.Scale <= 14),
             "date" => from.Name is "date" or "datetime" or "datetime2" or "smalldatetime" or "datetimeoffset",
+            "smalldatetime" => from.Name == "smalldatetime",
             "datetime2" => from.Name switch
             {
                 "date" or "smalldatetime" => true,

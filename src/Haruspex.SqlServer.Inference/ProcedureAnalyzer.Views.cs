@@ -21,6 +21,7 @@ internal sealed partial class ProcedureAnalyzer
         ReadView = views is null ? null : (view, hinted) => views.Read(view, hinted || ReadUncommitted),
         ReadFunction = views is null ? null : TableFunction,
         ReadOpenJson = OpenJsonRelation,
+        ReadGenerateSeries = GenerateSeries,
     };
 
     /// <summary>

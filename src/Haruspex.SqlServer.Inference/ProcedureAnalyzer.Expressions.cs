@@ -134,7 +134,15 @@ internal sealed partial class ProcedureAnalyzer
 
     private sealed class VolatileFinder : TSqlFragmentVisitor
     {
-        private static readonly HashSet<string> Pure = new(StringComparer.OrdinalIgnoreCase) { "isnull", "concat", "concat_ws", "choose" };
+        // The date and string functions of slice 6i read only their arguments too; the current date and time do not, but are never
+        // NULL, so a COALESCE never reads them twice. LEFT and RIGHT are not FunctionCalls, so never counted.
+        private static readonly HashSet<string> Pure = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "isnull", "concat", "concat_ws", "choose",
+            "datediff", "datediff_big", "dateadd", "datepart", "year", "month", "day", "datename", "eomonth",
+            "datefromparts", "datetime2fromparts", "datetimefromparts", "smalldatetimefromparts", "timefromparts", "datetimeoffsetfromparts",
+            "ltrim", "rtrim", "trim", "upper", "lower", "substring", "len", "datalength", "replace", "string_escape", "formatmessage", "json_value",
+        };
 
         public bool Found { get; private set; }
 
@@ -197,6 +205,10 @@ internal sealed partial class ProcedureAnalyzer
         var shape = to is null ? null : SqlTypes.ToConvertedShape(model, to.ToSqlType(), At(call));
         if (to is null || shape is null or UnknownShape)
             return NotModelled(call, "a conversion to this type is not modelled yet.");
+
+        // The NULL literal converts to any type, and is NULL there (CAST(NULL AS date) is a common way to type a NULL).
+        if (Strip(operand) is NullLiteral)
+            return new Value(shape, [new IrNullReason(IrNullRules.NullLiteral, At(operand).ToString())]);
 
         var value = Expression(operand, scope);
         if (value.Shape is UnknownShape || value.IsLiveJson)
@@ -270,10 +282,12 @@ internal sealed partial class ProcedureAnalyzer
     // ---- arithmetic ---------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// <c>a + b</c>, <c>a - b</c>, <c>a * b</c>, <c>a / b</c>: string + (<see cref="Plus"/>), or exact numbers typed by
-    /// <see cref="ScalarType.Arithmetic"/>, null when an operand is. Integers can overflow, and division can divide by zero,
-    /// either NULL under a caller's ANSI_WARNINGS and ARITHABORT off (observed); a decimal's +, - and * cannot, within 38
-    /// digits. Anything else (money, float, dates, a string with a number) is not modelled yet.
+    /// <c>a + b</c>, <c>a - b</c>, <c>a * b</c>, <c>a / b</c>: string + (<see cref="Plus"/>), or numbers and dates typed by
+    /// <see cref="ScalarType.Arithmetic"/>, null when an operand is. Integers, money, float, real, datetime and smalldatetime
+    /// can overflow, and division can divide by zero, each NULL under a caller's ANSI_WARNINGS and ARITHABORT off (observed:
+    /// Arithmetic_over_float_money_and_dates_overflows_to_an_error_or_to_null_under_the_callers_ansi_warnings_and_arithabort_off);
+    /// a decimal's +, - and * cannot, within 38 digits, money among them being converted to decimal(19,4) exactly. A string
+    /// with a number is not modelled yet.
     /// </summary>
     private Value Binary(BinaryExpression binary, BindingScope scope)
     {
@@ -302,12 +316,13 @@ internal sealed partial class ProcedureAnalyzer
             return NotModelled(binary, "arithmetic on these types is not modelled yet.");
 
         var because = ShapeJoin.Reasons(left.NullableBecause, right.NullableBecause);
-        return Typed(type, type.IsInteger || op == '/' ? ShapeJoin.Reasons(because, [Overflow(binary)]) : because, binary);
+        return Typed(type, !type.IsDecimal || op == '/' ? ShapeJoin.Reasons(because, [Overflow(binary)]) : because, binary);
     }
 
     /// <summary>
-    /// <c>-a</c> and <c>+a</c>: a's type. Negating an integer overflows at its least value; a literal, a decimal and <c>+</c>
-    /// cannot.
+    /// <c>-a</c> and <c>+a</c>: a's type, but a tinyint negated is a smallint (observed:
+    /// Arithmetic_over_float_real_money_and_dates_follows_data_type_precedence). Negating an int, smallint, bigint, money or
+    /// smallmoney overflows at its least value; a literal, a decimal, a float, a real, a tinyint and <c>+</c> cannot.
     /// </summary>
     private Value Unary(UnaryExpression unary, BindingScope scope)
     {
@@ -320,7 +335,7 @@ internal sealed partial class ProcedureAnalyzer
 
         // A negated literal is the literal's type, and cannot overflow; but negated, 2147483648 is int's least value, an int
         // (observed: A_literals_type_is_its_own_digits_or_characters).
-        if (LiteralOf(unary) is ({ } literal, true) && literal is IntegerLiteral or NumericLiteral)
+        if (LiteralOf(unary) is ({ } literal, true) && literal is IntegerLiteral or NumericLiteral or RealLiteral or MoneyLiteral)
         {
             // The parser gives -2147483648 as one signed literal; negating that again is numeric(38,0) on the server
             // (observed, same test), not the literal's type, and is not modelled (review round 2).
@@ -337,8 +352,9 @@ internal sealed partial class ProcedureAnalyzer
             return operand;
         return TypeOf(operand, unary.Expression) switch
         {
-            { IsDecimal: true } decimalType => Typed(decimalType, operand.NullableBecause, unary),
-            { IsInteger: true } integer => Typed(integer, ShapeJoin.Reasons(operand.NullableBecause, [Overflow(unary)]), unary),
+            ({ IsDecimal: true } or { IsApproximate: true }) and var exact => Typed(exact with { Digits = null }, operand.NullableBecause, unary),
+            { Name: "tinyint" } => Typed(new ScalarType("smallint"), operand.NullableBecause, unary),
+            ({ IsInteger: true } or { IsMoney: true }) and var integer => Typed(integer with { Digits = null }, ShapeJoin.Reasons(operand.NullableBecause, [Overflow(unary)]), unary),
             _ => NotModelled(unary, "negating a value of this type is not modelled yet."),
         };
     }
@@ -357,15 +373,7 @@ internal sealed partial class ProcedureAnalyzer
         var argument = InAggregate(() => Expression(call.Parameters[0], scope));
         if (argument.Shape is UnknownShape)
             return argument;
-        var type = TypeOf(argument, call.Parameters[0]) switch
-        {
-            { Name: "tinyint" or "smallint" or "int" } => new ScalarType("int"),
-            { Name: "bigint" } => new ScalarType("bigint"),
-            { IsDecimal: true } d => new ScalarType(d.Name, Precision: 38, Scale: d.Scale),
-            { Name: "money" or "smallmoney" } => new ScalarType("money"),
-            { Name: "float" or "real" } => new ScalarType("float"),
-            _ => null,
-        };
+        var type = TypeOf(argument, call.Parameters[0]) is { } of ? SumType(of) : null;
         if (type is null)
             return NotModelled(call, "SUM of a value of this type is not modelled yet.");
         if (ProvedAggregate(call))
@@ -375,6 +383,17 @@ internal sealed partial class ProcedureAnalyzer
         IReadOnlyList<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call)];
         return Typed(type, from is { IsDecimal: true, Precision: <= 19 } ? because : ShapeJoin.Reasons(because, [Overflow(call)]), call);
     }
+
+    /// <summary>The type SUM gives a value of this type, over a window too (observed: Sum_widens_its_argument).</summary>
+    private static ScalarType? SumType(ScalarType of) => of switch
+    {
+        { Name: "tinyint" or "smallint" or "int" } => new ScalarType("int"),
+        { Name: "bigint" } => new ScalarType("bigint"),
+        { IsDecimal: true } d => new ScalarType(d.Name, Precision: 38, Scale: d.Scale),
+        { Name: "money" or "smallmoney" } => new ScalarType("money"),
+        { Name: "float" or "real" } => new ScalarType("float"),
+        _ => null,
+    };
 
     // ---- assignment ----------------------------------------------------------------------------------------------------
 

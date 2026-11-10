@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.13",
+  "irVersion": "0.14",
   "source": {
     "dialect": "tsql"
   },
@@ -60,17 +60,18 @@
         {
           "name": "customer_name",
           "type": {
-            "kind": "unknown",
-            "reason": "unsupported-expression"
+            "kind": "string",
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
           },
           "presence": "always",
-          "nullable": true,
-          "nullableBecause": [
-            {
-              "rule": "unknown",
-              "at": "procedures/order_report.sql:6:8"
-            }
-          ]
+          "nullable": false
         },
         {
           "name": "total_with_tax",
@@ -167,13 +168,6 @@
     }
   },
   "unknowns": [
-    {
-      "object": "sales.order_report",
-      "path": "results[0][].customer_name",
-      "reason": "unsupported-expression",
-      "detail": "The expression upper(c.name) is not modelled yet.",
-      "at": "procedures/order_report.sql:6:8"
-    },
     {
       "object": "sales.order_report",
       "path": "results[0][].nickname",

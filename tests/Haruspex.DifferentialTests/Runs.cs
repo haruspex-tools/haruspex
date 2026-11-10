@@ -28,7 +28,7 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs", "cases", "sets"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs", "cases", "sets", "funcs"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
@@ -59,6 +59,8 @@ public static class Runs
     private const string NoCafe = "DELETE FROM cafe.tab_item; DELETE FROM cafe.tab; DELETE FROM cafe.menu_item; DELETE FROM cafe.guest;";
     private const string NoDesk = "DELETE FROM desk.part_line; DELETE FROM desk.job_note; DELETE FROM desk.job; DELETE FROM desk.customer;";
     private const string NoRink = "DELETE FROM rink.booking; DELETE FROM rink.locker; DELETE FROM rink.session; DELETE FROM rink.guest; DELETE FROM rink.member;";
+
+    private const string NoGym = "DELETE FROM gym.visit; DELETE FROM gym.member;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -327,6 +329,18 @@ public static class Runs
         new("sets: busy_people", "sets", "rink.busy_people", None),
         new("sets: overlaps, counts kept", "sets", "rink.overlaps", new Dictionary<string, object?> { ["@min"] = 0L }),
         new("sets: overlaps, counts filtered out", "sets", "rink.overlaps", new Dictionary<string, object?> { ["@min"] = 100L }),
+        new("funcs: member_dates, no offset", "funcs", "gym.member_dates", None),
+        new("funcs: member_dates, an offset", "funcs", "gym.member_dates", new Dictionary<string, object?> { ["@offset"] = 2 }),
+        new("funcs: member_names", "funcs", "gym.member_names", None),
+        new("funcs: member_names, empty gym", "funcs", "gym.member_names", None, NoGym),
+        new("funcs: visit_totals, a member with timed visits", "funcs", "gym.visit_totals", new Dictionary<string, object?> { ["@member_id"] = 1 }),
+        new("funcs: visit_totals, a member with untimed visits only", "funcs", "gym.visit_totals", new Dictionary<string, object?> { ["@member_id"] = 2 }),
+        new("funcs: visit_totals, a member without visits", "funcs", "gym.visit_totals", new Dictionary<string, object?> { ["@member_id"] = 4 }),
+        new("funcs: visit_totals, empty gym", "funcs", "gym.visit_totals", new Dictionary<string, object?> { ["@member_id"] = 1 }, NoGym),
+        new("funcs: visit_windows", "funcs", "gym.visit_windows", None),
+        new("funcs: visit_money", "funcs", "gym.visit_money", None),
+        new("funcs: series, up to 3", "funcs", "gym.series", new Dictionary<string, object?> { ["@upto"] = 3 }),
+        new("funcs: series, up to NULL", "funcs", "gym.series", new Dictionary<string, object?> { ["@upto"] = null }),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

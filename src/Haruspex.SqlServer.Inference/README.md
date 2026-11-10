@@ -403,9 +403,16 @@ modelled.
   `Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments`): strings give `nvarchar` if any is national,
   `varchar` if any varies, of the longest length, max if any is; exact numbers with a decimal give a decimal with every
   argument's integer digits and the largest scale (an `int` column or variable counts as `decimal(10,0)`, an integer literal
-  as its own digits), named `decimal` or `numeric` as its first decimal argument is; integers give the widest; a `date` with a
-  `datetime2(n)` gives the `datetime2(n)`. Every argument then converts without overflow. Others (a string with a number,
-  money, other mixes of dates) are not modelled. It is never null when an argument is never null, except: it is
+  as its own digits, `money` as `decimal(19,4)`, `smallmoney` as `decimal(10,4)`), named `decimal` or `numeric` as its first
+  decimal argument is; integers give the widest. Since 6i (`Coalesce_over_float_money_and_dates_follows_data_type_precedence`):
+  any `float` gives `float`, else any `real` `real`; `money` or `smallmoney` with integers gives `money` if any is, else
+  `smallmoney`; among `date`, `smalldatetime`, `datetime` and `datetime2(n)`, any `datetime2` gives `datetime2` of the largest
+  n, counting a `datetime` as 3 (`datetime2(1)` with `datetime` is `datetime2(3)`), else `datetime`, `smalldatetime`, `date` in
+  that order. **Every argument must then convert without overflow** (`ScalarType.Converts`), or it is not modelled:
+  `date` into `datetime` or `smalldatetime`, `bigint` into `money` and `int` into `smallmoney` can overflow, which is NULL under
+  the caller's options (`Coalesce_converting_to_a_narrower_range_overflows_to_null_under_the_callers_ansi_warnings_and_arithabort_off`),
+  and `CASE` and set operations, which use the same rule, count on a value not NULL staying so. Others (a string with a
+  number, `time` and `datetimeoffset` with other types) are not modelled. It is never null when an argument is never null, except: it is
   `CASE WHEN a IS NOT NULL THEN a …`, which reads an argument twice, so a subquery or a call before the never-null argument may
   be NULL the second time (`Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot`: NULL a quarter of the time
   over a subquery NULL half the time). Since 6g that is the rule `read-twice`, at the argument, in place of the argument's own
@@ -439,9 +446,25 @@ modelled.
   two integers give the wider, and may overflow; with a decimal, `+` and `-` give scale max(s1, s2) and precision
   max(p1 − s1, p2 − s2) + scale + 1, `*` gives p1 + p2 + 1 and s1 + s2, `/` gives scale max(6, s1 + p2 + 1) and precision
   p1 − s1 + s2 + scale; `numeric` when either operand is. Within 38 digits a decimal's `+`, `-` and `*` cannot overflow; `/`
-  can divide by zero. Beyond 38 digits SQL Server cuts the scale by rules not modelled, so it is unknown; so are money, float
-  and dates. Unary `-` keeps the type (an integer's can overflow at its least value). This is only what the fixtures need, not
-  the whole numeric tower.
+  can divide by zero. Beyond 38 digits SQL Server cuts the scale by rules not modelled, so it is unknown.
+- **Over `float`, `real`, `money` and dates** (since 6i, `Arithmetic_over_float_real_money_and_dates_follows_data_type_precedence`):
+  `float` with any number is `float`, `real` with any but `float` `real`; `money` or `smallmoney` with an integer, a `bit` or
+  each other is `money` if either is, else `smallmoney` (even beside `bigint`); `money` with a decimal is decimal arithmetic on
+  `decimal(19,4)` (`smallmoney` `decimal(10,4)`), exactly as above (`money + 1.5` is `numeric(20,4)`). `datetime` and
+  `smalldatetime` take `+` and `-` with a number or each other: `datetime` if either is, else `smalldatetime`; `datetime2`,
+  `date`, `time` and `datetimeoffset` take no arithmetic (a compile error), and `*` and `/` on dates are errors too: not
+  modelled. Every one of these may overflow (or divide by zero), an error by default and NULL under the caller's options
+  (`Arithmetic_over_float_money_and_dates_overflows_to_an_error_or_to_null_under_the_callers_ansi_warnings_and_arithabort_off`),
+  so each has `arithmetic-overflow`, a `float` overflow included.
+- **Unary `-`** keeps the type, except that a `tinyint` becomes a `smallint` (it has no sign; observed, and a slip before 6i,
+  which gave `tinyint`). An `int`, `smallint`, `bigint`, `money` or `smallmoney` can overflow at its least value; a decimal, a
+  `float`, a `real` and a `tinyint` cannot. A `float` literal (`1.5e0`) is `float`, a money literal (`$2.50`) `money`, never
+  null.
+- **The `NULL` literal** on its own is `int` (`A_bare_null_is_an_int`), nullable for `null-literal`; converted (`CAST(NULL AS
+  date)`) it is of the target type and NULL, with no `arithmetic-overflow` though `int` would not convert. It is in fact always
+  NULL, which the IR cannot say yet.
+- This is only what the fixtures and the corpus need, not the whole numeric tower: `%`, `bit` with integers, and a string
+  with a number are not modelled.
 - **`SUM(x)`** (`Sum_widens_its_argument`) is `int` for an integer narrower than `bigint`, `bigint`, `decimal(38, s)`,
   `money`, `float`; NULL over no rows without `GROUP BY` (`empty-aggregate`) and when every value is NULL; and it may overflow,
   except a decimal of at most 19 digits: fewer than 2^63 values below 10^(p − s) each sum to less than 10^(38 − s), and no
@@ -884,3 +907,95 @@ lax path that finds nothing), so it is many and never sure to have a row. Observ
   `null`; `FOR JSON` nests it as JSON (`Openjson_as_json_is_nvarchar_max_holding_an_object_or_array_that_nests_as_json`). Its
   shape is in the data, so it is live JSON of unknown shape (`json-shape-unknown`), as a `json` column is: JSON text in a
   rowset, unknown where it nests.
+
+## Built-in functions
+
+`ProcedureAnalyzer.Functions.cs` (slice 6i). Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
+runs and `DescribedTypeTests` check them on data. Each is null when an argument it reads is (its reasons), unless said
+otherwise; a value it computes has its type's facets only (`LOWER` of a `CHECK`ed column has no set). An argument of a type
+not listed is not modelled.
+
+### Dates
+
+- **`DATEDIFF`** is `int`, **`DATEDIFF_BIG`** `bigint`; **`DATEPART`**, **`YEAR`**, **`MONTH`**, **`DAY`** `int`;
+  **`DATENAME`** `nvarchar(30)`, never a closed set, since the names depend on the session's language. **`DATEADD`** is its
+  date's own type, or `datetime` for a string or an integer (`DATEADD(day, 1, '2026-01-01')`, `DATEDIFF(day, 0, d)`). The part
+  is a keyword and is not read. The date may be a date or time type, a string or an integer
+  (`Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type`).
+- **`EOMONTH(d [, n])`** is `date`, null only when `d` is: a NULL `n` is taken as 0
+  (`A_date_function_is_null_when_an_argument_is_but_eomonth_ignores_a_null_offset`).
+- **`DATEFROMPARTS`**, `DATETIMEFROMPARTS`, `SMALLDATETIMEFROMPARTS` and, with a precision that must be a literal,
+  `DATETIME2FROMPARTS`, `TIMEFROMPARTS`, `DATETIMEOFFSETFROMPARTS`: of their type, NULL when any part is. Only parts of an
+  integer type narrower than `bigint` are read, so no conversion can overflow.
+- **An overflow is an error, not NULL**, under any session options: `DATEADD` (517), `DATEDIFF` (535), `EOMONTH` (517), a
+  part out of range (289) (`A_date_overflow_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off`). So none
+  has `arithmetic-overflow`, unlike `+` on a `datetime`.
+- **`SYSDATETIME`**, `SYSUTCDATETIME` (`datetime2(7)`), **`GETDATE`**, `GETUTCDATE`, `CURRENT_TIMESTAMP` (`datetime`) and
+  `SYSDATETIMEOFFSET` (`datetimeoffset(7)`) are never null (`The_current_date_and_time_functions_are_never_null`).
+
+### Strings
+
+- **`LTRIM`**, **`RTRIM`**, **`TRIM`**, **`UPPER`**, **`LOWER`**: the string's length, made varying (`char(5)` gives
+  `varchar(5)`), max staying max; with characters to trim (`TRIM(c FROM s)`, `LTRIM(s, c)`), `nvarchar` if either is
+  (`Trimming_and_case_keep_the_strings_length_and_make_a_fixed_length_string_varying`).
+- **`LEFT`**, **`RIGHT`**, **`SUBSTRING`**: the string's type made varying, as long as an integer literal length when that is
+  shorter (at least 1; the start does not count), max staying max. The server folds a constant length (`LEFT(s, 1 + 1)` is
+  `varchar(2)`) but not a decimal literal (`LEFT(s, 2.7)` is `s`'s length); neither is modelled. A length that reads a column
+  or variable gives the string's length. Past the end is `''`, never NULL; a negative length is an error (536)
+  (`Left_right_and_substring_are_as_long_as_a_literal_length_allows`).
+- **`LEN`** (of a string) and **`DATALENGTH`** (of any scalar): `int`, `bigint` over max. `LEN` ignores trailing spaces
+  (`Len_and_datalength_are_int_or_bigint_over_max_and_len_ignores_trailing_spaces`).
+- **`REPLACE`**: `varchar(8000)`, `nvarchar(4000)` if any argument is national, max only when the string searched is
+  (`Replace_widens_to_8000_bytes_unless_its_string_is_max`).
+- **`STRING_ESCAPE(s, 'json')`**: `nvarchar(max)`. **`FORMATMESSAGE(format, …)`** with a string format: `nvarchar(4000)`, NULL
+  only when the format is: a NULL or missing argument is written `(null)`, and a bad `%d` gives terse error text, not an
+  error (`String_escape_is_nvarchar_max_and_formatmessage_nvarchar_4000_writing_a_null_argument_as_null_in_brackets`). A
+  message number names a message the project does not hold: not modelled.
+- **`JSON_VALUE(doc, path)`**: `nvarchar(4000)`, always nullable (`json-value`): NULL for a JSON `null` under any path, and
+  under a lax path for a missing property, an object or array, or a string longer than 4,000 characters; invalid JSON is an
+  error (13609) (`Json_value_is_nvarchar_4000_and_null_for_a_json_null_a_missing_path_an_object_or_a_long_string`). Its
+  arguments are not read: neither changes the type, and `json-value` covers a NULL document.
+
+### `STRING_AGG`
+
+`varchar(8000)` for a `varchar` or `char`, `nvarchar(4000)` for an `nvarchar` or anything that is not a string, max over max.
+NULLs are skipped, so it is NULL when every value is (the argument's reasons), and over no rows without `GROUP BY`
+(`empty-aggregate`); a NULL separator does not make it NULL. Past its limit it is an error (9829) under any session options
+(`String_agg_is_8000_bytes_unless_max_and_null_over_no_rows_or_only_nulls`,
+`String_agg_past_its_limit_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off`).
+
+### `GENERATE_SERIES`
+
+In `FROM`, a join or `APPLY` it is a relation of one column, `value` (`GenerateSeries`, bound as `OPENJSON` is), never null, of
+its arguments' one integer type, or of the type `COALESCE` gives decimals (`GENERATE_SERIES(@n numeric(5,1), 3.25)` is
+`numeric(6,2)`); any other mix is an error (5373), and is not modelled. A NULL argument, or a step the wrong way, gives no rows
+(`Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument`). Many rows.
+
+## Window functions
+
+`ProcedureAnalyzer.Windows.cs` (slice 6i). A window is computed for each row the query returns, after grouping, so its
+arguments are read as the select list's are, with their own reasons (a `ROLLUP`'s NULL among them), and a partition always
+holds the current row. Observed in `FunctionObservationTests`.
+
+- **`ROW_NUMBER`**, **`RANK`**, **`DENSE_RANK`**, **`NTILE`**: `bigint`, never null (`NTILE` of NULL or 0 is an error, 4116)
+  (`Ranking_is_never_null_and_percentiles_are_null_only_over_all_null_input`).
+- **`COUNT`** (`int`) and **`COUNT_BIG`** (`bigint`): 0 over an empty frame, never NULL; but `COUNT` keeps `count-overflow`, as
+  without a window: it is the same `int`, and a partition of more than 2,147,483,647 rows cannot be read to observe otherwise
+  (a deliberate departure from the brief, which said never null).
+- **`SUM`**, **`MIN`**, **`MAX`**: typed as the aggregates (`SUM`'s overflow rule included); NULL when every value in the frame
+  is, so with the argument's reasons, and when the frame may be empty (`empty-frame`), over a column never null too. `MIN` and
+  `MAX` keep the argument's facets. `AVG` and the rest are not modelled, with a window or without.
+- **A frame may be empty** only when it is given (`ROWS …`) and may leave out the current row: it starts after it
+  (`1 FOLLOWING`) or ends before it (`1 PRECEDING`). Without a frame the whole partition (without `ORDER BY`) or the rows up to
+  the current one's peers (with it) are read, the current row among them
+  (`A_frame_that_may_leave_out_the_current_row_can_be_empty_and_give_null_over_a_never_null_column`).
+- **`FIRST_VALUE`**, **`LAST_VALUE`**: the argument, with its facets, and `empty-frame`.
+- **`LAG(x [, offset [, default]])`**, **`LEAD`**: `x`'s type. Past the partition's edge NULL (`window-edge`), unless a default
+  is given (not the `NULL` literal), which is converted to `x`'s type: a long string cut, `1.9` to 1, an overflow an error or
+  NULL under the caller's options (`arithmetic-overflow`, unless it fits); with one, only the type's facets hold. A NULL offset
+  is NULL; offset 0 is the row itself
+  (`Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type`).
+- **`PERCENTILE_CONT`** (`float`, over a number) and **`PERCENTILE_DISC`** (its argument's type and facets): NULLs are skipped,
+  so NULL only when every value in the partition is (the argument's reasons).
+- A window function inside `COALESCE` still counts as a call read twice (`read-twice`): that it is computed once per row, as
+  an aggregate is, is likely but not observed.

@@ -330,7 +330,9 @@ public class ExpressionTests
         Assert.Equal("decimal(19,4)", Typed(doc, "g"));
         Assert.Equal("smallint nullable-column arithmetic-overflow", Typed(doc, "h"));
         Assert.Equal("decimal(30,6) nullable-column", Typed(doc, "i"));
-        Assert.StartsWith("unknown", Sql(doc, "j"), StringComparison.Ordinal);
+
+        // Float arithmetic is read since slice 6i (FunctionTests): it can overflow.
+        Assert.Equal("float nullable-column arithmetic-overflow", Typed(doc, "j"));
     }
 
     [Fact]

@@ -379,7 +379,7 @@ public class JsonFunctionTests
         dir.File("functions.sql", """
             CREATE FUNCTION dbo.tree(@id int) RETURNS nvarchar(max) AS
             BEGIN
-                RETURN (SELECT c.id, upper(c.name) AS up, json_query(dbo.tree(c.id)) AS children FROM dbo.t AS c WHERE c.parent_id = @id FOR JSON PATH);
+                RETURN (SELECT c.id, reverse(c.name) AS up, json_query(dbo.tree(c.id)) AS children FROM dbo.t AS c WHERE c.parent_id = @id FOR JSON PATH);
             END
             GO
             """);

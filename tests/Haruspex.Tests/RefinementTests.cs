@@ -492,9 +492,10 @@ public class RefinementTests
     }
 
     [Fact]
-    public void A_windowed_aggregate_is_not_modelled()
+    public void A_windowed_aggregate_not_modelled_is_unknown()
     {
-        var doc = Procedure("SELECT MAX(t.id) OVER () AS m FROM dbo.t AS t;");
+        // MIN, MAX, SUM and COUNT over a window are read (slice 6i, FunctionTests); AVG is not, with a window or without.
+        var doc = Procedure("SELECT AVG(t.id) OVER () AS m FROM dbo.t AS t;");
 
         Assert.Equal(IrUnknownReasons.UnsupportedExpression, Assert.Single(doc.Unknowns).Reason);
     }
@@ -716,7 +717,7 @@ public class RefinementTests
     {
         var json = IrJsonWriter.Write(Procedure("SELECT t.name FROM dbo.t AS t WHERE t.id = @x;", "@x int"));
 
-        Assert.Contains("\"irVersion\": \"0.13\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"irVersion\": \"0.14\"", json, StringComparison.Ordinal);
         Assert.Contains("\"cardinality\": \"atMostOne\"", json, StringComparison.Ordinal);
     }
 

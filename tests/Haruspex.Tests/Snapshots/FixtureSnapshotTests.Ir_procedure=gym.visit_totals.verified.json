@@ -1,0 +1,199 @@
+{
+  "irVersion": "0.14",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "gym.visit_totals",
+      "name": "VisitTotals",
+      "kind": "procedure",
+      "at": "procedures/visit_totals.sql:1:1",
+      "parameters": [
+        {
+          "name": "@member_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "VisitTotalsResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "VisitTotalsResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "VisitTotalsResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "gym.visit_totals",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "plan_name",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(10)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "basic",
+                "plus"
+              ],
+              "from": [
+                {
+                  "check": "gym.ck_member_plan"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "nicknames",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gym.member.nickname"
+            }
+          ]
+        },
+        {
+          "name": "names",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8000)",
+            "maxLength": {
+              "value": 8000,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "ids",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "VisitTotalsResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "gym.visit_totals",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "minutes_list",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8000)",
+            "maxLength": {
+              "value": 8000,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gym.visit.minutes"
+            },
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/visit_totals.sql:12:8"
+            }
+          ]
+        },
+        {
+          "name": "all_prefs",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gym.member.prefs"
+            },
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/visit_totals.sql:13:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

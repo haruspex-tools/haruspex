@@ -1,0 +1,195 @@
+{
+  "irVersion": "0.14",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "gym.series",
+      "name": "Series",
+      "kind": "procedure",
+      "at": "procedures/series.sql:1:1",
+      "parameters": [
+        {
+          "name": "@upto",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SeriesResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SeriesResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SeriesResult3Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "SeriesResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "gym.series",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "n",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "SeriesResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "gym.series",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "visit_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "seat",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "SeriesResult3Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "gym.series",
+        "path": "results[2][]"
+      },
+      "fields": [
+        {
+          "name": "step",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "numeric(3,2)",
+            "digits": {
+              "precision": 3,
+              "scale": 2,
+              "from": {
+                "type": "numeric(3,2)"
+              }
+            },
+            "min": {
+              "value": -9.99,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(3,2)"
+              }
+            },
+            "max": {
+              "value": 9.99,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(3,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

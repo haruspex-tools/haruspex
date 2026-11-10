@@ -82,7 +82,7 @@ public class FactFlowTests
 
     [Fact]
     public void An_expression_not_modelled_drops_the_facts_with_the_type() =>
-        Assert.IsType<IrUnknownType>(Field(Procedure("SELECT upper(t.status) AS v FROM dbo.t AS t;"), "PRow", "v").Type);
+        Assert.IsType<IrUnknownType>(Field(Procedure("SELECT reverse(t.status) AS v FROM dbo.t AS t;"), "PRow", "v").Type);
 
     [Theory]
     [InlineData("SELECT t.score + 1 AS v FROM dbo.t AS t;", "-2147483648")]

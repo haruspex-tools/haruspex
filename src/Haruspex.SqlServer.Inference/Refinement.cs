@@ -468,6 +468,9 @@ internal sealed partial class ProcedureAnalyzer
             case "sum" when call.Parameters.Count == 1:
                 return Sum(call, scope);
 
+            case "string_agg" when call.Parameters.Count == 2:
+                return StringAggregate(call, scope);
+
             default:
                 return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The aggregate {Text(call)} is not modelled yet.", at));
         }

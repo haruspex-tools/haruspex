@@ -177,6 +177,10 @@ public sealed class Binder(DatabaseModel model, string file)
             case OpenJsonTableReference openJson when scope.Locals?.OpenJson(openJson, lateral ?? scope.Parent) is { } openJsonRelation:
                 scope.Add(Sided(new BoundSource(openJson.Alias?.Value, null, null, optionalSideOf, openJsonRelation)));
                 break;
+            case GlobalFunctionTableReference { Name.Value: var function } series
+                when function.Equals("generate_series", StringComparison.OrdinalIgnoreCase) && scope.Locals?.GenerateSeries(series, lateral ?? scope.Parent) is { } seriesRelation:
+                scope.Add(Sided(new BoundSource(series.Alias?.Value, null, null, optionalSideOf, seriesRelation)));
+                break;
             case VariableTableReference variable:
                 // A table variable is the body's own; without a definition of it in hand it is not modelled.
                 scope.Add(Sided(scope.Locals?.Find(variable.Variable.Name) is { } relation

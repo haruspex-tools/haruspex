@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.13";
+    public const string CurrentVersion = "0.14";
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
@@ -572,7 +572,10 @@ public static class IrNullRules
     /// <summary>It is a <c>CASE</c> without <c>ELSE</c>, which is NULL when no <c>WHEN</c> holds.</summary>
     public const string NoElse = "no-else";
 
-    /// <summary>A result of a <c>CASE</c>, <c>IIF</c> or <c>CHOOSE</c> it may give is the <c>NULL</c> literal.</summary>
+    /// <summary>
+    /// A result of a <c>CASE</c>, <c>IIF</c> or <c>CHOOSE</c> it may give is the <c>NULL</c> literal, or it is (or reads) the
+    /// <c>NULL</c> literal itself, as a bare <c>NULL</c> select item (an <c>int</c>) or <c>CAST(NULL AS date)</c> (0.14).
+    /// </summary>
     public const string NullLiteral = "null-literal";
 
     /// <summary>It is a <c>CHOOSE</c> whose index may be below 1 or above its count of values, which gives NULL.</summary>
@@ -589,12 +592,26 @@ public static class IrNullRules
     public const string NullIf = "nullif";
 
     /// <summary>
-    /// It is a column <c>OPENJSON</c> reads from JSON (0.13): NULL where the JSON holds <c>null</c> there, under a <c>strict</c>
-    /// path too, and, under a lax path, where nothing is there, or an <c>AS JSON</c> column finds a scalar, or a scalar column an
-    /// object or array. (A number too large for the column is NULL as well under the caller's <c>ANSI_WARNINGS</c> and
-    /// <c>ARITHABORT</c> off.)
+    /// It is a column <c>OPENJSON</c> reads from JSON (0.13), or a <c>JSON_VALUE</c> (0.14): NULL where the JSON holds
+    /// <c>null</c> there, under a <c>strict</c> path too, and, under a lax path, where nothing is there, or an <c>AS JSON</c>
+    /// column finds a scalar, or a scalar column or <c>JSON_VALUE</c> an object or array (or, for <c>JSON_VALUE</c>, a string
+    /// longer than 4,000 characters). (A number too large for the column is NULL as well under the caller's
+    /// <c>ANSI_WARNINGS</c> and <c>ARITHABORT</c> off.)
     /// </summary>
     public const string JsonValue = "json-value";
+
+    /// <summary>
+    /// It is a window function over a frame that may hold no row (0.14): an aggregate, <c>FIRST_VALUE</c> or
+    /// <c>LAST_VALUE</c> whose <c>ROWS</c> frame may leave out the current row (<c>ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING</c>
+    /// has nothing before the first row) is NULL there, over a column never null too. The default frame, and any frame that
+    /// holds the current row, is never empty.
+    /// </summary>
+    public const string EmptyFrame = "empty-frame";
+
+    /// <summary>
+    /// It is <c>LAG</c> or <c>LEAD</c> without a default (0.14), NULL where the row it reads is past the partition's edge.
+    /// </summary>
+    public const string WindowEdge = "window-edge";
 
     /// <summary>Its type is unknown, so nothing is proved about it.</summary>
     public const string Unknown = "unknown";
