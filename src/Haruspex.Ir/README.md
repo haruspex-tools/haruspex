@@ -1,7 +1,7 @@
-# The haruspex IR, version 0.10
+# The haruspex IR, version 0.11
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
-each side can be written in whatever language suits it. This page describes version 0.10. A JSON Schema for
+each side can be written in whatever language suits it. This page describes version 0.11. A JSON Schema for
 it will follow.
 
 ## Why not JSON Schema
@@ -15,7 +15,7 @@ every document. It maps to JSON Schema without loss.
 
 ```jsonc
 {
-  "irVersion": "0.10",                // versioned separately from the tool
+  "irVersion": "0.11",                // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database: the object's identity
@@ -370,6 +370,38 @@ are in `Haruspex.SqlServer.Inference/README.md` ("APPLY", "Views"). For the IR:
 - A view's columns carry their reasons from its definition: a `nullable-column` names the base table's column, an
   `outer-join` or `outer-apply` inside the view points into the view's file.
 
+## Expressions, table-valued functions and read-uncommitted (0.11)
+
+The common expressions, table-valued functions as table sources, and visible read-uncommitted are read (slice 6f); the engine
+rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Expressions", "Table-valued functions",
+"Cardinality"). For the IR:
+
+- An expression's scalar has the SQL type SQL Server gives it (`decimal(38,2)` for `SUM` of a `decimal(10,2)`,
+  `nvarchar(15)` for `CONCAT` of a `varchar(5)` and an `nvarchar(10)`), with that type's facets only: a column's `CHECK` set or
+  bounds do not survive an expression, except a conversion to the column's own type or `ISNULL` of a value never null, which
+  give the value unchanged. The differential tests compare each rowset column's `sql` with the server's own description.
+- **`arithmetic-overflow`**: arithmetic, a `SUM`, or a conversion (`CAST`, `CONVERT`, an assignment, a function's argument)
+  that can overflow its type, or a division that can divide by zero. By default that is an error, which fails the call; under
+  a caller's `ANSI_WARNINGS` and `ARITHABORT` off it is NULL, and a procedure cannot prevent that, as for `count-overflow`. So
+  `CONVERT(decimal(19,2), SUM(amount))` is nullable for it, and `COALESCE(SUM(amount), 0)` is not. A conversion that cannot
+  overflow (to a wider type, a string long enough, a date into a string) does not have it.
+- **`failed-conversion`**: `TRY_CAST` or `TRY_CONVERT` of a value that may not convert, which is NULL rather than an error.
+- `COALESCE` and `ISNULL` are never null when an argument is never null, except that `COALESCE` reads an argument with a
+  subquery or a call twice, so one before the never-null argument keeps its reasons. `CONCAT` and `CONCAT_WS` are never null.
+  String `+` is null when an operand is, which holds whether or not the session concatenates NULL as empty.
+- A table-valued function's columns carry their reasons from its body or its return table: a `nullable-column` names the base
+  table's column, or `<function>.<column>` for a multi-statement function's declared table; an argument that may be null keeps
+  its reasons through the body, and one not modelled is `parameter`. A result may be `atMostOne` through a function's key or
+  its one row per call.
+- A `NOLOCK` or `READUNCOMMITTED` hint, or `READ UNCOMMITTED` set in the procedure or a caller, removes the keys of what it
+  reads, so a result once `atMostOne` by a key is `many`. An isolation level the outermost caller sets is not seen: the
+  IR assumes it does not read uncommitted.
+
+Changes in 0.11 (slice 6f, expressions and table-valued functions): the null rules `arithmetic-overflow` and
+`failed-conversion`. Expressions and table-valued functions were unknown (`unsupported-expression`, `unsupported-source`)
+before; a key read uncommitted no longer bounds a result. A 0.10 reader would meet a null rule it does not know, which is why
+the version changed.
+
 Changes in 0.10 (slice 6e, APPLY and views): the null rule `outer-apply`. APPLY, `VALUES` and views were unknown
 (`unsupported-source`, `unresolved-table`) before; a result may now be `atMostOne` through an APPLY or a keyed view. A 0.9
 reader would meet a null rule it does not know, which is why the version changed.
@@ -414,4 +446,4 @@ Changes in 0.2: scalars gained facets (`maxLength`, `length`, `minLength`, `digi
 each with its `from`. A reader of 0.1 that ignores unknown keys reads 0.2 documents unchanged, but the version
 changed because the facets are claims a 0.2 reader may rely on.
 
-Not in 0.10, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.
+Not in 0.11, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.

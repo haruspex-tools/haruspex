@@ -1,0 +1,174 @@
+{
+  "irVersion": "0.11",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "cafe.menu_prices",
+      "name": "MenuPrices",
+      "kind": "procedure",
+      "at": "procedures/menu_prices.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MenuPricesRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "MenuPricesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "cafe.menu_prices",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "item_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "label",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(45)",
+            "maxLength": {
+              "value": 45,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(45)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "price_with_tax",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "numeric(12,3)",
+            "digits": {
+              "precision": 12,
+              "scale": 3,
+              "from": {
+                "type": "numeric(12,3)"
+              }
+            },
+            "min": {
+              "value": -999999999.999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(12,3)"
+              }
+            },
+            "max": {
+              "value": 999999999.999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(12,3)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "pence",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/menu_prices.sql:10:8"
+            }
+          ]
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(4)",
+            "length": {
+              "value": 4,
+              "unit": "bytes",
+              "from": {
+                "type": "char(4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "ref",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(17)",
+            "maxLength": {
+              "value": 17,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(17)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

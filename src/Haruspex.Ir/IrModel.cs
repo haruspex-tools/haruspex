@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.10";
+    public const string CurrentVersion = "0.11";
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override

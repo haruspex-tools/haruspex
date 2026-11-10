@@ -1,0 +1,105 @@
+{
+  "irVersion": "0.11",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "cafe.open_tabs_payload",
+      "name": "OpenTabsPayload",
+      "kind": "procedure",
+      "at": "procedures/open_tabs_payload.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OpenTabsPayloadRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "OpenTabsPayloadOpenTabs": {
+      "kind": "object",
+      "identity": {
+        "procedure": "cafe.open_tabs_payload",
+        "path": "results[0][].open_tabs<json>[]"
+      },
+      "fields": [
+        {
+          "name": "tab_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "opened_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OpenTabsPayloadRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "cafe.open_tabs_payload",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "open_tabs",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "ref": "OpenTabsPayloadOpenTabs"
+              },
+              "minItems": 1
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "functions/open_tabs_json.sql:6:12"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

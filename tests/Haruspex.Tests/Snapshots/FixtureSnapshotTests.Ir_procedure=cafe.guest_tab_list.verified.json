@@ -1,0 +1,118 @@
+{
+  "irVersion": "0.11",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "cafe.guest_tab_list",
+      "name": "GuestTabList",
+      "kind": "procedure",
+      "at": "procedures/guest_tab_list.sql:2:1",
+      "parameters": [
+        {
+          "name": "@guest_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GuestTabListRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GuestTabListRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "cafe.guest_tab_list",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "tab_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "opened_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "closed_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "cafe.tab.closed_at"
+            }
+          ]
+        },
+        {
+          "name": "state",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(10)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

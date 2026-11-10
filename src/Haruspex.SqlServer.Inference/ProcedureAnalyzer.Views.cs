@@ -19,6 +19,7 @@ internal sealed partial class ProcedureAnalyzer
         ReadDerived = Derived,
         ReadValues = ValuesList,
         ReadView = views is null ? null : views.Read,
+        ReadFunction = views is null ? null : TableFunction,
     };
 
     /// <summary>
@@ -233,13 +234,58 @@ internal sealed partial class ProcedureAnalyzer
 }
 
 /// <summary>
-/// What each view of the project holds, read once per document from its definition (<see cref="ProcedureAnalyzer.ReadView"/>).
-/// A view reads others; one that reads itself through them cannot be created, and is unknown here.
+/// What each view of the project holds, read once per document from its definition (<see cref="ProcedureAnalyzer.ReadView"/>),
+/// and what each call of a table-valued function returns (slice 6f), read once per function and set of argument values. A
+/// view or function reads others; one that reads itself through them cannot be created, and is unknown here.
 /// </summary>
-internal sealed class ViewSummaries(DatabaseModel model, FunctionSummaries functions)
+internal sealed class ViewSummaries
 {
+    private readonly DatabaseModel model;
+    private readonly FunctionSummaries functions;
     private readonly Dictionary<ObjectName, LocalRelationValues> done = [];
     private readonly HashSet<ObjectName> reading = [];
+    private readonly Dictionary<string, LocalRelationValues> calls = new(StringComparer.Ordinal);
+
+    public ViewSummaries(DatabaseModel model, FunctionSummaries functions)
+    {
+        this.model = model;
+        this.functions = functions;
+
+        // A scalar function's body may read views too.
+        functions.Views = this;
+    }
+
+    /// <summary>
+    /// What a call of a table-valued function returns, with its parameters holding <paramref name="arguments"/>: an inline
+    /// function's query read with them (<see cref="ProcedureAnalyzer.ReadInline"/>), a multi-statement one's declared return
+    /// table (<see cref="ProcedureAnalyzer.ReadReturnTable"/>).
+    /// </summary>
+    public LocalRelationValues Function(UserFunction function, IReadOnlyDictionary<string, Value> arguments)
+    {
+        var key = function.Name + "(" + string.Join(",", arguments.OrderBy(a => a.Key, StringComparer.OrdinalIgnoreCase).Select(a => a.Key + "=" + ShapeText.Of(a.Value))) + ")";
+        if (calls.TryGetValue(key, out var found))
+            return found;
+        if (!reading.Add(function.Name))
+            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReasons.UnresolvedTable, $"{function.Name} reads itself through the functions and views it reads.", function.At));
+
+        try
+        {
+            var analyzer = new ProcedureAnalyzer(model, function.File, functions, arguments, ansiNullsOff: function.AnsiNullsOff, views: this);
+            found = function.Body.ReturnType switch
+            {
+                SelectFunctionReturnType inline => analyzer.ReadInline(function, inline.SelectStatement),
+                TableValuedFunctionReturnType declared => analyzer.ReadReturnTable(function, declared),
+                _ => throw new ArgumentException("Not a table-valued function.", nameof(function)),
+            };
+        }
+        finally
+        {
+            reading.Remove(function.Name);
+        }
+
+        calls[key] = found;
+        return found;
+    }
 
     /// <summary>A placeholder location for an unknown about the view as a whole; each read reports its own location instead.</summary>
     private static readonly Haruspex.Diagnostics.SourceLocation Nowhere = new("", 0, 0);

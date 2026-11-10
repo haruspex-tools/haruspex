@@ -78,8 +78,15 @@ internal sealed partial class ProcedureAnalyzer
         escapes = this.context.Escapes ? [] : null;
     }
 
-    /// <summary>The value a function's <c>RETURN</c> expression gives, read with no FROM in scope.</summary>
-    public Value Return(ScalarExpression expression) => Expression(expression, binder.BindFrom(new QuerySpecification(), null));
+    /// <summary>
+    /// The value a function's <c>RETURN</c> expression gives, read with no FROM in scope; its subqueries may read views and
+    /// table-valued functions (slice 6f; views in function bodies were unresolved before).
+    /// </summary>
+    public Value Return(ScalarExpression expression)
+    {
+        locals = Locals(new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase));
+        return Expression(expression, binder.BindFrom(new QuerySpecification(), null, locals));
+    }
 
     /// <summary>A procedure's declared parameters and their types.</summary>
     public static IReadOnlyList<ParameterShape> Parameters(DatabaseModel model, Procedure procedure) =>

@@ -82,4 +82,13 @@ public interface ILocalRelations
     /// </summary>
     /// <param name="view">The view; its <see cref="NamedObject.View"/> is its definition.</param>
     LocalRelation? View(NamedObject view) => null;
+
+    /// <summary>
+    /// The relation a call of a table-valued function in FROM (<c>FROM s.f(@a) AS x</c>) is, or null when functions are not
+    /// modelled here. Its arguments may read the enclosing queries' columns, or an <c>APPLY</c>'s left input's, so it is given
+    /// that scope; which function it names, and what that returns, is the supplier's to decide.
+    /// </summary>
+    /// <param name="reference">The call.</param>
+    /// <param name="outer">The scope its arguments may read beyond their own, or null.</param>
+    LocalRelation? TableFunction(SchemaObjectFunctionTableReference reference, BindingScope? outer) => null;
 }

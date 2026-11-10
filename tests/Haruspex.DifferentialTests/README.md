@@ -94,8 +94,19 @@ what it can do to its caller's temporary tables, what `INSERT … EXEC` accepts,
 NULL, under three-valued logic and ANSI_NULLS; what aggregates give over no rows; how many rows TOP, FETCH and a unique key
 allow; when COUNT overflows to NULL) is pinned by `RefinementObservationTests`. What APPLY, `VALUES` lists and views rely on
 (which outer rows each APPLY keeps, what an applied aggregate gives, what an applied query can see, a `VALUES` column's type,
-what a view binds when it is created, its `ANSI_NULLS`, `NOEXPAND`) is pinned by `ApplyViewObservationTests`. A field whose only reason to be null is
-`count-overflow` need not be seen null: no seed has 2,147,483,648 rows. Both make their calls through `Server/ObservedCall.cs`.
+what a view binds when it is created, its `ANSI_NULLS`, `NOEXPAND`) is pinned by `ApplyViewObservationTests`. What the
+expressions rely on (the types of literals, `COALESCE`, `ISNULL`, conversions, `CONCAT`, `+`, decimal arithmetic and `SUM`;
+which overflow NULL under a caller's `ANSI_WARNINGS` and `ARITHABORT` off and which conversions cannot overflow; `COALESCE`
+reading a subquery twice) is pinned by `ExpressionObservationTests`; what table-valued functions rely on (arguments converted
+as assignments are, a multi-statement function's return table enforcing its constraints, `DEFAULT`) by
+`TableFunctionObservationTests`; and how far a procedure's isolation level reaches by `ReadUncommittedObservationTests`. A
+field whose only reasons to be null are `count-overflow` or `arithmetic-overflow` need not be seen null: no seed has
+2,147,483,648 rows, and the runs use the default session options, under which an overflow is an error. They all make their
+calls through `Server/ObservedCall.cs`.
+
+`DescribedTypeTests` checks what the validator cannot see in a value: that the SQL type the IR gives each column of every
+procedure's first rowset is the one SQL Server describes (`sys.dm_exec_describe_first_result_set_for_object`). A wrong
+precision or length passes the value checks as long as the data is short; the type is a claim of its own.
 
 A fixture may have a `haruspex.json` beside its SQL: its IR is then inferred with it applied, so results it declares
 (the `calls` fixture's dynamic SQL) are checked against the server like everything inferred.

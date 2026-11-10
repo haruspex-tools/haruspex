@@ -28,7 +28,7 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
@@ -55,6 +55,8 @@ public static class Runs
     private const string NoLoans = "DELETE FROM lend.loan;";
     private const string NoMarket = "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase; DELETE FROM mart.price; DELETE FROM mart.product; DELETE FROM mart.customer;";
     private const string NoPurchases = "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase;";
+    private const string NoOpenTabs = "UPDATE cafe.tab SET closed_at = DATEADD(hour, 1, opened_at) WHERE closed_at IS NULL;";
+    private const string NoCafe = "DELETE FROM cafe.tab_item; DELETE FROM cafe.tab; DELETE FROM cafe.menu_item; DELETE FROM cafe.guest;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -273,6 +275,30 @@ public static class Runs
         new("apply: purchase_lines, none", "apply", "mart.purchase_lines", new Dictionary<string, object?> { ["@purchase_id"] = 11 }),
         new("apply: price_versions, changed once", "apply", "mart.price_versions", new Dictionary<string, object?> { ["@product_id"] = 101 }),
         new("apply: price_versions, never changed", "apply", "mart.price_versions", new Dictionary<string, object?> { ["@product_id"] = 100 }),
+
+        new("tabs: tab_summary, closed with items", "tabs", "cafe.tab_summary", new Dictionary<string, object?> { ["@tab_id"] = 10 }),
+        new("tabs: tab_summary, open", "tabs", "cafe.tab_summary", new Dictionary<string, object?> { ["@tab_id"] = 11 }),
+        new("tabs: tab_summary, no items, no nickname", "tabs", "cafe.tab_summary", new Dictionary<string, object?> { ["@tab_id"] = 13 }),
+        new("tabs: tab_summary, no such tab", "tabs", "cafe.tab_summary", new Dictionary<string, object?> { ["@tab_id"] = 99 }),
+        new("tabs: tab_receipt, a numeric note", "tabs", "cafe.tab_receipt", new Dictionary<string, object?> { ["@tab_id"] = 10 }),
+        new("tabs: tab_receipt, a note that is not a number", "tabs", "cafe.tab_receipt", new Dictionary<string, object?> { ["@tab_id"] = 11 }),
+        new("tabs: tab_receipt, no note, no nickname", "tabs", "cafe.tab_receipt", new Dictionary<string, object?> { ["@tab_id"] = 12 }),
+        new("tabs: tab_receipt, no items", "tabs", "cafe.tab_receipt", new Dictionary<string, object?> { ["@tab_id"] = 13 }),
+        new("tabs: tab_receipt, no such tab", "tabs", "cafe.tab_receipt", new Dictionary<string, object?> { ["@tab_id"] = 99 }),
+        new("tabs: guest_tab_list, an open and a closed tab", "tabs", "cafe.guest_tab_list", new Dictionary<string, object?> { ["@guest_id"] = 1 }),
+        new("tabs: guest_tab_list, no tabs", "tabs", "cafe.guest_tab_list", new Dictionary<string, object?> { ["@guest_id"] = 3 }),
+        new("tabs: tab_lines_list, two lines", "tabs", "cafe.tab_lines_list", new Dictionary<string, object?> { ["@tab_id"] = 10 }),
+        new("tabs: tab_lines_list, none", "tabs", "cafe.tab_lines_list", new Dictionary<string, object?> { ["@tab_id"] = 13 }),
+        new("tabs: guests_with_open_tab", "tabs", "cafe.guests_with_open_tab", None),
+        new("tabs: guests_with_open_tab, none open", "tabs", "cafe.guests_with_open_tab", None, NoOpenTabs),
+        new("tabs: guest_labels", "tabs", "cafe.guest_labels", None),
+        new("tabs: dirty_tab, with a note", "tabs", "cafe.dirty_tab", new Dictionary<string, object?> { ["@tab_id"] = 11 }),
+        new("tabs: dirty_tab, no note", "tabs", "cafe.dirty_tab", new Dictionary<string, object?> { ["@tab_id"] = 12 }),
+        new("tabs: open_tabs_payload", "tabs", "cafe.open_tabs_payload", None),
+        new("tabs: open_tabs_payload, none open", "tabs", "cafe.open_tabs_payload", None, NoOpenTabs),
+        new("tabs: guest_spending", "tabs", "cafe.guest_spending", None),
+        new("tabs: guest_spending, no guests", "tabs", "cafe.guest_spending", None, NoCafe),
+        new("tabs: menu_prices", "tabs", "cafe.menu_prices", None),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

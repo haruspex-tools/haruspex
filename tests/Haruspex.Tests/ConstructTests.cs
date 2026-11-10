@@ -182,10 +182,14 @@ public class ConstructTests
 
     [Theory]
     [InlineData("OPENJSON(N'[]') WITH (id int) AS s")]
-    [InlineData("dbo.f(1) AS s")]
     [InlineData("otherdb.dbo.t AS s")]
+    [InlineData("otherdb.dbo.f(1) AS s")]
     public void A_source_not_modelled_makes_its_columns_unknown(string from) =>
         AssertUnknown(Procedure($"SELECT s.id FROM {from};"), "results[0][].id", IrUnknownReasons.UnsupportedSource);
+
+    [Fact]
+    public void A_function_the_project_does_not_define_is_unresolved() =>
+        AssertUnknown(Procedure("SELECT s.id FROM dbo.f(1) AS s;"), "results[0][].id", IrUnknownReasons.UnresolvedTable);
 
     [Fact]
     public void An_ambiguous_unqualified_column_is_unknown()

@@ -74,6 +74,9 @@ internal sealed class FunctionSummaries
     /// <summary>The results assumed for the component being solved, at the current step.</summary>
     private Dictionary<ObjectName, FunctionReturn>? assumed;
 
+    /// <summary>The views a body may read, once they are known (<see cref="ViewSummaries"/> sets it); null leaves them unread.</summary>
+    public ViewSummaries? Views { get; set; }
+
     public FunctionSummaries(DatabaseModel model)
     {
         this.model = model;
@@ -278,7 +281,7 @@ internal sealed class FunctionSummaries
             p => p.VariableName.Value,
             p => Parameter(p, nullOnNull, function.File),
             StringComparer.OrdinalIgnoreCase);
-        var value = new ProcedureAnalyzer(model, function.File, this, parameters, ansiNullsOff: function.AnsiNullsOff).Return(expression);
+        var value = new ProcedureAnalyzer(model, function.File, this, parameters, ansiNullsOff: function.AnsiNullsOff, views: Views).Return(expression);
 
         Shape? content = value switch
         {

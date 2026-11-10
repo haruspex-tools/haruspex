@@ -35,6 +35,12 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
     public LocalRelation? View(NamedObject view) =>
         ReadView is null ? null : Register(view.Name.ToString(), ReadView(view));
 
+    /// <summary>Reads a call of a table-valued function; null leaves functions in FROM unmodelled.</summary>
+    public Func<SchemaObjectFunctionTableReference, BindingScope?, LocalRelationValues>? ReadFunction { get; init; }
+
+    public LocalRelation? TableFunction(SchemaObjectFunctionTableReference reference, BindingScope? outer) =>
+        ReadFunction is null ? null : Register(reference.Alias?.Value ?? reference.SchemaObject.BaseIdentifier.Value, ReadFunction(reference, outer));
+
     /// <summary>Whether a relation handed out is a temporary table (#t), rather than a CTE, derived table or table variable.</summary>
     public bool IsTemporary(LocalRelation relation) => temporary.Contains(relation);
     private readonly List<Dictionary<string, LocalRelation>> cteFrames = [];

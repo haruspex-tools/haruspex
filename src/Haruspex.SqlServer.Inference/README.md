@@ -2,8 +2,10 @@
 
 How a procedure's statements are read in order (slice 6), calls followed (slice 6b, "Calls" below), what filters and
 single-row queries prove (slice 6c, "Refinement" below), writes, triggers and cursors (slice 6d, "DML", "Triggers" and
-"Cursors" below), and `APPLY`, `VALUES` lists and views (slice 6e, "APPLY" and "Views" below, observed in
-`ApplyViewObservationTests`). The code is `ProcedureAnalyzer.Flow.cs` (the walk),
+"Cursors" below), `APPLY`, `VALUES` lists and views (slice 6e, "APPLY" and "Views" below, observed in
+`ApplyViewObservationTests`), and the common expressions, table-valued functions and visible read-uncommitted (slice 6f,
+"Expressions", "Table-valued functions" and "Cardinality" below, observed in `ExpressionObservationTests`,
+`TableFunctionObservationTests` and `ReadUncommittedObservationTests`). The code is `ProcedureAnalyzer.Flow.cs` (the walk),
 `FlowState.cs` (the state and its join), `FlowLocals.cs` (what the binder sees), and `ShapeJoin.cs` (joins of values).
 Every engine rule it leans on is observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`; the test names are given below.
@@ -340,13 +342,105 @@ write fires them. A trigger disabled by `DISABLE TRIGGER` is still counted, whic
 - `@@FETCH_STATUS` loops are ordinary `WHILE` loops: conditions are not read, and the loop's fixed point joins the
   variables.
 
-## Expressions this needs
+## Expressions
 
-Two expressions were added because the shapes above are built from them: an integer literal within `int`'s range is
-a non-null `int`, and `CAST`/`CONVERT` (without a style) of a string to a string type is of that type and null exactly
-when its operand is (it cuts a longer string short without an error). A string type without a length is 30 long in a
-`CAST` or `CONVERT`, and 1 in a declaration (`A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration`). Arithmetic is not modelled: under a caller's
-`ANSI_WARNINGS OFF` an overflow gives NULL rather than an error.
+`ProcedureAnalyzer.Expressions.cs` reads them, `ScalarTypes.cs` computes their types (slice 6f). Every rule is observed in
+`ExpressionObservationTests`, mostly as SQL Server describes a query's columns (`sys.dm_exec_describe_first_result_set`), and
+`DescribedTypeTests` compares the type of every rowset column of every fixture with the server's description. A value
+computed by an expression is any value of its type: it has the type's facets, not the CHECK set or bounds of a column it
+read, except where it is that value unchanged (a conversion to its own type, `ISNULL` of a value never null).
+
+### Literals
+
+`'abc'` is `varchar(3)`, `N'ab'` `nvarchar(2)`, `''` `varchar(1)`; an integer within `int` is `int`, a larger one
+`numeric(digits,0)`; `2.50` is `numeric(3,2)`: the scale counts the digits after the point, trailing zeros too, and the
+precision adds those before it, less leading zeros (`A_literals_type_is_its_own_digits_or_characters`). None is ever null. A
+`varchar` literal beyond ASCII, or one with `COLLATE`, is not typed: its length in bytes depends on the code page.
+
+### What may make an expression NULL besides its operands
+
+- **Overflow** (`arithmetic-overflow`). Integer arithmetic past its type, a conversion that does not fit (a decimal into
+  fewer integer digits, an int into `tinyint`, a number into a string too short, a `datetime2` before 1753 into `datetime`),
+  a `SUM` past its type and a division by zero are errors by default, which fail the call, and NULL when the caller's session
+  has `ANSI_WARNINGS` and `ARITHABORT` off
+  (`An_overflow_is_an_error_by_default_and_null_under_the_callers_ansi_warnings_and_arithabort_off`). A procedure cannot stop
+  a caller doing that, so, as for `COUNT` (decided 10 Nov 2026, `haruspex-design.md`), each is nullable for it, unless the
+  type rules below prove it cannot happen. `SET ANSI_WARNINGS ON` inside the procedure would make it an error again; that is
+  not read, which only claims less. A conversion that **fails** for a value (`'abc'` as `int`, a date that does not exist, a
+  GUID into a short string) is an error even then (`A_failed_conversion_is_an_error_even_under_ansi_warnings_and_arithabort_off`),
+  so it never makes NULL.
+- **`TRY_CAST` and `TRY_CONVERT`** (`failed-conversion`) are NULL whenever the conversion may fail or overflow
+  (`Try_cast_and_try_convert_are_null_when_the_conversion_fails`); one that cannot (the table below) is null only as its
+  operand is.
+
+### Conversions: `CAST`, `CONVERT`, assignments and arguments
+
+Of the target type, whatever the style (`Cast_and_convert_are_of_the_target_type_whatever_the_style`); a string type without
+a length is 30 long in `CAST` and `CONVERT`, 1 in a declaration
+(`A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration`); `numeric` alone is `numeric(18,0)`. The characters a style
+writes are not claimed. Null when the operand is, and for `arithmetic-overflow` unless every value of the operand's type fits
+(`ScalarType.Converts`, each case observed at its edge in `A_conversion_that_cannot_overflow_keeps_every_value`):
+
+| From | To | Fits when |
+|---|---|---|
+| a string, a date or a time | a string | always: a string is cut short, and so is a date or time written as one, with or without a style |
+| an integer, `bit`, `decimal(p,s)`, `uniqueidentifier` | a string | it is long enough for the longest: `tinyint` 3, `smallint` 6, `int` 11, `bigint` 20, `bit` 1, a GUID 36, a decimal p + 1 for the sign, + 1 for a point when s > 0, + 1 for a leading 0 when p = s; never with a style |
+| an integer | an integer | the target is as wide |
+| `decimal(p,s)` | an integer | p − s is less than the target's digits (`int` 10, `bigint` 19, `smallint` 5); never `tinyint`, which has no sign |
+| an exact number (an integer as its digits, `money` as `decimal(19,4)`) | `decimal(p2,s2)` | p2 − s2 > p − s, or p2 − s2 = p − s and s2 ≥ s (rounding to fewer places can carry: `99.999` as `decimal(4,2)` overflows) |
+| `date`, `datetime`, `smalldatetime`, `datetime2(n)` | `date`, `datetime2(m)` | always for `date`; for `datetime2(m)`, a `date` or `smalldatetime`, a `datetime` when m ≥ 3, a `datetime2(n)` when m ≥ n |
+| anything else | | not proved: `arithmetic-overflow` |
+
+A literal is checked by its value instead (`ISNULL(@d, 0)` into `decimal(10,2)` fits). An assignment to a variable converts
+the same way, so a value assigned to a narrower variable has `arithmetic-overflow` too; so does a table-valued function's
+argument ("Table-valued functions" below). A conversion of JSON, or to a type that is not modelled (binary, `xml`), is not
+modelled.
+
+### `COALESCE` and `ISNULL`
+
+- **`COALESCE(a, b, …)`** is of the type of highest precedence (`ScalarType.Union`,
+  `Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments`): strings give `nvarchar` if any is national,
+  `varchar` if any varies, of the longest length, max if any is; exact numbers with a decimal give a decimal with every
+  argument's integer digits and the largest scale (an `int` column or variable counts as `decimal(10,0)`, an integer literal
+  as its own digits), named `decimal` or `numeric` as its first decimal argument is; integers give the widest; a `date` with a
+  `datetime2(n)` gives the `datetime2(n)`. Every argument then converts without overflow. Others (a string with a number,
+  money, other mixes of dates) are not modelled. It is never null when an argument is never null, except: it is
+  `CASE WHEN a IS NOT NULL THEN a …`, which reads an argument twice, so a subquery or a call before the never-null argument may
+  be NULL the second time (`Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot`: NULL a quarter of the time
+  over a subquery NULL half the time); such an argument's reasons stay. An aggregate is computed once for its group and is
+  safe to read twice (the same test). A `NULL` literal adds nothing but its place.
+- **`ISNULL(a, b)`** is `a`'s type (`b`'s when `a` is the `NULL` literal), to which `b` is converted, a longer string cut short
+  (`Isnull_converts_its_second_argument_to_the_firsts_type_cutting_a_string_short`). It reads `a` once: never null when `a` is
+  never null (then it is `a`, with its facets), or when `b` is never null and converts to `a`'s type without overflow
+  (`ISNULL(@tinyint, 1000)` is NULL under the caller's options, observed). A value that may be `b` has only the type's facets.
+
+### Strings
+
+- **`CONCAT(a, b, …)`** and **`CONCAT_WS(sep, a, b, …)`** are never null, whatever is null (NULL counts as empty); `nvarchar`
+  if any argument or the separator is; as long as their arguments together plus the separator between each two, NULL
+  counting nothing; max if any is, otherwise cut at 8000 bytes (4000 characters for `nvarchar`), which the value is too
+  (`Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null`). A string argument counts its length, an
+  `int` 12 and a `bit` 1; an argument of another type is not modelled.
+- **String `+`** is described the same way (a `NULL` literal counts 1) and is null when an operand is. With
+  `CONCAT_NULL_YIELDS_NULL` off, `NULL + 'x'` is `'x'` (`With_concat_null_yields_null_off_a_string_plus_null_is_the_string`):
+  less often null, so the claim holds under either setting, and nothing needs assuming about it. On is SQL Server's default,
+  and off is deprecated; a procedure that sets it off is unknown, as before (`IsHarmless`). `+` of a string and a number is
+  arithmetic, which may fail, and is not modelled.
+
+### Arithmetic and `SUM`
+
+- **`+`, `-`, `*`, `/`** on exact numbers (`ScalarType.Arithmetic`, `Decimal_arithmetic_has_the_documented_precision_and_scale`):
+  two integers give the wider, and may overflow; with a decimal, `+` and `-` give scale max(s1, s2) and precision
+  max(p1 − s1, p2 − s2) + scale + 1, `*` gives p1 + p2 + 1 and s1 + s2, `/` gives scale max(6, s1 + p2 + 1) and precision
+  p1 − s1 + s2 + scale; `numeric` when either operand is. Within 38 digits a decimal's `+`, `-` and `*` cannot overflow; `/`
+  can divide by zero. Beyond 38 digits SQL Server cuts the scale by rules not modelled, so it is unknown; so are money, float
+  and dates. Unary `-` keeps the type (an integer's can overflow at its least value). This is only what the fixtures need, not
+  the whole numeric tower.
+- **`SUM(x)`** (`Sum_widens_its_argument`) is `int` for an integer narrower than `bigint`, `bigint`, `decimal(38, s)`,
+  `money`, `float`; NULL over no rows without `GROUP BY` (`empty-aggregate`) and when every value is NULL; and it may overflow,
+  except a decimal of at most 19 digits: fewer than 2^63 values below 10^(p − s) each sum to less than 10^(38 − s), and no
+  query reads 2^63 rows (at a billion a second, 292 years), an assumption written here rather than observed. So
+  `COALESCE(SUM(x), 0)` is never null, and `CONVERT(decimal(19,2), COALESCE(SUM(x), 0))` may overflow.
 
 ## Refinement
 
@@ -437,8 +531,8 @@ themselves: what a query proved is what its row holds.
   removes it.
 - `MIN` and `MAX` return one of their argument's values: its type and facets, null when the argument can be, and
   `empty-aggregate` without `GROUP BY` (`An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows`,
-  `An_aggregate_with_group_by_returns_no_row_over_no_rows`). `SUM`, `AVG` and the rest are not modelled yet: they change
-  the type, and `SUM` can overflow as `COUNT` does.
+  `An_aggregate_with_group_by_returns_no_row_over_no_rows`). `SUM` is typed since slice 6f ("Expressions" above);
+  `AVG` and the rest are not modelled yet.
 - A scalar subquery is its one column's value, with its type and facets, and `empty-subquery` unless its query returns
   exactly one row (`A_scalar_subquery_of_an_aggregate_without_group_by_always_has_a_value_for_count`). A `FOR JSON` subquery
   is NULL over no rows, so an array it builds has at least one item, and at most one where its query returns at most one.
@@ -473,6 +567,20 @@ only when it is exactly one row (an aggregate without `GROUP BY`), never for an 
 its own `WHERE` fixes and the history repeats; a derived table, `VALUES` list or view of at most one row (for an `APPLY`'s right side, at most one per
 outer row) counts as fixed already.
 
+**Read uncommitted** (slice 6f, decided 10 Nov 2026 in `haruspex-design.md`, "What can and cannot be typed"). Under read
+uncommitted a scan can return a row twice, or miss one, while pages split under it. So a source read with a `NOLOCK` or
+`READUNCOMMITTED` hint (`BoundSource.Uncommitted`; on a view the hint applies to every table under it), and every source of a
+statement after `SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED` on any path (`FlowState.ReadUncommitted`), is treated as
+history is: no key holds, and only a relation of exactly one row counts as fixed. The duplicate row itself is not observed (it
+needs another session splitting pages during the scan); Microsoft documents it, and dropping the claim only claims less. What
+is observed is how far the isolation level reaches
+(`A_procedures_isolation_level_holds_in_the_procedures_it_calls_and_ends_when_it_returns`): a procedure's callees run under it
+(`CallContext.ReadUncommitted`), and the caller's own level is back when the procedure that set another returns. A
+table-valued function takes no table hint, but one inside its body counts, as in a view. Other hints (`READCOMMITTED`,
+`ROWLOCK`, `INDEX`) change nothing, and `READCOMMITTED` on a table in a statement that reads uncommitted is not read, which
+only claims less. **Assumed, and stated:** an isolation level set by the outermost caller is not visible in the project, and
+haruspex assumes it is not read uncommitted; being strict would remove every key-based claim.
+
 The comparison must be the key's own equality: when SQL Server converts the key to the value's type, several rows can
 match. `'5'` and `'05'` both equal 5 (`A_comparison_that_converts_the_key_can_match_several_rows`), and a `varchar` key
 under a SQL collation compared with an `nvarchar` value is compared by Unicode rules, under which `'ss'` and `'ß'` are equal
@@ -482,7 +590,7 @@ carry no `COLLATE` of its own (`InKeysType` lists them).
 
 Not modelled yet: keys of temporary tables, table variables, CTEs and derived tables (a derived table's at-most-one
 bound is); `CREATE UNIQUE INDEX` (a separate
-statement) and `ALTER TABLE … ADD CONSTRAINT … UNIQUE`; `SUM` and `AVG`; refinement of `UPDATE … FROM` and
+statement) and `ALTER TABLE … ADD CONSTRAINT … UNIQUE`; `AVG`; refinement of `UPDATE … FROM` and
 `SELECT @v = …` by their filters. Each only claims less.
 
 ## APPLY
@@ -518,7 +626,7 @@ side is evaluated once for each row of its left input. Each rule is observed in 
   Otherwise many.
 - **Claims less, written down.** The outer query's own `WHERE` facts are not yet pushed while the right side is read
   (binding happens before), so an outer column read *inside* the applied query is not refined by the outer `WHERE`. An
-  `APPLY` of a table-valued function stays `unsupported-source` (slice 6f); `CROSS JOIN` stays unmodelled, as before.
+  `APPLY` of a table-valued function is read since slice 6f ("Table-valued functions" below); `CROSS JOIN` stays unmodelled.
 
 ### `VALUES`
 
@@ -543,8 +651,8 @@ rules above. `WITH SCHEMABINDING` only stops its tables changing; table hints su
 not what it returns (`Noexpand_is_refused_on_a_view_without_an_index_and_on_one_with_it_returns_the_same_rows`). A view
 outside the project stays `unresolved-table`, as does one defined more than once (created and altered: which definition
 applies depends on the order the scripts run), and one that reads itself through other views (SQL Server refuses it). A
-view whose query is a `UNION` or has `FOR XML`/`FOR JSON` is `unsupported-query`. Views are read in procedures only; a
-function's body still leaves them unresolved.
+view whose query is a `UNION` or has `FOR XML`/`FOR JSON` is `unsupported-query`. Views are read in procedures and, since
+slice 6f, in functions' bodies too (a table-valued function's, and a scalar function's subqueries).
 
 **`SELECT *` in a view** is expanded (`Expand`): each source's columns in order, a table's as declared and a relation's as
 named, and `alias.*` for one source. SQL Server binds it when the view is created and keeps that list until the view is
@@ -562,3 +670,34 @@ bare columns without `COLLATE`, is a key of the view, compared in the base colum
 only claiming less: a view grouped by a whole key (`ROLLUP` and its kind would repeat it, and telling them apart is not
 worth it yet), and a view with a join that matches at most one row (proving that needs the joined side's key fixed by its
 `ON`). A view's relation also carries its query's cardinality, so a view of at most one row counts as fixed.
+
+## Table-valued functions
+
+A call of a table-valued function in `FROM`, a join or `APPLY` (`ProcedureAnalyzer.TableFunctions.cs`, slice 6f) is a relation,
+bound like a derived table: its arguments read the enclosing queries' columns, and an `APPLY`'s left input's
+(`CROSS APPLY shop.order_totals(o.order_id) AS t`). Each rule is observed in `TableFunctionObservationTests`.
+
+- **Arguments.** Each is converted to its parameter's type as an assignment is: a string cut short, an overflow an error or,
+  under the caller's options, NULL (`An_argument_is_converted_to_its_parameters_type_as_an_assignment_is`). So a parameter
+  holds the argument's value, null exactly when the argument may be (and for `arithmetic-overflow` when it may not fit), and an
+  argument of the parameter's own type keeps its facets. `DEFAULT` passes the parameter's default
+  (`Default_passes_the_parameters_default`). An argument not modelled is any value of the parameter's type, or null
+  (`parameter`).
+- **An inline function** is read from its query with those values, as a view is (`ReadInline`): in its own file and with its
+  own `ANSI_NULLS`, its parameters read as constants, so a key compared with one is fixed, and an argument never null stays
+  never null where the body passes it through. It is read once per function and set of argument values
+  (`ViewSummaries.Function`). Its keys pass through as a view's do, and its rows are its query's, for each call: an
+  ungrouped aggregate is one row for every outer row under either APPLY
+  (`An_aggregate_function_applied_gives_one_row_for_every_outer_row`), so it keeps the outer bound and is never null-extended;
+  `TOP (1)` is at most one.
+- **A multi-statement function** is its declared return table, whatever its body does (`ReadReturnTable`): the table enforces
+  its declaration, so a NULL into a `NOT NULL` column, a repeated `PRIMARY KEY` or `UNIQUE` value (one NULL at most) and a value
+  its `CHECK` refuses each fail the call (`A_multi_statement_functions_return_table_enforces_its_constraints`). Its columns
+  are the declared ones, with their CHECK facets, null as declared (`nullable-column` at `<function>.<column>`), and its keys
+  are the declared ones. How many rows it returns is not read.
+- **What a call may not say.** A column list at the call is refused (317), and so is a table hint (a syntax error):
+  `A_call_takes_no_column_alias_and_no_table_hint`. A column list is `unsupported-source`.
+- **Not modelled**, each unknown with a reason: a function the project does not define or defines twice, a scalar function
+  in `FROM` (`unresolved-table`), a CLR function (`external-code`), a function of another database, an inline function whose
+  query is a `UNION` or uses `SELECT *` (`unsupported-query`: a view's star is bound when it is created, and whether a
+  function's is too was not observed), and one that reads itself through others.

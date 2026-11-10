@@ -98,9 +98,10 @@ public static class Coverage
 
     /// <summary>
     /// Reasons to be null that no seed can reach: COUNT's overflow needs more than 2,147,483,647 rows and a caller's session
-    /// options. It is observed instead (RefinementObservationTests), and a field null only for it need not be seen null.
+    /// options, and any other overflow those options (the runs use the defaults, under which it is an error). They are observed
+    /// instead (RefinementObservationTests, ExpressionObservationTests), and a field null only for them need not be seen null.
     /// </summary>
-    private static readonly HashSet<string> Unseedable = [IrNullRules.CountOverflow];
+    private static readonly HashSet<string> Unseedable = [IrNullRules.CountOverflow, IrNullRules.ArithmeticOverflow];
 
     private static void Element(IrDocument document, IrType type, bool nullable, string path, Action<string, Seen> need, HashSet<string> walked)
     {

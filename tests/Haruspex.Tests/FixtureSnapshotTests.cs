@@ -23,6 +23,7 @@ public class FixtureSnapshotTests
         ["refine"] = new(() => SqlProject.Load(TestPaths.Fixture("refine"))),
         ["dml"] = new(() => SqlProject.Load(TestPaths.Fixture("dml"))),
         ["apply"] = new(() => SqlProject.Load(TestPaths.Fixture("apply"))),
+        ["tabs"] = new(() => SqlProject.Load(TestPaths.Fixture("tabs"))),
     };
 
     /// <summary>Every fixture procedure, with its fixture. Procedure ids are unique across fixtures.</summary>
@@ -95,6 +96,16 @@ public class FixtureSnapshotTests
         ["mart.purchases_json"] = "apply",
         ["mart.purchase_lines"] = "apply",
         ["mart.price_versions"] = "apply",
+        ["cafe.tab_summary"] = "tabs",
+        ["cafe.tab_receipt"] = "tabs",
+        ["cafe.guest_tab_list"] = "tabs",
+        ["cafe.tab_lines_list"] = "tabs",
+        ["cafe.guests_with_open_tab"] = "tabs",
+        ["cafe.guest_labels"] = "tabs",
+        ["cafe.dirty_tab"] = "tabs",
+        ["cafe.open_tabs_payload"] = "tabs",
+        ["cafe.guest_spending"] = "tabs",
+        ["cafe.menu_prices"] = "tabs",
         ["flow.region_report"] = "flow",
         ["flow.region_sales"] = "flow",
         ["flow.sales_by_mode"] = "flow",

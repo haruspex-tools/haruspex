@@ -1,0 +1,135 @@
+{
+  "irVersion": "0.11",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "cafe.guest_labels",
+      "name": "GuestLabels",
+      "kind": "procedure",
+      "at": "procedures/guest_labels.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GuestLabelsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GuestLabelsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "cafe.guest_labels",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "guest_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "display_name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "full_label",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(63)",
+            "maxLength": {
+              "value": 63,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(63)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "greeting",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(41)",
+            "maxLength": {
+              "value": 41,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(41)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "nickname",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "cafe.guest.nickname"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

@@ -213,14 +213,16 @@ public class ApplyViewTests
     }
 
     [Fact]
-    public void Apply_of_a_table_valued_function_is_not_modelled_yet()
+    public void Apply_of_a_table_valued_function_is_typed_from_its_body()
     {
+        // Slice 6f (TableFunctionTests has the rules); it was unsupported-source before.
         var doc = Infer(
             ("tables.sql", Tables),
             ("f.sql", "CREATE FUNCTION dbo.f(@id int) RETURNS TABLE AS RETURN SELECT u.label FROM dbo.u AS u WHERE u.t_id = @id;"),
             ("p.sql", "CREATE PROCEDURE dbo.p AS SELECT t.id, f.label FROM dbo.t AS t CROSS APPLY dbo.f(t.id) AS f;"));
 
-        Assert.Equal(IrUnknownReasons.UnsupportedSource, Unknown(doc, "results[0][].label").Reason);
+        Typed(doc);
+        Assert.Empty(Rules(doc, "label"));
     }
 
     // ---- APPLY: cardinality ----------------------------------------------------------------------------------------------

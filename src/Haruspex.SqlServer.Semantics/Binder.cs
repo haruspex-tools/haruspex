@@ -154,6 +154,10 @@ public sealed class Binder(DatabaseModel model, string file)
                 // Its alias is required, and names it in this scope only.
                 scope.Add(Sided(new BoundSource(derived.Alias?.Value, null, null, optionalSideOf, derivedRelation)));
                 break;
+            case SchemaObjectFunctionTableReference call when scope.Locals?.TableFunction(call, lateral ?? scope.Parent) is { } functionRelation:
+                // A table-valued function takes no table hints (a syntax error), so it is never read uncommitted by its own.
+                scope.Add(Sided(new BoundSource(call.Alias?.Value ?? call.SchemaObject.BaseIdentifier.Value, null, null, optionalSideOf, functionRelation)));
+                break;
             case InlineDerivedTable values when scope.Locals?.Values(values, lateral ?? scope.Parent) is { } valuesRelation:
                 scope.Add(Sided(new BoundSource(values.Alias?.Value, null, null, optionalSideOf, valuesRelation)));
                 break;

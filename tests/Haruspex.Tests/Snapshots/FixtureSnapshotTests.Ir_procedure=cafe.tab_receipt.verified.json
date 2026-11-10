@@ -1,0 +1,279 @@
+{
+  "irVersion": "0.11",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "cafe.tab_receipt",
+      "name": "TabReceipt",
+      "kind": "procedure",
+      "at": "procedures/tab_receipt.sql:3:1",
+      "parameters": [
+        {
+          "name": "@tab_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "TabReceiptRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/tab_receipt.sql:8:1"
+            }
+          ],
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "TabReceiptItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "cafe.tab_receipt",
+        "path": "results[0].items[]"
+      },
+      "fields": [
+        {
+          "name": "line",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(38)",
+            "maxLength": {
+              "value": 38,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(38)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "ref",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(16)",
+            "maxLength": {
+              "value": 16,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(16)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "cafe.menu_item.short_code"
+            }
+          ]
+        },
+        {
+          "name": "amount",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,2)",
+            "digits": {
+              "precision": 19,
+              "scale": 2,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "discount",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(5,2)",
+            "digits": {
+              "precision": 5,
+              "scale": 2,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            },
+            "min": {
+              "value": -999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            },
+            "max": {
+              "value": 999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "cafe.tab_item.discount"
+            }
+          ]
+        }
+      ]
+    },
+    "TabReceiptRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "cafe.tab_receipt",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "tab",
+          "type": {
+            "ref": "TabReceiptTab"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "items",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "TabReceiptItem"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/tab_receipt.sql:11:8"
+            }
+          ]
+        }
+      ]
+    },
+    "TabReceiptTab": {
+      "kind": "object",
+      "identity": {
+        "procedure": "cafe.tab_receipt",
+        "path": "results[0].tab"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "guest",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(63)",
+            "maxLength": {
+              "value": 63,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(63)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note_number",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "cafe.tab.note"
+            },
+            {
+              "rule": "failed-conversion",
+              "at": "procedures/tab_receipt.sql:10:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}
