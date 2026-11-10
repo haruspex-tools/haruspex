@@ -157,7 +157,17 @@ internal sealed partial class ProcedureAnalyzer
         var keys = new Dictionary<BoundSource, List<List<KeyColumn>>>(ReferenceEqualityComparer.Instance);
         foreach (var source in scope.Sources)
         {
-            if (source.Table is { } table)
+            if (source.History)
+            {
+                // History rows repeat every key; a relation of at most one row still is one (its TOP or aggregate is
+                // applied over the history), so only its keys go.
+                keys[source] = [];
+                if (source.Local is { } historic && locals?.Values(historic) is { Why: null, Rows: not IrCardinality.Many })
+                    fixedSources.Add(source);
+                else if (source.Table is null && source.Local is null)
+                    return false;
+            }
+            else if (source.Table is { } table)
             {
                 keys[source] = [.. SchemaRules.EnforcedKeys(table).Select(k => k.Columns
                     .Select(c => new KeyColumn(c, -1, SchemaRules.ResolveType(model, table.Column(c)?.Type)?.BuiltIn.Name)).ToList())];

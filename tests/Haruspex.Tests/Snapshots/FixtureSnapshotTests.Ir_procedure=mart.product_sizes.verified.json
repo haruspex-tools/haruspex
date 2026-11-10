@@ -8,7 +8,7 @@
       "id": "mart.product_sizes",
       "name": "ProductSizes",
       "kind": "procedure",
-      "at": "procedures/product_sizes.sql:2:1",
+      "at": "procedures/product_sizes.sql:3:1",
       "parameters": [],
       "results": [
         {
@@ -83,6 +83,22 @@
               "unit": "utf16",
               "from": {
                 "type": "nvarchar(80)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "dimension",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(6)"
               }
             }
           },

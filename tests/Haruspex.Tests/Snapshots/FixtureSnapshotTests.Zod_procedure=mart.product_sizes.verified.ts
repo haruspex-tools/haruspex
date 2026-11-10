@@ -6,6 +6,7 @@ export const ProductSizesRowSchema = z.object({
   product_id: z.int32(),
   code: z.string().max(20) /* varchar(20) counts bytes: exact in a single-byte collation, an upper bound otherwise; no collation is declared */,
   label: z.string().max(80),
+  dimension: z.string().max(6) /* varchar(6) counts bytes: exact in a single-byte collation, an upper bound otherwise; no collation is declared */,
   size_mm: z.int32().nullable(),
 })
 export type ProductSizesRow = z.infer<typeof ProductSizesRowSchema>

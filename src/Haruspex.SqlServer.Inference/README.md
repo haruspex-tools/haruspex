@@ -466,7 +466,9 @@ column of a source already fixed; or is tested `IS NULL`, since a key holds one 
 (`A_unique_constraint_allows_one_null_only`). When every source is fixed, there is at most one row. A condition counts
 from `WHERE`'s top-level conjuncts, or from a join's `ON` for the sources inside that join (the optional side, for an
 outer join, which then matches at most one row per kept row); never under `OR`. Tables are keyed, and views by the rule
-in "Views" below; a derived table, `VALUES` list or view of at most one row (for an `APPLY`'s right side, at most one per
+in "Views" below, except a source read `FOR SYSTEM_TIME` `ALL`, `BETWEEN`, `FROM … TO` or `CONTAINED IN`, table or view,
+whose history rows repeat every key (`For_system_time_other_than_as_of_repeats_a_key_through_a_table_or_a_view`; `AS OF`
+returns one version and keeps it; slice 6e, which fixed this for tables read directly too); a derived table, `VALUES` list or view of at most one row (for an `APPLY`'s right side, at most one per
 outer row) counts as fixed already.
 
 The comparison must be the key's own equality: when SQL Server converts the key to the value's type, several rows can
@@ -523,7 +525,10 @@ name-an-expression idioms) or in `FROM`. It has as many rows as it lists, every 
 A column's type is the one of highest precedence among its rows', to which each value is converted
 (`A_values_column_takes_the_type_of_highest_precedence_among_its_rows`: `int` and `2.5` give `numeric(2,1)`), which is not
 modelled: so a column is typed only when it has one row, or every row's value has the same shape (then each value's claims
-hold whatever the common type), and is nullable when any row's value is. JSON passes through it as JSON
+hold whatever the common type), and is nullable when any row's value is. A column of string literals only (the unpivot's
+label) is never null, `varchar` of the longest literal (at least 1), or `nvarchar` when any is `N'…'`
+(`A_values_column_of_string_literals_is_a_string_of_the_longest`); a `varchar` literal beyond ASCII is left out, since its
+length in bytes depends on the database's code page. String literals are not read anywhere else yet. JSON passes through it as JSON
 (`Json_passes_through_a_values_list_as_json`). Anything else is `unsupported-expression`.
 
 ## Views
@@ -548,7 +553,8 @@ whose `*` differs from its declared columns (a `HIDDEN` period column, or a grap
 `SELECT *` in a procedure is still not expanded: the brief asked for views only.
 
 **Keys pass through a view only when proved** (`ViewKeys`). A view that reads one table, with no join, `APPLY` or
-`GROUP BY`, returns some of the table's rows, each once (`A_view_over_one_table_returns_each_of_its_rows_at_most_once`);
+`GROUP BY`, and does not read it `FOR SYSTEM_TIME` other than `AS OF`, returns some of the table's rows, each once
+(`A_view_over_one_table_returns_each_of_its_rows_at_most_once`);
 `WHERE`, `TOP` and `DISTINCT` only drop rows. So each enforced key of the table whose columns the view selects whole, as
 bare columns without `COLLATE`, is a key of the view, compared in the base column's type (`InKeysType`). Left out, each
 only claiming less: a view grouped by a whole key (`ROLLUP` and its kind would repeat it, and telling them apart is not

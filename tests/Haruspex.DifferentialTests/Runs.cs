@@ -53,7 +53,7 @@ public static class Runs
     private const string NoBakery = "DELETE FROM calls.delivery; DELETE FROM calls.batch; DELETE FROM calls.oven;";
     private const string NoLibrary = "DELETE FROM lend.loan; DELETE FROM lend.copy; DELETE FROM lend.title; DELETE FROM lend.member;";
     private const string NoLoans = "DELETE FROM lend.loan;";
-    private const string NoMarket = "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase; DELETE FROM mart.product; DELETE FROM mart.customer;";
+    private const string NoMarket = "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase; DELETE FROM mart.price; DELETE FROM mart.product; DELETE FROM mart.customer;";
     private const string NoPurchases = "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase;";
 
     private static readonly Dictionary<string, object?> None = [];
@@ -269,6 +269,10 @@ public static class Runs
         new("apply: list_products", "apply", "mart.list_products", None),
         new("apply: purchase_overview", "apply", "mart.purchase_overview", None),
         new("apply: purchase_overview, none", "apply", "mart.purchase_overview", None, NoMarket),
+        new("apply: purchase_lines, two lines", "apply", "mart.purchase_lines", new Dictionary<string, object?> { ["@purchase_id"] = 10 }),
+        new("apply: purchase_lines, none", "apply", "mart.purchase_lines", new Dictionary<string, object?> { ["@purchase_id"] = 11 }),
+        new("apply: price_versions, changed once", "apply", "mart.price_versions", new Dictionary<string, object?> { ["@product_id"] = 101 }),
+        new("apply: price_versions, never changed", "apply", "mart.price_versions", new Dictionary<string, object?> { ["@product_id"] = 100 }),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

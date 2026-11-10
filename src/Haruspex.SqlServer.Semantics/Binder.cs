@@ -140,7 +140,12 @@ public sealed class Binder(DatabaseModel model, string file)
                 AddSources(parenthesis.Join, scope, optionalSideOf, lateral, inside);
                 break;
             case NamedTableReference named:
-                scope.Add(Sided(Named(named, optionalSideOf, scope.Locals)));
+                // FOR SYSTEM_TIME other than AS OF reads history too, on a table or on a view (observed:
+                // For_system_time_other_than_as_of_repeats_a_key_through_a_table_or_a_view).
+                scope.Add(Sided(Named(named, optionalSideOf, scope.Locals)) with
+                {
+                    History = named.TemporalClause is { TemporalClauseType: not TemporalClauseType.AsOf },
+                });
                 break;
             case QueryDerivedTable derived when scope.Locals?.Derived(derived, lateral ?? scope.Parent) is { } derivedRelation:
                 // Its alias is required, and names it in this scope only.

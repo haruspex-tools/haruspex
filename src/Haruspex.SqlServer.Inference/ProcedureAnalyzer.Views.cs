@@ -39,7 +39,8 @@ internal sealed partial class ProcedureAnalyzer
     /// type is the one of highest precedence among its rows', to which every value is converted (observed:
     /// A_values_column_takes_the_type_of_highest_precedence_among_its_rows), which is not modelled: so a column is typed only
     /// when its rows' values all have the same shape, whose claims then hold of each value whatever the type, or when there
-    /// is one row. JSON passes through as JSON (observed: Json_passes_through_a_values_list_as_json).
+    /// is one row, or when every row is a string literal (<see cref="Literals"/>), whose common type is known. JSON passes
+    /// through as JSON (observed: Json_passes_through_a_values_list_as_json).
     /// </summary>
     private LocalRelationValues ValuesList(InlineDerivedTable table, BindingScope? outer)
     {
@@ -61,6 +62,12 @@ internal sealed partial class ProcedureAnalyzer
         for (var i = 0; i < names.Count; i++)
         {
             var column = rows.Select(r => r[i]).ToList();
+            if (Literals(table.RowValues.Select(r => r.ColumnValues[i]).ToList(), at) is { } literals)
+            {
+                values.Add(literals);
+                continue;
+            }
+
             if (column.FirstOrDefault(v => v.Shape is UnknownShape) is { } unknown)
             {
                 values.Add(unknown);
@@ -82,6 +89,24 @@ internal sealed partial class ProcedureAnalyzer
             Rows = rows.Count == 1 ? IrCardinality.One : IrCardinality.Many,
             AtLeastOne = true,
         };
+    }
+
+    /// <summary>
+    /// A VALUES column whose every row is a string literal (the label of the unpivot idiom): never null, of type varchar of
+    /// the longest literal, at least 1, or nvarchar when any is <c>N'…'</c> (observed:
+    /// A_values_column_of_string_literals_is_a_string_of_the_longest). A varchar literal's length counts bytes of the
+    /// database's code page, which the project does not show, so one with a character beyond ASCII is left out. Null when the
+    /// column is anything else. Only VALUES reads string literals so far.
+    /// </summary>
+    private Value? Literals(List<ScalarExpression> column, Haruspex.Diagnostics.SourceLocation at)
+    {
+        var literals = column.Select(Strip).OfType<StringLiteral>().ToList();
+        if (literals.Count != column.Count || literals.Any(l => l.Collation is not null || (!l.IsNational && l.Value.Any(c => c > '\u007f'))))
+            return null;
+        var national = literals.Any(l => l.IsNational);
+        var length = Math.Max(1, literals.Max(l => l.Value.Length));
+        var type = new SqlType(SqlTypeKind.BuiltIn, national ? "nvarchar" : "varchar", [length.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
+        return new Value(SqlTypes.ToConvertedShape(model, type, at), []);
     }
 
     // ---- views --------------------------------------------------------------------------------------------------------
@@ -134,7 +159,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private List<RelationKey> ViewKeys(QuerySpecification query, Row row)
     {
-        if (query.GroupByClause is not null || row.Sources is not [{ Table: { } table, OptionalSideOf: null } source])
+        if (query.GroupByClause is not null || row.Sources is not [{ Table: { } table, OptionalSideOf: null, History: false } source])
             return [];
 
         var keys = new List<RelationKey>();

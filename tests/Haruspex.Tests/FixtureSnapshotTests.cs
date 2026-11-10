@@ -93,6 +93,8 @@ public class FixtureSnapshotTests
         ["mart.product_sizes"] = "apply",
         ["mart.purchase_overview"] = "apply",
         ["mart.purchases_json"] = "apply",
+        ["mart.purchase_lines"] = "apply",
+        ["mart.price_versions"] = "apply",
         ["flow.region_report"] = "flow",
         ["flow.region_sales"] = "flow",
         ["flow.sales_by_mode"] = "flow",

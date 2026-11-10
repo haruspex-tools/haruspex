@@ -281,6 +281,28 @@ public class ApplyViewTests
         Assert.Equal(IrUnknownReasons.UnsupportedExpression, Unknown(doc, "results[0][].c").Reason);
     }
 
+    [Theory]
+    [InlineData("('width', t.n), ('height', t.id)", "varchar", 6)]
+    [InlineData("('a', t.n), ('', t.id)", "varchar", 1)]
+    [InlineData("('', t.n)", "varchar", 1)]
+    [InlineData("('ab', t.n), (N'xyz', t.id)", "nvarchar", 3)]
+    public void A_values_column_of_string_literals_is_a_non_null_string_of_the_longest(string rows, string sql, int length)
+    {
+        // A_values_column_of_string_literals_is_a_string_of_the_longest: the unpivot idiom's label column.
+        var doc = Procedure($"SELECT v.label, v.size FROM dbo.t AS t CROSS APPLY (VALUES {rows}) AS v (label, size);");
+
+        Assert.Empty(Rules(doc, "label"));
+        var scalar = Assert.IsType<IrScalar>(Field(doc, "label").Type);
+        Assert.Equal($"{sql}({length})", scalar.Sql);
+        Assert.Equal(length, scalar.Facets?.Length?.Value);
+    }
+
+    [Theory]
+    [InlineData("('caf\u00e9'), ('tea')")]
+    [InlineData("(t.name), (N'zz')")]
+    public void A_values_column_of_other_strings_is_unknown(string rows) =>
+        Assert.Equal(IrUnknownReasons.UnsupportedExpression, Unknown(Procedure($"SELECT v.label FROM dbo.t AS t CROSS APPLY (VALUES {rows}) AS v (label);"), "results[0][].label").Reason);
+
     [Fact]
     public void A_values_list_in_from_is_modelled_too()
     {
@@ -439,6 +461,38 @@ public class ApplyViewTests
     {
         // A_view_over_one_table_returns_each_of_its_rows_at_most_once.
         var doc = Procedure($"SELECT x.id FROM dbo.w AS x WHERE {where};", "@id int", view);
+
+        Assert.Equal(expected, Rows(doc));
+    }
+
+    private const string Temporal = """
+        CREATE TABLE dbo.h (
+            id int NOT NULL CONSTRAINT pk_h PRIMARY KEY, name nvarchar(10) NOT NULL,
+            vf datetime2 GENERATED ALWAYS AS ROW START NOT NULL, vt datetime2 GENERATED ALWAYS AS ROW END NOT NULL,
+            PERIOD FOR SYSTEM_TIME (vf, vt))
+        WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.h_history));
+        GO
+        CREATE VIEW dbo.h_all AS SELECT h.id, h.name FROM dbo.h FOR SYSTEM_TIME ALL AS h;
+        GO
+        CREATE VIEW dbo.h_now AS SELECT h.id, h.name FROM dbo.h AS h;
+        GO
+        """;
+
+    [Theory]
+    [InlineData("dbo.h FOR SYSTEM_TIME ALL AS x", IrCardinality.Many)]
+    [InlineData("dbo.h FOR SYSTEM_TIME BETWEEN '2020-01-01' AND '2021-01-01' AS x", IrCardinality.Many)]
+    [InlineData("dbo.h FOR SYSTEM_TIME FROM '2020-01-01' TO '2021-01-01' AS x", IrCardinality.Many)]
+    [InlineData("dbo.h FOR SYSTEM_TIME CONTAINED IN ('2020-01-01', '2021-01-01') AS x", IrCardinality.Many)]
+    [InlineData("dbo.h FOR SYSTEM_TIME AS OF '2020-01-01' AS x", IrCardinality.AtMostOne)]
+    [InlineData("dbo.h AS x", IrCardinality.AtMostOne)]
+    [InlineData("dbo.h_all AS x", IrCardinality.Many)]
+    [InlineData("dbo.h_now FOR SYSTEM_TIME ALL AS x", IrCardinality.Many)]
+    [InlineData("dbo.h_now FOR SYSTEM_TIME AS OF '2020-01-01' AS x", IrCardinality.AtMostOne)]
+    [InlineData("dbo.h_now AS x", IrCardinality.AtMostOne)]
+    public void A_key_does_not_hold_over_history(string from, IrCardinality expected)
+    {
+        // For_system_time_other_than_as_of_repeats_a_key_through_a_table_or_a_view.
+        var doc = Infer(("tables.sql", Tables + "\n" + Temporal), ("p.sql", $"CREATE PROCEDURE dbo.p @id int AS SELECT x.name FROM {from} WHERE x.id = @id;"));
 
         Assert.Equal(expected, Rows(doc));
     }

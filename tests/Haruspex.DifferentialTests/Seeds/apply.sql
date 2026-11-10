@@ -23,3 +23,16 @@ VALUES (10, 1, 100, 2, 9.50, NULL),
        (10, 2, 101, 1, 3.25, 0.50),
        (12, 1, 101, 4, 3.25, NULL),
        (13, 1, 102, 1, 12.00, NULL);
+GO
+
+-- Prices, then a change to one of them in a later batch, so its history row has a period of its own (an UPDATE in the
+-- same transaction leaves one of no length, which no FOR SYSTEM_TIME clause returns).
+INSERT INTO mart.price (product_id, amount)
+VALUES (100, 9.50),
+       (101, 3.25);
+GO
+
+WAITFOR DELAY '00:00:00.050';
+GO
+
+UPDATE mart.price SET amount = 3.75 WHERE product_id = 101;

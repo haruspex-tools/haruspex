@@ -58,6 +58,11 @@ public sealed class BindingScope
 /// source has no row, so a relation that always has one is never null-extended; which relations those are is the reader's
 /// to decide.
 /// </param>
+/// <param name="History">
+/// Whether it is read <c>FOR SYSTEM_TIME</c> <c>ALL</c>, <c>BETWEEN</c>, <c>FROM … TO</c> or <c>CONTAINED IN</c>, which returns
+/// a system-versioned table's history rows too, one per version of a key; so no key of it holds. <c>AS OF</c> returns one
+/// version, and is not history.
+/// </param>
 public sealed record BoundSource(
     string? Alias,
     Table? Table,
@@ -65,7 +70,8 @@ public sealed record BoundSource(
     SourceLocation? OptionalSideOf,
     LocalRelation? Local = null,
     bool OuterApply = false,
-    bool WholeApplied = false);
+    bool WholeApplied = false,
+    bool History = false);
 
 /// <summary>What a column reference binds to.</summary>
 public abstract record ColumnBinding;

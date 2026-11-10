@@ -127,6 +127,16 @@ public class ApplyViewObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_values_column_of_string_literals_is_a_string_of_the_longest()
+    {
+        // varchar literals give varchar of the longest (at least 1: '' alone is varchar(1)); one N'' literal makes it nvarchar.
+        const string Type = "CAST(SQL_VARIANT_PROPERTY(v.a, 'BaseType') AS sysname) AS t, CAST(SQL_VARIANT_PROPERTY(v.a, 'MaxLength') AS int) AS l";
+        Assert.Equal("t,l,a: varchar,6,width;varchar,6,height;varchar,6,", await Select($"SELECT {Type}, v.a FROM (VALUES ('width'), ('height'), ('')) AS v (a);"));
+        Assert.Equal("t,l: varchar,1", await Select($"SELECT {Type} FROM (VALUES ('')) AS v (a);"));
+        Assert.Equal("t,l: nvarchar,6;nvarchar,6", await Select($"SELECT {Type} FROM (VALUES ('a'), (N'bcd')) AS v (a);"));
+    }
+
+    [Fact]
     public async Task Json_passes_through_a_values_list_as_json()
     {
         // json_query and a constructor in a VALUES row nest as JSON in FOR JSON, as through a derived table: not as text.
@@ -192,6 +202,40 @@ public class ApplyViewObservationTests(SqlServerFixture server)
         Assert.Equal("a,b: 1,null;2,5", (await Run(setup, "SELECT a, b FROM dbo.obs_bound WITH (NOEXPAND) ORDER BY a;")).ToString());
         Assert.Equal("a,b: 1,null;2,5", (await Run(setup, "SELECT a, b FROM dbo.obs_bound ORDER BY a;")).ToString());
         Assert.Equal(8171, (await Run(setup, "SELECT a, b FROM dbo.obs_plain WITH (NOEXPAND);")).Error);
+    }
+
+    [Fact]
+    public async Task For_system_time_other_than_as_of_repeats_a_key_through_a_table_or_a_view()
+    {
+        // A system-versioned table read FOR SYSTEM_TIME ALL, BETWEEN, FROM … TO or CONTAINED IN returns its history rows too,
+        // one per version of a key; AS OF returns one version. Written on a view, the clause applies to the temporal tables
+        // under it. So only AS OF keeps a key.
+        // A write session is one transaction, in which an UPDATE leaves a history row of no length, which no clause returns;
+        // so the history is written by hand, with a period of its own, before versioning is switched on.
+        string[] setup =
+        [
+            "CREATE TABLE dbo.obs_hist_history (id int NOT NULL, name nvarchar(20) NOT NULL, vf datetime2 NOT NULL, vt datetime2 NOT NULL);",
+            "INSERT INTO dbo.obs_hist_history VALUES (1, N'a', '2020-01-01', '2021-01-01');",
+            """
+            CREATE TABLE dbo.obs_hist (
+                id int NOT NULL PRIMARY KEY, name nvarchar(20) NOT NULL,
+                vf datetime2 GENERATED ALWAYS AS ROW START NOT NULL, vt datetime2 GENERATED ALWAYS AS ROW END NOT NULL,
+                PERIOD FOR SYSTEM_TIME (vf, vt));
+            """,
+            "INSERT INTO dbo.obs_hist (id, name) VALUES (1, N'b');",
+            "ALTER TABLE dbo.obs_hist SET (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.obs_hist_history));",
+            "CREATE VIEW dbo.obs_hist_all AS SELECT h.id, h.name FROM dbo.obs_hist FOR SYSTEM_TIME ALL AS h;",
+            "CREATE VIEW dbo.obs_hist_now AS SELECT h.id, h.name FROM dbo.obs_hist AS h;",
+        ];
+        async Task<string> Count(string from) => (await Run(setup, $"SELECT COUNT(*) AS n FROM {from} WHERE h.id = 1;")).ToString();
+        Assert.Equal("n: 2", await Count("dbo.obs_hist FOR SYSTEM_TIME ALL AS h"));
+        Assert.Equal("n: 2", await Count("dbo.obs_hist FOR SYSTEM_TIME BETWEEN '0001-01-01' AND '9999-12-31' AS h"));
+        Assert.Equal("n: 2", await Count("dbo.obs_hist FOR SYSTEM_TIME FROM '0001-01-01' TO '9999-12-31' AS h"));
+        Assert.Equal("n: 2", await Count("dbo.obs_hist FOR SYSTEM_TIME CONTAINED IN ('2019-01-01', '9999-12-31 23:59:59.9999999') AS h"));
+        Assert.Equal("n: 1", await Count("dbo.obs_hist FOR SYSTEM_TIME AS OF '2020-06-01' AS h"));
+        Assert.Equal("n: 2", await Count("dbo.obs_hist_all AS h"));
+        Assert.Equal("n: 2", await Count("dbo.obs_hist_now FOR SYSTEM_TIME ALL AS h"));
+        Assert.Equal("n: 1", await Count("dbo.obs_hist_now AS h"));
     }
 
     [Fact]
