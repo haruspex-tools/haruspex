@@ -1,0 +1,145 @@
+{
+  "irVersion": "0.9",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "depot.prune_prices",
+      "name": "PrunePrices",
+      "kind": "procedure",
+      "at": "procedures/prune_prices.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PrunePricesRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "PrunePricesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "depot.prune_prices",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "change",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "DELETE",
+                "UPDATE"
+              ],
+              "from": [
+                {
+                  "engine": "$action"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "part",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "listed_part",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "merge-action",
+              "at": "procedures/prune_prices.sql:7:1"
+            }
+          ]
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "merge-action",
+              "at": "procedures/prune_prices.sql:7:1"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

@@ -18,6 +18,12 @@ namespace Haruspex.SqlServer.Inference;
 internal sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadOnlyList<string> Temps, string? Direct, string? Unmodelled)
 {
     /// <summary>
+    /// The permanent object the write changes when it names one, directly or through an alias in FROM, rather than through a
+    /// CTE or derived table, whose columns are not its object's: what <c>inserted</c> and <c>deleted</c> are rows of.
+    /// </summary>
+    public SchemaObjectName? Named { get; init; }
+
+    /// <summary>
     /// The target of a write: <paramref name="target"/> as written, an alias of a source in <paramref name="from"/>
     /// (<c>UPDATE x … FROM t AS x</c>), or a CTE of <paramref name="with"/>.
     /// </summary>
@@ -27,10 +33,11 @@ internal sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadO
         var temps = new List<string>();
         string? direct = null;
         string? unmodelled = null;
+        SchemaObjectName? namedObject = null;
         var ctes = with?.CommonTableExpressions.ToDictionary(c => c.ExpressionName.Value, StringComparer.OrdinalIgnoreCase)
             ?? new Dictionary<string, CommonTableExpression>(StringComparer.OrdinalIgnoreCase);
         Resolve(target, aliases: true, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
-        return new DmlTarget(objects, temps, direct, unmodelled);
+        return new DmlTarget(objects, temps, direct, unmodelled) { Named = objects.Count == 1 && temps.Count == 0 && direct is null ? namedObject : null };
 
         void Resolve(TableReference reference, bool aliases, HashSet<string> seen)
         {
@@ -58,12 +65,19 @@ internal sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadO
                     }
 
                     if (one.StartsWith('#') && !one.StartsWith("##", StringComparison.Ordinal))
+                    {
                         direct ??= one;
+                    }
                     else
+                    {
                         objects.Add(name);
+                        namedObject ??= name;
+                    }
+
                     break;
-                case NamedTableReference named:
-                    objects.Add(named.SchemaObject);
+                case NamedTableReference other:
+                    objects.Add(other.SchemaObject);
+                    namedObject ??= other.SchemaObject;
                     break;
                 case QueryDerivedTable derived:
                     Read(derived.QueryExpression, seen);
@@ -99,7 +113,8 @@ internal sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadO
         }
     }
 
-    private static string? Alias(TableReferenceWithAlias source) =>
+    /// <summary>The name a source's columns are qualified by: its alias, or its own name without one.</summary>
+    public static string? Alias(TableReferenceWithAlias source) =>
         source.Alias?.Value ?? (source as NamedTableReference)?.SchemaObject.BaseIdentifier.Value ?? (source as VariableTableReference)?.Variable.Name;
 
     /// <summary>The sources of a FROM clause, through its joins.</summary>
@@ -198,11 +213,28 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
     /// <summary>How writing <paramref name="name"/> fires a trigger that may return results, as words; null when it fires none.</summary>
     private string? Reaches(ObjectName name, DmlEvents events, SourceLocation at, HashSet<string> visited)
     {
+        // A write through a synonym writes its object (observed: A_write_through_a_synonym_fires_the_triggers_of_its_table).
+        if (model.FindNamedObject(name) is { Kind: NamedObjectKind.Synonym } synonym)
+        {
+            if (!visited.Add($"synonym {name}"))
+                return null;
+            var objects = synonym.SynonymFor is { } written ? new Binder(model, at.File).ResolveWritten(written) : [];
+            if (objects.Count == 0)
+                Warn($"{name} (a synonym for {(synonym.SynonymFor is { } far ? FragmentText.OneLine(far) : "an object not known")})", at);
+            foreach (var target in objects)
+            {
+                if (Reaches(target, events, at, visited) is { } why)
+                    return $"writes {target} through the synonym {name}, and {why}";
+            }
+
+            return null;
+        }
+
         var view = model.FindNamedObject(name) is { Kind: NamedObjectKind.View } named ? named : null;
         var table = model.FindTable(name) is not null || model.FindTableRedefinition(name) is not null;
         if (view is null && !table)
         {
-            Warn(model.FindNamedObject(name) is { Kind: NamedObjectKind.Synonym } ? $"{name} (a synonym, whose table is not followed)" : name.ToString(), at);
+            Warn(name.ToString(), at);
             return null;
         }
 

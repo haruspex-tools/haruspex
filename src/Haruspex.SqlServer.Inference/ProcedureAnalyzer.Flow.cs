@@ -357,9 +357,18 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>A scope with no FROM, for an expression outside a query: <c>SET @v = …</c>, <c>VALUES (…)</c>.</summary>
     private BindingScope NoFrom() => binder.BindFrom(new QuerySpecification(), null, locals);
 
-    private Value Variable(VariableReference variable) => locals!.State.Variables.TryGetValue(variable.Name, out var value)
-        ? value
-        : Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The variable {variable.Name} is not declared.", At(variable)));
+    private Value Variable(VariableReference variable)
+    {
+        if (!locals!.State.Variables.TryGetValue(variable.Name, out var value))
+            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The variable {variable.Name} is not declared.", At(variable)));
+
+        // A cursor's query takes its variables as they were when its DECLARE ran (observed:
+        // A_cursors_query_takes_its_variables_as_they_are_when_it_is_declared), not where the FETCH reads it: any value of
+        // the variable's declared type, which every assignment converts to, or null.
+        if (unfiltered && variableShapes.TryGetValue(variable.Name, out var declared))
+            return new Value(declared, Because(IrNullRules.Variable, variable.Name, declared), value.IsLiveJson);
+        return value;
+    }
 
     /// <summary>The value an assignment writes: the expression, unless a compound one (<c>+=</c>) combines it with the old.</summary>
     private Value Assigned(AssignmentKind kind, ScalarExpression expression, BindingScope scope, TSqlFragment at) =>

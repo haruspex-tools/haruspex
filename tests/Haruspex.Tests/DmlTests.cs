@@ -205,6 +205,26 @@ public class DmlTests
     }
 
     [Fact]
+    public void A_write_through_a_synonym_reaches_the_triggers_of_its_table()
+    {
+        // Review round 1, finding 3. Observed: A_write_through_a_synonym_fires_the_triggers_of_its_table.
+        var inside = Infer(
+            ("synonym", "CREATE SYNONYM dbo.item_syn FOR dbo.item;"),
+            ("trigger", "CREATE TRIGGER dbo.item_loud ON dbo.item AFTER INSERT AS SELECT N'fired' AS what;"),
+            ("p", "CREATE PROCEDURE dbo.p AS INSERT INTO dbo.item_syn (id) VALUES (1); SELECT 2 AS two;"));
+        var outside = Infer(
+            ("synonym", "CREATE SYNONYM dbo.far_syn FOR other_db.dbo.far;"),
+            ("p", "CREATE PROCEDURE dbo.p AS INSERT INTO dbo.far_syn (id) VALUES (1); SELECT 2 AS two;"));
+
+        Assert.Equal(IrUnknownReasons.TriggerResults, ResultsUnknown(inside.Doc).Reason);
+        Assert.Empty(inside.Warnings);
+        Assert.Single(Results(outside.Doc));
+        var warning = Assert.Single(outside.Warnings);
+        Assert.Contains("dbo.far_syn", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("other_db.dbo.far", warning.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_cascading_key_reaches_the_triggers_of_the_referencing_table()
     {
         // Observed: A_cascading_delete_fires_the_triggers_of_the_referencing_table. The key may be added by ALTER TABLE.
@@ -367,6 +387,43 @@ public class DmlTests
     }
 
     [Fact]
+    public void Every_source_of_a_joined_using_is_null_for_rows_not_matched_by_source()
+    {
+        // Review round 1, finding 1: USING a JOIN b ON … is a source of several tables, each null-extended for those rows.
+        var doc = Doc(("p", """
+            CREATE PROCEDURE dbo.p AS
+            MERGE dbo.item AS t USING dbo.note AS s JOIN dbo.error_log AS e ON e.id = s.id ON t.id = s.id
+            WHEN MATCHED THEN UPDATE SET label = N'm'
+            WHEN NOT MATCHED BY SOURCE THEN DELETE
+            OUTPUT s.id AS note_id, e.at;
+            """));
+
+        Assert.Equal([IrNullRules.MergeAction], Rules(Field(doc, "note_id")));
+        Assert.Equal([IrNullRules.MergeAction], Rules(Field(doc, "at")));
+    }
+
+    [Theory]
+    [InlineData("UPDATE i SET qty = 0 OUTPUT inserted.label AS now, deleted.qty AS was FROM dbo.item AS i JOIN dbo.note AS n ON n.id = i.id;")]
+    [InlineData("DELETE i OUTPUT deleted.label AS now, deleted.qty AS was FROM dbo.item AS i JOIN dbo.note AS n ON n.id = i.id;")]
+    public void Output_of_a_write_to_an_alias_in_from_is_typed_from_its_table(string dml)
+    {
+        // Review round 1, finding 4.
+        var doc = Doc(("p", $"CREATE PROCEDURE dbo.p AS {dml}"));
+
+        Assert.Equal([IrNullRules.NullableColumn], Rules(Field(doc, "now")));
+        Assert.False(Field(doc, "was").Nullable);
+        Assert.IsType<IrScalar>(Field(doc, "was").Type);
+    }
+
+    [Fact]
+    public void Output_of_a_write_through_a_cte_is_unknown()
+    {
+        var doc = Doc(("p", "CREATE PROCEDURE dbo.p AS WITH c AS (SELECT i.id, i.label FROM dbo.item AS i) UPDATE c SET label = N'x' OUTPUT inserted.label;"));
+
+        Assert.IsType<IrUnknownType>(Field(doc, "label").Type);
+    }
+
+    [Fact]
     public void Output_of_the_from_sources_is_refined_by_the_where()
     {
         var doc = Doc(("p", "CREATE PROCEDURE dbo.p AS UPDATE i SET qty = 0 OUTPUT n.text FROM dbo.item AS i JOIN dbo.note AS n ON n.id = i.id WHERE n.text IS NOT NULL;"));
@@ -517,6 +574,22 @@ public class DmlTests
             """));
 
         Assert.Contains(IrNullRules.Unknown, Rules(Field(doc, "n")));
+    }
+
+    [Fact]
+    public void A_variable_in_a_cursors_query_is_any_value_of_its_type()
+    {
+        // Review round 1, finding 2. Observed: A_cursors_query_takes_its_variables_as_they_are_when_it_is_declared.
+        var doc = Doc(("p", """
+            CREATE PROCEDURE dbo.p AS
+            DECLARE @x int, @v int = 0;
+            DECLARE c CURSOR LOCAL STATIC FOR SELECT @x AS v;
+            SET @x = 5;
+            OPEN c; FETCH NEXT FROM c INTO @v; CLOSE c; DEALLOCATE c;
+            SELECT @v AS v;
+            """));
+
+        Assert.True(Field(doc, "v").Nullable);
     }
 
     [Fact]

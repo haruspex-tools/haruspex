@@ -244,10 +244,15 @@ it on the stack of calls.
 - It is read as a select list over the write's `FROM` sources (`MERGE`'s `USING` source), filtered by its `WHERE`, with two
   relations added: `inserted`, the target after the write, and `deleted`, before it. For a permanent table they are its
   declared columns: every value is converted to the column, and a NOT NULL column is never null
-  (`Output_columns_are_the_values_converted_to_the_target_columns`). For a temporary table, the table as tracked after and
+  (`Output_columns_are_the_values_converted_to_the_target_columns`); that holds also when the target is an alias of a
+  table in `FROM` (`UPDATE o … FROM t AS o JOIN …`), and not through a CTE, a derived table, a view or a synonym, whose
+  `inserted` and `deleted` are unknown. For a temporary table, the table as tracked after and
   before the write; for a table variable, its declaration. `inserted.*` and `deleted.*` list the target's columns. `INSERT`
   has no `deleted`, `DELETE` no `inserted`. Refinement works as for any query: a `WHERE` on a `FROM` source proves its
-  columns.
+  columns, and a `DELETE`'s `WHERE` proves `deleted`'s. An `UPDATE`'s `WHERE` without a qualifier names the target's columns
+  as they were before, which is `deleted`; in the query read they are ambiguous between `inserted` and `deleted`, so
+  `deleted` is not refined by it, which only claims less (refining it would mean binding the `WHERE` to `deleted` alone,
+  and `inserted`'s values may differ).
 - **`MERGE`** (`Merge_output_has_null_deleted_columns_for_inserted_rows_null_inserted_columns_for_deleted_rows_and_null_source_columns_when_not_matched_by_source`):
   `deleted` is null for the rows it inserts, `inserted` for the rows it deletes, and the source's columns for the rows it
   changes under `WHEN NOT MATCHED BY SOURCE`. Each such column has the null rule `merge-action`, when the statement has that
@@ -285,6 +290,7 @@ Which triggers a write may fire is followed transitively, each step observed:
 | `TRUNCATE TABLE` | none (`Truncate_does_not_fire_a_delete_trigger`) |
 | a view | its `INSTEAD OF` triggers (`An_instead_of_trigger_on_a_view_returns_its_result_set`), and for the statements none covers, the triggers of every table its definition reads (`Dml_through_a_view_or_a_cte_fires_the_triggers_of_the_table_underneath`); a view defined more than once is not known, and counts |
 | a CTE or derived table | the triggers of every table its query reads |
+| a synonym | those of its object, followed like a write to it (`A_write_through_a_synonym_fires_the_triggers_of_its_table`); an object outside the project is warned of, naming both |
 | a `DELETE` or `UPDATE` of a table that foreign keys reference with an action (`ON DELETE CASCADE`, `SET NULL`, `SET DEFAULT`, or `ON UPDATE` ones) | the `DELETE` and `UPDATE` triggers of the referencing table (`A_cascading_delete_fires_the_triggers_of_the_referencing_table`), from `CREATE TABLE` or `ALTER TABLE … ADD` |
 | inside a trigger, its own writes and calls | followed the same way (`A_triggers_own_dml_fires_other_triggers_whose_results_reach_the_client`): nested triggers are on by default |
 
@@ -299,7 +305,8 @@ that defines a cursor returns nothing.
 **A table the project does not define** may have a trigger the project cannot show. Its results are not withdrawn for that,
 which would make every procedure that writes a table of another database unknown, but haruspex warns, once per table: the
 CLI writes `file:line:column: warning: … is written here but is not defined in the project, …`. The same goes for a table
-of another database, a synonym, and a table a view reads that the project does not define. DDL triggers are not read: no
+of another database, a synonym for an object outside the project, and a table a view reads that the project does not
+define. DDL triggers are not read: no
 write fires them. A trigger disabled by `DISABLE TRIGGER` is still counted, which only claims less.
 
 ## Cursors
@@ -310,9 +317,14 @@ write fires them. A trigger disabled by `DISABLE TRIGGER` is still counted, whic
   `ROWSTAT`, a column the server marks hidden, which SqlClient lists among the columns and a driver that honours the flag
   leaves out. Which keys the row has depends on the client, so the results are unknown, `hidden-column`. Inside a loop it
   would be `varying-results` anyway.
-- **`FETCH … INTO`** assigns each variable, or leaves it as it was when there is no row
+- **`FETCH … INTO`** assigns each variable, or leaves it as it was past the end
   (`Fetch_into_leaves_the_variables_as_they_were_past_the_end`), so each joins its value before with the cursor's column,
-  converted to the variable's declared type. The cursor is the one declaration of its name in the procedure (`FETCH
+  converted to the variable's declared type. A keyset cursor's row deleted after `OPEN` (`@@FETCH_STATUS` -2) is assigned
+  too: NULL for a nullable column, and zero, blanks, `0001-01-01` or the empty GUID for a NOT NULL one, whatever its CHECK
+  says (`Fetch_into_from_a_keyset_cursor_whose_row_was_deleted_assigns_null_or_zeros_whatever_the_checks_say`). That is
+  within the column's type and nullability, and a variable keeps only its declared type and why it may be null, never a
+  column's CHECK facets, so the join above still holds. A later change that carries facets into variables must not carry
+  a cursor column's CHECK. The cursor is the one declaration of its name in the procedure (`FETCH
   GLOBAL c` only one declared `GLOBAL`, since a declaration without the option takes the database's default); its query is
   read where the `FETCH` is, with no filter proving anything: a keyset cursor fetches a row changed after `OPEN` that its
   `WHERE` no longer keeps (`A_keyset_cursor_fetches_a_row_changed_after_open_that_its_where_no_longer_keeps`), and a
@@ -320,7 +332,9 @@ write fires them. A trigger disabled by `DISABLE TRIGGER` is still counted, whic
   (`A_dynamic_cursor_fetches_a_temporary_tables_rows_as_they_are_when_fetched`). A static cursor's rows are those of `OPEN`,
   which writes since then only widened; unless the table was altered, dropped or created again after the declaration, by
   the procedure or one it calls, when the row is unknown. A cursor variable, one declared elsewhere, or one declared more
-  than once reads unknown values. A cursor is declared when its `DECLARE` runs, not at compile time
+  than once reads unknown values. A variable in a cursor's query takes its value when the `DECLARE` runs, not at `OPEN` or
+  `FETCH` (`A_cursors_query_takes_its_variables_as_they_are_when_it_is_declared`), so there it is read as any value of its
+  declared type, or null. A cursor is declared when its `DECLARE` runs, not at compile time
   (`A_cursor_is_declared_when_its_declare_runs_not_when_the_procedure_is_compiled`): a `FETCH` where none ran fails the call.
 - `@@FETCH_STATUS` loops are ordinary `WHILE` loops: conditions are not read, and the loop's fixed point joins the
   variables.

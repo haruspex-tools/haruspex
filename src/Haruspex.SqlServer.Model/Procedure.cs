@@ -84,6 +84,12 @@ public sealed record NamedObject(ObjectName Name, NamedObjectKind Kind)
     /// underneath and fires their triggers.
     /// </summary>
     public ViewStatementBody? View { get; init; }
+
+    /// <summary>
+    /// A synonym's object, as written (possibly in another database or on a linked server); null for other objects. A write
+    /// through a synonym writes its object and fires that object's triggers.
+    /// </summary>
+    public SchemaObjectName? SynonymFor { get; init; }
 }
 
 /// <summary>What a <see cref="NamedObject"/> is.</summary>

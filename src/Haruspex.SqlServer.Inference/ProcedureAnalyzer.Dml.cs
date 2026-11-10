@@ -23,7 +23,7 @@ internal sealed partial class ProcedureAnalyzer
     /// While a MERGE's OUTPUT is read: the alias of its source, whose columns are null for the rows it changes because they
     /// are not matched by the source, when it has such a clause; and why.
     /// </summary>
-    private (string Alias, IrNullReason Why)? unmatchedSource;
+    private (HashSet<string> Aliases, IrNullReason Why)? unmatchedSource;
 
     /// <summary>While a cursor's query is read: no filter proves anything of the row a FETCH returns (see <see cref="FetchRow"/>).</summary>
     private bool unfiltered;
@@ -119,10 +119,10 @@ internal sealed partial class ProcedureAnalyzer
         var outerUnmatched = unmatchedSource;
         mergeActions = actions is null || actions.Contains(null) ? null : [.. actions.OfType<string>().Distinct().Order(StringComparer.Ordinal)];
         outputTarget = from is not null && spec.Target is NamedTableReference { SchemaObject: { SchemaIdentifier: null } written } ? written.BaseIdentifier.Value : null;
-        unmatchedSource = spec is MergeSpecification { TableReference: TableReferenceWithAlias merged } m
+        // Every source in the USING tree: a joined USING is null-extended as a whole (review round 1, finding 1).
+        unmatchedSource = spec is MergeSpecification { TableReference: { } merged } m
             && m.ActionClauses.Any(c => c.Condition == MergeCondition.NotMatchedBySource)
-            && (merged.Alias?.Value ?? (merged as NamedTableReference)?.SchemaObject.BaseIdentifier.Value) is { } alias
-            ? (alias, because)
+            ? (DmlTarget.Sources([merged]).Select(DmlTarget.Alias).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase), because)
             : null;
         locals!.State = before;
         try
@@ -161,7 +161,7 @@ internal sealed partial class ProcedureAnalyzer
             locals!.State = state;
             values = locals.Find(direct) is { } relation ? locals.Values(relation) : LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnresolvedTable, $"{direct} is not declared.", at));
         }
-        else if (spec.Target is NamedTableReference named && target.Objects is [var only] && ReferenceEquals(only, named.SchemaObject)
+        else if (target.Named is { } only
             && binder.ResolveWritten(only) is [var name] && model.FindTable(name) is { } table && model.FindTableRedefinition(name) is null)
         {
             var source = new BoundSource(name.Name, table, null, null);
@@ -169,7 +169,9 @@ internal sealed partial class ProcedureAnalyzer
         }
         else
         {
-            values = LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedStatement, $"The OUTPUT at {at} of a write to {Text(spec.Target)}, which is not a table of the project, a temporary table or a table variable, is not modelled.", at));
+            values = LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedStatement, target.Named is { } through
+                ? $"The OUTPUT at {at} of a write to {Text(through)}, which is not one table of the project (a view, a synonym, a table defined elsewhere or more than one), is not modelled."
+                : $"The OUTPUT at {at} of a write through a CTE or derived table, {Text(spec.Target)}, is not modelled.", at));
         }
 
         if (merged is null || values.Values is null)
@@ -295,7 +297,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>Why a column of a MERGE's source may be null in its OUTPUT: the rows it changes not matched by the source have none.</summary>
     private IrNullReason? Unmatched(BoundSource source) =>
-        unmatchedSource is { } unmatched && unmatched.Alias.Equals(source.Alias, StringComparison.OrdinalIgnoreCase)
+        unmatchedSource is { } unmatched && source.Alias is { } alias && unmatched.Aliases.Contains(alias)
             && !(source.Local?.Name is "inserted" or "deleted")
             ? unmatched.Why
             : null;
@@ -310,7 +312,10 @@ internal sealed partial class ProcedureAnalyzer
     /// (<c>ROWSTAT</c>), which SqlClient lists and a driver that honours the flag leaves out (observed:
     /// Cursor_statements_and_fetch_into_return_nothing_and_fetch_without_into_returns_one_row): which keys the row has
     /// depends on the client, so the results are unknown. With <c>INTO</c> it returns nothing and assigns the variables,
-    /// or leaves them as they were when there is no row (Fetch_into_leaves_the_variables_as_they_were_past_the_end).
+    /// or leaves them as they were past the end (Fetch_into_leaves_the_variables_as_they_were_past_the_end). A keyset row
+    /// deleted after OPEN (-2) assigns NULL, or zero or blanks for a NOT NULL column whatever its CHECK says
+    /// (Fetch_into_from_a_keyset_cursor_whose_row_was_deleted_assigns_null_or_zeros_whatever_the_checks_say): within the
+    /// column's type and nullability, which is all a variable keeps (never a CHECK's facets), so the join is still sound.
     /// </summary>
     private Outcome Fetch(FetchCursorStatement fetch, FlowState state)
     {

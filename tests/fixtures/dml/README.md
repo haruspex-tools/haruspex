@@ -17,5 +17,9 @@ returns (`Seeds/dml.sql`), and each run that writes runs in a write session that
 | `depot.recent_note` | the procedure `depot.purge` inserts the results of |
 | `depot.add_note` | a write to a table whose trigger returns a result set: results unknown (`trigger-results`) |
 | `depot.peek_parts` | `FETCH` without `INTO`: results unknown (`hidden-column`) |
+| `depot.prune_prices` | `MERGE` with a joined `USING`: every source of the join is null for the rows not matched by source |
+| `depot.low_floor` | a variable read in a cursor's query: its value at `DECLARE`, not at `FETCH` |
+| `depot.add_note_by_synonym` | a write through a synonym (`depot.legacy_note_alias`) fires its table's trigger: `trigger-results` |
+| `depot.pick_order_lines` | `UPDATE` of an alias in `FROM`, joined: `inserted` and `deleted` typed from the table |
 | `depot.stock_audit` | a trigger that writes another table and returns nothing |
 | `depot.legacy_note_echo` | a trigger that returns a result set, which SQL Server allows by default |

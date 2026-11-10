@@ -190,6 +190,18 @@ public class DmlObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_write_through_a_synonym_fires_the_triggers_of_its_table()
+    {
+        string[] setup = [
+            Item,
+            "CREATE SYNONYM dbo.obs_item_syn FOR dbo.obs_item;",
+            "CREATE TRIGGER dbo.obs_item_loud ON dbo.obs_item AFTER INSERT AS SELECT N'fired' AS what;",
+        ];
+
+        Assert.Equal("what: fired", (await Run(setup, "INSERT INTO dbo.obs_item_syn (id) VALUES (1);")).ToString());
+    }
+
+    [Fact]
     public async Task Truncate_does_not_fire_a_delete_trigger()
     {
         string[] setup = [Item, Seed, "CREATE TRIGGER dbo.obs_item_loud ON dbo.obs_item AFTER DELETE AS SELECT N'fired' AS what;"];
@@ -284,6 +296,51 @@ public class DmlObservationTests(SqlServerFixture server)
         ];
 
         Assert.Equal("id,status: 5,-1", (await Run(setup, "EXEC dbo.obs_fetch_end")).ToString());
+    }
+
+    [Fact]
+    public async Task Fetch_into_from_a_keyset_cursor_whose_row_was_deleted_assigns_null_or_zeros_whatever_the_checks_say()
+    {
+        // @@FETCH_STATUS -2: the variables are assigned, not left alone. A nullable column gives NULL; a NOT NULL one zero,
+        // blanks, the earliest date or the empty GUID, inside its type and NOT NULL but outside its CHECK. Sound because a
+        // variable keeps only its declared type and why it may be null, never a column's CHECK.
+        string[] setup = [
+            "CREATE TABLE dbo.obs_gone (id int NOT NULL PRIMARY KEY, q int NOT NULL CHECK (q > 0), s varchar(10) NOT NULL CHECK (s IN ('open', 'done')), d date NOT NULL, c char(3) NOT NULL, g uniqueidentifier NOT NULL, n int NULL);",
+            "INSERT INTO dbo.obs_gone VALUES (1, 5, 'open', '2026-11-10', 'abc', NEWID(), 7);",
+            """
+            CREATE PROCEDURE dbo.obs_gone_fetch AS
+            DECLARE @q int = -1, @s varchar(10) = 'x', @d date = '2000-01-01', @c char(3) = 'x', @g uniqueidentifier = NEWID(), @n int = -1;
+            DECLARE k CURSOR LOCAL KEYSET FOR SELECT q, s, d, c, g, n FROM dbo.obs_gone;
+            OPEN k;
+            DELETE FROM dbo.obs_gone;
+            FETCH NEXT FROM k INTO @q, @s, @d, @c, @g, @n;
+            SELECT @@FETCH_STATUS AS status, @q AS q, DATALENGTH(@s) AS s_bytes, LEN(@s) AS s_len, CONVERT(char(10), @d, 23) AS d, DATALENGTH(@c) AS c_bytes, @g AS g, @n AS n;
+            CLOSE k; DEALLOCATE k;
+            """,
+        ];
+
+        Assert.Equal("status,q,s_bytes,s_len,d,c_bytes,g,n: -2,0,10,0,0001-01-01,3,00000000-0000-0000-0000-000000000000,null", (await Run(setup, "EXEC dbo.obs_gone_fetch")).ToString());
+    }
+
+    [Fact]
+    public async Task A_cursors_query_takes_its_variables_as_they_are_when_it_is_declared()
+    {
+        // Set after DECLARE and before OPEN, the variable is still NULL in the rows fetched, for STATIC and DYNAMIC alike. So a
+        // variable read in a cursor's query is any value of its type, or null.
+        string[] setup = [
+            """
+            CREATE PROCEDURE dbo.obs_cursor_variable @kind int AS
+            DECLARE @x int, @v int = 0;
+            IF @kind = 1 DECLARE c CURSOR LOCAL STATIC FOR SELECT @x AS v;
+            ELSE DECLARE c CURSOR LOCAL DYNAMIC FOR SELECT @x AS v;
+            SET @x = 5;
+            OPEN c; FETCH NEXT FROM c INTO @v; CLOSE c; DEALLOCATE c;
+            SELECT @v AS v;
+            """,
+        ];
+
+        Assert.Equal("v: null", (await Run(setup, "EXEC dbo.obs_cursor_variable 1")).ToString());
+        Assert.Equal("v: null", (await Run(setup, "EXEC dbo.obs_cursor_variable 2")).ToString());
     }
 
     [Fact]

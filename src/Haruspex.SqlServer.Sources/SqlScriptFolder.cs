@@ -122,7 +122,7 @@ public static class SqlScriptFolder
                         definitions.Add(view);
                         break;
                     case CreateSynonymStatement synonym:
-                        TryAddNamed(others, ObjectName.From(synonym.Name), NamedObjectKind.Synonym);
+                        others.TryAdd(ObjectName.From(synonym.Name), new NamedObject(ObjectName.From(synonym.Name), NamedObjectKind.Synonym) { SynonymFor = synonym.ForName });
                         break;
                     case CreateFunctionStatement or CreateOrAlterFunctionStatement:
                         var function = (FunctionStatementBody)statement;

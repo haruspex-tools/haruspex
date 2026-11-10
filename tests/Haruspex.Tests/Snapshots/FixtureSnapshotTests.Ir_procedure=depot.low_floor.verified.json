@@ -1,0 +1,106 @@
+{
+  "irVersion": "0.9",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "depot.low_floor",
+      "name": "LowFloor",
+      "kind": "procedure",
+      "at": "procedures/low_floor.sql:3:1",
+      "parameters": [
+        {
+          "name": "@start",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LowFloorRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "LowFloorRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "depot.low_floor",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "part_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "floor",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "variable",
+              "at": "@floor"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

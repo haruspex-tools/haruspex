@@ -238,6 +238,12 @@ public static class Runs
         new("dml: recent_note", "dml", "depot.recent_note", None),
         new("dml: add_note", "dml", "depot.add_note", new Dictionary<string, object?> { ["@note_id"] = 2, ["@text"] = "new" }, Writes),
         new("dml: peek_parts", "dml", "depot.peek_parts", None),
+        new("dml: prune_prices", "dml", "depot.prune_prices", None, Writes),
+        new("dml: low_floor, null when declared", "dml", "depot.low_floor", None),
+        new("dml: low_floor, a value when declared", "dml", "depot.low_floor", new Dictionary<string, object?> { ["@start"] = 3 }),
+        new("dml: add_note_by_synonym", "dml", "depot.add_note_by_synonym", new Dictionary<string, object?> { ["@note_id"] = 3, ["@text"] = "via" }, Writes),
+        new("dml: pick_order_lines, no note", "dml", "depot.pick_order_lines", new Dictionary<string, object?> { ["@order_id"] = 1 }, Writes),
+        new("dml: pick_order_lines, a note", "dml", "depot.pick_order_lines", new Dictionary<string, object?> { ["@order_id"] = 2 }, Writes),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>
