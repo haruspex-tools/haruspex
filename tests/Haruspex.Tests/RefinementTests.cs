@@ -368,6 +368,68 @@ public class RefinementTests
         Assert.Equal(["outer-join"], Rules(doc, "id"));
     }
 
+    [Fact]
+    public void An_aggregate_subquerys_filter_proves_nothing_of_an_outer_column_it_returns()
+    {
+        // An_aggregate_subquery_returns_its_row_even_when_its_where_rejects_the_outer_column: its one row comes even when WHERE
+        // removed every row, so the outer t.n in it may be null.
+        var doc = Procedure("""
+            SELECT t.id,
+                (SELECT t.n AS n, COUNT_BIG(*) AS c FROM dbo.u AS u WHERE u.t_id = t.n FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS stats,
+                (SELECT t.n FROM dbo.u AS u WHERE u.t_id = t.n HAVING COUNT(*) >= 0) AS kept,
+                (SELECT t.n FROM dbo.u AS u WHERE u.t_id = t.n) AS plain
+            FROM dbo.t AS t FOR JSON PATH;
+            """);
+
+        var stats = Assert.IsType<IrJsonText>(Field(doc, "stats").Type);
+        var n = Assert.Single(doc.Types[Assert.IsType<IrRef>(stats.Content).Name].Fields, f => f.Name == "n");
+        Assert.Equal(["nullable-column"], Rules(n));
+        Assert.Contains("nullable-column", Rules(doc, "kept"));
+
+        // Without an aggregate, a row the subquery returns passed its WHERE.
+        Assert.Equal(["empty-subquery"], Rules(doc, "plain"));
+    }
+
+    [Fact]
+    public void An_aggregate_subquerys_filter_still_refines_its_own_columns_and_having_the_outer_ones()
+    {
+        var doc = Procedure("""
+            SELECT t.id,
+                (SELECT MAX(u.note) FROM dbo.u AS u WHERE u.t_id = t.id AND u.note IS NOT NULL) AS note,
+                (SELECT t.n FROM dbo.u AS u WHERE u.t_id = t.id HAVING t.n > 0) AS n
+            FROM dbo.t AS t;
+            """);
+
+        Assert.Equal(["empty-aggregate"], Rules(doc, "note"));
+        Assert.Equal(["empty-subquery"], Rules(doc, "n"));
+    }
+
+    [Theory]
+    [InlineData("GROUP BY ROLLUP (t.n)")]
+    [InlineData("GROUP BY CUBE (t.n)")]
+    [InlineData("GROUP BY GROUPING SETS ((t.n), ())")]
+    [InlineData("GROUP BY t.n WITH ROLLUP")]
+    [InlineData("GROUP BY t.n WITH CUBE")]
+    public void Super_aggregate_rows_make_grouped_columns_nullable_and_the_rows_many(string groupBy)
+    {
+        // Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null.
+        var doc = Procedure($"SELECT t.n, t.id, COUNT_BIG(*) AS c, MAX(t.id) AS top_id FROM dbo.t AS t WHERE t.n IS NOT NULL AND t.id = @x {groupBy.Replace("t.n", "t.n, t.id", StringComparison.Ordinal)};", "@x int");
+
+        Assert.Equal(IrCardinality.Many, Assert.Single(Results(doc)).Cardinality);
+        Assert.Contains("grouping-set", Rules(doc, "n"));
+        Assert.Contains("grouping-set", Rules(doc, "id"));
+        Assert.False(Field(doc, "c").Nullable);
+        Assert.False(Field(doc, "top_id").Nullable);
+    }
+
+    [Fact]
+    public void A_plain_group_by_leaves_grouped_columns_as_they_are()
+    {
+        var doc = Procedure("SELECT t.n, COUNT_BIG(*) AS c FROM dbo.t AS t WHERE t.n IS NOT NULL GROUP BY t.n;");
+
+        Assert.False(Field(doc, "n").Nullable);
+    }
+
     // ---- aggregates and HAVING ---------------------------------------------------------------------------------
 
     [Fact]

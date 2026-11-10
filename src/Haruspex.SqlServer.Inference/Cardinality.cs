@@ -31,8 +31,10 @@ internal sealed partial class ProcedureAnalyzer
         }
         else
         {
-            // Grouping never makes more rows than it reads, so a filter that fixes every source's key bounds it too.
-            rows = Keyed(query, scope) ? IrCardinality.AtMostOne : IrCardinality.Many;
+            // Grouping never makes more rows than it reads, so a filter that fixes every source's key bounds it too; but
+            // ROLLUP, CUBE and GROUPING SETS add super-aggregate rows (observed:
+            // Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null).
+            rows = !SuperAggregate(query) && Keyed(query, scope) ? IrCardinality.AtMostOne : IrCardinality.Many;
         }
 
         return Limited(Limited(rows, query.TopRowFilter), query.OffsetClause);
@@ -96,8 +98,8 @@ internal sealed partial class ProcedureAnalyzer
         });
     }
 
-    /// <summary>The aggregates in an expression, not inside a subquery.</summary>
-    private sealed class AggregateFinder : TSqlFragmentVisitor
+    /// <summary>The aggregates in an expression, not inside a subquery, and the calls <paramref name="also"/> counts as ones.</summary>
+    private sealed class AggregateFinder(Func<FunctionCall, bool>? also = null) : TSqlFragmentVisitor
     {
         public List<FunctionCall> Found { get; } = [];
 
@@ -107,7 +109,7 @@ internal sealed partial class ProcedureAnalyzer
 
         public override void Visit(FunctionCall node)
         {
-            if (IsAggregate(node))
+            if (IsAggregate(node) || also?.Invoke(node) == true)
                 Found.Add(node);
         }
     }

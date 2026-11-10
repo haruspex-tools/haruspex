@@ -287,6 +287,19 @@ compared by reference, since one table read twice is two sources.
 | an inner join's `ON`, inside an optional side | any source | no: the rows it kept may be null-extended around it |
 | an outer join's `ON` | the optional side's only | no: it never removes a row of the kept side (`A_condition_in_the_on_of_an_outer_join_never_drops_a_row_of_the_kept_side`) |
 
+**Two places where a filter proves nothing of the row returned:**
+
+- A query that aggregates without `GROUP BY` returns its one row even when `WHERE` removed every row
+  (`An_aggregate_subquery_returns_its_row_even_when_its_where_rejects_the_outer_column`). Its own columns are read only
+  inside its aggregates, over the rows kept, so `WHERE` and `ON` facts about them hold; an enclosing query's column is read
+  as it is, so no `WHERE` or `ON` fact about it is kept (nor a row fact). `HAVING` filters the one row, so its facts are
+  kept. Whether a query aggregates errs towards yes: `HAVING`, a built-in aggregate in its select list or `ORDER BY`, or a
+  call of a function the project does not show to be scalar (it may be a CLR aggregate).
+- `ROLLUP`, `CUBE` and `GROUPING SETS` (and `WITH ROLLUP`, `WITH CUBE`) add super-aggregate rows in which the rolled-up
+  columns are NULL (`Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null`). Every column of such a query's
+  own sources read outside its aggregates gets `grouping-set`, which no filter removes, and the query returns many rows.
+  This also corrects a claim older than refinement: a `NOT NULL` grouped column was non-null there.
+
 `HAVING` also proves aggregates non-null: one compared there (`MAX(c) > 0`) is non-null in every group kept, matched in the
 select list by its text. Refinement passes through CTEs, derived tables and `SELECT … INTO` tables with the values
 themselves: what a query proved is what its row holds.
@@ -313,17 +326,18 @@ themselves: what a query proved is what its row holds.
 | an aggregate in the select list, or `HAVING`, without `GROUP BY` | one; at most one with `HAVING` (`Having_over_no_groups_returns_no_row_and_without_group_by_at_most_one`) |
 | no `FROM` | one; at most one with `WHERE` |
 | `GROUP BY`, even `GROUP BY ()` | many, and none over no rows (`An_aggregate_with_group_by_returns_no_row_over_no_rows`) |
-| a filter fixing a key of every source | at most one |
+| a filter fixing a key of every source, without `ROLLUP`, `CUBE` or `GROUPING SETS` | at most one |
 | `TOP (0)` or `(1)` without `PERCENT` or `WITH TIES`; `FETCH NEXT 0` or `1` | at most one (`Top_1_and_fetch_1_give_at_most_one_row_but_with_ties_gives_more`) |
 
 `TOP` and `OFFSET` never add rows; over a query of exactly one row they keep it only as a literal `TOP` of one or more, and
-`OFFSET 0`. An aggregate counts for the query only when it is `COUNT(*)`, or every column its arguments read is of the
+`OFFSET 0` (`Offset_keeps_the_one_row_of_an_aggregate_query_only_when_it_skips_none`). An aggregate counts for the query only when it is `COUNT(*)`, or every column its arguments read is of the
 query's own sources: an aggregate of only an enclosing query's columns is that query's in SQL, and would not make the
 subquery an aggregate query.
 
 **Keys.** A source is fixed when every column of one of its enforced keys (`SchemaRules.EnforcedKeys`: the primary key,
 unique constraints and unfiltered unique indexes of its definition, less any an `ALTER INDEX … DISABLE` anywhere may have
-disabled) is compared with `=` to a value the same for every row: a literal, a variable, an enclosing query's column, or a
+disabled: a filtered unique index allows duplicates outside its filter, `A_filtered_unique_index_allows_duplicates_outside_its_filter`,
+and a disabled one allows them, `A_disabled_unique_index_allows_duplicates`) is compared with `=` to a value the same for every row: a literal, a variable, an enclosing query's column, or a
 column of a source already fixed; or is tested `IS NULL`, since a key holds one NULL at most
 (`A_unique_constraint_allows_one_null_only`). When every source is fixed, there is at most one row. A condition counts
 from `WHERE`'s top-level conjuncts, or from a join's `ON` for the sources inside that join (the optional side, for an

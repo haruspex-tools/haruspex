@@ -24,9 +24,18 @@ internal sealed partial class ProcedureAnalyzer
     /// What a query's filters prove, for reading its select list. A fact about a column holds only while that query's row is
     /// read: in its select list and in the subqueries there, which see the outer row as it was filtered.
     /// </summary>
-    private sealed class QueryFacts(QuerySpecification query)
+    private sealed class QueryFacts(QuerySpecification query, BindingScope scope)
     {
         public QuerySpecification Query { get; } = query;
+
+        /// <summary>The query's own sources: those of its FROM, not an enclosing query's.</summary>
+        public HashSet<BoundSource> Own { get; } = new(scope.Sources, ReferenceEqualityComparer.Instance);
+
+        /// <summary>
+        /// Where the query groups by ROLLUP, CUBE or GROUPING SETS, whose super-aggregate rows hold NULL in its grouped
+        /// columns (observed: Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null); null otherwise.
+        /// </summary>
+        public IrNullReason? Rolled { get; init; }
 
         /// <summary>
         /// Columns proved non-null whenever their source's row is there: by source (compared by reference, since two
@@ -60,6 +69,30 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>Whether a filter of a query being read proves the source's row is there, not null-extended by an outer join.</summary>
     private bool Matched(BoundSource source) => facts.Any(f => f.Rows.Contains(source));
 
+    /// <summary>The queries whose aggregate's arguments are being read: a column read there is a row's, not a group's.</summary>
+    private readonly List<QuerySpecification?> aggregating = [];
+
+    /// <summary>
+    /// Why a column read now may be NULL in a super-aggregate row: when it is a source of a query grouped by ROLLUP, CUBE or
+    /// GROUPING SETS and is read outside that query's aggregates. No filter removes it.
+    /// </summary>
+    private IrNullReason? Rolled(BoundSource source) =>
+        facts.FirstOrDefault(f => f.Rolled is not null && f.Own.Contains(source) && !aggregating.Any(q => ReferenceEquals(q, f.Query)))?.Rolled;
+
+    /// <summary>Reads an aggregate's arguments of the query whose select list is being read.</summary>
+    private T InAggregate<T>(Func<T> read)
+    {
+        aggregating.Add(current);
+        try
+        {
+            return read();
+        }
+        finally
+        {
+            aggregating.RemoveAt(aggregating.Count - 1);
+        }
+    }
+
     /// <summary>Whether HAVING proves this aggregate of the query whose select list is being read non-null.</summary>
     private bool ProvedAggregate(FunctionCall call) =>
         facts.Count > 0 && ReferenceEquals(facts[^1].Query, current) && facts[^1].Aggregates.Contains(Text(call));
@@ -68,11 +101,20 @@ internal sealed partial class ProcedureAnalyzer
 
     private QueryFacts Facts(QuerySpecification query, BindingScope scope)
     {
-        var found = new QueryFacts(query);
+        var found = new QueryFacts(query, scope)
+        {
+            Rolled = SuperAggregate(query) ? new IrNullReason(IrNullRules.GroupingSet, At(query.GroupByClause!).ToString()) : null,
+        };
+
+        // A query that aggregates without GROUP BY returns its one row even when WHERE and ON removed every row (observed:
+        // An_aggregate_subquery_returns_its_row_even_when_its_where_rejects_the_outer_column). Its own columns are read only
+        // inside its aggregates, over the rows kept, so what WHERE proves of them holds there; an enclosing query's column
+        // is read as it is, so nothing WHERE or ON proves of it holds. HAVING filters the one row, so its facts hold.
+        var own = MayAggregateWithoutGrouping(query) ? found.Own : null;
         if (query.WhereClause?.SearchCondition is { } where)
-            Refine(where, scope, found, rows: true, only: null);
+            Refine(where, scope, found, rows: true, only: own);
         foreach (var reference in query.FromClause?.TableReferences ?? [])
-            Joins(reference, scope, found, insideOptional: false);
+            Joins(reference, scope, found, insideOptional: false, own);
 
         // HAVING keeps the groups for which it is TRUE: a grouped column or an aggregate it proves non-null is non-null in
         // every group kept (observed: Having_over_no_groups_returns_no_row_and_without_group_by_at_most_one).
@@ -96,24 +138,55 @@ internal sealed partial class ProcedureAnalyzer
     /// A_condition_in_the_on_of_an_outer_join_never_drops_a_row_of_the_kept_side), so it proves only what holds of its
     /// optional side's row when it matched.
     /// </summary>
-    private void Joins(TableReference reference, BindingScope scope, QueryFacts found, bool insideOptional)
+    /// <param name="own">When set, only these sources' columns are refined (see <see cref="Facts"/>).</param>
+    private void Joins(TableReference reference, BindingScope scope, QueryFacts found, bool insideOptional, HashSet<BoundSource>? own)
     {
         switch (reference)
         {
             case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.Inner } join:
-                Joins(join.FirstTableReference, scope, found, insideOptional);
-                Joins(join.SecondTableReference, scope, found, insideOptional);
-                Refine(join.SearchCondition, scope, found, rows: !insideOptional, only: null);
+                Joins(join.FirstTableReference, scope, found, insideOptional, own);
+                Joins(join.SecondTableReference, scope, found, insideOptional, own);
+                Refine(join.SearchCondition, scope, found, rows: !insideOptional, only: own);
                 break;
             case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.LeftOuter } join:
-                Joins(join.FirstTableReference, scope, found, insideOptional);
-                Joins(join.SecondTableReference, scope, found, insideOptional: true);
+                // The optional side's sources are the query's own, so own changes nothing here.
+                Joins(join.FirstTableReference, scope, found, insideOptional, own);
+                Joins(join.SecondTableReference, scope, found, insideOptional: true, own);
                 Refine(join.SearchCondition, scope, found, rows: false, only: Sources(join.SecondTableReference, scope));
                 break;
             case JoinParenthesisTableReference parenthesis:
-                Joins(parenthesis.Join, scope, found, insideOptional);
+                Joins(parenthesis.Join, scope, found, insideOptional, own);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Whether the query groups by ROLLUP, CUBE or GROUPING SETS (or WITH ROLLUP, WITH CUBE): anything but a list of
+    /// expressions, or GROUP BY () alone. A composite grouping is counted too, which only claims less.
+    /// </summary>
+    private static bool SuperAggregate(QuerySpecification query) =>
+        query.GroupByClause is { } group
+        && (group.GroupByOption != GroupByOption.None
+            || group.GroupingSpecifications.Any(s => s is not ExpressionGroupingSpecification
+                && !(s is GrandTotalGroupingSpecification && group.GroupingSpecifications.Count == 1)));
+
+    /// <summary>
+    /// Whether the query may aggregate without GROUP BY, erring towards yes, since yes only claims less here: HAVING, or a
+    /// built-in aggregate in its select list or ORDER BY (outside subqueries, wherever its arguments read), or a call of a
+    /// function the project does not show to be a scalar function, which may be a CLR aggregate.
+    /// </summary>
+    private bool MayAggregateWithoutGrouping(QuerySpecification query)
+    {
+        if (query.GroupByClause is not null)
+            return false;
+        if (query.HavingClause is not null)
+            return true;
+        var finder = new AggregateFinder(call => FunctionSummaries.Callee(call) is { } callee
+            && model.FindFunction(callee)?.Body.ReturnType is not ScalarFunctionReturnType);
+        foreach (var element in query.SelectElements)
+            element.Accept(finder);
+        query.OrderByClause?.Accept(finder);
+        return finder.Found.Count > 0;
     }
 
     /// <summary>The sources of this scope that a table reference binds.</summary>
@@ -365,7 +438,7 @@ internal sealed partial class ProcedureAnalyzer
 
             case "min" or "max" when call.Parameters.Count == 1:
             {
-                var argument = Expression(call.Parameters[0], scope);
+                var argument = InAggregate(() => Expression(call.Parameters[0], scope));
                 if (argument.Shape is UnknownShape unknown)
                     return Value.Unknown(unknown);
                 if (argument.IsLiveJson || argument.Shape is not ScalarShape)

@@ -523,6 +523,12 @@ public static class IrNullRules
     /// </summary>
     public const string CountOverflow = "count-overflow";
 
+    /// <summary>
+    /// It is a grouped column of a query grouped by <c>ROLLUP</c>, <c>CUBE</c> or <c>GROUPING SETS</c>, whose super-aggregate
+    /// rows hold NULL in the columns they roll up, whatever the filters proved of them.
+    /// </summary>
+    public const string GroupingSet = "grouping-set";
+
     /// <summary>Its type is unknown, so nothing is proved about it.</summary>
     public const string Unknown = "unknown";
 

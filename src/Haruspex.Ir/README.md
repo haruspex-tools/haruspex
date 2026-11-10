@@ -342,7 +342,9 @@ point, as if its statements were there, so they carry the callee's locations (a 
   reason `declared`, at the procedure declared. A declared scalar has no SQL type, so it has no `sql`: that key is the
   database's type, which other dialects and backends read, and a JSON Schema type is not one.
 
-Changes in 0.8 (slice 6c, refinement): a result's `cardinality`; the null rule `count-overflow`. Refinement tightens
+Changes in 0.8 (slice 6c, refinement): a result's `cardinality`; the null rules `count-overflow` and `grouping-set` (a
+grouped column of a query grouped by `ROLLUP`, `CUBE` or `GROUPING SETS`, NULL in its super-aggregate rows; such a query's
+grouped columns were wrongly claimed non-null before). Refinement tightens
 nullability and adds `minItems`/`maxItems` to `FOR JSON` subqueries' arrays, which 0.7 readers read as before, but a 0.7
 reader would not know a result is one row, and a document always writes `cardinality`, which is why the version changed.
 

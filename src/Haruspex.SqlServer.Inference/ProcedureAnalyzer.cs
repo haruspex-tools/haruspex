@@ -351,6 +351,8 @@ internal sealed partial class ProcedureAnalyzer
         // be null, whatever its declaration says; unless a filter proves the row matched.
         if (source.OptionalSideOf is { } optional && !Matched(source))
             because.Add(new IrNullReason(IrNullRules.OuterJoin, optional.ToString()));
+        if (Rolled(source) is { } rolled)
+            because.Add(rolled);
 
         // A json column nests as JSON inside FOR JSON and the constructors (observed), but what it holds is data.
         // Through a driver it is text, which Rowset makes of any live value.
@@ -594,7 +596,7 @@ internal sealed partial class ProcedureAnalyzer
         if (call.Parameters.Count != 1)
             return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"json_arrayagg of {call.Parameters.Count} values is not modelled: {Text(call)}", At(call)));
 
-        var value = Expression(call.Parameters[0], scope);
+        var value = InAggregate(() => Expression(call.Parameters[0], scope));
         var neverEmpty = nullOnNull || value.NullableBecause.Count == 0;
         return new Value(
             new ArrayShape(value.Shape, nullOnNull ? value.NullableBecause : null, MinItems: neverEmpty ? 1 : null),
@@ -611,7 +613,7 @@ internal sealed partial class ProcedureAnalyzer
         if (call.JsonParameters is not [var pair])
             return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"This form of json_objectagg is not modelled: {Text(call)}", At(call)));
 
-        var value = Expression(pair.JsonValue, scope);
+        var value = InAggregate(() => Expression(pair.JsonValue, scope));
         return new Value(new RecordShape(value.Shape, nullOnNull ? value.NullableBecause : []), Aggregate(call), IsLiveJson: true);
     }
 

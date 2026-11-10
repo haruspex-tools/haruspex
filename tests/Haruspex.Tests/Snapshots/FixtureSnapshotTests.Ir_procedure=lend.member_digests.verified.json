@@ -1,0 +1,197 @@
+{
+  "irVersion": "0.8",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "lend.member_digests",
+      "name": "MemberDigests",
+      "kind": "procedure",
+      "at": "procedures/member_digests.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MemberDigestsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "MemberDigestsDigest": {
+      "kind": "object",
+      "identity": {
+        "procedure": "lend.member_digests",
+        "path": "results[0][].digest<json>"
+      },
+      "fields": [
+        {
+          "name": "nickname",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "lend.member.nickname"
+            }
+          ]
+        },
+        {
+          "name": "loans",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "MemberDigestsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "lend.member_digests",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "member_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "digest",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "ref": "MemberDigestsDigest"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "summary",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "ref": "MemberDigestsSummary"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "MemberDigestsSummary": {
+      "kind": "object",
+      "identity": {
+        "procedure": "lend.member_digests",
+        "path": "results[0][].summary<json>"
+      },
+      "fields": [
+        {
+          "name": "nickname",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "lend.member.nickname"
+            }
+          ]
+        },
+        {
+          "name": "loans",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

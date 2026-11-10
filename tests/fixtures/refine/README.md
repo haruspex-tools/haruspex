@@ -16,3 +16,6 @@ of non-null is tested against rows that could break it.
 | `lend.overdue_members` | a filter's proof that survives `SELECT … INTO #t` |
 | `lend.catalogue_summary` | aggregates without GROUP BY: exactly one row as a rowset and as JSON, over no rows too |
 | `lend.latest_loan` | `TOP (1)`: at most one row, none for a member who never borrowed |
+| `lend.copies_at` | a filter on part of a two-column key: any number of rows (two here) |
+| `lend.loan_totals` | `ROLLUP` and `GROUPING SETS`: grouped columns null in the super-aggregate rows despite WHERE, and more than one row despite a key filter |
+| `lend.member_digests` | aggregate subqueries returning the outer row's column that their WHERE tests: their one row comes even when WHERE kept none |

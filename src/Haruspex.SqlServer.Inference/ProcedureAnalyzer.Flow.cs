@@ -975,8 +975,10 @@ internal sealed partial class ProcedureAnalyzer
         var value = locals!.Column(bound.Relation, bound.Ordinal, at);
         if (value.Shape is not UnknownShape && bound.Ordinal >= 0 && Proved(bound.Source, Key(bound)))
             value = value with { NullableBecause = [] };
-        return bound.Source.OptionalSideOf is { } optional && !Matched(bound.Source)
-            ? value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.OuterJoin, optional.ToString())]) }
+        if (bound.Source.OptionalSideOf is { } optional && !Matched(bound.Source))
+            value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.OuterJoin, optional.ToString())]) };
+        return Rolled(bound.Source) is { } rolled && value.Shape is not UnknownShape
+            ? value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [rolled]) }
             : value;
     }
 

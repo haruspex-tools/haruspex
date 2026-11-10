@@ -228,7 +228,60 @@ public class RefinementObservationTests(SqlServerFixture server)
         Assert.Equal("j: [{\"n\":0}]", (await Run([Empty], "SELECT (SELECT COUNT(*) AS n FROM dbo.obs_none FOR JSON PATH) AS j;")).ToString());
     }
 
+    [Fact]
+    public async Task Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null()
+    {
+        // The super-aggregate rows hold NULL in the columns they roll up, whatever WHERE proved of them, and they are rows
+        // of their own: a filter fixing a key no longer gives at most one row.
+        Assert.Equal("c,n: 1,1;2,1;null,2", (await Run([Rows], "SELECT c, COUNT_BIG(*) AS n FROM dbo.obs_val WHERE c IS NOT NULL GROUP BY ROLLUP (c) ORDER BY GROUPING(c), c;")).ToString());
+        Assert.Equal("id,n: 1,1;null,1", (await Run([Rows], "SELECT id, COUNT_BIG(*) AS n FROM dbo.obs_val WHERE id = 1 GROUP BY ROLLUP (id) ORDER BY GROUPING(id);")).ToString());
+        Assert.Equal("id,n: 1,1;null,1", (await Run([Rows], "SELECT id, COUNT_BIG(*) AS n FROM dbo.obs_val WHERE id = 1 GROUP BY CUBE (id) ORDER BY GROUPING(id);")).ToString());
+        Assert.Equal("id,n: 1,1;null,1", (await Run([Rows], "SELECT id, COUNT_BIG(*) AS n FROM dbo.obs_val WHERE id = 1 GROUP BY GROUPING SETS ((id), ()) ORDER BY GROUPING(id);")).ToString());
+        Assert.Equal("id,n: 1,1;null,1", (await Run([Rows], "SELECT id, COUNT_BIG(*) AS n FROM dbo.obs_val WHERE id = 1 GROUP BY id WITH ROLLUP ORDER BY GROUPING(id);")).ToString());
+    }
+
+    [Fact]
+    public async Task An_aggregate_subquery_returns_its_row_even_when_its_where_rejects_the_outer_column()
+    {
+        // The outer row's c is null, so t.c = o.c keeps no row; but an aggregate without GROUP BY still returns one, in which
+        // o.c is null. A filter on an enclosing query's column proves nothing in such a query's select list.
+        Assert.Equal("j: {\"n\":0}", (await Run([Rows], """
+            SELECT (SELECT o.c AS c, COUNT_BIG(*) AS n FROM dbo.obs_val AS t WHERE t.c = o.c FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS j
+            FROM dbo.obs_val AS o WHERE o.id = 3;
+            """)).ToString());
+        Assert.Equal("c,n: null,0", (await Run([Rows], "SELECT (SELECT o.c FROM dbo.obs_val AS t WHERE t.c = o.c HAVING COUNT(*) >= 0) AS c, (SELECT COUNT_BIG(*) FROM dbo.obs_val AS t WHERE t.c = o.c) AS n FROM dbo.obs_val AS o WHERE o.id = 3;")).ToString());
+    }
+
     // ---- how many rows ----------------------------------------------------------------------------------------------
+
+    [Fact]
+    public async Task Offset_keeps_the_one_row_of_an_aggregate_query_only_when_it_skips_none()
+    {
+        Assert.Equal("n: 0", (await Run([Empty], "SELECT COUNT(*) AS n FROM dbo.obs_none ORDER BY 1 OFFSET 0 ROWS;")).ToString());
+        Assert.Equal("n: 0", (await Run([Empty], "SELECT COUNT(*) AS n FROM dbo.obs_none ORDER BY 1 OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;")).ToString());
+        Assert.Equal("n: ", (await Run([Empty], "SELECT COUNT(*) AS n FROM dbo.obs_none ORDER BY 1 OFFSET 1 ROWS;")).ToString());
+    }
+
+    [Fact]
+    public async Task A_filtered_unique_index_allows_duplicates_outside_its_filter()
+    {
+        // Unique only among the rows its filter keeps: several NULLs, or several equal values the filter leaves out.
+        string[] setup = ["CREATE TABLE dbo.obs_filtered (id int NOT NULL PRIMARY KEY, code int NULL, INDEX ux_code UNIQUE (code) WHERE code > 0);"];
+        Assert.Equal("", (await Run(setup, "INSERT INTO dbo.obs_filtered VALUES (1, NULL), (2, NULL), (3, -1), (4, -1);")).ToString());
+        Assert.Equal(" ! 2601", (await Run(setup, "INSERT INTO dbo.obs_filtered VALUES (1, 5), (2, 5);")).ToString());
+    }
+
+    [Fact]
+    public async Task A_disabled_unique_index_allows_duplicates()
+    {
+        // Disabled, it enforces nothing, so a key it declares no longer fixes one row; rebuilding it then fails on them.
+        string[] setup = [
+            "CREATE TABLE dbo.obs_disabled (id int NOT NULL PRIMARY KEY, code int NOT NULL CONSTRAINT uq_obs_disabled UNIQUE);",
+            "ALTER INDEX uq_obs_disabled ON dbo.obs_disabled DISABLE;",
+        ];
+        Assert.Equal("n: 2", (await Run(setup, "INSERT INTO dbo.obs_disabled VALUES (1, 5), (2, 5); SELECT COUNT(*) AS n FROM dbo.obs_disabled WHERE code = 5;")).ToString());
+    }
+
 
     [Fact]
     public async Task Top_1_and_fetch_1_give_at_most_one_row_but_with_ties_gives_more()
