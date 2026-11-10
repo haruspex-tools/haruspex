@@ -36,7 +36,11 @@ internal sealed record KnownTable(string Name, IReadOnlyList<TempColumn> Columns
 /// <c>SELECT … INTO</c> has a type, but its nullability is SQL Server's own reading of the select, which haruspex does not
 /// reproduce (observed), so each write joins with what it held.
 /// </param>
-internal sealed record TempColumn(string Name, Value Value, Table? Declaration);
+/// <param name="Identity">
+/// Whether it is an identity column, which an insert without a column list skips: true or false when known, null when it
+/// may be (a column <c>SELECT … INTO</c> copied from one it can't see the properties of).
+/// </param>
+internal sealed record TempColumn(string Name, Value Value, Table? Declaration, bool? Identity = false);
 
 /// <summary>A result set one path returns at a position, from the statement at <paramref name="At"/>.</summary>
 internal sealed record Produced(ResultShape Result, SourceLocation At, string Key);
@@ -239,6 +243,7 @@ internal sealed class FlowState
                     // differently, is not guaranteed by either declaration, so it joins later writes like a column SELECT …
                     // INTO made, and is never read again from one path's declaration.
                     Declaration = ReferenceEquals(c.Declaration, d.Declaration) ? c.Declaration : null,
+                    Identity = c.Identity == d.Identity ? c.Identity : null,
                 })]);
             case (KnownTable, KnownTable):
                 return new UnknownTable(new UnknownShape(IrUnknownReasons.UnsupportedStatement, $"{name} has different columns on different paths before {at}.", at));
@@ -274,7 +279,8 @@ internal sealed class FlowState
                     break;
                 case KnownTable known:
                     foreach (var column in known.Columns)
-                        text.Append(column.Name).Append(column.Declaration is null ? ':' : '!').Append(ShapeText.Of(column.Value)).Append(';');
+                        text.Append(column.Name).Append(column.Identity switch { true => "+", false => "", null => "?" })
+                            .Append(column.Declaration is null ? ':' : '!').Append(ShapeText.Of(column.Value)).Append(';');
                     break;
             }
 

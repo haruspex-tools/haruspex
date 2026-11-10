@@ -130,6 +130,22 @@ public static class ConfigApplication
                 $"{obj.Id}: its result sets are unknown: {why.Detail} ({why.At}) Declare them in {file} under procedures[\"{obj.Id}\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it."));
         }
 
+        // Values a call that isn't followed leaves unknown, under INSERT … EXEC: its results went into a temporary table,
+        // which is unknown after it. A declaration can't help there (what a call does to temporary tables is never known
+        // from it), but a path override can, so the warning says so. One warning per call, naming it.
+        for (var i = 0; i < document.Objects.Count; i++)
+        {
+            var obj = document.Objects[i];
+            if (results[i] is null)
+                continue;
+            foreach (var call in unknowns.Where(u => u.Object == obj.Id && u.Path != "results" && Unknowable.Contains(u.Reason)).GroupBy(u => u.Detail, StringComparer.Ordinal))
+            {
+                var paths = call.Select(u => u.Path).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+                problems.Add(new ConfigProblem(ConfigSeverity.Warning, config.File, null,
+                    $"{obj.Id}: {string.Join(", ", paths)} {(paths.Count == 1 ? "is" : "are")} unknown: {call.Key} A declaration can't type {(paths.Count == 1 ? "it" : "them")}: after a call that is not followed, temporary tables are unknown even when its results are declared. To type the value, override its path under \"paths\" with \"type\" and \"import\"."));
+            }
+        }
+
         var settler = new NameSettler(config, types, procedureNames, applier.Names, problems);
         var named = problems.Any(p => p.Severity == ConfigSeverity.Error) ? null : settler.Settle(document with { Unknowns = unknowns }, results);
         return new ConfigApplied(named is null ? null : named with { Overrides = [.. document.Overrides, .. claims] }, problems);

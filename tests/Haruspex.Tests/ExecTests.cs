@@ -14,7 +14,12 @@ public class ExecTests
     private const string Tables = """
         CREATE TABLE dbo.t (id int NOT NULL PRIMARY KEY, name nvarchar(10) NULL, code int NOT NULL);
         GO
+        CREATE TABLE dbo.item (id int IDENTITY(1, 1) NOT NULL PRIMARY KEY, qty int NULL);
+        GO
         """;
+
+    /// <summary>Whether a field may be null or is unknown: anything but a claim that it is never null.</summary>
+    private static bool ClaimsNothingNonNull(IrField field) => field.Nullable || field.Type is IrUnknownType;
 
     /// <summary>Infers every procedure of the files, over the standard tables.</summary>
     private static IrDocument Infer(params (string Name, string Sql)[] procedures) => Infer("*.*", procedures);
@@ -131,6 +136,22 @@ public class ExecTests
         Assert.Equal(2, results.Count);
         var union = Assert.IsType<IrUnion>(results[0].Type);
         Assert.Equal(["id", "name"], union.Variants.SelectMany(v => Names(doc, v)).Order(StringComparer.Ordinal));
+        Assert.False(results[0].MayBeAbsent);
+        Assert.Equal(IrNullRules.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
+    }
+
+    [Fact]
+    public void A_callees_result_on_one_branch_may_not_arrive_and_a_later_one_takes_its_place()
+    {
+        // Observed in StatementFlowObservationTests (a branch not taken returns no result set at all); a callee's own branch
+        // is no different, so the caller's next result may arrive first.
+        var doc = Infer(
+            ("q", "CREATE PROCEDURE dbo.q @b bit AS IF @b = 1 SELECT t.id FROM dbo.t AS t;"),
+            ("p", "CREATE PROCEDURE dbo.p @b bit AS EXEC dbo.q @b; SELECT t.name FROM dbo.t AS t;"));
+
+        var results = Results(doc);
+        Assert.Equal(2, results.Count);
+        Assert.Equal(["id", "name"], Assert.IsType<IrUnion>(results[0].Type).Variants.SelectMany(v => Names(doc, v)).Order(StringComparer.Ordinal));
         Assert.False(results[0].MayBeAbsent);
         Assert.Equal(IrNullRules.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
     }
@@ -429,6 +450,58 @@ public class ExecTests
     }
 
     [Fact]
+    public void Under_insert_exec_a_for_json_query_ends_the_path()
+    {
+        // Observed: Insert_exec_of_a_procedure_that_runs_for_json_fails. So the callee's write after it never happens, and
+        // the caller's CATCH sees #x as it was before.
+        var doc = Infer(
+            ("q", "CREATE PROCEDURE dbo.q AS SELECT t.id FROM dbo.t AS t FOR JSON PATH; INSERT INTO #x (a) VALUES (NULL);"),
+            ("p", """
+                CREATE PROCEDURE dbo.p AS
+                SELECT t.id AS a INTO #x FROM dbo.t AS t;
+                CREATE TABLE #y (j nvarchar(max));
+                BEGIN TRY INSERT INTO #y EXEC dbo.q; END TRY BEGIN CATCH PRINT N'failed'; END CATCH
+                SELECT x.a FROM #x AS x;
+                """));
+
+        Assert.False(Field(doc, "a").Nullable);
+    }
+
+    [Fact]
+    public void Insert_exec_without_a_column_list_skips_an_identity_column_select_into_copied()
+    {
+        // Observed: Select_into_copies_identity_and_insert_exec_without_a_column_list_skips_it. So the callee's one column goes
+        // into n, which may then be null.
+        var doc = Infer(
+            ("q", "CREATE PROCEDURE dbo.q AS SELECT i.qty FROM dbo.item AS i;"),
+            ("p", """
+                CREATE PROCEDURE dbo.p AS
+                DECLARE @v int = 1;
+                SELECT i.id, @v AS n INTO #x FROM dbo.item AS i;
+                INSERT INTO #x EXEC dbo.q;
+                SELECT x.id, x.n FROM #x AS x;
+                """));
+
+        Assert.True(ClaimsNothingNonNull(Field(doc, "n")));
+    }
+
+    [Fact]
+    public void Insert_exec_without_a_column_list_skips_a_declared_identity_column()
+    {
+        var doc = Infer(
+            ("q", "CREATE PROCEDURE dbo.q AS SELECT t.code FROM dbo.t AS t;"),
+            ("p", """
+                CREATE PROCEDURE dbo.p AS
+                CREATE TABLE #x (id int IDENTITY(1, 1) NOT NULL, n int NOT NULL);
+                INSERT INTO #x EXEC dbo.q;
+                SELECT x.id, x.n FROM #x AS x;
+                """));
+
+        Assert.False(Field(doc, "n").Nullable);
+        Assert.DoesNotContain(doc.Unknowns, u => u.Object == "dbo.p");
+    }
+
+    [Fact]
     public void Insert_exec_into_a_table_variable_is_followed()
     {
         var doc = Infer(
@@ -534,6 +607,28 @@ public class ExecTests
                 """));
 
         Assert.Contains(doc.Unknowns, u => u.Object == "dbo.outer_p" && u.Path == "results[0][].a");
+    }
+
+    [Fact]
+    public void A_recursive_call_from_changed_tables_is_read_from_those_tables()
+    {
+        // The recursive call reads #r after its caller wrote a null into it, so its result may be null.
+        var doc = Infer(
+            ("rec", """
+                CREATE PROCEDURE dbo.rec @n int AS
+                IF @n <= 0 SELECT r.x FROM #r AS r;
+                ELSE BEGIN INSERT INTO #r (x) SELECT i.qty FROM dbo.item AS i; DECLARE @m int = @n - 1; EXEC dbo.rec @m; END
+                """),
+            ("rec_caller", """
+                CREATE PROCEDURE dbo.rec_caller @n int AS
+                DECLARE @v int = 1;
+                SELECT @v AS x INTO #r;
+                EXEC dbo.rec @n;
+                """));
+
+        var result = Assert.Single(Results(doc, "dbo.rec_caller"));
+        var variants = result.Type is IrUnion union ? union.Variants : [result.Type];
+        Assert.All(variants, v => Assert.True(ClaimsNothingNonNull(Assert.Single(Fields(doc, v), f => f.Name == "x"))));
     }
 
     // ---- the Zod -------------------------------------------------------------------------------------------

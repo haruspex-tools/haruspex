@@ -47,8 +47,10 @@ internal sealed record Walked(FlowState? End, IReadOnlyList<FlowState> Escapes, 
 /// <para>
 /// <b>Recursion.</b> A call of a procedure that is already being walked (it calls itself, directly or through others) does
 /// not walk it again. It gives what is assumed of that procedure: at first that it never returns (the path through the call
-/// ends), then the result sets its last walk returned, until a walk returns what was assumed. Result sets only grow from one
-/// walk to the next, so this is the least fixed point, which describes every call that returns, by induction on its depth.
+/// ends), then the result sets its last walk returned, until a walk returns what was assumed. The walk starts from the join
+/// of the temporary tables it was called with and those every recursive call of it starts from (the procedure may have
+/// written them first), widened and walked again until no call adds to them, so the assumption holds for each call's tables.
+/// Result sets only grow from one walk to the next, so this is the least fixed point, which describes every call that returns, by induction on its depth.
 /// At most <see cref="MostPasses"/> walks are taken; a procedure that returns more result sets at each depth never settles,
 /// and is unknown (<c>unresolved-recursion</c>). What the recursive call does to temporary tables is not iterated: every
 /// table that the procedures it can reach write is unknown after it. SQL Server stops at 32 nested calls (error 217,
@@ -64,9 +66,18 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     /// <summary>The most walks a recursive procedure gets to reach a fixed point.</summary>
     public const int MostPasses = 20;
 
-    private sealed class Frame(ObjectName name)
+    private sealed class Frame(ObjectName name, CallContext context)
     {
         public ObjectName Name { get; } = name;
+
+        /// <summary>
+        /// What its walk starts from: the context it was called with, joined with the temporary tables of every recursive
+        /// call of it met, so that what is assumed of those calls holds for the tables they start from.
+        /// </summary>
+        public CallContext Context { get; set; } = context;
+
+        /// <summary>Whether a recursive call widened <see cref="Context"/> in this pass, so another is needed.</summary>
+        public bool Widened { get; set; }
 
         /// <summary>Whether a call of it was met while it was being walked, in this pass.</summary>
         public bool Recursive { get; set; }
@@ -115,9 +126,29 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
             return Run(callee, context);
 
         // A recursive call: what is assumed of the callee, and every frame above it rests on that assumption.
-        stack[index].Recursive = true;
+        var frame = stack[index];
+        frame.Recursive = true;
         for (var i = index + 1; i < stack.Count; i++)
             stack[i].Dependent = true;
+
+        // The assumption is the callee's results from the tables its walk starts from. The recursive call may start from
+        // others (the procedure has written them), so the walk starts from the join of both, again, until it holds.
+        if (context.Inserting != frame.Context.Inserting)
+        {
+            return new Walked(null, [], new UnknownShape(
+                IrUnknownReasons.UnresolvedRecursion,
+                $"{callee.Name} calls itself under INSERT … EXEC and outside it, which is not modelled.",
+                at), []);
+        }
+
+        var joined = FlowState.Join(FlowState.Start([]).WithTemps(frame.Context.Temps), FlowState.Start([]).WithTemps(context.Temps), at)!.Temps;
+        var wider = frame.Context with { Temps = joined };
+        if (Key(callee.Name, wider) != Key(callee.Name, frame.Context))
+        {
+            frame.Context = wider;
+            frame.Widened = true;
+        }
+
         return Assumed(callee, context, at);
     }
 
@@ -138,14 +169,15 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
         if (cache.TryGetValue(key, out var cached))
             return cached;
 
-        var frame = new Frame(procedure.Name);
+        var frame = new Frame(procedure.Name, context);
         stack.Add(frame);
         try
         {
             for (var pass = 0; pass < MostPasses; pass++)
             {
                 frame.Recursive = false;
-                var walked = new ProcedureAnalyzer(model, procedure.File, functions, calls: this, context: context).Walk(procedure.Body);
+                frame.Widened = false;
+                var walked = new ProcedureAnalyzer(model, procedure.File, functions, calls: this, context: frame.Context).Walk(procedure.Body);
                 if (!frame.Recursive || walked.Blocker is not null)
                 {
                     if (!frame.Dependent)
@@ -153,9 +185,17 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
                     return walked;
                 }
 
-                // A call of itself was met: settled when it returned what the call was assumed to.
+                // A call of itself was met: settled when it returned what the call was assumed to, from tables that cover
+                // the call's.
                 var track = walked.End?.Results;
                 var before = assumed.GetValueOrDefault(procedure.Name);
+                if (frame.Widened)
+                {
+                    // What was assumed was read from narrower tables; the next walk starts over from wider ones.
+                    assumed.Remove(procedure.Name);
+                    continue;
+                }
+
                 if (Text(track) == Text(before))
                 {
                     if (!frame.Dependent)

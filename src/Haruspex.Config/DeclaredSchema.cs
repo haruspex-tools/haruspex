@@ -25,6 +25,9 @@ public sealed record ResultsDeclaration(IReadOnlyList<IrResult> Results, IReadOn
 /// never narrower, so a value the schema allows is never refused.
 /// </summary>
 /// <remarks>
+/// <para>A declared scalar has no SQL type (<see cref="IrScalar.Sql"/> is null): <c>sql</c> is the database's type, which other
+/// dialects and backends read, and a JSON Schema type is not one. Its <c>declared</c> null reason, and the override the IR
+/// lists, say where it came from.</para>
 /// A declaration is a claim, and is checked at runtime like the inferred types: the generated validator refuses output that
 /// does not fit it. So a wrong declaration fails loudly, on real data.
 /// </remarks>
@@ -175,23 +178,23 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
             "array" => ArrayNode(schema, at, irPath),
             "string" => format switch
             {
-                null => new IrScalar(IrScalarKind.String, null, "string"),
-                "date" => new IrScalar(IrScalarKind.Date, null, format),
-                "time" => new IrScalar(IrScalarKind.Time, null, format),
-                "date-time" => new IrScalar(IrScalarKind.Datetime, IrFormats.Offset, format),
-                "date-time-local" => new IrScalar(IrScalarKind.Datetime, IrFormats.Local, format),
-                "uuid" => new IrScalar(IrScalarKind.Uuid, null, format),
-                _ => Unchecked(new IrScalar(IrScalarKind.String, null, "string")),
+                null => new IrScalar(IrScalarKind.String, null, null),
+                "date" => new IrScalar(IrScalarKind.Date, null, null),
+                "time" => new IrScalar(IrScalarKind.Time, null, null),
+                "date-time" => new IrScalar(IrScalarKind.Datetime, IrFormats.Offset, null),
+                "date-time-local" => new IrScalar(IrScalarKind.Datetime, IrFormats.Local, null),
+                "uuid" => new IrScalar(IrScalarKind.Uuid, null, null),
+                _ => Unchecked(new IrScalar(IrScalarKind.String, null, null)),
             },
             "integer" => format switch
             {
-                null => new IrScalar(IrScalarKind.Number, null, "integer"),
-                "int32" => new IrScalar(IrScalarKind.Number, IrFormats.Int32, "integer"),
-                "int64" => new IrScalar(IrScalarKind.Number, IrFormats.Int64, "integer"),
-                _ => Unchecked(new IrScalar(IrScalarKind.Number, null, "integer")),
+                null => new IrScalar(IrScalarKind.Number, null, null),
+                "int32" => new IrScalar(IrScalarKind.Number, IrFormats.Int32, null),
+                "int64" => new IrScalar(IrScalarKind.Number, IrFormats.Int64, null),
+                _ => Unchecked(new IrScalar(IrScalarKind.Number, null, null)),
             },
-            "number" => format is null ? new IrScalar(IrScalarKind.Number, null, "number") : Unchecked(new IrScalar(IrScalarKind.Number, null, "number")),
-            "boolean" => format is null ? new IrScalar(IrScalarKind.Boolean, null, "boolean") : Unchecked(new IrScalar(IrScalarKind.Boolean, null, "boolean")),
+            "number" => format is null ? new IrScalar(IrScalarKind.Number, null, null) : Unchecked(new IrScalar(IrScalarKind.Number, null, null)),
+            "boolean" => format is null ? new IrScalar(IrScalarKind.Boolean, null, null) : Unchecked(new IrScalar(IrScalarKind.Boolean, null, null)),
             var other => Invalid(other),
         };
         return type is null ? null : (type, nullable);

@@ -1,0 +1,94 @@
+{
+  "irVersion": "0.7",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "calls.delivery_stage",
+      "name": "DeliveryStage",
+      "kind": "procedure",
+      "at": "procedures/delivery_stage.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "DeliveryStageRow"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
+    }
+  ],
+  "types": {
+    "DeliveryStageRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "calls.delivery_stage",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "delivery_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "n",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "calls.oven.rack_count"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

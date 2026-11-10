@@ -219,7 +219,8 @@ public static class IrJsonWriter
                 json.WriteString("kind", ScalarKindName(scalar.Kind));
                 if (scalar.Format is not null)
                     json.WriteString("format", scalar.Format);
-                json.WriteString("sql", scalar.Sql);
+                if (scalar.Sql is not null)
+                    json.WriteString("sql", scalar.Sql);
                 if (scalar.Facets is { IsEmpty: false } facets)
                     WriteFacets(json, facets);
                 break;

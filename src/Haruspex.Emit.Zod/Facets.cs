@@ -71,7 +71,7 @@ internal static class Facets
             var exactLength = length.Unit == IrLengthUnit.Utf16 || length.Encoding == IrByteEncoding.SingleByte;
             code += length.IsFixed && exactLength ? $".length({length.Value})" : $".max({length.Value})";
             if (length.Unit == IrLengthUnit.Bytes)
-                notes.Add(BytesNote(scalar.Sql, length));
+                notes.Add(BytesNote(scalar.Sql ?? "the string", length));
         }
 
         return (code, notes.Count == 0 ? null : string.Join("; ", notes));
@@ -99,8 +99,8 @@ internal static class Facets
                 if (ExactNumbers(facets) is { } values)
                     return (values, null);
                 var (min, max) = FormatRange(scalar.Format);
-                var lower = facets?.Min ?? new IrBound(min.ToString(CultureInfo.InvariantCulture), true, new IrFactSource(IrFactSources.Type, scalar.Sql));
-                var upper = facets?.Max ?? new IrBound(max.ToString(CultureInfo.InvariantCulture), true, new IrFactSource(IrFactSources.Type, scalar.Sql));
+                var lower = facets?.Min ?? new IrBound(min.ToString(CultureInfo.InvariantCulture), true, new IrFactSource(IrFactSources.Type, scalar.Sql ?? scalar.Format));
+                var upper = facets?.Max ?? new IrBound(max.ToString(CultureInfo.InvariantCulture), true, new IrFactSource(IrFactSources.Type, scalar.Sql ?? scalar.Format));
                 if (lower is { Inclusive: true, Value: "-2147483648" } && upper is { Inclusive: true, Value: "2147483647" })
                     return ("z.int32()", null);
                 return ("z.int()" + Lower(lower, 0) + Upper(upper, 0), null);
@@ -140,7 +140,7 @@ internal static class Facets
                     code += digits.Scale == 0 ? ".multipleOf(1)" : $".multipleOf(1e-{digits.Scale.ToString(CultureInfo.InvariantCulture)})";
                 var comment = exactInDriver || (facets?.Min is null && facets?.Max is null && facets?.Values is null)
                     ? null
-                    : $"the mssql driver may round {scalar.Sql} past its bounds, so they are not checked in a row";
+                    : $"the mssql driver may round {scalar.Sql ?? "a decimal"} past its bounds, so they are not checked in a row";
                 return (code, comment);
             }
 

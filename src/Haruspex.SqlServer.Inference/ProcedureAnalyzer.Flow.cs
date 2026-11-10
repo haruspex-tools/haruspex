@@ -413,12 +413,53 @@ internal sealed partial class ProcedureAnalyzer
                 return Unknown(name, Unsupported(IrUnknownReasons.UnsupportedQuery, "SELECT * is not expanded yet.", star));
             if (row.Columns.Any(c => string.IsNullOrEmpty(c.Name)) || row.Columns.GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
                 return Unknown(name, Unsupported(IrUnknownReasons.UnnamedColumn, $"SELECT … INTO {name} has a column without a name, or two of one name, which SQL Server refuses.", at));
-            return new KnownTable(name, [.. row.Columns.Select(c => new TempColumn(c.Name!, Stored(c.Value, $"{name}.{c.Name}", c.At), null))]);
+            var identity = Identities(query);
+            return new KnownTable(name, [.. row.Columns.Select((c, i) => new TempColumn(c.Name!, Stored(c.Value, $"{name}.{c.Name}", c.At), null, identity[i]))]);
         }, why => Unknown(name, why));
         return state.WithTemp(name, table);
     }
 
     private static UnknownTable Unknown(string name, UnknownShape why) => new(why with { Detail = $"{name}: {why.Detail}" });
+
+    /// <summary>
+    /// Whether each column <c>SELECT … INTO</c> makes is an identity column: SQL Server copies the IDENTITY property of a
+    /// column read unchanged from one table (observed), which matters to an insert without a column list, which skips it.
+    /// It is documented not to be copied through an expression, so a column that is not a plain column reference is not one.
+    /// Through a join, a column listed twice, or a relation whose columns' properties are not known (a CTE, a table
+    /// variable, a caller's table), it may be: null.
+    /// </summary>
+    private bool?[] Identities(QuerySpecification query)
+    {
+        var scope = binder.BindFrom(query, null, locals);
+        var single = query.FromClause?.TableReferences is [NamedTableReference];
+        var bound = query.SelectElements.OfType<SelectScalarExpression>()
+            .Select(e => e.Expression is ColumnReferenceExpression column ? binder.BindColumn(column, scope) : null)
+            .ToList();
+        var elements = query.SelectElements.OfType<SelectScalarExpression>().ToList();
+        return [.. elements.Select((element, i) =>
+        {
+            if (bound[i] is not { } binding)
+                return element.Expression is ParenthesisExpression ? (bool?)null : false;
+            bool? identity = binding switch
+            {
+                BoundColumn column => column.Column.IsIdentity,
+                BoundLocalColumn { Relation.Name: var local, Ordinal: >= 0 and var ordinal } when local.StartsWith('#')
+                    && locals!.State.Temp(local) is KnownTable known => known.Columns[ordinal].Identity,
+                _ => null,
+            };
+
+            // Listed twice, the property is documented not to be copied; claimed only of a column listed once.
+            var once = bound.Count(b => Same(b, binding)) == 1;
+            return identity == false ? false : single && once ? identity : null;
+        })];
+
+        static bool Same(ColumnBinding? a, ColumnBinding b) => (a, b) switch
+        {
+            (BoundColumn x, BoundColumn y) => ReferenceEquals(x.Column, y.Column),
+            (BoundLocalColumn x, BoundLocalColumn y) => ReferenceEquals(x.Relation, y.Relation) && x.Ordinal == y.Ordinal,
+            _ => ReferenceEquals(a, b),
+        };
+    }
 
     private static Value Stored(Value value, string column, SourceLocation at) => value.IsLiveJson
         ? Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"JSON stored in {column} is text unless its SQL type is json, which is not tracked yet.", at))
@@ -475,7 +516,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>
     /// The table after rows are inserted into it: a declared column is unchanged (the engine converts each value to its type
     /// and refuses a null where it is NOT NULL); a column SELECT … INTO made joins with each value, and with null when the
-    /// insert leaves it out.
+    /// insert leaves it out, unless it is an identity column, which takes its next value.
     /// </summary>
     /// <param name="targets">The table's column each value of a row goes to, by position.</param>
     private static KnownTable Written(KnownTable table, List<int> targets, IEnumerable<IReadOnlyList<Value>> rows, SourceLocation at)
@@ -488,6 +529,10 @@ internal sealed partial class ProcedureAnalyzer
             var column = columns[i];
             var where = $"{table.Name}.{column.Name}";
             var position = targets.IndexOf(i);
+
+            // An identity column the insert leaves out gets its next value, never null.
+            if (position < 0 && column.Identity == true)
+                continue;
             var written = position < 0
                 ? [new Value(column.Value.Shape, [new IrNullReason(IrNullRules.NullableColumn, where)])]
                 : rows.Select(r => Stored(r[position], where, at));
@@ -655,7 +700,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var name = create.SchemaObjectName.BaseIdentifier.Value;
         var definition = Table.FromDefinition(new ObjectName("", name), create.Definition, file, At(create));
-        return new KnownTable(name, [.. definition.Columns.Select(c => new TempColumn(c.Name, Declared(definition, c, name, temporary: true), definition))]);
+        return new KnownTable(name, [.. definition.Columns.Select(c => new TempColumn(c.Name, Declared(definition, c, name, temporary: true), definition, c.IsIdentity))]);
     }
 
     /// <summary>
@@ -699,7 +744,7 @@ internal sealed partial class ProcedureAnalyzer
                     definition = Disabled(definition, null, at);
                 return state.WithTemp(name, table with
                 {
-                    Columns = [.. table.Columns, .. definition.Columns.Select(c => new TempColumn(c.Name, Declared(definition, c, name, temporary: true), definition))],
+                    Columns = [.. table.Columns, .. definition.Columns.Select(c => new TempColumn(c.Name, Declared(definition, c, name, temporary: true), definition, c.IsIdentity))],
                 });
             }
 
@@ -720,7 +765,7 @@ internal sealed partial class ProcedureAnalyzer
                     change.Collation?.Value);
                 var definition = new Table(new ObjectName("", name), [column], [], at);
                 var columns = table.Columns.ToList();
-                columns[i] = new TempColumn(column.Name, Declared(definition, column, name, temporary: true), definition);
+                columns[i] = new TempColumn(column.Name, Declared(definition, column, name, temporary: true), definition, table.Columns[i].Identity);
                 return state.WithTemp(name, table with { Columns = columns });
             }
 

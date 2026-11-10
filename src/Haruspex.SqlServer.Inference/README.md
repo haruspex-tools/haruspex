@@ -158,6 +158,14 @@ to it, as with `INSERT`. What a successful one never received is left out:
   that statement ends its path;
 - `INSERT … EXEC` cannot be nested (8164, `Insert_exec_cannot_be_nested`), so under `Inserting` it ends its path too.
 
+Without a column list, the rows go into every column but an identity column, which takes its next value. `SELECT … INTO`
+copies a column's IDENTITY when it reads it unchanged from one table, and not through an expression
+(`Select_into_copies_identity_and_insert_exec_without_a_column_list_skips_it`), so each column of a temporary table knows
+whether it is one (`TempColumn.Identity`): a declared column from its declaration; a `SELECT … INTO` column is not one when
+it isn't a plain column reference or reads a column that isn't, is one when it reads an identity column of the one table
+in FROM, listed once, and may be one otherwise (a join, a CTE, a column listed twice). When a column may be one, which
+columns an insert without a column list fills is not known, and the table becomes unknown.
+
 `INSERT … EXEC` into a table variable works (`Insert_exec_into_a_table_variable_works`), and changes nothing it may hold.
 Into a permanent table it is not followed (a trigger may return result sets).
 
@@ -192,7 +200,10 @@ declaration is never applied here: the config layer applies it, and checks it ag
 
 A call of a procedure that is already being walked does not walk it again: it gives what is assumed of it, at first that
 it never returns, then the result sets its last walk returned, until a walk returns what was assumed (at most 20 walks,
-`ProcedureCalls.MostPasses`). Result sets only grow between walks, so this is the least fixed point, which describes every
+`ProcedureCalls.MostPasses`). The assumption must hold for the temporary tables the recursive call starts from, which the
+procedure may have written before calling itself; so the walk starts from the join of the tables it was called with and
+those of every recursive call met, and when a call widens them, it starts over from the wider tables. A recursive call both
+under `INSERT … EXEC` and outside it is `unresolved-recursion`. Result sets only grow between walks, so this is the least fixed point, which describes every
 call that returns, by induction on its depth. A procedure that returns more result sets at each depth never settles and is
 `unresolved-recursion`. Every temporary table that the procedures the recursive call can reach write is unknown after it:
 that part is not iterated. Calls nest at most 32 deep (error 217, `Calls_nest_at_most_32_deep`), which fails the call, so it

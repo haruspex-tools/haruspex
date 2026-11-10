@@ -50,7 +50,7 @@ public static class Runs
     private const string NoSales = "DELETE FROM flow.sale;";
     private const string NoEmployees = "DELETE FROM flow.employee;";
     private const string NoRegions = "DELETE FROM flow.region;";
-    private const string NoBakery = "DELETE FROM calls.batch; DELETE FROM calls.oven;";
+    private const string NoBakery = "DELETE FROM calls.delivery; DELETE FROM calls.batch; DELETE FROM calls.oven;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -171,6 +171,14 @@ public static class Runs
         new("calls: ovens_or_batches, an oven with racks", "calls", "calls.ovens_or_batches", new Dictionary<string, object?> { ["@ovens"] = false, ["@oven"] = 1 }),
         new("calls: search_batches", "calls", "calls.search_batches", new Dictionary<string, object?> { ["@product"] = "%r%" }),
         new("calls: search_batches, no match", "calls", "calls.search_batches", new Dictionary<string, object?> { ["@product"] = "zzz" }),
+        new("calls: rack_counts", "calls", "calls.rack_counts", None),
+        new("calls: delivery_stage", "calls", "calls.delivery_stage", None),
+        new("calls: recount_from, no steps", "calls", "calls.recount_from", new Dictionary<string, object?> { ["@n"] = 0 }),
+        new("calls: recount_from, one step", "calls", "calls.recount_from", new Dictionary<string, object?> { ["@n"] = 1 }),
+        new("calls: maybe_ovens, shown", "calls", "calls.maybe_ovens", new Dictionary<string, object?> { ["@show"] = true }),
+        new("calls: maybe_ovens, not shown", "calls", "calls.maybe_ovens", new Dictionary<string, object?> { ["@show"] = false }),
+        new("calls: maybe_then_batches, ovens first", "calls", "calls.maybe_then_batches", new Dictionary<string, object?> { ["@show"] = true }),
+        new("calls: maybe_then_batches, no ovens", "calls", "calls.maybe_then_batches", new Dictionary<string, object?> { ["@show"] = false }),
         new("calls: search_with_ovens", "calls", "calls.search_with_ovens", new Dictionary<string, object?> { ["@product"] = "%e%" }),
     ];
 
@@ -180,6 +188,7 @@ public static class Runs
         ["sales.order_report"] =
             "It reads sales.voucher and customer.nickname, which the fixture leaves out on purpose to show unknowns, so SQL Server cannot run it.",
         ["calls.picked_batches"] = "It reads its caller's #picked, so it runs only when called: through calls.daily_report, which is run.",
+        ["calls.recount"] = "It reads and writes its caller's #counts, so it runs only when called: through calls.recount_from, which is run.",
         ["calls.add_placeholder"] = "It writes its caller's #picked, so it runs only when called: through calls.daily_report, which is run.",
     };
 

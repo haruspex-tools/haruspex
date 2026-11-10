@@ -58,7 +58,7 @@ every document. It maps to JSON Schema without loss.
 }
 ```
 
-Type nodes are one of: a scalar (`{ "kind", "format"?, "sql", facets… }`, below), an array, a tuple, a record, a
+Type nodes are one of: a scalar (`{ "kind", "format"?, "sql"?, facets… }`, below; `sql` is left out only in declared results), an array, a tuple, a record, a
 union (below), `{ "ref" }`, `{ "kind": "json-text", "content"? }`, `{ "kind": "import", "name", "from" }` or
 `{ "kind": "unknown", "reason" }`.
 
@@ -323,12 +323,12 @@ point, as if its statements were there, so they carry the callee's locations (a 
   "results", "why" }`; a caller whose results include a declared callee's lists the same override with `"via"`, the
   callee's name. So every result that rests on a person's word, not the database's, is listed.
 - Inside declared results, a value that may be null, or a key that may be left out, or a result that may be absent, has the
-  reason `declared`, at the procedure declared. A declared scalar has no SQL type: its `sql` is the JSON Schema type or
-  format it was declared with (`integer`, `string`, `date-time`).
+  reason `declared`, at the procedure declared. A declared scalar has no SQL type, so it has no `sql`: that key is the
+  database's type, which other dialects and backends read, and a JSON Schema type is not one.
 
 Changes in 0.7 (slice 6b, calls): the unknown reasons `dynamic-sql`, `procedure-variable`, `system-procedure`,
 `missing-procedure` and `ambiguous-procedure`; the null rule `declared`; the override setting `results` and an override's
-`via`. A 0.6 reader that ignores unknown keys would read a caller's declared results as inferred, which is why the version
+`via`; a scalar's `sql` may be left out (in declared results). A 0.6 reader that ignores unknown keys would read a caller's declared results as inferred, which is why the version
 changed.
 
 Changes in 0.6 (slice 6, statement flow): the result reason `not-run`, under which a result set may be missing

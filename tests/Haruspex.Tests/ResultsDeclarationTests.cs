@@ -31,6 +31,16 @@ public class ResultsDeclarationTests
         CREATE PROCEDURE rpt.list_items AS
         SELECT i.item_id, i.label FROM rpt.item AS i;
         GO
+        CREATE PROCEDURE rpt.staged AS
+        CREATE TABLE #s (item_id int NOT NULL);
+        INSERT INTO #s EXEC (N'SELECT 1');
+        SELECT s.item_id FROM #s AS s;
+        GO
+        CREATE PROCEDURE rpt.staged_through AS
+        CREATE TABLE #s (item_id int NOT NULL);
+        INSERT INTO #s (item_id) EXEC rpt.search N'1 = 1';
+        SELECT s.item_id FROM #s AS s;
+        GO
         CREATE PROCEDURE rpt.logged AS
         EXEC audit.write_log N'listed';
         SELECT i.item_id FROM rpt.item AS i;
@@ -104,7 +114,7 @@ public class ResultsDeclarationTests
         Assert.Equal(["item_id", "label"], row.Fields.Select(f => f.Name));
         Assert.All(row.Fields, f => Assert.Equal(IrPresence.Always, f.Presence));
         Assert.False(row.Fields[0].Nullable);
-        Assert.Equal(new IrScalar(IrScalarKind.Number, IrFormats.Int32, "integer"), row.Fields[0].Type);
+        Assert.Equal(new IrScalar(IrScalarKind.Number, IrFormats.Int32, null), row.Fields[0].Type);
         Assert.Equal([new IrNullReason(IrNullRules.Declared, "rpt.search")], row.Fields[1].NullableBecause);
         Assert.Equal(IrScalarKind.String, Assert.IsType<IrScalar>(row.Fields[1].Type).Kind);
     }
@@ -331,6 +341,21 @@ public class ResultsDeclarationTests
         Assert.Equal(
             ["haruspex.json:1:19: warning: procedures[\"audit.write_log\"]: the declared results are not used: audit.write_log is not selected, and no selected procedure calls it."],
             run.Problems);
+    }
+
+    [Theory]
+    [InlineData("rpt.staged", "the call at procedures.sql:14:1, which is not followed: EXEC (N'SELECT 1') runs dynamic SQL")]
+    // Under INSERT … EXEC, rpt.search's own dynamic SQL is the call not followed: its result sets go into #s too.
+    [InlineData("rpt.staged_through", "the call at procedures.sql:3:1, which is not followed: EXEC sp_executesql @sql runs dynamic SQL")]
+    public void An_unknowable_exec_under_insert_exec_is_a_warning_naming_the_statement(string procedure, string statement)
+    {
+        var run = Apply("{}", procedure);
+
+        Assert.NotNull(run.Applied.Document);
+        var warning = Assert.Single(run.Problems);
+        Assert.StartsWith($"haruspex.json: warning: {procedure}: results[0][].item_id is unknown: #s may be changed by ", warning, StringComparison.Ordinal);
+        Assert.Contains(statement, warning, StringComparison.Ordinal);
+        Assert.EndsWith("A declaration can't type it: after a call that is not followed, temporary tables are unknown even when its results are declared. To type the value, override its path under \"paths\" with \"type\" and \"import\".", warning, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -135,8 +135,7 @@
           "name": "batch_id",
           "type": {
             "kind": "number",
-            "format": "int32",
-            "sql": "integer"
+            "format": "int32"
           },
           "presence": "always",
           "nullable": false
@@ -144,8 +143,7 @@
         {
           "name": "product",
           "type": {
-            "kind": "string",
-            "sql": "string"
+            "kind": "string"
           },
           "presence": "always",
           "nullable": false
@@ -154,8 +152,7 @@
           "name": "weight_g",
           "type": {
             "kind": "number",
-            "format": "int32",
-            "sql": "integer"
+            "format": "int32"
           },
           "presence": "always",
           "nullable": true,

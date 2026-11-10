@@ -146,6 +146,11 @@ exits as before (the `check` command will fail it).
   so it can be removed. They are compared as far as a declaration can say: how many result sets, each one's encoding and
   whether it may be absent, and in every value its kind, its keys, and whether it may be null or left out. To correct part of
   inferred results, use `paths` instead; `paths` and `results` can't be used together.
+- **`INSERT … EXEC` staging.** A call whose results go into a temporary table (`INSERT INTO #t EXEC …`) and isn't followed
+  (dynamic SQL, or a procedure running it) leaves every temporary table unknown, because it could change any of them. A
+  declaration of the procedure called doesn't change that: it says what the procedure returns, not what it does to
+  temporary tables. `generate` warns of each such call, naming it; to type the values read back from the table, override
+  their paths under `paths` with `type` and `import`.
 - **Declared results are checked at runtime**, like everything else: the generated validator rejects output that doesn't
   fit the declaration, so a wrong one fails loudly on real data.
 

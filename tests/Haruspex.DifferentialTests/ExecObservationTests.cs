@@ -168,6 +168,29 @@ public class ExecObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task Select_into_copies_identity_and_insert_exec_without_a_column_list_skips_it()
+    {
+        // A column read unchanged from one table keeps its IDENTITY; an insert without a column list then fills the other
+        // columns only, so a one-column result set goes into n. Through an expression the property is not copied.
+        string[] setup = [
+            "CREATE TABLE dbo.obs_item (id int IDENTITY(1, 1) NOT NULL PRIMARY KEY, q int NULL); INSERT INTO dbo.obs_item (q) VALUES (5);",
+            "CREATE PROCEDURE dbo.obs_one AS SELECT CAST(NULL AS int) AS q;",
+        ];
+
+        Assert.Equal("ident: True | id,n: 1,1;2,null", (await Run(setup, """
+            DECLARE @v int = 1;
+            SELECT i.id, @v AS n INTO #t FROM dbo.obs_item AS i;
+            SELECT c.is_identity AS ident FROM tempdb.sys.columns AS c WHERE c.object_id = OBJECT_ID(N'tempdb..#t') AND c.name = N'id';
+            INSERT INTO #t EXEC dbo.obs_one;
+            SELECT t.id, ISNULL(CONVERT(nvarchar(5), t.n), N'null') AS n FROM #t AS t ORDER BY t.id;
+            """)).ToString());
+        Assert.Equal("ident: False", (await Run(setup, """
+            SELECT i.id + 0 AS id INTO #t FROM dbo.obs_item AS i;
+            SELECT c.is_identity AS ident FROM tempdb.sys.columns AS c WHERE c.object_id = OBJECT_ID(N'tempdb..#t') AND c.name = N'id';
+            """)).ToString());
+    }
+
+    [Fact]
     public async Task Insert_exec_into_a_table_variable_works()
     {
         string[] setup = ["CREATE PROCEDURE dbo.obs_leaf AS SELECT 1 AS v;"];

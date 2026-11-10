@@ -221,7 +221,8 @@ internal sealed class OverrideApplier(
         IrJsonText => "JSON text",
         IrImport import => $"the imported {import.Name}",
         IrUnknownType => "of unknown type",
-        IrScalar scalar => $"a {scalar.Kind.ToString().ToLowerInvariant()} ({scalar.Sql})",
+        IrScalar { Sql: { } sql } scalar => $"a {scalar.Kind.ToString().ToLowerInvariant()} ({sql})",
+        IrScalar scalar => $"a {scalar.Kind.ToString().ToLowerInvariant()}",
         _ => "a value",
     };
 

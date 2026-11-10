@@ -1,0 +1,70 @@
+{
+  "irVersion": "0.7",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "calls.rack_counts",
+      "name": "RackCounts",
+      "kind": "procedure",
+      "at": "procedures/rack_counts.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "RackCountsRow"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
+    }
+  ],
+  "types": {
+    "RackCountsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "calls.rack_counts",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "rack_count",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "calls.oven.rack_count"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

@@ -1,0 +1,215 @@
+{
+  "irVersion": "0.7",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "calls.maybe_then_batches",
+      "name": "MaybeThenBatches",
+      "kind": "procedure",
+      "at": "procedures/maybe_then_batches.sql:2:1",
+      "parameters": [
+        {
+          "name": "@show",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "MaybeThenBatchesResult1Row"
+                }
+              },
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "MaybeThenBatchesResult1Row2"
+                }
+              }
+            ]
+          },
+          "mayBeAbsent": false
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MaybeThenBatchesResult2Row"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "not-run",
+              "at": "procedures/maybe_then_batches.sql:5:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "MaybeThenBatchesResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "calls.maybe_then_batches",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "oven_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "label",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "MaybeThenBatchesResult1Row2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "calls.maybe_then_batches",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "batch_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "product",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "MaybeThenBatchesResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "calls.maybe_then_batches",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "batch_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "product",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

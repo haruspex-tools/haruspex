@@ -5,3 +5,4 @@ INSERT INTO calls.batch (batch_id, oven_id, product, baked_on, weight_g, note) V
     (11, 1, N'Seeded roll', '2026-11-02', NULL, NULL),
     (12, 2, N'Brioche', '2026-11-03', 450, NULL),
     (13, 3, N'Baguette', '2026-11-03', 250, N'long proof');
+INSERT INTO calls.delivery (batch_id) VALUES (10), (12);

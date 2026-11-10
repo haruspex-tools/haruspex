@@ -44,7 +44,7 @@ internal sealed partial class ProcedureAnalyzer
                 return Outcome.Ends;
             }
 
-            return Continue(Assigned(execute.ExecuteSpecification, Forgotten(state, why)));
+            return Continue(Assigned(execute.ExecuteSpecification, Forgotten(state, why, At(execute))));
         }
 
         if (called.After is not { } after)
@@ -80,15 +80,23 @@ internal sealed partial class ProcedureAnalyzer
 
         var called = Call(execute, state, inserting: true);
         if (called.Unknowable is { } why)
-            return Continue(Assigned(execute, Forgotten(state, why)));
+            return Continue(Assigned(execute, Forgotten(state, why, at)));
         if (called.After is not { } after)
             return Outcome.Ends;
         after = Assigned(execute, after);
         if (target is null || after.Temp(target) is not KnownTable table)
             return Continue(after);
 
+        // Without a column list the rows go into every column but an identity column (observed, also of one SELECT … INTO
+        // copied); when a column may be one, which columns they go into is not known.
+        if (spec.Columns.Count == 0 && table.Columns.FirstOrDefault(c => c.Identity is null) is { } maybe)
+        {
+            return Continue(after.WithTemp(target, Unknown(target, Unsupported(IrUnknownReasons.UnsupportedStatement,
+                $"{maybe.Name} may be an identity column SELECT … INTO copied, which the insert at {at} skips without a column list, so which columns its rows go into is not known.", at))));
+        }
+
         var targets = spec.Columns.Count == 0
-            ? [.. Enumerable.Range(0, table.Columns.Count)]
+            ? [.. Enumerable.Range(0, table.Columns.Count).Where(i => table.Columns[i].Identity != true)]
             : spec.Columns.Select(c => IndexOf(table, c.MultiPartIdentifier.Identifiers[^1].Value)).ToList();
         if (targets.Any(i => i < 0))
             return Continue(after.WithTemp(target, Unknown(target, Unsupported(IrUnknownReasons.UnresolvedColumn, "The insert names a column the table does not have.", at))));
@@ -153,7 +161,7 @@ internal sealed partial class ProcedureAnalyzer
             if (name is { } calledName && calls!.Declared(calledName) is var (declaredName, declaration))
             {
                 declaredUsed = declaredUsed.Add(declaredName.ToString());
-                var forgotten = Forgotten(state, new UnknownShape(why.Reason, $"{declaredName}'s results are declared, but what it does to temporary tables is not known: {why.Detail}", why.At));
+                var forgotten = Forgotten(state, new UnknownShape(why.Reason, $"{declaredName}'s results are declared, but what it does to temporary tables is not known: {why.Detail}", why.At), at);
                 var received = Declared(declaration, declaredName, at);
                 if (needEscapes)
                     Escaped([forgotten.WithResults(inserting ? state.Results : state.Results.Then(received.Prefixes()))]);
@@ -242,11 +250,12 @@ internal sealed partial class ProcedureAnalyzer
     /// Every temporary table unknown: after a call nothing is known of, which can create, write, alter or drop any of them
     /// (observed of dynamic SQL), its caller's included.
     /// </summary>
-    private static FlowState Forgotten(FlowState state, UnknownShape why)
+    /// <param name="call">The call, in this procedure, which the detail names.</param>
+    private static FlowState Forgotten(FlowState state, UnknownShape why, SourceLocation call)
     {
         var temps = state.Temps;
         foreach (var name in state.Temps.Keys)
-            temps = temps.SetItem(name, new UnknownTable(why with { Detail = $"{name} may be changed by the call at {why.At}, which is not followed: {why.Detail}" }));
+            temps = temps.SetItem(name, new UnknownTable(why with { Detail = $"{name} may be changed by the call at {call}, which is not followed: {why.Detail}" }));
         return state.WithTemps(temps);
     }
 

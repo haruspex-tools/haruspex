@@ -72,6 +72,12 @@ public class FixtureSnapshotTests
         ["calls.ovens_or_batches"] = "calls",
         ["calls.search_batches"] = "calls",
         ["calls.search_with_ovens"] = "calls",
+        ["calls.rack_counts"] = "calls",
+        ["calls.delivery_stage"] = "calls",
+        ["calls.recount"] = "calls",
+        ["calls.recount_from"] = "calls",
+        ["calls.maybe_ovens"] = "calls",
+        ["calls.maybe_then_batches"] = "calls",
     };
 
     public static TheoryData<string> Procedures { get; } = [.. FixtureOf.Keys];
