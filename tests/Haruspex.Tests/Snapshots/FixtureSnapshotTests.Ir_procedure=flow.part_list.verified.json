@@ -1,0 +1,155 @@
+{
+  "irVersion": "0.6",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "flow.part_list",
+      "name": "PartList",
+      "kind": "procedure",
+      "at": "procedures/part_list.sql:3:1",
+      "parameters": [
+        {
+          "name": "@with_units",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PartListRow"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
+    }
+  ],
+  "types": {
+    "PartListRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.part_list",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "part_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "unit",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(4)",
+            "maxLength": {
+              "value": 4,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(4)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "each",
+                "kg",
+                "m"
+              ],
+              "from": [
+                {
+                  "check": "procedures/part_list.sql:11:26"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "#p.unit"
+            }
+          ]
+        },
+        {
+          "name": "used_in",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "#p.used_in"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

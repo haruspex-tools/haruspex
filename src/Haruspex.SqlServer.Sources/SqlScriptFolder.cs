@@ -168,56 +168,8 @@ public static class SqlScriptFolder
         return new SchemaReadResult(model, diagnostics);
     }
 
-    private static Table ReadTable(CreateTableStatement statement, string file)
-    {
-        var definition = statement.Definition;
-
-        // Declared on the table, or on a column. SQL Server refuses a table with two primary keys, so collecting
-        // every one only matters for a script that would not deploy.
-        var primaryKey = definition.TableConstraints
-            .OfType<UniqueConstraintDefinition>()
-            .Where(u => u.IsPrimaryKey)
-            .SelectMany(u => u.Columns)
-            .Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)
-            .Concat(definition.ColumnDefinitions
-                .Where(c => c.Constraints.OfType<UniqueConstraintDefinition>().Any(u => u.IsPrimaryKey))
-                .Select(c => c.ColumnIdentifier.Value))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var columns = new List<Column>();
-        foreach (var column in definition.ColumnDefinitions)
-        {
-            var nullable = column.Constraints.OfType<NullableConstraintDefinition>().ToList();
-
-            // A column that says both NULL and NOT NULL is recorded as NOT NULL, which is how inference read it
-            // before the model existed (slice 2b changed no behaviour).
-            var nullability = nullable.Any(n => !n.Nullable) ? DeclaredNullability.NotNull
-                : nullable.Count > 0 ? DeclaredNullability.Null
-                : DeclaredNullability.NotDeclared;
-
-            columns.Add(new Column(
-                column.ColumnIdentifier.Value,
-                SqlType.From(column.DataType),
-                nullability,
-                isIdentity: column.IdentityOptions is not null,
-                column.ComputedColumnExpression,
-                new SourceLocation(file, column.StartLine, column.StartColumn),
-                column.Collation?.Value));
-        }
-
-        // Column constraints first, then table constraints, each in declaration order. ALTER TABLE … ADD CONSTRAINT
-        // is not read (see OnlyTightens): a check added later is left out, which only claims less.
-        var checks = definition.ColumnDefinitions
-            .SelectMany(c => c.Constraints.OfType<CheckConstraintDefinition>().Select(k => Check(k, c.ColumnIdentifier.Value, file)))
-            .Concat(definition.TableConstraints.OfType<CheckConstraintDefinition>().Select(k => Check(k, null, file)))
-            .ToList();
-
-        return new Table(ObjectName.From(statement.SchemaObjectName), columns, primaryKey, new SourceLocation(file, statement.StartLine, statement.StartColumn), checks);
-    }
-
-    private static CheckConstraint Check(CheckConstraintDefinition check, string? column, string file) =>
-        new(check.ConstraintIdentifier?.Value, check.CheckCondition, column, check.NotForReplication, new SourceLocation(file, check.StartLine, check.StartColumn));
+    private static Table ReadTable(CreateTableStatement statement, string file) =>
+        Table.FromDefinition(ObjectName.From(statement.SchemaObjectName), statement.Definition, file, new SourceLocation(file, statement.StartLine, statement.StartColumn));
 
     /// <summary>ALTER TABLE … NOCHECK CONSTRAINT, or … WITH CHECK CHECK CONSTRAINT.</summary>
     /// <param name="Table">The table it names; in <c>dbo</c> when <paramref name="Qualified"/> is false.</param>

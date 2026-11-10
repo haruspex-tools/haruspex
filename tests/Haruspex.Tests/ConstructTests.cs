@@ -52,7 +52,6 @@ public class ConstructTests
     // ---- queries ------------------------------------------------------------------------------------
 
     [Theory]
-    [InlineData("WITH x AS (SELECT t.id FROM dbo.t AS t) SELECT x.id FROM x;")]
     [InlineData("SELECT t.id FROM dbo.t AS t UNION ALL SELECT u.id FROM dbo.u AS u;")]
     [InlineData("SELECT t.id FROM dbo.t AS t FOR XML PATH;")]
     [InlineData("SELECT t.id FROM dbo.t AS t FOR JSON AUTO;")]
@@ -187,16 +186,8 @@ public class ConstructTests
     [InlineData("(SELECT t.id FROM dbo.t AS t) AS s")]
     [InlineData("dbo.f(1) AS s")]
     [InlineData("otherdb.dbo.t AS s")]
-    [InlineData("#temp AS s")]
     public void A_source_not_modelled_makes_its_columns_unknown(string from) =>
         AssertUnknown(Procedure($"SELECT s.id FROM {from};"), "results[0][].id", IrUnknownReasons.UnsupportedSource);
-
-    [Fact]
-    public void A_table_variable_makes_its_columns_unknown() =>
-        AssertUnknown(
-            Procedure("DECLARE @v TABLE (id int NOT NULL);\nSELECT v.id FROM @v AS v;"),
-            "results[0][].id",
-            IrUnknownReasons.UnsupportedSource);
 
     [Fact]
     public void An_ambiguous_unqualified_column_is_unknown()

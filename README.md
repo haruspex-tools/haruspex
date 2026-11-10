@@ -22,8 +22,10 @@ from dotted aliases, `WITHOUT_ARRAY_WRAPPER`, `INCLUDE_NULL_VALUES`, and nested 
 `FOR JSON` subqueries; the JSON constructors `json_object`, `json_array`, `json_arrayagg` and `json_objectagg`
 (SQL Server 2022 for the first two, 2025 or Azure SQL for the aggregates), alone, nested, inside `FOR JSON` and in
 correlated subqueries; the native `json` type; and scalar functions that return JSON, including functions that call
-themselves to build trees, which become recursive types (Zod getters). Anything else is reported as unknown, with a
-reason.
+themselves to build trees, which become recursive types (Zod getters); and procedures built from several statements:
+temporary tables (`CREATE TABLE #t`, `SELECT … INTO`, `INSERT`, `UPDATE`, `ALTER`, `DROP`), table variables, variables,
+`IF`, `WHILE`, `TRY … CATCH`, `RETURN` and `THROW`, and CTEs, recursive ones included. Anything else is reported as
+unknown, with a reason.
 
 ```sh
 haruspex generate path/to/database --include 'sales.*' --out src/db

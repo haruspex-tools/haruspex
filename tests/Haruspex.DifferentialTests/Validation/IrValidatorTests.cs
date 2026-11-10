@@ -196,7 +196,7 @@ public class IrValidatorTests
             [Json("""[{"a":""", """1},{"a":2}]""")]).Violations);
 
     [Fact]
-    public void A_json_result_with_no_rows_is_absent_which_needs_may_be_absent()
+    public void A_json_result_with_no_rows_is_absent_which_needs_the_no_rows_reason()
     {
         var row = ("Row", new[] { Field("a", Scalar(IrScalarKind.String)) });
 
@@ -206,7 +206,7 @@ public class IrValidatorTests
 
         var v = Single(IrValidator.Validate(Doc(JsonResult(new IrArray(new IrRef("Row")), mayBeAbsent: false), row), "dbo.p", [Json()]));
         Assert.Equal("results[0]", v.Path);
-        Assert.Contains("always present", v.Claim, StringComparison.Ordinal);
+        Assert.Contains("has a row whenever it runs", v.Claim, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -229,6 +229,59 @@ public class IrValidatorTests
         Assert.Equal("results", v.Path);
         Assert.Contains("1 result set", v.Claim, StringComparison.Ordinal);
         Assert.Equal("2", v.Value);
+    }
+
+    private static readonly IrNullReason NotRun = new(IrNullRules.NotRun, "p.sql:2:1");
+
+    private static IrDocument Results(params IrResult[] results) =>
+        new(new IrSource("tsql"), [new IrObject("dbo.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], results)], new Dictionary<string, IrObjectType> { ["Row"] = new([]) }, []);
+
+    [Fact]
+    public void Trailing_results_that_may_not_run_may_be_missing_and_are_then_absent()
+    {
+        var doc = Results(RowsetResult("Row"), new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("Row")), [NotRun]));
+
+        var report = IrValidator.Validate(doc, "dbo.p", [new ObservedResultSet([], [])]);
+        Assert.Empty(report.Violations);
+        Assert.Contains(("results[1]", Seen.Absent), report.Seen);
+        Assert.Empty(IrValidator.Validate(doc, "dbo.p", [new ObservedResultSet([], []), new ObservedResultSet([], [])]).Violations);
+    }
+
+    [Fact]
+    public void A_result_that_always_runs_may_not_be_missing()
+    {
+        var doc = Results(RowsetResult("Row"), new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("Row")), [NotRun]));
+
+        var v = Single(IrValidator.Validate(doc, "dbo.p", []));
+        Assert.Contains("1 to 2 result set", v.Claim, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_json_result_that_may_not_run_but_matches_rows_whenever_it_runs_has_a_row()
+    {
+        var doc = Results(new IrResult(IrEncoding.Json, new IrArray(new IrRef("Row")), [NotRun]));
+
+        Assert.Single(IrValidator.Validate(doc, "dbo.p", [new ObservedResultSet([JsonColumn], [])]).Violations);
+        Assert.Empty(IrValidator.Validate(doc, "dbo.p", []).Violations);
+    }
+
+    [Fact]
+    public void A_rowset_several_statements_may_return_fits_one_of_their_rows_whole()
+    {
+        var doc = new IrDocument(
+            new IrSource("tsql"),
+            [new IrObject("dbo.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrUnion([new IrRef("A"), new IrRef("B")])), [])])],
+            new Dictionary<string, IrObjectType>
+            {
+                ["A"] = new([Field("a", Scalar(IrScalarKind.String))]),
+                ["B"] = new([Field("b", Scalar(IrScalarKind.String))]),
+            },
+            []);
+
+        Assert.Empty(IrValidator.Validate(doc, "dbo.p", [new ObservedResultSet(["a"], [["x"]])]).Violations);
+        Assert.Empty(IrValidator.Validate(doc, "dbo.p", [new ObservedResultSet(["b"], [["y"]])]).Violations);
+        Assert.NotEmpty(IrValidator.Validate(doc, "dbo.p", [new ObservedResultSet(["b"], [[null]])]).Violations);
+        Assert.NotEmpty(IrValidator.Validate(doc, "dbo.p", [new ObservedResultSet(["c"], [["z"]])]).Violations);
     }
 
     [Fact]

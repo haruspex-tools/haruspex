@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.5",
+  "irVersion": "0.6",
   "source": {
     "dialect": "tsql"
   },
@@ -21,18 +21,55 @@
           "output": false
         }
       ],
-      "results": null
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ArchiveOrdersRow"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
     }
   ],
-  "types": {},
-  "unknowns": [
-    {
-      "object": "sales.archive_orders",
-      "path": "results",
-      "reason": "unsupported-statement",
-      "detail": "IF is not modelled yet, so the procedure's result sets cannot be listed.",
-      "at": "procedures/archive_orders.sql:6:1"
+  "types": {
+    "ArchiveOrdersRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.archive_orders",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
     }
-  ],
+  },
+  "unknowns": [],
   "overrides": []
 }

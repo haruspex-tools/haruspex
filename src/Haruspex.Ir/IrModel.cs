@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.5";
+    public const string CurrentVersion = "0.6";
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
@@ -468,6 +468,16 @@ public static class IrNullRules
     /// <summary>It is a query result, which returns nothing when no rows match.</summary>
     public const string NoRows = "no-rows";
 
+    /// <summary>
+    /// It is a result whose statement may not run (it is in a branch, or after a <c>RETURN</c> that may be taken), so the
+    /// result set may be missing altogether rather than empty. Only a result after which every result may be missing too
+    /// has it, so the result sets a client receives are always the first ones listed.
+    /// </summary>
+    public const string NotRun = "not-run";
+
+    /// <summary>It is a procedure's variable, which holds null until a value that is never null is assigned on every path.</summary>
+    public const string Variable = "variable";
+
     /// <summary>Its type is unknown, so nothing is proved about it.</summary>
     public const string Unknown = "unknown";
 }
@@ -519,4 +529,16 @@ public static class IrUnknownReasons
 
     /// <summary>JSON whose shape is not visible here, such as JSON text read from a column.</summary>
     public const string JsonShapeUnknown = "json-shape-unknown";
+
+    /// <summary>
+    /// A temporary table the procedure does not create on every path before it reads it: a table of that name created by
+    /// the caller, if there is one, whose shape depends on who calls.
+    /// </summary>
+    public const string CallerTempTable = "caller-temp-table";
+
+    /// <summary>
+    /// Result sets that cannot be listed because which are returned depends on the path through the procedure in a way the
+    /// list cannot express: a result inside a loop, or results of different encodings at one position.
+    /// </summary>
+    public const string VaryingResults = "varying-results";
 }

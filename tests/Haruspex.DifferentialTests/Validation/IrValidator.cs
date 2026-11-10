@@ -34,16 +34,22 @@ public static partial class IrValidator
         if (target.Results is not { } claimed)
             return run.Report();
 
-        if (results.Count != claimed.Count)
+        // A result whose statement may not run (not-run) may be missing altogether, and only results after which every one
+        // may be missing too have the reason, so the sets that arrive are the first ones listed (IR 0.6).
+        var fewest = claimed.TakeWhile(r => !r.AbsentBecause.Any(a => a.Rule == IrNullRules.NotRun)).Count();
+        if (results.Count > claimed.Count || results.Count < fewest)
         {
-            run.Violation("results", $"{claimed.Count} result set(s)", results.Count.ToString(CultureInfo.InvariantCulture));
+            var expected = fewest == claimed.Count ? $"{claimed.Count}" : $"{fewest} to {claimed.Count}";
+            run.Violation("results", $"{expected} result set(s)", results.Count.ToString(CultureInfo.InvariantCulture));
             return run.Report();
         }
 
         for (var i = 0; i < claimed.Count; i++)
         {
             var path = $"results[{i}]";
-            if (claimed[i].Encoding == IrEncoding.Json)
+            if (i >= results.Count)
+                run.Missing(path);
+            else if (claimed[i].Encoding == IrEncoding.Json)
                 run.JsonResult(claimed[i], results[i], path);
             else
                 run.RowsetResult(claimed[i], results[i], path);
@@ -69,6 +75,9 @@ public static partial class IrValidator
 
         public void Violation(string path, string claim, string value) => violations.Add(new Violation(procedure, path, claim, value));
 
+        /// <summary>A result set that did not arrive, which only a result that may not run may do: absent, for the coverage.</summary>
+        public void Missing(string path) => seen.Add((path, Seen.Absent));
+
         // ---- JSON -----------------------------------------------------------------------------------
 
         public void JsonResult(IrResult result, ObservedResultSet set, string path)
@@ -83,8 +92,8 @@ public static partial class IrValidator
             if (set.Rows.Count == 0)
             {
                 seen.Add((path, Seen.Absent));
-                if (!result.MayBeAbsent)
-                    Violation(path, "a result that is always present", "(absent: no rows)");
+                if (!result.AbsentBecause.Any(a => a.Rule == IrNullRules.NoRows))
+                    Violation(path, "a result that has a row whenever it runs", "(absent: no rows)");
                 return;
             }
 
@@ -368,12 +377,33 @@ public static partial class IrValidator
         public void RowsetResult(IrResult result, ObservedResultSet set, string path)
         {
             seen.Add((path, Seen.Value));
-            if (result.Type is IrUnknownType)
-                return;
-            if (result.Type is not IrArray { Items: IrRef row })
-                throw new InvalidOperationException($"A rowset's type should be an array of rows, not {result.Type}.");
+            switch (result.Type)
+            {
+                case IrUnknownType:
+                    return;
+                case IrArray { Items: IrRef row }:
+                    Rows(document.Types[row.Name].Fields, set, path);
+                    return;
+                case IrArray { Items: IrUnion union } when union.Variants.All(v => v is IrRef):
+                    // A position several statements may fill (IR 0.6): every row of one set comes from one statement, so
+                    // the set must fit one variant whole, and the one it fits is the one it is checked against.
+                    var before = violations.Count;
+                    foreach (var variant in union.Variants.Cast<IrRef>())
+                    {
+                        violations.RemoveRange(before, violations.Count - before);
+                        Rows(document.Types[variant.Name].Fields, set, path);
+                        if (violations.Count == before)
+                            return;
+                    }
 
-            var fields = document.Types[row.Name].Fields;
+                    return;
+                default:
+                    throw new InvalidOperationException($"A rowset's type should be an array of rows, not {result.Type}.");
+            }
+        }
+
+        private void Rows(IReadOnlyList<IrField> fields, ObservedResultSet set, string path)
+        {
             for (var r = 0; r < set.Rows.Count; r++)
             {
                 var rowPath = $"{path}[{r}]";

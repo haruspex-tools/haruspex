@@ -1,0 +1,197 @@
+{
+  "irVersion": "0.6",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "flow.bill_of_materials",
+      "name": "BillOfMaterials",
+      "kind": "procedure",
+      "at": "procedures/bill_of_materials.sql:3:1",
+      "parameters": [
+        {
+          "name": "@assembly",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "BillOfMaterialsRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/bill_of_materials.sql:8:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "BillOfMaterialsPart": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.bill_of_materials",
+        "path": "results[0][].part"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "unit",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(4)",
+            "maxLength": {
+              "value": 4,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(4)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "each",
+                "kg",
+                "m"
+              ],
+              "from": [
+                {
+                  "check": "flow.ck_part_unit"
+                }
+              ]
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "flow.part.unit"
+            }
+          ]
+        }
+      ]
+    },
+    "BillOfMaterialsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.bill_of_materials",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "assemblyId",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "part",
+          "type": {
+            "ref": "BillOfMaterialsPart"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": 0,
+              "inclusive": false,
+              "from": {
+                "check": "flow.ck_component_quantity"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

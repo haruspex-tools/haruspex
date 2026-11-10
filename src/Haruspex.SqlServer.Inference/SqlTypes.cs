@@ -106,10 +106,15 @@ internal static class SqlTypes
         _ => IrByteEncoding.Unknown,
     };
 
-    /// <summary>A type by its name; a check by its schema-qualified name, or its location when it has none.</summary>
+    /// <summary>
+    /// A type by its name; a check by its schema-qualified name, or its location when it has none. A temporary table's or
+    /// table variable's check is named by its table (<c>#totals.ck_amount</c>), since it belongs to no schema of the project.
+    /// </summary>
     private static IrFactSource Source(FactSource from) => from switch
     {
         TypeSource type => new IrFactSource(IrFactSources.Type, type.Type),
+        CheckSource { Check.Name: { } name } check when check.Table.Name.Name.StartsWith('#') || check.Table.Name.Name.StartsWith('@')
+            => new IrFactSource(IrFactSources.Check, $"{check.Table.Name.Name}.{name}"),
         CheckSource { Check.Name: { } name } check => new IrFactSource(IrFactSources.Check, $"{check.Table.Name.Schema}.{name}"),
         CheckSource check => new IrFactSource(IrFactSources.Check, check.Check.At.ToString()),
         _ => throw new ArgumentOutOfRangeException(nameof(from), from, "Unknown fact source."),

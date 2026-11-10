@@ -67,8 +67,10 @@ emitter's mistakes. It checks what the IR claims:
 - a field with no `nullableBecause` is never null;
 - every key present is one the type has, at most once, and every key whose presence is `always` is there;
   a key that is `omittedWhenNull` is never present with a null;
-- a result without `mayBeAbsent` always comes back (a FOR JSON result with no row is absent);
-- the number of result sets is the number of results;
+- a result without `mayBeAbsent` always comes back (a FOR JSON result with no row is absent, which needs `no-rows`);
+- the number of result sets is the number of results, less any trailing ones that may not run (`not-run`, IR 0.6),
+  which then count as absent;
+- a rowset whose rows are a `union` (several statements may return it) fits one variant whole;
 - every scalar has the form its kind claims: in JSON, integers within their format's range, dates, times,
   date-times (with or without an offset) and GUIDs as strings of the right form; in a rowset, the .NET type
   SqlClient returns for that kind;
@@ -81,6 +83,10 @@ emitter's mistakes. It checks what the IR claims:
   says so, and otherwise only as an upper bound), a minimum length, digits, bounds compared exactly from the
   decimal text (never through a double), and value sets. An `exact` set is matched exactly; a `collation` set
   ignoring case and trailing spaces, which is what the fixtures' collations ignore.
+
+What the statement walk relies on (which result sets arrive when a branch is not taken, a path returns early or an
+error is raised; what temporary tables, table variables and `SELECT … INTO` give; how a recursive CTE's columns are
+typed) is pinned by `StatementFlowObservationTests`.
 
 It does not check what the IR leaves open, such as fractional-second precision: that is pinned separately,
 as observed fact, by `ForJsonObservationTests`, and what the JSON constructors write (null options, empty
@@ -118,7 +124,8 @@ for every variant it satisfies.
 For the fixtures about scalar facts (`Runs.EdgeFixtures`: `values`, `checks`, `payloads` and `trees`), `The_seed_reaches_every_edge_the_ir_claims`
 also fails unless the data reached every edge of every facet: each bound (or, when exclusive, the nearest step
 inside it), each full length, each minimum length and each value of each set, and each array's fewest and most
-items when the IR bounds them. A maximum of 255 is not shown to hold by values of 7. `orders` is about query shapes, and its scalars are the types `values` covers at their edges.
+items when the IR bounds them. A maximum of 255 is not shown to hold by values of 7. `orders` is about query shapes, and its scalars are the types `values` covers at their edges; `flow` (statement flow:
+temporary tables, table variables, branches and recursive CTEs) likewise.
 `Every_procedure_is_run_or_excluded_with_a_reason` makes sure a new fixture procedure is not forgotten.
 
 A recursive type's cases are counted by its name, not its path: every field of `ComponentsNode` is recorded as

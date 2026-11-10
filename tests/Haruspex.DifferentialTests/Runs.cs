@@ -28,7 +28,7 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
@@ -47,6 +47,8 @@ public static class Runs
     private const string NoReviews = "DELETE FROM pay.review;";
     private const string NoParts = "DELETE FROM bom.component; DELETE FROM bom.part;";
     private const string NoItems = "DELETE FROM cat.item;";
+    private const string NoSales = "DELETE FROM flow.sale;";
+    private const string NoEmployees = "DELETE FROM flow.employee;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -118,6 +120,21 @@ public static class Runs
         new("trees: list_items", "trees", "cat.list_items", None),
         new("trees: list_items, no items", "trees", "cat.list_items", None, NoItems),
         new("trees: item_rows", "trees", "cat.item_rows", None),
+
+        new("flow: region_report", "flow", "flow.region_report", None),
+        new("flow: region_report, web only", "flow", "flow.region_report", new Dictionary<string, object?> { ["@channel"] = "web" }),
+        new("flow: region_report, a channel with no sales", "flow", "flow.region_report", new Dictionary<string, object?> { ["@channel"] = "post" }),
+        new("flow: region_sales", "flow", "flow.region_sales", None),
+        new("flow: region_sales, no sales", "flow", "flow.region_sales", None, NoSales),
+        new("flow: sales_by_mode, sales", "flow", "flow.sales_by_mode", new Dictionary<string, object?> { ["@mode"] = (byte)1, ["@region"] = 1 }),
+        new("flow: sales_by_mode, regions, no such region", "flow", "flow.sales_by_mode", new Dictionary<string, object?> { ["@mode"] = (byte)2, ["@region"] = 99 }),
+        new("flow: sales_by_mode, returns early", "flow", "flow.sales_by_mode", new Dictionary<string, object?> { ["@mode"] = (byte)3 }),
+        new("flow: part_list", "flow", "flow.part_list", None),
+        new("flow: part_list, units cleared", "flow", "flow.part_list", new Dictionary<string, object?> { ["@with_units"] = false }),
+        new("flow: org_chart", "flow", "flow.org_chart", None),
+        new("flow: org_chart, no employees", "flow", "flow.org_chart", None, NoEmployees),
+        new("flow: bill_of_materials, two levels", "flow", "flow.bill_of_materials", new Dictionary<string, object?> { ["@assembly"] = 1 }),
+        new("flow: bill_of_materials, a part with no components", "flow", "flow.bill_of_materials", new Dictionary<string, object?> { ["@assembly"] = 6 }),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

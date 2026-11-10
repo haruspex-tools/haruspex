@@ -1,7 +1,7 @@
-# The haruspex IR, version 0.5
+# The haruspex IR, version 0.6
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
-each side can be written in whatever language suits it. This page describes version 0.5. A JSON Schema for
+each side can be written in whatever language suits it. This page describes version 0.6. A JSON Schema for
 it will follow.
 
 ## Why not JSON Schema
@@ -15,7 +15,7 @@ every document. It maps to JSON Schema without loss.
 
 ```jsonc
 {
-  "irVersion": "0.5",                 // versioned separately from the tool
+  "irVersion": "0.6",                 // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database: the object's identity
@@ -170,6 +170,16 @@ not for these facts.
   present (with no rows, it is an empty result set). **Reader convention:** a reader that finds no row for
   a result that may be absent yields `[]` when the result's type is an array, and `null` otherwise. Emitters
   rely on it: a single-object result is nullable, an array result is not.
+- **A result can be missing.** A result returned inside a branch, or after a `RETURN` that may be taken, may not run,
+  and then its result set is not there at all, not empty; a result after it arrives in its place (observed). Results
+  are listed by position: `results[k]` is everything a successful path can return k-th, a `union` when paths differ
+  (a rowset's rows then each fit one variant, all rows of one set the same one). A position some path does not reach
+  has `not-run` in `absentBecause`, at each statement that can return it there, and so does every position after it:
+  the result sets a client receives are always the first ones listed. **Reader convention:** a reader pads the
+  missing ones as absent, `[]` for a rowset or an array result and `null` otherwise, as for a JSON result with no row.
+- **The IR describes calls that succeed.** A path that ends in an error the caller sees (`THROW`, `RAISERROR` of
+  severity 11 or more, observed to fail the call even where the procedure goes on) describes no call that returns,
+  and is left out: `IF @x IS NULL THROW …` is a guard, after which the results always run.
 - **`WITHOUT_ARRAY_WRAPPER` is claimed as one object** without proving the query returns at most one row
   (WHERE is not read yet, so single-row queries are not recognised). The claim is accepted because it cannot
   be silently wrong: several rows produce `{...},{...}`, which is not valid JSON, so parsing fails loudly
@@ -284,6 +294,28 @@ in `tests/Haruspex.DifferentialTests/JsonFunctionObservationTests.cs`:
 - An altered or dropped function is unknown (`redefined`), as a procedure is; a function not in the project, or a
   table-valued one called as a scalar, is unknown (`unsupported-expression`).
 
+## Statement flow
+
+A procedure's statements are read in order (slice 6), through temporary tables (`#t`), table variables (`@t`),
+variables, `IF`, `WHILE`, `TRY … CATCH` and CTEs, recursive ones included. What each gives, and why each join is
+sound, is in `Haruspex.SqlServer.Inference/README.md`; the engine rules are observed and kept as tests in
+`tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`. What it means for the IR:
+
+- A value that passes unchanged through a temporary table or a CTE keeps its facets and its origins: `nullable-column`
+  still names the base column, and a facet's `from` still names the base table's CHECK. A temporary table's or table
+  variable's own CHECK is named by its table: `{ "check": "#totals.ck_amount" }`, and its nullable columns as
+  `#totals.amount`.
+- A variable has its declared type, with the type's facets, and is nullable (`variable`) until a value that is never
+  null is assigned on every path. A procedure's parameter read in its body is nullable (`parameter`).
+- A `#t` the procedure does not create on every path before it reads it is the caller's, if any: unknown,
+  `caller-temp-table`. Results that cannot be lined up by position are unknown, `varying-results`.
+
+Changes in 0.6 (slice 6, statement flow): the result reason `not-run`, under which a result set may be missing
+altogether (only trailing ones, padded by readers as absent); a rowset result whose items are a `union` of row types;
+the null rule `variable`; the unknown reasons `caller-temp-table` and `varying-results`; and results described for
+calls that succeed, so a path that throws no longer makes them unknown. A 0.5 reader would take a missing result set
+for a wrong count, which is why the version changed.
+
 Changes in 0.5 (slice 4, the config file): an object type's `identity`; the `import` node; the document's `overrides`;
 names settled from the config file (the schema left out unless its block gives a `prefix`), with no number added to
 break a clash between objects, which is an error instead; a path inside a recursive type starts with the function's name
@@ -302,4 +334,4 @@ Changes in 0.2: scalars gained facets (`maxLength`, `length`, `minLength`, `digi
 each with its `from`. A reader of 0.1 that ignores unknown keys reads 0.2 documents unchanged, but the version
 changed because the facets are claims a 0.2 reader may rely on.
 
-Not in 0.5, but planned: origins (column lineage) beyond each facet's `from`, documentation, and a source hash.
+Not in 0.6, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.

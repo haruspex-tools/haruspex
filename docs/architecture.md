@@ -79,6 +79,17 @@ the type was split rather than moved whole:
 | `ObjectName` | moved whole to Model | Names are schema data. |
 | `ObjectPattern` | moved whole to the CLI, then (slice 4) to Config | Selection patterns are the config file's concern, not schema data, so they stay out of the publishable Model. |
 
+## The body's own relations (slice 6)
+
+A procedure defines relations of its own: CTEs, temporary tables and table variables. Binding a name to one is
+Semantics' job, as binding to a table is, so the `Binder` takes an `ILocalRelations` and binds a one-part name to a
+`LocalRelation` (a name and its columns' names) before looking in the schema; a CTE hides a table of its name, as in
+SQL Server. What a relation's columns hold is not binding: Inference supplies the relations (`FlowLocals`), keeps
+their values, and carries the state of each temporary table from statement to statement (`FlowState`). So Semantics
+still never sees a value, and Inference never resolves a name. A temporary table's or table variable's definition is
+read into a `Table` by `Table.FromDefinition` in Model, the same reading `CREATE TABLE` gets in Sources, so the
+schema rules (`SchemaRules.IsNeverNull`, `ColumnFacts`) apply to it unchanged.
+
 Two behaviours were kept although a cleaner split would change them, because this slice changes no behaviour:
 RIGHT and FULL joins, CROSS JOIN and APPLY are left unbound by the binder (binding them is easy, but what they
 mean for nulls is not modelled, and binding them would change which unknowns are reported); and a table changed

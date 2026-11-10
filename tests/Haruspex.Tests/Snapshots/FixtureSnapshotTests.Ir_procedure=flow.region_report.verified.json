@@ -1,0 +1,247 @@
+{
+  "irVersion": "0.6",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "flow.region_report",
+      "name": "RegionReport",
+      "kind": "procedure",
+      "at": "procedures/region_report.sql:4:1",
+      "parameters": [
+        {
+          "name": "@channel",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(6)"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "RegionReportRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/region_report.sql:24:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "RegionReportRegion": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.region_report",
+        "path": "results[0][].region"
+      },
+      "fields": [
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(3)",
+            "length": {
+              "value": 3,
+              "unit": "bytes",
+              "from": {
+                "type": "char(3)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "NTH",
+                "STH",
+                "EST",
+                "WST"
+              ],
+              "from": [
+                {
+                  "check": "flow.ck_region_code"
+                }
+              ]
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "outer-join",
+              "at": "procedures/region_report.sql:14:11"
+            }
+          ]
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "outer-join",
+              "at": "procedures/region_report.sql:14:11"
+            }
+          ]
+        }
+      ]
+    },
+    "RegionReportRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.region_report",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "amount",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "check": "flow.ck_sale_amount"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "channel",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(6)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "web",
+                "store",
+                "phone"
+              ],
+              "from": [
+                {
+                  "check": "flow.ck_sale_channel"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "flow.sale.note"
+            },
+            {
+              "rule": "outer-join",
+              "at": "procedures/region_report.sql:14:11"
+            }
+          ]
+        },
+        {
+          "name": "region",
+          "type": {
+            "ref": "RegionReportRegion"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "all-fields-null",
+              "at": "procedures/region_report.sql:24:54"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

@@ -18,6 +18,7 @@ public class FixtureSnapshotTests
         ["checks"] = new(() => SqlProject.Load(TestPaths.Fixture("checks"))),
         ["payloads"] = new(() => SqlProject.Load(TestPaths.Fixture("payloads"))),
         ["trees"] = new(() => SqlProject.Load(TestPaths.Fixture("trees"))),
+        ["flow"] = new(() => SqlProject.Load(TestPaths.Fixture("flow"))),
     };
 
     /// <summary>Every fixture procedure, with its fixture. Procedure ids are unique across fixtures.</summary>
@@ -48,6 +49,12 @@ public class FixtureSnapshotTests
         ["cat.get_category"] = "trees",
         ["cat.list_items"] = "trees",
         ["cat.item_rows"] = "trees",
+        ["flow.region_report"] = "flow",
+        ["flow.region_sales"] = "flow",
+        ["flow.sales_by_mode"] = "flow",
+        ["flow.part_list"] = "flow",
+        ["flow.org_chart"] = "flow",
+        ["flow.bill_of_materials"] = "flow",
     };
 
     public static TheoryData<string> Procedures { get; } = [.. FixtureOf.Keys];

@@ -6,6 +6,9 @@ NOT NULL, identity, primary keys and CHECK constraints; alias and CLR types (`CR
 synonyms and functions by name. Names are two-part (`schema.name`) and compared case-insensitively, as SQL Server
 compares them in almost every database.
 
+`Table.FromDefinition` reads a table definition as written, so a body's own tables (`CREATE TABLE #t`,
+`DECLARE @t TABLE`) can be read the same way as the schema's.
+
 It is meant for tools that need to read a schema without a database and without DacFx: linters, diff tools,
 documentation generators, code generators. [Haruspex.SqlServer.Sources](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md)
 fills it from a folder of `.sql` scripts.

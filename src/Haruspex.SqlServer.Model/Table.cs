@@ -26,6 +26,65 @@ public sealed class Table
         Checks = checks ?? [];
     }
 
+    /// <summary>
+    /// Reads a table definition as written: in a <c>CREATE TABLE</c>, and equally in a body's <c>CREATE TABLE #t</c>,
+    /// <c>DECLARE @t TABLE</c> or <c>ALTER TABLE … ADD</c>, which share ScriptDom's <see cref="TableDefinition"/>.
+    /// </summary>
+    /// <param name="name">The name the table is known by.</param>
+    /// <param name="definition">Its columns and constraints.</param>
+    /// <param name="file">The file it is in, for locations.</param>
+    /// <param name="at">Where the table is defined.</param>
+    public static Table FromDefinition(ObjectName name, TableDefinition definition, string file, SourceLocation at)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+
+        // Declared on the table, or on a column. SQL Server refuses a table with two primary keys, so collecting
+        // every one only matters for a script that would not deploy.
+        var primaryKey = definition.TableConstraints
+            .OfType<UniqueConstraintDefinition>()
+            .Where(u => u.IsPrimaryKey)
+            .SelectMany(u => u.Columns)
+            .Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)
+            .Concat(definition.ColumnDefinitions
+                .Where(c => c.Constraints.OfType<UniqueConstraintDefinition>().Any(u => u.IsPrimaryKey))
+                .Select(c => c.ColumnIdentifier.Value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var columns = new List<Column>();
+        foreach (var column in definition.ColumnDefinitions)
+        {
+            var nullable = column.Constraints.OfType<NullableConstraintDefinition>().ToList();
+
+            // A column that says both NULL and NOT NULL is recorded as NOT NULL, which is how inference read it
+            // before the model existed (slice 2b changed no behaviour).
+            var nullability = nullable.Any(n => !n.Nullable) ? DeclaredNullability.NotNull
+                : nullable.Count > 0 ? DeclaredNullability.Null
+                : DeclaredNullability.NotDeclared;
+
+            columns.Add(new Column(
+                column.ColumnIdentifier.Value,
+                SqlType.From(column.DataType),
+                nullability,
+                isIdentity: column.IdentityOptions is not null,
+                column.ComputedColumnExpression,
+                new SourceLocation(file, column.StartLine, column.StartColumn),
+                column.Collation?.Value));
+        }
+
+        // Column constraints first, then table constraints, each in declaration order. ALTER TABLE … ADD CONSTRAINT
+        // is not read (see OnlyTightens in Sources): a check added later is left out, which only claims less.
+        var checks = definition.ColumnDefinitions
+            .SelectMany(c => c.Constraints.OfType<CheckConstraintDefinition>().Select(k => Check(k, c.ColumnIdentifier.Value, file)))
+            .Concat(definition.TableConstraints.OfType<CheckConstraintDefinition>().Select(k => Check(k, null, file)))
+            .ToList();
+
+        return new Table(name, columns, primaryKey, at, checks);
+    }
+
+    private static CheckConstraint Check(CheckConstraintDefinition check, string? column, string file) =>
+        new(check.ConstraintIdentifier?.Value, check.CheckCondition, column, check.NotForReplication, new SourceLocation(file, check.StartLine, check.StartColumn));
+
     /// <summary>The CHECK constraints, whether declared on the table or on a column, in declaration order.</summary>
     public IReadOnlyList<CheckConstraint> Checks { get; }
 

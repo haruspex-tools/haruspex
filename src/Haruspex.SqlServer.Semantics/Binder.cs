@@ -14,10 +14,13 @@ namespace Haruspex.SqlServer.Semantics;
 public sealed class Binder(DatabaseModel model, string file)
 {
     /// <summary>Binds a query's FROM clause into a new scope inside <paramref name="parent"/>.</summary>
-    public BindingScope BindFrom(QuerySpecification query, BindingScope? parent)
+    /// <param name="query">The query.</param>
+    /// <param name="parent">The enclosing query's scope, for a subquery.</param>
+    /// <param name="locals">The relations the body defines here; null to inherit the parent's, or for none.</param>
+    public BindingScope BindFrom(QuerySpecification query, BindingScope? parent, ILocalRelations? locals = null)
     {
         ArgumentNullException.ThrowIfNull(query);
-        var scope = new BindingScope(parent);
+        var scope = new BindingScope(parent, locals);
         foreach (var reference in query.FromClause?.TableReferences ?? [])
             AddSources(reference, scope, optionalSideOf: null);
         return scope;
@@ -48,14 +51,14 @@ public sealed class Binder(DatabaseModel model, string file)
                 continue;
             }
 
-            var matches = s.Sources.Where(x => x.Table?.Column(name) is not null).ToList();
+            var matches = s.Sources.Where(x => x.Table?.Column(name) is not null || x.Local?.IndexOf(name) >= 0).ToList();
             if (matches.Count > 1)
                 return Unbound(BindingProblemKind.UnresolvedColumn, $"The column {name} is ambiguous: more than one table in scope has it.", at);
             if (matches.Count == 1)
                 return FromSource(matches[0], name, at);
 
-            // A source that cannot be bound may be the one that has this column.
-            if (s.Sources.FirstOrDefault(x => x.Table is null) is { } unresolved)
+            // A source that cannot be bound, or whose columns are not known, may be the one that has this column.
+            if (s.Sources.FirstOrDefault(x => x.Table is null && x.Local?.Columns is null) is { } unresolved)
                 return FromSource(unresolved, name, at);
         }
 
@@ -64,6 +67,16 @@ public sealed class Binder(DatabaseModel model, string file)
 
     private static ColumnBinding FromSource(BoundSource source, string name, SourceLocation at)
     {
+        if (source.Local is { } local)
+        {
+            if (local.Columns is null)
+                return new BoundLocalColumn(source, local, -1);
+            var ordinal = local.IndexOf(name);
+            return ordinal >= 0
+                ? new BoundLocalColumn(source, local, ordinal)
+                : Unbound(BindingProblemKind.UnresolvedColumn, $"{local.Name} has no column {name}.", at);
+        }
+
         // The source's own problem, moved to the column, so that each reference is reported where it is.
         if (source.Table is null)
             return new UnboundColumn(source.Unresolved! with { At = at });
@@ -97,7 +110,13 @@ public sealed class Binder(DatabaseModel model, string file)
                 AddSources(parenthesis.Join, scope, optionalSideOf);
                 break;
             case NamedTableReference named:
-                scope.Add(Named(named, optionalSideOf));
+                scope.Add(Named(named, optionalSideOf, scope.Locals));
+                break;
+            case VariableTableReference variable:
+                // A table variable is the body's own; without a definition of it in hand it is not modelled.
+                scope.Add(scope.Locals?.Find(variable.Variable.Name) is { } relation
+                    ? new BoundSource(variable.Alias?.Value ?? variable.Variable.Name, null, null, optionalSideOf, relation)
+                    : new BoundSource(variable.Alias?.Value ?? variable.Variable.Name, null, Problem(BindingProblemKind.UnsupportedSource, $"The table variable {variable.Variable.Name} is not modelled here.", At(reference)), optionalSideOf));
                 break;
             default:
                 AddUnresolved(reference, scope, Problem(BindingProblemKind.UnsupportedSource, $"The table source {FragmentText.OneLine(reference)} is not modelled yet.", At(reference)));
@@ -105,12 +124,18 @@ public sealed class Binder(DatabaseModel model, string file)
         }
     }
 
-    private BoundSource Named(NamedTableReference named, SourceLocation? optionalSideOf)
+    private BoundSource Named(NamedTableReference named, SourceLocation? optionalSideOf, ILocalRelations? locals)
     {
         var name = named.SchemaObject;
         var alias = named.Alias?.Value ?? name.BaseIdentifier.Value;
         var at = At(named);
         BoundSource Unresolved(BindingProblemKind kind, string detail) => new(alias, null, Problem(kind, detail, at), optionalSideOf);
+
+        // A CTE hides a table of the same name, but only a one-part name can mean it; a temporary table is only ever a
+        // one-part name. Either is the body's own.
+        if (name.ServerIdentifier is null && name.DatabaseIdentifier is null && name.SchemaIdentifier is null
+            && locals?.Find(name.BaseIdentifier.Value) is { } local)
+            return new BoundSource(alias, null, null, optionalSideOf, local);
 
         if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
             return Unresolved(BindingProblemKind.UnsupportedSource, $"The reference {FragmentText.OneLine(name)} to another database is not modelled yet.");

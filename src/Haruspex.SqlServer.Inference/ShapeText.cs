@@ -23,6 +23,24 @@ internal static class ShapeText
         return text.ToString();
     }
 
+    /// <summary>A shape as text, for comparing two shapes, such as the states of a fixed point.</summary>
+    public static string Of(Shape shape)
+    {
+        var text = new StringBuilder();
+        Write(text, shape);
+        return text.ToString();
+    }
+
+    /// <summary>A value as text: its shape, its reasons to be null and whether it is live JSON.</summary>
+    public static string Of(Value value)
+    {
+        var text = new StringBuilder();
+        text.Append(value.IsLiveJson ? 'L' : 'T');
+        Reasons(text, value.NullableBecause);
+        Write(text, value.Shape);
+        return text.ToString();
+    }
+
     private static void Write(StringBuilder text, Shape shape)
     {
         switch (shape)

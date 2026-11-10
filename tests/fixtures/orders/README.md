@@ -12,4 +12,4 @@ Each procedure covers one group of constructs:
 | `sales.get_order` | `FOR JSON PATH, WITHOUT_ARRAY_WRAPPER`; dotted aliases; `json_query` over a correlated `FOR JSON` subquery; dates, times and GUIDs in JSON |
 | `sales.list_customer_orders` | `FOR JSON PATH, INCLUDE_NULL_VALUES`; a bare correlated `FOR JSON` subquery |
 | `sales.order_report` | expressions and references haruspex does not model yet, each an unknown with a reason |
-| `sales.archive_orders` | a statement haruspex does not model yet, which makes the procedure's results unknown |
+| `sales.archive_orders` | an `IF … THROW` guard: the path that throws is a failed call, which the IR does not describe, so the result always arrives (before slice 6, `IF` made the results unknown) |

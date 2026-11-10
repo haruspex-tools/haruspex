@@ -1,0 +1,255 @@
+{
+  "irVersion": "0.6",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "flow.sales_by_mode",
+      "name": "SalesByMode",
+      "kind": "procedure",
+      "at": "procedures/sales_by_mode.sql:3:1",
+      "parameters": [
+        {
+          "name": "@mode",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint"
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@region",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "union",
+              "variants": [
+                {
+                  "ref": "SalesByModeResult1Row"
+                },
+                {
+                  "ref": "SalesByModeResult1Row2"
+                }
+              ]
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "not-run",
+              "at": "procedures/sales_by_mode.sql:13:5"
+            },
+            {
+              "rule": "not-run",
+              "at": "procedures/sales_by_mode.sql:15:5"
+            }
+          ]
+        },
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "SalesByModeResult2Row"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/sales_by_mode.sql:19:1"
+            },
+            {
+              "rule": "not-run",
+              "at": "procedures/sales_by_mode.sql:19:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "SalesByModeResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.sales_by_mode",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "sale_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "amount",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "check": "flow.ck_sale_amount"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "SalesByModeResult1Row2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.sales_by_mode",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "region_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "SalesByModeResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.sales_by_mode",
+        "path": "results[1]"
+      },
+      "fields": [
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(3)",
+            "length": {
+              "value": 3,
+              "unit": "bytes",
+              "from": {
+                "type": "char(3)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "NTH",
+                "STH",
+                "EST",
+                "WST"
+              ],
+              "from": [
+                {
+                  "check": "flow.ck_region_code"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

@@ -29,7 +29,7 @@ internal sealed record ResultShape(IrEncoding Encoding, Shape Shape, IReadOnlyLi
 /// what that means for a value's shape and nullability is decided here. Slice 2b split the two out of this one
 /// class, so that lint, lineage and diff can bind without inferring.
 /// </remarks>
-internal sealed class ProcedureAnalyzer
+internal sealed partial class ProcedureAnalyzer
 {
     private readonly DatabaseModel model;
     private readonly Binder binder;
@@ -77,52 +77,7 @@ internal sealed class ProcedureAnalyzer
                 At(procedure)));
         }
 
-        var results = new List<ResultShape>();
-        var blocker = Walk(procedure.StatementList.Statements, results);
-        return blocker is null
-            ? new ProcedureAnalysis(parameters, results, null)
-            : new ProcedureAnalysis(parameters, null, blocker);
-    }
-
-    // ---- statements ---------------------------------------------------------------------------------
-
-    /// <summary>
-    /// Collects the result sets of a statement list. Returns the first statement that makes the list of
-    /// results unknowable, because it could return results of its own or decide which others run.
-    /// </summary>
-    private UnknownShape? Walk(IEnumerable<TSqlStatement> statements, List<ResultShape> results)
-    {
-        foreach (var statement in statements)
-        {
-            switch (statement)
-            {
-                case PredicateSetStatement set when IsHarmless(set):
-                    break;
-
-                // These never return a result set. Variables are not tracked yet, so a later reference to one
-                // is an unknown expression rather than a wrong type.
-                case DeclareVariableStatement:
-                case DeclareTableVariableStatement:
-                case SetVariableStatement:
-                    break;
-                case BeginEndBlockStatement block:
-                    if (Walk(block.StatementList.Statements, results) is { } blocker)
-                        return blocker;
-                    break;
-                case SelectStatement select:
-                    if (Select(select) is { } result)
-                        results.Add(result);
-                    break;
-                default:
-                    var keyword = statement.ScriptTokenStream[statement.FirstTokenIndex].Text.ToUpperInvariant();
-                    return new UnknownShape(
-                        IrUnknownReasons.UnsupportedStatement,
-                        $"{keyword} is not modelled yet, so the procedure's result sets cannot be listed.",
-                        At(statement));
-            }
-        }
-
-        return null;
+        return Flow(procedure, parameters);
     }
 
     /// <summary>
@@ -154,18 +109,22 @@ internal sealed class ProcedureAnalyzer
         // rowset that matches no rows is still a result set, with no rows.
         IReadOnlyList<IrNullReason> absent = encoding == IrEncoding.Json ? [new IrNullReason(IrNullRules.NoRows, at.ToString())] : [];
 
-        if (select.WithCtesAndXmlNamespaces is not null)
-            return new ResultShape(encoding, Unsupported(IrUnknownReasons.UnsupportedQuery, "A common table expression (WITH) is not modelled yet.", at), absent);
-        if (select.QueryExpression is not QuerySpecification query)
-            return new ResultShape(encoding, Unsupported(IrUnknownReasons.UnsupportedQuery, "A UNION, INTERSECT, EXCEPT or parenthesised query is not modelled yet.", at), absent);
+        return WithCtes(
+            select.WithCtesAndXmlNamespaces,
+            () =>
+            {
+                if (select.QueryExpression is not QuerySpecification query)
+                    return new ResultShape(encoding, Unsupported(IrUnknownReasons.UnsupportedQuery, "A UNION, INTERSECT, EXCEPT or parenthesised query is not modelled yet.", at), absent);
 
-        var row = Query(query, parent: null);
-        return query.ForClause switch
-        {
-            JsonForClause json => new ResultShape(IrEncoding.Json, ForJson(row, json, at), absent),
-            null => new ResultShape(IrEncoding.Rowset, Rowset(row), absent),
-            _ => new ResultShape(IrEncoding.Rowset, Unsupported(IrUnknownReasons.UnsupportedQuery, $"{Text(query.ForClause)} is not modelled yet.", at), []),
-        };
+                var row = Query(query, parent: null);
+                return query.ForClause switch
+                {
+                    JsonForClause json => new ResultShape(IrEncoding.Json, ForJson(row, json, at), absent),
+                    null => new ResultShape(IrEncoding.Rowset, Rowset(row), absent),
+                    _ => new ResultShape(IrEncoding.Rowset, Unsupported(IrUnknownReasons.UnsupportedQuery, $"{Text(query.ForClause)} is not modelled yet.", at), []),
+                };
+            },
+            why => new ResultShape(encoding, why, absent));
     }
 
     // ---- queries ------------------------------------------------------------------------------------
@@ -174,7 +133,8 @@ internal sealed class ProcedureAnalyzer
 
     private Row Query(QuerySpecification query, BindingScope? parent)
     {
-        var scope = binder.BindFrom(query, parent);
+        // An outermost query sees the body's own relations; a subquery inherits them through its parent's scope.
+        var scope = binder.BindFrom(query, parent, parent is null ? locals : null);
 
         // WHERE, GROUP BY and HAVING are not read. They can only remove rows or make values non-null, so
         // ignoring them can leave a field nullable that is not, but never the reverse.
@@ -341,12 +301,17 @@ internal sealed class ProcedureAnalyzer
             when call.FunctionName.Value.Equals("json_query", StringComparison.OrdinalIgnoreCase) => JsonQuery(call, scope),
         FunctionCall call when FunctionSummaries.Callee(call) is { } callee => CallFunction(call, callee, scope),
         VariableReference variable when parameters.TryGetValue(variable.Name, out var parameter) => parameter,
+        VariableReference variable when locals is not null => Variable(variable),
+        IntegerLiteral literal => Integer(literal),
+        CastCall cast => Cast(cast.DataType, cast.Parameter, cast, scope),
+        ConvertCall { Style: null } convert => Cast(convert.DataType, convert.Parameter, convert, scope),
         _ => Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
     };
 
     private Value Column(ColumnReferenceExpression column, BindingScope scope) => binder.BindColumn(column, scope) switch
     {
         BoundColumn bound => FromColumn(bound),
+        BoundLocalColumn local => FromLocal(local, At(column)),
         UnboundColumn unbound => Value.Unknown(Unknown(unbound.Problem)),
         _ => throw new InvalidOperationException("Unknown binding."),
     };

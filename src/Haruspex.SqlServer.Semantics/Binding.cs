@@ -8,7 +8,14 @@ public sealed class BindingScope
 {
     private readonly List<BoundSource> sources = [];
 
-    internal BindingScope(BindingScope? parent) => Parent = parent;
+    internal BindingScope(BindingScope? parent, ILocalRelations? locals)
+    {
+        Parent = parent;
+        Locals = locals ?? parent?.Locals;
+    }
+
+    /// <summary>The relations the body defines that names in this scope may refer to; inherited by nested scopes.</summary>
+    public ILocalRelations? Locals { get; }
 
     /// <summary>The enclosing query's scope, or null for an outermost query.</summary>
     public BindingScope? Parent { get; }
@@ -21,13 +28,14 @@ public sealed class BindingScope
 
 /// <summary>A table source in a FROM clause, bound to a table or not.</summary>
 /// <param name="Alias">The name columns are qualified by: the alias, or the table's name without one.</param>
-/// <param name="Table">The table, or null when the source cannot be bound.</param>
-/// <param name="Unresolved">Why the source cannot be bound, when <paramref name="Table"/> is null.</param>
+/// <param name="Table">The table, or null when the source cannot be bound or is <paramref name="Local"/>.</param>
+/// <param name="Unresolved">Why the source cannot be bound, when it is neither a table nor a local relation.</param>
 /// <param name="OptionalSideOf">
 /// Set when the source is on the optional side of an outer join: the location of that side, in the outermost such
 /// join. This is structure, not nullability; what it implies for values is the reader's to decide.
 /// </param>
-public sealed record BoundSource(string? Alias, Table? Table, BindingProblem? Unresolved, SourceLocation? OptionalSideOf);
+/// <param name="Local">The CTE, temporary table or table variable it reads, when it is one.</param>
+public sealed record BoundSource(string? Alias, Table? Table, BindingProblem? Unresolved, SourceLocation? OptionalSideOf, LocalRelation? Local = null);
 
 /// <summary>What a column reference binds to.</summary>
 public abstract record ColumnBinding;
@@ -37,6 +45,12 @@ public abstract record ColumnBinding;
 /// <param name="Table">The source's table.</param>
 /// <param name="Column">The column.</param>
 public sealed record BoundColumn(BoundSource Source, Table Table, Column Column) : ColumnBinding;
+
+/// <summary>A column reference bound to a column of a CTE, temporary table or table variable in scope.</summary>
+/// <param name="Source">The source it was found in.</param>
+/// <param name="Relation">The source's relation.</param>
+/// <param name="Ordinal">The column's position, or -1 when the relation's columns are not known.</param>
+public sealed record BoundLocalColumn(BoundSource Source, LocalRelation Relation, int Ordinal) : ColumnBinding;
 
 /// <summary>A column reference that cannot be bound.</summary>
 /// <param name="Problem">Why, located at the reference.</param>

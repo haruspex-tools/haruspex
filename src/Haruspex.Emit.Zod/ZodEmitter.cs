@@ -88,13 +88,24 @@ public static class ZodEmitter
             return result.MayBeAbsent && result.Type is not (IrArray or IrUnknownType) ? code + ".nullable()" : code;
         }
 
-        private static string Describe(IrResult result) => (result.Encoding, result.MayBeAbsent, result.Type) switch
+        /// <summary>
+        /// What a result is, and what it reads as when absent: a FOR JSON query that matched no rows, or a statement that did
+        /// not run (in a branch, or after a RETURN), whose result set is then missing altogether.
+        /// </summary>
+        private static string Describe(IrResult result)
         {
-            (IrEncoding.Rowset, _, _) => "rows",
-            (_, false, _) => "JSON",
-            (_, true, IrArray) => "JSON, [] when no rows match",
-            _ => "JSON, null when no rows match",
-        };
+            var noRows = result.AbsentBecause.Any(r => r.Rule == IrNullRules.NoRows);
+            var notRun = result.AbsentBecause.Any(r => r.Rule == IrNullRules.NotRun);
+            var when = (noRows, notRun) switch
+            {
+                (true, true) => "when no rows match or it does not run",
+                (true, false) => "when no rows match",
+                (false, true) => "when it does not run",
+                _ => null,
+            };
+            var what = result.Encoding == IrEncoding.Rowset ? "rows" : "JSON";
+            return when is null ? what : $"{what}, {(result.Encoding == IrEncoding.Rowset || result.Type is IrArray ? "[]" : "null")} {when}";
+        }
 
         /// <summary>
         /// JSON text whose content the IR knows: a string that must parse to a value of the content's schema. The type stays

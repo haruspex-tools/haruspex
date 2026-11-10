@@ -58,13 +58,13 @@ public class ZodAcceptanceTests(SqlServerFixture server)
                     var observed = await server.ObserveAsync(run);
                     if (results.Count == 1)
                     {
-                        WriteResult(json, results[0], observed[0]);
+                        WriteResult(json, results[0], observed.Count > 0 ? observed[0] : null);
                     }
                     else
                     {
                         json.WriteStartArray();
                         for (var i = 0; i < results.Count; i++)
-                            WriteResult(json, results[i], observed[i]);
+                            WriteResult(json, results[i], i < observed.Count ? observed[i] : null);
                         json.WriteEndArray();
                     }
 
@@ -86,8 +86,12 @@ public class ZodAcceptanceTests(SqlServerFixture server)
         }
     }
 
-    internal static void WriteResult(Utf8JsonWriter json, IrResult result, ObservedResultSet set)
+    /// <param name="set">The result set, or null when it did not arrive (a result that may not run, IR 0.6).</param>
+    internal static void WriteResult(Utf8JsonWriter json, IrResult result, ObservedResultSet? set)
     {
+        // No result set at all reads as a rowset with no rows, or as a JSON result with no row: the reader convention in
+        // the IR's README.
+        set ??= new ObservedResultSet(result.Encoding == IrEncoding.Json ? ["json"] : [], []);
         if (result.Encoding == IrEncoding.Json)
         {
             // No row: the reader convention in the IR's README.
