@@ -573,7 +573,11 @@ outer row) counts as fixed already.
 uncommitted a scan can return a row twice, or miss one, while pages split under it. So a source read with a `NOLOCK` or
 `READUNCOMMITTED` hint (`BoundSource.Uncommitted`; on a view the hint applies to every table under it), and every source of a
 statement after `SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED` on any path (`FlowState.ReadUncommitted`), is treated as
-history is: no key holds, and only a relation of exactly one row counts as fixed. The duplicate row itself is not observed (it
+history is: no key holds, and only a relation of exactly one row counts as fixed. It reaches inside what such a statement or
+hint reads: a view, an inline function and a scalar function's body are read uncommitted there too (`ViewSummaries` keys its
+reads on it, and `FunctionSummaries.Uncommitted` reads scalar bodies so), so a `FOR JSON` subquery inside one loses its
+`maxItems` as the same subquery written in the procedure does. A recursive scalar function read uncommitted gives its declared
+type only, since its named node is the committed reading's; that claims less. The duplicate row itself is not observed (it
 needs another session splitting pages during the scan); Microsoft documents it, and dropping the claim only claims less. What
 is observed is how far the isolation level reaches
 (`A_procedures_isolation_level_holds_in_the_procedures_it_calls_and_ends_when_it_returns`): a procedure's callees run under it
