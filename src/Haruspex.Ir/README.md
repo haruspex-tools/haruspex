@@ -172,8 +172,8 @@ not for these facts.
   rely on it: a single-object result is nullable, an array result is not.
 - **A result can be missing.** A result returned inside a branch, or after a `RETURN` that may be taken, may not run,
   and then its result set is not there at all, not empty; a result after it arrives in its place (observed). Results
-  are listed by position: `results[k]` is everything a successful path can return k-th, a `union` when paths differ
-  (a rowset's rows then each fit one variant, all rows of one set the same one). A position some path does not reach
+  are listed by position: `results[k]` is everything a successful path can return k-th, a `union` of the whole results when
+  paths differ (a rowset is then a union of arrays: every row of one result set comes from one statement). A position some path does not reach
   has `not-run` in `absentBecause`, at each statement that can return it there, and so does every position after it:
   the result sets a client receives are always the first ones listed. **Reader convention:** a reader pads the
   missing ones as absent, `[]` for a rowset or an array result and `null` otherwise, as for a JSON result with no row.
@@ -311,7 +311,7 @@ sound, is in `Haruspex.SqlServer.Inference/README.md`; the engine rules are obse
   `caller-temp-table`. Results that cannot be lined up by position are unknown, `varying-results`.
 
 Changes in 0.6 (slice 6, statement flow): the result reason `not-run`, under which a result set may be missing
-altogether (only trailing ones, padded by readers as absent); a rowset result whose items are a `union` of row types;
+altogether (only trailing ones, padded by readers as absent); a rowset result that is a `union` of arrays of rows;
 the null rule `variable`; the unknown reasons `caller-temp-table` and `varying-results`; and results described for
 calls that succeed, so a path that throws no longer makes them unknown. A 0.5 reader would take a missing result set
 for a wrong count, which is why the version changed.

@@ -146,13 +146,16 @@ internal sealed class NameSettler(
                 Object(reference.Name, stem + "Row", stem, path + "[]", owner);
                 break;
 
-            // A result several statements may return (IR 0.6): each variant is a row of it, numbered after the first.
-            case IrArray { Items: IrUnion union }:
-                Root(union, stem, path + "[]", owner);
-                break;
-            case IrUnion union when union.Variants.All(v => v is IrRef r && !IsNode(r)):
-                foreach (var variant in union.Variants.Cast<IrRef>())
-                    Object(variant.Name, stem + "Row", stem, path, owner);
+            // A result several statements may return (IR 0.6): each variant's object is a row of it, numbered after the first.
+            case IrUnion union when union.Variants.All(v => v is IrRef r && !IsNode(r) || v is IrArray { Items: IrRef i } && !IsNode(i)):
+                foreach (var variant in union.Variants)
+                {
+                    if (variant is IrRef reference)
+                        Object(reference.Name, stem + "Row", stem, path, owner);
+                    else
+                        Object(((IrRef)((IrArray)variant).Items).Name, stem + "Row", stem, path + "[]", owner);
+                }
+
                 break;
             default:
                 Walk(type, stem, path, owner);

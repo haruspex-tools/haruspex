@@ -82,10 +82,11 @@ public static class ZodEmitter
         /// at all) follows the reader convention in the IR's README: an array reads as <c>[]</c>, so its schema
         /// is unchanged, and anything else reads as <c>null</c>.
         /// </summary>
-        private static string Result(IrResult result)
+        private string Result(IrResult result)
         {
             var code = Expression(result.Type, result.Encoding).Code;
-            return result.MayBeAbsent && result.Type is not (IrArray or IrUnknownType) ? code + ".nullable()" : code;
+            // A rowset reads as no rows when absent, whatever its type (a union of arrays when branches return different rows).
+            return result.MayBeAbsent && result.Encoding == IrEncoding.Json && result.Type is not (IrArray or IrUnknownType) ? code + ".nullable()" : code;
         }
 
         /// <summary>
@@ -298,7 +299,7 @@ public static class ZodEmitter
         /// A field's schema. Presence and nullability are separate: a key that is left out when null is
         /// <c>.optional()</c> (never null), and a key that is kept as null is <c>.nullable()</c> (never absent).
         /// </summary>
-        private static string Field(IrField field, IrEncoding encoding)
+        private string Field(IrField field, IrEncoding encoding)
         {
             var (code, comment) = Expression(field.Type, encoding);
             if (field.Nullable && field.Presence == IrPresence.OmittedWhenNull)
@@ -308,19 +309,39 @@ public static class ZodEmitter
             return comment is null ? code : $"{code} /* {Comment(comment)} */";
         }
 
-        private static (string Code, string? Comment) Expression(IrType type, IrEncoding encoding) => type switch
+        private (string Code, string? Comment) Expression(IrType type, IrEncoding encoding) => type switch
         {
             IrScalar scalar => Scalar(scalar, encoding),
             IrArray array => Array(array, encoding),
             IrTuple tuple => Combine("z.tuple([", tuple.Items.Select(e => Nullable(Expression(e.Type, encoding), e.Nullable, e.Type)), "])"),
             IrRecord record => Combine("z.record(z.string(), ", [Nullable(Expression(record.Values, encoding), record.ValuesNullable, record.Values)], ")"),
-            IrUnion union => Combine("z.union([", union.Variants.Select(v => Expression(v, encoding)), "])"),
+            IrUnion union => Combine("z.union([", SupersetsFirst(union.Variants).Select(v => Expression(v, encoding)), "])"),
             IrRef reference => ($"{reference.Name}Schema", null),
             IrImport import => (import.Name, null),
             IrJsonText { Content: { } content } => JsonText(Expression(content, IrEncoding.Json)),
             IrJsonText => ("z.string()", "JSON text"),
             IrUnknownType unknown => ("z.unknown()", unknown.Reason),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown IR type node."),
+        };
+
+        /// <summary>
+        /// A union's variants with those of more keys first. <c>z.union</c> returns the first variant that accepts a value,
+        /// and a <c>z.object</c> strips the keys it doesn't know, so an object variant whose keys are a subset of another's
+        /// would accept the other's values and drop their extra keys. A rowset's columns are always all there, so a row only
+        /// fits a variant whose keys it has, and putting more keys first makes the one it takes its own. An array of objects
+        /// is ordered by its objects. Equal counts keep the IR's order.
+        /// </summary>
+        private IEnumerable<IrType> SupersetsFirst(IReadOnlyList<IrType> variants) =>
+            variants.Select((v, i) => (Variant: v, Index: i))
+                .OrderByDescending(x => Keys(x.Variant))
+                .ThenBy(x => x.Index)
+                .Select(x => x.Variant);
+
+        private int Keys(IrType type) => type switch
+        {
+            IrRef reference when document.Types.TryGetValue(reference.Name, out var target) => target.Fields.Count,
+            IrArray array => Keys(array.Items),
+            _ => 0,
         };
 
         private static (string Code, string? Comment) JsonText((string Code, string? Comment) content) =>
@@ -330,7 +351,7 @@ public static class ZodEmitter
         /// An array, with its items' nullability and its length when the IR knows them (<c>json_array</c> and the
         /// aggregates; an array FOR JSON builds has neither).
         /// </summary>
-        private static (string Code, string? Comment) Array(IrArray array, IrEncoding encoding)
+        private (string Code, string? Comment) Array(IrArray array, IrEncoding encoding)
         {
             var (code, comment) = Combine("z.array(", [Nullable(Expression(array.Items, encoding), array.ItemsNullable, array.Items)], ")");
             if (array.MinItems is { } min)

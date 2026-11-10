@@ -8,7 +8,7 @@
       "id": "flow.org_chart",
       "name": "OrgChart",
       "kind": "procedure",
-      "at": "procedures/org_chart.sql:2:1",
+      "at": "procedures/org_chart.sql:3:1",
       "parameters": [],
       "results": [
         {
@@ -23,7 +23,7 @@
           "absentBecause": [
             {
               "rule": "no-rows",
-              "at": "procedures/org_chart.sql:6:1"
+              "at": "procedures/org_chart.sql:7:1"
             }
           ]
         }
@@ -110,6 +110,28 @@
         },
         {
           "name": "title",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "flow.employee.title"
+            }
+          ]
+        },
+        {
+          "name": "lead",
           "type": {
             "kind": "string",
             "sql": "nvarchar(30)",

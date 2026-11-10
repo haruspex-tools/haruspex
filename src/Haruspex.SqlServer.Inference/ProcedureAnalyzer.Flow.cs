@@ -911,7 +911,10 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private Value Cast(DataTypeReference target, ScalarExpression operand, TSqlFragment call, BindingScope scope)
     {
+        // Without a length, a string type in CAST or CONVERT is 30 long (observed), where a declaration's is 1.
         var type = SqlType.From(target);
+        if (type is { Kind: SqlTypeKind.BuiltIn, Name: "char" or "varchar" or "nchar" or "nvarchar", Arguments.Count: 0 })
+            type = new SqlType(SqlTypeKind.BuiltIn, type.Name, ["30"]);
         var value = Expression(operand, scope);
         var to = SchemaRules.ResolveType(model, type)?.BuiltIn.Name;
         return to is "char" or "varchar" or "nchar" or "nvarchar" && value is { IsLiveJson: false, Shape: ScalarShape { Type.Kind: IrScalarKind.String } }
@@ -950,24 +953,20 @@ internal sealed partial class ProcedureAnalyzer
             var absent = produced.SelectMany(p => p.Result.AbsentBecause).ToList();
             if (i >= always)
                 absent.AddRange(produced.Select(p => new IrNullReason(IrNullRules.NotRun, p.At.ToString())));
-            results.Add(new ResultShape(encoding, Union(shapes, encoding), [.. absent.Distinct()]));
+            results.Add(new ResultShape(encoding, Union(shapes), [.. absent.Distinct()]));
         }
 
         return results;
     }
 
     /// <summary>
-    /// The union of what several statements return at one position. Rows of a rowset each come from one statement, so a
-    /// rowset is an array of rows of any of the shapes.
+    /// The union of what several statements return at one position: one of their shapes whole, so a rowset is a union of
+    /// arrays, every row of one result set from the same statement.
     /// </summary>
-    private static Shape Union(List<Shape> shapes, IrEncoding encoding)
+    private static Shape Union(List<Shape> shapes)
     {
         if (shapes.Count == 1)
             return shapes[0];
-        if (shapes.FirstOrDefault(s => s is UnknownShape) is { } unknown)
-            return unknown;
-        return encoding == IrEncoding.Rowset && shapes.All(s => s is ArrayShape)
-            ? new ArrayShape(new UnionShape([.. shapes.Cast<ArrayShape>().Select(a => a.Items)]))
-            : new UnionShape(shapes);
+        return shapes.FirstOrDefault(s => s is UnknownShape) ?? new UnionShape(shapes);
     }
 }

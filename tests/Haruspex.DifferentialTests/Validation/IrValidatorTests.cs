@@ -270,7 +270,7 @@ public class IrValidatorTests
     {
         var doc = new IrDocument(
             new IrSource("tsql"),
-            [new IrObject("dbo.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrUnion([new IrRef("A"), new IrRef("B")])), [])])],
+            [new IrObject("dbo.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrUnion([new IrArray(new IrRef("A")), new IrArray(new IrRef("B"))]), [])])],
             new Dictionary<string, IrObjectType>
             {
                 ["A"] = new([Field("a", Scalar(IrScalarKind.String))]),

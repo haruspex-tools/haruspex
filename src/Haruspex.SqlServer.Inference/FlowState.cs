@@ -203,7 +203,10 @@ internal sealed class FlowState
                 return new KnownTable(x.Name, [.. x.Columns.Zip(y.Columns, (c, d) => c with
                 {
                     Value = ShapeJoin.Either(c.Value, d.Value, at, $"{name}.{c.Name}"),
-                    Declaration = ReferenceEquals(c.Declaration, d.Declaration) ? c.Declaration : c.Declaration ?? d.Declaration,
+                    // A column declared alike on both paths keeps its declaration. One declared on some paths only, or
+                    // differently, is not guaranteed by either declaration, so it joins later writes like a column SELECT …
+                    // INTO made, and is never read again from one path's declaration.
+                    Declaration = ReferenceEquals(c.Declaration, d.Declaration) ? c.Declaration : null,
                 })]);
             case (KnownTable, KnownTable):
                 return new UnknownTable(new UnknownShape(IrUnknownReasons.UnsupportedStatement, $"{name} has different columns on different paths before {at}.", at));

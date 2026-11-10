@@ -7,6 +7,7 @@ export const OrgChartRowSchema = z.object({
   managerId: z.int32().optional(),
   name: z.string().max(30),
   title: z.string().max(30).optional(),
+  lead: z.string().max(30).optional(),
 })
 export type OrgChartRow = z.infer<typeof OrgChartRowSchema>
 

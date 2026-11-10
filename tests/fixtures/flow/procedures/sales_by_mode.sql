@@ -1,5 +1,6 @@
--- Branches: a guard that throws, two branches returning different rows at the same position, and a branch that
--- returns early, so neither result need arrive.
+-- Branches: a guard that throws, three branches returning different rows at the same position (one a superset of
+-- another's columns, which the Zod must not read as the subset), and a branch that returns early, so neither result
+-- need arrive.
 CREATE PROCEDURE flow.sales_by_mode
     @mode tinyint,
     @region int = NULL
@@ -13,6 +14,8 @@ IF @mode = 1
     SELECT s.sale_id, s.amount FROM flow.sale AS s ORDER BY s.sale_id;
 ELSE IF @mode = 2
     SELECT r.region_id, r.name FROM flow.region AS r ORDER BY r.region_id;
+ELSE IF @mode = 4
+    SELECT r.region_id, r.name, r.code FROM flow.region AS r ORDER BY r.region_id;
 ELSE
     RETURN;
 

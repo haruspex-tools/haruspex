@@ -70,7 +70,7 @@ emitter's mistakes. It checks what the IR claims:
 - a result without `mayBeAbsent` always comes back (a FOR JSON result with no row is absent, which needs `no-rows`);
 - the number of result sets is the number of results, less any trailing ones that may not run (`not-run`, IR 0.6),
   which then count as absent;
-- a rowset whose rows are a `union` (several statements may return it) fits one variant whole;
+- a rowset that is a `union` of arrays (several statements may return it) fits one variant whole;
 - every scalar has the form its kind claims: in JSON, integers within their format's range, dates, times,
   date-times (with or without an offset) and GUIDs as strings of the right form; in a rowset, the .NET type
   SqlClient returns for that kind;
@@ -96,7 +96,8 @@ other cases and trailing spaces, `char(n)` pads to bytes, an alias type's NOT NU
 
 ## The generated Zod meets the same data
 
-`ZodAcceptanceTests` runs every run's output through the Zod emitted for its procedure, in Node against the
+`ZodAcceptanceTests` runs every run's output through the Zod emitted for its procedure, and fails if a parse that
+succeeds drops a key the output had (a union whose subset variant read a superset's row), in Node against the
 pinned zod (`tests/emit-check/src/accept.mjs`). The validator checks the IR; this checks the emitter turned the
 IR into schemas that accept what SQL Server returns. JSON results are handed over as SQL Server's text, so
 `JSON.parse` rounds their numbers as an application's would; rows as the mssql driver delivers them (bigint as

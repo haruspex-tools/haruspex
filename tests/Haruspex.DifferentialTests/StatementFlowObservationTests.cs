@@ -251,6 +251,33 @@ public class StatementFlowObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task Select_into_a_column_from_a_variable_takes_null()
+    {
+        // Whatever the variable holds, the column SQL Server makes from it is nullable.
+        string[] setup = ["""
+            CREATE PROCEDURE dbo.obs_from_variable AS
+            DECLARE @v int = 5;
+            SELECT @v AS v INTO #t;
+            INSERT INTO #t (v) VALUES (NULL);
+            SELECT ISNULL(CONVERT(nvarchar(10), t.v), N'null') AS v FROM #t AS t ORDER BY t.v;
+            """];
+
+        Assert.Equal("v: null;5", (await Run(setup, "EXEC dbo.obs_from_variable")).ToString());
+    }
+
+    [Fact]
+    public async Task A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration()
+    {
+        var outcome = await Run([], """
+            DECLARE @s nvarchar(40) = N'abcdefghijklmnopqrstuvwxyz0123456789';
+            DECLARE @d varchar = 'abc';
+            SELECT CAST(@s AS varchar) AS a, CONVERT(nvarchar, @s) AS b, LEN(CAST(@s AS char)) AS c, DATALENGTH(CAST(N'x' AS char)) AS cpad, @d AS d;
+            """);
+
+        Assert.Equal("a,b,c,cpad,d: abcdefghijklmnopqrstuvwxyz0123,abcdefghijklmnopqrstuvwxyz0123,30,30,a", outcome.ToString());
+    }
+
+    [Fact]
     public async Task Json_stored_in_a_temporary_table_is_text_but_json_through_a_cte_stays_json()
     {
         // A value of nvarchar(max) holding JSON escapes once it is stored, as through a variable; a CTE is part of its

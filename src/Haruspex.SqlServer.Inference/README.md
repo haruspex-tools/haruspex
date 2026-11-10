@@ -42,7 +42,8 @@ always its declaration: nothing a statement does changes what its columns may ho
 - **Made by `SELECT … INTO`**: each column holds what the select gave it, with its facets and origins (a column read
   unchanged keeps `nullable-column` at its base column, and its CHECK's facets). SQL Server decides such a column's
   nullability by its own reading of the select, which haruspex does not reproduce
-  (`Select_into_a_column_from_a_not_null_column_refuses_null_but_others_take_it`), so every later write is joined in:
+  (`Select_into_a_column_from_a_not_null_column_refuses_null_but_others_take_it`; a column from a variable takes null
+  whatever the variable holds, `Select_into_a_column_from_a_variable_takes_null`), so every later write is joined in:
   `ShapeJoin.Converted` keeps the column's SQL type (the write converts to it), keeps the facets both sides prove and
   at least the type's own, and unions the reasons to be null. A column an `INSERT` leaves out gets null.
 - **JSON** stored in a column is text once stored (`Json_stored_in_a_temporary_table_is_text_but_json_through_a_cte_stays_json`),
@@ -66,6 +67,7 @@ the point are joined. Each join claims only what holds on every path:
 
 | What | Join |
 |---|---|
+| A temporary table's column's declaration | kept only when it is the same on both paths; a column declared on some paths only, or differently, joins later writes like a `SELECT … INTO` column and is never read again from one path's declaration |
 | A value (variable, column) | null if null on any path (the reasons of both); a scalar of the same SQL type keeps the facets both prove, each the looser of the two (longer maximum, lower minimum, the union of two sets); other shapes stay only when both are the same, or are unknown |
 | A temporary table | the same table on both: column by column. Created on one path only: unknown, the caller's on the other (`caller-temp-table`). Dropped on one path only: unknown (`unresolved-table`) |
 | Result sets | per position, everything either path returned there; the numbers of results so far, both |
@@ -86,7 +88,8 @@ the point are joined. Each join claims only what holds on every path:
 A branch that is not taken returns no result set at all, so a result after it arrives at its position
 (`A_branch_not_taken_returns_no_result_set_at_all_so_later_ones_move_up`). So the k-th result a client receives is
 the k-th of its path, and `results[k]` is the union of every result some path returns k-th: one shape when they
-agree, a `union` of rows when they differ (rows of one result set all come from one statement). A position some
+agree, a `union` of the whole results when they differ (for a rowset a union of arrays, since every row of one result
+set comes from one statement). A position some
 successful path does not reach may be missing: its `absentBecause` has `not-run` at each statement that returns it
 there. Only trailing positions can be, so the sets that arrive are the first ones listed. Results of different
 encodings at one position, or a result inside a loop, make the results unknown (`varying-results`).
@@ -112,5 +115,6 @@ inside one, and `WITH XMLNAMESPACES`.
 
 Two expressions were added because the shapes above are built from them: an integer literal within `int`'s range is
 a non-null `int`, and `CAST`/`CONVERT` (without a style) of a string to a string type is of that type and null exactly
-when its operand is (it cuts a longer string short without an error). Arithmetic is not modelled: under a caller's
+when its operand is (it cuts a longer string short without an error). A string type without a length is 30 long in a
+`CAST` or `CONVERT`, and 1 in a declaration (`A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration`). Arithmetic is not modelled: under a caller's
 `ANSI_WARNINGS OFF` an overflow gives NULL rather than an error.

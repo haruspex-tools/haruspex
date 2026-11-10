@@ -331,6 +331,37 @@ public class StatementFlowTests
     }
 
     [Fact]
+    public void A_column_declared_on_some_paths_only_joins_later_writes()
+    {
+        // SQL Server makes a SELECT … INTO column read from a variable nullable (observed), so NOT NULL holds only on the
+        // path that altered it.
+        var doc = Procedure("""
+            DECLARE @v int = 5;
+            SELECT @v AS v INTO #t;
+            IF @x = 1 ALTER TABLE #t ALTER COLUMN v int NOT NULL;
+            INSERT INTO #t (v) VALUES (NULL);
+            SELECT t.v FROM #t AS t;
+            """, "@x int");
+
+        Assert.True(Field(doc, "v").Nullable);
+    }
+
+    [Fact]
+    public void A_column_declared_differently_on_two_paths_is_not_read_again_from_either_declaration()
+    {
+        var doc = Procedure("""
+            CREATE TABLE #t (v int NULL);
+            IF @x = 1 ALTER TABLE #t ALTER COLUMN v int NOT NULL;
+            ELSE ALTER TABLE #t ALTER COLUMN v int NULL;
+            INSERT INTO #t (v) VALUES (NULL);
+            ALTER TABLE #t NOCHECK CONSTRAINT ALL;
+            SELECT t.v FROM #t AS t;
+            """, "@x int");
+
+        Assert.True(Field(doc, "v").Nullable);
+    }
+
+    [Fact]
     public void A_temporary_table_column_of_an_alias_type_is_unknown()
     {
         // tempdb does not have the database's alias types (observed: 2715), so the name does not mean this project's type.
@@ -508,6 +539,19 @@ public class StatementFlowTests
         Assert.False(Field(doc, "b").Nullable);
     }
 
+    [Theory]
+    [InlineData("CAST(t.name AS varchar)", "varchar(30)")]
+    [InlineData("CONVERT(nvarchar, t.name)", "nvarchar(30)")]
+    [InlineData("CAST(t.name AS char)", "char(30)")]
+    public void A_cast_to_a_string_type_without_a_length_is_30_long(string expression, string sql)
+    {
+        // Observed: A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration.
+        var scalar = Scalar(Field(Procedure($"SELECT {expression} AS a FROM dbo.t AS t;"), "a"));
+
+        Assert.Equal(sql, scalar.Sql);
+        Assert.Equal(30, scalar.Facets!.Length!.Value);
+    }
+
     [Fact]
     public void A_cast_of_anything_else_is_not_modelled_yet()
     {
@@ -532,7 +576,8 @@ public class StatementFlowTests
         var doc = Procedure("IF @x = 1 SELECT t.id FROM dbo.t AS t;\nELSE SELECT u.name FROM dbo.u AS u;", "@x int");
 
         var result = Assert.Single(Results(doc));
-        var union = Assert.IsType<IrUnion>(Assert.IsType<IrArray>(result.Type).Items);
+        var union = Assert.IsType<IrUnion>(result.Type);
+        Assert.All(union.Variants, v => Assert.IsType<IrArray>(v));
         Assert.Equal(2, union.Variants.Count);
     }
 
@@ -545,7 +590,7 @@ public class StatementFlowTests
         var results = Results(doc);
         Assert.Equal(2, results.Count);
         Assert.False(results[0].MayBeAbsent);
-        Assert.IsType<IrUnion>(Assert.IsType<IrArray>(results[0].Type).Items);
+        Assert.IsType<IrUnion>(results[0].Type);
         Assert.Equal(IrNullRules.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
         Assert.Equal("name", Assert.Single(Fields(doc, 1)).Name);
     }
@@ -628,7 +673,7 @@ public class StatementFlowTests
     }
 
     private static string[] VariantFields(IrDocument doc, IrResult result) =>
-        [.. Assert.IsType<IrUnion>(Assert.IsType<IrArray>(result.Type).Items).Variants.SelectMany(v => Fields(doc, v)).Select(f => f.Name).Order(StringComparer.Ordinal)];
+        [.. Assert.IsType<IrUnion>(result.Type).Variants.SelectMany(v => Fields(doc, v)).Select(f => f.Name).Order(StringComparer.Ordinal)];
 
     [Fact]
     public void An_error_in_a_nested_try_reaches_its_own_catch_and_one_there_the_outer_catch()
@@ -860,6 +905,15 @@ public class StatementFlowTests
         var ts = ZodEmitter.Emit(Procedure("IF @x IS NULL RETURN;\nSELECT t.id FROM dbo.t AS t FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;", "@x int"));
 
         Assert.Contains("export const PSchema = PRowSchema.nullable()\n", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_union_puts_a_variant_with_more_keys_first_so_zod_keeps_every_column()
+    {
+        // z.union takes the first variant that accepts a row, and z.object strips keys it does not know.
+        var doc = Procedure("IF @x = 1 SELECT u.id FROM dbo.u AS u;\nELSE SELECT t.id, t.code FROM dbo.t AS t;", "@x int");
+
+        Assert.Contains("export const PSchema = z.union([z.array(PRow2Schema), z.array(PRowSchema)])\n", ZodEmitter.Emit(doc), StringComparison.Ordinal);
     }
 
     [Fact]

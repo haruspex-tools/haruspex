@@ -55,6 +55,9 @@ public class FixtureSnapshotTests
         ["flow.part_list"] = "flow",
         ["flow.org_chart"] = "flow",
         ["flow.bill_of_materials"] = "flow",
+        ["flow.staff_moves"] = "flow",
+        ["flow.chain_up"] = "flow",
+        ["flow.caught_report"] = "flow",
     };
 
     public static TheoryData<string> Procedures { get; } = [.. FixtureOf.Keys];

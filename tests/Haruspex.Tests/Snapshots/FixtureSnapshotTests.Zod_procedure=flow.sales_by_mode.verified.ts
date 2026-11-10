@@ -14,6 +14,13 @@ export const SalesByModeResult1Row2Schema = z.object({
 })
 export type SalesByModeResult1Row2 = z.infer<typeof SalesByModeResult1Row2Schema>
 
+export const SalesByModeResult1Row3Schema = z.object({
+  region_id: z.int32(),
+  name: z.string().max(30),
+  code: z.string().max(3) /* one of "NTH", "STH", "EST", "WST" as the database compares strings (case, accents and trailing spaces may differ), so not an enum; char(3) pads to 3 bytes: 3 characters in a single-byte collation, at most 3 otherwise; no collation is declared */,
+})
+export type SalesByModeResult1Row3 = z.infer<typeof SalesByModeResult1Row3Schema>
+
 export const SalesByModeResult2RowSchema = z.object({
   code: z.string().max(3) /* one of "NTH", "STH", "EST", "WST" as the database compares strings (case, accents and trailing spaces may differ), so not an enum; char(3) pads to 3 bytes: 3 characters in a single-byte collation, at most 3 otherwise; no collation is declared */,
   name: z.string().max(30),
@@ -21,5 +28,5 @@ export const SalesByModeResult2RowSchema = z.object({
 export type SalesByModeResult2Row = z.infer<typeof SalesByModeResult2RowSchema>
 
 /** flow.sales_by_mode: returns 2 result sets: rows, [] when it does not run; JSON, null when no rows match or it does not run. */
-export const SalesByModeSchema = z.tuple([z.array(z.union([SalesByModeResult1RowSchema, SalesByModeResult1Row2Schema])), SalesByModeResult2RowSchema.nullable()])
+export const SalesByModeSchema = z.tuple([z.union([z.array(SalesByModeResult1Row3Schema), z.array(SalesByModeResult1RowSchema), z.array(SalesByModeResult1Row2Schema)]), SalesByModeResult2RowSchema.nullable()])
 export type SalesByMode = z.infer<typeof SalesByModeSchema>

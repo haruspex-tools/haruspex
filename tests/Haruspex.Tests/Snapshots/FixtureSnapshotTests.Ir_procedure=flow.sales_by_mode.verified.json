@@ -8,7 +8,7 @@
       "id": "flow.sales_by_mode",
       "name": "SalesByMode",
       "kind": "procedure",
-      "at": "procedures/sales_by_mode.sql:3:1",
+      "at": "procedures/sales_by_mode.sql:4:1",
       "parameters": [
         {
           "name": "@mode",
@@ -35,28 +35,41 @@
         {
           "encoding": "rowset",
           "type": {
-            "kind": "array",
-            "items": {
-              "kind": "union",
-              "variants": [
-                {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "array",
+                "items": {
                   "ref": "SalesByModeResult1Row"
-                },
-                {
+                }
+              },
+              {
+                "kind": "array",
+                "items": {
                   "ref": "SalesByModeResult1Row2"
                 }
-              ]
-            }
+              },
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "SalesByModeResult1Row3"
+                }
+              }
+            ]
           },
           "mayBeAbsent": true,
           "absentBecause": [
             {
               "rule": "not-run",
-              "at": "procedures/sales_by_mode.sql:13:5"
+              "at": "procedures/sales_by_mode.sql:14:5"
             },
             {
               "rule": "not-run",
-              "at": "procedures/sales_by_mode.sql:15:5"
+              "at": "procedures/sales_by_mode.sql:16:5"
+            },
+            {
+              "rule": "not-run",
+              "at": "procedures/sales_by_mode.sql:18:5"
             }
           ]
         },
@@ -69,11 +82,11 @@
           "absentBecause": [
             {
               "rule": "no-rows",
-              "at": "procedures/sales_by_mode.sql:19:1"
+              "at": "procedures/sales_by_mode.sql:22:1"
             },
             {
               "rule": "not-run",
-              "at": "procedures/sales_by_mode.sql:19:1"
+              "at": "procedures/sales_by_mode.sql:22:1"
             }
           ]
         }
@@ -187,6 +200,85 @@
               "from": {
                 "type": "nvarchar(30)"
               }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "SalesByModeResult1Row3": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.sales_by_mode",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "region_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(3)",
+            "length": {
+              "value": 3,
+              "unit": "bytes",
+              "from": {
+                "type": "char(3)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "NTH",
+                "STH",
+                "EST",
+                "WST"
+              ],
+              "from": [
+                {
+                  "check": "flow.ck_region_code"
+                }
+              ]
             }
           },
           "presence": "always",

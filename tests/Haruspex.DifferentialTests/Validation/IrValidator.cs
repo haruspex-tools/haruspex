@@ -384,11 +384,11 @@ public static partial class IrValidator
                 case IrArray { Items: IrRef row }:
                     Rows(document.Types[row.Name].Fields, set, path);
                     return;
-                case IrArray { Items: IrUnion union } when union.Variants.All(v => v is IrRef):
-                    // A position several statements may fill (IR 0.6): every row of one set comes from one statement, so
-                    // the set must fit one variant whole, and the one it fits is the one it is checked against.
+                case IrUnion union when union.Variants.All(v => v is IrArray { Items: IrRef }):
+                    // A position several statements may fill (IR 0.6): a union of arrays, every row of one set from one
+                    // statement, so the set must fit one variant whole, and the one it fits is the one it is checked against.
                     var before = violations.Count;
-                    foreach (var variant in union.Variants.Cast<IrRef>())
+                    foreach (var variant in union.Variants.Select(v => (IrRef)((IrArray)v).Items))
                     {
                         violations.RemoveRange(before, violations.Count - before);
                         Rows(document.Types[variant.Name].Fields, set, path);
