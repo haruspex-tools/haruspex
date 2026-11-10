@@ -1,7 +1,7 @@
-# The haruspex IR, version 0.6
+# The haruspex IR, version 0.7
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
-each side can be written in whatever language suits it. This page describes version 0.6. A JSON Schema for
+each side can be written in whatever language suits it. This page describes version 0.7. A JSON Schema for
 it will follow.
 
 ## Why not JSON Schema
@@ -15,7 +15,7 @@ every document. It maps to JSON Schema without loss.
 
 ```jsonc
 {
-  "irVersion": "0.6",                 // versioned separately from the tool
+  "irVersion": "0.7",                 // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database: the object's identity
@@ -310,6 +310,27 @@ sound, is in `Haruspex.SqlServer.Inference/README.md`; the engine rules are obse
 - A `#t` the procedure does not create on every path before it reads it is the caller's, if any: unknown,
   `caller-temp-table`. Results that cannot be lined up by position are unknown, `varying-results`.
 
+## Calls and declared results
+
+A procedure's `EXEC` of another of the project is followed (slice 6b): the callee's result sets are its caller's at that
+point, as if its statements were there, so they carry the callee's locations (a `not-run` or `no-rows` reason, an unknown's
+`at`). What the engine does across a call is in `Haruspex.SqlServer.Inference/README.md` ("Calls"). For the IR:
+
+- Calls whose results the project cannot show give the unknown reasons `dynamic-sql`, `procedure-variable`,
+  `system-procedure`, `missing-procedure` and `ambiguous-procedure` (and `external-code` for a CLR procedure, as before).
+- **Declared results.** The config file can declare a procedure's results where they can't be inferred. A selected
+  procedure's own declared results are its `results`, with an override `{ "object", "path": "results", "setting":
+  "results", "why" }`; a caller whose results include a declared callee's lists the same override with `"via"`, the
+  callee's name. So every result that rests on a person's word, not the database's, is listed.
+- Inside declared results, a value that may be null, or a key that may be left out, or a result that may be absent, has the
+  reason `declared`, at the procedure declared. A declared scalar has no SQL type: its `sql` is the JSON Schema type or
+  format it was declared with (`integer`, `string`, `date-time`).
+
+Changes in 0.7 (slice 6b, calls): the unknown reasons `dynamic-sql`, `procedure-variable`, `system-procedure`,
+`missing-procedure` and `ambiguous-procedure`; the null rule `declared`; the override setting `results` and an override's
+`via`. A 0.6 reader that ignores unknown keys would read a caller's declared results as inferred, which is why the version
+changed.
+
 Changes in 0.6 (slice 6, statement flow): the result reason `not-run`, under which a result set may be missing
 altogether (only trailing ones, padded by readers as absent); a rowset result that is a `union` of arrays of rows;
 the null rule `variable`; the unknown reasons `caller-temp-table` and `varying-results`; and results described for
@@ -334,4 +355,4 @@ Changes in 0.2: scalars gained facets (`maxLength`, `length`, `minLength`, `digi
 each with its `from`. A reader of 0.1 that ignores unknown keys reads 0.2 documents unchanged, but the version
 changed because the facets are claims a 0.2 reader may rely on.
 
-Not in 0.6, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.
+Not in 0.7, but planned: origins (column lineage) beyond each facet's `from` and each null reason's `at`, documentation, and a source hash.

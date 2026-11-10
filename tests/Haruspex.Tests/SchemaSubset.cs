@@ -16,7 +16,7 @@ internal sealed class SchemaSubset(JsonElement root)
     private static readonly HashSet<string> Implemented = new(StringComparer.Ordinal)
     {
         "type", "enum", "const", "properties", "additionalProperties", "required", "items", "minItems", "minLength", "pattern",
-        "$ref", "dependentRequired", "dependentSchemas", "anyOf", "propertyNames",
+        "$ref", "dependentRequired", "dependentSchemas", "anyOf", "not", "propertyNames",
     };
 
     /// <summary>The ways <paramref name="instance"/> fails the schema, as JSON pointers with a reason; empty when it is valid.</summary>
@@ -117,6 +117,12 @@ internal sealed class SchemaSubset(JsonElement root)
                         Check(k, name.RootElement, $"{at}/{property.Name} (its name)", errors);
                     }
 
+                    break;
+                case "not":
+                    var matched = new List<string>();
+                    Check(k, value, at, matched);
+                    if (matched.Count == 0)
+                        errors.Add($"{at}: matches what \"not\" forbids");
                     break;
                 case "anyOf":
                     if (!k.EnumerateArray().Any(option => { var none = new List<string>(); Check(option, value, at, none); return none.Count == 0; }))

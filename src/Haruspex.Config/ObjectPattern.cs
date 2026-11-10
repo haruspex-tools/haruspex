@@ -20,12 +20,16 @@ public sealed class ObjectPattern
     private readonly Regex schema;
     private readonly Regex name;
 
-    private ObjectPattern(string text, Regex schema, Regex name)
+    private ObjectPattern(string text, Regex schema, Regex name, ObjectName? literal)
     {
         Text = text;
         this.schema = schema;
         this.name = name;
+        Name = literal;
     }
+
+    /// <summary>The one name the pattern matches, when it has no wildcard outside brackets; null otherwise.</summary>
+    public ObjectName? Name { get; }
 
     /// <summary>The pattern as given.</summary>
     public string Text { get; }
@@ -44,7 +48,9 @@ public sealed class ObjectPattern
         ArgumentNullException.ThrowIfNull(text);
         pattern = null;
         var parts = new List<StringBuilder> { new() };
+        var literals = new List<StringBuilder> { new() };
         var hasContent = new List<bool> { false };
+        var wild = false;
 
         for (var i = 0; i < text.Length; i++)
         {
@@ -78,23 +84,28 @@ public sealed class ObjectPattern
                     }
 
                     parts[^1].Append(Regex.Escape(literal.ToString()));
+                    literals[^1].Append(literal);
                     hasContent[^1] |= literal.Length > 0;
                     i = j;
                     break;
                 case '.':
                     parts.Add(new StringBuilder());
+                    literals.Add(new StringBuilder());
                     hasContent.Add(false);
                     break;
                 case '*':
                     parts[^1].Append(".*");
                     hasContent[^1] = true;
+                    wild = true;
                     break;
                 case '?':
                     parts[^1].Append('.');
                     hasContent[^1] = true;
+                    wild = true;
                     break;
                 default:
                     parts[^1].Append(Regex.Escape(c.ToString()));
+                    literals[^1].Append(c);
                     hasContent[^1] = true;
                     break;
             }
@@ -107,7 +118,7 @@ public sealed class ObjectPattern
         }
 
         error = null;
-        pattern = new ObjectPattern(text, Anchored(parts[0]), Anchored(parts[1]));
+        pattern = new ObjectPattern(text, Anchored(parts[0]), Anchored(parts[1]), wild ? null : new ObjectName(literals[0].ToString(), literals[1].ToString()));
         return true;
     }
 

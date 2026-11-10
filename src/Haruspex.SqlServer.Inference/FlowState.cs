@@ -78,6 +78,38 @@ internal sealed class ResultTrack
         return new ResultTrack(positions, [.. Counts.Select(c => c + 1)]);
     }
 
+    /// <summary>
+    /// The results of a call appended: a callee's result sets arrive in the caller's stream where it is called, in order
+    /// (observed), so the callee's k-th lands at every position some path of the caller is at, plus k.
+    /// </summary>
+    public ResultTrack Then(ResultTrack callee)
+    {
+        if (callee.Positions.Count == 0 && callee.Counts.SetEquals([0]))
+            return this;
+        var positions = Positions;
+        foreach (var count in Counts)
+        {
+            for (var i = 0; i < callee.Positions.Count; i++)
+            {
+                while (positions.Count <= count + i)
+                    positions = positions.Add([]);
+                foreach (var produced in callee.Positions[i])
+                {
+                    if (!positions[count + i].Any(p => p.Key == produced.Key))
+                        positions = positions.SetItem(count + i, positions[count + i].Add(produced));
+                }
+            }
+        }
+
+        return new ResultTrack(positions, [.. Counts.SelectMany(c => callee.Counts.Select(k => c + k))]);
+    }
+
+    /// <summary>The same results, stopped after any number of them: what a client has received when an error cuts a call short.</summary>
+    public ResultTrack Prefixes() => new(Positions, [.. Enumerable.Range(0, Counts.Max + 1)]);
+
+    /// <summary>Every result some path returns, at any position.</summary>
+    public IEnumerable<Produced> All => Positions.SelectMany(p => p);
+
     public ResultTrack Join(ResultTrack other)
     {
         var positions = Positions;
@@ -218,6 +250,16 @@ internal sealed class FlowState
     /// <summary>The state as text, for a loop to tell when another pass changes nothing.</summary>
     public string Text()
     {
+        var text = new StringBuilder(TempsText());
+        foreach (var (name, value) in Variables.OrderBy(v => v.Key, StringComparer.Ordinal))
+            text.Append(name).Append('=').Append(ShapeText.Of(value)).Append('\n');
+        Results.Write(text);
+        return text.ToString();
+    }
+
+    /// <summary>The temporary tables as text: what a callee starts from, so it keys a call's walk in a cache.</summary>
+    public string TempsText()
+    {
         var text = new StringBuilder();
         foreach (var (name, table) in Temps.OrderBy(t => t.Key, StringComparer.Ordinal))
         {
@@ -239,9 +281,6 @@ internal sealed class FlowState
             text.Append('\n');
         }
 
-        foreach (var (name, value) in Variables.OrderBy(v => v.Key, StringComparer.Ordinal))
-            text.Append(name).Append('=').Append(ShapeText.Of(value)).Append('\n');
-        Results.Write(text);
         return text.ToString();
     }
 }

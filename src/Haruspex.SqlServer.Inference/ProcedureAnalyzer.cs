@@ -10,10 +10,12 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="Parameters">Each declared parameter and its type.</param>
 /// <param name="Results">The result sets in order, or null when a statement makes them impossible to list.</param>
 /// <param name="ResultsUnknown">Why the results cannot be listed, when <paramref name="Results"/> is null.</param>
+/// <param name="Declared">The procedures whose declared results its results include, through its calls.</param>
 internal sealed record ProcedureAnalysis(
     IReadOnlyList<ParameterShape> Parameters,
     IReadOnlyList<ResultShape>? Results,
-    UnknownShape? ResultsUnknown);
+    UnknownShape? ResultsUnknown,
+    IReadOnlyCollection<string> Declared);
 
 internal sealed record ParameterShape(string Name, Shape Type, bool HasDefault, bool IsOutput);
 
@@ -46,39 +48,38 @@ internal sealed partial class ProcedureAnalyzer
     /// <param name="file">The file the body is in, for locations.</param>
     /// <param name="functions">What each scalar function returns.</param>
     /// <param name="parameters">Inside a function, its parameters' values.</param>
-    public ProcedureAnalyzer(DatabaseModel model, string file, FunctionSummaries functions, IReadOnlyDictionary<string, Value>? parameters = null)
+    /// <param name="calls">The calls being followed, inside a procedure; null inside a function, which cannot call one.</param>
+    /// <param name="context">What a procedure's walk starts from: its caller's temporary tables, and how it is called.</param>
+    public ProcedureAnalyzer(
+        DatabaseModel model,
+        string file,
+        FunctionSummaries functions,
+        IReadOnlyDictionary<string, Value>? parameters = null,
+        ProcedureCalls? calls = null,
+        CallContext? context = null)
     {
         this.model = model;
         binder = new Binder(model, file);
         this.file = file;
         this.functions = functions;
         this.parameters = parameters ?? new Dictionary<string, Value>();
+        this.calls = calls;
+        this.context = context ?? CallContext.Top;
+        escapes = this.context.Escapes ? [] : null;
     }
 
     /// <summary>The value a function's <c>RETURN</c> expression gives, read with no FROM in scope.</summary>
     public Value Return(ScalarExpression expression) => Expression(expression, binder.BindFrom(new QuerySpecification(), null));
 
-    public ProcedureAnalysis Analyse(ProcedureStatementBody procedure)
-    {
-        var parameters = procedure.Parameters
-            .Select(p => new ParameterShape(
-                p.VariableName.Value,
-                SqlTypes.ToShape(model, SqlType.From(p.DataType), At(p)),
-                HasDefault: p.Value is not null,
-                IsOutput: p.Modifier == ParameterModifier.Output))
-            .ToList();
-
-        // A CLR procedure's body is .NET code, so its results cannot be known from the project.
-        if (procedure.MethodSpecifier is not null || procedure.StatementList is null)
-        {
-            return new ProcedureAnalysis(parameters, null, new UnknownShape(
-                IrUnknownReasons.ExternalCode,
-                "This is a CLR procedure: its results come from .NET code, which is not in the project.",
-                At(procedure)));
-        }
-
-        return Flow(procedure, parameters);
-    }
+    /// <summary>A procedure's declared parameters and their types.</summary>
+    public static IReadOnlyList<ParameterShape> Parameters(DatabaseModel model, Procedure procedure) =>
+    [
+        .. procedure.Body.Parameters.Select(p => new ParameterShape(
+            p.VariableName.Value,
+            SqlTypes.ToShape(model, SqlType.From(p.DataType), new SourceLocation(procedure.File, p.StartLine, p.StartColumn)),
+            HasDefault: p.Value is not null,
+            IsOutput: p.Modifier == ParameterModifier.Output)),
+    ];
 
     /// <summary>
     /// Session options known not to change which result sets run or their shape. Anything else is not modelled:

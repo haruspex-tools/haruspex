@@ -28,7 +28,7 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
@@ -50,6 +50,7 @@ public static class Runs
     private const string NoSales = "DELETE FROM flow.sale;";
     private const string NoEmployees = "DELETE FROM flow.employee;";
     private const string NoRegions = "DELETE FROM flow.region;";
+    private const string NoBakery = "DELETE FROM calls.batch; DELETE FROM calls.oven;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -148,6 +149,29 @@ public static class Runs
         new("flow: notes_or_names, no regions", "flow", "flow.notes_or_names", new Dictionary<string, object?> { ["@notes"] = false }, NoRegions),
         new("flow: bill_of_materials, two levels", "flow", "flow.bill_of_materials", new Dictionary<string, object?> { ["@assembly"] = 1 }),
         new("flow: bill_of_materials, a part with no components", "flow", "flow.bill_of_materials", new Dictionary<string, object?> { ["@assembly"] = 6 }),
+
+        new("calls: oven_list", "calls", "calls.oven_list", None),
+        new("calls: daily_report", "calls", "calls.daily_report", None),
+        new("calls: daily_report, one day", "calls", "calls.daily_report", new Dictionary<string, object?> { ["@day"] = new DateTime(2026, 11, 3) }),
+        new("calls: daily_report, with placeholders", "calls", "calls.daily_report", new Dictionary<string, object?> { ["@placeholder"] = true }),
+        new("calls: batch_rows", "calls", "calls.batch_rows", None),
+        new("calls: batch_rows, an oven without racks", "calls", "calls.batch_rows", new Dictionary<string, object?> { ["@oven"] = 2 }),
+        new("calls: batch_rows, an oven with racks", "calls", "calls.batch_rows", new Dictionary<string, object?> { ["@oven"] = 1 }),
+        new("calls: rack_sizes", "calls", "calls.rack_sizes", None),
+        new("calls: batch_feed", "calls", "calls.batch_feed", None),
+        new("calls: batch_feed, one oven", "calls", "calls.batch_feed", new Dictionary<string, object?> { ["@oven"] = 2 }),
+        new("calls: batch_feed, nothing baked", "calls", "calls.batch_feed", None, NoBakery),
+        new("calls: walk_even, no steps", "calls", "calls.walk_even", new Dictionary<string, object?> { ["@n"] = 0 }),
+        new("calls: walk_even, one step", "calls", "calls.walk_even", new Dictionary<string, object?> { ["@n"] = 1 }),
+        new("calls: walk_odd, no steps", "calls", "calls.walk_odd", new Dictionary<string, object?> { ["@n"] = 0 }),
+        new("calls: walk_odd, three steps", "calls", "calls.walk_odd", new Dictionary<string, object?> { ["@n"] = 3 }),
+        new("calls: ovens_or_batches, ovens", "calls", "calls.ovens_or_batches", new Dictionary<string, object?> { ["@ovens"] = true }),
+        new("calls: ovens_or_batches, batches", "calls", "calls.ovens_or_batches", new Dictionary<string, object?> { ["@ovens"] = false }),
+        new("calls: ovens_or_batches, an oven without racks", "calls", "calls.ovens_or_batches", new Dictionary<string, object?> { ["@ovens"] = false, ["@oven"] = 2 }),
+        new("calls: ovens_or_batches, an oven with racks", "calls", "calls.ovens_or_batches", new Dictionary<string, object?> { ["@ovens"] = false, ["@oven"] = 1 }),
+        new("calls: search_batches", "calls", "calls.search_batches", new Dictionary<string, object?> { ["@product"] = "%r%" }),
+        new("calls: search_batches, no match", "calls", "calls.search_batches", new Dictionary<string, object?> { ["@product"] = "zzz" }),
+        new("calls: search_with_ovens", "calls", "calls.search_with_ovens", new Dictionary<string, object?> { ["@product"] = "%e%" }),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>
@@ -155,6 +179,8 @@ public static class Runs
     {
         ["sales.order_report"] =
             "It reads sales.voucher and customer.nickname, which the fixture leaves out on purpose to show unknowns, so SQL Server cannot run it.",
+        ["calls.picked_batches"] = "It reads its caller's #picked, so it runs only when called: through calls.daily_report, which is run.",
+        ["calls.add_placeholder"] = "It writes its caller's #picked, so it runs only when called: through calls.daily_report, which is run.",
     };
 
     public static ProcedureRun Named(string name) => All.Single(r => r.Name == name);

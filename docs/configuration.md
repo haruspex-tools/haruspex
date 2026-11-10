@@ -37,7 +37,12 @@ otherwise silently do nothing.
         "status": { "values": "exact", "why": "the application writes lower case only" },
         "settings": { "type": "OrderSettingsSchema", "import": "@app/orders/settings" }   // see "type" below
       }
-    }
+    },
+    "sales.search_orders": {                // dynamic SQL: see "Declared results" below
+      "results": { "rowset": "schemas/order-search-row.schema.json" },
+      "why": "the filter is built as dynamic SQL"
+    },
+    "audit.write_log": { "results": "none", "why": "it only writes the log" }
   }
 }
 ```
@@ -70,7 +75,7 @@ breaking a file written today.
 ## Overrides
 
 An override corrects or completes what was inferred, for one procedure (keyed by its two-part name, which must be
-selected). Overrides are applied to the IR after inference, never inside it, and every one stays **checked at
+selected; only `results`, below, may be given for any procedure). Overrides are applied to the IR after inference, never inside it, and every one stays **checked at
 runtime**: the generated validator still checks every value, so a wrong override fails loudly on real data; it is never
 a silent cast. The IR lists every claim an override made under `overrides`, with its reason.
 
@@ -95,6 +100,54 @@ a silent cast. The IR lists every claim an override made under `overrides`, with
 
 **An override whose path doesn't exist is an error**, naming the keys that do. **One the inference already agrees
 with is a warning**, so the file shrinks as the SQL improves. Generation goes ahead after a warning.
+
+## Declared results: `results`
+
+Some procedures' result sets can't be known from the project: dynamic SQL (`EXEC (@sql)`, `sp_executesql`), a procedure named
+in a variable, a system procedure, a CLR procedure, one in another database. Their results are unknown, and so are those of
+every procedure that calls them, with a reason naming the statement. `generate` warns about each selected procedure whose
+results are unknown for one of these reasons, naming the statement and what to declare; it still writes its output, and
+exits as before (the `check` command will fail it).
+
+`results` declares them, with a required `why`:
+
+```jsonc
+"procedures": {
+  "audit.write_log": { "results": "none", "why": "it only writes the log" },
+  "sales.search_orders": {
+    "results": [
+      { "rowset": { "type": "object", "properties": {
+          "order_id": { "type": "integer", "format": "int32" },
+          "note": { "type": ["string", "null"] } } } },
+      { "json": "schemas/search-totals.schema.json", "mayBeAbsent": true }
+    ],
+    "why": "the filter is built as dynamic SQL"
+  }
+}
+```
+
+- `"none"`, one result, or an array of them in the order the procedure returns them. A result is `{ "rowset": schema }`, the
+  JSON Schema of **one row** (an object whose `properties` are its columns, each a scalar and always there), or
+  `{ "json": schema }`, the JSON Schema of the document `FOR JSON` writes, with `"mayBeAbsent": true` when it may match no
+  rows (FOR JSON then returns no row at all). A schema is written inline, or as the path of a file holding it, relative to
+  this file; a problem in a file is reported in that file, with its line.
+- **The schema keywords read:** `type` (one type, with `"null"` when it may be null), `properties` and `required`, `items`,
+  `minItems` and `maxItems`, `additionalProperties` (alone, for an object whose keys are data), `$ref` to the schema's own
+  `$defs` or `definitions` (not recursive), and `format`: `date`, `time`, `date-time` (with an offset), `date-time-local`
+  (without one, as SQL Server writes `datetime2`), `uuid`, and `int32` or `int64` on an `integer`. An `integer` without a
+  format is checked as a number. Annotations (`title`, `description`, `$schema`, …) are ignored. **Any other keyword is a
+  warning** and is not checked, so the generated type is wider than the schema, never narrower. A key of a JSON object that
+  is not `required` may be left out but is never null, as `FOR JSON` writes it; one that may be both is an error.
+- **Any procedure** can be declared: one that isn't selected, or isn't in the project. A call of it contributes the declared
+  result sets to its caller, and the caller's IR lists that claim (an override with `via`). What it does to temporary tables
+  is not known either way, so after a call of it they are unknown. A declaration that no selected procedure uses is a
+  warning.
+- **A declaration of results haruspex can infer** is an error when it disagrees, naming where, and a warning when it agrees,
+  so it can be removed. They are compared as far as a declaration can say: how many result sets, each one's encoding and
+  whether it may be absent, and in every value its kind, its keys, and whether it may be null or left out. To correct part of
+  inferred results, use `paths` instead; `paths` and `results` can't be used together.
+- **Declared results are checked at runtime**, like everything else: the generated validator rejects output that doesn't
+  fit the declaration, so a wrong one fails loudly on real data.
 
 ## Results policy: `objects`
 

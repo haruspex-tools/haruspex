@@ -1,0 +1,319 @@
+using System.Collections.Immutable;
+using System.Text;
+using Haruspex.Diagnostics;
+using Haruspex.Ir;
+using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Semantics;
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+
+namespace Haruspex.SqlServer.Inference;
+
+/// <summary>
+/// The result sets declared for a procedure whose results cannot be inferred from the project, in the IR's terms: what
+/// a call of it contributes to its caller. Inference takes them as given, as it takes the model; where they come from
+/// (the config file, in Haruspex.Config) is not its concern.
+/// </summary>
+/// <param name="Results">The result sets it returns, in order; none for a procedure declared to return none.</param>
+/// <param name="Types">The object types <paramref name="Results"/> refer to.</param>
+/// <param name="Why">Why the declaration holds, as given.</param>
+public sealed record DeclaredResults(IReadOnlyList<IrResult> Results, IReadOnlyDictionary<string, IrObjectType> Types, string Why);
+
+/// <summary>What a procedure's walk starts from, besides its own parameters and variables.</summary>
+/// <param name="Temps">The caller's temporary tables, which the callee reads and writes as its own until it creates one of a name.</param>
+/// <param name="Escapes">Whether to keep each state an error may leave the procedure from: the caller is inside a TRY.</param>
+/// <param name="Inserting">
+/// Whether the procedure runs under <c>INSERT … EXEC</c>, its result sets going into a table: FOR JSON fails there (13602)
+/// and so does another <c>INSERT … EXEC</c> (8164), both observed.
+/// </param>
+internal sealed record CallContext(ImmutableDictionary<string, TempTable> Temps, bool Escapes, bool Inserting)
+{
+    public static CallContext Top { get; } = new(ImmutableDictionary.Create<string, TempTable>(StringComparer.OrdinalIgnoreCase), false, false);
+}
+
+/// <summary>What walking a procedure's body found.</summary>
+/// <param name="End">The state at its end, joined over the paths that return successfully; null when none does.</param>
+/// <param name="Escapes">The states an error may leave it from, when asked for (<see cref="CallContext.Escapes"/>).</param>
+/// <param name="Blocker">The statement that makes its results impossible to list, if any; then nothing else is known.</param>
+/// <param name="Declared">The procedures whose declared results it took, at any depth of calls.</param>
+internal sealed record Walked(FlowState? End, IReadOnlyList<FlowState> Escapes, UnknownShape? Blocker, ImmutableSortedSet<string> Declared);
+
+/// <summary>
+/// Follows <c>EXEC</c> into the procedures of the project. A callee is walked again at each call, from its caller's
+/// temporary tables at that point, so that what it reads of them and does to them is known; its parameters are its declared
+/// types, nullable, which holds for every call. Calls that form a cycle are solved as a fixed point. README.md in this
+/// folder ("Calls") gives the model and the observations it rests on.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>Recursion.</b> A call of a procedure that is already being walked (it calls itself, directly or through others) does
+/// not walk it again. It gives what is assumed of that procedure: at first that it never returns (the path through the call
+/// ends), then the result sets its last walk returned, until a walk returns what was assumed. Result sets only grow from one
+/// walk to the next, so this is the least fixed point, which describes every call that returns, by induction on its depth.
+/// At most <see cref="MostPasses"/> walks are taken; a procedure that returns more result sets at each depth never settles,
+/// and is unknown (<c>unresolved-recursion</c>). What the recursive call does to temporary tables is not iterated: every
+/// table that the procedures it can reach write is unknown after it. SQL Server stops at 32 nested calls (error 217,
+/// observed), which fails the call, so it describes no result the IR has to.
+/// </para>
+/// <para>
+/// <b>Cache.</b> The walk of a callee from the same temporary tables, with the same flags, gives the same outcome, unless it
+/// rested on an assumption about a procedure further down the stack of calls; those are walked again.
+/// </para>
+/// </remarks>
+internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries functions, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations)
+{
+    /// <summary>The most walks a recursive procedure gets to reach a fixed point.</summary>
+    public const int MostPasses = 20;
+
+    private sealed class Frame(ObjectName name)
+    {
+        public ObjectName Name { get; } = name;
+
+        /// <summary>Whether a call of it was met while it was being walked, in this pass.</summary>
+        public bool Recursive { get; set; }
+
+        /// <summary>Whether its walk took an assumption about a procedure below it on the stack, so it cannot be cached.</summary>
+        public bool Dependent { get; set; }
+    }
+
+    private readonly List<Frame> stack = [];
+
+    /// <summary>The result sets assumed of each recursive procedure being solved; absent while it is assumed never to return.</summary>
+    private readonly Dictionary<ObjectName, ResultTrack> assumed = [];
+    private readonly Dictionary<string, Walked> cache = new(StringComparer.Ordinal);
+    private readonly Dictionary<ObjectName, ImmutableSortedSet<string>> writes = [];
+
+    public DatabaseModel Model => model;
+
+    /// <summary>The declaration of a procedure's results, if there is one, with the name it is declared by.</summary>
+    public (ObjectName Name, DeclaredResults Results)? Declared(ObjectName name) =>
+        declarations.Keys.Where(k => k == name).Select(k => ((ObjectName, DeclaredResults)?)(k, declarations[k])).FirstOrDefault();
+
+    /// <summary>Infers one procedure's results, as the outermost call.</summary>
+    public ProcedureAnalysis Analyse(Procedure procedure)
+    {
+        var parameters = ProcedureAnalyzer.Parameters(model, procedure);
+        if (Unwalkable(procedure, procedure.At) is { } why)
+            return new ProcedureAnalysis(parameters, null, why, []);
+
+        var walked = Run(procedure, CallContext.Top);
+        if (walked.Blocker is { } blocker)
+            return new ProcedureAnalysis(parameters, null, blocker, walked.Declared);
+        if (walked.End is null)
+            return new ProcedureAnalysis(parameters, [], null, walked.Declared);
+        var (results, varying) = ProcedureAnalyzer.Results(walked.End.Results);
+        return new ProcedureAnalysis(parameters, results, varying, walked.Declared);
+    }
+
+    /// <summary>What a call of <paramref name="callee"/> from a caller in <paramref name="context"/> does.</summary>
+    public Walked Follow(Procedure callee, CallContext context, SourceLocation at)
+    {
+        if (Unwalkable(callee, at) is { } why)
+            return new Walked(null, [], why, []);
+
+        var index = stack.FindIndex(f => f.Name == callee.Name);
+        if (index < 0)
+            return Run(callee, context);
+
+        // A recursive call: what is assumed of the callee, and every frame above it rests on that assumption.
+        stack[index].Recursive = true;
+        for (var i = index + 1; i < stack.Count; i++)
+            stack[i].Dependent = true;
+        return Assumed(callee, context, at);
+    }
+
+    /// <summary>Why a procedure cannot be walked at all: a CLR procedure, or one changed after its definition.</summary>
+    private static UnknownShape? Unwalkable(Procedure procedure, SourceLocation at)
+    {
+        if (procedure.Body.MethodSpecifier is not null || procedure.Body.StatementList is null)
+            return new UnknownShape(IrUnknownReasons.ExternalCode, $"{procedure.Name} is a CLR procedure: its results come from .NET code, which is not in the project.", procedure.At);
+
+        // The parameters are still read from the definition the model kept, but which body runs depends on the order the
+        // scripts run, so the results are withdrawn.
+        return procedure.Redefinition is { } redefinition ? new UnknownShape(IrUnknownReasons.Redefined, redefinition.Message, redefinition.At) : null;
+    }
+
+    private Walked Run(Procedure procedure, CallContext context)
+    {
+        var key = Key(procedure.Name, context);
+        if (cache.TryGetValue(key, out var cached))
+            return cached;
+
+        var frame = new Frame(procedure.Name);
+        stack.Add(frame);
+        try
+        {
+            for (var pass = 0; pass < MostPasses; pass++)
+            {
+                frame.Recursive = false;
+                var walked = new ProcedureAnalyzer(model, procedure.File, functions, calls: this, context: context).Walk(procedure.Body);
+                if (!frame.Recursive || walked.Blocker is not null)
+                {
+                    if (!frame.Dependent)
+                        cache[key] = walked;
+                    return walked;
+                }
+
+                // A call of itself was met: settled when it returned what the call was assumed to.
+                var track = walked.End?.Results;
+                var before = assumed.GetValueOrDefault(procedure.Name);
+                if (Text(track) == Text(before))
+                {
+                    if (!frame.Dependent)
+                        cache[key] = walked;
+                    return walked;
+                }
+
+                if (track is null)
+                    assumed.Remove(procedure.Name);
+                else
+                    assumed[procedure.Name] = track;
+            }
+
+            return new Walked(null, [], new UnknownShape(
+                IrUnknownReasons.UnresolvedRecursion,
+                $"{procedure.Name} calls itself, directly or through other procedures, and the result sets it returns reached no fixed point in {MostPasses} walks: it may return more at each depth.",
+                procedure.At), []);
+        }
+        finally
+        {
+            stack.RemoveAt(stack.Count - 1);
+            assumed.Remove(procedure.Name);
+        }
+    }
+
+    /// <summary>
+    /// A recursive call: the result sets assumed of the callee (none at first, so the path through the call ends), and every
+    /// temporary table that it, or a procedure it can reach, writes made unknown.
+    /// </summary>
+    private Walked Assumed(Procedure callee, CallContext context, SourceLocation at)
+    {
+        var written = Writes(callee.Name);
+        var temps = context.Temps;
+        foreach (var name in temps.Keys.Where(written.Contains).ToList())
+        {
+            temps = temps.SetItem(name, new UnknownTable(new UnknownShape(
+                IrUnknownReasons.UnresolvedRecursion,
+                $"{name} may be changed by the recursive call of {callee.Name} at {at}, which is not followed.",
+                at)));
+        }
+
+        var state = FlowState.Start([]).WithTemps(temps);
+        var track = assumed.GetValueOrDefault(callee.Name);
+        IReadOnlyList<FlowState> escapes = context.Escapes ? [state.WithResults((track ?? ResultTrack.None).Prefixes())] : [];
+        return new Walked(track is null ? null : state.WithResults(track), escapes, null, []);
+    }
+
+    /// <summary>
+    /// The temporary tables a procedure writes, creates, alters or drops, or any procedure it calls does, at any depth: what
+    /// a call of it may change, read from the bodies alone.
+    /// </summary>
+    private ImmutableSortedSet<string> Writes(ObjectName name)
+    {
+        if (writes.TryGetValue(name, out var known))
+            return known;
+        writes[name] = [];
+        var all = ImmutableSortedSet.Create<string>(StringComparer.OrdinalIgnoreCase);
+        if (model.FindProcedure(name) is { Body.StatementList: { } body } procedure)
+        {
+            var finder = new WriteFinder();
+            body.Accept(finder);
+            all = all.Union(finder.Tables);
+            var binder = new Binder(model, procedure.File);
+            foreach (var call in finder.Calls)
+            {
+                if (binder.BindCall(call) is ProcedureCall { Procedure: var callee })
+                    all = all.Union(Writes(callee.Name));
+            }
+        }
+
+        writes[name] = all;
+        return all;
+    }
+
+    private sealed class WriteFinder : TSqlFragmentVisitor
+    {
+        public HashSet<string> Tables { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public List<ExecuteSpecification> Calls { get; } = [];
+
+        public override void Visit(InsertSpecification node) => Add(node.Target);
+
+        public override void Visit(UpdateSpecification node) => Add(node.Target);
+
+        public override void Visit(MergeSpecification node) => Add(node.Target);
+
+        public override void Visit(CreateTableStatement node) => Add(node.SchemaObjectName);
+
+        public override void Visit(AlterTableStatement node) => Add(node.SchemaObjectName);
+
+        public override void Visit(DropTableStatement node)
+        {
+            foreach (var name in node.Objects)
+                Add(name);
+        }
+
+        public override void Visit(SelectStatement node)
+        {
+            if (node.Into is not null)
+                Add(node.Into);
+        }
+
+        public override void Visit(ExecuteSpecification node) => Calls.Add(node);
+
+        private void Add(TableReference target)
+        {
+            if (target is NamedTableReference named)
+                Add(named.SchemaObject);
+        }
+
+        private void Add(SchemaObjectName name)
+        {
+            if (name.BaseIdentifier.Value.StartsWith('#'))
+                Tables.Add(name.BaseIdentifier.Value);
+        }
+    }
+
+    private static string Text(ResultTrack? track)
+    {
+        if (track is null)
+            return "never";
+        var text = new StringBuilder();
+        track.Write(text);
+        return text.ToString();
+    }
+
+    /// <summary>
+    /// What a walk of a procedure depends on besides its body: the temporary tables it starts from, in full (an unknown's
+    /// detail and a declared column's declaration included, since a later statement reads them), and the flags.
+    /// </summary>
+    private static string Key(ObjectName name, CallContext context)
+    {
+        var text = new StringBuilder();
+        text.Append(name).Append('|').Append(context.Escapes).Append('|').Append(context.Inserting).Append('\n');
+        text.Append(FlowState.Start([]).WithTemps(context.Temps).TempsText());
+        foreach (var (table, state) in context.Temps.OrderBy(t => t.Key, StringComparer.Ordinal))
+        {
+            text.Append(table).Append(':');
+            switch (state)
+            {
+                case UnknownTable unknown:
+                    text.Append(unknown.Why.Detail);
+                    break;
+                case KnownTable known:
+                    foreach (var column in known.Columns.Where(c => c.Declaration is not null))
+                    {
+                        text.Append(column.Name).Append('@').Append(column.Declaration!.At).Append('[');
+                        foreach (var check in column.Declaration.Checks)
+                            text.Append(check).Append(check.DisabledAt is null ? '+' : '-').Append(',');
+                        text.Append(']');
+                    }
+
+                    break;
+            }
+
+            text.Append('\n');
+        }
+
+        return text.ToString();
+    }
+}

@@ -7,30 +7,35 @@ namespace Haruspex.SqlServer.Inference;
 public static class IrInference
 {
     /// <summary>Infers the IR for the given procedures of <paramref name="model"/>.</summary>
+    /// <param name="model">The model.</param>
+    /// <param name="procedures">The procedures to infer.</param>
+    /// <param name="declarations">
+    /// The results declared for procedures whose results cannot be inferred: a call of one contributes these instead of
+    /// making its caller's results unknown. A procedure's own declaration is not applied to it here; that is the config
+    /// layer's, which also checks it against what is inferred.
+    /// </param>
     /// <exception cref="ArgumentException">A name is not a procedure of the model.</exception>
-    public static IrDocument Infer(DatabaseModel model, IReadOnlyList<ObjectName> procedures)
+    public static IrDocument Infer(DatabaseModel model, IReadOnlyList<ObjectName> procedures, IReadOnlyDictionary<ObjectName, DeclaredResults>? declarations = null)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(procedures);
+        declarations ??= new Dictionary<ObjectName, DeclaredResults>();
         var functions = new FunctionSummaries(model);
+        var calls = new ProcedureCalls(model, functions, declarations);
         var analysed = procedures
             .Distinct()
             .Select(name => model.FindProcedure(name)
                 ?? throw new ArgumentException($"No procedure named {name} in the project.", nameof(procedures)))
-            .Select(procedure => (procedure, Analyse(model, functions, procedure)))
+            .Select(procedure => (procedure, calls.Analyse(procedure)))
             .ToList();
-        return new IrBuilder(functions).Build(analysed);
-    }
+        var document = new IrBuilder(functions).Build(analysed);
 
-    private static ProcedureAnalysis Analyse(DatabaseModel model, FunctionSummaries functions, Procedure procedure)
-    {
-        var analysis = new ProcedureAnalyzer(model, procedure.File, functions).Analyse(procedure.Body);
-        if (procedure.Redefinition is not { } redefinition)
-            return analysis;
-
-        // The parameters are still read from the definition the model kept, but which body runs depends on the
-        // order the scripts run, so the results are withdrawn.
-        var why = new UnknownShape(IrUnknownReasons.Redefined, redefinition.Message, redefinition.At);
-        return analysis with { Results = null, ResultsUnknown = why };
+        // A caller's results that include a callee's declared results rest on that declaration, so the claim is listed.
+        var claims = analysed
+            .Where(a => a.Item2.Results is not null)
+            .SelectMany(a => a.Item2.Declared.Select(callee => (Object: a.procedure.Name.ToString(), Callee: callee)))
+            .Select(c => new IrOverride(c.Object, "results", IrOverrideSettings.Results, declarations.First(d => d.Key.ToString() == c.Callee).Value.Why) { Via = c.Callee })
+            .ToList();
+        return document with { Overrides = claims };
     }
 }

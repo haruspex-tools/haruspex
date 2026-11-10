@@ -1,0 +1,1 @@
+{ "$schema": "../../../../schemas/haruspex.schema.json", "procedures": { "sales.p": { "results": { "json": 5 }, "why": "x" } } }

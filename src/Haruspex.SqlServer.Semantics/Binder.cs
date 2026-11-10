@@ -231,6 +231,79 @@ public sealed class Binder(DatabaseModel model, string file)
         _ => "This join",
     };
 
+    /// <summary>
+    /// Binds what an <c>EXEC</c> runs: a procedure of the project, or why its results cannot be known from the project. An
+    /// unqualified name resolves like a table's (see <see cref="BindFrom"/>): to the one procedure of that name, if exactly
+    /// one schema has it, since SQL Server looks in the caller's default schema and then in <c>dbo</c>.
+    /// </summary>
+    /// <param name="execute">The <c>EXEC</c>'s specification: of a statement, or of <c>INSERT … EXEC</c>.</param>
+    public CallTarget BindCall(ExecuteSpecification execute)
+    {
+        ArgumentNullException.ThrowIfNull(execute);
+        var at = At(execute);
+        var text = FragmentText.OneLine(execute);
+        UnknowableCall Unknowable(UnknowableCallKind kind, string detail, ObjectName? name = null) => new(kind, name, detail, at);
+
+        if (execute.LinkedServer is not null)
+            return Unknowable(UnknowableCallKind.MissingProcedure, $"{text} runs on the linked server {execute.LinkedServer.Value}, whose procedures are not in the project.");
+
+        switch (execute.ExecutableEntity)
+        {
+            case ExecutableStringList:
+                return Unknowable(UnknowableCallKind.DynamicSql, $"{text} runs dynamic SQL, a string built when the procedure runs, so its result sets are not known.");
+            case ExecutableProcedureReference { ProcedureReference.ProcedureVariable: { } variable }:
+                return Unknowable(UnknowableCallKind.ProcedureVariable, $"{text} runs the procedure named in {variable.Name}, which is chosen when it runs.");
+            case ExecutableProcedureReference { AdHocDataSource: not null }:
+                return Unknowable(UnknowableCallKind.MissingProcedure, $"{text} runs a procedure through OPENDATASOURCE, which is not in the project.");
+            case ExecutableProcedureReference { ProcedureReference.ProcedureReference.Name: { } name }:
+                return BindProcedure(name, text, at);
+            default:
+                return Unknowable(UnknowableCallKind.MissingProcedure, $"{text} is not a form of EXEC that is modelled.");
+        }
+    }
+
+    private CallTarget BindProcedure(SchemaObjectName name, string text, SourceLocation at)
+    {
+        var own = name.BaseIdentifier.Value;
+
+        // sp_executesql is dynamic SQL, under any qualification. Any other sp_ or xp_ name may be one of SQL Server's own
+        // procedures, which it runs instead of the database's whatever schema is written (observed), and which ones it has is
+        // not known here; so even a procedure of the project with such a name is not followed.
+        if (own.Equals("sp_executesql", StringComparison.OrdinalIgnoreCase))
+            return new UnknowableCall(UnknowableCallKind.DynamicSql, null, $"{text} runs dynamic SQL, a string built when the procedure runs, so its result sets are not known.", at);
+        if (own.StartsWith("sp_", StringComparison.OrdinalIgnoreCase) || own.StartsWith("xp_", StringComparison.OrdinalIgnoreCase))
+        {
+            var system = new ObjectName(name.SchemaIdentifier?.Value ?? "sys", own);
+            var also = model.FindProcedure(system) is not null ? $" The project's {system} has that name, but SQL Server runs its own procedure of that name instead, if it has one." : "";
+            return new UnknowableCall(UnknowableCallKind.SystemProcedure, system, $"{text} runs {system}, which may be a system procedure, whose results are SQL Server's own.{also}", at);
+        }
+
+        if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
+            return new UnknowableCall(UnknowableCallKind.MissingProcedure, null, $"{text} runs a procedure of another database, which is not in the project.", at);
+
+        if (name.SchemaIdentifier is not null)
+        {
+            var objectName = ObjectName.From(name);
+            return model.FindProcedure(objectName) is { } procedure
+                ? new ProcedureCall(procedure, at)
+                : new UnknowableCall(UnknowableCallKind.MissingProcedure, objectName, Missing(objectName, text), at);
+        }
+
+        var candidates = model.Procedures.Where(p => p.Name.Name.Equals(own, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (candidates.Count > 1)
+        {
+            return new UnknowableCall(UnknowableCallKind.AmbiguousProcedure, null,
+                $"{text} names {own} without a schema, and {string.Join(" and ", candidates.Select(c => c.Name))} have that name: which runs depends on the caller's default schema.", at);
+        }
+
+        var dbo = ObjectName.From(name);
+        return candidates.Count == 1 ? new ProcedureCall(candidates[0], at) : new UnknowableCall(UnknowableCallKind.MissingProcedure, dbo, Missing(dbo, text), at);
+    }
+
+    private string Missing(ObjectName name, string text) => model.FindNamedObject(name) is { Kind: NamedObjectKind.Synonym }
+        ? $"{text} runs the synonym {name}, which is not modelled yet."
+        : $"{text} runs {name}, which is not a procedure of the project.";
+
     private static BindingProblem Problem(BindingProblemKind kind, string detail, SourceLocation at) => new(kind, detail, at);
 
     private static UnboundColumn Unbound(BindingProblemKind kind, string detail, SourceLocation at) => new(Problem(kind, detail, at));

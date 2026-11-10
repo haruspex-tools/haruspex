@@ -4,6 +4,7 @@ using Haruspex.DifferentialTests.Server;
 using Haruspex.DifferentialTests.Validation;
 using Haruspex.Ir;
 using Haruspex.Cli;
+using Haruspex.Config;
 using Microsoft.Data.SqlClient;
 using Testcontainers.MsSql;
 
@@ -262,7 +263,15 @@ public sealed class SqlServerFixture : IAsyncLifetime
         var project = SqlProject.Load(Paths.Fixture(f));
         if (project.Diagnostics.Count > 0)
             throw new InvalidOperationException($"The fixture {f} has diagnostics: {string.Join("; ", project.Diagnostics)}");
-        return project.Infer(project.Procedures);
+
+        // A fixture's haruspex.json declares results inference can't see (dynamic SQL), so they are checked against the
+        // server like everything inferred.
+        var config = Path.Join(Paths.Fixture(f), HaruspexConfig.FileName);
+        if (!File.Exists(config))
+            return project.Infer(project.Procedures);
+        var read = ConfigReader.Read(config);
+        var applied = project.Infer(project.Procedures, read.Config ?? throw new InvalidOperationException(string.Join("; ", read.Problems)));
+        return applied.Document ?? throw new InvalidOperationException(string.Join("; ", applied.Problems));
     })).Value;
 
     /// <summary>Runs a procedure once per test run; later calls reuse what it returned.</summary>

@@ -1,0 +1,113 @@
+{
+  "irVersion": "0.7",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "calls.rack_sizes",
+      "name": "RackSizes",
+      "kind": "procedure",
+      "at": "procedures/rack_sizes.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "RackSizesResult1Row"
+            }
+          },
+          "mayBeAbsent": false
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "RackSizesResult2Row"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
+    }
+  ],
+  "types": {
+    "RackSizesResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "calls.rack_sizes",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "rack_count",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "calls.oven.rack_count"
+            }
+          ]
+        }
+      ]
+    },
+    "RackSizesResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "calls.rack_sizes",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "oven_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

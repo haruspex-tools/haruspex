@@ -73,12 +73,15 @@ public static class IrJsonWriter
             foreach (var claim in document.Overrides
                          .OrderBy(o => o.Object, StringComparer.Ordinal)
                          .ThenBy(o => o.Path, StringComparer.Ordinal)
-                         .ThenBy(o => o.Setting, StringComparer.Ordinal))
+                         .ThenBy(o => o.Setting, StringComparer.Ordinal)
+                         .ThenBy(o => o.Via, StringComparer.Ordinal))
             {
                 json.WriteStartObject();
                 json.WriteString("object", claim.Object);
                 json.WriteString("path", claim.Path);
                 json.WriteString("setting", claim.Setting);
+                if (claim.Via is not null)
+                    json.WriteString("via", claim.Via);
                 if (claim.Why is not null)
                     json.WriteString("why", claim.Why);
                 json.WriteEndObject();

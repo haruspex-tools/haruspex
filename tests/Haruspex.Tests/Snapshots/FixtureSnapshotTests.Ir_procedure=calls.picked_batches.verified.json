@@ -1,0 +1,129 @@
+{
+  "irVersion": "0.7",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "calls.picked_batches",
+      "name": "PickedBatches",
+      "kind": "procedure",
+      "at": "procedures/picked_batches.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PickedBatchesRow"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
+    }
+  ],
+  "types": {
+    "PickedBatchesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "calls.picked_batches",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "batch_id",
+          "type": {
+            "kind": "unknown",
+            "reason": "caller-temp-table"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/picked_batches.sql:4:8"
+            }
+          ]
+        },
+        {
+          "name": "product",
+          "type": {
+            "kind": "unknown",
+            "reason": "caller-temp-table"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/picked_batches.sql:4:20"
+            }
+          ]
+        },
+        {
+          "name": "weight_g",
+          "type": {
+            "kind": "unknown",
+            "reason": "caller-temp-table"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/picked_batches.sql:4:31"
+            }
+          ]
+        },
+        {
+          "name": "round_no",
+          "type": {
+            "kind": "unknown",
+            "reason": "caller-temp-table"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/picked_batches.sql:4:43"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "calls.picked_batches",
+      "path": "results[0][].batch_id",
+      "reason": "caller-temp-table",
+      "detail": "#picked is not created by the procedure before this, so it is the caller's, whose shape depends on who calls.",
+      "at": "procedures/picked_batches.sql:4:8"
+    },
+    {
+      "object": "calls.picked_batches",
+      "path": "results[0][].product",
+      "reason": "caller-temp-table",
+      "detail": "#picked is not created by the procedure before this, so it is the caller's, whose shape depends on who calls.",
+      "at": "procedures/picked_batches.sql:4:20"
+    },
+    {
+      "object": "calls.picked_batches",
+      "path": "results[0][].round_no",
+      "reason": "caller-temp-table",
+      "detail": "#picked is not created by the procedure before this, so it is the caller's, whose shape depends on who calls.",
+      "at": "procedures/picked_batches.sql:4:43"
+    },
+    {
+      "object": "calls.picked_batches",
+      "path": "results[0][].weight_g",
+      "reason": "caller-temp-table",
+      "detail": "#picked is not created by the procedure before this, so it is the caller's, whose shape depends on who calls.",
+      "at": "procedures/picked_batches.sql:4:31"
+    }
+  ],
+  "overrides": []
+}

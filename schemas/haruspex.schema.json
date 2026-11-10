@@ -41,7 +41,7 @@
       "$ref": "#/$defs/naming"
     },
     "procedures": {
-      "description": "Overrides per procedure, keyed by its two-part name (schema.name, with T-SQL brackets around a part that holds a dot). Each must be a selected procedure.",
+      "description": "Overrides per procedure, keyed by its two-part name (schema.name, with T-SQL brackets around a part that holds a dot). name and paths need a selected procedure; results alone may be declared for any procedure, in the project or not.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/procedure"
@@ -75,6 +75,46 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/$defs/path"
+          }
+        },
+        "results": {
+          "description": "The procedure's result sets, declared where haruspex can't infer them (dynamic SQL, a system procedure, one outside the project): \"none\", one result, or an array of them in order. A call of the procedure contributes them to its caller. Needs why. Still checked at runtime.",
+          "anyOf": [
+            {
+              "const": "none"
+            },
+            {
+              "$ref": "#/$defs/result"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/result"
+              }
+            }
+          ]
+        },
+        "why": {
+          "description": "Why the declared results hold. Required with results.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "dependentRequired": {
+        "results": [
+          "why"
+        ],
+        "why": [
+          "results"
+        ]
+      },
+      "dependentSchemas": {
+        "results": {
+          "not": {
+            "required": [
+              "paths"
+            ]
           }
         }
       }
@@ -240,6 +280,63 @@
           "include"
         ]
       }
+    },
+    "result": {
+      "description": "One declared result set: rowset, the JSON Schema of one row; or json, the JSON Schema of the document FOR JSON writes. Either is a schema, or the path of a file holding one, relative to this file.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rowset": {
+          "description": "The JSON Schema of one row: an object with properties, one per column, each a scalar.",
+          "$ref": "#/$defs/declaredSchema"
+        },
+        "json": {
+          "description": "The JSON Schema of the document the result holds.",
+          "$ref": "#/$defs/declaredSchema"
+        },
+        "mayBeAbsent": {
+          "description": "true when the JSON result may not be there: FOR JSON over no rows returns no row at all.",
+          "type": "boolean"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "rowset"
+          ]
+        },
+        {
+          "required": [
+            "json"
+          ]
+        }
+      ],
+      "dependentSchemas": {
+        "rowset": {
+          "not": {
+            "required": [
+              "json"
+            ]
+          }
+        },
+        "mayBeAbsent": {
+          "required": [
+            "json"
+          ]
+        }
+      }
+    },
+    "declaredSchema": {
+      "description": "A JSON Schema (type, properties, required, items, minItems, maxItems, additionalProperties, format and $ref to $defs are read), or the path of a file holding one.",
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "string",
+          "minLength": 1
+        }
+      ]
     }
   }
 }

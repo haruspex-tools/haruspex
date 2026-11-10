@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../schemas/haruspex.schema.json",
+  "procedures": {
+    "calls.search_batches": {
+      "results": {
+        "rowset": {
+          "type": "object",
+          "properties": {
+            "batch_id": { "type": "integer", "format": "int32" },
+            "product": { "type": "string" },
+            "weight_g": { "type": ["integer", "null"], "format": "int32" }
+          }
+        }
+      },
+      "why": "the search runs as dynamic SQL, with the product pattern as a parameter"
+    }
+  }
+}

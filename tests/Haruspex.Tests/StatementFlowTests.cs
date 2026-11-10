@@ -765,9 +765,9 @@ public class StatementFlowTests
     }
 
     [Theory]
-    [InlineData("IF @x = 1 EXEC dbo.other;")]
-    [InlineData("WHILE @x > 0 BEGIN EXEC dbo.other; END")]
-    [InlineData("BEGIN TRY SELECT t.id FROM dbo.t AS t; END TRY BEGIN CATCH EXEC dbo.other; END CATCH")]
+    [InlineData("IF @x = 1 WAITFOR DELAY '00:00:01';")]
+    [InlineData("WHILE @x > 0 BEGIN WAITFOR DELAY '00:00:01'; END")]
+    [InlineData("BEGIN TRY SELECT t.id FROM dbo.t AS t; END TRY BEGIN CATCH WAITFOR DELAY '00:00:01'; END CATCH")]
     [InlineData("GOTO done;\ndone:")]
     public void A_statement_not_modelled_anywhere_makes_the_results_unknown(string body)
     {

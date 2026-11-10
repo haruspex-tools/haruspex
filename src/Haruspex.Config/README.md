@@ -13,10 +13,12 @@ emitter's own options.
 | `ConfigJson.cs` | Reads JSON with comments into a tree that remembers each value's line and column. `JsonDocument` forgets positions, and every error must name its line. |
 | `ConfigReader.cs` | Finds the file (walking up) and checks every setting; an unknown key is an error, never ignored. The same checks as the JSON Schema, plus what a schema can't say (a pattern, a path or a regular expression that doesn't parse, a reserved word). |
 | `NamePattern.cs`, `ObjectPattern.cs`, `ProcedureSelection.cs` | Selection per schema (`schemas["sales"].include`, matching names only), and the CLI's one-off `--include schema.pattern`. A pattern or a schema key that matches nothing is reported. |
+| `DeclaredSchema.cs` | A procedure's declared results (`results`): the JSON Schema of each, inline or in a file, translated into IR results. A keyword it doesn't read is a warning and is not checked, so a declared type is never narrower than its schema. |
+| `ResultsComparison.cs` | A declaration of results that inference can infer is compared with them: an error where they differ, a warning where they agree. |
 | `OverrideApplier.cs` | Path overrides as transformations of the IR. Each claim is listed in the IR's `overrides`; a path that doesn't exist is an error, an override the inference agrees with a warning. |
 | `NamingRules.cs` | `replace`, then the schema's `prefix`, then `case`; a schema's `naming` merges over the top level's. |
 | `NameSettler.cs` | Settles every name, replacing inference's provisional keys. Clashes between objects are errors; a number is added only between two types of one object. |
-| `ConfigApplication.cs` | The order: overrides first (their paths are in terms of the inferred document), then names. |
+| `ConfigApplication.cs` | The order: overrides and declared results first (their paths are in terms of the inferred document), then names. It also warns of a selected procedure whose results only a declaration could give, naming the statement. |
 
 **Why naming lives here, not in inference.** Names are generated from config, so they can't be settled before it is
 read. Inference keys each type by its identity (the object and the path that own it, also written to the IR as
@@ -25,3 +27,8 @@ names itself and broke clashes with numbers, which made names depend on which ot
 
 **Why overrides come before naming.** A path override is written in terms of the shape, which doesn't depend on names,
 and a `name` override must be known before the types under it are named, since their names build on it.
+
+**Why declared results reach inference.** A declaration is applied to the procedure itself here, like an override. But a
+procedure that calls it needs the declared result sets placed among its own, through its branches and loops, which only the
+statement walk can do. So the declarations, translated into IR results here, are also handed to inference by the CLI
+(`SqlProject.Infer`), which takes them as given facts about procedures, as it takes the model; it never sees this file.

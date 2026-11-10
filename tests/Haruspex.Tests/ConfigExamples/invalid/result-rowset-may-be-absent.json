@@ -1,0 +1,1 @@
+{ "$schema": "../../../../schemas/haruspex.schema.json", "procedures": { "sales.p": { "results": { "rowset": { "type": "object", "properties": {} }, "mayBeAbsent": true }, "why": "x" } } }

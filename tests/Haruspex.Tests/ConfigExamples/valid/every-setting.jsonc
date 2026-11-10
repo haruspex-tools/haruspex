@@ -27,5 +27,14 @@
       },
     },
     "[RDF.].GetPropertyList": { "name": "PropertyList" },
+    "audit.write_log": { "results": "none", "why": "it only writes to the log" },
+    "sales.search_orders": {
+      "name": "OrderSearch",
+      "results": [
+        { "rowset": { "type": "object", "properties": { "order_id": { "type": "integer", "format": "int32" }, "note": { "type": ["string", "null"] } } } },
+        { "json": { "type": "array", "items": { "$ref": "#/$defs/total" }, "$defs": { "total": { "type": "object", "properties": { "n": { "type": "integer" } }, "required": ["n"] } } }, "mayBeAbsent": true },
+      ],
+      "why": "the filter is built as dynamic SQL",
+    },
   },
 }

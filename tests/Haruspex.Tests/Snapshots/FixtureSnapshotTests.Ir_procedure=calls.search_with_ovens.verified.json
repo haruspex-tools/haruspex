@@ -1,0 +1,182 @@
+{
+  "irVersion": "0.7",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "calls.search_with_ovens",
+      "name": "SearchWithOvens",
+      "kind": "procedure",
+      "at": "procedures/search_with_ovens.sql:2:1",
+      "parameters": [
+        {
+          "name": "@product",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SearchWithOvensResult1Row"
+            }
+          },
+          "mayBeAbsent": false
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SearchWithOvensResult2Row"
+            }
+          },
+          "mayBeAbsent": false
+        }
+      ]
+    }
+  ],
+  "types": {
+    "SearchWithOvensResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "calls.search_with_ovens",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "oven_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "label",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "rack_count",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "calls.oven.rack_count"
+            }
+          ]
+        }
+      ]
+    },
+    "SearchWithOvensResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "calls.search_with_ovens",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "batch_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "integer"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "product",
+          "type": {
+            "kind": "string",
+            "sql": "string"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "weight_g",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "integer"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "declared",
+              "at": "calls.search_batches"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [
+    {
+      "object": "calls.search_with_ovens",
+      "path": "results",
+      "setting": "results",
+      "via": "calls.search_batches",
+      "why": "the search runs as dynamic SQL, with the product pattern as a parameter"
+    }
+  ]
+}

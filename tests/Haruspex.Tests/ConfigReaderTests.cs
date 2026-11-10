@@ -171,7 +171,7 @@ public class ConfigReaderTests
         { """{ "procedures": { "get_order": {} } }""", "haruspex.json:1:19: error: procedures.get_order: 'get_order' is not a two-part name such as sales.get_order, sales.* or *.list_*." },
         { """{ "procedures": { "sales.*": {} } }""", "haruspex.json:1:19: error: procedures[\"sales.*\"]: names one procedure, so it cannot use * or ?; write a part that holds them in brackets, as [a*b]." },
         { """{ "procedures": { "sales.p": 1 } }""", "haruspex.json:1:30: error: procedures[\"sales.p\"]: must be an object." },
-        { """{ "procedures": { "sales.p": { "rename": "X" } } }""", "haruspex.json:1:32: error: procedures[\"sales.p\"].rename: unknown setting \"rename\". The settings here are name, paths." },
+        { """{ "procedures": { "sales.p": { "rename": "X" } } }""", "haruspex.json:1:32: error: procedures[\"sales.p\"].rename: unknown setting \"rename\". The settings here are name, paths, results, why." },
         { """{ "procedures": { "sales.p": { "name": "Order Detail" } } }""", "haruspex.json:1:40: error: procedures[\"sales.p\"].name: 'Order Detail' is not a valid name: an ASCII letter, _ or $, then letters, digits, _ or $, and not a reserved word." },
         { """{ "procedures": { "sales.p": { "name": "delete" } } }""", "haruspex.json:1:40: error: procedures[\"sales.p\"].name: 'delete' is not a valid name: an ASCII letter, _ or $, then letters, digits, _ or $, and not a reserved word." },
         { """{ "procedures": { "sales.p": { "paths": [] } } }""", "haruspex.json:1:41: error: procedures[\"sales.p\"].paths: must be an object." },

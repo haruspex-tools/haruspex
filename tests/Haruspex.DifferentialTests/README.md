@@ -86,7 +86,12 @@ emitter's mistakes. It checks what the IR claims:
 
 What the statement walk relies on (which result sets arrive when a branch is not taken, a path returns early or an
 error is raised; what temporary tables, table variables and `SELECT … INTO` give; how a recursive CTE's columns are
-typed) is pinned by `StatementFlowObservationTests`.
+typed) is pinned by `StatementFlowObservationTests`. What following `EXEC` relies on (where a callee's result sets arrive,
+what it can do to its caller's temporary tables, what `INSERT … EXEC` accepts, how deep calls nest, which procedure an
+`sp_` name runs) is pinned by `ExecObservationTests`. Both make their calls through `Server/ObservedCall.cs`.
+
+A fixture may have a `haruspex.json` beside its SQL: its IR is then inferred with it applied, so results it declares
+(the `calls` fixture's dynamic SQL) are checked against the server like everything inferred.
 
 It does not check what the IR leaves open, such as fractional-second precision: that is pinned separately,
 as observed fact, by `ForJsonObservationTests`, and what the JSON constructors write (null options, empty
@@ -110,6 +115,10 @@ A failure names the procedure, the path with array indexes, the claim and the va
 sales.list_orders results[0][2].salesperson_name: the IR claims a non-null value, but the value was null
 ```
 
+`OverrideAcceptanceTests` and `DeclarationAcceptanceTests` show the same for claims a person makes in the config file: a
+wrong `nullable: false` or exact value set, and wrong declared results of a dynamic-SQL procedure, are rejected by the
+generated Zod on SQL Server's real output, while the right ones are accepted.
+
 ## The seed must reach every case
 
 A non-null claim is only tested by data that could break it. So the validator also records what it saw at
@@ -126,7 +135,7 @@ For the fixtures about scalar facts (`Runs.EdgeFixtures`: `values`, `checks`, `p
 also fails unless the data reached every edge of every facet: each bound (or, when exclusive, the nearest step
 inside it), each full length, each minimum length and each value of each set, and each array's fewest and most
 items when the IR bounds them. A maximum of 255 is not shown to hold by values of 7. `orders` is about query shapes, and its scalars are the types `values` covers at their edges; `flow` (statement flow:
-temporary tables, table variables, branches and recursive CTEs) likewise.
+temporary tables, table variables, branches and recursive CTEs) likewise, and `calls` (procedures calling procedures).
 `Every_procedure_is_run_or_excluded_with_a_reason` makes sure a new fixture procedure is not forgotten.
 
 A recursive type's cases are counted by its name, not its path: every field of `ComponentsNode` is recorded as

@@ -1,0 +1,61 @@
+using Haruspex.Diagnostics;
+using Haruspex.Ir;
+using Haruspex.SqlServer.Model;
+
+namespace Haruspex.SqlServer.Inference;
+
+/// <summary>
+/// IR types back into inference's shapes: how a declared result (<see cref="DeclaredResults"/>) joins a caller's results,
+/// to be joined, unioned and written again like any shape inferred here. The opposite of <see cref="IrBuilder"/>'s
+/// conversion, for the nodes a declaration can hold.
+/// </summary>
+internal static class IrShapes
+{
+    /// <summary>A declared type as a shape.</summary>
+    /// <param name="type">The type.</param>
+    /// <param name="types">The object types it refers to.</param>
+    /// <param name="procedure">The procedure declared, for an unknown's detail.</param>
+    /// <param name="at">The call, for an unknown's location.</param>
+    public static Shape ToShape(IrType type, IReadOnlyDictionary<string, IrObjectType> types, ObjectName procedure, SourceLocation at) =>
+        Convert(type, types, procedure, at, []);
+
+    private static Shape Convert(IrType type, IReadOnlyDictionary<string, IrObjectType> types, ObjectName procedure, SourceLocation at, HashSet<string> expanding)
+    {
+        Shape Of(IrType inner) => Convert(inner, types, procedure, at, expanding);
+        switch (type)
+        {
+            case IrScalar scalar:
+                return new ScalarShape(scalar);
+            case IrArray array:
+                return new ArrayShape(Of(array.Items), array.ItemsNullableBecause, array.MinItems, array.MaxItems);
+            case IrTuple tuple:
+                return new TupleShape([.. tuple.Items.Select(e => new ElementShape(Of(e.Type), e.NullableBecause))]);
+            case IrRecord record:
+                return new RecordShape(Of(record.Values), record.ValuesNullableBecause);
+            case IrUnion union:
+                return new UnionShape([.. union.Variants.Select(Of)]);
+            case IrJsonText text:
+                return new JsonTextShape(text.Content is null ? null : Of(text.Content));
+            case IrRef reference when types.TryGetValue(reference.Name, out var obj):
+                // A declaration's types do not refer to themselves (the config file refuses a recursive $ref), but a cycle
+                // here would not end, so it is refused rather than followed.
+                if (!expanding.Add(reference.Name))
+                    return Unknown(IrUnknownReasons.UnresolvedRecursion, $"The declared results of {procedure} refer to {reference.Name} inside itself, which is not modelled.");
+                try
+                {
+                    return new ObjectShape([.. obj.Fields.Select(f => new FieldShape(f.Name, Of(f.Type), f.Presence, f.NullableBecause))]);
+                }
+                finally
+                {
+                    expanding.Remove(reference.Name);
+                }
+
+            case IrUnknownType unknown:
+                return Unknown(unknown.Reason, $"The declared results of {procedure} leave this unknown.");
+            default:
+                return Unknown(IrUnknownReasons.UnsupportedExpression, $"The declared results of {procedure} hold a type that is not modelled here.");
+        }
+
+        UnknownShape Unknown(string reason, string detail) => new(reason, detail, at);
+    }
+}

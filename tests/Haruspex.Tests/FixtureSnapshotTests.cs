@@ -19,6 +19,7 @@ public class FixtureSnapshotTests
         ["payloads"] = new(() => SqlProject.Load(TestPaths.Fixture("payloads"))),
         ["trees"] = new(() => SqlProject.Load(TestPaths.Fixture("trees"))),
         ["flow"] = new(() => SqlProject.Load(TestPaths.Fixture("flow"))),
+        ["calls"] = new(() => SqlProject.Load(TestPaths.Fixture("calls"))),
     };
 
     /// <summary>Every fixture procedure, with its fixture. Procedure ids are unique across fixtures.</summary>
@@ -59,6 +60,18 @@ public class FixtureSnapshotTests
         ["flow.chain_up"] = "flow",
         ["flow.caught_report"] = "flow",
         ["flow.notes_or_names"] = "flow",
+        ["calls.oven_list"] = "calls",
+        ["calls.picked_batches"] = "calls",
+        ["calls.add_placeholder"] = "calls",
+        ["calls.daily_report"] = "calls",
+        ["calls.batch_rows"] = "calls",
+        ["calls.rack_sizes"] = "calls",
+        ["calls.batch_feed"] = "calls",
+        ["calls.walk_even"] = "calls",
+        ["calls.walk_odd"] = "calls",
+        ["calls.ovens_or_batches"] = "calls",
+        ["calls.search_batches"] = "calls",
+        ["calls.search_with_ovens"] = "calls",
     };
 
     public static TheoryData<string> Procedures { get; } = [.. FixtureOf.Keys];
@@ -91,6 +104,14 @@ public class FixtureSnapshotTests
         var project = Fixtures[FixtureOf[procedure]].Value;
         var selection = project.Select([ObjectPattern.Parse(procedure)]);
         Assert.Empty(selection.Unmatched);
-        return project.Infer(selection.Procedures);
+
+        // A fixture's haruspex.json declares results inference can't see; a declaration a procedure doesn't use is only a
+        // warning, which a snapshot of one procedure ignores.
+        var config = Path.Join(TestPaths.Fixture(FixtureOf[procedure]), HaruspexConfig.FileName);
+        if (!File.Exists(config))
+            return project.Infer(selection.Procedures);
+        var read = ConfigReader.Read(config);
+        var applied = project.Infer(selection.Procedures, read.Config!);
+        return applied.Document ?? throw new InvalidOperationException(string.Join("; ", applied.Problems));
     }
 }

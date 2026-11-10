@@ -68,8 +68,33 @@ public sealed class SqlProject
     /// <param name="config">The config.</param>
     /// <param name="selectedByFile">See <see cref="ConfigApplication.Apply"/>.</param>
     /// <param name="outputDirectory">See <see cref="ConfigApplication.Apply"/>.</param>
-    public ConfigApplied Infer(IReadOnlyList<ObjectName> selected, HaruspexConfig config, IReadOnlyCollection<ObjectName>? selectedByFile = null, string? outputDirectory = null) =>
-        ConfigApplication.Apply(IrInference.Infer(model, selected), config, Procedures, selectedByFile, outputDirectory);
+    /// <remarks>
+    /// The config file's declared results (<c>procedures["s.p"].results</c>) are handed to inference, in the IR's terms, so that
+    /// a call of a declared procedure contributes them to its caller; a procedure's own declaration is applied by the config
+    /// layer, which checks it against what is inferred. The declared procedures of the project that are not selected are
+    /// inferred too, for that check alone.
+    /// </remarks>
+    public ConfigApplied Infer(IReadOnlyList<ObjectName> selected, HaruspexConfig config, IReadOnlyCollection<ObjectName>? selectedByFile = null, string? outputDirectory = null)
+    {
+        ArgumentNullException.ThrowIfNull(selected);
+        ArgumentNullException.ThrowIfNull(config);
+        var declarations = new Dictionary<ObjectName, DeclaredResults>();
+        foreach (var entry in config.Procedures)
+        {
+            if (entry is { Results: { } declared, Procedure.Name: { } name })
+                declarations.TryAdd(name, new DeclaredResults(declared.Results, declared.Types, declared.Why));
+        }
+
+        var document = IrInference.Infer(model, selected, declarations);
+        var others = declarations.Keys
+            .Select(name => model.FindProcedure(name)?.Name)
+            .OfType<ObjectName>()
+            .Where(name => !selected.Contains(name))
+            .Distinct()
+            .ToList();
+        var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations);
+        return ConfigApplication.Apply(document, config, Procedures, selectedByFile, outputDirectory, declaredDocument);
+    }
 }
 
 /// <summary>The outcome of <see cref="SqlProject.Select"/>.</summary>

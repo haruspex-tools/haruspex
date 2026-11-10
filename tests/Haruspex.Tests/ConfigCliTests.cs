@@ -44,6 +44,53 @@ public class ConfigCliTests
         Snapshot.Match(File.ReadAllText(Path.Combine(outDir.Path, "haruspex.zod.ts")), $"{nameof(ConfigCliTests)}.Shop", "ts");
     }
 
+    private const string Dynamic = """
+        CREATE SCHEMA rpt;
+        GO
+        CREATE PROCEDURE rpt.search @where nvarchar(200) AS
+        DECLARE @sql nvarchar(max) = N'SELECT 1 AS n WHERE ' + @where;
+        EXEC (@sql);
+        GO
+        """;
+
+    [Fact]
+    public void An_undeclared_unknowable_exec_is_a_warning_naming_it_and_generation_goes_ahead()
+    {
+        // check (slice 7) will fail it; generate warns, and its exit codes are as before.
+        using var dir = new TempDirectory();
+        dir.File("database/search.sql", Dynamic);
+        dir.File("haruspex.json", """{ "source": "database", "out": "out", "schemas": { "rpt": { "include": ["search"] } } }""");
+
+        var (exitCode, output, error) = Run(dir.Path, "generate");
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal(
+            $"{Path.Combine(dir.Path, "haruspex.json")}: warning: rpt.search: its result sets are unknown: EXEC (@sql) runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (search.sql:5:1) Declare them in haruspex.json under procedures[\"rpt.search\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it.\n",
+            error);
+        Assert.Contains("haruspex: 1 procedure, 1 unknown(s).", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_declaration_types_an_unknowable_procedure()
+    {
+        using var dir = new TempDirectory();
+        dir.File("database/search.sql", Dynamic);
+        dir.File("haruspex.json", """
+            {
+              "source": "database", "out": "out",
+              "schemas": { "rpt": { "include": ["search"] } },
+              "procedures": { "rpt.search": { "results": { "rowset": { "type": "object", "properties": { "n": { "type": "integer", "format": "int32" } } } }, "why": "the query is built from @where" } }
+            }
+            """);
+
+        var (exitCode, output, error) = Run(dir.Path, "generate");
+
+        Assert.Equal("", error);
+        Assert.Equal(0, exitCode);
+        Assert.Contains("haruspex: 1 procedure, 0 unknown(s).", output, StringComparison.Ordinal);
+        Assert.Contains("n: z.int32(),", File.ReadAllText(Path.Combine(dir.Path, "out", "haruspex.zod.ts")), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void The_shop_s_config_shows_in_its_output()
     {

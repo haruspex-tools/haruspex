@@ -43,6 +43,12 @@ Why these lines:
   produced, so they work the same however it was produced, and an emitter never needs to know they existed. Inference
   leaves names unsettled (each object's id, each type keyed by its identity); Config settles them. The emitter is
   handed its settings (`ZodOptions`) by the CLI and never reads the config file.
+- **Declared results are an input to inference, in the IR's terms** (slice 6b). A procedure's declared results stand in
+  for a call of it inside another, and a call's result sets are placed among its caller's by the statement walk, through
+  branches and loops; that can't be done to a finished document. So Config reads the declaration into IR results, the CLI
+  hands them to `IrInference.Infer` as `DeclaredResults`, as it hands it the model, and Inference never reads the config
+  file. A procedure's own declaration is applied by Config to the document, like any override, and checked there against
+  what is inferred. A referenced DACPAC, later, is the same kind of input: facts about objects outside the project.
 
 ## Enforced by a test
 

@@ -1,0 +1,19 @@
+{
+  "irVersion": "0.7",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "calls.add_placeholder",
+      "name": "AddPlaceholder",
+      "kind": "procedure",
+      "at": "procedures/add_placeholder.sql:2:1",
+      "parameters": [],
+      "results": []
+    }
+  ],
+  "types": {},
+  "unknowns": [],
+  "overrides": []
+}

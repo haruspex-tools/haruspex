@@ -38,7 +38,11 @@ internal sealed partial class ProcedureAnalyzer
         public static Outcome Ends { get; } = new(null, null, null);
     }
 
-    private ProcedureAnalysis Flow(ProcedureStatementBody procedure, IReadOnlyList<ParameterShape> declared)
+    /// <summary>
+    /// Walks a procedure's body from <see cref="context"/>: the state at its end, joined over the paths that return
+    /// successfully, and what stopped the walk, if anything did.
+    /// </summary>
+    public Walked Walk(ProcedureStatementBody procedure)
     {
         // Declarations are compiled, not run (observed: a variable or table variable declared in a branch not taken still
         // exists), so they are collected from the whole body first. A name can be declared once in a batch.
@@ -77,17 +81,17 @@ internal sealed partial class ProcedureAnalyzer
         }
 
         locals = new FlowLocals(tableVariables);
-        var walked = Walk(procedure.StatementList.Statements, FlowState.Start(start));
+        var walked = Walk(procedure.StatementList.Statements, FlowState.Start(start).WithTemps(context.Temps));
         if (blocker is not null)
-            return new ProcedureAnalysis(declared, null, blocker);
+            return new Walked(null, [], blocker, declaredUsed);
 
         // Paths that throw end in an error, which the IR does not describe: it describes calls that succeed.
         var end = FlowState.Join(returns.Prepend(walked.Next), At(procedure));
-        return end is null
-            ? new ProcedureAnalysis(declared, [], null)
-            : Results(end.Results) is { } results
-                ? new ProcedureAnalysis(declared, results, null)
-                : new ProcedureAnalysis(declared, null, blocker);
+
+        // An error after the last statement's results were sent leaves with all of them.
+        if (end is not null)
+            escapes?.Add(end);
+        return new Walked(end, escapes ?? [], null, declaredUsed);
     }
 
     private static IReadOnlyList<IrNullReason> Because(string rule, string name, Shape shape) =>
@@ -128,9 +132,11 @@ internal sealed partial class ProcedureAnalyzer
                 break;
 
             // Any statement inside TRY may fail before it changes anything (a statement's effects are rolled back with it),
-            // and its CATCH then starts from the state before it.
+            // and its CATCH then starts from the state before it. Any statement at all may fail with an error that leaves the
+            // procedure, to a CATCH of a caller's.
             if (catchEntries.Count > 0)
                 catchEntries.Peek().Add(state);
+            escapes?.Add(state);
 
             var outcome = Statement(statement, state);
             breaks = FlowState.Join(breaks, outcome.Breaks, At(statement));
@@ -189,10 +195,20 @@ internal sealed partial class ProcedureAnalyzer
             case TryCatchStatement attempt:
                 return Try(attempt, state);
 
+            // Under INSERT … EXEC a FOR JSON query fails when it runs (13602), and so does another INSERT … EXEC (8164), both
+            // observed: the path ends there.
+            case SelectStatement { Into: null, QueryExpression.ForClause: JsonForClause } when context.Inserting:
+                return Outcome.Ends;
+            case InsertStatement { InsertSpecification.InsertSource: ExecuteInsertSource } when context.Inserting:
+                return Outcome.Ends;
             case SelectStatement select:
                 return Continue(Select(select, state));
+            case InsertStatement { InsertSpecification.InsertSource: ExecuteInsertSource } insert:
+                return InsertExecute(insert, state);
             case InsertStatement insert:
                 return Continue(Insert(insert, state));
+            case ExecuteStatement execute:
+                return Execute(execute, state);
             case UpdateStatement update:
                 return Continue(Update(update, state));
             case DeleteStatement delete:
@@ -418,7 +434,7 @@ internal sealed partial class ProcedureAnalyzer
     private FlowState Insert(InsertStatement insert, FlowState state)
     {
         var spec = insert.InsertSpecification;
-        if (spec.OutputClause is not null || spec.OutputIntoClause is not null || spec.InsertSource is ExecuteInsertSource)
+        if (spec.OutputClause is not null || spec.OutputIntoClause is not null)
         {
             Blocked(insert);
             return state;
@@ -453,13 +469,24 @@ internal sealed partial class ProcedureAnalyzer
         if (rows is null)
             return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReasons.UnsupportedStatement, "The insert's values do not match its columns one to one.", at)));
 
+        return state.WithTemp(name, Written(table, targets, rows, at));
+    }
+
+    /// <summary>
+    /// The table after rows are inserted into it: a declared column is unchanged (the engine converts each value to its type
+    /// and refuses a null where it is NOT NULL); a column SELECT … INTO made joins with each value, and with null when the
+    /// insert leaves it out.
+    /// </summary>
+    /// <param name="targets">The table's column each value of a row goes to, by position.</param>
+    private static KnownTable Written(KnownTable table, List<int> targets, IEnumerable<IReadOnlyList<Value>> rows, SourceLocation at)
+    {
         var columns = table.Columns.ToList();
         for (var i = 0; i < columns.Count; i++)
         {
             if (columns[i].Declaration is not null)
                 continue;
             var column = columns[i];
-            var where = $"{name}.{column.Name}";
+            var where = $"{table.Name}.{column.Name}";
             var position = targets.IndexOf(i);
             var written = position < 0
                 ? [new Value(column.Value.Shape, [new IrNullReason(IrNullRules.NullableColumn, where)])]
@@ -467,7 +494,7 @@ internal sealed partial class ProcedureAnalyzer
             columns[i] = column with { Value = written.Aggregate(column.Value, (all, value) => ShapeJoin.Converted(all, value, at, where)) };
         }
 
-        return state.WithTemp(name, table with { Columns = columns });
+        return table with { Columns = columns };
     }
 
     /// <summary>The values each row of an insert writes, by the insert's column positions; null when a row has the wrong number.</summary>
@@ -928,7 +955,7 @@ internal sealed partial class ProcedureAnalyzer
     /// The result sets of the paths that succeed. The i-th a client receives is the i-th of its path, so each position is
     /// the union of what any path returns there, and may be missing (<c>not-run</c>) when some path returns fewer.
     /// </summary>
-    private List<ResultShape>? Results(ResultTrack track)
+    public static (List<ResultShape>? Results, UnknownShape? Varying) Results(ResultTrack track)
     {
         var count = track.Counts.Max;
         var always = track.Counts.Min;
@@ -937,10 +964,7 @@ internal sealed partial class ProcedureAnalyzer
         {
             var produced = track.Positions[i];
             if (produced.Select(p => p.Result.Encoding).Distinct().Count() > 1)
-            {
-                blocker = new UnknownShape(IrUnknownReasons.VaryingResults, $"Result set {i + 1} is a rowset on some paths and JSON on others.", produced[0].At);
-                return null;
-            }
+                return (null, new UnknownShape(IrUnknownReasons.VaryingResults, $"Result set {i + 1} is a rowset on some paths and JSON on others.", produced[0].At));
 
             var shapes = new List<Shape>();
             foreach (var shape in produced.Select(p => p.Result.Shape))
@@ -956,7 +980,7 @@ internal sealed partial class ProcedureAnalyzer
             results.Add(new ResultShape(encoding, Union(shapes), [.. absent.Distinct()]));
         }
 
-        return results;
+        return (results, null);
     }
 
     /// <summary>

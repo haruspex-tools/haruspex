@@ -73,12 +73,14 @@ public static class ConfigReader
             return new(null, [new ConfigProblem(ConfigSeverity.Error, file, new ConfigLocation(e.Path, e.Line, e.Column), e.Message)]);
         }
 
-        var reader = new Checker(file);
+        var reader = new Checker(file, directory);
         var config = reader.Root(root, directory);
-        return new(reader.Problems.Count == 0 ? config : null, reader.Problems);
+
+        // A warning (a JSON Schema keyword in a declaration that is not checked) leaves the config usable.
+        return new(reader.Problems.Any(p => p.Severity == ConfigSeverity.Error) ? null : config, reader.Problems);
     }
 
-    private sealed class Checker(string file)
+    private sealed class Checker(string file, string directory)
     {
         public List<ConfigProblem> Problems { get; } = [];
 
@@ -339,11 +341,19 @@ public static class ConfigReader
                 string? name = null;
                 ConfigLocation? nameAt = null;
                 var paths = new List<PathOverride>();
+                JsonMember? results = null;
+                string? why = null;
                 foreach (var setting in body.Members)
                 {
                     var settingPath = Child(procedurePath, setting.Name);
                     switch (setting.Name)
                     {
+                        case "results":
+                            results = setting;
+                            break;
+                        case "why":
+                            why = NonEmpty(setting.Value, settingPath);
+                            break;
                         case "name":
                             name = Identifier(setting.Value, settingPath);
                             nameAt = At(setting.Value, settingPath);
@@ -360,16 +370,144 @@ public static class ConfigReader
 
                             break;
                         default:
-                            Unknown(setting, settingPath, "name, paths");
+                            Unknown(setting, settingPath, "name, paths, results, why");
                             break;
                     }
                 }
 
+                var has = body.Members.Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
+                if (has.Contains("results") && !has.Contains("why"))
+                    Error(body, procedurePath, "\"results\" needs \"why\": the project doesn't show them, so say what does.");
+                if (has.Contains("why") && !has.Contains("results"))
+                    Error(body, procedurePath, "\"why\" explains declared results, but there are none here: give \"results\", or move \"why\" into the path it explains.");
+                if (has.Contains("results") && has.Contains("paths"))
+                    Error(body, procedurePath, "\"paths\" can't be used with \"results\": the declared schema says it all, so put the detail there.");
+
+                ResultsDeclaration? declared = null;
+                if (results is not null && procedure?.Name is { } declaredName)
+                    declared = Declared(results, Child(procedurePath, "results"), declaredName.ToString(), why ?? "");
+
                 if (procedure is not null)
-                    procedures.Add(new ProcedureOverride(procedure, name, paths, at, nameAt));
+                    procedures.Add(new ProcedureOverride(procedure, name, paths, at, nameAt) { Results = declared });
             }
 
             return procedures;
+        }
+
+        /// <summary>
+        /// <c>results</c>: <c>"none"</c>, one result (<c>{ "rowset": schema }</c> or <c>{ "json": schema, "mayBeAbsent": … }</c>),
+        /// or an array of them; a schema is an object, or the path of a file holding one, relative to this file.
+        /// </summary>
+        private ResultsDeclaration? Declared(JsonMember member, string path, string procedure, string why)
+        {
+            var at = new ConfigLocation(path, member.Line, member.Column);
+            var errors = Problems.Count(p => p.Severity == ConfigSeverity.Error);
+            var types = new Dictionary<string, IrObjectType>(StringComparer.Ordinal);
+            var results = new List<IrResult>();
+            switch (member.Value)
+            {
+                case JsonStringValue { Value: "none" }:
+                    break;
+                case JsonObjectValue one:
+                    if (Result(one, path, 0, procedure, types) is { } single)
+                        results.Add(single);
+                    break;
+                case JsonArrayValue { Items.Count: 0 } empty:
+                    Error(empty, path, "must list at least one result; for none, use \"none\".");
+                    break;
+                case JsonArrayValue many:
+                    for (var i = 0; i < many.Items.Count; i++)
+                    {
+                        if (Object(many.Items[i], Index(path, i)) is { } item && Result(item, Index(path, i), i, procedure, types) is { } result)
+                            results.Add(result);
+                    }
+
+                    break;
+                default:
+                    Error(member.Value, path, "must be \"none\", a result ({ \"rowset\": … } or { \"json\": … }) or an array of them, in the order the procedure returns them.");
+                    break;
+            }
+
+            return Problems.Count(p => p.Severity == ConfigSeverity.Error) == errors ? new ResultsDeclaration(results, types, why, at) : null;
+        }
+
+        private IrResult? Result(JsonObjectValue result, string path, int index, string procedure, Dictionary<string, IrObjectType> types)
+        {
+            JsonMember? schema = null;
+            var json = false;
+            var mayBeAbsent = false;
+            foreach (var member in result.Members)
+            {
+                var memberPath = Child(path, member.Name);
+                switch (member.Name)
+                {
+                    case "rowset" or "json":
+                        if (schema is not null)
+                        {
+                            Error(result, path, "must have either \"rowset\" or \"json\", the schema of a row or of the JSON document, not both.");
+                            return null;
+                        }
+
+                        schema = member;
+                        json = member.Name == "json";
+                        break;
+                    case "mayBeAbsent":
+                        if (member.Value is JsonOtherValue { Kind: JsonTokenType.True or JsonTokenType.False } flag)
+                            mayBeAbsent = flag.Kind == JsonTokenType.True;
+                        else
+                            Error(member.Value, memberPath, "must be true or false.");
+                        break;
+                    default:
+                        Unknown(member, memberPath, "rowset, json, mayBeAbsent");
+                        break;
+                }
+            }
+
+            if (schema is null)
+            {
+                Error(result, path, "must have either \"rowset\" or \"json\", the schema of a row or of the JSON document.");
+                return null;
+            }
+
+            if (!json && result.Members.Any(m => m.Name == "mayBeAbsent"))
+            {
+                Error(result, path, "\"mayBeAbsent\" is for a JSON result, which FOR JSON leaves out when it matches no rows; a rowset with no rows is still there.");
+                return null;
+            }
+
+            var schemaPath = Child(path, schema.Name);
+            var (schemaFile, root, rootPath) = (file, schema.Value, schemaPath);
+            switch (schema.Value)
+            {
+                case JsonObjectValue:
+                    break;
+                case JsonStringValue { Value.Length: > 0 } reference:
+                    // A schema in a file of its own, relative to this one like every path here. Its problems are reported in it.
+                    schemaFile = Path.GetFullPath(Path.Combine(directory, reference.Value));
+                    try
+                    {
+                        root = ConfigJson.Parse(File.ReadAllBytes(schemaFile));
+                        rootPath = "";
+                    }
+                    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                    {
+                        Error(reference, schemaPath, $"cannot read the schema {reference.Value}: {e.Message}");
+                        return null;
+                    }
+                    catch (ConfigJsonException e)
+                    {
+                        Problems.Add(new ConfigProblem(ConfigSeverity.Error, schemaFile, new ConfigLocation(e.Path, e.Line, e.Column), e.Message));
+                        return null;
+                    }
+
+                    break;
+                default:
+                    Error(schema.Value, schemaPath, "must be a JSON Schema, or the path of a file holding one, relative to this file.");
+                    return null;
+            }
+
+            var translator = new DeclaredSchema(schemaFile, root, rootPath, Problems, procedure, types);
+            return json ? translator.Json(index, mayBeAbsent) : translator.Rowset(index);
         }
 
         private PathOverride? PathOverride(JsonMember entry, string path)

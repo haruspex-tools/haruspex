@@ -120,7 +120,14 @@ public sealed record NamingReplacement(Regex Pattern, string With, ConfigLocatio
 /// <param name="Paths">Overrides of places inside its results.</param>
 /// <param name="At">Where its key is written.</param>
 /// <param name="NameAt">Where its name is written, when it has one.</param>
-public sealed record ProcedureOverride(ObjectPattern Procedure, string? Name, IReadOnlyList<PathOverride> Paths, ConfigLocation At, ConfigLocation? NameAt);
+public sealed record ProcedureOverride(ObjectPattern Procedure, string? Name, IReadOnlyList<PathOverride> Paths, ConfigLocation At, ConfigLocation? NameAt)
+{
+    /// <summary>
+    /// The procedure's declared results (<c>results</c>, with its <c>why</c>), or null. A procedure need not be selected, or
+    /// in the project, to have them: a call of it contributes them to its caller.
+    /// </summary>
+    public ResultsDeclaration? Results { get; init; }
+}
 
 /// <summary>An override of one place inside a procedure's results (<c>paths["lines[].sku"]</c>).</summary>
 /// <param name="Path">The path as written.</param>

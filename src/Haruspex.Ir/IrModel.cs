@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.6";
+    public const string CurrentVersion = "0.7";
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
@@ -129,7 +129,15 @@ public enum IrTypeOwner
 /// <param name="Path">Where in the object, in the IR's path syntax, as an unknown's path is written.</param>
 /// <param name="Setting">One of <see cref="IrOverrideSettings"/>.</param>
 /// <param name="Why">The reason given in the config file, or null when none was needed.</param>
-public sealed record IrOverride(string Object, string Path, string Setting, string? Why);
+public sealed record IrOverride(string Object, string Path, string Setting, string? Why)
+{
+    /// <summary>
+    /// The procedure whose declaration the claim rests on, when it is not <see cref="Object"/> itself: a caller's results
+    /// that include the declared results of a procedure it calls (<see cref="IrOverrideSettings.Results"/>). Null when the
+    /// claim is about the object's own declaration.
+    /// </summary>
+    public string? Via { get; init; }
+}
 
 /// <summary>The settings an override can make.</summary>
 public static class IrOverrideSettings
@@ -142,6 +150,13 @@ public static class IrOverrideSettings
 
     /// <summary>A value set the database compares under its collation is declared to hold exactly its items.</summary>
     public const string ExactValues = "exact-values";
+
+    /// <summary>
+    /// The results are declared, not inferred: a procedure whose result sets cannot be known from the project (dynamic SQL,
+    /// say) is declared to return these, or none. On a caller, with <see cref="IrOverride.Via"/>, its results include the
+    /// declared results of a procedure it calls.
+    /// </summary>
+    public const string Results = "results";
 }
 
 /// <summary>A field of an object type.</summary>
@@ -480,6 +495,12 @@ public static class IrNullRules
 
     /// <summary>Its type is unknown, so nothing is proved about it.</summary>
     public const string Unknown = "unknown";
+
+    /// <summary>
+    /// The config file declares it may be null, or absent: in results declared for a procedure whose results cannot be
+    /// inferred. <see cref="IrNullReason.At"/> is the procedure declared.
+    /// </summary>
+    public const string Declared = "declared";
 }
 
 /// <summary>The reasons a value or a result cannot be typed.</summary>
@@ -541,4 +562,22 @@ public static class IrUnknownReasons
     /// list cannot express: a result inside a loop, or results of different encodings at one position.
     /// </summary>
     public const string VaryingResults = "varying-results";
+
+    /// <summary>Dynamic SQL (<c>EXEC (@sql)</c>, <c>sp_executesql</c>): what it runs is a string built when the procedure runs.</summary>
+    public const string DynamicSql = "dynamic-sql";
+
+    /// <summary><c>EXEC @name</c>: the procedure is chosen when the call runs.</summary>
+    public const string ProcedureVariable = "procedure-variable";
+
+    /// <summary>
+    /// A system procedure (<c>sp_…</c>, <c>xp_…</c>), whose results are SQL Server's own. A procedure of the project with such a
+    /// name may be one too: SQL Server runs its own procedure of that name instead, if it has one.
+    /// </summary>
+    public const string SystemProcedure = "system-procedure";
+
+    /// <summary>A procedure that is not in the project: in another database, on a linked server, or nowhere.</summary>
+    public const string MissingProcedure = "missing-procedure";
+
+    /// <summary>An unqualified procedure name that more than one schema has: which runs depends on the caller's default schema.</summary>
+    public const string AmbiguousProcedure = "ambiguous-procedure";
 }
