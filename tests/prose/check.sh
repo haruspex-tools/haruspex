@@ -17,14 +17,17 @@ root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root" || exit 2
 here=tests/prose
 fixtures=$here/fixtures
+corpus=tests/corpus/sql-server-samples
 
 vale_version=3.24.0
 # Pinned by digest, the Docker equivalent of a commit SHA, as in ci.yml.
 vale_image=jdkato/vale:v3.24.0@sha256:f5a09410093936d4919d868120786da9789e2652ac321c66a895403eca020ae4
 
 # The files a check reads, one to a line: tracked and new ones, as git lists them (so nothing under bin, obj or
-# node_modules), without the fixtures, which are wrong on purpose.
-files() { git ls-files --cached --others --exclude-standard -- "$@" ":!$fixtures"; }
+# node_modules), without the fixtures, which are wrong on purpose, and without the vendored corpus, which is Microsoft's,
+# kept byte for byte (tests/corpus/README.md), and not ours to judge. Its paths also have spaces, which the word
+# splitting below can't take.
+files() { git ls-files --cached --others --exclude-standard -- "$@" ":!$fixtures" ":!$corpus"; }
 
 npm_ready() {
   if [ ! -f "$here/node_modules/.package-lock.json" ] || [ "$here/package-lock.json" -nt "$here/node_modules/.package-lock.json" ]; then

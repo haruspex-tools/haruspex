@@ -1,0 +1,1707 @@
+{
+  "repository": "https://github.com/microsoft/sql-server-samples",
+  "commit": "8fe3fd0c9a825fef3ae6d601e97537b612d7b214",
+  "committed": "2026-11-05T14:49:05Z",
+  "licence": {
+    "spdx": "MIT",
+    "file": "license.txt"
+  },
+  "folder": "sql-server-samples",
+  "files": [
+    {
+      "path": "license.txt",
+      "bytes": 1142,
+      "sha256": "201f3705979e932c92cd3c6ddbddf4dc3c71dcc5a82089a1e4018227cfe1cf09"
+    },
+    {
+      "path": "samples/databases/adventure-works/oltp-install-script/instawdb.sql",
+      "bytes": 329368,
+      "sha256": "d979f036750f9c7b4fb7be3d58cdbb596a74f864a6325998501b3a96c6ad53f9"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Functions/DetermineCustomerAccess.sql",
+      "bytes": 876,
+      "sha256": "9a48a5283c37773621b091341b31226271a53f94c70283270dd782de2c878c33"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/AddRoleMemberIfNonexistent.sql",
+      "bytes": 1198,
+      "sha256": "86a6fde49363797ffea92cc9336dcd7e733285a799c956d8fe17133a4dfe50e6"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/Configuration_ApplyAuditing.sql",
+      "bytes": 2482,
+      "sha256": "7bdd4d2e686ff4dacfd264e92727af78b90dc49c41a04275eabe3d1c54fd016d"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/Configuration_ApplyColumnstoreIndexing.sql",
+      "bytes": 3097,
+      "sha256": "bed99a821f6c2d68b3f4a5e21853caec518a0570ae197a217bca534cadd1fc3c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/Configuration_ApplyFullTextIndexing.sql",
+      "bytes": 6237,
+      "sha256": "3c3047e23312137a17bdc6583f238f1d0d251fda9547f115ad9676bae8c79a09"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/Configuration_ApplyPartitioning.sql",
+      "bytes": 6273,
+      "sha256": "49ecf1768e1676068b30025708d1a76dc7923fa41693bec5b396331b9c7de749"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/Configuration_ApplyRowLevelSecurity.sql",
+      "bytes": 1937,
+      "sha256": "e6090105e6e6da23e27313f4a1d412a988e3b83e81d494b1b1c382dd76fc5a23"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/Configuration_ConfigureForEnterpriseEdition.sql",
+      "bytes": 340,
+      "sha256": "7f5424a67c43c0d33a63a4ca80298c515a6532eba211bf3a795657c2c5341f53"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/Configuration_DisableInMemory.sql",
+      "bytes": 18292,
+      "sha256": "bb3a02abe9d8e7513f2913de098dec3967f8ccc559fd98abdd1b5350224f0b98"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/Configuration_EnableInMemory.sql",
+      "bytes": 19109,
+      "sha256": "c8be6458187a5f56209da2038443e11e1ecd423f6a89ebc0475d71bc9e0af451"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/Configuration_PrepareForAzureStandard.sql",
+      "bytes": 274,
+      "sha256": "940edbc269d05450a79183bb074939560664953a78b7c94b001eb8e03a00fae6"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/Configuration_RemoveAuditing.sql",
+      "bytes": 1392,
+      "sha256": "662d7415307b21c79e919a18dc570ad0e37448ef2a8130280e17bda1386006e1"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/Configuration_RemoveColumnstoreIndexing.sql",
+      "bytes": 3072,
+      "sha256": "7dbc5d848e9cd4bd8c7b05a32820edbed0434398e257d32b5a3fc417048d4f2a"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/Configuration_RemoveRowLevelSecurity.sql",
+      "bytes": 661,
+      "sha256": "302d64847325487d67b9191163c6e75de2e9df4fb65de36528fbce5453618455"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Stored Procedures/CreateRoleIfNonexistent.sql",
+      "bytes": 594,
+      "sha256": "6e23084ef2797d2d0adc1f4a3ed2ae0cdd37bd1fd25cdb30d223858b8e080cba"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/Cities.sql",
+      "bytes": 3364,
+      "sha256": "808fe047e8d256a6c42ea657ca34ea00db03654580f82114aa33275ab3ab5971"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/Cities_Archive.sql",
+      "bytes": 666,
+      "sha256": "22ee9fb1e614575a6b1323c20aeeaca30ccefb5584b3ae49e29846fe15d72d61"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/Countries.sql",
+      "bytes": 5178,
+      "sha256": "c633aab745439c14180488fb7dbdecea4977281c02ac056626feb879961fda43"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/Countries_Archive.sql",
+      "bytes": 1017,
+      "sha256": "09d31ff8ba82e4c2a7a90cbf65211f638fa909257e0348d0b18ef7cd17800204"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/DeliveryMethods.sql",
+      "bytes": 1988,
+      "sha256": "f47c848e7a947edd62fd93a67669300ce0cee3118c8d610a3f41496970c41cd0"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/DeliveryMethods_Archive.sql",
+      "bytes": 474,
+      "sha256": "ed30656f9b639beaf88087cc3a825eeb68005b8e8d1c73f2b6b71f1b4d288712"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/Logs.sql",
+      "bytes": 1749,
+      "sha256": "16a770159afa1c0c59548423e09baf415303aa26531af2fa8d117d9b555e0b92"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/PaymentMethods.sql",
+      "bytes": 1951,
+      "sha256": "b5a2ecfda18d82c03f4205cc1ef79fd8f557d3e494d0f725fc0cc6cdc7a0af12"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/PaymentMethods_Archive.sql",
+      "bytes": 466,
+      "sha256": "ebab1d8babb52035f9c2436f5d03f4740746e5d0d70bb22a272cc252cdd6ee09"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/People.sql",
+      "bytes": 9178,
+      "sha256": "2788edc31522b5defc9106128a592743065b2a755d0279b0628089b59a7fa834"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/People_Archive.sql",
+      "bytes": 1342,
+      "sha256": "de41c585033875b838dbe789de0503de26e9ea9bd272906dce8465003f370b89"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/StateProvinces.sql",
+      "bytes": 4876,
+      "sha256": "beb2f76b79cd15f23c6dc8dd008abd37de0081b5edad8251bdc2477b0460cc54"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/StateProvinces_Archive.sql",
+      "bytes": 808,
+      "sha256": "f5b4c43aca5e4bc7172159890ba7fa806cfb1beeb1a2fa85c0b6d61728eaaf82"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/SystemParameters.sql",
+      "bytes": 5817,
+      "sha256": "51f3ce9d85ebed7bfc24468e0ee3a526a01a131f84a7cf7ff663e9dd60e786ba"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/TransactionTypes.sql",
+      "bytes": 1975,
+      "sha256": "3042cceb0b095b253f79f0bcb8c7fea790c10c7aa0b69d4dbbe7d0c5d183cc3e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Application/Tables/TransactionTypes_Archive.sql",
+      "bytes": 482,
+      "sha256": "083bfeeea9b1dddb4e704131376ce04a1fb9d086001d66533f474542b7c7beee"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Functions/GetAreaCode.sql",
+      "bytes": 587,
+      "sha256": "c39477c6fba9b32a9e59ec745f732adaa12fe79b6a0860287aa756a3c4e8da5c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Functions/GetBogativePhoneNumber.sql",
+      "bytes": 616,
+      "sha256": "19ade9fe0c858e1996f9d0e6cbd0d7673b917e47ad949226fba40b33e0c0f2e9"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Functions/GetCityLocation.sql",
+      "bytes": 398,
+      "sha256": "6888f7734caaad7f873b431891301299832b76d09ff57dff47397f350c20021d"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Functions/GetCustomerCount.sql",
+      "bytes": 563,
+      "sha256": "5f88f6aa256b8ce4895159feaebc1a0ff1f29df3b360b6f65c9385e5defe76b7"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Functions/GetDeliveryMethodID.sql",
+      "bytes": 577,
+      "sha256": "c59885b482f7b8007e00f12e3d478bc6c28aa830704e0164fc6f3a87a55757ab"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Functions/GetPaymentMethodID.sql",
+      "bytes": 558,
+      "sha256": "d0a18d610b3d36a794c93c4d44b9499f98cbe5916357db0da8dceb06bdb72bef"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Functions/GetPersonID.sql",
+      "bytes": 472,
+      "sha256": "43e4f7df037107b99b63253f34851a1478ac275cc9e23059208f942c3de2c793"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Functions/GetStateProvinceID.sql",
+      "bytes": 528,
+      "sha256": "aeb76d8fdd88fac14f8a849b4cb32330820f224e16662398a34b0da1bf25fbe9"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Functions/GetSupplierCategoryID.sql",
+      "bytes": 596,
+      "sha256": "6d05b8398154b3b9f1e2d28ac6eec10fbf9a351a1b7e8b3703b7af12f0f6a88d"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Functions/GetTransactionTypeID.sql",
+      "bytes": 590,
+      "sha256": "b3d28f21183a63a09ecacae4b05355e432add6b4011ee86ef87debb4dffe5426"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/ActivateWebsiteLogons.sql",
+      "bytes": 1993,
+      "sha256": "eedccf3a3ea53e369932220814e3aaaae9842f7f0298962e1e5c16c10db15623"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/AddCustomers.sql",
+      "bytes": 7427,
+      "sha256": "64cd1b3efb5b580bafac040497aec77ea1b7c6ca580c5d52118842c0cf50c29e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/AddSpecialDeals.sql",
+      "bytes": 1735,
+      "sha256": "80b312757fe016661b397aa0e9326bec081d506254c2f2b865082e0e754b5c92"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/AddStockItems.sql",
+      "bytes": 12246,
+      "sha256": "e5fd0233b595ed9caca281aa08019704855f0d8de174d536bd7f31f0411a788f"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/ChangePasswords.sql",
+      "bytes": 1926,
+      "sha256": "d85a56a0799c3680a0d36b9368102eb205ed65f428be1765091a0d715d647cc3"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/CreateCustomerOrders.sql",
+      "bytes": 4377,
+      "sha256": "ac36564fea249fcff2060dcc184d370053d49127ca445dabda5bf58f59d90728"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/DailyProcessToCreateHistory.sql",
+      "bytes": 15800,
+      "sha256": "706d64edacf7012f6c66ad9bbf98a9c5157c77cdd8bce0d1bdd793f6b2965200"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/DeactivateTemporalTablesBeforeDataLoad.sql",
+      "bytes": 50102,
+      "sha256": "1c4a3c6ed6118aca7bfe5b81f0fd7297eb904291071f9114af4549613386b62f"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetBogativePostalCode.sql",
+      "bytes": 1287,
+      "sha256": "dbe75ea0fd9dd5a8ebaedff29314844db2c73ab710c637983da4c0803c1fa4be"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetBuyingGroupDomain.sql",
+      "bytes": 6517,
+      "sha256": "f62a3d45d7a33f82c5673f6d56000e4a61255fc7846e9755c5a2ec07dd5b8757"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetFicticiousName.sql",
+      "bytes": 1489,
+      "sha256": "0a359c54baf409c5a2b449179368c71cc2ff830f2cdf7caebcd41d5cfad40b75"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomBuyingGroup.sql",
+      "bytes": 785,
+      "sha256": "7efd875cdeed75d59c8ea0db8fee6c5e16390a3e88d6de97ef3add1dab81d1db"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomBuyingGroupNotInUse.sql",
+      "bytes": 3122,
+      "sha256": "47e524efdfde272ec7736178c1127fafebdd784f6c6ae13149298954f8fc4fce"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomCity.sql",
+      "bytes": 1526,
+      "sha256": "a2be4eda8d0d427f37932870fac65e14485f67452050c1ef883ae3b621e4c3a5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomCustomer.sql",
+      "bytes": 931,
+      "sha256": "b96a0a9b902f35e33b80f6709de69b5be0b7599380f0c375e79ee311552ba4e5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomCustomerCategory.sql",
+      "bytes": 898,
+      "sha256": "c54c0917d7f37a47652453298181313e3b04830e9affbb439e8c546c4804a363"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomDeliveryMethod.sql",
+      "bytes": 657,
+      "sha256": "64b108bd45504b46a1be4e75f4002f9920b915fafc23acf34b548d077233d192"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomEmployeePerson.sql",
+      "bytes": 669,
+      "sha256": "b4076d6eec56d39df36d0b684ac851e7c031adbd90fd64261552d6c1ae8371bc"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomPaymentDays.sql",
+      "bytes": 1115,
+      "sha256": "f00fb51ecd0110a5b82f9989114d27c81e6473395dfa89af9cc0d8863af8f4e4"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomSalesPersonID.sql",
+      "bytes": 666,
+      "sha256": "50fdf600685aa54fbf0e0b1e03fd2a6f4cf3bf8f197a82a24c33e653ae34ac86"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomSecondaryAddress.sql",
+      "bytes": 1482,
+      "sha256": "1a0a6dff6ee223e2c1814e8f147fa547290823a970a93c08d74d21dfba9284fd"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomStockItemToAdjust.sql",
+      "bytes": 715,
+      "sha256": "218e7a0ac8a536afb901ee68e3d13a56105eddbd736a9722883a29281edccb71"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomStreet.sql",
+      "bytes": 1095,
+      "sha256": "1257e51f8c4d4d84a25b0d916b537479f7eea6589cb518a0ad9c44352b1953e5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomStreetName.sql",
+      "bytes": 1916,
+      "sha256": "c5608838b6c3ce69a968e79b102a195834726533fba74ed6f3d8ad924f47ce14"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/GetRandomStreetSuffix.sql",
+      "bytes": 1044,
+      "sha256": "0ce28b19b32e94f1e4f7b2ff7f2d6c169460012ae562f718ea7e1e33e77d288b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/InvoicePickedOrders.sql",
+      "bytes": 9790,
+      "sha256": "b91be72a530392c4102389fb8a20bd73facda40811da42ca18eff4dc1d93dbfd"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/MakeTemporalChanges.sql",
+      "bytes": 5818,
+      "sha256": "fb7b1f184d92f58845e36cf2995ea734c1327eac8697c747ed1f846116af2751"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/PaySuppliers.sql",
+      "bytes": 2200,
+      "sha256": "91496943be53f48443e1a00222b11c9ae4de2fa47c69f0e27177cebd881200bd"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/PerformStocktake.sql",
+      "bytes": 2384,
+      "sha256": "e048311129057a6cbacaa9533acb91bdefe9a51387ea179072ada5f1bb795a10"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/PickStockForCustomerOrders.sql",
+      "bytes": 4211,
+      "sha256": "dacbd846cbffb3c645fee001243ffe147c7c19732f82d94cc832f872d6d48e88"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/PlaceSupplierOrders.sql",
+      "bytes": 4976,
+      "sha256": "cae6f12ff51375aa40704ebebed74245183bb50b8f275184157edcbd1df28f2b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/PopulateColdRoomTemperatures_temp.sql",
+      "bytes": 1289,
+      "sha256": "16df2754327ea18ea1eb9effb667d0558a52688b1b64dd489eeb5c8177aa3f39"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/PopulateDataTo180DaysAgo.sql",
+      "bytes": 1062,
+      "sha256": "d242002ee01cb0e5823eec3d052f50c5b1252285c947b0f2d5d902bc2cc02f68"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/PopulateDataToCurrentDate.sql",
+      "bytes": 1038,
+      "sha256": "fd87c2d684442ab008d3862c91e82e4f6fe86b295b0e0b76a30b7fbc0f6dc9bb"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/PopulateOneDayOfHistory.sql",
+      "bytes": 985,
+      "sha256": "e96a342d3a01f2e261a7b11f17d0e6df642d2ba9ad14f6dd46c195934d6c1f4b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/ProcessCustomerPayments.sql",
+      "bytes": 2260,
+      "sha256": "6d381cd5871cf6830bbf8411021dab8cc0477670cdb27bee7e120d766aba14c6"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/ReactivateTemporalTablesAfterDataLoad.sql",
+      "bytes": 6102,
+      "sha256": "e526509ee5019a254df0b4dae0508a135a81a51a65ad35dbf83a9281ff622d4a"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/ReceivePurchaseOrders.sql",
+      "bytes": 4479,
+      "sha256": "68fc4c0d92f10d0251c7b747e07fd557ad35efaf37cea503e52ab6c19d66a46b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/RecordColdRoomTemperatures.sql",
+      "bytes": 2645,
+      "sha256": "a2a301db9e1cdf8aec2f38092a0f9b6d01a0cac59d243ca3806bd487e955f934"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/RecordDeliveryVanTemperatures.sql",
+      "bytes": 2753,
+      "sha256": "4457431a54714eaebf21f2d46617786af2d5a4e6dadf02c6de527de77cc4c90c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/RecordInvoiceDeliveries.sql",
+      "bytes": 3989,
+      "sha256": "0042884929197cabc156475cc1a12b7ead1122653afb0fbd100a5ff00ac9af89"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Stored Procedures/UpdateCustomFields.sql",
+      "bytes": 10868,
+      "sha256": "997d8b738d03a3e15341dfc4fdc9f0d553048fdd009b9bd31d63c39babf9bf9b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Tables/AreaCode.sql",
+      "bytes": 120,
+      "sha256": "25ba0a8fdb8e347da78fa07f7fa4e00cc94a99f35c16c598cfd7209703b75902"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Tables/ColdRoomTemperatures_temp.sql",
+      "bytes": 952,
+      "sha256": "01862afff8322f6a99b3a0b01d333a54bcb6ec80c5ba01cf25ad28d48e5ea3c5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Tables/FicticiousNamePool.sql",
+      "bytes": 186,
+      "sha256": "df3d120e4008c76aa45e668c2709bbae0c86cb314fd6e20f784799dd62fec5ed"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/DataLoadSimulation/Tables/SeasonVariation.sql",
+      "bytes": 265,
+      "sha256": "c56345abe138fbac9ce8f8d1fd5a67489f7dedac2144d2bd278e826e18c51de1"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetCityUpdates.sql",
+      "bytes": 6819,
+      "sha256": "7d5837dbfc9c6e228b57d9e7f224c47cec69f37c3ab9865acbd4d0917059f929"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetCustomerUpdates.sql",
+      "bytes": 7490,
+      "sha256": "a93a1f6fefb4abc561788ced089ebe88c794097656fcd85fda342f951e7fe41b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetEmployeeUpdates.sql",
+      "bytes": 2683,
+      "sha256": "3a93fabb1227130ea62e9173c0b3c01716a9d6b6aeb9e3516ab3f3346e640c72"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetMovementUpdates.sql",
+      "bytes": 947,
+      "sha256": "fcaf6c9283fc5ca994da7c57a8e2f906a87558888be418bcb9e868e2ecfbdc96"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetOrderUpdates.sql",
+      "bytes": 1792,
+      "sha256": "5229ba78c21dd1c0c4357ac856b0dddc3756df63e7d26f723493f2e6f2477796"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetPaymentMethodUpdates.sql",
+      "bytes": 2516,
+      "sha256": "7ac40f8ab5b176aee2f570e6d75e30a039b7b027e742d6eeafe31f0819c1f621"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetPurchaseUpdates.sql",
+      "bytes": 1411,
+      "sha256": "5f5850d8d60e999ae32fb2af3341d5e965d1452f6d942849bbf5f47fdf94c8c5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetSaleUpdates.sql",
+      "bytes": 2029,
+      "sha256": "b888d8b3909fe8473789b94812b615639cdda7f87e1dacec5ca5a59aa9465ba6"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetStockHoldingUpdates.sql",
+      "bytes": 597,
+      "sha256": "6925056f57a7b147d8045910debf3f057d36668c5109d31f5fdbf2803b7b9178"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetStockItemUpdates.sql",
+      "bytes": 4237,
+      "sha256": "fcbd048a5c7bef82637e34fce72473bd4e804a90b02f7e3c7fdfbd083763595f"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetSupplierUpdates.sql",
+      "bytes": 5003,
+      "sha256": "ea66a003a1d27eba09337f582e9f6def2ad183c8f805010bcfc4b64e84c0b730"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetTransactionTypeUpdates.sql",
+      "bytes": 2588,
+      "sha256": "f3653b8c5dcc025b07f7520b5fc1c07adfbe807fa059898c76d808f64374698d"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Integration/Stored Procedures/GetTransactionUpdates.sql",
+      "bytes": 2476,
+      "sha256": "555604065442bfc3ba113583afc2ca15a48ff7f2fef89d6922ac79405929645f"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/Script.PostDeployment1.sql",
+      "bytes": 7652,
+      "sha256": "af5091ea100a3bc7c524c0c8d201409d49a0ae1ff430c28869590d2a6c52ffd1"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds100-ins-app-people.sql",
+      "bytes": 15519,
+      "sha256": "778af1467038c45ceca51dce8cd35c8991f35c190a6f51480ed78ca077619e98"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds105-ins-dls-ficticiousnamepool.sql",
+      "bytes": 78200,
+      "sha256": "6f5c252eff1bff12ee565759efd97eedcf4a0ee12744ff8dea70342a197ff3ba"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds106-ins-dls-areacode.sql",
+      "bytes": 6494,
+      "sha256": "7a4a77d27c8ef0b62b7cbfdb86c06ea9ac8cec107232f82f94673b72c48357eb"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds110-ins-app-countries.sql",
+      "bytes": 2968090,
+      "sha256": "b50150936ceae9c412dc4544391ef9352ce84f46c2d5bbaf68cfe6d89fd9963d"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds120-ins-app-deliverymethods.sql",
+      "bytes": 865,
+      "sha256": "f39d7db15ae4efcacfdd53f52bedc47d49a56161629ca18ec657e33ba11a428d"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds130-ins-app-paymentmethods.sql",
+      "bytes": 479,
+      "sha256": "b764ae1943e7ac5aa4b39c3b5213e1f2ed034ff29a186459d1b1a0a94a7b63cb"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds140-ins-app-stateprovinces.sql",
+      "bytes": 6021,
+      "sha256": "231fd03127d7225e34aea750d33b76292f1541b8fbaf876ad7d2691a150c1969"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds142-upd-app-stateprovinces-borders.sql",
+      "bytes": 247090,
+      "sha256": "c47319db9100a017494edcfcb1b0436738c259fc256d3f7fc0532328e99bd1a2"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-a.sql",
+      "bytes": 249490,
+      "sha256": "2724b52d34aa23d50b9fdbafffc807e1fea6e37d635434d05f2f2fe0bb4634f5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-b.sql",
+      "bytes": 483093,
+      "sha256": "1cb7fe72c88170f8a4d1891da6090dcad49d401a1db013239bfd73b9a1a6833f"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-c.sql",
+      "bytes": 540651,
+      "sha256": "5074d056ee7deb50e6295de5e0643e8214ecddc61c4b552fd64e513e44d8fb6f"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-d.sql",
+      "bytes": 196201,
+      "sha256": "c49cdddd4a63f886e92d2cd39a8d0fa85d5d4abd4acac53feeb6ffd6383df367"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-e.sql",
+      "bytes": 205528,
+      "sha256": "73172d5e6c482783e2b0d1d70a310fd233a0e1508e142d025a99e6e5160e70d5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-f.sql",
+      "bytes": 215284,
+      "sha256": "21770ed6604766bb3668ef7dd4e1f452c4a8a0775694490e4041b47996a8f0b9"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-g.sql",
+      "bytes": 264666,
+      "sha256": "21c966a2a0e4d6b432c2de8f2569a33e1429ff36dbc09515087f22994f18d6b3"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-h.sql",
+      "bytes": 322828,
+      "sha256": "396a58f768394335013cec1479e4259a101d43691db6872eb9f240ba62b3a6c6"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-i.sql",
+      "bytes": 51102,
+      "sha256": "2e92b2a30deeb2e0501b85f63076e18044ef6e6cde7f20b0277dd3ffab349973"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-j.sql",
+      "bytes": 62581,
+      "sha256": "9d44374f82e4399410bacda3283ad05049f2a474d2f3e6da83ef7172eedd88a7"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-k.sql",
+      "bytes": 114066,
+      "sha256": "4a565e0ce22f3af84bfdbb956ffbd9b428f31a2f1b2a1f2b7cfadd5b14d5f1dc"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-l.sql",
+      "bytes": 371066,
+      "sha256": "8b898922d32c93f519f677ed404dc01e544630ec60b0ced7b0dbaa2ed923ec25"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-m.sql",
+      "bytes": 501417,
+      "sha256": "7f4bdaedf523bed8a4a2a01919887ae6560eaad32006e30fd77e9d707639480e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-n.sql",
+      "bytes": 214361,
+      "sha256": "8485c9f16f24e7b723fd50e88ffd1ca0b29c112dc713417a3b1402a511f2a0f8"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-o.sql",
+      "bytes": 145702,
+      "sha256": "a9457dae442b62d191b8a954d9fce027989c05e312e9ddcf8ae85fcd83e975f6"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-p.sql",
+      "bytes": 347961,
+      "sha256": "24ab8e8ad818ef23df5fd56265cdebe734c961f06720cba33f9d586a261c2bc5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-q.sql",
+      "bytes": 101,
+      "sha256": "97180e6dd19d50dba81e63d87166adc83b91123b75dbbe017d2a9931ea932e01"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-r.sql",
+      "bytes": 269244,
+      "sha256": "1930ad0cad08d27c68a64a5d82a0c38035d2030e259958ca7a4b0b6643047533"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-s.sql",
+      "bytes": 575524,
+      "sha256": "8f8bf4e89337221e132a040a86a3f6fed412b1ef694fd4596d7de73ee109f479"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-t.sql",
+      "bytes": 187433,
+      "sha256": "3b6ed2f0a66fdf8de552acafec3778016014a054e0e1d1bb7c980e3ca4b9a66c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-u.sql",
+      "bytes": 23056,
+      "sha256": "a438f8317235119510eb97bf2800d5a845f1c63f6ccf508a29a630bbf1b78e2b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-v.sql",
+      "bytes": 73891,
+      "sha256": "15bceca9b08155d627c93f46f95da1450407866d94322fd5a31f7972094eb74a"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-w.sql",
+      "bytes": 387409,
+      "sha256": "e18fc02f10832127b23230d11e3006e0e1c5f3b073288f4cc126aec40b5b1d20"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-x.sql",
+      "bytes": 89,
+      "sha256": "2f17f3e60f5d2591c739a85aabf44168103cd90379afefb8df2182dd719a57a3"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-y.sql",
+      "bytes": 9042,
+      "sha256": "835211f64afed767ca7806921ab7b5114cbc897821a1f018b40cf03741145999"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities-z.sql",
+      "bytes": 90,
+      "sha256": "06c5bc5770df09b84d69ca9c9249c1b07af3193d38b0bda221186b61de70b1ef"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds150-ins-app-cities.sql",
+      "bytes": 394189,
+      "sha256": "8fc881f71bdc1881a36045c7219b60b91edc2e31cfb985619cda6bfa94e66510"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds151-ins-post-app-cities.sql",
+      "bytes": 493,
+      "sha256": "d81db56846f2c5e2139e3312bd7abb513a45b1784cd07e531fede7ecc4bc1cd3"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds160-ins-app-transactiontypes.sql",
+      "bytes": 1018,
+      "sha256": "ca5f4ce568a0ec78674a17db1c0898ba8ae5e51f57fddcc9ecefd1d51d4004e2"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds170-ins-purchasing-suppliercategories.sql",
+      "bytes": 847,
+      "sha256": "3053b2ffb4e514e9cf7a44f185ffa1476296d287286d7801b9f5914477e427d6"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds180-ins-sales-groups-categories.sql",
+      "bytes": 1850,
+      "sha256": "8ee015763ee06e5e782373d36f4e64dee72dbcb0ad47b8e9b373f590d9d03072"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds190-ins-warehouse-colors.sql",
+      "bytes": 2010,
+      "sha256": "8e830e0a219f3c9906d6f6b675f2be660d6d9e6ba27ef00ced26d7de783fb3f1"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds200-ins-warehouse-packagetypes.sql",
+      "bytes": 974,
+      "sha256": "300aa16b4df7e243cf4c93e198ad8a6b898d0524e95fd1760bec213910647b81"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds210-ins-warehouse-stockgroups.sql",
+      "bytes": 803,
+      "sha256": "b3bb22154575d29e7ff1144c88693fc3510b9cc65ed0a3097d91ca505c082afc"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds220-ins-purchasing-suppliers.sql",
+      "bytes": 22069,
+      "sha256": "f2d52d4006c220b5e71c0c861c42ee4d72df28437fa616c61960fd792f72abba"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds230-ins-sales-customers.sql",
+      "bytes": 15929,
+      "sha256": "0d1fa2431a6bc034091f8ac57dd3d3f93606ed1cdf54b75118c4be286684ead2"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds240-ins-warehouse-stockitems.sql",
+      "bytes": 54661,
+      "sha256": "73d815b4192b27a2f85332ae393e33561c416bcb194ea9a289d3482dbb6af7ca"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds250-ins-warehouse-stockitemholdings.sql",
+      "bytes": 10775,
+      "sha256": "e3a010d0b95944bcc3a117e55f1a22ee77508b2b8aaaed59d0fdcb038b41d843"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds260-ins-warehouse-stockitemstockgroups.sql",
+      "bytes": 52705,
+      "sha256": "abf178572c05c1015ee4a8976a6cdbd887d912806535b40ab4cbb12125ba32af"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds270-ins-app-systemparameters.sql",
+      "bytes": 4341,
+      "sha256": "0ffa2244c1eeec381bb774202fb91bea66e454c52648400b5a2a3175d5feca46"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds400-ins-unkown-orderline.sql",
+      "bytes": 830,
+      "sha256": "b600b1a15c3c5a2da1fd642d06b49b6f3289249d5c39838e222c5e3311b0b421"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/PostDeploymentScripts/pds410-update-archive-tables.sql",
+      "bytes": 1160,
+      "sha256": "db7b927d68637e90d0329684cade716be6908d800ab9e60325aa4719b31fd119"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Purchasing/Tables/PurchaseOrderLines.sql",
+      "bytes": 6972,
+      "sha256": "169dea41263fe9b7db14754377d8a76e5b73aa11c9f44867a3d1fb60fc7e19b9"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Purchasing/Tables/PurchaseOrders.sql",
+      "bytes": 6179,
+      "sha256": "2d31564840cbcdd97d444f835726e16e94683101d683811dfb2ba08d5119aa07"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Purchasing/Tables/SupplierCategories.sql",
+      "bytes": 2012,
+      "sha256": "0837ff64b8bd2be0b4700ad3990e7cb495cb0a1b033f02cf9b1ecc36686cd636"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Purchasing/Tables/SupplierCategories_Archive.sql",
+      "bytes": 491,
+      "sha256": "44091d2eff116633386b4a5599cb9224bbd30a9e4c576050329acd03da075e53"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Purchasing/Tables/SupplierTransactions.sql",
+      "bytes": 9012,
+      "sha256": "c0dbe791f1c039e535c399b147aef5cbabac45cd1270c76f188ce75911fbead3"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Purchasing/Tables/Suppliers.sql",
+      "bytes": 14444,
+      "sha256": "9b5ccacc33cb58cea3dbad27426c8f06bcb1ba4108f08d4e67202bfee75a7063"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Purchasing/Tables/Suppliers_Archive.sql",
+      "bytes": 2833,
+      "sha256": "c0ba179ed93460120c4e4ed22448b49b6b3505c86e05eb56482fb0b9a1e18e33"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sales/Tables/BuyingGroups.sql",
+      "bytes": 1853,
+      "sha256": "45414681a09cd39be32413fdb4dd4ff695715640fbc73badaab492569ce01310"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sales/Tables/BuyingGroups_Archive.sql",
+      "bytes": 438,
+      "sha256": "363914f6a558e929bd1a0af3bcc2e2596e0a840b0eddc89c0e33c87964106343"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sales/Tables/CustomerCategories.sql",
+      "bytes": 1963,
+      "sha256": "b07a09f9d279c4e5a0d060a2fc86af1589ee2c47d8fbbd742ed3c1baae12a4f0"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sales/Tables/CustomerCategories_Archive.sql",
+      "bytes": 481,
+      "sha256": "15fabde245d28d77ad416fb07aa1262686b4fba6586a8b48ffe6d42032c8e1b0"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sales/Tables/CustomerTransactions.sql",
+      "bytes": 8340,
+      "sha256": "f2888dff5bb91b5fc93fdb5d56067040adb71ee106961f6e5236acd453e7d3fa"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sales/Tables/Customers.sql",
+      "bytes": 15942,
+      "sha256": "fea8a3680d3d79a5a4f1ea19f5482918d3618c629a038f66a1ee458c5c939a05"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sales/Tables/Customers_Archive.sql",
+      "bytes": 2058,
+      "sha256": "7d218d6724733b65df92d363cf33162bfcda97213b82051e2fec77bc37c9c678"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sales/Tables/InvoiceLines.sql",
+      "bytes": 6057,
+      "sha256": "c73464737bea9f610087c63a37f99b9ba95cde8cdd1b7f24b174bbc9a42dd280"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sales/Tables/Invoices.sql",
+      "bytes": 14124,
+      "sha256": "e274206641a02feb38f615f67814a87928e04b00c5ed5ef35314e2ac6d100d69"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sales/Tables/OrderLines.sql",
+      "bytes": 6893,
+      "sha256": "0a47b2f0711306cf7e773e081d20ea8e724ed4a40b7c5bd51e631200afba0ab0"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sales/Tables/Orders.sql",
+      "bytes": 7664,
+      "sha256": "5d76a3c1271c2ba7c1022958e450d4c24d09dfa45cdbf2be930748213531c35c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sales/Tables/SpecialDeals.sql",
+      "bytes": 8972,
+      "sha256": "f92b086706534d8399d33e730e370c2fa00c25ee63a03f553ed4acdd17b42da2"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Application.sql",
+      "bytes": 317,
+      "sha256": "164a1db91ecc6b336ffed1d2354b4563baebb73ec062e3e062277f0abe682aec"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/DataLoadSimulation.sql",
+      "bytes": 274,
+      "sha256": "1eb9f4e4246080c338d3acaca7a12c24257b060123cb1acba004dae53558b93b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/External Sales.sql",
+      "bytes": 58,
+      "sha256": "a9cfe899d21bb1b8a0e75a551f675ec45647372925ab9b6747cc6075f2119b89"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Far West Sales.sql",
+      "bytes": 58,
+      "sha256": "85419ce6c1ca4d1ecd668c18e47bac85c63bdf755c2d379dbbf869c8b97176d2"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/FilterCustomersBySalesTerritoryRole.sql",
+      "bytes": 327,
+      "sha256": "891daa87250bf1f52d660cfbff7e5f64b811e0dbffbdbc1caeabb2ae9652dd43"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Great Lakes Sales.sql",
+      "bytes": 61,
+      "sha256": "35b4febaee88d67e753a36b5307e95e99ba4c37270ccd3a9ef7c15bff1650f4e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Integration.sql",
+      "bytes": 256,
+      "sha256": "64aa778113dde6194b8fc509029561a9fe0d1a69d58dcc5fa292c383563298ee"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Mideast Sales.sql",
+      "bytes": 57,
+      "sha256": "6d9499a235b257ebaecb22f7c55119fd9815f9b151c6810f3c4c1d4054730e5b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/New England Sales.sql",
+      "bytes": 61,
+      "sha256": "04d5b99bd26393f8093fca0724d00b71c2e239bf248835fa21ca8e2b284f65f9"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Permissions.sql",
+      "bytes": 465,
+      "sha256": "3057fbdf4e70105f4adfc40f9f9a495c851802d08d1cc3b401576cd78712ec4e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Plains Sales.sql",
+      "bytes": 56,
+      "sha256": "b3022ac8cc5353020993cbb5c55c7536d324c81264d37e535991c2e33a524ac3"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/PowerBI.sql",
+      "bytes": 268,
+      "sha256": "1d282cbadd69774cab0ceda0b7e0b2da8b2c3901cce24924f9c8568fe8041e51"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Purchasing.sql",
+      "bytes": 239,
+      "sha256": "82db22149d2688d1d0c22de2140e29365c2dba7edc14fa859db30520c743e63d"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Reports.sql",
+      "bytes": 259,
+      "sha256": "e22fcbd17798c6328c0bf032496d17db1bc0b1dd47a9118882b486cea649f335"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Rocky Mountain Sales.sql",
+      "bytes": 64,
+      "sha256": "9c474bea432f79948495a7659f2c222783b3926f34be896c94ff715b82b0f7bb"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Sales.sql",
+      "bytes": 238,
+      "sha256": "1d355041ca388f9aa8924e3b73ad836d8b8771de33df52966b26e5eaa3f878af"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Sequences.sql",
+      "bytes": 237,
+      "sha256": "776c5322be81fa03902270239a50f3bda6386522371641b3f06d35e4a693172b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Southeast Sales.sql",
+      "bytes": 59,
+      "sha256": "0b665461a5105410dbe3a8c1f9324fb0b3bcd223d9c740cab6b80b88e0e42e73"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Southwest Sales.sql",
+      "bytes": 59,
+      "sha256": "0d1a667518627122c7466726564151136c2adabc6cd22b034bcf47bb71efd65e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Warehouse.sql",
+      "bytes": 239,
+      "sha256": "1541c40c40d899ff3fac9efe7f7d6b9dd0b5663cdfc5afbbe5982c9976a44b43"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/WebApi.sql",
+      "bytes": 262,
+      "sha256": "b7eeb8e808104a9899adb9fd350fca92d5b928466885be809bbbdefbd0393042"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Security/Website.sql",
+      "bytes": 264,
+      "sha256": "0b1b5b01ae6414d639aa02cf9ed608b4dd4a6335bd6e09e58f7957b226af82d0"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/BuyingGroupID.sql",
+      "bytes": 96,
+      "sha256": "f20595bc7bf3b5ec7c591eee418ee740af7f264ac4b86fb346890f1a2d47d28b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/CityID.sql",
+      "bytes": 93,
+      "sha256": "90e126380d1e741299db6203301ec53964ac864a608410cb817dbcbcff994c61"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/ColorID.sql",
+      "bytes": 91,
+      "sha256": "3934347585c9b36418895c724a22912e4dda0d792e6b7f197fd77a0621ea2000"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/CountryID.sql",
+      "bytes": 94,
+      "sha256": "72f11a2b80b1d938e0b2268103d5e1fce4440ea1da7ee0bafaeab3122b594366"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/CustomerCategoryID.sql",
+      "bytes": 104,
+      "sha256": "2d1634ea0592f6db763978305b0bd4ba24916559ceb2130e8d29ebe20dd685cc"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/CustomerID.sql",
+      "bytes": 98,
+      "sha256": "19b77e2b363733d35f2ca7e30d1168db887c07971716977f548a0dbe06208bac"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/DeliveryMethodID.sql",
+      "bytes": 100,
+      "sha256": "8d3aee52ea48abe1aa318fa394bbd5055d039a770d2509cf3b2857c4c3747079"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/InvoiceID.sql",
+      "bytes": 99,
+      "sha256": "008af2a605dc645a74cde9fd5a72588fa5b58852f9aa193a25c7350976e08ddf"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/InvoiceLineID.sql",
+      "bytes": 103,
+      "sha256": "9ef18fc3bbdbefda27cccaf5d25f673d48d02d7ae8992a6834d5436e5700aba5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/OrderID.sql",
+      "bytes": 97,
+      "sha256": "fd9c6388c60267eb94872b1e009c43bb4c1d584800f1379978849cec0dcbace4"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/OrderLineID.sql",
+      "bytes": 101,
+      "sha256": "de7797e0c494acc705ce9a757c24d2b2a917ac29f6e2ba2781fc0c091b4102ee"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/PackageTypeID.sql",
+      "bytes": 97,
+      "sha256": "e7d425e603c80fcd009026818c4f7e139ffa5cb0ef94e0ec0ba08625fffd93b9"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/PaymentMethodID.sql",
+      "bytes": 98,
+      "sha256": "3a6c14530510b17d02a02a5103f9c94e4e783d8916f4525f8a2cbd566f774d16"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/PersonID.sql",
+      "bytes": 96,
+      "sha256": "3cbc825db06a1163bae22ee3c624e9b0ed8a88a68eb9b24c5cd2a78af9526328"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/PurchaseOrderID.sql",
+      "bytes": 103,
+      "sha256": "b032283b5920d4ba86e9b8c15b6aa924e84e399570d93b87b08c04863d2a653e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/PurchaseOrderLineID.sql",
+      "bytes": 108,
+      "sha256": "bb511f4e0a86e784ab3b546e71bc1225a07a8f6e39d89dbff156ba7e940a082e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/SpecialDealID.sql",
+      "bytes": 98,
+      "sha256": "02f877b6397dbfe594641bf2e5ada3d408284e42684668193bd65ddd3245097c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/StateProvinceID.sql",
+      "bytes": 99,
+      "sha256": "72813240278816d738fb813cbd85a4818c64b4c47bf2d83c182e3d0df317c76e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/StockGroupID.sql",
+      "bytes": 96,
+      "sha256": "3861abfb2011015eef4d5a0457deb94cbffbf0b7e61f0bc4aa82bfb718ad30c8"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/StockItemID.sql",
+      "bytes": 96,
+      "sha256": "471837264c5f588066e6ea4c508d8feb182323388ee0671beee652fce270d510"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/StockItemStockGroupID.sql",
+      "bytes": 108,
+      "sha256": "c08123faef5733bf0b15047be4ea550843395f915ddc58807683bf0794e75ddc"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/SupplierCategoryID.sql",
+      "bytes": 102,
+      "sha256": "ba9f7337273fed35a9d0368ea64776196e2d27e36b4a7fe87faa624ed1abc52e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/SupplierID.sql",
+      "bytes": 94,
+      "sha256": "e2da316d350e85250fe34fc7acb48f502111d6bfb278fbb1b422117ce4922f29"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/SystemParameterID.sql",
+      "bytes": 102,
+      "sha256": "e89adfd58be21b374ab1ba1caa9b3cb30a4129c5cb1636d2b3799409d60a2afa"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/TransactionID.sql",
+      "bytes": 103,
+      "sha256": "16d7b1a44a30aa383b057f59208ebbfc469cbe76dfac8273093e8a770bbfc722"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Sequences/TransactionTypeID.sql",
+      "bytes": 103,
+      "sha256": "58c81c34ce568a60a9a6191c486c7297bbc6c17867f37de846a7eff17827b33b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Stored Procedures/ReseedAllSequences.sql",
+      "bytes": 5007,
+      "sha256": "19606378b8d40a821f0289d61fbb7969a7e377914ef0b92f59a01de5b7a1ca5a"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Sequences/Stored Procedures/ReseedSequenceBeyondTableValues.sql",
+      "bytes": 1378,
+      "sha256": "04ba7d9d18661785df0f437dd157830fe84e4afee6f3db98cf0427f2fd45a9e1"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Storage/PF_TransactionDate.sql",
+      "bytes": 185,
+      "sha256": "f7afff157392434416f00773d602ea954ab8a71894584ffe6a6d9978c9d475f9"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Storage/PF_TransactionDateTime.sql",
+      "bytes": 193,
+      "sha256": "9f232855b6cff23b2ed5b397c94516a618f77402697f45aa61d2a4cc1d02aee5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Storage/PS_TransactionDate.sql",
+      "bytes": 168,
+      "sha256": "bc43d6942f516138e7c72e86765a5ec5840fd967cefd20f8623a7c35ee4b5fc0"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Storage/PS_TransactionDateTime.sql",
+      "bytes": 176,
+      "sha256": "9e3a168309d37ad0611a4aee7a921cf8714c91baaae435fc3c6840a6f4a15e91"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Storage/USERDATA.sql",
+      "bytes": 67,
+      "sha256": "d6cfa5c07ca8d20a4999e8fdf0e2e34277102dbb04c52753419a37fae135aaa2"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Storage/WWI_MemoryOptimized_Data.sql",
+      "bytes": 114,
+      "sha256": "b576d7c66a48ae44589c65d06908a63c4736c917c77de9afc1f4036567afc668"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/ColdRoomTemperatures.sql",
+      "bytes": 969,
+      "sha256": "aecfde01032dc73118856d805e055cf9e1a756b8df462f9738578d71092357c7"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/ColdRoomTemperatures_Archive.sql",
+      "bytes": 564,
+      "sha256": "042039e4410b81ace263f154a4c3418c96bfe738564039f420b0286d2e134f89"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/Colors.sql",
+      "bytes": 1736,
+      "sha256": "e01fcda0b5239a61f869e2b20f38e3f7b39155abde8d2a7bdbe7490e088060eb"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/Colors_Archive.sql",
+      "bytes": 413,
+      "sha256": "f76093a8c4298d88ab4808f3c0925366e8e5583dd649dad4485a28048b875da7"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/PackageTypes.sql",
+      "bytes": 1905,
+      "sha256": "31ccb8369b20eeee35d93a9d205425a8a9b3bdc9a20a5facb29aea29384d1d4a"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/PackageTypes_Archive.sql",
+      "bytes": 446,
+      "sha256": "a41b851679cf99747bde532222e966fe86326f1e579e80e1f39af8347291f474"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/StockGroups.sql",
+      "bytes": 1862,
+      "sha256": "9ed45f27089e0940dc6bf8498f62d19aafa02f527369dc8fa3e3246127550264"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/StockGroups_Archive.sql",
+      "bytes": 438,
+      "sha256": "52e430e77d1334104974f162b56d47311f25dbc92e2a7f56649626d47b46acaf"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/StockItemHoldings.sql",
+      "bytes": 3326,
+      "sha256": "4f5758fa35941c9dabcefe0e95e73d2361544c540b18cefaf2880af0681e30ee"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/StockItemStockGroups.sql",
+      "bytes": 3228,
+      "sha256": "78683e63cdec019b3c530662e17cb2f2c5116cc8bf1b5fbda8335ed740cc68d1"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/StockItemTransactions.sql",
+      "bytes": 7987,
+      "sha256": "bb8a079bd615c0cdedcc5bd0c61e1c4e0e36d26cc2f60a2cf6a69b5bd3b8df00"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/StockItems.sql",
+      "bytes": 11455,
+      "sha256": "493e1c80487adc972b1a6260593508617cb8e58853ea157fca2b2b6eb1a747e9"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/StockItems_Archive.sql",
+      "bytes": 1545,
+      "sha256": "e56b02483bb86b3a2c2284cd9870c378638743e0b56445a58bc55bb5aba181af"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Warehouse/Tables/VehicleTemperatures.sql",
+      "bytes": 679,
+      "sha256": "21afe7b5999135c26afdb286247f32e4749585e72f085a9df64e35c5c185361f"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteBuyingGroup.sql",
+      "bytes": 168,
+      "sha256": "babd57893a998d257eaa15d916c736aba299df36017e7d70414cfbd92bb61f2a"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteCity.sql",
+      "bytes": 140,
+      "sha256": "f49d7af4f5b211bcc426f261667393832157fe6c3594af0d1e1f41e277ee7d1c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteColor.sql",
+      "bytes": 142,
+      "sha256": "884884aab8eb5ff04ed025a4cf3b92589bc78c589e1d3eab7678183204be483e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteCountry.sql",
+      "bytes": 156,
+      "sha256": "841763f6de14494931538384a82a5df1a8fefaeb9ee47e6f7322e2dd17b4268a"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteCustomer.sql",
+      "bytes": 154,
+      "sha256": "f8563e1befef30b1d4bb1addc2ee3cefca641c4c247a1637e56128094b09eaf2"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteCustomerCategory.sql",
+      "bytes": 194,
+      "sha256": "c69a4c5cb9eccdbeaf4cfee1464323bdf708985e913dd4f9a814e5362825eab0"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteDeliveryMethod.sql",
+      "bytes": 189,
+      "sha256": "2f1f7c08f4e775ffc5dd8ef502d0df1d43ff61a66e11fb738e1e8e76d50a9a58"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeletePackageType.sql",
+      "bytes": 172,
+      "sha256": "a93192886fab8c02177f5fbfe35f5d46151e09e245bd069749f94dac7f9f9b66"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeletePaymentMethod.sql",
+      "bytes": 184,
+      "sha256": "8ff5a7bd9dd0bd636e52995b8f5ea190e18a8ef043d248454ca143f911ac7253"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteStateProvince.sql",
+      "bytes": 186,
+      "sha256": "621cf74081c1402c741213974bc39248c1a1478354e0fe38e69bb7f0f790f570"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteStockGroup.sql",
+      "bytes": 167,
+      "sha256": "c4761a2247ea1f2a638902a7f0c64d4805a8744edfc34070a0ae5f42b48c99f3"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteStockItem.sql",
+      "bytes": 163,
+      "sha256": "998fa6e8ed20ab2ad4cd10280189d73e57eae995cdc216b56dca780213845d9f"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteSupplier.sql",
+      "bytes": 159,
+      "sha256": "5629e0eab381760b59bfbd433559ff73727fe6a5ca7edd47cbedd711e8f855fa"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteSupplierCategory.sql",
+      "bytes": 199,
+      "sha256": "07c5dd9bfa484e56a522b2cfc231ee2942e7c0c55017db7363edd312102ad77e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/DeleteTransactionType.sql",
+      "bytes": 194,
+      "sha256": "2f39cc3a85c94fc59047449d5e9b2850a3280f4c2ec05fe874951748660130cd"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertBuyingGroupsFromJson.sql",
+      "bytes": 336,
+      "sha256": "fe14ca76dad1571405d0bc622a048822c85202d2d1fa695332ba170ace242d71"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertCitiesFromJson.sql",
+      "bytes": 491,
+      "sha256": "e9dbde1cad7335f2b8ba5244c5ff2061fd66c6a80d4588c2ee2cdb2993d41c0c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertColorsFromJson.sql",
+      "bytes": 292,
+      "sha256": "ad2df998df24181dfa39e427d2d04e1631a2e17dc7eaf7b6816d6a8b7a28b9f1"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertCountriesFromJson.sql",
+      "bytes": 855,
+      "sha256": "2b06606fd5c35b8952f2a24186cbcb8bcaba6c2d1b5fee6ba4a6806594af58f5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertCustomerCategoriesFromJson.sql",
+      "bytes": 380,
+      "sha256": "98c55995aebdae3ec22a1f439db61f9f8be6db856cb202094abbb24d347b68c9"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertCustomersFromJson.sql",
+      "bytes": 2419,
+      "sha256": "08f6552de9331735072cad801fe89f36424bbc006d21d3a3a6a4e9138844db84"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertDeliveryMethodsFromJson.sql",
+      "bytes": 366,
+      "sha256": "a7e28e39135de5c34d74079639b9e175cbb7cb84acf0ea9cbad5743e4a494b77"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertPackageTypesFromJson.sql",
+      "bytes": 340,
+      "sha256": "7d56bf78b872ef8a5250ffed7384972d835b21c80045e8b60a8e1fc66f1cc779"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertPaymentMethodsFromJson.sql",
+      "bytes": 358,
+      "sha256": "cbd37a822febdf7d2e1264ffaffb02306d46196ffba67f7c01599887b1957a13"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertStateProvincesFromJson.sql",
+      "bytes": 719,
+      "sha256": "49d0a62af0880fe8843b12df3e402a5ebad57c825f55379663a20d5e51ef9536"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertStockGroupsFromJson.sql",
+      "bytes": 332,
+      "sha256": "3cc9eaf4fb7df25d79e230d5db74a5f3fdda288c03554901bed88b6055e2687d"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertStockItemsFromJson.sql",
+      "bytes": 1522,
+      "sha256": "4c7b29f8512e60c933ae7ab2b0d5910e8e69c8cbb176aaa40844396ca64e16cc"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertSupplierCategoriesFromJson.sql",
+      "bytes": 385,
+      "sha256": "38d45c6de69d3818e8226e913e0382b13705e9e50461449dc3e2217aa6e08dbe"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertSuppliersFromJson.sql",
+      "bytes": 2241,
+      "sha256": "4326b3b00316d1f0ae4c61d2f18270f6fb750f61d068a43e131dd68ecbf9f010"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/InsertTransactionTypesFromJson.sql",
+      "bytes": 374,
+      "sha256": "0e65a50614508de90db00823385dbd0c2419f4f7e16ccbeefaab1a8574c1da37"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/Login.sql",
+      "bytes": 397,
+      "sha256": "a2b6aa3a2541848b022466b9b9965e2a0c3f4179e6fc7955f8a098d9221f150e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/SearchForStockItems.sql",
+      "bytes": 1366,
+      "sha256": "1d8b2b21771c2321cadfb9c2e3ffd43d93333808cf8ee1a02c31a907013e3614"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateBuyingGroupFromJson.sql",
+      "bytes": 384,
+      "sha256": "e321be7a3ed55b757a65d0cdc69868a47a6873664aa5aca06d3b9723206a4a9a"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateCityFromJson.sql",
+      "bytes": 537,
+      "sha256": "f7037c1067218a1bb300bee7e90a783cd05c3e0a0fa05f6dc1fb9e01a513c3de"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateColorFromJson.sql",
+      "bytes": 328,
+      "sha256": "88b6a1c782be4f6b45378599c39da84d2f6c5d63e68bc01f1952ec845d476ebc"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateCountryFromJson.sql",
+      "bytes": 1026,
+      "sha256": "c98116cb09c311176ebe4c4c5b2e4d6bd3bfb9fe3c9f07f858f45caca09aeef4"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateCustomerCategoryFromJson.sql",
+      "bytes": 442,
+      "sha256": "ce819ff7444885fc6c5a32d1420edbe3fac612b77a873b314ee64b397bead7f8"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateCustomerFromJson.sql",
+      "bytes": 3012,
+      "sha256": "43b8f8f31c8b504ed031c43a08d3b62e293c5791126c5684e51be44fc36ee3c0"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateCustomerTransactionFromJson.sql",
+      "bytes": 1305,
+      "sha256": "33daf4f18fc1884e85f587e17bd2424efb573235e4b6401b9ebbc6a37f0f993c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateDeliveryMethodFromJson.sql",
+      "bytes": 430,
+      "sha256": "03a9d05442459e219114c07fbae63d2691153a1820cd2e2d1795c6e5f35dbcda"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateInvoiceFromJson.sql",
+      "bytes": 1749,
+      "sha256": "cb016c120bc427ea621faa0170b5e0f2467870a28c80a985f4fcc0cc6983d703"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdatePackageTypeFromJson.sql",
+      "bytes": 393,
+      "sha256": "6567624114ec01985b93d24a42251a9129bbb54831f9bf7ccaa68c200f29a134"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdatePaymentMethodFromJson.sql",
+      "bytes": 419,
+      "sha256": "c3ac79b1366467e89e567623aa58c57c45d8fc812139c5dae77f1b3a270d9e9e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdatePurchaseOrderFromJson.sql",
+      "bytes": 1058,
+      "sha256": "ae8c2f9782cb7ff744dbe1a76ebb6a1d99ea8b5d1b6b3241c684e7611b1d3877"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateSalesOrderFromJson.sql",
+      "bytes": 1399,
+      "sha256": "a4edca85b7de6238456440b5e93d8a1a4192d5504495ddf413af663fbcc2f4b1"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateSpecialDealFromJson.sql",
+      "bytes": 1162,
+      "sha256": "4bfcfb3910e0e76ecd918c3ad672c18d7bc84cd98da9c985f5f6525f5cce05ea"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateStateProvinceFromJson.sql",
+      "bytes": 844,
+      "sha256": "3630be195073820398fe0fcadba56c4a7c0e3433b1a24479b85c5cb547b135bc"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateStockGroupFromJson.sql",
+      "bytes": 382,
+      "sha256": "da3536e861971ee765ecdbd06aeee9e21852aa070910c7c6bffe132242ddc0f5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateStockItemFromJson.sql",
+      "bytes": 1941,
+      "sha256": "e34bd70d2604446e92e5a2cc2df3c6f89a460ccf3c3d9ecf852015680dd4c63c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateSupplierCategoryFromJson.sql",
+      "bytes": 453,
+      "sha256": "33d33ad30501fdf70fbc164bf2d0abcae4190b30a1160d93c9e5d4bcb6bd1678"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateSupplierFromJson.sql",
+      "bytes": 3106,
+      "sha256": "4af3dbcf1b52ebfcd8d1bf0f99d81c733e37fa6d5f3623f874295ed66f5b205c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateSupplierTransactionFromJson.sql",
+      "bytes": 1720,
+      "sha256": "16f84e174090992a4dd0c3e1cc5794862167636f527dae49d1b4765f428ff1d4"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Stored Procedures/UpdateTransactionTypeFromJson.sql",
+      "bytes": 441,
+      "sha256": "d8c923810761796b1283e71a078205d3487eedf55ffca5799adde2740309c225"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/BuyingGroups.sql",
+      "bytes": 103,
+      "sha256": "be28d05ee8cfa8121e33e7abbc904ca50bf1f9d08c97b3d6caa79f71d136bc81"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/Cities.sql",
+      "bytes": 464,
+      "sha256": "75128780fe86ae58ede816f568d844fa7012c1a5d7acfefdb665133b8d3329f2"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/Colors.sql",
+      "bytes": 84,
+      "sha256": "6bfd3afd21d8dd49a152fe069780afb4322fe1bb0e95b14e7eefea20bb537a1e"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/Countries.sql",
+      "bytes": 198,
+      "sha256": "6210fd50347fb96bcb28b02859f2aa99d52a60200c673edc4289fe86e4eeeba5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/CustomerCategories.sql",
+      "bytes": 125,
+      "sha256": "2eaba88c66d447d946f7715addf1fecebdf65f1bb7ff0bff7dd921fe1847c124"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/CustomerTransactions.sql",
+      "bytes": 752,
+      "sha256": "bb1361dd8e65fbf8ccbaca850c717c09c26c7cf1e36872cd6659e9e77935311f"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/Customers.sql",
+      "bytes": 1765,
+      "sha256": "9c9b12d4027681479e94cf232d4d748bd55893f4731fd57578a67bd4470675e9"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/DeliveryMethods.sql",
+      "bytes": 123,
+      "sha256": "b81b4840b5245c1f220432df8416ce945ba042525572ef39ebe4c69f8136bd4c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/Invoices.sql",
+      "bytes": 1091,
+      "sha256": "1eee276f10b639f437c6537d69f79bba6268a0f0b85e38604f13f1a624449669"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/PackageTypes.sql",
+      "bytes": 108,
+      "sha256": "0db0a00cb31222807fbd8f34af2c7914b94c0d910aa1beb7232a7db2f90d593c"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/PaymentMethods.sql",
+      "bytes": 119,
+      "sha256": "37640e59de3e9cb64ca2c14af31e76040b674b3e32348417f305256c174582ef"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/PurchaseOrderLines.sql",
+      "bytes": 551,
+      "sha256": "3e523b6d9f98181f0a4b843169fd23d1953e6fec3312995bae6016e585ff3675"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/PurchaseOrders.sql",
+      "bytes": 518,
+      "sha256": "abaf3c3a29920294288fb687f8770c00dd84c4e46029dc9a39c2ced35ca26774"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/SalesOrderLines.sql",
+      "bytes": 493,
+      "sha256": "5408d266d295d16b1e2ea4002227c52c97c7560b05cce9e8900ba32a6d3354bb"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/SalesOrders.sql",
+      "bytes": 1119,
+      "sha256": "38122e4ce72b602a4098730c40eb44b3492ee019343db368ea16ebd557ebe80f"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/SpecialDeals.sql",
+      "bytes": 756,
+      "sha256": "b505b48650df9233f38e9cfb81def01fd2af902185c0202ffa1524137252cf0b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/StateProvinces.sql",
+      "bytes": 844,
+      "sha256": "8f318432160323692a92848c39311c56b4afe79406700bca4341a50da07e1a6d"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/StockGroups.sql",
+      "bytes": 104,
+      "sha256": "ab61d5559be663a5f78ab383957309d1614cd4e9d87d88a377ed02b7c7a77105"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/StockItems.sql",
+      "bytes": 1043,
+      "sha256": "1530fab655f8fa12b334d1fa95bd50059e175fd3eb19b9e94913f5e0c582dfd5"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/SupplierCategories.sql",
+      "bytes": 130,
+      "sha256": "428baea6ca919f0fa6e02f236cf10eac3b5ebb083a169aded48f0e195f47eb2f"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/SupplierTransactions.sql",
+      "bytes": 982,
+      "sha256": "b6e6a1eabdf68ddc3358c3008c3e3195361fd58eec40fb33bf0b7002479d534f"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/Suppliers.sql",
+      "bytes": 1594,
+      "sha256": "df04dd48b2f53b498be96115963046db4672cef1a2f3bc5824816fe9db43bd4b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WebApi/Views/TransactionTypes.sql",
+      "bytes": 127,
+      "sha256": "c5e057c3db054ab81ce256d2a20075ad052ab7fbe674ab694323435286a14daf"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Functions/CalculateCustomerPrice.sql",
+      "bytes": 4703,
+      "sha256": "0277b31439ac0f6689fb84e5735c9029444cf3410420a61b6a7118016aa8b278"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Stored Procedures/ActivateWebsiteLogon.sql",
+      "bytes": 803,
+      "sha256": "bdc6a047492169c998b843b3381cb216b0e50b86cddfd53c0cac459b13106414"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Stored Procedures/ChangePassword.sql",
+      "bytes": 743,
+      "sha256": "773c47f708147a3b45e844fa512cbe55e405463733e94f9621ee392c30084855"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Stored Procedures/InsertCustomerOrders.sql",
+      "bytes": 2363,
+      "sha256": "fa030c063de85f55ec3f848d854ae35ee0c9d73d081fd1345d2ba285e5beba10"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Stored Procedures/InvoiceCustomerOrders.sql",
+      "bytes": 7455,
+      "sha256": "09c53c616dd0ee455687ad5d8de049e4b27a6a75f1904f0fbb489bd4dbde6811"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Stored Procedures/RecordColdRoomTemperatures.sql",
+      "bytes": 1408,
+      "sha256": "0df39b083182ba9c77af7299a2e1f12d144fcce61705e2cf4cf27496f71fff8d"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Stored Procedures/RecordVehicleTemperature.sql",
+      "bytes": 2177,
+      "sha256": "0b2b1c2fe233d89afb870108e834ab3d3e5c2949c33c18269876222ec665c51d"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Stored Procedures/SearchForCustomers.sql",
+      "bytes": 778,
+      "sha256": "6c462ee66930d5bb761979add07deb95ffc2a9a1302508c3e2f704f73603bb47"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Stored Procedures/SearchForPeople.sql",
+      "bytes": 1076,
+      "sha256": "e0299f8b71d26fcfc5b462ae26c0d2920083e0334c18da2b6926f8f0f8210a92"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Stored Procedures/SearchForStockItems.sql",
+      "bytes": 394,
+      "sha256": "7a2f6d24cca8880d7a9927d9c2584782d61baa8ed0dda9b54fd0454201f7e365"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Stored Procedures/SearchForStockItemsByTags.sql",
+      "bytes": 391,
+      "sha256": "5d23368bf182fdd5e1c7f42b663cac6b36f8b9cf26aa750846613465903e9aa2"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Stored Procedures/SearchForSuppliers.sql",
+      "bytes": 759,
+      "sha256": "d9f729bdc5f9f26d0d5e626c37e00d62c47629a2324e0a3b6d0a1d7da1917e3b"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/User Defined Types/OrderIDList.sql",
+      "bytes": 159,
+      "sha256": "5df6b9b29c574cba88ccc2e6893b1b76c65b6d66ed0d033514f7af89b6496993"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/User Defined Types/OrderLineList.sql",
+      "bytes": 312,
+      "sha256": "3325555e7213d888b22222ae9e78c5c816b90470224c65645bd9d777a94f9780"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/User Defined Types/OrderList.sql",
+      "bytes": 580,
+      "sha256": "1bef3bc3355eaedf7cd8b85ef3ee3144afe40d12f18945160a35e78ec20eb110"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/User Defined Types/SensorDataList.sql",
+      "bytes": 359,
+      "sha256": "18e7da3264ce189acfcbbfe6ed21c1136757ab228c24f220643176eeede49211"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Views/Customers.sql",
+      "bytes": 999,
+      "sha256": "ffc211441ae14340b48dd76117b6162817773a8cacef2abbe71c0075b700a790"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Views/Suppliers.sql",
+      "bytes": 887,
+      "sha256": "5b65a6fd3f2e19bf6ac08657b16da01fb964453b18936c22da6b4d140760ba49"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/Website/Views/VehicleTemperatures.sql",
+      "bytes": 408,
+      "sha256": "15ab3ddd6c454fa05c15d6f060a9c4466ab192473c4f6d7eeeb2a3730b142661"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/WideWorldImporters.sqlproj",
+      "bytes": 42773,
+      "sha256": "02f4e2a7d0afbd038bb99ba0d4d9e82c07c940c14f25aeeb78f841dafd33c8c0"
+    },
+    {
+      "path": "samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt/dbo/Tables/SampleVersion.sql",
+      "bytes": 320,
+      "sha256": "5babf3d46bbcadd8af36066a67f0244f43814fd24bb7ef42ce9061a81c5c9f23"
+    }
+  ]
+}

@@ -21,6 +21,16 @@ end_of_line = lf
 insert_final_newline = unset
 trim_trailing_whitespace = false
 
+# The vendored corpus is Microsoft's, kept byte for byte as fetched and checked against its manifest's hashes
+# (tests/corpus/README.md): no editor or formatter may change its encoding, line endings or whitespace.
+[tests/corpus/sql-server-samples/**]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
 [*.cs]
 # Every code-style rule (IDE*) is a warning, and warnings are errors (Directory.Build.props), so each
 # preference below is enforced by the build and by `dotnet format --verify-no-changes` in CI. Each one is

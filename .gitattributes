@@ -2,3 +2,6 @@
 # so the working tree uses LF everywhere.
 * text=auto eol=lf
 *.png binary
+# The corpus is third-party and vendored byte for byte (tests/corpus/README.md): its hashes are checked against the
+# manifest, so git must not convert its line endings.
+tests/corpus/sql-server-samples/** -text
