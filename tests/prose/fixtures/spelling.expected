@@ -1,3 +1,6 @@
+tests/prose/fixtures/spelling.cs:6:behavior
+tests/prose/fixtures/spelling.cs:6:normalized
+tests/prose/fixtures/spelling.cs:10:recieved
 tests/prose/fixtures/spelling.md:6:behavior
 tests/prose/fixtures/spelling.md:6:favorite
 tests/prose/fixtures/spelling.md:8:recieved

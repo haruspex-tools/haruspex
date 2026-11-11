@@ -36,8 +36,9 @@ Fix the text. When the text is right and the tool is wrong:
 
 - **cspell**, because it reads code as well as prose: it splits identifiers (`IrJsonWriter` is checked as three
   words) and knows C#'s keywords. It runs with the `en-GB` dictionary, which refuses most American spellings
-  but accepts the Oxford ones in *-ize*; the software dictionaries cspell adds accept more. So British spelling
-  in prose is also a Vale rule, `haruspex.Spelling`: a pattern for every *-ize* and *-yze* word (bar *size*,
+  but accepts the Oxford ones in *-ize*; the software dictionaries cspell adds accept more, in C# strings too. So
+  `cspell.config.yaml` forbids the American and Oxford forms of the verbs a technical text uses, which is what
+  checks the diagnostics in C# strings, and British spelling in prose is also a Vale rule, `haruspex.Spelling`: a pattern for every *-ize* and *-yze* word (bar *size*,
   *prize* and a few that are British too) and a list of the common American forms
   that no pattern catches. A pattern, not a list, so a word nobody thought of is caught too.
 - **Vale**, because its rules are small YAML files that state the guide's rules directly, and because it reads

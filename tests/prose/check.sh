@@ -67,7 +67,7 @@ spelling() {
   npm_ready || return 1
   local cspell=$here/node_modules/.bin/cspell found
   # "file:line:col - Unknown word (x)" becomes "file:line:x". cspell exits 1 here: the fixture is misspelt.
-  found=$("$cspell" --no-progress --no-summary --no-color "$fixtures/spelling.md" \
+  found=$("$cspell" --no-progress --no-summary --no-color "$fixtures/spelling.md" "$fixtures/spelling.cs" \
     | sed -E 's/^([^:]+):([0-9]+):[0-9]+ - [A-Za-z ]+ \(([^)]*)\).*$/\1:\2:\3/')
   expect "$fixtures/spelling.expected" "$found" spelling || return 1
   files '*.md' '*.cs' '.github/workflows/*.yml' | "$cspell" --no-progress --file-list stdin
