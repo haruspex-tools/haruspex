@@ -38,3 +38,11 @@ Passes: `Haruspex.Ir` and Haruspex.Ir are namespaces, HaruspexCli is a type, and
 Passes: a read-only, well-known hyphen; and a sentence that ends with haruspex.
 
 Passes: the size of a prize, JsonSerializer and ProcedureAnalyzer (identifiers), and `normalize` in code.
+
+History: slice 6g added this rule.
+
+History: fixed in review round 1.
+
+History: as haruspex-design.md decided.
+
+Passes: a slice of the data, and a span's slice taken with `Slice(2)`.

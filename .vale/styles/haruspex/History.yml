@@ -1,0 +1,15 @@
+# No history that leads nowhere (docs/style.md, "No history as narrative"). The plan's slice names, its review
+# rounds and its design document are private, so a public reader can't follow them: name the construct, the README
+# section or the observed test instead, and give a dated decision where the past explains the code. A "slice" of
+# data, or slicing a span, names no slice and passes: only a slice followed by its name or number is flagged.
+extends: existence
+message: "'%s' points into the project's private history; name what it points at: the construct, the README section or the observed test."
+level: error
+ignorecase: true
+tokens:
+  - slices? S?\d+[a-z]?
+  - slice-[a-z0-9]+
+  - review round \d+
+  - round \d+, finding \d+
+  - haruspex-design(?:\.md)?
+  - slices\.md

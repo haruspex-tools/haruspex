@@ -9,4 +9,7 @@ public static class Haruspex
 
     /* A block comment, e.g. this one, which would realize nothing. */
     public static int Value(int? x) => x!.Value;
+
+    // Slice 6f: the common expressions.
+    public static string Slice => "slice 6f".Substring(0, 5);
 }
