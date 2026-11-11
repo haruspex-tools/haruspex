@@ -90,9 +90,10 @@ dotnet_style_explicit_tuple_names = true
 dotnet_style_prefer_inferred_tuple_names = true
 dotnet_style_prefer_inferred_anonymous_type_member_names = true
 dotnet_style_prefer_auto_properties = true
-dotnet_style_prefer_conditional_expression_over_assignment = true
-# A chain of guard clauses, one case to a line with its comment, reads better than the nested ?: this would ask for.
+# A chain of guard clauses or of if/else if, one case to a line with its comment, reads better than the nested ?:
+# these would ask for.
 dotnet_style_prefer_conditional_expression_over_return = false
+dotnet_style_prefer_conditional_expression_over_assignment = false
 dotnet_style_prefer_compound_assignment = true
 dotnet_style_prefer_simplified_interpolation = true
 dotnet_style_prefer_simplified_boolean_expressions = true
@@ -215,10 +216,15 @@ dotnet_diagnostic.CA1064.severity = none
 # Public members are documented where the API is reusable (below); elsewhere a comment is written where it says
 # something the name does not, and a rule demanding one on every member would produce restatements.
 dotnet_diagnostic.CS1591.severity = none
+# In the internal layers a <param> is written for the parameter whose meaning its name and the summary do not give;
+# demanding one for every other parameter as soon as one is written would produce restatements ("a: the first value").
+dotnet_diagnostic.CS1573.severity = none
 
 [src/{Haruspex.Diagnostics,Haruspex.SqlServer.Model,Haruspex.SqlServer.Sources,Haruspex.SqlServer.Semantics,Haruspex.Ir}/**.cs]
-# The packable layers, and the reusable ones that may follow them: every public member documented.
+# The packable layers, and the reusable ones that may follow them: every public member documented, and every
+# parameter of a documented member.
 dotnet_diagnostic.CS1591.severity = error
+dotnet_diagnostic.CS1573.severity = error
 
 [src/Haruspex.Ir/**.cs]
 # The IR's vocabulary is type names (String, Int32, Object), which is exactly what CA1720 forbids.
