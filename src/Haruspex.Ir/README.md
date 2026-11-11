@@ -421,7 +421,9 @@ For the IR:
 - `COALESCE` over JSON is `json-text` wherever it nests, its `content` what the arguments hold (a fallback `'[]'` removes the
   array's `minItems`, `'{}'` adds the empty object as a variant of a `union`); `ISNULL` over JSON is JSON where it nests, with
   the same content, and never null with a literal fallback. A `CASE`, `IIF`, `CHOOSE` or `NULLIF` over JSON is unknown
-  (`unsupported-expression`): whether it nests as JSON depends on whether the server folds it.
+  (`unsupported-expression`): whether it nests as JSON depends on whether the server folds it. (Since slice 6l: under
+  `json_query`, and when every result is JSON text, `CASE`, `IIF` and `CHOOSE` hold the join of their results' JSON, and any
+  literal that is a JSON document counts as JSON, not only `'[]'` and `'{}'`.)
 
 ## Set operations, CROSS JOIN, FULL OUTER JOIN and OPENJSON (0.13)
 
@@ -499,6 +501,27 @@ are in `Haruspex.SqlServer.Inference/README.md` ("Combining types"). For the IR:
 - Types SQL Server refuses to combine (an operand type clash, 206) stay unknown (`unsupported-expression`), the detail naming
   both types. So does a column whose scale turns on whether the server folds an int expression to a constant (a `CASE` or
   `IIF` of int literals beside a decimal past 38 digits), the detail naming the expression.
+
+No record, rule or reason was added, and every meaning stays as 0.15 describes it, so the version is unchanged: a 0.15 reader
+reads these documents as they are.
+
+## JSON built here, traced (slice 6l, still 0.15)
+
+JSON built in the project keeps its shape on the way to where it is read: through variables, table variables, temporary tables,
+multi-statement functions' return tables, JSON literals, `COALESCE`, `CASE`, `IIF` and `ISNULL`, and into `OPENJSON` and
+`JSON_VALUE`. The engine rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("JSON built here, traced"). For
+the IR:
+
+- More values are `json-text` with `content`, and more `json_query` results are JSON of a known type, where they were unknown
+  (`json-shape-unknown`) before. Where a place may also hold text that is not JSON built here, `json_query` over it is still
+  `json-shape-unknown`, located at the write that made it so and naming it.
+- A JSON literal's content is exact: an array is a `tuple` (`'[]'` the empty one), an object's keys are `always` present, a
+  JSON `null` is `null-literal`, and a string's or number's `values` is the literal's own, with the fact source `expression`
+  at the literal. Its scalars have no `sql` (they are JSON, not a SQL type), as 0.7 allows. JSON that may be either of two
+  shapes that do not join is a `union`.
+- `OPENJSON` and `JSON_VALUE` over such JSON can be never null, and keep the facets and `values` the JSON's own type proves.
+  `OPENJSON`'s `key` and `type`, and `JSON_VALUE` of `true` or `false`, have `values` from the fact source `engine`, its ref
+  naming the function.
 
 No record, rule or reason was added, and every meaning stays as 0.15 describes it, so the version is unchanged: a 0.15 reader
 reads these documents as they are.

@@ -1,0 +1,423 @@
+{
+  "irVersion": "0.15",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "kit.kit_sheets",
+      "name": "KitSheets",
+      "kind": "procedure",
+      "at": "procedures/kit_sheets.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "KitSheetsResult1Row"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/kit_sheets.sql:20:1"
+            }
+          ],
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "KitSheetsResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "KitSheetsResult1Card": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_sheets",
+        "path": "results[0][].card"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "KitSheetsResult1CopiedItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_sheets",
+        "path": "results[0][].copied[]"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "string",
+                "sql": "varchar(8)",
+                "maxLength": {
+                  "value": 8,
+                  "unit": "bytes",
+                  "from": {
+                    "type": "varchar(8)"
+                  }
+                }
+              },
+              {
+                "kind": "string",
+                "values": {
+                  "match": "exact",
+                  "items": [
+                    "SPARE"
+                  ],
+                  "from": [
+                    {
+                      "expression": "procedures/kit_sheets.sql:18:44"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "qty",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "number",
+                "format": "uint8",
+                "sql": "tinyint",
+                "min": {
+                  "value": 0,
+                  "inclusive": true,
+                  "from": {
+                    "type": "tinyint"
+                  }
+                },
+                "max": {
+                  "value": 255,
+                  "inclusive": true,
+                  "from": {
+                    "type": "tinyint"
+                  }
+                }
+              },
+              {
+                "kind": "number",
+                "values": {
+                  "match": "exact",
+                  "items": [0
+                  ],
+                  "from": [
+                    {
+                      "expression": "procedures/kit_sheets.sql:18:44"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "KitSheetsResult1Part": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_sheets",
+        "path": "results[0][].parts[]"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "qty",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "KitSheetsResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_sheets",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "kit_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "parts",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "KitSheetsResult1Part"
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "@sheets.parts"
+            }
+          ]
+        },
+        {
+          "name": "card",
+          "type": {
+            "ref": "KitSheetsResult1Card"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "copied",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "KitSheetsResult1CopiedItem"
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "#sheets.parts"
+            }
+          ]
+        }
+      ]
+    },
+    "KitSheetsResult2Parts": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_sheets",
+        "path": "results[1][].parts<json>[]"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "string",
+                "sql": "varchar(8)",
+                "maxLength": {
+                  "value": 8,
+                  "unit": "bytes",
+                  "from": {
+                    "type": "varchar(8)"
+                  }
+                }
+              },
+              {
+                "kind": "string",
+                "values": {
+                  "match": "exact",
+                  "items": [
+                    "SPARE"
+                  ],
+                  "from": [
+                    {
+                      "expression": "procedures/kit_sheets.sql:18:44"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "qty",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "number",
+                "format": "uint8",
+                "sql": "tinyint",
+                "min": {
+                  "value": 0,
+                  "inclusive": true,
+                  "from": {
+                    "type": "tinyint"
+                  }
+                },
+                "max": {
+                  "value": 255,
+                  "inclusive": true,
+                  "from": {
+                    "type": "tinyint"
+                  }
+                }
+              },
+              {
+                "kind": "number",
+                "values": {
+                  "match": "exact",
+                  "items": [0
+                  ],
+                  "from": [
+                    {
+                      "expression": "procedures/kit_sheets.sql:18:44"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "KitSheetsResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_sheets",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "kit_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "parts",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "ref": "KitSheetsResult2Parts"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "#sheets.parts"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

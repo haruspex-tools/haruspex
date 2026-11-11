@@ -68,6 +68,10 @@ internal sealed partial class ProcedureAnalyzer
         foreach (var name in target.Temps.Where(t => after.Temp(t) is KnownTable))
             after = after.WithTemp(name, Unknown(name, Unsupported(IrUnknownReasons.UnsupportedStatement, $"It is written through a CTE or derived table at {at}, which is not followed.", at)));
 
+        // So is a table variable's JSON (slice 6l): one a write through a CTE or derived table may change is no longer known.
+        if (target.Direct is null)
+            after = Underneath(after, spec.Target, with, at);
+
         return Continue(Output(statement, spec, from, where, with, target, state, after));
     }
 
@@ -252,8 +256,16 @@ internal sealed partial class ProcedureAnalyzer
     /// INSERT's; a table variable is its declaration; a permanent table's own triggers never run, since OUTPUT … INTO a table
     /// with an enabled trigger fails (observed: Output_into_a_table_with_an_enabled_trigger_fails).
     /// </summary>
-    private static FlowState OutputInto(OutputIntoClause into, Row row, FlowState state, SourceLocation at)
+    private FlowState OutputInto(OutputIntoClause into, Row row, FlowState state, SourceLocation at)
     {
+        if (into.IntoTable is NamedTableReference { SchemaObject: { SchemaIdentifier: null, BaseIdentifier.Value: var variable } } && variable.StartsWith('@'))
+        {
+            var columns = TableVariableTargets(variable, into.IntoTableColumns);
+            return row.Star is null && columns is not null && columns.Count == row.Columns.Count
+                ? TableVariableWritten(state, variable, columns, [[.. row.Columns.Select(c => c.Value)]], [[.. row.Columns.Select(c => c.Expression)]], at)
+                : TableVariableWritten(state, variable, null, null, null, at);
+        }
+
         if (into.IntoTable is not NamedTableReference { SchemaObject: var name } || !IsTemporary(name))
             return state;
         var table = name.BaseIdentifier.Value;
@@ -266,7 +278,7 @@ internal sealed partial class ProcedureAnalyzer
             : into.IntoTableColumns.Select(c => IndexOf(known, c.MultiPartIdentifier.Identifiers[^1].Value)).ToList();
         if (targets.Any(i => i < 0) || targets.Count != row.Columns.Count)
             return state.WithTemp(table, Unknown(table, Unsupported(IrUnknownReasons.UnresolvedColumn, $"The OUTPUT at {at} does not match the columns of {table} one to one.", at)));
-        return state.WithTemp(table, Written(known, targets, [[.. row.Columns.Select(c => c.Value)]], at));
+        return state.WithTemp(table, Written(known, targets, [[.. row.Columns.Select(c => c.Value)]], at, [[.. row.Columns.Select(c => c.Expression)]]));
     }
 
     /// <summary>

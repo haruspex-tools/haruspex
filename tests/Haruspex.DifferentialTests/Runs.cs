@@ -28,7 +28,7 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs", "cases", "sets", "funcs", "ledger", "bazaar"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs", "cases", "sets", "funcs", "ledger", "bazaar", "kits"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
@@ -63,6 +63,7 @@ public static class Runs
     private const string NoGym = "DELETE FROM gym.visit; DELETE FROM gym.member;";
     private const string NoLines = "DELETE FROM ledger.line;";
     private const string Lenient = "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;";
+    private const string NoKits = "DELETE FROM kit.kit_part; DELETE FROM kit.kit;";
     private const string NoMarketDay = "DELETE FROM bazaar.stall_sale; DELETE FROM bazaar.web_order; DELETE FROM bazaar.auction_lot; DELETE FROM bazaar.barter;";
 
     private static readonly Dictionary<string, object?> None = [];
@@ -361,6 +362,22 @@ public static class Runs
         new("bazaar: mixed", "bazaar", "bazaar.mixed", None),
         new("bazaar: mixed, under ANSI_WARNINGS and ARITHABORT off", "bazaar", "bazaar.mixed", None, Lenient),
         new("bazaar: lenient, under ANSI_WARNINGS and ARITHABORT off", "bazaar", "bazaar.lenient", None, Lenient),
+        new("kits: get_kit, with parts", "kits", "kit.get_kit", new Dictionary<string, object?> { ["@kit_id"] = 1 }),
+        new("kits: get_kit, no parts", "kits", "kit.get_kit", new Dictionary<string, object?> { ["@kit_id"] = 2 }),
+        new("kits: get_kit, no kit", "kits", "kit.get_kit", new Dictionary<string, object?> { ["@kit_id"] = 99 }),
+        new("kits: get_kit, no parts and no fallback", "kits", "kit.get_kit", new Dictionary<string, object?> { ["@kit_id"] = 4 }),
+        new("kits: kit_sheets", "kits", "kit.kit_sheets", None),
+        new("kits: kit_sheets, no kits", "kits", "kit.kit_sheets", None, NoKits),
+        new("kits: kit_routes, every kit", "kits", "kit.kit_routes", new Dictionary<string, object?> { ["@kit_id"] = null }),
+        new("kits: kit_routes, a kit with no parts", "kits", "kit.kit_routes", new Dictionary<string, object?> { ["@kit_id"] = 2 }),
+        new("kits: kit_routes, no kit", "kits", "kit.kit_routes", new Dictionary<string, object?> { ["@kit_id"] = 99 }),
+        new("kits: part_rows, with parts", "kits", "kit.part_rows", new Dictionary<string, object?> { ["@kit_id"] = 1 }),
+        new("kits: part_rows, no parts", "kits", "kit.part_rows", new Dictionary<string, object?> { ["@kit_id"] = 2 }),
+        new("kits: part_rows, no kit", "kits", "kit.part_rows", new Dictionary<string, object?> { ["@kit_id"] = 50 }),
+        new("kits: part_rows, no kit and no style rows", "kits", "kit.part_rows", new Dictionary<string, object?> { ["@kit_id"] = 99 }),
+        new("kits: kit_badges, with parts", "kits", "kit.kit_badges", new Dictionary<string, object?> { ["@kit_id"] = 1 }),
+        new("kits: kit_badges, no parts", "kits", "kit.kit_badges", new Dictionary<string, object?> { ["@kit_id"] = 2 }),
+        new("kits: kit_badges, stored extras", "kits", "kit.kit_badges", new Dictionary<string, object?> { ["@kit_id"] = 3 }),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

@@ -30,6 +30,9 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>How many result sets have been added to any state, so that a loop can tell whether its body returns any.</summary>
     private int appended;
 
+    /// <summary>Each table variable's declaration, from every DECLARE in the body.</summary>
+    private readonly Dictionary<string, Table> tableVariableDefinitions = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Each scalar variable's declared type, from every DECLARE in the body.</summary>
     private readonly Dictionary<string, Shape> variableShapes = new(StringComparer.OrdinalIgnoreCase);
 
@@ -48,7 +51,10 @@ internal sealed partial class ProcedureAnalyzer
     /// Walks a procedure's body from <see cref="context"/>: the state at its end, joined over the paths that return
     /// successfully, and what stopped the walk, if anything did.
     /// </summary>
-    public Walked Walk(ProcedureStatementBody procedure)
+    /// <param name="returnTable">
+    /// A multi-statement function's return table, a table variable its body fills (slice 6l); null for a procedure.
+    /// </param>
+    public Walked Walk(ProcedureStatementBodyBase procedure, DeclareTableVariableBody? returnTable = null)
     {
         // Declarations are compiled, not run (observed: a variable or table variable declared in a branch not taken still
         // exists), so they are collected from the whole body first. A name can be declared once in a batch.
@@ -84,12 +90,13 @@ internal sealed partial class ProcedureAnalyzer
             start.Add(new(name, new Value(variableShapes[name], Because(IrNullRules.Variable, name, variableShapes[name]), live)));
         }
 
-        foreach (var table in declarations.Tables)
+        foreach (var table in returnTable is null ? declarations.Tables : declarations.Tables.Prepend(returnTable))
         {
             var name = table.VariableName.Value;
             if (tableVariables.ContainsKey(name))
                 continue;
             var definition = Table.FromDefinition(new ObjectName("", name), table.Definition, file, At(table));
+            tableVariableDefinitions[name] = definition;
             tableVariables[name] = new LocalRelationValues(
                 [.. definition.Columns.Select(c => c.Name)],
                 [.. definition.Columns.Select(c => Declared(definition, c, name, temporary: false))],
@@ -97,7 +104,27 @@ internal sealed partial class ProcedureAnalyzer
         }
 
         locals = Locals(tableVariables);
-        var walked = Walk(procedure.StatementList.Statements, FlowState.Start(start).WithTemps(context.Temps).WithReadUncommitted(context.ReadUncommitted));
+        var initial = FlowState.Start(start).WithTemps(context.Temps).WithReadUncommitted(context.ReadUncommitted);
+
+        // What each variable and table variable column of nvarchar(max) holds as JSON: nothing yet (slice 6l). A parameter is
+        // the caller's, so it is not traced.
+        foreach (var element in declarations.Variables)
+        {
+            if (Traced(variableShapes[element.VariableName.Value]) && !initial.Json.ContainsKey(element.VariableName.Value)
+                && !procedure.Parameters.Any(p => p.VariableName.Value.Equals(element.VariableName.Value, StringComparison.OrdinalIgnoreCase)))
+                initial = initial.WithJson(element.VariableName.Value, JsonSlot.Empty);
+        }
+
+        foreach (var (name, table) in tableVariables)
+        {
+            foreach (var (column, value) in table.Names!.Zip(table.Values!))
+            {
+                if (Traced(value))
+                    initial = initial.WithJson($"{name}.{column}", JsonSlot.Empty);
+            }
+        }
+
+        var walked = Walk(procedure.StatementList.Statements, initial);
         if (blocker is not null)
             return new Walked(null, [], blocker, declaredUsed);
 
@@ -191,10 +218,10 @@ internal sealed partial class ProcedureAnalyzer
                 return Continue(RolledBack(state, at));
             case DeclareVariableStatement declare:
                 foreach (var element in declare.Declarations.Where(d => d.Value is not null))
-                    state = Assign(state, element.VariableName.Value, Expression(element.Value, NoFrom()), definitely: true, at);
+                    state = Assign(state, element.VariableName.Value, Expression(element.Value, NoFrom()), definitely: true, at, element.Value);
                 return Continue(state);
             case SetVariableStatement set when set.CursorDefinition is null && set.Identifier is null && set.Expression is not null:
-                return Continue(Assign(state, set.Variable.Name, Assigned(set.AssignmentKind, set.Expression, NoFrom(), set), definitely: true, at));
+                return Continue(Assign(state, set.Variable.Name, Assigned(set.AssignmentKind, set.Expression, NoFrom(), set), definitely: true, at, set.Expression));
             case BeginEndBlockStatement block:
                 return Walk(block.StatementList.Statements, state);
             case IfStatement branch:
@@ -372,7 +399,9 @@ internal sealed partial class ProcedureAnalyzer
         // the variable's declared type, which every assignment converts to, or null.
         if (unfiltered && variableShapes.TryGetValue(variable.Name, out var declared))
             return new Value(declared, Because(IrNullRules.Variable, variable.Name, declared), value.IsLiveJson);
-        return value;
+
+        // A variable holding JSON built here holds it as text (slice 6l).
+        return locals.State.Json.TryGetValue(variable.Name, out var slot) ? slot.Read(value) : value;
     }
 
     /// <summary>The value an assignment writes: the expression, unless a compound one (<c>+=</c>) combines it with the old.</summary>
@@ -385,13 +414,21 @@ internal sealed partial class ProcedureAnalyzer
     /// Assigns a variable: its type stays its declared one, which the value is converted to, and it is null when the value
     /// may be. An assignment that may not happen (a SELECT that may match no rows) joins with the value before.
     /// </summary>
-    private FlowState Assign(FlowState state, string name, Value value, bool definitely, SourceLocation at)
+    /// <param name="expression">The expression assigned, when there is one: a JSON literal is read for its content.</param>
+    private FlowState Assign(FlowState state, string name, Value value, bool definitely, SourceLocation at, ScalarExpression? expression = null)
     {
         if (!variableShapes.TryGetValue(name, out var shape) || !state.Variables.TryGetValue(name, out var old))
             return state;
         var because = shape is UnknownShape unknown ? ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.Unknown, unknown.At.ToString())]) : Converting(value, shape, at);
         var assigned = new Value(shape, because, old.IsLiveJson);
-        return state.WithVariable(name, definitely ? assigned : ShapeJoin.Either(old, assigned, at, name));
+        state = state.WithVariable(name, definitely ? assigned : ShapeJoin.Either(old, assigned, at, name));
+        if (state.Json.TryGetValue(name, out var slot))
+        {
+            var written = JsonWritten(value, expression, at, name);
+            state = state.WithJson(name, definitely ? written : JsonSlot.Join(slot, written));
+        }
+
+        return state;
     }
 
     // ---- SELECT ---------------------------------------------------------------------------------------------------
@@ -426,7 +463,7 @@ internal sealed partial class ProcedureAnalyzer
                 var value = unknown
                     ? Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, "WITH XMLNAMESPACES is not modelled yet.", At(assignment)))
                     : Assigned(assignment.AssignmentKind, assignment.Expression, scope, assignment);
-                state = Assign(state, assignment.Variable.Name, value, once, At(assignment));
+                state = Assign(state, assignment.Variable.Name, value, once, At(assignment), unknown ? null : assignment.Expression);
             }
 
             return state;
@@ -461,7 +498,7 @@ internal sealed partial class ProcedureAnalyzer
                 return Unknown(name, Unsupported(IrUnknownReasons.UnnamedColumn, $"SELECT … INTO {name} has a column without a name, or two of one name, which SQL Server refuses.", at));
             // Through a set operation SQL Server does not copy IDENTITY (observed: Select_into_from_a_union_does_not_copy_an_identity).
             var identity = select.QueryExpression is QuerySpecification query ? Identities(query) : new bool?[row.Columns.Count];
-            return new KnownTable(name, [.. row.Columns.Select((c, i) => new TempColumn(c.Name!, Stored(c.Value, $"{name}.{c.Name}", c.At), null, identity[i]))]);
+            return new KnownTable(name, [.. row.Columns.Select((c, i) => new TempColumn(c.Name!, Stored(c.Value, $"{name}.{c.Name}", c.At, c.Expression), null, identity[i]))]);
         }, why => Unknown(name, why));
         return state.WithTemp(name, table);
     }
@@ -508,8 +545,15 @@ internal sealed partial class ProcedureAnalyzer
         };
     }
 
-    private static Value Stored(Value value, string column, SourceLocation at) => value.IsLiveJson
-        ? Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"JSON stored in {column} is text unless its SQL type is json, which is not tracked yet.", at))
+    /// <param name="expression">
+    /// The expression stored, when <c>SELECT … INTO</c> makes the column from it: a FOR JSON subquery or a constructor not
+    /// <c>RETURNING json</c> makes an <c>nvarchar(max)</c> column, holding the JSON as text (observed:
+    /// Select_into_makes_nvarchar_max_of_built_json_and_json_of_returning_json).
+    /// </param>
+    private static Value Stored(Value value, string column, SourceLocation at, ScalarExpression? expression = null) => value.IsLiveJson
+        ? expression is not null && BuiltAsText(expression) && value.Shape is not UnknownShape
+            ? new Value(new JsonTextShape(value.Shape), value.NullableBecause)
+            : Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"JSON stored in {column} is text unless its SQL type is json, which is not tracked yet.", at))
         : value;
 
     // ---- writes to temporary tables -------------------------------------------------------------------------------
@@ -522,6 +566,8 @@ internal sealed partial class ProcedureAnalyzer
     private FlowState Insert(InsertStatement insert, DmlTarget target, FlowState state)
     {
         var spec = insert.InsertSpecification;
+        if (target.Direct is { } variable && variable.StartsWith('@'))
+            return TableVariableInsert(insert, variable, state);
         if (target.Direct is not { } name || !name.StartsWith('#') || state.Temp(name) is not KnownTable table)
             return state;
 
@@ -539,7 +585,7 @@ internal sealed partial class ProcedureAnalyzer
         if (rows is null)
             return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReasons.UnsupportedStatement, "The insert's values do not match its columns one to one.", at)));
 
-        return state.WithTemp(name, Written(table, targets, rows, at));
+        return state.WithTemp(name, Written(table, targets, rows, at, InsertedExpressions(spec.InsertSource, rows.Count)));
     }
 
     /// <summary>
@@ -548,28 +594,60 @@ internal sealed partial class ProcedureAnalyzer
     /// insert leaves it out, unless it is an identity column, which takes its next value.
     /// </summary>
     /// <param name="targets">The table's column each value of a row goes to, by position.</param>
-    private static KnownTable Written(KnownTable table, List<int> targets, IEnumerable<IReadOnlyList<Value>> rows, SourceLocation at)
+    /// <param name="expressions">Each row's expressions, by the same positions, when the rows are written from the source.</param>
+    private KnownTable Written(KnownTable table, List<int> targets, IEnumerable<IReadOnlyList<Value>> rows, SourceLocation at, IReadOnlyList<IReadOnlyList<ScalarExpression?>>? expressions = null)
     {
+        var all = rows.ToList();
         var columns = table.Columns.ToList();
         for (var i = 0; i < columns.Count; i++)
         {
-            if (columns[i].Declaration is not null)
-                continue;
             var column = columns[i];
             var where = $"{table.Name}.{column.Name}";
             var position = targets.IndexOf(i);
+            if (column.Declaration is not null)
+            {
+                // A declared column's value is its declaration's, but what it holds as JSON is what is written (slice 6l). One the
+                // insert leaves out takes its default, which is not read.
+                if (column.Json is { } slot)
+                    columns[i] = column with { Json = JsonSlot.Join(slot, JsonRows(all, expressions, position, at, where)) };
+                continue;
+            }
 
             // An identity column the insert leaves out gets its next value, never null.
             if (position < 0 && column.Identity == true)
                 continue;
             var written = position < 0
                 ? [new Value(column.Value.Shape, [new IrNullReason(IrNullRules.NullableColumn, where)])]
-                : rows.Select(r => Stored(r[position], where, at));
+                : all.Select(r => Stored(r[position], where, at));
             columns[i] = column with { Value = written.Aggregate(column.Value, (all, value) => ShapeJoin.Converted(all, value, at, where)) };
         }
 
         return table with { Columns = columns };
     }
+
+    /// <summary>
+    /// What rows written put in a traced column as JSON (<see cref="JsonSlot"/>): the join of each row's value at
+    /// <paramref name="position"/>, or, when the write leaves the column out (a negative position), its default, which is not read.
+    /// </summary>
+    private JsonSlot JsonRows(IReadOnlyList<IReadOnlyList<Value>> rows, IReadOnlyList<IReadOnlyList<ScalarExpression?>>? expressions, int position, SourceLocation at, string where)
+    {
+        if (position < 0)
+            return JsonSlot.Text(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{where} is left out by the write {Text(at)}, so it takes its default, which is not read.", at));
+        return rows.Select((r, n) => JsonWritten(r[position], expressions?[n][position], at, where)).Aggregate(JsonSlot.Empty, JsonSlot.Join);
+    }
+
+    /// <summary>
+    /// The expressions each row of an insert writes, by position, where the source has them as written: a VALUES list's, or a
+    /// query's select list (a set operation's are not read). Null otherwise; a value is then read as JSON by its shape alone.
+    /// </summary>
+    private static IReadOnlyList<IReadOnlyList<ScalarExpression?>>? InsertedExpressions(InsertSource source, int rows) => source switch
+    {
+        ValuesInsertSource { IsDefaultValues: false } values when values.RowValues.Count == rows =>
+            [.. values.RowValues.Select(r => (IReadOnlyList<ScalarExpression?>)[.. r.ColumnValues])],
+        SelectInsertSource { Select: QuerySpecification query } when rows == 1 && query.SelectElements.All(e => e is SelectScalarExpression) =>
+            [[.. query.SelectElements.Cast<SelectScalarExpression>().Select(e => (ScalarExpression?)e.Expression)]],
+        _ => null,
+    };
 
     /// <summary>The values each row of an insert writes, by the insert's column positions; null when a row has the wrong number.</summary>
     private List<IReadOnlyList<Value>>? InsertedRows(InsertSource source, int count, SourceLocation at)
@@ -619,7 +697,13 @@ internal sealed partial class ProcedureAnalyzer
 
                 var value = Assigned(set.AssignmentKind, set.NewValue, scope, set);
                 if (set.Variable is { } variable)
-                    state = Assign(state, variable.Name, value, definitely: false, At(set));
+                    state = Assign(state, variable.Name, value, definitely: false, At(set), set.NewValue);
+                if (set.Column is not null && target.StartsWith('@') && state.Json.TryGetValue($"{target}.{set.Column.MultiPartIdentifier.Identifiers[^1].Value}", out var traced))
+                {
+                    var key = $"{target}.{set.Column.MultiPartIdentifier.Identifiers[^1].Value}";
+                    state = state.WithJson(key, JsonSlot.Join(traced, JsonWritten(value, set.NewValue, At(set), key)));
+                }
+
                 if (set.Column is null || columns is null)
                     continue;
 
@@ -631,6 +715,10 @@ internal sealed partial class ProcedureAnalyzer
                     var where = $"{target}.{columns[i].Name}";
                     columns[i] = columns[i] with { Value = ShapeJoin.Converted(columns[i].Value, Stored(value, where, at), at, where) };
                 }
+                else if (columns[i].Json is { } slot)
+                {
+                    columns[i] = columns[i] with { Json = JsonSlot.Join(slot, JsonWritten(value, set.NewValue, At(set), $"{target}.{columns[i].Name}")) };
+                }
             }
 
             return table is null ? state : state.WithTemp(target, table with { Columns = columns! });
@@ -641,6 +729,7 @@ internal sealed partial class ProcedureAnalyzer
     private FlowState Merge(MergeStatement merge, DmlTarget target, FlowState state) =>
         target.Direct is { } name && name.StartsWith('#') && state.Temp(name) is KnownTable
             ? state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReasons.UnsupportedStatement, $"MERGE at {At(merge)} is not modelled yet.", At(merge))))
+            : target.Direct is { } variable && variable.StartsWith('@') ? TableVariableWritten(state, variable, null, null, null, At(merge))
             : state;
 
     // ---- creating and altering temporary tables -----------------------------------------------------------------
@@ -662,7 +751,21 @@ internal sealed partial class ProcedureAnalyzer
     {
         var name = create.SchemaObjectName.BaseIdentifier.Value;
         var definition = Table.FromDefinition(new ObjectName("", name), create.Definition, file, At(create));
-        return new KnownTable(name, [.. definition.Columns.Select(c => new TempColumn(c.Name, Declared(definition, c, name, temporary: true), definition, c.IsIdentity))]);
+        return new KnownTable(name, [.. definition.Columns.Select(c => Fresh(definition, c, name, c.IsIdentity, null))]);
+    }
+
+    /// <summary>
+    /// A declared column of a temporary table, as created: of <c>nvarchar(max)</c>, it is traced for JSON (slice 6l), holding none
+    /// yet, unless its rows were given values at <paramref name="filled"/> (a column added with a default, or one whose type
+    /// changed), which are not read.
+    /// </summary>
+    private TempColumn Fresh(Table definition, Column column, string name, bool? identity, SourceLocation? filled)
+    {
+        var value = Declared(definition, column, name, temporary: true);
+        var json = !Traced(value) || column.IsComputed ? null
+            : filled is { } at ? JsonSlot.Text(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{name}.{column.Name} is given values {Text(at)} that are not read.", at))
+            : JsonSlot.Empty;
+        return new TempColumn(column.Name, value, definition, identity, json);
     }
 
     /// <summary>
@@ -706,7 +809,8 @@ internal sealed partial class ProcedureAnalyzer
                     definition = Disabled(definition, null, at);
                 return state.WithTemp(name, table with
                 {
-                    Columns = [.. table.Columns, .. definition.Columns.Select(c => new TempColumn(c.Name, Declared(definition, c, name, temporary: true), definition, c.IsIdentity))],
+                    Columns = [.. table.Columns, .. definition.Columns.Select(c => Fresh(definition, c, name, c.IsIdentity, add.Definition.ColumnDefinitions
+                        .Any(d => d.ColumnIdentifier.Value.Equals(c.Name, StringComparison.OrdinalIgnoreCase) && d.DefaultConstraint is not null) ? at : null))],
                 });
             }
 
@@ -727,7 +831,7 @@ internal sealed partial class ProcedureAnalyzer
                     change.Collation?.Value);
                 var definition = new Table(new ObjectName("", name), [column], [], at);
                 var columns = table.Columns.ToList();
-                columns[i] = new TempColumn(column.Name, Declared(definition, column, name, temporary: true), definition, table.Columns[i].Identity);
+                columns[i] = Fresh(definition, column, name, table.Columns[i].Identity, at);
                 return state.WithTemp(name, table with { Columns = columns });
             }
 

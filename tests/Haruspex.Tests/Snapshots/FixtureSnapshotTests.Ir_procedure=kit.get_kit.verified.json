@@ -1,0 +1,474 @@
+{
+  "irVersion": "0.15",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "kit.get_kit",
+      "name": "GetKit",
+      "kind": "procedure",
+      "at": "procedures/get_kit.sql:3:1",
+      "parameters": [
+        {
+          "name": "@kit_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "GetKitRow"
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GetKitEither": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.get_kit",
+        "path": "results[0].either"
+      },
+      "fields": [
+        {
+          "name": "empty",
+          "type": {
+            "kind": "boolean"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "GetKitEither2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.get_kit",
+        "path": "results[0].either"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": -9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "parts",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetKitEither2Part"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/get_kit.sql:6:32"
+            }
+          ]
+        }
+      ]
+    },
+    "GetKitEither2Part": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.get_kit",
+        "path": "results[0].either.parts[]"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "qty",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "colour",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "kit.kit_part.colour"
+            }
+          ]
+        }
+      ]
+    },
+    "GetKitKit": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.get_kit",
+        "path": "results[0].kit"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": -9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "parts",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetKitKitPart"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/get_kit.sql:6:32"
+            }
+          ]
+        }
+      ]
+    },
+    "GetKitKitPart": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.get_kit",
+        "path": "results[0].kit.parts[]"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "qty",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "colour",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "kit.kit_part.colour"
+            }
+          ]
+        }
+      ]
+    },
+    "GetKitPart": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.get_kit",
+        "path": "results[0].parts[]"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "qty",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "colour",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "kit.kit_part.colour"
+            }
+          ]
+        }
+      ]
+    },
+    "GetKitRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.get_kit",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "kit",
+          "type": {
+            "ref": "GetKitKit"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "variable",
+              "at": "@summary"
+            }
+          ]
+        },
+        {
+          "name": "parts",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetKitPart"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "either",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "ref": "GetKitEither"
+              },
+              {
+                "ref": "GetKitEither2"
+              }
+            ]
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "variable",
+              "at": "@summary"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

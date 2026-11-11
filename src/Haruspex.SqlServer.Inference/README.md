@@ -51,8 +51,10 @@ always its declaration: nothing a statement does changes what its columns may ho
   whatever the variable holds, `Select_into_a_column_from_a_variable_takes_null`), so every later write is joined in:
   `ShapeJoin.Converted` keeps the column's SQL type (the write converts to it), keeps the facets both sides prove and
   at least the type's own, and unions the reasons to be null. A column an `INSERT` leaves out gets null.
-- **JSON** stored in a column is text once stored (`Json_stored_in_a_temporary_table_is_text_but_json_through_a_cte_stays_json`),
-  unless its SQL type is `json`, which is not tracked, so live JSON selected into a table is unknown.
+- **JSON** stored in a column is text once stored (`Json_stored_in_a_temporary_table_is_text_but_json_through_a_cte_stays_json`).
+  `SELECT … INTO` makes `nvarchar(max)` of a `FOR JSON` subquery or a constructor, so the column is JSON text of its content
+  (slice 6l), but `json` of one `RETURNING json`, which is not tracked, so other live JSON selected into a table is unknown. A
+  declared `nvarchar(max)` column holds the JSON its writes put in it ("JSON built here, traced", below).
 - `DELETE` and `TRUNCATE` remove rows, which changes nothing a column may hold. `MERGE` into one, a write through a CTE
   over it, or an `ALTER TABLE` form not listed, makes it unknown.
 - `CREATE TABLE #t` always makes a new table, hiding a caller's of that name
@@ -606,10 +608,12 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   only `char` results pad, and those are columns, not literals. These are output values, so no collation applies. Literals in
   conditions do not count; a value written twice is one item; numbers are converted to the type exactly, which is wide enough
   for each.
-- **JSON.** A CASE, IIF or CHOOSE with a JSON result is not modelled. Over JSON it is text, escaped where it nests, unless the
-  server folds it to the one result a constant condition picks, when it keeps that result's JSON
+- **JSON.** A CASE, IIF or CHOOSE with a live JSON result is not modelled. Over JSON it is text, escaped where it nests, unless
+  the server folds it to the one result a constant condition picks, when it keeps that result's JSON
   (`Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch`). Which is up to the
-  optimiser, and `OPTION (RECOMPILE)` folds a parameter's value too, so the shape cannot be known from the code.
+  optimiser, and `OPTION (RECOMPILE)` folds a parameter's value too, so the shape cannot be known from the code. Since slice 6l
+  one whose results are all JSON text (or JSON literals) is JSON text of their join, and under `json_query`, where folding no
+  longer matters, any is ("JSON built here, traced").
 - **`NULLIF(a, b)`** is `a`, unchanged, or NULL when `a` and `b` compare equal (`nullif`): `a`'s type and facets, a CHECK set
   included. `a`'s type, except that an integer literal `a` is the smallest integer type that holds it, `tinyint` for `1`,
   `smallint` for `-1` or `1000` (`Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it`;
@@ -631,7 +635,8 @@ observed in each position before it was typed (`CaseObservationTests`):
 - **`COALESCE` over JSON is text**, never live JSON, wherever it nests, even when every argument is JSON
   (`Coalesce_over_a_for_json_subquery_nests_as_escaped_text_and_isnull_as_json`), so it is JSON text (`json-text`) whose
   content is what its arguments hold: the subquery's array, with no `minItems` when `'[]'` may stand in for it; a union with
-  the empty object for `'{}'`; unknown content for `'null'` (it parses, but to `null`, which the IR's content cannot say); a
+  the empty object for `'{}'`; any other literal that is a JSON document its exact shape (slice 6l, `JsonLiterals`); unknown
+  content for `'null'` (it parses, but to `null`, which the IR's content cannot say); a
   plain `nvarchar(max)` when an argument is a string that may not be JSON. `JSON_QUERY` over it makes that content live again
   (`Json_query_over_coalesce_makes_it_json_again`; over `'null'` it is error 13609). It is still read twice
   (`Coalesce_reads_a_for_json_subquery_twice_so_it_can_be_null_though_its_fallback_is_not`, the subquery reading its outer
@@ -641,10 +646,11 @@ observed in each position before it was typed (`CaseObservationTests`):
   folded, even one without FROM.
 - **`ISNULL` keeps its first argument's JSON**: over live JSON it nests as JSON, and its fallback is written into the JSON as
   it is, unchecked (`Isnull_writes_its_fallback_into_the_json_as_it_is`): `'[]'` the empty array (so the array may have no
-  items), `'{}'` the empty object (a union), a live JSON value (another FOR JSON subquery, say) its JSON. Any other literal is not
-  modelled, valid JSON (`'[1]'`) or not: `'null'` is JSON `null`,
+  items), `'{}'` the empty object (a union), any other literal that is a JSON document its exact shape (since slice 6l:
+  `'[1]'` is `[1]`, observed in `Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken`),
+  a live JSON value (another FOR JSON subquery, say) its JSON. Any other literal is not modelled: `'null'` is JSON `null`,
   which is not SQL NULL, so the key stays even under `ABSENT ON NULL` and the IR's "null means left out" for FOR JSON does not
-  hold; `''`, `'x'` or a column's text make output that is not JSON. It reads its argument once, so it is NULL only when the
+  hold; `''`, `'x'`, `'[1]x'` or a column's text make output that is not JSON. It reads its argument once, so it is NULL only when the
   fallback is: never for a literal. Over JSON text (a subquery `WITHOUT_ARRAY_WRAPPER`) it is text, with the same content rule
   as `COALESCE` (`Without_its_array_wrapper_the_subquery_is_text_in_coalesce_and_isnull_until_json_query`).
 - In a rowset each is `nvarchar(max)` text (`In_a_rowset_coalesce_and_isnull_over_json_are_nvarchar_max_text`), as any JSON is.
@@ -902,7 +908,9 @@ bound like a derived table: its arguments read the enclosing queries' columns, a
   ungrouped aggregate is one row for every outer row under either APPLY
   (`An_aggregate_function_applied_gives_one_row_for_every_outer_row`), so it keeps the outer bound and is never null-extended;
   `TOP (1)` is at most one.
-- **A multi-statement function** is its declared return table, whatever its body does (`ReadReturnTable`): the table enforces
+- **A multi-statement function** is its declared return table (`ReadReturnTable`), and its `nvarchar(max)` columns hold the JSON
+  its body writes to them (slice 6l): the body is walked as a procedure's is, the return table a table variable ("JSON built
+  here, traced"); a body the walk cannot follow leaves them as declared. The table enforces
   its declaration, so a NULL into a `NOT NULL` column, a repeated `PRIMARY KEY` or `UNIQUE` value (one NULL at most) and a value
   its `CHECK` refuses each fail the call (`A_multi_statement_functions_return_table_enforces_its_constraints`). Its columns
   are the declared ones, with their CHECK facets, null as declared (`nullable-column` at `<function>.<column>`), and its keys
@@ -1088,6 +1096,73 @@ lax path that finds nothing), so it is many and never sure to have a row. Observ
   `null`; `FOR JSON` nests it as JSON (`Openjson_as_json_is_nvarchar_max_holding_an_object_or_array_that_nests_as_json`). Its
   shape is in the data, so it is live JSON of unknown shape (`json-shape-unknown`), as a `json` column is: JSON text in a
   rowset, unknown where it nests.
+
+## JSON built here, traced
+
+Slice 6l (`ProcedureAnalyzer.JsonTracing.cs`, `ProcedureAnalyzer.JsonReads.cs`, `JsonSlot.cs`, `JsonLiterals.cs`). JSON built
+in the project (`FOR JSON`, the constructors, a function returning JSON, a JSON literal) keeps its shape on every route inside
+the project to where it is read, and `json_query`, `OPENJSON` and `JSON_VALUE` there use it. JSON stored in a permanent table's
+column is never traced: someone else may write it. Every rule is observed in `JsonTracingObservationTests`.
+
+| Route | How the JSON goes | Since |
+|---|---|---|
+| CTE, derived table, view, inline function | its expression is the query's, so live JSON stays live | 6, 6e, 6f |
+| variable of `nvarchar(max)` | text of its content (`JsonSlot`) | 6l |
+| table variable or `#table` column of `nvarchar(max)`, declared | text of what its writes put in it | 6l |
+| `#table` column `SELECT … INTO` makes | text, when it is a `FOR JSON` subquery or a constructor not `RETURNING json` | 6l |
+| multi-statement function's return table | text of what its body writes | 6l |
+| literal | its exact shape, when it is valid JSON of an object or array | 6l |
+| `COALESCE`, `ISNULL`, `CASE`, `IIF`, `CHOOSE` | the join of its arguments' or results' JSON | 6g, 6l |
+
+- **Places.** A variable, and a declared column of a table variable, temporary table or multi-statement function's return
+  table, of type `nvarchar(max)`, holds JSON as text, escaped where it nests, JSON again under `json_query`
+  (`Json_built_here_keeps_its_content_through_variables_and_tables_until_json_query`). A shorter type cuts it short without
+  an error, and `varchar` changes a character its code page lacks into another, so neither is traced. What a place holds as JSON
+  (`JsonSlot`) is kept beside its value: `FlowState.Json` for variables and table variables (`@t.column`), `TempColumn.Json`
+  for a temporary table, so a callee's writes come back with the table. A parameter is the caller's, so it is not traced.
+- **Writes join.** A place written on several paths, in a loop, by several statements, or by an assignment that may not
+  happen (`SELECT @x = … FROM` over no rows keeps what `@x` held, observed), holds the join of what each wrote
+  (`ShapeJoin.Content`): the same shape is itself; arrays and tuples are an array of both's items, between the fewest and most
+  of both (so `'[]'` keeps an array's items and only drops its least count); objects with the same keys in the same order join
+  key by key; scalars of one type keep the facts both prove; anything else is a `union` of both, which is exact. NULL adds
+  nothing. A write of a value that may not be JSON built here (a parameter, a stored column, concatenation, `json_modify`, a
+  literal that is not a JSON document, a default, a `MERGE`, an `INSERT … EXEC`, a write through a CTE or derived table)
+  makes the content unknown, and `json_query` over the place reports `json-shape-unknown` at that write, naming it.
+- **Literals** (`JsonLiterals`). A literal that is valid JSON of an object or array has an exact shape: an array a tuple, keys
+  always present, a JSON `null` `null-literal`, strings and numbers their own values (fact source `expression`). Observed
+  (`A_json_literal_is_read_exactly_and_a_bare_scalar_or_text_that_is_not_json_is_an_error`): the text is embedded as written;
+  a bare scalar, `''`, `N''` and text that is not JSON are errors (13609) for `json_query`, `OPENJSON` and `JSON_VALUE`, lax
+  too; but only the first value is checked, so `'[1]x'` is read as `[1]`. Such a literal is not valid JSON, so it is unknown,
+  which claims less; so is an object with a key written twice, which parsers read differently. Whitespace around the value is
+  allowed.
+- **`json_query`** over a place or literal is live JSON of its content, nullable as the value is. Under `json_query` a
+  `CASE`, `IIF`, `CHOOSE` or `COALESCE` holds JSON whether or not the server folds it to one result, so its results' JSON is
+  joined, literals parsed (`Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken`).
+  Elsewhere a `CASE` whose results are all JSON text is JSON text of the join; one with a live result is unknown, as before.
+  `ISNULL` over live JSON writes any literal fallback that is a JSON document as JSON (one that is not, `'[1]x'`, makes text
+  that is not JSON, so it is not modelled).
+- **`OPENJSON`** over JSON built here (`TracedOpenJson`): its rows are an array's items or an object itself. With `WITH`, a
+  column is never null where its path finds a value in every row that is never JSON null (a key `FOR JSON` leaves out when
+  null may be missing; under `strict` a missing key is an error, so only a JSON null makes it NULL) and converts without
+  failing (`Converted`). Observed (`Openjson_with_over_json_built_here_converts_its_own_types_exactly_and_cuts_strings_short`):
+  each type back into itself is unchanged, so its facts and `values` hold (integers, decimals, strings, `bit`, `date`,
+  `datetime2`, `datetimeoffset`, `uniqueidentifier`, `money`; not `float`, whose text `FOR JSON` writes may round); a string
+  into any string type is never NULL, cut short past its length, so only that type's facts hold unless every value fits; an
+  integer into a wider integer is the same number; a narrower number overflows (244, or NULL under the caller's options) and
+  a `bit`, written `true` or `false`, is not a number (245), so those stay nullable. `AS JSON` holds the object or array there,
+  live. Without `WITH`, `key` is one of an object's keys or a tuple's positions, and `type` one of the JSON types its values
+  can be (`Openjson_without_with_over_json_built_here_gives_its_keys_and_their_types`): a key `FOR JSON` leaves out when null
+  is never 0; `value` is never null when no value can be JSON null.
+- **`JSON_VALUE`** over JSON built here (`TracedJsonValue`): never null where the path finds a scalar that is never JSON null,
+  and at most 4,000 characters (or a `strict` path, which makes anything else an error), and the document is never NULL; a
+  string keeps its length bound and `values`, and `true` or `false` is `'true'` or `'false'`
+  (`Json_value_over_json_built_here_gives_its_scalars_as_text`).
+- **Paths** read: `lax` or `strict`, `$`, keys (quoted or not) and indexes into a tuple. A wildcard, an index into an array of
+  unknown length, a record's key or a recursive node is not read, and the general rule holds.
+- **Not traced**, each claiming no more than before: a stored column; `varchar(max)` and shorter types; a `#table` column
+  `SELECT … INTO` makes from live JSON that is not syntactically a `FOR JSON` subquery or constructor (a view's column, say,
+  whose SQL type is not recorded: it may be `json`); a column `SELECT … INTO` made, later written with live JSON; `OPENJSON`'s
+  `value` as JSON text.
 
 ## Built-in functions
 

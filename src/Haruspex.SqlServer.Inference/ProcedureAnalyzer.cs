@@ -520,11 +520,14 @@ internal sealed partial class ProcedureAnalyzer
 
     private Value JsonQuery(FunctionCall call, BindingScope scope)
     {
-        var argument = Expression(call.Parameters[0], scope);
+        // A literal, or CASE, IIF, CHOOSE or COALESCE over JSON, is read for what it holds (slice 6l, ProcedureAnalyzer.JsonTracing.cs).
+        var argument = JsonQueryArgument(call.Parameters[0], scope);
         if (argument.IsLiveJson || argument.Shape is UnknownShape)
             return argument;
         if (argument.Shape is JsonTextShape { Content: { } shape })
             return shape is UnknownShape unknown ? Value.Unknown(unknown) : new Value(shape, argument.NullableBecause, IsLiveJson: true);
+        if (argument.JsonWhy is { } why)
+            return Value.Unknown(why);
 
         // json_query over text (a column, a variable) makes it live JSON, but its shape is in data we cannot see.
         return Value.Unknown(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{Text(call)} reads JSON that is not built here, so its shape is unknown.", At(call)));

@@ -58,7 +58,7 @@ internal sealed partial class ProcedureAnalyzer
             ("replace", 3) => Replace(call, scope),
             ("string_escape", 2) => StringEscape(call, scope),
             ("formatmessage", >= 1) => FormatMessage(call, scope),
-            ("json_value", 2) => JsonValue(call),
+            ("json_value", 2) => TracedJsonValue(call, scope) ?? JsonValue(call),
             ("round" or "floor" or "ceiling" or "abs" or "sign" or "power" or "square" or "sqrt" or "exp" or "log" or "log10", _) => Numeric(call, scope),
             _ => NotModelled(call, "this form of the function is not modelled."),
         };

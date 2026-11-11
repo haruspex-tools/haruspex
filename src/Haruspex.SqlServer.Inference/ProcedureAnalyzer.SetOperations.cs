@@ -310,6 +310,15 @@ internal sealed partial class ProcedureAnalyzer
         var name = reference.Alias?.Value ?? "OPENJSON";
         IrNullReason JsonValue(SourceLocation where) => new(IrNullRules.JsonValue, where.ToString());
 
+        // Over JSON built here its shape says more (slice 6l, ProcedureAnalyzer.JsonReads.cs).
+        if (TracedOpenJson(reference, outer ?? NoFrom(), at) is { } traced)
+        {
+            List<string> columns = reference.SchemaDeclarationItems.Count == 0 ? ["key", "value", "type"] : [.. reference.SchemaDeclarationItems.Select(i => i.ColumnDefinition.ColumnIdentifier.Value)];
+            return columns.Distinct(StringComparer.OrdinalIgnoreCase).Count() != columns.Count
+                ? LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: its column names are not distinct.", at))
+                : new LocalRelationValues(columns, traced, null);
+        }
+
         if (reference.SchemaDeclarationItems.Count == 0)
         {
             var type = new IrValueSet(

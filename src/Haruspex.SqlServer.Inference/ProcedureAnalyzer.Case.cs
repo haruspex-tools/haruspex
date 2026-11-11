@@ -172,9 +172,10 @@ internal sealed partial class ProcedureAnalyzer
     /// <paramref name="also"/>. When
     /// every other result is a string literal, or every one a number, it is one of them exactly: a literal is varchar or
     /// nvarchar, never padded, so trailing spaces are its own (observed:
-    /// A_literal_result_keeps_its_trailing_spaces_and_a_fixed_length_result_pads). JSON is not modelled: whether a CASE over
-    /// it nests as JSON depends on whether the server folds it to one branch (observed:
-    /// Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch).
+    /// A_literal_result_keeps_its_trailing_spaces_and_a_fixed_length_result_pads). Live JSON is not modelled: whether a CASE
+    /// over it nests as JSON depends on whether the server folds it to one branch (observed:
+    /// Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch). Results that are all JSON
+    /// text are JSON text of their join, and under json_query, where folding does not matter, so are any (slice 6l).
     /// </summary>
     private Value Results(TSqlFragment at, List<(ScalarExpression Expression, Value? Value)> results, IReadOnlyList<IrNullReason> also)
     {
@@ -183,8 +184,25 @@ internal sealed partial class ProcedureAnalyzer
             return NotModelled(at, "every result is NULL.");
         if (given.FirstOrDefault(r => r.Value.Shape is UnknownShape) is { Value: { } unknown })
             return unknown;
-        if (given.Any(r => r.Value.IsLiveJson))
+
+        // Under json_query whether the server folds it no longer matters: json_query makes either result JSON, so what it holds
+        // is the join of its results' JSON, literals parsed (slice 6l). Elsewhere, JSON text in every result is JSON text.
+        var underJsonQuery = ReferenceEquals(at, jsonQueryArgument);
+        if (given.Any(r => r.Value.IsLiveJson) && !underJsonQuery)
             return NotModelled(at, "whether it nests as JSON depends on whether the server folds it to one result.");
+        if (underJsonQuery || given.Any(r => r.Value.Shape is JsonTextShape))
+        {
+            var (json, content) = JsonContent(given.Select(r => (r.Expression, r.Value)));
+            if (json)
+            {
+                var nulls = given.Select(r => r.Value.NullableBecause)
+                    .Concat(results.Where(r => r.Value is null).Select(r => (IReadOnlyList<IrNullReason>)[new IrNullReason(IrNullRules.NullLiteral, At(r.Expression).ToString())]))
+                    .Append(also)
+                    .Aggregate((IReadOnlyList<IrNullReason>)[], ShapeJoin.Reasons);
+                return new Value(new JsonTextShape(content), nulls);
+            }
+        }
+
         var where = At(at);
         var combined = Combined([.. given.Select(r => (r.Value, r.Expression, where))]);
         if (combined.Type is not { } type)
@@ -315,98 +333,58 @@ internal sealed partial class ProcedureAnalyzer
 
     // ---- COALESCE and ISNULL over JSON ----------------------------------------------------------------------------------
 
-    /// <summary>What a string literal is as JSON, where it is written into JSON as it is.</summary>
-    private enum JsonLiteral
-    {
-        /// <summary>Not one of the forms below: another JSON value, or not JSON at all.</summary>
-        Other,
-
-        /// <summary><c>[]</c>, spaces allowed.</summary>
-        EmptyArray,
-
-        /// <summary><c>{}</c>, spaces allowed.</summary>
-        EmptyObject,
-
-        /// <summary><c>null</c>: JSON null, which is not a SQL NULL.</summary>
-        Null,
-    }
-
-    private static JsonLiteral JsonLiteralOf(string text)
-    {
-        var trimmed = text.Trim(' ', '\t', '\r', '\n');
-        if (trimmed.Length >= 2 && trimmed[1..^1].Trim(' ', '\t', '\r', '\n').Length == 0)
-        {
-            if (trimmed[0] == '[' && trimmed[^1] == ']')
-                return JsonLiteral.EmptyArray;
-            if (trimmed[0] == '{' && trimmed[^1] == '}')
-                return JsonLiteral.EmptyObject;
-        }
-
-        return trimmed == "null" ? JsonLiteral.Null : JsonLiteral.Other;
-    }
-
     private static bool IsJson(Value value) => value.IsLiveJson || value.Shape is JsonTextShape;
 
     /// <summary>
     /// What a value built from <paramref name="parts"/> holds as JSON, each written as it is: a live value its shape, JSON text its
-    /// content, and a literal <c>'[]'</c> or <c>'{}'</c> the empty array or object. <c>NotJson</c> when a part may not be JSON (a
-    /// column, another literal); otherwise JSON, its content null when not known (a JSON text of unknown content, <c>'null'</c>,
-    /// or <c>'[]'</c> beside no array). Different shapes are a union; <c>'[]'</c> lets the arrays have no items.
+    /// content, and a literal that is a JSON document its parsed shape (<see cref="JsonLiterals"/>; slice 6l, before which only
+    /// <c>'[]'</c> and <c>'{}'</c> were read). <c>NotJson</c> when a part may not be JSON (a column, a literal that is not a
+    /// document); otherwise JSON, its content null when not known (a JSON text of unknown content, or <c>'null'</c>, which is
+    /// JSON but not a document). The content is the join of the parts' (<see cref="ShapeJoin.Content"/>): <c>'[]'</c> lets
+    /// arrays have no items, and shapes that do not join are a union.
     /// </summary>
-    private static (bool Json, Shape? Content) JsonContent(IEnumerable<(ScalarExpression Expression, Value Value)> parts)
+    private (bool Json, Shape? Content) JsonContent(IEnumerable<(ScalarExpression Expression, Value Value)> parts)
     {
-        var shapes = new List<Shape>();
+        Shape? content = null;
         var known = true;
-        var (emptyArray, emptyObject) = (false, false);
         foreach (var (expression, value) in parts)
         {
+            Shape shape;
             if (value.IsLiveJson)
             {
-                shapes.Add(value.Shape);
-                continue;
+                shape = value.Shape;
             }
-
-            if (value.Shape is JsonTextShape text)
+            else if (value.Shape is JsonTextShape text)
             {
                 if (text.Content is null)
+                {
                     known = false;
-                else
-                    shapes.Add(text.Content);
-                continue;
-            }
+                    continue;
+                }
 
-            if (LiteralOf(expression) is not ({ } literal and StringLiteral, _))
-                return (false, null);
-            switch (JsonLiteralOf(literal.Value))
+                shape = text.Content;
+            }
+            else if (LiteralOf(expression) is ({ } literal and StringLiteral, _))
             {
-                case JsonLiteral.EmptyArray:
-                    emptyArray = true;
-                    break;
-                case JsonLiteral.EmptyObject:
-                    emptyObject = true;
-                    break;
-                case JsonLiteral.Null:
+                if (literal.Value.Trim(' ', '\t', '\r', '\n') == "null")
+                {
                     known = false;
-                    break;
-                default:
+                    continue;
+                }
+
+                shape = JsonLiterals.Parse(literal.Value, At(literal));
+                if (shape is UnknownShape)
                     return (false, null);
             }
+            else
+            {
+                return (false, null);
+            }
+
+            content = content is null ? shape : ShapeJoin.Content(content, shape);
         }
 
-        var variants = new List<Shape>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var shape in shapes.SelectMany(s => s is UnionShape u ? u.Variants : [s]))
-        {
-            var variant = emptyArray && shape is ArrayShape array ? array with { MinItems = null } : shape;
-            if (seen.Add(ShapeText.Of(variant)))
-                variants.Add(variant);
-        }
-
-        if (emptyArray && !variants.Any(v => v is ArrayShape))
-            known = false;
-        if (emptyObject && !variants.Any(v => v is ObjectShape { Fields.Count: 0 }))
-            variants.Add(new ObjectShape([]));
-        return (true, known ? (variants.Count == 1 ? variants[0] : new UnionShape(variants)) : null);
+        return (true, known ? content : null);
     }
 
     /// <summary>
@@ -431,7 +409,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private Value CoalesceJson(CoalesceExpression coalesce, List<ScalarExpression> arguments, List<Value> values, IReadOnlyList<IrNullReason> because)
     {
-        if (arguments.Where((a, i) => values[i].IsLiveJson && !Unfoldable(a)).Any())
+        if (!ReferenceEquals(coalesce, jsonQueryArgument) && arguments.Where((a, i) => values[i].IsLiveJson && !Unfoldable(a)).Any())
             return NotModelled(coalesce, "whether COALESCE over this JSON nests as JSON depends on whether the server folds it.");
         var (json, content) = JsonContent(arguments.Zip(values));
         if (json)
@@ -444,9 +422,10 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>
     /// <c>ISNULL(a, b)</c> with a JSON and maybe null. ISNULL takes a's JSON-ness: over live JSON it is live, and b is written
     /// into the JSON as it is, unchecked (observed: Isnull_writes_its_fallback_into_the_json_as_it_is), so only a b that is JSON
-    /// is modelled: the literal <c>'[]'</c> or <c>'{}'</c>, or a live JSON value or JSON text whose content is known (any other
-    /// literal, even valid JSON such as <c>'[1]'</c>, is not); <c>'null'</c> is JSON null that is not SQL NULL, so a key holding it
-    /// is never left out, which is not modelled. Over JSON text (WITHOUT_ARRAY_WRAPPER) it is text. It reads a once, so it is
+    /// is modelled: a literal that is a JSON document (slice 6l: <c>'[1]'</c> is <c>[1]</c>, observed in
+    /// Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken; <c>'[1]x'</c> is not
+    /// JSON), or a live JSON value or JSON text whose content is known; <c>'null'</c> is JSON null that is not SQL NULL, so a key
+    /// holding it is never left out, which is not modelled. Over JSON text (WITHOUT_ARRAY_WRAPPER) it is text. It reads a once, so it is
     /// NULL only when b is too: b's reasons say why.
     /// </summary>
     private Value IsNullJson(FunctionCall call, ScalarExpression a, Value first, ScalarExpression b, BindingScope scope)

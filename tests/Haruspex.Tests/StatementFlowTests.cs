@@ -220,15 +220,18 @@ public class StatementFlowTests
     }
 
     [Fact]
-    public void Live_json_stored_in_a_temporary_table_is_unknown()
+    public void Live_json_stored_in_a_temporary_table_is_text_of_its_content_unless_it_is_of_type_json()
     {
-        // Text once stored (observed), unless its SQL type is json, which is not tracked yet.
+        // Text once stored (observed): SELECT … INTO makes nvarchar(max) of a constructor and json of one RETURNING json, which
+        // is not tracked yet (slice 6l: Select_into_makes_nvarchar_max_of_built_json_and_json_of_returning_json).
         var doc = Procedure("""
-            SELECT t.id, json_object('n': t.name) AS j INTO #t FROM dbo.t AS t;
-            SELECT y.j FROM #t AS y FOR JSON PATH;
+            SELECT t.id, json_object('n': t.name) AS j, json_object('n': t.name RETURNING json) AS k INTO #t FROM dbo.t AS t;
+            SELECT y.j, json_query(y.j) AS q, y.k FROM #t AS y FOR JSON PATH;
             """);
 
-        AssertUnknown(doc, "results[0][].j", IrUnknownReasons.UnsupportedExpression);
+        Assert.IsType<IrJsonText>(Field(doc, "j").Type);
+        Assert.IsType<IrRef>(Field(doc, "q").Type);
+        AssertUnknown(doc, "results[0][].k", IrUnknownReasons.UnsupportedExpression);
     }
 
     [Fact]

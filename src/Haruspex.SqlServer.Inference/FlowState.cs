@@ -40,7 +40,15 @@ internal sealed record KnownTable(string Name, IReadOnlyList<TempColumn> Columns
 /// Whether it is an identity column, which an insert without a column list skips: true or false when known, null when it
 /// may be (a column <c>SELECT … INTO</c> copied from one it can't see the properties of).
 /// </param>
-internal sealed record TempColumn(string Name, Value Value, Table? Declaration, bool? Identity = false);
+/// <param name="Json">
+/// What a declared <c>nvarchar(max)</c> column holds as JSON (slice 6l), from every write to it; null when it is not traced,
+/// and it reads as its declaration.
+/// </param>
+internal sealed record TempColumn(string Name, Value Value, Table? Declaration, bool? Identity = false, JsonSlot? Json = null)
+{
+    /// <summary>What a read of the column gives: its value, holding the JSON its writes put in it.</summary>
+    public Value Read => Json is { } slot ? slot.Read(Value) : Value;
+}
 
 /// <summary>A result set one path returns at a position, from the statement at <paramref name="At"/>.</summary>
 internal sealed record Produced(ResultShape Result, SourceLocation At, string Key);
@@ -156,13 +164,20 @@ internal sealed class FlowState
 {
     private static readonly StringComparer Names = StringComparer.OrdinalIgnoreCase;
 
-    private FlowState(ImmutableDictionary<string, TempTable> temps, ImmutableDictionary<string, Value> variables, ResultTrack results, bool readUncommitted = false)
+    private FlowState(ImmutableDictionary<string, TempTable> temps, ImmutableDictionary<string, Value> variables, ResultTrack results, bool readUncommitted = false, ImmutableDictionary<string, JsonSlot>? json = null)
     {
         Temps = temps;
         Variables = variables;
         Results = results;
         ReadUncommitted = readUncommitted;
+        Json = json ?? ImmutableDictionary.Create<string, JsonSlot>(Names);
     }
+
+    /// <summary>
+    /// What each variable of type <c>nvarchar(max)</c>, and each such column of a table variable (<c>@t.c</c>), holds as JSON
+    /// (slice 6l): see <see cref="JsonSlot"/>. A name not here is not traced, and reads as its declared type.
+    /// </summary>
+    public ImmutableDictionary<string, JsonSlot> Json { get; }
 
     /// <summary>
     /// Whether the procedure may read uncommitted here: <c>SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED</c> came first on some
@@ -186,15 +201,17 @@ internal sealed class FlowState
     /// <summary>The table's state; null when the procedure has not touched it, which makes it the caller's.</summary>
     public TempTable? Temp(string name) => Temps.GetValueOrDefault(name);
 
-    public FlowState WithTemp(string name, TempTable table) => new(Temps.SetItem(name, table), Variables, Results, ReadUncommitted);
+    public FlowState WithTemp(string name, TempTable table) => new(Temps.SetItem(name, table), Variables, Results, ReadUncommitted, Json);
 
-    public FlowState WithTemps(ImmutableDictionary<string, TempTable> temps) => new(temps, Variables, Results, ReadUncommitted);
+    public FlowState WithTemps(ImmutableDictionary<string, TempTable> temps) => new(temps, Variables, Results, ReadUncommitted, Json);
 
-    public FlowState WithVariable(string name, Value value) => new(Temps, Variables.SetItem(name, value), Results, ReadUncommitted);
+    public FlowState WithVariable(string name, Value value) => new(Temps, Variables.SetItem(name, value), Results, ReadUncommitted, Json);
 
-    public FlowState WithResults(ResultTrack results) => new(Temps, Variables, results, ReadUncommitted);
+    public FlowState WithResults(ResultTrack results) => new(Temps, Variables, results, ReadUncommitted, Json);
 
-    public FlowState WithReadUncommitted(bool readUncommitted) => new(Temps, Variables, Results, readUncommitted);
+    public FlowState WithReadUncommitted(bool readUncommitted) => new(Temps, Variables, Results, readUncommitted, Json);
+
+    public FlowState WithJson(string name, JsonSlot slot) => new(Temps, Variables, Results, ReadUncommitted, Json.SetItem(name, slot));
 
     /// <summary>The state after either of two groups of paths; null stands for no path (every one ended before here).</summary>
     public static FlowState? Join(FlowState? a, FlowState? b, SourceLocation at)
@@ -216,8 +233,15 @@ internal sealed class FlowState
                 : variables.SetItem(name, value);
         }
 
+        // A name traced on one path only is not traced on the other (it cannot happen: declarations are the whole body's).
+        var json = a.Json;
+        foreach (var (name, slot) in b.Json)
+            json = a.Json.TryGetValue(name, out var mine) ? json.SetItem(name, JsonSlot.Join(mine, slot)) : json.Remove(name);
+        foreach (var name in a.Json.Keys.Where(k => !b.Json.ContainsKey(k)))
+            json = json.Remove(name);
+
         // Uncommitted on either path may be uncommitted here.
-        return new FlowState(temps, variables, a.Results.Join(b.Results), a.ReadUncommitted || b.ReadUncommitted);
+        return new FlowState(temps, variables, a.Results.Join(b.Results), a.ReadUncommitted || b.ReadUncommitted, json);
     }
 
     public static FlowState? Join(IEnumerable<FlowState?> states, SourceLocation at) =>
@@ -256,6 +280,7 @@ internal sealed class FlowState
                     // INTO made, and is never read again from one path's declaration.
                     Declaration = ReferenceEquals(c.Declaration, d.Declaration) ? c.Declaration : null,
                     Identity = c.Identity == d.Identity ? c.Identity : null,
+                    Json = c.Json is { } x && d.Json is { } y ? JsonSlot.Join(x, y) : null,
                 })]);
             case (KnownTable, KnownTable):
                 return new UnknownTable(new UnknownShape(IrUnknownReasons.UnsupportedStatement, $"{name} has different columns on different paths before {at}.", at));
@@ -271,6 +296,8 @@ internal sealed class FlowState
         text.Append(ReadUncommitted ? "uncommitted\n" : "");
         foreach (var (name, value) in Variables.OrderBy(v => v.Key, StringComparer.Ordinal))
             text.Append(name).Append('=').Append(ShapeText.Of(value)).Append('\n');
+        foreach (var (name, slot) in Json.OrderBy(v => v.Key, StringComparer.Ordinal))
+            text.Append(name).Append(':').Append(slot.Text()).Append('\n');
         Results.Write(text);
         return text.ToString();
     }
@@ -293,7 +320,7 @@ internal sealed class FlowState
                 case KnownTable known:
                     foreach (var column in known.Columns)
                         text.Append(column.Name).Append(column.Identity switch { true => "+", false => "", null => "?" })
-                            .Append(column.Declaration is null ? ':' : '!').Append(ShapeText.Of(column.Value)).Append(';');
+                            .Append(column.Declaration is null ? ':' : '!').Append(ShapeText.Of(column.Value)).Append(column.Json?.Text()).Append(';');
                     break;
             }
 

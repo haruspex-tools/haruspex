@@ -84,6 +84,8 @@ internal sealed partial class ProcedureAnalyzer
         after = Assigned(execute, after);
         if (written.Direct is null)
             return Continue(Output(insert, spec, null, null, insert.WithCtesAndXmlNamespaces, written, state, after));
+        if (written.Direct.StartsWith('@'))
+            return Continue(TableVariableWritten(after, written.Direct, null, null, null, at));
         var target = written.Direct.StartsWith('#') ? written.Direct : null;
         if (target is null || after.Temp(target) is not KnownTable table)
             return Continue(after);

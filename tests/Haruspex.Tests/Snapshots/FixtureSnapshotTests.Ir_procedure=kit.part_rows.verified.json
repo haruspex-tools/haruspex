@@ -1,0 +1,458 @@
+{
+  "irVersion": "0.15",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "kit.part_rows",
+      "name": "PartRows",
+      "kind": "procedure",
+      "at": "procedures/part_rows.sql:3:1",
+      "parameters": [
+        {
+          "name": "@kit_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PartRowsResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PartRowsResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PartRowsResult3Row"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/part_rows.sql:16:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "PartRowsResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.part_rows",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "part_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "qty",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "qty_wide",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "sku_short",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(3)",
+            "maxLength": {
+              "value": 3,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(3)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "colour",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-value",
+              "at": "procedures/part_rows.sql:11:124"
+            }
+          ]
+        }
+      ]
+    },
+    "PartRowsResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.part_rows",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "key",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "kit_id",
+                "name",
+                "price"
+              ],
+              "from": [
+                {
+                  "engine": "OPENJSON over JSON built here"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "value",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "type",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [1,2
+              ],
+              "from": [
+                {
+                  "engine": "OPENJSON over JSON built here"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "PartRowsResult3Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.part_rows",
+        "path": "results[2][]"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/part_rows.sql:7:31"
+            }
+          ]
+        },
+        {
+          "name": "finish",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "matt"
+              ],
+              "from": [
+                {
+                  "expression": "procedures/part_rows.sql:8:32"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "boxed",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "false",
+                "true"
+              ],
+              "from": [
+                {
+                  "engine": "JSON_VALUE of true or false"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "with_finish",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "matt"
+              ],
+              "from": [
+                {
+                  "expression": "procedures/part_rows.sql:8:32"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "sizes",
+          "type": {
+            "kind": "tuple",
+            "items": [
+              {
+                "type": {
+                  "kind": "number",
+                  "values": {
+                    "match": "exact",
+                    "items": [1
+                    ],
+                    "from": [
+                      {
+                        "expression": "procedures/part_rows.sql:8:32"
+                      }
+                    ]
+                  }
+                },
+                "nullable": false
+              },
+              {
+                "type": {
+                  "kind": "number",
+                  "values": {
+                    "match": "exact",
+                    "items": [2
+                    ],
+                    "from": [
+                      {
+                        "expression": "procedures/part_rows.sql:8:32"
+                      }
+                    ]
+                  }
+                },
+                "nullable": false
+              },
+              {
+                "type": {
+                  "kind": "number",
+                  "values": {
+                    "match": "exact",
+                    "items": [3
+                    ],
+                    "from": [
+                      {
+                        "expression": "procedures/part_rows.sql:8:32"
+                      }
+                    ]
+                  }
+                },
+                "nullable": false
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

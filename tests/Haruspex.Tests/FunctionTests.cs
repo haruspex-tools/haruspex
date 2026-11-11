@@ -243,7 +243,9 @@ public class FunctionTests
         // A message number names a message that may not exist: not modelled.
         Unknown(doc, "f3");
         Assert.Equal("nvarchar(4000) json-value", Typed(doc, "g1"));
-        Assert.Equal("nvarchar(4000) json-value", Typed(doc, "g2"));
+
+        // Over a literal JSON document the path's value is known: a number, always there under strict (slice 6l).
+        Assert.Equal("nvarchar(4000)", Typed(doc, "g2"));
     }
 
     [Fact]

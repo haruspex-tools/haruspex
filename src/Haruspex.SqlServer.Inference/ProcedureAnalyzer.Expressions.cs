@@ -177,8 +177,12 @@ internal sealed partial class ProcedureAnalyzer
             : values.Take(first).Select((v, i) => i).Where(i => ReadTwice(arguments[i]))
                 .Select(i => (IReadOnlyList<IrNullReason>)[new IrNullReason(IrNullRules.ReadTwice, At(arguments[i]).ToString())])
                 .Aggregate((IReadOnlyList<IrNullReason>)[], ShapeJoin.Reasons);
-        if (values.Any(IsJson))
-            return CoalesceJson(coalesce, arguments, values, because);
+        if (values.Any(IsJson) || ReferenceEquals(coalesce, jsonQueryArgument))
+        {
+            var json = CoalesceJson(coalesce, arguments, values, because);
+            if (values.Any(IsJson) || json.Shape is JsonTextShape)
+                return json;
+        }
 
         // A value converted to the common type may overflow it, NULL under the caller's options, whichever argument it is
         // (observed: A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).

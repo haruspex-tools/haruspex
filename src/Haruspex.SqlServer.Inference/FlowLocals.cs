@@ -70,7 +70,7 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
         }
 
         if (name.StartsWith('@'))
-            return tableVariables.TryGetValue(name, out var variable) ? Register(name, variable) : null;
+            return tableVariables.TryGetValue(name, out var variable) ? Register(name, Holding(name, variable)) : null;
         if (!name.StartsWith('#'))
             return null;
 
@@ -80,7 +80,7 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
 
         var found = State.Temp(name) switch
         {
-            KnownTable known => Register(name, new LocalRelationValues([.. known.Columns.Select(c => c.Name)], [.. known.Columns.Select(c => c.Value)], null)),
+            KnownTable known => Register(name, new LocalRelationValues([.. known.Columns.Select(c => c.Name)], [.. known.Columns.Select(c => c.Read)], null)),
             UnknownTable unknown => Register(name, LocalRelationValues.Unknown(unknown.Why)),
             AbsentTable absent => Register(name, LocalRelationValues.Unknown(new UnknownShape(IrUnknownReasons.UnresolvedTable, $"{name} was dropped at {absent.At}, so it is not there to read.", absent.At))),
             _ => Register(name, LocalRelationValues.Unknown(new UnknownShape(
@@ -91,6 +91,16 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
         temporary.Add(found);
         return found;
     }
+
+    /// <summary>The columns of a table variable the body declares, by name; null when it declares none of that name.</summary>
+    public IReadOnlyList<string>? TableVariableColumns(string name) => tableVariables.TryGetValue(name, out var variable) ? variable.Names : null;
+
+    /// <summary>A table variable's columns as they stand: each declared, holding the JSON written to it (slice 6l).</summary>
+    private LocalRelationValues Holding(string name, LocalRelationValues declared) =>
+        declared.Names is null ? declared : declared with
+        {
+            Values = [.. declared.Names.Select((c, i) => State.Json.TryGetValue($"{name}.{c}", out var slot) ? slot.Read(declared.Values![i]) : declared.Values![i])],
+        };
 
     /// <summary>A placeholder location for an unknown that has none of its own; each read reports its own location instead.</summary>
     private static readonly SourceLocation Nowhere = new("", 0, 0);

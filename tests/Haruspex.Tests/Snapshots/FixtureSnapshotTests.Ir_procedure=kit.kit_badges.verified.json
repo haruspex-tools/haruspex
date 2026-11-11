@@ -1,0 +1,307 @@
+{
+  "irVersion": "0.15",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "kit.kit_badges",
+      "name": "KitBadges",
+      "kind": "procedure",
+      "at": "procedures/kit_badges.sql:3:1",
+      "parameters": [
+        {
+          "name": "@kit_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "KitBadgesRow"
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "KitBadgesBadge": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_badges",
+        "path": "results[0].badge"
+      },
+      "fields": [
+        {
+          "name": "kind",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "string",
+                "sql": "nvarchar(5)",
+                "maxLength": {
+                  "value": 5,
+                  "unit": "utf16",
+                  "from": {
+                    "type": "nvarchar(5)"
+                  }
+                }
+              },
+              {
+                "kind": "string",
+                "values": {
+                  "match": "exact",
+                  "items": [
+                    "empty"
+                  ],
+                  "from": [
+                    {
+                      "expression": "procedures/kit_badges.sql:11:18"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "count",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "number",
+                "format": "int64",
+                "sql": "bigint",
+                "min": {
+                  "value": -9223372036854775808,
+                  "inclusive": true,
+                  "from": {
+                    "type": "bigint"
+                  }
+                },
+                "max": {
+                  "value": 9223372036854775807,
+                  "inclusive": true,
+                  "from": {
+                    "type": "bigint"
+                  }
+                }
+              },
+              {
+                "kind": "number",
+                "values": {
+                  "match": "exact",
+                  "items": [0
+                  ],
+                  "from": [
+                    {
+                      "expression": "procedures/kit_badges.sql:11:18"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "KitBadgesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_badges",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "badge",
+          "type": {
+            "ref": "KitBadgesBadge"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "tally",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "KitBadgesTallyItem"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "tiers",
+          "type": {
+            "kind": "tuple",
+            "items": [
+              {
+                "type": {
+                  "ref": "KitBadgesTiers"
+                },
+                "nullable": false
+              },
+              {
+                "type": {
+                  "ref": "KitBadgesTiers2"
+                },
+                "nullable": false
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "stored",
+          "type": {
+            "kind": "unknown",
+            "reason": "json-shape-unknown"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/kit_badges.sql:19:8"
+            }
+          ]
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "KitBadgesTallyItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_badges",
+        "path": "results[0].tally[]"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "KitBadgesTiers": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_badges",
+        "path": "results[0].tiers[0]"
+      },
+      "fields": [
+        {
+          "name": "tier",
+          "type": {
+            "kind": "string",
+            "values": {
+              "match": "exact",
+              "items": [
+                "gold"
+              ],
+              "from": [
+                {
+                  "expression": "procedures/kit_badges.sql:26:19"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "KitBadgesTiers2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_badges",
+        "path": "results[0].tiers[1]"
+      },
+      "fields": [
+        {
+          "name": "tier",
+          "type": {
+            "kind": "string",
+            "values": {
+              "match": "exact",
+              "items": [
+                "silver"
+              ],
+              "from": [
+                {
+                  "expression": "procedures/kit_badges.sql:26:19"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "since",
+          "type": {
+            "kind": "number",
+            "values": {
+              "match": "exact",
+              "items": [2024
+              ],
+              "from": [
+                {
+                  "expression": "procedures/kit_badges.sql:26:19"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "kit.kit_badges",
+      "path": "results[0].stored",
+      "reason": "json-shape-unknown",
+      "detail": "@stored is assigned k.extras at procedures/kit_badges.sql:19:8, which is not JSON built here.",
+      "at": "procedures/kit_badges.sql:19:8"
+    }
+  ],
+  "overrides": []
+}

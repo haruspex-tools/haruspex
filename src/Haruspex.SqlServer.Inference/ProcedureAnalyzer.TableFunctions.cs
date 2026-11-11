@@ -152,6 +152,16 @@ internal sealed partial class ProcedureAnalyzer
                 keys.Add(new RelationKey(ordinals, types!));
         }
 
+        // What its nvarchar(max) columns hold as JSON is what its body writes to them (slice 6l): the body is walked as a
+        // procedure's is, the return table a table variable, and its traced columns read as they stand where it returns. A body
+        // the walk cannot follow leaves them as declared.
+        var walked = Walk(function.Body, returns.DeclareTableVariableBody);
+        if (walked.Blocker is null && walked.End is { } end)
+        {
+            var variable = returns.DeclareTableVariableBody.VariableName.Value;
+            values = [.. values.Select((v, i) => end.Json.TryGetValue($"{variable}.{table.Columns[i].Name}", out var slot) ? slot.Read(v) : v)];
+        }
+
         return new LocalRelationValues([.. table.Columns.Select(c => c.Name)], values, null) { Keys = keys };
     }
 }

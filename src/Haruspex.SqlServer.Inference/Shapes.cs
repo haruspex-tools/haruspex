@@ -76,7 +76,11 @@ internal sealed record FieldShape(string Name, Shape Type, IrPresence Presence, 
 /// JSON text whose shape is known (a <c>FOR JSON</c> subquery without its array wrapper, a call of a function returning
 /// JSON) has a <see cref="JsonTextShape"/> with its content, which <c>json_query</c> makes live again.
 /// </remarks>
-internal sealed record Value(Shape Shape, IReadOnlyList<IrNullReason> NullableBecause, bool IsLiveJson = false, IntDigits? Digits = null)
+/// <param name="JsonWhy">
+/// For a string read from a place that holds JSON built here on some writes but may hold other text (<see cref="JsonSlot"/>), why
+/// its JSON's shape is not known, naming the write: what <c>json_query</c> over it reports. Null otherwise.
+/// </param>
+internal sealed record Value(Shape Shape, IReadOnlyList<IrNullReason> NullableBecause, bool IsLiveJson = false, IntDigits? Digits = null, UnknownShape? JsonWhy = null)
 {
     public static Value Unknown(UnknownShape shape) =>
         new(shape, [new IrNullReason(IrNullRules.Unknown, shape.At.ToString())]);
