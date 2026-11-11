@@ -25,6 +25,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0017](0017-stored-json-is-typed-only-by-declaration.md) | 11 Nov 2026 | JSON stored in a column is typed only by declaration |
 | [0018](0018-snapshots-without-a-snapshot-library.md) | 9 Nov 2026 | Snapshots without a snapshot library |
 | [0019](0019-the-guide-is-held-to-the-code-by-tests.md) | 11 Nov 2026 | The guide is held to the code by tests |
+| [0020](0020-public-figures-come-from-public-corpora.md) | 11 Nov 2026 | Public figures come only from public corpora, written by a test |
 
 ## Writing a record
 

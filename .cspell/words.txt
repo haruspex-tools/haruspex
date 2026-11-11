@@ -91,9 +91,11 @@ mscorlib
 netstandard
 rhysd
 sarif
+setvar
 shellcheck
 slnx
 sqlclient
+sqlproj
 ssdt
 ssms
 xunit
@@ -121,6 +123,8 @@ tarjan
 unioned
 uniqueidentifiers
 unmodelled
+vendored
+vendoring
 writable
 
 # Authors the guide cites (docs/internals), named as their works are
@@ -143,6 +147,9 @@ unwalkable
 
 # The names of the test fixtures (tests/fixtures), which the documentation cites
 funcs
+
+# The corpus's install script (tests/corpus), which the documentation names
+instawdb
 
 # Packages the prose check uses, and the publisher of Vale's image
 elkjs

@@ -51,7 +51,9 @@ on a real SQL Server:
 How each is read, and the observations each rule rests on, are in
 [the inference README](src/Haruspex.SqlServer.Inference/README.md). Anything else is reported as unknown, with a reason.
 How haruspex works, and why a static analyser is built this way, is explained in [the guide](docs/internals/README.md), and
-the decisions it rests on, with the alternatives, in [the decision log](docs/decisions/README.md).
+the decisions it rests on, with the alternatives, in [the decision log](docs/decisions/README.md). How much of a real
+database it types is measured on two of Microsoft's sample databases, by a test that writes
+[the corpus figures](docs/corpus-figures.md).
 
 ```sh
 haruspex generate path/to/database --include 'sales.*' --out src/db

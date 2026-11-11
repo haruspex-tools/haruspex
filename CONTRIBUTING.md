@@ -112,6 +112,15 @@ dotnet run --project src/Haruspex.Cli -- generate tests/fixtures/orders --includ
 cd tests/fixtures/shop && dotnet run --project ../../../src/Haruspex.Cli -- generate --out ../../../out/shop  # with its haruspex.json
 ```
 
+### Coverage on the sample databases
+
+`tests/corpus` holds two of Microsoft's sample databases, vendored at a pinned commit, and `CorpusFiguresTests` writes what
+haruspex makes of them to [docs/corpus-figures.md](docs/corpus-figures.md). A change that types more or less of them fails
+that test until the page is rewritten with `HARUSPEX_ACCEPT=1`; commit the page with the change, and say in the commit why
+the figures moved. A figure in any other public text is copied from that page, never measured elsewhere
+([decision 0020](docs/decisions/0020-public-figures-come-from-public-corpora.md)). How the corpora are kept and refreshed
+is in [tests/corpus/README.md](tests/corpus/README.md).
+
 ## Writing
 
 Everything a reader reads (the Markdown, XML documentation, comments and diagnostics) follows the house style in
@@ -205,6 +214,9 @@ packages they bring are MIT, ISC, BSD or Apache-2.0; the others are permissive t
 BlueOak, WTFPL, MPL-2.0 or Apache-2.0 for DOMPurify), except two that are not ordinary code licences: cspell's
 dictionary of common misspellings is CC BY-SA 4.0, and `elkjs`, a layout engine Mermaid includes but the check
 never calls, is EPL-2.0. Both would matter only to someone redistributing them, which this repository does not.
+
+The corpus in `tests/corpus` is data, not a dependency: Microsoft's sample databases under the MIT licence, whose
+`license.txt` is kept beside them. Nothing builds or ships it.
 
 ScriptDom (MIT) is the only SQL dependency. **DacFx must not be added**: its licence requires anyone who
 redistributes it to indemnify Microsoft, which no maintainer of a free tool should take on. DACPACs will

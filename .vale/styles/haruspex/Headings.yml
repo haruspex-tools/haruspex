@@ -17,3 +17,6 @@ exceptions:
   - Zod
   # Microsoft's T-SQL parser, a product name (docs/decisions/0004-scriptdom-is-the-only-sql-dependency.md).
   - ScriptDom
+  # Microsoft's sample databases, product names, which the corpus figures (docs/corpus-figures.md) head by name.
+  - AdventureWorks
+  - WideWorldImporters
