@@ -1,0 +1,33 @@
+// The runs of the trees fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  // The seed must reach every edge the IR claims (each bound, each value of a set, each full length), because facts
+  // pass through functions and recursive types too, where an edge counts at any depth of the tree.
+  "seedReachesEveryEdge": true,
+
+  "setups": {
+    "no parts": "DELETE FROM bom.component; DELETE FROM bom.part;",
+    "no items": "DELETE FROM cat.item;"
+  },
+
+  "runs": [
+    { "name": "get_assembly, four levels deep", "procedure": "bom.get_assembly", "parameters": { "@part_id": 1 } },
+    { "name": "get_assembly, a part with no components, lowest key", "procedure": "bom.get_assembly", "parameters": { "@part_id": -2147483648 } },
+    { "name": "get_assembly, a part used in three assemblies, highest key", "procedure": "bom.get_assembly", "parameters": { "@part_id": 2147483647 } },
+    { "name": "get_assembly, an assembly with no components", "procedure": "bom.get_assembly", "parameters": { "@part_id": 12 } },
+    { "name": "get_assembly, an assembly of one component", "procedure": "bom.get_assembly", "parameters": { "@part_id": 11 } },
+    { "name": "get_assembly, the longest name", "procedure": "bom.get_assembly", "parameters": { "@part_id": 21 } },
+    { "name": "get_assembly, no such part", "procedure": "bom.get_assembly", "parameters": { "@part_id": 999 } },
+    { "name": "list_parts", "procedure": "bom.list_parts" },
+    { "name": "list_parts, no parts", "procedure": "bom.list_parts", "setup": "no parts" },
+    { "name": "get_category, the whole catalogue", "procedure": "cat.get_category", "parameters": { "@category_id": 5 } },
+    { "name": "get_category, lowest key", "procedure": "cat.get_category", "parameters": { "@category_id": -2147483648 } },
+    { "name": "get_category, a leaf, highest key", "procedure": "cat.get_category", "parameters": { "@category_id": 2147483647 } },
+    { "name": "get_category, the longest name", "procedure": "cat.get_category", "parameters": { "@category_id": 3 } },
+    { "name": "get_category, empty", "procedure": "cat.get_category", "parameters": { "@category_id": 4 } },
+    { "name": "get_category, no such category", "procedure": "cat.get_category", "parameters": { "@category_id": 999 } },
+    { "name": "list_items", "procedure": "cat.list_items" },
+    { "name": "list_items, no items", "procedure": "cat.list_items", "setup": "no items" },
+    { "name": "item_rows", "procedure": "cat.item_rows" }
+  ]
+}

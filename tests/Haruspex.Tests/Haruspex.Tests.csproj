@@ -8,7 +8,7 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Helpers both test projects use: running the emit-check npm package (see the file). -->
+    <!-- Support both test projects use: finding the fixtures and running the emit-check npm package. -->
     <Compile Include="..\Shared\*.cs" LinkBase="Shared" />
   </ItemGroup>
   <ItemGroup>

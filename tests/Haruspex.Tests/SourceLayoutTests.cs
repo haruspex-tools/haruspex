@@ -26,8 +26,8 @@ public partial class SourceLayoutTests
     private static readonly List<string> Files =
     [
         .. new[] { "src", "tests" }
-            .SelectMany(folder => Directory.EnumerateFiles(Path.Combine(TestPaths.RepoRoot, folder), "*.cs", SearchOption.AllDirectories))
-            .Where(path => !Path.GetRelativePath(TestPaths.RepoRoot, path).Split(Path.DirectorySeparatorChar).Any(Skipped.Contains))
+            .SelectMany(folder => Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, folder), "*.cs", SearchOption.AllDirectories))
+            .Where(path => !Path.GetRelativePath(RepositoryPaths.Root, path).Split(Path.DirectorySeparatorChar).Any(Skipped.Contains))
             .Order(StringComparer.Ordinal),
     ];
 
@@ -89,13 +89,13 @@ public partial class SourceLayoutTests
         // An exception that no longer applies would otherwise let the file break the rule again unnoticed.
         foreach (var file in Exceptions)
         {
-            var path = Path.Combine(TestPaths.RepoRoot, file);
+            var path = Path.Combine(RepositoryPaths.Root, file);
             Assert.True(File.Exists(path), $"{file} is listed as an exception but does not exist; remove it from the list.");
             Assert.Contains(TopLevelTypes(File.ReadAllText(path)), name => name != Path.GetFileName(file).Split('.')[0]);
         }
     }
 
-    private static string Relative(string path) => Path.GetRelativePath(TestPaths.RepoRoot, path).Replace('\\', '/');
+    private static string Relative(string path) => Path.GetRelativePath(RepositoryPaths.Root, path).Replace('\\', '/');
 
     /// <summary>The names of the types declared at column 0, other than <c>file</c> types.</summary>
     private static List<string> TopLevelTypes(string source) =>

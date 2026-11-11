@@ -1,0 +1,26 @@
+// The runs of the kits fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  "setups": {
+    "no kits": "DELETE FROM kit.kit_part; DELETE FROM kit.kit;"
+  },
+
+  "runs": [
+    { "name": "get_kit, with parts", "procedure": "kit.get_kit", "parameters": { "@kit_id": 1 } },
+    { "name": "get_kit, no parts", "procedure": "kit.get_kit", "parameters": { "@kit_id": 2 } },
+    { "name": "get_kit, no kit", "procedure": "kit.get_kit", "parameters": { "@kit_id": 99 } },
+    { "name": "get_kit, no parts and no fallback", "procedure": "kit.get_kit", "parameters": { "@kit_id": 4 } },
+    { "name": "kit_sheets", "procedure": "kit.kit_sheets" },
+    { "name": "kit_sheets, no kits", "procedure": "kit.kit_sheets", "setup": "no kits" },
+    { "name": "kit_routes, every kit", "procedure": "kit.kit_routes", "parameters": { "@kit_id": null } },
+    { "name": "kit_routes, a kit with no parts", "procedure": "kit.kit_routes", "parameters": { "@kit_id": 2 } },
+    { "name": "kit_routes, no kit", "procedure": "kit.kit_routes", "parameters": { "@kit_id": 99 } },
+    { "name": "part_rows, with parts", "procedure": "kit.part_rows", "parameters": { "@kit_id": 1 } },
+    { "name": "part_rows, no parts", "procedure": "kit.part_rows", "parameters": { "@kit_id": 2 } },
+    { "name": "part_rows, no kit", "procedure": "kit.part_rows", "parameters": { "@kit_id": 50 } },
+    { "name": "part_rows, no kit and no style rows", "procedure": "kit.part_rows", "parameters": { "@kit_id": 99 } },
+    { "name": "kit_badges, with parts", "procedure": "kit.kit_badges", "parameters": { "@kit_id": 1 } },
+    { "name": "kit_badges, no parts", "procedure": "kit.kit_badges", "parameters": { "@kit_id": 2 } },
+    { "name": "kit_badges, stored extras", "procedure": "kit.kit_badges", "parameters": { "@kit_id": 3 } }
+  ]
+}

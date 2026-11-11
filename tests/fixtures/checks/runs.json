@@ -1,0 +1,17 @@
+// The runs of the checks fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  // The seed must reach every edge the IR claims (each bound, each value of a set, each full length), because this
+  // fixture is about scalar facts.
+  "seedReachesEveryEdge": true,
+
+  "setups": {
+    "no tickets": "DELETE FROM chk.ticket_event; DELETE FROM chk.ticket;"
+  },
+
+  "runs": [
+    { "name": "list_tickets", "procedure": "chk.list_tickets" },
+    { "name": "list_tickets, no tickets", "procedure": "chk.list_tickets", "setup": "no tickets" },
+    { "name": "ticket_rows", "procedure": "chk.ticket_rows" }
+  ]
+}

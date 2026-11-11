@@ -1,0 +1,38 @@
+// The runs of the flow fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  "setups": {
+    "no sales": "DELETE FROM flow.sale;",
+    "no employees": "DELETE FROM flow.employee;",
+    "no regions": "DELETE FROM flow.region;"
+  },
+
+  "runs": [
+    { "name": "region_report", "procedure": "flow.region_report" },
+    { "name": "region_report, web only", "procedure": "flow.region_report", "parameters": { "@channel": "web" } },
+    { "name": "region_report, a channel with no sales", "procedure": "flow.region_report", "parameters": { "@channel": "post" } },
+    { "name": "region_sales", "procedure": "flow.region_sales" },
+    { "name": "region_sales, no sales", "procedure": "flow.region_sales", "setup": "no sales" },
+    { "name": "sales_by_mode, sales", "procedure": "flow.sales_by_mode", "parameters": { "@mode": 1, "@region": 1 } },
+    { "name": "sales_by_mode, regions, no such region", "procedure": "flow.sales_by_mode", "parameters": { "@mode": 2, "@region": 99 } },
+    { "name": "sales_by_mode, regions with codes", "procedure": "flow.sales_by_mode", "parameters": { "@mode": 4, "@region": 2 } },
+    { "name": "sales_by_mode, returns early", "procedure": "flow.sales_by_mode", "parameters": { "@mode": 3 } },
+    { "name": "part_list", "procedure": "flow.part_list" },
+    { "name": "part_list, units cleared", "procedure": "flow.part_list", "parameters": { "@with_units": false } },
+    { "name": "org_chart", "procedure": "flow.org_chart" },
+    { "name": "org_chart, no employees", "procedure": "flow.org_chart", "setup": "no employees" },
+    { "name": "staff_moves", "procedure": "flow.staff_moves" },
+    { "name": "staff_moves, assigned", "procedure": "flow.staff_moves", "parameters": { "@assign": true } },
+    { "name": "chain_up, from a fitter to the top", "procedure": "flow.chain_up", "parameters": { "@employee": 4 } },
+    { "name": "chain_up, no such employee", "procedure": "flow.chain_up", "parameters": { "@employee": 99 } },
+    { "name": "caught_report, no error", "procedure": "flow.caught_report" },
+    { "name": "caught_report, error before the sales", "procedure": "flow.caught_report", "parameters": { "@fail_at": 1 } },
+    { "name": "caught_report, error before the regions", "procedure": "flow.caught_report", "parameters": { "@fail_at": 2 } },
+    { "name": "caught_report, error at the end", "procedure": "flow.caught_report", "parameters": { "@fail_at": 3 } },
+    { "name": "notes_or_names, notes", "procedure": "flow.notes_or_names" },
+    { "name": "notes_or_names, names", "procedure": "flow.notes_or_names", "parameters": { "@notes": false } },
+    { "name": "notes_or_names, no regions", "procedure": "flow.notes_or_names", "parameters": { "@notes": false }, "setup": "no regions" },
+    { "name": "bill_of_materials, two levels", "procedure": "flow.bill_of_materials", "parameters": { "@assembly": 1 } },
+    { "name": "bill_of_materials, a part with no components", "procedure": "flow.bill_of_materials", "parameters": { "@assembly": 6 } }
+  ]
+}

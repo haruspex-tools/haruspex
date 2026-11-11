@@ -2,7 +2,7 @@
 
 An invented parts depot for writes: DML on permanent tables, `OUTPUT`, triggers, `WITH` before a write, and
 cursors. No part of it comes from a real system. Every column that may be null is null in some seeded row a procedure
-returns (`Seeds/dml.sql`), and each run that writes runs in a write session that is rolled back.
+returns (`tests/fixtures/dml/seed.sql`), and each run that writes runs in a write session that is rolled back.
 
 | Object | Covers |
 |---|---|

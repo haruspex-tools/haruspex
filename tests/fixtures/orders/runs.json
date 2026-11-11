@@ -1,0 +1,28 @@
+// The runs of the orders fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  // Not held to every edge: this fixture is about query shapes, and its scalars are the same types the values fixture
+  // covers at their edges. Seeding its ids and totals at the lowest int would only obscure what it shows.
+  "seedReachesEveryEdge": false,
+
+  "setups": {
+    "no orders": "DELETE FROM sales.order_line; DELETE FROM sales.[order]; DELETE FROM sales.customer;"
+  },
+
+  "runs": [
+    { "name": "list_customers", "procedure": "sales.list_customers" },
+    { "name": "list_orders, every order", "procedure": "sales.list_orders" },
+    { "name": "list_orders, a customer with no orders", "procedure": "sales.list_orders", "parameters": { "@customer_id": 3 } },
+    { "name": "get_order, with lines and a salesperson", "procedure": "sales.get_order", "parameters": { "@order_id": 100 } },
+    { "name": "get_order, no lines, no salesperson, nulls", "procedure": "sales.get_order", "parameters": { "@order_id": 101 } },
+    { "name": "get_order, a customer with no email", "procedure": "sales.get_order", "parameters": { "@order_id": 102 } },
+    { "name": "get_order, no such order", "procedure": "sales.get_order", "parameters": { "@order_id": 999 } },
+    { "name": "list_customer_orders", "procedure": "sales.list_customer_orders" },
+    { "name": "list_customer_orders, no customers", "procedure": "sales.list_customer_orders", "setup": "no orders" },
+    { "name": "archive_orders", "procedure": "sales.archive_orders", "parameters": { "@before": "2026-12-31" } }
+  ],
+
+  "notRun": {
+    "sales.order_report": "It reads sales.voucher and customer.nickname, which the fixture leaves out on purpose to show unknowns, so SQL Server cannot run it."
+  }
+}

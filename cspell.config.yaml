@@ -311,8 +311,6 @@ overrides:
   - filename: "**/tests/Haruspex.DifferentialTests/ZodAcceptanceTests.cs"
     # A .NET date format string.
     ignoreWords: [fffzzz]
-  - filename: "**/tests/Haruspex.DifferentialTests/Runs.cs"
-    ignoreWords: [upto]
   - filename: "**/tests/Haruspex.Tests/ApplyViewTests.cs"
     # The end column of a system-versioned table's period.
     ignoreWords: [upto]

@@ -1,4 +1,3 @@
-using Haruspex.Cli;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.Tests.Snapshotting;
@@ -6,214 +5,67 @@ using Haruspex.Tests.Snapshotting;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// One snapshot of the IR and one of the Zod per fixture procedure. A snapshot is a claim about what
-/// SQL Server returns, so a change to one is reviewed against the engine's behaviour, never accepted unread.
+/// One snapshot of the IR and one of the Zod per procedure of every fixture that is checked per procedure (every one but
+/// a project for the CLI, whose output <c>ConfigCliTests</c> checks whole), kept in the fixture's <c>expected/</c> folder.
+/// A snapshot is a claim about what SQL Server returns, so a change to one is reviewed against the engine's behaviour, never
+/// accepted unread.
 /// </summary>
 public class FixtureSnapshotTests
 {
-    private static readonly Dictionary<string, Lazy<SqlProject>> Fixtures = new(StringComparer.Ordinal)
-    {
-        ["orders"] = new(() => SqlProject.Load(TestPaths.Fixture("orders"))),
-        ["values"] = new(() => SqlProject.Load(TestPaths.Fixture("values"))),
-        ["checks"] = new(() => SqlProject.Load(TestPaths.Fixture("checks"))),
-        ["payloads"] = new(() => SqlProject.Load(TestPaths.Fixture("payloads"))),
-        ["trees"] = new(() => SqlProject.Load(TestPaths.Fixture("trees"))),
-        ["flow"] = new(() => SqlProject.Load(TestPaths.Fixture("flow"))),
-        ["calls"] = new(() => SqlProject.Load(TestPaths.Fixture("calls"))),
-        ["refine"] = new(() => SqlProject.Load(TestPaths.Fixture("refine"))),
-        ["dml"] = new(() => SqlProject.Load(TestPaths.Fixture("dml"))),
-        ["apply"] = new(() => SqlProject.Load(TestPaths.Fixture("apply"))),
-        ["tabs"] = new(() => SqlProject.Load(TestPaths.Fixture("tabs"))),
-        ["cases"] = new(() => SqlProject.Load(TestPaths.Fixture("cases"))),
-        ["sets"] = new(() => SqlProject.Load(TestPaths.Fixture("sets"))),
-        ["funcs"] = new(() => SqlProject.Load(TestPaths.Fixture("funcs"))),
-        ["ledger"] = new(() => SqlProject.Load(TestPaths.Fixture("ledger"))),
-        ["bazaar"] = new(() => SqlProject.Load(TestPaths.Fixture("bazaar"))),
-        ["kits"] = new(() => SqlProject.Load(TestPaths.Fixture("kits"))),
-    };
+    private static readonly IReadOnlyList<Fixture> Fixtures = [.. Fixture.All.Where(f => !f.IsProject)];
 
     /// <summary>Every fixture procedure, with its fixture. Procedure ids are unique across fixtures.</summary>
-    private static readonly Dictionary<string, string> FixtureOf = new(StringComparer.Ordinal)
-    {
-        ["sales.list_customers"] = "orders",
-        ["sales.list_orders"] = "orders",
-        ["sales.get_order"] = "orders",
-        ["sales.list_customer_orders"] = "orders",
-        ["sales.order_report"] = "orders",
-        ["sales.archive_orders"] = "orders",
-        ["vals.list_samples"] = "values",
-        ["vals.list_samples_with_nulls"] = "values",
-        ["vals.get_sample"] = "values",
-        ["vals.sample_rows"] = "values",
-        ["vals.list_nested"] = "values",
-        ["vals.list_nested_with_nulls"] = "values",
-        ["chk.list_tickets"] = "checks",
-        ["chk.ticket_rows"] = "checks",
-        ["pay.get_author"] = "payloads",
-        ["pay.list_books"] = "payloads",
-        ["pay.author_stats"] = "payloads",
-        ["pay.reviews_by_book"] = "payloads",
-        ["pay.author_documents"] = "payloads",
-        ["pay.review_digest"] = "payloads",
-        ["bom.get_assembly"] = "trees",
-        ["bom.list_parts"] = "trees",
-        ["cat.get_category"] = "trees",
-        ["cat.list_items"] = "trees",
-        ["cat.item_rows"] = "trees",
-        ["lend.search_titles"] = "refine",
-        ["lend.authors_report"] = "refine",
-        ["lend.get_member"] = "refine",
-        ["lend.member_by_email"] = "refine",
-        ["lend.copy_at"] = "refine",
-        ["lend.open_loans"] = "refine",
-        ["lend.branch_stats"] = "refine",
-        ["lend.overdue_members"] = "refine",
-        ["lend.catalogue_summary"] = "refine",
-        ["lend.latest_loan"] = "refine",
-        ["lend.copies_at"] = "refine",
-        ["lend.loan_totals"] = "refine",
-        ["lend.member_digests"] = "refine",
-        ["depot.add_note"] = "dml",
-        ["depot.cancel_order"] = "dml",
-        ["depot.get_order"] = "dml",
-        ["depot.list_parts"] = "dml",
-        ["depot.log_error"] = "dml",
-        ["depot.peek_parts"] = "dml",
-        ["depot.place_order"] = "dml",
-        ["depot.purge"] = "dml",
-        ["depot.recent_note"] = "dml",
-        ["depot.restock"] = "dml",
-        ["depot.sync_prices"] = "dml",
-        ["depot.prune_prices"] = "dml",
-        ["depot.low_floor"] = "dml",
-        ["depot.add_note_by_synonym"] = "dml",
-        ["depot.pick_order_lines"] = "dml",
-        ["mart.customer_activity"] = "apply",
-        ["mart.customer_purchases"] = "apply",
-        ["mart.customer_tree"] = "apply",
-        ["mart.get_purchase"] = "apply",
-        ["mart.last_purchase"] = "apply",
-        ["mart.list_products"] = "apply",
-        ["mart.list_purchases"] = "apply",
-        ["mart.open_contacts"] = "apply",
-        ["mart.open_purchase_by_id"] = "apply",
-        ["mart.product_sizes"] = "apply",
-        ["mart.purchase_overview"] = "apply",
-        ["mart.purchases_json"] = "apply",
-        ["mart.purchase_lines"] = "apply",
-        ["mart.price_versions"] = "apply",
-        ["cafe.tab_summary"] = "tabs",
-        ["cafe.tab_receipt"] = "tabs",
-        ["cafe.guest_tab_list"] = "tabs",
-        ["cafe.tab_lines_list"] = "tabs",
-        ["cafe.guests_with_open_tab"] = "tabs",
-        ["cafe.guest_labels"] = "tabs",
-        ["cafe.dirty_tab"] = "tabs",
-        ["cafe.open_tabs_payload"] = "tabs",
-        ["cafe.guest_spending"] = "tabs",
-        ["cafe.menu_prices"] = "tabs",
-        ["desk.job_board"] = "cases",
-        ["desk.job_card"] = "cases",
-        ["desk.customer_jobs"] = "cases",
-        ["desk.status_totals"] = "cases",
-        ["rink.everyone"] = "sets",
-        ["rink.session_board"] = "sets",
-        ["rink.regulars"] = "sets",
-        ["rink.counts"] = "sets",
-        ["rink.lockers"] = "sets",
-        ["rink.member_prefs"] = "sets",
-        ["rink.reach"] = "sets",
-        ["rink.busy_people"] = "sets",
-        ["rink.overlaps"] = "sets",
-        ["gym.member_dates"] = "funcs",
-        ["gym.member_names"] = "funcs",
-        ["gym.visit_totals"] = "funcs",
-        ["gym.visit_windows"] = "funcs",
-        ["gym.visit_money"] = "funcs",
-        ["gym.series"] = "funcs",
-        ["gym.lenient"] = "funcs",
-        ["ledger.line_values"] = "ledger",
-        ["ledger.line_functions"] = "ledger",
-        ["ledger.account_stats"] = "ledger",
-        ["ledger.line_windows"] = "ledger",
-        ["ledger.lenient"] = "ledger",
-        ["bazaar.sales_feed"] = "bazaar",
-        ["bazaar.mixed"] = "bazaar",
-        ["bazaar.lenient"] = "bazaar",
-        ["kit.get_kit"] = "kits",
-        ["kit.kit_sheets"] = "kits",
-        ["kit.kit_routes"] = "kits",
-        ["kit.part_rows"] = "kits",
-        ["kit.kit_badges"] = "kits",
-        ["flow.region_report"] = "flow",
-        ["flow.region_sales"] = "flow",
-        ["flow.sales_by_mode"] = "flow",
-        ["flow.part_list"] = "flow",
-        ["flow.org_chart"] = "flow",
-        ["flow.bill_of_materials"] = "flow",
-        ["flow.staff_moves"] = "flow",
-        ["flow.chain_up"] = "flow",
-        ["flow.caught_report"] = "flow",
-        ["flow.notes_or_names"] = "flow",
-        ["calls.oven_list"] = "calls",
-        ["calls.picked_batches"] = "calls",
-        ["calls.add_placeholder"] = "calls",
-        ["calls.daily_report"] = "calls",
-        ["calls.batch_rows"] = "calls",
-        ["calls.rack_sizes"] = "calls",
-        ["calls.batch_feed"] = "calls",
-        ["calls.walk_even"] = "calls",
-        ["calls.walk_odd"] = "calls",
-        ["calls.ovens_or_batches"] = "calls",
-        ["calls.search_batches"] = "calls",
-        ["calls.search_with_ovens"] = "calls",
-        ["calls.rack_counts"] = "calls",
-        ["calls.delivery_stage"] = "calls",
-        ["calls.recount"] = "calls",
-        ["calls.recount_from"] = "calls",
-        ["calls.maybe_ovens"] = "calls",
-        ["calls.maybe_then_batches"] = "calls",
-    };
+    private static readonly Dictionary<string, Fixture> FixtureOf =
+        Fixtures.SelectMany(f => f.Project.Procedures.Select(p => (Procedure: p.ToString(), Fixture: f)))
+            .ToDictionary(p => p.Procedure, p => p.Fixture, StringComparer.Ordinal);
 
     public static TheoryData<string> Procedures { get; } = [.. FixtureOf.Keys];
 
-    public static TheoryData<string> FixtureNames { get; } = [.. Fixtures.Keys];
+    public static TheoryData<string> FixtureNames { get; } = [.. Fixtures.Select(f => f.Name)];
 
     [Theory]
     [MemberData(nameof(FixtureNames))]
-    public void The_fixture_loads_without_diagnostics(string fixture) => Assert.Empty(Fixtures[fixture].Value.Diagnostics);
+    public void The_fixture_loads_without_diagnostics(string fixture) => Assert.Empty(Fixture.Named(fixture).Project.Diagnostics);
 
+    // Each procedure has its two snapshots, and each snapshot a procedure: a renamed or deleted procedure leaves no
+    // reviewed file behind that nothing checks.
     [Theory]
     [MemberData(nameof(FixtureNames))]
-    public void Every_fixture_procedure_has_snapshots(string fixture) =>
-        Assert.Equal(
-            FixtureOf.Where(p => p.Value == fixture).Select(p => p.Key).Order(StringComparer.Ordinal),
-            Fixtures[fixture].Value.Procedures.Select(p => p.ToString()).Order(StringComparer.Ordinal));
+    public void Every_fixture_procedure_has_snapshots(string fixture)
+    {
+        var expected = Fixture.Named(fixture).Expected;
+        var procedures = Fixture.Named(fixture).Project.Procedures.Select(p => p.ToString()).Order(StringComparer.Ordinal).ToList();
+        Assert.Equal(procedures, Snapshots(expected, ".ir.verified.json"));
+        Assert.Equal(procedures, Snapshots(expected, ".zod.verified.ts"));
+    }
 
     // A snapshot is named for what it holds, the IR or the Zod of one procedure, not for the test that checks it, so that
     // renaming a test does not move 276 reviewed files.
     [Theory]
     [MemberData(nameof(Procedures))]
     public void Each_procedure_infers_the_reviewed_ir(string procedure) =>
-        Snapshot.Match(IrJsonWriter.Write(Infer(procedure)), $"{nameof(FixtureSnapshotTests)}.Ir_procedure={procedure}", "json");
+        Snapshot.Match(IrJsonWriter.Write(Infer(procedure)), FixtureOf[procedure].Expected, $"{procedure}.ir", "json");
 
     [Theory]
     [MemberData(nameof(Procedures))]
     public void Each_procedure_emits_the_reviewed_zod(string procedure) =>
-        Snapshot.Match(ZodEmitter.Emit(Infer(procedure)), $"{nameof(FixtureSnapshotTests)}.Zod_procedure={procedure}", "ts");
+        Snapshot.Match(ZodEmitter.Emit(Infer(procedure)), FixtureOf[procedure].Expected, $"{procedure}.zod", "ts");
+
+    private static List<string> Snapshots(string folder, string suffix) =>
+        [.. Directory.EnumerateFiles(folder, "*" + suffix).Select(f => Path.GetFileName(f)[..^suffix.Length]).Order(StringComparer.Ordinal)];
 
     private static IrDocument Infer(string procedure)
     {
-        var project = Fixtures[FixtureOf[procedure]].Value;
+        var fixture = FixtureOf[procedure];
+        var project = fixture.Project;
         var selection = project.Select([ObjectPattern.Parse(procedure)]);
         Assert.Empty(selection.Unmatched);
 
         // A fixture's haruspex.json declares results inference can't see; a declaration a procedure doesn't use is only a
         // warning, which a snapshot of one procedure ignores.
-        var config = Path.Join(TestPaths.Fixture(FixtureOf[procedure]), HaruspexConfig.FileName);
-        if (!File.Exists(config))
+        if (fixture.Config is null)
             return project.Infer(selection.Procedures);
-        var read = ConfigReader.Read(config);
+        var read = ConfigReader.Read(fixture.Config);
         var applied = project.Infer(selection.Procedures, read.Config!);
         return applied.Document ?? throw new InvalidOperationException(string.Join("; ", applied.Problems));
     }

@@ -56,7 +56,7 @@ public class CorpusManifestTests
     public void The_build_compiles_nothing_from_the_corpus()
     {
         // The corpus holds a .sqlproj, which must stay data: the solution names every project it builds.
-        var solution = File.ReadAllText(Path.Combine(TestPaths.RepoRoot, "Haruspex.slnx"));
+        var solution = File.ReadAllText(Path.Combine(RepositoryPaths.Root, "Haruspex.slnx"));
 
         Assert.DoesNotContain("tests/corpus", solution.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase);
     }

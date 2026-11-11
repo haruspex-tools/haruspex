@@ -1,6 +1,7 @@
 # Snapshot helper
 
-The snapshot tests compare haruspex's output with committed `*.verified.*` files in `../Snapshots`. This
+The snapshot tests compare haruspex's output with committed `*.verified.*` files: a fixture's expected output in its
+`expected/` folder ([tests/fixtures/README.md](../../fixtures/README.md)), and a test's own output in `../Snapshots`. This
 small helper does that instead of a snapshot library.
 
 **Why not Verify.** Verify releases after 1 September 2026 are under the Open Source Maintenance Fee terms.

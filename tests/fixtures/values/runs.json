@@ -1,0 +1,30 @@
+// The runs of the values fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  // The seed must reach every edge the IR claims (each bound, each value of a set, each full length), because this
+  // fixture is about scalar facts.
+  "seedReachesEveryEdge": true,
+
+  "setups": {
+    "no samples": "DELETE FROM vals.sample_tag; DELETE FROM vals.sample;"
+  },
+
+  "runs": [
+    { "name": "list_samples", "procedure": "vals.list_samples" },
+    { "name": "list_samples, no match", "procedure": "vals.list_samples", "parameters": { "@sample_id": -1 } },
+    { "name": "list_samples_with_nulls", "procedure": "vals.list_samples_with_nulls" },
+    { "name": "list_samples_with_nulls, no samples", "procedure": "vals.list_samples_with_nulls", "setup": "no samples" },
+    { "name": "get_sample, typical", "procedure": "vals.get_sample", "parameters": { "@sample_id": 1 } },
+    { "name": "get_sample, nulls", "procedure": "vals.get_sample", "parameters": { "@sample_id": 5 } },
+    { "name": "get_sample, no such sample", "procedure": "vals.get_sample", "parameters": { "@sample_id": -1 } },
+    { "name": "get_sample, maxima", "procedure": "vals.get_sample", "parameters": { "@sample_id": 2 } },
+    { "name": "get_sample, minima", "procedure": "vals.get_sample", "parameters": { "@sample_id": 3 } },
+    { "name": "get_sample, lowest key", "procedure": "vals.get_sample", "parameters": { "@sample_id": -2147483648 } },
+    { "name": "get_sample, highest key", "procedure": "vals.get_sample", "parameters": { "@sample_id": 2147483647 } },
+    { "name": "sample_rows", "procedure": "vals.sample_rows" },
+    { "name": "list_nested", "procedure": "vals.list_nested" },
+    { "name": "list_nested, no samples", "procedure": "vals.list_nested", "setup": "no samples" },
+    { "name": "list_nested_with_nulls", "procedure": "vals.list_nested_with_nulls" },
+    { "name": "list_nested_with_nulls, no samples", "procedure": "vals.list_nested_with_nulls", "setup": "no samples" }
+  ]
+}

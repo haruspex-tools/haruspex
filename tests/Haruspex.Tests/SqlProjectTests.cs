@@ -61,7 +61,7 @@ public class SqlProjectTests
     [Fact]
     public void An_include_pattern_that_matches_nothing_is_reported()
     {
-        var project = SqlProject.Load(TestPaths.Fixture("orders"));
+        var project = SqlProject.Load(Fixture.Named("orders").Database);
 
         var selection = project.Select([ObjectPattern.Parse("sales.get_*"), ObjectPattern.Parse("sales.nothing_*")]);
 

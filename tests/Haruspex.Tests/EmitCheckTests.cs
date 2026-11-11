@@ -1,11 +1,10 @@
 using Haruspex.Cli;
 using Haruspex.Emit.Zod;
-using Haruspex.TestSupport;
 
 namespace Haruspex.Tests;
 
 /// <summary>
-/// Compiles the Zod generated from every procedure of the fixtures with <c>tsc --noEmit</c>, against the zod and
+/// Compiles the Zod generated from every procedure of every fixture with <c>tsc --noEmit</c>, against the zod and
 /// TypeScript versions pinned in <c>tests/emit-check/package-lock.json</c>. <c>src/usage.ts</c> and
 /// <c>src/checks-usage.ts</c> there also check the inferred types: that an omitted key is optional, a kept null is
 /// nullable, and a value set is a union of literals; <c>src/shop-usage.ts</c> checks what the shop fixture's config file
@@ -16,30 +15,32 @@ public class EmitCheckTests
     [Fact]
     public void Generated_zod_compiles_with_tsc()
     {
-        EmitCheckPackage.RequireNode(TestPaths.EmitCheck, "the generated Zod was not type-checked");
+        EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated Zod was not type-checked");
 
-        var generated = Path.Combine(TestPaths.EmitCheck, "generated");
+        // Emptied first, so a module left by an earlier run, of a fixture since renamed or removed, can't pass for one.
+        var generated = Path.Combine(RepositoryPaths.EmitCheck, "generated");
+        if (Directory.Exists(generated))
+            Directory.Delete(generated, recursive: true);
         Directory.CreateDirectory(generated);
-        foreach (var (fixture, file) in new[] { ("orders", "haruspex.zod.ts"), ("values", "values.zod.ts"), ("checks", "checks.zod.ts"), ("payloads", "payloads.zod.ts"), ("trees", "trees.zod.ts"), ("flow", "flow.zod.ts"), ("refine", "refine.zod.ts"), ("dml", "dml.zod.ts"), ("apply", "apply.zod.ts"), ("tabs", "tabs.zod.ts"), ("cases", "cases.zod.ts"), ("sets", "sets.zod.ts"), ("funcs", "funcs.zod.ts"), ("ledger", "ledger.zod.ts"), ("bazaar", "bazaar.zod.ts"), ("kits", "kits.zod.ts") })
-        {
-            var project = SqlProject.Load(TestPaths.Fixture(fixture));
-            var selection = project.Select([ObjectPattern.Parse("*.*")]);
-            File.WriteAllText(Path.Combine(generated, file), ZodEmitter.Emit(project.Infer(selection.Procedures)));
-        }
 
-        // The shop fixture through the CLI, with its config file: strict objects, overrides and an import that
-        // tsconfig.json maps to src/shop-types.ts.
-        using (var output = new StringWriter())
-        using (var error = new StringWriter())
+        // Every fixture's procedures, as the snapshot tests and the differential tests infer them, in <name>.zod.ts.
+        foreach (var fixture in Fixture.All.Where(f => !f.IsProject))
+            File.WriteAllText(Path.Combine(generated, $"{fixture.Name}.zod.ts"), ZodEmitter.Emit(fixture.Ir));
+
+        // A project fixture through the CLI, with its config file: the shop's strict objects, overrides and an import
+        // that tsconfig.json maps to src/shop-types.ts.
+        foreach (var fixture in Fixture.All.Where(f => f.IsProject))
         {
-            var exitCode = HaruspexCli.Run(["generate", "--out", Path.Combine(generated, "shop")], output, error, TestPaths.Fixture("shop"));
+            using var output = new StringWriter();
+            using var error = new StringWriter();
+            var exitCode = HaruspexCli.Run(["generate", "--out", Path.Combine(generated, fixture.Name)], output, error, fixture.Folder);
             Assert.True(exitCode == 0, error.ToString());
         }
 
-        EmitCheckPackage.EnsureInstalled(TestPaths.EmitCheck);
+        EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
 
         Assert.True(
-            EmitCheckPackage.TryRun("node", [Path.Combine("node_modules", "typescript", "bin", "tsc"), "--noEmit", "-p", "."], TestPaths.EmitCheck, out var tscOutput, out var tscWhy),
+            EmitCheckPackage.TryRun("node", [Path.Combine("node_modules", "typescript", "bin", "tsc"), "--noEmit", "-p", "."], RepositoryPaths.EmitCheck, out var tscOutput, out var tscWhy),
             $"tsc rejected the generated Zod ({tscWhy}):\n{tscOutput}");
     }
 
@@ -51,11 +52,11 @@ public class EmitCheckTests
     [Fact]
     public void Zod_checks_a_decimal_step_without_floating_point_false_failures()
     {
-        EmitCheckPackage.RequireNode(TestPaths.EmitCheck, "Zod's multipleOf was not checked");
-        EmitCheckPackage.EnsureInstalled(TestPaths.EmitCheck);
+        EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "Zod's multipleOf was not checked");
+        EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
 
         Assert.True(
-            EmitCheckPackage.TryRun("node", [Path.Combine("src", "multiple-of.mjs")], TestPaths.EmitCheck, out var output, out var why),
+            EmitCheckPackage.TryRun("node", [Path.Combine("src", "multiple-of.mjs")], RepositoryPaths.EmitCheck, out var output, out var why),
             $"multipleOf gave false failures ({why}):\n{output}");
     }
 }

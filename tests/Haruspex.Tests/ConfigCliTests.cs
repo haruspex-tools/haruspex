@@ -10,7 +10,7 @@ namespace Haruspex.Tests;
 /// </summary>
 public class ConfigCliTests
 {
-    private static string Shop => TestPaths.Fixture("shop");
+    private static string Shop => Fixture.Named("shop").Folder;
 
     private static (int ExitCode, string Output, string Error) Run(string workingDirectory, params string[] args)
     {
@@ -40,8 +40,8 @@ public class ConfigCliTests
         Assert.Equal("", error);
         Assert.Equal(0, exitCode);
         Assert.Contains("haruspex: 4 procedures, 0 unknown(s).", output, StringComparison.Ordinal);
-        Snapshot.Match(File.ReadAllText(Path.Combine(outDir.Path, "haruspex.ir.json")), $"{nameof(ConfigCliTests)}.Shop", "json");
-        Snapshot.Match(File.ReadAllText(Path.Combine(outDir.Path, "haruspex.zod.ts")), $"{nameof(ConfigCliTests)}.Shop", "ts");
+        Snapshot.Match(File.ReadAllText(Path.Combine(outDir.Path, "haruspex.ir.json")), Fixture.Named("shop").Expected, "haruspex.ir", "json");
+        Snapshot.Match(File.ReadAllText(Path.Combine(outDir.Path, "haruspex.zod.ts")), Fixture.Named("shop").Expected, "haruspex.zod", "ts");
     }
 
     private const string Dynamic = """

@@ -1,0 +1,16 @@
+// The runs of the bazaar fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  "setups": {
+    "no sales": "DELETE FROM bazaar.stall_sale; DELETE FROM bazaar.web_order; DELETE FROM bazaar.auction_lot; DELETE FROM bazaar.barter;",
+    "lenient": "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;"
+  },
+
+  "runs": [
+    { "name": "sales_feed", "procedure": "bazaar.sales_feed" },
+    { "name": "sales_feed, no sales", "procedure": "bazaar.sales_feed", "setup": "no sales" },
+    { "name": "mixed", "procedure": "bazaar.mixed" },
+    { "name": "mixed, under ANSI_WARNINGS and ARITHABORT off", "procedure": "bazaar.mixed", "setup": "lenient" },
+    { "name": "lenient, under ANSI_WARNINGS and ARITHABORT off", "procedure": "bazaar.lenient", "setup": "lenient" }
+  ]
+}

@@ -1,0 +1,32 @@
+// The runs of the payloads fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  // The seed must reach every edge the IR claims (each bound, each value of a set, each full length), because this
+  // fixture shows that facts pass through the JSON constructors, and that an array's length bounds hold.
+  "seedReachesEveryEdge": true,
+
+  "setups": {
+    "no books": "DELETE FROM pay.book_tag; DELETE FROM pay.review; DELETE FROM pay.book;",
+    "no reviews": "DELETE FROM pay.review;",
+    "one review": "DELETE FROM pay.review WHERE review_id <> 7;"
+  },
+
+  "runs": [
+    { "name": "get_author, the longest values and both extreme books", "procedure": "pay.get_author", "parameters": { "@author_id": -2147483648 } },
+    { "name": "get_author, one book, nulls", "procedure": "pay.get_author", "parameters": { "@author_id": 2147483647 } },
+    { "name": "get_author, no books", "procedure": "pay.get_author", "parameters": { "@author_id": 3 } },
+    { "name": "get_author, a book with no reviews", "procedure": "pay.get_author", "parameters": { "@author_id": 4 } },
+    { "name": "get_author, no such author", "procedure": "pay.get_author", "parameters": { "@author_id": 999 } },
+    { "name": "list_books", "procedure": "pay.list_books" },
+    { "name": "list_books, no books", "procedure": "pay.list_books", "setup": "no books" },
+    { "name": "author_stats", "procedure": "pay.author_stats" },
+    { "name": "author_stats, no books", "procedure": "pay.author_stats", "setup": "no books" },
+    { "name": "reviews_by_book", "procedure": "pay.reviews_by_book" },
+    { "name": "reviews_by_book, no reviews", "procedure": "pay.reviews_by_book", "setup": "no reviews" },
+    { "name": "author_documents", "procedure": "pay.author_documents" },
+    { "name": "review_digest", "procedure": "pay.review_digest" },
+    { "name": "review_digest, no reviews", "procedure": "pay.review_digest", "setup": "no reviews" },
+    // The text's content claims at least one id when it is not null: one review is that edge.
+    { "name": "review_digest, one review", "procedure": "pay.review_digest", "setup": "one review" }
+  ]
+}

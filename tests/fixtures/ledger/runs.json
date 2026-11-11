@@ -1,0 +1,21 @@
+// The runs of the ledger fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  "setups": {
+    "lenient": "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;",
+    "no lines": "DELETE FROM ledger.line;"
+  },
+
+  "runs": [
+    { "name": "line_values", "procedure": "ledger.line_values" },
+    { "name": "line_values, under ANSI_WARNINGS and ARITHABORT off", "procedure": "ledger.line_values", "setup": "lenient" },
+    { "name": "line_functions", "procedure": "ledger.line_functions" },
+    { "name": "line_functions, under ANSI_WARNINGS and ARITHABORT off", "procedure": "ledger.line_functions", "setup": "lenient" },
+    { "name": "account_stats, ordinary lines", "procedure": "ledger.account_stats", "parameters": { "@account_id": 1 } },
+    { "name": "account_stats, one line", "procedure": "ledger.account_stats", "parameters": { "@account_id": 2 } },
+    { "name": "account_stats, no lines", "procedure": "ledger.account_stats", "parameters": { "@account_id": 5 } },
+    { "name": "account_stats, empty ledger", "procedure": "ledger.account_stats", "parameters": { "@account_id": 1 }, "setup": "no lines" },
+    { "name": "line_windows", "procedure": "ledger.line_windows" },
+    { "name": "lenient, under ANSI_WARNINGS and ARITHABORT off", "procedure": "ledger.lenient", "setup": "lenient" }
+  ]
+}

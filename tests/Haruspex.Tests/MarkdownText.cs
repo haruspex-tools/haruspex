@@ -16,7 +16,7 @@ internal static class MarkdownText
     /// </summary>
     public static IReadOnlyList<string> Documentation { get; } =
     [
-        .. Files(TestPaths.RepoRoot)
+        .. Files(RepositoryPaths.Root)
             .Select(Relative)
             .Where(f => f != "docs/style.md" && !f.StartsWith("tests/prose/fixtures/", StringComparison.Ordinal)),
     ];
@@ -37,7 +37,7 @@ internal static class MarkdownText
     }
 
     /// <summary>A path relative to the repository root, with <c>/</c> on every platform.</summary>
-    public static string Relative(string path) => Path.GetRelativePath(TestPaths.RepoRoot, path).Replace('\\', '/');
+    public static string Relative(string path) => Path.GetRelativePath(RepositoryPaths.Root, path).Replace('\\', '/');
 
     /// <summary>Whether a line opens or closes a fenced code block.</summary>
     public static bool IsFence(string line) => line.TrimStart().StartsWith("```", StringComparison.Ordinal);

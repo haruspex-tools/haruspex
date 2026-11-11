@@ -17,9 +17,9 @@ public class ConfigSchemaTests
 {
     private static readonly JsonDocumentOptions Jsonc = new() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
 
-    private static string SchemaPath => Path.Combine(TestPaths.RepoRoot, "schemas", "haruspex.schema.json");
+    private static string SchemaPath => Path.Combine(RepositoryPaths.Root, "schemas", "haruspex.schema.json");
 
-    private static string Examples => Path.Combine(TestPaths.RepoRoot, "tests", "Haruspex.Tests", "ConfigExamples");
+    private static string Examples => Path.Combine(RepositoryPaths.Root, "tests", "Haruspex.Tests", "ConfigExamples");
 
     private static SchemaSubset Schema()
     {
@@ -70,7 +70,7 @@ public class ConfigSchemaTests
 
     [Fact]
     public void The_shop_fixture_s_config_passes_the_schema() =>
-        Assert.Empty(SchemaErrors(Path.Combine(TestPaths.Fixture("shop"), "haruspex.json")));
+        Assert.Empty(SchemaErrors(Path.Combine(Fixture.Named("shop").Folder, "haruspex.json")));
 
     [Fact]
     public void Every_example_names_the_schema() =>

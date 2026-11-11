@@ -1,0 +1,34 @@
+// The runs of the tabs fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  "setups": {
+    "no open tabs": "UPDATE cafe.tab SET closed_at = DATEADD(hour, 1, opened_at) WHERE closed_at IS NULL;",
+    "an empty cafe": "DELETE FROM cafe.tab_item; DELETE FROM cafe.tab; DELETE FROM cafe.menu_item; DELETE FROM cafe.guest;"
+  },
+
+  "runs": [
+    { "name": "tab_summary, closed with items", "procedure": "cafe.tab_summary", "parameters": { "@tab_id": 10 } },
+    { "name": "tab_summary, open", "procedure": "cafe.tab_summary", "parameters": { "@tab_id": 11 } },
+    { "name": "tab_summary, no items, no nickname", "procedure": "cafe.tab_summary", "parameters": { "@tab_id": 13 } },
+    { "name": "tab_summary, no such tab", "procedure": "cafe.tab_summary", "parameters": { "@tab_id": 99 } },
+    { "name": "tab_receipt, a numeric note", "procedure": "cafe.tab_receipt", "parameters": { "@tab_id": 10 } },
+    { "name": "tab_receipt, a note that is not a number", "procedure": "cafe.tab_receipt", "parameters": { "@tab_id": 11 } },
+    { "name": "tab_receipt, no note, no nickname", "procedure": "cafe.tab_receipt", "parameters": { "@tab_id": 12 } },
+    { "name": "tab_receipt, no items", "procedure": "cafe.tab_receipt", "parameters": { "@tab_id": 13 } },
+    { "name": "tab_receipt, no such tab", "procedure": "cafe.tab_receipt", "parameters": { "@tab_id": 99 } },
+    { "name": "guest_tab_list, an open and a closed tab", "procedure": "cafe.guest_tab_list", "parameters": { "@guest_id": 1 } },
+    { "name": "guest_tab_list, no tabs", "procedure": "cafe.guest_tab_list", "parameters": { "@guest_id": 3 } },
+    { "name": "tab_lines_list, two lines", "procedure": "cafe.tab_lines_list", "parameters": { "@tab_id": 10 } },
+    { "name": "tab_lines_list, none", "procedure": "cafe.tab_lines_list", "parameters": { "@tab_id": 13 } },
+    { "name": "guests_with_open_tab", "procedure": "cafe.guests_with_open_tab" },
+    { "name": "guests_with_open_tab, none open", "procedure": "cafe.guests_with_open_tab", "setup": "no open tabs" },
+    { "name": "guest_labels", "procedure": "cafe.guest_labels" },
+    { "name": "dirty_tab, with a note", "procedure": "cafe.dirty_tab", "parameters": { "@tab_id": 11 } },
+    { "name": "dirty_tab, no note", "procedure": "cafe.dirty_tab", "parameters": { "@tab_id": 12 } },
+    { "name": "open_tabs_payload", "procedure": "cafe.open_tabs_payload" },
+    { "name": "open_tabs_payload, none open", "procedure": "cafe.open_tabs_payload", "setup": "no open tabs" },
+    { "name": "guest_spending", "procedure": "cafe.guest_spending" },
+    { "name": "guest_spending, no guests", "procedure": "cafe.guest_spending", "setup": "an empty cafe" },
+    { "name": "menu_prices", "procedure": "cafe.menu_prices" }
+  ]
+}

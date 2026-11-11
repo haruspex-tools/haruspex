@@ -1,0 +1,25 @@
+// The runs of the funcs fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  "setups": {
+    "lenient": "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;",
+    "an empty gym": "DELETE FROM gym.visit; DELETE FROM gym.member;"
+  },
+
+  "runs": [
+    { "name": "member_dates, no offset", "procedure": "gym.member_dates" },
+    { "name": "member_dates, an offset", "procedure": "gym.member_dates", "parameters": { "@offset": 2 } },
+    { "name": "member_names", "procedure": "gym.member_names" },
+    { "name": "member_names, a NULL format", "procedure": "gym.member_names", "parameters": { "@format": null } },
+    { "name": "lenient, under ANSI_WARNINGS and ARITHABORT off", "procedure": "gym.lenient", "setup": "lenient" },
+    { "name": "member_names, empty gym", "procedure": "gym.member_names", "setup": "an empty gym" },
+    { "name": "visit_totals, a member with timed visits", "procedure": "gym.visit_totals", "parameters": { "@member_id": 1 } },
+    { "name": "visit_totals, a member with untimed visits only", "procedure": "gym.visit_totals", "parameters": { "@member_id": 2 } },
+    { "name": "visit_totals, a member without visits", "procedure": "gym.visit_totals", "parameters": { "@member_id": 4 } },
+    { "name": "visit_totals, empty gym", "procedure": "gym.visit_totals", "parameters": { "@member_id": 1 }, "setup": "an empty gym" },
+    { "name": "visit_windows", "procedure": "gym.visit_windows" },
+    { "name": "visit_money", "procedure": "gym.visit_money" },
+    { "name": "series, up to 3", "procedure": "gym.series", "parameters": { "@upto": 3 } },
+    { "name": "series, up to NULL", "procedure": "gym.series", "parameters": { "@upto": null } }
+  ]
+}

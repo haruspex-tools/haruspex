@@ -129,19 +129,20 @@ internal sealed partial class CodeReferences
         }
 
         // A project, and a layer by its short name as the prose calls it (Ir, Sources, Semantics).
-        foreach (var project in Directory.EnumerateFiles(TestPaths.RepoRoot, "*.csproj", SearchOption.AllDirectories))
+        foreach (var project in Directory.EnumerateFiles(RepositoryPaths.Root, "*.csproj", SearchOption.AllDirectories))
         {
             var name = Path.GetFileNameWithoutExtension(project);
             namespaces.Add(name);
             namespaces.Add(name.Split('.')[^1]);
         }
 
-        // Generated names are real when haruspex generates them: in a committed snapshot, or in a worked example's output,
-        // which WorkedExampleTests holds to what haruspex gives.
-        var modules = Directory.EnumerateFiles(Path.Combine(TestPaths.RepoRoot, "tests", "Haruspex.Tests", "Snapshots"), "*.verified.ts")
+        // Generated names are real when haruspex generates them: in a committed snapshot (a test's own, or a fixture's
+        // expected output), or in a worked example's output, which WorkedExampleTests holds to what haruspex gives.
+        var modules = Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "tests", "Haruspex.Tests", "Snapshots"), "*.verified.ts")
+            .Concat(Fixture.All.SelectMany(f => Directory.EnumerateFiles(f.Expected, "*.verified.ts")))
             .Select(File.ReadAllText)
             .Concat(MarkdownText.Documentation
-                .SelectMany(f => MarkdownText.FencedBlocks(File.ReadAllText(Path.Combine(TestPaths.RepoRoot, f))))
+                .SelectMany(f => MarkdownText.FencedBlocks(File.ReadAllText(Path.Combine(RepositoryPaths.Root, f))))
                 .Where(b => b.Words.Contains(WorkedExample.ZodMark))
                 .Select(b => b.Text));
         foreach (var module in modules)
@@ -184,14 +185,14 @@ internal sealed partial class CodeReferences
     /// <summary>Why a path written in C# source leads nowhere; null when it resolves.</summary>
     public static string? PathProblem(string path)
     {
-        var full = Path.GetFullPath(Path.Combine(TestPaths.RepoRoot, path.TrimEnd('/')));
+        var full = Path.GetFullPath(Path.Combine(RepositoryPaths.Root, path.TrimEnd('/')));
         return File.Exists(full) || Directory.Exists(full) ? null : "names no file or folder of the repository";
     }
 
     /// <summary>The C# files of the repository: the shipped code and the tests, build output and packages left out.</summary>
     public static IEnumerable<string> SourceFiles() =>
         CodeFolders
-            .SelectMany(folder => Directory.EnumerateFiles(Path.Combine(TestPaths.RepoRoot, folder), "*.cs", SearchOption.AllDirectories))
+            .SelectMany(folder => Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, folder), "*.cs", SearchOption.AllDirectories))
             .Where(path => !MarkdownText.Relative(path).Split('/').Any(part => part is "bin" or "obj" or "node_modules"))
             .Order(StringComparer.Ordinal);
 
@@ -245,7 +246,7 @@ internal sealed partial class CodeReferences
     /// <summary>A type known only from the differential tests' source: each member must be declared in its files.</summary>
     private static string? SourceMemberProblem(IEnumerable<string> files, string[] parts)
     {
-        var text = string.Concat(files.Select(f => File.ReadAllText(Path.Combine(TestPaths.RepoRoot, f))));
+        var text = string.Concat(files.Select(f => File.ReadAllText(Path.Combine(RepositoryPaths.Root, f))));
         foreach (var member in parts.Skip(1))
         {
             if (!Regex.IsMatch(text, $@"\b{Regex.Escape(member)}\b\s*(?:\(|\{{|=>|=|;|<)"))

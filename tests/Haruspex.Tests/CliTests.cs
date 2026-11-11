@@ -20,7 +20,7 @@ public class CliTests
     {
         using var outDir = new TempDirectory();
 
-        var (exitCode, output, error) = Run("generate", TestPaths.Fixture("orders"), "--include", "sales.*", "--out", outDir.Path);
+        var (exitCode, output, error) = Run("generate", Fixture.Named("orders").Database, "--include", "sales.*", "--out", outDir.Path);
 
         Assert.Equal(0, exitCode);
         Assert.Equal("", error);
@@ -38,7 +38,7 @@ public class CliTests
         using var outDir = new TempDirectory();
 
         var (exitCode, output, _) = Run(
-            "generate", TestPaths.Fixture("orders"), "--include", "sales.get_order", "-i", "sales.list_*", "--out", outDir.Path);
+            "generate", Fixture.Named("orders").Database, "--include", "sales.get_order", "-i", "sales.list_*", "--out", outDir.Path);
 
         Assert.Equal(0, exitCode);
         Assert.Contains("4 procedures", output, StringComparison.Ordinal);
@@ -61,7 +61,7 @@ public class CliTests
     {
         using var outDir = new TempDirectory();
 
-        var (exitCode, _, error) = Run("generate", TestPaths.Fixture("orders"), "--include", "sales.get_ordr", "--out", outDir.Path);
+        var (exitCode, _, error) = Run("generate", Fixture.Named("orders").Database, "--include", "sales.get_ordr", "--out", outDir.Path);
 
         Assert.Equal(2, exitCode);
         Assert.Contains("sales.get_ordr", error, StringComparison.Ordinal);
@@ -73,7 +73,7 @@ public class CliTests
     {
         using var outDir = new TempDirectory();
 
-        var (exitCode, _, error) = Run("generate", TestPaths.Fixture("orders"), "--include", "get_order", "--out", outDir.Path);
+        var (exitCode, _, error) = Run("generate", Fixture.Named("orders").Database, "--include", "get_order", "--out", outDir.Path);
 
         Assert.Equal(2, exitCode);
         Assert.Contains("get_order", error, StringComparison.Ordinal);
@@ -82,7 +82,7 @@ public class CliTests
     [Fact]
     public void Without_a_config_file_out_is_required()
     {
-        var (exitCode, output, error) = Run("generate", TestPaths.Fixture("orders"), "--include", "*.*");
+        var (exitCode, output, error) = Run("generate", Fixture.Named("orders").Database, "--include", "*.*");
 
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);
@@ -94,7 +94,7 @@ public class CliTests
     {
         using var outDir = new TempDirectory();
 
-        var (exitCode, output, error) = Run("generate", TestPaths.Fixture("orders"), "--out", outDir.Path);
+        var (exitCode, output, error) = Run("generate", Fixture.Named("orders").Database, "--out", outDir.Path);
 
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);

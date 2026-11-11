@@ -1,7 +1,7 @@
 # Fixture: sets
 
 An invented small ice rink for set operations, `CROSS JOIN`, `FULL OUTER JOIN` and `OPENJSON`. No part of it comes
-from a real system. The seed (`Seeds/sets.sql`) makes every query of every set operation give a NULL somewhere (members
+from a real system. The seed (`tests/fixtures/sets/seed.sql`) makes every query of every set operation give a NULL somewhere (members
 without an email or a level, a guest without a phone, a guest's lesson booking without a member), leaves the full join
 unmatched on both sides (members without a locker, a locker without a member), and gives `OPENJSON` a missing path, a JSON
 null under a strict path, an object, an array and a scalar under `AS JSON`, no document at all, and one value of each JSON

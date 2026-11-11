@@ -8,11 +8,13 @@ by a user at runtime.
 ## What happens in a run
 
 1. **A server is found** (below), and one database is created for the run, named `haruspex_test_<random>`.
-2. **Each fixture in `Runs.Fixtures` is deployed** into it: every batch of every `.sql` file under
-   `tests/fixtures/<name>`, retried after the others when it fails, because a fixture's scripts are in no
-   particular order (a foreign key may name a table created later). The fixtures' schemas must not overlap.
-3. **Each fixture is seeded** from `Seeds/<name>.sql`.
-4. **Each run in `Runs.All` calls a procedure** and reads every result set. A run with `ProcedureRun.Setup` runs that SQL
+2. **Each fixture with a seed is deployed** into it (`Runs.Fixtures`, found by listing `tests/fixtures`, whose
+   [README](../fixtures/README.md) describes a fixture's folder): every batch of every `.sql` file under its
+   `database/` folder, retried after the others when it fails, because a fixture's scripts are in no particular order (a
+   foreign key may name a table created later). The fixtures' schemas must not overlap.
+3. **Each fixture is seeded** from its `seed.sql`.
+4. **Each run in `Runs.All` calls a procedure** and reads every result set. The runs are read from each fixture's
+   `runs.json`, which gives each parameter as JSON and leaves its type to the procedure's declaration, as an `EXEC` does. A run with `ProcedureRun.Setup` runs that SQL
    first in a transaction that is rolled back, which is how a procedure without parameters is run against
    empty tables. Such a run writes, so it runs alone (see "Runs that write").
 5. **The output is validated against the IR** (`Validation/IrValidator.cs`).
@@ -111,7 +113,7 @@ calls through `Server/ObservedCall.cs`.
 procedure's first rowset is the one SQL Server describes (`sys.dm_exec_describe_first_result_set_for_object`). A wrong
 precision or length passes the value checks as long as the data is short; the type is a claim of its own.
 
-A fixture may have a `haruspex.json` beside its SQL: its IR is then inferred with it applied, so results it declares
+A fixture may have a `haruspex.json` beside its `database/` folder: its IR is then inferred with it applied, so results it declares
 (the `calls` fixture's dynamic SQL) are checked against the server like everything inferred.
 
 It does not check what the IR leaves open, such as fractional-second precision: that is pinned separately,
@@ -152,7 +154,8 @@ whose items may be null must be seen null (when they can be) and with a value. T
 own (`v[0]`, `v[1]`), a record's values share `v{}`, and a union's variants share their path; a value counts as seen
 for every variant it satisfies.
 
-For the fixtures about scalar facts (`Runs.EdgeFixtures`: `values`, `checks`, `payloads` and `trees`), `The_seed_reaches_every_edge_the_ir_claims`
+For the fixtures about scalar facts (`Runs.EdgeFixtures`: `values`, `checks`, `payloads` and `trees`, whose `runs.json` sets
+`seedReachesEveryEdge` and says why), `The_seed_reaches_every_edge_the_ir_claims`
 also fails unless the data reached every edge of every facet: each bound (or, when exclusive, the nearest step
 inside it), each full length, each minimum length and each value of each set, and each array's fewest and most
 items when the IR bounds them. A maximum of 255 is not shown to hold by values of 7. `orders` is about query shapes, and its scalars are the types `values` covers at their edges; `flow` (statement flow:
@@ -206,6 +209,7 @@ Stopping a run must not leave it behind either:
 
 ## Adding a fixture or a run
 
-Add the fixture's name to `Runs.Fixtures`, write `Seeds/<name>.sql`, and add runs to `Runs.All` until the
-coverage test passes. A procedure that cannot run goes in `Runs.NotRun` with the reason. A run whose procedure itself writes needs a `ProcedureRun.Setup` so that it runs in a write
-session; in a read session the write fails the run.
+A new folder under `tests/fixtures` is found by every test that needs a fixture; [its README](../fixtures/README.md) says
+what the folder holds. Write its `seed.sql`, and add runs to its `runs.json` until the coverage test passes. A procedure
+that cannot run goes in the file's `notRun` with the reason. A run whose procedure itself writes needs a `setup` (the
+`writes` one changes nothing) so that it runs in a write session; in a read session the write fails the run.

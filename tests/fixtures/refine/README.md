@@ -1,7 +1,7 @@
 # Fixture: refine
 
 An invented lending library for refinement: what filters, joins and single-row queries prove. No part of it
-comes from a real system. Every column that may be null is null in some seeded row (`Seeds/refine.sql`), so each claim
+comes from a real system. Every column that may be null is null in some seeded row (`tests/fixtures/refine/seed.sql`), so each claim
 of non-null is tested against rows that could break it.
 
 | Procedure | Covers |

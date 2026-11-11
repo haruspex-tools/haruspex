@@ -3,7 +3,6 @@ using System.Text.Json;
 using Haruspex.Cli;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.Emit.Zod;
-using Haruspex.TestSupport;
 
 namespace Haruspex.DifferentialTests;
 
@@ -33,7 +32,7 @@ public class DeclarationAcceptanceTests(SqlServerFixture server)
     public async Task A_wrong_declaration_is_rejected_by_the_generated_zod(string columns, string rejectedKey, bool accepted)
     {
         server.Require();
-        EmitCheckPackage.RequireNode(Paths.EmitCheck, "the generated Zod was not run against real output");
+        EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated Zod was not run against real output");
 
         var config = $$"""
             { "procedures": { "calls.search_batches": {
@@ -41,8 +40,8 @@ public class DeclarationAcceptanceTests(SqlServerFixture server)
               "why": "dynamic SQL"
             } } }
             """;
-        var project = SqlProject.Load(Paths.Fixture("calls"));
-        var read = ConfigReader.Read(Encoding.UTF8.GetBytes(config), "haruspex.json", Paths.Fixture("calls"));
+        var project = SqlProject.Load(Fixture.Named("calls").Database);
+        var read = ConfigReader.Read(Encoding.UTF8.GetBytes(config), "haruspex.json", Fixture.Named("calls").Folder);
         Assert.Empty(read.Problems);
         var selected = project.Procedures.Where(p => p.ToString() == "calls.search_batches").ToList();
         var applied = project.Infer(selected, read.Config!);
@@ -51,7 +50,7 @@ public class DeclarationAcceptanceTests(SqlServerFixture server)
         var run = Runs.Named("calls: search_batches");
         var observed = await server.ObserveAsync(run);
 
-        var folder = Path.Combine(Paths.EmitCheck, "accept", Guid.NewGuid().ToString("N"));
+        var folder = Path.Combine(RepositoryPaths.EmitCheck, "accept", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
         try
         {
@@ -72,8 +71,8 @@ public class DeclarationAcceptanceTests(SqlServerFixture server)
                 json.WriteEndObject();
             }
 
-            EmitCheckPackage.EnsureInstalled(Paths.EmitCheck);
-            var passed = EmitCheckPackage.TryRun("node", [Path.Combine("src", "accept.mjs"), folder], Paths.EmitCheck, out var output, out _);
+            EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
+            var passed = EmitCheckPackage.TryRun("node", [Path.Combine("src", "accept.mjs"), folder], RepositoryPaths.EmitCheck, out var output, out _);
 
             Assert.True(passed == accepted, output);
             if (!accepted)

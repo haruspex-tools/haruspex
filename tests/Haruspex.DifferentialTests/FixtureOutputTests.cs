@@ -41,7 +41,7 @@ public class FixtureOutputTests(SqlServerFixture server)
         }
 
         // A procedure that is not run (Runs.NotRun says why) is not counted as missing every case.
-        var missing = Coverage.Missing(server.Ir(fixture), seen)
+        var missing = Coverage.Missing(Fixture.Named(fixture).Ir, seen)
             .Where(m => !Runs.NotRun.Keys.Any(p => m.StartsWith(p + " ", StringComparison.Ordinal)))
             .ToList();
         Assert.True(missing.Count == 0, "No run saw these cases, so the claims around them are untested. Extend the seed or add a run:\n" + string.Join("\n", missing));
@@ -64,7 +64,7 @@ public class FixtureOutputTests(SqlServerFixture server)
             reached[run.Procedure] = into;
         }
 
-        var missing = Coverage.MissingEdges(server.Ir(fixture), reached)
+        var missing = Coverage.MissingEdges(Fixture.Named(fixture).Ir, reached)
             .Where(m => !Runs.NotRun.Keys.Any(p => m.StartsWith(p + " ", StringComparison.Ordinal)))
             .ToList();
         Assert.True(missing.Count == 0, "No run reached these edges, so the facets there are untested. Extend the seed:\n" + string.Join("\n", missing));
@@ -79,7 +79,7 @@ public class FixtureOutputTests(SqlServerFixture server)
     public async Task An_untrusted_constraint_claims_nothing_and_the_data_breaks_it()
     {
         server.Require();
-        var fields = server.Ir("checks").Types["ListTicketsRow"].Fields;
+        var fields = Fixture.Named("checks").Ir.Types["ListTicketsRow"].Fields;
         IrFacets Facets(string name) => Assert.IsType<IrScalar>(fields.Single(f => f.Name == name).Type).Facets!;
 
         foreach (var untrusted in new[] { "muted", "late" })
@@ -117,7 +117,7 @@ public class FixtureOutputTests(SqlServerFixture server)
     [MemberData(nameof(Fixtures))]
     public void Every_procedure_is_run_or_excluded_with_a_reason(string fixture)
     {
-        var procedures = server.Ir(fixture).Objects.Select(o => o.Id);
+        var procedures = Fixture.Named(fixture).Ir.Objects.Select(o => o.Id);
         var run = Runs.All.Where(r => r.Fixture == fixture).Select(r => r.Procedure).ToHashSet(StringComparer.Ordinal);
 
         var neither = procedures.Where(p => !run.Contains(p) && !Runs.NotRun.ContainsKey(p)).ToList();

@@ -8,7 +8,7 @@ for trailing spaces. Some constraints are there to be ignored:
 `ck_ticket_pair` (two columns), `ck_ticket_replicated` (NOT FOR REPLICATION), `ck_ticket_muted`, which
 `ticket_nocheck.sql` disables, and `ck_ticket_late`, which `ticket_late.sql` adds WITH NOCHECK after a row that
 breaks it. `ck_ticket_restored` is disabled and then validated again (`ticket_restored.sql`), so it is read. The
-seed and `ticket_late.sql` write rows that break the two untrusted constraints, so a claim from either would fail. The seed (`tests/Haruspex.DifferentialTests/Seeds/checks.sql`) reaches every edge:
+seed and `ticket_late.sql` write rows that break the two untrusted constraints, so a claim from either would fail. The seed (`tests/fixtures/checks/seed.sql`) reaches every edge:
 each bound, each value of each set, each maximum and minimum length, and null in every nullable column. It also
 stores values that pass a string CHECK without being one of its strings exactly (`'CLOSED'`, `'open      '`,
 `'sw'`), which is why a set of strings is never emitted as an enum.

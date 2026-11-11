@@ -20,7 +20,7 @@ public class DescribedTypeTests(SqlServerFixture server)
     {
         server.Require();
         var cancel = TestContext.Current.CancellationToken;
-        var document = server.Ir(fixture);
+        var document = Fixture.Named(fixture).Ir;
         var differences = new List<string>();
 
         // The server describes procedures from metadata, which a read session's user may not see; nothing is written.

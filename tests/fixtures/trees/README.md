@@ -3,7 +3,7 @@
 Scalar functions that return JSON, and functions that call themselves to build trees of any depth: the way T-SQL
 builds a nested document whose depth is in the data. Needs SQL Server 2022 or later (`json_object`).
 
-Two invented domains, with the seed in `tests/Haruspex.DifferentialTests/Seeds/trees.sql`:
+Two invented domains, with the seed in `tests/fixtures/trees/seed.sql`:
 
 - **A bill of materials** (`bom`): parts and assemblies, an assembly's components each with their own components.
   The seed goes four levels deep, uses one part in three assemblies, and has an assembly with no components yet.

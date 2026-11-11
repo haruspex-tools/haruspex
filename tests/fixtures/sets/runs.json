@@ -1,0 +1,27 @@
+// The runs of the sets fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  "setups": {
+    "an empty rink": "DELETE FROM rink.booking; DELETE FROM rink.locker; DELETE FROM rink.session; DELETE FROM rink.guest; DELETE FROM rink.member;"
+  },
+
+  "runs": [
+    { "name": "everyone", "procedure": "rink.everyone" },
+    { "name": "session_board", "procedure": "rink.session_board" },
+    { "name": "session_board, empty rink", "procedure": "rink.session_board", "setup": "an empty rink" },
+    { "name": "regulars, a member who booked", "procedure": "rink.regulars", "parameters": { "@member_id": 1 } },
+    { "name": "regulars, a member who did not", "procedure": "rink.regulars", "parameters": { "@member_id": 5 } },
+    { "name": "counts", "procedure": "rink.counts" },
+    { "name": "counts, empty rink", "procedure": "rink.counts", "setup": "an empty rink" },
+    { "name": "lockers", "procedure": "rink.lockers" },
+    { "name": "member_prefs", "procedure": "rink.member_prefs" },
+    { "name": "member_prefs, empty rink", "procedure": "rink.member_prefs", "setup": "an empty rink" },
+    { "name": "reach, a member and a guest", "procedure": "rink.reach", "parameters": { "@person_id": 1, "@session_id": 1 } },
+    { "name": "reach, a member only, a lesson", "procedure": "rink.reach", "parameters": { "@person_id": 3, "@session_id": 2 } },
+    { "name": "reach, a member and a guest without contacts", "procedure": "rink.reach", "parameters": { "@person_id": 2, "@session_id": 3 } },
+    { "name": "reach, nobody", "procedure": "rink.reach", "parameters": { "@person_id": 99, "@session_id": 4 } },
+    { "name": "busy_people", "procedure": "rink.busy_people" },
+    { "name": "overlaps, counts kept", "procedure": "rink.overlaps", "parameters": { "@min": 0 } },
+    { "name": "overlaps, counts filtered out", "procedure": "rink.overlaps", "parameters": { "@min": 100 } }
+  ]
+}

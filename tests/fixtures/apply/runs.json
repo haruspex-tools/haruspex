@@ -1,0 +1,38 @@
+// The runs of the apply fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  "setups": {
+    "an empty market": "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase; DELETE FROM mart.price; DELETE FROM mart.product; DELETE FROM mart.customer;",
+    "no purchases": "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase;"
+  },
+
+  "runs": [
+    { "name": "list_purchases", "procedure": "mart.list_purchases" },
+    { "name": "list_purchases, none", "procedure": "mart.list_purchases", "setup": "an empty market" },
+    { "name": "purchases_json", "procedure": "mart.purchases_json" },
+    { "name": "purchases_json, none", "procedure": "mart.purchases_json", "setup": "an empty market" },
+    { "name": "customer_tree", "procedure": "mart.customer_tree" },
+    { "name": "customer_tree, no purchases", "procedure": "mart.customer_tree", "setup": "no purchases" },
+    { "name": "customer_tree, no customers", "procedure": "mart.customer_tree", "setup": "an empty market" },
+    { "name": "get_purchase, two lines", "procedure": "mart.get_purchase", "parameters": { "@purchase_id": 10 } },
+    { "name": "get_purchase, no lines", "procedure": "mart.get_purchase", "parameters": { "@purchase_id": 11 } },
+    { "name": "get_purchase, no such purchase", "procedure": "mart.get_purchase", "parameters": { "@purchase_id": 99 } },
+    { "name": "customer_purchases", "procedure": "mart.customer_purchases" },
+    { "name": "last_purchase", "procedure": "mart.last_purchase" },
+    { "name": "last_purchase, no purchases", "procedure": "mart.last_purchase", "setup": "no purchases" },
+    { "name": "customer_activity", "procedure": "mart.customer_activity" },
+    { "name": "customer_activity, no purchases", "procedure": "mart.customer_activity", "setup": "no purchases" },
+    { "name": "product_sizes", "procedure": "mart.product_sizes" },
+    { "name": "open_purchase_by_id, open", "procedure": "mart.open_purchase_by_id", "parameters": { "@purchase_id": 10 } },
+    { "name": "open_purchase_by_id, with a note", "procedure": "mart.open_purchase_by_id", "parameters": { "@purchase_id": 12 } },
+    { "name": "open_purchase_by_id, paid", "procedure": "mart.open_purchase_by_id", "parameters": { "@purchase_id": 11 } },
+    { "name": "open_contacts", "procedure": "mart.open_contacts" },
+    { "name": "list_products", "procedure": "mart.list_products" },
+    { "name": "purchase_overview", "procedure": "mart.purchase_overview" },
+    { "name": "purchase_overview, none", "procedure": "mart.purchase_overview", "setup": "an empty market" },
+    { "name": "purchase_lines, two lines", "procedure": "mart.purchase_lines", "parameters": { "@purchase_id": 10 } },
+    { "name": "purchase_lines, none", "procedure": "mart.purchase_lines", "parameters": { "@purchase_id": 11 } },
+    { "name": "price_versions, changed once", "procedure": "mart.price_versions", "parameters": { "@product_id": 101 } },
+    { "name": "price_versions, never changed", "procedure": "mart.price_versions", "parameters": { "@product_id": 100 } }
+  ]
+}

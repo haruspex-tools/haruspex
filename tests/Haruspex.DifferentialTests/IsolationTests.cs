@@ -134,7 +134,7 @@ public class IsolationTests(SqlServerFixture server)
     [Fact]
     public void No_test_opens_a_connection_of_its_own()
     {
-        var project = Path.Combine(Paths.RepoRoot, "tests", "Haruspex.DifferentialTests");
+        var project = Path.Combine(RepositoryPaths.Root, "tests", "Haruspex.DifferentialTests");
         string[] allowed =
         [
             Path.Combine("Server", "SqlServerFixture.cs"),

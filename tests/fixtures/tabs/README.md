@@ -1,7 +1,7 @@
 # Fixture: tabs
 
 An invented small café for the common expressions, table-valued functions and visible read-uncommitted. No part
-of it comes from a real system. The seed (`Seeds/tabs.sql`) has a guest without tabs, a tab without items, a note that is a
+of it comes from a real system. The seed (`tests/fixtures/tabs/seed.sql`) has a guest without tabs, a tab without items, a note that is a
 number and one that is not, and a menu item without a short code; every nullable column is null in some row returned.
 
 | Function | Covers |

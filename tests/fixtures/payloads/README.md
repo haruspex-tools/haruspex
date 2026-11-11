@@ -4,7 +4,7 @@ An invented bookshop (authors, books, reviews, tags) whose procedures build thei
 hand-written API procedures do: `json_query(json_object(…))`, with nested arrays and aggregates. Needs SQL Server 2025
 (the aggregates and the native `json` type; `json_object` and `json_array` alone exist from 2022).
 
-The seed (`tests/Haruspex.DifferentialTests/Seeds/payloads.sql`) reaches every edge: ids at `int`'s limits, every
+The seed (`tests/fixtures/payloads/seed.sql`) reaches every edge: ids at `int`'s limits, every
 string at its full length, prices, stars and weights at the bounds their CHECK constraints set, a null in every
 nullable value, an author with no books, books with no reviews or tags, and groups of exactly one row (an aggregate's
 fewest items). The facts of each column (lengths, digits, bounds) pass through the constructors unchanged, which is

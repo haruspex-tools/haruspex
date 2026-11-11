@@ -1,0 +1,19 @@
+// The runs of the cases fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  "setups": {
+    "no jobs": "DELETE FROM desk.part_line; DELETE FROM desk.job_note; DELETE FROM desk.job; DELETE FROM desk.customer;"
+  },
+
+  "runs": [
+    { "name": "job_board", "procedure": "desk.job_board" },
+    { "name": "job_card, two lines, one without a price", "procedure": "desk.job_card", "parameters": { "@job_id": 11 } },
+    { "name": "job_card, one free line", "procedure": "desk.job_card", "parameters": { "@job_id": 12 } },
+    { "name": "job_card, no lines", "procedure": "desk.job_card", "parameters": { "@job_id": 10 } },
+    { "name": "job_card, no such job", "procedure": "desk.job_card", "parameters": { "@job_id": 99 } },
+    { "name": "customer_jobs", "procedure": "desk.customer_jobs" },
+    { "name": "status_totals", "procedure": "desk.status_totals" },
+    { "name": "status_totals, done", "procedure": "desk.status_totals", "parameters": { "@status": "D" } },
+    { "name": "status_totals, no jobs", "procedure": "desk.status_totals", "setup": "no jobs" }
+  ]
+}

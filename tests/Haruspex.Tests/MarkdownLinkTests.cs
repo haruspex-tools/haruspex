@@ -16,7 +16,7 @@ namespace Haruspex.Tests;
 /// </remarks>
 public partial class MarkdownLinkTests
 {
-    private static readonly List<string> All = [.. MarkdownText.Files(TestPaths.RepoRoot).Select(MarkdownText.Relative)];
+    private static readonly List<string> All = [.. MarkdownText.Files(RepositoryPaths.Root).Select(MarkdownText.Relative)];
 
     public static TheoryData<string> MarkdownFiles { get; } = [.. All];
 
@@ -27,7 +27,7 @@ public partial class MarkdownLinkTests
     [MemberData(nameof(MarkdownFiles))]
     public void Every_relative_link_in_a_markdown_file_resolves(string file)
     {
-        var path = Path.Combine(TestPaths.RepoRoot, file);
+        var path = Path.Combine(RepositoryPaths.Root, file);
         var problems = new List<string>();
         foreach (var (line, target) in Links(File.ReadAllText(path)))
         {
@@ -64,7 +64,7 @@ public partial class MarkdownLinkTests
         var anchor = hash < 0 ? null : target[(hash + 1)..];
 
         var resolved = pathPart.Length == 0 ? from : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(from)!, pathPart));
-        var root = Path.GetFullPath(TestPaths.RepoRoot) + Path.DirectorySeparatorChar;
+        var root = Path.GetFullPath(RepositoryPaths.Root) + Path.DirectorySeparatorChar;
         if (!resolved.StartsWith(root, StringComparison.Ordinal) && resolved != root.TrimEnd(Path.DirectorySeparatorChar))
             return "leads outside the repository";
         if (Directory.Exists(resolved))

@@ -21,7 +21,7 @@ internal sealed record CorpusManifest(
     IReadOnlyList<CorpusManifest.VendoredFile> Files)
 {
     /// <summary>The folder that holds the corpus: the manifest, the refresh script, and the vendored files below it.</summary>
-    public static string Root { get; } = Path.Combine(TestPaths.RepoRoot, "tests", "corpus");
+    public static string Root { get; } = Path.Combine(RepositoryPaths.Root, "tests", "corpus");
 
     /// <summary>The manifest as committed.</summary>
     public static CorpusManifest Current { get; } = Load();

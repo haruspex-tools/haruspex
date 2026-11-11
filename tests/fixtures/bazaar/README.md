@@ -8,7 +8,7 @@ reserve and a `datetime`; a barter has `bigint` units, a `float` estimate, a `sm
 `time(7)`. The view `bazaar.all_sales` puts them in one shape with `UNION ALL`, so every column but the id takes its type by
 precedence over four different ones.
 
-The seed (`Seeds/bazaar.sql`) reaches the extremes the widened types must hold: `date`'s, `datetime`'s, `smalldatetime`'s and
+The seed (`tests/fixtures/bazaar/seed.sql`) reaches the extremes the widened types must hold: `date`'s, `datetime`'s, `smalldatetime`'s and
 `datetimeoffset`'s ends (each converts to `datetimeoffset(3)` unchanged), a hammer price of 28 nines and 10 places beside a
 reserve of 30 nines (as `decimal(38,8)` it rounds to 10^28), `bigint`'s and `smallmoney`'s ends, a 200-character note and a
 9,000-character memo. Each nullable column is NULL at least once. The default procedures cannot overflow on it, and

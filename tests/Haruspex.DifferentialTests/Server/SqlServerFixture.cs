@@ -1,9 +1,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using Haruspex.Cli;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.DifferentialTests.Validation;
-using Haruspex.Ir;
 using Microsoft.Data.SqlClient;
 using Testcontainers.MsSql;
 
@@ -44,7 +42,6 @@ public sealed class SqlServerFixture : IAsyncLifetime
 
     private readonly DatabaseGate gate = new();
 
-    private readonly ConcurrentDictionary<string, Lazy<IrDocument>> documents = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, Lazy<Task<IReadOnlyList<ObservedResultSet>>>> observations = new(StringComparer.Ordinal);
 
     private MsSqlContainer? container;
@@ -145,10 +142,10 @@ public sealed class SqlServerFixture : IAsyncLifetime
             // though no test has started yet, so that every write goes through it.
             using (await gate.EnterWriteAsync(CancellationToken.None).ConfigureAwait(false))
             {
-                foreach (var fixture in Runs.Fixtures)
+                foreach (var fixture in Fixture.All.Where(f => f.IsDeployed))
                 {
-                    await Deployer.DeployAsync(ConnectionString, Paths.Fixture(fixture)).ConfigureAwait(false);
-                    await Deployer.ExecuteScriptAsync(ConnectionString, Paths.Seed(fixture)).ConfigureAwait(false);
+                    await Deployer.DeployAsync(ConnectionString, fixture.Database).ConfigureAwait(false);
+                    await Deployer.ExecuteScriptAsync(ConnectionString, fixture.Seed!).ConfigureAwait(false);
                 }
 
                 await using var connection = new SqlConnection(ConnectionString);
@@ -261,23 +258,6 @@ public sealed class SqlServerFixture : IAsyncLifetime
             Assert.Fail($"Setting up the test database failed: {failure}");
     }
 
-    /// <summary>The IR inferred for every procedure of a fixture.</summary>
-    public IrDocument Ir(string fixture) => documents.GetOrAdd(fixture, f => new Lazy<IrDocument>(() =>
-    {
-        var project = SqlProject.Load(Paths.Fixture(f));
-        if (project.Diagnostics.Count > 0)
-            throw new InvalidOperationException($"The fixture {f} has diagnostics: {string.Join("; ", project.Diagnostics)}");
-
-        // A fixture's haruspex.json declares results inference can't see (dynamic SQL), so they are checked against the
-        // server like everything inferred.
-        var config = Path.Join(Paths.Fixture(f), HaruspexConfig.FileName);
-        if (!File.Exists(config))
-            return project.Infer(project.Procedures);
-        var read = ConfigReader.Read(config);
-        var applied = project.Infer(project.Procedures, read.Config ?? throw new InvalidOperationException(string.Join("; ", read.Problems)));
-        return applied.Document ?? throw new InvalidOperationException(string.Join("; ", applied.Problems));
-    })).Value;
-
     /// <summary>Runs a procedure once per test run; later calls reuse what it returned.</summary>
     public Task<IReadOnlyList<ObservedResultSet>> ObserveAsync(ProcedureRun run)
     {
@@ -359,7 +339,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
     public async Task<ValidationReport> ValidateAsync(ProcedureRun run)
     {
         ArgumentNullException.ThrowIfNull(run);
-        return IrValidator.Validate(Ir(run.Fixture), run.Procedure, await ObserveAsync(run).ConfigureAwait(false));
+        return IrValidator.Validate(Fixture.Named(run.Fixture).Ir, run.Procedure, await ObserveAsync(run).ConfigureAwait(false));
     }
 
     /// <summary>

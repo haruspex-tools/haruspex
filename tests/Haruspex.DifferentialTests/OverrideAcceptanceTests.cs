@@ -3,7 +3,6 @@ using System.Text.Json;
 using Haruspex.Cli;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.Emit.Zod;
-using Haruspex.TestSupport;
 
 namespace Haruspex.DifferentialTests;
 
@@ -28,10 +27,10 @@ public class OverrideAcceptanceTests(SqlServerFixture server)
     public async Task A_wrong_override_is_rejected_by_the_generated_zod(string config, string rejectedKey, bool accepted)
     {
         server.Require();
-        EmitCheckPackage.RequireNode(Paths.EmitCheck, "the generated Zod was not run against real output");
+        EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated Zod was not run against real output");
 
-        var project = SqlProject.Load(Paths.Fixture("checks"));
-        var read = ConfigReader.Read(Encoding.UTF8.GetBytes(config), "haruspex.json", Paths.Fixture("checks"));
+        var project = SqlProject.Load(Fixture.Named("checks").Database);
+        var read = ConfigReader.Read(Encoding.UTF8.GetBytes(config), "haruspex.json", Fixture.Named("checks").Folder);
         Assert.Empty(read.Problems);
         var selected = project.Procedures.Where(p => p.ToString() == "chk.list_tickets").ToList();
         var applied = project.Infer(selected, read.Config!);
@@ -40,7 +39,7 @@ public class OverrideAcceptanceTests(SqlServerFixture server)
         var run = Runs.All.First(r => r.Procedure == "chk.list_tickets" && r.Setup is null);
         var observed = await server.ObserveAsync(run);
 
-        var folder = Path.Combine(Paths.EmitCheck, "accept", Guid.NewGuid().ToString("N"));
+        var folder = Path.Combine(RepositoryPaths.EmitCheck, "accept", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
         try
         {
@@ -61,8 +60,8 @@ public class OverrideAcceptanceTests(SqlServerFixture server)
                 json.WriteEndObject();
             }
 
-            EmitCheckPackage.EnsureInstalled(Paths.EmitCheck);
-            var passed = EmitCheckPackage.TryRun("node", [Path.Combine("src", "accept.mjs"), folder], Paths.EmitCheck, out var output, out _);
+            EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
+            var passed = EmitCheckPackage.TryRun("node", [Path.Combine("src", "accept.mjs"), folder], RepositoryPaths.EmitCheck, out var output, out _);
 
             Assert.True(passed == accepted, output);
             if (!accepted)

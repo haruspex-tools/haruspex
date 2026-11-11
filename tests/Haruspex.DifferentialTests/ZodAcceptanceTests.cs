@@ -6,7 +6,6 @@ using Haruspex.DifferentialTests.Server;
 using Haruspex.DifferentialTests.Validation;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
-using Haruspex.TestSupport;
 
 namespace Haruspex.DifferentialTests;
 
@@ -31,10 +30,10 @@ public class ZodAcceptanceTests(SqlServerFixture server)
     public async Task The_generated_zod_accepts_every_output(string fixture)
     {
         server.Require();
-        EmitCheckPackage.RequireNode(Paths.EmitCheck, "the generated Zod was not run against real output");
+        EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated Zod was not run against real output");
 
-        var document = server.Ir(fixture);
-        var folder = Path.Combine(Paths.EmitCheck, "accept", Guid.NewGuid().ToString("N"));
+        var document = Fixture.Named(fixture).Ir;
+        var folder = Path.Combine(RepositoryPaths.EmitCheck, "accept", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
         try
         {
@@ -75,9 +74,9 @@ public class ZodAcceptanceTests(SqlServerFixture server)
                 json.WriteEndObject();
             }
 
-            EmitCheckPackage.EnsureInstalled(Paths.EmitCheck);
+            EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
             Assert.True(
-                EmitCheckPackage.TryRun("node", [Path.Combine("src", "accept.mjs"), folder], Paths.EmitCheck, out var output, out var why),
+                EmitCheckPackage.TryRun("node", [Path.Combine("src", "accept.mjs"), folder], RepositoryPaths.EmitCheck, out var output, out var why),
                 $"The generated Zod rejected real output ({why}):\n{output}");
         }
         finally

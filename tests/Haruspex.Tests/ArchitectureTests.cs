@@ -6,12 +6,13 @@ using System.Xml.Linq;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// Enforces the layering in <c>docs/architecture.md</c>: each project under <c>src/</c> is a layer in the table
-/// below, and refers only to what its layer may know. Project references are the first enforcement; this test
-/// is the second, because a dependency direction erodes one convenient reference at a time.
+/// Enforces the layering in <c>docs/architecture.md</c>: each project under <c>src/</c> is a layer in that document's
+/// table, which this test reads, and refers only to what its layer may know. Project references are the first
+/// enforcement; this test is the second, because a dependency direction erodes one convenient reference at a time.
 /// </summary>
 /// <remarks>
-/// Two things are read for each layer. The compiled assembly's references, which are what its code really
+/// The table is read from the document rather than copied here, so it exists once; the document says why it is the
+/// source. Two things are read for each layer. The compiled assembly's references, which are what its code really
 /// uses (the compiler drops a reference nothing uses). And the project file's references, which are what a
 /// published package would depend on even when unused. The second also covers what the first cannot see: a
 /// constant from another assembly is inlined, leaving no reference behind. Framework assemblies are allowed
@@ -21,20 +22,7 @@ namespace Haruspex.Tests;
 /// </remarks>
 public class ArchitectureTests
 {
-    private const string ScriptDom = "Microsoft.SqlServer.TransactSql.ScriptDom";
-
-    private const string Diagnostics = "Haruspex.Diagnostics";
-    private const string Model = "Haruspex.SqlServer.Model";
-    private const string Sources = "Haruspex.SqlServer.Sources";
-    private const string Semantics = "Haruspex.SqlServer.Semantics";
-    private const string Inference = "Haruspex.SqlServer.Inference";
-    private const string Ir = "Haruspex.Ir";
-    private const string Config = "Haruspex.Config";
-    private const string EmitZod = "Haruspex.Emit.Zod";
-    private const string EmitJsonSchema = "Haruspex.Emit.JsonSchema";
-    private const string Cli = "Haruspex.Cli";
-
-    /// <summary>Files, zips and XML: what only the layer that reads sources may know.</summary>
+    /// <summary>Files, zips and XML: what a layer whose row says it never handles them may not refer to.</summary>
     private static readonly string[] SourceFormats = ["System.Xml", "System.IO.Compression", "System.IO.Packaging"];
 
     /// <summary>
@@ -44,48 +32,17 @@ public class ArchitectureTests
     private static readonly string[] FileSystem =
         ["System.IO.File", "System.IO.Directory", "System.IO.FileInfo", "System.IO.DirectoryInfo", "System.IO.FileStream", "System.IO.FileSystemInfo"];
 
-    /// <summary>
-    /// The table of layers in docs/architecture.md. A
-    /// layer may refer to the layers and packages listed for it, and to nothing else of this repository's.
-    /// </summary>
-    private static readonly Layer[] Layers =
-    [
-        new(Diagnostics, Knows: [], Packages: []),
+    private static readonly string Document = Path.Combine(RepositoryPaths.Root, "docs", "architecture.md");
 
-        // Bodies are kept as ScriptDom fragments, so the model needs ScriptDom; it must not know where the
-        // schema came from (Sources) or what a body's references point to (Semantics).
-        new(Model, Knows: [Diagnostics], Packages: [ScriptDom], ForbiddenFramework: SourceFormats, ForbiddenTypes: FileSystem),
-
-        // The only layer that reads files, and later a DACPAC's zip and XML.
-        new(Sources, Knows: [Diagnostics, Model], Packages: [ScriptDom]),
-
-        // Binding needs the model, never how it was read, and never the IR.
-        new(Semantics, Knows: [Diagnostics, Model], Packages: [ScriptDom], ForbiddenFramework: SourceFormats, ForbiddenTypes: FileSystem),
-
-        // From bound bodies into the IR: not files, zips or XML, the emitters or the config file.
-        new(Inference, Knows: [Diagnostics, Model, Semantics, Ir], Packages: [ScriptDom], ForbiddenFramework: SourceFormats, ForbiddenTypes: FileSystem),
-
-        // The IR knows no SQL of any dialect.
-        new(Ir, Knows: [], Packages: []),
-
-        // The config file: selection patterns name model objects, so it may see the model, and overrides and naming
-        // transform the IR; but not SQL syntax (no ScriptDom), and not the emitters, which are handed their settings.
-        new(Config, Knows: [Diagnostics, Model, Ir], Packages: []),
-
-        // Emitters see only the IR.
-        new(EmitZod, Knows: [Ir], Packages: []),
-        new(EmitJsonSchema, Knows: [Ir], Packages: [], Planned: true),
-
-        // Composes everything. It needs no SQL package of its own: parsing belongs to the layers.
-        new(Cli, Knows: [Diagnostics, Model, Sources, Semantics, Inference, Ir, Config, EmitZod, EmitJsonSchema], Packages: ["System.CommandLine"]),
-    ];
+    /// <summary>The table of layers in <c>docs/architecture.md</c>, read from it.</summary>
+    private static readonly Layer[] Layers = ReadLayers();
 
     [Fact]
     public void Every_project_under_src_is_a_layer_in_the_table()
     {
         var notLayers = Projects().Keys.Where(name => Layers.All(l => l.Name != name)).ToList();
 
-        Assert.True(notLayers.Count == 0, $"Not a layer in the table: {string.Join(", ", notLayers)}. Split it into layers, or add the layer to the table and to docs/architecture.md.");
+        Assert.True(notLayers.Count == 0, $"Not a layer in the table: {string.Join(", ", notLayers)}. Split it into layers, or add the layer's row to the table in docs/architecture.md.");
     }
 
     [Fact]
@@ -181,6 +138,54 @@ public class ArchitectureTests
         Assert.Empty(unknown);
     }
 
+    /// <summary>
+    /// Reads the rows of the table under "The table" in <c>docs/architecture.md</c>. A layer's name is in backticks,
+    /// followed by <c>(planned)</c> when it has no code yet. "May refer to" is <c>nothing</c>, <c>every layer</c> or
+    /// short layer names, then after a semicolon the packages in backticks. "Files, zips, XML" is <c>may</c> or
+    /// <c>never</c>. Anything else fails, so a typo can't allow nothing silently.
+    /// </summary>
+    private static Layer[] ReadLayers()
+    {
+        var lines = File.ReadAllLines(Document);
+        var start = Array.IndexOf(lines, "## The table");
+        var rows = lines.Skip(start + 1).SkipWhile(l => !l.StartsWith('|')).TakeWhile(l => l.StartsWith('|')).Skip(2)
+            .Select(l => l.Trim('|').Split('|').Select(c => c.Trim()).ToArray())
+            .ToList();
+        if (start < 0 || rows.Count == 0)
+            throw new InvalidOperationException($"{Document} has no table under \"## The table\".");
+
+        var names = rows.Select(r => Name(r[0])).ToList();
+        string Short(string name) => name.Replace("Haruspex.", "", StringComparison.Ordinal).Replace("SqlServer.", "", StringComparison.Ordinal);
+
+        return [.. rows.Select(row =>
+        {
+            if (row.Length != 5)
+                throw new InvalidOperationException($"{Document}: a row of the layer table has {row.Length} cells, not 5: {string.Join(" | ", row)}");
+            var name = Name(row[0]);
+            var mayReferTo = row[3].Split(';', 2);
+            var layers = mayReferTo[0].Trim() switch
+            {
+                "nothing" => [],
+                "every layer" => [.. names.Where(n => n != name)],
+                var list => list.Split(',').Select(l => names.SingleOrDefault(n => Short(n) == l.Trim())
+                    ?? throw new InvalidOperationException($"{Document}: {name} may refer to \"{l.Trim()}\", which is not a layer in the table.")).ToArray(),
+            };
+            string[] packages = mayReferTo.Length == 2 ? [.. mayReferTo[1].Split(',').Select(p => p.Trim().Trim('`'))] : [];
+            var neverFiles = row[4] switch
+            {
+                "never" => true,
+                "may" => false,
+                var other => throw new InvalidOperationException($"{Document}: {name}'s \"Files, zips, XML\" is \"{other}\", not \"may\" or \"never\"."),
+            };
+            return new Layer(name, layers, packages,
+                ForbiddenFramework: neverFiles ? SourceFormats : null,
+                Planned: row[0].EndsWith("(planned)", StringComparison.Ordinal),
+                ForbiddenTypes: neverFiles ? FileSystem : null);
+        })];
+
+        string Name(string cell) => cell.Split('`') is [_, var inside, ..] ? inside : throw new InvalidOperationException($"{Document}: no layer name in backticks in \"{cell}\".");
+    }
+
     private static string Describe(Layer? layer, string name) => layer is null ? $"{name}, not being a layer," : "its layer";
 
     /// <param name="Name">The project's name, which is also its package id.</param>
@@ -201,7 +206,7 @@ public class ArchitectureTests
     private static SortedDictionary<string, Project> Projects()
     {
         var projects = new SortedDictionary<string, Project>(StringComparer.Ordinal);
-        foreach (var file in Directory.EnumerateFiles(Path.Combine(TestPaths.RepoRoot, "src"), "*.csproj", SearchOption.AllDirectories))
+        foreach (var file in Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "src"), "*.csproj", SearchOption.AllDirectories))
         {
             var xml = XDocument.Load(file);
             var name = Path.GetFileNameWithoutExtension(file);

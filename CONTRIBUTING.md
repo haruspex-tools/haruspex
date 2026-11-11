@@ -15,8 +15,8 @@ A change that types more fields by guessing will not be accepted.
 
 Every change starts with a failing test.
 
-- **A new SQL construct** gets a small fixture (invented SQL, in `tests/fixtures/`) and a snapshot of the
-  IR and of the generated Zod. Write the fixture and the test, run it, and check that the snapshot the
+- **A new SQL construct** gets a small fixture (invented SQL, a folder in `tests/fixtures/` laid out as
+  [its README](tests/fixtures/README.md) says) and a snapshot of the IR and of the generated Zod, in the fixture's `expected/` folder. Write the fixture and the test, run it, and check that the snapshot the
   test proposes (`*.received.*`) is what SQL Server would really do, before accepting it as
   `*.verified.*` (rename it, or rerun with `HARUSPEX_ACCEPT=1`). The snapshot is the claim, so review it
   as carefully as code. The helper is described in `tests/Haruspex.Tests/Snapshotting/README.md`.
@@ -108,7 +108,7 @@ is there because the container's certificate is self-signed; use it only for a s
 To run the tool from source:
 
 ```sh
-dotnet run --project src/Haruspex.Cli -- generate tests/fixtures/orders --include 'sales.*' --out out
+dotnet run --project src/Haruspex.Cli -- generate tests/fixtures/orders/database --include 'sales.*' --out out
 cd tests/fixtures/shop && dotnet run --project ../../../src/Haruspex.Cli -- generate --out ../../../out/shop  # with its haruspex.json
 ```
 
@@ -147,10 +147,10 @@ in the table allows**: only `Sources` reads a database project, `Semantics` neve
 emitters never see SQL, and no SQL Server layer knows the emitters. The table, the reasons for its
 lines, and the types that were split to fit it are in [docs/architecture.md](docs/architecture.md).
 
-`tests/Haruspex.Tests/ArchitectureTests.cs` enforces it: it holds the same table as data and reads each
-assembly's references and each project file's, failing on anything the table doesn't allow. A new layer, or a
-new reference between layers, changes the table in both places in the same pull request. Never weaken the
-test to let a reference through; move the code to the layer that may know it.
+`tests/Haruspex.Tests/ArchitectureTests.cs` enforces it: it reads the table in `docs/architecture.md`, which is its only
+copy, and each assembly's references and each project file's, failing on anything the table doesn't allow. A new layer,
+or a new reference between layers, is a change to that table's row, nowhere else. Never weaken the test to let a
+reference through; move the code to the layer that may know it.
 
 **Each file holds one type and is named after it** (`Table.cs` holds `Table`), so a type's name says where it is.
 Nested types stay in the type they belong to, and a partial type's parts are named after the type and the part
@@ -159,20 +159,12 @@ Nested types stay in the type they belong to, and a partial type's parts are nam
 
 | Path | What it holds |
 |---|---|
-| `src/Haruspex.Diagnostics` | Messages and source locations, shared by the SQL Server layers. Packable, because Model's API uses it. |
-| `src/Haruspex.SqlServer.Model` | The schema as data. Packable; see its `README.md`. |
-| `src/Haruspex.SqlServer.Sources` | Reads a folder of `.sql` files into the model with ScriptDom. Packable; see its `README.md`. |
-| `src/Haruspex.SqlServer.Semantics` | Binds references in bodies to model objects, and interprets the schema. |
-| `src/Haruspex.SqlServer.Inference` | Infers the IR from bound procedure bodies. |
-| `src/Haruspex.Ir` | The IR model, its deterministic JSON form, its path syntax and the one identifier rule. Depends on nothing. |
-| `src/Haruspex.Config` | The config file (`haruspex.json`): reading it, selection, overrides and naming applied to the IR. See its `README.md`. |
-| `src/Haruspex.Emit.Zod` | The Zod emitter. Reads only the IR. |
-| `src/Haruspex.Cli` | The `haruspex` command, and `SqlProject`, which composes the layers. |
+| `src/Haruspex.*` | The layers, one project each. What each knows and may refer to is in [the table in docs/architecture.md](docs/architecture.md#the-table); each project's `README.md` describes it. |
 | `schemas` | The published JSON Schema of `haruspex.json`, checked against examples by `ConfigSchemaTests`. |
 | `tests/Haruspex.Tests` | Unit, snapshot, end-to-end and architecture tests. |
 | `tests/Haruspex.DifferentialTests` | Runs the fixtures in SQL Server and checks the output against the IR and the generated Zod. |
-| `tests/Shared` | Test helpers compiled into both test projects: running the emit-check npm package. |
-| `tests/fixtures` | Invented SQL used by the tests. |
+| `tests/Shared` | Test support compiled into both test projects: the fixtures, found by listing their folder (`Fixture`), the repository's paths, and running the emit-check npm package. |
+| `tests/fixtures` | The fixtures, one folder each: schema, seed, runs and expected outputs ([its README](tests/fixtures/README.md)). |
 | `tests/emit-check` | A small npm package that type-checks the generated Zod. |
 | `tests/prose` | The prose checks (`check.sh`), their npm package and the fixtures that test them. |
 

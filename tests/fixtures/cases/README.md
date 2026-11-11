@@ -1,7 +1,7 @@
 # Fixture: cases
 
 An invented small bicycle repair desk for `CASE`, `IIF`, `CHOOSE`, `NULLIF`, and `COALESCE` and `ISNULL` over JSON. No
-part of it comes from a real system. The seed (`Seeds/cases.sql`) takes every branch of every expression: each job
+part of it comes from a real system. The seed (`tests/fixtures/cases/seed.sql`) takes every branch of every expression: each job
 status, a priority that is NULL, 1, 2, 3 and 4 (beyond `CHOOSE`'s three values), a job finished late and ones not, a phone,
 an empty phone and none, a note, a note row whose note is NULL and jobs without one, a customer without jobs, a job without
 part lines, a line without a price and one priced 0.

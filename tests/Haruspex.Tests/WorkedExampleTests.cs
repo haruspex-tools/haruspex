@@ -15,7 +15,7 @@ public class WorkedExampleTests
 {
     private static readonly List<WorkedExample> All =
     [
-        .. MarkdownText.Documentation.SelectMany(f => WorkedExample.Read(f, File.ReadAllText(Path.Combine(TestPaths.RepoRoot, f))).Examples),
+        .. MarkdownText.Documentation.SelectMany(f => WorkedExample.Read(f, File.ReadAllText(Path.Combine(RepositoryPaths.Root, f))).Examples),
     ];
 
     public static TheoryData<string, int> Examples { get; } = [.. All.Select(e => (e.File, e.Line))];
@@ -28,7 +28,7 @@ public class WorkedExampleTests
     public void Every_worked_example_is_written_so_it_can_be_run()
     {
         var problems = MarkdownText.Documentation
-            .SelectMany(f => WorkedExample.Read(f, File.ReadAllText(Path.Combine(TestPaths.RepoRoot, f))).Problems)
+            .SelectMany(f => WorkedExample.Read(f, File.ReadAllText(Path.Combine(RepositoryPaths.Root, f))).Problems)
             .ToList();
         Assert.True(problems.Count == 0, string.Join("\n", problems));
     }

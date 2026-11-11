@@ -13,17 +13,21 @@ others, published alone as a NuGet package from this repository. Each project un
 
 ## The table
 
-| Layer (project) | Knows | Must not know | May refer to |
-|---|---|---|---|
-| `Haruspex.Diagnostics` | diagnostics: message and source location | anything else | nothing |
-| `Haruspex.SqlServer.Model` | the schema as data: tables, columns, types, collations, keys, CHECK constraints, alias and CLR types, procedures and functions (bodies as ScriptDom fragments), views, synonyms and functions by name | where the schema came from; what any reference in a body points to | Diagnostics; ScriptDom |
-| `Haruspex.SqlServer.Sources` | reading a folder of `.sql` files (later a DACPAC's `model.xml`) into the model | name resolution, types of expressions, the IR | Diagnostics, Model; ScriptDom |
-| `Haruspex.SqlServer.Semantics` | binding a body's references to model objects (scopes, aliases, ambiguity), and interpreting the schema (which columns are never null; what types, alias types and CHECK constraints guarantee about values) | result shapes, nullability inference, the IR | Diagnostics, Model; ScriptDom |
-| `Haruspex.SqlServer.Inference` | shapes, nullability, presence and JSON structure, from bound bodies into the IR | files, zips, XML; the emitters; the config file | Diagnostics, Model, Semantics, Ir; ScriptDom |
-| `Haruspex.Ir` | the IR model and its deterministic JSON | SQL of any dialect | nothing |
-| `Haruspex.Config` | the config file: selection patterns, overrides as transformations of the IR, naming rules, emitter settings | SQL syntax | Diagnostics, Model, Ir |
-| `Haruspex.Emit.Zod` (later `Haruspex.Emit.JsonSchema`) | the IR and their own target | SQL, the model, the config file | Ir |
-| `Haruspex.Cli` | composing all of the above | inference or emission logic of its own | every layer; System.CommandLine |
+| Layer (project) | Knows | Must not know | May refer to | Files, zips, XML |
+|---|---|---|---|---|
+| `Haruspex.Diagnostics` | diagnostics: message and source location | anything else | nothing | may |
+| `Haruspex.SqlServer.Model` | the schema as data: tables, columns, types, collations, keys, CHECK constraints, alias and CLR types, procedures and functions (bodies as ScriptDom fragments), views, synonyms and functions by name | where the schema came from; what any reference in a body points to | Diagnostics; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
+| `Haruspex.SqlServer.Sources` | reading a folder of `.sql` files (later a DACPAC's `model.xml`) into the model | name resolution, types of expressions, the IR | Diagnostics, Model; `Microsoft.SqlServer.TransactSql.ScriptDom` | may |
+| `Haruspex.SqlServer.Semantics` | binding a body's references to model objects (scopes, aliases, ambiguity), and interpreting the schema (which columns are never null; what types, alias types and CHECK constraints guarantee about values) | result shapes, nullability inference, the IR | Diagnostics, Model; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
+| `Haruspex.SqlServer.Inference` | shapes, nullability, presence and JSON structure, from bound bodies into the IR | files, zips, XML; the emitters; the config file | Diagnostics, Model, Semantics, Ir; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
+| `Haruspex.Ir` | the IR model and its deterministic JSON | SQL of any dialect | nothing | may |
+| `Haruspex.Config` | the config file: selection patterns, overrides as transformations of the IR, naming rules, emitter settings | SQL syntax | Diagnostics, Model, Ir | may |
+| `Haruspex.Emit.Zod` | the IR and its own target | SQL, the model, the config file | Ir | may |
+| `Haruspex.Emit.JsonSchema` (planned) | the IR and its own target | SQL, the model, the config file | Ir | may |
+| `Haruspex.Cli` | composing all of the above | inference or emission logic of its own | every layer; `System.CommandLine` | may |
+
+This table is the one copy: `ArchitectureTests` reads it (below), and every other mention of the layers points here. In
+"May refer to", a layer is named without `Haruspex.` and `SqlServer.`, and packages, in backticks, follow the semicolon.
 
 **The rule:** a layer refers only to what its row allows. In particular: ScriptDom is only for the four layers
 that handle SQL syntax; the IR and the emitters never see SQL; Model, Semantics and Inference never read files,
@@ -53,21 +57,30 @@ Why these lines:
 ## Enforced by a test
 
 The project references are the first enforcement. `tests/Haruspex.Tests/ArchitectureTests.cs` is the second: it
-holds the table above as data and fails when
+reads the table above, from this file, and fails when
 
 - a project under `src/` is not a layer in the table, or a layer that has code today has no project;
 - a compiled assembly refers to a layer, or a package's assembly, that its row doesn't allow (read from the
   assembly's metadata, so it is what the code really uses);
 - a project file has a `ProjectReference` or `PackageReference` its row doesn't allow (what a published package
   would depend on, even if unused);
-- Model, Semantics or Inference refers to the framework's XML, compression or packaging assemblies, or uses the
-  file system's types (`File`, `Directory`, `FileInfo`, `DirectoryInfo`, `FileStream`, `FileSystemInfo`). Those
-  types share `System.Runtime` with everything else, so the test reads each assembly's type references for them.
+- a layer whose row says it never handles files, zips or XML (Model, Semantics and Inference) refers to the framework's
+  XML, compression or packaging assemblies, or uses the file system's types (`File`, `Directory`, `FileInfo`,
+  `DirectoryInfo`, `FileStream`, `FileSystemInfo`). Those types share `System.Runtime` with everything else, so the test
+  reads each assembly's type references for them;
+- the table names a layer it doesn't list, or a cell the test can't read, so a typo can't allow nothing silently.
 
-Adding a layer means adding it to the table here and in the test, in the same change. A layer decided on but without
-code yet is marked `Layer.Planned` in the test's table (`Haruspex.Emit.JsonSchema` today), so its project may be missing; when
-its code arrives the flag is removed, and the project must then exist. Dependency direction erodes one convenient
-reference at a time, which is why it is checked rather than only written down.
+**Why the test reads the document**, rather than holding the table as data and writing the document from it: the
+table is a design decision, read and argued over as prose, and the reasons for its lines are beside it here. Kept in
+the document, a change to the layering is one edit that a reviewer reads where the reasons are, and the test makes sure
+the code obeys it. Generated from the test's data, the document would be an output that someone must remember to
+regenerate, and the decision would live in a C# array that few readers open. The cost is a small parser, which fails
+loudly on a cell it can't read.
+
+Adding a layer means adding its row here. A layer decided on but without code yet is marked `(planned)` after its name
+(`Haruspex.Emit.JsonSchema` today), so its project may be missing; when its code arrives the mark is removed, and the
+project must then exist. Dependency direction erodes one convenient reference at a time, which is why it is checked
+rather than only written down.
 
 ## Types that were split, and why
 

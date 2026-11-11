@@ -1,0 +1,42 @@
+// The runs of the refine fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  "setups": {
+    "an empty library": "DELETE FROM lend.loan; DELETE FROM lend.copy; DELETE FROM lend.title; DELETE FROM lend.member;",
+    "no loans": "DELETE FROM lend.loan;"
+  },
+
+  "runs": [
+    { "name": "search_titles, no filter", "procedure": "lend.search_titles" },
+    { "name": "search_titles, by author", "procedure": "lend.search_titles", "parameters": { "@author": "A. Writer" } },
+    { "name": "search_titles, by genre and name", "procedure": "lend.search_titles", "parameters": { "@genre": "fiction", "@name": "T" } },
+    { "name": "authors_report", "procedure": "lend.authors_report" },
+    { "name": "authors_report, no titles", "procedure": "lend.authors_report", "setup": "an empty library" },
+    { "name": "get_member, with a home branch", "procedure": "lend.get_member", "parameters": { "@member_id": 1 } },
+    { "name": "get_member, no email or home branch", "procedure": "lend.get_member", "parameters": { "@member_id": 2 } },
+    { "name": "get_member, never borrowed", "procedure": "lend.get_member", "parameters": { "@member_id": 4 } },
+    { "name": "get_member, no such member", "procedure": "lend.get_member", "parameters": { "@member_id": 999 } },
+    { "name": "member_by_email", "procedure": "lend.member_by_email", "parameters": { "@email": "cy@example.test" } },
+    { "name": "member_by_email, with a nickname", "procedure": "lend.member_by_email", "parameters": { "@email": "ann@example.test" } },
+    { "name": "member_by_email, no such email", "procedure": "lend.member_by_email", "parameters": { "@email": "none@example.test" } },
+    { "name": "member_by_email, null", "procedure": "lend.member_by_email", "parameters": { "@email": null } },
+    { "name": "copy_at, shelved", "procedure": "lend.copy_at", "parameters": { "@branch_id": 1, "@copy_no": 1 } },
+    { "name": "copy_at, no author", "procedure": "lend.copy_at", "parameters": { "@branch_id": 2, "@copy_no": 1 } },
+    { "name": "copy_at, no shelf", "procedure": "lend.copy_at", "parameters": { "@branch_id": 1, "@copy_no": 2 } },
+    { "name": "copy_at, no such copy", "procedure": "lend.copy_at", "parameters": { "@branch_id": 9, "@copy_no": 9 } },
+    { "name": "open_loans", "procedure": "lend.open_loans" },
+    { "name": "copies_at, two copies", "procedure": "lend.copies_at", "parameters": { "@branch_id": 1 } },
+    { "name": "copies_at, none", "procedure": "lend.copies_at", "parameters": { "@branch_id": 4 } },
+    { "name": "loan_totals", "procedure": "lend.loan_totals", "parameters": { "@member_id": 1 } },
+    { "name": "member_digests", "procedure": "lend.member_digests" },
+    { "name": "branch_stats", "procedure": "lend.branch_stats" },
+    { "name": "branch_stats, no loans", "procedure": "lend.branch_stats", "setup": "no loans" },
+    { "name": "overdue_members", "procedure": "lend.overdue_members", "parameters": { "@today": "2026-11-10" } },
+    { "name": "overdue_members, none yet", "procedure": "lend.overdue_members", "parameters": { "@today": "2026-01-01" } },
+    { "name": "catalogue_summary", "procedure": "lend.catalogue_summary" },
+    { "name": "catalogue_summary, an empty library", "procedure": "lend.catalogue_summary", "setup": "an empty library" },
+    { "name": "latest_loan, returned and not", "procedure": "lend.latest_loan", "parameters": { "@member_id": 1 } },
+    { "name": "latest_loan, never borrowed", "procedure": "lend.latest_loan", "parameters": { "@member_id": 4 } },
+    { "name": "latest_loan, back with no fine", "procedure": "lend.latest_loan", "parameters": { "@member_id": 3 } }
+  ]
+}

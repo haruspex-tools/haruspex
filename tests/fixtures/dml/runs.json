@@ -1,0 +1,38 @@
+// The runs of the dml fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what
+// each key means.
+{
+  "setups": {
+    // Changes nothing, but asks for a write session, which a run of a procedure that writes permanent tables needs.
+    "writes": "SET NOCOUNT ON;",
+    "nothing low": "UPDATE depot.stock SET qty = 100;",
+    "a shelved part low": "UPDATE depot.stock SET qty = 1 WHERE part_id = 2;"
+  },
+
+  "runs": [
+    { "name": "list_parts, every part", "procedure": "depot.list_parts" },
+    { "name": "list_parts, by code", "procedure": "depot.list_parts", "parameters": { "@code": "B-200" } },
+    { "name": "get_order, with lines and no note", "procedure": "depot.get_order", "parameters": { "@order_id": 1 } },
+    { "name": "get_order, no lines", "procedure": "depot.get_order", "parameters": { "@order_id": 3 } },
+    { "name": "get_order, no such order", "procedure": "depot.get_order", "parameters": { "@order_id": 999 } },
+    { "name": "log_error", "procedure": "depot.log_error", "parameters": { "@procedure": "depot.test", "@message": null }, "setup": "writes" },
+    { "name": "place_order", "procedure": "depot.place_order", "parameters": { "@part_id": 2, "@qty": 5 }, "setup": "writes" },
+    { "name": "place_order, a part with no stock, a note", "procedure": "depot.place_order", "parameters": { "@part_id": 3, "@qty": 1, "@note": "call first" }, "setup": "writes" },
+    { "name": "cancel_order, no note", "procedure": "depot.cancel_order", "parameters": { "@order_id": 1 }, "setup": "writes" },
+    { "name": "cancel_order, a note", "procedure": "depot.cancel_order", "parameters": { "@order_id": 2 }, "setup": "writes" },
+    { "name": "cancel_order, no such order", "procedure": "depot.cancel_order", "parameters": { "@order_id": 999 }, "setup": "writes" },
+    { "name": "sync_prices", "procedure": "depot.sync_prices", "setup": "writes" },
+    { "name": "restock, one low part", "procedure": "depot.restock", "setup": "writes" },
+    { "name": "restock, nothing low", "procedure": "depot.restock", "setup": "nothing low" },
+    { "name": "restock, a shelved part last", "procedure": "depot.restock", "setup": "a shelved part low" },
+    { "name": "purge", "procedure": "depot.purge", "setup": "writes" },
+    { "name": "recent_note", "procedure": "depot.recent_note" },
+    { "name": "add_note", "procedure": "depot.add_note", "parameters": { "@note_id": 2, "@text": "new" }, "setup": "writes" },
+    { "name": "peek_parts", "procedure": "depot.peek_parts" },
+    { "name": "prune_prices", "procedure": "depot.prune_prices", "setup": "writes" },
+    { "name": "low_floor, null when declared", "procedure": "depot.low_floor" },
+    { "name": "low_floor, a value when declared", "procedure": "depot.low_floor", "parameters": { "@start": 3 } },
+    { "name": "add_note_by_synonym", "procedure": "depot.add_note_by_synonym", "parameters": { "@note_id": 3, "@text": "via" }, "setup": "writes" },
+    { "name": "pick_order_lines, no note", "procedure": "depot.pick_order_lines", "parameters": { "@order_id": 1 }, "setup": "writes" },
+    { "name": "pick_order_lines, a note", "procedure": "depot.pick_order_lines", "parameters": { "@order_id": 2 }, "setup": "writes" }
+  ]
+}

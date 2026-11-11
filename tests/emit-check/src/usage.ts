@@ -7,7 +7,7 @@ import type {
   ListCustomerOrdersRow,
   ListCustomersRow,
   ListOrdersRow,
-} from '../generated/haruspex.zod'
+} from '../generated/orders.zod'
 
 // A top-level FOR JSON query that matches no rows returns no row at all; the reader convention makes that
 // null for a single-object result (and [] for a list).

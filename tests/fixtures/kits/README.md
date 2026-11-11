@@ -6,7 +6,7 @@ back by another route: a variable, a table variable, a temporary table, a view, 
 function, a CTE, a derived table, `SELECT … INTO`, a JSON literal, `OPENJSON` and `JSON_VALUE`. A stored JSON column
 (`kit.kit.extras`) is read too, and stays unknown: someone else may write it.
 
-The seed (`tests/Haruspex.DifferentialTests/Seeds/kits.sql`) reaches the edges the tracing turns on: a kit with three parts
+The seed (`tests/fixtures/kits/seed.sql`) reaches the edges the tracing turns on: a kit with three parts
 (one without a colour, a full-length sku and colour, a quantity of 255), a free kit with no parts (every FOR JSON subquery over
 its parts is NULL, every literal fallback is taken, and the multi-statement function returns no row for it), a kit with one
 part and stored extras, a kit with no parts and no fallback, and kit ids that are not there, which leave a variable assigned

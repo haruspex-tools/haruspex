@@ -2,7 +2,7 @@
 
 An invented small gym for the built-in functions: date and string functions, `STRING_AGG`, `JSON_VALUE`, window
 functions, arithmetic and precedence over `float`, `real`, `money`, `smallmoney`, `datetime` and `smalldatetime`, the bare `NULL`
-and `GENERATE_SERIES`. No part of it comes from a real system. The seed (`Seeds/funcs.sql`) makes each nullable input NULL at
+and `GENERATE_SERIES`. No part of it comes from a real system. The seed (`tests/fixtures/funcs/seed.sql`) makes each nullable input NULL at
 least once, gives the plus plan only NULL nicknames, gives one member only untimed visits, and leaves every framed window and
 `LAG`/`LEAD` empty at a member's first or last visit.
 

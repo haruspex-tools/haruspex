@@ -18,7 +18,7 @@ public class ProjectReadmeTests
     public void Every_project_under_src_has_a_readme_headed_with_its_name()
     {
         var problems = new List<string>();
-        foreach (var project in Directory.EnumerateFiles(Path.Combine(TestPaths.RepoRoot, "src"), "*.csproj", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
+        foreach (var project in Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "src"), "*.csproj", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
         {
             var name = Path.GetFileNameWithoutExtension(project);
             var readme = Path.Combine(Path.GetDirectoryName(project)!, "README.md");
@@ -50,7 +50,7 @@ public class ProjectReadmeTests
     public void Every_project_readme_is_its_layer_s_chapter_in_brief()
     {
         var problems = new List<string>();
-        foreach (var readme in Directory.EnumerateFiles(Path.Combine(TestPaths.RepoRoot, "src"), "README.md", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
+        foreach (var readme in Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "src"), "README.md", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
         {
             var name = MarkdownText.Relative(readme);
             var lines = File.ReadAllLines(readme);

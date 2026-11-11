@@ -1,7 +1,7 @@
 # Fixture: apply
 
 An invented small market for `CROSS APPLY`, `OUTER APPLY`, `VALUES` lists and views. No part of it comes from a
-real system. The seed (`Seeds/apply.sql`) has outer rows an APPLY finds nothing for: a customer without purchases (and
+real system. The seed (`tests/fixtures/apply/seed.sql`) has outer rows an APPLY finds nothing for: a customer without purchases (and
 without an email or city), a purchase without lines, a sent purchase that the open-purchase view leaves out, and a price
 changed once (in a later batch, so its history row has a period); so every
 claim about an APPLY's right side meets data that could break it. Every nullable column is null in some row returned.

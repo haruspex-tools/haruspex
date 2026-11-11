@@ -17,7 +17,7 @@ public partial class CodeReferenceTests
     public void The_documentation_holds_references_to_check()
     {
         var references = MarkdownText.Documentation
-            .SelectMany(f => MarkdownText.InlineCode(File.ReadAllText(Path.Combine(TestPaths.RepoRoot, f))))
+            .SelectMany(f => MarkdownText.InlineCode(File.ReadAllText(Path.Combine(RepositoryPaths.Root, f))))
             .Count(c => CodeReferences.IsReference(c.Code));
 
         // Hundreds today; a fall to a handful would mean the scan stopped seeing them, not that they went away.
@@ -28,7 +28,7 @@ public partial class CodeReferenceTests
     [MemberData(nameof(Documents))]
     public void Every_code_reference_in_a_document_resolves(string file)
     {
-        var markdown = File.ReadAllText(Path.Combine(TestPaths.RepoRoot, file));
+        var markdown = File.ReadAllText(Path.Combine(RepositoryPaths.Root, file));
         var problems = new List<string>();
         foreach (var (line, code) in MarkdownText.InlineCode(markdown))
         {
