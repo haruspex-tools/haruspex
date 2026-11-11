@@ -241,3 +241,6 @@ dotnet_diagnostic.CA1062.severity = none
 dotnet_diagnostic.CA1515.severity = none
 # The validators lower-case names to write them in messages, never to compare them.
 dotnet_diagnostic.CA1308.severity = none
+# An editor hint to tag strings that look like JSON for colouring: here they are expected outputs written exactly as
+# SQL Server returns them, and a /*lang=json*/ before each of 250 would be noise.
+dotnet_diagnostic.JSON002.severity = none
