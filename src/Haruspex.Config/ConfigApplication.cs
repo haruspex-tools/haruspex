@@ -114,8 +114,8 @@ public static class ConfigApplication
                 results[index] = applier.Apply(obj, results[index], path);
         }
 
-        // A selected procedure whose results are unknowable and not declared: generation goes ahead (check, slice 7, will fail
-        // it), but the statement is named, with what to declare.
+        // A selected procedure whose results are unknowable and not declared: generation goes ahead (a `check`
+        // command, which is planned, will fail it), but the statement is named, with what to declare.
         for (var i = 0; i < document.Objects.Count; i++)
         {
             var obj = document.Objects[i];

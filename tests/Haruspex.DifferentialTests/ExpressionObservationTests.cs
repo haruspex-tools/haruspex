@@ -3,7 +3,7 @@ using Haruspex.DifferentialTests.Server;
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// What SQL Server gives for the common expressions slice 6f types: <c>COALESCE</c>, <c>ISNULL</c>, <c>CAST</c> and
+/// What SQL Server gives for the common expressions haruspex types: <c>COALESCE</c>, <c>ISNULL</c>, <c>CAST</c> and
 /// <c>CONVERT</c> (with a style too), <c>TRY_CAST</c>, <c>CONCAT</c>, <c>CONCAT_WS</c>, string <c>+</c>, decimal arithmetic,
 /// <c>SUM</c>, and the literals they are built from. Types are read as the server describes them
 /// (<c>sys.dm_exec_describe_first_result_set</c>); what can be NULL, and what is cut short, is read from values. The rules

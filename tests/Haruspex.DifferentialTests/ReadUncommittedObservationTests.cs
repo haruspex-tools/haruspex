@@ -3,10 +3,10 @@ using Haruspex.DifferentialTests.Server;
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// How far an isolation level a procedure sets reaches, which visible read-uncommitted rests on (slice 6f; Haruspex.SqlServer.Inference's
+/// How far an isolation level a procedure sets reaches, which visible read-uncommitted rests on (Haruspex.SqlServer.Inference's
 /// README.md, "Cardinality"). That a scan under read-uncommitted can return a row twice is not observed here: it needs another
 /// session splitting pages during the scan. It is documented by Microsoft for the <c>NOLOCK</c> and <c>READUNCOMMITTED</c> hints and
-/// the isolation level, and haruspex takes it as decided (haruspex-design.md, "What can and cannot be typed", 10 Nov 2026), which
+/// the isolation level, and haruspex takes it as decided (10 Nov 2026), which
 /// only claims less. Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
 public class ReadUncommittedObservationTests(SqlServerFixture server)

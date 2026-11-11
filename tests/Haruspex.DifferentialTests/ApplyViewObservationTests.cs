@@ -4,7 +4,7 @@ namespace Haruspex.DifferentialTests;
 
 /// <summary>
 /// What SQL Server does with <c>CROSS APPLY</c>, <c>OUTER APPLY</c>, <c>VALUES</c> lists and views, observed and kept as
-/// tests: the rules slice 6e rests on (Haruspex.SqlServer.Inference, README "APPLY" and "Views"). Which outer rows an APPLY
+/// tests: the rules haruspex's reading of APPLY and views rests on (Haruspex.SqlServer.Inference, README "APPLY" and "Views"). Which outer rows an APPLY
 /// keeps, what an applied aggregate gives, what an applied query can see, what type a VALUES column has, and what a view
 /// binds when it is created. Each test creates what it needs in a write session, rolled back. Observed on SQL Server 2025
 /// RTM-CU10.

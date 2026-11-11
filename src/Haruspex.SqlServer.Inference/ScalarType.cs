@@ -4,7 +4,7 @@ using Haruspex.SqlServer.Model;
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
-/// A built-in scalar type as SQL Server types an expression (slice 6f): what <c>COALESCE</c>, conversions, string building and
+/// A built-in scalar type as SQL Server types an expression: what <c>COALESCE</c>, conversions, string building and
 /// decimal arithmetic compute from, and what they give. Each rule here was observed (the differential tests'
 /// <c>ExpressionObservationTests</c>, named on each), and anything not listed gives null, which the caller makes unknown.
 /// </summary>
@@ -157,7 +157,7 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
 
     /// <summary>
     /// The type a column takes whose values are of these types, as a set operation, <c>COALESCE</c>, <c>CASE</c>, <c>IIF</c> and
-    /// <c>CHOOSE</c> all type it (one rule, slice 6k; observed over every ordered pair of a grid, SetTypeGridTests, and in
+    /// <c>CHOOSE</c> all type it (one rule; observed over every ordered pair of a grid, SetTypeGridTests, and in
     /// SetTypeObservationTests), or null when SQL Server refuses them (<see cref="Clash"/>). It is a fold, left to right, of
     /// <see cref="Pair"/> (observed: A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal): bigint, then
     /// money, then decimal(5,2) is decimal(19,4), money having taken the bigint in; bigint, decimal(5,2), money is
@@ -350,7 +350,7 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// </list>
     /// Past 38 digits the precision is 38 and the scale is cut to keep the integer digits: for + and -, to
     /// 38 - max(p1 - s1, p2 - s2), with no floor; for * and /, to min(s, max(6, 38 - (p - s))), so never below 6 unless it was
-    /// already (observed over 144,500 operand pairs while building slice 6j; ArithmeticGridTests keeps a grid of them).
+    /// already (observed over 144,500 operand pairs when the rule was written; ArithmeticGridTests keeps a grid of them).
     /// </summary>
     private static (int Precision, int Scale, int UncappedPrecision, int UncappedScale)? DecimalResult(char op, ScalarType left, ScalarType right)
     {

@@ -4,7 +4,7 @@ namespace Haruspex.DifferentialTests;
 
 /// <summary>
 /// What SQL Server returns for DML on permanent tables, for <c>OUTPUT</c>, for triggers and for cursors, observed and kept
-/// as tests: the rules slice 6d's statement walk rests on (Haruspex.SqlServer.Inference's README.md, "DML" and
+/// as tests: the rules haruspex's reading of writes rests on (Haruspex.SqlServer.Inference's README.md, "DML" and
 /// "Cursors"). Each test creates what it needs in a write session, rolled back, alone in the test database while it lasts.
 /// Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
@@ -23,7 +23,7 @@ public class DmlObservationTests(SqlServerFixture server)
     public async Task Dml_on_a_permanent_table_returns_no_result_set()
     {
         // With NOCOUNT off, each statement sends a row count, which a client sees as no result set (no columns): only the
-        // final SELECT arrives. Every form the slice models: INSERT … VALUES, … SELECT, … EXEC, … DEFAULT VALUES; UPDATE, with
+        // final SELECT arrives. Every form haruspex models: INSERT … VALUES, … SELECT, … EXEC, … DEFAULT VALUES; UPDATE, with
         // FROM and a join; DELETE, with FROM; MERGE; TRUNCATE TABLE; and each behind a WITH.
         string[] setup = [
             Item, Note,

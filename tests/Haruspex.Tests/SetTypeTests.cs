@@ -5,7 +5,7 @@ namespace Haruspex.Tests;
 
 /// <summary>
 /// A column whose values have different types: a set operation's, <c>COALESCE</c>'s and a <c>CASE</c>'s, all typed by one rule
-/// (slice 6k, <c>ScalarType.Common</c>). Each rule rests on an observation in the differential tests' <c>SetTypeObservationTests</c>,
+/// (<c>ScalarType.Common</c>). Each rule rests on an observation in the differential tests' <c>SetTypeObservationTests</c>,
 /// named where it matters; <c>SetTypeGridTests</c> compares the types with the server's over every pair of a grid.
 /// </summary>
 public class SetTypeTests
@@ -79,7 +79,7 @@ public class SetTypeTests
     [Fact]
     public void A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal()
     {
-        // A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal (review round 1): the bigint must become
+        // A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal: the bigint must become
         // decimal(19,4), which it may overflow.
         static string Chain(params string[] columns) =>
             Typed(Procedure(string.Join(" UNION ALL ", columns.Select((c, i) => $"SELECT s.{c}{(i == 0 ? " AS v" : "")} FROM dbo.sale AS s")) + ";"));
@@ -99,7 +99,7 @@ public class SetTypeTests
     [Fact]
     public void A_chain_is_refused_only_when_a_value_cannot_become_its_type()
     {
-        // A_chain_is_refused_only_when_a_value_cannot_become_its_type (review round 1).
+        // A_chain_is_refused_only_when_a_value_cannot_become_its_type.
         Assert.StartsWith("datetime ", Typed(Procedure("SELECT 1 AS v UNION ALL SELECT s.sold FROM dbo.sale AS s UNION ALL SELECT s.stamp FROM dbo.sale AS s;")), StringComparison.Ordinal);
         Assert.Equal("datetime2(7)", Typed(Procedure("SELECT s.sold AS v FROM dbo.sale AS s UNION ALL SELECT s.at_time FROM dbo.sale AS s UNION ALL SELECT s.moment FROM dbo.sale AS s;")));
         Assert.StartsWith("datetime ", Typed(Procedure("SELECT COALESCE(1, s.sold, s.stamp) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
@@ -110,7 +110,7 @@ public class SetTypeTests
     [Fact]
     public void An_int_constant_counts_its_own_digits_and_one_the_server_may_fold_leaves_the_scale_unknown()
     {
-        // An_int_constant_counts_its_own_digits_beside_a_decimal (review round 1).
+        // An_int_constant_counts_its_own_digits_beside_a_decimal.
         static string Beside(string other) => Typed(Procedure($"SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT {other} FROM dbo.sale AS s;"));
         Assert.Equal("decimal(38,37) null-literal", Beside("CAST(NULL AS int)"));
         Assert.Equal("decimal(38,37) null-literal", Beside("TRY_CONVERT(int, NULL)"));

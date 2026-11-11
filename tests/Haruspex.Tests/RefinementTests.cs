@@ -5,7 +5,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// Refinement (slice 6c): what predicates, joins and single-row queries prove. A filter that is never TRUE when a column is
+/// Refinement: what predicates, joins and single-row queries prove. A filter that is never TRUE when a column is
 /// NULL makes the column non-null in the rows it keeps; an aggregate without GROUP BY returns exactly one row; TOP (1),
 /// FETCH 1 and a filter fixing a whole key return at most one. The engine rules each test leans on are observed in the
 /// differential tests' <c>RefinementObservationTests</c>, named where they matter.
@@ -490,7 +490,7 @@ public class RefinementTests
     [Fact]
     public void A_windowed_aggregate_not_modelled_is_unknown()
     {
-        // MIN, MAX, SUM and COUNT over a window are read (slice 6i, FunctionTests), AVG and the statistics since 6j
+        // MIN, MAX, SUM and COUNT over a window are read (FunctionTests), AVG and the statistics too
         // (NumericTests); CHECKSUM_AGG is not, with a window or without.
         var doc = Procedure("SELECT CHECKSUM_AGG(t.id) OVER () AS m FROM dbo.t AS t;");
 

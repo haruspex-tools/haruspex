@@ -1,5 +1,5 @@
 -- A cursor's query takes its variables as they were when it was declared: @floor is @start there, though set to 5 before
--- OPEN, so @seen is @start after the FETCH, null when it is (review round 1, finding 2).
+-- OPEN, so @seen is @start after the FETCH, null when it is.
 CREATE PROCEDURE depot.low_floor
     @start int = NULL
 AS

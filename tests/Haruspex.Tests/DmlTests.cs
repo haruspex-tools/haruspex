@@ -5,7 +5,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// DML on permanent tables, <c>OUTPUT</c>, triggers, <c>WITH</c> before DML, and cursors (slice 6d). The engine rules each
+/// DML on permanent tables, <c>OUTPUT</c>, triggers, <c>WITH</c> before DML, and cursors. The engine rules each
 /// test leans on are observed in the differential tests' <c>DmlObservationTests</c>, named in each test.
 /// </summary>
 public class DmlTests
@@ -207,7 +207,7 @@ public class DmlTests
     [Fact]
     public void A_write_through_a_synonym_reaches_the_triggers_of_its_table()
     {
-        // Review round 1, finding 3. Observed: A_write_through_a_synonym_fires_the_triggers_of_its_table.
+        // Observed: A_write_through_a_synonym_fires_the_triggers_of_its_table.
         var inside = Infer(
             ("synonym", "CREATE SYNONYM dbo.item_syn FOR dbo.item;"),
             ("trigger", "CREATE TRIGGER dbo.item_loud ON dbo.item AFTER INSERT AS SELECT N'fired' AS what;"),
@@ -389,7 +389,7 @@ public class DmlTests
     [Fact]
     public void Every_source_of_a_joined_using_is_null_for_rows_not_matched_by_source()
     {
-        // Review round 1, finding 1: USING a JOIN b ON … is a source of several tables, each null-extended for those rows.
+        // USING a JOIN b ON … is a source of several tables, each null-extended for those rows.
         var doc = Doc(("p", """
             CREATE PROCEDURE dbo.p AS
             MERGE dbo.item AS t USING dbo.note AS s JOIN dbo.error_log AS e ON e.id = s.id ON t.id = s.id
@@ -407,7 +407,6 @@ public class DmlTests
     [InlineData("DELETE i OUTPUT deleted.label AS now, deleted.qty AS was FROM dbo.item AS i JOIN dbo.note AS n ON n.id = i.id;")]
     public void Output_of_a_write_to_an_alias_in_from_is_typed_from_its_table(string dml)
     {
-        // Review round 1, finding 4.
         var doc = Doc(("p", $"CREATE PROCEDURE dbo.p AS {dml}"));
 
         Assert.Equal([IrNullRules.NullableColumn], Rules(Field(doc, "now")));
@@ -579,7 +578,7 @@ public class DmlTests
     [Fact]
     public void A_variable_in_a_cursors_query_is_any_value_of_its_type()
     {
-        // Review round 1, finding 2. Observed: A_cursors_query_takes_its_variables_as_they_are_when_it_is_declared.
+        // Observed: A_cursors_query_takes_its_variables_as_they_are_when_it_is_declared.
         var doc = Doc(("p", """
             CREATE PROCEDURE dbo.p AS
             DECLARE @x int, @v int = 0;

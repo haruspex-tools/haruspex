@@ -4,7 +4,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// Slice 6j: AVG, the statistical aggregates and the numeric functions. Decimal arithmetic itself is in ScalarTypes.cs. README.md
+// AVG, the statistical aggregates and the numeric functions. Decimal arithmetic itself is in ScalarType.cs. README.md
 // in this folder ("Decimal arithmetic", "Numeric functions") gives the rules and the observations they rest on
 // (NumericObservationTests in the differential tests).
 internal sealed partial class ProcedureAnalyzer

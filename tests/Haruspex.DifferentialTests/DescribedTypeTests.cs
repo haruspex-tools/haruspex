@@ -6,7 +6,7 @@ namespace Haruspex.DifferentialTests;
 /// <summary>
 /// The SQL type the IR gives each column of a procedure's first rowset is the one SQL Server describes for it
 /// (<c>sys.dm_exec_describe_first_result_set_for_object</c>). The validator checks values against the IR's kinds and facets,
-/// which a wrong precision or length can still pass; this checks the type itself, which slice 6f's expressions compute
+/// which a wrong precision or length can still pass; this checks the type itself, which the expressions compute
 /// (Haruspex.SqlServer.Inference's README.md, "Expressions"). Nullability is not compared: the server's description of it is
 /// its own estimate, looser than what haruspex proves (COALESCE is described as nullable whatever its arguments).
 /// </summary>

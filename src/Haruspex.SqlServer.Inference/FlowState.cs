@@ -23,16 +23,16 @@ internal sealed class FlowState
     }
 
     /// <summary>
-    /// What each variable of type <c>nvarchar(max)</c>, and each such column of a table variable (<c>@t.c</c>), holds as JSON
-    /// (slice 6l): see <see cref="JsonSlot"/>. A name not here is not traced, and reads as its declared type.
+    /// What each variable of type <c>nvarchar(max)</c>, and each such column of a table variable (<c>@t.c</c>), holds as
+    /// JSON: see <see cref="JsonSlot"/>. A name not here is not traced, and reads as its declared type.
     /// </summary>
     public ImmutableDictionary<string, JsonSlot> Json { get; }
 
     /// <summary>
     /// Whether the procedure may read uncommitted here: <c>SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED</c> came first on some
     /// path, here or in a caller (observed: A_procedures_isolation_level_holds_in_the_procedures_it_calls_and_ends_when_it_returns).
-    /// An isolation level the outermost caller set is not seen: haruspex assumes it does not read uncommitted
-    /// (haruspex-design.md, "What can and cannot be typed").
+    /// An isolation level the outermost caller set is not seen: haruspex assumes it does not read uncommitted, because
+    /// being strict would remove every key-based claim (the Inference README, "How many rows").
     /// </summary>
     public bool ReadUncommitted { get; }
 

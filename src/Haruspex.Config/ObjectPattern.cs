@@ -12,8 +12,7 @@ namespace Haruspex.Config;
 /// case-insensitive, like the names themselves.
 /// </summary>
 /// <remarks>
-/// Selection is the config file's concern, not the schema's, so this is not in the publishable Model. It lived in the
-/// CLI until Haruspex.Config existed (slice 4).
+/// Selection is the config file's concern, not the schema's, so this is not in the publishable Model.
 /// </remarks>
 public sealed class ObjectPattern
 {

@@ -7,7 +7,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
-/// Whether the triggers a write fires may return result sets (slice 6d). A trigger's result sets arrive in the caller's
+/// Whether the triggers a write fires may return result sets. A trigger's result sets arrive in the caller's
 /// stream where the statement is, even when no row is affected, and SQL Server allows them unless the server's
 /// <c>disallow results from triggers</c> option is on, which it is not by default (observed in <c>DmlObservationTests</c>;
 /// README.md in this folder, "Triggers"). So a statement that fires a trigger of the project that may return results

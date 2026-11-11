@@ -4,7 +4,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// The common expressions (slice 6f): literals, <c>COALESCE</c>, <c>ISNULL</c>, <c>CAST</c>/<c>CONVERT</c> and their <c>TRY_</c>
+/// The common expressions: literals, <c>COALESCE</c>, <c>ISNULL</c>, <c>CAST</c>/<c>CONVERT</c> and their <c>TRY_</c>
 /// forms, <c>CONCAT</c>, <c>CONCAT_WS</c>, string <c>+</c>, decimal arithmetic and <c>SUM</c>. Each type and each reason to be
 /// null rests on an observation in the differential tests' <c>ExpressionObservationTests</c>, named where it matters.
 /// </summary>
@@ -63,7 +63,7 @@ public class ExpressionTests
         Assert.Equal("int", Typed(doc, "paren"));
         Assert.Equal("numeric(10,0)", Typed(doc, "below"));
 
-        // Negated again it is numeric(38,0) on the server, which is not modelled (review round 2).
+        // Negated again it is numeric(38,0) on the server, which is not modelled.
         var twice = Procedure("SELECT -(-2147483648) AS a, - -2147483648 AS b, -(-5) AS c;");
         Assert.StartsWith("unknown", Sql(twice, "a"), StringComparison.Ordinal);
         Assert.StartsWith("unknown", Sql(twice, "b"), StringComparison.Ordinal);
@@ -112,7 +112,7 @@ public class ExpressionTests
     [Fact]
     public void Coalesce_of_a_string_and_a_number_is_the_number_and_may_overflow()
     {
-        // The string is converted to the number: a failure is an error, an overflow NULL under the caller's options (slice 6k:
+        // The string is converted to the number: a failure is an error, an overflow NULL under the caller's options (
         // A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
         var doc = Procedure("SELECT COALESCE(short, 0) AS a FROM dbo.t;");
         Assert.Equal("int arithmetic-overflow", Typed(doc, "a"));
@@ -303,7 +303,7 @@ public class ExpressionTests
     [Fact]
     public void A_plus_of_fixed_length_strings_is_fixed_length()
     {
-        // Fixed_length_strings_plus_is_fixed_length (review round 1): char + char is char, nchar + char nchar; with a
+        // Fixed_length_strings_plus_is_fixed_length: char + char is char, nchar + char nchar; with a
         // varying operand it varies.
         var doc = Procedure("DECLARE @n nchar(2) = N'ab'; SELECT code + code AS a, @n + code AS b, code + 'x' AS c FROM dbo.t;");
         Assert.Equal("char(8) nullable-column", Typed(doc, "a"));
@@ -316,7 +316,7 @@ public class ExpressionTests
     [Fact]
     public void Decimal_arithmetic_has_the_documented_type_and_overflows_only_by_division()
     {
-        // Decimal_arithmetic_has_the_documented_precision_and_scale. Since slice 6j a division by a literal other than 0 cannot
+        // Decimal_arithmetic_has_the_documented_precision_and_scale. A division by a literal other than 0 cannot
         // divide by zero (NumericTests); by a column it can.
         var doc = Procedure("""
             SELECT amount + total AS a, total * 2 AS b, total / 3 AS c, n + 1 AS d, total - amount AS e, total + 0.5 AS f, -total AS g,
@@ -334,14 +334,14 @@ public class ExpressionTests
         Assert.Equal("smallint nullable-column arithmetic-overflow", Typed(doc, "h"));
         Assert.Equal("decimal(30,6) nullable-column", Typed(doc, "i"));
 
-        // Float arithmetic is read since slice 6i (FunctionTests): it can overflow.
+        // Float arithmetic is read (FunctionTests): it can overflow.
         Assert.Equal("float nullable-column arithmetic-overflow", Typed(doc, "j"));
     }
 
     [Fact]
     public void Decimal_arithmetic_beyond_38_digits_is_capped_and_may_overflow()
     {
-        // SQL Server then cuts the scale (slice 6j, NumericTests): decimal(38,4) * decimal(19,4) is decimal(38,6), whose 32
+        // SQL Server then cuts the scale (NumericTests): decimal(38,4) * decimal(19,4) is decimal(38,6), whose 32
         // integer digits cannot hold the 49 the product may need.
         var doc = Procedure("SELECT SUM(total) * total AS a FROM dbo.t GROUP BY total;");
         Assert.Equal("decimal(38,6) arithmetic-overflow", Typed(doc, "a"));

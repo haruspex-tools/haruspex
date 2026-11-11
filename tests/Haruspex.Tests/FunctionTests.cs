@@ -4,7 +4,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// The built-in functions slice 6i types: date and string functions, <c>STRING_AGG</c>, <c>JSON_VALUE</c>, window functions,
+/// The built-in functions haruspex types: date and string functions, <c>STRING_AGG</c>, <c>JSON_VALUE</c>, window functions,
 /// arithmetic and precedence over <c>float</c>, <c>real</c>, <c>money</c> and the date and time types, the bare <c>NULL</c>,
 /// and <c>GENERATE_SERIES</c>. Each type and each reason to be null rests on an observation in the differential tests'
 /// <c>FunctionObservationTests</c>, named where it matters.
@@ -244,7 +244,7 @@ public class FunctionTests
         Unknown(doc, "f3");
         Assert.Equal("nvarchar(4000) json-value", Typed(doc, "g1"));
 
-        // Over a literal JSON document the path's value is known: a number, always there under strict (slice 6l).
+        // Over a literal JSON document the path's value is known: a number, always there under strict.
         Assert.Equal("nvarchar(4000)", Typed(doc, "g2"));
     }
 
@@ -391,7 +391,7 @@ public class FunctionTests
         Assert.Equal("float", Typed(doc, "h"));
         Assert.Equal("varchar(10)", Typed(doc, "i"));
 
-        // A bit is a number to PERCENTILE_CONT (review round 1); a string is an error.
+        // A bit is a number to PERCENTILE_CONT; a string is an error.
         Assert.Equal("float", Typed(doc, "j"));
         Unknown(doc, "k");
     }
@@ -399,7 +399,7 @@ public class FunctionTests
     [Fact]
     public void A_window_function_not_modelled_is_unknown()
     {
-        // AVG over a window is read since slice 6j (NumericTests).
+        // AVG over a window is read (NumericTests).
         var doc = Procedure("SELECT CUME_DIST() OVER (ORDER BY id) AS a, PERCENT_RANK() OVER (ORDER BY id) AS b FROM dbo.t;");
         Unknown(doc, "a");
         Unknown(doc, "b");
@@ -479,7 +479,7 @@ public class FunctionTests
         Assert.Equal("decimal(11,4)", Typed(doc, "a5"));
         Assert.Equal("numeric(19,4)", Typed(doc, "a6"));
 
-        // An int may not fit smallmoney, a bigint money: NULL under the caller's options (slice 6k:
+        // An int may not fit smallmoney, a bigint money: NULL under the caller's options (
         // A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
         Assert.Equal("smallmoney arithmetic-overflow", Typed(doc, "a7"));
         Assert.Equal("money arithmetic-overflow", Typed(doc, "a8"));
@@ -504,7 +504,7 @@ public class FunctionTests
         Assert.Equal("int null-literal", Typed(doc, "n"));
         Assert.Equal("date null-literal", Typed(doc, "d"));
 
-        // DATEADD with the NULL literal as its number does not compile (8116, review round 1).
+        // DATEADD with the NULL literal as its number does not compile (error 8116).
         Unknown(doc, "e");
     }
 
@@ -536,7 +536,7 @@ public class FunctionTests
         Assert.Equal("unknown", Of(3, "d"));
         Assert.Equal("int", Of(4, "e"));
 
-        // decimal beside a numeric literal is an error too (5373, review round 1): the names must be the same.
+        // decimal beside a numeric literal is an error too (error 5373): the names must be the same.
         Assert.Equal("unknown", Of(5, "f"));
     }
 }

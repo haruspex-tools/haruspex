@@ -10,8 +10,8 @@ namespace Haruspex.SqlServer.Inference;
 /// <remarks>
 /// Names for generated code are not inference's concern: they come from the config file's naming rules and overrides,
 /// applied by Haruspex.Config to the document this builds. So each procedure's name is left as its id, and each type is
-/// keyed by its identity (<c>sales.get_order:results[0][]</c>) until then. Before slice 4 names were settled here, with a
-/// number added to break a clash, which let adding one procedure rename another's types.
+/// keyed by its identity (<c>sales.get_order:results[0][]</c>) until then. Settling names here, with a number added to
+/// break a clash, would let adding one procedure rename another's types.
 /// </remarks>
 /// <param name="functions">The functions the procedures call, for the named type of each recursive one's node.</param>
 internal sealed class IrBuilder(FunctionSummaries functions)

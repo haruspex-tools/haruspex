@@ -28,7 +28,7 @@ internal static class ShapeJoin
         if (b.Shape is UnknownShape other)
             return new Value(other, WithUnknown(because, other));
 
-        // JSON text built here on both: text of either's content (slice 6l). Text beside a string of its own type, nvarchar(max), is
+        // JSON text built here on both: text of either's content. Text beside a string of its own type, nvarchar(max), is
         // that string, which may not be JSON; json_query over it reports why.
         if (!a.IsLiveJson && !b.IsLiveJson)
         {
@@ -79,7 +79,7 @@ internal static class ShapeJoin
     /// <summary>
     /// The facets true of a value drawn from any of <paramref name="each"/> (as <see cref="Lub"/>: a fact one lacks is dropped,
     /// of two the looser kept), and where none is left, the type's own (<paramref name="type"/>), which every value has. For a
-    /// set operation's column whose queries' values convert unchanged (slice 6k).
+    /// set operation's column whose queries' values convert unchanged.
     /// </summary>
     public static IrFacets? Widened(IReadOnlyList<IrFacets?> each, IrFacets? type)
     {
@@ -92,7 +92,7 @@ internal static class ShapeJoin
     }
 
     /// <summary>
-    /// JSON that is either <paramref name="a"/> or <paramref name="b"/> (slice 6l): what a variable or a column holds after
+    /// JSON that is either <paramref name="a"/> or <paramref name="b"/>: what a variable or a column holds after
     /// several writes of JSON built here, and what <c>COALESCE</c>, <c>CASE</c> or <c>ISNULL</c> over JSON holds. The same shape
     /// is itself; an unknown stays unknown; arrays and tuples become an array of the items of both (the empty tuple <c>[]</c>
     /// adds no item, so <c>COALESCE(@lines, '[]')</c> keeps the lines' items and only loses their least count); objects with the

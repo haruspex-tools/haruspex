@@ -4,7 +4,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// Table-valued functions as table sources (slice 6f): inline ones typed from their body with the call's arguments bound to
+/// Table-valued functions as table sources: inline ones typed from their body with the call's arguments bound to
 /// the parameters, multi-statement ones from their declared return table. The engine rules are observed in the differential
 /// tests' <c>TableFunctionObservationTests</c>, named where they matter.
 /// </summary>
@@ -165,8 +165,7 @@ public class TableFunctionTests
     [Fact]
     public void What_is_not_modelled_is_unknown()
     {
-        // A column list at the call is refused (317); a scalar function is not a table. A body that is a UNION is read since
-        // slice 6h.
+        // A column list at the call is refused (317); a scalar function is not a table. A body that is a UNION is read.
         Assert.StartsWith("unknown: unsupported-source", Typed(Procedure("SELECT f.a FROM dbo.t_by_id(@id) AS f (a, b, c);"), "a"), StringComparison.Ordinal);
         Assert.Equal("int parameter", Typed(Procedure("SELECT f.a FROM dbo.both(@id) AS f;"), "a"));
         Assert.StartsWith("unknown: unresolved-table", Typed(Procedure("SELECT f.x FROM dbo.scalar(@id) AS f;"), "x"), StringComparison.Ordinal);

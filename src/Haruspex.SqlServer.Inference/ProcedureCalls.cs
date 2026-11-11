@@ -253,7 +253,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
 
         public List<ExecuteSpecification> Calls { get; } = [];
 
-        // A write's target as DmlTarget resolves it: directly, or through an alias, a CTE or a derived table (slice 6d).
+        // A write's target as DmlTarget resolves it: directly, or through an alias, a CTE or a derived table.
         public override void Visit(InsertStatement node) => Add(DmlTarget.Of(node.InsertSpecification.Target, null, node.WithCtesAndXmlNamespaces));
 
         public override void Visit(UpdateStatement node) => Add(DmlTarget.Of(node.UpdateSpecification.Target, node.UpdateSpecification.FromClause, node.WithCtesAndXmlNamespaces));

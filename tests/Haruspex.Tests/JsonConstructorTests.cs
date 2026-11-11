@@ -348,14 +348,14 @@ public class JsonConstructorTests
         Assert.Equal(IrPresence.OmittedWhenNull, lines.Presence);
         Assert.Contains("empty-aggregate", Rules(lines.NullableBecause));
 
-        // An aggregate without GROUP BY always returns its one row, so the subquery is never empty (slice 6c).
+        // An aggregate without GROUP BY always returns its one row, so the subquery is never empty.
         Assert.DoesNotContain("empty-subquery", Rules(lines.NullableBecause));
     }
 
     [Fact]
     public void A_subquery_that_is_not_json_has_its_columns_type_and_is_null_when_it_has_no_row()
     {
-        // Slice 6c: a scalar subquery is its one column's value, or null when it returns no row.
+        // A scalar subquery is its one column's value, or null when it returns no row.
         var doc = Procedure("SELECT t.id, (SELECT u.qty FROM dbo.u AS u WHERE u.id = t.id) AS q FROM dbo.t AS t FOR JSON PATH;");
 
         Assert.Empty(doc.Unknowns);

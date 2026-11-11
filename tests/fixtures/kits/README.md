@@ -1,6 +1,6 @@
 # Fixture: kits
 
-An invented craft-kit catalogue for JSON built in a procedure and traced to where it is read (slice 6l). No part of it comes
+An invented craft-kit catalogue for JSON built in a procedure and traced to where it is read. No part of it comes
 from a real system. A kit has parts; each procedure builds JSON from them with `FOR JSON` or the constructors and reads it
 back by another route: a variable, a table variable, a temporary table, a view, an inline function, a multi-statement
 function, a CTE, a derived table, `SELECT … INTO`, a JSON literal, `OPENJSON` and `JSON_VALUE`. A stored JSON column

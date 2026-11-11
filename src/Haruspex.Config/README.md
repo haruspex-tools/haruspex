@@ -22,8 +22,8 @@ emitter's own options.
 
 **Why naming lives here, not in inference.** Names are generated from config, so they can't be settled before it is
 read. Inference keys each type by its identity (the object and the path that own it, also written to the IR as
-`identity`), and leaves each procedure's name as its id; this layer replaces both. Before slice 4 inference settled
-names itself and broke clashes with numbers, which made names depend on which other objects existed.
+`identity`), and leaves each procedure's name as its id; this layer replaces both. Inference settling names itself would mean
+breaking clashes with numbers, which would make names depend on which other objects exist.
 
 **Why overrides come before naming.** A path override is written in terms of the shape, which doesn't depend on names,
 and a `name` override must be known before the types under it are named, since their names build on it.

@@ -8,7 +8,7 @@ using Haruspex.TestSupport;
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// Overrides stay runtime-checked (haruspex-design.md, "Overrides"): an override is a claim the generated validator
+/// Overrides stay runtime-checked: an override is a claim the generated validator
 /// still checks, so a wrong one fails loudly on real data rather than casting it. Here the config file of the checks
 /// fixture makes two wrong claims about <c>chk.list_tickets</c>, which SQL Server's real output breaks: a note declared
 /// never null (ticket 3 has none), and a status set declared exact (ticket 3's is <c>'CLOSED'</c>, which passes the

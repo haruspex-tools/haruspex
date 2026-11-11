@@ -48,8 +48,8 @@ public sealed class Table(ObjectName name, IReadOnlyList<Column> columns, IReadO
         {
             var nullable = column.Constraints.OfType<NullableConstraintDefinition>().ToList();
 
-            // A column that says both NULL and NOT NULL is recorded as NOT NULL, which is how inference read it
-            // before the model existed (slice 2b changed no behaviour).
+            // A column that says both NULL and NOT NULL is recorded as NOT NULL: inference read it so before the model
+            // was split out of it, and the split was to change no behaviour.
             var nullability = nullable.Any(n => !n.Nullable) ? DeclaredNullability.NotNull
                 : nullable.Count > 0 ? DeclaredNullability.Null
                 : DeclaredNullability.NotDeclared;

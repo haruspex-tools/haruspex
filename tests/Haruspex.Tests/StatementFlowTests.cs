@@ -5,7 +5,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// A procedure's statements walked in order (slice 6): temporary tables, table variables, variables, control flow and
+/// A procedure's statements walked in order: temporary tables, table variables, variables, control flow and
 /// CTEs. The engine rules each test leans on are observed in the differential tests'
 /// <c>StatementFlowObservationTests</c>, named where they matter.
 /// </summary>
@@ -223,7 +223,7 @@ public class StatementFlowTests
     public void Live_json_stored_in_a_temporary_table_is_text_of_its_content_unless_it_is_of_type_json()
     {
         // Text once stored (observed): SELECT … INTO makes nvarchar(max) of a constructor and json of one RETURNING json, which
-        // is not tracked yet (slice 6l: Select_into_makes_nvarchar_max_of_built_json_and_json_of_returning_json).
+        // is not tracked yet (Select_into_makes_nvarchar_max_of_built_json_and_json_of_returning_json).
         var doc = Procedure("""
             SELECT t.id, json_object('n': t.name) AS j, json_object('n': t.name RETURNING json) AS k INTO #t FROM dbo.t AS t;
             SELECT y.j, json_query(y.j) AS q, y.k FROM #t AS y FOR JSON PATH;
@@ -418,7 +418,7 @@ public class StatementFlowTests
     [Fact]
     public void An_output_clause_returns_a_result_set_of_the_rows_written()
     {
-        // Slice 6d: OUTPUT without INTO is the rows written, typed from inserted (DmlTests has the rest).
+        // OUTPUT without INTO is the rows written, typed from inserted (DmlTests has the rest).
         var doc = Procedure("CREATE TABLE #t (a int NOT NULL);\nINSERT INTO #t (a) OUTPUT inserted.a SELECT t.id FROM dbo.t AS t;");
 
         Assert.Empty(doc.Unknowns);
@@ -428,7 +428,7 @@ public class StatementFlowTests
     [Fact]
     public void A_write_to_a_permanent_table_returns_no_result_set()
     {
-        // Slice 6d: no trigger in the project returns results, so the write returns none (DmlTests has the rest).
+        // No trigger in the project returns results, so the write returns none (DmlTests has the rest).
         var doc = Procedure("INSERT INTO dbo.u (id, t_id, name) SELECT t.id, t.id, N'x' FROM dbo.t AS t;\nSELECT t.id FROM dbo.t AS t;");
 
         Assert.Empty(doc.Unknowns);
@@ -532,7 +532,7 @@ public class StatementFlowTests
     [Fact]
     public void A_larger_integer_literal_is_numeric_of_its_digits()
     {
-        // Observed: A_literals_type_is_its_own_digits_or_characters (slice 6f; it was not modelled before).
+        // Observed: A_literals_type_is_its_own_digits_or_characters.
         var doc = Procedure("SELECT 2147483648 AS big;");
         Assert.Equal("numeric(10,0)", Scalar(Field(doc, "big")).Sql);
         Assert.False(Field(doc, "big").Nullable);
@@ -564,7 +564,7 @@ public class StatementFlowTests
 
     [Fact]
     public void A_cast_to_a_type_not_modelled_is_not_modelled_yet() =>
-        // Other casts are typed since slice 6f (ExpressionTests); a binary type is not modelled at all.
+        // Other casts are typed (ExpressionTests); a binary type is not modelled at all.
         AssertUnknown(Procedure("SELECT CAST(t.id AS varbinary(5)) AS a FROM dbo.t AS t;"), "results[0][].a", IrUnknownReasons.UnsupportedExpression);
 
     // ---- control flow --------------------------------------------------------------------------------------
@@ -860,7 +860,7 @@ public class StatementFlowTests
     [Fact]
     public void A_cte_whose_query_is_a_union_is_read_as_a_set_operation()
     {
-        // Since slice 6h (SetJoinTests has the rules).
+        // SetJoinTests has the rules.
         var doc = Procedure("WITH x AS (SELECT t.id FROM dbo.t AS t UNION SELECT u.id FROM dbo.u AS u) SELECT x.id FROM x;");
 
         Assert.Empty(doc.Unknowns);
@@ -885,7 +885,7 @@ public class StatementFlowTests
         Assert.True(Field(doc, "b").Nullable);
 
         // A recursive column has its anchor's type exactly (observed: A_recursive_member_of_another_type_than_the_anchor_is_an_error).
-        // The recursive member's depth + 1 is an int that can overflow (slice 6f), so it is null only for that.
+        // The recursive member's depth + 1 is an int that can overflow, so it is null only for that.
         Assert.Equal("int", Scalar(Field(doc, "depth")).Sql);
         Assert.Equal([IrNullRules.ArithmeticOverflow], Rules(Field(doc, "depth")));
     }

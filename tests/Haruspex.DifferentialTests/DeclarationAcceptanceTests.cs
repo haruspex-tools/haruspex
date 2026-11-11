@@ -8,7 +8,7 @@ using Haruspex.TestSupport;
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// Declared results stay runtime-checked (slice 6b): a declaration is a claim the generated validator checks, so a wrong
+/// Declared results stay runtime-checked: a declaration is a claim the generated validator checks, so a wrong
 /// one fails loudly on real data. <c>calls.search_batches</c> runs dynamic SQL, so its results come only from a declaration.
 /// The right one (the fixture's own haruspex.json) accepts what SQL Server returns; one declaring <c>weight_g</c> never
 /// null is refused by batch 11, which has no weight; one declaring <c>product</c> a number is refused by every row.

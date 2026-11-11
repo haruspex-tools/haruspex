@@ -6,7 +6,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// Declared results (<c>procedures["s.p"].results</c>, slice 6b): read from the config file as a JSON Schema, inline or in a
+/// Declared results (<c>procedures["s.p"].results</c>): read from the config file as a JSON Schema, inline or in a
 /// file, into the IR; applied to the procedure itself when its results cannot be inferred; checked against inference when
 /// they can; and contributed to every caller of it. Messages are checked word for word where they tell a user what to do.
 /// </summary>

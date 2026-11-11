@@ -7,7 +7,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// OPENJSON and JSON_VALUE over JSON built here (slice 6l): they read a document whose shape is known, so what they give is
+// OPENJSON and JSON_VALUE over JSON built here: they read a document whose shape is known, so what they give is
 // known too. Each rule was observed on SQL Server 2025 RTM-CU10 (JsonTracingObservationTests). See README.md, "JSON built
 // here, traced".
 internal sealed partial class ProcedureAnalyzer
@@ -239,8 +239,8 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The type an OPENJSON WITH column of <paramref name="declared"/> gives: an <c>nchar(n)</c> is not padded, so it is at most n,
-    /// not exactly n, where a <c>char(n)</c> is (observed: Openjson_with_does_not_pad_nchar_but_pads_char; review round 1, finding
-    /// 2). A value that is already n long, as an <c>nchar(n)</c> column through FOR JSON is, keeps its fixed length through the
+    /// not exactly n, where a <c>char(n)</c> is (observed: Openjson_with_does_not_pad_nchar_but_pads_char). A
+    /// value that is already n long, as an <c>nchar(n)</c> column through FOR JSON is, keeps its fixed length through the
     /// identity conversion (<see cref="Converted"/>).
     /// </summary>
     internal static Shape Unpadded(Shape declared) =>

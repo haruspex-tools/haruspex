@@ -1,6 +1,6 @@
 # Fixture: shop
 
-An invented shop with a config file (`haruspex.json`) that uses every part of slice 4: selection per schema with
+An invented shop with a config file (`haruspex.json`) that uses every part of it: selection per schema with
 `include` and `exclude`, a schema `prefix` and a schema's own naming rule, a procedure named by override, a nested type
 named by a path override, `nullable: false` with its reason, `values: "exact"`, a JSON column typed by an imported
 schema, strict objects, and the top-level naming rule `#` → `Row`. `ConfigCliTests` runs it end to end through the CLI, and `EmitCheckTests` compiles

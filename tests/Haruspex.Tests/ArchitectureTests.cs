@@ -45,7 +45,7 @@ public class ArchitectureTests
         ["System.IO.File", "System.IO.Directory", "System.IO.FileInfo", "System.IO.DirectoryInfo", "System.IO.FileStream", "System.IO.FileSystemInfo"];
 
     /// <summary>
-    /// The table of layers (docs/architecture.md, from haruspex-design.md "Layers and what each may know"). A
+    /// The table of layers in docs/architecture.md. A
     /// layer may refer to the layers and packages listed for it, and to nothing else of this repository's.
     /// </summary>
     private static readonly Layer[] Layers =

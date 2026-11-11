@@ -4,7 +4,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// <c>CROSS APPLY</c>, <c>OUTER APPLY</c>, <c>VALUES</c> lists and views (slice 6e). The engine rules each test leans on are
+/// <c>CROSS APPLY</c>, <c>OUTER APPLY</c>, <c>VALUES</c> lists and views. The engine rules each test leans on are
 /// observed in the differential tests' <c>ApplyViewObservationTests</c> (and <c>RefinementObservationTests</c> for the
 /// aggregate and cardinality rules reused here), named where they matter.
 /// </summary>
@@ -167,7 +167,7 @@ public class ApplyViewTests
     [Fact]
     public void An_outer_column_read_in_an_applied_aggregate_is_not_refined_by_its_where()
     {
-        // An_outer_column_read_in_an_applied_aggregate_is_not_filtered_by_its_where (6c's rule for aggregate subqueries).
+        // An_outer_column_read_in_an_applied_aggregate_is_not_filtered_by_its_where (refinement's rule for aggregate subqueries).
         var doc = Procedure("SELECT a.tn FROM dbo.t AS t CROSS APPLY (SELECT t.name AS tn, COUNT_BIG(*) AS n FROM dbo.u AS u WHERE t.name IS NOT NULL AND u.t_id = t.id) AS a;");
 
         Assert.Equal([IrNullRules.NullableColumn], Rules(doc, "tn"));
@@ -215,7 +215,7 @@ public class ApplyViewTests
     [Fact]
     public void Apply_of_a_table_valued_function_is_typed_from_its_body()
     {
-        // Slice 6f (TableFunctionTests has the rules); it was unsupported-source before.
+        // TableFunctionTests has the rules.
         var doc = Infer(
             ("tables.sql", Tables),
             ("f.sql", "CREATE FUNCTION dbo.f(@id int) RETURNS TABLE AS RETURN SELECT u.label FROM dbo.u AS u WHERE u.t_id = @id;"),

@@ -3,7 +3,7 @@ using Haruspex.DifferentialTests.Server;
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// What SQL Server gives for the expressions slice 6g types: <c>CASE</c> (simple and searched), <c>IIF</c>, <c>CHOOSE</c>,
+/// What SQL Server gives for the expressions haruspex types: <c>CASE</c> (simple and searched), <c>IIF</c>, <c>CHOOSE</c>,
 /// <c>NULLIF</c>, and <c>COALESCE</c> and <c>ISNULL</c> over JSON. Types are read as the server describes them
 /// (<c>sys.dm_exec_describe_first_result_set</c>); what can be NULL, and how JSON nests, is read from values. The rules rest on
 /// these (Haruspex.SqlServer.Inference's README.md, "CASE, IIF, CHOOSE and NULLIF", "COALESCE and ISNULL over JSON").

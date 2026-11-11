@@ -5,7 +5,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// <c>EXEC</c> followed into procedures of the project (slice 6b): a callee's result sets spliced into its caller's, what a
+/// <c>EXEC</c> followed into procedures of the project: a callee's result sets spliced into its caller's, what a
 /// callee does to its caller's temporary tables, <c>INSERT … EXEC</c>, recursion between procedures, and the calls that stay
 /// unknown. The engine rules each test leans on are observed in the differential tests' <c>ExecObservationTests</c>.
 /// </summary>

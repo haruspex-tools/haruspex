@@ -129,7 +129,7 @@ public class CliTests
     [Fact]
     public void A_write_to_a_table_outside_the_project_is_a_warning_with_its_location_and_the_output_is_written()
     {
-        // A trigger on it could return result sets, which haruspex cannot see (slice 6d). Once per table.
+        // A trigger on it could return result sets, which haruspex cannot see. Once per table.
         using var source = new TempDirectory();
         using var outDir = new TempDirectory();
         source.File("p.sql", "CREATE PROCEDURE dbo.p AS\nINSERT INTO audit.trail (what) VALUES (1);\nDELETE FROM audit.trail;\n");

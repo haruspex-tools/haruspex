@@ -1,6 +1,6 @@
 # Fixture: ledger
 
-An invented small ledger for decimal arithmetic, `AVG`, the statistical aggregates and the numeric functions (slice 6j). No
+An invented small ledger for decimal arithmetic, `AVG`, the statistical aggregates and the numeric functions. No
 part of it comes from a real system. `ledger.line` has a column of each numeric type the rules read, `decimal(38,0)` and
 `decimal(38,38)` among them. The seed (`Seeds/ledger.sql`) puts one line at every column's greatest value and one at every
 least value (`real` within 1e31 of its ends), makes each nullable input NULL at least once, gives one account a single line

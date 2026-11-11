@@ -1,4 +1,4 @@
--- UPDATE through an alias of FROM, joined: inserted and deleted are rows of depot.pick_order (review round 1, finding 4).
+-- UPDATE through an alias of FROM, joined: inserted and deleted are rows of depot.pick_order.
 CREATE PROCEDURE depot.pick_order_lines
     @order_id int
 AS

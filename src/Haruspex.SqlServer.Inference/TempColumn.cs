@@ -17,7 +17,7 @@ namespace Haruspex.SqlServer.Inference;
 /// may be (a column <c>SELECT … INTO</c> copied from one it can't see the properties of).
 /// </param>
 /// <param name="Json">
-/// What a declared <c>nvarchar(max)</c> column holds as JSON (slice 6l), from every write to it; null when it is not traced,
+/// What a declared <c>nvarchar(max)</c> column holds as JSON, from every write to it; null when it is not traced,
 /// and it reads as its declaration.
 /// </param>
 internal sealed record TempColumn(string Name, Value Value, Table? Declaration, bool? Identity = false, JsonSlot? Json = null)

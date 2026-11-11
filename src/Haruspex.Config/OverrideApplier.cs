@@ -5,7 +5,7 @@ namespace Haruspex.Config;
 
 /// <summary>
 /// Applies a procedure's path overrides to the IR, as transformations of the document inference produced, never by
-/// reaching back into inference (haruspex-design.md, "Layers and what each may know"): they work the same however the
+/// reaching back into inference (docs/architecture.md, "Why these lines"): they work the same however the
 /// IR was made, and an emitter never needs to know they existed.
 /// </summary>
 /// <remarks>

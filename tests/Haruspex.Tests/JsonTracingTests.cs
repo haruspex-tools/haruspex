@@ -4,7 +4,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// JSON built in the project, traced to where it is read (slice 6l): through variables, table variables, temporary tables and
+/// JSON built in the project, traced to where it is read: through variables, table variables, temporary tables and
 /// multi-statement functions, as a JSON literal, and under json_query, OPENJSON and JSON_VALUE. Each rule rests on an observation
 /// in the differential tests' <c>JsonTracingObservationTests</c>, named where it matters.
 /// </summary>
@@ -168,7 +168,7 @@ public class JsonTracingTests
     [Fact]
     public void Json_that_grows_in_a_loop_is_widened_and_the_loop_settles()
     {
-        // Review round 1, finding 4: before, the loop reached no fixed point and the procedure's results were unknown.
+        // Without widening the loop would reach no fixed point, and the procedure's results would be unknown.
         var doc = Infer("""
             DECLARE @x nvarchar(max) = N'[]', @n int = 0;
             DECLARE @t TABLE (j nvarchar(max));

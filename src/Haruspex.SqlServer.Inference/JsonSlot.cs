@@ -1,7 +1,7 @@
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
-/// What a place the body writes holds as JSON (slice 6l): a variable of type <c>nvarchar(max)</c>, or such a declared column of
+/// What a place the body writes holds as JSON: a variable of type <c>nvarchar(max)</c>, or such a declared column of
 /// a temporary table or table variable. Built JSON keeps its content there, and <c>json_query</c> over the place makes it
 /// live again (observed: Json_built_here_keeps_its_content_through_variables_and_tables_until_json_query). A place of a
 /// shorter type cuts the text short without an error (observed), so it is not traced.

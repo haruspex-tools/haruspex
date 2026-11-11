@@ -90,7 +90,7 @@ public class FactFlowTests
     [InlineData("SELECT ISNULL(t.score, 0) AS v FROM dbo.t AS t;", "-32768")]
     public void An_expression_keeps_only_its_types_facts(string body, string min)
     {
-        // A value computed from a column is any value of the expression's type (slice 6f): the column's CHECK does not hold.
+        // A value computed from a column is any value of the expression's type: the column's CHECK does not hold.
         var facets = Facets(Field(Procedure(body), "PRow", "v"))!;
         Assert.Equal(min, facets.Min!.Value);
         Assert.Null(facets.Values);

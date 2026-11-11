@@ -1,6 +1,6 @@
 # Fixture: flow
 
-An invented sales, staff and parts schema for statement flow (slice 6): procedures built from several statements
+An invented sales, staff and parts schema for statement flow: procedures built from several statements
 through temporary tables, table variables, control flow and CTEs. No part of it comes from a real system.
 
 | Procedure | Covers |

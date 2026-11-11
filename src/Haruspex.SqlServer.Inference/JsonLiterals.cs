@@ -6,7 +6,7 @@ using Haruspex.SqlServer.Semantics;
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
-/// What a string literal holds as JSON (slice 6l): its exact shape when it is valid JSON whose top level is an object or an
+/// What a string literal holds as JSON: its exact shape when it is valid JSON whose top level is an object or an
 /// array, the only documents <c>json_query</c>, <c>OPENJSON</c> and <c>JSON_VALUE</c> accept (observed:
 /// A_json_literal_is_read_exactly_and_a_bare_scalar_or_text_that_is_not_json_is_an_error).
 /// </summary>
@@ -118,7 +118,7 @@ internal static class JsonLiterals
                 var raw = element.GetRawText();
 
                 // A number past a double's range is written as it is, but a client reads it as Infinity, which is not a number
-                // a schema accepts (review round 1, finding 6).
+                // a schema accepts.
                 if (!double.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d) || double.IsInfinity(d))
                 {
                     why[0] = $"has the number {raw}, which a client reads as Infinity";

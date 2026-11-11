@@ -3,7 +3,7 @@ using Haruspex.DifferentialTests.Server;
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// What SQL Server gives for the numeric expressions slice 6j types: decimal arithmetic beyond 38 digits and <c>%</c>, a bit
+/// What SQL Server gives for the numeric expressions haruspex types: decimal arithmetic beyond 38 digits and <c>%</c>, a bit
 /// beside a number, integer division at its edge, <c>AVG</c>, the statistical aggregates and the numeric functions (<c>ROUND</c>,
 /// <c>FLOOR</c>, <c>CEILING</c>, <c>ABS</c>, <c>SIGN</c>, <c>POWER</c>, <c>SQRT</c>, <c>SQUARE</c>, <c>LOG</c>, <c>LOG10</c>,
 /// <c>EXP</c>). Types are read as the server describes them (<c>sys.dm_exec_describe_first_result_set</c>); what can be NULL,
@@ -155,7 +155,7 @@ public class NumericObservationTests(SqlServerFixture server)
     public async Task Modulo_brings_both_operands_to_its_scale_first_which_can_overflow()
     {
         // % converts each operand to the scale max(s1, s2) before dividing, keeping its own integer digits: past 38 digits that
-        // overflows (review round 1). decimal(38,0) % 1.0 needs 39, decimal(38,38) % 1 too, decimal(10,2) % decimal(38,31) 39;
+        // overflows. decimal(38,0) % 1.0 needs 39, decimal(38,38) % 1 too, decimal(10,2) % decimal(38,31) 39;
         // decimal(38,0) % 7, decimal(38,37) % 1 and decimal(10,2) % decimal(38,30) fit 38 and cannot.
         Assert.Equal("8115 / null", await Both("CAST(99999999999999999999999999999999999999 AS decimal(38,0)) % 1.0"));
         Assert.Equal("8115 / null", await Both("CAST(0.5 AS decimal(38,38)) % 1"));
@@ -170,7 +170,7 @@ public class NumericObservationTests(SqlServerFixture server)
     [Fact]
     public async Task A_bit_converted_to_a_decimal_of_places_only_overflows_when_it_is_1()
     {
-        // A bit beside decimal(p, s) becomes decimal(p, s), which cannot hold 1 when p = s (review round 1): 8115 by default, NULL
+        // A bit beside decimal(p, s) becomes decimal(p, s), which cannot hold 1 when p = s: 8115 by default, NULL
         // under the caller's options. With an integer digit it fits.
         Assert.Equal("8115 / null", await Both("CAST(0.5 AS decimal(9,9)) + CAST(1 AS bit)"));
         Assert.Equal("8115 / null", await Both("CAST(1 AS bit) - CAST(0.5 AS decimal(9,9))"));

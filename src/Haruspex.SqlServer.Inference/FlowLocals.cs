@@ -95,7 +95,7 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
     /// <summary>The columns of a table variable the body declares, by name; null when it declares none of that name.</summary>
     public IReadOnlyList<string>? TableVariableColumns(string name) => tableVariables.TryGetValue(name, out var variable) ? variable.Names : null;
 
-    /// <summary>A table variable's columns as they stand: each declared, holding the JSON written to it (slice 6l).</summary>
+    /// <summary>A table variable's columns as they stand: each declared, holding the JSON written to it.</summary>
     private LocalRelationValues Holding(string name, LocalRelationValues declared) =>
         declared.Names is null ? declared : declared with
         {

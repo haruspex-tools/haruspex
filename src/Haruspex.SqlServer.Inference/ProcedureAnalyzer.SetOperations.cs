@@ -6,7 +6,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// Slice 6h: set operations (UNION, UNION ALL, INTERSECT, EXCEPT and parenthesised queries) and OPENJSON. README.md in this
+// Set operations (UNION, UNION ALL, INTERSECT, EXCEPT and parenthesised queries) and OPENJSON. README.md in this
 // folder ("Set operations", "OPENJSON") gives the rules and the observations they rest on (SetJoinObservationTests in the
 // differential tests). CROSS JOIN and FULL OUTER JOIN are binding's (Binder.cs), refinement's and cardinality's.
 internal sealed partial class ProcedureAnalyzer
@@ -310,7 +310,7 @@ internal sealed partial class ProcedureAnalyzer
         var name = reference.Alias?.Value ?? "OPENJSON";
         static IrNullReason JsonValue(SourceLocation where) => new(IrNullRules.JsonValue, where.ToString());
 
-        // Over JSON built here its shape says more (slice 6l, ProcedureAnalyzer.JsonReads.cs).
+        // Over JSON built here its shape says more (ProcedureAnalyzer.JsonReads.cs).
         if (TracedOpenJson(reference, outer ?? NoFrom(), at) is { } traced)
         {
             List<string> columns = reference.SchemaDeclarationItems.Count == 0 ? ["key", "value", "type"] : [.. reference.SchemaDeclarationItems.Select(i => i.ColumnDefinition.ColumnIdentifier.Value)];

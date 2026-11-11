@@ -11,7 +11,7 @@ namespace Haruspex.DifferentialTests;
 /// scale of 6), with integers, bit, money, smallmoney and literals among them. The precision rules are Microsoft's, cut past 38
 /// digits (Haruspex.SqlServer.Inference's README.md, "Decimal arithmetic"); this checks them through the whole pipeline: a
 /// procedure is inferred from SQL and each column's type compared with the server's description of the same expression.
-/// While building slice 6j the rules were also checked over 144,500 decimal pairs, which is too slow to keep as a test.
+/// When the rules were written they were also checked over 144,500 decimal pairs, which is too slow to keep as a test.
 /// </summary>
 public class ArithmeticGridTests(SqlServerFixture server)
 {

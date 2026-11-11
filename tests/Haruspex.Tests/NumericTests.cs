@@ -4,7 +4,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// The numeric expressions slice 6j types: decimal arithmetic beyond 38 digits and <c>%</c>, a bit beside a number, division by
+/// The numeric expressions haruspex types: decimal arithmetic beyond 38 digits and <c>%</c>, a bit beside a number, division by
 /// a literal, <c>AVG</c>, the statistical aggregates and the numeric functions. Each type and each reason to be null rests on an
 /// observation in the differential tests' <c>NumericObservationTests</c>, named where it matters; <c>ArithmeticGridTests</c>
 /// checks the precision rules against the server over a grid.
@@ -144,7 +144,7 @@ public class NumericTests
     [Fact]
     public void Modulo_overflows_where_an_operand_brought_to_its_scale_passes_38_digits()
     {
-        // Modulo_brings_both_operands_to_its_scale_first_which_can_overflow (review round 1).
+        // Modulo_brings_both_operands_to_its_scale_first_which_can_overflow.
         Assert.Equal(
             """
             a: numeric(2,1) arithmetic-overflow
@@ -159,7 +159,7 @@ public class NumericTests
     [Fact]
     public void A_bit_beside_a_decimal_of_places_only_may_overflow()
     {
-        // A_bit_converted_to_a_decimal_of_places_only_overflows_when_it_is_1 (review round 1).
+        // A_bit_converted_to_a_decimal_of_places_only_overflows_when_it_is_1.
         Assert.Equal(
             """
             a: decimal(6,5) arithmetic-overflow
@@ -212,7 +212,7 @@ public class NumericTests
     [Fact]
     public void Avg_over_a_window_is_typed_as_without_one()
     {
-        // Avg_is_typed_by_its_argument_with_or_without_a_window; a frame that may leave out the current row can be empty (6i).
+        // Avg_is_typed_by_its_argument_with_or_without_a_window; a frame that may leave out the current row can be empty.
         Assert.Equal(
             """
             a: decimal(38,6)
@@ -402,7 +402,7 @@ public class NumericTests
     [Fact]
     public void A_numeric_function_reads_only_its_arguments_so_coalesce_reads_it_once()
     {
-        // COALESCE reads an argument twice only when it may give another value (6g); these functions read only their arguments.
+        // COALESCE reads an argument twice only when it may give another value; these functions read only their arguments.
         Assert.Equal(
             """
             a: numeric(10,2)

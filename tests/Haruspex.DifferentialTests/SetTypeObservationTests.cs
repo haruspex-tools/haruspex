@@ -5,7 +5,7 @@ namespace Haruspex.DifferentialTests;
 
 /// <summary>
 /// How SQL Server types a column whose queries in a set operation (and the arguments of <c>COALESCE</c>, the results of a
-/// <c>CASE</c>) have different types, and what converting each to that type does to its values: the rules slice 6k rests on
+/// <c>CASE</c>) have different types, and what converting each to that type does to its values: the rules for combining types rest on
 /// (Haruspex.SqlServer.Inference's README.md, "Combining types"). Types are read as the server describes them
 /// (<c>sys.dm_exec_describe_first_result_set</c>); what can be NULL, and what is an error instead, from values, by default and
 /// under a caller's ANSI_WARNINGS and ARITHABORT off. <c>SetTypeGridTests</c> checks the type rules against the server over
@@ -76,7 +76,7 @@ public class SetTypeObservationTests(SqlServerFixture server)
     [Fact]
     public async Task A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal()
     {
-        // Review round 1: not one computation over every query at once but a fold, left to right. An integer and money meeting
+        // Not one computation over every query at once but a fold, left to right. An integer and money meeting
         // before the decimal give money, whose 15 digits (smallmoney's 6) the decimal then counts; the integer's are gone.
         Assert.Equal("decimal(19,4)", await Chain("bi", "m", "d52"));
         Assert.Equal("decimal(23,4)", await Chain("bi", "d52", "m"));
@@ -107,7 +107,7 @@ public class SetTypeObservationTests(SqlServerFixture server)
     [Fact]
     public async Task A_chain_is_refused_only_when_a_value_cannot_become_its_type()
     {
-        // Review round 1: an int and a date alone are refused, but beside a datetime both become datetime; so are a date and
+        // An int and a date alone are refused, but beside a datetime both become datetime; so are a date and
         // a time beside a datetime2. A uniqueidentifier that must become an int is refused wherever it stands.
         Assert.Equal("datetime", await Chain("1", "dt", "dtm"));
         Assert.Equal("datetime", await Chain("dtm", "dt", "1"));
@@ -122,7 +122,7 @@ public class SetTypeObservationTests(SqlServerFixture server)
     [Fact]
     public async Task An_int_constant_counts_its_own_digits_beside_a_decimal()
     {
-        // Review round 1. Beside decimal(38,38), an int column counts 10 integer digits (decimal(38,28)); an int the server
+        // Beside decimal(38,38), an int column counts 10 integer digits (decimal(38,28)); an int the server
         // treats as a constant counts its own: a literal, the NULL cast to int (1), a derived table's literal column, a CASE
         // or IIF with a constant condition (folded to that literal), COALESCE(NULL, 1). Arithmetic, a scalar subquery, a
         // CAST of a number, ISNULL, a CASE with a column in its condition and a set operation of literals are not folded so.
@@ -301,7 +301,7 @@ public class SetTypeObservationTests(SqlServerFixture server)
         // NULL, as an expression over it shows; but read directly, the row reaches SqlClient malformed: it reads a wrong value
         // (-78847.5648 for a bigint at its greatest as smallmoney, 53504 for '3000000000' as int) and then fails with
         // "Internal connection fatal error", for every type tried (smallmoney, datetime, int, smalldatetime). COALESCE and CASE
-        // over the same rows come out NULL. Found while building slice 6k; the fixture reads such columns through a CONVERT.
+        // over the same rows come out NULL. The fixture reads such columns through a CONVERT.
         // Not asserted here, since a dead connection would take the test's session with it.
         const string Units = """
             CREATE TABLE dbo.obs_units (id int NOT NULL PRIMARY KEY, units bigint NOT NULL, fee smallmoney NOT NULL);

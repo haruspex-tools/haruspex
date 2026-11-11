@@ -7,7 +7,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// EXEC and INSERT … EXEC (slice 6b). README.md in this folder ("Calls") gives the model, and the observations it rests on
+// EXEC and INSERT … EXEC. README.md in this folder ("Calls") gives the model, and the observations it rests on
 // are ExecObservationTests in the differential tests.
 internal sealed partial class ProcedureAnalyzer
 {
@@ -58,7 +58,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>INSERT … EXEC</c>: the rows of every result set the callee returns go into the table, and none reaches the client
     /// (observed). A result set of another width than the insert's columns fails the statement, even with no rows (213), and
     /// so does a FOR JSON query (13602), both observed, so a successful insert received neither and nothing of them is written.
-    /// Into a permanent table it returns nothing either, unless a trigger it fires may (slice 6d), or it has an OUTPUT.
+    /// Into a permanent table it returns nothing either, unless a trigger it fires may, or it has an OUTPUT.
     /// </summary>
     private Outcome InsertExecute(InsertStatement insert, FlowState state)
     {

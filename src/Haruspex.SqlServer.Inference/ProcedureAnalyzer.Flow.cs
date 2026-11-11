@@ -55,7 +55,7 @@ internal sealed partial class ProcedureAnalyzer
     /// successfully, and what stopped the walk, if anything did.
     /// </summary>
     /// <param name="returnTable">
-    /// A multi-statement function's return table, a table variable its body fills (slice 6l); null for a procedure.
+    /// A multi-statement function's return table, a table variable its body fills; null for a procedure.
     /// </param>
     public Walked Walk(ProcedureStatementBodyBase procedure, DeclareTableVariableBody? returnTable = null)
     {
@@ -109,7 +109,7 @@ internal sealed partial class ProcedureAnalyzer
         locals = Locals(tableVariables);
         var initial = FlowState.Start(start).WithTemps(context.Temps).WithReadUncommitted(context.ReadUncommitted);
 
-        // What each variable and table variable column of nvarchar(max) holds as JSON: nothing yet (slice 6l). A parameter is
+        // What each variable and table variable column of nvarchar(max) holds as JSON: nothing yet. A parameter is
         // the caller's, so it is not traced.
         foreach (var element in declarations.Variables)
         {
@@ -345,7 +345,7 @@ internal sealed partial class ProcedureAnalyzer
             var next = FlowState.Join([state, body.Next, body.Continues], at)!;
 
             // JSON built from itself grows at every pass (SET @x = (SELECT json_query(@x) AS c FOR JSON PATH)), so after a few its
-            // content is widened to unknown, naming the loop, and the loop settles (slice 6l, review round 1, finding 4).
+            // content is widened to unknown, naming the loop, and the loop settles.
             if (pass >= WidenAfter)
                 next = Widened(head, next, at);
             if (next.Text() == head.Text())
@@ -410,7 +410,7 @@ internal sealed partial class ProcedureAnalyzer
         if (unfiltered && variableShapes.TryGetValue(variable.Name, out var declared))
             return new Value(declared, Because(IrNullRules.Variable, variable.Name, declared), value.IsLiveJson);
 
-        // A variable holding JSON built here holds it as text (slice 6l).
+        // A variable holding JSON built here holds it as text.
         return locals.State.Json.TryGetValue(variable.Name, out var slot) ? slot.Read(value) : value;
     }
 
@@ -616,7 +616,7 @@ internal sealed partial class ProcedureAnalyzer
             var position = targets.IndexOf(i);
             if (column.Declaration is not null)
             {
-                // A declared column's value is its declaration's, but what it holds as JSON is what is written (slice 6l). One the
+                // A declared column's value is its declaration's, but what it holds as JSON is what is written. One the
                 // insert leaves out takes its default, which is not read.
                 if (column.Json is { } slot)
                     columns[i] = column with { Json = JsonSlot.Join(slot, JsonRows(all, expressions, position, at, where)) };
@@ -765,7 +765,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>
-    /// A declared column of a temporary table, as created: of <c>nvarchar(max)</c>, it is traced for JSON (slice 6l), holding none
+    /// A declared column of a temporary table, as created: of <c>nvarchar(max)</c>, it is traced for JSON, holding none
     /// yet, unless its rows were given values at <paramref name="filled"/> (a column added with a default, or one whose type
     /// changed), which are not read.
     /// </summary>

@@ -8,14 +8,14 @@ it will follow.
 
 JSON Schema is an open validation language (`oneOf`, `allOf`, `if`/`then`, `$ref` anywhere), so every
 emitter would have to handle all of it, and it has no notion of procedures, result sets, provenance or
-unknowns. The IR is small and closed instead: an emitter that handles the records in `IrModel.cs` handles
-every document. It maps to JSON Schema without loss.
+unknowns. The IR is small and closed instead: an emitter that handles the IR's records (`IrDocument` and the records it
+holds, one to a file in this folder) handles every document. It maps to JSON Schema without loss.
 
 ## Shape of a document
 
 ```jsonc
 {
-  "irVersion": "0.13",                // versioned separately from the tool
+  "irVersion": "0.15",                // versioned separately from the tool
   "source": { "dialect": "tsql" },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database: the object's identity
@@ -313,7 +313,7 @@ in `tests/Haruspex.DifferentialTests/JsonFunctionObservationTests.cs`:
 
 ## Statement flow
 
-A procedure's statements are read in order (slice 6), through temporary tables (`#t`), table variables (`@t`),
+A procedure's statements are read in order, through temporary tables (`#t`), table variables (`@t`),
 variables, `IF`, `WHILE`, `TRY … CATCH` and CTEs, recursive ones included. What each gives, and why each join is
 sound, is in `Haruspex.SqlServer.Inference/README.md`; the engine rules are observed and kept as tests in
 `tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`. What it means for the IR:
@@ -329,7 +329,7 @@ sound, is in `Haruspex.SqlServer.Inference/README.md`; the engine rules are obse
 
 ## Calls and declared results
 
-A procedure's `EXEC` of another of the project is followed (slice 6b): the callee's result sets are its caller's at that
+A procedure's `EXEC` of another of the project is followed: the callee's result sets are its caller's at that
 point, as if its statements were there, so they carry the callee's locations (a `not-run` or `no-rows` reason, an unknown's
 `at`). What the engine does across a call is in `Haruspex.SqlServer.Inference/README.md` ("Calls"). For the IR:
 
@@ -345,7 +345,7 @@ point, as if its statements were there, so they carry the callee's locations (a 
 
 ## Writes, triggers and cursors (0.9)
 
-Statements that write tables are read (slice 6d); the engine rules, each observed, are in
+Statements that write tables are read; the engine rules, each observed, are in
 `Haruspex.SqlServer.Inference/README.md` ("DML", "Triggers", "Cursors"). For the IR:
 
 - A write returns no result set, on any table, unless it has an `OUTPUT` without `INTO`, which is a rowset result of
@@ -360,7 +360,7 @@ Statements that write tables are read (slice 6d); the engine rules, each observe
 
 ## APPLY and views (0.10)
 
-`CROSS APPLY`, `OUTER APPLY`, `VALUES` lists and views of the project are read (slice 6e); the engine rules, each observed,
+`CROSS APPLY`, `OUTER APPLY`, `VALUES` lists and views of the project are read; the engine rules, each observed,
 are in `Haruspex.SqlServer.Inference/README.md` ("APPLY", "Views"). For the IR:
 
 - A column from the right side of an `OUTER APPLY` has the null rule `outer-apply`, at the right side, unless the applied
@@ -372,7 +372,7 @@ are in `Haruspex.SqlServer.Inference/README.md` ("APPLY", "Views"). For the IR:
 
 ## Expressions, table-valued functions and read-uncommitted (0.11)
 
-The common expressions, table-valued functions as table sources, and visible read-uncommitted are read (slice 6f); the engine
+The common expressions, table-valued functions as table sources, and visible read-uncommitted are read; the engine
 rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Expressions", "Table-valued functions",
 "Cardinality"). For the IR:
 
@@ -381,7 +381,7 @@ rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Expressi
   bounds do not survive an expression, except a conversion to the column's own type or `ISNULL` of a value never null, which
   give the value unchanged. The differential tests compare each rowset column's `sql` with the server's own description.
 - **`arithmetic-overflow`**: arithmetic, a `SUM`, or a conversion (`CAST`, `CONVERT`, an assignment, a function's argument,
-  and since slice 6k a value converted to the type of a set operation's column, `COALESCE` or `CASE`)
+  and a value converted to the type of a set operation's column, `COALESCE` or `CASE`)
   that can overflow its type, or a division that can divide by zero. By default that is an error, which fails the call; under
   a caller's `ANSI_WARNINGS` and `ARITHABORT` off it is NULL, and a procedure cannot prevent that, as for `count-overflow`. So
   `CONVERT(decimal(19,2), SUM(amount))` is nullable for it, and `COALESCE(SUM(amount), 0)` is not. A conversion that cannot
@@ -400,7 +400,7 @@ rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Expressi
 
 ## CASE, IIF, CHOOSE, NULLIF and COALESCE over JSON (0.12)
 
-`CASE`, `IIF`, `CHOOSE` and `NULLIF`, and `COALESCE` and `ISNULL` over JSON, are read (slice 6g); the engine rules, each
+`CASE`, `IIF`, `CHOOSE` and `NULLIF`, and `COALESCE` and `ISNULL` over JSON, are read; the engine rules, each
 observed, are in `Haruspex.SqlServer.Inference/README.md` ("CASE, IIF, CHOOSE and NULLIF", "COALESCE and ISNULL over JSON").
 For the IR:
 
@@ -421,19 +421,19 @@ For the IR:
 - `COALESCE` over JSON is `json-text` wherever it nests, its `content` what the arguments hold (a fallback `'[]'` removes the
   array's `minItems`, `'{}'` adds the empty object as a variant of a `union`); `ISNULL` over JSON is JSON where it nests, with
   the same content, and never null with a literal fallback. A `CASE`, `IIF`, `CHOOSE` or `NULLIF` over JSON is unknown
-  (`unsupported-expression`): whether it nests as JSON depends on whether the server folds it. (Since slice 6l: under
+  (`unsupported-expression`): whether it nests as JSON depends on whether the server folds it. The exceptions: under
   `json_query`, and when every result is JSON text, `CASE`, `IIF` and `CHOOSE` hold the join of their results' JSON, and any
-  literal that is a JSON document counts as JSON, not only `'[]'` and `'{}'`.)
+  literal that is a JSON document counts as JSON, not only `'[]'` and `'{}'` ("JSON built here, traced" below).
 
 ## Set operations, CROSS JOIN, FULL OUTER JOIN and OPENJSON (0.13)
 
-`UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT` and parenthesised queries, `CROSS JOIN`, `FULL OUTER JOIN` and `OPENJSON` are read
-(slice 6h); the engine rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Set operations", "CROSS JOIN and
+`UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT` and parenthesised queries, `CROSS JOIN`, `FULL OUTER JOIN` and `OPENJSON` are read;
+the engine rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Set operations", "CROSS JOIN and
 FULL OUTER JOIN", "OPENJSON"). For the IR:
 
 - A set operation's column is named by its first query and has the SQL type SQL Server gives it, the one of highest
   precedence over every query's. Its facets are those every query whose values come out shares when each is already of
-  that type, and otherwise the type's (widened in slice 6k: "Combining types" below); its `values` are the union of those queries' sets (a `CHECK`'s, or the literal a
+  that type, and otherwise the type's ("Combining types" below); its `values` are the union of those queries' sets (a `CHECK`'s, or the literal a
   query gives, `from` `{ "expression": "<location>" }` as for `CASE`), left out when any has none or they are of different
   `match`. `INTERSECT` and `EXCEPT` give the left side's values only.
 - Its nullability: `UNION` and `UNION ALL` give every query's reasons (a `NULL` literal as `null-literal`), `INTERSECT` none
@@ -451,7 +451,7 @@ FULL OUTER JOIN", "OPENJSON"). For the IR:
 ## Built-in and window functions (0.14)
 
 Date and string functions, `STRING_AGG`, `JSON_VALUE`, window functions, arithmetic and precedence over `float`, `real`,
-`money`, `smallmoney`, `datetime` and `smalldatetime`, the bare `NULL` and `GENERATE_SERIES` are read (slice 6i); the engine
+`money`, `smallmoney`, `datetime` and `smalldatetime`, the bare `NULL` and `GENERATE_SERIES` are read; the engine
 rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Built-in functions", "Window functions", "Arithmetic
 and `SUM`"). For the IR:
 
@@ -471,7 +471,7 @@ and `SUM`"). For the IR:
 
 Decimal arithmetic in full (the cap at 38 digits, `%`, a `bit` beside a number), `AVG`, `STDEV`, `STDEVP`, `VAR`, `VARP`
 (with and without `OVER`) and `ROUND`, `FLOOR`, `CEILING`, `ABS`, `SIGN`, `POWER`, `SQRT`, `SQUARE`, `LOG`, `LOG10`, `EXP` are
-read (slice 6j); the engine rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Decimal arithmetic",
+read; the engine rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Decimal arithmetic",
 "`SUM`, `AVG` and the statistical aggregates", "Numeric functions"). For the IR:
 
 - Each has the SQL type SQL Server gives it, with that type's facets (a decimal's digits and bounds, as for any decimal).
@@ -483,7 +483,7 @@ read (slice 6j); the engine rules, each observed, are in `Haruspex.SqlServer.Inf
   point operation, error 3623 by default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off) and
   **`too-few-values`** (`STDEV` or `VAR`, NULL over fewer than two values, with `GROUP BY` and over a window too).
 
-## Combining types (slice 6k, still 0.15)
+## Combining types
 
 A set operation's column, `COALESCE`, and `CASE`, `IIF` and `CHOOSE` over values of different types are typed by one rule,
 data type precedence over every value, for every pair of the types the expressions model; the engine rules, each observed,
@@ -505,7 +505,7 @@ are in `Haruspex.SqlServer.Inference/README.md` ("Combining types"). For the IR:
 No record, rule or reason was added, and every meaning stays as 0.15 describes it, so the version is unchanged: a 0.15 reader
 reads these documents as they are.
 
-## JSON built here, traced (slice 6l, still 0.15)
+## JSON built here, traced
 
 JSON built in the project keeps its shape on the way to where it is read: through variables, table variables, temporary tables,
 multi-statement functions' return tables, JSON literals, `COALESCE`, `CASE`, `IIF` and `ISNULL`, and into `OPENJSON` and
@@ -526,58 +526,58 @@ the IR:
 No record, rule or reason was added, and every meaning stays as 0.15 describes it, so the version is unchanged: a 0.15 reader
 reads these documents as they are.
 
-Changes in 0.15 (slice 6j, decimal arithmetic and the numeric functions): the null rules `domain-error` and `too-few-values`.
+Changes in 0.15 (decimal arithmetic and the numeric functions): the null rules `domain-error` and `too-few-values`.
 Decimal arithmetic past 38 digits, `%`, `AVG`, the statistics and the numeric functions were unknown
 (`unsupported-expression`) before; a `bit` beside a decimal was typed as `decimal(1,0)` and is now the decimal's own type, as
 the server converts it; a division by a literal of at least 1 lost `arithmetic-overflow`. A 0.14 reader would meet null rules
 it does not know, which is why the version changed.
 
-Changes in 0.14 (slice 6i, built-in and window functions): the null rules `empty-frame` and `window-edge`. These functions,
+Changes in 0.14 (built-in and window functions): the null rules `empty-frame` and `window-edge`. These functions,
 float, money and date arithmetic, and `GENERATE_SERIES` were unknown (`unsupported-expression`, `unsupported-source`) before;
 a negated `tinyint` was typed `tinyint` and is now `smallint`, as the server types it. A 0.13 reader would meet null rules it
 does not know, which is why the version changed.
 
-Changes in 0.13 (slice 6h, set operations, the other joins and OPENJSON): the null rule `json-value`. Set operations, `CROSS
+Changes in 0.13 (set operations, the other joins and OPENJSON): the null rule `json-value`. Set operations, `CROSS
 JOIN`, `FULL OUTER JOIN` and `OPENJSON` were unknown (`unsupported-query`, `unsupported-source`) before; `outer-join` now also
 names a side of a `FULL OUTER JOIN`. A 0.12 reader would meet a null rule it does not know, which is why the version changed.
 
-Changes in 0.12 (slice 6g, CASE and COALESCE over JSON): the null rules `no-else`, `null-literal`, `out-of-range`, `nullif`
+Changes in 0.12 (CASE and COALESCE over JSON): the null rules `no-else`, `null-literal`, `out-of-range`, `nullif`
 and `read-twice`; the fact source `expression`. These expressions were unknown (`unsupported-expression`) before, and a
 `COALESCE` read twice gave its argument's reasons instead of `read-twice`. A 0.11 reader would meet null rules and a fact
 source it does not know, which is why the version changed.
 
-Changes in 0.11 (slice 6f, expressions and table-valued functions): the null rules `arithmetic-overflow` and
+Changes in 0.11 (expressions and table-valued functions): the null rules `arithmetic-overflow` and
 `failed-conversion`. Expressions and table-valued functions were unknown (`unsupported-expression`, `unsupported-source`)
 before; a key read uncommitted no longer bounds a result. A 0.10 reader would meet a null rule it does not know, which is why
 the version changed.
 
-Changes in 0.10 (slice 6e, APPLY and views): the null rule `outer-apply`. APPLY, `VALUES` and views were unknown
+Changes in 0.10 (APPLY and views): the null rule `outer-apply`. APPLY, `VALUES` and views were unknown
 (`unsupported-source`, `unresolved-table`) before; a result may now be `atMostOne` through an APPLY or a keyed view. A 0.9
 reader would meet a null rule it does not know, which is why the version changed.
 
-Changes in 0.9 (slice 6d, writes): the unknown reasons `trigger-results` and `hidden-column`; the null rule
+Changes in 0.9 (writes): the unknown reasons `trigger-results` and `hidden-column`; the null rule
 `merge-action`; the fact source `engine`. Writes to permanent tables, `OUTPUT`, `WITH` before a write and cursors were
 `unsupported-statement` before. A 0.8 reader that does not know `engine` would read a `values` facet's `from` it cannot
 place, which is why the version changed.
 
-Changes in 0.8 (slice 6c, refinement): a result's `cardinality`; the null rules `count-overflow` and `grouping-set` (a
+Changes in 0.8 (refinement): a result's `cardinality`; the null rules `count-overflow` and `grouping-set` (a
 grouped column of a query grouped by `ROLLUP`, `CUBE` or `GROUPING SETS`, NULL in its super-aggregate rows; such a query's
 grouped columns were wrongly claimed non-null before). Refinement tightens
 nullability and adds `minItems`/`maxItems` to `FOR JSON` subqueries' arrays, which 0.7 readers read as before, but a 0.7
 reader would not know a result is one row, and a document always writes `cardinality`, which is why the version changed.
 
-Changes in 0.7 (slice 6b, calls): the unknown reasons `dynamic-sql`, `procedure-variable`, `system-procedure`,
+Changes in 0.7 (calls): the unknown reasons `dynamic-sql`, `procedure-variable`, `system-procedure`,
 `missing-procedure` and `ambiguous-procedure`; the null rule `declared`; the override setting `results` and an override's
 `via`; a scalar's `sql` may be left out (in declared results). A 0.6 reader that ignores unknown keys would read a caller's declared results as inferred, which is why the version
 changed.
 
-Changes in 0.6 (slice 6, statement flow): the result reason `not-run`, under which a result set may be missing
+Changes in 0.6 (statement flow): the result reason `not-run`, under which a result set may be missing
 altogether (only trailing ones, padded by readers as absent); a rowset result that is a `union` of arrays of rows;
 the null rule `variable`; the unknown reasons `caller-temp-table` and `varying-results`; and results described for
 calls that succeed, so a path that throws no longer makes them unknown. A 0.5 reader would take a missing result set
 for a wrong count, which is why the version changed.
 
-Changes in 0.5 (slice 4, the config file): an object type's `identity`; the `import` node; the document's `overrides`;
+Changes in 0.5 (the config file): an object type's `identity`; the `import` node; the document's `overrides`;
 names settled from the config file (the schema left out unless its block gives a `prefix`), with no number added to
 break a clash between objects, which is an error instead; a path inside a recursive type starts with the function's name
 (`<bom.components>`), not the type's; and `$` counts as an identifier character in paths (`.a$b`, not `["a$b"]`). A 0.4

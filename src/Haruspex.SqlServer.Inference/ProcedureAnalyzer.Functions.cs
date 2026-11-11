@@ -4,7 +4,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// Slice 6i: the date and string functions, JSON_VALUE, STRING_AGG and GENERATE_SERIES. Types come from ScalarTypes.cs; README.md
+// The date and string functions, JSON_VALUE, STRING_AGG and GENERATE_SERIES. Types come from ScalarType.cs; README.md
 // in this folder ("Built-in functions") gives the rules and the observations they rest on (FunctionObservationTests in the
 // differential tests). Window functions are in ProcedureAnalyzer.Windows.cs.
 internal sealed partial class ProcedureAnalyzer
@@ -109,7 +109,7 @@ internal sealed partial class ProcedureAnalyzer
         var (values, unknown) = Arguments(call.Parameters.Skip(1), scope);
         if (unknown is not null)
             return unknown;
-        // The NULL literal as the number does not compile (8116, review round 1), where a NULL variable gives NULL.
+        // The NULL literal as the number does not compile (error 8116), where a NULL variable gives NULL.
         if (Strip(call.Parameters[1]) is NullLiteral || TypeOf(values[0], call.Parameters[1]) is not { IsNumber: true })
             return NotModelled(call, "a number of this type is not modelled.");
         var date = DateOperand(values[1], call.Parameters[2]);

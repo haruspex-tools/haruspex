@@ -4,7 +4,7 @@ namespace Haruspex.DifferentialTests;
 
 /// <summary>
 /// What SQL Server does with set operations (<c>UNION</c>, <c>UNION ALL</c>, <c>INTERSECT</c>, <c>EXCEPT</c>), <c>CROSS JOIN</c>,
-/// <c>FULL OUTER JOIN</c> and <c>OPENJSON</c>, observed and kept as tests: the rules slice 6h rests on (Haruspex.SqlServer.Inference,
+/// <c>FULL OUTER JOIN</c> and <c>OPENJSON</c>, observed and kept as tests: the rules haruspex's reading of them rests on (Haruspex.SqlServer.Inference,
 /// README "Set operations", "CROSS JOIN and FULL OUTER JOIN", "OPENJSON"). Types are read as the server describes them
 /// (<c>sys.dm_exec_describe_first_result_set</c>); rows and nulls from values. Each test creates what it needs in a write
 /// session, rolled back. Observed on SQL Server 2025 RTM-CU10.

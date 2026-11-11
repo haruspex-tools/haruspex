@@ -5,7 +5,7 @@ namespace Haruspex.Tests;
 
 /// <summary>
 /// Set operations (<c>UNION</c>, <c>UNION ALL</c>, <c>INTERSECT</c>, <c>EXCEPT</c>), <c>CROSS JOIN</c>, <c>FULL OUTER JOIN</c> and
-/// <c>OPENJSON</c> (slice 6h). Each rule rests on an observation in the differential tests' <c>SetJoinObservationTests</c>, named
+/// <c>OPENJSON</c>. Each rule rests on an observation in the differential tests' <c>SetJoinObservationTests</c>, named
 /// where it matters.
 /// </summary>
 public class SetJoinTests

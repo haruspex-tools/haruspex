@@ -1,13 +1,13 @@
 # Fixture: dml
 
-An invented parts depot for writes (slice 6d): DML on permanent tables, `OUTPUT`, triggers, `WITH` before a write, and
+An invented parts depot for writes: DML on permanent tables, `OUTPUT`, triggers, `WITH` before a write, and
 cursors. No part of it comes from a real system. Every column that may be null is null in some seeded row a procedure
 returns (`Seeds/dml.sql`), and each run that writes runs in a write session that is rolled back.
 
 | Object | Covers |
 |---|---|
 | `depot.log_error` | the shared logger every `CATCH` calls: an `INSERT`, no result set |
-| `depot.list_parts` | the case that motivated the slice: a read whose `CATCH` calls the logger. Fully typed |
+| `depot.list_parts` | the case that motivated reading writes: a read whose `CATCH` calls the logger. Fully typed |
 | `depot.get_order` | the same with a `FOR JSON` result |
 | `depot.place_order` | `INSERT … OUTPUT` without `INTO` (its rows, with a NOT NULL identity), `OUTPUT … INTO` table variables, an `UPDATE` of a table whose trigger returns nothing, a transaction, and the logger |
 | `depot.cancel_order` | `UPDATE … OUTPUT` of `deleted` and `inserted`, and `DELETE … FROM` with a join |

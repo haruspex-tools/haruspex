@@ -167,7 +167,7 @@ public class ConstructTests
 
     // ---- sources and joins --------------------------------------------------------------------------
 
-    // FULL OUTER JOIN and CROSS JOIN are modelled since slice 6h (SetJoinTests).
+    // FULL OUTER JOIN and CROSS JOIN are modelled (SetJoinTests); RIGHT JOIN is not.
     [Theory]
     [InlineData("dbo.t AS t RIGHT JOIN dbo.u AS u ON u.t_id = t.id")]
     [InlineData("dbo.t AS t RIGHT OUTER JOIN dbo.u AS u ON u.t_id = t.id")]
@@ -250,7 +250,7 @@ public class ConstructTests
     [InlineData("dbo.customer")]
     public void A_view_read_by_name_is_typed_from_its_definition(string reference)
     {
-        // Slice 6e: a view of the project is read like a derived table (ApplyViewTests has the rules).
+        // A view of the project is read like a derived table (ApplyViewTests has the rules).
         var doc = Infer(
             ("tables.sql", "CREATE TABLE dbo.customer_base (name nvarchar(10) NOT NULL);\nGO\nCREATE VIEW dbo.customer AS SELECT b.name FROM dbo.customer_base AS b;"),
             ("p.sql", $"CREATE PROCEDURE dbo.p AS SELECT c.name FROM {reference} AS c;"));

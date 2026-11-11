@@ -1,6 +1,6 @@
 # Fixture: bazaar
 
-An invented weekend market for set operations, `COALESCE` and `CASE` over values of different types (slice 6k). No part of it
+An invented weekend market for set operations, `COALESCE` and `CASE` over values of different types. No part of it
 comes from a real system. Four kinds of sale each compute their columns their own way: a stall sale is priced per unit in
 `decimal(9,2)` and dated by `date`; a web order is priced in `money`, placed at a `datetimeoffset(3)`, and carries a
 `uniqueidentifier` voucher and its reference as text; an auction lot has a `decimal(38,10)` hammer price, a `decimal(30,0)`

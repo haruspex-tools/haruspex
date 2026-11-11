@@ -3,7 +3,7 @@ using Haruspex.DifferentialTests.Server;
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// What SQL Server does with JSON built in a procedure on the way to where it is read (slice 6l): through variables and tables,
+/// What SQL Server does with JSON built in a procedure on the way to where it is read: through variables and tables,
 /// as a literal, and under <c>json_query</c>, <c>OPENJSON</c> and <c>JSON_VALUE</c>. The rules in Haruspex.SqlServer.Inference's
 /// README.md, "JSON built here, traced", rest on these. Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
@@ -55,7 +55,7 @@ public class JsonTracingObservationTests(SqlServerFixture server)
     [Fact]
     public async Task A_literal_without_n_is_converted_to_the_code_page_before_it_is_read_as_json()
     {
-        // Review round 1, finding 1. Under the test database's collation (Latin1, code page 1252): ā has no code point there and
+        // Under the test database's collation (Latin1, code page 1252): ā has no code point there and
         // becomes a, a character outside the BMP two question marks, a key too; an escape is decoded first, then converted. An
         // N'' literal is read as it is.
         Assert.Equal(
@@ -189,7 +189,7 @@ public class JsonTracingObservationTests(SqlServerFixture server)
     [Fact]
     public async Task Openjson_with_does_not_pad_nchar_but_pads_char()
     {
-        // Review round 1, finding 2: "ab" into nchar(4) is 2 characters (4 bytes), into char(4) padded to 4.
+        // "ab" into nchar(4) is 2 characters (4 bytes), into char(4) padded to 4.
         Assert.Equal(
             "n,nb,c,cb: ab,4,ab  ,4",
             await Select("""SELECT j.n, datalength(j.n) AS nb, j.c, datalength(j.c) AS cb FROM OPENJSON(N'[{"v":"ab"}]') WITH (n nchar(4) '$.v', c char(4) '$.v') AS j;"""));
@@ -212,7 +212,7 @@ public class JsonTracingObservationTests(SqlServerFixture server)
     [Fact]
     public async Task Openjson_with_converts_a_varchar_to_the_databases_code_page()
     {
-        // Review round 1, finding 3: a Greek varchar goes out as α and comes back, as varchar of the database's collation, as a.
+        // A Greek varchar goes out as α and comes back, as varchar of the database's collation, as a.
         Assert.Equal(
             "v: a",
             await Select("""

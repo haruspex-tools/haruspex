@@ -56,7 +56,7 @@ public class ConfigCliTests
     [Fact]
     public void An_undeclared_unknowable_exec_is_a_warning_naming_it_and_generation_goes_ahead()
     {
-        // check (slice 7) will fail it; generate warns, and its exit codes are as before.
+        // A planned check command will fail it; generate warns, and its exit codes are as before.
         using var dir = new TempDirectory();
         dir.File("database/search.sql", Dynamic);
         dir.File("haruspex.json", """{ "source": "database", "out": "out", "schemas": { "rpt": { "include": ["search"] } } }""");

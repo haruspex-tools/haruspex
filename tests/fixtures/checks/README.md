@@ -1,6 +1,6 @@
 # Fixture: checks
 
-Invented tickets, owners and events whose columns carry every fact slice 3 reads from a schema: alias types
+Invented tickets, owners and events whose columns carry every fact haruspex reads from a schema: alias types
 (`chk.short_code`, NOT NULL; `chk.pct`, NULL), CHECK constraints giving value sets (`IN`, OR-ed equalities),
 ranges (`BETWEEN`, comparisons combined by AND, inclusive and exclusive), and minimum lengths (`len(…) > 0`,
 `<> ''`), and string lengths in a single-byte and a UTF-8 collation, and a set under a binary collation (`sigil`), exact but

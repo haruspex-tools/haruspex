@@ -1,6 +1,6 @@
 # Fixture: calls
 
-An invented bakery, ovens and batches, for following `EXEC` (slice 6b): procedures built from other procedures, through
+An invented bakery, ovens and batches, for following `EXEC`: procedures built from other procedures, through
 temporary tables, `INSERT … EXEC`, branches and recursion, and one that runs dynamic SQL with its results declared in
 `haruspex.json`. No part of it comes from a real system.
 

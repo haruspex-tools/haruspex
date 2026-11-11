@@ -6,7 +6,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// Slice 6f: the common expressions. Types come from ScalarTypes.cs; README.md in this folder ("Expressions") gives the rules
+// The common expressions. Types come from ScalarType.cs; README.md in this folder ("Expressions") gives the rules
 // and the observations they rest on (ExpressionObservationTests in the differential tests).
 internal sealed partial class ProcedureAnalyzer
 {
@@ -102,7 +102,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The type values of different types take when they meet in one column: a set operation's, COALESCE's, a CASE's, IIF's or
-    /// CHOOSE's (one rule, <see cref="ScalarType.Common"/>, slice 6k).
+    /// CHOOSE's (one rule, <see cref="ScalarType.Common"/>).
     /// </summary>
     /// <param name="Type">The type, or null when it is not known.</param>
     /// <param name="Overflows">For each value, the reason converting it may give NULL: an overflow, NULL under a caller's
@@ -213,7 +213,7 @@ internal sealed partial class ProcedureAnalyzer
 
     private sealed class VolatileFinder : TSqlFragmentVisitor
     {
-        // The date and string functions of slice 6i, and the numeric functions of 6j, read only their arguments too; the current date and time do not, but are never
+        // The date, string and numeric functions read only their arguments too; the current date and time do not, but are never
         // NULL, so a COALESCE never reads them twice. LEFT and RIGHT are not FunctionCalls, so never counted.
         private static readonly HashSet<string> Pure = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -408,7 +408,7 @@ internal sealed partial class ProcedureAnalyzer
         if (ScalarType.Arithmetic(op, l, r) is not { } type)
             return NotModelled(binary, "arithmetic on these types is not modelled yet.");
 
-        // An int the server may fold to a literal counts that literal's digits (slice 6k, observed:
+        // An int the server may fold to a literal counts that literal's digits (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal); when its fewest digits give another scale, not modelled.
         var mayOverflow = ScalarType.MayOverflow(op, l, r, NumberOf(binary.SecondExpression));
         if (Uncertain(left) || Uncertain(right))
@@ -440,7 +440,7 @@ internal sealed partial class ProcedureAnalyzer
         if (unary.UnaryExpressionType is not (UnaryExpressionType.Negative or UnaryExpressionType.Positive))
             return NotModelled(unary, "this operator is not modelled yet.");
         // A literal signed twice, -(-2147483648), is numeric(38,0) on the server, whichever way the parser splits the signs
-        // (observed, A_literals_type_is_its_own_digits_or_characters), and is not modelled (review round 2).
+        // (observed, A_literals_type_is_its_own_digits_or_characters), and is not modelled.
         if (Strip(unary.Expression) is UnaryExpression && LiteralOf(unary) is not null)
             return NotModelled(unary, "a literal signed more than once is not modelled.");
 
@@ -449,7 +449,7 @@ internal sealed partial class ProcedureAnalyzer
         if (LiteralOf(unary) is ({ } literal, true) && literal is IntegerLiteral or NumericLiteral or RealLiteral or MoneyLiteral)
         {
             // The parser gives -2147483648 as one signed literal; negating that again is numeric(38,0) on the server
-            // (observed, same test), not the literal's type, and is not modelled (review round 2).
+            // (observed, same test), not the literal's type, and is not modelled.
             if (literal.Value.StartsWith('-') || literal.Value.StartsWith('+'))
                 return NotModelled(unary, "negating a signed literal is not modelled.");
             // The parser gives 2147483648 as a numeric literal, being beyond int.

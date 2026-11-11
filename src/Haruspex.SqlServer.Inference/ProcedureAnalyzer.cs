@@ -12,8 +12,8 @@ namespace Haruspex.SqlServer.Inference;
 /// </summary>
 /// <remarks>
 /// Which table and column a reference reads is the <see cref="Binder"/>'s job (Haruspex.SqlServer.Semantics);
-/// what that means for a value's shape and nullability is decided here. Slice 2b split the two out of this one
-/// class, so that lint, lineage and diff can bind without inferring.
+/// what that means for a value's shape and nullability is decided here. The two were once this one class, and were
+/// split so that lint, lineage and diff can bind without inferring.
 /// </remarks>
 internal sealed partial class ProcedureAnalyzer
 {
@@ -71,7 +71,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The value a function's <c>RETURN</c> expression gives, read with no FROM in scope; its subqueries may read views and
-    /// table-valued functions (slice 6f; views in function bodies were unresolved before).
+    /// table-valued functions.
     /// </summary>
     /// <param name="expression">The returned expression.</param>
     /// <param name="parameters">
@@ -503,7 +503,7 @@ internal sealed partial class ProcedureAnalyzer
 
     private Value JsonQuery(FunctionCall call, BindingScope scope)
     {
-        // A literal, or CASE, IIF, CHOOSE or COALESCE over JSON, is read for what it holds (slice 6l, ProcedureAnalyzer.JsonTracing.cs).
+        // A literal, or CASE, IIF, CHOOSE or COALESCE over JSON, is read for what it holds (ProcedureAnalyzer.JsonTracing.cs).
         var argument = JsonQueryArgument(call.Parameters[0], scope);
         if (argument.IsLiveJson || argument.Shape is UnknownShape)
             return argument;

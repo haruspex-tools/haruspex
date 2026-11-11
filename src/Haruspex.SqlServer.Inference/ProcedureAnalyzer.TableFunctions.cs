@@ -6,7 +6,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// Slice 6f: table-valued functions as table sources. README.md in this folder ("Table-valued functions") gives the rules and
+// Table-valued functions as table sources. README.md in this folder ("Table-valued functions") gives the rules and
 // the observations they rest on (TableFunctionObservationTests in the differential tests).
 internal sealed partial class ProcedureAnalyzer
 {
@@ -152,7 +152,7 @@ internal sealed partial class ProcedureAnalyzer
                 keys.Add(new RelationKey(ordinals, types!));
         }
 
-        // What its nvarchar(max) columns hold as JSON is what its body writes to them (slice 6l): the body is walked as a
+        // What its nvarchar(max) columns hold as JSON is what its body writes to them: the body is walked as a
         // procedure's is, the return table a table variable, and its traced columns read as they stand where it returns. A body
         // the walk cannot follow leaves them as declared.
         var walked = Walk(function.Body, returns.DeclareTableVariableBody);

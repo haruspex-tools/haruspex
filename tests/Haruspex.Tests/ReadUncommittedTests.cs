@@ -4,7 +4,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// Visible read-uncommitted (slice 6f, decided 10 Nov 2026): a <c>NOLOCK</c> or <c>READUNCOMMITTED</c> hint on a source, or
+/// Visible read-uncommitted (decided 10 Nov 2026): a <c>NOLOCK</c> or <c>READUNCOMMITTED</c> hint on a source, or
 /// <c>SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED</c> earlier in the procedure or in a caller, drops the key-based "at most
 /// one row" claims through that source, because a scan under read-uncommitted can return a row twice. How far the isolation
 /// level reaches is observed in the differential tests' <c>ReadUncommittedObservationTests</c>.
@@ -116,7 +116,7 @@ public class ReadUncommittedTests
     [Fact]
     public void Read_uncommitted_reaches_inside_views_and_functions() =>
         // A view, an inline function and a scalar function read under the procedure's READ UNCOMMITTED read their own tables
-        // so too (review round 1): their keys bound nothing, as the same subquery written directly does not.
+        // so too: their keys bound nothing, as the same subquery written directly does not.
         Assert.Equal([null, null, null, null], MaxItems(Procedure("SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\n" + JsonReads)));
 
     [Fact]

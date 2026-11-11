@@ -1,14 +1,14 @@
 # Haruspex.SqlServer.Inference: statement flow and refinement
 
-How a procedure's statements are read in order (slice 6), calls followed (slice 6b, "Calls" below), what filters and
-single-row queries prove (slice 6c, "Refinement" below), writes, triggers and cursors (slice 6d, "DML", "Triggers" and
-"Cursors" below), `APPLY`, `VALUES` lists and views (slice 6e, "APPLY" and "Views" below, observed in
-`ApplyViewObservationTests`), and the common expressions, table-valued functions and visible read-uncommitted (slice 6f,
-"Expressions", "Table-valued functions" and "Cardinality" below, observed in `ExpressionObservationTests`,
-`TableFunctionObservationTests` and `ReadUncommittedObservationTests`). The code is `ProcedureAnalyzer.Flow.cs` (the walk),
-`FlowState.cs` (the state and its join), `FlowLocals.cs` (what the binder sees), and `ShapeJoin.cs` (joins of values).
-Every engine rule it leans on is observed on SQL Server 2025 RTM-CU10 and kept as a test in
-`tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`; the test names are given below.
+How a procedure's statements are read in order, and what each construct inside them gives: calls ("Calls" below), what
+filters and single-row queries prove ("Refinement"), writes, triggers and cursors ("DML", "Triggers", "Cursors"), `APPLY`,
+`VALUES` lists and views ("APPLY", "Views"), expressions ("Expressions", "CASE, IIF, CHOOSE and NULLIF", "Built-in
+functions", "Window functions"), table-valued functions, set operations and the other joins, `OPENJSON`, and JSON built in
+the project and traced to where it is read. The walk is `ProcedureAnalyzer.Flow.cs`, with `FlowState.cs` (the state and
+its join), `FlowLocals.cs` (what the binder sees) and `ShapeJoin.cs` (joins of values). Every engine rule it leans on is
+observed on SQL Server 2025 RTM-CU10 and kept as a test in
+`tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`; the test names are given below. Each later section
+names its own code and its own test class.
 
 ## What the IR describes: calls that succeed
 
@@ -53,7 +53,7 @@ always its declaration: nothing a statement does changes what its columns may ho
   at least the type's own, and unions the reasons to be null. A column an `INSERT` leaves out gets null.
 - **JSON** stored in a column is text once stored (`Json_stored_in_a_temporary_table_is_text_but_json_through_a_cte_stays_json`).
   `SELECT … INTO` makes `nvarchar(max)` of a `FOR JSON` subquery or a constructor, so the column is JSON text of its content
-  (slice 6l), but `json` of one `RETURNING json`, which is not tracked, so other live JSON selected into a table is unknown. A
+  ("JSON built here, traced", below), but `json` of one `RETURNING json`, which is not tracked, so other live JSON selected into a table is unknown. A
   declared `nvarchar(max)` column holds the JSON its writes put in it ("JSON built here, traced", below).
 - `DELETE` and `TRUNCATE` remove rows, which changes nothing a column may hold. `MERGE` into one, a write through a CTE
   over it, or an `ALTER TABLE` form not listed, makes it unknown.
@@ -116,12 +116,12 @@ nullability and the facets the members share need a fixed point: the recursive m
 stands, joined in by `ShapeJoin.Converted`, and read again until nothing changes (at most 20 passes). A recursive
 member's column that is not modelled (`depth + 1`) is still of the anchor's type; only its nullability is unknown.
 
-A CTE whose query is a set operation is read as any set operation is (below, "Set operations", since slice 6h). Not modelled
+A CTE whose query is a set operation is read as any set operation is (below, "Set operations"). Not modelled
 yet: a recursive CTE with several anchor members, `SELECT *` inside one, and `WITH XMLNAMESPACES`.
 
 ## Calls
 
-`EXEC` of a procedure of the project is followed (slice 6b): `ProcedureAnalyzer.Calls.cs` does a call, `ProcedureCalls.cs`
+`EXEC` of a procedure of the project is followed: `ProcedureAnalyzer.Calls.cs` does a call, `ProcedureCalls.cs`
 walks the callee and solves recursion. Every engine rule here is observed and kept as a test in
 `tests/Haruspex.DifferentialTests/ExecObservationTests.cs`; the test names are given below.
 
@@ -224,7 +224,7 @@ it on the stack of calls.
 
 ## DML
 
-`ProcedureAnalyzer.Dml.cs` (slice 6d). Every engine rule here is observed and kept as a test in
+`ProcedureAnalyzer.Dml.cs` reads writes. Every engine rule here is observed and kept as a test in
 `tests/Haruspex.DifferentialTests/DmlObservationTests.cs`; the test names are given below.
 
 - **A write returns no result set**, on any table: `INSERT` (`VALUES`, `SELECT`, `EXEC`, `DEFAULT VALUES`), `UPDATE` (with
@@ -346,7 +346,7 @@ write fires them. A trigger disabled by `DISABLE TRIGGER` is still counted, whic
 
 ## Expressions
 
-`ProcedureAnalyzer.Expressions.cs` reads them, `ScalarTypes.cs` computes their types (slice 6f). Every rule is observed in
+`ProcedureAnalyzer.Expressions.cs` reads them, `ScalarType.cs` computes their types. Every rule is observed in
 `ExpressionObservationTests`, mostly as SQL Server describes a query's columns (`sys.dm_exec_describe_first_result_set`), and
 `DescribedTypeTests` compares the type of every rowset column of every fixture with the server's description. A value
 computed by an expression is any value of its type: it has the type's facets, not the CHECK set or bounds of a column it
@@ -367,7 +367,7 @@ precision adds those before it, less leading zeros (`A_literals_type_is_its_own_
   a `SUM` past its type and a division by zero are errors by default, which fail the call, and NULL when the caller's session
   has `ANSI_WARNINGS` and `ARITHABORT` off
   (`An_overflow_is_an_error_by_default_and_null_under_the_callers_ansi_warnings_and_arithabort_off`). A procedure cannot stop
-  a caller doing that, so, as for `COUNT` (decided 10 Nov 2026, `haruspex-design.md`), each is nullable for it, unless the
+  a caller doing that, so, as for `COUNT` ("Aggregates and scalar subqueries" below; decided 10 Nov 2026), each is nullable for it, unless the
   type rules below prove it cannot happen. `SET ANSI_WARNINGS ON` inside the procedure would make it an error again; that is
   not read, which only claims less. A conversion that **fails** for a value (`'abc'` as `int`, a date that does not exist, a
   GUID into a short string) is an error even then (`A_failed_conversion_is_an_error_even_under_ansi_warnings_and_arithabort_off`),
@@ -392,8 +392,8 @@ writes are not claimed. Null when the operand is, and for `arithmetic-overflow` 
 | `decimal(p,s)` | an integer | p − s is less than the target's digits (`int` 10, `bigint` 19, `smallint` 5); never `tinyint`, which has no sign |
 | an exact number (an integer as its digits, `money` as `decimal(19,4)`) | `decimal(p2,s2)` | p2 − s2 > p − s, or p2 − s2 = p − s and s2 ≥ s (rounding to fewer places can carry: `99.999` as `decimal(4,2)` overflows) |
 | `date`, `datetime`, `smalldatetime`, `datetime2(n)` | `date`, `datetime2(m)` | always for `date`; for `datetime2(m)`, a `date` or `smalldatetime`, a `datetime` when m ≥ 3, a `datetime2(n)` or `time(n)` when m ≥ n |
-| `date`, `datetime`, `smalldatetime`, `datetime2(n)`, `time(n)`, `datetimeoffset(n)` | `datetimeoffset(m)` | a `date` or `smalldatetime`; a `datetime` when m ≥ 3; the others when m ≥ n (slice 6k, offset +00:00) |
-| `time`, `tinyint`, `bit`; `smallint` | `datetime`; `smalldatetime` | a time is that time on 1 January 1900 (rounding into the 2nd at most); a `tinyint` or `bit` that many days from 1900; a `smallint` only into `datetime` (1810 to 1989), not `smalldatetime`, which starts in 1900 (slice 6k) |
+| `date`, `datetime`, `smalldatetime`, `datetime2(n)`, `time(n)`, `datetimeoffset(n)` | `datetimeoffset(m)` | a `date` or `smalldatetime`; a `datetime` when m ≥ 3; the others when m ≥ n (offset +00:00) |
+| `time`, `tinyint`, `bit`; `smallint` | `datetime`; `smalldatetime` | a time is that time on 1 January 1900 (rounding into the 2nd at most); a `tinyint` or `bit` that many days from 1900; a `smallint` only into `datetime` (1810 to 1989), not `smalldatetime`, which starts in 1900 |
 | anything else | | not proved: `arithmetic-overflow` |
 
 A literal is checked by its value instead (`ISNULL(@d, 0)` into `decimal(10,2)` fits). An assignment to a variable converts
@@ -404,23 +404,23 @@ modelled.
 ### `COALESCE` and `ISNULL`
 
 - **`COALESCE(a, b, …)`** is of the type of highest precedence, by the rule set operations and `CASE` share ("Combining types"
-  below; `ScalarType.Union` until slice 6k,
+  below;
   `Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments`): strings give `nvarchar` if any is national,
   `varchar` if any varies, of the longest length, max if any is; exact numbers with a decimal give a decimal with every
   argument's integer digits and the largest scale (an `int` column or variable counts as `decimal(10,0)`, an integer literal
   as its own digits, `money` as `decimal(19,4)`, `smallmoney` as `decimal(10,4)`), named `decimal` or `numeric` as its first
-  decimal argument is; integers give the widest. Since 6i (`Coalesce_over_float_money_and_dates_follows_data_type_precedence`):
+  decimal argument is; integers give the widest (`Coalesce_over_float_money_and_dates_follows_data_type_precedence`):
   any `float` gives `float`, else any `real` `real`; `money` or `smallmoney` with integers gives `money` if any is, else
   `smallmoney`; among `date`, `smalldatetime`, `datetime` and `datetime2(n)`, any `datetime2` gives `datetime2` of the largest
   n, counting a `datetime` as 3 (`datetime2(1)` with `datetime` is `datetime2(3)`), else `datetime`, `smalldatetime`, `date` in
   that order. An argument that may not convert without overflow (`date` into `datetime` or `smalldatetime`, `bigint` into
   `money`, `int` into `smallmoney`) may make it NULL under the caller's options
-  (`Coalesce_converting_to_a_narrower_range_overflows_to_null_under_the_callers_ansi_warnings_and_arithabort_off`): until slice
-  6k that left it unknown; now it is typed with `arithmetic-overflow` at the COALESCE ("Combining types"). It is never null
+  (`Coalesce_converting_to_a_narrower_range_overflows_to_null_under_the_callers_ansi_warnings_and_arithabort_off`), so it
+  is typed with `arithmetic-overflow` at the COALESCE ("Combining types"). It is never null
   when an argument is never null and no argument may overflow, except: it is
   `CASE WHEN a IS NOT NULL THEN a …`, which reads an argument twice, so a subquery or a call before the never-null argument may
   be NULL the second time (`Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot`: NULL a quarter of the time
-  over a subquery NULL half the time). Since 6g that is the rule `read-twice`, at the argument, in place of the argument's own
+  over a subquery NULL half the time). That is the rule `read-twice`, at the argument, in place of the argument's own
   reasons: an argument found NULL is passed over, so only its second read can make the COALESCE NULL. No seed reaches it
   (another statement must change the rows between the two reads), so the differential coverage does not ask to see it, as for
   the overflows. An aggregate is computed once for its group and is safe to read twice (the same test). A `NULL` literal adds
@@ -447,11 +447,11 @@ modelled.
 
 ### Decimal arithmetic
 
-Since slice 6j decimal arithmetic is read in full, `%` and the cap at 38 digits included. The rules are Microsoft's, from
+Decimal arithmetic is read in full, `%` and the cap at 38 digits included. The rules are Microsoft's, from
 [Precision, scale, and length (Transact-SQL)](https://learn.microsoft.com/en-us/sql/t-sql/data-types/precision-scale-and-length-transact-sql),
 each checked on the server (`NumericObservationTests`), and the precision rules over a grid of operand types that reaches
 every threshold (`ArithmeticGridTests`: 3,560 binary expressions and the functions below, each column's type compared with
-the server's description of it). While building 6j they were also checked over 144,500 pairs of decimal types under all five
+the server's description of it). When the rules were written they were also checked over 144,500 pairs of decimal types under all five
 operators, with no difference; that took 14 minutes, so the grid kept as a test is smaller.
 
 - **Operands** (`ScalarType.Arithmetic`). An integer column or variable is a decimal of its type's digits (`int` (10,0),
@@ -459,8 +459,7 @@ operators, with no difference; that took 14 minutes, so the grid kept as a test 
   (10,4); a decimal literal is `numeric` of its own digits (`1.0` is `numeric(2,1)`, `-1.0` too: the sign is not a digit).
   A `bit` beside another number is converted to that number's own type, a decimal's precision and scale too (`bit * decimal(10,2)`
   is `decimal(21,4)`, that is `decimal(10,2) * decimal(10,2)`); two bits are an error (402), and so is negating one (8117)
-  (`A_bit_beside_a_number_takes_the_numbers_type_and_two_bits_are_an_error`; before 6j a bit beside a decimal counted as
-  `decimal(1,0)`, a slip). The result is `numeric` when either operand is.
+  (`A_bit_beside_a_number_takes_the_numbers_type_and_two_bits_are_an_error`; it does not count as `decimal(1,0)`). The result is `numeric` when either operand is.
 - **Within 38 digits** (`Decimal_arithmetic_has_the_documented_precision_and_scale`,
   `Modulo_has_the_documented_precision_and_scale_and_integers_and_money_keep_their_type`):
 
@@ -483,8 +482,8 @@ operators, with no difference; that took 14 minutes, so the grid kept as a test 
   `Decimal_overflow_and_division_by_zero_are_errors_by_default_and_null_under_the_callers_options`,
   `Decimal_arithmetic_whose_integer_digits_fit_cannot_overflow_at_its_operands_extremes`,
   `Integer_and_money_division_overflow_only_at_the_least_value_divided_by_minus_one`). Each is an error by default (8115,
-  8134) and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off, so `arithmetic-overflow` (6f's rule, which already
-  covered a division). A decimal result within 38 digits cannot overflow, with two exceptions found in review: a `bit` beside
+  8134) and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off, so `arithmetic-overflow`, the rule
+  that covers a division too. A decimal result within 38 digits cannot overflow, with two exceptions: a `bit` beside
   `decimal(p,p)` becomes that type, which cannot hold 1
   (`A_bit_converted_to_a_decimal_of_places_only_overflows_when_it_is_1`); and `%` first brings each operand to its scale
   max(s1, s2), keeping its integer digits, which overflows when max(p1 − s1, p2 − s2) + max(s1, s2) passes 38
@@ -498,7 +497,7 @@ operators, with no difference; that took 14 minutes, so the grid kept as a test 
   its divisor is a number literal other than 0. Integers, `money`, `float` and `real` can always overflow (the least `int`
   divided by -1 does), except that a `/` or `%` by a literal of at least 1 neither divides by zero nor grows: `x / 100` is
   never NULL for an `int`, `money` or `float` `x` that is not.
-- **Over `float`, `real`, `money` and dates** (since 6i, `Arithmetic_over_float_real_money_and_dates_follows_data_type_precedence`):
+- **Over `float`, `real`, `money` and dates** (`Arithmetic_over_float_real_money_and_dates_follows_data_type_precedence`):
   `float` with any number is `float`, `real` with any but `float` `real`, and neither takes `%` (an error, 402); `money` or
   `smallmoney` with an integer, a `bit` or each other is `money` if either is, else `smallmoney` (even beside `bigint`), `%`
   too; `money` with a decimal is decimal arithmetic on `decimal(19,4)` (`smallmoney` `decimal(10,4)`), exactly as above
@@ -507,8 +506,7 @@ operators, with no difference; that took 14 minutes, so the grid kept as a test 
   and `*`, `/` and `%` on dates are errors too: not modelled. Each may overflow (or divide by zero), an error by default and
   NULL under the caller's options
   (`Arithmetic_over_float_money_and_dates_overflows_to_an_error_or_to_null_under_the_callers_ansi_warnings_and_arithabort_off`).
-- **Unary `-`** keeps the type, except that a `tinyint` becomes a `smallint` (it has no sign; observed, and a slip before 6i,
-  which gave `tinyint`). An `int`, `smallint`, `bigint`, `money` or `smallmoney` can overflow at its least value; a decimal, a
+- **Unary `-`** keeps the type, except that a `tinyint` becomes a `smallint` (it has no sign; observed). An `int`, `smallint`, `bigint`, `money` or `smallmoney` can overflow at its least value; a decimal, a
   `float`, a `real` and a `tinyint` cannot. A `float` literal (`1.5e0`) is `float`, a money literal (`$2.50`) `money`, never
   null.
 - **The `NULL` literal** on its own is `int` (`A_bare_null_is_an_int`), nullable for `null-literal`; converted (`CAST(NULL AS
@@ -539,7 +537,7 @@ operators, with no difference; that took 14 minutes, so the grid kept as a test 
 
 ### Numeric functions
 
-`ProcedureAnalyzer.Numeric.cs` (slice 6j). Each is NULL when its first argument is, and when any other is, except `ROUND`'s
+`ProcedureAnalyzer.Numeric.cs` reads them. Each is NULL when its first argument is, and when any other is, except `ROUND`'s
 third (a NULL third argument rounds); each reads only its arguments, so a `COALESCE` reads it once. Observed in
 `NumericObservationTests`; the types also over the grid (`ArithmeticGridTests`).
 
@@ -574,7 +572,7 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
 
 ## CASE, IIF, CHOOSE and NULLIF
 
-`ProcedureAnalyzer.Case.cs` reads them (slice 6g). Every rule is observed in `CaseObservationTests`.
+`ProcedureAnalyzer.Case.cs` reads them. Every rule is observed in `CaseObservationTests`.
 
 - **Type.** A `CASE` (searched or simple), `IIF` or `CHOOSE` is of the type of highest precedence over its *results*, by the
   same rule as `COALESCE` and set operations ("Combining types" below): `CASE … THEN 'a' ELSE 'longer' END` is `varchar(6)`, a `char(4)`
@@ -583,7 +581,7 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   CHOOSE's index do not count; `IIF(c, a, b)` is `CASE WHEN c THEN a ELSE b END`. A `NULL` result adds nothing to the type;
   a CASE or IIF of `NULL` results only is error 8133 and CHOOSE of them an `int` NULL, neither modelled
   (`A_case_whose_results_are_all_null_is_an_error_but_choose_of_nulls_is_null`). A result that may overflow the type when
-  converted to it gives `arithmetic-overflow` (slice 6k; before, the CASE was not modelled). Types SQL Server refuses to
+  converted to it gives `arithmetic-overflow`. Types SQL Server refuses to
   combine are unknown, the reason naming them.
 - **What makes it NULL.** A result that may be (with that result's reasons), a `NULL` result (`null-literal`, at it), no
   `ELSE` (`no-else`: NULL when no `WHEN` holds), and for `CHOOSE` an index that is NULL (its reasons) or below 1 or above the
@@ -611,8 +609,8 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
 - **JSON.** A CASE, IIF or CHOOSE with a live JSON result is not modelled. Over JSON it is text, escaped where it nests, unless
   the server folds it to the one result a constant condition picks, when it keeps that result's JSON
   (`Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch`). Which is up to the
-  optimiser, and `OPTION (RECOMPILE)` folds a parameter's value too, so the shape cannot be known from the code. Since slice 6l
-  one whose results are all JSON text (or JSON literals) is JSON text of their join, and under `json_query`, where folding no
+  optimiser, and `OPTION (RECOMPILE)` folds a parameter's value too, so the shape cannot be known from the code. The
+  exceptions: one whose results are all JSON text (or JSON literals) is JSON text of their join, and under `json_query`, where folding no
   longer matters, any is ("JSON built here, traced").
 - **`NULLIF(a, b)`** is `a`, unchanged, or NULL when `a` and `b` compare equal (`nullif`): `a`'s type and facets, a CHECK set
   included. `a`'s type, except that an integer literal `a` is the smallest integer type that holds it, `tinyint` for `1`,
@@ -635,7 +633,7 @@ observed in each position before it was typed (`CaseObservationTests`):
 - **`COALESCE` over JSON is text**, never live JSON, wherever it nests, even when every argument is JSON
   (`Coalesce_over_a_for_json_subquery_nests_as_escaped_text_and_isnull_as_json`), so it is JSON text (`json-text`) whose
   content is what its arguments hold: the subquery's array, with no `minItems` when `'[]'` may stand in for it; a union with
-  the empty object for `'{}'`; any other literal that is a JSON document its exact shape (slice 6l, `JsonLiterals`); unknown
+  the empty object for `'{}'`; any other literal that is a JSON document its exact shape (`JsonLiterals`); unknown
   content for `'null'` (it parses, but to `null`, which the IR's content cannot say); a
   plain `nvarchar(max)` when an argument is a string that may not be JSON. `JSON_QUERY` over it makes that content live again
   (`Json_query_over_coalesce_makes_it_json_again`; over `'null'` it is error 13609). It is still read twice
@@ -646,8 +644,8 @@ observed in each position before it was typed (`CaseObservationTests`):
   folded, even one without FROM.
 - **`ISNULL` keeps its first argument's JSON**: over live JSON it nests as JSON, and its fallback is written into the JSON as
   it is, unchecked (`Isnull_writes_its_fallback_into_the_json_as_it_is`): `'[]'` the empty array (so the array may have no
-  items), `'{}'` the empty object (a union), any other literal that is a JSON document its exact shape (since slice 6l:
-  `'[1]'` is `[1]`, observed in `Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken`),
+  items), `'{}'` the empty object (a union), any other literal that is a JSON document its exact shape
+  (`'[1]'` is `[1]`, observed in `Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken`),
   a live JSON value (another FOR JSON subquery, say) its JSON. Any other literal is not modelled: `'null'` is JSON `null`,
   which is not SQL NULL, so the key stays even under `ABSENT ON NULL` and the IR's "null means left out" for FOR JSON does not
   hold; `''`, `'x'`, `'[1]x'` or a column's text make output that is not JSON. It reads its argument once, so it is NULL only when the
@@ -657,7 +655,7 @@ observed in each position before it was typed (`CaseObservationTests`):
 
 ## Refinement
 
-What a query's filters prove about the rows they keep (slice 6c): `Refinement.cs` (facts and three-valued logic) and
+What a query's filters prove about the rows they keep: `Refinement.cs` (facts and three-valued logic) and
 `Cardinality.cs` (how many rows). Every engine rule is observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/RefinementObservationTests.cs`; the test names are given below.
 
@@ -744,8 +742,8 @@ themselves: what a query proved is what its row holds.
   removes it.
 - `MIN` and `MAX` return one of their argument's values: its type and facets, null when the argument can be, and
   `empty-aggregate` without `GROUP BY` (`An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows`,
-  `An_aggregate_with_group_by_returns_no_row_over_no_rows`). `SUM` is typed since slice 6f ("Expressions" above);
-  `AVG` and the rest are not modelled yet.
+  `An_aggregate_with_group_by_returns_no_row_over_no_rows`). `SUM`, `AVG` and the statistical aggregates are typed
+  ("Expressions" above).
 - A scalar subquery is its one column's value, with its type and facets, and `empty-subquery` unless its query returns
   exactly one row (`A_scalar_subquery_of_an_aggregate_without_group_by_always_has_a_value_for_count`). A `FOR JSON` subquery
   is NULL over no rows, so an array it builds has at least one item, and at most one where its query returns at most one.
@@ -775,12 +773,12 @@ from `WHERE`'s top-level conjuncts, or from a join's `ON` for the sources inside
 outer join, which then matches at most one row per kept row); never under `OR`. Tables are keyed, and views by the rule
 in "Views" below, except a source read `FOR SYSTEM_TIME` `ALL`, `BETWEEN`, `FROM … TO` or `CONTAINED IN`, table or view,
 whose history rows repeat every key (`For_system_time_other_than_as_of_repeats_a_key_through_a_table_or_a_view`; `AS OF`
-returns one version and keeps it; slice 6e, which fixed this for tables read directly too); such a source counts as fixed
+returns one version and keeps it); such a source counts as fixed
 only when it is exactly one row (an aggregate without `GROUP BY`), never for an at-most-one bound, which may come from a key
 its own `WHERE` fixes and the history repeats; a derived table, `VALUES` list or view of at most one row (for an `APPLY`'s right side, at most one per
 outer row) counts as fixed already.
 
-**Read uncommitted** (slice 6f, decided 10 Nov 2026 in `haruspex-design.md`, "What can and cannot be typed"). Under read
+**Read uncommitted** (decided 10 Nov 2026). Under read
 uncommitted a scan can return a row twice, or miss one, while pages split under it. So a source read with a `NOLOCK` or
 `READUNCOMMITTED` hint (`BoundSource.Uncommitted`; on a view the hint applies to every table under it), and every source of a
 statement after `SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED` on any path (`FlowState.ReadUncommitted`), is treated as
@@ -796,7 +794,8 @@ is observed is how far the isolation level reaches
 table-valued function takes no table hint, but one inside its body counts, as in a view. Other hints (`READCOMMITTED`,
 `ROWLOCK`, `INDEX`) change nothing, and `READCOMMITTED` on a table in a statement that reads uncommitted is not read, which
 only claims less. **Assumed, and stated:** an isolation level set by the outermost caller is not visible in the project, and
-haruspex assumes it is not read uncommitted; being strict would remove every key-based claim.
+haruspex assumes it is not read uncommitted; being strict would remove every key-based claim. That differs from `COUNT`,
+where being strict costs one nullable column (`count-overflow`).
 
 The comparison must be the key's own equality: when SQL Server converts the key to the value's type, several rows can
 match. `'5'` and `'05'` both equal 5 (`A_comparison_that_converts_the_key_can_match_several_rows`), and a `varchar` key
@@ -812,7 +811,7 @@ statement) and `ALTER TABLE … ADD CONSTRAINT … UNIQUE`; `AVG`; refinement of
 
 ## APPLY
 
-`CROSS APPLY` and `OUTER APPLY` (slice 6e) are bound by the binder (`Binder.AddSources`) and read like a join whose right
+`CROSS APPLY` and `OUTER APPLY` are bound by the binder (`Binder.AddSources`) and read like a join whose right
 side is evaluated once for each row of its left input. Each rule is observed in `ApplyViewObservationTests`.
 
 - **What the right side sees.** Its left input's sources (joins included) and the enclosing queries' columns, never a
@@ -828,13 +827,13 @@ side is evaluated once for each row of its left input. Each rule is observed in 
   rows (`An_ungrouped_aggregate_applied_gives_one_row_for_every_outer_row`), a query without `FROM` one row
   (`A_for_json_subquery_applied_without_from_is_one_row_whose_json_is_null_when_there_are_no_rows`), and a `VALUES` list its
   rows; so under either APPLY their columns keep their own nullability, and `CROSS APPLY` removes no outer row. Which queries
-  are one row is slice 6c's cardinality (`Cardinality.cs`): a relation records its query's `Rows` and `AtLeastOne`
+  are one row is the cardinality of "How many rows" above (`Cardinality.cs`): a relation records its query's `Rows` and `AtLeastOne`
   (`LocalRelationValues`), and the null-extension is skipped only for a source that *is* the whole right side
   (`BoundSource.WholeApplied`): one joined inside it may have a row while the side as a whole has none. With `GROUP BY` (even
   `GROUP BY ()`) or `HAVING` the right side may have no row (`A_grouped_aggregate_applied_gives_no_row_for_an_outer_row_without_rows`).
 - **Filters.** The applied query's `WHERE` is its own: its facts are pushed only while its select list is read (as for any
   subquery), so they refine its own columns and never the outer columns read outside it. Inside it, an outer column read in
-  an aggregate query is not refined either (6c's rule, `An_outer_column_read_in_an_applied_aggregate_is_not_filtered_by_its_where`).
+  an aggregate query is not refined either (as in "Refinement", `An_outer_column_read_in_an_applied_aggregate_is_not_filtered_by_its_where`).
   An outer `WHERE` on a right-side column proves the row matched, as for a left join, and drops `outer-apply`. Joins inside an
   `OUTER APPLY`'s right side refine as an outer join's optional side does.
 - **Cardinality.** A right side of at most one row per outer row (`TOP (1)`, an aggregate, a key fixed by the outer row,
@@ -843,7 +842,7 @@ side is evaluated once for each row of its left input. Each rule is observed in 
   Otherwise many.
 - **Claims less, written down.** The outer query's own `WHERE` facts are not yet pushed while the right side is read
   (binding happens before), so an outer column read *inside* the applied query is not refined by the outer `WHERE`. An
-  `APPLY` of a table-valued function is read since slice 6f ("Table-valued functions" below), and `CROSS JOIN` since 6h.
+  `APPLY` of a table-valued function is read as any table-valued function is ("Table-valued functions" below).
 
 ### `VALUES`
 
@@ -869,8 +868,8 @@ not what it returns (`Noexpand_is_refused_on_a_view_without_an_index_and_on_one_
 outside the project stays `unresolved-table`, as does one defined more than once (created and altered: which definition
 applies depends on the order the scripts run), and one that reads itself through other views (SQL Server refuses it). A
 view whose query has `FOR XML`/`FOR JSON` is `unsupported-query`; one whose query is a set operation is read as one, and has no
-key (slice 6h). Views are read in procedures and, since
-slice 6f, in functions' bodies too (a table-valued function's, and a scalar function's subqueries).
+key. Views are read in procedures and in functions' bodies too (a table-valued function's, and a scalar function's
+subqueries).
 
 **`SELECT *` in a view** is expanded (`Expand`): each source's columns in order, a table's as declared and a relation's as
 named, and `alias.*` for one source. SQL Server binds it when the view is created and keeps that list until the view is
@@ -891,7 +890,7 @@ worth it yet), and a view with a join that matches at most one row (proving that
 
 ## Table-valued functions
 
-A call of a table-valued function in `FROM`, a join or `APPLY` (`ProcedureAnalyzer.TableFunctions.cs`, slice 6f) is a relation,
+A call of a table-valued function in `FROM`, a join or `APPLY` (`ProcedureAnalyzer.TableFunctions.cs`) is a relation,
 bound like a derived table: its arguments read the enclosing queries' columns, and an `APPLY`'s left input's
 (`CROSS APPLY shop.order_totals(o.order_id) AS t`). Each rule is observed in `TableFunctionObservationTests`.
 
@@ -909,7 +908,7 @@ bound like a derived table: its arguments read the enclosing queries' columns, a
   (`An_aggregate_function_applied_gives_one_row_for_every_outer_row`), so it keeps the outer bound and is never null-extended;
   `TOP (1)` is at most one.
 - **A multi-statement function** is its declared return table (`ReadReturnTable`), and its `nvarchar(max)` columns hold the JSON
-  its body writes to them (slice 6l): the body is walked as a procedure's is, the return table a table variable ("JSON built
+  its body writes to them: the body is walked as a procedure's is, the return table a table variable ("JSON built
   here, traced"); a body the walk cannot follow leaves them as declared. The table enforces
   its declaration, so a NULL into a `NOT NULL` column, a repeated `PRIMARY KEY` or `UNIQUE` value (one NULL at most) and a value
   its `CHECK` refuses each fail the call (`A_multi_statement_functions_return_table_enforces_its_constraints`). Its columns
@@ -924,7 +923,7 @@ bound like a derived table: its arguments read the enclosing queries' columns, a
 
 ## Set operations
 
-`UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT` and parenthesised queries (`ProcedureAnalyzer.SetOperations.cs`, slice 6h) are read
+`UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT` and parenthesised queries (`ProcedureAnalyzer.SetOperations.cs`) are read
 wherever a query stands: a result, a derived table, a CTE, a view, an inline function, a scalar subquery, `INSERT … SELECT`
 and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
 
@@ -934,15 +933,15 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
   (`Intersect_binds_tighter_than_union_and_except_whatever_the_parser_shows`). ScriptDom gives the chain left to right
   whatever the operators, so `Combine` flattens it (never through parentheses) and regroups it before reading nulls.
 - **Names** are the first query's. **Types** are by precedence over every query's, as `COALESCE`'s ("Combining types"
-  below): a fold over the chain left to right (corrected in slice 6k's review; 6h wrote "at once, not pairwise", which the
-  fold agrees with except where an integer meets `money` before a decimal), so an integer literal keeps its own digits
+  below): a fold over the chain left to right (the test below is named for typing every query at once, which the fold
+  agrees with except where an integer meets `money` before a decimal), so an integer literal keeps its own digits
   (`A_chain_of_set_operations_is_typed_over_all_its_queries_at_once_so_an_integer_literal_keeps_its_digits`:
   `1 UNION ALL 2 UNION ALL 2.5` is `numeric(2,1)`); `INTERSECT` and `EXCEPT` are typed the same way
   (`A_set_operations_columns_are_named_by_its_first_query_and_typed_by_precedence_over_every_query`). A `NULL` literal adds
   nothing to the type (`A_null_literal_adds_nothing_to_a_set_operations_type_and_alone_is_int`) and gives `null-literal`; a
   column that is `NULL` in every query is not modelled. Types SQL Server refuses to combine are unknown, the reason naming
   them. A query's value that may overflow the column's type when converted to it gives `arithmetic-overflow` at that query's
-  column, before `INTERSECT` and `EXCEPT` decide whose nulls come out (slice 6k): a `bigint` that overflows `smallmoney` on the
+  column, before `INTERSECT` and `EXCEPT` decide whose nulls come out: a `bigint` that overflows `smallmoney` on the
   left of an `INTERSECT` whose right side is never null is not in the result.
 - **Which values come out**: every query's for `UNION` and `UNION ALL`; the left side's for `INTERSECT` and `EXCEPT`, which
   compare under the collation and return the left side's spelling and trailing spaces
@@ -952,7 +951,7 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
   left NULL only when the right side has one: never null when either side is never null, otherwise the left side's reasons.
   `EXCEPT`: the left side's.
 - **Facets.** When every query whose values come out is already of the column's type, nothing is converted, and the facets
-  they all prove hold (each the looser, as at a join of paths: `ShapeJoin.Either`). Otherwise (slice 6k) a query whose every
+  they all prove hold (each the looser, as at a join of paths: `ShapeJoin.Either`). Otherwise a query whose every
   value converts unchanged (`ScalarType.Preserves`: an integer into a wider one or a decimal holding it, a decimal into one
   with as many integer digits and places, `smallmoney` into `money`, a string into a varying string as long and of the same
   kind) keeps its facets, and any other query (rounded to fewer places, made approximate, padded, cut short, or a date or
@@ -981,15 +980,15 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
 
 ## Combining types
 
-Slice 6k. A set operation's column, `COALESCE`, and a `CASE`, `IIF` or `CHOOSE` all take one type over values of different
+A set operation's column, `COALESCE`, and a `CASE`, `IIF` or `CHOOSE` all take one type over values of different
 types, by one rule: `ScalarType.Common` for the type, `ScalarType.Clash` for pairs SQL Server refuses, and
 `ProcedureAnalyzer.Combined` for what converting each value adds. Observed in `SetTypeObservationTests`, and over every
 ordered pair of a grid of 33 types and 5 literals, in all three forms, in `SetTypeGridTests` (the server describes a set
-operation and `COALESCE` alike over all 1,806 ordered pairs of a wider grid, binary and `xml` included, checked while
-building the slice; the `CASE` there had a constant condition, which the server folds to one result, so it differed only
+operation and `COALESCE` alike over all 1,806 ordered pairs of a wider grid, binary and `xml` included, checked once
+when the rule was written, not kept as a test; the `CASE` there had a constant condition, which the server folds to one result, so it differed only
 where folding did).
 
-- **A fold, left to right** (`ScalarType.Fold` of `Pair`; review round 1, observed:
+- **A fold, left to right** (`ScalarType.Fold` of `Pair`; observed:
   `A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal`, and over every triple of 13 exact numbers and
   of 9 dates, times and others in `SetTypeGridTests`): each step combines the type so far with the next value's. It matters
   where an integer meets `money` or `smallmoney` before a decimal: the money type takes the integer in and keeps only its own
@@ -1019,10 +1018,10 @@ where folding did).
   anything but a string; `date`, `time`, `datetime2` and `datetimeoffset` with a number or `bit`; `date` with `time`
   (`Types_without_an_implicit_conversion_are_refused_with_an_operand_type_clash`). Only against the final type: `1`, a
   `date`, a `datetime` is `datetime`, though `1` and a `date` alone are refused
-  (`A_chain_is_refused_only_when_a_value_cannot_become_its_type`, review round 1). The column is unknown, and its reason names
+  (`A_chain_is_refused_only_when_a_value_cannot_become_its_type`). The column is unknown, and its reason names
   the two types (the refused value and one of the final type): "SQL Server refuses to combine int and uniqueidentifier: there is no implicit conversion between them". A
   value of a type not modelled (`xml`, binary) is unknown by its own reason, which names it.
-- **An int constant's digits** (review round 1, `An_int_constant_counts_its_own_digits_beside_a_decimal`). Beside a decimal an
+- **An int constant's digits** (`An_int_constant_counts_its_own_digits_beside_a_decimal`). Beside a decimal an
   int counts 10 integer digits, but one the server treats as a constant counts its own: a literal, also as a derived table's,
   CTE's or view's column; the NULL cast to int (`CAST`, `CONVERT`, `TRY_` forms, nested) 1; a `CASE` or `IIF` with a constant
   condition and `COALESCE(NULL, 1)`, folded to that literal. Arithmetic, a scalar subquery, a `CAST` of a number, `ISNULL`, a
@@ -1031,7 +1030,7 @@ where folding did).
   a range from the fewest to 10, since whether the server folds it turns on its condition. Where the range changes the scale,
   the column is unknown (its reason names the expression); where it changes only the precision, the most digits hold every
   value. Claiming a literal's digits where the server counts 10 is still sound (the constant fits them, and the scale claimed
-  is the larger); claiming 10 where it counts the literal's is not. Decimal arithmetic (6j) counts the same digits
+  is the larger); claiming 10 where it counts the literal's is not. Decimal arithmetic counts the same digits
   (`decimal(38,38) + CAST(NULL AS int)` is `decimal(38,37)`), and turns unknown on the same range.
 - **Converting each value.** A value whose type may not convert without overflow (`ScalarType.NeverNull`: `Converts`, or a
   string into `uniqueidentifier`, which fails as an error and is never NULL) gives `arithmetic-overflow`: an overflow is an
@@ -1040,7 +1039,7 @@ where folding did).
   `smallmoney`, `float` into `datetime`, `bit` into `decimal(38,38)`, `date` into `smalldatetime`, `'300'` into `tinyint`). A
   string that is not a value of the type at all is an error even then
   (`A_string_that_is_not_a_value_of_the_type_is_an_error_even_under_the_callers_options`), so it adds nothing. A literal is
-  checked by its value. Before slice 6k such a column was unknown.
+  checked by its value.
 - **A wire trap**, for anyone testing this: over a table under those options, a set operation whose conversion overflows sends
   a row SqlClient misreads (a wrong value, then "Internal connection fatal error"), though the server's value is NULL, as an
   expression over it shows; `COALESCE` and `CASE` do not
@@ -1054,7 +1053,7 @@ where folding did).
 
 ## CROSS JOIN and FULL OUTER JOIN
 
-Bound by the binder since slice 6h; observed in `SetJoinObservationTests`.
+Bound by the binder; observed in `SetJoinObservationTests`.
 
 - **`CROSS JOIN`** reads both sides as they are: every row of one with every row of the other, so neither side's columns gain
   a reason. It has no `ON`. A `FROM` of only cross joins (or commas) of relations of exactly one row each is one row, at most
@@ -1067,8 +1066,8 @@ Bound by the binder since slice 6h; observed in `SetJoinObservationTests`.
   - Its `ON` proves nothing of either side: a row of one side that fails it comes back unmatched with whatever it holds
     (`A_full_outer_joins_on_proves_nothing_of_either_side`). Joins inside it are read as inside an optional side.
   - A `WHERE` (or an inner join after it) that proves a column of one side non-null proves that side's row and drops
-    `outer-join` for that side only (`A_where_on_one_side_of_a_full_join_drops_that_sides_unmatched_rows_only`), as 6c's row
-    facts do.
+    `outer-join` for that side only (`A_where_on_one_side_of_a_full_join_drops_that_sides_unmatched_rows_only`), as row facts do
+    for a left join ("Refinement").
   - It is never bounded by its sides: two sides of one row each that do not match give two rows, and a key tested `IS NULL`
     matches every row the other side null-extends (`A_full_join_of_two_queries_of_at_most_one_row_can_return_two`). A
     `WHERE` fixing a key of each side by `=` would bound it; that is left out, so a query with a full join is many.
@@ -1076,7 +1075,7 @@ Bound by the binder since slice 6h; observed in `SetJoinObservationTests`.
 
 ## OPENJSON
 
-`OPENJSON(doc [, path]) [WITH (…)]` in `FROM`, a join or `APPLY` is a relation (`OpenJsonRelation`, slice 6h), bound like a
+`OPENJSON(doc [, path]) [WITH (…)]` in `FROM`, a join or `APPLY` is a relation (`OpenJsonRelation`), bound like a
 table-valued function's call; its arguments are not read. How many rows it gives is the data's (none for a NULL document or a
 lax path that finds nothing), so it is many and never sure to have a row. Observed in `SetJoinObservationTests`.
 
@@ -1099,20 +1098,20 @@ lax path that finds nothing), so it is many and never sure to have a row. Observ
 
 ## JSON built here, traced
 
-Slice 6l (`ProcedureAnalyzer.JsonTracing.cs`, `ProcedureAnalyzer.JsonReads.cs`, `JsonSlot.cs`, `JsonLiterals.cs`). JSON built
+The code is `ProcedureAnalyzer.JsonTracing.cs`, `ProcedureAnalyzer.JsonReads.cs`, `JsonSlot.cs` and `JsonLiterals.cs`. JSON built
 in the project (`FOR JSON`, the constructors, a function returning JSON, a JSON literal) keeps its shape on every route inside
 the project to where it is read, and `json_query`, `OPENJSON` and `JSON_VALUE` there use it. JSON stored in a permanent table's
 column is never traced: someone else may write it. Every rule is observed in `JsonTracingObservationTests`.
 
-| Route | How the JSON goes | Since |
-|---|---|---|
-| CTE, derived table, view, inline function | its expression is the query's, so live JSON stays live | 6, 6e, 6f |
-| variable of `nvarchar(max)` | text of its content (`JsonSlot`) | 6l |
-| table variable or `#table` column of `nvarchar(max)`, declared | text of what its writes put in it | 6l |
-| `#table` column `SELECT … INTO` makes | text, when it is a `FOR JSON` subquery or a constructor not `RETURNING json` | 6l |
-| multi-statement function's return table | text of what its body writes | 6l |
-| literal | its exact shape, when it is valid JSON of an object or array | 6l |
-| `COALESCE`, `ISNULL`, `CASE`, `IIF`, `CHOOSE` | the join of its arguments' or results' JSON | 6g, 6l |
+| Route | How the JSON goes |
+|---|---|
+| CTE, derived table, view, inline function | its expression is the query's, so live JSON stays live |
+| variable of `nvarchar(max)` | text of its content (`JsonSlot`) |
+| table variable or `#table` column of `nvarchar(max)`, declared | text of what its writes put in it |
+| `#table` column `SELECT … INTO` makes | text, when it is a `FOR JSON` subquery or a constructor not `RETURNING json` |
+| multi-statement function's return table | text of what its body writes |
+| literal | its exact shape, when it is valid JSON of an object or array |
+| `COALESCE`, `ISNULL`, `CASE`, `IIF`, `CHOOSE` | the join of its arguments' or results' JSON |
 
 - **Places.** A variable, and a declared column of a table variable, temporary table or multi-statement function's return
   table, of type `nvarchar(max)`, holds JSON as text, escaped where it nests, JSON again under `json_query`
@@ -1137,8 +1136,7 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   range, which a client reads as `Infinity`. Whitespace around the value is allowed. **A literal without `N` is converted to
   the database's code page before it is read**, its escapes decoded first (`'["ā", "\u0101", "😀"]'` gives `["a", "a", "??"]`
   under a Latin1 collation, a key too: `A_literal_without_n_is_converted_to_the_code_page_before_it_is_read_as_json`), and which
-  characters that code page has is not known here, so such a literal with a string or key that is not ASCII is unknown (review
-  round 1, finding 1). An `N'…'` literal is read as it is.
+  characters that code page has is not known here, so such a literal with a string or key that is not ASCII is unknown. An `N'…'` literal is read as it is.
 - **`json_query`** over a place or literal is live JSON of its content, nullable as the value is. Under `json_query` a
   `CASE`, `IIF`, `CHOOSE` or `COALESCE` holds JSON whether or not the server folds it to one result, so its results' JSON is
   joined, literals parsed (`Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken`).
@@ -1157,8 +1155,7 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   through the database's code page, which may change a character that is not ASCII (`α` from a Greek column comes back `a`:
   `Openjson_with_converts_a_varchar_to_the_databases_code_page`), so its value set holds only when every value is ASCII. An
   `nchar(n)` column is not padded, so it is at most n, not exactly n, unless it reads an `nchar(n)` value, which FOR JSON writes
-  padded (`Openjson_with_does_not_pad_nchar_but_pads_char`; this holds of `OPENJSON` over any document, since 6h, and was
-  claimed exact until review round 1 of 6l). `AS JSON` holds the object or array there, live. Without `WITH`, `key` is one of an object's keys or a tuple's positions, and `type` one of the JSON types its values
+  padded (`Openjson_with_does_not_pad_nchar_but_pads_char`; this holds of `OPENJSON` over any document). `AS JSON` holds the object or array there, live. Without `WITH`, `key` is one of an object's keys or a tuple's positions, and `type` one of the JSON types its values
   can be (`Openjson_without_with_over_json_built_here_gives_its_keys_and_their_types`): a key `FOR JSON` leaves out when null
   is never 0; `value` is never null when no value can be JSON null.
 - **`JSON_VALUE`** over JSON built here (`TracedJsonValue`): never null where the path finds a scalar that is never JSON null,
@@ -1167,8 +1164,8 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   (`Json_value_over_json_built_here_gives_its_scalars_as_text`).
 - **Loops.** JSON built from itself in a loop (`SET @x = (SELECT json_query(@x) AS c FOR JSON PATH)`, a table variable fed
   from itself) grows at every pass. After two passes, a place whose JSON still changes is widened to unknown content naming the
-  loop (`Widened`), which joins to itself, so the loop reaches its fixed point and only that JSON is unknown (review round 1,
-  finding 4; before, the whole procedure's results were).
+  loop (`Widened`), which joins to itself, so the loop reaches its fixed point and only that JSON is unknown, not the whole
+  procedure's results.
 - **Paths** read: `lax` or `strict`, `$`, keys (quoted or not) and indexes into a tuple. A wildcard, an index into an array of
   unknown length, a record's key or a recursive node is not read, and the general rule holds.
 - **Not traced**, each claiming no more than before: a stored column; `varchar(max)` and shorter types; a `#table` column
@@ -1178,7 +1175,7 @@ column is never traced: someone else may write it. Every rule is observed in `Js
 
 ## Built-in functions
 
-`ProcedureAnalyzer.Functions.cs` (slice 6i). Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
+`ProcedureAnalyzer.Functions.cs` reads them. Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
 runs and `DescribedTypeTests` check them on data. Each is null when an argument it reads is (its reasons), unless said
 otherwise; a value it computes has its type's facets only (`LOWER` of a `CHECK`ed column has no set). An argument of a type
 not listed is not modelled.
@@ -1243,7 +1240,7 @@ its arguments' one integer type, or of the type `COALESCE` gives decimals all na
 
 ## Window functions
 
-`ProcedureAnalyzer.Windows.cs` (slice 6i). A window is computed for each row the query returns, after grouping, so its
+`ProcedureAnalyzer.Windows.cs` reads them. A window is computed for each row the query returns, after grouping, so its
 arguments are read as the select list's are, with their own reasons (a `ROLLUP`'s NULL among them), and a partition always
 holds the current row. Observed in `FunctionObservationTests`.
 

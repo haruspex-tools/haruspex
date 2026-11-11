@@ -5,7 +5,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// JSON built here, traced to where it is read (slice 6l). Every rule here was observed on SQL Server 2025 RTM-CU10 before it
+// JSON built here, traced to where it is read. Every rule here was observed on SQL Server 2025 RTM-CU10 before it
 // was relied on, and is kept as a test (JsonTracingObservationTests in the differential tests). See README.md, "JSON built
 // here, traced".
 internal sealed partial class ProcedureAnalyzer
@@ -62,7 +62,7 @@ internal sealed partial class ProcedureAnalyzer
 
     // ---- table variables ----------------------------------------------------------------------------------------------
     //
-    // A table variable is its declaration (slice 6), but what its nvarchar(max) columns hold as JSON is what the body writes to
+    // A table variable is its declaration, but what its nvarchar(max) columns hold as JSON is what the body writes to
     // them, kept in FlowState.Json under "@t.column". Only this body can write one; every statement that does is read here:
     // INSERT (VALUES or a query), UPDATE's SET, OUTPUT … INTO; INSERT … EXEC and MERGE write values not read, so the columns
     // they may write are not JSON known here.

@@ -52,8 +52,8 @@ public class SetTypeGridTests(SqlServerFixture server)
 
     /// <summary>
     /// Every ordered triple of a few exact numbers (where an integer, money and a decimal meet in either order) and of a few
-    /// dates, times and others (where two values SQL Server refuses together may each become a third's type): review round 1
-    /// found a chain is typed left to right, and refused only when a value cannot become its type.
+    /// dates, times and others (where two values SQL Server refuses together may each become a third's type): a chain is
+    /// typed left to right, and refused only when a value cannot become its type.
     /// </summary>
     private static IEnumerable<string[]> Triples()
     {
@@ -157,7 +157,7 @@ public class SetTypeGridTests(SqlServerFixture server)
         "union" => string.Join(" UNION ALL ", operands.Select((o, i) => $"SELECT {o}{(i == 0 ? $" AS {name}" : "")} FROM {source}")),
         "coalesce" => $"SELECT COALESCE({string.Join(", ", operands)}) AS {name} FROM {source}",
 
-        // Conditions the server cannot fold, so every result counts (6g: a CASE folded to one branch is typed by it).
+        // Conditions the server cannot fold, so every result counts (a CASE folded to one branch is typed by it).
         _ => $"SELECT CASE {string.Concat(operands.SkipLast(1).Select((o, i) => $"WHEN id > {i.ToString(CultureInfo.InvariantCulture)} THEN {o} "))}ELSE {operands[^1]} END AS {name} FROM {source}",
     };
 

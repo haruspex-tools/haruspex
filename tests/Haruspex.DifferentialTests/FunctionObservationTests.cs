@@ -3,7 +3,7 @@ using Haruspex.DifferentialTests.Server;
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// What SQL Server gives for the built-in functions slice 6i types: the date functions, the string functions, <c>STRING_AGG</c>,
+/// What SQL Server gives for the built-in functions haruspex types: the date functions, the string functions, <c>STRING_AGG</c>,
 /// <c>JSON_VALUE</c>, the window functions, arithmetic and precedence over <c>float</c>, <c>real</c>, <c>money</c>,
 /// <c>smallmoney</c> and the date and time types, the bare <c>NULL</c>, and <c>GENERATE_SERIES</c>. Types are read as the server
 /// describes them (<c>sys.dm_exec_describe_first_result_set</c>); what can be NULL, and what is an error instead, from values.
@@ -109,7 +109,7 @@ public class FunctionObservationTests(SqlServerFixture server)
     [Fact]
     public async Task Dateadd_with_the_null_literal_as_its_number_does_not_compile_and_percentile_cont_takes_a_bit()
     {
-        // Review round 1: DATEADD(day, NULL, d) is refused (8116), where a NULL variable is NULL; PERCENTILE_CONT over a bit is
+        // DATEADD(day, NULL, d) is refused (8116), where a NULL variable is NULL; PERCENTILE_CONT over a bit is
         // a float.
         Assert.Equal(" ! 8116", (await Run([], "SELECT DATEADD(day, NULL, CAST('2026-01-01' AS date)) AS v;")).ToString());
         Assert.Equal("v float", await Describe("SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY CAST(n AS bit)) OVER () AS v FROM dbo.obs_w", [Rows]));
@@ -392,7 +392,7 @@ public class FunctionObservationTests(SqlServerFixture server)
         Assert.Equal("value numeric(2,1)", await Describe("SELECT value FROM GENERATE_SERIES(0.0, 1.0, 0.1)"));
         Assert.Equal(" ! 5373", (await Run([], "DECLARE @a smallint = 1; SELECT value FROM GENERATE_SERIES(@a, 10);")).ToString());
 
-        // decimal and numeric do not mix either, though COALESCE would take them (review round 1).
+        // decimal and numeric do not mix either, though COALESCE would take them.
         Assert.Equal(" ! 5373", (await Run([], "DECLARE @a decimal(10,2) = 1; SELECT value FROM GENERATE_SERIES(@a, 100.5);")).ToString());
 
         // A step the wrong way, or a NULL argument, gives no rows; never a NULL value.

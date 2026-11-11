@@ -1,5 +1,5 @@
 -- MERGE with a joined source: under WHEN NOT MATCHED BY SOURCE every table of the USING join is null for the rows it
--- deletes, the list's and the part's alike (review round 1, finding 1).
+-- deletes, the list's and the part's alike.
 CREATE PROCEDURE depot.prune_prices
 AS
 SET NOCOUNT ON;

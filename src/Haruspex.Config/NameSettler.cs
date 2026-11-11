@@ -15,8 +15,8 @@ namespace Haruspex.Config;
 /// <c>GetOrderLine</c> for <c>lines[]</c>; <c>…Result2Row</c> for a second result set; <c>PartTreeNode</c> for a
 /// recursive function's node). None depends on which other objects exist.</para>
 /// <para><b>Clashes are errors.</b> When two objects' names come out the same, the error names both and asks for an
-/// override. Until slice 4 a number was added instead, so adding a procedure could renumber another's types and break code
-/// that used them.</para>
+/// override. A number added instead would let adding one procedure renumber another's types and break code that used
+/// them.</para>
 /// <para><b>Numbers only within one object.</b> Inside one procedure (or one recursive function's types), two types can
 /// still get the same name: the variants of a union share their path, or a key <c>row</c> beside the row type. There a
 /// number is added, in the order the procedure's results are written, because it depends only

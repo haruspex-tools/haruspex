@@ -4,7 +4,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// <c>CASE</c>, <c>IIF</c>, <c>CHOOSE</c> and <c>NULLIF</c>, and <c>COALESCE</c> and <c>ISNULL</c> over JSON (slice 6g). Each type,
+/// <c>CASE</c>, <c>IIF</c>, <c>CHOOSE</c> and <c>NULLIF</c>, and <c>COALESCE</c> and <c>ISNULL</c> over JSON. Each type,
 /// reason to be null and way of nesting rests on an observation in the differential tests' <c>CaseObservationTests</c>, named
 /// where it matters.
 /// </summary>
@@ -100,7 +100,7 @@ public class CaseTests
     public void Results_of_types_sql_server_refuses_to_combine_are_not_typed()
     {
         // An int beside a string is int on the server, converting the string: a failure is an error, an overflow NULL under the
-        // caller's options (slice 6k, SetTypeObservationTests). An int beside a uniqueidentifier is refused (206).
+        // caller's options (SetTypeObservationTests). An int beside a uniqueidentifier is refused (206).
         var doc = Procedure("SELECT CASE WHEN id = 1 THEN x ELSE short END AS m, CASE WHEN id = 1 THEN NULL ELSE short END AS ok, CASE WHEN id = 1 THEN x ELSE NEWID() END AS no FROM dbo.t;");
         Assert.Equal("int nullable-column nullable-column arithmetic-overflow", Typed(doc, "m"));
         Assert.Equal("varchar(10)", Sql(doc, "ok"));

@@ -3,9 +3,10 @@ using Haruspex.SqlServer.Model;
 namespace Haruspex.Config;
 
 /// <summary>
-/// Which procedures are the interface (haruspex-design.md, "Which procedures are the interface", reshaped per schema by
-/// Richard on 9 Nov 2026). Each schema's block selects among that schema's procedures by their own names: <c>include</c>,
-/// then <c>exclude</c>, which wins. Nothing is selected unless its schema has a block with an include, so typing every
+/// Which procedures are the interface. In most databases most procedures write or administer, and only some are worth
+/// typing. Each schema's block selects among that schema's procedures by their own names: <c>include</c>, then
+/// <c>exclude</c>, which wins, because people think "in this schema, these procedures" (decided 9 Nov 2026, replacing
+/// patterns over two-part names). Nothing is selected unless its schema has a block with an include, so typing every
 /// procedure is something asked for, never the default.
 /// </summary>
 /// <remarks>

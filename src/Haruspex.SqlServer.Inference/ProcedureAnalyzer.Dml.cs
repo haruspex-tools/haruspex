@@ -6,7 +6,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// DML on permanent tables, OUTPUT, triggers and cursors (slice 6d). README.md in this folder ("DML" and "Cursors") gives the
+// DML on permanent tables, OUTPUT, triggers and cursors. README.md in this folder ("DML" and "Cursors") gives the
 // model; the observations it rests on are DmlObservationTests in the differential tests.
 internal sealed partial class ProcedureAnalyzer
 {
@@ -68,7 +68,7 @@ internal sealed partial class ProcedureAnalyzer
         foreach (var name in target.Temps.Where(t => after.Temp(t) is KnownTable))
             after = after.WithTemp(name, Unknown(name, Unsupported(IrUnknownReasons.UnsupportedStatement, $"It is written through a CTE or derived table at {at}, which is not followed.", at)));
 
-        // So is a table variable's JSON (slice 6l): one a write through a CTE or derived table may change is no longer known.
+        // So is a table variable's JSON: one a write through a CTE or derived table may change is no longer known.
         if (target.Direct is null)
             after = Underneath(after, spec.Target, with, at);
 
@@ -123,7 +123,7 @@ internal sealed partial class ProcedureAnalyzer
         var outerUnmatched = unmatchedSource;
         mergeActions = actions is null || actions.Contains(null) ? null : [.. actions.OfType<string>().Distinct().Order(StringComparer.Ordinal)];
         outputTarget = from is not null && spec.Target is NamedTableReference { SchemaObject: { SchemaIdentifier: null } written } ? written.BaseIdentifier.Value : null;
-        // Every source in the USING tree: a joined USING is null-extended as a whole (review round 1, finding 1).
+        // Every source in the USING tree: a joined USING is null-extended as a whole.
         unmatchedSource = spec is MergeSpecification { TableReference: { } merged } m
             && m.ActionClauses.Any(c => c.Condition == MergeCondition.NotMatchedBySource)
             ? (DmlTarget.Sources([merged]).Select(DmlTarget.Alias).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase), because)

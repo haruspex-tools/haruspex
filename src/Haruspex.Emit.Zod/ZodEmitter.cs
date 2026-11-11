@@ -250,8 +250,9 @@ public static class ZodEmitter
 
                     // Strip by default: unknown keys are dropped at parse time, so a column the database adds before the
                     // application redeploys doesn't break it. Strict is a setting for projects that deploy the
-                    // application first or together, and want an unexpected key to fail (haruspex-design.md,
-                    // "tolerant by default, strict as a setting"). Every object here is part of a result.
+                    // application first or together, and want an unexpected key to fail. Decided 9 Nov 2026: strict was
+                    // the first default, reversed because the common order, database first, would make strict break every
+                    // running application whenever a column is added. Every object here is part of a result.
                     var body = new StringBuilder(options.Objects == ZodObjects.Strict ? "z.strictObject({\n" : "z.object({\n");
                     foreach (var field in objectType.Fields)
                     {

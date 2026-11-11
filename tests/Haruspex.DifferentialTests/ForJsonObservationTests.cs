@@ -3,8 +3,8 @@ using Haruspex.DifferentialTests.Server;
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// What SQL Server's FOR JSON actually writes, observed and kept as tests. Slice 1 took these from the
-/// documentation; here the engine settles them, and the inferencer and the IR's README follow what these
+/// What SQL Server's FOR JSON actually writes, observed and kept as tests. The documentation was
+/// the first source; here the engine settles them, and the inferencer and the IR's README follow what these
 /// say. If a SQL Server version changes any of them, this is where it shows.
 /// </summary>
 public class ForJsonObservationTests(SqlServerFixture server)

@@ -43,7 +43,7 @@ Why these lines:
   produced, so they work the same however it was produced, and an emitter never needs to know they existed. Inference
   leaves names unsettled (each object's id, each type keyed by its identity); Config settles them. The emitter is
   handed its settings (`ZodOptions`) by the CLI and never reads the config file.
-- **Declared results are an input to inference, in the IR's terms** (slice 6b). A procedure's declared results stand in
+- **Declared results are an input to inference, in the IR's terms.** A procedure's declared results stand in
   for a call of it inside another, and a call's result sets are placed among its caller's by the statement walk, through
   branches and loops; that can't be done to a finished document. So Config reads the declaration into IR results, the CLI
   hands them to `IrInference.Infer` as `DeclaredResults`, as it hands it the model, and Inference never reads the config
@@ -64,15 +64,17 @@ holds the table above as data and fails when
   file system's types (`File`, `Directory`, `FileInfo`, `DirectoryInfo`, `FileStream`, `FileSystemInfo`). Those
   types share `System.Runtime` with everything else, so the test reads each assembly's type references for them.
 
-Adding a layer means adding it to the table here and in the test, in the same change. Slice 4 activated the reserved
-`Haruspex.Config` row: its `Planned` flag was removed, so its project must now exist; what it may know is unchanged. Dependency direction
-erodes one convenient reference at a time, which is why it is checked rather than only written down.
+Adding a layer means adding it to the table here and in the test, in the same change. A layer decided on but without
+code yet is marked `Planned` in the test's table (`Haruspex.Emit.JsonSchema` today), so its project may be missing; when
+its code arrives the flag is removed, and the project must then exist. Dependency direction erodes one convenient
+reference at a time, which is why it is checked rather than only written down.
 
 ## Types that were split, and why
 
-Slice 1 put reading, the catalogue, binding and inference in one project, `Haruspex.SqlServer`. Slice 2b split it
-without changing behaviour (every snapshot and CLI output is byte-identical). Where one type mixed two concerns,
-the type was split rather than moved whole:
+The SQL Server code began as one project, `Haruspex.SqlServer`, holding reading, the catalogue, binding and inference.
+Decided 9 Nov 2026: split it into the layers above, without changing behaviour (every snapshot and CLI output stayed
+byte-identical). Where one type mixed two concerns, the type was split rather than moved whole, and the table says why,
+because the reasons still hold for the code as it is:
 
 | Was | Became | Why |
 |---|---|---|
@@ -81,11 +83,11 @@ the type was split rather than moved whole:
 | `SqlTypes.ToShape(DataTypeReference)` | `SqlType` (Model: kind, canonical name, arguments as written); `SqlTypes.ToShape(SqlType)` (Inference) | What a type *is* is schema data; what it becomes in the IR is inference's choice. Lower-casing the arguments for the IR's SQL type text stays in Inference. |
 | `ProcedureAnalyzer` (scopes, sources, aliases, column resolution, and shapes) | `Binder`, `BindingScope`, `BoundSource`, `ColumnBinding`, `BindingProblem` (Semantics); the rest of `ProcedureAnalyzer` (Inference) | Binding needs no IR. A binding problem has its own kind, which Inference maps to the IR's unknown reason. An outer join's optional side is recorded as structure (`BoundSource.OptionalSideOf`); that it makes a value nullable is decided in Inference. |
 | `UnknownShape` built by `SqlProject.Changed` for ALTER/DROP | `Redefinition` (Model), turned into an unknown by Semantics (tables) and Inference (procedures) | The doubt about which definition is in effect is a fact about the source; how it surfaces in the IR is inference's. |
-| `Diagnostic`, `SourceLocation` | moved whole to `Haruspex.Diagnostics` | Already one concern. The design gives a diagnostic a code and severity too; nothing needs them yet, so they were not added. |
+| `Diagnostic`, `SourceLocation` | moved whole to `Haruspex.Diagnostics` | Already one concern. |
 | `ObjectName` | moved whole to Model | Names are schema data. |
-| `ObjectPattern` | moved whole to the CLI, then (slice 4) to Config | Selection patterns are the config file's concern, not schema data, so they stay out of the publishable Model. |
+| `ObjectPattern` | moved whole to the CLI, then, when the config file arrived, to Config | Selection patterns are the config file's concern, not schema data, so they stay out of the publishable Model. |
 
-## The body's own relations (slice 6)
+## The body's own relations
 
 A procedure defines relations of its own: CTEs, temporary tables and table variables. Binding a name to one is
 Semantics' job, as binding to a table is, so the `Binder` takes an `ILocalRelations` and binds a one-part name to a
@@ -96,9 +98,9 @@ still never sees a value, and Inference never resolves a name. A temporary table
 read into a `Table` by `Table.FromDefinition` in Model, the same reading `CREATE TABLE` gets in Sources, so the
 schema rules (`SchemaRules.IsNeverNull`, `ColumnFacts`) apply to it unchanged.
 
-Two behaviours were kept although a cleaner split would change them, because this slice changes no behaviour:
-RIGHT and FULL joins, CROSS JOIN and APPLY are left unbound by the binder (binding them is easy, but what they
-mean for nulls is not modelled, and binding them would change which unknowns are reported); and a table changed
-by `ALTER TABLE` is still reported with the reason `unsupported-source`. (Slice 6e binds APPLY, `VALUES` lists and
-views: the binder gives an APPLY's right side a scope of its left input's sources and records which side a source is on;
-Inference supplies the relations, a view's read from its definition, as for derived tables.)
+`APPLY`, `CROSS JOIN` and `FULL OUTER JOIN` are bound: the binder gives an `APPLY`'s right side a scope of its left
+input's sources and records which side a source is on, and Inference supplies the relations, a view's read from its
+definition, as for derived tables. `RIGHT JOIN` is left unbound: binding it is easy, but what it means for nulls is not
+modelled, and binding it would change which unknowns are reported. A permanent table changed by `ALTER TABLE`, other than
+by adding or checking constraints, is reported with the reason `unsupported-source`, because which definition applies
+depends on the order the scripts run.

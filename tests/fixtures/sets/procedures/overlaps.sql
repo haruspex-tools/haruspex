@@ -1,4 +1,4 @@
--- What INTERSECT, UNION and CROSS JOIN must not be claimed to do, each made visible in a run (review round 1):
+-- What INTERSECT, UNION and CROSS JOIN must not be claimed to do, each made visible in a run:
 -- an INTERSECT of two nullable columns keeps a NULL that is on both sides; an INTERSECT under the database's
 -- case-insensitive collation gives the left side's spelling, not the right side's literals; a UNION of two queries of at
 -- most one row each gives two rows; a cross join of one-row sides is at most one row under a WHERE, which may remove it.

@@ -70,7 +70,7 @@ internal sealed class FunctionSummaries
     private readonly bool uncommitted;
 
     /// <summary>
-    /// The same functions read uncommitted, for calls in a statement that reads uncommitted (review round 1 of slice 6f). A
+    /// The same functions read uncommitted, for calls in a statement that reads uncommitted, so that a key inside one no longer holds. A
     /// recursive function is not read there: it gives its declared type only, so that its named node (<see cref="Nodes"/>,
     /// which the IR's type table holds once) comes from the committed reading alone. That only claims less.
     /// </summary>

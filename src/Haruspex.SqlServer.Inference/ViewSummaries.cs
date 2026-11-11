@@ -6,7 +6,7 @@ namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
 /// What each view of the project holds, read once per document from its definition (<see cref="ProcedureAnalyzer.ReadView"/>),
-/// and what each call of a table-valued function returns (slice 6f), read once per function and set of argument values. A
+/// and what each call of a table-valued function returns, read once per function and set of argument values. A
 /// view or function reads others; one that reads itself through them cannot be created, and is unknown here.
 /// </summary>
 internal sealed class ViewSummaries
@@ -68,7 +68,7 @@ internal sealed class ViewSummaries
     /// <summary>A view's rows, read once per document and per way of reading it: committed, or uncommitted inside too.</summary>
     /// <param name="uncommitted">
     /// Whether it is read uncommitted: under a NOLOCK or READUNCOMMITTED hint on it, which applies to every table under it, or
-    /// in a statement that reads uncommitted. Then no key of the tables inside holds (review round 1 of slice 6f).
+    /// in a statement that reads uncommitted. Then no key of the tables inside holds.
     /// </param>
     public LocalRelationValues Read(NamedObject view, bool uncommitted)
     {

@@ -3,7 +3,7 @@ using Haruspex.DifferentialTests.Server;
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// What SQL Server does with table-valued functions read as tables, observed and kept as tests: the rules slice 6f rests on
+/// What SQL Server does with table-valued functions read as tables, observed and kept as tests: the rules haruspex's reading of them rests on
 /// (Haruspex.SqlServer.Inference's README.md, "Table-valued functions"). What a call's arguments become, what a multi-statement
 /// function's return table enforces, and what a call may and may not say. Each test creates what it needs in a write session,
 /// rolled back. Observed on SQL Server 2025 RTM-CU10.

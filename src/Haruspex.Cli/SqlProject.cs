@@ -13,7 +13,7 @@ namespace Haruspex.Cli;
 /// selection, overrides and naming in Haruspex.Config).
 /// </summary>
 /// <remarks>
-/// Before slice 2b this class was the whole front end. It is kept as the composition, here in the CLI, because
+/// This class was once the whole front end. It is kept as the composition, here in the CLI, because
 /// composing the layers is the CLI's job and no layer below may know both how a model is read and how it is
 /// inferred.
 /// </remarks>

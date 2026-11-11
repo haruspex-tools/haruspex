@@ -1,4 +1,4 @@
--- The case that motivated slice 6d: a read whose CATCH calls the logger, which inserts. It is fully typed.
+-- The case that motivated reading writes: a read whose CATCH calls the logger, which inserts. It is fully typed.
 CREATE PROCEDURE depot.list_parts
     @code varchar(20) = NULL
 AS

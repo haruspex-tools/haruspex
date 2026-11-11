@@ -5,8 +5,7 @@ namespace Haruspex.Diagnostics;
 /// results cannot show, such as a table the project does not define.
 /// </summary>
 /// <remarks>
-/// The design gives a diagnostic a code too. None needs one yet, so it is left for the slice that does rather than invented
-/// here. The severity came with slice 6d, the first warning.
+/// A diagnostic has no code yet. None needs one, so codes are left until something does, rather than invented here.
 /// </remarks>
 /// <param name="Message">What is wrong, in a sentence.</param>
 /// <param name="At">Where, when it is known.</param>

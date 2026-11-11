@@ -44,7 +44,7 @@ public partial class MarkdownLinkTests
     [Theory]
     [InlineData("## What it deliberately doesn't do", "what-it-deliberately-doesnt-do")]
     [InlineData("## `IrJsonWriter`: the IR as JSON", "irjsonwriter-the-ir-as-json")]
-    [InlineData("### Slice 6c *and* after", "slice-6c-and-after")]
+    [InlineData("### Step 6c *and* after", "step-6c-and-after")]
     [InlineData("## [Linked](elsewhere.md) heading", "linked-heading")]
     [InlineData("## Scalars in JSON (0.11)", "scalars-in-json-011")]
     [InlineData("## snake_case stays", "snake_case-stays")]

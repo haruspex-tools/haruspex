@@ -6,7 +6,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
-/// How many rows a query returns (slice 6c): exactly one, at most one, or any number. Each rule is observed in
+/// How many rows a query returns: exactly one, at most one, or any number. Each rule is observed in
 /// <c>RefinementObservationTests</c>, and the README beside this file says why each is sound. Anything not recognised is
 /// <see cref="IrCardinality.Many"/>, which claims nothing.
 /// </summary>

@@ -6,7 +6,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
-/// Refinement (slice 6c): what a query's filters prove about the rows they keep. WHERE, an inner join's ON and HAVING keep
+/// Refinement: what a query's filters prove about the rows they keep. WHERE, an inner join's ON and HAVING keep
 /// only rows for which their condition is TRUE, so a condition that cannot be TRUE when a column is NULL proves the column
 /// non-null in every row kept. Which conditions those are is decided by three-valued logic (<see cref="Possible"/>), and
 /// each engine rule it uses is observed in <c>RefinementObservationTests</c>. The README beside this file says why each

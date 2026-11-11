@@ -4,7 +4,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// Slice 6i: window functions, a call with OVER. README.md in this folder ("Window functions") gives the rules and the
+// Window functions, a call with OVER. README.md in this folder ("Window functions") gives the rules and the
 // observations they rest on (FunctionObservationTests in the differential tests).
 internal sealed partial class ProcedureAnalyzer
 {

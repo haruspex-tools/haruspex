@@ -5,7 +5,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// Slice 6g: CASE, IIF, CHOOSE and NULLIF, and COALESCE and ISNULL over JSON. README.md in this folder ("CASE, IIF, CHOOSE and
+// CASE, IIF, CHOOSE and NULLIF, and COALESCE and ISNULL over JSON. README.md in this folder ("CASE, IIF, CHOOSE and
 // NULLIF", "COALESCE and ISNULL over JSON") gives the rules and the observations they rest on (CaseObservationTests in the
 // differential tests).
 internal sealed partial class ProcedureAnalyzer
@@ -175,7 +175,7 @@ internal sealed partial class ProcedureAnalyzer
     /// A_literal_result_keeps_its_trailing_spaces_and_a_fixed_length_result_pads). Live JSON is not modelled: whether a CASE
     /// over it nests as JSON depends on whether the server folds it to one branch (observed:
     /// Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch). Results that are all JSON
-    /// text are JSON text of their join, and under json_query, where folding does not matter, so are any (slice 6l).
+    /// text are JSON text of their join, and under json_query, where folding does not matter, so are any.
     /// </summary>
     private Value Results(TSqlFragment at, List<(ScalarExpression Expression, Value? Value)> results, IReadOnlyList<IrNullReason> also)
     {
@@ -186,7 +186,7 @@ internal sealed partial class ProcedureAnalyzer
             return unknown;
 
         // Under json_query whether the server folds it no longer matters: json_query makes either result JSON, so what it holds
-        // is the join of its results' JSON, literals parsed (slice 6l). Elsewhere, JSON text in every result is JSON text.
+        // is the join of its results' JSON, literals parsed. Elsewhere, JSON text in every result is JSON text.
         var underJsonQuery = ReferenceEquals(at, jsonQueryArgument);
         if (given.Any(r => r.Value.IsLiveJson) && !underJsonQuery)
             return NotModelled(at, "whether it nests as JSON depends on whether the server folds it to one result.");
@@ -337,8 +337,8 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// What a value built from <paramref name="parts"/> holds as JSON, each written as it is: a live value its shape, JSON text its
-    /// content, and a literal that is a JSON document its parsed shape (<see cref="JsonLiterals"/>; slice 6l, before which only
-    /// <c>'[]'</c> and <c>'{}'</c> were read). <c>NotJson</c> when a part may not be JSON (a column, a literal that is not a
+    /// content, and a literal that is a JSON document its parsed shape (<see cref="JsonLiterals"/>), not only
+    /// <c>'[]'</c> and <c>'{}'</c>. <c>NotJson</c> when a part may not be JSON (a column, a literal that is not a
     /// document); otherwise JSON, its content null when not known (a JSON text of unknown content, or <c>'null'</c>, which is
     /// JSON but not a document). The content is the join of the parts' (<see cref="ShapeJoin.Content"/>): <c>'[]'</c> lets
     /// arrays have no items, and shapes that do not join are a union.
@@ -422,7 +422,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>
     /// <c>ISNULL(a, b)</c> with a JSON and maybe null. ISNULL takes a's JSON-ness: over live JSON it is live, and b is written
     /// into the JSON as it is, unchecked (observed: Isnull_writes_its_fallback_into_the_json_as_it_is), so only a b that is JSON
-    /// is modelled: a literal that is a JSON document (slice 6l: <c>'[1]'</c> is <c>[1]</c>, observed in
+    /// is modelled: a literal that is a JSON document (<c>'[1]'</c> is <c>[1]</c>, observed in
     /// Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken; <c>'[1]x'</c> is not
     /// JSON), or a live JSON value or JSON text whose content is known; <c>'null'</c> is JSON null that is not SQL NULL, so a key
     /// holding it is never left out, which is not modelled. Over JSON text (WITHOUT_ARRAY_WRAPPER) it is text. It reads a once, so it is
