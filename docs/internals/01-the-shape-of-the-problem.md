@@ -133,6 +133,23 @@ The analysis here is sound, and the reason is the cost of each mistake to the pe
 a failure in production: code that trusted a field to be present, on the day it wasn't. A user forgives the first and not
 the second ([decision 0002](../decisions/0002-unknown-with-a-reason-never-a-guess.md)).
 
+### Why not "soundy"?
+
+Many typed-SQL tools make the other trade on purpose: sound except for known holes, a position Livshits and others named
+*soundiness* and defended. A sceptic will point out that haruspex generates a runtime validator, so a wrong claim would fail
+loudly at the parse rather than silently. Why not accept a few wrong claims, then, and type more fields?
+
+Because a loud failure is still a failure, and it comes at the worst time. A wrong non-null claim, met by a null in
+production, fails the parse of that result for every call that returns such a row: the procedure stops working for those
+users until someone writes an override and redeploys. The types the application was compiled against were wrong too, so
+the code never handled the case. A sound `.nullable()` costs a check the compiler shows the developer before anything ships.
+The runtime check is there so that the application can trust its types, and so that the claims a *person* makes
+(overrides, declared results) fail loudly when wrong; it isn't meant as a net under haruspex's own.
+
+Nor is haruspex free of assumptions. It states each one where it is made rather than leaving holes to be found, for
+example that a caller doesn't read uncommitted data
+([decision 0016](../decisions/0016-visible-read-uncommitted-drops-key-claims.md)).
+
 In the literature this is an **over-approximation**: the set of values haruspex says a field may take always contains
 every value it can really take. "Nullable" means "may be null", never "is sometimes null"; "non-null" means "is never
 null". When haruspex can't bound the set at all, the field is **unknown**.
@@ -244,6 +261,8 @@ otherwise with a reason.
   approximation (free at <https://cs.au.dk/~amoeller/spa/>).
 - Flemming Nielson, Hanne Riis Nielson and Chris Hankin, *Principles of Program Analysis*, chapter 1, for the same ideas
   more formally.
+- Benjamin Livshits and others, the manifesto on soundiness, *Communications of the ACM*, volume 58, 2015: the case for
+  the other trade, made well.
 - H. G. Rice, "Classes of recursively enumerable sets and their decision problems", *Transactions of the American
   Mathematical Society*, 1953: the theorem itself.
 

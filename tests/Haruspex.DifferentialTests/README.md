@@ -12,7 +12,7 @@ by a user at runtime.
    `tests/fixtures/<name>`, retried after the others when it fails, because a fixture's scripts are in no
    particular order (a foreign key may name a table created later). The fixtures' schemas must not overlap.
 3. **Each fixture is seeded** from `Seeds/<name>.sql`.
-4. **Each run in `Runs.All` calls a procedure** and reads every result set. A run with `Setup` runs that SQL
+4. **Each run in `Runs.All` calls a procedure** and reads every result set. A run with `ProcedureRun.Setup` runs that SQL
    first in a transaction that is rolled back, which is how a procedure without parameters is run against
    empty tables. Such a run writes, so it runs alone (see "Runs that write").
 5. **The output is validated against the IR** (`Validation/IrValidator.cs`).
@@ -21,7 +21,7 @@ by a user at runtime.
 ## Runs that write
 
 Tests run in parallel against one database. Most only read, but some write inside a transaction that is rolled
-back: a run's `Setup` (deleting rows, to see a procedure on empty tables), and the observation tests that create
+back: a run's `ProcedureRun.Setup` (deleting rows, to see a procedure on empty tables), and the observation tests that create
 a table or functions to watch the engine (`CheckConstraintObservationTests`, `JsonFunctionObservationTests`). The
 rollback hides what they wrote, but not their locks: until it, a run reading the same tables waits on them, and
 when the two take their locks in opposite orders SQL Server kills one with error 1205. GitHub's CI did on
@@ -35,7 +35,7 @@ once, or one that writes, alone. Nothing reaches the database except through it:
 - The fixture keeps the connection string to itself. A test asks for a **`ReadSession`**
   (`server.ReadAsync`) or a **`WriteSession`** (`server.WriteAsync`); both hold their place in the gate until
   disposed. A write session's work is one transaction, always rolled back. `server.ObserveAsync` and
-  `server.RunAsync` pick the session from the run: a write session when it has a `Setup`.
+  `server.RunAsync` pick the session from the run: a write session when it has a `ProcedureRun.Setup`.
 - **A read session cannot write**, so a test or procedure that tries fails at once rather than deadlocking
   another test by luck. It reads a **database snapshot** of the test database, taken once it is seeded,
   which is read-only to everyone: even a `dbo` procedure, which ownership chaining lets past every
@@ -207,5 +207,5 @@ Stopping a run must not leave it behind either:
 ## Adding a fixture or a run
 
 Add the fixture's name to `Runs.Fixtures`, write `Seeds/<name>.sql`, and add runs to `Runs.All` until the
-coverage test passes. A procedure that cannot run goes in `Runs.NotRun` with the reason. A run whose procedure itself writes needs a `Setup` so that it runs in a write
+coverage test passes. A procedure that cannot run goes in `Runs.NotRun` with the reason. A run whose procedure itself writes needs a `ProcedureRun.Setup` so that it runs in a write
 session; in a read session the write fails the run.

@@ -16,7 +16,7 @@ scan. What is observed is how far a procedure's isolation level reaches
 - *Be strict about the caller too.* No source shows the caller's isolation level, so every key-based claim would go.
 
 **Reason.** A hint in the source is visible, and dropping the claim it breaks only claims less. The caller's level is not, and
-being strict about it would remove every cardinality claim haruspex makes. This differs from
+being strict about it would remove every key-based claim haruspex makes. This differs from
 [`COUNT`](0014-count-is-nullable.md), where being strict costs one `.nullable()`: the assumption is made only because the
 cost of strictness is so much higher, and it is stated rather than hidden.
 

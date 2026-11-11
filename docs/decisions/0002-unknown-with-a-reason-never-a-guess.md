@@ -6,12 +6,16 @@
 value set holds every value the code can produce. What cannot be proved is *unknown*, with a reason from a closed list
 (`IrUnknownReasons`), a sentence saying why, and where in the source it arose.
 
-**Context.** No static analysis of a real language can be both sound (every claim true) and complete (every true fact
-claimed): Rice's theorem rules it out. So a tool must choose which way to be wrong when it cannot tell.
+**Context.** No static analysis of a real language that always terminates can be both sound (every claim true) and
+complete (every true fact claimed): Rice's theorem rules it out. So a tool must choose which way to be wrong when it
+cannot tell.
 
 **Alternatives.**
 - *Guess the likely type*, as a heuristic or a model trained on examples would. Most fields would come out right, and the
   wrong ones would be found by a user at runtime, in their code, with no sign of which they were.
+- *Sound except for known holes* ("soundy", in Livshits et al.'s word), trusting the generated runtime check to catch a
+  wrong claim. The check turns a wrong claim into a failed parse of every row that breaks it: an outage the user can only
+  fix after it happens, with an override.
 - *Fail the whole procedure* when any part is not understood. Sound, but one unmodelled column would hide every field that
   was proved.
 

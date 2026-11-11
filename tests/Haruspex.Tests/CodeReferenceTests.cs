@@ -36,6 +36,12 @@ public partial class CodeReferenceTests
                 problems.Add($"{file}:{line.ToString(CultureInfo.InvariantCulture)}: `{code}` {problem}");
         }
 
+        foreach (var (line, name) in CodeReferences.DiagramNames(markdown))
+        {
+            if (CodeReferences.Current.Problem(name) is { } problem)
+                problems.Add($"{file}:{line.ToString(CultureInfo.InvariantCulture)}: the diagram's {name} {problem}");
+        }
+
         foreach (var (line, path) in RepositoryLinks(markdown))
         {
             if (CodeReferences.PathProblem(path) is { } problem)
@@ -112,6 +118,21 @@ public partial class CodeReferenceTests
     [InlineData("tests/fixtures/*.sql")]
     [InlineData("SqlTypes.ToShape(SqlType)")]
     public void Code_that_is_not_a_reference_is_not_checked(string code) => Assert.False(CodeReferences.IsReference(code));
+
+    [Fact]
+    public void A_member_written_alone_is_not_taken_for_a_type()
+    {
+        // Redefinition is a type and also a property of Procedure; Body is only a property.
+        Assert.Null(CodeReferences.Current.Problem("Redefinition"));
+        Assert.Null(CodeReferences.Current.Problem("Procedure.Body"));
+        Assert.NotNull(CodeReferences.Current.Problem("Body"));
+    }
+
+    [Fact]
+    public void A_diagram_s_compound_names_are_references_and_its_plain_words_are_not() =>
+        Assert.Equal(
+            [(3, "IrBuilder"), (4, "ResultTrack.Then")],
+            CodeReferences.DiagramNames("```mermaid\nflowchart LR\n    a[\"IrBuilder\"] --> b[\"Sources: the Model\"]\n    b --> c[\"ResultTrack.Then\"]\n```\n"));
 
     [Fact]
     public void A_link_into_this_repository_on_github_is_checked_on_disk() =>

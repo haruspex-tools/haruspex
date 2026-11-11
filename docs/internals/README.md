@@ -29,8 +29,9 @@ Then, in about ten minutes:
 1. [The shape of the problem](01-the-shape-of-the-problem.md), "What haruspex is for": a procedure and the Zod haruspex
    writes for it, line by line.
 2. The same chapter, "Sound by default": why haruspex says *unknown* rather than guess, and what an unknown looks like.
-3. [Summaries and recursion](07-summaries-and-recursion.md), "Solving recursion: the least fixed point": the analysis at
-   its most interesting, typing a tree that a function builds by calling itself.
+3. [Summaries and recursion](07-summaries-and-recursion.md), "Shapes, ordered" and "Solving recursion: the least fixed
+   point": the few ideas about abstract values the rest needs, then the analysis at its most interesting, typing a tree
+   that a function builds by calling itself.
 4. [The decision log](../decisions/README.md), for any choice that looks odd: each record gives the alternatives and why
    they lost.
 
@@ -82,7 +83,10 @@ to check when it is one of these:
 | A test's name | `Calls_nest_at_most_32_deep` | name a test method |
 
 Types and members are found by reflection over haruspex's assemblies, and for the differential tests from their source. A
-name alone may also be a member of some type, a project, or a name a committed Zod snapshot holds. A name that is not
+name alone may also be a test, a project or layer (`Ir`, `Sources`), or a name a committed Zod snapshot or a worked
+example's Zod holds, but never a member: write a member after its type (`ScalarType.Converts`), since a type renamed while a property keeps its
+old name would otherwise go unnoticed. In a Mermaid diagram, every word in PascalCase with two capitals or more
+(`IrBuilder`) is a name, checked the same way. A name that is not
 haruspex's (a .NET type, an MSBuild property) is listed in `CodeReferences.Outside`, which says why each is there; a
 renamed type of haruspex must never be added to it. Text in capitals (`FOR JSON`, `WITHOUT_ARRAY_WRAPPER`) is SQL and is not
 checked, nor is anything with a placeholder or a wildcard. Links to this repository on GitHub, which the packable projects'

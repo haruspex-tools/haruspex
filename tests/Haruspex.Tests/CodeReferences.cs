@@ -27,9 +27,9 @@ namespace Haruspex.Tests;
 /// <para>
 /// A name resolves when its first part is a type of haruspex (read by reflection from the shipped assemblies and these
 /// tests; for the differential tests, which this project does not reference, from their source), and each later part is
-/// a member or nested type of the part before it. A name alone may also be a member of some haruspex type, a test method,
-/// a project or namespace of haruspex, or a name in a committed Zod snapshot or a worked example's Zod, since the
-/// documentation shows generated names. Anything else must be in <see cref="Outside"/>, which says why each is there.
+/// a member or nested type of the part before it. A name alone may also be a test method, a project, layer or
+/// namespace of haruspex, or a name in a committed Zod snapshot or a worked example's Zod, since the documentation shows generated
+/// names, but never a member written alone, which would hide a renamed type that left a property of its old name. Anything else must be in <see cref="Outside"/>, which says why each is there.
 /// Text in capitals (<c>FOR JSON</c>, <c>WITHOUT_ARRAY_WRAPPER</c>) is SQL, not a name, and is not checked.
 /// </para>
 /// </remarks>
@@ -56,6 +56,9 @@ internal sealed partial class CodeReferences
 
         // Names from before the split into layers, in the table of what each type became (docs/architecture.md).
         "Haruspex.SqlServer", "Catalog", "TableModel", "ColumnModel", "SqlProject.Changed",
+
+        // Products named in the layers' diagrams.
+        "ScriptDom", "TypeScript",
 
         // A layer planned but not yet built, in the layer table.
         "Haruspex.Emit.JsonSchema",
@@ -90,7 +93,6 @@ internal sealed partial class CodeReferences
     private const BindingFlags Every = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy;
 
     private readonly Dictionary<string, List<Type>> types = new(StringComparer.Ordinal);
-    private readonly HashSet<string> members = new(StringComparer.Ordinal);
     private readonly HashSet<string> namespaces = new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<string>> sourceTypes = new(StringComparer.Ordinal);
     private readonly HashSet<string> methods = new(StringComparer.Ordinal);
@@ -107,8 +109,6 @@ internal sealed partial class CodeReferences
             Add(types, SimpleName(type), type);
             if (type.Namespace is { } ns)
                 namespaces.Add(ns);
-            foreach (var member in type.GetMembers(Every | BindingFlags.DeclaredOnly))
-                members.Add(member.Name);
         }
 
         // ScriptDom's types are named where haruspex says which syntax it reads.
@@ -126,12 +126,15 @@ internal sealed partial class CodeReferences
                 Add(sourceTypes, m.Groups["name"].Value, relative);
             foreach (Match m in MethodDeclaration().Matches(text))
                 methods.Add(m.Groups["name"].Value);
-            foreach (Match m in MemberDeclaration().Matches(text))
-                members.Add(m.Groups["name"].Value);
         }
 
+        // A project, and a layer by its short name as the prose calls it (Ir, Sources, Semantics).
         foreach (var project in Directory.EnumerateFiles(TestPaths.RepoRoot, "*.csproj", SearchOption.AllDirectories))
-            namespaces.Add(Path.GetFileNameWithoutExtension(project));
+        {
+            var name = Path.GetFileNameWithoutExtension(project);
+            namespaces.Add(name);
+            namespaces.Add(name.Split('.')[^1]);
+        }
 
         // Generated names are real when haruspex generates them: in a committed snapshot, or in a worked example's output,
         // which WorkedExampleTests holds to what haruspex gives.
@@ -159,6 +162,24 @@ internal sealed partial class CodeReferences
         ReferenceKind.Name => NameProblem(code),
         _ => null,
     };
+
+    /// <summary>
+    /// The names a Mermaid diagram's labels give, with the line each is on: every word in PascalCase with at least two
+    /// capitals (<c>IrBuilder</c>, <c>ResultTrack.Then</c>), which in a diagram of haruspex's types is a type's name. Plain
+    /// words (<c>Sources</c>, <c>Model</c>) are the layers' names in prose, and are not checked.
+    /// </summary>
+    public static IEnumerable<(int Line, string Name)> DiagramNames(string markdown)
+    {
+        foreach (var block in MarkdownText.FencedBlocks(markdown).Where(b => b.Words is ["mermaid", ..]))
+        {
+            var lines = block.Text.Split('\n');
+            for (var i = 0; i < lines.Length; i++)
+            {
+                foreach (Match m in DiagramName().Matches(lines[i]))
+                    yield return (block.Line + 1 + i, m.Value);
+            }
+        }
+    }
 
     /// <summary>Why a path written in C# source leads nowhere; null when it resolves.</summary>
     public static string? PathProblem(string path)
@@ -198,9 +219,12 @@ internal sealed partial class CodeReferences
             return $"{parts[0]} is not a type of haruspex";
         if (code.Contains('_', StringComparison.Ordinal))
             return methods.Contains(code) ? null : "names no test";
-        return members.Contains(code) || generated.Contains(code)
+
+        // A name alone is a type, never a member: a type is often renamed while a property keeps its old name
+        // (Procedure.Redefinition), so a member written alone would hide the rename. Write a member as Type.Member.
+        return generated.Contains(code)
             ? null
-            : "names no type or member of haruspex and no generated name in a snapshot";
+            : "names no type of haruspex and no generated name (write a member as Type.Member)";
     }
 
     /// <summary>Each part after the first is a member or nested type of what the part before it names.</summary>
@@ -272,9 +296,8 @@ internal sealed partial class CodeReferences
     [GeneratedRegex(@"\b(?:void|Task|ValueTask)\s+(?<name>[A-Z]\w*)\s*\(")]
     private static partial Regex MethodDeclaration();
 
-    /// <summary>A member declared in source: a type, then a name, then what a declaration has next.</summary>
-    [GeneratedRegex(@"[\w>?\]]\s+(?<name>[A-Z]\w*)\s*(?:[({;=,)]|=>)")]
-    private static partial Regex MemberDeclaration();
+    [GeneratedRegex(@"(?<![\w.])[A-Z][a-z0-9]+[A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)*(?![\w])")]
+    private static partial Regex DiagramName();
 
     [GeneratedRegex(@"\bexport\s+(?:const|type)\s+(?<name>[A-Za-z_]\w*)")]
     private static partial Regex GeneratedName();

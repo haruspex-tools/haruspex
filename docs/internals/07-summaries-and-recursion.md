@@ -57,13 +57,13 @@ a largest set of nodes each reachable from every other: one function that calls 
 Collapsing each component to a single node leaves a graph with no cycles, so the components can be solved in an order where
 every callee comes first.
 
-In this graph, `category_tree` and `category_contents` call each other, `subcategories` calls itself, and `item_card`
+In this graph, `category_node` and `category_contents` call each other, `subcategories` calls itself, and `item_card`
 calls neither:
 
 ```mermaid
 flowchart TB
     subgraph c1["Component: mutual recursion"]
-        tree["category_tree"] --> contents["category_contents"]
+        tree["category_node"] --> contents["category_contents"]
         contents --> tree
     end
     subgraph c2["Component: self recursion"]
@@ -77,22 +77,53 @@ flowchart TB
 
 `FunctionSummaries` finds the components with **Tarjan's algorithm** (1972), which does it in one depth-first walk of the
 graph, in time linear in its size. It gives each node the lowest index reachable from it through nodes still on the walk's
-stack; a node whose lowest index is its own closes a component, which is everything above it on the stack. Tarjan's
-algorithm emits components callees first, which is the order they must be solved in. A component of one function that
-doesn't call itself is not recursive, and is read once.
+stack; a node whose lowest index is its own closes a component, which is everything above it on the stack. It completes
+components callees first, which is an order they can be solved in. `FunctionSummaries` doesn't loop over them in that
+order, though: it solves a component when one of its functions is first called (`FunctionSummaries.Return`), and reading
+that component's bodies calls into the components below it, which are solved first by the same rule. The order is the
+same, reached on demand, so a function no procedure calls is never read. A component of one function that doesn't call
+itself is not recursive, and is read once.
+
+### Shapes, ordered
+
+A summary is a description of values, not a value: "an `int32`, never null", "an array of these objects, or absent". The
+guide calls such a description an **abstract value**, and the idea of computing with them **abstract interpretation**
+(chapters 4 and 5, planned, cover both properly). Four ideas about them are enough for this chapter.
+
+- **Descriptions are ordered by how much they allow.** "`int32`, never null" allows less than "`int32`, may be null", which
+  allows less than "unknown". Allowing less is being more precise; it is never less sound, as long as every real value is
+  still allowed.
+- **The join** of two descriptions is the most precise description that allows everything either allows. Where two paths
+  meet, or two calls may return, the join is what holds of both: the join of "never null" and "may be null" is "may be
+  null".
+- **Bottom and top.** At the bottom is "never returns" (`NeverShape`), which allows no value at all. At the top is
+  "unknown", which allows anything. An ordered set like this, where any two elements have a join, is a **lattice**.
+- **A step is monotone** when reading a body with an assumption that allows more never gives a result that allows less. A
+  nullable argument may make a result nullable; it must never make it non-null.
 
 ### Solving recursion: the least fixed point
 
-A recursive component is solved by iteration. Start by assuming each function in it *never returns*: no information at
-all, the bottom of the lattice of shapes (`NeverShape`). Read every body in the component, with each call into the
-component giving what is assumed so far. That gives a new assumption. Repeat until a step changes nothing.
+### Solving recursion: the least fixed point
 
-This is **Kleene iteration** to the **least fixed point**. The fixed point is the summary that, assumed at every call,
-gives itself back when the bodies are read. It is the *least* one because the iteration starts at the bottom, and that is
-what makes it right: after k steps, the assumption describes every call that returns after at most k levels of nesting.
-Any call that returns does so after finitely many levels, so the limit describes every call that returns, and nothing a
-call can't produce. Starting from the top instead ("unknown") would also reach a fixed point, a sound one, but it would say
-nothing.
+A recursive component is solved by iteration. Start by assuming each function in it *never returns*: the bottom.
+Read every body in the component, with each call into the component giving what is assumed so far. That gives a new
+assumption. Repeat until a step changes nothing.
+
+This is **Kleene iteration** to the **least fixed point**. A fixed point is a summary that, assumed at every call, gives
+itself back when the bodies are read. When each step is monotone, starting from the bottom makes each assumption allow at
+least as much as the one before, and the first one that repeats is the *least* fixed point. That is what makes it sound:
+after k steps, the assumption describes every call that returns after at most k levels of nesting, and any call that
+returns does so after finitely many levels, so the fixed point describes every call that returns.
+
+Least does not mean exact. The least fixed point is the most precise of the sound summaries the shapes can express, and it
+is still an over-approximation, as everything in chapter 1 is: in the example below, `id` is any `int32`, and nothing ties a
+child's `id` to its parent's. Starting from the top ("unknown") instead would also reach a fixed point, a sound one, but it
+would say nothing.
+
+The argument needs each step to be monotone. `FunctionSummaries.Solve` replaces each assumption with the next reading
+rather than joining the two, which comes to the same thing only when reading is monotone. The rules are written to be
+(a nullable argument never makes a result non-null), but no test checks that yet; property tests of the lattice's laws
+belong with chapter 5.
 
 Here a function builds a tree of categories by calling itself for each child, and a procedure returns the roots:
 
@@ -160,22 +191,23 @@ The steps, for `subcategories`:
 
 ### Why it ends
 
-An iteration only ends if the assumptions stop changing. Two things make sure they do.
+Shapes can grow for ever: an array of arrays of arrays, a tuple holding a tuple. A lattice with ascending chains that never
+end needs **widening**: an operator that, when an iteration may climb without end, jumps to an upper bound at which it can
+stop and still be sound. The bound on steps is haruspex's widening, in its coarsest form. `FunctionSummaries` stops after
+`FunctionSummaries.StepsPerFunction` steps per function in the component, plus `FunctionSummaries.ExtraSteps`, and a
+component that hasn't settled by then jumps to the top: unknown (`unresolved-recursion`), which claims nothing and so is
+always sound. A finer widening would keep more of what was found; this one keeps nothing, and is simple to trust.
+
+That bound is what guarantees the iteration ends. Two things make the common cases settle well inside it:
 
 - **The recursive node is named.** A call into the component gives a *reference* to the function's object
-  (`RecursiveShape`), not the object itself. Without that, each step would nest the tree one level deeper, and the shapes
-  would grow for ever. With it, every step's shape is finite, and after the first step that finds an object, its structure
-  is fixed.
-- **What can still change only grows, and has a ceiling.** The reasons a value may be null are only ever added, never
-  removed, and there are finitely many (each is a rule at a place in the source). A result goes from "never returns" to a
-  shape once. So the assumptions climb a ladder of finite height, and must stop.
+  (`RecursiveShape`), not the object itself. Without that, each step would nest the tree one level deeper. With it, every
+  step's shape is finite, and after the first step that finds an object, its structure is fixed.
+- **What can still change is small.** Once the structure is fixed, what is left to change is the reasons a value may be
+  null, which a monotone step only adds to, and of which there are finitely many (each is a rule at a place in the source).
 
-In the literature, a lattice whose ascending chains are finite needs nothing more; one with infinite chains needs
-**widening**, an operator that jumps ahead to a safe upper bound so the iteration can't climb for ever. Naming the node is
-what keeps haruspex's chains finite here. Shapes that are not named (a tuple, a record) can still grow at each step, so
-`FunctionSummaries` also stops after `FunctionSummaries.StepsPerFunction` steps per function in the component, plus
-`FunctionSummaries.ExtraSteps`. That bound is a guard, not the argument: a component that reaches it is unknown
-(`unresolved-recursion`), which is sound.
+So a component of n functions settles in a few steps per function. Shapes that are not named (a tuple, a record) don't
+settle, and reach the bound.
 
 Two outcomes of a settled iteration are still refused:
 
@@ -189,13 +221,19 @@ describe, rather than bounding what a successful call returns.
 
 ### Procedures that call themselves
 
-`EXEC` is solved the same way, in `ProcedureCalls`. A call of a procedure already being walked does not walk it again: at
-first it is assumed to return nothing (the path through the call ends), then to return what its last walk returned, until
-a walk returns what was assumed. One thing is harder than for functions: a procedure may write a temporary table before
-calling itself, so the recursive call may start from wider tables than the outer one. The walk starts from the join of
-both, and starts again whenever a call widens them. Result sets only grow from one walk to the next, so this too is a least
-fixed point. At most `ProcedureCalls.MostPasses` walks are taken; a procedure that returns more result sets at each depth
-never settles, and is unknown.
+Procedures are solved by the same iteration, in `ProcedureCalls`, but their cycles are found another way. A procedure is
+walked once per call context, not summarised once, so there is no single summary per procedure to put in order ahead of
+time, and no call graph is built. A cycle shows up instead on the stack of walks: a call of a procedure already being
+walked (`ProcedureCalls.Follow`) marks that walk as recursive, and every walk above it as resting on an assumption, so that
+none of them is cached.
+
+The recursive call is not walked again. At first it is assumed to return nothing (the path through the call ends), then to
+return what the last walk returned, until a walk returns what was assumed. One thing is harder than for functions: a
+procedure may write a temporary table before calling itself, so the recursive call may start from wider tables than the
+outer one. The walk starts from the join of both, and starts again whenever a call widens them. With monotone steps each
+walk returns at least what the last did, so this too reaches the least fixed point; the bound, `ProcedureCalls.MostPasses`
+walks, is again what makes it end. A procedure that returns more result sets at each depth never settles, and is
+unknown.
 
 The rejected alternatives are in [decision 0012](../decisions/0012-recursion-is-solved-as-a-fixed-point.md): reporting
 recursion as unknown would leave every tree untyped, and unrolling k levels gives a type that is wrong at level k + 1.

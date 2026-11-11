@@ -15,7 +15,9 @@ usually built by a function that calls itself for each child.
 - *Unroll a fixed number of levels.* A type for depth k is wrong at k + 1, or claims a bound the data does not have. SQL
   Server's own limit, 32 nested calls, ends the call in an error rather than a value, so it is no bound on the shape.
 
-**Reason.** The least fixed point describes every call that returns, by induction on its depth, and nothing more. Naming the
-recursive node keeps each step's shape finite, so the iteration settles in a few steps.
+**Reason.** The least fixed point describes every call that returns, by induction on its depth, and is the most precise of
+the sound summaries the shapes can express (still an over-approximation, as every claim is). Naming the recursive node
+keeps each step's shape finite, so the common cases settle in a few steps; the bound on steps, past which the result is
+unknown, is what guarantees the iteration ends.
 
 **See also:** [the guide, "Summaries and recursion"](../internals/07-summaries-and-recursion.md).

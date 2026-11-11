@@ -44,7 +44,7 @@ foreach (var table in model.Tables)
 - **Declarations are kept as written**, so a tool reading the model sees what the source says, not an interpretation.
 - **An object changed after its definition says so.** When the source changes an object (`ALTER TABLE`, `DROP PROCEDURE`,
   `ALTER FUNCTION`) and doesn't say which runs last, the model records a `Redefinition` rather than applying one. A CHECK
-  constraint that a later `ALTER TABLE … NOCHECK CONSTRAINT` may disable records where (`DisabledAt`).
+  constraint that a later `ALTER TABLE … NOCHECK CONSTRAINT` may disable records where (`CheckConstraint.DisabledAt`).
 
 ## What it deliberately doesn't do
 

@@ -114,6 +114,8 @@ ordinally
 interprocedural
 kleene
 serialiser
+soundiness
+soundy
 tarjan
 unioned
 uniqueidentifiers
@@ -124,6 +126,7 @@ writable
 flemming
 hankin
 hanne
+livshits
 mckeeman
 micha
 pnueli

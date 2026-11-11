@@ -65,7 +65,7 @@ holds the table above as data and fails when
   types share `System.Runtime` with everything else, so the test reads each assembly's type references for them.
 
 Adding a layer means adding it to the table here and in the test, in the same change. A layer decided on but without
-code yet is marked `Planned` in the test's table (`Haruspex.Emit.JsonSchema` today), so its project may be missing; when
+code yet is marked `Layer.Planned` in the test's table (`Haruspex.Emit.JsonSchema` today), so its project may be missing; when
 its code arrives the flag is removed, and the project must then exist. Dependency direction erodes one convenient
 reference at a time, which is why it is checked rather than only written down.
 
