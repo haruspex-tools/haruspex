@@ -1,0 +1,216 @@
+{
+  "irVersion": "0.15",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "ledger.line_windows",
+      "name": "LineWindows",
+      "kind": "procedure",
+      "at": "procedures/line_windows.sql:1:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LineWindowsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "LineWindowsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "ledger.line_windows",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "line_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "avg_price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,6)",
+            "digits": {
+              "precision": 38,
+              "scale": 6,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999999999.999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999999999.999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "avg_qty",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/line_windows.sql:6:8"
+            }
+          ]
+        },
+        {
+          "name": "sd_price",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "too-few-values",
+              "at": "procedures/line_windows.sql:7:8"
+            }
+          ]
+        },
+        {
+          "name": "varp_score",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.score"
+            }
+          ]
+        },
+        {
+          "name": "var_units_before",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "too-few-values",
+              "at": "procedures/line_windows.sql:9:8"
+            },
+            {
+              "rule": "empty-frame",
+              "at": "procedures/line_windows.sql:9:8"
+            }
+          ]
+        },
+        {
+          "name": "avg_delta_after",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.delta"
+            },
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/line_windows.sql:10:8"
+            },
+            {
+              "rule": "empty-frame",
+              "at": "procedures/line_windows.sql:10:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

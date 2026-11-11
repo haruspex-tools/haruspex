@@ -1,0 +1,784 @@
+{
+  "irVersion": "0.15",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "ledger.line_functions",
+      "name": "LineFunctions",
+      "kind": "procedure",
+      "at": "procedures/line_functions.sql:1:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LineFunctionsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "LineFunctionsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "ledger.line_functions",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "line_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "round_kept",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,2)",
+            "digits": {
+              "precision": 19,
+              "scale": 2,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "round_cut",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,2)",
+            "digits": {
+              "precision": 19,
+              "scale": 2,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "round_units",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "round_score",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.score"
+            }
+          ]
+        },
+        {
+          "name": "round_small_fee",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.small_fee"
+            }
+          ]
+        },
+        {
+          "name": "round_fee",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "floor_price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,0)",
+            "digits": {
+              "precision": 19,
+              "scale": 0,
+              "from": {
+                "type": "decimal(19,0)"
+              }
+            },
+            "min": {
+              "value": -9999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,0)"
+              }
+            },
+            "max": {
+              "value": 9999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,0)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "ceiling_frac",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,0)",
+            "digits": {
+              "precision": 38,
+              "scale": 0,
+              "from": {
+                "type": "decimal(38,0)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,0)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,0)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "floor_small_fee",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.small_fee"
+            }
+          ]
+        },
+        {
+          "name": "ceiling_score",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.score"
+            }
+          ]
+        },
+        {
+          "name": "abs_delta",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.delta"
+            }
+          ]
+        },
+        {
+          "name": "abs_big",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,0)",
+            "digits": {
+              "precision": 38,
+              "scale": 0,
+              "from": {
+                "type": "decimal(38,0)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,0)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,0)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "abs_small_fee",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.small_fee"
+            }
+          ]
+        },
+        {
+          "name": "sign_frac",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,37)",
+            "digits": {
+              "precision": 38,
+              "scale": 37,
+              "from": {
+                "type": "decimal(38,37)"
+              }
+            },
+            "min": {
+              "value": -9.9999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,37)"
+              }
+            },
+            "max": {
+              "value": 9.9999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,37)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "sign_fee",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "sign_qty",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "sign_discount",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "numeric(5,4)",
+            "digits": {
+              "precision": 5,
+              "scale": 4,
+              "from": {
+                "type": "numeric(5,4)"
+              }
+            },
+            "min": {
+              "value": -9.9999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(5,4)"
+              }
+            },
+            "max": {
+              "value": 9.9999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(5,4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.discount"
+            }
+          ]
+        },
+        {
+          "name": "discount_squared",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "numeric(38,4)",
+            "digits": {
+              "precision": 38,
+              "scale": 4,
+              "from": {
+                "type": "numeric(38,4)"
+              }
+            },
+            "min": {
+              "value": -9999999999999999999999999999999999.9999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(38,4)"
+              }
+            },
+            "max": {
+              "value": 9999999999999999999999999999999999.9999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(38,4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.discount"
+            }
+          ]
+        },
+        {
+          "name": "units_cubed",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "flag_squared",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "sqrt_units",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "sqrt_score",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.score"
+            },
+            {
+              "rule": "domain-error",
+              "at": "procedures/line_functions.sql:27:8"
+            }
+          ]
+        },
+        {
+          "name": "square_big",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "square_score",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.score"
+            }
+          ]
+        },
+        {
+          "name": "exp_units",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "exp_discount",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.discount"
+            }
+          ]
+        },
+        {
+          "name": "log_units",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/line_functions.sql:32:12"
+            },
+            {
+              "rule": "domain-error",
+              "at": "procedures/line_functions.sql:32:8"
+            }
+          ]
+        },
+        {
+          "name": "log2_units",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/line_functions.sql:33:12"
+            },
+            {
+              "rule": "domain-error",
+              "at": "procedures/line_functions.sql:33:8"
+            }
+          ]
+        },
+        {
+          "name": "log10_units",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/line_functions.sql:34:14"
+            },
+            {
+              "rule": "domain-error",
+              "at": "procedures/line_functions.sql:34:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

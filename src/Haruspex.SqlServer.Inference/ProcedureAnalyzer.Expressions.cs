@@ -134,7 +134,7 @@ internal sealed partial class ProcedureAnalyzer
 
     private sealed class VolatileFinder : TSqlFragmentVisitor
     {
-        // The date and string functions of slice 6i read only their arguments too; the current date and time do not, but are never
+        // The date and string functions of slice 6i, and the numeric functions of 6j, read only their arguments too; the current date and time do not, but are never
         // NULL, so a COALESCE never reads them twice. LEFT and RIGHT are not FunctionCalls, so never counted.
         private static readonly HashSet<string> Pure = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -142,6 +142,7 @@ internal sealed partial class ProcedureAnalyzer
             "datediff", "datediff_big", "dateadd", "datepart", "year", "month", "day", "datename", "eomonth",
             "datefromparts", "datetime2fromparts", "datetimefromparts", "smalldatetimefromparts", "timefromparts", "datetimeoffsetfromparts",
             "ltrim", "rtrim", "trim", "upper", "lower", "substring", "len", "datalength", "replace", "string_escape", "formatmessage", "json_value",
+            "round", "floor", "ceiling", "abs", "sign", "power", "square", "sqrt", "exp", "log", "log10",
         };
 
         public bool Found { get; private set; }
@@ -282,12 +283,10 @@ internal sealed partial class ProcedureAnalyzer
     // ---- arithmetic ---------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// <c>a + b</c>, <c>a - b</c>, <c>a * b</c>, <c>a / b</c>: string + (<see cref="Plus"/>), or numbers and dates typed by
-    /// <see cref="ScalarType.Arithmetic"/>, null when an operand is. Integers, money, float, real, datetime and smalldatetime
-    /// can overflow, and division can divide by zero, each NULL under a caller's ANSI_WARNINGS and ARITHABORT off (observed:
-    /// Arithmetic_over_float_money_and_dates_overflows_to_an_error_or_to_null_under_the_callers_ansi_warnings_and_arithabort_off);
-    /// a decimal's +, - and * cannot, within 38 digits, money among them being converted to decimal(19,4) exactly. A string
-    /// with a number is not modelled yet.
+    /// <c>a + b</c>, <c>a - b</c>, <c>a * b</c>, <c>a / b</c>, <c>a % b</c>: string + (<see cref="Plus"/>), or numbers and dates
+    /// typed by <see cref="ScalarType.Arithmetic"/>, null when an operand is, and NULL under a caller's ANSI_WARNINGS and
+    /// ARITHABORT off when it may overflow or divide by zero (<see cref="ScalarType.MayOverflow"/>, which reads a literal
+    /// divisor). A string with a number is not modelled yet.
     /// </summary>
     private Value Binary(BinaryExpression binary, BindingScope scope)
     {
@@ -297,6 +296,7 @@ internal sealed partial class ProcedureAnalyzer
             BinaryExpressionType.Subtract => '-',
             BinaryExpressionType.Multiply => '*',
             BinaryExpressionType.Divide => '/',
+            BinaryExpressionType.Modulo => '%',
             _ => '?',
         };
         if (op == '?' || Strip(binary.FirstExpression) is NullLiteral || Strip(binary.SecondExpression) is NullLiteral)
@@ -316,8 +316,15 @@ internal sealed partial class ProcedureAnalyzer
             return NotModelled(binary, "arithmetic on these types is not modelled yet.");
 
         var because = ShapeJoin.Reasons(left.NullableBecause, right.NullableBecause);
-        return Typed(type, !type.IsDecimal || op == '/' ? ShapeJoin.Reasons(because, [Overflow(binary)]) : because, binary);
+        return Typed(type, ScalarType.MayOverflow(op, l, r, NumberOf(binary.SecondExpression)) ? ShapeJoin.Reasons(because, [Overflow(binary)]) : because, binary);
     }
+
+    /// <summary>The value of an integer or decimal literal, through parentheses and signs; null for anything else.</summary>
+    private static decimal? NumberOf(ScalarExpression expression) =>
+        LiteralOf(expression) is ({ } literal and (IntegerLiteral or NumericLiteral), var negative)
+        && decimal.TryParse(literal.Value, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out var value)
+            ? negative ? -value : value
+            : null;
 
     /// <summary>
     /// <c>-a</c> and <c>+a</c>: a's type, but a tinyint negated is a smallint (observed:

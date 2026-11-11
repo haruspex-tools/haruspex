@@ -18,7 +18,7 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.14";
+    public const string CurrentVersion = "0.15";
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
@@ -547,8 +547,9 @@ public static class IrNullRules
     public const string CountOverflow = "count-overflow";
 
     /// <summary>
-    /// It is arithmetic, a <c>SUM</c> or a conversion that can overflow its type or divide by zero: an error by default, but NULL
-    /// when the caller's session has <c>ANSI_WARNINGS</c> and <c>ARITHABORT</c> off, which a procedure cannot prevent.
+    /// It is arithmetic, a <c>SUM</c> or <c>AVG</c>, a numeric function (<c>ROUND</c>, <c>ABS</c>, <c>POWER</c>, <c>EXP</c>, …) or a
+    /// conversion that can overflow its type or divide by zero: an error by default, but NULL when the caller's session has
+    /// <c>ANSI_WARNINGS</c> and <c>ARITHABORT</c> off, which a procedure cannot prevent.
     /// <c>COALESCE</c> or <c>ISNULL</c> with a value never null removes it.
     /// </summary>
     public const string ArithmeticOverflow = "arithmetic-overflow";
@@ -612,6 +613,21 @@ public static class IrNullRules
     /// It is <c>LAG</c> or <c>LEAD</c> without a default (0.14), NULL where the row it reads is past the partition's edge.
     /// </summary>
     public const string WindowEdge = "window-edge";
+
+    /// <summary>
+    /// It is a math function that may be given a value outside its domain (0.15): <c>SQRT</c> of a negative, <c>LOG</c> or
+    /// <c>LOG10</c> of 0 or less or to a base of 0 or 1, <c>POWER</c> of a negative to a fractional power. That is an invalid
+    /// floating point operation: an error by default, but NULL when the caller's session has <c>ANSI_WARNINGS</c> and
+    /// <c>ARITHABORT</c> off, which a procedure cannot prevent, as for <see cref="ArithmeticOverflow"/>.
+    /// </summary>
+    public const string DomainError = "domain-error";
+
+    /// <summary>
+    /// It is a sample statistic, <c>STDEV</c> or <c>VAR</c> (0.15), which is NULL over fewer than two values that are not NULL:
+    /// a group or a window's frame of one row, with <c>GROUP BY</c> too. The population forms, <c>STDEVP</c> and <c>VARP</c>,
+    /// are 0 over one value.
+    /// </summary>
+    public const string TooFewValues = "too-few-values";
 
     /// <summary>Its type is unknown, so nothing is proved about it.</summary>
     public const string Unknown = "unknown";

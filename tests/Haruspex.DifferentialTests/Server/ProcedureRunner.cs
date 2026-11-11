@@ -65,9 +65,10 @@ internal static class ProcedureRunner
         {
             return reader.GetValue(i);
         }
-        catch (OverflowException)
+        catch (Exception e) when (e is OverflowException or System.Data.SqlTypes.SqlTypeException)
         {
-            // A decimal with more digits than System.Decimal holds (decimal(38, 0) can): read it exactly instead.
+            // A decimal with more digits than System.Decimal holds (decimal(38, 0) can): read it exactly instead. SqlClient
+            // throws SqlTypeException rather than OverflowException for some (1 as decimal(38,37), slice 6j).
             return reader.GetSqlDecimal(i);
         }
     }

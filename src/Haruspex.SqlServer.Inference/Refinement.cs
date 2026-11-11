@@ -435,7 +435,8 @@ internal sealed partial class ProcedureAnalyzer
     /// Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off). MIN and MAX return
     /// one of their argument's values, so its type and facets, and are NULL over no rows (without GROUP BY) and when every
     /// value is (observed: An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows,
-    /// An_aggregate_with_group_by_returns_no_row_over_no_rows). The others change the type (SUM, AVG) or are not needed yet.
+    /// An_aggregate_with_group_by_returns_no_row_over_no_rows). SUM, AVG and the statistics change the type; the others are not
+    /// modelled yet.
     /// </summary>
     private Value BuiltInAggregate(FunctionCall call, BindingScope scope)
     {
@@ -467,6 +468,9 @@ internal sealed partial class ProcedureAnalyzer
 
             case "sum" when call.Parameters.Count == 1:
                 return Sum(call, scope);
+
+            case "avg" or "stdev" or "stdevp" or "var" or "varp" when call.Parameters.Count == 1:
+                return Average(call, scope, name);
 
             case "string_agg" when call.Parameters.Count == 2:
                 return StringAggregate(call, scope);

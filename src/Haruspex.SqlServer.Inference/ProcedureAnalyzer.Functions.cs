@@ -18,6 +18,7 @@ internal sealed partial class ProcedureAnalyzer
         "datefromparts", "datetime2fromparts", "datetimefromparts", "smalldatetimefromparts", "timefromparts", "datetimeoffsetfromparts",
         "sysdatetime", "getdate", "getutcdate", "sysutcdatetime", "sysdatetimeoffset",
         "ltrim", "rtrim", "trim", "upper", "lower", "substring", "len", "datalength", "replace", "string_escape", "formatmessage", "json_value",
+        "round", "floor", "ceiling", "abs", "sign", "power", "square", "sqrt", "exp", "log", "log10",
     };
 
     private static bool IsBuiltIn(FunctionCall call) => call is { CallTarget: null, OverClause: null } && BuiltIns.Contains(call.FunctionName.Value);
@@ -58,6 +59,7 @@ internal sealed partial class ProcedureAnalyzer
             ("string_escape", 2) => StringEscape(call, scope),
             ("formatmessage", >= 1) => FormatMessage(call, scope),
             ("json_value", 2) => JsonValue(call),
+            ("round" or "floor" or "ceiling" or "abs" or "sign" or "power" or "square" or "sqrt" or "exp" or "log" or "log10", _) => Numeric(call, scope),
             _ => NotModelled(call, "this form of the function is not modelled."),
         };
     }

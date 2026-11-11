@@ -440,22 +440,63 @@ modelled.
   and off is deprecated; a procedure that sets it off is unknown, as before (`IsHarmless`). `+` of a string and a number is
   arithmetic, which may fail, and is not modelled.
 
-### Arithmetic and `SUM`
+### Decimal arithmetic
 
-- **`+`, `-`, `*`, `/`** on exact numbers (`ScalarType.Arithmetic`, `Decimal_arithmetic_has_the_documented_precision_and_scale`):
-  two integers give the wider, and may overflow; with a decimal, `+` and `-` give scale max(s1, s2) and precision
-  max(p1 − s1, p2 − s2) + scale + 1, `*` gives p1 + p2 + 1 and s1 + s2, `/` gives scale max(6, s1 + p2 + 1) and precision
-  p1 − s1 + s2 + scale; `numeric` when either operand is. Within 38 digits a decimal's `+`, `-` and `*` cannot overflow; `/`
-  can divide by zero. Beyond 38 digits SQL Server cuts the scale by rules not modelled, so it is unknown.
+Since slice 6j decimal arithmetic is read in full, `%` and the cap at 38 digits included. The rules are Microsoft's, from
+[Precision, scale, and length (Transact-SQL)](https://learn.microsoft.com/en-us/sql/t-sql/data-types/precision-scale-and-length-transact-sql),
+each checked on the server (`NumericObservationTests`), and the precision rules over a grid of operand types that reaches
+every threshold (`ArithmeticGridTests`: 3,560 binary expressions and the functions below, each column's type compared with
+the server's description of it). While building 6j they were also checked over 144,500 pairs of decimal types under all five
+operators, with no difference; that took 14 minutes, so the grid kept as a test is smaller.
+
+- **Operands** (`ScalarType.Arithmetic`). An integer column or variable is a decimal of its type's digits (`int` (10,0),
+  `bigint` (19,0)), an integer literal one of its own digits (`2` is (1,0), `00012` (2,0)), `money` (19,4), `smallmoney`
+  (10,4); a decimal literal is `numeric` of its own digits (`1.0` is `numeric(2,1)`, `-1.0` too: the sign is not a digit).
+  A `bit` beside another number is converted to that number's own type, a decimal's precision and scale too (`bit * decimal(10,2)`
+  is `decimal(21,4)`, that is `decimal(10,2) * decimal(10,2)`); two bits are an error (402), and so is negating one (8117)
+  (`A_bit_beside_a_number_takes_the_numbers_type_and_two_bits_are_an_error`; before 6j a bit beside a decimal counted as
+  `decimal(1,0)`, a slip). The result is `numeric` when either operand is.
+- **Within 38 digits** (`Decimal_arithmetic_has_the_documented_precision_and_scale`,
+  `Modulo_has_the_documented_precision_and_scale_and_integers_and_money_keep_their_type`):
+
+  | Operation | Precision | Scale |
+  |---|---|---|
+  | `e1 + e2`, `e1 - e2` | max(s1, s2) + max(p1 − s1, p2 − s2) + 1 | max(s1, s2) |
+  | `e1 * e2` | p1 + p2 + 1 | s1 + s2 |
+  | `e1 / e2` | p1 − s1 + s2 + max(6, s1 + p2 + 1) | max(6, s1 + p2 + 1) |
+  | `e1 % e2` | min(p1 − s1, p2 − s2) + max(s1, s2) | max(s1, s2) |
+
+- **Past 38 digits** (`Decimal_arithmetic_beyond_38_digits_caps_the_precision_and_cuts_the_scale`): the precision is 38 and
+  the scale is cut to keep the integer digits. For `+` and `-`, to 38 − max(p1 − s1, p2 − s2), with no floor
+  (`decimal(38,10) + decimal(38,0)` is `decimal(38,0)`); this is the page's own wording, and the grid confirms it. For `*` and
+  `/`, Microsoft gives three cases (integer part under 32: scale min(s, 38 − (p − s)); 32 or more with a scale under 6: kept;
+  32 or more with a scale over 6: 6), which together are min(s, max(6, 38 − (p − s))), p and s being the uncapped result's.
+  So `decimal(19,2) * decimal(19,6)` is `decimal(38,7)`, `decimal(38,0) * decimal(38,0)` `decimal(38,0)`,
+  `decimal(38,38) * decimal(38,38)` `decimal(38,37)`, `-1.0 * decimal(19,2)` `numeric(22,3)` (within 38) and
+  `-1.0 * decimal(38,0)` `numeric(38,1)`. `%` never passes 38.
+- **Overflow and division by zero** (`ScalarType.MayOverflow`;
+  `Decimal_overflow_and_division_by_zero_are_errors_by_default_and_null_under_the_callers_options`,
+  `Decimal_arithmetic_whose_integer_digits_fit_cannot_overflow_at_its_operands_extremes`,
+  `Integer_and_money_division_overflow_only_at_the_least_value_divided_by_minus_one`). Each is an error by default (8115,
+  8134) and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off, so `arithmetic-overflow` (6f's rule, which already
+  covered a division). A decimal result within 38 digits cannot overflow, nor a `%` (smaller than its divisor). A capped one
+  overflows when the integer digits it may need exceed the 38 − scale it keeps: max(p1 − s1, p2 − s2) + 1 for `+` and `-`,
+  (p1 − s1) + (p2 − s2) for `*`, p1 − s1 + s2 for `/` (p1 − s1 when dividing by a literal of at least 1); for `*` and `/` also
+  when they are equal and the scale was cut, since rounding can carry into one more digit (`decimal(38,38)` squared rounds
+  up to 1, which its one integer digit holds). So `decimal(19,2) * decimal(19,6)` cannot (31 digits kept, 30 needed), and
+  `-1.0 * decimal(38,0)` or `decimal(38,4) * decimal(19,4)` (a `SUM` times a price) can. A `/` or `%` divides by zero unless
+  its divisor is a number literal other than 0. Integers, `money`, `float` and `real` can always overflow (the least `int`
+  divided by -1 does), except that a `/` or `%` by a literal of at least 1 neither divides by zero nor grows: `x / 100` is
+  never NULL for an `int`, `money` or `float` `x` that is not.
 - **Over `float`, `real`, `money` and dates** (since 6i, `Arithmetic_over_float_real_money_and_dates_follows_data_type_precedence`):
-  `float` with any number is `float`, `real` with any but `float` `real`; `money` or `smallmoney` with an integer, a `bit` or
-  each other is `money` if either is, else `smallmoney` (even beside `bigint`); `money` with a decimal is decimal arithmetic on
-  `decimal(19,4)` (`smallmoney` `decimal(10,4)`), exactly as above (`money + 1.5` is `numeric(20,4)`). `datetime` and
-  `smalldatetime` take `+` and `-` with a number or each other: `datetime` if either is, else `smalldatetime`; `datetime2`,
-  `date`, `time` and `datetimeoffset` take no arithmetic (a compile error), and `*` and `/` on dates are errors too: not
-  modelled. Every one of these may overflow (or divide by zero), an error by default and NULL under the caller's options
-  (`Arithmetic_over_float_money_and_dates_overflows_to_an_error_or_to_null_under_the_callers_ansi_warnings_and_arithabort_off`),
-  so each has `arithmetic-overflow`, a `float` overflow included.
+  `float` with any number is `float`, `real` with any but `float` `real`, and neither takes `%` (an error, 402); `money` or
+  `smallmoney` with an integer, a `bit` or each other is `money` if either is, else `smallmoney` (even beside `bigint`), `%`
+  too; `money` with a decimal is decimal arithmetic on `decimal(19,4)` (`smallmoney` `decimal(10,4)`), exactly as above
+  (`money + 1.5` is `numeric(20,4)`). `datetime` and `smalldatetime` take `+` and `-` with a number or each other: `datetime`
+  if either is, else `smalldatetime`; `datetime2`, `date`, `time` and `datetimeoffset` take no arithmetic (a compile error),
+  and `*`, `/` and `%` on dates are errors too: not modelled. Each may overflow (or divide by zero), an error by default and
+  NULL under the caller's options
+  (`Arithmetic_over_float_money_and_dates_overflows_to_an_error_or_to_null_under_the_callers_ansi_warnings_and_arithabort_off`).
 - **Unary `-`** keeps the type, except that a `tinyint` becomes a `smallint` (it has no sign; observed, and a slip before 6i,
   which gave `tinyint`). An `int`, `smallint`, `bigint`, `money` or `smallmoney` can overflow at its least value; a decimal, a
   `float`, a `real` and a `tinyint` cannot. A `float` literal (`1.5e0`) is `float`, a money literal (`$2.50`) `money`, never
@@ -463,13 +504,63 @@ modelled.
 - **The `NULL` literal** on its own is `int` (`A_bare_null_is_an_int`), nullable for `null-literal`; converted (`CAST(NULL AS
   date)`) it is of the target type and NULL, with no `arithmetic-overflow` though `int` would not convert. It is in fact always
   NULL, which the IR cannot say yet.
-- This is only what the fixtures and the corpus need, not the whole numeric tower: `%`, `bit` with integers, and a string
-  with a number are not modelled.
+- A string with a number is not modelled.
+
+### `SUM`, `AVG` and the statistical aggregates
+
 - **`SUM(x)`** (`Sum_widens_its_argument`) is `int` for an integer narrower than `bigint`, `bigint`, `decimal(38, s)`,
   `money`, `float`; NULL over no rows without `GROUP BY` (`empty-aggregate`) and when every value is NULL; and it may overflow,
   except a decimal of at most 19 digits: fewer than 2^63 values below 10^(p − s) each sum to less than 10^(38 − s), and no
   query reads 2^63 rows (at a billion a second, 292 years), an assumption written here rather than observed. So
   `COALESCE(SUM(x), 0)` is never null, and `CONVERT(decimal(19,2), COALESCE(SUM(x), 0))` may overflow.
+- **`AVG(x)`** (`Avg_is_typed_by_its_argument_with_or_without_a_window`, `Avg_is_null_over_no_rows_and_overflows_as_sum_does`)
+  is `int` for `tinyint`, `smallint` and `int` (cut toward zero), `bigint`, `decimal(38, max(s, 6))` of the argument's own
+  name, `money` for `money` and `smallmoney`, `float` for `float` and `real`; a `bit` is an error. It is NULL as `SUM` is, and
+  overflows as `SUM` does, since it sums in the same type (two `int`s overflow it): a decimal of at most 19 digits cannot, by
+  `SUM`'s argument, and its 32 integer digits hold the average; a `decimal(38,0)` at its greatest overflows a scale of 6.
+- **`STDEV`, `STDEVP`, `VAR`, `VARP`**
+  (`The_statistical_aggregates_are_float_and_the_sample_forms_null_over_fewer_than_two_values`,
+  `The_statistical_aggregates_overflow_only_over_float`) are `float` over any number (a `bit` is an error). They are NULL as
+  `SUM` is, and the sample forms, `STDEV` and `VAR`, also over a single value, with `GROUP BY` too: **`too-few-values`** (IR
+  0.15). The population forms are 0 there. They overflow only over a `float`, whose squares can pass its range; an exact
+  type's squares (10^76 at most) or a `real`'s (10^77) cannot. HAVING comparing any of them proves it, as for every aggregate.
+- **Over a window** each is typed as without one; a partition is never empty, but a `ROWS` frame may be (`empty-frame`), and
+  a sample statistic over a frame or partition of one value is NULL (`too-few-values`).
+
+### Numeric functions
+
+`ProcedureAnalyzer.Numeric.cs` (slice 6j). Each is NULL when its first argument is, and when any other is, except `ROUND`'s
+third (a NULL third argument rounds); each reads only its arguments, so a `COALESCE` reads it once. Observed in
+`NumericObservationTests`; the types also over the grid (`ArithmeticGridTests`).
+
+- **The type.** `ROUND`, `ABS`, `SIGN`, `FLOOR`, `CEILING` and `POWER` give `int` for `tinyint`, `smallint` and `int`,
+  `bigint` for `bigint`, `money` for `money` and `smallmoney`, `float` for `float`, `real` and `bit`; a decimal keeps its own
+  type through `ROUND` and `ABS`, is `decimal(p, 0)` through `FLOOR` and `CEILING`, `decimal(38, s)` through `POWER`, and
+  through `SIGN` keeps it unless every digit is a place, when it gains an integer digit to hold 1 (`decimal(5,5)` gives
+  `decimal(6,5)`, `decimal(38,38)` `decimal(38,37)`). `POWER`'s exponent does not count. `SQRT`, `SQUARE`, `LOG` (both forms),
+  `LOG10` and `EXP` are `float`.
+- **`ROUND(x, n [, f])`** may carry into a digit x's type lacks: `ROUND(9.5, 0)` is 10.0, which `numeric(2,1)` cannot hold
+  (8115, NULL under the caller's options), and so for an `int` rounded to tens at its greatest, or `money` at its ends rounded
+  to 3, 1 or 0 places. It cannot when f is a literal other than 0 (it truncates), when n is a literal keeping every place x
+  has (a decimal's scale, 4 for `money`, 0 for an integer or a `float`), when x becomes a wider type (`tinyint`, `smallint`,
+  `real`, `bit`, `smallmoney`), or for `money` rounded to 2 places: its ends are .5807 and −.5808, which round down there,
+  and no value can round up past them (observed at both ends). Otherwise `arithmetic-overflow`.
+- **`FLOOR` and `CEILING`** of a decimal always fit `decimal(p, 0)` (`CEILING` of `decimal(2,2)` is 1); of `money` at its ends
+  they overflow. **`ABS`** overflows `int`, `bigint` and `money` at their least value, not `smallint` (an `int`), a decimal or
+  `smallmoney`. **`SIGN`** never overflows.
+- **`POWER(x, y)`** is computed in `float` and converted to x's type: it may overflow it, divide by zero (0 to a negative
+  power, 8134), or be outside its domain (a negative to a fractional power, 3623). With a whole literal exponent n of at least
+  0 only the overflow is left, and that cannot happen when x's integer digits n times over stay strictly below what the type
+  holds (38 less the scale for a decimal, 10 digits for `int`, 19 for `bigint`; strictly, because `float` rounds): so
+  `POWER(decimal(4,2), 17)` is never NULL, `POWER(decimal(4,2), 18)` may be. A `bit` to such a power never overflows.
+- **`SQUARE`** overflows only over a `float`; **`EXP`** past e^709, so not over a `tinyint`, a `bit` or a decimal of at most
+  two integer digits.
+- **Outside the domain** (`A_math_function_outside_its_domain_is_an_error_by_default_and_null_under_the_callers_options`):
+  `SQRT` of a negative, `LOG` of 0 or less or to a base of 0 or 1, `LOG10` of 0 or less, `POWER` as above, are error 3623 by
+  default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off. The brief expected an error under any options;
+  the server says otherwise, so these are nullable for **`domain-error`** (IR 0.15), a rule of its own because the cause is
+  not an overflow. `SQRT` of a `tinyint` or a `bit` cannot be. No bound proves an argument positive yet (a `CHECK (x > 0)`
+  would), which is left for a corpus that needs it.
 
 ## CASE, IIF, CHOOSE and NULLIF
 

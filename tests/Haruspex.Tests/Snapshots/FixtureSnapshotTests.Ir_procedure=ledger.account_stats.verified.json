@@ -1,0 +1,550 @@
+{
+  "irVersion": "0.15",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "ledger.account_stats",
+      "name": "AccountStats",
+      "kind": "procedure",
+      "at": "procedures/account_stats.sql:1:1",
+      "parameters": [
+        {
+          "name": "@account_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "AccountStatsResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "AccountStatsResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "AccountStatsResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "ledger.account_stats",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "account_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "avg_qty",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/account_stats.sql:7:8"
+            }
+          ]
+        },
+        {
+          "name": "avg_units",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/account_stats.sql:8:8"
+            }
+          ]
+        },
+        {
+          "name": "avg_delta",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.delta"
+            },
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/account_stats.sql:9:8"
+            }
+          ]
+        },
+        {
+          "name": "avg_price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,6)",
+            "digits": {
+              "precision": 38,
+              "scale": 6,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999999999.999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999999999.999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "avg_rate",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,6)",
+            "digits": {
+              "precision": 38,
+              "scale": 6,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999999999.999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999999999.999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.rate"
+            }
+          ]
+        },
+        {
+          "name": "avg_discount",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "numeric(38,6)",
+            "digits": {
+              "precision": 38,
+              "scale": 6,
+              "from": {
+                "type": "numeric(38,6)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999999999.999999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(38,6)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999999999.999999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(38,6)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.discount"
+            }
+          ]
+        },
+        {
+          "name": "avg_fee",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/account_stats.sql:13:8"
+            }
+          ]
+        },
+        {
+          "name": "avg_score",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.score"
+            },
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/account_stats.sql:14:8"
+            }
+          ]
+        },
+        {
+          "name": "avg_frac",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,38)",
+            "digits": {
+              "precision": 38,
+              "scale": 38,
+              "from": {
+                "type": "decimal(38,38)"
+              }
+            },
+            "min": {
+              "value": -0.99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,38)"
+              }
+            },
+            "max": {
+              "value": 0.99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,38)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/account_stats.sql:15:8"
+            }
+          ]
+        },
+        {
+          "name": "sd_price",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "too-few-values",
+              "at": "procedures/account_stats.sql:16:8"
+            }
+          ]
+        },
+        {
+          "name": "sdp_rate",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.rate"
+            }
+          ]
+        },
+        {
+          "name": "var_fee",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "too-few-values",
+              "at": "procedures/account_stats.sql:18:8"
+            }
+          ]
+        },
+        {
+          "name": "varp_score",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.score"
+            }
+          ]
+        },
+        {
+          "name": "var_weight",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "ledger.line.weight"
+            },
+            {
+              "rule": "too-few-values",
+              "at": "procedures/account_stats.sql:20:8"
+            },
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/account_stats.sql:20:8"
+            }
+          ]
+        }
+      ]
+    },
+    "AccountStatsResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "ledger.account_stats",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "avg_price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,6)",
+            "digits": {
+              "precision": 38,
+              "scale": 6,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999999999.999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999999999.999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/account_stats.sql:25:8"
+            }
+          ]
+        },
+        {
+          "name": "sd_price",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/account_stats.sql:26:8"
+            },
+            {
+              "rule": "too-few-values",
+              "at": "procedures/account_stats.sql:26:8"
+            }
+          ]
+        },
+        {
+          "name": "varp_units",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/account_stats.sql:27:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

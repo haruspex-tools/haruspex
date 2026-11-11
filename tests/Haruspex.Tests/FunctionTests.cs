@@ -397,7 +397,8 @@ public class FunctionTests
     [Fact]
     public void A_window_function_not_modelled_is_unknown()
     {
-        var doc = Procedure("SELECT CUME_DIST() OVER (ORDER BY id) AS a, AVG(n) OVER () AS b FROM dbo.t;");
+        // AVG over a window is read since slice 6j (NumericTests).
+        var doc = Procedure("SELECT CUME_DIST() OVER (ORDER BY id) AS a, PERCENT_RANK() OVER (ORDER BY id) AS b FROM dbo.t;");
         Unknown(doc, "a");
         Unknown(doc, "b");
     }

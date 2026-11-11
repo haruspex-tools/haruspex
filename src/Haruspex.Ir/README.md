@@ -1,4 +1,4 @@
-# The haruspex IR, version 0.14
+# The haruspex IR, version 0.15
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
 each side can be written in whatever language suits it. This page describes version 0.13. A JSON Schema for
@@ -463,6 +463,28 @@ and `SUM`"). For the IR:
 - The date functions never have `arithmetic-overflow`: their overflows are errors under any session options. Ranking
   functions are never null; `COUNT` over a window keeps `count-overflow` as `COUNT` does.
 - `GENERATE_SERIES` is a table source of one column, `value`, never null, of its arguments' type.
+
+## Decimal arithmetic, `AVG` and the numeric functions (0.15)
+
+Decimal arithmetic in full (the cap at 38 digits, `%`, a `bit` beside a number), `AVG`, `STDEV`, `STDEVP`, `VAR`, `VARP`
+(with and without `OVER`) and `ROUND`, `FLOOR`, `CEILING`, `ABS`, `SIGN`, `POWER`, `SQRT`, `SQUARE`, `LOG`, `LOG10`, `EXP` are
+read (slice 6j); the engine rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Decimal arithmetic",
+"`SUM`, `AVG` and the statistical aggregates", "Numeric functions"). For the IR:
+
+- Each has the SQL type SQL Server gives it, with that type's facets (a decimal's digits and bounds, as for any decimal).
+- `arithmetic-overflow` also names a decimal result capped at 38 digits whose integer digits may not fit, a division or modulo
+  that may divide by zero, `AVG` (as `SUM`), a statistic over `float`, and `ROUND`, `FLOOR`, `CEILING`, `ABS`, `POWER`,
+  `SQUARE` and `EXP` where they may overflow. A division or modulo by a number literal of at least 1 no longer has it, for
+  any type, nor a decimal division by any literal other than 0 whose result fits.
+- New null rules: **`domain-error`** (`SQRT`, `LOG`, `LOG10` or `POWER` given a value outside its domain: an invalid floating
+  point operation, error 3623 by default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off) and
+  **`too-few-values`** (`STDEV` or `VAR`, NULL over fewer than two values, with `GROUP BY` and over a window too).
+
+Changes in 0.15 (slice 6j, decimal arithmetic and the numeric functions): the null rules `domain-error` and `too-few-values`.
+Decimal arithmetic past 38 digits, `%`, `AVG`, the statistics and the numeric functions were unknown
+(`unsupported-expression`) before; a `bit` beside a decimal was typed as `decimal(1,0)` and is now the decimal's own type, as
+the server converts it; a division by a literal of at least 1 lost `arithmetic-overflow`. A 0.14 reader would meet null rules
+it does not know, which is why the version changed.
 
 Changes in 0.14 (slice 6i, built-in and window functions): the null rules `empty-frame` and `window-edge`. These functions,
 float, money and date arithmetic, and `GENERATE_SERIES` were unknown (`unsupported-expression`, `unsupported-source`) before;

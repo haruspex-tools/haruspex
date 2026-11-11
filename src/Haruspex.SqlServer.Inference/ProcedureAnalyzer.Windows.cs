@@ -57,6 +57,25 @@ internal sealed partial class ProcedureAnalyzer
                 return Typed(type, because, call);
             }
 
+            // AVG and the statistics as without a window (Average): a partition is never empty, but a frame may be, and a
+            // sample statistic over a frame of one value is NULL.
+            case ("avg" or "stdev" or "stdevp" or "var" or "varp", 1):
+            {
+                var argument = Expression(call.Parameters[0], scope);
+                if (argument.Shape is UnknownShape)
+                    return argument;
+                if (argument.IsLiveJson || TypeOf(argument, call.Parameters[0]) is not { } from || Statistic(name, from) is not var (type, overflows))
+                    return NotModelled(call, $"{name.ToUpperInvariant()} of a value of this type is not modelled.");
+                IReadOnlyList<IrNullReason> because =
+                [
+                    .. argument.NullableBecause,
+                    .. name is "stdev" or "var" ? [new IrNullReason(IrNullRules.TooFewValues, At(call).ToString())] : (IReadOnlyList<IrNullReason>)[],
+                    .. overflows ? [Overflow(call)] : (IReadOnlyList<IrNullReason>)[],
+                    .. Framed(),
+                ];
+                return Typed(type, because, call);
+            }
+
             case ("min" or "max", 1):
             case ("first_value" or "last_value", 1):
             {

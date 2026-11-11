@@ -28,7 +28,7 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs", "cases", "sets", "funcs"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs", "cases", "sets", "funcs", "ledger"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
@@ -61,6 +61,8 @@ public static class Runs
     private const string NoRink = "DELETE FROM rink.booking; DELETE FROM rink.locker; DELETE FROM rink.session; DELETE FROM rink.guest; DELETE FROM rink.member;";
 
     private const string NoGym = "DELETE FROM gym.visit; DELETE FROM gym.member;";
+    private const string NoLines = "DELETE FROM ledger.line;";
+    private const string Lenient = "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -343,6 +345,16 @@ public static class Runs
         new("funcs: visit_money", "funcs", "gym.visit_money", None),
         new("funcs: series, up to 3", "funcs", "gym.series", new Dictionary<string, object?> { ["@upto"] = 3 }),
         new("funcs: series, up to NULL", "funcs", "gym.series", new Dictionary<string, object?> { ["@upto"] = null }),
+        new("ledger: line_values", "ledger", "ledger.line_values", None),
+        new("ledger: line_values, under ANSI_WARNINGS and ARITHABORT off", "ledger", "ledger.line_values", None, Lenient),
+        new("ledger: line_functions", "ledger", "ledger.line_functions", None),
+        new("ledger: line_functions, under ANSI_WARNINGS and ARITHABORT off", "ledger", "ledger.line_functions", None, Lenient),
+        new("ledger: account_stats, ordinary lines", "ledger", "ledger.account_stats", new Dictionary<string, object?> { ["@account_id"] = 1 }),
+        new("ledger: account_stats, one line", "ledger", "ledger.account_stats", new Dictionary<string, object?> { ["@account_id"] = 2 }),
+        new("ledger: account_stats, no lines", "ledger", "ledger.account_stats", new Dictionary<string, object?> { ["@account_id"] = 5 }),
+        new("ledger: account_stats, empty ledger", "ledger", "ledger.account_stats", new Dictionary<string, object?> { ["@account_id"] = 1 }, NoLines),
+        new("ledger: line_windows", "ledger", "ledger.line_windows", None),
+        new("ledger: lenient, under ANSI_WARNINGS and ARITHABORT off", "ledger", "ledger.lenient", None, Lenient),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>

@@ -315,15 +315,17 @@ public class ExpressionTests
     [Fact]
     public void Decimal_arithmetic_has_the_documented_type_and_overflows_only_by_division()
     {
-        // Decimal_arithmetic_has_the_documented_precision_and_scale.
+        // Decimal_arithmetic_has_the_documented_precision_and_scale. Since slice 6j a division by a literal other than 0 cannot
+        // divide by zero (NumericTests); by a column it can.
         var doc = Procedure("""
             SELECT amount + total AS a, total * 2 AS b, total / 3 AS c, n + 1 AS d, total - amount AS e, total + 0.5 AS f, -total AS g,
-                   small + tiny AS h, amount * total AS i, ratio * 2 AS j
+                   small + tiny AS h, amount * total AS i, ratio * 2 AS j, total / n AS k
             FROM dbo.t;
             """);
         Assert.Equal("decimal(20,4) nullable-column", Typed(doc, "a"));
         Assert.Equal("decimal(21,4)", Typed(doc, "b"));
-        Assert.Equal("decimal(21,6) arithmetic-overflow", Typed(doc, "c"));
+        Assert.Equal("decimal(21,6)", Typed(doc, "c"));
+        Assert.Equal("decimal(30,15) nullable-column arithmetic-overflow", Typed(doc, "k"));
         Assert.Equal("int nullable-column arithmetic-overflow", Typed(doc, "d"));
         Assert.Equal("decimal(20,4) nullable-column", Typed(doc, "e"));
         Assert.Equal("numeric(20,4)", Typed(doc, "f"));
@@ -336,10 +338,11 @@ public class ExpressionTests
     }
 
     [Fact]
-    public void Decimal_arithmetic_beyond_38_digits_is_not_typed()
+    public void Decimal_arithmetic_beyond_38_digits_is_capped_and_may_overflow()
     {
-        // SQL Server then cuts the scale by rules not modelled.
+        // SQL Server then cuts the scale (slice 6j, NumericTests): decimal(38,4) * decimal(19,4) is decimal(38,6), whose 32
+        // integer digits cannot hold the 49 the product may need.
         var doc = Procedure("SELECT SUM(total) * total AS a FROM dbo.t GROUP BY total;");
-        Assert.StartsWith("unknown", Sql(doc, "a"), StringComparison.Ordinal);
+        Assert.Equal("decimal(38,6) arithmetic-overflow", Typed(doc, "a"));
     }
 }
