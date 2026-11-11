@@ -57,14 +57,15 @@ csharp_style_prefer_readonly_struct = true
 csharp_style_prefer_readonly_struct_member = true
 
 ## Expression bodies
-csharp_style_expression_bodied_methods = true
+# A method is an expression when it fits on a line; a longer one is a block, so its first line is its signature.
+csharp_style_expression_bodied_methods = when_on_single_line
 csharp_style_expression_bodied_constructors = false
 csharp_style_expression_bodied_operators = true
 csharp_style_expression_bodied_properties = true
 csharp_style_expression_bodied_indexers = true
 csharp_style_expression_bodied_accessors = true
 csharp_style_expression_bodied_lambdas = true
-csharp_style_expression_bodied_local_functions = true
+csharp_style_expression_bodied_local_functions = when_on_single_line
 
 ## Blocks and statements
 csharp_prefer_braces = when_multiline
