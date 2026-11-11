@@ -7,6 +7,6 @@ public static class Haruspex
     // Haruspex reads this comment — twice.
     public static string Simply => "powerful, just, e.g. — Haruspex!";
 
-    /* A block comment, e.g. this one. */
+    /* A block comment, e.g. this one, which would realize nothing. */
     public static int Value(int? x) => x!.Value;
 }

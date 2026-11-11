@@ -11,7 +11,7 @@ tests/prose/check.sh spelling        # or any one of them
 | Check | Tool | Reads | Configuration |
 |---|---|---|---|
 | Spelling, in British English | cspell | Markdown, C# (comments, strings and identifiers), workflows | `cspell.config.yaml`, `.cspell/words.txt` |
-| The house style | Vale | Markdown, C# comments | `.vale.ini`, `.vale/styles/haruspex/` |
+| The house style, and British spelling in prose | Vale | Markdown, C# comments | `.vale.ini`, `.vale/styles/haruspex/` |
 | Mermaid diagrams parse | Mermaid, in Node | Markdown | `diagrams.mjs` |
 
 Each check runs first on the files in `fixtures`, which break its rules on purpose, and compares what it reports
@@ -26,7 +26,8 @@ Fix the text. When the text is right and the tool is wrong:
   subject) goes in `.cspell/words.txt`, in its section. A word that is right in one test only (a column
   abbreviation in a query, a name misspelt on purpose to test a message) goes in `cspell.config.yaml`, under
   that file, with the reason. Never add a misspelling to the dictionary.
-- **An identifier with American spelling** keeps it (docs/style.md, "Spelling"): add its name to
+- **An identifier with American spelling** keeps it (docs/style.md, "Spelling"). Vale already skips it (code
+  and identifiers with a capital inside are not prose to it); if cspell refuses it, add its name to
   `ignoreRegExpList` in `cspell.config.yaml`.
 - **A Vale rule that is wrong for a file** is turned off for that file in `.vale.ini`, with the reason. A rule
   that is wrong everywhere is changed in its `.yml`, and its fixture with it.
@@ -34,8 +35,11 @@ Fix the text. When the text is right and the tool is wrong:
 ## Why these tools
 
 - **cspell**, because it reads code as well as prose: it splits identifiers (`IrJsonWriter` is checked as three
-  words) and knows C#'s keywords. It runs with the `en-GB` dictionary, which accepts the Oxford spellings
-  in *-ize*, so the American and Oxford forms the guide rules out are listed as forbidden words.
+  words) and knows C#'s keywords. It runs with the `en-GB` dictionary, which refuses most American spellings
+  but accepts the Oxford ones in *-ize*; the software dictionaries cspell adds accept more. So British spelling
+  in prose is also a Vale rule, `haruspex.Spelling`: a pattern for every *-ize* and *-yze* word (bar *size*,
+  *prize* and a few that are British too) and a list of the common American forms
+  that no pattern catches. A pattern, not a list, so a word nobody thought of is caught too.
 - **Vale**, because its rules are small YAML files that state the guide's rules directly, and because it reads
   the comments in C# (`//`, `/* */` and `///`) and skips code, in C# and in Markdown. It is one Go binary; CI
   runs its Docker image, pinned by digest, with no network. Locally, `check.sh` uses `vale` from the `PATH` if

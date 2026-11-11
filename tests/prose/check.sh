@@ -37,6 +37,17 @@ run_vale() {
   if command -v "$binary" > /dev/null && "$binary" --version | grep -q "$vale_version"; then
     "$binary" "$@"
   else
+    # The image reads the repository through a bind mount, which names a path on the machine Docker runs on. A
+    # Docker host over SSH or TCP sees its own files, not these, and Vale would report on nothing.
+    local host=${DOCKER_HOST:-$(docker context inspect --format '{{.Endpoints.docker.Host}}' 2> /dev/null)}
+    case $host in
+      unix://* | npipe://* | "") ;;
+      *)
+        echo "Vale $vale_version is not on the PATH, and Docker's host is $host, which can't see this folder." >&2
+        echo "Install Vale $vale_version (or set VALE to its path), or set DOCKER_CONTEXT to a local Docker." >&2
+        return 1
+        ;;
+    esac
     # Read-only, and with no network: Vale needs neither.
     docker run --rm --network none -v "$root:/repo:ro" -w /repo "$vale_image" "$@"
   fi
@@ -64,6 +75,8 @@ spelling() {
 
 style() {
   local found
+  # Fails here, saying why, if neither a local Vale nor a local Docker can run it.
+  run_vale --version > /dev/null || return 1
   # "file:line:col:rule:message" becomes "file:line:rule". Vale exits 1 here: the fixtures break every rule.
   found=$(run_vale --output=line "$fixtures/style.md" "$fixtures/style.cs" | cut -d: -f1,2,4)
   expect "$fixtures/style.expected" "$found" style || return 1

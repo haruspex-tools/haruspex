@@ -10,71 +10,11 @@ dictionaryDefinitions:
 dictionaries:
   - haruspex
 
-# The en-GB dictionary accepts the Oxford -ize spellings, and the software dictionaries cspell adds for code
-# accept American ones. docs/style.md asks for -ise, so these are refused wherever they appear.
-flagWords:
-  - analyze
-  - analyzes
-  - analyzed
-  - analyzing
-  - analyzer
-  - analyzers
-  - behavior
-  - behaviors
-  - color
-  - colors
-  - customize
-  - customized
-  - finalize
-  - finalized
-  - initialize
-  - initialized
-  - initializes
-  - initializer
-  - initializers
-  - initialization
-  - materialize
-  - materialized
-  - minimize
-  - minimized
-  - maximize
-  - maximized
-  - normalize
-  - normalized
-  - normalizes
-  - normalization
-  - optimize
-  - optimized
-  - optimization
-  - organize
-  - organized
-  - organization
-  - parameterize
-  - parameterized
-  - prioritize
-  - recognize
-  - recognized
-  - recognizes
-  - serialize
-  - serialized
-  - serializes
-  - serializer
-  - serialization
-  - specialize
-  - specialized
-  - summarize
-  - summarized
-  - summarizes
-
+# American spellings in prose are Vale's (haruspex.Spelling), because the en-GB dictionary accepts the Oxford -ize
+# forms and the software dictionaries accept many American ones. cspell refuses the rest, so the identifiers that
+# keep their own American spelling (docs/style.md, "Spelling") are named here.
 ignoreRegExpList:
-  # Identifiers keep their own spelling (docs/style.md, "Spelling"). These are the names, from .NET, ScriptDom and
-  # this code, whose American spelling the flagged words above would otherwise refuse. ProcedureAnalyzer is
   # haruspex's own: renaming it is a change of structure, not of prose.
-  - /\bJsonSerializer\w*/g
-  - /\bSerialize\b(?=\s*[(<])/g
-  - /\bSuppressFinalize\b/g
-  - /\bInitializeAsync\b/g
-  - /\bParameterizedDataTypeReference\b/g
   - /\bProcedureAnalyzer\b/g
   # actionlint's option for coloured output (.github/workflows/ci.yml).
   - /(?<=\s)-color\b/g

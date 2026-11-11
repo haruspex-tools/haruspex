@@ -1,0 +1,26 @@
+# British spelling in prose (docs/style.md, "Spelling"). cspell's en-GB dictionary refuses most American
+# spellings, but it accepts the Oxford -ize forms, and the dictionaries it adds for code accept many American ones.
+# So this rule refuses, by pattern, any -ize or -yze word (organize, analyzer, realization) except the few that are
+# British too (size, prize, seize), and lists the common American forms that have no pattern (center, gray,
+# behavior). Vale reads prose only, so identifiers keep their own spelling: JsonSerializer and ProcedureAnalyzer,
+# with a capital inside them, don't match, and code in backticks or <c> is skipped. "catalog" is not listed: it is
+# SQL Server's own term ("catalog view").
+extends: existence
+message: "'%s' is American or Oxford spelling: write it the British way (docs/style.md, Spelling)."
+level: error
+ignorecase: false
+raw:
+  - '\b(?:[A-Za-z][a-z]*(?:iz|yz)(?:e|es|ed|ing|er|ers|ation|ations|ational|able)|(?i:center(?:s|ed)?|cancel(?:ed|ing)|gray|neighbor(?:s|ing|hood)?|colors?|colored|behaviors?|behavioral|favor(?:s|ed|ite|able)?|honors?|labors?|humors?|model(?:ed|ing)|label(?:ed|ing)|level(?:ed|ing)|travel(?:ed|ing)|aluminum|defense|offense))\b'
+exceptions:
+  - size
+  - sizes
+  - sized
+  - sizing
+  - resize
+  - resized
+  - prize
+  - prizes
+  - seize
+  - seized
+  - capsize
+  - maize

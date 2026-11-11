@@ -133,11 +133,13 @@ fixed point*, *widening*, *strongly connected component*, *dataflow analysis*.
 
 | Rule | Checked by |
 |---|---|
-| British spelling; the project dictionary of terms and identifiers | cspell (`en-GB`) |
+| British spelling; the project dictionary of terms and identifiers | cspell (`en-GB`), and Vale (`haruspex.Spelling`) for the American and Oxford forms the dictionaries accept |
+| *haruspex* in lowercase, and not at the start of a sentence | Vale (`haruspex.ToolName`, `haruspex.ToolNameStart`) |
 | Marketing words and minimisers | Vale (`haruspex.Hype`, `haruspex.Minimisers`) |
 | *knob* and the other replaced terms in the table above | Vale (`haruspex.Terms`) |
 | No dashes as punctuation; *for example*, not *e.g.*; no exclamation marks | Vale (`haruspex.Punctuation`) |
-| Sentence-case headings; no slice names in headings or prose | Vale (`haruspex.Headings`, `haruspex.History`) |
+| Sentence-case headings | Vale (`haruspex.Headings`) |
+| No slice names in headings or prose | review until the references are removed; then Vale (`haruspex.History`) |
 | Relative links resolve | the Markdown link test (S1) |
 | Mermaid diagrams parse | the diagram check in CI (S1b) |
 | Lead with the point; say why; don't restate code; claims no stronger than the evidence | review (checklist items 9 and 10) |

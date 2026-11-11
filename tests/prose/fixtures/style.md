@@ -27,6 +27,14 @@ Punctuation: it works!
 
 Name: Haruspex infers the shape.
 
+Spelling: we tokenize the input, which no list names: the rule is a pattern.
+
+Spelling: the center of the gray area.
+
+haruspex begins this sentence.
+
 Passes: `Haruspex.Ir` and Haruspex.Ir are namespaces, HaruspexCli is a type, and `x!` and `just` are code.
 
 Passes: a read-only, well-known hyphen; and a sentence that ends with haruspex.
+
+Passes: the size of a prize, JsonSerializer and ProcedureAnalyzer (identifiers), and `normalize` in code.

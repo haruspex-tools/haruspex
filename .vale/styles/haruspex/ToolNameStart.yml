@@ -1,0 +1,8 @@
+# The tool's name is lowercase, so a sentence that begins with it is reworded instead (docs/style.md,
+# "Spelling"). A heading or line that is the name alone (the README's title) is not a sentence.
+extends: existence
+message: "Reword so the sentence doesn't begin with the tool's name (docs/style.md, Spelling)."
+level: error
+scope: sentence
+raw:
+  - '^haruspex\b(?!\s*$)'

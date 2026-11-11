@@ -3,6 +3,7 @@ tests/prose/fixtures/style.cs:4:haruspex.Minimisers
 tests/prose/fixtures/style.cs:7:haruspex.Punctuation
 tests/prose/fixtures/style.cs:7:haruspex.ToolName
 tests/prose/fixtures/style.cs:10:haruspex.Punctuation
+tests/prose/fixtures/style.cs:10:haruspex.Spelling
 tests/prose/fixtures/style.md:6:haruspex.Headings
 tests/prose/fixtures/style.md:10:haruspex.Hype
 tests/prose/fixtures/style.md:12:haruspex.Minimisers
@@ -14,3 +15,7 @@ tests/prose/fixtures/style.md:22:haruspex.Punctuation
 tests/prose/fixtures/style.md:24:haruspex.Punctuation
 tests/prose/fixtures/style.md:26:haruspex.Punctuation
 tests/prose/fixtures/style.md:28:haruspex.ToolName
+tests/prose/fixtures/style.md:30:haruspex.Spelling
+tests/prose/fixtures/style.md:32:haruspex.Spelling
+tests/prose/fixtures/style.md:32:haruspex.Spelling
+tests/prose/fixtures/style.md:34:haruspex.ToolNameStart
