@@ -1,4 +1,3 @@
-using Haruspex.Cli;
 using Haruspex.Ir;
 
 namespace Haruspex.Tests;
@@ -22,16 +21,10 @@ public class FunctionTests
         GO
         """;
 
-    private static IrDocument Procedure(string body)
-    {
-        using var dir = new TempDirectory();
-        dir.File("tables.sql", Tables);
-        dir.File("p.sql", $"CREATE PROCEDURE dbo.p AS\n{body}");
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse("dbo.p")]).Procedures);
-    }
+    private static IrDocument Procedure(string body) =>
+        InferProcedure.Infer("dbo.p", ("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE dbo.p AS\n{body}"));
 
+    // Stricter than IrNavigation.Fields: asserts one result, an array of rows.
     private static IReadOnlyList<IrField> Fields(IrDocument doc)
     {
         var results = doc.Objects[0].Results ?? throw new InvalidOperationException("The results are unknown: " + string.Join("; ", doc.Unknowns.Select(u => u.Detail)));

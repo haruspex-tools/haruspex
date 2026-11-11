@@ -17,16 +17,8 @@ public class JsonFunctionTests
         GO
         """;
 
-    private static IrDocument Infer(string functions, string body)
-    {
-        using var dir = new TempDirectory();
-        dir.File("tables.sql", Tables);
-        dir.File("functions.sql", functions);
-        dir.File("p.sql", $"CREATE PROCEDURE dbo.p AS\n{body}");
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse("dbo.p")]).Procedures);
-    }
+    private static IrDocument Infer(string functions, string body) =>
+        InferProcedure.Infer("dbo.p", ("tables.sql", Tables), ("functions.sql", functions), ("p.sql", $"CREATE PROCEDURE dbo.p AS\n{body}"));
 
     private static IrField Field(IrDocument doc, string name) => Fields(doc, Row(doc)).Single(f => f.Name == name);
 
@@ -37,6 +29,7 @@ public class JsonFunctionTests
         var other => throw new InvalidOperationException($"Unexpected result type {other}."),
     };
 
+    // Stricter than IrNavigation.Fields: the type must be an object type, not an array of one.
     private static IReadOnlyList<IrField> Fields(IrDocument doc, IrType type) => doc.Types[Assert.IsType<IrRef>(type).Name].Fields;
 
     private static IrField Sub(IrDocument doc, IrType type, string name) => Fields(doc, type).Single(f => f.Name == name);

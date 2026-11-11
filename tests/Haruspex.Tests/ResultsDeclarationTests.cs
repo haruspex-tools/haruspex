@@ -2,6 +2,7 @@ using System.Text;
 using Haruspex.Cli;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
+using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests;
 
@@ -83,13 +84,6 @@ public class ResultsDeclarationTests
         var (selected, _) = ProcedureSelection.Select(project.Procedures, [ObjectPattern.Parse(include)], read.Config!);
         return new Run(project.Infer(selected, read.Config!));
     }
-
-    private static IReadOnlyList<IrField> Fields(IrDocument doc, IrType type) => type switch
-    {
-        IrArray { Items: var items } => Fields(doc, items),
-        IrRef r => doc.Types[r.Name].Fields,
-        var other => throw new InvalidOperationException($"Unexpected type {other}."),
-    };
 
     // ---- reading -----------------------------------------------------------------------------------------
 

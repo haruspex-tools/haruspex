@@ -1,6 +1,6 @@
-namespace Haruspex.Tests;
+namespace Haruspex.TestSupport;
 
-/// <summary>A directory under the system temp folder, deleted when disposed.</summary>
+/// <summary>A folder under the system temp folder, for a test to write files into, deleted when disposed.</summary>
 internal sealed class TempDirectory : IDisposable
 {
     public TempDirectory()

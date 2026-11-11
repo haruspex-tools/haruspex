@@ -1,6 +1,6 @@
-using Haruspex.Cli;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
+using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests;
 
@@ -20,15 +20,8 @@ public class JsonConstructorTests
         GO
         """;
 
-    private static IrDocument Procedure(string body, string parameters = "")
-    {
-        using var dir = new TempDirectory();
-        dir.File("tables.sql", Tables);
-        dir.File("p.sql", $"CREATE PROCEDURE dbo.p {parameters} AS\n{body}");
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse("*.*")]).Procedures);
-    }
+    private static IrDocument Procedure(string body, string parameters = "") =>
+        InferProcedure.Infer("*.*", ("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE dbo.p {parameters} AS\n{body}"));
 
     /// <summary>The field <paramref name="name"/> of the first result's row.</summary>
     private static IrField Field(IrDocument doc, string name) => Fields(doc, Row(doc)).Single(f => f.Name == name);
@@ -40,11 +33,10 @@ public class JsonConstructorTests
         var other => throw new InvalidOperationException($"Unexpected result type {other}."),
     };
 
+    // Stricter than IrNavigation.Fields: the type must be an object type, not an array of one.
     private static IReadOnlyList<IrField> Fields(IrDocument doc, IrType type) => doc.Types[Assert.IsType<IrRef>(type).Name].Fields;
 
     private static IrField Sub(IrDocument doc, IrField field, string name) => Fields(doc, field.Type).Single(f => f.Name == name);
-
-    private static IrUnknown Unknown(IrDocument doc, string path) => Assert.Single(doc.Unknowns, u => u.Path == path);
 
     private static IEnumerable<string> Rules(IEnumerable<IrNullReason> reasons) => reasons.Select(r => r.Rule);
 

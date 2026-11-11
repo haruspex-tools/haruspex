@@ -1,6 +1,6 @@
-using Haruspex.Cli;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
+using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests;
 
@@ -25,20 +25,10 @@ public class ExecTests
     private static IrDocument Infer(params (string Name, string Sql)[] procedures) => Infer("*.*", procedures);
 
     /// <summary>Infers the procedures <paramref name="include"/> selects.</summary>
-    private static IrDocument Infer(string include, params (string Name, string Sql)[] procedures)
-    {
-        using var dir = new TempDirectory();
-        dir.File("tables.sql", Tables);
-        foreach (var (name, sql) in procedures)
-            dir.File($"{name}.sql", sql);
+    private static IrDocument Infer(string include, params (string Name, string Sql)[] procedures) =>
+        InferProcedure.Infer(include, [("tables.sql", Tables), .. procedures.Select(p => ($"{p.Name}.sql", p.Sql))]);
 
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse(include)]).Procedures);
-    }
-
-    private static IrObject Object(IrDocument doc, string id) => Assert.Single(doc.Objects, o => o.Id == id);
-
+    // By id, dbo.p unless named, where IrNavigation's take the first procedure: these tests infer callers and callees together.
     private static IReadOnlyList<IrResult> Results(IrDocument doc, string id = "dbo.p") =>
         Object(doc, id).Results ?? throw new InvalidOperationException("The results are unknown: " + string.Join("; ", doc.Unknowns.Where(u => u.Object == id).Select(u => u.Detail)));
 
@@ -48,17 +38,8 @@ public class ExecTests
         return Assert.Single(doc.Unknowns, u => u.Object == id && u.Path == "results");
     }
 
-    private static IReadOnlyList<IrField> Fields(IrDocument doc, IrType type) => type switch
-    {
-        IrArray { Items: var items } => Fields(doc, items),
-        IrRef r => doc.Types[r.Name].Fields,
-        var other => throw new InvalidOperationException($"Unexpected result type {other}."),
-    };
-
     private static IrField Field(IrDocument doc, string name, int result = 0, string id = "dbo.p") =>
         Assert.Single(Fields(doc, Results(doc, id)[result].Type), f => f.Name == name);
-
-    private static string[] Names(IrDocument doc, IrType type) => [.. Fields(doc, type).Select(f => f.Name)];
 
     // ---- result sets through a call --------------------------------------------------------------------
 

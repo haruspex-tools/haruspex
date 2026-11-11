@@ -1,4 +1,3 @@
-using Haruspex.Cli;
 using Haruspex.Ir;
 
 namespace Haruspex.Tests;
@@ -22,15 +21,8 @@ public class FactFlowTests
         GO
         """;
 
-    private static IrDocument Procedure(string body)
-    {
-        using var dir = new TempDirectory();
-        dir.File("tables.sql", Tables);
-        dir.File("p.sql", $"CREATE PROCEDURE dbo.p @code dbo.code, @name sysname AS\n{body}");
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse("*.*")]).Procedures);
-    }
+    private static IrDocument Procedure(string body) =>
+        InferProcedure.Infer("*.*", ("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE dbo.p @code dbo.code, @name sysname AS\n{body}"));
 
     private static IrField Field(IrDocument doc, string type, string name) => doc.Types[type].Fields.Single(f => f.Name == name);
 

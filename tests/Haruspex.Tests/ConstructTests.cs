@@ -1,6 +1,6 @@
-using Haruspex.Cli;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
+using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests;
 
@@ -19,23 +19,10 @@ public class ConstructTests
         GO
         """;
 
-    private static IrDocument Infer(params (string File, string Sql)[] files)
-    {
-        using var dir = new TempDirectory();
-        foreach (var (file, sql) in files)
-            dir.File(file, sql);
-
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse("*.*")]).Procedures);
-    }
+    private static IrDocument Infer(params (string File, string Sql)[] files) => InferProcedure.Infer("*.*", files);
 
     /// <summary>Infers <c>dbo.p</c>, whose body is <paramref name="body"/>, over the standard tables.</summary>
     private static IrDocument Procedure(string body) => Infer(("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE dbo.p AS\n{body}"));
-
-    private static IrUnknown Unknown(IrDocument doc, string path) => Assert.Single(doc.Unknowns, u => u.Path == path);
-
-    private static void AssertUnknown(IrDocument doc, string path, string reason) => Assert.Equal(reason, Unknown(doc, path).Reason);
 
     private static IReadOnlyList<IrField> RowFields(IrDocument doc, int result = 0)
     {

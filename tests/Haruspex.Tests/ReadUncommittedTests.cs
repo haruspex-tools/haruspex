@@ -1,4 +1,3 @@
-using Haruspex.Cli;
 using Haruspex.Ir;
 
 namespace Haruspex.Tests;
@@ -28,15 +27,8 @@ public class ReadUncommittedTests
         GO
         """;
 
-    private static IrDocument Infer(string procedures, string name = "dbo.p")
-    {
-        using var dir = new TempDirectory();
-        dir.File("tables.sql", Tables);
-        dir.File("p.sql", procedures);
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse(name)]).Procedures);
-    }
+    private static IrDocument Infer(string procedures, string name = "dbo.p") =>
+        InferProcedure.Infer(name, ("tables.sql", Tables), ("p.sql", procedures));
 
     private static IrDocument Procedure(string body) => Infer($"CREATE PROCEDURE dbo.p @id int AS\n{body}");
 

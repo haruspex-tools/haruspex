@@ -1,6 +1,6 @@
-using Haruspex.Cli;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
+using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests;
 
@@ -24,35 +24,10 @@ public class RefinementTests
         GO
         """;
 
-    private static IrDocument Infer(params (string File, string Sql)[] files)
-    {
-        using var dir = new TempDirectory();
-        foreach (var (file, sql) in files)
-            dir.File(file, sql);
-
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse("*.*")]).Procedures);
-    }
+    private static IrDocument Infer(params (string File, string Sql)[] files) => InferProcedure.Infer("*.*", files);
 
     private static IrDocument Procedure(string body, string parameters = "") =>
         Infer(("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE dbo.p {parameters} AS\n{body}"));
-
-    private static IReadOnlyList<IrResult> Results(IrDocument doc) =>
-        doc.Objects[0].Results ?? throw new InvalidOperationException("The results are unknown: " + string.Join("; ", doc.Unknowns.Select(u => u.Detail)));
-
-    private static IReadOnlyList<IrField> Fields(IrDocument doc, IrType type) => type switch
-    {
-        IrArray { Items: var items } => Fields(doc, items),
-        IrRef r => doc.Types[r.Name].Fields,
-        var other => throw new InvalidOperationException($"Unexpected result type {other}."),
-    };
-
-    private static IrField Field(IrDocument doc, string name, int result = 0) => Assert.Single(Fields(doc, Results(doc)[result].Type), f => f.Name == name);
-
-    private static string[] Rules(IrField field) => [.. field.NullableBecause.Select(r => r.Rule)];
-
-    private static string[] Rules(IrDocument doc, string name) => Rules(Field(doc, name));
 
     private static IrCardinality Rows(string body, string parameters = "") => Assert.Single(Results(Procedure(body, parameters))).Cardinality;
 

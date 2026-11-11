@@ -1,5 +1,5 @@
-using Haruspex.Cli;
 using Haruspex.Ir;
+using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests;
 
@@ -19,41 +19,20 @@ public class ApplyViewTests
         GO
         """;
 
-    private static IrDocument Infer(params (string File, string Sql)[] files)
-    {
-        using var dir = new TempDirectory();
-        foreach (var (file, sql) in files)
-            dir.File(file, sql);
-
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse("dbo.p")]).Procedures);
-    }
+    private static IrDocument Infer(params (string File, string Sql)[] files) => InferProcedure.Infer("dbo.p", files);
 
     private static IrDocument Procedure(string body, string parameters = "", string views = "") =>
         views.Length == 0
             ? Infer(("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE dbo.p {parameters} AS\n{body}"))
             : Infer(("tables.sql", Tables), ("views.sql", views), ("p.sql", $"CREATE PROCEDURE dbo.p {parameters} AS\n{body}"));
 
-    private static IReadOnlyList<IrResult> Results(IrDocument doc) =>
-        doc.Objects[0].Results ?? throw new InvalidOperationException("The results are unknown: " + string.Join("; ", doc.Unknowns.Select(u => u.Detail)));
-
-    private static IReadOnlyList<IrField> Fields(IrDocument doc, IrType type) => type switch
-    {
-        IrArray { Items: var items } => Fields(doc, items),
-        IrRef r => doc.Types[r.Name].Fields,
-        var other => throw new InvalidOperationException($"Unexpected type {other}."),
-    };
-
+    // Stricter than IrNavigation.Field: asserts the procedure has exactly one result. Rules reads it, so it is kept too.
     private static IrField Field(IrDocument doc, string name) => Assert.Single(Fields(doc, Assert.Single(Results(doc)).Type), f => f.Name == name);
 
     private static string[] Rules(IrDocument doc, string name) => [.. Field(doc, name).NullableBecause.Select(r => r.Rule)];
 
-    private static IrUnknown Unknown(IrDocument doc, string path) =>
-        Assert.Single(doc.Unknowns, u => u.Path == path);
-
-    private static void Typed(IrDocument doc) =>
-        Assert.True(doc.Unknowns.Count == 0, "Unknowns: " + string.Join("; ", doc.Unknowns.Select(u => $"{u.Path}: {u.Detail}")));
+    // IrNavigation.AllTyped, under the name these tests use.
+    private static void Typed(IrDocument doc) => AllTyped(doc);
 
     private static IrCardinality Rows(IrDocument doc) => Assert.Single(Results(doc)).Cardinality;
 

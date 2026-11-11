@@ -1,5 +1,5 @@
-using Haruspex.Cli;
 using Haruspex.Ir;
+using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests;
 
@@ -18,36 +18,17 @@ public class JsonTracingTests
         GO
         """;
 
-    private static IrDocument Infer(string body, string parameters = "@id int, @flag bit, @raw nvarchar(max)", string more = "")
-    {
-        using var dir = new TempDirectory();
-        dir.File("schema.sql", "CREATE SCHEMA sales;\nGO\n");
-        dir.File("tables.sql", Tables);
-        if (more.Length > 0)
-            dir.File("more.sql", more);
-        dir.File("p.sql", $"CREATE PROCEDURE sales.p {parameters} AS\n{body}");
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse("sales.p")]).Procedures);
-    }
+    private static IrDocument Infer(string body, string parameters = "@id int, @flag bit, @raw nvarchar(max)", string more = "") =>
+        InferProcedure.Infer(
+            "sales.p",
+            [("schema.sql", "CREATE SCHEMA sales;\nGO\n"), ("tables.sql", Tables), .. more.Length > 0 ? [("more.sql", more)] : Array.Empty<(string, string)>(), ("p.sql", $"CREATE PROCEDURE sales.p {parameters} AS\n{body}")]);
 
     private const string Lines = "DECLARE @lines nvarchar(max) = (SELECT l.sku, l.qty FROM sales.order_line AS l WHERE l.order_id = @id FOR JSON PATH);\n";
 
-    private static IReadOnlyList<IrField> Fields(IrDocument doc, IrType type) => type switch
-    {
-        IrArray { Items: var items } => Fields(doc, items),
-        IrRef r => doc.Types[r.Name].Fields,
-        var other => throw new InvalidOperationException($"Unexpected type {other}."),
-    };
-
-    private static IrField Field(IrDocument doc, string name, int result = 0) =>
-        Assert.Single(Fields(doc, (doc.Objects[0].Results ?? throw new InvalidOperationException(string.Join("; ", doc.Unknowns.Select(u => u.Detail))))[result].Type), f => f.Name == name);
-
     private static IrField Sub(IrDocument doc, IrType type, string name) => Assert.Single(Fields(doc, type), f => f.Name == name);
 
+    // Unlike IrNavigation.Unknown, found by the field's name at the end of its path.
     private static IrUnknown Unknown(IrDocument doc, string field) => Assert.Single(doc.Unknowns, u => u.Path.EndsWith("." + field, StringComparison.Ordinal));
-
-    private static string[] Rules(IrField field) => [.. field.NullableBecause.Select(r => r.Rule)];
 
     /// <summary>The lines' item type: an object of sku and qty, each never null.</summary>
     private static void AssertLines(IrDocument doc, IrType type)

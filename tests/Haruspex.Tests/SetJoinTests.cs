@@ -1,5 +1,5 @@
-using Haruspex.Cli;
 using Haruspex.Ir;
+using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests;
 
@@ -20,34 +20,12 @@ public class SetJoinTests
         GO
         """;
 
-    private static IrDocument Infer(params (string File, string Sql)[] files)
-    {
-        using var dir = new TempDirectory();
-        foreach (var (file, sql) in files)
-            dir.File(file, sql);
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse("dbo.p")]).Procedures);
-    }
+    private static IrDocument Infer(params (string File, string Sql)[] files) => InferProcedure.Infer("dbo.p", files);
 
     private static IrDocument Procedure(string body, string others = "") =>
         others.Length == 0
             ? Infer(("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE dbo.p AS\n{body}"))
             : Infer(("tables.sql", Tables), ("others.sql", others), ("p.sql", $"CREATE PROCEDURE dbo.p AS\n{body}"));
-
-    private static IReadOnlyList<IrResult> Results(IrDocument doc) =>
-        doc.Objects[0].Results ?? throw new InvalidOperationException("The results are unknown: " + string.Join("; ", doc.Unknowns.Select(u => u.Detail)));
-
-    private static IReadOnlyList<IrField> Fields(IrDocument doc, IrType type) => type switch
-    {
-        IrArray { Items: var items } => Fields(doc, items),
-        IrRef r => doc.Types[r.Name].Fields,
-        var other => throw new InvalidOperationException($"Unexpected type {other}."),
-    };
-
-    private static IrField Field(IrDocument doc, string name) => Assert.Single(Fields(doc, Results(doc)[0].Type), f => f.Name == name);
-
-    private static string[] Rules(IrDocument doc, string name) => [.. Field(doc, name).NullableBecause.Select(r => r.Rule)];
 
     private static string Sql(IrDocument doc, string name) => Field(doc, name).Type switch
     {
@@ -64,9 +42,6 @@ public class SetJoinTests
             ? $"{set.Match.ToString().ToLowerInvariant()}:{string.Join("|", set.Items.Select(i => i.Text))}"
 #pragma warning restore CA1308
             : null;
-
-    private static void AllTyped(IrDocument doc) =>
-        Assert.True(doc.Unknowns.Count == 0, "Unknowns: " + string.Join("; ", doc.Unknowns.Select(u => $"{u.Path}: {u.Detail}")));
 
     private static IrCardinality Rows(IrDocument doc) => Results(doc)[0].Cardinality;
 

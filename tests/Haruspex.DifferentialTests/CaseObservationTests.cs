@@ -21,13 +21,7 @@ public class CaseObservationTests(SqlServerFixture server)
         """;
 
     /// <summary>The server's description of a query's columns: <c>name type</c>, comma-separated.</summary>
-    private async Task<string> Describe(string select)
-    {
-        var query = select.Replace("'", "''", StringComparison.Ordinal);
-        var outcome = await Run($"SELECT name + ' ' + system_type_name AS c FROM sys.dm_exec_describe_first_result_set(N'{query}', NULL, 0) ORDER BY column_ordinal;");
-        Assert.Null(outcome.Error);
-        return outcome.Sets[0]["c: ".Length..].Replace(";", ", ", StringComparison.Ordinal);
-    }
+    private Task<string> Describe(string select) => FirstResultSet.Describe(server, select);
 
     /// <summary>Order headers 1 and 2, and lines for order 1 only, so a correlated FOR JSON subquery is empty for order 2.</summary>
     private const string Orders = """

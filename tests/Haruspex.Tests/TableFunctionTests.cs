@@ -1,5 +1,5 @@
-using Haruspex.Cli;
 using Haruspex.Ir;
+using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests;
 
@@ -49,19 +49,13 @@ public class TableFunctionTests
         GO
         """;
 
-    private static IrDocument Procedure(string body, string parameters = "@id int")
-    {
-        using var dir = new TempDirectory();
-        dir.File("schema.sql", Schema);
-        dir.File("p.sql", $"CREATE PROCEDURE dbo.p {parameters} AS\n{body}");
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse("dbo.p")]).Procedures);
-    }
+    private static IrDocument Procedure(string body, string parameters = "@id int") =>
+        InferProcedure.Infer("dbo.p", ("schema.sql", Schema), ("p.sql", $"CREATE PROCEDURE dbo.p {parameters} AS\n{body}"));
 
     private static IrResult Result(IrDocument doc) =>
         Assert.Single(doc.Objects[0].Results ?? throw new InvalidOperationException("Unknown results: " + string.Join("; ", doc.Unknowns.Select(u => u.Detail))));
 
+    // Stricter than IrNavigation.Field: asserts the procedure has one result, an array of rows.
     private static IrField Field(IrDocument doc, string name)
     {
         var row = (IrRef)((IrArray)Result(doc).Type).Items;
@@ -77,9 +71,6 @@ public class TableFunctionTests
             : "unknown: " + string.Join("; ", doc.Unknowns.Where(u => u.Path.EndsWith("." + name, StringComparison.Ordinal)).Select(u => u.Reason));
         return string.Join(" ", [type, .. field.NullableBecause.Select(r => r.Rule)]);
     }
-
-    private static void AllTyped(IrDocument doc) =>
-        Assert.True(doc.Unknowns.Count == 0, "Unknowns: " + string.Join("; ", doc.Unknowns.Select(u => $"{u.Path}: {u.Detail}")));
 
     // ---- inline functions -------------------------------------------------------------------------------------------
 

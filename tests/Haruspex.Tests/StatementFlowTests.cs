@@ -1,6 +1,6 @@
-using Haruspex.Cli;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
+using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests;
 
@@ -23,42 +23,13 @@ public class StatementFlowTests
         GO
         """;
 
-    private static IrDocument Infer(params (string File, string Sql)[] files)
-    {
-        using var dir = new TempDirectory();
-        foreach (var (file, sql) in files)
-            dir.File(file, sql);
-
-        var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
-        return project.Infer(project.Select([ObjectPattern.Parse("*.*")]).Procedures);
-    }
+    private static IrDocument Infer(params (string File, string Sql)[] files) => InferProcedure.Infer("*.*", files);
 
     /// <summary>Infers <c>dbo.p</c>, whose body is <paramref name="body"/>, over the standard tables.</summary>
     private static IrDocument Procedure(string body, string parameters = "") =>
         Infer(("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE dbo.p {parameters} AS\n{body}"));
 
-    private static IReadOnlyList<IrResult> Results(IrDocument doc) =>
-        doc.Objects[0].Results ?? throw new InvalidOperationException("The results are unknown: " + string.Join("; ", doc.Unknowns.Select(u => u.Detail)));
-
-    private static IrUnknown Unknown(IrDocument doc, string path) => Assert.Single(doc.Unknowns, u => u.Path == path);
-
-    private static void AssertUnknown(IrDocument doc, string path, string reason) => Assert.Equal(reason, Unknown(doc, path).Reason);
-
-    private static IReadOnlyList<IrField> Fields(IrDocument doc, int result = 0) => Fields(doc, Results(doc)[result].Type);
-
-    private static IReadOnlyList<IrField> Fields(IrDocument doc, IrType type) => type switch
-    {
-        IrArray { Items: var items } => Fields(doc, items),
-        IrRef r => doc.Types[r.Name].Fields,
-        var other => throw new InvalidOperationException($"Unexpected result type {other}."),
-    };
-
-    private static IrField Field(IrDocument doc, string name, int result = 0) => Assert.Single(Fields(doc, result), f => f.Name == name);
-
     private static IrScalar Scalar(IrField field) => Assert.IsType<IrScalar>(field.Type);
-
-    private static string[] Rules(IrField field) => [.. field.NullableBecause.Select(r => r.Rule)];
 
     // ---- temporary tables ----------------------------------------------------------------------------
 

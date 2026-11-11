@@ -37,13 +37,7 @@ public class FunctionObservationTests(SqlServerFixture server)
         """;
 
     /// <summary>The server's description of a query's columns: <c>name type</c>, comma-separated.</summary>
-    private async Task<string> Describe(string select, string[]? setup = null)
-    {
-        var query = select.Replace("'", "''", StringComparison.Ordinal);
-        var outcome = await Run(setup ?? [], $"SELECT name + ' ' + system_type_name AS c FROM sys.dm_exec_describe_first_result_set(N'{query}', NULL, 0) ORDER BY column_ordinal;");
-        Assert.Null(outcome.Error);
-        return outcome.Sets[0]["c: ".Length..].Replace(";", ", ", StringComparison.Ordinal);
-    }
+    private Task<string> Describe(string select, string[]? setup = null) => FirstResultSet.Describe(server, select, setup);
 
     // ---- date functions -----------------------------------------------------------------------------------------------
 
