@@ -73,13 +73,30 @@ spelling() {
   files '*.md' '*.cs' '.github/workflows/*.yml' | "$cspell" --no-progress --file-list stdin
 }
 
+# Vale doesn't read SQL, so the tokens of haruspex.History are applied to .sql files here, with Perl: "file:line:rule" for
+# each line that has one. The tokens are read from the rule's YAML, so the two can't drift apart.
+history_in_sql() {
+  local pattern
+  pattern=$(sed -n '/^tokens:/,$ s/^  - //p' .vale/styles/haruspex/History.yml | paste -sd '|' -)
+  perl -ne 'BEGIN { $p = shift } print "$ARGV:$.:haruspex.History\n" if /$p/i; close ARGV if eof' "$pattern" "$@"
+}
+
 style() {
-  local found
+  local found sql
   # Fails here, saying why, if neither a local Vale nor a local Docker can run it.
   run_vale --version > /dev/null || return 1
   # "file:line:col:rule:message" becomes "file:line:rule". Vale exits 1 here: the fixtures break every rule.
   found=$(run_vale --output=line "$fixtures/style.md" "$fixtures/style.cs" | cut -d: -f1,2,4)
   expect "$fixtures/style.expected" "$found" style || return 1
+  found=$(history_in_sql "$fixtures/history.sql")
+  expect "$fixtures/history.expected" "$found" "style (SQL)" || return 1
+  # shellcheck disable=SC2046
+  sql=$(history_in_sql $(files '*.sql'))
+  if [ -n "$sql" ]; then
+    printf '%s\n' "$sql" >&2
+    echo "style: the SQL above names the project's private history (haruspex.History)." >&2
+    return 1
+  fi
   # One argument per file. The repository's paths have no spaces, which `git ls-files` would otherwise quote.
   # shellcheck disable=SC2046
   run_vale $(files '*.md' '*.cs')

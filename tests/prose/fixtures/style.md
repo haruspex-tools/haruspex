@@ -46,3 +46,19 @@ History: fixed in review round 1.
 History: as haruspex-design.md decided.
 
 Passes: a slice of the data, and a span's slice taken with `Slice(2)`.
+
+History: see slice-6l.
+
+History: as round 2, finding 3 said.
+
+History: the plan is in slices.md.
+
+History: read since 6h.
+
+History: 6c's rule.
+
+History: it was unknown before 6j.
+
+History: typed (6g) here.
+
+Passes: 2e+076 / 2e+076 is a float, and in 2026 a slice of bread.

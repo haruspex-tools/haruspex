@@ -1,15 +1,23 @@
 # No history that leads nowhere (docs/style.md, "No history as narrative"). The plan's slice names, its review
 # rounds and its design document are private, so a public reader can't follow them: name the construct, the README
-# section or the observed test instead, and give a dated decision where the past explains the code. A "slice" of
-# data, or slicing a span, names no slice and passes: only a slice followed by its name or number is flagged.
+# section or the observed test instead, and give a dated decision where the past explains the code.
+#
+# A slice name is a number and a letter (6g, 2b), often written bare ("since 6h", "(6g)", "6c's rule"), so those
+# forms are flagged too. A "slice" of data, or a span's Slice, names no slice and passes. Each token has its own
+# self-test line in tests/prose/fixtures. check.sh applies the same tokens to the SQL files, which Vale doesn't read,
+# so they must be regular expressions that Go and Perl read alike.
 extends: existence
 message: "'%s' points into the project's private history; name what it points at: the construct, the README section or the observed test."
 level: error
 ignorecase: true
+nonword: true
 tokens:
-  - slices? S?\d+[a-z]?
-  - slice-[a-z0-9]+
-  - review round \d+
-  - round \d+, finding \d+
-  - haruspex-design(?:\.md)?
-  - slices\.md
+  - \bslices? S?\d+[a-z]?\b
+  - \bslice-[a-z0-9]+\b
+  - \breview round \d+\b
+  - \bround \d+, finding \d+\b
+  - \bharuspex-design(?:\.md)?\b
+  - \bslices\.md\b
+  - \b(?:since|before|until|after|in|of|from|building) \d{1,2}[a-l]\b
+  - \b\d{1,2}[a-l]'s\b
+  - \(\d{1,2}[a-l][,;:)]
