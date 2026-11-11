@@ -133,11 +133,18 @@ hankin
 hanne
 livshits
 mckeeman
+mcminn
 micha
+muzammil
 pnueli
 riis
 schwartzbach
+shahbaz
 sharir
+zhendong
+
+# A conference the guide cites a paper from
+OOPSLA
 
 # Adjectives coined in this project's code, each meaning "cannot be <verb>ed": a seed that can't be made,
 # an expression that can't be folded, a procedure whose body can't be walked

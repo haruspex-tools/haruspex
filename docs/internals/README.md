@@ -47,7 +47,7 @@ Then, in about ten minutes:
 | 6 | Flow, joins and fixed points | *Planned.* The statement walk as a dataflow analysis: the state it carries, the join where paths meet, loops iterated to a fixed point, and what stands in for widening. |
 | 7 | [Summaries and recursion](07-summaries-and-recursion.md) | How views, functions, triggers and called procedures are summarised; strongly connected components and the least fixed point; result sets as positions. |
 | 8 | The SQL Server type system as data | *Planned.* Type precedence, decimal arithmetic and conversions written as tables of observed rules, and why they are modelled as the server does them rather than as a theory would. |
-| 9 | [Observing the engine](09-observing-the-engine.md) | *In outline.* Why every rule about SQL Server is observed in a differential test, how the harness checks every claim against real output, and how the seed is shown to reach every case. |
+| 9 | [Observing the engine](09-observing-the-engine.md) | Why every rule about SQL Server is observed in a differential test; how a fixture is laid out and found; how the harness checks every claim against real output and shows the seed reached every case; and how the runs are kept honest. |
 | 10 | The IR as a contract | *Planned.* What a claim in the IR means, why the format is closed and versioned, and the conventions a reader of it must follow. |
 | 11 | Emitting code | *Planned.* How the IR becomes Zod: what each fact turns into, what the target can't hold and says so in a comment, and why the output looks hand-written. |
 | 12 | From input to output | *Planned.* One procedure followed through every layer, from its file to its generated schema. |
