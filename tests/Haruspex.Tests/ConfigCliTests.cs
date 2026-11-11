@@ -1,5 +1,4 @@
 using Haruspex.Cli;
-using Haruspex.Tests.Snapshotting;
 
 namespace Haruspex.Tests;
 
@@ -40,8 +39,10 @@ public class ConfigCliTests
         Assert.Equal("", error);
         Assert.Equal(0, exitCode);
         Assert.Contains("haruspex: 4 procedures, 0 unknown(s).", output, StringComparison.Ordinal);
-        Snapshot.Match(File.ReadAllText(Path.Combine(outDir.Path, "haruspex.ir.json")), Fixture.Named("shop").Expected, "haruspex.ir", "json");
-        Snapshot.Match(File.ReadAllText(Path.Combine(outDir.Path, "haruspex.zod.ts")), Fixture.Named("shop").Expected, "haruspex.zod", "ts");
+
+        // What it writes is the shop's expected output, which FixtureSnapshotTests checks for every project fixture.
+        Assert.True(File.Exists(Path.Combine(outDir.Path, "haruspex.ir.json")));
+        Assert.True(File.Exists(Path.Combine(outDir.Path, "haruspex.zod.ts")));
     }
 
     private const string Dynamic = """

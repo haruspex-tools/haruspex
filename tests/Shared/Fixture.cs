@@ -19,13 +19,17 @@ internal sealed class Fixture
     private readonly Lazy<SqlProject> project;
     private readonly Lazy<IrDocument> ir;
 
+    /// <summary>The fixture's config file as read, or null when it has none.</summary>
+    private readonly ConfigReadResult? configRead;
+
     private Fixture(string folder)
     {
         Folder = folder;
         Name = Path.GetFileName(folder);
         project = new(() => SqlProject.Load(Database));
         ir = new(InferEveryProcedure);
-        IsProject = Config is { } config && ConfigReader.Read(config).Config?.Source is not null;
+        configRead = Config is { } config ? ConfigReader.Read(config) : null;
+        IsProject = configRead?.Config?.Source is not null;
     }
 
     /// <summary>Every fixture, in ordinal order of name.</summary>
@@ -91,6 +95,10 @@ internal sealed class Fixture
     /// <summary>Fails discovery when the folder lacks a part its kind needs, so a fixture can't be half added.</summary>
     private void Check()
     {
+        // A config file that doesn't read leaves the fixture's kind unknown, so it is reported before any missing part.
+        if (configRead is { Config: null } broken)
+            throw new InvalidOperationException($"The fixture {Name}'s {HaruspexConfig.FileName} can't be read: {string.Join("; ", broken.Problems)}");
+
         var missing = new List<string>();
         if (!Directory.Exists(Database))
             missing.Add("database/");
@@ -117,10 +125,9 @@ internal sealed class Fixture
         if (Project.Diagnostics.Count > 0)
             throw new InvalidOperationException($"The fixture {Name} has diagnostics: {string.Join("; ", Project.Diagnostics)}");
 
-        if (Config is null)
+        if (configRead is null)
             return Project.Infer(Project.Procedures);
-        var read = ConfigReader.Read(Config);
-        var applied = Project.Infer(Project.Procedures, read.Config ?? throw new InvalidOperationException(string.Join("; ", read.Problems)));
+        var applied = Project.Infer(Project.Procedures, configRead.Config ?? throw new InvalidOperationException(string.Join("; ", configRead.Problems)));
         return applied.Document ?? throw new InvalidOperationException(string.Join("; ", applied.Problems));
     }
 }

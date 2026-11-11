@@ -1,6 +1,6 @@
 CREATE PROCEDURE gym.lenient
 AS
--- Run only under the caller's ANSI_WARNINGS and ARITHABORT off (Runs.cs), where an overflow is NULL instead of an error: each
+-- Run only under the caller's ANSI_WARNINGS and ARITHABORT off (the lenient setup in runs.json), where an overflow is NULL instead of an error: each
 -- of these overflows on some rows and not on others. The arithmetic reads only columns never null, so overflow is its only
 -- reason to be NULL: room 1 fits and rooms 2 and 3 overflow float and datetime; a fee times room 24 or more overflows money.
 SELECT v.visit_id,

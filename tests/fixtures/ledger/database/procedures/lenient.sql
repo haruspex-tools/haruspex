@@ -1,6 +1,6 @@
 CREATE PROCEDURE ledger.lenient
 AS
--- Run only under the caller's ANSI_WARNINGS and ARITHABORT off (Runs.cs), where an overflow, a division by zero or a math
+-- Run only under the caller's ANSI_WARNINGS and ARITHABORT off (the lenient setup in runs.json), where an overflow, a division by zero or a math
 -- function outside its domain is NULL instead of an error. Each reads only columns never null, so that is its only reason to
 -- be NULL, and each is NULL on some lines and not on others: the seed's extremes overflow, units is 0 on some lines, and
 -- unit_price is 0 or negative on some.

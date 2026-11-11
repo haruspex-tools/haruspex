@@ -30,11 +30,12 @@ dotnet run --project src/Haruspex.Cli -- generate tests/fixtures/orders/database
 
 - **A fixture checked per procedure** (every one but `shop`). Its `expected/` folder holds, for each procedure, its IR
   (`sales.get_order.ir.verified.json`) and its Zod (`sales.get_order.zod.verified.ts`), named for the procedure and what
-  they hold; `FixtureSnapshotTests` fails on a procedure without both, or a snapshot without a procedure. It has a seed and
+  they hold; `FixtureSnapshotTests` fails on a procedure without both, a snapshot without a procedure or any other file there. It has a seed and
   runs, and the differential tests deploy it, call every procedure and check every value against the IR.
 - **A project for the CLI** (`shop`): its `haruspex.json` names its `source` folder, chooses the procedures and names
   them, so what it must produce is the command's two files, `expected/haruspex.ir.verified.json` and
-  `expected/haruspex.zod.verified.ts`, which `ConfigCliTests` checks. It is not deployed, so it has no seed or runs; its
+  `expected/haruspex.zod.verified.ts`, which `FixtureSnapshotTests` checks by running the CLI in the fixture's folder, as a
+  user would; anything else in `expected/` fails it. It is not deployed, so it has no seed or runs; its
   README says why.
 
 A folder that lacks a part its kind needs fails discovery, and with it every test that uses a fixture: a fixture can't

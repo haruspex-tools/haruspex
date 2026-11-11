@@ -154,12 +154,12 @@ whose items may be null must be seen null (when they can be) and with a value. T
 own (`v[0]`, `v[1]`), a record's values share `v{}`, and a union's variants share their path; a value counts as seen
 for every variant it satisfies.
 
-For the fixtures about scalar facts (`Runs.EdgeFixtures`: `values`, `checks`, `payloads` and `trees`, whose `runs.json` sets
-`seedReachesEveryEdge` and says why), `The_seed_reaches_every_edge_the_ir_claims`
-also fails unless the data reached every edge of every facet: each bound (or, when exclusive, the nearest step
-inside it), each full length, each minimum length and each value of each set, and each array's fewest and most
-items when the IR bounds them. A maximum of 255 is not shown to hold by values of 7. `orders` is about query shapes, and its scalars are the types `values` covers at their edges; `flow` (statement flow:
-temporary tables, table variables, branches and recursive CTEs) likewise, and `calls` (procedures calling procedures).
+For a fixture whose `runs.json` sets `seedReachesEveryEdge` (`Runs.EdgeFixtures`: the fixtures about scalar facts; each
+file that sets it says why), `The_seed_reaches_every_edge_the_ir_claims` also fails unless the data reached
+every edge of every facet: each bound (or, when exclusive, the nearest step inside it), each full length, each minimum
+length and each value of each set, and each array's fewest and most items when the IR bounds them. A maximum of 255 is
+not shown to hold by values of 7. A fixture about query shapes or statement flow doesn't set it: its scalars are types a
+fixture about scalar facts covers at their edges.
 `Every_procedure_is_run_or_excluded_with_a_reason` makes sure a new fixture procedure is not forgotten.
 
 A recursive type's cases are counted by its name, not its path: every field of `ComponentsNode` is recorded as
