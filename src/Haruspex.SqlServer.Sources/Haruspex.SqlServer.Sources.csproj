@@ -5,8 +5,6 @@
     <PackageId>Haruspex.SqlServer.Sources</PackageId>
     <PackageTags>sql-server;t-sql;schema;scriptdom;database-project;sqlproj</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <!-- See Haruspex.SqlServer.Model.csproj: every public member is documented. -->
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" />

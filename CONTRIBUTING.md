@@ -41,7 +41,17 @@ dotnet build
 dotnet test
 ```
 
-The build treats warnings as errors, with nullable reference types and the recommended analysers on.
+The build treats warnings as errors, with nullable reference types and every SDK analyser on
+(`AnalysisLevel` `latest-all`). Code style is part of the build too: every style rule is a warning, so a
+file that `dotnet format` would change does not build. The house style, and the few rules turned off with the
+reason for each, are in `.editorconfig`. Before committing, run:
+
+```sh
+dotnet format
+```
+
+CI runs `dotnet format --verify-no-changes` after the build, and lints the workflow files with `actionlint`
+and `zizmor`.
 Package versions are central (`Directory.Packages.props`) and locked (`packages.lock.json`, committed).
 To add or update a package, change `Directory.Packages.props`, run `dotnet restore --force-evaluate`,
 and commit the updated lock files with the change. Dependency updates are read by hand, never merged
@@ -126,7 +136,9 @@ test to let a reference through; move the code to the layer that may know it.
 
 Only `Model` and `Sources` are packable (`IsPackable`, with package metadata and a readme), with `Diagnostics`
 because its types are in their public API; every other project is not. Nothing is published yet: that is a later decision, so don't push packages anywhere. Their public API
-must be documented, which the build enforces (`GenerateDocumentationFile`, so a missing comment is an error).
+must be documented, which the build enforces: a public member without a comment is an error (`CS1591`) in
+them and in the layers reusable enough to follow them (`Semantics` and `Ir`). A comment says what the member is
+for, not its name again.
 
 ## Dependencies
 

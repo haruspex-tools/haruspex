@@ -5,8 +5,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <!-- Every SDK analyser on, and every code-style rule enforced by the build. The few rules turned off, and the
+         style preferences, are in .editorconfig, each with its reason. -->
+    <AnalysisLevel>latest-all</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- In every project, tests included: the compiler reports unused usings (IDE0005) only where it builds the
+         documentation file. Whether a missing comment is an error (CS1591) is set per layer in .editorconfig. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Deterministic>true</Deterministic>
     <InvariantGlobalization>true</InvariantGlobalization>
 

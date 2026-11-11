@@ -5,9 +5,6 @@
     <PackageId>Haruspex.SqlServer.Model</PackageId>
     <PackageTags>sql-server;t-sql;schema;scriptdom;database-project</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <!-- The public API is for people who have never heard of haruspex, so every public member is documented:
-         a missing comment is a warning, and warnings are errors. -->
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" />
