@@ -135,6 +135,10 @@ assembly's references and each project file's, failing on anything the table doe
 new reference between layers, changes the table in both places in the same pull request. Never weaken the
 test to let a reference through; move the code to the layer that may know it.
 
+**Each file holds one type and is named after it** (`Table.cs` holds `Table`), so a type's name says where it is.
+Nested types stay in the type they belong to, and a partial type's parts are named `Type.Part.cs`.
+`tests/Haruspex.Tests/SourceLayoutTests.cs` enforces it.
+
 | Path | What it holds |
 |---|---|
 | `src/Haruspex.Diagnostics` | Messages and source locations, shared by the SQL Server layers. Packable, because Model's API uses it. |
