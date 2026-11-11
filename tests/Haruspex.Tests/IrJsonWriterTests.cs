@@ -78,7 +78,7 @@ public class IrJsonWriterFacetTests
             [new IrObject("a.p", "P", IrObjectKind.Procedure, "a.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("PRow")), [])])],
             new Dictionary<string, IrObjectType> { ["PRow"] = new([new IrField("v", scalar, IrPresence.Always, [])]) },
             []);
-        using var json = System.Text.Json.JsonDocument.Parse(IrJsonWriter.Write(doc));
+        using var json = JsonDocument.Parse(IrJsonWriter.Write(doc));
         return json.RootElement.GetProperty("types").GetProperty("PRow").GetProperty("fields")[0].GetProperty("type").GetRawText();
     }
 
@@ -97,7 +97,7 @@ public class IrJsonWriterFacetTests
         Assert.Contains("\"max\": {\n", text, StringComparison.Ordinal);
         Assert.Contains("\"value\": 999999999999999999999999999999999999.99,", text, StringComparison.Ordinal);
         Assert.Contains("\"digits\": {\n", text, StringComparison.Ordinal);
-        using var json = System.Text.Json.JsonDocument.Parse(text);
+        using var json = JsonDocument.Parse(text);
         var root = json.RootElement;
         Assert.Equal(38, root.GetProperty("digits").GetProperty("precision").GetInt32());
         Assert.False(root.GetProperty("min").GetProperty("inclusive").GetBoolean());
@@ -108,9 +108,9 @@ public class IrJsonWriterFacetTests
     [Fact]
     public void Writes_lengths_with_their_unit_and_a_known_encoding()
     {
-        using var max = System.Text.Json.JsonDocument.Parse(Field(new IrScalar(IrScalarKind.String, null, "varchar(5)", new IrFacets(
+        using var max = JsonDocument.Parse(Field(new IrScalar(IrScalarKind.String, null, "varchar(5)", new IrFacets(
             Length: new IrLength(5, false, IrLengthUnit.Bytes, IrByteEncoding.Utf8, Type), MinLength: new IrMinLength(1, Check)))));
-        using var fixedLength = System.Text.Json.JsonDocument.Parse(Field(new IrScalar(IrScalarKind.String, null, "nchar(5)", new IrFacets(
+        using var fixedLength = JsonDocument.Parse(Field(new IrScalar(IrScalarKind.String, null, "nchar(5)", new IrFacets(
             Length: new IrLength(5, true, IrLengthUnit.Utf16, IrByteEncoding.Unknown, Type)))));
 
         Assert.Equal("bytes", max.RootElement.GetProperty("maxLength").GetProperty("unit").GetString());
@@ -123,9 +123,9 @@ public class IrJsonWriterFacetTests
     [Fact]
     public void Writes_a_value_set_with_its_match_and_every_source()
     {
-        using var strings = System.Text.Json.JsonDocument.Parse(Field(new IrScalar(IrScalarKind.String, null, "varchar(10)", new IrFacets(
+        using var strings = JsonDocument.Parse(Field(new IrScalar(IrScalarKind.String, null, "varchar(10)", new IrFacets(
             Values: new IrValueSet([new IrValue("open", true), new IrValue("1.50", true)], IrValueMatch.Collation, [Check])))));
-        using var numbers = System.Text.Json.JsonDocument.Parse(Field(new IrScalar(IrScalarKind.Number, IrFormats.Int32, "int", new IrFacets(
+        using var numbers = JsonDocument.Parse(Field(new IrScalar(IrScalarKind.Number, IrFormats.Int32, "int", new IrFacets(
             Values: new IrValueSet([new IrValue("-3", false), new IrValue("12345678901234567890", false)], IrValueMatch.Exact, [Check, new IrFactSource(IrFactSources.Check, "dbo.ck_w")])))));
 
         var s = strings.RootElement.GetProperty("values");

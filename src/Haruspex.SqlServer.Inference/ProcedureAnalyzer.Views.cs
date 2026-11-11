@@ -101,7 +101,7 @@ internal sealed partial class ProcedureAnalyzer
     /// database's code page, which the project does not show, so one with a character beyond ASCII is left out. Null when the
     /// column is anything else. Only VALUES reads string literals so far.
     /// </summary>
-    private Value? Literals(List<ScalarExpression> column, Haruspex.Diagnostics.SourceLocation at)
+    private Value? Literals(List<ScalarExpression> column, Diagnostics.SourceLocation at)
     {
         var literals = column.Select(Strip).OfType<StringLiteral>().ToList();
         if (literals.Count != column.Count || literals.Any(l => l.Collation is not null || (!l.IsNational && l.Value.Any(c => c > '\u007f'))))
@@ -294,7 +294,7 @@ internal sealed class ViewSummaries
     }
 
     /// <summary>A placeholder location for an unknown about the view as a whole; each read reports its own location instead.</summary>
-    private static readonly Haruspex.Diagnostics.SourceLocation Nowhere = new("", 0, 0);
+    private static readonly Diagnostics.SourceLocation Nowhere = new("", 0, 0);
 
     /// <summary>The scalar functions' summaries for a body read committed or uncommitted (<see cref="FunctionSummaries.Uncommitted"/>).</summary>
     private FunctionSummaries Functions(bool uncommitted) => uncommitted ? functions.Uncommitted : functions;
