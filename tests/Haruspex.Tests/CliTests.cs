@@ -143,7 +143,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Help_succeeds()
+    public void Generate_help_succeeds_and_lists_its_options()
     {
         var (exitCode, output, _) = Run("generate", "--help");
 

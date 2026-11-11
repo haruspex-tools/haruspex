@@ -21,6 +21,8 @@ Every change starts with a failing test.
   `*.verified.*` (rename it, or rerun with `HARUSPEX_ACCEPT=1`). The snapshot is the claim, so review it
   as carefully as code. The helper is described in `tests/Haruspex.Tests/Snapshotting/README.md`.
 - **A bug** gets a test that reproduces it before the fix.
+- **A test's name is a sentence** saying what it proves, at least three words joined by underscores
+  (`A_null_key_is_left_out`, never `Ir`). `TestNameTests` (in `tests/Shared`) checks every test in both projects.
 - Fixtures are invented. Never copy schema or code from a real organisation's database into this
   repository, even in a test.
 
@@ -52,6 +54,8 @@ dotnet format
 
 CI runs `dotnet format --verify-no-changes` after the build, and lints the workflow files with `actionlint`
 and `zizmor`.
+Every relative link in the repository's Markdown, anchors included, must resolve; `MarkdownLinkTests` checks
+them.
 Package versions are central (`Directory.Packages.props`) and locked (`packages.lock.json`, committed).
 To add or update a package, change `Directory.Packages.props`, run `dotnet restore --force-evaluate`,
 and commit the updated lock files with the change. Dependency updates are read by hand, never merged

@@ -190,15 +190,17 @@ public class FixtureSnapshotTests
             FixtureOf.Where(p => p.Value == fixture).Select(p => p.Key).Order(StringComparer.Ordinal),
             Fixtures[fixture].Value.Procedures.Select(p => p.ToString()).Order(StringComparer.Ordinal));
 
+    // A snapshot is named for what it holds, the IR or the Zod of one procedure, not for the test that checks it, so that
+    // renaming a test does not move 276 reviewed files.
     [Theory]
     [MemberData(nameof(Procedures))]
-    public void Ir(string procedure) =>
-        Snapshot.Match(IrJsonWriter.Write(Infer(procedure)), $"{nameof(FixtureSnapshotTests)}.{nameof(Ir)}_procedure={procedure}", "json");
+    public void Each_procedure_infers_the_reviewed_ir(string procedure) =>
+        Snapshot.Match(IrJsonWriter.Write(Infer(procedure)), $"{nameof(FixtureSnapshotTests)}.Ir_procedure={procedure}", "json");
 
     [Theory]
     [MemberData(nameof(Procedures))]
-    public void Zod(string procedure) =>
-        Snapshot.Match(ZodEmitter.Emit(Infer(procedure)), $"{nameof(FixtureSnapshotTests)}.{nameof(Zod)}_procedure={procedure}", "ts");
+    public void Each_procedure_emits_the_reviewed_zod(string procedure) =>
+        Snapshot.Match(ZodEmitter.Emit(Infer(procedure)), $"{nameof(FixtureSnapshotTests)}.Zod_procedure={procedure}", "ts");
 
     private static IrDocument Infer(string procedure)
     {
