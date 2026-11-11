@@ -16,10 +16,7 @@ namespace Haruspex.Tests;
 /// </remarks>
 public partial class MarkdownLinkTests
 {
-    /// <summary>Folders that hold build output or other projects' files, never the repository's own Markdown.</summary>
-    private static readonly HashSet<string> Skipped = new(StringComparer.Ordinal) { ".git", "bin", "obj", "node_modules" };
-
-    private static readonly List<string> All = [.. Files(TestPaths.RepoRoot).Select(f => Path.GetRelativePath(TestPaths.RepoRoot, f).Replace('\\', '/'))];
+    private static readonly List<string> All = [.. MarkdownText.Files(TestPaths.RepoRoot).Select(MarkdownText.Relative)];
 
     public static TheoryData<string> MarkdownFiles { get; } = [.. All];
 
@@ -58,20 +55,6 @@ public partial class MarkdownLinkTests
     [Fact]
     public void A_link_inside_code_is_not_a_link() =>
         Assert.Equal(["real.md"], Links("[a](real.md)\n`[b](inline.md)`\n```\n[c](fenced.md)\n```\n").Select(l => l.Target));
-
-    private static IEnumerable<string> Files(string folder)
-    {
-        foreach (var file in Directory.EnumerateFiles(folder, "*.md").Order(StringComparer.Ordinal))
-            yield return file;
-        foreach (var sub in Directory.EnumerateDirectories(folder).Order(StringComparer.Ordinal))
-        {
-            if (!Skipped.Contains(Path.GetFileName(sub)))
-            {
-                foreach (var file in Files(sub))
-                    yield return file;
-            }
-        }
-    }
 
     /// <summary>Why the link from <paramref name="from"/> to <paramref name="target"/> leads nowhere; null when it resolves.</summary>
     private static string? Problem(string from, string target)

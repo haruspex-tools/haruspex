@@ -22,7 +22,7 @@ Every change starts with a failing test.
   as carefully as code. The helper is described in `tests/Haruspex.Tests/Snapshotting/README.md`.
 - **A bug** gets a test that reproduces it before the fix.
 - **A test's name is a sentence** saying what it proves, at least three words joined by underscores
-  (`A_null_key_is_left_out`, never `Ir`). `TestNameTests` (in `tests/Shared`) checks every test in both projects.
+  (`Separates_absent_keys_from_null_values`, never `Ir`). `TestNameTests` (in `tests/Shared`) checks every test in both projects.
 - Fixtures are invented. Never copy schema or code from a real organisation's database into this
   repository, even in a test.
 
@@ -32,6 +32,10 @@ When a line of code is there for a non-obvious reason (an engine rule, a soundne
 compatibility constraint), say why in a short comment beside it, or in a `README.md` in the same folder
 when it needs more room. A reviewer should not need the commit history or an issue thread to understand
 why the code is the way it is. Comments say *why*, not *what*.
+
+A design decision with alternatives worth recording gets a record in [the decision log](docs/decisions/README.md), and
+the code links it. An idea a reader needs in order to understand a layer is explained in
+[the guide](docs/internals/README.md), and a change to the code it describes updates its chapter in the same pull request.
 
 ## Building and testing
 
@@ -63,8 +67,8 @@ automatically.
 
 The emit-check test (`tests/emit-check`) writes the Zod generated from the fixtures and compiles it with
 `tsc --noEmit` against a pinned `zod`. It runs `npm ci` there the first time. The same package holds
-`src/multiple-of.mjs`, the evidence that Zod checks a decimal's step without floating-point false failures, and
-`src/accept.mjs`, through which the differential tests run real output into the generated schemas. CI sets
+`tests/emit-check/src/multiple-of.mjs`, the evidence that Zod checks a decimal's step without floating-point false
+failures, and `tests/emit-check/src/accept.mjs`, through which the differential tests run real output into the generated schemas. CI sets
 `HARUSPEX_REQUIRE_NODE=1`, which turns a missing Node into a failure rather than a skip.
 
 ### Differential tests against SQL Server
@@ -119,6 +123,10 @@ diagram parses. Run all three before committing a change to prose:
 tests/prose/check.sh
 ```
 
+Two tests hold the guide, the decision log and the READMEs to the code: every code reference in them must resolve
+(`CodeReferenceTests`), and every worked example is run and its output compared (`WorkedExampleTests`). The conventions
+they check are in [the guide's index](docs/internals/README.md#how-the-guide-is-kept-true).
+
 It needs Node, and Vale 3.24.0 on the `PATH` or Docker with a local socket to run Vale's image. CI runs the same
 script. [tests/prose/README.md](tests/prose/README.md) says what to do when a check is wrong rather than the text:
 a real term goes in the project dictionary, never a misspelling.
@@ -136,7 +144,8 @@ new reference between layers, changes the table in both places in the same pull 
 test to let a reference through; move the code to the layer that may know it.
 
 **Each file holds one type and is named after it** (`Table.cs` holds `Table`), so a type's name says where it is.
-Nested types stay in the type they belong to, and a partial type's parts are named `Type.Part.cs`.
+Nested types stay in the type they belong to, and a partial type's parts are named after the type and the part
+(`ProcedureAnalyzer.Flow.cs`).
 `tests/Haruspex.Tests/SourceLayoutTests.cs` enforces it.
 
 | Path | What it holds |

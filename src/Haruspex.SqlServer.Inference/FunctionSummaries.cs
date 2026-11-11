@@ -9,6 +9,7 @@ namespace Haruspex.SqlServer.Inference;
 /// <summary>
 /// The return of every scalar function a body calls, worked out once per document. A function whose body returns JSON
 /// built here has that JSON's shape; one that calls itself, directly or through others, gets a recursive named type.
+/// The idea, and the alternatives, are in docs/internals/07-summaries-and-recursion.md.
 /// </summary>
 /// <remarks>
 /// <para>

@@ -13,6 +13,7 @@ namespace Haruspex.SqlServer.Inference;
 /// temporary tables at that point, so that what it reads of them and does to them is known; its parameters are its declared
 /// types, nullable, which holds for every call. Calls that form a cycle are solved as a fixed point. README.md in this
 /// folder ("Calls") gives the model and the observations it rests on.
+/// The idea, and the alternatives, are in docs/internals/07-summaries-and-recursion.md.
 /// </summary>
 /// <remarks>
 /// <para>

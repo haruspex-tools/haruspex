@@ -8,6 +8,7 @@ namespace Haruspex.SqlServer.Inference;
 /// What each view of the project holds, read once per document from its definition (<see cref="ProcedureAnalyzer.ReadView"/>),
 /// and what each call of a table-valued function returns, read once per function and set of argument values. A
 /// view or function reads others; one that reads itself through them cannot be created, and is unknown here.
+/// The idea, and the alternatives, are in docs/internals/07-summaries-and-recursion.md.
 /// </summary>
 internal sealed class ViewSummaries
 {

@@ -1,0 +1,110 @@
+# How haruspex works
+
+A guide to haruspex's internals, read in order, from the problem it solves to the code it writes. It is for two readers at
+once: a developer deciding whether to trust haruspex, who wants to see how its claims are made; and someone learning how a
+static analyser is built, who wants the ideas as well as this code. Each chapter explains its idea in general terms first,
+names it as the literature does, shows how haruspex does it, and says what was considered instead and why it lost.
+
+## Start here
+
+**The idea in a paragraph.** Given a SQL Server database project, haruspex works out, without running anything, what
+each stored procedure returns: every column and JSON key, its type, whether it can be null, and facts such as a length or a
+set of values. It does this by *abstract interpretation*: it walks each procedure as SQL Server would run it, but over
+descriptions of values ("an `int` that is never null") rather than values. Where two paths meet it keeps only what holds on
+both, and where a construct is not understood it says *unknown*, with a reason, rather than guess. Every rule it uses about
+SQL Server is checked against a real server by a test. The result is an IR, from which it generates Zod.
+
+```mermaid
+flowchart LR
+    sql[".sql files"] --> model["Model: the schema as data"]
+    model --> binding["Semantics: what each name means"]
+    binding --> inference["Inference: walk each body over abstract values"]
+    inference --> ir["IR: the claims, and the unknowns with reasons"]
+    ir --> zod["Zod schemas and types"]
+    server[("SQL Server, in the tests only")] -.->|observed rules| inference
+```
+
+Then, in about ten minutes:
+
+1. [The shape of the problem](01-the-shape-of-the-problem.md), "What haruspex is for": a procedure and the Zod haruspex
+   writes for it, line by line.
+2. The same chapter, "Sound by default": why haruspex says *unknown* rather than guess, and what an unknown looks like.
+3. [Summaries and recursion](07-summaries-and-recursion.md), "Solving recursion: the least fixed point": the analysis at
+   its most interesting, typing a tree that a function builds by calling itself.
+4. [The decision log](../decisions/README.md), for any choice that looks odd: each record gives the alternatives and why
+   they lost.
+
+## The chapters
+
+| | Chapter | |
+|---|---|---|
+| 1 | [The shape of the problem](01-the-shape-of-the-problem.md) | What haruspex is for; why it infers from the source rather than asking the server; why it is sound by default, and what *unknown* means. |
+| 2 | The inputs and the model | *Planned.* How a folder of scripts, in no particular order, becomes a model of the schema with ScriptDom, and why an object changed after its definition is recorded rather than applied. |
+| 3 | Binding | *Planned.* How each name in a body is resolved to the table, column, CTE or temporary table it means, and why binding is a layer of its own, apart from inference. |
+| 4 | Abstract interpretation | *Planned.* Running a program over abstract values instead of real ones; why *unknown* is the top of every domain, and what makes the analysis sound. |
+| 5 | Values as a lattice | *Planned.* What haruspex knows about a value (its shape, why it may be null, its facets), how two such descriptions join, and why SQL Server's type rules for `CASE` are not a join. |
+| 6 | Flow, joins and fixed points | *Planned.* The statement walk as a dataflow analysis: the state it carries, the join where paths meet, loops iterated to a fixed point, and what stands in for widening. |
+| 7 | [Summaries and recursion](07-summaries-and-recursion.md) | How views, functions, triggers and called procedures are summarised; strongly connected components and the least fixed point; result sets as positions. |
+| 8 | The SQL Server type system as data | *Planned.* Type precedence, decimal arithmetic and conversions written as tables of observed rules, and why they are modelled as the server does them rather than as a theory would. |
+| 9 | [Observing the engine](09-observing-the-engine.md) | *In outline.* Why every rule about SQL Server is observed in a differential test, how the harness checks every claim against real output, and how the seed is shown to reach every case. |
+| 10 | The IR as a contract | *Planned.* What a claim in the IR means, why the format is closed and versioned, and the conventions a reader of it must follow. |
+| 11 | Emitting code | *Planned.* How the IR becomes Zod: what each fact turns into, what the target can't hold and says so in a comment, and why the output looks hand-written. |
+| 12 | From input to output | *Planned.* One procedure followed through every layer, from its file to its generated schema. |
+
+Each project's README is its layer's chapter in brief: what the layer is for, its main types, an example, what it
+guarantees and what it deliberately doesn't do. They are listed in [docs/architecture.md](../architecture.md).
+
+## Reading further
+
+The ideas here are old and well described. Two books cover nearly all of them:
+
+- Anders Møller and Michael I. Schwartzbach, *Static Program Analysis*, free online at
+  <https://cs.au.dk/~amoeller/spa/>. Clear and short: lattices, dataflow analysis, widening, interprocedural analysis.
+- Flemming Nielson, Hanne Riis Nielson and Chris Hankin, *Principles of Program Analysis* (Springer, 1999). The standard
+  reference, more formal: abstract interpretation and its proofs.
+
+Each chapter names the papers its own idea comes from.
+
+## How the guide is kept true
+
+The guide, the [decision log](../decisions/README.md) and the READMEs point into the code and show what haruspex produces.
+Two tests keep those pointers and examples true, so a change that breaks one fails the build like any other test
+([decision 0019](../decisions/0019-the-guide-is-held-to-the-code-by-tests.md)).
+
+**Code references** (`CodeReferenceTests`). In every Markdown file but the house style guide, inline code is a reference
+to check when it is one of these:
+
+| Written as | Example | Must |
+|---|---|---|
+| A path from the repository root, starting `src/Haruspex.…`, `tests/`, `docs/` or `schemas/` | `src/Haruspex.SqlServer.Inference/FunctionSummaries.cs` | name a file or folder that exists |
+| A C# file's name | `FlowState.cs` | name a file under `src/` or `tests/` |
+| A name in PascalCase, with members after dots | `ResultTrack.Then`, `FunctionSummaries.StepsPerFunction` | name a type of haruspex, then a member of it at each dot |
+| A test's name | `Calls_nest_at_most_32_deep` | name a test method |
+
+Types and members are found by reflection over haruspex's assemblies, and for the differential tests from their source. A
+name alone may also be a member of some type, a project, or a name a committed Zod snapshot holds. A name that is not
+haruspex's (a .NET type, an MSBuild property) is listed in `CodeReferences.Outside`, which says why each is there; a
+renamed type of haruspex must never be added to it. Text in capitals (`FOR JSON`, `WITHOUT_ARRAY_WRAPPER`) is SQL and is not
+checked, nor is anything with a placeholder or a wildcard. Links to this repository on GitHub, which the packable projects'
+READMEs use because they are read on NuGet, are checked on disk too, and so is every path into `docs/` that a C# comment
+names.
+
+**Worked examples** (`WorkedExampleTests`). A fenced block whose info string is `sql haruspex-example` holds a whole
+database project: tables, functions and procedures, separated by `GO`. Every procedure in it is inferred as the CLI does
+with no config file. The blocks after it, up to the next example, show what that gives:
+
+- `ts haruspex-zod`: the Zod module, compared line for line. It may start after the module's `import` line, leaving out the
+  header, which names the IR's version.
+- `json haruspex-ir`: the IR, compared as JSON; with a third word, only that top-level property
+  (`json haruspex-ir unknowns`).
+
+When an example's output changes, the test prints what haruspex now gives. Read it as a claim about SQL Server, as you would
+a snapshot, before pasting it in: the example teaches whatever it shows.
+
+## Writing a chapter
+
+Follow [the house style](../style.md). Lead with the idea in general terms, name it as the literature does, and point to
+where to read more. Then show how haruspex does it, with a worked example where one teaches, and a Mermaid diagram where a
+picture is clearer than prose. Argue rather than assert: for each design, the obvious alternative and why it lost, so that
+a sceptical expert finds the argument already had. State the limits as plainly as the strengths. Use invented schemas (a
+shop, a catalogue), never a real organisation's.

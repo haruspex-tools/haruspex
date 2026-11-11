@@ -9,6 +9,7 @@ namespace Haruspex.SqlServer.Inference;
 /// and one that does not run is not there at all, so a later one takes its place (observed). So the track keeps, for each
 /// position, every result some path returned there, and the numbers of results the paths have returned so far. A result
 /// returned now lands at every position some path is at.
+/// The idea, and the alternatives, are in docs/internals/07-summaries-and-recursion.md.
 /// </summary>
 internal sealed class ResultTrack
 {

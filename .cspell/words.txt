@@ -111,12 +111,25 @@ lookarounds
 metacharacter
 nullability
 ordinally
+interprocedural
+kleene
 serialiser
 tarjan
 unioned
 uniqueidentifiers
 unmodelled
 writable
+
+# Authors the guide cites (docs/internals), named as their works are
+flemming
+hankin
+hanne
+mckeeman
+micha
+pnueli
+riis
+schwartzbach
+sharir
 
 # Adjectives coined in this project's code, each meaning "cannot be <verb>ed": a seed that can't be made,
 # an expression that can't be folded, a procedure whose body can't be walked
