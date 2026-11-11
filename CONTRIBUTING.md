@@ -147,7 +147,7 @@ in the table allows**: only `Sources` reads a database project, `Semantics` neve
 emitters never see SQL, and no SQL Server layer knows the emitters. The table, the reasons for its
 lines, and the types that were split to fit it are in [docs/architecture.md](docs/architecture.md).
 
-`tests/Haruspex.Tests/ArchitectureTests.cs` enforces it: it reads the table in `docs/architecture.md`, which is its only
+`tests/Haruspex.Tests/Architecture/ArchitectureTests.cs` enforces it: it reads the table in `docs/architecture.md`, which is its only
 copy, and each assembly's references and each project file's, failing on anything the table doesn't allow. A new layer,
 or a new reference between layers, is a change to that table's row, nowhere else. Never weaken the test to let a
 reference through; move the code to the layer that may know it.
@@ -155,7 +155,7 @@ reference through; move the code to the layer that may know it.
 **Each file holds one type and is named after it** (`Table.cs` holds `Table`), so a type's name says where it is.
 Nested types stay in the type they belong to, and a partial type's parts are named after the type and the part
 (`ProcedureAnalyzer.Flow.cs`).
-`tests/Haruspex.Tests/SourceLayoutTests.cs` enforces it.
+`tests/Haruspex.Tests/Architecture/SourceLayoutTests.cs` enforces it.
 
 | Path | What it holds |
 |---|---|

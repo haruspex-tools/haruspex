@@ -311,42 +311,42 @@ overrides:
   - filename: "**/tests/Haruspex.DifferentialTests/ZodAcceptanceTests.cs"
     # A .NET date format string.
     ignoreWords: [fffzzz]
-  - filename: "**/tests/Haruspex.Tests/ApplyViewTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Inference/ApplyViewTests.cs"
     # The end column of a system-versioned table's period.
     ignoreWords: [upto]
-  - filename: "**/tests/Haruspex.Tests/JsonConstructorTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Inference/JsonConstructorTests.cs"
     ignoreWords: [qtys]
-  - filename: "**/tests/Haruspex.Tests/SetTypeTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Inference/SetTypeTests.cs"
     ignoreWords: [nkind]
-  - filename: "**/tests/Haruspex.Tests/ConstructTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Inference/ConstructTests.cs"
     # A database other than the current one, in a three-part name.
     ignoreWords: [otherdb]
-  - filename: "**/tests/Haruspex.Tests/ExecTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Inference/ExecTests.cs"
     # The class of a CLR procedure's EXTERNAL NAME.
     ignoreWords: [procs]
-  - filename: "**/tests/Haruspex.Tests/RefinementTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Inference/RefinementTests.cs"
     # ncode: an nvarchar parameter. querys and subquerys: possessives in test names, which can't hold an apostrophe.
     ignoreWords: [ncode, querys, subquerys]
-  - filename: "**/tests/Haruspex.Tests/ReadUncommittedTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Inference/ReadUncommittedTests.cs"
     ignoreWords: [subquerys]
-  - filename: "**/tests/Haruspex.Tests/SetJoinTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Inference/SetJoinTests.cs"
     ignoreWords: [querys]
-  - filename: "**/tests/Haruspex.Tests/ProcedureSelectionTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Config/ProcedureSelectionTests.cs"
     # axxb: a name that a wildcard pattern must match. ordr: a misspelt name, as below.
     ignoreWords: [axxb, ordr]
-  - filename: "**/tests/Haruspex.Tests/NamingRulesTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Config/NamingRulesTests.cs"
     # A prefix joined to a name with the case preserved, which is the point of the test.
     ignoreWords: [auditget]
-  - filename: "**/tests/Haruspex.Tests/MarkdownLinkTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Documentation/MarkdownLinkTests.cs"
     # Anchors as GitHub makes them from headings, which drops apostrophes and backticks.
     ignoreWords: [doesnt, irjsonwriter]
   - filename: "**/src/Haruspex.Config/NamingRules.cs"
     # The plural endings the singular rule looks for.
     ignoreWords: [sses, ches, shes]
   # Misspelt names, to test that a selection or override naming nothing is reported, with a suggestion.
-  - filename: "**/tests/Haruspex.Tests/CliTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Cli/CliTests.cs"
     ignoreWords: [ordr]
-  - filename: "**/tests/Haruspex.Tests/ConfigApplicationTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Config/ConfigApplicationTests.cs"
     ignoreWords: [nmae, customr]
-  - filename: "**/tests/Haruspex.Tests/ConfigCliTests.cs"
+  - filename: "**/tests/Haruspex.Tests/Cli/ConfigCliTests.cs"
     ignoreWords: [baskte, shopp]

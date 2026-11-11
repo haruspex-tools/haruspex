@@ -56,7 +56,7 @@ Why these lines:
 
 ## Enforced by a test
 
-The project references are the first enforcement. `tests/Haruspex.Tests/ArchitectureTests.cs` is the second: it
+The project references are the first enforcement. `tests/Haruspex.Tests/Architecture/ArchitectureTests.cs` is the second: it
 reads the table above, from this file, and fails when
 
 - a project under `src/` is not a layer in the table, or a layer that has code today has no project;

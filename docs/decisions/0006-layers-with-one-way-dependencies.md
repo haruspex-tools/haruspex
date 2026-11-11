@@ -21,4 +21,4 @@ Sources read a SQL Server project without DacFx, which linters and diff tools ne
 every analysis needs. Emitters see only the IR, so the IR must carry whatever they need.
 
 **In the code:** [docs/architecture.md](../architecture.md), which holds the table, the reasons for its lines and the types
-that were split; `tests/Haruspex.Tests/ArchitectureTests.cs`.
+that were split; `tests/Haruspex.Tests/Architecture/ArchitectureTests.cs`.
