@@ -97,7 +97,7 @@ internal sealed class OverrideApplier(
         {
             if (slot.Type is not IrScalar { Facets.Values: { } set } scalar)
             {
-                throw new PathException($"the value at {path} has no value set to declare exact. haruspex infers one from a CHECK constraint on a column the value passes through unchanged; "
+                throw new PathException($"the value at {path} has no value set to declare exact. A value set is inferred from a CHECK constraint on a column the value passes through unchanged; "
                     + "canonical value sets for other cases are planned, not done.");
             }
 
@@ -191,7 +191,7 @@ internal sealed class OverrideApplier(
 
     private static string Here(string whole, IReadOnlyList<IrPathSegment> path, int i)
     {
-        // The canonical path is results[n] followed by the segments; the part before segment i is where we are.
+        // The canonical path is results[n] followed by the segments; the part before segment i is where the walk has reached.
         var rendered = IrPath.Render(path.Take(i));
         var prefix = whole[..(whole.Length - IrPath.Render(path).Length)];
         return prefix + (rendered.Length > 0 && rendered[0] is not ('[' or '<' or '{') ? "." : "") + rendered;

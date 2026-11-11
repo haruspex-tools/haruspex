@@ -39,7 +39,7 @@ public class SchemaFactsTests
         return SchemaRules.IsNeverNull(model, table, table.Column(column)!);
     }
 
-    private static string Bound(BoundFact? bound) => bound is null ? "none" : (bound.Inclusive ? "" : "excl ") + bound.Value;
+    private static string Bound(BoundFact? bound) => bound is null ? "none" : (bound.Inclusive ? "" : "exclusive ") + bound.Value;
 
     private static string Source(FactSource? from) => from switch
     {
@@ -231,20 +231,20 @@ public class SchemaFactsTests
 
     [Theory]
     [InlineData("int NULL CHECK (c BETWEEN 1 AND 5)", "1", "5")]
-    [InlineData("int NULL CHECK (c >= -10 AND c < 100)", "-10", "excl 100")]
-    [InlineData("int NULL CHECK (c > 0)", "excl 0", "2147483647")]
-    [InlineData("int NULL CHECK (0 < c)", "excl 0", "2147483647")]
+    [InlineData("int NULL CHECK (c >= -10 AND c < 100)", "-10", "exclusive 100")]
+    [InlineData("int NULL CHECK (c > 0)", "exclusive 0", "2147483647")]
+    [InlineData("int NULL CHECK (0 < c)", "exclusive 0", "2147483647")]
     [InlineData("int NULL CHECK (100 >= c)", "-2147483648", "100")]
-    [InlineData("decimal(9, 4) NULL CHECK (c > 0 AND c < 1)", "excl 0", "excl 1")]
+    [InlineData("decimal(9, 4) NULL CHECK (c > 0 AND c < 1)", "exclusive 0", "exclusive 1")]
     [InlineData("decimal(5, 2) NULL CHECK (c >= 0.5)", "0.5", "999.99")]
     // The type's bound when it is tighter than the constraint's.
     [InlineData("tinyint NULL CHECK (c > -5 AND c <= 300)", "0", "255")]
     // The tighter of two constraints.
     [InlineData("int NULL CHECK (c >= 0), CHECK (c >= 5), CHECK (c <= 10)", "5", "10")]
     // At the same value an exclusive bound is tighter.
-    [InlineData("int NULL CHECK (c >= 5 AND c > 5)", "excl 5", "2147483647")]
+    [InlineData("int NULL CHECK (c >= 5 AND c > 5)", "exclusive 5", "2147483647")]
     // A conjunct that isn't understood is skipped; the rest still holds.
-    [InlineData("int NULL CHECK (c > 0 AND c % 2 = 0)", "excl 0", "2147483647")]
+    [InlineData("int NULL CHECK (c > 0 AND c % 2 = 0)", "exclusive 0", "2147483647")]
     [InlineData("int NULL CHECK (c IS NOT NULL AND c <= 9)", "-2147483648", "9")]
     public void Between_and_comparisons_give_bounds(string definition, string min, string max)
     {
@@ -355,9 +355,9 @@ public class SchemaFactsTests
 
     [Theory]
     // Re-enabled and every row validated, later in the same script: trusted again.
-    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nGO\nALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ck_c;", "excl 0")]
-    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ALL;\nGO\nALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ALL;", "excl 0")]
-    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ck_d, ck_c;", "excl 0")]
+    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nGO\nALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ck_c;", "exclusive 0")]
+    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ALL;\nGO\nALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ALL;", "exclusive 0")]
+    [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ck_d, ck_c;", "exclusive 0")]
     // Re-enabled without validating the rows written meanwhile (is_not_trusted stays 1): still nothing.
     [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nGO\nALTER TABLE dbo.t CHECK CONSTRAINT ck_c;", "-2147483648")]
     [InlineData("ALTER TABLE dbo.t NOCHECK CONSTRAINT ck_c;\nGO\nALTER TABLE dbo.t WITH NOCHECK CHECK CONSTRAINT ck_c;", "-2147483648")]
@@ -413,12 +413,12 @@ public class SchemaFactsTests
         const string sql = "CREATE TABLE dbo.t (c int NULL CHECK (c > 0), d int NULL CONSTRAINT ck_d CHECK (d > 0));\nGO\nALTER TABLE dbo.t NOCHECK CONSTRAINT CK__t__c__3A81B327;";
 
         Assert.Equal("-2147483648", Bound(Facts(sql).Min));
-        Assert.Equal("excl 0", Bound(Facts(sql, "d").Min));
+        Assert.Equal("exclusive 0", Bound(Facts(sql, "d").Min));
     }
 
     [Fact]
     public void Nocheck_of_another_constraint_leaves_this_one_read() =>
-        Assert.Equal("excl 0", Bound(Facts("CREATE TABLE dbo.t (c int NULL CONSTRAINT ck_c CHECK (c > 0), d int NULL CONSTRAINT ck_d CHECK (d > 0));\nGO\nALTER TABLE dbo.t NOCHECK CONSTRAINT ck_d;").Min));
+        Assert.Equal("exclusive 0", Bound(Facts("CREATE TABLE dbo.t (c int NULL CONSTRAINT ck_c CHECK (c > 0), d int NULL CONSTRAINT ck_d CHECK (d > 0));\nGO\nALTER TABLE dbo.t NOCHECK CONSTRAINT ck_d;").Min));
 
     [Fact]
     public void A_constraint_on_another_column_says_nothing_about_this_one() =>

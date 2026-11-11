@@ -1,7 +1,7 @@
 namespace Haruspex.DifferentialTests.Server;
 
 /// <summary>
-/// A reader–writer gate for the test database: any number of readers at once, or one writer alone. A run whose setup
+/// A reader-writer gate for the test database: any number of readers at once, or one writer alone. A run whose setup
 /// deletes rows, or a test that creates a table inside its own transaction, holds its write locks until it rolls back,
 /// and a run reading the same tables at the same time waits on them; with one more lock taken the other way round,
 /// SQL Server kills one of the two with error 1205 (GitHub's CI did, on 9 Nov 2026). Readers only ever take shared

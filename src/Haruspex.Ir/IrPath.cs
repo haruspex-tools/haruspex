@@ -144,7 +144,7 @@ public static class IrPath
         return false;
     }
 
-    /// <summary>Reads the JSON string starting at <paramref name="start"/> (its opening quote); <paramref name="end"/> is just after it.</summary>
+    /// <summary>Reads the JSON string starting at <paramref name="start"/> (its opening quote); <paramref name="end"/> is the index after it.</summary>
     private static bool TryReadString(string text, int start, out string value, out int end)
     {
         value = "";

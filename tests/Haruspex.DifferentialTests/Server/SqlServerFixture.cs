@@ -107,7 +107,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
 #pragma warning restore CA1031
             {
                 // Not only DockerUnavailableException: an ssh:// Docker host (a Docker context over SSH) throws
-                // SshDockerEndpointNotSupportedException from a type initializer, because Docker.DotNet has no SSH
+                // SshDockerEndpointNotSupportedException from a type initialiser, because Docker.DotNet has no SSH
                 // transport. Observed with Testcontainers 4.16.0; see README.md.
                 unavailable = $"{ServerVariable} is not set, and Testcontainers could not start SQL Server ({Innermost(e).GetType().Name}: {Innermost(e).Message}).";
                 server = null;
@@ -163,7 +163,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
                     "CREATE PROCEDURE dbo.gate_probe_write AS SET NOCOUNT ON; INSERT INTO dbo.gate_probe VALUES (1);",
                 })
                 {
-#pragma warning disable CA2100 // The batches are the constant statements just above.
+#pragma warning disable CA2100 // The batches are the constant statements above.
                     await using var command = new SqlCommand(batch, connection);
 #pragma warning restore CA2100
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);

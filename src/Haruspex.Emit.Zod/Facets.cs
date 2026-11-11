@@ -14,7 +14,7 @@ namespace Haruspex.Emit.Zod;
 /// <remarks>
 /// <para><b>Numbers are doubles.</b> <c>JSON.parse</c> rounds a decimal to the nearest double, and rounding never
 /// reverses an order, so a value at most a bound parses to a double at most the bound's double: an inclusive bound
-/// is always safe. An exclusive one is not, because a value just inside it can round onto it. So <c>.gt</c> and
+/// is always safe. An exclusive one is not, because a value inside it but close to it can round onto it. So <c>.gt</c> and
 /// <c>.lt</c> are used only for integers within 2^53, where nothing rounds; any other exclusive bound becomes the
 /// inclusive one at the type's step (<c>&lt; 100</c> on <c>decimal(5,2)</c> is <c>.max(99.99)</c>), which says the
 /// same of the stored values.</para>

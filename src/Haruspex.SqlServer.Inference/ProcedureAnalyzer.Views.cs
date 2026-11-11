@@ -276,11 +276,11 @@ internal sealed class ViewSummaries
 
         try
         {
-            var analyzer = new ProcedureAnalyzer(model, function.File, Functions(uncommitted), arguments, ansiNullsOff: function.AnsiNullsOff, views: this, uncommittedReads: uncommitted);
+            var analyser = new ProcedureAnalyzer(model, function.File, Functions(uncommitted), arguments, ansiNullsOff: function.AnsiNullsOff, views: this, uncommittedReads: uncommitted);
             found = function.Body.ReturnType switch
             {
-                SelectFunctionReturnType inline => analyzer.ReadInline(function, inline.SelectStatement),
-                TableValuedFunctionReturnType declared => analyzer.ReadReturnTable(function, declared),
+                SelectFunctionReturnType inline => analyser.ReadInline(function, inline.SelectStatement),
+                TableValuedFunctionReturnType declared => analyser.ReadReturnTable(function, declared),
                 _ => throw new ArgumentException("Not a table-valued function.", nameof(function)),
             };
         }

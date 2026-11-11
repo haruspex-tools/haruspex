@@ -529,7 +529,7 @@ internal sealed partial class ProcedureAnalyzer
         if (argument.JsonWhy is { } why)
             return Value.Unknown(why);
 
-        // json_query over text (a column, a variable) makes it live JSON, but its shape is in data we cannot see.
+        // json_query over text (a column, a variable) makes it live JSON, but its shape is in data haruspex cannot see.
         return Value.Unknown(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{Text(call)} reads JSON that is not built here, so its shape is unknown.", At(call)));
     }
 

@@ -27,7 +27,7 @@ public class StatementFlowObservationTests(SqlServerFixture server)
     [Fact]
     public async Task A_branch_not_taken_returns_no_result_set_at_all_so_later_ones_move_up()
     {
-        // The IR's results are positional, so a result inside a branch may be missing altogether, not just empty, and a
+        // The IR's results are positional, so a result inside a branch may be missing altogether, not only empty, and a
         // result after it can arrive at its position: results[i] is the union of what each path returns i-th.
         string[] setup = ["""
             CREATE PROCEDURE dbo.obs_branch @a int AS

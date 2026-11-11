@@ -29,7 +29,7 @@ when the two take their locks in opposite orders SQL Server kills one with error
 overlap certain, holding a setup open while a reading run starts; before the fix the reader waited on `LCK_M_S`
 every time.
 
-So the fixture has a **reader–writer gate** (`Server/DatabaseGate.cs`): any number of sessions that read at
+So the fixture has a **reader-writer gate** (`Server/DatabaseGate.cs`): any number of sessions that read at
 once, or one that writes, alone. Nothing reaches the database except through it:
 
 - The fixture keeps the connection string to itself. A test asks for a **`ReadSession`**

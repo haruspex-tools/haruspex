@@ -35,9 +35,9 @@ public class ZodFacetsTests
 
     private static IrScalar Number(string format, string sql, IrFacets facets) => new(IrScalarKind.Number, format, sql, facets);
 
-    private static IrBound Incl(string value, IrFactSource? from = null) => new(value, true, from ?? Type);
+    private static IrBound Inclusive(string value, IrFactSource? from = null) => new(value, true, from ?? Type);
 
-    private static IrBound Excl(string value) => new(value, false, Check);
+    private static IrBound Exclusive(string value) => new(value, false, Check);
 
     private static IrValueSet Numbers(params string[] values) => new([.. values.Select(v => new IrValue(v, false))], IrValueMatch.Exact, [Check]);
 
@@ -108,7 +108,7 @@ public class ZodFacetsTests
     [InlineData(IrFormats.Int32, "1", "5", "z.int().min(1).max(5)")]
     public void An_integer_has_its_range(string format, string min, string max, string zod)
     {
-        var scalar = Number(format, "int", new IrFacets(Min: Incl(min), Max: Incl(max)));
+        var scalar = Number(format, "int", new IrFacets(Min: Inclusive(min), Max: Inclusive(max)));
 
         Assert.Equal(zod, Json(scalar));
         Assert.Equal(zod, Rows(scalar));
@@ -116,11 +116,11 @@ public class ZodFacetsTests
 
     [Fact]
     public void An_exclusive_bound_on_a_safe_integer_stays_exclusive() =>
-        Assert.Equal("z.int().gt(0).lt(100)", Json(Number(IrFormats.Int32, "int", new IrFacets(Min: Excl("0"), Max: Excl("100")))));
+        Assert.Equal("z.int().gt(0).lt(100)", Json(Number(IrFormats.Int32, "int", new IrFacets(Min: Exclusive("0"), Max: Exclusive("100")))));
 
     [Fact]
     public void An_exact_set_of_integers_is_a_literal() =>
-        Assert.Equal("z.literal([1, 2, 4])", Json(Number(IrFormats.Int16, "smallint", new IrFacets(Min: Incl("-32768"), Max: Incl("32767"), Values: Numbers("1", "2", "4")))));
+        Assert.Equal("z.literal([1, 2, 4])", Json(Number(IrFormats.Int16, "smallint", new IrFacets(Min: Inclusive("-32768"), Max: Inclusive("32767"), Values: Numbers("1", "2", "4")))));
 
     [Fact]
     public void An_empty_set_admits_no_value() =>
@@ -129,20 +129,20 @@ public class ZodFacetsTests
     [Fact]
     public void A_bigint_in_json_keeps_its_bare_number_and_only_a_checks_range_inclusively()
     {
-        var typeRange = new IrFacets(Min: Incl("-9223372036854775808"), Max: Incl("9223372036854775807"));
+        var typeRange = new IrFacets(Min: Inclusive("-9223372036854775808"), Max: Inclusive("9223372036854775807"));
         Assert.Equal("z.number() /* int64: exact only up to 2^53 once parsed */", Json(Number(IrFormats.Int64, "bigint", typeRange)));
 
         // Exclusive bounds become inclusive, because two bigints past 2^53 can parse to the same double.
-        var checkRange = new IrFacets(Min: Excl("0"), Max: new IrBound("9007199254740993", false, Check));
+        var checkRange = new IrFacets(Min: Exclusive("0"), Max: new IrBound("9007199254740993", false, Check));
         Assert.Equal("z.number().min(1).max(9007199254740992) /* int64: exact only up to 2^53 once parsed */", Json(Number(IrFormats.Int64, "bigint", checkRange)));
     }
 
     [Fact]
     public void A_bigint_in_a_row_is_a_string_whose_set_is_strings()
     {
-        Assert.Equal("z.string()", Rows(Number(IrFormats.Int64, "bigint", new IrFacets(Min: Incl("-9223372036854775808"), Max: Incl("9223372036854775807")))));
+        Assert.Equal("z.string()", Rows(Number(IrFormats.Int64, "bigint", new IrFacets(Min: Inclusive("-9223372036854775808"), Max: Inclusive("9223372036854775807")))));
         Assert.Equal("z.enum([\"1\", \"20\"])", Rows(Number(IrFormats.Int64, "bigint", new IrFacets(Values: Numbers("1", "20")))));
-        Assert.Equal("z.string() /* a bigint arrives as a string, so its CHECK range is not checked */", Rows(Number(IrFormats.Int64, "bigint", new IrFacets(Min: Incl("0", Check)))));
+        Assert.Equal("z.string() /* a bigint arrives as a string, so its CHECK range is not checked */", Rows(Number(IrFormats.Int64, "bigint", new IrFacets(Min: Inclusive("0", Check)))));
     }
 
     // ---- decimals -----------------------------------------------------------------------------------
@@ -158,34 +158,34 @@ public class ZodFacetsTests
     [InlineData(10, 0, "-9999999999", "9999999999", "z.int().min(-9999999999).max(9999999999)")]
     [InlineData(38, 0, "-99999999999999999999999999999999999999", "99999999999999999999999999999999999999", "z.number().min(-99999999999999999999999999999999999999).max(99999999999999999999999999999999999999).multipleOf(1)")]
     public void A_decimal_in_json_has_its_range_and_its_step(int precision, int scale, string min, string max, string zod) =>
-        Assert.Equal(zod, Json(Number(IrFormats.Decimal, "decimal", Decimal(precision, scale, Incl(min), Incl(max)))));
+        Assert.Equal(zod, Json(Number(IrFormats.Decimal, "decimal", Decimal(precision, scale, Inclusive(min), Inclusive(max)))));
 
     [Theory]
     [InlineData(9, 4, "0", "1", "z.number().min(0.0001).max(0.9999).multipleOf(1e-4)")]
     [InlineData(5, 2, "-100", "100", "z.number().min(-99.99).max(99.99).multipleOf(1e-2)")]
     [InlineData(5, 0, "-1", "10", "z.int().min(0).max(9)")]
     public void An_exclusive_bound_on_a_decimal_becomes_the_nearest_inclusive_one(int precision, int scale, string min, string max, string zod) =>
-        Assert.Equal(zod, Json(Number(IrFormats.Decimal, "decimal", Decimal(precision, scale, Excl(min), Excl(max)))));
+        Assert.Equal(zod, Json(Number(IrFormats.Decimal, "decimal", Decimal(precision, scale, Exclusive(min), Exclusive(max)))));
 
     [Fact]
     public void A_set_of_decimals_is_a_literal() =>
-        Assert.Equal("z.literal([1.5, 2.25])", Json(Number(IrFormats.Decimal, "decimal(5,2)", Decimal(5, 2, Incl("-999.99"), Incl("999.99"), Numbers("1.5", "2.25")))));
+        Assert.Equal("z.literal([1.5, 2.25])", Json(Number(IrFormats.Decimal, "decimal(5,2)", Decimal(5, 2, Inclusive("-999.99"), Inclusive("999.99"), Numbers("1.5", "2.25")))));
 
     [Fact]
     public void A_narrow_decimal_in_a_row_keeps_its_bounds() =>
-        Assert.Equal("z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4)", Rows(Number(IrFormats.Decimal, "smallmoney", Decimal(10, 4, Incl("-214748.3648"), Incl("214748.3647")))));
+        Assert.Equal("z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4)", Rows(Number(IrFormats.Decimal, "smallmoney", Decimal(10, 4, Inclusive("-214748.3648"), Inclusive("214748.3647")))));
 
     [Fact]
     public void A_wide_decimal_in_a_row_keeps_its_step_but_not_its_bounds_or_values()
     {
         Assert.Equal(
             "z.number().multipleOf(1e-2) /* the mssql driver may round decimal(19,2) past its bounds, so they are not checked in a row */",
-            Rows(Number(IrFormats.Decimal, "decimal(19,2)", Decimal(19, 2, Incl("-99999999999999999.99"), Incl("99999999999999999.99"), Numbers("1.5")))));
+            Rows(Number(IrFormats.Decimal, "decimal(19,2)", Decimal(19, 2, Inclusive("-99999999999999999.99"), Inclusive("99999999999999999.99"), Numbers("1.5")))));
     }
 
     [Fact]
     public void A_float_takes_only_inclusive_bounds() =>
-        Assert.Equal("z.number().min(0).max(1)", Json(Number(IrFormats.Float, "float", new IrFacets(Min: Excl("0"), Max: Incl("1")))));
+        Assert.Equal("z.number().min(0).max(1)", Json(Number(IrFormats.Float, "float", new IrFacets(Min: Exclusive("0"), Max: Inclusive("1")))));
 
     [Fact]
     public void A_number_without_facets_is_unchanged() =>

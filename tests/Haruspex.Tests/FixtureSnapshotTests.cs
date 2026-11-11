@@ -7,7 +7,7 @@ namespace Haruspex.Tests;
 
 /// <summary>
 /// One snapshot of the IR and one of the Zod per fixture procedure. A snapshot is a claim about what
-/// SQL Server returns, so a change to one is reviewed against the engine's behaviour, not just accepted.
+/// SQL Server returns, so a change to one is reviewed against the engine's behaviour, never accepted unread.
 /// </summary>
 public class FixtureSnapshotTests
 {

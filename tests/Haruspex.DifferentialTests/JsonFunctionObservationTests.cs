@@ -5,7 +5,7 @@ namespace Haruspex.DifferentialTests;
 
 /// <summary>
 /// What a call of a scalar function returning JSON gives, observed and kept as tests: what FunctionSummaries and the
-/// analyzer's "scalar functions" rules rest on. Each test creates its table and functions in a write session, rolled
+/// analyser's "scalar functions" rules rest on. Each test creates its table and functions in a write session, rolled
 /// back, alone in the test database while it lasts. Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
 public class JsonFunctionObservationTests(SqlServerFixture server)
