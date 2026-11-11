@@ -140,6 +140,8 @@ public class IsolationTests(SqlServerFixture server)
             Path.Combine("Server", "SqlServerFixture.cs"),
             Path.Combine("Server", "Deployer.cs"),
             Path.Combine("Server", "DatabaseSession.cs"),
+            Path.Combine("Server", "ReadSession.cs"),
+            Path.Combine("Server", "WriteSession.cs"),
         ];
 
         var offenders = Directory.EnumerateFiles(project, "*.cs", SearchOption.AllDirectories)
