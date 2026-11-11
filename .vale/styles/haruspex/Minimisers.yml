@@ -1,0 +1,11 @@
+# What is easy for the writer may not be for the reader (docs/style.md, "Voice").
+extends: existence
+message: "Leave out '%s': what is easy for the writer may not be for the reader."
+level: error
+ignorecase: true
+tokens:
+  - simply
+  - just
+  - easily
+  - obviously
+  - of course

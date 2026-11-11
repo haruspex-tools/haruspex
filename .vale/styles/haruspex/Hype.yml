@@ -1,0 +1,13 @@
+# Marketing words claim more than any evidence can show (docs/style.md, "Voice").
+extends: existence
+message: "Say what is true instead of '%s'."
+level: error
+ignorecase: true
+tokens:
+  - powerful
+  - seamless(?:ly)?
+  - blazing(?:ly)?
+  - robust(?:ly|ness)?
+  - cutting-edge
+  - best-in-class
+  - revolutionary

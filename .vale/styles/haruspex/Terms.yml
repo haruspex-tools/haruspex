@@ -1,0 +1,11 @@
+# The words with a fixed meaning (docs/style.md, "Words with a fixed meaning"). Only the replaced terms that
+# have no other correct use are here. The rest of that table's "Not" column (schema, model, verified, enum,
+# error, sample, mock and the like) are right in other senses, so review checks them, not a rule.
+extends: substitution
+message: "Use '%s' instead of '%s'."
+level: error
+ignorecase: true
+swap:
+  knobs?: setting
+  raw JSON: live JSON
+  stringified JSON: JSON text

@@ -1,0 +1,17 @@
+# Headings are in sentence case (docs/style.md, "Headings"). The exceptions are proper nouns and terms
+# written in capitals wherever they appear.
+extends: capitalization
+message: "'%s' should be in sentence case."
+level: error
+scope: heading
+match: $sentence
+exceptions:
+  # A word in capitals is an acronym or a SQL keyword (DML, CTEs, CROSS JOIN), written so in prose too.
+  - '[A-Z]{2,}s?'
+  # A project's README is titled with its namespace (Haruspex.Cli).
+  - 'Haruspex(?:\.\w+)+'
+  # The tool's name is lowercase even where it begins a heading (the README's title).
+  - haruspex
+  - SQL Server
+  - JSON Schema
+  - Zod

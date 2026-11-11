@@ -1,0 +1,153 @@
+# cspell checks the spelling of the Markdown, the C# (comments, strings and identifiers) and the workflows, in
+# British English (docs/style.md, "Spelling"). tests/prose/check.sh runs it, over the files it lists.
+version: "0.2"
+language: en-GB
+
+dictionaryDefinitions:
+  - name: haruspex
+    path: ./.cspell/words.txt
+    addWords: true
+dictionaries:
+  - haruspex
+
+# The en-GB dictionary accepts the Oxford -ize spellings, and the software dictionaries cspell adds for code
+# accept American ones. docs/style.md asks for -ise, so these are refused wherever they appear.
+flagWords:
+  - analyze
+  - analyzes
+  - analyzed
+  - analyzing
+  - analyzer
+  - analyzers
+  - behavior
+  - behaviors
+  - color
+  - colors
+  - customize
+  - customized
+  - finalize
+  - finalized
+  - initialize
+  - initialized
+  - initializes
+  - initializer
+  - initializers
+  - initialization
+  - materialize
+  - materialized
+  - minimize
+  - minimized
+  - maximize
+  - maximized
+  - normalize
+  - normalized
+  - normalizes
+  - normalization
+  - optimize
+  - optimized
+  - optimization
+  - organize
+  - organized
+  - organization
+  - parameterize
+  - parameterized
+  - prioritize
+  - recognize
+  - recognized
+  - recognizes
+  - serialize
+  - serialized
+  - serializes
+  - serializer
+  - serialization
+  - specialize
+  - specialized
+  - summarize
+  - summarized
+  - summarizes
+
+ignoreRegExpList:
+  # Identifiers keep their own spelling (docs/style.md, "Spelling"). These are the names, from .NET, ScriptDom and
+  # this code, whose American spelling the flagged words above would otherwise refuse. ProcedureAnalyzer is
+  # haruspex's own: renaming it is a change of structure, not of prose.
+  - /\bJsonSerializer\w*/g
+  - /\bSerialize\b(?=\s*[(<])/g
+  - /\bSuppressFinalize\b/g
+  - /\bInitializeAsync\b/g
+  - /\bParameterizedDataTypeReference\b/g
+  - /\bProcedureAnalyzer\b/g
+  # actionlint's option for coloured output (.github/workflows/ci.yml).
+  - /(?<=\s)-color\b/g
+
+overrides:
+  # The style guide's examples of identifiers that keep their own spelling (`Color`, `normalize`), in backticks.
+  - filename: "**/docs/style.md"
+    ignoreRegExpList: ["/`[^`\\n]+`/g"]
+  # Inside tests, SQL in strings names columns and parameters that are abbreviations made up for one query
+  # (cnull, a CHOOSE with a NULL index), and some strings are deliberately wrong, to test what is said about
+  # them. Each file's words are listed with it, so a word is excused only where it is meant.
+  - filename: "**/tests/Haruspex.DifferentialTests/CaseObservationTests.cs"
+    ignoreWords: [cneg, cnull, cdec]
+  - filename: "**/tests/Haruspex.DifferentialTests/ExpressionObservationTests.cs"
+    ignoreWords: [intadd, cnull, wsnull, wsallnull, wsnullsep, plusnull]
+  - filename: "**/tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs"
+    ignoreWords: [cpad]
+  - filename: "**/tests/Haruspex.DifferentialTests/SetTypeGridTests.cs"
+    ignoreWords: [vmax, nvmax]
+  - filename: "**/tests/Haruspex.DifferentialTests/RefinementObservationTests.cs"
+    ignoreWords: [sqlkey]
+  - filename: "**/tests/Haruspex.DifferentialTests/ExecObservationTests.cs"
+    # conv: a procedure that converts its argument; objname: sp_help's own parameter, which the test shadows.
+    ignoreWords: [conv, objname]
+  - filename: "**/tests/Haruspex.DifferentialTests/JsonTracingObservationTests.cs"
+    ignoreWords: [alphabeta]
+  - filename: "**/tests/Haruspex.DifferentialTests/SetJoinObservationTests.cs"
+    # A string longer than the other branch's, to show which length a set operation keeps.
+    ignoreWords: [xxxxxxx]
+  - filename: "**/tests/Haruspex.DifferentialTests/TableFunctionObservationTests.cs"
+    # A value too long for its column, and what is left of it once SQL Server truncates it.
+    ignoreWords: [toolong, toolo]
+  - filename: "**/tests/Haruspex.DifferentialTests/ZodAcceptanceTests.cs"
+    # A .NET date format string.
+    ignoreWords: [fffzzz]
+  - filename: "**/tests/Haruspex.DifferentialTests/Runs.cs"
+    ignoreWords: [upto]
+  - filename: "**/tests/Haruspex.Tests/ApplyViewTests.cs"
+    # The end column of a system-versioned table's period.
+    ignoreWords: [upto]
+  - filename: "**/tests/Haruspex.Tests/JsonConstructorTests.cs"
+    ignoreWords: [qtys]
+  - filename: "**/tests/Haruspex.Tests/SetTypeTests.cs"
+    ignoreWords: [nkind]
+  - filename: "**/tests/Haruspex.Tests/ConstructTests.cs"
+    # A database other than the current one, in a three-part name.
+    ignoreWords: [otherdb]
+  - filename: "**/tests/Haruspex.Tests/ExecTests.cs"
+    # The class of a CLR procedure's EXTERNAL NAME.
+    ignoreWords: [procs]
+  - filename: "**/tests/Haruspex.Tests/RefinementTests.cs"
+    # ncode: an nvarchar parameter. querys and subquerys: possessives in test names, which can't hold an apostrophe.
+    ignoreWords: [ncode, querys, subquerys]
+  - filename: "**/tests/Haruspex.Tests/ReadUncommittedTests.cs"
+    ignoreWords: [subquerys]
+  - filename: "**/tests/Haruspex.Tests/SetJoinTests.cs"
+    ignoreWords: [querys]
+  - filename: "**/tests/Haruspex.Tests/ProcedureSelectionTests.cs"
+    # axxb: a name that a wildcard pattern must match. ordr: a misspelt name, as below.
+    ignoreWords: [axxb, ordr]
+  - filename: "**/tests/Haruspex.Tests/NamingRulesTests.cs"
+    # A prefix joined to a name with the case preserved, which is the point of the test.
+    ignoreWords: [auditget]
+  - filename: "**/tests/Haruspex.Tests/MarkdownLinkTests.cs"
+    # Anchors as GitHub makes them from headings, which drops apostrophes and backticks.
+    ignoreWords: [doesnt, irjsonwriter]
+  - filename: "**/src/Haruspex.Config/NamingRules.cs"
+    # The plural endings the singular rule looks for.
+    ignoreWords: [sses, ches, shes]
+  # Misspelt names, to test that a selection or override naming nothing is reported, with a suggestion.
+  - filename: "**/tests/Haruspex.Tests/CliTests.cs"
+    ignoreWords: [ordr]
+  - filename: "**/tests/Haruspex.Tests/ConfigApplicationTests.cs"
+    ignoreWords: [nmae, customr]
+  - filename: "**/tests/Haruspex.Tests/ConfigCliTests.cs"
+    ignoreWords: [baskte, shopp]

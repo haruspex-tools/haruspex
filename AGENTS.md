@@ -17,4 +17,7 @@ In addition:
   tree and list the paths you changed.
 - **Changes to `.claude/`, `.github/`, `AGENTS.md` and `CLAUDE.md` need the maintainer's review**
   (CODEOWNERS). Point them out explicitly.
+- **Write to the house style.** Every comment, document and message follows [docs/style.md](docs/style.md).
+  Run `tests/prose/check.sh` before handing over a change to prose, and fix the text rather than adding to the
+  dictionary or the exceptions; add a word only when it is a real term.
 - Keep the build free of warnings; they are errors here.

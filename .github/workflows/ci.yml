@@ -79,3 +79,31 @@ jobs:
           # Offline, so a run depends only on this commit; and no SARIF upload, which would need write permission.
           online-audits: false
           advanced-security: false
+
+  prose:
+    name: Check the prose
+    # The checks docs/style.md assigns to tools: spelling (cspell), the house style (Vale) and Mermaid diagrams
+    # that parse. tests/prose/check.sh runs each, as it does locally; each first checks itself against fixtures.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      # cspell, Mermaid and jsdom, at the versions in the committed lockfile, with no install scripts run.
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: tests/prose
+
+      - run: tests/prose/check.sh spelling
+
+      # Vale runs from its Docker image, pinned by digest in check.sh, with no network.
+      - run: tests/prose/check.sh style
+        if: ${{ !cancelled() }}
+
+      - run: tests/prose/check.sh diagrams
+        if: ${{ !cancelled() }}

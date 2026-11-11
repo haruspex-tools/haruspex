@@ -1,0 +1,12 @@
+# docs/style.md, "Punctuation": no dashes as punctuation (a comma, a colon, parentheses or a new sentence
+# instead, and "to" in a range), "for example" and "that is" rather than their abbreviations, and no
+# exclamation marks.
+extends: existence
+message: "Rewrite without '%s': for a dash use a comma, a colon, parentheses or a new sentence (or 'to' in a range); write 'for example' or 'that is'; no exclamation marks."
+level: error
+nonword: true
+tokens:
+  - '[—–]'
+  - '\b[Ee]\.g\.'
+  - '\b[Ii]\.e\.'
+  - '(?<=[\w)"''])!(?=\s|$)'

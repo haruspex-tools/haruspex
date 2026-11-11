@@ -1,0 +1,7 @@
+# haruspex is lowercase as the tool's name, everywhere except the start of a .NET namespace or type
+# (Haruspex.Ir, HaruspexCli), which a "." and a word, or a word character, follows (docs/style.md, "Spelling").
+extends: existence
+message: "Write the tool's name in lowercase: 'haruspex'."
+level: error
+raw:
+  - '\bHaruspex\b(?!\.\w)'

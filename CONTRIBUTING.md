@@ -108,6 +108,21 @@ dotnet run --project src/Haruspex.Cli -- generate tests/fixtures/orders --includ
 cd tests/fixtures/shop && dotnet run --project ../../../src/Haruspex.Cli -- generate --out ../../../out/shop  # with its haruspex.json
 ```
 
+## Writing
+
+Everything a reader reads (the Markdown, XML documentation, comments and diagnostics) follows the house style in
+[docs/style.md](docs/style.md): British spelling, plain words, sentence-case headings, the project's fixed terms.
+Tools check the rules its last table assigns to them: cspell the spelling, Vale the style, and Mermaid that every
+diagram parses. Run all three before committing a change to prose:
+
+```sh
+tests/prose/check.sh
+```
+
+It needs Node, and Vale 3.24.0 on the `PATH` or Docker with a local socket to run Vale's image. CI runs the same
+script. [tests/prose/README.md](tests/prose/README.md) says what to do when a check is wrong rather than the text:
+a real term goes in the project dictionary, never a misspelling.
+
 ## Layers
 
 The code is split into layers, one project each, and **a layer refers only to the layers and packages its row
@@ -137,6 +152,7 @@ test to let a reference through; move the code to the layer that may know it.
 | `tests/Shared` | Test helpers compiled into both test projects: running the emit-check npm package. |
 | `tests/fixtures` | Invented SQL used by the tests. |
 | `tests/emit-check` | A small npm package that type-checks the generated Zod. |
+| `tests/prose` | The prose checks (`check.sh`), their npm package and the fixtures that test them. |
 
 Only `Model` and `Sources` are packable (`IsPackable`, with package metadata and a readme), with `Diagnostics`
 because its types are in their public API; every other project is not. Nothing is published yet: that is a later decision, so don't push packages anywhere. Their public API
@@ -156,6 +172,10 @@ the maintainer's agreement.
 | `xunit.v3` | Apache-2.0 | tests | The test framework; runs on Microsoft.Testing.Platform (opted into in `global.json`). |
 | `typescript` (npm) | Apache-2.0 | emit-check | Compiles the generated Zod, to prove it type-checks. |
 | `zod` (npm) | MIT | emit-check | The library the generated code targets, pinned so the check is repeatable. |
+| `cspell` (npm) | MIT | prose check | Spelling in British English across Markdown, C# and the workflows, identifiers included. |
+| `mermaid` (npm) | MIT | prose check | Mermaid's own parser, to prove every diagram in the Markdown parses. |
+| `jsdom` (npm) | MIT | prose check | The DOM that Mermaid's parser needs in Node for some diagram types, instead of a browser. |
+| Vale (Docker image `jdkato/vale`) | MIT | prose check | Checks the house style's rules in the Markdown and the C# comments. |
 | `Microsoft.Data.SqlClient` | MIT | differential tests | Microsoft's SQL Server driver for .NET: the tests must run procedures and read their results as SQL Server returns them. |
 | `Testcontainers.MsSql` | MIT | differential tests | Starts a throwaway SQL Server in Docker when no server is configured, as in CI; it can later run a matrix of SQL Server versions. |
 | `System.Security.Cryptography.Pkcs` | MIT | differential tests | Not used directly: pinned to a patched version because the one SqlClient brings has two advisories (see `Directory.Packages.props`). |
@@ -166,6 +186,12 @@ layer for Windows, is under the Microsoft Software License Terms. They allow it 
 and test your applications", which is all the tests do; like DacFx's, they ask anyone who *redistributes* it to
 indemnify Microsoft. So it must never reach anything haruspex ships: the shipped projects under `src/` must
 not reference SqlClient.
+
+The prose check's packages run only in development and CI, and nothing in them is shipped. Most of the 259 npm
+packages they bring are MIT, ISC, BSD or Apache-2.0; the others are permissive too (MIT-0, CC0, Unlicense,
+BlueOak, WTFPL, MPL-2.0 or Apache-2.0 for DOMPurify), except two that are not ordinary code licences: cspell's
+dictionary of common misspellings is CC BY-SA 4.0, and `elkjs`, a layout engine Mermaid includes but the check
+never calls, is EPL-2.0. Both would matter only to someone redistributing them, which this repository does not.
 
 ScriptDom (MIT) is the only SQL dependency. **DacFx must not be added**: its licence requires anyone who
 redistributes it to indemnify Microsoft, which no maintainer of a free tool should take on. DACPACs will

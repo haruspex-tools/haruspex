@@ -1,0 +1,133 @@
+# The project dictionary: words that are right in this repository and that the en-GB dictionary doesn't know.
+# Each is a real term or a real name, never a misspelling. One word to a line, in lower case unless the case
+# is part of the name; cspell matches them without regard to case. Words that are right only in one test file
+# are in cspell.config.yaml, beside the file, with the reason.
+
+# T-SQL keywords, functions, types and settings, and SQL Server's own names
+arithabort
+checkident
+cume
+datalength
+dateadd
+datediff
+datefromparts
+datename
+datepart
+datetimefromparts
+datetimeoffset
+datetimeoffsetfromparts
+dbcc
+dflt
+eomonth
+executesql
+fixeddrives
+fmtonly
+formatmessage
+fromparts
+getdate
+getutcdate
+isnull
+keyset
+ltrim
+nchar
+nestlevel
+nocount
+noexec
+noexpand
+ntile
+nvarchar
+objectagg
+openjson
+opendatasource
+openquery
+openrowset
+parseonly
+quotename
+raiserror
+readcommitted
+readuncommitted
+refreshview
+rowcount
+rowset
+rowsets
+rowstat
+rtrim
+schemabinding
+smalldatetime
+smalldatetimefromparts
+smallint
+smallmoney
+spid
+stdev
+stdevp
+sysdatetime
+sysdatetimeoffset
+sysname
+sysutcdatetime
+tempdb
+timefromparts
+tinyint
+tinyints
+unpivot
+varbinary
+varchar
+varp
+xact
+xmlnamespaces
+arrayagg
+datareader
+wansung
+
+# CTEs and UDDT (a user-defined data type), as ScriptDom's type names spell them (WithCtesAndXmlNamespaces,
+# CreateTypeUddtStatement)
+ctes
+uddt
+
+# Products, tools and their names
+dacfx
+dacpac
+dacpacs
+mscorlib
+netstandard
+rhysd
+sarif
+shellcheck
+slnx
+sqlclient
+ssdt
+ssms
+xunit
+zizmor
+zizmorcore
+nologo
+optout
+
+# Words of the subject that the dictionary lacks
+bigints
+callees
+datetimes
+linters
+lookarounds
+metacharacter
+nullability
+ordinally
+serialiser
+tarjan
+unioned
+uniqueidentifiers
+unmodelled
+writable
+
+# Adjectives coined in this project's code, each meaning "cannot be <verb>ed": a seed that can't be made,
+# an expression that can't be folded, a procedure whose body can't be walked
+unseedable
+unfoldable
+unwalkable
+
+# The names of the test fixtures (tests/fixtures), which the documentation cites
+funcs
+
+# Packages the prose check uses, and the publisher of Vale's image
+elkjs
+jdkato
+jsdom
