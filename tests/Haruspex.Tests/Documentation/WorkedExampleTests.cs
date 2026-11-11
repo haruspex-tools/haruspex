@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Haruspex.Cli;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 
@@ -111,14 +110,7 @@ public class WorkedExampleTests
     }
 
     /// <summary>The example's project, read and inferred as the CLI does with no config file, every procedure selected.</summary>
-    private static IrDocument Infer(string sql)
-    {
-        using var dir = new TempDirectory();
-        dir.File("example.sql", sql);
-        var project = SqlProject.Load(dir.Path);
-        Assert.True(project.Diagnostics.Count == 0, string.Join("\n", project.Diagnostics));
-        return project.Infer(project.Select([ObjectPattern.Parse("*.*")]).Procedures);
-    }
+    private static IrDocument Infer(string sql) => InferProcedure.Infer("*.*", ("example.sql", sql));
 
     /// <summary>
     /// The module as the block shows it: whole, when the block starts with the header comment, and otherwise from the line

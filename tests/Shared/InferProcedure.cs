@@ -12,7 +12,7 @@ internal static class InferProcedure
 {
     /// <summary>
     /// Writes each file into a temporary folder, reads the folder as haruspex reads a database project (failing the test on
-    /// any diagnostic), and infers the procedures <paramref name="include"/> selects, such as <c>dbo.p</c> or <c>*.*</c>.
+    /// any diagnostic, and listing them), and infers the procedures <paramref name="include"/> selects, such as <c>dbo.p</c> or <c>*.*</c>.
     /// </summary>
     public static IrDocument Infer(string include, params (string File, string Sql)[] files) => Infer(include, warnings: null, files);
 
@@ -24,7 +24,7 @@ internal static class InferProcedure
             dir.File(file, sql);
 
         var project = SqlProject.Load(dir.Path);
-        Assert.Empty(project.Diagnostics);
+        Assert.True(project.Diagnostics.Count == 0, string.Join("\n", project.Diagnostics));
         return project.Infer(project.Select([ObjectPattern.Parse(include)]).Procedures, warnings);
     }
 }

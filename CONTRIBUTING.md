@@ -153,7 +153,7 @@ the group of SQL constructs one part of the inference handles, and that one name
 
 | What | Where | Named |
 |---|---|---|
-| Unit tests | `tests/Haruspex.Tests/Inference` | `<Family>Tests`; when the class is large, one partial part per construct, named for it: `ExecTests.InsertExec.cs` |
+| Unit tests | `tests/Haruspex.Tests/Inference` | `<Family>Tests`; when the class is large, one partial part per construct, named for it: `ExecTests.InsertExec.cs`, and the family's checks of the IR and Zod it writes, as a whole, in a part of their own, `ExecTests.Zod.cs` or `RefinementTests.IrAndZod.cs` |
 | Observation tests, one engine rule each | `tests/Haruspex.DifferentialTests` | `<Family>ObservationTests`, each test named for the rule it observes |
 | The reference | `src/Haruspex.SqlServer.Inference/README.md` | a section per construct, which names its code and its observation tests |
 | The fixture | `tests/fixtures/<domain>` | for its invented domain (`calls` is a bakery); its README's first sentence names its constructs |
@@ -170,13 +170,13 @@ split into parts along the constructs it covers. The families today:
 | Writes | `DmlTests` | `DmlObservationTests` | `tests/fixtures/dml` | "DML", "Triggers", "Cursors" |
 | APPLY and views | `ApplyViewTests` | `ApplyViewObservationTests` | `tests/fixtures/apply` | "APPLY", "Views" |
 | Expressions | `ExpressionTests` | `ExpressionObservationTests` | `tests/fixtures/tabs` | "Expressions" |
-| Numbers | `NumericTests` | `NumericObservationTests` | `tests/fixtures/ledger` | "Decimal arithmetic", "Numeric functions" |
+| Numbers | `NumericTests` | `NumericObservationTests`, `ArithmeticGridTests` | `tests/fixtures/ledger` | "Decimal arithmetic", "Numeric functions" |
 | CASE and its kin | `CaseTests` | `CaseObservationTests` | `tests/fixtures/cases` | "CASE, IIF, CHOOSE and NULLIF", "COALESCE and ISNULL over JSON" |
 | Built-in functions | `FunctionTests` | `FunctionObservationTests` | `tests/fixtures/funcs` | "Built-in functions", "Window functions" |
 | Table-valued functions | `TableFunctionTests` | `TableFunctionObservationTests` | `tests/fixtures/tabs` | "Table-valued functions" |
 | Set operations and joins | `SetJoinTests` | `SetJoinObservationTests` | `tests/fixtures/sets` | "Set operations", "CROSS JOIN and FULL OUTER JOIN", "OPENJSON" |
 | Combining types | `SetTypeTests` | `SetTypeObservationTests`, `SetTypeGridTests` | `tests/fixtures/bazaar` | "Combining types" |
-| JSON traced | `JsonTracingTests` | `JsonTracingObservationTests` | `tests/fixtures/kits` | "JSON built here, traced" |
+| JSON traced | `JsonTracingTests` | `JsonTracingObservationTests` | `tests/fixtures/kits` | "JSON built here, traced", "OPENJSON" |
 | JSON constructors | `JsonConstructorTests` | `JsonConstructorObservationTests` | `tests/fixtures/payloads` | the IR README's "JSON constructors" |
 | Functions that return JSON | `JsonFunctionTests` | `JsonFunctionObservationTests` | `tests/fixtures/trees` | the guide's [Summaries and recursion](docs/internals/07-summaries-and-recursion.md) |
 | Read uncommitted | `ReadUncommittedTests` | `ReadUncommittedObservationTests` | `tests/fixtures/tabs` | [decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md) |
@@ -184,8 +184,10 @@ split into parts along the constructs it covers. The families today:
 Three classes are named otherwise, for what they cover across families: `ConstructTests` (queries, results and sources
 in general, with `FOR JSON`'s rules in `ForJsonObservationTests` and `tests/fixtures/orders`), `FactFlowTests` (facts a
 value carries through expressions) and, in Semantics, `SchemaFactsTests` (what types, alias types and CHECK constraints
-guarantee, observed in `CheckConstraintObservationTests` on `tests/fixtures/checks`). `CodeReferenceTests` checks that every
-name in these tables exists.
+guarantee, observed in `CheckConstraintObservationTests` on `tests/fixtures/checks`). `OPENJSON` belongs to two families: as
+a source of rows with its `WITH` columns (`SetJoinTests.OpenJson.cs`), and reading JSON a procedure built and traced
+(`JsonTracingTests.OpenJsonAndJsonValue.cs`). `CodeReferenceTests` checks that every name in these tables exists, and
+`ConstructFamilyTests` that every Inference test class and every observation or grid class is named here.
 
 ## Layers
 
