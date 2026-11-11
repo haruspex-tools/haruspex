@@ -36,30 +36,3 @@ public sealed class Trigger(ObjectName name, ObjectName parent, bool insteadOf, 
     /// <summary>The trigger's name.</summary>
     public override string ToString() => Name.ToString();
 }
-
-/// <summary>The data-modifying statements a trigger can fire for.</summary>
-[Flags]
-public enum DmlEvents
-{
-    /// <summary>None.</summary>
-    None = 0,
-
-    /// <summary><c>INSERT</c>.</summary>
-    Insert = 1,
-
-    /// <summary><c>UPDATE</c>.</summary>
-    Update = 2,
-
-    /// <summary><c>DELETE</c>.</summary>
-    Delete = 4,
-}
-
-/// <summary>
-/// A foreign key that changes rows of its table when rows of the table it references are deleted or updated: one with an
-/// <c>ON DELETE</c> or <c>ON UPDATE</c> action other than <c>NO ACTION</c>. Such a change fires the referencing table's
-/// triggers. Keys without an action change nothing, so they are not recorded.
-/// </summary>
-/// <param name="Referencing">The table whose rows the action changes.</param>
-/// <param name="Referenced">The table whose rows being deleted or updated starts it.</param>
-/// <param name="At">Where it is declared.</param>
-public sealed record CascadingKey(ObjectName Referencing, ObjectName Referenced, SourceLocation At);

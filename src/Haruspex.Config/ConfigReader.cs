@@ -4,9 +4,6 @@ using Haruspex.Ir;
 
 namespace Haruspex.Config;
 
-/// <summary>The outcome of reading a config file: the config when it has no errors, and every problem found.</summary>
-public sealed record ConfigReadResult(HaruspexConfig? Config, IReadOnlyList<ConfigProblem> Problems);
-
 /// <summary>
 /// Reads <c>haruspex.json</c>: finds it, parses it (JSON with comments and trailing commas, as tsconfig.json allows) and
 /// checks every setting, reporting each problem with the path inside the file and its line. The checks are the same as

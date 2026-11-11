@@ -3,9 +3,6 @@ using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Config;
 
-/// <summary>The outcome of applying a config file to a document: the document when there are no errors, and every problem.</summary>
-public sealed record ConfigApplied(IrDocument? Document, IReadOnlyList<ConfigProblem> Problems);
-
 /// <summary>
 /// Applies a config file to the IR inference produced: the overrides, as transformations of the document, and then the
 /// naming rules, which settle every generated name. The result is what is written to <c>haruspex.ir.json</c> and handed to

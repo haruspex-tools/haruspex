@@ -2,11 +2,6 @@ using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Config;
 
-/// <summary>The procedures selected, and every problem with the patterns that selected them.</summary>
-/// <param name="Procedures">The selected procedures, in the order given.</param>
-/// <param name="Problems">Patterns and schemas that match nothing; selection fails when there are any.</param>
-public sealed record SelectionResult(IReadOnlyList<ObjectName> Procedures, IReadOnlyList<ConfigProblem> Problems);
-
 /// <summary>
 /// Which procedures are the interface (haruspex-design.md, "Which procedures are the interface", reshaped per schema by
 /// Richard on 9 Nov 2026). Each schema's block selects among that schema's procedures by their own names: <c>include</c>,

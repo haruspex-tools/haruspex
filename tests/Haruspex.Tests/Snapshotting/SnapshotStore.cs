@@ -3,9 +3,6 @@ using System.Text;
 
 namespace Haruspex.Tests.Snapshotting;
 
-/// <summary>The outcome of comparing a text with its verified snapshot.</summary>
-internal sealed record SnapshotOutcome(bool Passed, string Message);
-
 /// <summary>
 /// Compares text with a committed <c>name.verified.ext</c> file. See README.md in this folder for why this
 /// exists instead of a snapshot library.

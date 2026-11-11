@@ -6,23 +6,6 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-/// <summary>What inference found in one procedure.</summary>
-/// <param name="Parameters">Each declared parameter and its type.</param>
-/// <param name="Results">The result sets in order, or null when a statement makes them impossible to list.</param>
-/// <param name="ResultsUnknown">Why the results cannot be listed, when <paramref name="Results"/> is null.</param>
-/// <param name="Declared">The procedures whose declared results its results include, through its calls.</param>
-internal sealed record ProcedureAnalysis(
-    IReadOnlyList<ParameterShape> Parameters,
-    IReadOnlyList<ResultShape>? Results,
-    UnknownShape? ResultsUnknown,
-    IReadOnlyCollection<string> Declared);
-
-internal sealed record ParameterShape(string Name, Shape Type, bool HasDefault, bool IsOutput);
-
-/// <param name="AbsentBecause">Why the result can arrive with no value at all (see <see cref="IrResult"/>).</param>
-/// <param name="Cardinality">How many rows its query returns when it runs (see <see cref="IrResult.Cardinality"/>).</param>
-internal sealed record ResultShape(IrEncoding Encoding, Shape Shape, IReadOnlyList<IrNullReason> AbsentBecause, IrCardinality Cardinality = IrCardinality.Many);
-
 /// <summary>
 /// Infers the result sets of one procedure. Every construct it does not model becomes an
 /// <see cref="UnknownShape"/> with a reason, so what it does claim can be trusted.

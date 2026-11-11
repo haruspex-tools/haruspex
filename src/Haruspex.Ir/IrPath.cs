@@ -5,30 +5,6 @@ using System.Text.Json;
 
 namespace Haruspex.Ir;
 
-/// <summary>One step of a path into an object's results (see <see cref="IrPath"/>).</summary>
-public abstract record IrPathSegment;
-
-/// <summary>An object's key, or a top-level part such as <c>results</c>: <c>.key</c>, or <c>["a key"]</c> when not an identifier.</summary>
-public sealed record IrPathKey(string Key) : IrPathSegment;
-
-/// <summary>An array's items: <c>[]</c>.</summary>
-public sealed record IrPathItems : IrPathSegment;
-
-/// <summary>A record's values, whatever their key: <c>{}</c>.</summary>
-public sealed record IrPathValues : IrPathSegment;
-
-/// <summary>One position: a tuple's element, or one of an object's results: <c>[0]</c>.</summary>
-public sealed record IrPathIndex(int Index) : IrPathSegment;
-
-/// <summary>What JSON text parses to: <c>&lt;json&gt;</c>.</summary>
-public sealed record IrPathJson : IrPathSegment;
-
-/// <summary>
-/// The start of a path inside a type that several objects share, named by the database object it comes from:
-/// <c>&lt;bom.part_tree&gt;</c> for the node of a recursive function.
-/// </summary>
-public sealed record IrPathShared(string Owner) : IrPathSegment;
-
 /// <summary>
 /// The path syntax of the IR, used by unknowns, by the identity of types and by the config file's overrides, so all
 /// three write and read a place the same way: <c>results[0][].lines[].name</c>, <c>results[0].tags{}</c>,

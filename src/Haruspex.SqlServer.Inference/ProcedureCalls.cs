@@ -9,35 +9,6 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
-/// The result sets declared for a procedure whose results cannot be inferred from the project, in the IR's terms: what
-/// a call of it contributes to its caller. Inference takes them as given, as it takes the model; where they come from
-/// (the config file, in Haruspex.Config) is not its concern.
-/// </summary>
-/// <param name="Results">The result sets it returns, in order; none for a procedure declared to return none.</param>
-/// <param name="Types">The object types <paramref name="Results"/> refer to.</param>
-/// <param name="Why">Why the declaration holds, as given.</param>
-public sealed record DeclaredResults(IReadOnlyList<IrResult> Results, IReadOnlyDictionary<string, IrObjectType> Types, string Why);
-
-/// <summary>What a procedure's walk starts from, besides its own parameters and variables.</summary>
-/// <param name="Temps">The caller's temporary tables, which the callee reads and writes as its own until it creates one of a name.</param>
-/// <param name="Escapes">Whether to keep each state an error may leave the procedure from: the caller is inside a TRY.</param>
-/// <param name="Inserting">
-/// Whether the procedure runs under <c>INSERT … EXEC</c>, its result sets going into a table: FOR JSON fails there (13602)
-/// and so does another <c>INSERT … EXEC</c> (8164), both observed.
-/// </param>
-internal sealed record CallContext(ImmutableDictionary<string, TempTable> Temps, bool Escapes, bool Inserting, bool ReadUncommitted = false)
-{
-    public static CallContext Top { get; } = new(ImmutableDictionary.Create<string, TempTable>(StringComparer.OrdinalIgnoreCase), false, false);
-}
-
-/// <summary>What walking a procedure's body found.</summary>
-/// <param name="End">The state at its end, joined over the paths that return successfully; null when none does.</param>
-/// <param name="Escapes">The states an error may leave it from, when asked for (<see cref="CallContext.Escapes"/>).</param>
-/// <param name="Blocker">The statement that makes its results impossible to list, if any; then nothing else is known.</param>
-/// <param name="Declared">The procedures whose declared results it took, at any depth of calls.</param>
-internal sealed record Walked(FlowState? End, IReadOnlyList<FlowState> Escapes, UnknownShape? Blocker, ImmutableSortedSet<string> Declared);
-
-/// <summary>
 /// Follows <c>EXEC</c> into the procedures of the project. A callee is walked again at each call, from its caller's
 /// temporary tables at that point, so that what it reads of them and does to them is known; its parameters are its declared
 /// types, nullable, which holds for every call. Calls that form a cycle are solved as a fixed point. README.md in this

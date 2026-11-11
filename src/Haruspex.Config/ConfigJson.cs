@@ -1,53 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
-using Haruspex.Ir;
 
 namespace Haruspex.Config;
-
-// The config file as a tree that remembers where each value was written, so every error can name its line. JsonDocument
-// forgets positions, so the file is read token by token with Utf8JsonReader, which also reads comments and trailing
-// commas (JSONC, as tsconfig.json allows) without a dependency.
-
-/// <summary>A value in the config file, with where it starts.</summary>
-internal abstract record JsonValue(int Line, int Column);
-
-internal sealed record JsonObjectValue(IReadOnlyList<JsonMember> Members, int Line, int Column) : JsonValue(Line, Column);
-
-/// <param name="Line">Where the key is written.</param>
-internal sealed record JsonMember(string Name, JsonValue Value, int Line, int Column);
-
-internal sealed record JsonArrayValue(IReadOnlyList<JsonValue> Items, int Line, int Column) : JsonValue(Line, Column);
-
-internal sealed record JsonStringValue(string Value, int Line, int Column) : JsonValue(Line, Column);
-
-internal sealed record JsonOtherValue(JsonTokenType Kind, string Text, int Line, int Column) : JsonValue(Line, Column);
-
-/// <summary>How a place in the config file is written in problems: <c>schemas.sales.include[0]</c>, <c>procedures["sales.get_order"]</c>.</summary>
-internal static class ConfigPath
-{
-    public static string Child(string path, string key)
-    {
-        var segment = IrIdentifiers.IsIdentifier(key) ? key : "[\"" + JsonEncodedText.Encode(key, JavaScriptEncoder.UnsafeRelaxedJsonEscaping) + "\"]";
-        return path.Length == 0 || segment.StartsWith('[') ? path + segment : path + "." + segment;
-    }
-
-    public static string Index(string path, int index) => path + "[" + index.ToString(CultureInfo.InvariantCulture) + "]";
-}
-
-/// <summary>Text that is not JSON with comments, and where.</summary>
-[SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "Thrown and caught inside Config, always with a position.")]
-[SuppressMessage("Design", "CA1064:Exceptions should be public", Justification = "Thrown and caught inside Config; never part of its API.")]
-internal sealed class ConfigJsonException(string message, int line, int column, string path = "") : Exception(message)
-{
-    public string Path { get; } = path;
-
-    public int Line { get; } = line;
-
-    public int Column { get; } = column;
-}
 
 internal static class ConfigJson
 {
