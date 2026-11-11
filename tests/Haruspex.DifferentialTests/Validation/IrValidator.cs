@@ -523,7 +523,9 @@ public static partial class IrValidator
                     _ => i.Text.TrimEnd(' ').Equals(text.TrimEnd(' '), StringComparison.OrdinalIgnoreCase),
                 });
                 if (match is null)
+#pragma warning disable CA1308 // Lower case to write the match in a message, not to compare it.
                     return $"one of {string.Join(", ", strings.Items.Select(i => JsonSerializer.Serialize(i.Text)))} ({strings.Match.ToString().ToLowerInvariant()})";
+#pragma warning restore CA1308
                 edge("value " + match.Text);
             }
 
@@ -588,9 +590,11 @@ public static partial class IrValidator
         }
     }
 
+#pragma warning disable CA1308 // Lower case to write the kind in a message, not to compare it.
     private static string Name(IrScalar scalar) => scalar.Format is null
         ? scalar.Kind.ToString().ToLowerInvariant()
         : $"{scalar.Kind.ToString().ToLowerInvariant()} {scalar.Format}";
+#pragma warning restore CA1308
 
     private static (BigInteger Min, BigInteger Max)? IntegerRange(string? format) => format switch
     {
