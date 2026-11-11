@@ -51,8 +51,8 @@ public class CorpusFiguresTests
     public void Every_script_of_a_corpus_is_read_or_left_out_with_a_reason(string name)
     {
         var corpus = Corpus.All.Single(c => c.Name == name);
-        var all = Directory.EnumerateFiles(corpus.Directory, "*.sql", SearchOption.AllDirectories)
-            .Select(path => Path.GetRelativePath(corpus.Directory, path).Replace('\\', '/'))
+        var all = Directory.EnumerateFiles(corpus.ProjectFolder, "*.sql", SearchOption.AllDirectories)
+            .Select(path => Path.GetRelativePath(corpus.ProjectFolder, path).Replace('\\', '/'))
             .Order(StringComparer.Ordinal);
         var accounted = corpus.Scripts.Concat(corpus.LeftOut.SelectMany(o => o.Files)).Order(StringComparer.Ordinal);
 
@@ -66,11 +66,36 @@ public class CorpusFiguresTests
         // WideWorldImporters builds most scripts with QUOTED_IDENTIFIER off, and Sources parses with it on. The page says
         // that makes no difference here: no script has a double-quoted name, which is the only thing the setting changes.
         var quoted = Corpus.All
-            .SelectMany(c => c.Scripts.Select(s => Path.Combine(c.Directory, s)))
+            .SelectMany(c => c.Scripts.Select(s => Path.Combine(c.ProjectFolder, s)))
             .Where(path => QuotedNames(path) > 0)
             .ToList();
 
         Assert.Empty(quoted);
+    }
+
+    [Theory]
+    [MemberData(nameof(CorpusNames))]
+    public void The_procedure_rows_add_up_to_every_procedure(string name)
+    {
+        var f = CorpusFigures.Count(Runs.Value.Single(r => r.Corpus.Name == name).Document);
+
+        Assert.Equal(
+            f.Procedures,
+            f.ProceduresReturningFields + f.ProceduresWithUnknownResults + f.ProceduresWithUnlistedResults + f.ProceduresWithNoResults + f.ProceduresWithoutFields);
+    }
+
+    [Fact]
+    public void A_headline_says_how_many_procedures_it_cannot_describe()
+    {
+        var document = new IrDocument(
+            new IrSource("tsql"),
+            [Procedure("s.p", [Rowset("Row")]), Procedure("s.dynamic", null)],
+            new Dictionary<string, IrObjectType> { ["Row"] = new([Field("id", Int)]) },
+            []);
+
+        Assert.Equal(
+            "Typed 1 of 1 fields in Shop; the results of 1 of its 2 procedures can't be described, so they have no fields to count",
+            CorpusFiguresPage.Headline("Shop", CorpusFigures.Count(document)));
     }
 
     public static TheoryData<string> CorpusNames { get; } = [.. Corpus.All.Select(c => c.Name)];
@@ -108,6 +133,33 @@ public class CorpusFiguresTests
     }
 
     [Fact]
+    public void A_union_or_tuple_of_objects_is_not_a_field_unless_part_of_it_is_unknown()
+    {
+        var unknown = new IrUnknownType(IrUnknownReasons.UnsupportedQuery);
+        var document = new IrDocument(
+            new IrSource("tsql"),
+            [Procedure("s.p", [Rowset("Holder")])],
+            new Dictionary<string, IrObjectType>
+            {
+                ["Holder"] = new(
+                [
+                    Field("either", new IrUnion([new IrRef("A"), new IrRef("B")])),
+                    Field("pair", new IrTuple([new IrElement(new IrRef("A"), []), new IrElement(Int, [])])),
+                    Field("maybe", new IrUnion([new IrRef("A"), unknown])),
+                ]),
+                ["A"] = new([Field("a", Int)]),
+                ["B"] = new([Field("b", Int)]),
+            },
+            []);
+
+        var figures = CorpusFigures.Count(document);
+
+        // a, b, and "maybe", whose unknown part would otherwise go uncounted.
+        Assert.Equal((3, 2), (figures.Fields, figures.FieldsTyped));
+        Assert.Equal([new CorpusFigures.Reason(IrUnknownReasons.UnsupportedQuery, 1, 0, 0, 0)], figures.Unknowns);
+    }
+
+    [Fact]
     public void A_type_shared_by_two_results_is_counted_once()
     {
         var document = new IrDocument(
@@ -138,7 +190,7 @@ public class CorpusFiguresTests
     }
 
     [Fact]
-    public void Unlisted_and_wholly_unknown_results_are_counted_by_reason_and_not_as_fields()
+    public void Unlisted_and_unknown_results_are_counted_by_reason_and_not_as_fields()
     {
         var document = new IrDocument(
             new IrSource("tsql"),
@@ -153,7 +205,8 @@ public class CorpusFiguresTests
         var figures = CorpusFigures.Count(document);
 
         Assert.Equal((0, 0), (figures.Fields, figures.ProceduresReturningFields));
-        Assert.Equal((1, 1, 1), (figures.ProceduresWithUnlistedResults, figures.ResultsUnknown, figures.ProceduresWithNoResults));
+        Assert.Equal((1, 1, 1), (figures.ProceduresWithUnlistedResults, figures.ProceduresWithUnknownResults, figures.ProceduresWithNoResults));
+        Assert.Equal((1, 2), (figures.ResultsUnknown, figures.ProceduresNotDescribed));
         Assert.Equal(
             [new CorpusFigures.Reason(IrUnknownReasons.DynamicSql, 0, 0, 1, 0), new CorpusFigures.Reason(IrUnknownReasons.UnsupportedQuery, 0, 1, 0, 0)],
             figures.Unknowns);

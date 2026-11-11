@@ -13,11 +13,11 @@ Every procedure in every schema is inferred, with no config file, into IR versio
 
 ## How the figures are counted
 
-- **A field** is a leaf field of the IR's type table (`types`): a field whose value is not an object, that is, whose type, looking through arrays, records and JSON text, is not a reference to another type. A field that holds a tuple or a union is one field. Each named type is counted once, however many results share it.
+- **A field** is a leaf field of the IR's type table (`types`): a field whose value is not an object, that is, whose type, looking through arrays, records, JSON text, tuples and unions, reaches no reference to another type. The fields of the types it would reach are counted in those types. A field that holds an object and also something unknown (a union of a reference and an unknown, say) is counted as one unknown field, so that no unknown goes uncounted. Each named type is counted once, however many results share it.
 - **A typed field** has no unknown in its type. A field holding JSON text whose content isn't known counts as typed, since the IR claims it is a string holding JSON; how many there are is shown beside it.
-- **A procedure returns fields** when the types its results reach have at least one field. It is **fully typed** when every field they reach is typed and none of its results is unknown as a whole.
-- **A result unknown as a whole** has a type with no fields to count, because its shape is unknown (or is JSON text whose content isn't known).
-- **Unknowns by reason** count unknown fields by the reason in their type, results unknown as a whole, procedures whose results can't be listed, by the reason the IR's `unknowns` gives for their `results`, and parameters whose type is unknown. A field or parameter unknown for two reasons is counted under each.
+- **A result of unknown shape** has an unknown in its type outside the named types it refers to, or is JSON text whose content isn't known. A result whose whole shape is unknown has no fields, so it adds nothing to the fields counted: the procedures it leaves with no fields are counted apart, and the headline says how many procedures are not described at all.
+- **The procedures** fall into five rows that add up to all of them: those that return fields, those whose results have no fields because a result's shape is unknown, those whose results can't be listed (the IR's `results` is null), those that return no result set, and those whose known results have no fields. **Not described** are the second and third. A procedure that returns fields is **fully typed** when every field its results reach is typed and none of its results is of unknown shape.
+- **Unknowns by reason** count unknown fields by the reason in their type, results of unknown shape, procedures whose results can't be listed, by the reason the IR's `unknowns` gives for their `results`, and parameters whose type is unknown. A field or parameter unknown for two reasons is counted under each.
 
 ## AdventureWorks
 
@@ -31,18 +31,20 @@ One install script, `instawdb.sql`, written for sqlcmd: it names the database wi
 | Errors reading them | 0 |
 | Procedures | 10 |
 | Procedures that return fields | 5 |
-| Procedures fully typed | 2 |
-| Procedures that return no result set | 5 |
+| Procedures whose results have no fields, because a result's shape is unknown | 0 |
 | Procedures whose result sets can't be listed | 0 |
+| Procedures that return no result set | 5 |
+| Procedures whose known results have no fields | 0 |
+| Procedures that return fields, fully typed | 2 |
 | Fields | 38 |
 | Fields typed | 32 |
 | Fields typed as JSON text whose content isn't known | 0 |
 | Results | 5 |
-| Results unknown as a whole | 0 |
+| Results of unknown shape | 0 |
 
 ### Unknowns by reason
 
-| Reason | Fields | Results unknown as a whole | Procedures whose result sets can't be listed | Parameters |
+| Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
 | `unsupported-expression` | 2 | 0 | 0 | 0 |
 | `unsupported-source` | 4 | 0 | 0 | 0 |
@@ -54,7 +56,7 @@ None: every script is read.
 
 ## WideWorldImporters
 
-**Typed 170 of 175 fields in WideWorldImporters.** 25 of the 30 procedures that return fields are fully typed.
+**Typed 170 of 175 fields in WideWorldImporters; the results of 28 of its 129 procedures can't be described, so they have no fields to count.** 25 of the 30 procedures that return fields are fully typed.
 
 An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. Reading a project file isn't built yet, so the test reads the scripts the project lists to build, as a build would, and leaves out the others, listed below with the reason. The project builds most of its scripts with `QUOTED_IDENTIFIER` off, and they are parsed with it on; in these scripts every double quote is inside a string or a comment, where the setting changes nothing.
 
@@ -64,18 +66,20 @@ An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. Reading a projec
 | Errors reading them | 0 |
 | Procedures | 129 |
 | Procedures that return fields | 30 |
-| Procedures fully typed | 25 |
-| Procedures that return no result set | 71 |
+| Procedures whose results have no fields, because a result's shape is unknown | 5 |
 | Procedures whose result sets can't be listed | 23 |
+| Procedures that return no result set | 71 |
+| Procedures whose known results have no fields | 0 |
+| Procedures that return fields, fully typed | 25 |
 | Fields | 175 |
 | Fields typed | 170 |
 | Fields typed as JSON text whose content isn't known | 0 |
 | Results | 35 |
-| Results unknown as a whole | 5 |
+| Results of unknown shape | 5 |
 
 ### Unknowns by reason
 
-| Reason | Fields | Results unknown as a whole | Procedures whose result sets can't be listed | Parameters |
+| Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
 | `dynamic-sql` | 0 | 0 | 18 | 0 |
 | `unsupported-query` | 0 | 5 | 0 | 0 |

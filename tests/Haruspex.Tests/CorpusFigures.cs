@@ -9,18 +9,24 @@ namespace Haruspex.Tests;
 /// <param name="Procedures">Procedures in the document.</param>
 /// <param name="ProceduresWithNoResults">Procedures proved to return no result set.</param>
 /// <param name="ProceduresWithUnlistedResults">Procedures whose result sets can't be listed (the IR's <c>results</c> is null).</param>
+/// <param name="ProceduresWithUnknownResults">
+/// Procedures whose results are listed, but have no fields to count because a result's shape is unknown.
+/// </param>
+/// <param name="ProceduresWithoutFields">Procedures whose results are known and have no fields (a single value, say).</param>
 /// <param name="ProceduresReturningFields">Procedures with at least one field in their results.</param>
-/// <param name="ProceduresFullyTyped">Of those, the ones with every field typed and no result unknown as a whole.</param>
+/// <param name="ProceduresFullyTyped">Of those, the ones with every field typed and no result of unknown shape.</param>
 /// <param name="Fields">Leaf fields in the type table.</param>
 /// <param name="FieldsTyped">Of those, the ones with no unknown in them.</param>
 /// <param name="FieldsOfJsonText">Of the typed ones, those that hold JSON text whose content isn't known.</param>
 /// <param name="Results">Result sets of the procedures whose results are listed.</param>
-/// <param name="ResultsUnknown">Of those, the ones unknown as a whole: no fields to count.</param>
+/// <param name="ResultsUnknown">Of those, the ones whose shape is unknown, outside the named types they refer to.</param>
 /// <param name="Unknowns">Everything unknown, by reason, in ordinal order of the reason.</param>
 internal sealed record CorpusFigures(
     int Procedures,
     int ProceduresWithNoResults,
     int ProceduresWithUnlistedResults,
+    int ProceduresWithUnknownResults,
+    int ProceduresWithoutFields,
     int ProceduresReturningFields,
     int ProceduresFullyTyped,
     int Fields,
@@ -33,17 +39,27 @@ internal sealed record CorpusFigures(
     /// <summary>The definition of each figure, as the figures page states it, in Markdown.</summary>
     public const string Definition =
         "- **A field** is a leaf field of the IR's type table (`types`): a field whose value is not an object, that is, whose " +
-        "type, looking through arrays, records and JSON text, is not a reference to another type. A field that holds a tuple or " +
-        "a union is one field. Each named type is counted once, however many results share it.\n" +
+        "type, looking through arrays, records, JSON text, tuples and unions, reaches no reference to another type. The fields " +
+        "of the types it would reach are counted in those types. A field that holds an object and also something unknown (a " +
+        "union of a reference and an unknown, say) is counted as one unknown field, so that no unknown goes uncounted. Each " +
+        "named type is counted once, however many results share it.\n" +
         "- **A typed field** has no unknown in its type. A field holding JSON text whose content isn't known counts as typed, " +
         "since the IR claims it is a string holding JSON; how many there are is shown beside it.\n" +
-        "- **A procedure returns fields** when the types its results reach have at least one field. It is **fully typed** when " +
-        "every field they reach is typed and none of its results is unknown as a whole.\n" +
-        "- **A result unknown as a whole** has a type with no fields to count, because its shape is unknown (or is JSON text " +
-        "whose content isn't known).\n" +
-        "- **Unknowns by reason** count unknown fields by the reason in their type, results unknown as a whole, procedures " +
+        "- **A result of unknown shape** has an unknown in its type outside the named types it refers to, or is JSON text " +
+        "whose content isn't known. A result whose whole shape is unknown has no fields, so it adds nothing to the fields " +
+        "counted: the procedures it leaves with no fields are counted apart, and the headline says how many procedures are " +
+        "not described at all.\n" +
+        "- **The procedures** fall into five rows that add up to all of them: those that return fields, those whose results " +
+        "have no fields because a result's shape is unknown, those whose results can't be listed (the IR's `results` is null), " +
+        "those that return no result set, and those whose known results have no fields. **Not described** are the second and " +
+        "third. A procedure that returns fields is **fully typed** when every field its results reach is typed and none of its " +
+        "results is of unknown shape.\n" +
+        "- **Unknowns by reason** count unknown fields by the reason in their type, results of unknown shape, procedures " +
         "whose results can't be listed, by the reason the IR's `unknowns` gives for their `results`, and parameters whose type " +
         "is unknown. A field or parameter unknown for two reasons is counted under each.";
+
+    /// <summary>Procedures haruspex can't describe at all: results that can't be listed, or with no known shape.</summary>
+    public int ProceduresNotDescribed => ProceduresWithUnlistedResults + ProceduresWithUnknownResults;
 
     /// <summary>The figures for a document.</summary>
     public static CorpusFigures Count(IrDocument document)
@@ -62,7 +78,7 @@ internal sealed record CorpusFigures(
         int fields = 0, typed = 0, jsonText = 0;
         foreach (var (name, type) in document.Types)
         {
-            foreach (var field in type.Fields.Where(f => !IsObject(f.Type)))
+            foreach (var field in type.Fields.Where(f => IsField(f.Type)))
             {
                 fields++;
                 var reasons = UnknownReasons(field.Type);
@@ -81,7 +97,7 @@ internal sealed record CorpusFigures(
             }
         }
 
-        int noResults = 0, unlisted = 0, returningFields = 0, fullyTyped = 0, results = 0, resultsUnknown = 0;
+        int noResults = 0, unlisted = 0, unknownResults = 0, withoutFields = 0, returningFields = 0, fullyTyped = 0, results = 0, resultsUnknown = 0;
         foreach (var procedure in document.Objects)
         {
             foreach (var parameter in procedure.Parameters)
@@ -100,35 +116,47 @@ internal sealed record CorpusFigures(
             }
 
             if (listed.Count == 0)
+            {
                 noResults++;
+                continue;
+            }
 
-            var wholeUnknown = false;
+            var unknownShape = false;
             foreach (var result in listed)
             {
                 results++;
-                if (IsObject(result.Type))
-                    continue;
                 var reasons = UnknownReasons(result.Type);
-                if (reasons.Count == 0 && !IsUnknownJsonText(result.Type))
+                if (reasons.Count == 0 && (HoldsObject(result.Type) || !IsUnknownJsonText(result.Type)))
                     continue;
                 resultsUnknown++;
-                wholeUnknown = true;
+                unknownShape = true;
                 foreach (var reason in reasons.DefaultIfEmpty(IrUnknownReasons.JsonShapeUnknown))
                     Add(reason, results: 1);
             }
 
             var reached = Reached(document, listed.Select(r => r.Type));
-            if (reached.Sum(name => document.Types[name].Fields.Count(f => !IsObject(f.Type))) == 0)
-                continue;
-            returningFields++;
-            if (!wholeUnknown && !reached.Overlaps(untypedTypes))
-                fullyTyped++;
+            if (reached.Sum(name => document.Types[name].Fields.Count(f => IsField(f.Type))) > 0)
+            {
+                returningFields++;
+                if (!unknownShape && !reached.Overlaps(untypedTypes))
+                    fullyTyped++;
+            }
+            else if (unknownShape)
+            {
+                unknownResults++;
+            }
+            else
+            {
+                withoutFields++;
+            }
         }
 
         return new CorpusFigures(
             document.Objects.Count,
             noResults,
             unlisted,
+            unknownResults,
+            withoutFields,
             returningFields,
             fullyTyped,
             fields,
@@ -139,13 +167,20 @@ internal sealed record CorpusFigures(
             [.. byReason.Values]);
     }
 
-    /// <summary>Whether a value is an object: a reference to a named type, through arrays, records and JSON text.</summary>
-    private static bool IsObject(IrType type) => type switch
+    /// <summary>Whether a field's value counts as a field: it reaches no named type, or it has an unknown of its own.</summary>
+    private static bool IsField(IrType type) => !HoldsObject(type) || UnknownReasons(type).Count > 0;
+
+    /// <summary>
+    /// Whether a value holds an object: a reference to a named type, through arrays, records, JSON text, tuples and unions.
+    /// </summary>
+    private static bool HoldsObject(IrType type) => type switch
     {
         IrRef => true,
-        IrArray array => IsObject(array.Items),
-        IrRecord record => IsObject(record.Values),
-        IrJsonText { Content: { } content } => IsObject(content),
+        IrArray array => HoldsObject(array.Items),
+        IrRecord record => HoldsObject(record.Values),
+        IrJsonText { Content: { } content } => HoldsObject(content),
+        IrTuple tuple => tuple.Items.Any(e => HoldsObject(e.Type)),
+        IrUnion union => union.Variants.Any(HoldsObject),
         _ => false,
     };
 

@@ -19,7 +19,7 @@ internal sealed record Corpus(string Name, string Folder, IReadOnlyList<string> 
     public static IReadOnlyList<Corpus> All { get; } = [AdventureWorks(), WideWorldImporters()];
 
     /// <summary>The project's folder on disk.</summary>
-    public string Directory => CorpusManifest.Current.PathOf(Folder);
+    public string ProjectFolder => CorpusManifest.Current.PathOf(Folder);
 
     /// <summary>
     /// Runs haruspex over the scripts read: every procedure in every schema, inferred with no config file. Names for
@@ -28,7 +28,7 @@ internal sealed record Corpus(string Name, string Folder, IReadOnlyList<string> 
     /// </summary>
     public CorpusRun Run()
     {
-        var read = SqlScriptFolder.Read(Directory, Scripts);
+        var read = SqlScriptFolder.Read(ProjectFolder, Scripts);
         var document = IrInference.Infer(read.Model, [.. read.Model.Procedures.Select(p => p.Name)]);
         return new CorpusRun(this, read.Diagnostics, document);
     }
@@ -57,7 +57,7 @@ internal sealed record Corpus(string Name, string Folder, IReadOnlyList<string> 
             .Where(e => e.Attribute("Include") is not null && e.Attribute("Include")!.Value.EndsWith(".sql", StringComparison.OrdinalIgnoreCase))
             .ToDictionary(e => e.Attribute("Include")!.Value.Replace('\\', '/'), e => e.Name.LocalName, StringComparer.Ordinal);
         var built = items.Where(i => i.Value == "Build").Select(i => i.Key).Order(StringComparer.Ordinal).ToList();
-        var others = System.IO.Directory.EnumerateFiles(root, "*.sql", SearchOption.AllDirectories)
+        var others = Directory.EnumerateFiles(root, "*.sql", SearchOption.AllDirectories)
             .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/'))
             .Where(path => !built.Contains(path, StringComparer.Ordinal))
             .Select(path => (Path: path, Item: items.GetValueOrDefault(path, "none")))

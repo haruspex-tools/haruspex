@@ -13,9 +13,18 @@ internal static class CorpusFiguresPage
     /// <summary>The page, relative to the repository's root.</summary>
     public const string Path = "docs/corpus-figures.md";
 
-    /// <summary>The sentence that states a corpus's main figure, which the style guide quotes for AdventureWorks.</summary>
-    public static string Headline(string corpus, CorpusFigures figures) =>
-        $"Typed {N(figures.FieldsTyped)} of {N(figures.Fields)} fields in {corpus}";
+    /// <summary>
+    /// The sentence that states a corpus's main figure, which the style guide quotes for AdventureWorks. The fields counted
+    /// leave out procedures haruspex can't describe at all, so the sentence says how many there are, when there are any:
+    /// a figure quoted alone must not read as more than it is.
+    /// </summary>
+    public static string Headline(string corpus, CorpusFigures figures)
+    {
+        var typed = $"Typed {N(figures.FieldsTyped)} of {N(figures.Fields)} fields in {corpus}";
+        return figures.ProceduresNotDescribed == 0
+            ? typed
+            : $"{typed}; the results of {N(figures.ProceduresNotDescribed)} of its {N(figures.Procedures)} procedures can't be described, so they have no fields to count";
+    }
 
     /// <summary>The page for these runs.</summary>
     public static string Render(CorpusManifest manifest, IReadOnlyList<CorpusRun> runs)
@@ -65,14 +74,16 @@ internal static class CorpusFiguresPage
             | Errors reading them | {N(run.Errors.Count)} |
             | Procedures | {N(f.Procedures)} |
             | Procedures that return fields | {N(f.ProceduresReturningFields)} |
-            | Procedures fully typed | {N(f.ProceduresFullyTyped)} |
-            | Procedures that return no result set | {N(f.ProceduresWithNoResults)} |
+            | Procedures whose results have no fields, because a result's shape is unknown | {N(f.ProceduresWithUnknownResults)} |
             | Procedures whose result sets can't be listed | {N(f.ProceduresWithUnlistedResults)} |
+            | Procedures that return no result set | {N(f.ProceduresWithNoResults)} |
+            | Procedures whose known results have no fields | {N(f.ProceduresWithoutFields)} |
+            | Procedures that return fields, fully typed | {N(f.ProceduresFullyTyped)} |
             | Fields | {N(f.Fields)} |
             | Fields typed | {N(f.FieldsTyped)} |
             | Fields typed as JSON text whose content isn't known | {N(f.FieldsOfJsonText)} |
             | Results | {N(f.Results)} |
-            | Results unknown as a whole | {N(f.ResultsUnknown)} |
+            | Results of unknown shape | {N(f.ResultsUnknown)} |
 
             """);
 
@@ -83,7 +94,7 @@ internal static class CorpusFiguresPage
         }
         else
         {
-            page.Append("| Reason | Fields | Results unknown as a whole | Procedures whose result sets can't be listed | Parameters |\n|---|---:|---:|---:|---:|\n");
+            page.Append("| Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |\n|---|---:|---:|---:|---:|\n");
             foreach (var reason in f.Unknowns)
                 page.Append(CultureInfo.InvariantCulture, $"| `{reason.Name}` | {N(reason.Fields)} | {N(reason.Results)} | {N(reason.Procedures)} | {N(reason.Parameters)} |\n");
         }
@@ -104,7 +115,7 @@ internal static class CorpusFiguresPage
 
         foreach (var group in corpus.LeftOut)
         {
-            var bytes = group.Files.Sum(file => new FileInfo(System.IO.Path.Combine(corpus.Directory, file)).Length);
+            var bytes = group.Files.Sum(file => new FileInfo(System.IO.Path.Combine(corpus.ProjectFolder, file)).Length);
             page.Append(CultureInfo.InvariantCulture, $"""
                 {group.Why}
 
