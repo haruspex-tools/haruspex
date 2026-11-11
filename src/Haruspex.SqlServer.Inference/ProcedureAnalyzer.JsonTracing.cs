@@ -194,7 +194,7 @@ internal sealed partial class ProcedureAnalyzer
 
         foreach (var (name, slot) in next.Json)
         {
-            if (!head.Json.TryGetValue(name, out var before) || before.Text() != slot.Text())
+            if (!head.Json.TryGetValue(name, out var before) || before != slot)
                 next = next.WithJson(name, JsonSlot.Text(Why(name)));
         }
 
@@ -205,9 +205,9 @@ internal sealed partial class ProcedureAnalyzer
             var columns = known.Columns.Select((c, i) =>
             {
                 var was = old.Columns[i];
-                if (c.Json is { } slot && slot.Text() != was.Json?.Text())
+                if (c.Json is { } slot && slot != was.Json)
                     c = c with { Json = JsonSlot.Text(Why($"{name}.{c.Name}")) };
-                if (c.Value.Shape is JsonTextShape && ShapeText.Of(c.Value) != ShapeText.Of(was.Value))
+                if (c.Value.Shape is JsonTextShape && c.Value != was.Value)
                     c = c with { Value = c.Value with { Shape = new JsonTextShape(Why($"{name}.{c.Name}")) } };
                 return c;
             }).ToList();

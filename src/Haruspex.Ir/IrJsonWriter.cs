@@ -309,19 +309,6 @@ public static class IrJsonWriter
     }
 
     /// <summary>
-    /// One type node as the document would write it. Two nodes that write the same text are the same type, which is
-    /// how a front end can tell that two variants of a union are one.
-    /// </summary>
-    public static string WriteType(IrType type)
-    {
-        ArgumentNullException.ThrowIfNull(type);
-        using var buffer = new MemoryStream();
-        using (var json = new Utf8JsonWriter(buffer, new JsonWriterOptions { Encoder = Options.Encoder }))
-            WriteType(json, type);
-        return Encoding.UTF8.GetString(buffer.ToArray());
-    }
-
-    /// <summary>
     /// The facets, each only when known, in a fixed order. Numbers (bounds, numeric values) are written as JSON
     /// numbers from their exact decimal text, so a reader that parses them as decimals loses nothing; one that
     /// parses doubles rounds them, as it would any JSON number.

@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Text;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 
@@ -9,7 +8,7 @@ namespace Haruspex.SqlServer.Inference;
 /// The state of a procedure at a point on its paths: each temporary table, each variable's value, and the result sets
 /// returned so far. Immutable, so a branch can start from the state before it and both branches' states can be joined.
 /// </summary>
-internal sealed class FlowState
+internal sealed class FlowState : IEquatable<FlowState>
 {
     private static readonly StringComparer Names = StringComparer.OrdinalIgnoreCase;
 
@@ -133,47 +132,21 @@ internal sealed class FlowState
         };
     }
 
-    /// <summary>The state as text, for a loop to tell when another pass changes nothing.</summary>
-    public string Text()
-    {
-        var text = new StringBuilder(TempsText());
-        text.Append(ReadUncommitted ? "uncommitted\n" : "");
-        foreach (var (name, value) in Variables.OrderBy(v => v.Key, StringComparer.Ordinal))
-            text.Append(name).Append('=').Append(ShapeText.Of(value)).Append('\n');
-        foreach (var (name, slot) in Json.OrderBy(v => v.Key, StringComparer.Ordinal))
-            text.Append(name).Append(':').Append(slot.Text()).Append('\n');
-        Results.Write(text);
-        return text.ToString();
-    }
+    /// <summary>
+    /// Whether two states are the same: the same tables, variables, traced JSON and results, by value. A loop stops when a
+    /// pass gives the state it started from.
+    /// </summary>
+    public bool Equals(FlowState? other) =>
+        other is not null
+        && (ReferenceEquals(this, other)
+            || (ReadUncommitted == other.ReadUncommitted
+                && ImmutableMaps.Equal(Temps, other.Temps)
+                && ImmutableMaps.Equal(Variables, other.Variables)
+                && ImmutableMaps.Equal(Json, other.Json)
+                && Results.Equals(other.Results)));
 
-    /// <summary>The temporary tables as text: what a callee starts from, so it keys a call's walk in a cache.</summary>
-    public string TempsText()
-    {
-        var text = new StringBuilder();
-        foreach (var (name, table) in Temps.OrderBy(t => t.Key, StringComparer.Ordinal))
-        {
-            text.Append(name).Append('=');
-            switch (table)
-            {
-                case AbsentTable absent:
-                    text.Append("absent@").Append(absent.At);
-                    break;
-                case UnknownTable unknown:
-                    text.Append("unknown:").Append(unknown.Why.Reason).Append('@').Append(unknown.Why.At);
-                    break;
-                case KnownTable known:
-                    foreach (var column in known.Columns)
-                    {
-                        text.Append(column.Name).Append(column.Identity switch { true => "+", false => "", null => "?" })
-                            .Append(column.Declaration is null ? ':' : '!').Append(ShapeText.Of(column.Value)).Append(column.Json?.Text()).Append(';');
-                    }
+    public override bool Equals(object? obj) => Equals(obj as FlowState);
 
-                    break;
-            }
-
-            text.Append('\n');
-        }
-
-        return text.ToString();
-    }
+    public override int GetHashCode() =>
+        HashCode.Combine(ReadUncommitted, ImmutableMaps.Hash(Temps), ImmutableMaps.Hash(Variables), ImmutableMaps.Hash(Json), Results);
 }

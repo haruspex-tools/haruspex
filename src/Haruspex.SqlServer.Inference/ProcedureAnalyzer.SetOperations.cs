@@ -168,7 +168,7 @@ internal sealed partial class ProcedureAnalyzer
         {
             var because = SetNulls(node, [.. columns.Select(c => IsNull(c) ? [new IrNullReason(IrNullRules.NullLiteral, c.At.ToString())] : c.Value.NullableBecause)]);
             var contents = output.Select(c => ((JsonTextShape)c.Value.Shape).Content).ToList();
-            var same = contents.Count > 0 && contents.All(x => x is not null && ShapeText.Of(x) == ShapeText.Of(contents[0]!));
+            var same = contents.Count > 0 && contents.All(x => x is not null && x == contents[0]);
             return new Value(new JsonTextShape(same ? contents[0] : null), because);
         }
 

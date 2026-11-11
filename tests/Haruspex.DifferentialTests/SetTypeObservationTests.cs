@@ -152,6 +152,17 @@ public class SetTypeObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_recursive_ctes_column_is_not_a_constant_even_when_every_member_is_one_literal()
+    {
+        // A CTE that does not recurse carries its literal column as a derived table does, counting the literal's own digits.
+        // One that recurses counts its type's 10, whatever its members are: its rows come from the recursion, and the server
+        // folds none of them to the literal.
+        Assert.Equal("decimal(38,37)", await Describe($"WITH c AS (SELECT 1 AS n) SELECT d3838 AS x FROM {Source} UNION ALL SELECT n FROM c"));
+        Assert.Equal("decimal(38,28)", await Describe($"WITH c AS (SELECT 1 AS n UNION ALL SELECT 1 FROM c WHERE 1 = 0) SELECT d3838 AS x FROM {Source} UNION ALL SELECT n FROM c"));
+        Assert.Equal("decimal(38,28)", await Describe($"WITH c AS (SELECT 12 AS n UNION ALL SELECT n + 1 FROM c WHERE n < 20) SELECT d3838 AS x FROM {Source} UNION ALL SELECT n FROM c"));
+    }
+
+    [Fact]
     public async Task A_cut_scale_rounds_but_never_overflows_since_the_integer_digits_are_kept()
     {
         // A query whose scale is cut has fewer integer digits than the column keeps (or it would not need cutting), so rounding

@@ -228,7 +228,7 @@ internal sealed partial class ProcedureAnalyzer
             c.Value.IsLiveJson ? new JsonTextShape(c.Value.Shape) : c.Value.Shape,
             IrPresence.Always,
             c.Value.NullableBecause));
-        return new ArrayShape(new ObjectShape([.. fields]));
+        return new ArrayShape(new ObjectShape([.. fields]), []);
     }
 
     // ---- FOR JSON -----------------------------------------------------------------------------------
@@ -303,7 +303,7 @@ internal sealed partial class ProcedureAnalyzer
         // rows are covered by AbsentBecause.
         if (options.Contains(JsonForClauseOptions.WithoutArrayWrapper))
             return shape;
-        return subquery ? new ArrayShape(shape, MinItems: 1, MaxItems: row.Rows == IrCardinality.Many ? null : 1) : new ArrayShape(shape);
+        return subquery ? new ArrayShape(shape, [], MinItems: 1, MaxItems: row.Rows == IrCardinality.Many ? null : 1) : new ArrayShape(shape, []);
     }
 
     private static UnknownShape KeyConflict(RowColumn column) =>
@@ -644,22 +644,23 @@ internal sealed partial class ProcedureAnalyzer
         var variants = Distinct(elements.Select(e => e.Shape));
         var present = elements.Count(e => e.NullableBecause.Count == 0);
         return new Value(
-            new ArrayShape(variants.Count == 1 ? variants[0] : new UnionShape([.. variants]), MinItems: present > 0 ? present : null, MaxItems: elements.Count),
+            new ArrayShape(variants.Count == 1 ? variants[0] : new UnionShape([.. variants]), [], MinItems: present > 0 ? present : null, MaxItems: elements.Count),
             [],
             IsLiveJson: true);
     }
 
     /// <summary>
-    /// The different shapes among <paramref name="shapes"/>, in order. Scalars are the same when the IR writes them the
-    /// same; any other shape is kept as it is, since telling two objects apart is not worth the risk of merging them.
+    /// The different shapes among <paramref name="shapes"/>, in order. Scalars are the same when they are equal (the same
+    /// kind, format, SQL type and facets); any other shape is kept as it is, since telling two objects apart is not worth the
+    /// risk of merging them.
     /// </summary>
     private static List<Shape> Distinct(IEnumerable<Shape> shapes)
     {
         var result = new List<Shape>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var seen = new HashSet<IrScalar>();
         foreach (var shape in shapes)
         {
-            if (shape is ScalarShape scalar && !seen.Add(IrJsonWriter.WriteType(scalar.Type)))
+            if (shape is ScalarShape scalar && !seen.Add(scalar.Type))
                 continue;
             result.Add(shape);
         }
@@ -679,7 +680,7 @@ internal sealed partial class ProcedureAnalyzer
         var value = InAggregate(() => Expression(call.Parameters[0], scope));
         var neverEmpty = nullOnNull || value.NullableBecause.Count == 0;
         return new Value(
-            new ArrayShape(value.Shape, nullOnNull ? value.NullableBecause : null, MinItems: neverEmpty ? 1 : null),
+            new ArrayShape(value.Shape, nullOnNull ? value.NullableBecause : [], MinItems: neverEmpty ? 1 : null),
             Aggregate(call),
             IsLiveJson: true);
     }

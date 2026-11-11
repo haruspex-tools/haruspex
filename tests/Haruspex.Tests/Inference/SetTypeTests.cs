@@ -125,6 +125,18 @@ public class SetTypeTests
     }
 
     [Fact]
+    public void A_recursive_ctes_column_counts_its_types_digits_even_when_every_member_is_one_literal()
+    {
+        // A_recursive_ctes_column_is_not_a_constant_even_when_every_member_is_one_literal. The recursive members read the
+        // column as it stands and give the same shape as the anchor's literal, but not a constant: the CTE's fixed point
+        // compares the values with their digits, so it takes one more pass and the column loses them.
+        static string Beside(string cte) => Typed(Procedure($"WITH {cte} SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT c.n FROM c;"));
+        Assert.Equal("decimal(38,37)", Beside("c AS (SELECT 1 AS n)"));
+        Assert.Equal("decimal(38,28)", Beside("c AS (SELECT 1 AS n UNION ALL SELECT 1 FROM c WHERE 1 = 0)"));
+        Assert.StartsWith("decimal(38,28)", Beside("c AS (SELECT 12 AS n UNION ALL SELECT n + 1 FROM c WHERE n < 20)"), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_bit_takes_the_other_type_and_overflows_only_a_decimal_of_places_only()
     {
         // A_bit_takes_the_other_types_and_a_string_the_number_date_or_uniqueidentifier_beside_it;

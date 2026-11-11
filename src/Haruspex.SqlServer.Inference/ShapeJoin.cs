@@ -18,8 +18,9 @@ internal static class ShapeJoin
     /// <param name="at">Where the two meet, for an unknown.</param>
     public static Value Either(Value a, Value b, SourceLocation at, string what)
     {
-        // Either one's constant digits may be counted (Value.Digits): the fewest of both, up to 10.
-        if (ShapeText.Of(a) == ShapeText.Of(b))
+        // The same value but for the digits a constant counts and why its JSON isn't known, which are not compared: either
+        // one's digits may be counted (Value.Digits), so the fewest of both, up to 10; the first one's why is kept.
+        if (a.Shape == b.Shape && a.NullableBecause == b.NullableBecause && a.IsLiveJson == b.IsLiveJson)
             return a.Digits == b.Digits ? a : a with { Digits = IntDigits.Foldable([a.Digits ?? new IntDigits(10, 10), b.Digits ?? new IntDigits(10, 10)]) };
 
         var because = Reasons(a.NullableBecause, b.NullableBecause);
@@ -45,7 +46,7 @@ internal static class ShapeJoin
 
         if (a.IsLiveJson == b.IsLiveJson && Scalars(a.Shape, b.Shape) is { } scalar)
             return new Value(scalar, because, a.IsLiveJson);
-        if (a.IsLiveJson == b.IsLiveJson && ShapeText.Of(a.Shape) == ShapeText.Of(b.Shape))
+        if (a.IsLiveJson == b.IsLiveJson && a.Shape == b.Shape)
             return new Value(a.Shape, because, a.IsLiveJson);
 
         var unknown = new UnknownShape(IrUnknownReasons.UnsupportedExpression, $"{what} holds values of different shapes on different paths, which are not joined yet.", at);
@@ -101,7 +102,7 @@ internal static class ShapeJoin
     /// </summary>
     public static Shape Content(Shape a, Shape b)
     {
-        if (ShapeText.Of(a) == ShapeText.Of(b))
+        if (a == b)
             return a;
         if (a is UnknownShape)
             return a;
@@ -140,7 +141,7 @@ internal static class ShapeJoin
 
     /// <summary>Whether two variants of a union join into one without a union: arrays and tuples, or the same shape.</summary>
     private static bool Mergeable(Shape a, Shape b) =>
-        (a is TupleShape or ArrayShape && b is TupleShape or ArrayShape) || ShapeText.Of(a) == ShapeText.Of(b)
+        (a is TupleShape or ArrayShape && b is TupleShape or ArrayShape) || a == b
         || (a is ObjectShape x && b is ObjectShape y && Objects(x, y) is not null)
         || (a is ScalarShape { Type: var s } && b is ScalarShape { Type: var t } && s.Kind == t.Kind && s.Format == t.Format && s.Sql == t.Sql);
 
@@ -169,7 +170,7 @@ internal static class ShapeJoin
         static (List<Shape> Items, List<IrNullReason> Nulls, int Min, int? Max) Of(Shape s) => s switch
         {
             TupleShape t => ([.. t.Items.Select(e => e.Type)], [.. t.Items.SelectMany(e => e.NullableBecause)], t.Items.Count, t.Items.Count),
-            ArrayShape r => ([r.Items], [.. r.ItemsNullableBecause ?? []], r.MinItems ?? 0, r.MaxItems),
+            ArrayShape r => ([r.Items], [.. r.ItemsNullableBecause], r.MinItems ?? 0, r.MaxItems),
             _ => throw new ArgumentOutOfRangeException(nameof(s)),
         };
 
@@ -181,7 +182,7 @@ internal static class ShapeJoin
         int? max = x.Max is { } p && y.Max is { } q ? Math.Max(p, q) : null;
 
         // Two empty tuples are the same shape, handled before; an empty one beside another empty has no items to type.
-        return new ArrayShape(items!, nulls.Count == 0 ? null : nulls, min == 0 ? null : min, max);
+        return new ArrayShape(items!, nulls, min == 0 ? null : min, max);
     }
 
     /// <summary>The reasons of both, each once, in order.</summary>

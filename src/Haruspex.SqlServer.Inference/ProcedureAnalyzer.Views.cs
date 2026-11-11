@@ -78,7 +78,7 @@ internal sealed partial class ProcedureAnalyzer
             }
 
             var first = column[0];
-            var same = column.All(v => v.IsLiveJson == first.IsLiveJson && ShapeText.Of(v.Shape) == ShapeText.Of(first.Shape));
+            var same = column.All(v => v.IsLiveJson == first.IsLiveJson && v.Shape == first.Shape);
             values.Add(same
                 ? first with { NullableBecause = column.Select(v => v.NullableBecause).Aggregate(ShapeJoin.Reasons) }
                 : Value.Unknown(Unsupported(

@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Text;
 using Haruspex.Diagnostics;
 
 namespace Haruspex.SqlServer.Inference;
@@ -11,7 +10,7 @@ namespace Haruspex.SqlServer.Inference;
 /// returned now lands at every position some path is at.
 /// The idea, and the alternatives, are in docs/internals/07-summaries-and-recursion.md.
 /// </summary>
-internal sealed class ResultTrack
+internal sealed class ResultTrack : IEquatable<ResultTrack>
 {
     private ResultTrack(ImmutableList<ImmutableList<Produced>> positions, ImmutableSortedSet<int> counts)
     {
@@ -29,13 +28,13 @@ internal sealed class ResultTrack
 
     public ResultTrack Append(ResultShape result, SourceLocation at)
     {
-        var produced = new Produced(result, at, Key(result, at));
+        var produced = new Produced(result, at);
         var positions = Positions;
         foreach (var count in Counts)
         {
             while (positions.Count <= count)
                 positions = positions.Add([]);
-            if (!positions[count].Any(p => p.Key == produced.Key))
+            if (!positions[count].Contains(produced))
                 positions = positions.SetItem(count, positions[count].Add(produced));
         }
 
@@ -59,7 +58,7 @@ internal sealed class ResultTrack
                     positions = positions.Add([]);
                 foreach (var produced in callee.Positions[i])
                 {
-                    if (!positions[count + i].Any(p => p.Key == produced.Key))
+                    if (!positions[count + i].Contains(produced))
                         positions = positions.SetItem(count + i, positions[count + i].Add(produced));
                 }
             }
@@ -83,7 +82,7 @@ internal sealed class ResultTrack
                 positions = positions.Add([]);
             foreach (var produced in other.Positions[i])
             {
-                if (!positions[i].Any(p => p.Key == produced.Key))
+                if (!positions[i].Contains(produced))
                     positions = positions.SetItem(i, positions[i].Add(produced));
             }
         }
@@ -91,19 +90,26 @@ internal sealed class ResultTrack
         return new ResultTrack(positions, Counts.Union(other.Counts));
     }
 
-    public void Write(StringBuilder text)
-    {
-        foreach (var position in Positions)
-            text.Append('[').AppendJoin(';', position.Select(p => p.Key)).Append(']');
-        text.Append('#').AppendJoin(',', Counts);
-    }
+    /// <summary>Whether two tracks hold the same results at each position, in the same order, and the same counts.</summary>
+    public bool Equals(ResultTrack? other) =>
+        other is not null
+        && (ReferenceEquals(this, other)
+            || (Counts.SetEquals(other.Counts) && Positions.Count == other.Positions.Count && Positions.Zip(other.Positions).All(p => p.First.SequenceEqual(p.Second))));
 
-    private static string Key(ResultShape result, SourceLocation at)
+    public override bool Equals(object? obj) => Equals(obj as ResultTrack);
+
+    public override int GetHashCode()
     {
-        var text = new StringBuilder();
-        text.Append(at).Append('|').Append(result.Encoding).Append('|').Append(ShapeText.Of(result.Shape)).Append('|');
-        foreach (var reason in result.AbsentBecause)
-            text.Append(reason.Rule).Append('@').Append(reason.At).Append(',');
-        return text.ToString();
+        var hash = new HashCode();
+        foreach (var position in Positions)
+        {
+            foreach (var produced in position)
+                hash.Add(produced);
+            hash.Add(-1);
+        }
+
+        foreach (var count in Counts)
+            hash.Add(count);
+        return hash.ToHashCode();
     }
 }

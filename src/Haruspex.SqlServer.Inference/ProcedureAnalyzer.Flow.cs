@@ -348,7 +348,7 @@ internal sealed partial class ProcedureAnalyzer
             // content is widened to unknown, naming the loop, and the loop settles.
             if (pass >= WidenAfter)
                 next = Widened(head, next, at);
-            if (next.Text() == head.Text())
+            if (next.Equals(head))
                 return new Outcome(FlowState.Join(head, body.Breaks, at), null, null);
             head = next;
         }
@@ -967,8 +967,11 @@ internal sealed partial class ProcedureAnalyzer
         }
 
         // The column types are the anchor's exactly (SQL Server refuses a recursive member of any other, error 240,
-        // observed), so only nullability, and the facets the members share, need a fixed point: the recursive members are
-        // read with the CTE as it stands, joined in, and read again until nothing changes. Each pass only joins upwards.
+        // observed), so only nullability, the facets the members share and whether a column is a constant need a fixed
+        // point: the recursive members are read with the CTE as it stands, joined in, and read again until the values,
+        // compared whole, don't change. Each pass only joins upwards. A recursive member's value is never a constant
+        // (observed: A_recursive_ctes_column_is_not_a_constant_even_when_every_member_is_one_literal), and the join drops
+        // the anchor's digits (Value.Digits), so even a member that gives the anchor's literal again takes one more pass.
         if (Relation(cte, Query((QuerySpecification)members[0], parent: null)) is not { } current)
             return Fails(IrUnknownReasons.UnsupportedQuery, "its anchor's columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
         for (var pass = 0; pass < MostPasses; pass++)
@@ -984,7 +987,7 @@ internal sealed partial class ProcedureAnalyzer
                     next[i] = ShapeJoin.Converted(next[i], row.Columns[i].Value, row.Columns[i].At, $"{name}.{current.Names![i]}");
             }
 
-            if (next.Select(ShapeText.Of).SequenceEqual(current.Values!.Select(ShapeText.Of), StringComparer.Ordinal))
+            if (next.SequenceEqual(current.Values!))
                 return current;
             current = current with { Values = [.. next] };
         }
@@ -1116,7 +1119,7 @@ internal sealed partial class ProcedureAnalyzer
             var shapes = new List<Shape>();
             foreach (var shape in produced.Select(p => p.Result.Shape))
             {
-                if (!shapes.Any(s => ShapeText.Of(s) == ShapeText.Of(shape)))
+                if (!shapes.Contains(shape))
                     shapes.Add(shape);
             }
 

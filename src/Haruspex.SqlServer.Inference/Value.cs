@@ -16,7 +16,8 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="Digits">
 /// For an <c>int</c> the server may treat as a constant, the integer digits it counts beside a decimal, when not the type's 10
 /// (observed: An_int_constant_counts_its_own_digits_beside_a_decimal): a literal its own, carried through a derived
-/// table, CTE or view column; a NULL cast to int 1; a CASE, IIF, CHOOSE, COALESCE or ISNULL that the server may fold to one
+/// table, view column or CTE that does not recurse (one that does is never a constant, observed:
+/// A_recursive_ctes_column_is_not_a_constant_even_when_every_member_is_one_literal); a NULL cast to int 1; a CASE, IIF, CHOOSE, COALESCE or ISNULL that the server may fold to one
 /// of its literals a range, from the fewest of them to 10. Null for anything else, which counts as its type.
 /// </param>
 /// <remarks>

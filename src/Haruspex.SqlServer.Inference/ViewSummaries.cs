@@ -16,7 +16,7 @@ internal sealed class ViewSummaries
     private readonly FunctionSummaries functions;
     private readonly Dictionary<(ObjectName, bool), LocalRelationValues> done = [];
     private readonly HashSet<ObjectName> reading = [];
-    private readonly Dictionary<string, LocalRelationValues> calls = new(StringComparer.Ordinal);
+    private readonly Dictionary<Reading, LocalRelationValues> calls = [];
 
     public ViewSummaries(DatabaseModel model, FunctionSummaries functions)
     {
@@ -35,7 +35,7 @@ internal sealed class ViewSummaries
     /// <param name="uncommitted">Whether it is read uncommitted (Cardinality.cs), so that no key of what it reads holds.</param>
     public LocalRelationValues Function(UserFunction function, IReadOnlyDictionary<string, Value> arguments, bool uncommitted)
     {
-        var key = (uncommitted ? "uncommitted " : "") + function.Name + "(" + string.Join(",", arguments.OrderBy(a => a.Key, StringComparer.OrdinalIgnoreCase).Select(a => a.Key + "=" + ShapeText.Of(a.Value))) + ")";
+        var key = new Reading(function.Name, uncommitted, [.. arguments.OrderBy(a => a.Key, StringComparer.OrdinalIgnoreCase)]);
         if (calls.TryGetValue(key, out var found))
             return found;
         if (!reading.Add(function.Name))
@@ -94,4 +94,10 @@ internal sealed class ViewSummaries
         done[(view.Name, uncommitted)] = found;
         return found;
     }
+
+    /// <summary>
+    /// One reading of a table-valued function: the function, whether it is read uncommitted, and each argument's value by
+    /// parameter name, in name order. Two calls with equal arguments, compared by value, read the same rows.
+    /// </summary>
+    private sealed record Reading(ObjectName Function, bool Uncommitted, EquatableArray<KeyValuePair<string, Value>> Arguments);
 }

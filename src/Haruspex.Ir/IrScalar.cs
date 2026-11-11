@@ -9,6 +9,16 @@ namespace Haruspex.Ir;
 /// </param>
 /// <param name="Facets">
 /// What the database guarantees about the value beyond its kind: lengths, digits, bounds and value sets, each with
-/// where it came from. Null when nothing more is known, which claims nothing.
+/// where it came from. Null when nothing more is known, which claims nothing; facets with nothing in them are kept as null.
 /// </param>
-public sealed record IrScalar(IrScalarKind Kind, string? Format, string? Sql, IrFacets? Facets = null) : IrType;
+public sealed record IrScalar(IrScalarKind Kind, string? Format, string? Sql, IrFacets? Facets = null) : IrType
+{
+    /// <summary>
+    /// What the database guarantees about the value beyond its kind, or null when nothing more is known. Empty facets
+    /// (<see cref="IrFacets.IsEmpty"/>) claim nothing too, and are stored as null, so that one claim has one form and two
+    /// scalars that claim the same are equal.
+    /// </summary>
+    public IrFacets? Facets { get; init => field = Claimed(value); } = Claimed(Facets);
+
+    private static IrFacets? Claimed(IrFacets? facets) => facets is { IsEmpty: true } ? null : facets;
+}

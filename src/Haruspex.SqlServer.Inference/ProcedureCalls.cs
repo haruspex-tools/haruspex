@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Text;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
@@ -66,7 +65,11 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
 
     /// <summary>The result sets assumed of each recursive procedure being solved; absent while it is assumed never to return.</summary>
     private readonly Dictionary<ObjectName, ResultTrack> assumed = [];
-    private readonly Dictionary<string, Walked> cache = new(StringComparer.Ordinal);
+    /// <summary>
+    /// Each walk that depends on nothing but its procedure and context (<see cref="Frame.Dependent"/>): a walk of the same
+    /// procedure from an equal context, its temporary tables compared by value, is the same walk.
+    /// </summary>
+    private readonly Dictionary<(ObjectName Procedure, CallContext Context), Walked> cache = [];
     private readonly Dictionary<ObjectName, ImmutableSortedSet<string>> writes = [];
 
     public DatabaseModel Model => model;
@@ -119,7 +122,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
 
         var joined = FlowState.Join(FlowState.Start([]).WithTemps(frame.Context.Temps), FlowState.Start([]).WithTemps(context.Temps), at)!.Temps;
         var wider = frame.Context with { Temps = joined, ReadUncommitted = frame.Context.ReadUncommitted || context.ReadUncommitted };
-        if (Key(callee.Name, wider) != Key(callee.Name, frame.Context))
+        if (!wider.Equals(frame.Context))
         {
             frame.Context = wider;
             frame.Widened = true;
@@ -141,8 +144,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
 
     private Walked Run(Procedure procedure, CallContext context)
     {
-        var key = Key(procedure.Name, context);
-        if (cache.TryGetValue(key, out var cached))
+        if (cache.TryGetValue((procedure.Name, context), out var cached))
             return cached;
 
         var frame = new Frame(procedure.Name, context);
@@ -157,7 +159,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
                 if (!frame.Recursive || walked.Blocker is not null)
                 {
                     if (!frame.Dependent)
-                        cache[key] = walked;
+                        cache[(procedure.Name, context)] = walked;
                     return walked;
                 }
 
@@ -172,10 +174,10 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
                     continue;
                 }
 
-                if (Text(track) == Text(before))
+                if (Equals(track, before))
                 {
                     if (!frame.Dependent)
-                        cache[key] = walked;
+                        cache[(procedure.Name, context)] = walked;
                     return walked;
                 }
 
@@ -301,49 +303,5 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
             if (name.BaseIdentifier.Value.StartsWith('#'))
                 Tables.Add(name.BaseIdentifier.Value);
         }
-    }
-
-    private static string Text(ResultTrack? track)
-    {
-        if (track is null)
-            return "never";
-        var text = new StringBuilder();
-        track.Write(text);
-        return text.ToString();
-    }
-
-    /// <summary>
-    /// What a walk of a procedure depends on besides its body: the temporary tables it starts from, in full (an unknown's
-    /// detail and a declared column's declaration included, since a later statement reads them), and the flags.
-    /// </summary>
-    private static string Key(ObjectName name, CallContext context)
-    {
-        var text = new StringBuilder();
-        text.Append(name).Append('|').Append(context.Escapes).Append('|').Append(context.Inserting).Append('|').Append(context.ReadUncommitted).Append('\n');
-        text.Append(FlowState.Start([]).WithTemps(context.Temps).TempsText());
-        foreach (var (table, state) in context.Temps.OrderBy(t => t.Key, StringComparer.Ordinal))
-        {
-            text.Append(table).Append(':');
-            switch (state)
-            {
-                case UnknownTable unknown:
-                    text.Append(unknown.Why.Detail);
-                    break;
-                case KnownTable known:
-                    foreach (var column in known.Columns.Where(c => c.Declaration is not null))
-                    {
-                        text.Append(column.Name).Append('@').Append(column.Declaration!.At).Append('[');
-                        foreach (var check in column.Declaration.Checks)
-                            text.Append(check).Append(check.DisabledAt is null ? '+' : '-').Append(',');
-                        text.Append(']');
-                    }
-
-                    break;
-            }
-
-            text.Append('\n');
-        }
-
-        return text.ToString();
     }
 }

@@ -47,8 +47,4 @@ internal sealed record JsonSlot(Shape? Content, UnknownShape? NotJson)
             return declared with { JsonWhy = why };
         return Content is { } content ? new Value(new JsonTextShape(content), declared.NullableBecause) : declared;
     }
-
-    /// <summary>The slot as text, for a loop's fixed point.</summary>
-    public string Text() =>
-        NotJson is { } why ? $"text@{why.At}" : Content is { } content ? $"json({ShapeText.Of(content)})" : "empty";
 }

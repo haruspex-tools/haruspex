@@ -145,7 +145,7 @@ internal sealed class FunctionSummaries
             {
                 assumed = current.ToDictionary(p => p.Key, p => Abstract(p.Key, p.Value));
                 var next = functions.ToDictionary(f => f.Name, f => Read(f));
-                settled = functions.All(f => ShapeText.Of(next[f.Name]) == ShapeText.Of(current[f.Name]));
+                settled = functions.All(f => next[f.Name] == current[f.Name]);
                 current = next;
             }
         }

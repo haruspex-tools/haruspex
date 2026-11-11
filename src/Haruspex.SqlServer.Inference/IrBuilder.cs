@@ -211,7 +211,7 @@ internal sealed class IrBuilder(FunctionSummaries functions)
     };
 
     private static IrArray Array(ArrayShape array, IrType items) =>
-        new(items) { ItemsNullableBecause = array.ItemsNullableBecause ?? [], MinItems = array.MinItems, MaxItems = array.MaxItems };
+        new(items) { ItemsNullableBecause = array.ItemsNullableBecause, MinItems = array.MinItems, MaxItems = array.MaxItems };
 
     /// <param name="key">The type's key, already reserved, or null to reserve one for its identity.</param>
     private IrRef Object(ObjectShape obj, Owner owner, string id, string path, string? key = null)
