@@ -1,4 +1,4 @@
-# The haruspex IR, version 0.15
+# Haruspex.Ir: the haruspex IR, version 0.15
 
 The intermediate representation is the product: front ends write it, emitters read it, and it is a file, so
 each side can be written in whatever language suits it. This page describes version 0.13. A JSON Schema for
