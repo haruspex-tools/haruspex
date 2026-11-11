@@ -298,8 +298,10 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// <list type="bullet">
     /// <item>integers, money and floats can always overflow, but a division or modulo by a literal of at least 1 neither
     /// divides by zero nor grows (the least int divided by -1 is why the literal must be positive);</item>
-    /// <item>decimals cannot overflow within 38 digits, nor <c>%</c> at all (its result is smaller than its divisor); a
-    /// division or modulo divides by zero unless the divisor is a literal other than 0. Capped past 38 digits, the result
+    /// <item>decimals cannot overflow within 38 digits, except that a bit beside decimal(p, p) becomes that type, which cannot
+    /// hold 1; a division or modulo divides by zero unless the divisor is a literal other than 0. <c>%</c> brings both
+    /// operands to its scale max(s1, s2) first, which overflows when max(p1 - s1, p2 - s2) + max(s1, s2) passes 38; its result,
+    /// smaller than either operand, cannot. Capped past 38 digits, the result
     /// overflows when the integer digits it may need exceed the 38 - scale it keeps: max(p1 - s1, p2 - s2) + 1 for + and -,
     /// (p1 - s1) + (p2 - s2) for *, p1 - s1 + s2 for / (p1 - s1 by a literal of at least 1). For * and / it may also when they
     /// are equal and the scale was cut, since rounding can carry into one more digit (observed: decimal(38,38) squared rounds
@@ -316,12 +318,24 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
             return !byPositive;
         if (op is '/' or '%' && divisor is null or 0)
             return true;
-        // Within 38 digits the precision holds every result, so only a capped one can overflow.
-        if (op == '%' || DecimalResult(op, l, r) is not var (_, scale, uncappedPrecision, uncappedScale) || uncappedPrecision <= 38)
-            return false;
+
+        // A bit becomes the decimal's own type, which cannot hold its 1 when every digit is a place (observed:
+        // A_bit_converted_to_a_decimal_of_places_only_overflows_when_it_is_1).
+        if ((left.Name == "bit" || right.Name == "bit") && l.IsDecimal && l.Precision == l.Scale)
+            return true;
 
         var (p1, s1) = l.AsDecimal();
         var (p2, s2) = r.AsDecimal();
+
+        // % first brings each operand to its scale, keeping its integer digits, which past 38 digits overflows (observed:
+        // Modulo_brings_both_operands_to_its_scale_first_which_can_overflow); its result, smaller than either, cannot.
+        if (op == '%')
+            return Math.Max(p1 - s1, p2 - s2) + Math.Max(s1, s2) > 38;
+
+        // Within 38 digits the precision holds every result, so only a capped one can overflow.
+        if (DecimalResult(op, l, r) is not var (_, scale, uncappedPrecision, uncappedScale) || uncappedPrecision <= 38)
+            return false;
+
         var needed = op switch
         {
             '+' or '-' => Math.Max(p1 - s1, p2 - s2) + 1,

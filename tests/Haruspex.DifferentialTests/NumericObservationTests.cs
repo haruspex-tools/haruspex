@@ -152,6 +152,34 @@ public class NumericObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task Modulo_brings_both_operands_to_its_scale_first_which_can_overflow()
+    {
+        // % converts each operand to the scale max(s1, s2) before dividing, keeping its own integer digits: past 38 digits that
+        // overflows (review round 1). decimal(38,0) % 1.0 needs 39, decimal(38,38) % 1 too, decimal(10,2) % decimal(38,31) 39;
+        // decimal(38,0) % 7, decimal(38,37) % 1 and decimal(10,2) % decimal(38,30) fit 38 and cannot.
+        Assert.Equal("8115 / null", await Both("CAST(99999999999999999999999999999999999999 AS decimal(38,0)) % 1.0"));
+        Assert.Equal("8115 / null", await Both("CAST(0.5 AS decimal(38,38)) % 1"));
+        Assert.Equal("8115 / null", await Both("CAST(0.5 AS decimal(38,37)) % 10"));
+        Assert.Equal("8115 / null", await Both("CAST(0.5 AS decimal(37,30)) % 2147483648"));
+        Assert.Equal("8115 / null", await Both("CAST(12345678 AS decimal(10,2)) % CAST(3 AS decimal(38,31))"));
+        Assert.Equal("1 / 1", await Both("CAST(99999999999999999999999999999999999999 AS decimal(38,0)) % 7"));
+        Assert.Equal("0.5000000000000000000000000000000000000 / 0.5000000000000000000000000000000000000", await Both("CAST(0.5 AS decimal(38,37)) % 1"));
+        Assert.Equal("0.000000000000000000000000000000 / 0.000000000000000000000000000000", await Both("CAST(12345678 AS decimal(10,2)) % CAST(3 AS decimal(38,30))"));
+    }
+
+    [Fact]
+    public async Task A_bit_converted_to_a_decimal_of_places_only_overflows_when_it_is_1()
+    {
+        // A bit beside decimal(p, s) becomes decimal(p, s), which cannot hold 1 when p = s (review round 1): 8115 by default, NULL
+        // under the caller's options. With an integer digit it fits.
+        Assert.Equal("8115 / null", await Both("CAST(0.5 AS decimal(9,9)) + CAST(1 AS bit)"));
+        Assert.Equal("8115 / null", await Both("CAST(1 AS bit) - CAST(0.5 AS decimal(9,9))"));
+        Assert.Equal("8115 / null", await Both("CAST(0.5 AS decimal(38,38)) * CAST(1 AS bit)"));
+        Assert.Equal("0.500000000 / 0.500000000", await Both("CAST(0.5 AS decimal(9,9)) + CAST(0 AS bit)"));
+        Assert.Equal("10.5000 / 10.5000", await Both("CAST(9.5 AS decimal(5,4)) + CAST(1 AS bit)"));
+    }
+
+    [Fact]
     public async Task Integer_and_money_division_overflow_only_at_the_least_value_divided_by_minus_one()
     {
         // The least int, smallint or money divided by -1 overflows; int's modulo by -1 too (money's does not). A division or

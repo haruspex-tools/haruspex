@@ -10,6 +10,8 @@ export const LineWindowsRowSchema = z.object({
   varp_score: z.number().nullable(),
   var_units_before: z.number().nullable(),
   avg_delta_after: z.int32().nullable(),
+  avg_price_after: z.number().multipleOf(1e-6).nullable() /* the mssql driver may round decimal(38,6) past its bounds, so they are not checked in a row */,
+  sdp_units_after: z.number().nullable(),
 })
 export type LineWindowsRow = z.infer<typeof LineWindowsRowSchema>
 

@@ -114,7 +114,7 @@
           "nullableBecause": [
             {
               "rule": "arithmetic-overflow",
-              "at": "procedures/line_windows.sql:6:8"
+              "at": "procedures/line_windows.sql:7:8"
             }
           ]
         },
@@ -130,7 +130,7 @@
           "nullableBecause": [
             {
               "rule": "too-few-values",
-              "at": "procedures/line_windows.sql:7:8"
+              "at": "procedures/line_windows.sql:8:8"
             }
           ]
         },
@@ -162,11 +162,11 @@
           "nullableBecause": [
             {
               "rule": "too-few-values",
-              "at": "procedures/line_windows.sql:9:8"
+              "at": "procedures/line_windows.sql:10:8"
             },
             {
               "rule": "empty-frame",
-              "at": "procedures/line_windows.sql:9:8"
+              "at": "procedures/line_windows.sql:10:8"
             }
           ]
         },
@@ -200,11 +200,64 @@
             },
             {
               "rule": "arithmetic-overflow",
-              "at": "procedures/line_windows.sql:10:8"
+              "at": "procedures/line_windows.sql:11:8"
             },
             {
               "rule": "empty-frame",
-              "at": "procedures/line_windows.sql:10:8"
+              "at": "procedures/line_windows.sql:11:8"
+            }
+          ]
+        },
+        {
+          "name": "avg_price_after",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,6)",
+            "digits": {
+              "precision": 38,
+              "scale": 6,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999999999.999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999999999.999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,6)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-frame",
+              "at": "procedures/line_windows.sql:12:8"
+            }
+          ]
+        },
+        {
+          "name": "sdp_units_after",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-frame",
+              "at": "procedures/line_windows.sql:13:8"
             }
           ]
         }

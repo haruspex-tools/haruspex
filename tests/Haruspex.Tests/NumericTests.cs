@@ -129,7 +129,7 @@ public class NumericTests
             g: int arithmetic-overflow
             h: money arithmetic-overflow
             k: float arithmetic-overflow
-            l: decimal(38,37)
+            l: decimal(38,37) arithmetic-overflow
             n: unknown
             o: unknown
             q: unknown
@@ -139,6 +139,37 @@ public class NumericTests
                        bt + bt AS n, f % 2 AS o, d % f AS q
                 FROM dbo.t;
                 """));
+    }
+
+    [Fact]
+    public void Modulo_overflows_where_an_operand_brought_to_its_scale_passes_38_digits()
+    {
+        // Modulo_brings_both_operands_to_its_scale_first_which_can_overflow (review round 1).
+        Assert.Equal(
+            """
+            a: numeric(2,1) arithmetic-overflow
+            b: decimal(1,0)
+            c: decimal(38,38) arithmetic-overflow
+            e: decimal(5,5)
+            g: numeric(38,38) arithmetic-overflow
+            """,
+            Typed("SELECT d380 % 1.0 a, d380 % 7 b, d3838 % 1 c, d55 % 1 e, d3838 % 7.5 g FROM dbo.t;"));
+    }
+
+    [Fact]
+    public void A_bit_beside_a_decimal_of_places_only_may_overflow()
+    {
+        // A_bit_converted_to_a_decimal_of_places_only_overflows_when_it_is_1 (review round 1).
+        Assert.Equal(
+            """
+            a: decimal(6,5) arithmetic-overflow
+            b: decimal(6,5) arithmetic-overflow
+            c: decimal(11,10) arithmetic-overflow
+            e: decimal(38,37) arithmetic-overflow
+            g: decimal(11,2)
+            h: decimal(9,4)
+            """,
+            Typed("SELECT d55 + bt a, bt - d55 b, d55 * bt c, d3838 * bt e, d + bt g, d42 * bt h FROM dbo.t;"));
     }
 
     // ---- AVG and the statistical aggregates ---------------------------------------------------------------------------

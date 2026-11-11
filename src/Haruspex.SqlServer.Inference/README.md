@@ -479,7 +479,12 @@ operators, with no difference; that took 14 minutes, so the grid kept as a test 
   `Decimal_arithmetic_whose_integer_digits_fit_cannot_overflow_at_its_operands_extremes`,
   `Integer_and_money_division_overflow_only_at_the_least_value_divided_by_minus_one`). Each is an error by default (8115,
   8134) and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off, so `arithmetic-overflow` (6f's rule, which already
-  covered a division). A decimal result within 38 digits cannot overflow, nor a `%` (smaller than its divisor). A capped one
+  covered a division). A decimal result within 38 digits cannot overflow, with two exceptions found in review: a `bit` beside
+  `decimal(p,p)` becomes that type, which cannot hold 1
+  (`A_bit_converted_to_a_decimal_of_places_only_overflows_when_it_is_1`); and `%` first brings each operand to its scale
+  max(s1, s2), keeping its integer digits, which overflows when max(p1 − s1, p2 − s2) + max(s1, s2) passes 38
+  (`Modulo_brings_both_operands_to_its_scale_first_which_can_overflow`: `decimal(38,0) % 1.0`, `decimal(38,38) % 1`), though
+  its result, smaller than either operand, cannot. A capped one
   overflows when the integer digits it may need exceed the 38 − scale it keeps: max(p1 − s1, p2 − s2) + 1 for `+` and `-`,
   (p1 − s1) + (p2 − s2) for `*`, p1 − s1 + s2 for `/` (p1 − s1 when dividing by a literal of at least 1); for `*` and `/` also
   when they are equal and the scale was cut, since rounding can carry into one more digit (`decimal(38,38)` squared rounds
