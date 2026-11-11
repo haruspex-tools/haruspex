@@ -56,6 +56,10 @@ objects: see [docs/configuration.md](docs/configuration.md).
   procedure is in no source file, so haruspex cannot type it, and it says so.
 - **Anyone looking for an ORM.** Haruspex goes the other way: the database owns the interface, and the
   application's types are derived from it.
+- **Anyone who won't use code written by AI.** Haruspex is built by agentic engineering. AI coding
+  agents write and review each change, in small slices, and every rule is checked by observing a real SQL
+  Server. A person decides what is built and merges every change. If that rules it out for you, it's
+  better to know before you start.
 
 ## Licence
 
