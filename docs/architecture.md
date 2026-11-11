@@ -101,6 +101,7 @@ schema rules (`SchemaRules.IsNeverNull`, `ColumnFacts`) apply to it unchanged.
 `APPLY`, `CROSS JOIN` and `FULL OUTER JOIN` are bound: the binder gives an `APPLY`'s right side a scope of its left
 input's sources and records which side a source is on, and Inference supplies the relations, a view's read from its
 definition, as for derived tables. `RIGHT JOIN` is left unbound: binding it is easy, but what it means for nulls is not
-modelled, and binding it would change which unknowns are reported. A permanent table changed by `ALTER TABLE`, other than
-by adding or checking constraints, is reported with the reason `unsupported-source`, because which definition applies
-depends on the order the scripts run.
+modelled, and binding it would change which unknowns are reported. A permanent table changed by `ALTER TABLE` is reported with the reason `unsupported-source`, because which definition applies
+depends on the order the scripts run. The forms that can't make a column nullable, change its type, or add or remove one
+are the exceptions: adding a constraint, checking or disabling constraints, rebuilding, and switching triggers or change
+tracking (`SqlScriptFolder.OnlyTightens`).

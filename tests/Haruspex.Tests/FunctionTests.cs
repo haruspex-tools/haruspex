@@ -479,8 +479,8 @@ public class FunctionTests
         Assert.Equal("decimal(11,4)", Typed(doc, "a5"));
         Assert.Equal("numeric(19,4)", Typed(doc, "a6"));
 
-        // An int may not fit smallmoney, a bigint money: NULL under the caller's options (
-        // A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
+        // An int may not fit smallmoney, a bigint money: NULL under the caller's options
+        // (A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
         Assert.Equal("smallmoney arithmetic-overflow", Typed(doc, "a7"));
         Assert.Equal("money arithmetic-overflow", Typed(doc, "a8"));
         Assert.Equal("datetime2(3)", Typed(doc, "c1"));

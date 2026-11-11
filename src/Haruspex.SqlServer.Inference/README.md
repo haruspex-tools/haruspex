@@ -788,7 +788,7 @@ reads on it, and `FunctionSummaries.Uncommitted` reads scalar bodies so), so a `
 `maxItems` as the same subquery written in the procedure does. A recursive scalar function read uncommitted gives its declared
 type only, since its named node is the committed reading's; that claims less. The duplicate row itself is not observed (it
 needs another session splitting pages during the scan); Microsoft documents it, and dropping the claim only claims less. What
-is observed is how far the isolation level reaches
+is observed, in `ReadUncommittedObservationTests`, is how far the isolation level reaches
 (`A_procedures_isolation_level_holds_in_the_procedures_it_calls_and_ends_when_it_returns`): a procedure's callees run under it
 (`CallContext.ReadUncommitted`), and the caller's own level is back when the procedure that set another returns. A
 table-valued function takes no table hint, but one inside its body counts, as in a view. Other hints (`READCOMMITTED`,

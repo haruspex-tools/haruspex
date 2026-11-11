@@ -12,8 +12,8 @@ namespace Haruspex.SqlServer.Inference;
 /// </summary>
 /// <remarks>
 /// Which table and column a reference reads is the <see cref="Binder"/>'s job (Haruspex.SqlServer.Semantics);
-/// what that means for a value's shape and nullability is decided here. The two were once this one class, and were
-/// split so that lint, lineage and diff can bind without inferring.
+/// what that means for a value's shape and nullability is decided here. They are apart so
+/// that lint, lineage and diff can bind without inferring.
 /// </remarks>
 internal sealed partial class ProcedureAnalyzer
 {

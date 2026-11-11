@@ -24,8 +24,9 @@ on a real SQL Server:
   column's `NOT NULL`, a `CHECK`'s set of values or range, a string's length.
 - **Queries**: `SELECT` with inner, left, `FULL OUTER` and `CROSS` joins, `CROSS APPLY` and `OUTER APPLY`, derived
   tables, CTEs (recursive ones included), `VALUES` lists, views, `UNION`, `UNION ALL`, `INTERSECT` and `EXCEPT`, `TOP`,
-  subqueries, and `GROUP BY` with `ROLLUP`, `CUBE` and `GROUPING SETS`. Filters, keys and single-row queries refine what
-  is proved: `WHERE c IS NOT NULL` makes `c` never null, and a lookup by key returns at most one row.
+  subqueries, `GROUP BY` with `ROLLUP` and `GROUPING SETS`, and system-versioned tables read `FOR SYSTEM_TIME`. Filters,
+  keys and single-row queries refine what is proved: `WHERE c IS NOT NULL` makes `c` never null, and a lookup by key
+  returns at most one row.
 - **Expressions**, each typed as SQL Server types it: literals, `CAST` and `CONVERT` and their `TRY_` forms, arithmetic
   (decimal arithmetic to 38 digits included), `COALESCE`, `ISNULL`, `CASE`, `IIF`, `CHOOSE` and `NULLIF`, aggregates (`AVG`
   and the statistical ones included), window functions, and the common date, string and numeric functions, `JSON_VALUE`,
@@ -42,6 +43,8 @@ on a real SQL Server:
   `DELETE`, `ALTER`, `DROP`), table variables, variables, `IF`, `WHILE`, `TRY … CATCH`, `RETURN` and `THROW`; `EXEC` of
   the project's procedures and `INSERT … EXEC`, recursion included; writes to permanent tables (`INSERT`, `UPDATE`,
   `DELETE`, `MERGE`, `TRUNCATE`) with `OUTPUT`, and the triggers they fire; and cursors.
+- **Declared results**: where a procedure's results can't be inferred (dynamic SQL, say), the config file can declare them
+  as a JSON Schema; they stay checked at runtime, and flow into the results of the procedures that call it.
 - **Read uncommitted**: a `NOLOCK` hint, or `READ UNCOMMITTED` set in the project, withdraws the claim that a lookup by
   key returns at most one row.
 
@@ -65,8 +68,9 @@ working directory, so `haruspex generate` alone is enough:
 }
 ```
 
-It also holds per-schema exclusions and name prefixes, overrides of what was inferred (each still checked at runtime), naming rules and strict
-objects: see [docs/configuration.md](docs/configuration.md).
+It also holds per-schema exclusions and name prefixes, overrides of what was inferred (each still checked at runtime),
+results declared where they can't be inferred, naming rules and strict objects: see
+[docs/configuration.md](docs/configuration.md).
 
 ## Who it is not for
 
