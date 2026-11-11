@@ -4,6 +4,52 @@ The intermediate representation is the product: front ends write it, emitters re
 each side can be written in whatever language suits it. This page describes version 0.15. A JSON Schema for
 it will follow.
 
+## How data flows through it
+
+Inference builds an `IrDocument`; the config layer transforms it (overrides, names); `IrJsonWriter` writes it; emitters
+read it. Nothing in it is SQL Server's: the SQL type of a value is kept as text, for people and for emitters that want it.
+
+```mermaid
+flowchart LR
+    inference["Inference"] --> document["IrDocument"]
+    document --> objects["IrObject: IrParameter, IrResult"]
+    document --> types["named types: IrObjectType, IrField"]
+    types --> nodes["IrType nodes: IrScalar, IrArray, IrTuple, IrRecord, IrUnion, IrRef, IrJsonText, IrImport, IrUnknownType"]
+    document --> unknowns["IrUnknown: what could not be typed, and why"]
+    document --> overrides["IrOverride: claims a person made"]
+    document --> writer["IrJsonWriter"]
+    writer --> json["haruspex.ir.json"]
+    document --> emitters["emitters: Zod"]
+```
+
+## Example
+
+```csharp
+var document = IrInference.Infer(model, [new ObjectName("sales", "get_order")]);
+File.WriteAllText("haruspex.ir.json", IrJsonWriter.Write(document));
+```
+
+"Shape of a document", below, shows a document annotated; the guide's
+[first chapter](../../docs/internals/01-the-shape-of-the-problem.md) shows one whole, with an unknown.
+
+## What it guarantees
+
+- **Every claim holds for every execution.** A field with no `nullableBecause` is never null; a value set holds every value
+  the code can produce; a result without `mayBeAbsent` always arrives. The differential tests check each against SQL
+  Server's real output.
+- **Nothing is left out silently.** Whatever could not be typed is an `unknown` node in place and an entry in `unknowns`,
+  with a reason from a closed list, a sentence and a location.
+- **The format is closed.** An emitter that handles the nodes listed here handles every document of this version.
+- **The same input gives the same bytes**, on every machine ("Decisions", below).
+
+## What it deliberately doesn't do
+
+- **No SQL.** It depends on nothing, and knows no dialect; a second front end would write the same format.
+- **No JSON Schema.** It maps to JSON Schema without loss, but isn't it ([decision 0003](../../docs/decisions/0003-an-ir-of-its-own.md)).
+- **No reading back yet.** The writer is here; a reader, so that emitters can run from the file, is not.
+
+Its chapter of [the guide](../../docs/internals/README.md), *The IR as a contract*, is planned.
+
 ## Why not JSON Schema
 
 JSON Schema is an open validation language (`oneOf`, `allOf`, `if`/`then`, `$ref` anywhere), so every

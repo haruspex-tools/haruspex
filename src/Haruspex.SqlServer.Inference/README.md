@@ -1,7 +1,63 @@
-# Haruspex.SqlServer.Inference: statement flow and refinement
+# Haruspex.SqlServer.Inference
 
-How a procedure's statements are read in order, and what each construct inside them gives: calls ("Calls" below), what
-filters and single-row queries prove ("Refinement"), writes, triggers and cursors ("DML", "Triggers", "Cursors"), `APPLY`,
+Infers what each procedure returns, from its bound body, into the IR: every result set, every column and JSON key, its
+type, whether it may be null or absent, its facets, and how many rows it has. It is a dataflow analysis by abstract
+interpretation: each body is walked as SQL Server would run it, over descriptions of values rather than values, and
+anything not modelled is unknown, with a reason. The guide explains the ideas:
+[the shape of the problem](../../docs/internals/01-the-shape-of-the-problem.md) and
+[summaries and recursion](../../docs/internals/07-summaries-and-recursion.md); its chapters on abstract interpretation,
+values as a lattice, flow and fixed points, and the type system are planned.
+
+## How data flows through it
+
+```mermaid
+flowchart LR
+    model["DatabaseModel"] --> infer["IrInference.Infer"]
+    declared["DeclaredResults, from the config file"] --> infer
+    infer --> calls["ProcedureCalls: one walk per procedure and call context"]
+    calls --> walk["ProcedureAnalyzer: the statement walk"]
+    walk -->|binds names with| binder["Binder (Semantics)"]
+    walk -->|carries| state["FlowState: a Value per variable and column, ResultTrack"]
+    walk -->|asks| summaries["FunctionSummaries, ViewSummaries, DmlTriggers"]
+    walk -->|EXEC| calls
+    calls --> analysis["ProcedureAnalysis"]
+    analysis --> builder["IrBuilder"]
+    builder --> document["IrDocument"]
+```
+
+## Example
+
+```csharp
+var model = SqlScriptFolder.Read("path/to/database").Model;
+var warnings = new List<Diagnostic>();
+var document = IrInference.Infer(model, [new ObjectName("shop", "get_category")], warnings: warnings);
+```
+
+The guide's [first chapter](../../docs/internals/01-the-shape-of-the-problem.md) shows a procedure and what this gives for
+it, claim by claim.
+
+## What it guarantees
+
+- **Every claim holds for every execution**, under the rules below, each observed on SQL Server and named by its test.
+  What isn't proved is unknown, with a reason from `IrUnknownReasons`, never guessed
+  ([decision 0002](../../docs/decisions/0002-unknown-with-a-reason-never-a-guess.md)).
+- **Unknowns stay local.** An unmodelled expression makes its column unknown, not its row; only what can't be placed (a
+  result set of unknown shape) makes a procedure's results unknown.
+- **Anything new is unknown until modelled**, so teaching it a construct turns unknowns into claims and never makes an
+  existing claim wrong.
+- **The same model gives the same document.**
+
+## What it deliberately doesn't do
+
+- **No files, zips or XML.** It reads a model already built ([docs/architecture.md](../../docs/architecture.md)).
+- **No name resolution.** What a name in a body means is Semantics' answer; this layer decides what it holds.
+- **No names, no config file, no emitters.** Generated names are settled by Config, which also applies overrides to the
+  finished document; declared results are handed in as IR results; emitters read the IR.
+
+## The rules, construct by construct
+
+The rest of this page is the reference: how a procedure's statements are read in order, and what each construct inside
+them gives: calls ("Calls" below), what filters and single-row queries prove ("Refinement"), writes, triggers and cursors ("DML", "Triggers", "Cursors"), `APPLY`,
 `VALUES` lists and views ("APPLY", "Views"), expressions ("Expressions", "CASE, IIF, CHOOSE and NULLIF", "Built-in
 functions", "Window functions"), table-valued functions, set operations and the other joins, `OPENJSON`, and JSON built in
 the project and traced to where it is read. The walk is `ProcedureAnalyzer.Flow.cs`, with `FlowState.cs` (the state and
@@ -320,7 +376,8 @@ write fires them. A trigger disabled by `DISABLE TRIGGER` is still counted, whic
   INTO` return nothing (`Cursor_statements_and_fetch_into_return_nothing_and_fetch_without_into_returns_one_row`).
 - **`FETCH` without `INTO`** returns the row as a result set of one row at most, none past the end; but each carries
   `ROWSTAT`, a column the server marks hidden, which SqlClient lists among the columns and a driver that honours the flag
-  leaves out. Which keys the row has depends on the client, so the results are unknown, `hidden-column`. Inside a loop it
+  leaves out. Which keys the row has depends on the client, so the results are unknown, `hidden-column`
+  ([decision 0015](../../docs/decisions/0015-fetch-without-into-is-unknown.md)). Inside a loop it
   would be `varying-results` anyway.
 - **`FETCH … INTO`** assigns each variable, or leaves it as it was past the end
   (`Fetch_into_leaves_the_variables_as_they_were_past_the_end`), so each joins its value before with the cursor's column,
@@ -367,7 +424,8 @@ precision adds those before it, less leading zeros (`A_literals_type_is_its_own_
   a `SUM` past its type and a division by zero are errors by default, which fail the call, and NULL when the caller's session
   has `ANSI_WARNINGS` and `ARITHABORT` off
   (`An_overflow_is_an_error_by_default_and_null_under_the_callers_ansi_warnings_and_arithabort_off`). A procedure cannot stop
-  a caller doing that, so, as for `COUNT` ("Aggregates and scalar subqueries" below; decided 10 Nov 2026), each is nullable for it, unless the
+  a caller doing that, so, as for `COUNT` ("Aggregates and scalar subqueries" below, and
+[decision 0014](../../docs/decisions/0014-count-is-nullable.md)), each is nullable for it, unless the
   type rules below prove it cannot happen. `SET ANSI_WARNINGS ON` inside the procedure would make it an error again; that is
   not read, which only claims less. A conversion that **fails** for a value (`'abc'` as `int`, a date that does not exist, a
   GUID into a short string) is an error even then (`A_failed_conversion_is_an_error_even_under_ansi_warnings_and_arithabort_off`),
@@ -738,7 +796,8 @@ themselves: what a query proved is what its row holds.
 - `COUNT` and `COUNT_BIG` are `int` and `bigint`, 0 over no rows. `COUNT` overflows past 2,147,483,647 rows, which is an
   error by default but NULL under a caller's `ANSI_WARNINGS` and `ARITHABORT` off
   (`Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off`), and a procedure cannot
-  prevent it, so `COUNT` is nullable with `count-overflow`, and `COUNT_BIG` never null. A `HAVING` that compares the count
+  prevent it, so `COUNT` is nullable with `count-overflow`, and `COUNT_BIG` never null
+  ([decision 0014](../../docs/decisions/0014-count-is-nullable.md)). A `HAVING` that compares the count
   removes it.
 - `MIN` and `MAX` return one of their argument's values: its type and facets, null when the argument can be, and
   `empty-aggregate` without `GROUP BY` (`An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows`,
@@ -778,7 +837,7 @@ only when it is exactly one row (an aggregate without `GROUP BY`), never for an 
 its own `WHERE` fixes and the history repeats; a derived table, `VALUES` list or view of at most one row (for an `APPLY`'s right side, at most one per
 outer row) counts as fixed already.
 
-**Read uncommitted** (decided 10 Nov 2026). Under read
+**Read uncommitted** ([decision 0016](../../docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md)). Under read
 uncommitted a scan can return a row twice, or miss one, while pages split under it. So a source read with a `NOLOCK` or
 `READUNCOMMITTED` hint (`BoundSource.Uncommitted`; on a view the hint applies to every table under it), and every source of a
 statement after `SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED` on any path (`FlowState.ReadUncommitted`), is treated as
