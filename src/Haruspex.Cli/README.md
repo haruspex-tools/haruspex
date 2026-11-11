@@ -14,9 +14,15 @@ haruspex generate path/to/database --include 'sales.*' --out src/db
 
 `generate` writes `haruspex.ir.json` and `haruspex.zod.ts` to the output folder. The folder argument, `--include` and
 `--out` override the config file for one run, and `--config` names a config file instead of searching for one.
-Diagnostics go to standard error as `file:line:column: error: message`, which editors and CI annotate, and each
-unknown is reported with its reason and what would resolve it. Nothing is written when there is an error, so a failed
-run never leaves half an output behind.
+Diagnostics go to standard error as `file:line:column: error: message`, or `warning:`, which editors and CI annotate.
+A warning, such as a call whose results only a declaration in the config file could give, doesn't stop the run. A run
+that succeeds prints one line to standard output: how many procedures it typed and how many unknowns there are. The
+unknowns themselves are in the IR file's `unknowns`, each with its reason, a sentence saying why, and where it is; they
+aren't listed on the console.
+
+When the SQL, the command line or the config file has an error, nothing is written. Both outputs are made in memory
+before either is written, and then written one after the other, so only a failure to write (a full disk, a folder that
+can't be written to) can leave a new IR file beside a missing or older Zod file; the exit code is then 1.
 
 The exit codes are fixed, so scripts and CI can rely on them:
 

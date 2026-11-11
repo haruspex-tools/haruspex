@@ -16,16 +16,37 @@ never null. When something cannot be proved, haruspex says it is unknown and why
 **Pre-release.** The command line, the intermediate representation (IR) and the generated code will all
 change without notice. Do not depend on it yet.
 
-What works today: `CREATE TABLE` and `CREATE PROCEDURE` in a folder of `.sql` files; procedures whose
-result is a plain `SELECT` over tables, with inner and left joins; `FOR JSON PATH` with nested objects
-from dotted aliases, `WITHOUT_ARRAY_WRAPPER`, `INCLUDE_NULL_VALUES`, and nested arrays from correlated
-`FOR JSON` subqueries; the JSON constructors `json_object`, `json_array`, `json_arrayagg` and `json_objectagg`
-(SQL Server 2022 for the first two, 2025 or Azure SQL for the aggregates), alone, nested, inside `FOR JSON` and in
-correlated subqueries; the native `json` type; and scalar functions that return JSON, including functions that call
-themselves to build trees, which become recursive types (Zod getters); and procedures built from several statements:
-temporary tables (`CREATE TABLE #t`, `SELECT … INTO`, `INSERT`, `UPDATE`, `ALTER`, `DROP`), table variables, variables,
-`IF`, `WHILE`, `TRY … CATCH`, `RETURN` and `THROW`, and CTEs, recursive ones included. Anything else is reported as
-unknown, with a reason.
+What works today, each with an invented database in [`tests/fixtures`](tests/fixtures) that the differential tests run
+on a real SQL Server:
+
+- **The schema**, from a folder of `.sql` files: tables with their `CHECK` constraints, keys and unique indexes, views,
+  functions, procedures, DML triggers, synonyms and alias types. What the schema proves reaches the generated code: a
+  column's `NOT NULL`, a `CHECK`'s set of values or range, a string's length.
+- **Queries**: `SELECT` with inner, left, `FULL OUTER` and `CROSS` joins, `CROSS APPLY` and `OUTER APPLY`, derived
+  tables, CTEs (recursive ones included), `VALUES` lists, views, `UNION`, `UNION ALL`, `INTERSECT` and `EXCEPT`, `TOP`,
+  subqueries, and `GROUP BY` with `ROLLUP`, `CUBE` and `GROUPING SETS`. Filters, keys and single-row queries refine what
+  is proved: `WHERE c IS NOT NULL` makes `c` never null, and a lookup by key returns at most one row.
+- **Expressions**, each typed as SQL Server types it: literals, `CAST` and `CONVERT` and their `TRY_` forms, arithmetic
+  (decimal arithmetic to 38 digits included), `COALESCE`, `ISNULL`, `CASE`, `IIF`, `CHOOSE` and `NULLIF`, aggregates (`AVG`
+  and the statistical ones included), window functions, and the common date, string and numeric functions, `JSON_VALUE`,
+  `STRING_AGG` and `GENERATE_SERIES`.
+- **JSON**: `FOR JSON PATH` with nested objects from dotted aliases, `WITHOUT_ARRAY_WRAPPER`, `INCLUDE_NULL_VALUES` and
+  nested arrays from correlated subqueries; the constructors `json_object`, `json_array`, `json_arrayagg` and
+  `json_objectagg` (SQL Server 2022 for the first two, 2025 or Azure SQL for the aggregates); the native `json` type;
+  `OPENJSON`, with and without `WITH`; scalar functions that return JSON, including ones that call themselves to build
+  trees, which become recursive types (Zod getters); and JSON built in the project, traced through variables, tables,
+  functions and JSON literals to where it is read.
+- **Functions**: scalar functions, and inline and multi-statement table-valued functions read in `FROM`, a join or
+  `APPLY`.
+- **Procedures of several statements**: temporary tables (`CREATE TABLE #t`, `SELECT … INTO`, `INSERT`, `UPDATE`,
+  `DELETE`, `ALTER`, `DROP`), table variables, variables, `IF`, `WHILE`, `TRY … CATCH`, `RETURN` and `THROW`; `EXEC` of
+  the project's procedures and `INSERT … EXEC`, recursion included; writes to permanent tables (`INSERT`, `UPDATE`,
+  `DELETE`, `MERGE`, `TRUNCATE`) with `OUTPUT`, and the triggers they fire; and cursors.
+- **Read uncommitted**: a `NOLOCK` hint, or `READ UNCOMMITTED` set in the project, withdraws the claim that a lookup by
+  key returns at most one row.
+
+How each is read, and the observations each rule rests on, are in
+[the inference README](src/Haruspex.SqlServer.Inference/README.md). Anything else is reported as unknown, with a reason.
 
 ```sh
 haruspex generate path/to/database --include 'sales.*' --out src/db
