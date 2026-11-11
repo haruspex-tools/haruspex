@@ -11,4 +11,4 @@ namespace Haruspex.SqlServer.Inference;
 /// </param>
 /// <param name="NullableBecause">Why the body's result may be null (with <paramref name="Content"/>), such as FOR JSON over no rows.</param>
 /// <param name="NullOnNullInput">Whether it is declared <c>WITH RETURNS NULL ON NULL INPUT</c>.</param>
-internal sealed record FunctionReturn(Shape Declared, bool ReturnsJson, Shape? Content, IReadOnlyList<IrNullReason> NullableBecause, bool NullOnNullInput);
+internal sealed record FunctionReturn(Shape Declared, bool ReturnsJson, Shape? Content, EquatableArray<IrNullReason> NullableBecause, bool NullOnNullInput);

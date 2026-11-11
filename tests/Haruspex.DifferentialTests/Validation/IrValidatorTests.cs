@@ -22,7 +22,7 @@ public class IrValidatorTests
         new(
             new IrSource("tsql"),
             [new IrObject("dbo.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [result])],
-            types.ToDictionary(t => t.Name, t => new IrObjectType(t.Fields)),
+            types.ToDictionary(t => t.Name, t => new IrObjectType([.. t.Fields])),
             []);
 
     private static IrResult JsonResult(IrType type, bool mayBeAbsent = true) =>
@@ -234,7 +234,7 @@ public class IrValidatorTests
     private static readonly IrNullReason NotRun = new(IrNullRules.NotRun, "p.sql:2:1");
 
     private static IrDocument Results(params IrResult[] results) =>
-        new(new IrSource("tsql"), [new IrObject("dbo.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], results)], new Dictionary<string, IrObjectType> { ["Row"] = new([]) }, []);
+        new(new IrSource("tsql"), [new IrObject("dbo.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [.. results])], new Dictionary<string, IrObjectType> { ["Row"] = new([]) }, []);
 
     [Fact]
     public void Trailing_results_that_may_not_run_may_be_missing_and_are_then_absent()

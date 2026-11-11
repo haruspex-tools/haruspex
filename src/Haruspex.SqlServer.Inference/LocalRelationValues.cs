@@ -6,7 +6,7 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="Names">The columns' names; null when not known.</param>
 /// <param name="Values">What each holds, by position; null when not known.</param>
 /// <param name="Why">Why they are not known.</param>
-internal sealed record LocalRelationValues(IReadOnlyList<string>? Names, IReadOnlyList<Value>? Values, UnknownShape? Why)
+internal sealed record LocalRelationValues(EquatableArray<string>? Names, EquatableArray<Value>? Values, UnknownShape? Why)
 {
     public static LocalRelationValues Unknown(UnknownShape why) => new(null, null, why);
 
@@ -23,5 +23,5 @@ internal sealed record LocalRelationValues(IReadOnlyList<string>? Names, IReadOn
     public bool AtLeastOne { get; init; }
 
     /// <summary>Its unique keys, which only a view has here (see <see cref="ProcedureAnalyzer"/>'s <c>ViewKeys</c>).</summary>
-    public IReadOnlyList<RelationKey> Keys { get; init; } = [];
+    public EquatableArray<RelationKey> Keys { get; init; } = [];
 }

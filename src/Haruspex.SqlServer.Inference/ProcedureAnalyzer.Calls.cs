@@ -287,7 +287,7 @@ internal sealed partial class ProcedureAnalyzer
         return state;
 
         // Assign keeps the variable's declared type, which the value is converted to; only why it may be null is taken.
-        Value Nulls(string name, IReadOnlyList<IrNullReason> because) =>
+        Value Nulls(string name, EquatableArray<IrNullReason> because) =>
             new(variableShapes.TryGetValue(name, out var shape) ? shape : new NeverShape(at), because);
     }
 

@@ -13,4 +13,4 @@ namespace Haruspex.Config;
 /// </param>
 /// <param name="Why">Why the declaration holds.</param>
 /// <param name="At">Where <c>results</c> is written.</param>
-public sealed record ResultsDeclaration(IReadOnlyList<IrResult> Results, IReadOnlyDictionary<string, IrObjectType> Types, string Why, ConfigLocation At);
+public sealed record ResultsDeclaration(EquatableArray<IrResult> Results, IReadOnlyDictionary<string, IrObjectType> Types, string Why, ConfigLocation At);

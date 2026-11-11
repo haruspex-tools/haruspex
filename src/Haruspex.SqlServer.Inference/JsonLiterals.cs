@@ -94,7 +94,7 @@ internal static class JsonLiterals
                     fields.Add(new FieldShape(property.Name, type, IrPresence.Always, Null(property.Value, at)));
                 }
 
-                return new ObjectShape(fields);
+                return new ObjectShape([.. fields]);
             case JsonValueKind.Array:
                 var items = new List<ElementShape>();
                 foreach (var item in element.EnumerateArray())
@@ -104,7 +104,7 @@ internal static class JsonLiterals
                     items.Add(new ElementShape(type, Null(item, at)));
                 }
 
-                return new TupleShape(items);
+                return new TupleShape([.. items]);
             case JsonValueKind.String:
                 var text = element.GetString()!;
                 if (!national && !Ascii(text))
@@ -137,7 +137,7 @@ internal static class JsonLiterals
         }
     }
 
-    private static IReadOnlyList<IrNullReason> Null(JsonElement element, SourceLocation at) =>
+    private static EquatableArray<IrNullReason> Null(JsonElement element, SourceLocation at) =>
         element.ValueKind == JsonValueKind.Null ? [new IrNullReason(IrNullRules.NullLiteral, at.ToString())] : [];
 
     private static ScalarShape Scalar(IrScalarKind kind, IrValue value, SourceLocation at) =>

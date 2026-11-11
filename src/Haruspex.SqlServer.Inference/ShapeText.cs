@@ -114,7 +114,7 @@ internal static class ShapeText
         }
     }
 
-    private static void Reasons(StringBuilder text, IReadOnlyList<IrNullReason> reasons)
+    private static void Reasons(StringBuilder text, EquatableArray<IrNullReason> reasons)
     {
         text.Append('[');
         foreach (var reason in reasons)

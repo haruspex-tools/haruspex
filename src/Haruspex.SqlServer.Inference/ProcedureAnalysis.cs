@@ -1,3 +1,5 @@
+using Haruspex.Ir;
+
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>What inference found in one procedure.</summary>
@@ -6,7 +8,7 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="ResultsUnknown">Why the results cannot be listed, when <paramref name="Results"/> is null.</param>
 /// <param name="Declared">The procedures whose declared results its results include, through its calls.</param>
 internal sealed record ProcedureAnalysis(
-    IReadOnlyList<ParameterShape> Parameters,
-    IReadOnlyList<ResultShape>? Results,
+    EquatableArray<ParameterShape> Parameters,
+    EquatableArray<ResultShape>? Results,
     UnknownShape? ResultsUnknown,
     IReadOnlyCollection<string> Declared);

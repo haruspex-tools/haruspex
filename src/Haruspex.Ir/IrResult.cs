@@ -8,7 +8,7 @@ namespace Haruspex.Ir;
 /// returns no row, not an empty array or object. Readers follow one convention, stated in README.md: an
 /// absent array result reads as <c>[]</c>, and any other absent result as <c>null</c>.
 /// </param>
-public sealed record IrResult(IrEncoding Encoding, IrType Type, IReadOnlyList<IrNullReason> AbsentBecause)
+public sealed record IrResult(IrEncoding Encoding, IrType Type, EquatableArray<IrNullReason> AbsentBecause)
 {
     /// <summary>Whether the result can arrive with no value at all, which <see cref="AbsentBecause"/> explains.</summary>
     public bool MayBeAbsent => AbsentBecause.Count > 0;

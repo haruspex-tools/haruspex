@@ -147,7 +147,7 @@ public static class ConfigApplication
         }
 
         var settler = new NameSettler(config, types, procedureNames, applier.Names, problems);
-        var named = problems.Any(p => p.Severity == ConfigSeverity.Error) ? null : settler.Settle(document with { Unknowns = unknowns }, results);
+        var named = problems.Any(p => p.Severity == ConfigSeverity.Error) ? null : settler.Settle(document with { Unknowns = [.. unknowns] }, results);
         return new ConfigApplied(named is null ? null : named with { Overrides = [.. document.Overrides, .. claims] }, problems);
 
         // A declaration of results haruspex infers: an error if they differ, a warning if not (it can go).
@@ -186,7 +186,7 @@ public static class ConfigApplication
     /// A declaration's results for the procedure <paramref name="id"/>, its types added to <paramref name="types"/> under keys
     /// of that procedure (the declaration's own keys were made from the config file's spelling of its name).
     /// </summary>
-    private static List<IrResult> Declared(ResultsDeclaration declaration, string id, Dictionary<string, IrObjectType> types)
+    private static EquatableArray<IrResult> Declared(ResultsDeclaration declaration, string id, Dictionary<string, IrObjectType> types)
     {
         var keys = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (key, type) in declaration.Types)

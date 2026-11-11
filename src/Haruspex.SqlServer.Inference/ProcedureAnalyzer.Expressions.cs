@@ -90,7 +90,7 @@ internal sealed partial class ProcedureAnalyzer
         return e is Literal literal ? (literal, negative) : null;
     }
 
-    private Value Typed(ScalarType type, IReadOnlyList<IrNullReason> because, TSqlFragment at) =>
+    private Value Typed(ScalarType type, EquatableArray<IrNullReason> because, TSqlFragment at) =>
         new(SqlTypes.ToConvertedShape(model, type.ToSqlType(), At(at)), because);
 
     private IrNullReason Overflow(TSqlFragment at) => new(IrNullRules.ArithmeticOverflow, At(at).ToString());
@@ -109,7 +109,7 @@ internal sealed partial class ProcedureAnalyzer
     /// ANSI_WARNINGS and ARITHABORT off (observed: A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options);
     /// empty when it cannot (<see cref="ScalarType.NeverNull"/>, or a literal that fits).</param>
     /// <param name="Why">When the type is not known, why, naming the types so a user knows what to change.</param>
-    private sealed record CombinedType(ScalarType? Type, IReadOnlyList<IReadOnlyList<IrNullReason>> Overflows, string? Why);
+    private sealed record CombinedType(ScalarType? Type, IReadOnlyList<EquatableArray<IrNullReason>> Overflows, string? Why);
 
     /// <param name="values">Each value, the expression it came from (for a literal's digits and value), and where an overflow
     /// converting it would happen.</param>
@@ -150,7 +150,7 @@ internal sealed partial class ProcedureAnalyzer
         {
             var fits = (LiteralOf(v.Expression) is ({ } literal, var negative) ? ScalarType.Fits(literal, type, negative) : null)
                 ?? ScalarType.NeverNull(known[i], type);
-            return fits ? (IReadOnlyList<IrNullReason>)[] : [new IrNullReason(IrNullRules.ArithmeticOverflow, v.At.ToString())];
+            return fits ? (EquatableArray<IrNullReason>)[] : [new IrNullReason(IrNullRules.ArithmeticOverflow, v.At.ToString())];
         }).ToList();
         return new CombinedType(type, overflows, null);
     }
@@ -177,8 +177,8 @@ internal sealed partial class ProcedureAnalyzer
         var because = first < 0
             ? values.Select(v => v.NullableBecause).Aggregate(ShapeJoin.Reasons)
             : values.Take(first).Select((v, i) => i).Where(i => ReadTwice(arguments[i]))
-                .Select(i => (IReadOnlyList<IrNullReason>)[new IrNullReason(IrNullRules.ReadTwice, At(arguments[i]).ToString())])
-                .Aggregate((IReadOnlyList<IrNullReason>)[], ShapeJoin.Reasons);
+                .Select(i => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRules.ReadTwice, At(arguments[i]).ToString())])
+                .Aggregate((EquatableArray<IrNullReason>)[], ShapeJoin.Reasons);
         if (values.Any(IsJson) || ReferenceEquals(coalesce, jsonQueryArgument))
         {
             var json = CoalesceJson(coalesce, arguments, values, because);
@@ -491,7 +491,7 @@ internal sealed partial class ProcedureAnalyzer
             return Typed(type, [], call);
 
         var from = TypeOf(argument, call.Parameters[0]);
-        IReadOnlyList<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call)];
+        EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call)];
         return Typed(type, from is { IsDecimal: true, Precision: <= 19 } ? because : ShapeJoin.Reasons(because, [Overflow(call)]), call);
     }
 
@@ -512,7 +512,7 @@ internal sealed partial class ProcedureAnalyzer
     /// A value converted to a declared type, as an assignment to a variable converts it: NULL too under a caller's
     /// ANSI_WARNINGS and ARITHABORT off when it may overflow (observed for CAST, which is the same conversion).
     /// </summary>
-    private static IReadOnlyList<IrNullReason> Converting(Value value, Shape declared, SourceLocation at)
+    private static EquatableArray<IrNullReason> Converting(Value value, Shape declared, SourceLocation at)
     {
         if (value.Shape is UnknownShape || value.IsLiveJson || declared is not ScalarShape { Type.Sql: var sql } || ScalarType.Parse(sql) is not { } to)
             return value.NullableBecause;

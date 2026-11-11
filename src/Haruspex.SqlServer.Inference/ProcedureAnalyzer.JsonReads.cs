@@ -16,7 +16,7 @@ internal sealed partial class ProcedureAnalyzer
     /// The JSON a document argument holds when it was built here: live JSON its shape, JSON text its content, a literal that is a
     /// JSON document its parsed shape; and why it may be NULL. Null when not known (data, or unknown).
     /// </summary>
-    private (Shape Shape, IReadOnlyList<IrNullReason> NullableBecause)? DocumentOf(ScalarExpression document, BindingScope scope)
+    private (Shape Shape, EquatableArray<IrNullReason> NullableBecause)? DocumentOf(ScalarExpression document, BindingScope scope)
     {
         if (LiteralOf(document) is ({ } literal and StringLiteral, false))
             return JsonLiterals.Parse(literal.Value, literal is StringLiteral { IsNational: true }, At(literal)) is var parsed and not UnknownShape ? (parsed, []) : null;

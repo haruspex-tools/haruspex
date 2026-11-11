@@ -147,7 +147,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The branches of a CASE: each read knowing what held (<see cref="Branch"/>). Its type is the precedence over its results
-    /// (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, IReadOnlyList{IrNullReason})"/>); without ELSE it is NULL when no WHEN holds (<c>no-else</c>).
+    /// (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, EquatableArray{IrNullReason})"/>); without ELSE it is NULL when no WHEN holds (<c>no-else</c>).
     /// </summary>
     private Value Branches(TSqlFragment at, IReadOnlyList<(BooleanExpression When, ScalarExpression Then)> whens, ScalarExpression? otherwise, BindingScope scope)
     {
@@ -177,7 +177,7 @@ internal sealed partial class ProcedureAnalyzer
     /// Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch). Results that are all JSON
     /// text are JSON text of their join, and under json_query, where folding does not matter, so are any.
     /// </summary>
-    private Value Results(TSqlFragment at, List<(ScalarExpression Expression, Value? Value)> results, IReadOnlyList<IrNullReason> also)
+    private Value Results(TSqlFragment at, List<(ScalarExpression Expression, Value? Value)> results, EquatableArray<IrNullReason> also)
     {
         var given = results.Where(r => r.Value is not null).Select(r => (r.Expression, Value: r.Value!)).ToList();
         if (given.Count == 0)
@@ -196,9 +196,9 @@ internal sealed partial class ProcedureAnalyzer
             if (json)
             {
                 var nulls = given.Select(r => r.Value.NullableBecause)
-                    .Concat(results.Where(r => r.Value is null).Select(r => (IReadOnlyList<IrNullReason>)[new IrNullReason(IrNullRules.NullLiteral, At(r.Expression).ToString())]))
+                    .Concat(results.Where(r => r.Value is null).Select(r => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRules.NullLiteral, At(r.Expression).ToString())]))
                     .Append(also)
-                    .Aggregate((IReadOnlyList<IrNullReason>)[], ShapeJoin.Reasons);
+                    .Aggregate((EquatableArray<IrNullReason>)[], ShapeJoin.Reasons);
                 return new Value(new JsonTextShape(content), nulls);
             }
         }
@@ -210,9 +210,9 @@ internal sealed partial class ProcedureAnalyzer
 
         var because = given.Select(r => r.Value.NullableBecause)
             .Concat(combined.Overflows)
-            .Concat(results.Where(r => r.Value is null).Select(r => (IReadOnlyList<IrNullReason>)[new IrNullReason(IrNullRules.NullLiteral, At(r.Expression).ToString())]))
+            .Concat(results.Where(r => r.Value is null).Select(r => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRules.NullLiteral, At(r.Expression).ToString())]))
             .Append(also)
-            .Aggregate((IReadOnlyList<IrNullReason>)[], ShapeJoin.Reasons);
+            .Aggregate((EquatableArray<IrNullReason>)[], ShapeJoin.Reasons);
         // A CASE whose condition is constant is folded to one result, an int literal then counting its own digits (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal); which, is not known here.
         var value = Typed(type, because, at) with { Digits = type.Name == "int" ? IntDigits.Foldable(given.Select(r => r.Value.Digits)) : null };
@@ -263,13 +263,13 @@ internal sealed partial class ProcedureAnalyzer
             return null;
         }
 
-        return new IrValueSet(items, IrValueMatch.Exact, [new IrFactSource(IrFactSources.Expression, At(at).ToString())]);
+        return new IrValueSet([.. items], IrValueMatch.Exact, [new IrFactSource(IrFactSources.Expression, At(at).ToString())]);
     }
 
     // ---- CHOOSE ---------------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// <c>CHOOSE(i, a, b, …)</c>: the precedence over its values, as CASE (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, IReadOnlyList{IrNullReason})"/>). NULL when i is, or is below 1
+    /// <c>CHOOSE(i, a, b, …)</c>: the precedence over its values, as CASE (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, EquatableArray{IrNullReason})"/>). NULL when i is, or is below 1
     /// or above the count (<c>out-of-range</c>; observed: Case_without_else_choose_out_of_range_and_nullif_of_equal_values_are_null),
     /// unless i is an integer literal in range or an integer whose bounds (a CHECK's) keep it in range. Its values are not read
     /// as branches: which one is taken is a number, not a condition.
@@ -407,7 +407,7 @@ internal sealed partial class ProcedureAnalyzer
     /// subquery before the fallback is read twice, so <c>COALESCE((SELECT … FOR JSON PATH), '[]')</c> keeps the subquery's
     /// <c>empty-subquery</c> (observed: Coalesce_reads_a_for_json_subquery_twice_so_it_can_be_null_though_its_fallback_is_not).
     /// </summary>
-    private Value CoalesceJson(CoalesceExpression coalesce, List<ScalarExpression> arguments, List<Value> values, IReadOnlyList<IrNullReason> because)
+    private Value CoalesceJson(CoalesceExpression coalesce, List<ScalarExpression> arguments, List<Value> values, EquatableArray<IrNullReason> because)
     {
         if (!ReferenceEquals(coalesce, jsonQueryArgument) && arguments.Where((a, i) => values[i].IsLiveJson && !Unfoldable(a)).Any())
             return NotModelled(coalesce, "whether COALESCE over this JSON nests as JSON depends on whether the server folds it.");

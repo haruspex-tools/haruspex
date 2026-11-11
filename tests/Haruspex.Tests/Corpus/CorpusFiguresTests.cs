@@ -106,7 +106,7 @@ public class CorpusFiguresTests
 
     private static IrField Field(string name, IrType type) => new(name, type, IrPresence.Always, []);
 
-    private static IrObject Procedure(string id, IReadOnlyList<IrResult>? results) => new(id, id, IrObjectKind.Procedure, "p.sql:1:1", [], results);
+    private static IrObject Procedure(string id, EquatableArray<IrResult>? results) => new(id, id, IrObjectKind.Procedure, "p.sql:1:1", [], results);
 
     private static IrResult Rowset(string type) => new(IrEncoding.Rowset, new IrArray(new IrRef(type)), []);
 

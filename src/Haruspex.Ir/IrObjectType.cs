@@ -2,7 +2,7 @@ namespace Haruspex.Ir;
 
 /// <summary>A named object type.</summary>
 /// <param name="Fields">Its fields, in order.</param>
-public sealed record IrObjectType(IReadOnlyList<IrField> Fields)
+public sealed record IrObjectType(EquatableArray<IrField> Fields)
 {
     /// <summary>
     /// Where the type comes from in database terms, independent of its generated name: an object and the path to the

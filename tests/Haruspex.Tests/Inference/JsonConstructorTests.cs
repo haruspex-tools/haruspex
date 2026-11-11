@@ -32,7 +32,7 @@ public partial class JsonConstructorTests
     };
 
     // Stricter than IrNavigation.Fields: the type must be an object type, not an array of one.
-    private static IReadOnlyList<IrField> Fields(IrDocument doc, IrType type) => doc.Types[Assert.IsType<IrRef>(type).Name].Fields;
+    private static EquatableArray<IrField> Fields(IrDocument doc, IrType type) => doc.Types[Assert.IsType<IrRef>(type).Name].Fields;
 
     private static IrField Sub(IrDocument doc, IrField field, string name) => Fields(doc, field.Type).Single(f => f.Name == name);
 

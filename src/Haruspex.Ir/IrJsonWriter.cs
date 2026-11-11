@@ -204,7 +204,7 @@ public static class IrJsonWriter
         json.WriteEndObject();
     }
 
-    private static void WriteReasons(Utf8JsonWriter json, string name, IReadOnlyList<IrNullReason> reasons)
+    private static void WriteReasons(Utf8JsonWriter json, string name, EquatableArray<IrNullReason> reasons)
     {
         json.WriteStartArray(name);
         foreach (var reason in reasons)

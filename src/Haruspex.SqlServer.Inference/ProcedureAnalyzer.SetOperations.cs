@@ -134,7 +134,7 @@ internal sealed partial class ProcedureAnalyzer
     };
 
     /// <summary>Why a column of a set operation's node may be null, given each query's own reasons.</summary>
-    private static IReadOnlyList<IrNullReason> SetNulls(SetNode node, IReadOnlyList<IReadOnlyList<IrNullReason>> because)
+    private static EquatableArray<IrNullReason> SetNulls(SetNode node, IReadOnlyList<EquatableArray<IrNullReason>> because)
     {
         if (node.Left is null)
             return because[node.Out[0]];
@@ -214,7 +214,7 @@ internal sealed partial class ProcedureAnalyzer
             : value;
     }
 
-    private Value Typed(ScalarType type, IReadOnlyList<IrNullReason> because, SourceLocation at) =>
+    private Value Typed(ScalarType type, EquatableArray<IrNullReason> because, SourceLocation at) =>
         new(SqlTypes.ToConvertedShape(model, type.ToSqlType(), at), because);
 
     private static IrFacets? WithValues(IrFacets? facets, IrValueSet? set)
@@ -274,7 +274,7 @@ internal sealed partial class ProcedureAnalyzer
             merged = [.. numbers.OrderBy(n => n.Number).Select(n => n.Item)];
         }
 
-        return new IrValueSet(merged, sets[0].Match, [.. sets.SelectMany(s => s.From).Distinct()]);
+        return new IrValueSet([.. merged], sets[0].Match, [.. sets.SelectMany(s => s.From).Distinct()]);
     }
 
     /// <summary>
@@ -316,7 +316,7 @@ internal sealed partial class ProcedureAnalyzer
             List<string> columns = reference.SchemaDeclarationItems.Count == 0 ? ["key", "value", "type"] : [.. reference.SchemaDeclarationItems.Select(i => i.ColumnDefinition.ColumnIdentifier.Value)];
             return columns.Distinct(StringComparer.OrdinalIgnoreCase).Count() != columns.Count
                 ? LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: its column names are not distinct.", at))
-                : new LocalRelationValues(columns, traced, null);
+                : new LocalRelationValues([.. columns], [.. traced], null);
         }
 
         if (reference.SchemaDeclarationItems.Count == 0)
@@ -357,6 +357,6 @@ internal sealed partial class ProcedureAnalyzer
 
         if (names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Count)
             return LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: its column names are not distinct.", at));
-        return new LocalRelationValues(names, values, null);
+        return new LocalRelationValues([.. names], [.. values], null);
     }
 }

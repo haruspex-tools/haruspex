@@ -89,7 +89,7 @@ internal sealed class NameSettler(
             {
                 Name = name,
                 Parameters = [.. obj.Parameters.Select(p => p with { Type = Rename(p.Type) })],
-                Results = objectResults?.Select(r => r with { Type = Rename(r.Type) }).ToList(),
+                Results = objectResults is null ? null : [.. objectResults.Select(r => r with { Type = Rename(r.Type) })],
             });
         }
 
@@ -104,7 +104,7 @@ internal sealed class NameSettler(
                 renamed[name] = type with { Fields = [.. type.Fields.Select(f => f with { Type = Rename(f.Type) })] };
         }
 
-        return document with { Objects = objects, Types = renamed };
+        return document with { Objects = [.. objects], Types = renamed };
     }
 
     private string? ProcedureName(string id)

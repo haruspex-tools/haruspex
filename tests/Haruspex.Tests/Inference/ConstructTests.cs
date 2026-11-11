@@ -24,7 +24,7 @@ public class ConstructTests
     /// <summary>Infers <c>dbo.p</c>, whose body is <paramref name="body"/>, over the standard tables.</summary>
     private static IrDocument Procedure(string body) => Infer(("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE dbo.p AS\n{body}"));
 
-    private static IReadOnlyList<IrField> RowFields(IrDocument doc, int result = 0)
+    private static EquatableArray<IrField> RowFields(IrDocument doc, int result = 0)
     {
         var results = Assert.IsType<IReadOnlyList<IrResult>>(doc.Objects[0].Results, exactMatch: false);
         var row = results[result].Type switch

@@ -71,8 +71,8 @@ internal sealed partial class ProcedureAnalyzer
         return (values, values.FirstOrDefault(v => v.Shape is UnknownShape));
     }
 
-    private static IReadOnlyList<IrNullReason> Reasons(IEnumerable<Value> values) =>
-        values.Select(v => v.NullableBecause).Aggregate((IReadOnlyList<IrNullReason>)[], ShapeJoin.Reasons);
+    private static EquatableArray<IrNullReason> Reasons(IEnumerable<Value> values) =>
+        values.Select(v => v.NullableBecause).Aggregate((EquatableArray<IrNullReason>)[], ShapeJoin.Reasons);
 
     // ---- dates ------------------------------------------------------------------------------------------------------
 

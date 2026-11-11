@@ -133,7 +133,7 @@ internal static class ShapeJoin
                 variants[i] = Content(variants[i], variant);
         }
 
-        return variants.Count == 1 ? variants[0] : new UnionShape(variants);
+        return variants.Count == 1 ? variants[0] : new UnionShape([.. variants]);
 
         static IEnumerable<Shape> Variants(Shape s) => s is UnionShape u ? u.Variants : [s];
     }
@@ -160,7 +160,7 @@ internal static class ShapeJoin
             fields.Add(new FieldShape(f.Name, Content(f.Type, g.Type), f.Presence == g.Presence ? f.Presence : IrPresence.OmittedWhenNull, Reasons(f.NullableBecause, g.NullableBecause)));
         }
 
-        return new ObjectShape(fields);
+        return new ObjectShape([.. fields]);
     }
 
     /// <summary>An array of the items of two arrays or tuples: each item of either, between the fewest and most of both.</summary>
@@ -185,11 +185,11 @@ internal static class ShapeJoin
     }
 
     /// <summary>The reasons of both, each once, in order.</summary>
-    public static IReadOnlyList<IrNullReason> Reasons(IReadOnlyList<IrNullReason> a, IReadOnlyList<IrNullReason> b) =>
+    public static EquatableArray<IrNullReason> Reasons(EquatableArray<IrNullReason> a, EquatableArray<IrNullReason> b) =>
         b.Count == 0 ? a : a.Count == 0 ? b : [.. a.Concat(b).Distinct()];
 
     /// <summary>A value whose shape is unknown proves nothing, so it may be null, which its reasons say.</summary>
-    private static IReadOnlyList<IrNullReason> WithUnknown(IReadOnlyList<IrNullReason> because, UnknownShape unknown) =>
+    private static EquatableArray<IrNullReason> WithUnknown(EquatableArray<IrNullReason> because, UnknownShape unknown) =>
         Reasons(because, [new IrNullReason(IrNullRules.Unknown, unknown.At.ToString())]);
 
     private static ScalarShape? Scalars(Shape a, Shape b) =>

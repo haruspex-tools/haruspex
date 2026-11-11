@@ -7,9 +7,9 @@ namespace Haruspex.Ir;
 /// <param name="Unknowns">Everything that could not be typed, with the reason.</param>
 public sealed record IrDocument(
     IrSource Source,
-    IReadOnlyList<IrObject> Objects,
+    EquatableArray<IrObject> Objects,
     IReadOnlyDictionary<string, IrObjectType> Types,
-    IReadOnlyList<IrUnknown> Unknowns)
+    EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
@@ -22,5 +22,5 @@ public sealed record IrDocument(
     /// declared. Empty when nothing was overridden. Kept so that what the database proves and what a person asserts stay
     /// distinguishable in the file, though an emitter needs neither: the types already carry the result.
     /// </summary>
-    public IReadOnlyList<IrOverride> Overrides { get; init; } = [];
+    public EquatableArray<IrOverride> Overrides { get; init; } = [];
 }

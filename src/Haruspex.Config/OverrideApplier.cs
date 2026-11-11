@@ -28,7 +28,7 @@ internal sealed class OverrideApplier(
     public Dictionary<(string Object, string Path), (string Name, ConfigLocation At)> Names { get; } = [];
 
     /// <summary>Applies one override to an object's results, returning them changed.</summary>
-    public IReadOnlyList<IrResult>? Apply(IrObject obj, IReadOnlyList<IrResult>? results, PathOverride entry)
+    public EquatableArray<IrResult>? Apply(IrObject obj, EquatableArray<IrResult>? results, PathOverride entry)
     {
         // The reader has checked the path's syntax already.
         if (!IrPath.TryParse(entry.Path, out var written, out _))
@@ -62,7 +62,7 @@ internal sealed class OverrideApplier(
             var changed = Edit(slot, rest, 0, canonical, s => Settle(obj.Id, canonical, s, entry));
             var list = results.ToList();
             list[index] = result with { Type = changed.Type, AbsentBecause = changed.Reasons };
-            return list;
+            return [.. list];
         }
         catch (PathException e)
         {
@@ -72,7 +72,7 @@ internal sealed class OverrideApplier(
     }
 
     /// <summary>A place a value is: its type, why it can be null, and whether it can be null at all.</summary>
-    private sealed record Slot(IrType Type, IReadOnlyList<IrNullReason> Reasons, bool CanBeNull);
+    private sealed record Slot(IrType Type, EquatableArray<IrNullReason> Reasons, bool CanBeNull);
 
     /// <summary>What the override says about the value at its path.</summary>
     private Slot Settle(string objectId, string path, Slot slot, PathOverride entry)
@@ -165,7 +165,7 @@ internal sealed class OverrideApplier(
                 var edited = Edit(new Slot(field.Type, field.NullableBecause, CanBeNull: true), path, i + 1, whole, settle);
                 var fields = obj.Fields.ToList();
                 fields[position] = field with { Type = edited.Type, NullableBecause = edited.Reasons };
-                types[reference.Name] = obj with { Fields = fields };
+                types[reference.Name] = obj with { Fields = [.. fields] };
                 return slot;
             case (IrPathItems, IrArray array):
                 var items = Edit(new Slot(array.Items, array.ItemsNullableBecause, CanBeNull: true), path, i + 1, whole, settle);
@@ -175,7 +175,7 @@ internal sealed class OverrideApplier(
                 var changed = Edit(new Slot(element.Type, element.NullableBecause, CanBeNull: true), path, i + 1, whole, settle);
                 var elements = tuple.Items.ToList();
                 elements[index.Index] = new IrElement(changed.Type, changed.Reasons);
-                return slot with { Type = new IrTuple(elements) };
+                return slot with { Type = new IrTuple([.. elements]) };
             case (IrPathValues, IrRecord record):
                 var values = Edit(new Slot(record.Values, record.ValuesNullableBecause, CanBeNull: true), path, i + 1, whole, settle);
                 return slot with { Type = new IrRecord(values.Type, values.Reasons) };

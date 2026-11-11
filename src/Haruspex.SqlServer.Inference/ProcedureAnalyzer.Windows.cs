@@ -33,7 +33,7 @@ internal sealed partial class ProcedureAnalyzer
         var name = call.FunctionName.Value.ToLowerInvariant();
 #pragma warning restore CA1308
         var over = call.OverClause;
-        IReadOnlyList<IrNullReason> Framed() => MayBeEmpty(over) ? [new IrNullReason(IrNullRules.EmptyFrame, At(call).ToString())] : [];
+        EquatableArray<IrNullReason> Framed() => MayBeEmpty(over) ? [new IrNullReason(IrNullRules.EmptyFrame, At(call).ToString())] : [];
 
         switch (name, call.Parameters.Count)
         {
@@ -55,7 +55,7 @@ internal sealed partial class ProcedureAnalyzer
                     return argument;
                 if (argument.IsLiveJson || TypeOf(argument, call.Parameters[0]) is not { } from || SumType(from) is not { } type)
                     return NotModelled(call, "SUM of a value of this type is not modelled yet.");
-                IReadOnlyList<IrNullReason> because = [.. argument.NullableBecause, .. from is { IsDecimal: true, Precision: <= 19 } ? [] : (IReadOnlyList<IrNullReason>)[Overflow(call)], .. Framed()];
+                EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. from is { IsDecimal: true, Precision: <= 19 } ? [] : (EquatableArray<IrNullReason>)[Overflow(call)], .. Framed()];
                 return Typed(type, because, call);
             }
 
@@ -68,11 +68,11 @@ internal sealed partial class ProcedureAnalyzer
                     return argument;
                 if (argument.IsLiveJson || TypeOf(argument, call.Parameters[0]) is not { } from || Statistic(name, from) is not var (type, overflows))
                     return NotModelled(call, $"{name.ToUpperInvariant()} of a value of this type is not modelled.");
-                IReadOnlyList<IrNullReason> because =
+                EquatableArray<IrNullReason> because =
                 [
                     .. argument.NullableBecause,
-                    .. name is "stdev" or "var" ? [new IrNullReason(IrNullRules.TooFewValues, At(call).ToString())] : (IReadOnlyList<IrNullReason>)[],
-                    .. overflows ? [Overflow(call)] : (IReadOnlyList<IrNullReason>)[],
+                    .. name is "stdev" or "var" ? [new IrNullReason(IrNullRules.TooFewValues, At(call).ToString())] : (EquatableArray<IrNullReason>)[],
+                    .. overflows ? [Overflow(call)] : (EquatableArray<IrNullReason>)[],
                     .. Framed(),
                 ];
                 return Typed(type, because, call);
@@ -142,7 +142,7 @@ internal sealed partial class ProcedureAnalyzer
         if (value.IsLiveJson || value.Shape is not ScalarShape)
             return NotModelled(call, "LAG or LEAD of a value that is not a scalar is not modelled.");
 
-        IReadOnlyList<IrNullReason> offsetBecause = [];
+        EquatableArray<IrNullReason> offsetBecause = [];
         var itself = false;
         if (parameters.Count >= 2)
         {
@@ -161,7 +161,7 @@ internal sealed partial class ProcedureAnalyzer
 
         if (parameters.Count < 3 || Strip(parameters[2]) is NullLiteral)
         {
-            IReadOnlyList<IrNullReason> edge = itself ? [] : [new IrNullReason(IrNullRules.WindowEdge, At(call).ToString())];
+            EquatableArray<IrNullReason> edge = itself ? [] : [new IrNullReason(IrNullRules.WindowEdge, At(call).ToString())];
             return value with { NullableBecause = [.. value.NullableBecause, .. edge, .. offsetBecause] };
         }
 
@@ -172,7 +172,7 @@ internal sealed partial class ProcedureAnalyzer
             return NotModelled(call, "LAG or LEAD of a value of this type is not modelled.");
         var fits = (LiteralOf(parameters[2]) is ({ } literal, var negative) ? ScalarType.Fits(literal, type, negative) : null)
             ?? (!fallback.IsLiveJson && TypeOf(fallback, parameters[2]) is { } from && ScalarType.Converts(from, type));
-        IReadOnlyList<IrNullReason> because = [.. value.NullableBecause, .. offsetBecause, .. itself ? [] : fallback.NullableBecause];
+        EquatableArray<IrNullReason> because = [.. value.NullableBecause, .. offsetBecause, .. itself ? [] : fallback.NullableBecause];
         return Typed(type with { Digits = null }, fits || itself ? because : ShapeJoin.Reasons(because, [Overflow(call)]), call);
     }
 }

@@ -307,7 +307,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
         var candidate = key;
         for (var n = 2; types.ContainsKey(candidate); n++)
             candidate = key + "~" + n.ToString(CultureInfo.InvariantCulture);
-        types[candidate] = new IrObjectType(fields) { Identity = new IrTypeIdentity(IrTypeOwner.Procedure, procedure, irPath) };
+        types[candidate] = new IrObjectType([.. fields]) { Identity = new IrTypeIdentity(IrTypeOwner.Procedure, procedure, irPath) };
         return new IrRef(candidate);
     }
 

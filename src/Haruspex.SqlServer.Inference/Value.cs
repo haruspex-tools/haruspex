@@ -27,7 +27,7 @@ namespace Haruspex.SqlServer.Inference;
 /// For a string read from a place that holds JSON built here on some writes but may hold other text (<see cref="JsonSlot"/>), why
 /// its JSON's shape is not known, naming the write: what <c>json_query</c> over it reports. Null otherwise.
 /// </param>
-internal sealed record Value(Shape Shape, IReadOnlyList<IrNullReason> NullableBecause, bool IsLiveJson = false, IntDigits? Digits = null, UnknownShape? JsonWhy = null)
+internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableBecause, bool IsLiveJson = false, IntDigits? Digits = null, UnknownShape? JsonWhy = null)
 {
     public static Value Unknown(UnknownShape shape) =>
         new(shape, [new IrNullReason(IrNullRules.Unknown, shape.At.ToString())]);

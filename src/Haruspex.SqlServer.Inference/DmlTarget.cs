@@ -1,3 +1,4 @@
+using Haruspex.Ir;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -12,7 +13,7 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="Temps">Temporary tables it may change through a CTE or derived table, which then hold what is not followed.</param>
 /// <param name="Direct">The temporary table (<c>#t</c>) or table variable (<c>@t</c>) it writes directly, if it does.</param>
 /// <param name="Unmodelled">Why the target is of a form not modelled (<c>OPENROWSET</c>, <c>OPENQUERY</c>, …), if it is.</param>
-internal sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadOnlyList<string> Temps, string? Direct, string? Unmodelled)
+internal sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, EquatableArray<string> Temps, string? Direct, string? Unmodelled)
 {
     /// <summary>
     /// The permanent object the write changes when it names one, directly or through an alias in FROM, rather than through a
@@ -34,7 +35,7 @@ internal sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadO
         var ctes = with?.CommonTableExpressions.ToDictionary(c => c.ExpressionName.Value, StringComparer.OrdinalIgnoreCase)
             ?? new Dictionary<string, CommonTableExpression>(StringComparer.OrdinalIgnoreCase);
         Resolve(target, aliases: true, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
-        return new DmlTarget(objects, temps, direct, unmodelled) { Named = objects.Count == 1 && temps.Count == 0 && direct is null ? namedObject : null };
+        return new DmlTarget([.. objects], [.. temps], direct, unmodelled) { Named = objects.Count == 1 && temps.Count == 0 && direct is null ? namedObject : null };
 
         void Resolve(TableReference reference, bool aliases, HashSet<string> seen)
         {

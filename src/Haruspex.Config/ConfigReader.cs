@@ -424,7 +424,7 @@ public static class ConfigReader
                     break;
             }
 
-            return Problems.Count(p => p.Severity == ConfigSeverity.Error) == errors ? new ResultsDeclaration(results, types, why, at) : null;
+            return Problems.Count(p => p.Severity == ConfigSeverity.Error) == errors ? new ResultsDeclaration([.. results], types, why, at) : null;
         }
 
         private IrResult? Result(JsonObjectValue result, string path, int index, string procedure, Dictionary<string, IrObjectType> types)

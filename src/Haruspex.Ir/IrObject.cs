@@ -15,5 +15,5 @@ public sealed record IrObject(
     string Name,
     IrObjectKind Kind,
     string At,
-    IReadOnlyList<IrParameter> Parameters,
-    IReadOnlyList<IrResult>? Results);
+    EquatableArray<IrParameter> Parameters,
+    EquatableArray<IrResult>? Results);

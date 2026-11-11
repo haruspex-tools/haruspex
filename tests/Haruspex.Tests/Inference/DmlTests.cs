@@ -32,7 +32,7 @@ public partial class DmlTests
     private static IrDocument Doc(params (string Name, string Sql)[] files) => Infer(files).Doc;
 
     // By id, dbo.p unless named, where IrNavigation's take the first procedure: these tests infer callers and callees together.
-    private static IReadOnlyList<IrResult> Results(IrDocument doc, string id = "dbo.p") =>
+    private static EquatableArray<IrResult> Results(IrDocument doc, string id = "dbo.p") =>
         Object(doc, id).Results ?? throw new InvalidOperationException("The results are unknown: " + string.Join("; ", doc.Unknowns.Where(u => u.Object == id).Select(u => u.Detail)));
 
     private static IrUnknown ResultsUnknown(IrDocument doc, string id = "dbo.p")

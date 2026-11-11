@@ -16,7 +16,7 @@ public class JsonNodeValidationTests
     private static IrDocument Doc(IrType type, params (string Name, IrField[] Fields)[] more) => new(
         new IrSource("tsql"),
         [new IrObject("dbo.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, new IrRef("Row"), [])])],
-        new[] { ("Row", new[] { new IrField("v", type, IrPresence.Always, []) }) }.Concat(more).ToDictionary(t => t.Item1, t => new IrObjectType(t.Item2)),
+        new[] { ("Row", new[] { new IrField("v", type, IrPresence.Always, []) }) }.Concat(more).ToDictionary(t => t.Item1, t => new IrObjectType([.. t.Item2])),
         []);
 
     private static ValidationReport Validate(IrType type, string value, params (string Name, IrField[] Fields)[] more) =>

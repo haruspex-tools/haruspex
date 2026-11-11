@@ -10,4 +10,4 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="Results">The result sets it returns, in order; none for a procedure declared to return none.</param>
 /// <param name="Types">The object types <paramref name="Results"/> refer to.</param>
 /// <param name="Why">Why the declaration holds, as given.</param>
-public sealed record DeclaredResults(IReadOnlyList<IrResult> Results, IReadOnlyDictionary<string, IrObjectType> Types, string Why);
+public sealed record DeclaredResults(EquatableArray<IrResult> Results, IReadOnlyDictionary<string, IrObjectType> Types, string Why);

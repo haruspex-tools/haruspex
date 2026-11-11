@@ -149,7 +149,7 @@ internal sealed partial class ProcedureAnalyzer
             var ordinals = key.Columns.Select(c => table.Columns.ToList().FindIndex(x => x.Name.Equals(c, StringComparison.OrdinalIgnoreCase))).ToList();
             var types = key.Columns.Select(c => SchemaRules.ResolveType(model, table.Column(c)?.Type)?.BuiltIn.Name).ToList();
             if (ordinals.All(o => o >= 0) && types.All(t => t is not null))
-                keys.Add(new RelationKey(ordinals, types!));
+                keys.Add(new RelationKey([.. ordinals], [.. types!]));
         }
 
         // What its nvarchar(max) columns hold as JSON is what its body writes to them: the body is walked as a
@@ -162,6 +162,6 @@ internal sealed partial class ProcedureAnalyzer
             values = [.. values.Select((v, i) => end.Json.TryGetValue($"{variable}.{table.Columns[i].Name}", out var slot) ? slot.Read(v) : v)];
         }
 
-        return new LocalRelationValues([.. table.Columns.Select(c => c.Name)], values, null) { Keys = keys };
+        return new LocalRelationValues([.. table.Columns.Select(c => c.Name)], [.. values], null) { Keys = [.. keys] };
     }
 }

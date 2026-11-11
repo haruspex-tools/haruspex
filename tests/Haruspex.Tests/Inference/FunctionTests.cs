@@ -25,7 +25,7 @@ public partial class FunctionTests
         InferProcedure.Infer("dbo.p", ("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE dbo.p AS\n{body}"));
 
     // Stricter than IrNavigation.Fields: asserts one result, an array of rows.
-    private static IReadOnlyList<IrField> Fields(IrDocument doc)
+    private static EquatableArray<IrField> Fields(IrDocument doc)
     {
         var results = doc.Objects[0].Results ?? throw new InvalidOperationException("The results are unknown: " + string.Join("; ", doc.Unknowns.Select(u => u.Detail)));
         var row = (IrRef)((IrArray)Assert.Single(results).Type).Items;

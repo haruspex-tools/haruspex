@@ -307,7 +307,7 @@ internal sealed class FunctionSummaries
     private Value Parameter(ProcedureParameter parameter, bool nullOnNull, string file)
     {
         var at = new SourceLocation(file, parameter.StartLine, parameter.StartColumn);
-        IReadOnlyList<IrNullReason> because = nullOnNull ? [] : [new IrNullReason(IrNullRules.Parameter, parameter.VariableName.Value)];
+        EquatableArray<IrNullReason> because = nullOnNull ? [] : [new IrNullReason(IrNullRules.Parameter, parameter.VariableName.Value)];
         var type = SqlType.From(parameter.DataType);
 
         // A json value nests as JSON (observed for variables and columns), and its shape is in the data.

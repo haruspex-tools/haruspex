@@ -375,6 +375,6 @@ public partial class StatementFlowTests
         var doc = Procedure("INSERT INTO dbo.u (id, t_id, name) SELECT t.id, t.id, N'x' FROM dbo.t AS t;\nSELECT t.id FROM dbo.t AS t;");
 
         Assert.Empty(doc.Unknowns);
-        Assert.Single(Assert.IsType<List<IrResult>>(doc.Objects[0].Results, exactMatch: false));
+        Assert.Single(Assert.IsType<EquatableArray<IrResult>>(doc.Objects[0].Results));
     }
 }

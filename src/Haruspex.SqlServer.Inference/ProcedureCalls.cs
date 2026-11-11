@@ -80,15 +80,15 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     {
         var parameters = ProcedureAnalyzer.Parameters(model, procedure);
         if (Unwalkable(procedure) is { } why)
-            return new ProcedureAnalysis(parameters, null, why, []);
+            return new ProcedureAnalysis([.. parameters], null, why, []);
 
         var walked = Run(procedure, CallContext.Top);
         if (walked.Blocker is { } blocker)
-            return new ProcedureAnalysis(parameters, null, blocker, walked.Declared);
+            return new ProcedureAnalysis([.. parameters], null, blocker, walked.Declared);
         if (walked.End is null)
-            return new ProcedureAnalysis(parameters, [], null, walked.Declared);
+            return new ProcedureAnalysis([.. parameters], [], null, walked.Declared);
         var (results, varying) = ProcedureAnalyzer.Results(walked.End.Results);
-        return new ProcedureAnalysis(parameters, results, varying, walked.Declared);
+        return new ProcedureAnalysis([.. parameters], results is null ? null : [.. results], varying, walked.Declared);
     }
 
     /// <summary>What a call of <paramref name="callee"/> from a caller in <paramref name="context"/> does.</summary>
@@ -216,7 +216,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
         var state = FlowState.Start([]).WithTemps(temps);
         var track = assumed.GetValueOrDefault(callee.Name);
         IReadOnlyList<FlowState> escapes = context.Escapes ? [state.WithResults((track ?? ResultTrack.None).Prefixes())] : [];
-        return new Walked(track is null ? null : state.WithResults(track), escapes, null, []);
+        return new Walked(track is null ? null : state.WithResults(track), [.. escapes], null, []);
     }
 
     /// <summary>

@@ -87,7 +87,7 @@ internal sealed partial class ProcedureAnalyzer
                     at)));
         }
 
-        return new LocalRelationValues(names, values, null)
+        return new LocalRelationValues([.. names], [.. values], null)
         {
             Rows = rows.Count == 1 ? IrCardinality.One : IrCardinality.Many,
             AtLeastOne = true,
@@ -153,7 +153,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>A set operation keeps no key (UNION ALL repeats one); a query specification's are <see cref="ViewKeys"/>.</summary>
-    private List<RelationKey> Keys(QueryExpression query, Row row) => query is QuerySpecification specification ? ViewKeys(specification, row) : [];
+    private EquatableArray<RelationKey> Keys(QueryExpression query, Row row) => query is QuerySpecification specification ? [.. ViewKeys(specification, row)] : [];
 
     /// <summary>
     /// The keys a view has: those of its one table that it selects whole, unchanged. A view that reads one table, without a
@@ -184,7 +184,7 @@ internal sealed partial class ProcedureAnalyzer
             }
 
             if (ordinals.Count == key.Columns.Count)
-                keys.Add(new RelationKey(ordinals, types));
+                keys.Add(new RelationKey([.. ordinals], [.. types]));
         }
 
         return keys;

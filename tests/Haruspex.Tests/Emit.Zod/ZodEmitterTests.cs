@@ -10,7 +10,7 @@ public class ZodEmitterTests
     private static IrDocument OneResult(IrEncoding encoding, params IrField[] fields) => new(
         new IrSource("tsql"),
         [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(encoding, new IrArray(new IrRef("PRow")), [])])],
-        new Dictionary<string, IrObjectType> { ["PRow"] = new(fields) },
+        new Dictionary<string, IrObjectType> { ["PRow"] = new([.. fields]) },
         []);
 
     private static IrField Field(string name, IrType type) => new(name, type, IrPresence.Always, []);
@@ -61,8 +61,8 @@ public class ZodEmitterTests
         var text = new IrScalar(IrScalarKind.String, null, "nvarchar(10)");
         var ts = ZodEmitter.Emit(OneResult(
             IrEncoding.Json,
-            new IrField("omitted", text, IrPresence.OmittedWhenNull, because),
-            new IrField("kept", text, IrPresence.Always, because)));
+            new IrField("omitted", text, IrPresence.OmittedWhenNull, [.. because]),
+            new IrField("kept", text, IrPresence.Always, [.. because])));
 
         Assert.Contains("  omitted: z.string().optional(),\n", ts, StringComparison.Ordinal);
         Assert.Contains("  kept: z.string().nullable(),\n", ts, StringComparison.Ordinal);

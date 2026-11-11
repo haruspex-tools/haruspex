@@ -124,8 +124,8 @@ internal sealed partial class ProcedureAnalyzer
         // A top-level FOR JSON query that matches no rows returns no row at all, rather than [] or {}. A
         // rowset that matches no rows is still a result set, with no rows. A query that always returns exactly one row
         // always returns its JSON (observed: For_json_over_an_aggregate_without_group_by_always_returns_its_one_object).
-        IReadOnlyList<IrNullReason> NoRows(Row row) => encoding == IrEncoding.Json && row.Rows != IrCardinality.One ? [new IrNullReason(IrNullRules.NoRows, at.ToString())] : [];
-        IReadOnlyList<IrNullReason> absent = encoding == IrEncoding.Json ? [new IrNullReason(IrNullRules.NoRows, at.ToString())] : [];
+        EquatableArray<IrNullReason> NoRows(Row row) => encoding == IrEncoding.Json && row.Rows != IrCardinality.One ? [new IrNullReason(IrNullRules.NoRows, at.ToString())] : [];
+        EquatableArray<IrNullReason> absent = encoding == IrEncoding.Json ? [new IrNullReason(IrNullRules.NoRows, at.ToString())] : [];
 
         return WithCtes(
             select.WithCtesAndXmlNamespaces,
@@ -336,7 +336,7 @@ internal sealed partial class ProcedureAnalyzer
                 : new FieldShape(key, nested, IrPresence.Always, []));
         }
 
-        return new ObjectShape(fields);
+        return new ObjectShape([.. fields]);
     }
 
     // ---- expressions --------------------------------------------------------------------------------
@@ -430,11 +430,11 @@ internal sealed partial class ProcedureAnalyzer
         {
             return new Value(
                 Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{table.Name}.{column.Name} is a json column: its shape is in the data, not the schema.", column.At),
-                because,
+                [.. because],
                 IsLiveJson: true);
         }
 
-        return new Value(ColumnShape(table, column), because);
+        return new Value(ColumnShape(table, column), [.. because]);
     }
 
     /// <summary>A column's shape when it is not null.</summary>
@@ -495,7 +495,7 @@ internal sealed partial class ProcedureAnalyzer
         var shape = ForJson(forJson, json, subquery: true);
         if (shape is UnknownShape unknown)
             return Value.Unknown(unknown);
-        IReadOnlyList<IrNullReason> empty = forJson.Rows == IrCardinality.One ? [] : [new IrNullReason(IrNullRules.EmptySubquery, at.ToString())];
+        EquatableArray<IrNullReason> empty = forJson.Rows == IrCardinality.One ? [] : [new IrNullReason(IrNullRules.EmptySubquery, at.ToString())];
         return json.Options.Any(o => o.OptionKind == JsonForClauseOptions.WithoutArrayWrapper)
             ? new Value(new JsonTextShape(shape), empty)
             : new Value(shape, empty, IsLiveJson: true);
@@ -543,10 +543,10 @@ internal sealed partial class ProcedureAnalyzer
 
         return result switch
         {
-            { Content: null, ReturnsJson: true } => new Value(result.Declared, because, IsLiveJson: true),
-            { Content: null } => new Value(result.Declared, because),
-            { ReturnsJson: true } => result.Content is UnknownShape unknown ? Value.Unknown(unknown) : new Value(result.Content, because, IsLiveJson: true),
-            _ => new Value(new JsonTextShape(result.Content), because),
+            { Content: null, ReturnsJson: true } => new Value(result.Declared, [.. because], IsLiveJson: true),
+            { Content: null } => new Value(result.Declared, [.. because]),
+            { ReturnsJson: true } => result.Content is UnknownShape unknown ? Value.Unknown(unknown) : new Value(result.Content, [.. because], IsLiveJson: true),
+            _ => new Value(new JsonTextShape(result.Content), [.. because]),
         };
     }
 
@@ -627,7 +627,7 @@ internal sealed partial class ProcedureAnalyzer
             fields.Add(new FieldShape(key.Value, value.Shape, presence, value.NullableBecause));
         }
 
-        return new Value(new ObjectShape(fields), [], IsLiveJson: true);
+        return new Value(new ObjectShape([.. fields]), [], IsLiveJson: true);
     }
 
     /// <summary>
@@ -644,7 +644,7 @@ internal sealed partial class ProcedureAnalyzer
         var variants = Distinct(elements.Select(e => e.Shape));
         var present = elements.Count(e => e.NullableBecause.Count == 0);
         return new Value(
-            new ArrayShape(variants.Count == 1 ? variants[0] : new UnionShape(variants), MinItems: present > 0 ? present : null, MaxItems: elements.Count),
+            new ArrayShape(variants.Count == 1 ? variants[0] : new UnionShape([.. variants]), MinItems: present > 0 ? present : null, MaxItems: elements.Count),
             [],
             IsLiveJson: true);
     }
@@ -701,7 +701,7 @@ internal sealed partial class ProcedureAnalyzer
     /// Why an aggregate can be null: over no rows it is NULL, which only a query without GROUP BY can give it (with
     /// GROUP BY, no rows means no groups at all).
     /// </summary>
-    private IReadOnlyList<IrNullReason> Aggregate(FunctionCall call) =>
+    private EquatableArray<IrNullReason> Aggregate(FunctionCall call) =>
         current?.GroupByClause is null && !ProvedAggregate(call) ? [new IrNullReason(IrNullRules.EmptyAggregate, At(call).ToString())] : [];
 
     // ---- helpers ------------------------------------------------------------------------------------

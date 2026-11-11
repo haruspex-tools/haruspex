@@ -63,11 +63,11 @@ internal sealed class IrBuilder(FunctionSummaries functions)
             }
 
             var at = source.At;
-            objects.Add(new IrObject(id, id, IrObjectKind.Procedure, at.ToString(), parameters, results));
+            objects.Add(new IrObject(id, id, IrObjectKind.Procedure, at.ToString(), [.. parameters], results is null ? null : [.. results]));
         }
 
         MarkRecursive();
-        return new IrDocument(new IrSource("tsql"), objects, types, unknowns);
+        return new IrDocument(new IrSource("tsql"), [.. objects], types, [.. unknowns]);
     }
 
     /// <summary>The object, procedure or recursive function, that the types being written belong to.</summary>
@@ -221,7 +221,7 @@ internal sealed class IrBuilder(FunctionSummaries functions)
         foreach (var field in obj.Fields)
             fields.Add(new IrField(field.Name, Convert(field.Type, owner, id, path + IrPath.Key(field.Name)), field.Presence, field.NullableBecause));
 
-        types[key] = new IrObjectType(fields) { Identity = new IrTypeIdentity(owner.Kind, owner.Object, path) };
+        types[key] = new IrObjectType([.. fields]) { Identity = new IrTypeIdentity(owner.Kind, owner.Object, path) };
         return new IrRef(key);
     }
 

@@ -1,3 +1,5 @@
+using Haruspex.Ir;
+
 namespace Haruspex.SqlServer.Inference;
 
-internal sealed record ObjectShape(IReadOnlyList<FieldShape> Fields) : Shape;
+internal sealed record ObjectShape(EquatableArray<FieldShape> Fields) : Shape;

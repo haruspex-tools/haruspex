@@ -53,7 +53,7 @@ internal sealed partial class ProcedureAnalyzer
         if (ProvedAggregate(call))
             return Typed(type, [], call);
 
-        IReadOnlyList<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call)];
+        EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call)];
         if (name is "stdev" or "var")
             because = ShapeJoin.Reasons(because, [new IrNullReason(IrNullRules.TooFewValues, At(call).ToString())]);
         return Typed(type, overflows ? ShapeJoin.Reasons(because, [Overflow(call)]) : because, call);
@@ -116,8 +116,8 @@ internal sealed partial class ProcedureAnalyzer
             return NotModelled(call, "an argument of this type is not modelled.");
         var counted = call.FunctionName.Value.Equals("round", StringComparison.OrdinalIgnoreCase) ? others.Take(1) : others;
         var because = ShapeJoin.Reasons(value.NullableBecause, Reasons(counted));
-        IReadOnlyList<IrNullReason> With(bool overflows, bool domain = false) =>
-            ShapeJoin.Reasons(because, [.. overflows ? [Overflow(call)] : (IReadOnlyList<IrNullReason>)[], .. domain ? [Domain(call)] : (IReadOnlyList<IrNullReason>)[]]);
+        EquatableArray<IrNullReason> With(bool overflows, bool domain = false) =>
+            ShapeJoin.Reasons(because, [.. overflows ? [Overflow(call)] : (EquatableArray<IrNullReason>)[], .. domain ? [Domain(call)] : (EquatableArray<IrNullReason>)[]]);
         var flt = new ScalarType("float");
 
 #pragma warning disable CA1308 // Built-in function names are ASCII, so lower case matches them exactly, and the cases are written as T-SQL usually is.
@@ -183,7 +183,7 @@ internal sealed partial class ProcedureAnalyzer
     /// 38 less the scale for a decimal, 10 digits for int, 19 for bigint (strictly, since float rounds the value); a bit's 0 or 1
     /// never does.
     /// </summary>
-    private Value Power(FunctionCall call, ScalarType type, ScalarType result, IReadOnlyList<IrNullReason> because)
+    private Value Power(FunctionCall call, ScalarType type, ScalarType result, EquatableArray<IrNullReason> because)
     {
         var typed = result.IsDecimal ? result with { Precision = 38 } : result;
         if (WholeOf(call.Parameters[1]) is not { } n)

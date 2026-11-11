@@ -25,7 +25,7 @@ public class CaseTests
         InferProcedure.Infer("dbo.p", ("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE dbo.p {parameters} AS\n{body}"));
 
     // Stricter than IrNavigation.Fields: the type must be an object type, not an array of one.
-    private static IReadOnlyList<IrField> Fields(IrDocument doc, IrType type) => doc.Types[Assert.IsType<IrRef>(type).Name].Fields;
+    private static EquatableArray<IrField> Fields(IrDocument doc, IrType type) => doc.Types[Assert.IsType<IrRef>(type).Name].Fields;
 
     /// <summary>The field <paramref name="name"/> of the first result's row, a rowset's or FOR JSON's.</summary>
     // Stricter than IrNavigation.Field: the first result must be an array of rows.

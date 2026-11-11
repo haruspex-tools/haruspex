@@ -139,10 +139,10 @@ internal sealed partial class ProcedureAnalyzer
         // An error after the last statement's results were sent leaves with all of them.
         if (end is not null)
             escapes?.Add(end);
-        return new Walked(end, escapes ?? [], null, declaredUsed);
+        return new Walked(end, escapes is null ? [] : [.. escapes], null, declaredUsed);
     }
 
-    private static IReadOnlyList<IrNullReason> Because(string rule, string name, Shape shape) =>
+    private static EquatableArray<IrNullReason> Because(string rule, string name, Shape shape) =>
         shape is UnknownShape unknown ? [new IrNullReason(rule, name), new IrNullReason(IrNullRules.Unknown, unknown.At.ToString())] : [new IrNullReason(rule, name)];
 
     /// <summary>A variable's or parameter's type: every value it holds has been converted to it, so the type's facets hold.</summary>
@@ -632,7 +632,7 @@ internal sealed partial class ProcedureAnalyzer
             columns[i] = column with { Value = written.Aggregate(column.Value, (all, value) => ShapeJoin.Converted(all, value, at, where)) };
         }
 
-        return table with { Columns = columns };
+        return table with { Columns = [.. columns] };
     }
 
     /// <summary>
@@ -731,7 +731,7 @@ internal sealed partial class ProcedureAnalyzer
                 }
             }
 
-            return table is null ? state : state.WithTemp(target, table with { Columns = columns! });
+            return table is null ? state : state.WithTemp(target, table with { Columns = [.. columns!] });
         }, why => target.StartsWith('#') ? state.WithTemp(target, Unknown(target, why)) : state);
     }
 
@@ -785,7 +785,7 @@ internal sealed partial class ProcedureAnalyzer
     private Value Declared(Table table, Column column, string name, bool temporary)
     {
         var where = $"{name}.{column.Name}";
-        IReadOnlyList<IrNullReason> because = SchemaRules.IsNeverNull(model, table, column) ? [] : [new IrNullReason(IrNullRules.NullableColumn, where)];
+        EquatableArray<IrNullReason> because = SchemaRules.IsNeverNull(model, table, column) ? [] : [new IrNullReason(IrNullRules.NullableColumn, where)];
 
         // A #table is created in tempdb, which does not have the database's alias types (observed: 2715), so a name there
         // does not mean this project's type. sysname is the system's own, which tempdb has. A table variable takes them from
@@ -844,7 +844,7 @@ internal sealed partial class ProcedureAnalyzer
                 var definition = new Table(new ObjectName("", name), [column], [], at);
                 var columns = table.Columns.ToList();
                 columns[i] = Fresh(definition, column, name, table.Columns[i].Identity, at);
-                return state.WithTemp(name, table with { Columns = columns });
+                return state.WithTemp(name, table with { Columns = [.. columns] });
             }
 
             case AlterTableDropTableElementStatement drop:
@@ -868,7 +868,7 @@ internal sealed partial class ProcedureAnalyzer
                     }
                 }
 
-                return state.WithTemp(name, table with { Columns = columns });
+                return state.WithTemp(name, table with { Columns = [.. columns] });
             }
 
             case AlterTableConstraintModificationStatement modify when modify.ConstraintEnforcement == ConstraintEnforcement.NoCheck:
@@ -877,10 +877,10 @@ internal sealed partial class ProcedureAnalyzer
                 // it again, but is not read, which only claims less.
                 var columns = table.Columns.ToList();
                 if (modify.All)
-                    return state.WithTemp(name, table with { Columns = Rechecked(columns, null, name, at, drop: false) });
+                    return state.WithTemp(name, table with { Columns = [.. Rechecked(columns, null, name, at, drop: false)] });
                 foreach (var constraint in modify.ConstraintNames)
                     columns = Rechecked(columns, constraint.Value, name, at, drop: false);
-                return state.WithTemp(name, table with { Columns = columns });
+                return state.WithTemp(name, table with { Columns = [.. columns] });
             }
 
             case AlterTableConstraintModificationStatement:
@@ -986,7 +986,7 @@ internal sealed partial class ProcedureAnalyzer
 
             if (next.Select(ShapeText.Of).SequenceEqual(current.Values!.Select(ShapeText.Of), StringComparer.Ordinal))
                 return current;
-            current = current with { Values = next };
+            current = current with { Values = [.. next] };
         }
 
         return Fails(IrUnknownReasons.UnresolvedRecursion, $"its columns reached no fixed point in {MostPasses} passes.");
@@ -1140,6 +1140,6 @@ internal sealed partial class ProcedureAnalyzer
     {
         if (shapes.Count == 1)
             return shapes[0];
-        return shapes.FirstOrDefault(s => s is UnknownShape) ?? new UnionShape(shapes);
+        return shapes.FirstOrDefault(s => s is UnknownShape) ?? new UnionShape([.. shapes]);
     }
 }

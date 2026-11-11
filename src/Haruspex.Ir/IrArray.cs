@@ -8,7 +8,7 @@ public sealed record IrArray(IrType Items) : IrType
     /// Why an item can be null. Empty, the default, means no item is ever null: FOR JSON and the constructors' default
     /// <c>ABSENT ON NULL</c> leave nulls out of arrays, so only <c>NULL ON NULL</c> puts them in.
     /// </summary>
-    public IReadOnlyList<IrNullReason> ItemsNullableBecause { get; init; } = [];
+    public EquatableArray<IrNullReason> ItemsNullableBecause { get; init; } = [];
 
     /// <summary>Whether an item can be null: true exactly when <see cref="ItemsNullableBecause"/> gives a reason.</summary>
     public bool ItemsNullable => ItemsNullableBecause.Count > 0;

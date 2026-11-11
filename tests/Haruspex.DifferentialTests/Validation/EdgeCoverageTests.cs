@@ -9,7 +9,7 @@ public class EdgeCoverageTests
     private static IrDocument Doc(params IrField[] fields) => new(
         new IrSource("tsql"),
         [new IrObject("dbo.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("Row")), [])])],
-        new Dictionary<string, IrObjectType> { ["Row"] = new(fields) },
+        new Dictionary<string, IrObjectType> { ["Row"] = new([.. fields]) },
         []);
 
     private static IrField Field(string name, IrScalar scalar) => new(name, scalar, IrPresence.Always, []);

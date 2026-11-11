@@ -41,6 +41,6 @@ public static class IrInference
             .SelectMany(a => a.Item2.Declared.Select(callee => (Object: a.procedure.Name.ToString(), Callee: callee)))
             .Select(c => new IrOverride(c.Object, "results", IrOverrideSettings.Results, declarations.First(d => d.Key.ToString() == c.Callee).Value.Why) { Via = c.Callee })
             .ToList();
-        return document with { Overrides = claims };
+        return document with { Overrides = [.. claims] };
     }
 }
