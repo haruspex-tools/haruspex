@@ -120,7 +120,9 @@ internal sealed partial class ProcedureAnalyzer
             ShapeJoin.Reasons(because, [.. overflows ? [Overflow(call)] : (IReadOnlyList<IrNullReason>)[], .. domain ? [Domain(call)] : (IReadOnlyList<IrNullReason>)[]]);
         var flt = new ScalarType("float");
 
+#pragma warning disable CA1308 // Built-in function names are ASCII, so lower case matches them exactly, and the cases are written as T-SQL usually is.
         return (call.FunctionName.Value.ToLowerInvariant(), p.Count) switch
+#pragma warning restore CA1308
         {
             ("round", 2 or 3) => Typed(result, With(RoundMayOverflow(type, p)), call),
 

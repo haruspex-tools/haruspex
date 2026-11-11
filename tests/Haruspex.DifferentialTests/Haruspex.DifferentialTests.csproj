@@ -7,7 +7,8 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <!-- SqlClient throws NotSupportedException in invariant globalization mode (it needs culture data for
-         collations), so this project, unlike the rest of the repository, runs with ICU. -->
+         collations), so this project, unlike the CLI and Haruspex.Tests, runs with ICU. Stated, though it is the
+         default, so that nobody turns it on here to match them. -->
     <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>

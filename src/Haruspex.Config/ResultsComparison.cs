@@ -94,8 +94,10 @@ internal static class ResultsComparison
 
         private static string Describe(IrType type) => type switch
         {
+#pragma warning disable CA1308 // Lower case to write the kind in a message, not to compare it.
             IrScalar { Format: { } format } scalar => $"a {scalar.Kind.ToString().ToLowerInvariant()} ({format})",
             IrScalar scalar => $"a {scalar.Kind.ToString().ToLowerInvariant()}",
+#pragma warning restore CA1308
             IrRef => "an object",
             IrArray => "an array",
             IrTuple => "a tuple",

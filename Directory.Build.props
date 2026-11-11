@@ -13,7 +13,6 @@
          documentation file. Whether a missing comment is an error (CS1591) is set per layer in .editorconfig. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Deterministic>true</Deterministic>
-    <InvariantGlobalization>true</InvariantGlobalization>
 
     <!-- Nothing is published yet. The reusable layers that may be (Haruspex.SqlServer.Model and .Sources, and
          Haruspex.Diagnostics, which their API uses) opt in with their package metadata; everything else stays

@@ -60,7 +60,9 @@ public class SetJoinTests
 
     private static string? Values(IrDocument doc, string name) =>
         Field(doc, name).Type is IrScalar { Facets.Values: { } set }
+#pragma warning disable CA1308 // Lower case to write the match in a description, not to compare it.
             ? $"{set.Match.ToString().ToLowerInvariant()}:{string.Join("|", set.Items.Select(i => i.Text))}"
+#pragma warning restore CA1308
             : null;
 
     private static void AllTyped(IrDocument doc) =>

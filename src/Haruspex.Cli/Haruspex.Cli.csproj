@@ -4,6 +4,10 @@
     <AssemblyName>haruspex</AssemblyName>
     <RootNamespace>Haruspex.Cli</RootNamespace>
     <Description>The haruspex command line.</Description>
+    <!-- The tool runs the same on every machine, whatever its culture: no ICU, so no culture data to differ. Set here, on
+         the executable, where it has a runtime meaning; the libraries run under their host's culture, and leaving it off
+         them keeps the analysers' culture rules (CA1305, CA1308 and the like) checking them. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />

@@ -4,6 +4,8 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- These tests run the CLI in process, so they run it as it ships (see Haruspex.Cli.csproj). -->
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
     <!-- Helpers both test projects use: running the emit-check npm package (see the file). -->

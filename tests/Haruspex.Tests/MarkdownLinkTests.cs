@@ -156,7 +156,9 @@ public partial class MarkdownLinkTests
     {
         var text = InlineLink().Replace(heading, m => m.Groups["text"].Value).Trim();
         var slug = new StringBuilder();
+#pragma warning disable CA1308 // GitHub lower-cases a heading to make its anchor.
         foreach (var c in text.ToLowerInvariant())
+#pragma warning restore CA1308
         {
             if (char.IsLetterOrDigit(c) || c is '-' or '_')
                 slug.Append(c);

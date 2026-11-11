@@ -441,7 +441,9 @@ internal sealed partial class ProcedureAnalyzer
     private Value BuiltInAggregate(FunctionCall call, BindingScope scope)
     {
         var at = At(call);
+#pragma warning disable CA1308 // Built-in function names are ASCII, so lower case matches them exactly, and the cases are written as T-SQL usually is.
         var name = call.FunctionName.Value.ToLowerInvariant();
+#pragma warning restore CA1308
         if (name is "json_arrayagg" or "json_objectagg")
             return Constructor(call, scope);
 

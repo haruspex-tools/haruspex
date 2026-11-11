@@ -24,7 +24,9 @@ internal sealed partial class ProcedureAnalyzer
     private Value BuiltIn(FunctionCall call, BindingScope scope)
     {
         var p = call.Parameters;
+#pragma warning disable CA1308 // Built-in function names are ASCII, so lower case matches them exactly, and the cases are written as T-SQL usually is.
         return (call.FunctionName.Value.ToLowerInvariant(), p.Count) switch
+#pragma warning restore CA1308
         {
             ("datediff", 3) => DateDiff(call, "int", scope),
             ("datediff_big", 3) => DateDiff(call, "bigint", scope),

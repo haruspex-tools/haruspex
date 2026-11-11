@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace Haruspex.Tests.Snapshotting;
@@ -139,7 +140,7 @@ internal sealed class SnapshotStore(string directory, bool isCi, bool accept)
             var hunk = ops.GetRange(start, end - start + 1);
             var aLength = hunk.Count(o => o.Kind != '+');
             var bLength = hunk.Count(o => o.Kind != '-');
-            output.Append($"@@ -{(aLength == 0 ? aStart - 1 : aStart)},{aLength} +{(bLength == 0 ? bStart - 1 : bStart)},{bLength} @@\n");
+            output.Append(CultureInfo.InvariantCulture, $"@@ -{(aLength == 0 ? aStart - 1 : aStart)},{aLength} +{(bLength == 0 ? bStart - 1 : bStart)},{bLength} @@\n");
             foreach (var (kind, line) in hunk)
             {
                 if (written++ == MaxDiffLines)

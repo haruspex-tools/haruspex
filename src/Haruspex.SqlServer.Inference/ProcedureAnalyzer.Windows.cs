@@ -29,7 +29,9 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private Value Window(FunctionCall call, BindingScope scope)
     {
+#pragma warning disable CA1308 // Built-in function names are ASCII, so lower case matches them exactly, and the cases are written as T-SQL usually is.
         var name = call.FunctionName.Value.ToLowerInvariant();
+#pragma warning restore CA1308
         var over = call.OverClause;
         IReadOnlyList<IrNullReason> Framed() => MayBeEmpty(over) ? [new IrNullReason(IrNullRules.EmptyFrame, At(call).ToString())] : [];
 

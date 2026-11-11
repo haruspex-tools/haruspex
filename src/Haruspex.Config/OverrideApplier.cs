@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Haruspex.Ir;
 
 namespace Haruspex.Config;
@@ -221,12 +222,16 @@ internal sealed class OverrideApplier(
         IrJsonText => "JSON text",
         IrImport import => $"the imported {import.Name}",
         IrUnknownType => "of unknown type",
+#pragma warning disable CA1308 // Lower case to write the kind in a message, not to compare it.
         IrScalar { Sql: { } sql } scalar => $"a {scalar.Kind.ToString().ToLowerInvariant()} ({sql})",
         IrScalar scalar => $"a {scalar.Kind.ToString().ToLowerInvariant()}",
+#pragma warning restore CA1308
         _ => "a value",
     };
 
     private static string Count(int n, string noun) => n == 1 ? $"1 {noun}" : $"{n} {noun}s";
 
+    [SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "Thrown and caught inside this class, always with a message.")]
+    [SuppressMessage("Design", "CA1064:Exceptions should be public", Justification = "Thrown and caught inside this class; never part of an API.")]
     private sealed class PathException(string message) : Exception(message);
 }
