@@ -137,16 +137,10 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
     // ---- null ---------------------------------------------------------------------------------------
 
     [Fact]
-    public async Task A_check_passes_null()
-    {
-        Assert.True(await Succeeds("CREATE TABLE dbo.obs (i int NULL CHECK (i IN (1, 2)), s varchar(5) NULL CHECK (len(s) > 0));", "INSERT INTO dbo.obs VALUES (NULL, NULL)"));
-    }
+    public async Task A_check_passes_null() => Assert.True(await Succeeds("CREATE TABLE dbo.obs (i int NULL CHECK (i IN (1, 2)), s varchar(5) NULL CHECK (len(s) > 0));", "INSERT INTO dbo.obs VALUES (NULL, NULL)"));
 
     [Fact]
-    public async Task A_null_in_an_in_list_makes_the_check_pass_anything()
-    {
-        Assert.True(await Succeeds("CREATE TABLE dbo.obs (i int NULL CHECK (i IN (1, NULL)));", "INSERT INTO dbo.obs VALUES (5)"));
-    }
+    public async Task A_null_in_an_in_list_makes_the_check_pass_anything() => Assert.True(await Succeeds("CREATE TABLE dbo.obs (i int NULL CHECK (i IN (1, NULL)));", "INSERT INTO dbo.obs VALUES (5)"));
 
     // ---- alias types --------------------------------------------------------------------------------
 

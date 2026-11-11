@@ -52,7 +52,6 @@ internal sealed class NameSettler(
 
     private readonly HashSet<string> reportedClashes = new(StringComparer.Ordinal);
 
-
     /// <summary>The document with every name settled, or null when a name could not be (the problems say why).</summary>
     public IrDocument? Settle(IrDocument document, IReadOnlyList<IrResult>?[] results)
     {
@@ -147,7 +146,7 @@ internal sealed class NameSettler(
                 break;
 
             // A result several statements may return (IR 0.6): each variant's object is a row of it, numbered after the first.
-            case IrUnion union when union.Variants.All(v => v is IrRef r && !IsNode(r) || v is IrArray { Items: IrRef i } && !IsNode(i)):
+            case IrUnion union when union.Variants.All(v => (v is IrRef r && !IsNode(r)) || (v is IrArray { Items: IrRef i } && !IsNode(i))):
                 foreach (var variant in union.Variants)
                 {
                     if (variant is IrRef reference)
@@ -338,9 +337,13 @@ internal sealed class NameSettler(
                         i++;
                     }
                     else if (id[i] == ']')
+                    {
                         break;
+                    }
                     else
+                    {
                         part.Append(id[i]);
+                    }
                 }
             }
             else if (id[i] == '.')

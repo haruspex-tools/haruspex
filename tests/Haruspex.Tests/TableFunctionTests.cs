@@ -149,29 +149,18 @@ public class TableFunctionTests
     }
 
     [Fact]
-    public void Nolock_inside_a_function_drops_its_key()
-    {
-        Assert.Equal(IrCardinality.Many, Result(Procedure("SELECT f.id FROM dbo.dirty(@id) AS f;")).Cardinality);
-    }
+    public void Nolock_inside_a_function_drops_its_key() => Assert.Equal(IrCardinality.Many, Result(Procedure("SELECT f.id FROM dbo.dirty(@id) AS f;")).Cardinality);
 
     [Fact]
-    public void Read_uncommitted_in_the_procedure_drops_the_functions_bound()
-    {
-        Assert.Equal(IrCardinality.Many, Result(Procedure("SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; SELECT f.id FROM dbo.t_by_id(@id) AS f;")).Cardinality);
-    }
+    public void Read_uncommitted_in_the_procedure_drops_the_functions_bound() => Assert.Equal(IrCardinality.Many, Result(Procedure("SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; SELECT f.id FROM dbo.t_by_id(@id) AS f;")).Cardinality);
 
     [Fact]
-    public void Default_passes_the_parameters_default()
-    {
+    public void Default_passes_the_parameters_default() =>
         // Default_passes_the_parameters_default.
         Assert.Equal("int", Typed(Procedure("SELECT f.x FROM dbo.with_default(DEFAULT) AS f;"), "x"));
-    }
 
     [Fact]
-    public void An_unqualified_function_name_resolves_like_a_tables()
-    {
-        Assert.Equal("int", Typed(Procedure("SELECT f.id FROM t_by_id(@id) AS f;"), "id"));
-    }
+    public void An_unqualified_function_name_resolves_like_a_tables() => Assert.Equal("int", Typed(Procedure("SELECT f.id FROM t_by_id(@id) AS f;"), "id"));
 
     [Fact]
     public void What_is_not_modelled_is_unknown()

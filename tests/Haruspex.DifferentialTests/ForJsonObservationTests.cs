@@ -1,5 +1,4 @@
 using Haruspex.DifferentialTests.Server;
-using Microsoft.Data.SqlClient;
 
 namespace Haruspex.DifferentialTests;
 

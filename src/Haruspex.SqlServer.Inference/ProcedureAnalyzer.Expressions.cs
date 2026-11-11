@@ -142,7 +142,9 @@ internal sealed partial class ProcedureAnalyzer
         // changes only the precision, the most digits hold every value.
         if (values.Any(v => Uncertain(v.Value)) && ScalarType.Common([.. values.Select(v => TypeOf(v.Value, v.Expression, least: true)!)]) is var fewest
             && (fewest is null || fewest.Name != type.Name || fewest.Scale != type.Scale))
+        {
             return new CombinedType(null, [], $"its type depends on whether SQL Server folds {Names(values.Where(v => Uncertain(v.Value)).Select(v => Text(v.Expression)))} to a constant, whose digits it would count.");
+        }
 
         var overflows = values.Select((v, i) =>
         {
@@ -300,7 +302,7 @@ internal sealed partial class ProcedureAnalyzer
         // A NULL cast to int and cast again stays that constant; CAST(1 AS int) counts an int's 10 digits (same observation).
         if (fits && from?.Text == to.Text && !styled)
             return value.Digits is { Least: 1, Most: 1 } && IsNullCast(operand) ? value : value with { Digits = null };
-        IReadOnlyList<IrNullReason> because = fits
+        var because = fits
             ? value.NullableBecause
             : ShapeJoin.Reasons(value.NullableBecause, [attempt ? new IrNullReason(IrNullRules.FailedConversion, At(call).ToString()) : Overflow(call)]);
         return new Value(shape, because);
@@ -352,7 +354,7 @@ internal sealed partial class ProcedureAnalyzer
         if (pieces.Any(p => p is null))
             return NotModelled(call, "an argument whose length as a string is not modelled yet.");
 
-        var parts = separated ? pieces.Skip(1).ToList() : pieces;
+        var parts = separated ? [.. pieces.Skip(1)] : pieces;
         var separator = separated ? pieces[0]!.Value.Length * (parts.Count - 1) : 0;
         var max = pieces.Any(p => p!.Value.Type.IsMax);
         var national = pieces.Any(p => p!.Value.Type.IsNational);
@@ -488,7 +490,7 @@ internal sealed partial class ProcedureAnalyzer
         if (ProvedAggregate(call))
             return Typed(type, [], call);
 
-        var from = TypeOf(argument, call.Parameters[0])!;
+        var from = TypeOf(argument, call.Parameters[0]);
         IReadOnlyList<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call)];
         return Typed(type, from is { IsDecimal: true, Precision: <= 19 } ? because : ShapeJoin.Reasons(because, [Overflow(call)]), call);
     }

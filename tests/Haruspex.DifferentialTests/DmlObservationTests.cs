@@ -111,12 +111,10 @@ public class DmlObservationTests(SqlServerFixture server)
     }
 
     [Fact]
-    public async Task Output_columns_are_the_values_converted_to_the_target_columns()
-    {
+    public async Task Output_columns_are_the_values_converted_to_the_target_columns() =>
         // inserted holds what the row holds: a value converted to the column's type (here a string into int) and a default
         // where the insert leaves the column out; never a null where the column is NOT NULL.
         Assert.Equal("id,qty,label: 7,0,null", (await Run([Item], "INSERT INTO dbo.obs_item (id) OUTPUT inserted.id, inserted.qty, inserted.label VALUES ('7');")).ToString());
-    }
 
     [Fact]
     public async Task Output_without_into_fails_on_a_table_with_an_enabled_trigger_and_works_when_it_is_disabled()
@@ -143,11 +141,9 @@ public class DmlObservationTests(SqlServerFixture server)
     // ---- triggers ------------------------------------------------------------------------------------------
 
     [Fact]
-    public async Task Results_from_triggers_are_allowed_by_default()
-    {
+    public async Task Results_from_triggers_are_allowed_by_default() =>
         // The server option is off unless an administrator turns it on, and the feature is deprecated, not removed.
         Assert.Equal("value_in_use: 0", (await Run([], "SELECT CONVERT(int, value_in_use) AS value_in_use FROM sys.configurations WHERE name = N'disallow results from triggers';")).ToString());
-    }
 
     [Fact]
     public async Task A_triggers_select_reaches_the_client_even_when_no_row_is_affected()

@@ -232,12 +232,10 @@ public class ExpressionObservationTests(SqlServerFixture server)
     }
 
     [Fact]
-    public async Task With_concat_null_yields_null_off_a_string_plus_null_is_the_string()
-    {
+    public async Task With_concat_null_yields_null_off_a_string_plus_null_is_the_string() =>
         // The setting is ON by default, and OFF is deprecated: it only makes + less often NULL, so a claim that + is NULL
         // when an operand may be holds under either.
         Assert.Equal("x: a", (await Run("SET CONCAT_NULL_YIELDS_NULL OFF; SELECT 'a' + NULL AS x;")).ToString());
-    }
 
     // ---- arithmetic and SUM -----------------------------------------------------------------------------------------
 

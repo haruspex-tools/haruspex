@@ -244,7 +244,10 @@ public static class SqlScriptFolder
         {
             if (key.DeleteAction is DeleteUpdateAction.NotSpecified or DeleteUpdateAction.NoAction
                 && key.UpdateAction is DeleteUpdateAction.NotSpecified or DeleteUpdateAction.NoAction)
+            {
                 continue;
+            }
+
             into.Add(new CascadingKey(table, ObjectName.From(key.ReferenceTableName), new SourceLocation(file, key.StartLine, key.StartColumn)));
         }
     }

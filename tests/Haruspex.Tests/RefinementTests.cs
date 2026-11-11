@@ -117,11 +117,9 @@ public class RefinementTests
     [InlineData("t.name = N'a' OR t.name = N'b'")]
     [InlineData("t.name IN (N'a') OR t.name LIKE N'b%'")]
     [InlineData("(t.name = N'a' AND t.n = 1) OR t.name = N'b'")]
-    public void Under_or_every_disjunct_must_prove_it(string predicate)
-    {
+    public void Under_or_every_disjunct_must_prove_it(string predicate) =>
         // Or_keeps_a_null_when_any_disjunct_can_be_true.
         Assert.False(Field(Procedure($"SELECT t.name FROM dbo.t AS t WHERE {predicate};"), "name").Nullable);
-    }
 
     [Theory]
     [InlineData("t.name = N'a' OR t.n = 1")]
@@ -176,12 +174,10 @@ public class RefinementTests
     [InlineData("t.name NOT LIKE N'a%'")]
     [InlineData("t.name IN (SELECT u.note FROM dbo.u AS u)")]
     [InlineData("NOT (t.name = N'a' OR t.name IS NULL)")]
-    public void Not_refines_exactly_where_three_valued_logic_says_it_is_never_true_for_null(string predicate)
-    {
+    public void Not_refines_exactly_where_three_valued_logic_says_it_is_never_true_for_null(string predicate) =>
         // Not_of_an_unknown_comparison_is_unknown_and_keeps_no_null: NOT UNKNOWN is UNKNOWN, and NOT (c IS NULL) is FALSE for
         // a null c. IN (subquery) is FALSE or UNKNOWN for a null, never TRUE.
         Assert.False(Field(Procedure($"SELECT t.name FROM dbo.t AS t WHERE {predicate};"), "name").Nullable);
-    }
 
     [Fact]
     public void A_procedure_created_with_ansi_nulls_off_does_not_refine_from_a_comparison_with_a_value()
@@ -591,12 +587,10 @@ public class RefinementTests
     [InlineData("SELECT t.id FROM dbo.t AS t ORDER BY t.id OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY;", IrCardinality.Many)]
     [InlineData("SELECT COUNT(*) AS n FROM dbo.t AS t ORDER BY 1 OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;", IrCardinality.One)]
     [InlineData("SELECT COUNT(*) AS n FROM dbo.t AS t ORDER BY 1 OFFSET 1 ROWS;", IrCardinality.AtMostOne)]
-    public void How_many_rows_a_query_returns(string query, IrCardinality expected)
-    {
+    public void How_many_rows_a_query_returns(string query, IrCardinality expected) =>
         // An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows, An_aggregate_with_group_by_returns_no_row_over_no_rows,
         // Having_over_no_groups_returns_no_row_and_without_group_by_at_most_one, Top_1_and_fetch_1_give_at_most_one_row_but_with_ties_gives_more.
         Assert.Equal(expected, Rows(query, "@x int"));
-    }
 
     [Theory]
     [InlineData("SELECT t.name FROM dbo.t AS t WHERE t.id = @x;", IrCardinality.AtMostOne)]
@@ -612,11 +606,9 @@ public class RefinementTests
     [InlineData("SELECT u.note FROM dbo.u AS u LEFT JOIN dbo.t AS t ON t.id = u.t_id WHERE u.id = @x;", IrCardinality.AtMostOne)]
     [InlineData("SELECT u.note FROM dbo.u AS u, dbo.t AS t WHERE t.id = u.t_id AND u.id = @x;", IrCardinality.AtMostOne)]
     [InlineData("SELECT t.n, COUNT(*) AS c FROM dbo.t AS t WHERE t.id = @x GROUP BY t.n;", IrCardinality.AtMostOne)]
-    public void A_filter_fixing_a_whole_key_returns_at_most_one_row(string query, IrCardinality expected)
-    {
+    public void A_filter_fixing_a_whole_key_returns_at_most_one_row(string query, IrCardinality expected) =>
         // A_unique_constraint_allows_one_null_only: so `code IS NULL` fixes at most one row too.
         Assert.Equal(expected, Rows(query, "@x int, @big bigint, @code varchar(10)"));
-    }
 
     [Theory]
     [InlineData("SELECT p.v FROM dbo.pair AS p WHERE p.a = 1;")]
@@ -634,11 +626,9 @@ public class RefinementTests
     [InlineData("SELECT u.note FROM dbo.u AS u JOIN dbo.t AS t ON t.id = u.t_id;")]
     [InlineData("SELECT t.name FROM dbo.t AS t JOIN dbo.u AS u ON u.id = @x WHERE t.id = u.t_id OR 1 = 1;")]
     [InlineData("SELECT t.name FROM dbo.t AS t LEFT JOIN dbo.u AS u ON t.id = @x;")]
-    public void A_filter_that_does_not_fix_a_whole_key_in_the_keys_own_type_returns_many(string query)
-    {
+    public void A_filter_that_does_not_fix_a_whole_key_in_the_keys_own_type_returns_many(string query) =>
         // A_comparison_that_converts_the_key_can_match_several_rows, A_varchar_key_under_a_sql_collation_compared_with_nvarchar_can_match_several_rows.
         Assert.Equal(IrCardinality.Many, Rows(query, "@x int, @ncode nvarchar(10)"));
-    }
 
     [Theory]
     [InlineData("CREATE TABLE dbo.k (id int NOT NULL, code int NOT NULL, INDEX ix_k_code UNIQUE (code));", IrCardinality.AtMostOne)]

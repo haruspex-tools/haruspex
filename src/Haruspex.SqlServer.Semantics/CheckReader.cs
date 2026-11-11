@@ -283,7 +283,9 @@ public static class CheckReader
 
             if (Literal(other) is not IntegerLiteral literal
                 || !int.TryParse(literal.Value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n))
+            {
                 return null;
+            }
 
             int? min = type switch
             {

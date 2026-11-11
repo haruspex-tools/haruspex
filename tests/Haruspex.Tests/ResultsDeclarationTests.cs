@@ -160,7 +160,7 @@ public class ResultsDeclarationTests
         Assert.Equal((IrScalarKind.Datetime, IrFormats.Local), (((IrScalar)fields["local"].Type).Kind, ((IrScalar)fields["local"].Type).Format));
         Assert.Equal(IrScalarKind.Time, ((IrScalar)fields["time"].Type).Kind);
         Assert.Equal(IrScalarKind.Uuid, ((IrScalar)fields["id"].Type).Kind);
-        Assert.Equal((IrScalarKind.Number, (string?)null), (((IrScalar)fields["count"].Type).Kind, ((IrScalar)fields["count"].Type).Format));
+        Assert.Equal((IrScalarKind.Number, null), (((IrScalar)fields["count"].Type).Kind, ((IrScalar)fields["count"].Type).Format));
         Assert.Equal(IrScalarKind.Boolean, ((IrScalar)fields["done"].Type).Kind);
         Assert.Equal(IrPresence.Always, fields["note"].Presence);
         Assert.True(fields["note"].Nullable);

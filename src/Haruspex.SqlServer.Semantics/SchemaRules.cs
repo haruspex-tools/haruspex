@@ -63,7 +63,9 @@ public static class SchemaRules
                 // are found before user types for an unqualified name.
                 if (type.Name.Equals("sysname", StringComparison.OrdinalIgnoreCase)
                     && (type.Schema is null || type.Schema.Equals("sys", StringComparison.OrdinalIgnoreCase)))
+                {
                     return new ResolvedType(new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["128"]), "sysname", DeclaredNullability.NotNull);
+                }
 
                 // An unqualified name resolves in the caller's default schema and then in dbo, and the source does not
                 // say whose. With exactly one type of that name in the project, a script that deployed used that one.

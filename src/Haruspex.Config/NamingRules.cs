@@ -112,7 +112,10 @@ public sealed record NamingRules(IReadOnlyList<NamingReplacement> Replace, Namin
         if (pascal.EndsWith("sses", StringComparison.Ordinal) || pascal.EndsWith("xes", StringComparison.Ordinal)
             || pascal.EndsWith("ches", StringComparison.Ordinal) || pascal.EndsWith("shes", StringComparison.Ordinal)
             || pascal.EndsWith("uses", StringComparison.Ordinal))
+        {
             return pascal[..^2];
+        }
+
         if (pascal.EndsWith('s') && !pascal.EndsWith("ss", StringComparison.Ordinal) && pascal.Length > 1)
             return pascal[..^1];
         return pascal + "Item";

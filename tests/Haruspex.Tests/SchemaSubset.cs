@@ -83,7 +83,7 @@ internal sealed class SchemaSubset(JsonElement root)
                 case "items" when value.ValueKind == JsonValueKind.Array:
                     var i = 0;
                     foreach (var item in value.EnumerateArray())
-                        Check(k, item, $"{at}/{(i++).ToString(CultureInfo.InvariantCulture)}", errors);
+                        Check(k, item, $"{at}/{i++.ToString(CultureInfo.InvariantCulture)}", errors);
                     break;
                 case "minItems" when value.ValueKind == JsonValueKind.Array:
                     if (value.GetArrayLength() < k.GetInt32())
@@ -125,8 +125,16 @@ internal sealed class SchemaSubset(JsonElement root)
                         errors.Add($"{at}: matches what \"not\" forbids");
                     break;
                 case "anyOf":
-                    if (!k.EnumerateArray().Any(option => { var none = new List<string>(); Check(option, value, at, none); return none.Count == 0; }))
+                    if (!k.EnumerateArray().Any(option =>
+                    {
+                        var none = new List<string>();
+                        Check(option, value, at, none);
+                        return none.Count == 0;
+                    }))
+                    {
                         errors.Add($"{at}: matches none of anyOf");
+                    }
+
                     break;
             }
         }

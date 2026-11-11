@@ -65,7 +65,7 @@ internal sealed partial class ProcedureAnalyzer
         for (var i = 0; i < names.Count; i++)
         {
             var column = rows.Select(r => r[i]).ToList();
-            if (Literals(table.RowValues.Select(r => r.ColumnValues[i]).ToList(), at) is { } literals)
+            if (Literals([.. table.RowValues.Select(r => r.ColumnValues[i])], at) is { } literals)
             {
                 values.Add(literals);
                 continue;
@@ -200,7 +200,7 @@ internal sealed partial class ProcedureAnalyzer
     private List<RowColumn>? Expand(SelectStarExpression star, BindingScope scope)
     {
         var at = At(star);
-        IReadOnlyList<BoundSource> sources = scope.Sources;
+        var sources = scope.Sources;
         if (star.Qualifier is { } qualifier)
         {
             if (qualifier.Identifiers.Count != 1)

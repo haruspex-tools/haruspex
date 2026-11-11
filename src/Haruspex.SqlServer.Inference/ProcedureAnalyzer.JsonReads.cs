@@ -212,7 +212,10 @@ internal sealed partial class ProcedureAnalyzer
             return new Value(new ScalarShape(to), []);
         if (into.IsInteger && from is null && source.Kind == IrScalarKind.Number && source.Facets?.Values is { } numbers
             && numbers.Items.All(v => ExactDecimal.TryParse(v.Text, out var d) && d.IsInteger && Within(d, into.Name)))
+        {
             return new Value(new ScalarShape(to with { Facets = (to.Facets ?? new IrFacets()) with { Values = numbers } }), []);
+        }
+
         return null;
 
         static int Rank(string name) => name switch { "tinyint" => 0, "smallint" => 1, "int" => 2, _ => 3 };
@@ -267,7 +270,7 @@ internal sealed partial class ProcedureAnalyzer
 
         if (Rows(document) is not { } rows)
             return null;
-        IrNullReason JsonValue(SourceLocation where) => new(IrNullRules.JsonValue, where.ToString());
+        static IrNullReason JsonValue(SourceLocation where) => new(IrNullRules.JsonValue, where.ToString());
 
         if (reference.SchemaDeclarationItems.Count == 0)
         {
@@ -397,12 +400,12 @@ internal sealed partial class ProcedureAnalyzer
 
         static HashSet<int>? TypeOf(Shape shape) => shape switch
         {
-            ScalarShape { Type.Kind: IrScalarKind.Number } => new HashSet<int> { 2 },
-            ScalarShape { Type.Kind: IrScalarKind.Boolean } => new HashSet<int> { 3 },
-            ScalarShape or JsonTextShape => new HashSet<int> { 1 },
-            ArrayShape or TupleShape => new HashSet<int> { 4 },
-            ObjectShape or RecordShape => new HashSet<int> { 5 },
-            UnionShape u when u.Variants.Select(TypeOf).ToList() is var each && each.All(t => t is not null) => each.SelectMany(t => t!).ToHashSet(),
+            ScalarShape { Type.Kind: IrScalarKind.Number } => [2],
+            ScalarShape { Type.Kind: IrScalarKind.Boolean } => [3],
+            ScalarShape or JsonTextShape => [1],
+            ArrayShape or TupleShape => [4],
+            ObjectShape or RecordShape => [5],
+            UnionShape u when u.Variants.Select(TypeOf).ToList() is var each && each.All(t => t is not null) => [.. each.SelectMany(t => t!)],
             _ => null,
         };
     }
@@ -425,7 +428,7 @@ internal sealed partial class ProcedureAnalyzer
         var type = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["4000"]), at);
 
         // A NULL document gives NULL.
-        IReadOnlyList<IrNullReason> nullable = ShapeJoin.Reasons(documentNull, [new IrNullReason(IrNullRules.JsonValue, at.ToString())]);
+        var nullable = ShapeJoin.Reasons(documentNull, [new IrNullReason(IrNullRules.JsonValue, at.ToString())]);
         if (found.Shape is not ScalarShape { Type: var scalar })
             return new Value(type, nullable);
 

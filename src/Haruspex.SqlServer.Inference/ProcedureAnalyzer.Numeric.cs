@@ -168,7 +168,7 @@ internal sealed partial class ProcedureAnalyzer
             { IsDecimal: true } d => !(places >= d.Scale),
             // money's ends are ±922337203685477.58xx with .5807 and .5808 below .585, so rounding to 2 places never carries past
             // them; to 3, 1 or 0 places it can (observed).
-            { Name: "money" } => !(places >= 4 || places == 2),
+            { Name: "money" } => places is not (>= 4 or 2),
             _ => !(places >= 0),
         };
     }

@@ -98,9 +98,13 @@ internal sealed class SnapshotStore(string directory, bool isCi, bool accept)
                 y++;
             }
             else if (lcs[x + 1, y] >= lcs[x, y + 1])
+            {
                 ops.Add(('-', a[x++]));
+            }
             else
+            {
                 ops.Add(('+', b[y++]));
+            }
         }
 
         while (x < a.Length)

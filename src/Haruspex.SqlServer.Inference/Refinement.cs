@@ -103,7 +103,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var found = new QueryFacts(query, scope)
         {
-            Rolled = SuperAggregate(query) ? new IrNullReason(IrNullRules.GroupingSet, At(query.GroupByClause!).ToString()) : null,
+            Rolled = SuperAggregate(query) ? new IrNullReason(IrNullRules.GroupingSet, At(query.GroupByClause).ToString()) : null,
         };
 
         // A query that aggregates without GROUP BY returns its one row even when WHERE and ON removed every row (observed:
@@ -398,7 +398,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private static IEnumerable<ScalarExpression> Operands(BooleanExpression condition)
     {
-        IEnumerable<ScalarExpression?> found = condition switch
+        var found = condition switch
         {
             BooleanParenthesisExpression p => Operands(p.Expression),
             BooleanNotExpression n => Operands(n.Expression),

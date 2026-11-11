@@ -1,6 +1,6 @@
-using Haruspex.Ir;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.DifferentialTests.Validation;
+using Haruspex.Ir;
 
 namespace Haruspex.DifferentialTests;
 
@@ -92,7 +92,7 @@ public class DifferentialTests(SqlServerFixture server)
 
         var rows = Assert.Single(await server.ObserveAsync(Runs.Named("checks: ticket_rows"))).Rows;
         var columns = Assert.Single(await server.ObserveAsync(Runs.Named("checks: ticket_rows"))).Columns;
-        int? Least(string column) => rows.Select(r => (int?)r[columns.ToList().IndexOf(column)]).Min();
+        int? Least(string column) => rows.Min(r => (int?)r[columns.ToList().IndexOf(column)]);
         Assert.True(Least("muted") <= 0, "The seed should break ck_ticket_muted.");
         Assert.True(Least("late") <= 0, "ticket_late.sql should break ck_ticket_late.");
         Assert.True(Least("restored") > 0);

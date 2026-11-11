@@ -172,7 +172,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
         Keywords(schema, at);
         var members = Members(schema);
         var format = members.TryGetValue("format", out var f) && f.Value is JsonStringValue fs ? fs.Value : null;
-        IrType? type = nonNull[0] switch
+        var type = nonNull[0] switch
         {
             "object" => ObjectNode(schema, at, irPath),
             "array" => ArrayNode(schema, at, irPath),
@@ -306,7 +306,10 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
             return null;
         if (member.Value is JsonOtherValue { Kind: System.Text.Json.JsonTokenType.Number } number
             && int.TryParse(number.Text, NumberStyles.None, CultureInfo.InvariantCulture, out var n))
+        {
             return n;
+        }
+
         Error(member.Value, Child(at, keyword), "must be a whole number, zero or more.");
         return null;
     }

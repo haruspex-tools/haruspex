@@ -114,7 +114,7 @@ internal sealed partial class ProcedureAnalyzer
         for (var c = 0; c < count; c++)
         {
             var first = rows[0].Columns[c];
-            columns.Add(new RowColumn(first.Name, SetColumn(rows.Select(r => r.Columns[c]).ToList(), node, first.At), first.At));
+            columns.Add(new RowColumn(first.Name, SetColumn([.. rows.Select(r => r.Columns[c])], node, first.At), first.At));
         }
 
         return new Row(columns, null, node.Rows);
@@ -150,7 +150,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>One column of a set operation, from that column of every query (see <see cref="Combine"/>).</summary>
     private Value SetColumn(List<RowColumn> columns, SetNode node, SourceLocation at)
     {
-        bool IsNull(RowColumn c) => c.Expression is { } e && Strip(e) is NullLiteral;
+        static bool IsNull(RowColumn c) => c.Expression is { } e && Strip(e) is NullLiteral;
         var given = columns.Where(c => !IsNull(c)).ToList();
         if (given.Count == 0)
             return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, "Every query of this set operation gives NULL in this column.", at));
@@ -308,7 +308,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = At(reference);
         var name = reference.Alias?.Value ?? "OPENJSON";
-        IrNullReason JsonValue(SourceLocation where) => new(IrNullRules.JsonValue, where.ToString());
+        static IrNullReason JsonValue(SourceLocation where) => new(IrNullRules.JsonValue, where.ToString());
 
         // Over JSON built here its shape says more (slice 6l, ProcedureAnalyzer.JsonReads.cs).
         if (TracedOpenJson(reference, outer ?? NoFrom(), at) is { } traced)

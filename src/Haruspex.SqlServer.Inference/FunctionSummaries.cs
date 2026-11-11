@@ -148,7 +148,7 @@ internal sealed class FunctionSummaries
 
         var outer = assumed;
         var functions = members.Select(m => model.FindFunction(m)!).ToList();
-        var current = functions.ToDictionary(f => f.Name, f => Start(f));
+        var current = functions.ToDictionary(f => f.Name, Start);
         var steps = StepsPerFunction * members.Count + ExtraSteps;
         var settled = false;
         try
@@ -303,7 +303,7 @@ internal sealed class FunctionSummaries
             StringComparer.OrdinalIgnoreCase);
         var value = new ProcedureAnalyzer(model, function.File, this, parameters, ansiNullsOff: function.AnsiNullsOff, views: Views, uncommittedReads: uncommitted).Return(expression, body.Parameters);
 
-        Shape? content = value switch
+        var content = value switch
         {
             { IsLiveJson: true } => value.Shape,
             { Shape: JsonTextShape { Content: { } text } } => text,

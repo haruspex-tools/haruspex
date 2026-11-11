@@ -369,7 +369,7 @@ internal sealed partial class ProcedureAnalyzer
         // FETCH … GLOBAL c names the global cursor; a declaration says GLOBAL, or takes the database's default, which may be
         // LOCAL. So only an explicit GLOBAL is known to be it.
         var candidates = fetch.Cursor.IsGlobal
-            ? declared.Where(d => d.CursorDefinition.Options.Any(o => o.OptionKind == CursorOptionKind.Global)).ToList()
+            ? [.. declared.Where(d => d.CursorDefinition.Options.Any(o => o.OptionKind == CursorOptionKind.Global))]
             : declared;
         if (candidates is not [var declaration] || declaration.CursorDefinition.Select is not { QueryExpression: QuerySpecification query } select)
             return null;

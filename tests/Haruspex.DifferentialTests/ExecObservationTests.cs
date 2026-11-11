@@ -100,11 +100,9 @@ public class ExecObservationTests(SqlServerFixture server)
     }
 
     [Fact]
-    public async Task Dynamic_sql_can_change_its_callers_temporary_tables()
-    {
+    public async Task Dynamic_sql_can_change_its_callers_temporary_tables() =>
         // Dynamic SQL runs as a nested scope with the caller's temporary tables in reach, so after it nothing is known of them.
         Assert.Equal("v,extra: 1,null", (await Run([], "CREATE TABLE #obs_t (v int); INSERT INTO #obs_t (v) VALUES (1); EXEC (N'ALTER TABLE #obs_t ADD extra int NULL'); EXEC sp_executesql N'SELECT * FROM #obs_t';")).ToString());
-    }
 
     // ---- INSERT … EXEC ---------------------------------------------------------------------------------------------
 

@@ -1,6 +1,4 @@
-using Haruspex.Diagnostics;
 using Haruspex.Ir;
-using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -215,7 +213,9 @@ internal sealed partial class ProcedureAnalyzer
                 n = (int)Math.Clamp(given, 1, type.Length);
             }
             else if (!ReadsData(length))
+            {
                 return NotModelled(call, "a length the server folds from constants is not modelled.");
+            }
         }
 
         return Typed(ScalarType.String(type.IsNational, varying: true, n), Reasons(values), call);

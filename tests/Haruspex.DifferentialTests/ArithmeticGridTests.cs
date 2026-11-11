@@ -92,8 +92,8 @@ public class ArithmeticGridTests(SqlServerFixture server)
         var expressions = grid switch
         {
             "binary" => BinaryExpressions().ToList(),
-            "functions" => FunctionExpressions().Where(e => !e.StartsWith("-bt", StringComparison.Ordinal)).ToList(),
-            _ => AggregateExpressions().ToList(),
+            "functions" => [.. FunctionExpressions().Where(e => !e.StartsWith("-bt", StringComparison.Ordinal))],
+            _ => [.. AggregateExpressions()],
         };
 
         // An aggregate and a window cannot share a select list without GROUP BY, so each aggregate is read in a query of its own.
@@ -140,13 +140,13 @@ public class ArithmeticGridTests(SqlServerFixture server)
         {
             var columns = string.Join(", ", Columns.Select(c => $"{c.Name} {c.Type} NOT NULL"));
             File.WriteAllText(Path.Join(dir.FullName, "tables.sql"), $"CREATE TABLE dbo.g (id int NOT NULL PRIMARY KEY, {columns});\n");
-            string Item(string e, int i) => $"{e} AS e{i.ToString(CultureInfo.InvariantCulture)}";
+            static string Item(string e, int i) => $"{e} AS e{i.ToString(CultureInfo.InvariantCulture)}";
             var bodies = oneEach
                 ? expressions.Select((e, i) => $"CREATE PROCEDURE dbo.p{i.ToString(CultureInfo.InvariantCulture)} AS\nSELECT {Item(e, i)} FROM dbo.g;\n")
                 : [$"CREATE PROCEDURE dbo.p0 AS\nSELECT {string.Join(",\n       ", expressions.Select(Item))} FROM dbo.g;\n"];
             var n = 0;
             foreach (var body in bodies)
-                File.WriteAllText(Path.Join(dir.FullName, $"p{(n++).ToString(CultureInfo.InvariantCulture)}.sql"), body);
+                File.WriteAllText(Path.Join(dir.FullName, $"p{n++.ToString(CultureInfo.InvariantCulture)}.sql"), body);
 
             var project = SqlProject.Load(dir.FullName);
             Assert.Empty(project.Diagnostics);

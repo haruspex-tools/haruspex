@@ -1,10 +1,9 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using Haruspex.Cli;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.DifferentialTests.Validation;
 using Haruspex.Ir;
-using Haruspex.Cli;
-using Haruspex.Config;
 using Microsoft.Data.SqlClient;
 using Testcontainers.MsSql;
 
@@ -61,7 +60,10 @@ public sealed class SqlServerFixture : IAsyncLifetime
     private int created;
     private readonly Lazy<Task> drop;
 
-    public SqlServerFixture() => drop = new(() => DropAsync(Database), LazyThreadSafetyMode.ExecutionAndPublication);
+    public SqlServerFixture()
+    {
+        drop = new(() => DropAsync(Database), LazyThreadSafetyMode.ExecutionAndPublication);
+    }
 
     /// <summary>Databases of earlier runs found at the start and less than a day old, so not dropped (see <see cref="DropLeftoversAsync"/>).</summary>
     public IReadOnlyList<string> RecentLeftovers { get; private set; } = [];
@@ -317,7 +319,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
             await using var become = new SqlCommand(
                 $"DECLARE @cookie varbinary(8000); EXECUTE AS USER = N'{Reader}' WITH COOKIE INTO @cookie; SELECT @cookie;",
                 connection);
-            var cookie = (byte[])(await become.ExecuteScalarAsync(token).ConfigureAwait(false))!;
+            var cookie = (byte[])(await become.ExecuteScalarAsync(token).ConfigureAwait(false));
             return new ReadSession(connection, cookie, pass);
         }
         catch

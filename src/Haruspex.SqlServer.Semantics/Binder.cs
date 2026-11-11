@@ -221,7 +221,9 @@ public sealed class Binder(DatabaseModel model, string file)
         // one-part name. Either is the body's own.
         if (name.ServerIdentifier is null && name.DatabaseIdentifier is null && name.SchemaIdentifier is null
             && locals?.Find(name.BaseIdentifier.Value) is { } local)
+        {
             return new BoundSource(alias, null, null, optionalSideOf, local);
+        }
 
         if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
             return Unresolved(BindingProblemKind.UnsupportedSource, $"The reference {FragmentText.OneLine(name)} to another database is not modelled yet.");
@@ -289,8 +291,8 @@ public sealed class Binder(DatabaseModel model, string file)
     /// </summary>
     private List<(ObjectName Name, string Kind)> ReadableNamed(string name) =>
     [
-        .. model.Tables.Select(t => (Name: t.Name, Kind: "table"))
-            .Concat(model.NamedObjects.Select(o => (Name: o.Name, Kind: KindName(o.Kind))))
+        .. model.Tables.Select(t => (t.Name, Kind: "table"))
+            .Concat(model.NamedObjects.Select(o => (o.Name, Kind: KindName(o.Kind))))
             .Where(c => c.Name.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
             .OrderBy(c => c.Name.ToString(), StringComparer.Ordinal)
             .ThenBy(c => c.Kind, StringComparer.Ordinal),

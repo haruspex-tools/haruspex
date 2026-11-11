@@ -1,6 +1,5 @@
 using System.Globalization;
 using Haruspex.Ir;
-using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 

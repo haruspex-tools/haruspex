@@ -92,7 +92,7 @@ public class SetTypeGridTests(SqlServerFixture server)
         // or a lesser one, and typed by it alone (observed: Coalesce_of_a_string_literal_first_is_folded_to_it_beside_a_string);
         // haruspex gives the type over every argument, which holds every value, so those are left out here.
         var combos = all.Where(o => form != "coalesce" || !(o[0].Contains('\'', StringComparison.Ordinal) && o.Skip(1).Any(IsString))).ToList();
-        string Name(int i) => $"e{i.ToString(CultureInfo.InvariantCulture)}";
+        static string Name(int i) => $"e{i.ToString(CultureInfo.InvariantCulture)}";
 
         // The server first: each described on its own, since a refused one fails its whole query, over a table (a row of
         // constants would let the server fold COALESCE and CASE to one argument and type them by it), in one batch.
@@ -111,7 +111,7 @@ public class SetTypeGridTests(SqlServerFixture server)
         foreach (var line in outcome.Sets[0]["c: ".Length..].Split(';'))
         {
             var (n, type) = (line[..line.IndexOf(' ', StringComparison.Ordinal)], line[(line.IndexOf(' ', StringComparison.Ordinal) + 1)..]);
-            Assert.True(type is not ['!', ..] || type == "!206", $"{Query(form, combos[int.Parse(n, CultureInfo.InvariantCulture)], "e" + n, "g")}: error {type}");
+            Assert.True(type is not ['!', ..] or "!206", $"{Query(form, combos[int.Parse(n, CultureInfo.InvariantCulture)], "e" + n, "g")}: error {type}");
             described["e" + n] = type.StartsWith('!') ? null : type;
         }
 
@@ -140,7 +140,7 @@ public class SetTypeGridTests(SqlServerFixture server)
         Assert.True(differences.Count == 0, $"{differences.Count} of {combos.Count} differ:\n" + string.Join("\n", differences));
     }
 
-    private static bool IsString(string operand) => TypeOf(operand) is var t && (t.Contains("char", StringComparison.Ordinal));
+    private static bool IsString(string operand) => TypeOf(operand) is var t && t.Contains("char", StringComparison.Ordinal);
 
     /// <summary>An operand's type as haruspex names it: a column's own, or a literal's.</summary>
     private static string TypeOf(string operand) => Columns.FirstOrDefault(c => c.Name == operand).Type ?? operand switch

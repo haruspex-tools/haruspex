@@ -601,7 +601,9 @@ internal sealed partial class ProcedureAnalyzer
         // Forms the server rejects or that would change what an aggregate sees (a window, DISTINCT) are not modelled.
         if (call.OverClause is not null || call.WithinGroupClause is not null || call.UniqueRowFilter != UniqueRowFilter.NotSpecified
             || call.IgnoreRespectNulls is { Count: > 0 } || call.WithArrayWrapper)
+        {
             return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"This form of {name} is not modelled: {Text(call)}", at));
+        }
 
         // RETURNING json changes the value's SQL type, not what it writes or how it nests (observed).
         if (call.ReturnType is { Count: > 0 } returns && returns is not [SqlDataTypeReference { SqlDataTypeOption: SqlDataTypeOption.Json }])

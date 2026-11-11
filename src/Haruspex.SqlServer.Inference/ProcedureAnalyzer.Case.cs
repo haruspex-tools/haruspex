@@ -279,7 +279,7 @@ internal sealed partial class ProcedureAnalyzer
         var count = call.Parameters.Count - 1;
         var index = Expression(call.Parameters[0], scope);
         var results = call.Parameters.Skip(1).Select(p => (p, Strip(p) is NullLiteral ? null : Expression(p, scope))).ToList();
-        IReadOnlyList<IrNullReason> because = InRange(index, call.Parameters[0], count)
+        var because = InRange(index, call.Parameters[0], count)
             ? index.NullableBecause
             : ShapeJoin.Reasons(index.NullableBecause, [new IrNullReason(IrNullRules.OutOfRange, At(call).ToString())]);
         return Results(call, results, because);
@@ -319,7 +319,7 @@ internal sealed partial class ProcedureAnalyzer
         if (value.IsLiveJson || value.Shape is JsonTextShape)
             return NotModelled(nullIf, "whether NULLIF over JSON nests as JSON depends on whether the server folds it.");
 
-        IReadOnlyList<IrNullReason> because = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.NullIf, At(nullIf).ToString())]);
+        var because = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.NullIf, At(nullIf).ToString())]);
         if (LiteralOf(nullIf.FirstExpression) is ({ } literal and IntegerLiteral, var negative)
             && long.TryParse(literal.Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n))
         {

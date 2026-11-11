@@ -55,10 +55,7 @@ public class ReadUncommittedTests
     }
 
     [Fact]
-    public void Other_hints_keep_the_key()
-    {
-        Assert.Equal([IrCardinality.AtMostOne], Rows(Procedure("SELECT t.name FROM dbo.t AS t WITH (READCOMMITTED, ROWLOCK) WHERE t.id = @id;")));
-    }
+    public void Other_hints_keep_the_key() => Assert.Equal([IrCardinality.AtMostOne], Rows(Procedure("SELECT t.name FROM dbo.t AS t WITH (READCOMMITTED, ROWLOCK) WHERE t.id = @id;")));
 
     [Fact]
     public void Only_the_source_read_uncommitted_loses_its_key()
@@ -114,18 +111,13 @@ public class ReadUncommittedTests
         """;
 
     [Fact]
-    public void A_key_inside_a_view_or_function_bounds_its_json_when_read_committed()
-    {
-        Assert.Equal([1, 1, 1, 1], MaxItems(Procedure(JsonReads)));
-    }
+    public void A_key_inside_a_view_or_function_bounds_its_json_when_read_committed() => Assert.Equal([1, 1, 1, 1], MaxItems(Procedure(JsonReads)));
 
     [Fact]
-    public void Read_uncommitted_reaches_inside_views_and_functions()
-    {
+    public void Read_uncommitted_reaches_inside_views_and_functions() =>
         // A view, an inline function and a scalar function read under the procedure's READ UNCOMMITTED read their own tables
         // so too (review round 1): their keys bound nothing, as the same subquery written directly does not.
         Assert.Equal([null, null, null, null], MaxItems(Procedure("SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\n" + JsonReads)));
-    }
 
     [Fact]
     public void Nolock_on_a_view_reaches_inside_it()

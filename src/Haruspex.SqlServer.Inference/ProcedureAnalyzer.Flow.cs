@@ -115,7 +115,9 @@ internal sealed partial class ProcedureAnalyzer
         {
             if (Traced(variableShapes[element.VariableName.Value]) && !initial.Json.ContainsKey(element.VariableName.Value)
                 && !procedure.Parameters.Any(p => p.VariableName.Value.Equals(element.VariableName.Value, StringComparison.OrdinalIgnoreCase)))
+            {
                 initial = initial.WithJson(element.VariableName.Value, JsonSlot.Empty);
+            }
         }
 
         foreach (var (name, table) in tableVariables)
@@ -531,7 +533,7 @@ internal sealed partial class ProcedureAnalyzer
         return [.. elements.Select((element, i) =>
         {
             if (bound[i] is not { } binding)
-                return element.Expression is ParenthesisExpression ? (bool?)null : false;
+                return element.Expression is ParenthesisExpression ? null : false;
             bool? identity = binding switch
             {
                 BoundColumn column => column.Column.IsIdentity,
@@ -790,7 +792,9 @@ internal sealed partial class ProcedureAnalyzer
         // the database (observed).
         if (temporary && column.Type is { Kind: SqlTypeKind.Named } named
             && !(named.Name.Equals("sysname", StringComparison.OrdinalIgnoreCase) && named.Schema is null or "sys"))
+        {
             return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedSqlType, $"{where} is of the alias type {named}, which tempdb has only if it was created there.", column.At));
+        }
 
         if (!column.IsComputed && SchemaRules.ResolveType(model, column.Type)?.BuiltIn.Name == "json")
             return new Value(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{where} is a json column: its shape is in the data.", column.At), because, IsLiveJson: true);
@@ -958,7 +962,9 @@ internal sealed partial class ProcedureAnalyzer
         // other form. Several anchors (themselves a UNION) are not modelled yet.
         if (recursive[0] || recursive.Skip(1).Contains(false) || members.Any(m => m is not QuerySpecification)
             || operators.Any(o => o.BinaryQueryExpressionType != BinaryQueryExpressionType.Union || !o.All))
+        {
             return Fails(IrUnknownReasons.UnsupportedQuery, "only a recursive CTE of one anchor member and recursive members, joined by UNION ALL, is modelled.");
+        }
 
         // The column types are the anchor's exactly (SQL Server refuses a recursive member of any other, error 240,
         // observed), so only nullability, and the facets the members share, need a fixed point: the recursive members are
@@ -1119,7 +1125,7 @@ internal sealed partial class ProcedureAnalyzer
             if (i >= always)
                 absent.AddRange(produced.Select(p => new IrNullReason(IrNullRules.NotRun, p.At.ToString())));
             // The fewest rows any statement here proves at most: a statement that may return many makes the position many.
-            var cardinality = produced.Select(p => p.Result.Cardinality).Min();
+            var cardinality = produced.Min(p => p.Result.Cardinality);
             results.Add(new ResultShape(encoding, Union(shapes), [.. absent.Distinct()], cardinality));
         }
 

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Haruspex.Ir;
@@ -544,7 +543,9 @@ public static class ConfigReader
                         {
                             if (Regex.IsMatch(type, @"^[A-Za-z_$][A-Za-z0-9_$]*(\[\])*$", RegexOptions.CultureInvariant)
                                 && !IrIdentifiers.IsReserved(type.TrimEnd('[', ']')))
+                            {
                                 result = result with { Type = type };
+                            }
                             else
                                 Error(member.Value, memberPath, "must be the name of an exported schema, with [] for each level of array, such as \"TagSchema[]\".");
                         }

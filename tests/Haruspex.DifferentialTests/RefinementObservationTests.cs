@@ -132,15 +132,12 @@ public class RefinementObservationTests(SqlServerFixture server)
     }
 
     [Fact]
-    public async Task A_condition_in_the_on_of_an_outer_join_never_drops_a_row_of_the_kept_side()
-    {
+    public async Task A_condition_in_the_on_of_an_outer_join_never_drops_a_row_of_the_kept_side() =>
         // The ON decides only which rows match: head 2 still comes, null-extended, and so does head 1 whose lines do not pass.
         Assert.Equal("id,line: 1,null;2,null", (await Run([Joined], "SELECT h.id, l.id AS line FROM dbo.obs_head AS h LEFT JOIN dbo.obs_line AS l ON l.head_id = h.id AND l.note = N'none' ORDER BY h.id;")).ToString());
-    }
 
     [Fact]
-    public async Task An_inner_join_after_an_outer_join_drops_its_unmatched_rows()
-    {
+    public async Task An_inner_join_after_an_outer_join_drops_its_unmatched_rows() =>
         // The inner join's ON reads the optional side's column, which is null for head 2, so head 2 goes.
         Assert.Equal("id,line: 1,10;1,11", (await Run([Joined], """
             SELECT h.id, l.id AS line
@@ -149,7 +146,6 @@ public class RefinementObservationTests(SqlServerFixture server)
             INNER JOIN dbo.obs_head AS again ON again.id = l.head_id
             ORDER BY h.id, l.id;
             """)).ToString());
-    }
 
     // ---- aggregates over no rows ---------------------------------------------------------------------------------------
 
@@ -281,7 +277,6 @@ public class RefinementObservationTests(SqlServerFixture server)
         ];
         Assert.Equal("n: 2", (await Run(setup, "INSERT INTO dbo.obs_disabled VALUES (1, 5), (2, 5); SELECT COUNT(*) AS n FROM dbo.obs_disabled WHERE code = 5;")).ToString());
     }
-
 
     [Fact]
     public async Task Top_1_and_fetch_1_give_at_most_one_row_but_with_ties_gives_more()

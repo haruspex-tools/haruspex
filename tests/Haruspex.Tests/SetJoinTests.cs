@@ -209,11 +209,9 @@ public class SetJoinTests
     [InlineData("SELECT u.id FROM dbo.u AS u EXCEPT SELECT t.id FROM dbo.t AS t WHERE t.id = 1;", IrCardinality.Many)]
     [InlineData("SELECT t.id FROM dbo.t AS t UNION ALL SELECT u.id FROM dbo.u AS u ORDER BY id OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;", IrCardinality.AtMostOne)]
     [InlineData("SELECT TOP (1) t.id FROM dbo.t AS t UNION ALL SELECT TOP (1) u.id FROM dbo.u AS u;", IrCardinality.Many)]
-    public void A_set_operation_is_at_most_one_row_only_where_proved(string query, IrCardinality expected)
-    {
+    public void A_set_operation_is_at_most_one_row_only_where_proved(string query, IrCardinality expected) =>
         // Order_by_and_offset_apply_to_the_whole_set_operation_and_top_to_its_first_query.
         Assert.Equal(expected, Rows(Procedure(query)));
-    }
 
     [Fact]
     public void A_key_does_not_pass_through_a_union_in_a_view()
@@ -307,11 +305,9 @@ public class SetJoinTests
     [InlineData("SELECT a.n, b.id FROM (SELECT COUNT(*) AS n FROM dbo.t) AS a CROSS JOIN dbo.u AS b;", IrCardinality.Many)]
     [InlineData("SELECT a.n, b.m FROM (SELECT COUNT(*) AS n FROM dbo.t) AS a CROSS JOIN (SELECT TOP (1) u.id AS m FROM dbo.u AS u) AS b;", IrCardinality.AtMostOne)]
     [InlineData("SELECT a.n, b.m FROM (SELECT COUNT(*) AS n FROM dbo.t) AS a CROSS JOIN (SELECT COUNT(*) AS m FROM dbo.u) AS b, (SELECT 1 AS k) AS c;", IrCardinality.One)]
-    public void A_cross_join_is_one_row_only_when_both_sides_are(string query, IrCardinality expected)
-    {
+    public void A_cross_join_is_one_row_only_when_both_sides_are(string query, IrCardinality expected) =>
         // A_cross_join_of_two_one_row_queries_is_one_row_and_with_an_empty_side_none.
         Assert.Equal(expected, Rows(Procedure(query)));
-    }
 
     // ---- FULL OUTER JOIN -------------------------------------------------------------------------------------------------
 
@@ -355,11 +351,9 @@ public class SetJoinTests
     [InlineData("SELECT a.id, b.id AS b_id FROM (SELECT t.id FROM dbo.t AS t WHERE t.id = 1) AS a FULL JOIN (SELECT u.id FROM dbo.u AS u WHERE u.id = 4) AS b ON b.id = a.id;")]
     [InlineData("SELECT t.id, u.id AS b_id FROM dbo.t AS t FULL JOIN dbo.u AS u ON u.id = t.id WHERE u.id IS NULL AND t.id = 1;")]
     [InlineData("SELECT t.id, u.id AS b_id FROM dbo.t AS t FULL JOIN dbo.u AS u ON u.id = t.id WHERE t.id = 1;")]
-    public void A_full_join_is_never_bounded_by_its_sides(string query)
-    {
+    public void A_full_join_is_never_bounded_by_its_sides(string query) =>
         // A_full_join_of_two_queries_of_at_most_one_row_can_return_two.
         Assert.Equal(IrCardinality.Many, Rows(Procedure(query)));
-    }
 
     [Fact]
     public void Right_join_stays_unmodelled()

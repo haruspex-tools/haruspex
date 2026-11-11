@@ -124,7 +124,10 @@ public static class ConfigApplication
             var obj = document.Objects[i];
             if (results[i] is not null || declaredHere.Contains(obj.Id)
                 || unknowns.FirstOrDefault(u => u.Object == obj.Id && u.Path == "results" && Unknowable.Contains(u.Reason)) is not { } why)
+            {
                 continue;
+            }
+
             var file = config.File.Length == 0 ? HaruspexConfig.FileName : Path.GetFileName(config.File);
             problems.Add(new ConfigProblem(ConfigSeverity.Warning, config.File, null,
                 $"{obj.Id}: its result sets are unknown: {why.Detail} ({why.At}) Declare them in {file} under procedures[\"{obj.Id}\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it."));

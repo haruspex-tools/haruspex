@@ -227,10 +227,7 @@ public class FunctionObservationTests(SqlServerFixture server)
     }
 
     [Fact]
-    public async Task String_agg_past_its_limit_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off()
-    {
-        Assert.Equal(" ! 9829", (await Run([Rows], "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; SELECT STRING_AGG(CAST(REPLICATE('x', 5000) AS varchar(8000)), ',') AS v FROM dbo.obs_w;")).ToString());
-    }
+    public async Task String_agg_past_its_limit_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off() => Assert.Equal(" ! 9829", (await Run([Rows], "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; SELECT STRING_AGG(CAST(REPLICATE('x', 5000) AS varchar(8000)), ',') AS v FROM dbo.obs_w;")).ToString());
 
     // ---- window functions ---------------------------------------------------------------------------------------------
 

@@ -311,7 +311,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
         switch (statement)
         {
             case SelectStatement select when cursorQueries.Contains(select) || select.Into is not null
-                || select.QueryExpression is QuerySpecification { SelectElements: var elements } && elements.All(e => e is SelectSetVariable):
+                || (select.QueryExpression is QuerySpecification { SelectElements: var elements } && elements.All(e => e is SelectSetVariable)):
                 return null;
             case SelectStatement:
                 return $"returns a result set at {at}";

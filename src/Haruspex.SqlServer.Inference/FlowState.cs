@@ -319,8 +319,11 @@ internal sealed class FlowState
                     break;
                 case KnownTable known:
                     foreach (var column in known.Columns)
+                    {
                         text.Append(column.Name).Append(column.Identity switch { true => "+", false => "", null => "?" })
                             .Append(column.Declaration is null ? ':' : '!').Append(ShapeText.Of(column.Value)).Append(column.Json?.Text()).Append(';');
+                    }
+
                     break;
             }
 
