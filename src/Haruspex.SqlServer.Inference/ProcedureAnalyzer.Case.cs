@@ -372,7 +372,7 @@ internal sealed partial class ProcedureAnalyzer
                     continue;
                 }
 
-                shape = JsonLiterals.Parse(literal.Value, At(literal));
+                shape = JsonLiterals.Parse(literal.Value, literal is StringLiteral { IsNational: true }, At(literal));
                 if (shape is UnknownShape)
                     return (false, null);
             }

@@ -8,26 +8,32 @@ export const PartRowsResult1RowSchema = z.object({
   qty: z.int().min(0).max(255),
   qty_wide: z.int32(),
   sku_short: z.string().max(3),
+  sku_nchar: z.string().max(10),
   colour: z.string().max(10).nullable(),
 })
 export type PartRowsResult1Row = z.infer<typeof PartRowsResult1RowSchema>
 
 export const PartRowsResult2RowSchema = z.object({
-  key: z.enum(["kit_id", "name", "price"]),
-  value: z.string(),
-  type: z.literal([1, 2]),
+  sku_nchar: z.string().max(10),
 })
 export type PartRowsResult2Row = z.infer<typeof PartRowsResult2RowSchema>
 
 export const PartRowsResult3RowSchema = z.object({
+  key: z.enum(["kit_id", "name", "price"]),
+  value: z.string(),
+  type: z.literal([1, 2]),
+})
+export type PartRowsResult3Row = z.infer<typeof PartRowsResult3RowSchema>
+
+export const PartRowsResult4RowSchema = z.object({
   name: z.string().max(4000).optional(),
   finish: z.enum(["matt"]),
   boxed: z.enum(["false", "true"]),
   with_finish: z.enum(["matt"]),
   sizes: z.tuple([z.number(), z.number(), z.number()]),
 })
-export type PartRowsResult3Row = z.infer<typeof PartRowsResult3RowSchema>
+export type PartRowsResult4Row = z.infer<typeof PartRowsResult4RowSchema>
 
-/** kit.part_rows: returns 3 result sets: rows; rows; JSON, [] when no rows match. */
-export const PartRowsSchema = z.tuple([z.array(PartRowsResult1RowSchema), z.array(PartRowsResult2RowSchema), z.array(PartRowsResult3RowSchema)])
+/** kit.part_rows: returns 4 result sets: rows; JSON, [] when no rows match; rows; JSON, [] when no rows match. */
+export const PartRowsSchema = z.tuple([z.array(PartRowsResult1RowSchema), z.array(PartRowsResult2RowSchema), z.array(PartRowsResult3RowSchema), z.array(PartRowsResult4RowSchema)])
 export type PartRows = z.infer<typeof PartRowsSchema>

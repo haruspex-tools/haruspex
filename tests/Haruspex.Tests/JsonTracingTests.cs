@@ -165,6 +165,27 @@ public class JsonTracingTests
         Assert.Equal(["sku"], Fields(doc, x.Items).Select(f => f.Name));
     }
 
+    [Fact]
+    public void Json_that_grows_in_a_loop_is_widened_and_the_loop_settles()
+    {
+        // Review round 1, finding 4: before, the loop reached no fixed point and the procedure's results were unknown.
+        var doc = Infer("""
+            DECLARE @x nvarchar(max) = N'[]', @n int = 0;
+            DECLARE @t TABLE (j nvarchar(max));
+            INSERT INTO @t (j) VALUES (N'[]');
+            WHILE @n < 3
+            BEGIN
+                SET @x = (SELECT json_query(@x) AS c FOR JSON PATH);
+                INSERT INTO @t (j) SELECT (SELECT json_query(t.j) AS c FROM @t AS t FOR JSON PATH);
+                SET @n += 1;
+            END
+            SELECT json_query(@x) AS x, @n AS n, (SELECT json_query(t.j) AS j FROM @t AS t FOR JSON PATH) AS t FOR JSON PATH;
+            """);
+
+        Assert.Equal(IrScalarKind.Number, Assert.IsType<IrScalar>(Field(doc, "n").Type).Kind);
+        Assert.Contains("loop", Unknown(doc, "x").Detail, StringComparison.Ordinal);
+    }
+
     // ---- literals -----------------------------------------------------------------------------------------------------
 
     [Fact]
@@ -192,10 +213,23 @@ public class JsonTracingTests
     [InlineData("N''", "not valid JSON")]
     [InlineData("'[1]x'", "not valid JSON")]
     [InlineData("'{\"a\":1,\"a\":2}'", "key written twice")]
+    [InlineData("'[\"ā\"]'", "not an N'' literal")]
+    [InlineData("'[\"\\u0101\"]'", "not an N'' literal")]
+    [InlineData("'{\"ā\": 1}'", "not an N'' literal")]
+    [InlineData("N'[1e400]'", "Infinity")]
     public void A_literal_that_is_not_a_json_document_is_unknown_saying_why(string literal, string why)
     {
         var doc = Infer($"SELECT json_query({literal}) AS x FOR JSON PATH;");
         Assert.Contains(why, Unknown(doc, "x").Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_n_literal_keeps_a_string_that_is_not_ascii()
+    {
+        // Observed: A_literal_without_n_is_converted_to_the_code_page_before_it_is_read_as_json.
+        var doc = Infer("""SELECT json_query(N'["ā", "\u0101"]') AS x FOR JSON PATH;""");
+        var items = Assert.IsType<IrTuple>(Field(doc, "x").Type).Items;
+        Assert.All(items, i => Assert.Equal(["ā"], Assert.IsType<IrScalar>(i.Type).Facets!.Values!.Items.Select(v => v.Text)));
     }
 
     [Fact]
@@ -334,6 +368,42 @@ public class JsonTracingTests
         Assert.Equal(["a"], Assert.IsType<IrScalar>(kind.Type).Facets!.Values!.Items.Select(v => v.Text));
         Assert.Equal(2, Assert.IsType<IrTuple>(Field(doc, "tags").Type).Items.Count);
         Assert.Empty(doc.Unknowns);
+    }
+
+    [Fact]
+    public void An_nchar_openjson_column_is_at_most_its_length_unless_it_reads_its_own_type()
+    {
+        // Observed: Openjson_with_does_not_pad_nchar_but_pads_char.
+        var doc = Infer("""
+            DECLARE @x nvarchar(max) = (SELECT CAST(l.sku AS nchar(8)) AS fixed, l.colour FROM sales.order_line AS l FOR JSON PATH);
+            SELECT j.fixed, j.colour, d.v FROM OPENJSON(@x) WITH (fixed nchar(8), colour nchar(10)) AS j
+            CROSS APPLY OPENJSON(N'[{"v":"ab"}]') WITH (v nchar(4)) AS d;
+            """);
+
+        Assert.True(Assert.IsType<IrScalar>(Field(doc, "fixed").Type).Facets!.Length!.IsFixed);
+        Assert.False(Assert.IsType<IrScalar>(Field(doc, "colour").Type).Facets!.Length!.IsFixed);
+        Assert.False(Assert.IsType<IrScalar>(Field(doc, "v").Type).Facets!.Length!.IsFixed);
+    }
+
+    [Fact]
+    public void A_varchar_read_back_into_itself_keeps_its_set_only_when_every_value_is_ascii()
+    {
+        // Observed: Openjson_with_converts_a_varchar_to_the_databases_code_page.
+        var doc = Infer("""
+            DECLARE @x nvarchar(max) = (SELECT g.greek, g.plain FROM sales.glyph AS g FOR JSON PATH);
+            SELECT g.greek, g.plain FROM sales.glyph AS g;
+            SELECT j.greek, j.plain FROM OPENJSON(@x) WITH (greek varchar(10), plain varchar(10)) AS j;
+            """, more: """
+            CREATE TABLE sales.glyph (id int NOT NULL PRIMARY KEY,
+                greek varchar(10) COLLATE Greek_CI_AS NOT NULL CHECK (greek IN (N'α', N'β')),
+                plain varchar(10) NOT NULL CHECK (plain IN ('a', 'b')));
+            GO
+            """);
+
+        // The table's own column has its set; read back through JSON only the ASCII one keeps it.
+        Assert.NotNull(Assert.IsType<IrScalar>(Field(doc, "greek").Type).Facets!.Values);
+        Assert.Null(Assert.IsType<IrScalar>(Field(doc, "greek", 1).Type).Facets?.Values);
+        Assert.NotNull(Assert.IsType<IrScalar>(Field(doc, "plain", 1).Type).Facets!.Values);
     }
 
     [Fact]

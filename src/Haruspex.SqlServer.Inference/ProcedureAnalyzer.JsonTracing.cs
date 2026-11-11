@@ -50,7 +50,7 @@ internal sealed partial class ProcedureAnalyzer
 
         if (expression is not null && LiteralOf(expression) is ({ } literal and StringLiteral, false))
         {
-            var parsed = JsonLiterals.Parse(literal.Value, At(literal));
+            var parsed = JsonLiterals.Parse(literal.Value, literal is StringLiteral { IsNational: true }, At(literal));
             return parsed is UnknownShape notJson ? JsonSlot.Text(notJson with { Detail = $"{where} is assigned a literal {Text(at)}: {notJson.Detail}" }) : JsonSlot.Json(parsed);
         }
 
@@ -151,7 +151,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         if (LiteralOf(argument) is ({ } literal and StringLiteral, false))
         {
-            var parsed = JsonLiterals.Parse(literal.Value, At(literal));
+            var parsed = JsonLiterals.Parse(literal.Value, literal is StringLiteral { IsNational: true }, At(literal));
             return parsed is UnknownShape unknown ? Value.Unknown(unknown) : new Value(new JsonTextShape(parsed), []);
         }
 
@@ -179,4 +179,41 @@ internal sealed partial class ProcedureAnalyzer
         FunctionCall { CallTarget: null } call => IsConstructor(call) && call.ReturnType is not { Count: > 0 },
         _ => false,
     };
+
+    // ---- loops --------------------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// <paramref name="next"/>, with the JSON that changed since <paramref name="head"/> widened to unknown content naming the
+    /// loop at <paramref name="at"/>: a traced place's slot, and a temporary table column's JSON text. Unknown content joins to
+    /// itself, so a loop whose only change is JSON that grows reaches a fixed point.
+    /// </summary>
+    private static FlowState Widened(FlowState head, FlowState next, SourceLocation at)
+    {
+        UnknownShape Why(string where) =>
+            new(IrUnknownReasons.JsonShapeUnknown, $"{where} holds JSON that changes at every pass of the loop {Text(at)}, so its shape is not followed.", at);
+
+        foreach (var (name, slot) in next.Json)
+        {
+            if (!head.Json.TryGetValue(name, out var before) || before.Text() != slot.Text())
+                next = next.WithJson(name, JsonSlot.Text(Why(name)));
+        }
+
+        foreach (var (name, table) in next.Temps)
+        {
+            if (table is not KnownTable known || head.Temp(name) is not KnownTable old || old.Columns.Count != known.Columns.Count)
+                continue;
+            var columns = known.Columns.Select((c, i) =>
+            {
+                var was = old.Columns[i];
+                if (c.Json is { } slot && slot.Text() != was.Json?.Text())
+                    c = c with { Json = JsonSlot.Text(Why($"{name}.{c.Name}")) };
+                if (c.Value.Shape is JsonTextShape && ShapeText.Of(c.Value) != ShapeText.Of(was.Value))
+                    c = c with { Value = c.Value with { Shape = new JsonTextShape(Why($"{name}.{c.Name}")) } };
+                return c;
+            }).ToList();
+            next = next.WithTemp(name, known with { Columns = columns });
+        }
+
+        return next;
+    }
 }

@@ -53,6 +53,18 @@ public class JsonTracingObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_literal_without_n_is_converted_to_the_code_page_before_it_is_read_as_json()
+    {
+        // Review round 1, finding 1. Under the test database's collation (Latin1, code page 1252): ā has no code point there and
+        // becomes a, a character outside the BMP two question marks, a key too; an escape is decoded first, then converted. An
+        // N'' literal is read as it is.
+        Assert.Equal(
+            """j: [{"a":["a"],"b":["a", "??"],"c":{"a": 1},"d":["ā"]}]""",
+            await Select($$"""{{One}} SELECT (SELECT json_query('["ā"]') AS a, json_query('["ā", "😀"]') AS b, json_query('{"ā": 1}') AS c, json_query(N'["ā"]') AS d FROM @one FOR JSON PATH) AS j;"""));
+        Assert.Equal("v: a", await Select($$"""{{One}} SELECT json_value('["ā"]', '$[0]') AS v FROM @one;"""));
+    }
+
+    [Fact]
     public async Task Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken()
     {
         Assert.Equal(
@@ -172,6 +184,43 @@ public class JsonTracingObservationTests(SqlServerFixture server)
         // A narrower number overflows (244), and a bit, written true or false, is not a number (245).
         Assert.Equal(244, await Error($"{Typed} SELECT i FROM OPENJSON(@j) WITH (i tinyint);"));
         Assert.Equal(245, await Error($"{Typed} SELECT b FROM OPENJSON(@j) WITH (b int);"));
+    }
+
+    [Fact]
+    public async Task Openjson_with_does_not_pad_nchar_but_pads_char()
+    {
+        // Review round 1, finding 2: "ab" into nchar(4) is 2 characters (4 bytes), into char(4) padded to 4.
+        Assert.Equal(
+            "n,nb,c,cb: ab,4,ab  ,4",
+            await Select("""SELECT j.n, datalength(j.n) AS nb, j.c, datalength(j.c) AS cb FROM OPENJSON(N'[{"v":"ab"}]') WITH (n nchar(4) '$.v', c char(4) '$.v') AS j;"""));
+
+        // In a procedure's rowset the value may arrive padded to n with U+0000 (seen in the kits fixture's part_rows, reading a
+        // variable) or not (this literal); in JSON it is its own length. So "at most n" is what holds.
+        var call = await ObservedCall.Run(server, ["""CREATE PROCEDURE dbo.obs_nchar AS SELECT j.n FROM OPENJSON(N'[{"v":"ab"}]') WITH (n nchar(4) '$.v') AS j FOR JSON PATH;"""], "EXEC dbo.obs_nchar;");
+        Assert.Null(call.Error);
+        Assert.Equal(["""JSON_F52E2B61-18A1-11d1-B105-00805F49916B: [{"n":"ab"}]"""], call.Sets);
+
+        // An nchar(n) column through FOR JSON is written padded, so back into nchar(n) it is n long.
+        Assert.Equal(
+            "n,nb: ab  ,8",
+            await Select("""
+                DECLARE @j nvarchar(max) = (SELECT CAST(N'ab' AS nchar(4)) AS n FOR JSON PATH);
+                SELECT j.n, datalength(j.n) AS nb FROM OPENJSON(@j) WITH (n nchar(4)) AS j;
+                """));
+    }
+
+    [Fact]
+    public async Task Openjson_with_converts_a_varchar_to_the_databases_code_page()
+    {
+        // Review round 1, finding 3: a Greek varchar goes out as α and comes back, as varchar of the database's collation, as a.
+        Assert.Equal(
+            "v: a",
+            await Select("""
+                CREATE TABLE #g (v varchar(10) COLLATE Greek_CI_AS NOT NULL);
+                INSERT #g VALUES (N'α');
+                DECLARE @j nvarchar(max) = (SELECT g.v FROM #g AS g FOR JSON PATH);
+                SELECT j.v FROM OPENJSON(@j) WITH (v varchar(10)) AS j;
+                """));
     }
 
     [Fact]

@@ -120,6 +120,48 @@
         }
       ]
     },
+    "KitBadgesLatest": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_badges",
+        "path": "results[0].latest"
+      },
+      "fields": [
+        {
+          "name": "none",
+          "type": {
+            "kind": "boolean"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "KitBadgesLatest2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_badges",
+        "path": "results[0].latest"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
     "KitBadgesRow": {
       "kind": "object",
       "identity": {
@@ -191,6 +233,124 @@
           },
           "presence": "always",
           "nullable": false
+        },
+        {
+          "name": "latest",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "ref": "KitBadgesLatest"
+              },
+              {
+                "ref": "KitBadgesLatest2"
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "share",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "ref": "KitBadgesShare"
+              },
+              {
+                "kind": "tuple",
+                "items": []
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "accent",
+          "type": {
+            "kind": "unknown",
+            "reason": "json-shape-unknown"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/kit_badges.sql:41:19"
+            }
+          ]
+        },
+        {
+          "name": "accent_n",
+          "type": {
+            "kind": "tuple",
+            "items": [
+              {
+                "type": {
+                  "kind": "string",
+                  "values": {
+                    "match": "exact",
+                    "items": [
+                      "ā"
+                    ],
+                    "from": [
+                      {
+                        "expression": "procedures/kit_badges.sql:42:19"
+                      }
+                    ]
+                  }
+                },
+                "nullable": false
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "KitBadgesShare": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.kit_badges",
+        "path": "results[0].share"
+      },
+      "fields": [
+        {
+          "name": "per_part",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "count-overflow",
+              "at": "procedures/kit_badges.sql:25:56"
+            },
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/kit_badges.sql:25:50"
+            }
+          ]
         }
       ]
     },
@@ -237,7 +397,7 @@
               ],
               "from": [
                 {
-                  "expression": "procedures/kit_badges.sql:26:19"
+                  "expression": "procedures/kit_badges.sql:35:19"
                 }
               ]
             }
@@ -265,7 +425,7 @@
               ],
               "from": [
                 {
-                  "expression": "procedures/kit_badges.sql:26:19"
+                  "expression": "procedures/kit_badges.sql:35:19"
                 }
               ]
             }
@@ -283,7 +443,7 @@
               ],
               "from": [
                 {
-                  "expression": "procedures/kit_badges.sql:26:19"
+                  "expression": "procedures/kit_badges.sql:35:19"
                 }
               ]
             }
@@ -295,6 +455,13 @@
     }
   },
   "unknowns": [
+    {
+      "object": "kit.kit_badges",
+      "path": "results[0].accent",
+      "reason": "json-shape-unknown",
+      "detail": "The literal '[\"ā\"]' is not an N'' literal and has a string that is not ASCII, which the database's code page may change, so it is not read as JSON here.",
+      "at": "procedures/kit_badges.sql:41:19"
+    },
     {
       "object": "kit.kit_badges",
       "path": "results[0].stored",

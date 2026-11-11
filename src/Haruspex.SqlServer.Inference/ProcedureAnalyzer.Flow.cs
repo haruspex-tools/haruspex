@@ -42,6 +42,9 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>The most passes a loop or a recursive CTE gets to reach a fixed point. Each joins only upwards, so a few are enough.</summary>
     private const int MostPasses = 20;
 
+    /// <summary>The passes of a loop after which JSON whose content still changes is widened to unknown (<see cref="Widened"/>).</summary>
+    private const int WidenAfter = 2;
+
     private sealed record Outcome(FlowState? Next, FlowState? Breaks, FlowState? Continues)
     {
         public static Outcome Ends { get; } = new(null, null, null);
@@ -338,6 +341,11 @@ internal sealed partial class ProcedureAnalyzer
             }
 
             var next = FlowState.Join([state, body.Next, body.Continues], at)!;
+
+            // JSON built from itself grows at every pass (SET @x = (SELECT json_query(@x) AS c FOR JSON PATH)), so after a few its
+            // content is widened to unknown, naming the loop, and the loop settles (slice 6l, review round 1, finding 4).
+            if (pass >= WidenAfter)
+                next = Widened(head, next, at);
             if (next.Text() == head.Text())
                 return new Outcome(FlowState.Join(head, body.Breaks, at), null, null);
             head = next;

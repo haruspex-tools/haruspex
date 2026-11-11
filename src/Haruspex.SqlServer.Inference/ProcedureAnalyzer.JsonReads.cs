@@ -19,7 +19,7 @@ internal sealed partial class ProcedureAnalyzer
     private (Shape Shape, IReadOnlyList<IrNullReason> NullableBecause)? DocumentOf(ScalarExpression document, BindingScope scope)
     {
         if (LiteralOf(document) is ({ } literal and StringLiteral, false))
-            return JsonLiterals.Parse(literal.Value, At(literal)) is var parsed and not UnknownShape ? (parsed, []) : null;
+            return JsonLiterals.Parse(literal.Value, literal is StringLiteral { IsNational: true }, At(literal)) is var parsed and not UnknownShape ? (parsed, []) : null;
         var value = Expression(document, scope);
         var shape = value.IsLiveJson ? value.Shape : value.Shape is JsonTextShape { Content: var content } ? content : null;
         return shape is null or UnknownShape or RecursiveShape ? null : (shape, value.NullableBecause);
@@ -178,11 +178,17 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private Value? Converted(IrScalar source, SqlType target, SourceLocation at)
     {
-        if (SqlTypes.ToConvertedShape(model, target, at) is not ScalarShape { Type: var to })
+        if (Unpadded(SqlTypes.ToConvertedShape(model, target, at)) is not ScalarShape { Type: var to })
             return null;
         var exact = new[] { "tinyint", "smallint", "int", "bigint", "decimal", "numeric", "bit", "date", "datetime2", "datetimeoffset", "uniqueidentifier", "money", "smallmoney", "char", "nchar", "varchar", "nvarchar" };
         if (source.Sql is { } sql && sql == to.Sql && ScalarType.Parse(sql) is { } same && exact.Contains(same.Name))
-            return new Value(new ScalarShape(source), []);
+        {
+            // A varchar or char value converted to the database's code page and back may change a character that is not ASCII
+            // (observed: Openjson_with_converts_a_varchar_to_the_databases_code_page), so its set holds only when every value is
+            // ASCII. Which code page the source column has is not followed.
+            var codePage = same.Name is "varchar" or "char" && source.Facets?.Values is { } items && items.Items.Any(v => v.Text.Any(c => c > '\u007f'));
+            return new Value(new ScalarShape(codePage ? source with { Facets = source.Facets! with { Values = null } } : source), []);
+        }
 
         var into = ScalarType.Parse(to.Sql!);
         if (into is null)
@@ -227,6 +233,17 @@ internal sealed partial class ProcedureAnalyzer
         static IrFacets? Keep(IrFacets? type, IrFacets? source) =>
             source is null ? type : (type ?? new IrFacets()) with { MinLength = source.MinLength, Values = source.Values };
     }
+
+    /// <summary>
+    /// The type an OPENJSON WITH column of <paramref name="declared"/> gives: an <c>nchar(n)</c> is not padded, so it is at most n,
+    /// not exactly n, where a <c>char(n)</c> is (observed: Openjson_with_does_not_pad_nchar_but_pads_char; review round 1, finding
+    /// 2). A value that is already n long, as an <c>nchar(n)</c> column through FOR JSON is, keeps its fixed length through the
+    /// identity conversion (<see cref="Converted"/>).
+    /// </summary>
+    internal static Shape Unpadded(Shape declared) =>
+        declared is ScalarShape { Type: { Sql: { } sql, Facets: { Length: { IsFixed: true } length } facets } type } && sql.StartsWith("nchar(", StringComparison.Ordinal)
+            ? new ScalarShape(type with { Facets = facets with { Length = length with { IsFixed = false } } })
+            : declared;
 
     // ---- OPENJSON -----------------------------------------------------------------------------------------------------
 
@@ -306,7 +323,7 @@ internal sealed partial class ProcedureAnalyzer
             if (declared is not null && found?.Shape is ScalarShape { Type: var scalar } && Converted(scalar, declared, where) is { } converted)
                 values.Add(present ? converted : converted with { NullableBecause = [JsonValue(where)] });
             else
-                values.Add(new Value(SqlTypes.ToConvertedShape(model, declared, where), [JsonValue(where)]));
+                values.Add(new Value(Unpadded(SqlTypes.ToConvertedShape(model, declared, where)), [JsonValue(where)]));
         }
 
         return values;

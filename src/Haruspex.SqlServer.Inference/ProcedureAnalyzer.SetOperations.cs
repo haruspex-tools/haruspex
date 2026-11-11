@@ -352,7 +352,7 @@ internal sealed partial class ProcedureAnalyzer
                 continue;
             }
 
-            values.Add(new Value(SqlTypes.ToConvertedShape(model, SqlType.From(column.DataType), where), [JsonValue(where)]));
+            values.Add(new Value(Unpadded(SqlTypes.ToConvertedShape(model, SqlType.From(column.DataType), where)), [JsonValue(where)]));
         }
 
         if (names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Count)

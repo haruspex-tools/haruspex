@@ -1133,8 +1133,12 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   (`A_json_literal_is_read_exactly_and_a_bare_scalar_or_text_that_is_not_json_is_an_error`): the text is embedded as written;
   a bare scalar, `''`, `N''` and text that is not JSON are errors (13609) for `json_query`, `OPENJSON` and `JSON_VALUE`, lax
   too; but only the first value is checked, so `'[1]x'` is read as `[1]`. Such a literal is not valid JSON, so it is unknown,
-  which claims less; so is an object with a key written twice, which parsers read differently. Whitespace around the value is
-  allowed.
+  which claims less; so is an object with a key written twice, which parsers read differently, and a number past a double's
+  range, which a client reads as `Infinity`. Whitespace around the value is allowed. **A literal without `N` is converted to
+  the database's code page before it is read**, its escapes decoded first (`'["ā", "\u0101", "😀"]'` gives `["a", "a", "??"]`
+  under a Latin1 collation, a key too: `A_literal_without_n_is_converted_to_the_code_page_before_it_is_read_as_json`), and which
+  characters that code page has is not known here, so such a literal with a string or key that is not ASCII is unknown (review
+  round 1, finding 1). An `N'…'` literal is read as it is.
 - **`json_query`** over a place or literal is live JSON of its content, nullable as the value is. Under `json_query` a
   `CASE`, `IIF`, `CHOOSE` or `COALESCE` holds JSON whether or not the server folds it to one result, so its results' JSON is
   joined, literals parsed (`Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken`).
@@ -1149,14 +1153,22 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   `datetime2`, `datetimeoffset`, `uniqueidentifier`, `money`; not `float`, whose text `FOR JSON` writes may round); a string
   into any string type is never NULL, cut short past its length, so only that type's facts hold unless every value fits; an
   integer into a wider integer is the same number; a narrower number overflows (244, or NULL under the caller's options) and
-  a `bit`, written `true` or `false`, is not a number (245), so those stay nullable. `AS JSON` holds the object or array there,
-  live. Without `WITH`, `key` is one of an object's keys or a tuple's positions, and `type` one of the JSON types its values
+  a `bit`, written `true` or `false`, is not a number (245), so those stay nullable. A `varchar` or `char` back into itself goes
+  through the database's code page, which may change a character that is not ASCII (`α` from a Greek column comes back `a`:
+  `Openjson_with_converts_a_varchar_to_the_databases_code_page`), so its value set holds only when every value is ASCII. An
+  `nchar(n)` column is not padded, so it is at most n, not exactly n, unless it reads an `nchar(n)` value, which FOR JSON writes
+  padded (`Openjson_with_does_not_pad_nchar_but_pads_char`; this holds of `OPENJSON` over any document, since 6h, and was
+  claimed exact until review round 1 of 6l). `AS JSON` holds the object or array there, live. Without `WITH`, `key` is one of an object's keys or a tuple's positions, and `type` one of the JSON types its values
   can be (`Openjson_without_with_over_json_built_here_gives_its_keys_and_their_types`): a key `FOR JSON` leaves out when null
   is never 0; `value` is never null when no value can be JSON null.
 - **`JSON_VALUE`** over JSON built here (`TracedJsonValue`): never null where the path finds a scalar that is never JSON null,
   and at most 4,000 characters (or a `strict` path, which makes anything else an error), and the document is never NULL; a
   string keeps its length bound and `values`, and `true` or `false` is `'true'` or `'false'`
   (`Json_value_over_json_built_here_gives_its_scalars_as_text`).
+- **Loops.** JSON built from itself in a loop (`SET @x = (SELECT json_query(@x) AS c FOR JSON PATH)`, a table variable fed
+  from itself) grows at every pass. After two passes, a place whose JSON still changes is widened to unknown content naming the
+  loop (`Widened`), which joins to itself, so the loop reaches its fixed point and only that JSON is unknown (review round 1,
+  finding 4; before, the whole procedure's results were).
 - **Paths** read: `lax` or `strict`, `$`, keys (quoted or not) and indexes into a tuple. A wildcard, an index into an array of
   unknown length, a record's key or a recursive node is not read, and the general rule holds.
 - **Not traced**, each claiming no more than before: a stored column; `varchar(max)` and shorter types; a `#table` column

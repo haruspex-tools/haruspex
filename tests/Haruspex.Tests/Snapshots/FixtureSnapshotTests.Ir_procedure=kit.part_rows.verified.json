@@ -34,11 +34,28 @@
           "cardinality": "many"
         },
         {
-          "encoding": "rowset",
+          "encoding": "json",
           "type": {
             "kind": "array",
             "items": {
               "ref": "PartRowsResult2Row"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/part_rows.sql:16:1"
+            }
+          ],
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PartRowsResult3Row"
             }
           },
           "mayBeAbsent": false,
@@ -49,14 +66,14 @@
           "type": {
             "kind": "array",
             "items": {
-              "ref": "PartRowsResult3Row"
+              "ref": "PartRowsResult4Row"
             }
           },
           "mayBeAbsent": true,
           "absentBecause": [
             {
               "rule": "no-rows",
-              "at": "procedures/part_rows.sql:16:1"
+              "at": "procedures/part_rows.sql:20:1"
             }
           ],
           "cardinality": "many"
@@ -177,6 +194,22 @@
           "nullable": false
         },
         {
+          "name": "sku_nchar",
+          "type": {
+            "kind": "string",
+            "sql": "nchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nchar(10)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
           "name": "colour",
           "type": {
             "kind": "string",
@@ -194,7 +227,7 @@
           "nullableBecause": [
             {
               "rule": "json-value",
-              "at": "procedures/part_rows.sql:11:124"
+              "at": "procedures/part_rows.sql:12:29"
             }
           ]
         }
@@ -205,6 +238,31 @@
       "identity": {
         "procedure": "kit.part_rows",
         "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "sku_nchar",
+          "type": {
+            "kind": "string",
+            "sql": "nchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nchar(10)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "PartRowsResult3Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kit.part_rows",
+        "path": "results[2][]"
       },
       "fields": [
         {
@@ -281,11 +339,11 @@
         }
       ]
     },
-    "PartRowsResult3Row": {
+    "PartRowsResult4Row": {
       "kind": "object",
       "identity": {
         "procedure": "kit.part_rows",
-        "path": "results[2][]"
+        "path": "results[3][]"
       },
       "fields": [
         {

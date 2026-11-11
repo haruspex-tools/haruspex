@@ -1,5 +1,5 @@
 -- OPENJSON and JSON_VALUE over JSON built here: each type read back into itself, a string into a shorter type, a key FOR JSON
--- leaves out when null, read lax and strict; the keys and types of an object; scalars of a literal document.
+-- leaves out when null, read lax and strict, a string into nchar, which is not padded; the keys and types of an object; scalars of a literal document.
 CREATE PROCEDURE kit.part_rows @kit_id int
 AS
 SET NOCOUNT ON;
@@ -7,9 +7,13 @@ DECLARE @parts nvarchar(max) = (SELECT p.part_id, p.sku, p.qty, p.colour FROM ki
 DECLARE @card nvarchar(max) = (SELECT k.kit_id, k.name, k.price FROM kit.kit AS k WHERE k.kit_id = @kit_id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 DECLARE @style nvarchar(max) = N'{"finish": "matt", "sizes": [1, 2, 3], "boxed": false}';
 
-SELECT j.part_id, j.sku, j.qty, j.qty_wide, j.sku_short, j.colour
-FROM OPENJSON(@parts) WITH (part_id int, sku varchar(8), qty tinyint, qty_wide int '$.qty', sku_short nvarchar(3) '$.sku', colour nvarchar(10) 'lax $.colour') AS j
+SELECT j.part_id, j.sku, j.qty, j.qty_wide, j.sku_short, j.sku_nchar, j.colour
+FROM OPENJSON(@parts) WITH (part_id int, sku varchar(8), qty tinyint, qty_wide int '$.qty', sku_short nvarchar(3) '$.sku', sku_nchar nchar(10) '$.sku',
+                            colour nvarchar(10) 'lax $.colour') AS j
 ORDER BY j.part_id;
+
+-- The nchar column in JSON: there it is the value itself, not padded (in a rowset it arrives padded with U+0000).
+SELECT j.sku_nchar FROM OPENJSON(@parts) WITH (sku_nchar nchar(10) '$.sku') AS j FOR JSON PATH;
 
 SELECT j.[key], j.value, j.type FROM OPENJSON(@card) AS j ORDER BY j.[key];
 

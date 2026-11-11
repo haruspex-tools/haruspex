@@ -24,12 +24,31 @@ export const KitBadgesTiers2Schema = z.object({
 })
 export type KitBadgesTiers2 = z.infer<typeof KitBadgesTiers2Schema>
 
+export const KitBadgesLatestSchema = z.object({
+  none: z.boolean(),
+})
+export type KitBadgesLatest = z.infer<typeof KitBadgesLatestSchema>
+
+export const KitBadgesLatest2Schema = z.object({
+  sku: z.string().max(8) /* varchar(8) counts bytes: exact in a single-byte collation, an upper bound otherwise; no collation is declared */,
+})
+export type KitBadgesLatest2 = z.infer<typeof KitBadgesLatest2Schema>
+
+export const KitBadgesShareSchema = z.object({
+  per_part: z.int32().nullable(),
+})
+export type KitBadgesShare = z.infer<typeof KitBadgesShareSchema>
+
 export const KitBadgesRowSchema = z.object({
   badge: KitBadgesBadgeSchema,
   tally: z.array(KitBadgesTallyItemSchema),
   tiers: z.tuple([KitBadgesTiersSchema, KitBadgesTiers2Schema]),
   stored: z.unknown().optional() /* json-shape-unknown */,
   note: z.string(),
+  latest: z.union([KitBadgesLatestSchema.extend({ sku: z.never().optional() }), KitBadgesLatest2Schema.extend({ none: z.never().optional() })]),
+  share: z.union([KitBadgesShareSchema, z.tuple([])]),
+  accent: z.unknown().optional() /* json-shape-unknown */,
+  accent_n: z.tuple([z.enum(["ā"])]),
 })
 export type KitBadgesRow = z.infer<typeof KitBadgesRowSchema>
 
