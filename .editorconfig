@@ -57,7 +57,8 @@ csharp_style_prefer_readonly_struct = true
 csharp_style_prefer_readonly_struct_member = true
 
 ## Expression bodies
-# A method is an expression when it fits on a line; a longer one is a block, so its first line is its signature.
+# A method or local function whose block body fits on one line as an expression must be one. A longer expression
+# body is not turned into a block: the option only stops the analyser asking for multi-line expression bodies.
 csharp_style_expression_bodied_methods = when_on_single_line
 csharp_style_expression_bodied_constructors = false
 csharp_style_expression_bodied_operators = true
@@ -209,10 +210,6 @@ dotnet_diagnostic.IDE0010.severity = none
 dotnet_diagnostic.IDE0072.severity = none
 # Its flow analysis misreads property patterns: both places it flagged here are reachable.
 dotnet_diagnostic.CA1508.severity = none
-# The two exceptions it flags are internal to Config, thrown and caught inside it and never part of an API, so the
-# public accessibility and the four standard constructors it asks for would be unused surface.
-dotnet_diagnostic.CA1032.severity = none
-dotnet_diagnostic.CA1064.severity = none
 # Public members are documented where the API is reusable (below); elsewhere a comment is written where it says
 # something the name does not, and a rule demanding one on every member would produce restatements.
 dotnet_diagnostic.CS1591.severity = none
