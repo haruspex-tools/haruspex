@@ -919,7 +919,8 @@ not listed is not modelled.
 
 - **`DATEDIFF`** is `int`, **`DATEDIFF_BIG`** `bigint`; **`DATEPART`**, **`YEAR`**, **`MONTH`**, **`DAY`** `int`;
   **`DATENAME`** `nvarchar(30)`, never a closed set, since the names depend on the session's language. **`DATEADD`** is its
-  date's own type, or `datetime` for a string or an integer (`DATEADD(day, 1, '2026-01-01')`, `DATEDIFF(day, 0, d)`). The part
+  date's own type, or `datetime` for a string or an integer (`DATEADD(day, 1, '2026-01-01')`, `DATEDIFF(day, 0, d)`); its
+  number may not be the `NULL` literal, which does not compile (8116), so that is not modelled. The part
   is a keyword and is not read. The date may be a date or time type, a string or an integer
   (`Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type`).
 - **`EOMONTH(d [, n])`** is `date`, null only when `d` is: a NULL `n` is taken as 0
@@ -967,8 +968,9 @@ NULLs are skipped, so it is NULL when every value is (the argument's reasons), a
 ### `GENERATE_SERIES`
 
 In `FROM`, a join or `APPLY` it is a relation of one column, `value` (`GenerateSeries`, bound as `OPENJSON` is), never null, of
-its arguments' one integer type, or of the type `COALESCE` gives decimals (`GENERATE_SERIES(@n numeric(5,1), 3.25)` is
-`numeric(6,2)`); any other mix is an error (5373), and is not modelled. A NULL argument, or a step the wrong way, gives no rows
+its arguments' one integer type, or of the type `COALESCE` gives decimals all named `decimal` or all `numeric`
+(`GENERATE_SERIES(@n numeric(5,1), 3.25)` is `numeric(6,2)`); any other mix, a `decimal` column beside a decimal literal (a
+`numeric`) included, is an error (5373), and is not modelled. A NULL argument, or a step the wrong way, gives no rows
 (`Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument`). Many rows.
 
 ## Window functions
@@ -995,7 +997,7 @@ holds the current row. Observed in `FunctionObservationTests`.
   NULL under the caller's options (`arithmetic-overflow`, unless it fits); with one, only the type's facets hold. A NULL offset
   is NULL; offset 0 is the row itself
   (`Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type`).
-- **`PERCENTILE_CONT`** (`float`, over a number) and **`PERCENTILE_DISC`** (its argument's type and facets): NULLs are skipped,
+- **`PERCENTILE_CONT`** (`float`, over a number or a `bit`) and **`PERCENTILE_DISC`** (its argument's type and facets): NULLs are skipped,
   so NULL only when every value in the partition is (the argument's reasons).
 - A window function inside `COALESCE` still counts as a call read twice (`read-twice`): that it is computed once per row, as
   an aggregate is, is likely but not observed.

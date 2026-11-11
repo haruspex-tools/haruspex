@@ -107,7 +107,8 @@ internal sealed partial class ProcedureAnalyzer
         var (values, unknown) = Arguments(call.Parameters.Skip(1), scope);
         if (unknown is not null)
             return unknown;
-        if (TypeOf(values[0], call.Parameters[1]) is not { IsNumber: true })
+        // The NULL literal as the number does not compile (8116, review round 1), where a NULL variable gives NULL.
+        if (Strip(call.Parameters[1]) is NullLiteral || TypeOf(values[0], call.Parameters[1]) is not { IsNumber: true })
             return NotModelled(call, "a number of this type is not modelled.");
         var date = DateOperand(values[1], call.Parameters[2]);
         if (date is null)
@@ -329,7 +330,8 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// <c>GENERATE_SERIES(start, stop [, step])</c> in FROM: one column, <c>value</c>, never null, of its arguments' one integer
-    /// type, or of the type COALESCE gives decimals; any other mix is an error (5373). A NULL argument, or a step the wrong way,
+    /// type, or of the type COALESCE gives decimals all named decimal or all numeric; any other mix, decimal with numeric
+    /// included, is an error (5373). A NULL argument, or a step the wrong way,
     /// gives no rows (observed: Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument).
     /// </summary>
     private LocalRelationValues GenerateSeries(GlobalFunctionTableReference reference, BindingScope? outer)
@@ -347,7 +349,7 @@ internal sealed partial class ProcedureAnalyzer
         ScalarType? type = null;
         if (types.Count > 0 && types.All(t => t is { IsInteger: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
             type = types[0]! with { Digits = null };
-        else if (types.Count > 0 && types.All(t => t is { IsDecimal: true }))
+        else if (types.Count > 0 && types.All(t => t is { IsDecimal: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
             type = ScalarType.Union(types!);
         if (type is null)
             return LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedSource, $"{Text(reference)}: its arguments must be of one integer type, or decimals.", at));

@@ -22,6 +22,7 @@ SELECT v.visit_id,
        FIRST_VALUE(v.room) OVER (PARTITION BY v.member_id ORDER BY v.visit_id) AS first_room,
        LAST_VALUE(v.room) OVER (PARTITION BY v.member_id ORDER BY v.visit_id ROWS BETWEEN 1 FOLLOWING AND 1 FOLLOWING) AS next_room,
        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY v.minutes) OVER (PARTITION BY v.member_id) AS median_minutes,
-       PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY v.room) OVER (PARTITION BY v.member_id) AS median_room
+       PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY v.room) OVER (PARTITION BY v.member_id) AS median_room,
+       PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY v.minutes) OVER (PARTITION BY v.member_id) AS median_minutes_taken
 FROM gym.visit AS v
 ORDER BY v.visit_id;

@@ -23,6 +23,7 @@ export const MemberNamesResult1RowSchema = z.object({
   nickname_zeroed: z.string().max(4000).nullable(),
   name_escaped: z.string(),
   label: z.string().max(4000),
+  custom_label: z.string().max(4000).nullable(),
   locker: z.string().max(4000).nullable(),
 })
 export type MemberNamesResult1Row = z.infer<typeof MemberNamesResult1RowSchema>

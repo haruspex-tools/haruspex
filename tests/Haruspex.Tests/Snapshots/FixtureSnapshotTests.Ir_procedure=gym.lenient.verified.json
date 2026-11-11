@@ -1,0 +1,172 @@
+{
+  "irVersion": "0.14",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "gym.lenient",
+      "name": "Lenient",
+      "kind": "procedure",
+      "at": "procedures/lenient.sql:1:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LenientRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "LenientRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "gym.lenient",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "visit_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "room_before",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/lenient.sql:7:8"
+            }
+          ]
+        },
+        {
+          "name": "heavy",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "float"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/lenient.sql:8:8"
+            }
+          ]
+        },
+        {
+          "name": "fee_scaled",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/lenient.sql:9:17"
+            },
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/lenient.sql:9:8"
+            }
+          ]
+        },
+        {
+          "name": "far_future",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/lenient.sql:10:40"
+            },
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/lenient.sql:10:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

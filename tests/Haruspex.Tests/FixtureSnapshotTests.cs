@@ -128,6 +128,7 @@ public class FixtureSnapshotTests
         ["gym.visit_windows"] = "funcs",
         ["gym.visit_money"] = "funcs",
         ["gym.series"] = "funcs",
+        ["gym.lenient"] = "funcs",
         ["flow.region_report"] = "flow",
         ["flow.region_sales"] = "flow",
         ["flow.sales_by_mode"] = "flow",

@@ -106,6 +106,15 @@ public class FunctionObservationTests(SqlServerFixture server)
         Assert.Equal(" ! 289", (await Run([], $"{Off} SELECT DATEFROMPARTS(2026, 2, 30) AS v;")).ToString());
     }
 
+    [Fact]
+    public async Task Dateadd_with_the_null_literal_as_its_number_does_not_compile_and_percentile_cont_takes_a_bit()
+    {
+        // Review round 1: DATEADD(day, NULL, d) is refused (8116), where a NULL variable is NULL; PERCENTILE_CONT over a bit is
+        // a float.
+        Assert.Equal(" ! 8116", (await Run([], "SELECT DATEADD(day, NULL, CAST('2026-01-01' AS date)) AS v;")).ToString());
+        Assert.Equal("v float", await Describe("SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY CAST(n AS bit)) OVER () AS v FROM dbo.obs_w", [Rows]));
+    }
+
     // ---- string functions ---------------------------------------------------------------------------------------------
 
     [Fact]
@@ -385,6 +394,9 @@ public class FunctionObservationTests(SqlServerFixture server)
         Assert.Equal("value numeric(6,2)", await Describe("DECLARE @a numeric(5,1) = 1; SELECT value FROM GENERATE_SERIES(@a, 3.25)"));
         Assert.Equal("value numeric(2,1)", await Describe("SELECT value FROM GENERATE_SERIES(0.0, 1.0, 0.1)"));
         Assert.Equal(" ! 5373", (await Run([], "DECLARE @a smallint = 1; SELECT value FROM GENERATE_SERIES(@a, 10);")).ToString());
+
+        // decimal and numeric do not mix either, though COALESCE would take them (review round 1).
+        Assert.Equal(" ! 5373", (await Run([], "DECLARE @a decimal(10,2) = 1; SELECT value FROM GENERATE_SERIES(@a, 100.5);")).ToString());
 
         // A step the wrong way, or a NULL argument, gives no rows; never a NULL value.
         Assert.Equal(

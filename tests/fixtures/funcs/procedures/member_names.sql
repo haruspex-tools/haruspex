@@ -1,4 +1,5 @@
 CREATE PROCEDURE gym.member_names
+    @format nvarchar(100) = N'%s!'
 AS
 SELECT m.member_id,
        LTRIM(m.code) AS code_left,
@@ -20,6 +21,7 @@ SELECT m.member_id,
        REPLACE(m.nickname, N'o', N'0') AS nickname_zeroed,
        STRING_ESCAPE(m.name, 'json') AS name_escaped,
        FORMATMESSAGE('%s (%s)', m.name, m.nickname) AS label,
+       FORMATMESSAGE(@format, m.name) AS custom_label,
        JSON_VALUE(m.prefs, '$.locker') AS locker
 FROM gym.member AS m
 ORDER BY m.member_id;

@@ -13,6 +13,7 @@ export type VisitTotalsResult1Row = z.infer<typeof VisitTotalsResult1RowSchema>
 export const VisitTotalsResult2RowSchema = z.object({
   minutes_list: z.string().max(8000).nullable() /* varchar(8000) counts bytes: exact in a single-byte collation, an upper bound otherwise; no collation is declared */,
   all_prefs: z.string().nullable(),
+  visitor_names: z.string().max(8000).nullable() /* varchar(8000) counts bytes: exact in a single-byte collation, an upper bound otherwise; no collation is declared */,
 })
 export type VisitTotalsResult2Row = z.infer<typeof VisitTotalsResult2RowSchema>
 

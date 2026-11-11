@@ -9,7 +9,17 @@
       "name": "MemberNames",
       "kind": "procedure",
       "at": "procedures/member_names.sql:1:1",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "@format",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
       "results": [
         {
           "encoding": "rowset",
@@ -34,7 +44,7 @@
           "absentBecause": [
             {
               "rule": "no-rows",
-              "at": "procedures/member_names.sql:27:1"
+              "at": "procedures/member_names.sql:29:1"
             }
           ],
           "cardinality": "many"
@@ -439,6 +449,28 @@
           "nullable": false
         },
         {
+          "name": "custom_label",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@format"
+            }
+          ]
+        },
+        {
           "name": "locker",
           "type": {
             "kind": "string",
@@ -456,7 +488,7 @@
           "nullableBecause": [
             {
               "rule": "json-value",
-              "at": "procedures/member_names.sql:23:8"
+              "at": "procedures/member_names.sql:25:8"
             }
           ]
         }
@@ -549,7 +581,7 @@
           "nullableBecause": [
             {
               "rule": "json-value",
-              "at": "procedures/member_names.sql:30:8"
+              "at": "procedures/member_names.sql:32:8"
             }
           ]
         },

@@ -376,7 +376,8 @@ public class FunctionTests
             SELECT FIRST_VALUE(n) OVER (ORDER BY id) AS a, LAST_VALUE(s) OVER (ORDER BY id ROWS BETWEEN 1 FOLLOWING AND 2 FOLLOWING) AS b,
                    FIRST_VALUE(v) OVER (PARTITION BY g ORDER BY id) AS c, LAST_VALUE(n) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS d,
                    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY n) OVER () AS e, PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY v) OVER (PARTITION BY g) AS f,
-                   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY d) OVER () AS h, PERCENTILE_DISC(0.25) WITHIN GROUP (ORDER BY s DESC) OVER () AS i
+                   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY d) OVER () AS h, PERCENTILE_DISC(0.25) WITHIN GROUP (ORDER BY s DESC) OVER () AS i,
+                   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY CAST(n AS bit)) OVER () AS j, PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY s) OVER () AS k
             FROM dbo.t;
             """);
         Assert.Equal("int", Typed(doc, "a"));
@@ -387,6 +388,10 @@ public class FunctionTests
         Assert.Equal("int nullable-column", Typed(doc, "f"));
         Assert.Equal("float", Typed(doc, "h"));
         Assert.Equal("varchar(10)", Typed(doc, "i"));
+
+        // A bit is a number to PERCENTILE_CONT (review round 1); a string is an error.
+        Assert.Equal("float", Typed(doc, "j"));
+        Unknown(doc, "k");
     }
 
     [Fact]
@@ -494,7 +499,9 @@ public class FunctionTests
         var doc = Procedure("SELECT NULL AS n, CAST(NULL AS date) AS d, DATEADD(day, NULL, da) AS e FROM dbo.t;");
         Assert.Equal("int null-literal", Typed(doc, "n"));
         Assert.Equal("date null-literal", Typed(doc, "d"));
-        Assert.Equal("date null-literal", Typed(doc, "e"));
+
+        // DATEADD with the NULL literal as its number does not compile (8116, review round 1).
+        Unknown(doc, "e");
     }
 
     [Fact]
@@ -507,6 +514,7 @@ public class FunctionTests
             SELECT value AS c FROM dbo.t AS t CROSS APPLY GENERATE_SERIES(t.nd, 3.25) AS g;
             SELECT value AS d FROM dbo.t AS t CROSS APPLY GENERATE_SERIES(t.ti, 10) AS g;
             SELECT t.id, s.value AS e FROM dbo.t AS t CROSS APPLY GENERATE_SERIES(1, t.n) AS s;
+            SELECT value AS f FROM dbo.t AS t CROSS APPLY GENERATE_SERIES(t.d, 100.5) AS g;
             """);
         string Of(int index, string name)
         {
@@ -523,5 +531,8 @@ public class FunctionTests
         // Arguments of different types are an error on the server.
         Assert.Equal("unknown", Of(3, "d"));
         Assert.Equal("int", Of(4, "e"));
+
+        // decimal beside a numeric literal is an error too (5373, review round 1): the names must be the same.
+        Assert.Equal("unknown", Of(5, "f"));
     }
 }

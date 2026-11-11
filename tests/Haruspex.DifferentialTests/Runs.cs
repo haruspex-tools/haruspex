@@ -332,6 +332,8 @@ public static class Runs
         new("funcs: member_dates, no offset", "funcs", "gym.member_dates", None),
         new("funcs: member_dates, an offset", "funcs", "gym.member_dates", new Dictionary<string, object?> { ["@offset"] = 2 }),
         new("funcs: member_names", "funcs", "gym.member_names", None),
+        new("funcs: member_names, a NULL format", "funcs", "gym.member_names", new Dictionary<string, object?> { ["@format"] = null }),
+        new("funcs: lenient, under ANSI_WARNINGS and ARITHABORT off", "funcs", "gym.lenient", None, "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;"),
         new("funcs: member_names, empty gym", "funcs", "gym.member_names", None, NoGym),
         new("funcs: visit_totals, a member with timed visits", "funcs", "gym.visit_totals", new Dictionary<string, object?> { ["@member_id"] = 1 }),
         new("funcs: visit_totals, a member with untimed visits only", "funcs", "gym.visit_totals", new Dictionary<string, object?> { ["@member_id"] = 2 }),

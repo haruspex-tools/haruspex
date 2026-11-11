@@ -376,6 +376,21 @@
           ]
         },
         {
+          "name": "joined_if_seen",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "null-literal",
+              "at": "procedures/member_dates.sql:21:38"
+            }
+          ]
+        },
+        {
           "name": "year_start",
           "type": {
             "kind": "date",

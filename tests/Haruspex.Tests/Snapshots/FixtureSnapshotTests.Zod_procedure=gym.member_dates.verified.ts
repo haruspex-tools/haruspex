@@ -20,6 +20,7 @@ export const MemberDatesRowSchema = z.object({
   month_end: z.date(),
   month_end_shifted: z.date(),
   seen_month_end: z.date().nullable(),
+  joined_if_seen: z.date().nullable(),
   year_start: z.date(),
   offset_month: z.date().nullable(),
   opening: z.date(),

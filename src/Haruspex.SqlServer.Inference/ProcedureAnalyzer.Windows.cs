@@ -20,7 +20,7 @@ internal sealed partial class ProcedureAnalyzer
     /// argument's reasons, and over a frame that may be empty (<c>empty-frame</c>), over a column never null too.</item>
     /// <item><c>FIRST_VALUE</c> and <c>LAST_VALUE</c>: the argument with its facts, and <c>empty-frame</c>.</item>
     /// <item><c>LAG</c> and <c>LEAD</c>: see <see cref="Offset"/>.</item>
-    /// <item><c>PERCENTILE_CONT</c> (float, over a number) and <c>PERCENTILE_DISC</c> (its argument's type and facts): NULLs are
+    /// <item><c>PERCENTILE_CONT</c> (float, over a number or a bit) and <c>PERCENTILE_DISC</c> (its argument's type and facts): NULLs are
     /// skipped, so NULL only when every value in the partition is.</item>
     /// </list>
     /// Observed: Window_functions_are_typed_by_their_kind_or_their_argument,
@@ -80,9 +80,9 @@ internal sealed partial class ProcedureAnalyzer
                     return NotModelled(call, "a percentile of a value that is not a scalar is not modelled.");
                 if (name == "percentile_disc")
                     return argument;
-                return TypeOf(argument, element.Expression) is { IsNumber: true }
+                return TypeOf(argument, element.Expression) is { IsNumber: true } or { Name: "bit" }
                     ? Typed(new ScalarType("float"), argument.NullableBecause, call)
-                    : NotModelled(call, "PERCENTILE_CONT of a value that is not a number is an error.");
+                    : NotModelled(call, "PERCENTILE_CONT of a value of this type is not modelled.");
             }
 
             default:

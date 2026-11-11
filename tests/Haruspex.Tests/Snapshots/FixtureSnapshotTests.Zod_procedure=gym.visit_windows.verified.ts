@@ -26,6 +26,7 @@ export const VisitWindowsRowSchema = z.object({
   next_room: z.int().min(0).max(255).nullable(),
   median_minutes: z.number().nullable(),
   median_room: z.int().min(0).max(255),
+  median_minutes_taken: z.int32().nullable(),
 })
 export type VisitWindowsRow = z.infer<typeof VisitWindowsRowSchema>
 
