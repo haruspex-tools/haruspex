@@ -1,6 +1,7 @@
 namespace Haruspex.SqlServer.Inference;
 
-// The shapes inference works with. They are the IR's types before naming: objects are anonymous here, and
-// unknowns carry their own location. IrBuilder turns them into the IR.
-
+/// <summary>
+/// A shape as inference works with it: the IR's type before naming. Objects are anonymous here, and unknowns carry their
+/// own location; <see cref="IrBuilder"/> turns shapes into the IR.
+/// </summary>
 internal abstract record Shape;
