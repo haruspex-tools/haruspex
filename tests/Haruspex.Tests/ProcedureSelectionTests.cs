@@ -3,7 +3,10 @@ using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Tests;
 
-/// <summary>Selection per schema, as Richard decided on 9 Nov 2026: each schema's block selects among its procedures by their own names.</summary>
+/// <summary>
+/// Selection per schema (docs/decisions/0010-procedures-are-selected-per-schema.md): each schema's block selects among its
+/// procedures by their own names.
+/// </summary>
 public class ProcedureSelectionTests
 {
     private static readonly ObjectName[] Procedures =

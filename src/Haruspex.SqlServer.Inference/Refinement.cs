@@ -451,6 +451,8 @@ internal sealed partial class ProcedureAnalyzer
         {
             case "count" or "count_big" when call.Parameters.Count == 1:
             {
+                // COUNT is NULL past int's range under a caller's options, which a procedure can't prevent
+                // (docs/decisions/0014-count-is-nullable.md); COUNT_BIG can't overflow.
                 var type = new SqlType(SqlTypeKind.BuiltIn, name == "count" ? "int" : "bigint", []);
                 IReadOnlyList<IrNullReason> because = name == "count" && !ProvedAggregate(call) ? [new IrNullReason(IrNullRules.CountOverflow, at.ToString())] : [];
                 return new Value(SqlTypes.ToConvertedShape(model, type, at), because);

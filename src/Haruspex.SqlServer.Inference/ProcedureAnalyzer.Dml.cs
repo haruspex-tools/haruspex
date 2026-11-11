@@ -332,6 +332,7 @@ internal sealed partial class ProcedureAnalyzer
     private Outcome Fetch(FetchCursorStatement fetch, FlowState state)
     {
         var at = At(fetch);
+        // Which columns the row has depends on the driver (docs/decisions/0015-fetch-without-into-is-unknown.md).
         if (fetch.IntoVariables.Count == 0)
         {
             blocker ??= new UnknownShape(IrUnknownReasons.HiddenColumn, $"FETCH without INTO at {at} returns the row with a hidden ROWSTAT column, which some drivers list among its columns and others leave out.", at);

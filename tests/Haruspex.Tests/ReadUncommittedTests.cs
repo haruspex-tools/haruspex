@@ -4,7 +4,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests;
 
 /// <summary>
-/// Visible read-uncommitted (decided 10 Nov 2026): a <c>NOLOCK</c> or <c>READUNCOMMITTED</c> hint on a source, or
+/// Visible read-uncommitted (docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md): a <c>NOLOCK</c> or <c>READUNCOMMITTED</c> hint on a source, or
 /// <c>SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED</c> earlier in the procedure or in a caller, drops the key-based "at most
 /// one row" claims through that source, because a scan under read-uncommitted can return a row twice. How far the isolation
 /// level reaches is observed in the differential tests' <c>ReadUncommittedObservationTests</c>.

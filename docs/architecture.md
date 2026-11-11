@@ -72,8 +72,8 @@ reference at a time, which is why it is checked rather than only written down.
 ## Types that were split, and why
 
 The SQL Server code began as one project, `Haruspex.SqlServer`, holding reading, the catalogue, binding and inference.
-Decided 9 Nov 2026: split it into the layers above, without changing behaviour (every snapshot and CLI output stayed
-byte-identical). Where one type mixed two concerns, the type was split rather than moved whole, and the table says why,
+It was split into the layers above without changing behaviour (every snapshot and CLI output stayed byte-identical); the
+decision and the alternatives are in [decision 0006](decisions/0006-layers-with-one-way-dependencies.md). Where one type mixed two concerns, the type was split rather than moved whole, and the table says why,
 because the reasons still hold for the code as it is:
 
 | Was | Became | Why |

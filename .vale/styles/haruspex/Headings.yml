@@ -15,3 +15,5 @@ exceptions:
   - SQL Server
   - JSON Schema
   - Zod
+  # Microsoft's T-SQL parser, a product name (docs/decisions/0004-scriptdom-is-the-only-sql-dependency.md).
+  - ScriptDom

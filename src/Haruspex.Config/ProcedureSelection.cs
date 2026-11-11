@@ -5,8 +5,8 @@ namespace Haruspex.Config;
 /// <summary>
 /// Which procedures are the interface. In most databases most procedures write or administer, and only some are worth
 /// typing. Each schema's block selects among that schema's procedures by their own names: <c>include</c>, then
-/// <c>exclude</c>, which wins, because people think "in this schema, these procedures" (decided 9 Nov 2026, replacing
-/// patterns over two-part names). Nothing is selected unless its schema has a block with an include, so typing every
+/// <c>exclude</c>, which wins, because people think "in this schema, these procedures"
+/// (docs/decisions/0010-procedures-are-selected-per-schema.md). Nothing is selected unless its schema has a block with an include, so typing every
 /// procedure is something asked for, never the default.
 /// </summary>
 /// <remarks>

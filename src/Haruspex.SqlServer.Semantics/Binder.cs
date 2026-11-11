@@ -155,8 +155,8 @@ public sealed class Binder(DatabaseModel model, string file)
             case NamedTableReference named:
                 // FOR SYSTEM_TIME other than AS OF reads history too, on a table or on a view (observed:
                 // For_system_time_other_than_as_of_repeats_a_key_through_a_table_or_a_view).
-                // NOLOCK and READUNCOMMITTED read uncommitted rows, a scan of which can repeat a row (decided 10 Nov 2026;
-                // the Inference README, "How many rows").
+                // NOLOCK and READUNCOMMITTED read uncommitted rows, a scan of which can repeat a row
+                // (docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md).
                 scope.Add(Sided(Named(named, optionalSideOf, scope.Locals)) with
                 {
                     History = named.TemporalClause is { TemporalClauseType: not TemporalClauseType.AsOf },

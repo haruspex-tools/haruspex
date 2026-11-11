@@ -20,11 +20,10 @@ namespace Haruspex.Config;
 /// written (<c>placedAt</c> stays <c>PlacedAt</c>). <c>camel</c> then lowers the first letter. A name that would start
 /// with a digit gets <c>_</c> in front. <c>preserve</c> keeps the prefix and the name as they are, joined.</item>
 /// </list>
-/// <para><b>The schema is left out of names</b> (Richard, 9 Nov 2026): most projects use one schema or a few with
-/// distinct names, and <c>DboGetOrder</c> everywhere helps nobody. Where two schemas' names meet, the clash is an error
-/// that asks for a <c>prefix</c> on one schema or a <c>name</c> override, so a name never depends on which other objects
-/// exist. Before the config file, the schema was added only on a clash and a number broke any clash left, so adding
-/// one procedure could rename another and break code that used it.</para>
+/// <para><b>The schema is left out of names</b>: most projects use one schema or a few with distinct names, and
+/// <c>DboGetOrder</c> everywhere helps nobody. Where two schemas' names meet, the clash is an error that asks for a
+/// <c>prefix</c> on one schema or a <c>name</c> override, so a name never depends on which other objects exist
+/// (docs/decisions/0011-generated-names-leave-the-schema-out.md).</para>
 /// </remarks>
 public sealed record NamingRules(IReadOnlyList<NamingReplacement> Replace, NamingCase Case, string Prefix = "")
 {
