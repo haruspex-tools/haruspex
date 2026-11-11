@@ -64,7 +64,8 @@ the project and traced to where it is read. The walk is `ProcedureAnalyzer.Flow.
 its join), `FlowLocals.cs` (what the binder sees) and `ShapeJoin.cs` (joins of values). Every engine rule it leans on is
 observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`; the test names are given below. Each later section
-names its own code and its own test class.
+names its own code and its own test class. A construct's unit tests are in the class of the same family, in
+`tests/Haruspex.Tests/Inference` ([CONTRIBUTING](../../CONTRIBUTING.md#where-a-constructs-tests-are) lists the families).
 
 ## What the IR describes: calls that succeed
 

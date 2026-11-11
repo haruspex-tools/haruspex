@@ -140,6 +140,53 @@ It needs Node, and Vale 3.24.0 on the `PATH` or Docker with a local socket to ru
 script. [tests/prose/README.md](tests/prose/README.md) says what to do when a check is wrong rather than the text:
 a real term goes in the project dictionary, never a misspelling.
 
+## Where a construct's tests are
+
+The tests are laid out like the code. `tests/Haruspex.Tests` has a folder per layer, named as the layer is
+(`tests/Haruspex.Tests/Inference`, `tests/Haruspex.Tests/Emit.Zod` and the rest), beside folders for the tests of the
+repository itself: its architecture, its documentation, the corpus, the fixtures and the snapshot helper. One project
+with a folder per layer, rather than a test project per layer: the Inference tests, the most numerous, reach their layer
+through `SqlProject` and the fixtures, which compose every layer, and one project builds and runs them once. The
+architecture test, not the project boundary, is what keeps the layers apart. Outside Inference a test class is named for
+the type it tests (`ConfigReaderTests` tests `ConfigReader`). Inside Inference it is named for a **construct family**,
+the group of SQL constructs one part of the inference handles, and that one name leads to everything else about it:
+
+| What | Where | Named |
+|---|---|---|
+| Unit tests | `tests/Haruspex.Tests/Inference` | `<Family>Tests`; when the class is large, one partial part per construct, named for it: `ExecTests.InsertExec.cs` |
+| Observation tests, one engine rule each | `tests/Haruspex.DifferentialTests` | `<Family>ObservationTests`, each test named for the rule it observes |
+| The reference | `src/Haruspex.SqlServer.Inference/README.md` | a section per construct, which names its code and its observation tests |
+| The fixture | `tests/fixtures/<domain>` | for its invented domain (`calls` is a bakery); its README's first sentence names its constructs |
+
+So a rule's unit test is found from the construct's name, and the rule's observation from the unit test's class. A new
+construct joins its family's classes, or starts a family with all four. A class of either kind over about 400 lines is
+split into parts along the constructs it covers. The families today:
+
+| Family | Unit tests | Observation tests | Fixture | Reference section |
+|---|---|---|---|---|
+| Statement flow | `StatementFlowTests` | `StatementFlowObservationTests` | `tests/fixtures/flow` | "The state", "Result sets are positional", "CTEs" |
+| Calls | `ExecTests` | `ExecObservationTests` | `tests/fixtures/calls` | "Calls" |
+| Refinement | `RefinementTests` | `RefinementObservationTests` | `tests/fixtures/refine` | "Refinement" |
+| Writes | `DmlTests` | `DmlObservationTests` | `tests/fixtures/dml` | "DML", "Triggers", "Cursors" |
+| APPLY and views | `ApplyViewTests` | `ApplyViewObservationTests` | `tests/fixtures/apply` | "APPLY", "Views" |
+| Expressions | `ExpressionTests` | `ExpressionObservationTests` | `tests/fixtures/tabs` | "Expressions" |
+| Numbers | `NumericTests` | `NumericObservationTests` | `tests/fixtures/ledger` | "Decimal arithmetic", "Numeric functions" |
+| CASE and its kin | `CaseTests` | `CaseObservationTests` | `tests/fixtures/cases` | "CASE, IIF, CHOOSE and NULLIF", "COALESCE and ISNULL over JSON" |
+| Built-in functions | `FunctionTests` | `FunctionObservationTests` | `tests/fixtures/funcs` | "Built-in functions", "Window functions" |
+| Table-valued functions | `TableFunctionTests` | `TableFunctionObservationTests` | `tests/fixtures/tabs` | "Table-valued functions" |
+| Set operations and joins | `SetJoinTests` | `SetJoinObservationTests` | `tests/fixtures/sets` | "Set operations", "CROSS JOIN and FULL OUTER JOIN", "OPENJSON" |
+| Combining types | `SetTypeTests` | `SetTypeObservationTests`, `SetTypeGridTests` | `tests/fixtures/bazaar` | "Combining types" |
+| JSON traced | `JsonTracingTests` | `JsonTracingObservationTests` | `tests/fixtures/kits` | "JSON built here, traced" |
+| JSON constructors | `JsonConstructorTests` | `JsonConstructorObservationTests` | `tests/fixtures/payloads` | the IR README's "JSON constructors" |
+| Functions that return JSON | `JsonFunctionTests` | `JsonFunctionObservationTests` | `tests/fixtures/trees` | the guide's [Summaries and recursion](docs/internals/07-summaries-and-recursion.md) |
+| Read uncommitted | `ReadUncommittedTests` | `ReadUncommittedObservationTests` | `tests/fixtures/tabs` | [decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md) |
+
+Three classes are named otherwise, for what they cover across families: `ConstructTests` (queries, results and sources
+in general, with `FOR JSON`'s rules in `ForJsonObservationTests` and `tests/fixtures/orders`), `FactFlowTests` (facts a
+value carries through expressions) and, in Semantics, `SchemaFactsTests` (what types, alias types and CHECK constraints
+guarantee, observed in `CheckConstraintObservationTests` on `tests/fixtures/checks`). `CodeReferenceTests` checks that every
+name in these tables exists.
+
 ## Layers
 
 The code is split into layers, one project each, and **a layer refers only to the layers and packages its row
@@ -161,9 +208,9 @@ Nested types stay in the type they belong to, and a partial type's parts are nam
 |---|---|
 | `src/Haruspex.*` | The layers, one project each. What each knows and may refer to is in [the table in docs/architecture.md](docs/architecture.md#the-table); each project's `README.md` describes it. |
 | `schemas` | The published JSON Schema of `haruspex.json`, checked against examples by `ConfigSchemaTests`. |
-| `tests/Haruspex.Tests` | Unit, snapshot, end-to-end and architecture tests. |
+| `tests/Haruspex.Tests` | Unit, snapshot, end-to-end and architecture tests, a folder per layer ("Where a construct's tests are", above). |
 | `tests/Haruspex.DifferentialTests` | Runs the fixtures in SQL Server and checks the output against the IR and the generated Zod. |
-| `tests/Shared` | Test support compiled into both test projects: the fixtures, found by listing their folder (`Fixture`), the repository's paths, and running the emit-check npm package. |
+| `tests/Shared` | Test support compiled into both test projects (`Haruspex.TestSupport`): the fixtures, found by listing their folder (`Fixture`); inferring procedures from SQL a test writes (`InferProcedure`) and finding things in the IR (`IrNavigation`); temporary folders, the repository's paths, and running the emit-check npm package. |
 | `tests/fixtures` | The fixtures, one folder each: schema, seed, runs and expected outputs ([its README](tests/fixtures/README.md)). |
 | `tests/emit-check` | A small npm package that type-checks the generated Zod. |
 | `tests/prose` | The prose checks (`check.sh`), their npm package and the fixtures that test them. |
