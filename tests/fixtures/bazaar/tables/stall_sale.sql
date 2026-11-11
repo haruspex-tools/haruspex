@@ -5,6 +5,7 @@ CREATE TABLE bazaar.stall_sale (
     qty smallint NOT NULL CONSTRAINT ck_stall_sale_qty CHECK (qty BETWEEN 1 AND 100),
     unit_price decimal(9,2) NOT NULL CONSTRAINT ck_stall_sale_price CHECK (unit_price >= 0),
     paid_by varchar(10) NOT NULL CONSTRAINT ck_stall_sale_paid_by CHECK (paid_by IN ('cash', 'card')),
+    share decimal(38,37) NOT NULL,
     discount decimal(3,2) NOT NULL CONSTRAINT ck_stall_sale_discount CHECK (discount IN (0.25, 0.75)),
     ticket varchar(12) NOT NULL,
     note varchar(200) NULL

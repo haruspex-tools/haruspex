@@ -206,6 +206,9 @@ internal sealed partial class ProcedureAnalyzer
             }
         }
 
+        // A set operation is not folded to a constant: an int column of one counts 10 digits (observed:
+        // An_int_constant_counts_its_own_digits_beside_a_decimal).
+        value = value with { Digits = null };
         return value.Shape is ScalarShape scalar
             ? value with { Shape = scalar with { Type = scalar.Type with { Facets = WithValues(scalar.Type.Facets, SetValues(output, type, scalar.Type.Sql)) } } }
             : value;

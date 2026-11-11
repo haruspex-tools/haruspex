@@ -18,8 +18,9 @@ internal static class ShapeJoin
     /// <param name="at">Where the two meet, for an unknown.</param>
     public static Value Either(Value a, Value b, SourceLocation at, string what)
     {
+        // Either one's constant digits may be counted (Value.Digits): the fewest of both, up to 10.
         if (ShapeText.Of(a) == ShapeText.Of(b))
-            return a;
+            return a.Digits == b.Digits ? a : a with { Digits = IntDigits.Foldable([a.Digits ?? new IntDigits(10, 10), b.Digits ?? new IntDigits(10, 10)]) };
 
         var because = Reasons(a.NullableBecause, b.NullableBecause);
         if (a.Shape is UnknownShape known)

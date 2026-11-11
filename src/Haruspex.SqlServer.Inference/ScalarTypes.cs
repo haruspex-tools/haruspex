@@ -158,25 +158,19 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// <summary>
     /// The type a column takes whose values are of these types, as a set operation, <c>COALESCE</c>, <c>CASE</c>, <c>IIF</c> and
     /// <c>CHOOSE</c> all type it (one rule, slice 6k; observed over every ordered pair of a grid, SetTypeGridTests, and in
-    /// SetTypeObservationTests), or null when SQL Server refuses them (<see cref="Clash"/>):
-    /// <list type="bullet">
-    /// <item>the type of highest precedence (<see cref="PrecedenceRank"/>), whatever the range: bigint beside smallmoney is
-    /// smallmoney, a float beside datetime datetime;</item>
-    /// <item>datetimeoffset and datetime2 take the most fractional digits of any datetimeoffset, datetime2 or time, and 3 for a
-    /// datetime; time the most of the times;</item>
-    /// <item>a decimal holds every exact number's integer digits (money 15, smallmoney 6, an integer column its type's, an
-    /// integer literal its own, bit none) and the largest scale; past 38 digits the precision is 38 and the scale is cut to
-    /// 38 less those integer digits, with no floor; named as its first decimal;</item>
-    /// <item>strings: nvarchar if any is national, varchar if any varies, of the longest length (cut at 4000 for national
-    /// ones, as concatenation's), max if any is.</item>
-    /// </list>
-    /// Whether each value converts without an overflow is the caller's question (<see cref="Converts"/>).
+    /// SetTypeObservationTests), or null when SQL Server refuses them (<see cref="Clash"/>). It is a fold, left to right, of
+    /// <see cref="Pair"/> (observed: A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal): bigint, then
+    /// money, then decimal(5,2) is decimal(19,4), money having taken the bigint in; bigint, decimal(5,2), money is
+    /// decimal(23,4). The date and time types are the exception: their fractional digits are the most over every value
+    /// (observed: A_chain_takes_the_most_fractional_digits_of_every_date_and_time). Whether each value converts to the result
+    /// without an overflow is the caller's question (<see cref="Converts"/>).
     /// </summary>
-    public static ScalarType? Common(IReadOnlyList<ScalarType> types)
+    public static ScalarType? Common(IReadOnlyList<ScalarType> types) => Clash(types) is null ? Fold(types) : null;
+
+    private static ScalarType? Fold(IReadOnlyList<ScalarType> types)
     {
-        if (types.Count == 0 || Clash(types) is not null)
+        if (types.Count == 0)
             return null;
-        var top = types.MaxBy(t => PrecedenceRank(t.Name))!;
         static int Fraction(ScalarType t) => t.Name switch
         {
             "datetimeoffset" or "datetime2" or "time" => t.Precision,
@@ -184,34 +178,65 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
             _ => 0,
         };
 
-        switch (top.Name)
+        var folded = types.Skip(1).Aggregate(types[0], Pair);
+        return folded.Name switch
         {
-            case "datetimeoffset" or "datetime2":
-                return new ScalarType(top.Name, Precision: types.Max(Fraction));
-            case "time":
-                return new ScalarType("time", Precision: types.Max(t => t.Precision));
-            case "decimal" or "numeric":
-            {
-                var decimals = types.Where(t => t.IsInteger || t.IsDecimal || t.IsMoney).Select(t => t.AsDecimal()).ToList();
-                var integer = decimals.Max(d => d.Precision - d.Scale);
-                var scale = Math.Min(decimals.Max(d => d.Scale), 38 - integer);
-                return new ScalarType(types.First(t => t.IsDecimal).Name, Precision: integer + scale, Scale: scale);
-            }
-
-            case "char" or "varchar" or "nchar" or "nvarchar":
-                var varying = types.Any(t => t.Name.EndsWith("varchar", StringComparison.Ordinal));
-                return String(types.Any(t => t.IsNational), varying, types.Any(t => t.IsMax) ? -1 : types.Max(t => t.Length));
-            default:
-                return Parse(top.Name);
-        }
+            "datetimeoffset" or "datetime2" => folded with { Precision = types.Max(Fraction) },
+            "time" => folded with { Precision = types.Where(t => t.Name == "time").Max(t => t.Precision) },
+            _ => folded with { Digits = null },
+        };
     }
 
     /// <summary>
-    /// Two of these types that SQL Server refuses to combine, as it names them in 206 ("Operand type clash: int is incompatible
-    /// with uniqueidentifier"), in the order they come; null when it combines them all (observed:
-    /// Types_without_an_implicit_conversion_are_refused_with_an_operand_type_clash, and every pair in SetTypeGridTests):
-    /// uniqueidentifier with anything but a string; date, time, datetime2 and datetimeoffset with a number or bit; date with
-    /// time.
+    /// Two types combined, as SQL Server does at each step of a chain: the one of higher precedence (<see cref="PrecedenceRank"/>),
+    /// whatever the range, with
+    /// <list type="bullet">
+    /// <item>two integers the wider, counting the more digits (an integer literal its own);</item>
+    /// <item>an integer and money or smallmoney that money type, its digits only (15 or 6): the integer's are gone;</item>
+    /// <item>a decimal and an exact number a decimal holding both's integer digits and the larger scale, past 38 digits the
+    /// scale cut to 38 less those digits with no floor, named as the first decimal; bit beside it adds nothing;</item>
+    /// <item>two strings national if either is, varying if either is, the longer (cut at 4000 for national), max if either is.</item>
+    /// </list>
+    /// A pair SQL Server would refuse still gives the higher one: a chain is refused only when a value cannot become the
+    /// final type (<see cref="Clash"/>; observed: A_chain_is_refused_only_when_a_value_cannot_become_its_type).
+    /// </summary>
+    private static ScalarType Pair(ScalarType a, ScalarType b)
+    {
+        static bool Exact(ScalarType t) => t.IsInteger || t.IsDecimal || t.IsMoney;
+        if ((a.IsDecimal || b.IsDecimal) && Exact(a) && Exact(b))
+        {
+            var (pa, sa) = a.AsDecimal();
+            var (pb, sb) = b.AsDecimal();
+            var integer = Math.Max(pa - sa, pb - sb);
+            var scale = Math.Min(Math.Max(sa, sb), 38 - integer);
+            return new ScalarType(a.IsDecimal ? a.Name : b.Name, Precision: integer + scale, Scale: scale);
+        }
+
+        if (a.IsInteger && b.IsInteger)
+        {
+            var wider = PrecedenceRank(a.Name) >= PrecedenceRank(b.Name) ? a : b;
+            var digits = Math.Max(a.AsDecimal().Precision, b.AsDecimal().Precision);
+            return wider with { Digits = digits == IntegerDigits(wider.Name) ? null : digits };
+        }
+
+        if (a.IsString && b.IsString)
+        {
+            var varying = a.Name.EndsWith("varchar", StringComparison.Ordinal) || b.Name.EndsWith("varchar", StringComparison.Ordinal);
+            return String(a.IsNational || b.IsNational, varying, a.IsMax || b.IsMax ? -1 : Math.Max(a.Length, b.Length));
+        }
+
+        // bit beside an integer adds nothing: an integer literal keeps its digits (observed over the grid's triples).
+        var top = PrecedenceRank(a.Name) >= PrecedenceRank(b.Name) ? a : b;
+        return top.IsDecimal || top.IsInteger ? top : top with { Digits = null };
+    }
+
+    /// <summary>
+    /// A value SQL Server refuses to convert to the type the chain folds to, and a value of that type (or the type itself), in
+    /// the order they come; null when every value converts (observed:
+    /// Types_without_an_implicit_conversion_are_refused_with_an_operand_type_clash, and every pair in SetTypeGridTests; for a
+    /// chain, A_chain_is_refused_only_when_a_value_cannot_become_its_type: 1, a date, a datetime is datetime, though 1 and a
+    /// date alone are refused). Refused: uniqueidentifier with anything but a string; date, time, datetime2 and datetimeoffset
+    /// with a number or bit; date with time.
     /// </summary>
     public static (ScalarType First, ScalarType Second)? Clash(IReadOnlyList<ScalarType> types)
     {
@@ -221,13 +246,16 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
             || (a.Name is "date" or "time" or "datetime2" or "datetimeoffset" && Numeric(b))
             || (a.Name == "date" && b.Name == "time");
 
+        if (Fold(types) is not { } final)
+            return null;
+        var own = types.ToList().FindIndex(t => t.Name == final.Name);
         for (var i = 0; i < types.Count; i++)
         {
-            for (var j = i + 1; j < types.Count; j++)
-            {
-                if (Refused(types[i], types[j]) || Refused(types[j], types[i]))
-                    return (types[i], types[j]);
-            }
+            if (!Refused(types[i], final) && !Refused(final, types[i]))
+                continue;
+            if (own < 0)
+                return (types[i], final);
+            return own < i ? (types[own], types[i]) : (types[i], types[own]);
         }
 
         return null;

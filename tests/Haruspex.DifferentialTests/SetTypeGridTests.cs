@@ -31,21 +31,43 @@ public class SetTypeGridTests(SqlServerFixture server)
     /// <summary>Literals beside a column: an integer literal counts its own digits, a decimal literal is numeric of them.</summary>
     private static readonly string[] Literals = ["1", "12345", "2.5", "'abc'", "N'abcdef'"];
 
-    /// <summary>Every ordered pair of different operands, columns and literals: (left, right).</summary>
-    private static IEnumerable<(string Left, string Right)> Pairs()
+    /// <summary>Every ordered pair of different operands, columns and literals.</summary>
+    private static IEnumerable<string[]> Pairs()
     {
         foreach (var (a, _) in Columns)
         {
             foreach (var (b, _) in Columns)
             {
                 if (a != b)
-                    yield return (a, b);
+                    yield return [a, b];
             }
 
             foreach (var literal in Literals)
             {
-                yield return (a, literal);
-                yield return (literal, a);
+                yield return [a, literal];
+                yield return [literal, a];
+            }
+        }
+    }
+
+    /// <summary>
+    /// Every ordered triple of a few exact numbers (where an integer, money and a decimal meet in either order) and of a few
+    /// dates, times and others (where two values SQL Server refuses together may each become a third's type): review round 1
+    /// found a chain is typed left to right, and refused only when a value cannot become its type.
+    /// </summary>
+    private static IEnumerable<string[]> Triples()
+    {
+        string[] numbers = ["bt", "ti", "i", "bi", "d52", "d2010", "d300", "d3838", "m", "sm", "f", "1", "2.5"];
+        string[] dates = ["dt", "tm7", "dtm", "sdt", "dt23", "dto3", "i", "v10", "u"];
+        foreach (var set in new[] { numbers, dates })
+        {
+            foreach (var a in set)
+            {
+                foreach (var b in set)
+                {
+                    foreach (var c in set)
+                        yield return [a, b, c];
+                }
             }
         }
     }
@@ -54,22 +76,31 @@ public class SetTypeGridTests(SqlServerFixture server)
 
     [Theory]
     [MemberData(nameof(Forms))]
-    public async Task Each_pair_has_the_type_sql_server_describes_or_is_unknown_naming_both_where_it_is_refused(string form)
+    public Task Each_pair_has_the_type_sql_server_describes_or_is_unknown_naming_both_where_it_is_refused(string form) =>
+        Compare(form, Pairs());
+
+    [Theory]
+    [MemberData(nameof(Forms))]
+    public Task Each_triple_has_the_type_sql_server_describes_or_is_unknown_where_it_is_refused(string form) =>
+        Compare(form, Triples());
+
+    private async Task Compare(string form, IEnumerable<string[]> all)
     {
         server.Require();
+
         // COALESCE whose first argument is a string literal is folded by the server to that literal beside a string of its kind
         // or a lesser one, and typed by it alone (observed: Coalesce_of_a_string_literal_first_is_folded_to_it_beside_a_string);
-        // haruspex gives the type over every argument, which holds every value, so those pairs are left out here.
-        var pairs = Pairs().Where(p => form != "coalesce" || !(p.Left.Contains('\'', StringComparison.Ordinal) && IsString(p.Right))).ToList();
+        // haruspex gives the type over every argument, which holds every value, so those are left out here.
+        var combos = all.Where(o => form != "coalesce" || !(o[0].Contains('\'', StringComparison.Ordinal) && o.Skip(1).Any(IsString))).ToList();
         string Name(int i) => $"e{i.ToString(CultureInfo.InvariantCulture)}";
 
-        // The server first: each pair described on its own, since a refused pair fails its whole query, over a table (a row of
+        // The server first: each described on its own, since a refused one fails its whole query, over a table (a row of
         // constants would let the server fold COALESCE and CASE to one argument and type them by it), in one batch.
         var table = $"CREATE TABLE dbo.g (id int NOT NULL PRIMARY KEY, {string.Join(", ", Columns.Select(c => $"{c.Name} {c.Type} NOT NULL"))});";
         var batch = new System.Text.StringBuilder("SET NOCOUNT ON; DECLARE @r TABLE (n int NOT NULL, t nvarchar(200) NULL, e int NULL);\n");
-        for (var i = 0; i < pairs.Count; i++)
+        for (var i = 0; i < combos.Count; i++)
         {
-            var query = Query(form, pairs[i], Name(i), "dbo.g").Replace("'", "''", StringComparison.Ordinal);
+            var query = Query(form, combos[i], Name(i), "dbo.g").Replace("'", "''", StringComparison.Ordinal);
             batch.Append(CultureInfo.InvariantCulture, $"INSERT INTO @r SELECT TOP (1) {i}, system_type_name, error_number FROM sys.dm_exec_describe_first_result_set(N'{query}', NULL, 0) ORDER BY column_ordinal;\n");
         }
 
@@ -80,33 +111,33 @@ public class SetTypeGridTests(SqlServerFixture server)
         foreach (var line in outcome.Sets[0]["c: ".Length..].Split(';'))
         {
             var (n, type) = (line[..line.IndexOf(' ', StringComparison.Ordinal)], line[(line.IndexOf(' ', StringComparison.Ordinal) + 1)..]);
-            Assert.True(type is not ['!', ..] || type == "!206", $"{Query(form, pairs[int.Parse(n, CultureInfo.InvariantCulture)], "e" + n, "g")}: error {type}");
+            Assert.True(type is not ['!', ..] || type == "!206", $"{Query(form, combos[int.Parse(n, CultureInfo.InvariantCulture)], "e" + n, "g")}: error {type}");
             described["e" + n] = type.StartsWith('!') ? null : type;
         }
 
-        Assert.Equal(pairs.Count, described.Count);
+        Assert.Equal(combos.Count, described.Count);
 
-        var (inferred, unknowns) = Infer(form, pairs);
+        var (inferred, unknowns) = Infer(form, combos);
         var differences = new List<string>();
-        for (var i = 0; i < pairs.Count; i++)
+        for (var i = 0; i < combos.Count; i++)
         {
-            var (left, right) = pairs[i];
+            var operands = string.Join(", ", combos[i]);
             var sql = described[Name(i)];
             if (sql is not null)
             {
                 if (!string.Equals(inferred.GetValueOrDefault(Name(i)), sql, StringComparison.OrdinalIgnoreCase))
-                    differences.Add($"{left}, {right}: haruspex {inferred.GetValueOrDefault(Name(i)) ?? "(unknown: " + unknowns.GetValueOrDefault(Name(i)) + ")"}, SQL Server {sql}");
+                    differences.Add($"{operands}: haruspex {inferred.GetValueOrDefault(Name(i)) ?? "(unknown: " + unknowns.GetValueOrDefault(Name(i)) + ")"}, SQL Server {sql}");
                 continue;
             }
 
-            // Refused: unknown, naming both types as SQL Server's message does.
+            // Refused: unknown, naming two of the types as SQL Server's message does (for a pair, both).
             var why = unknowns.GetValueOrDefault(Name(i));
-            var (lt, rt) = (TypeOf(left), TypeOf(right));
-            if (inferred.ContainsKey(Name(i)) || why is null || !why.Contains(lt, StringComparison.Ordinal) || !why.Contains(rt, StringComparison.Ordinal))
-                differences.Add($"{left}, {right}: SQL Server refuses it; haruspex {inferred.GetValueOrDefault(Name(i)) ?? "unknown: " + why}");
+            var named = combos[i].Select(TypeOf).Distinct().Count(t => why?.Contains(t, StringComparison.Ordinal) == true);
+            if (inferred.ContainsKey(Name(i)) || why is null || !why.Contains("refuses", StringComparison.Ordinal) || named < Math.Min(2, combos[i].Select(TypeOf).Distinct().Count()))
+                differences.Add($"{operands}: SQL Server refuses it; haruspex {inferred.GetValueOrDefault(Name(i)) ?? "unknown: " + why}");
         }
 
-        Assert.True(differences.Count == 0, $"{differences.Count} of {pairs.Count} differ:\n" + string.Join("\n", differences));
+        Assert.True(differences.Count == 0, $"{differences.Count} of {combos.Count} differ:\n" + string.Join("\n", differences));
     }
 
     private static bool IsString(string operand) => TypeOf(operand) is var t && (t.Contains("char", StringComparison.Ordinal));
@@ -120,21 +151,21 @@ public class SetTypeGridTests(SqlServerFixture server)
         _ => "int",
     };
 
-    /// <summary>One pair in its form, as a query over <paramref name="source"/>, its column named <paramref name="name"/>.</summary>
-    private static string Query(string form, (string Left, string Right) pair, string name, string source) => form switch
+    /// <summary>Operands in a form, as a query over <paramref name="source"/>, its column named <paramref name="name"/>.</summary>
+    private static string Query(string form, string[] operands, string name, string source) => form switch
     {
-        "union" => $"SELECT {pair.Left} AS {name} FROM {source} UNION ALL SELECT {pair.Right} FROM {source}",
-        "coalesce" => $"SELECT COALESCE({pair.Left}, {pair.Right}) AS {name} FROM {source}",
+        "union" => string.Join(" UNION ALL ", operands.Select((o, i) => $"SELECT {o}{(i == 0 ? $" AS {name}" : "")} FROM {source}")),
+        "coalesce" => $"SELECT COALESCE({string.Join(", ", operands)}) AS {name} FROM {source}",
 
-        // A condition the server cannot fold, so both results count (6g: a CASE folded to one branch is typed by it).
-        _ => $"SELECT CASE WHEN id > 0 THEN {pair.Left} ELSE {pair.Right} END AS {name} FROM {source}",
+        // Conditions the server cannot fold, so every result counts (6g: a CASE folded to one branch is typed by it).
+        _ => $"SELECT CASE {string.Concat(operands.SkipLast(1).Select((o, i) => $"WHEN id > {i.ToString(CultureInfo.InvariantCulture)} THEN {o} "))}ELSE {operands[^1]} END AS {name} FROM {source}",
     };
 
     /// <summary>
-    /// The SQL type haruspex infers for each pair, by name, and for those it leaves unknown, the reason's detail. Each pair is a
+    /// The SQL type haruspex infers for each combination, by name, and for those it leaves unknown, the reason's detail. Each pair is a
     /// procedure of its own, as on the server, so one unknown cannot hide another.
     /// </summary>
-    private static (Dictionary<string, string> Types, Dictionary<string, string> Unknowns) Infer(string form, List<(string Left, string Right)> pairs)
+    private static (Dictionary<string, string> Types, Dictionary<string, string> Unknowns) Infer(string form, List<string[]> pairs)
     {
         var dir = Directory.CreateTempSubdirectory("haruspex-set-grid-");
         try

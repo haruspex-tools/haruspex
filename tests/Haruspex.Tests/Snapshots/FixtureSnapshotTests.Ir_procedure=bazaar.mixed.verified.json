@@ -65,6 +65,28 @@
           },
           "mayBeAbsent": false,
           "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MixedResult6Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MixedResult7Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
         }
       ]
     }
@@ -328,6 +350,76 @@
       },
       "fields": [
         {
+          "name": "share",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,37)",
+            "digits": {
+              "precision": 38,
+              "scale": 37,
+              "from": {
+                "type": "decimal(38,37)"
+              }
+            },
+            "min": {
+              "value": -9.9999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,37)"
+              }
+            },
+            "max": {
+              "value": 9.9999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,37)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:42:13"
+            }
+          ]
+        }
+      ]
+    },
+    "MixedResult6Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bazaar.mixed",
+        "path": "results[5][]"
+      },
+      "fields": [
+        {
+          "name": "share_or_flag",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-expression"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/mixed.sql:48:8"
+            }
+          ]
+        }
+      ]
+    },
+    "MixedResult7Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bazaar.mixed",
+        "path": "results[6][]"
+      },
+      "fields": [
+        {
           "name": "order_id",
           "type": {
             "kind": "number",
@@ -425,6 +517,14 @@
       ]
     }
   },
-  "unknowns": [],
+  "unknowns": [
+    {
+      "object": "bazaar.mixed",
+      "path": "results[5][].share_or_flag",
+      "reason": "unsupported-expression",
+      "detail": "This set operation's column: its type depends on whether SQL Server folds IIF(1 = 1, 1, 2) to a constant, whose digits it would count.",
+      "at": "procedures/mixed.sql:48:8"
+    }
+  ],
   "overrides": []
 }

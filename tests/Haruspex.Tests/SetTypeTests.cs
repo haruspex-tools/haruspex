@@ -77,6 +77,61 @@ public class SetTypeTests
     }
 
     [Fact]
+    public void A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal()
+    {
+        // A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal (review round 1): the bigint must become
+        // decimal(19,4), which it may overflow.
+        static string Chain(params string[] columns) =>
+            Typed(Procedure(string.Join(" UNION ALL ", columns.Select((c, i) => $"SELECT s.{c}{(i == 0 ? " AS v" : "")} FROM dbo.sale AS s")) + ";"));
+        Assert.Equal("decimal(19,4) arithmetic-overflow", Chain("big", "fee", "price"));
+        Assert.Equal("decimal(23,4)", Chain("big", "price", "fee"));
+        Assert.Equal("decimal(11,4) arithmetic-overflow", Chain("qty", "small", "price"));
+        Assert.Equal("decimal(14,4)", Chain("qty", "price", "small"));
+        Assert.Equal("decimal(38,23) arithmetic-overflow", Chain("big", "fee", "frac"));
+        Assert.Equal("decimal(19,4) arithmetic-overflow", Typed(Procedure("SELECT COALESCE(s.big, s.fee, s.price) AS v FROM dbo.sale AS s;")));
+        Assert.Equal("decimal(19,4) arithmetic-overflow", Typed(Procedure("SELECT CHOOSE(s.id, s.big, s.fee, s.price) AS v FROM dbo.sale AS s;")).Replace(" out-of-range", "", StringComparison.Ordinal));
+
+        // Dates keep the most fractional digits of all (A_chain_takes_the_most_fractional_digits_of_every_date_and_time).
+        Assert.Equal("datetime2(7)", Chain("at_time", "sold", "moment"));
+        Assert.StartsWith("datetime2(7)", Typed(Procedure("SELECT s.zoned AS v FROM dbo.sale AS s UNION ALL SELECT CAST('10:00' AS time(7)) FROM dbo.sale AS s;")).Replace("datetimeoffset(7)", "datetime2(7)", StringComparison.Ordinal), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_chain_is_refused_only_when_a_value_cannot_become_its_type()
+    {
+        // A_chain_is_refused_only_when_a_value_cannot_become_its_type (review round 1).
+        Assert.StartsWith("datetime ", Typed(Procedure("SELECT 1 AS v UNION ALL SELECT s.sold FROM dbo.sale AS s UNION ALL SELECT s.stamp FROM dbo.sale AS s;")), StringComparison.Ordinal);
+        Assert.Equal("datetime2(7)", Typed(Procedure("SELECT s.sold AS v FROM dbo.sale AS s UNION ALL SELECT s.at_time FROM dbo.sale AS s UNION ALL SELECT s.moment FROM dbo.sale AS s;")));
+        Assert.StartsWith("datetime ", Typed(Procedure("SELECT COALESCE(1, s.sold, s.stamp) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
+        var refused = Typed(Procedure("SELECT s.qty AS v FROM dbo.sale AS s UNION ALL SELECT s.ref FROM dbo.sale AS s UNION ALL SELECT s.code FROM dbo.sale AS s;"));
+        Assert.Contains("int and uniqueidentifier", refused, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_int_constant_counts_its_own_digits_and_one_the_server_may_fold_leaves_the_scale_unknown()
+    {
+        // An_int_constant_counts_its_own_digits_beside_a_decimal (review round 1).
+        static string Beside(string other) => Typed(Procedure($"SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT {other} FROM dbo.sale AS s;"));
+        Assert.Equal("decimal(38,37) null-literal", Beside("CAST(NULL AS int)"));
+        Assert.Equal("decimal(38,37) null-literal", Beside("TRY_CONVERT(int, NULL)"));
+        Assert.Equal("decimal(38,33) null-literal", Beside("CAST(NULL AS smallint)"));
+        Assert.Equal("decimal(38,36)", Beside("-(12)"));
+        Assert.Equal("decimal(38,28)", Beside("CAST(2 AS int)"));
+        Assert.Equal("decimal(38,28)", Beside("(SELECT 1)"));
+        Assert.Equal("decimal(38,37)", Typed(Procedure("SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT q.y FROM (SELECT 1 AS y) AS q;")));
+        Assert.StartsWith("unknown: ", Beside("IIF(s.id > 0, 1, 2)"), StringComparison.Ordinal);
+        Assert.Contains("folds", Beside("CASE WHEN s.id > 0 THEN 1 END"), StringComparison.Ordinal);
+        Assert.Equal("decimal(38,37)", Typed(Procedure("SELECT COALESCE(s.frac, CAST(NULL AS int)) AS v FROM dbo.sale AS s;")));
+
+        // Beside a decimal(9,2) the scale is 2 however the server folds it: typed, with the most digits.
+        Assert.Equal("decimal(12,2)", Typed(Procedure("SELECT s.price AS v FROM dbo.sale AS s UNION ALL SELECT IIF(s.id > 0, 1, 2) FROM dbo.sale AS s;")));
+
+        // Decimal arithmetic counts the same digits.
+        Assert.Equal("decimal(38,37) arithmetic-overflow", Typed(Procedure("SELECT s.frac + CAST(NULL AS int) AS v FROM dbo.sale AS s;")).Replace(" null-literal", "", StringComparison.Ordinal));
+        Assert.StartsWith("unknown: ", Typed(Procedure("SELECT s.frac + IIF(s.id > 0, 1, 2) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_bit_takes_the_other_type_and_overflows_only_a_decimal_of_places_only()
     {
         // A_bit_takes_the_other_types_and_a_string_the_number_date_or_uniqueidentifier_beside_it;

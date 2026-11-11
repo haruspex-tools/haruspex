@@ -44,8 +44,11 @@ internal sealed partial class ProcedureAnalyzer
         return new Value(SqlTypes.ToConvertedShape(model, new ScalarType("numeric", Precision: precision, Scale: scale).ToSqlType(), At(literal)), []);
     }
 
-    /// <summary>The scalar type of a value, when it is a built-in scalar; an integer literal keeps its digits.</summary>
-    private static ScalarType? TypeOf(Value value, ScalarExpression expression)
+    /// <summary>
+    /// The scalar type of a value, when it is a built-in scalar. An integer literal keeps its digits, and so does an int the
+    /// server treats as a constant (<see cref="Value.Digits"/>): its fewest when <paramref name="least"/>, else its most.
+    /// </summary>
+    private static ScalarType? TypeOf(Value value, ScalarExpression expression, bool least = false)
     {
         if (value.IsLiveJson)
             return null;
@@ -55,8 +58,15 @@ internal sealed partial class ProcedureAnalyzer
             JsonTextShape => new ScalarType("nvarchar", -1),
             _ => null,
         };
-        return type is not null && IntegerLiteralOf(expression) is { } literal ? type with { Digits = literal.Value.TrimStart('-', '+').TrimStart('0').Length is var n and > 0 ? n : 1 } : type;
+        if (type is not null && IntegerLiteralOf(expression) is { } literal)
+            return type with { Digits = literal.Value.TrimStart('-', '+').TrimStart('0').Length is var n and > 0 ? n : 1 };
+        if (type is { Name: "int" } && value.Digits is { } digits && (least ? digits.Least : digits.Most) is var d and < 10)
+            return type with { Digits = d };
+        return type;
     }
+
+    /// <summary>Whether the server may count an int's digits as a literal's or as its type's, depending on what it folds.</summary>
+    private static bool Uncertain(Value value) => value.Digits is { } d && d.Least != d.Most;
 
     /// <summary>An integer literal, through parentheses and a sign.</summary>
     private static IntegerLiteral? IntegerLiteralOf(ScalarExpression expression) => Strip(expression) switch
@@ -127,6 +137,13 @@ internal sealed partial class ProcedureAnalyzer
         if (ScalarType.Common(known) is not { } type)
             return new CombinedType(null, [], $"combining {Names(known.Select(t => t.Text))} is not modelled yet.");
 
+        // An int the server may or may not fold to a literal counts between that literal's digits and 10; when that changes the
+        // scale, which values come back is not known (observed: An_int_constant_counts_its_own_digits_beside_a_decimal). When it
+        // changes only the precision, the most digits hold every value.
+        if (values.Any(v => Uncertain(v.Value)) && ScalarType.Common([.. values.Select(v => TypeOf(v.Value, v.Expression, least: true)!)]) is var fewest
+            && (fewest is null || fewest.Name != type.Name || fewest.Scale != type.Scale))
+            return new CombinedType(null, [], $"its type depends on whether SQL Server folds {Names(values.Where(v => Uncertain(v.Value)).Select(v => Text(v.Expression)))} to a constant, whose digits it would count.");
+
         var overflows = values.Select((v, i) =>
         {
             var fits = (LiteralOf(v.Expression) is ({ } literal, var negative) ? ScalarType.Fits(literal, type, negative) : null)
@@ -169,7 +186,12 @@ internal sealed partial class ProcedureAnalyzer
         var combined = Combined([.. values.Select((v, i) => (v, arguments[i], at))]);
         if (combined.Type is not { } type)
             return NotModelled(coalesce, combined.Why!);
-        return Typed(type, combined.Overflows.Aggregate(because, ShapeJoin.Reasons), coalesce);
+
+        // COALESCE(NULL, 1) is folded to 1 and counts its digits (observed: An_int_constant_counts_its_own_digits_beside_a_decimal).
+        return Typed(type, combined.Overflows.Aggregate(because, ShapeJoin.Reasons), coalesce) with
+        {
+            Digits = type.Name == "int" ? IntDigits.Foldable(values.Select(v => v.Digits)) : null,
+        };
     }
 
     /// <summary>
@@ -215,7 +237,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var (a, b) = (call.Parameters[0], call.Parameters[1]);
         if (Strip(a) is NullLiteral)
-            return Strip(b) is NullLiteral ? NotModelled(call, "ISNULL of NULL and NULL is not typed.") : Expression(b, scope);
+            return Strip(b) is NullLiteral ? NotModelled(call, "ISNULL of NULL and NULL is not typed.") : Expression(b, scope) with { Digits = null };
         var first = Expression(a, scope);
         if (first.Shape is UnknownShape || first.NullableBecause.Count == 0)
             return first;
@@ -259,8 +281,10 @@ internal sealed partial class ProcedureAnalyzer
             return NotModelled(call, "a conversion to this type is not modelled yet.");
 
         // The NULL literal converts to any type, and is NULL there (CAST(NULL AS date) is a common way to type a NULL).
+        // As an int it counts 1 integer digit beside a decimal, as a literal would (observed:
+        // An_int_constant_counts_its_own_digits_beside_a_decimal: CAST(NULL AS int) beside decimal(38,38) is decimal(38,37)).
         if (Strip(operand) is NullLiteral)
-            return new Value(shape, [new IrNullReason(IrNullRules.NullLiteral, At(operand).ToString())]);
+            return new Value(shape, [new IrNullReason(IrNullRules.NullLiteral, At(operand).ToString())], Digits: to.Name == "int" ? new IntDigits(1, 1) : null);
 
         var value = Expression(operand, scope);
         if (value.Shape is UnknownShape || value.IsLiveJson)
@@ -269,13 +293,25 @@ internal sealed partial class ProcedureAnalyzer
         var from = TypeOf(value, operand);
         var fits = (!styled && LiteralOf(operand) is ({ } literal, var negative) ? ScalarType.Fits(literal, to, negative) : null)
             ?? (from is not null && ScalarType.Converts(from, to, styled));
+        // A NULL cast to int and cast again stays that constant; CAST(1 AS int) counts an int's 10 digits (same observation).
         if (fits && from?.Text == to.Text && !styled)
-            return value;
+            return value.Digits is { Least: 1, Most: 1 } && IsNullCast(operand) ? value : value with { Digits = null };
         IReadOnlyList<IrNullReason> because = fits
             ? value.NullableBecause
             : ShapeJoin.Reasons(value.NullableBecause, [attempt ? new IrNullReason(IrNullRules.FailedConversion, At(call).ToString()) : Overflow(call)]);
         return new Value(shape, because);
     }
+
+    /// <summary>The NULL literal, cast or converted, however many times.</summary>
+    private static bool IsNullCast(ScalarExpression expression) => Strip(expression) switch
+    {
+        NullLiteral => true,
+        CastCall cast => IsNullCast(cast.Parameter),
+        ConvertCall convert => IsNullCast(convert.Parameter),
+        TryCastCall cast => IsNullCast(cast.Parameter),
+        TryConvertCall convert => IsNullCast(convert.Parameter),
+        _ => false,
+    };
 
     // ---- strings --------------------------------------------------------------------------------------------------------
 
@@ -366,8 +402,19 @@ internal sealed partial class ProcedureAnalyzer
         if (ScalarType.Arithmetic(op, l, r) is not { } type)
             return NotModelled(binary, "arithmetic on these types is not modelled yet.");
 
+        // An int the server may fold to a literal counts that literal's digits (slice 6k, observed:
+        // An_int_constant_counts_its_own_digits_beside_a_decimal); when its fewest digits give another scale, not modelled.
+        var mayOverflow = ScalarType.MayOverflow(op, l, r, NumberOf(binary.SecondExpression));
+        if (Uncertain(left) || Uncertain(right))
+        {
+            var (lf, rf) = (TypeOf(left, binary.FirstExpression, least: true)!, TypeOf(right, binary.SecondExpression, least: true)!);
+            if (ScalarType.Arithmetic(op, lf, rf) is not { } fewest || fewest.Scale != type.Scale || fewest.Name != type.Name)
+                return NotModelled(binary, "its type depends on whether SQL Server folds an operand to a constant, whose digits it would count.");
+            mayOverflow |= ScalarType.MayOverflow(op, lf, rf, NumberOf(binary.SecondExpression));
+        }
+
         var because = ShapeJoin.Reasons(left.NullableBecause, right.NullableBecause);
-        return Typed(type, ScalarType.MayOverflow(op, l, r, NumberOf(binary.SecondExpression)) ? ShapeJoin.Reasons(because, [Overflow(binary)]) : because, binary);
+        return Typed(type, mayOverflow ? ShapeJoin.Reasons(because, [Overflow(binary)]) : because, binary);
     }
 
     /// <summary>The value of an integer or decimal literal, through parentheses and signs; null for anything else.</summary>

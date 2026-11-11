@@ -493,9 +493,11 @@ internal sealed partial class ProcedureAnalyzer
                 return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"A subquery of other than one listed column is not modelled: {Text(subquery)}", at));
             if (only.Value.Shape is UnknownShape)
                 return only.Value;
+            // A scalar subquery is not folded: (SELECT 1) counts an int's 10 digits beside a decimal (observed:
+            // An_int_constant_counts_its_own_digits_beside_a_decimal).
             return row.Rows == IrCardinality.One
-                ? only.Value
-                : only.Value with { NullableBecause = [.. only.Value.NullableBecause, new IrNullReason(IrNullRules.EmptySubquery, at.ToString())] };
+                ? only.Value with { Digits = null }
+                : only.Value with { Digits = null, NullableBecause = [.. only.Value.NullableBecause, new IrNullReason(IrNullRules.EmptySubquery, at.ToString())] };
         }
 
         var query = subquery.QueryExpression;

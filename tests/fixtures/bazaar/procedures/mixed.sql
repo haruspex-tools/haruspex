@@ -35,6 +35,20 @@ SELECT s.discount AS band FROM bazaar.stall_sale AS s
 UNION ALL
 SELECT a.tier FROM bazaar.auction_lot AS a;
 
+-- A share of 37 places beside an int the server treats as a constant, which counts its own digits (1): decimal(38,37), so
+-- the share keeps every place (An_int_constant_counts_its_own_digits_beside_a_decimal).
+SELECT s.share AS share FROM bazaar.stall_sale AS s
+UNION ALL
+SELECT CAST(NULL AS int) FROM bazaar.barter AS b
+UNION ALL
+SELECT q.one FROM (SELECT 1 AS one) AS q;
+
+-- The same share beside an IIF the server folds to 1 here, but would not if its condition read a column: its type turns on
+-- that, so it is unknown rather than claimed.
+SELECT s.share AS share_or_flag FROM bazaar.stall_sale AS s
+UNION ALL
+SELECT IIF(1 = 1, 1, 2) FROM bazaar.barter AS b;
+
 -- The same rule in COALESCE and CASE: a uniqueidentifier from its text, never null; a quantity or a price as money; a
 -- 38-digit literal beside 2.5 is numeric(38,0), so 2.5 comes out as 3 and no set of the two literals holds.
 SELECT w.order_id,

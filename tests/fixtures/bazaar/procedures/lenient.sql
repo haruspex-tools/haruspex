@@ -26,3 +26,25 @@ FROM (
     UNION ALL
     SELECT b.swapped_at FROM bazaar.barter AS b
 ) AS d;
+
+-- A chain folds left to right: units (bigint) beside price (money) gives money, whose 15 integer digits the decimal(9,2) then
+-- counts, so the column is decimal(19,4) and bigint's ends overflow it (A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal).
+-- Literals that do not fit the column's type overflow it too: 9999999 as smallmoney, '300' as tinyint.
+SELECT CONVERT(decimal(19,4), c.amount) AS amount, CONVERT(smallmoney, c.fee) AS fee, CONVERT(tinyint, c.bids) AS bids
+FROM (
+    SELECT b.units AS amount, b.small_fee AS fee, a.bids AS bids
+    FROM bazaar.barter AS b
+    CROSS JOIN (SELECT TOP (1) bids FROM bazaar.auction_lot ORDER BY lot_id) AS a
+    UNION ALL
+    SELECT w.price, 9999999, '300' FROM bazaar.web_order AS w
+    UNION ALL
+    SELECT s.unit_price, 1, 1 FROM bazaar.stall_sale AS s
+) AS c;
+
+-- The same literal in CASE and COALESCE, which read fine directly: NULL where it is taken (barters 3 to 5, and barter 4,
+-- whose fee is 0).
+SELECT b.barter_id,
+       IIF(b.barter_id > 2, 9999999, b.small_fee) AS fee_or_big,
+       COALESCE(NULLIF(b.small_fee, 0), 9999999) AS fee_or_default
+FROM bazaar.barter AS b
+ORDER BY b.barter_id;

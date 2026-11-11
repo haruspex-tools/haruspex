@@ -967,7 +967,11 @@ internal sealed partial class ProcedureAnalyzer
     private Value Integer(IntegerLiteral literal)
     {
         if (long.TryParse(literal.Value, System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out var n) && n is >= int.MinValue and <= int.MaxValue)
-            return new Value(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "int", []), At(literal)), []);
+        {
+            var own = literal.Value.TrimStart('-', '+').TrimStart('0').Length is var d and > 0 ? d : 1;
+            return new Value(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "int", []), At(literal)), [], Digits: new IntDigits(own, own));
+        }
+
         var digits = literal.Value.TrimStart('-', '+').TrimStart('0').Length;
         return digits <= 38
             ? new Value(SqlTypes.ToConvertedShape(model, new ScalarType("numeric", Precision: digits).ToSqlType(), At(literal)), [])

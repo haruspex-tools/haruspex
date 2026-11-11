@@ -14,6 +14,20 @@ export const LenientResult2RowSchema = z.object({
 })
 export type LenientResult2Row = z.infer<typeof LenientResult2RowSchema>
 
-/** bazaar.lenient: returns 2 result sets: rows; rows. */
-export const LenientSchema = z.tuple([z.array(LenientResult1RowSchema), z.array(LenientResult2RowSchema)])
+export const LenientResult3RowSchema = z.object({
+  amount: z.number().multipleOf(1e-4).nullable() /* the mssql driver may round decimal(19,4) past its bounds, so they are not checked in a row */,
+  fee: z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4).nullable(),
+  bids: z.int().min(0).max(255).nullable(),
+})
+export type LenientResult3Row = z.infer<typeof LenientResult3RowSchema>
+
+export const LenientResult4RowSchema = z.object({
+  barter_id: z.int32(),
+  fee_or_big: z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4).nullable(),
+  fee_or_default: z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4).nullable(),
+})
+export type LenientResult4Row = z.infer<typeof LenientResult4RowSchema>
+
+/** bazaar.lenient: returns 4 result sets: rows; rows; rows; rows. */
+export const LenientSchema = z.tuple([z.array(LenientResult1RowSchema), z.array(LenientResult2RowSchema), z.array(LenientResult3RowSchema), z.array(LenientResult4RowSchema)])
 export type Lenient = z.infer<typeof LenientSchema>

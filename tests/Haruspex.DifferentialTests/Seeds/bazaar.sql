@@ -5,10 +5,12 @@
 -- caller's options: a barter of 3,000,000,000 units (past smallmoney), an estimate of 1e300 (past datetime), a stall sale on
 -- 0001-01-01 (before smalldatetime) and a last stall ticket of '3000000000' (past int). A barter of 3 units matches a stall
 -- sale of 3, so bazaar.mixed's INTERSECT has a row.
-INSERT INTO bazaar.stall_sale (sale_id, sold_on, qty, unit_price, paid_by, discount, ticket, note)
-VALUES (1, '2026-05-02', 3, 4.50, 'cash', 0.25, '1001', N'Three jars of plum jam'),
-       (2, '0001-01-01', 1, 0.00, 'card', 0.75, '1002', NULL),
-       (3, '9999-12-31', 100, 9999999.99, 'card', 0.25, '3000000000', REPLICATE('n', 200));
+INSERT INTO bazaar.stall_sale (sale_id, sold_on, qty, unit_price, paid_by, share, discount, ticket, note)
+VALUES (1, '2026-05-02', 3, 4.50, 'cash', 0.1234567890123456789012345678901234567, 0.25, '1001', N'Three jars of plum jam');
+INSERT INTO bazaar.stall_sale (sale_id, sold_on, qty, unit_price, paid_by, share, discount, ticket, note)
+VALUES (2, '0001-01-01', 1, 0.00, 'card', -9.9999999999999999999999999999999999999, 0.75, '1002', NULL);
+INSERT INTO bazaar.stall_sale (sale_id, sold_on, qty, unit_price, paid_by, share, discount, ticket, note)
+VALUES (3, '9999-12-31', 100, 9999999.99, 'card', 9.9999999999999999999999999999999999999, 0.25, '3000000000', REPLICATE('n', 200));
 
 INSERT INTO bazaar.web_order (order_id, placed_at, qty, price, channel, voucher, ref_code)
 VALUES (1, '2026-05-02 09:15:00.125 +01:00', 2, 12.99, N'app', '6F9619FF-8B86-D011-B42D-00C04FC964FF', '0E984725-C51C-4BF4-9960-E1C80E27ABA0'),

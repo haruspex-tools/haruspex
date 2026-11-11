@@ -925,8 +925,9 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
 - **Grouping.** `INTERSECT` binds tighter than `UNION` and `EXCEPT`, which apply left to right
   (`Intersect_binds_tighter_than_union_and_except_whatever_the_parser_shows`). ScriptDom gives the chain left to right
   whatever the operators, so `Combine` flattens it (never through parentheses) and regroups it before reading nulls.
-- **Names** are the first query's. **Types** are the one of highest precedence over every query's at once, as `COALESCE`'s
-  ("Combining types" below): over the whole chain, not pairwise, so an integer literal keeps its own digits
+- **Names** are the first query's. **Types** are by precedence over every query's, as `COALESCE`'s ("Combining types"
+  below): a fold over the chain left to right (corrected in slice 6k's review; 6h wrote "at once, not pairwise", which the
+  fold agrees with except where an integer meets `money` before a decimal), so an integer literal keeps its own digits
   (`A_chain_of_set_operations_is_typed_over_all_its_queries_at_once_so_an_integer_literal_keeps_its_digits`:
   `1 UNION ALL 2 UNION ALL 2.5` is `numeric(2,1)`); `INTERSECT` and `EXCEPT` are typed the same way
   (`A_set_operations_columns_are_named_by_its_first_query_and_typed_by_precedence_over_every_query`). A `NULL` literal adds
@@ -980,6 +981,15 @@ operation and `COALESCE` alike over all 1,806 ordered pairs of a wider grid, bin
 building the slice; the `CASE` there had a constant condition, which the server folds to one result, so it differed only
 where folding did).
 
+- **A fold, left to right** (`ScalarType.Fold` of `Pair`; review round 1, observed:
+  `A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal`, and over every triple of 13 exact numbers and
+  of 9 dates, times and others in `SetTypeGridTests`): each step combines the type so far with the next value's. It matters
+  where an integer meets `money` or `smallmoney` before a decimal: the money type takes the integer in and keeps only its own
+  digits (15 or 6), so `bigint`, `money`, `decimal(5,2)` is `decimal(19,4)`, the `bigint` overflowing it at its ends, while
+  `bigint`, `decimal(5,2)`, `money` is `decimal(23,4)`. Parentheses are flattened and folded the same way. An integer literal's
+  digits survive `bit` and a string before the decimal. The date and time types are the exception: their fractional digits
+  are the most over every value, whatever stands between
+  (`A_chain_takes_the_most_fractional_digits_of_every_date_and_time`).
 - **The type** is the one of highest data type precedence (`datetimeoffset`, `datetime2`, `datetime`, `smalldatetime`,
   `date`, `time`, `float`, `real`, `decimal`/`numeric`, `money`, `smallmoney`, `bigint`, `int`, `smallint`, `tinyint`, `bit`,
   `uniqueidentifier`, `nvarchar`, `nchar`, `varchar`, `char`), whatever the range: `bigint` beside `smallmoney` is
@@ -997,11 +1007,24 @@ where folding did).
   varying if any varies, of the longest length, cut at 4000 for a national one (`varchar(5000)` beside `nchar(5)` is
   `nvarchar(4000)`, and a 5000-character value is cut short without an error), `max` if any is
   (`Strings_are_national_if_any_is_varying_if_any_is_and_national_ones_stop_at_4000`).
-- **Refused pairs** (206, "Operand type clash"): `uniqueidentifier` with anything but a string; `date`, `time`, `datetime2` and
-  `datetimeoffset` with a number or `bit`; `date` with `time`
-  (`Types_without_an_implicit_conversion_are_refused_with_an_operand_type_clash`). The column is unknown, and its reason names
-  the two types: "SQL Server refuses to combine int and uniqueidentifier: there is no implicit conversion between them". A
+- **Refused** (206, "Operand type clash"): a value that cannot become the folded type, one of `uniqueidentifier` with
+  anything but a string; `date`, `time`, `datetime2` and `datetimeoffset` with a number or `bit`; `date` with `time`
+  (`Types_without_an_implicit_conversion_are_refused_with_an_operand_type_clash`). Only against the final type: `1`, a
+  `date`, a `datetime` is `datetime`, though `1` and a `date` alone are refused
+  (`A_chain_is_refused_only_when_a_value_cannot_become_its_type`, review round 1). The column is unknown, and its reason names
+  the two types (the refused value and one of the final type): "SQL Server refuses to combine int and uniqueidentifier: there is no implicit conversion between them". A
   value of a type not modelled (`xml`, binary) is unknown by its own reason, which names it.
+- **An int constant's digits** (review round 1, `An_int_constant_counts_its_own_digits_beside_a_decimal`). Beside a decimal an
+  int counts 10 integer digits, but one the server treats as a constant counts its own: a literal, also as a derived table's,
+  CTE's or view's column; the NULL cast to int (`CAST`, `CONVERT`, `TRY_` forms, nested) 1; a `CASE` or `IIF` with a constant
+  condition and `COALESCE(NULL, 1)`, folded to that literal. Arithmetic, a scalar subquery, a `CAST` of a number, `ISNULL`, a
+  `CASE` reading a column and a set operation of literals count 10. A value carries the digits (`Value.Digits`, `IntDigits`):
+  exact where the server folds; for a `CASE`, `IIF`, `CHOOSE`, `COALESCE` or `NULLIF` that has a literal among its results,
+  a range from the fewest to 10, since whether the server folds it turns on its condition. Where the range changes the scale,
+  the column is unknown (its reason names the expression); where it changes only the precision, the most digits hold every
+  value. Claiming a literal's digits where the server counts 10 is still sound (the constant fits them, and the scale claimed
+  is the larger); claiming 10 where it counts the literal's is not. Decimal arithmetic (6j) counts the same digits
+  (`decimal(38,38) + CAST(NULL AS int)` is `decimal(38,37)`), and turns unknown on the same range.
 - **Converting each value.** A value whose type may not convert without overflow (`ScalarType.NeverNull`: `Converts`, or a
   string into `uniqueidentifier`, which fails as an error and is never NULL) gives `arithmetic-overflow`: an overflow is an
   error by default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off

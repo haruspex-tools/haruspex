@@ -60,6 +60,97 @@ public class SetTypeObservationTests(SqlServerFixture server)
         Assert.Equal("decimal(38,8)", await Describe("SELECT COALESCE(CAST(1 AS decimal(20,10)), CAST(1 AS decimal(30,0))) AS x"));
     }
 
+    /// <summary>A source of one column of each type the chain tests read, none of them constant (TOP (0) over a catalog view).</summary>
+    private const string Source = """
+        (SELECT TOP (0) CAST(1 AS bigint) AS bi, CAST(1 AS int) AS i, CAST(1 AS money) AS m, CAST(1 AS smallmoney) AS sm,
+                CAST(1 AS decimal(5,2)) AS d52, CAST(1 AS decimal(38,38)) AS d3838, CAST('2000-01-01' AS date) AS dt,
+                CAST('10:00' AS time(3)) AS tm3, CAST('10:00' AS time(7)) AS tm7, CAST('2000-01-01' AS datetime) AS dtm,
+                CAST('2000-01-01' AS datetime2(3)) AS dt23, CAST('2000-01-01' AS datetimeoffset(3)) AS dto3, NEWID() AS u,
+                CAST('a' AS varchar(10)) AS v10
+         FROM sys.objects) AS t
+        """;
+
+    private Task<string> Chain(params string[] columns) =>
+        Describe(string.Join(" UNION ALL ", columns.Select((c, i) => $"SELECT {c}{(i == 0 ? " AS x" : "")} FROM {Source}")));
+
+    [Fact]
+    public async Task A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal()
+    {
+        // Review round 1: not one computation over every query at once but a fold, left to right. An integer and money meeting
+        // before the decimal give money, whose 15 digits (smallmoney's 6) the decimal then counts; the integer's are gone.
+        Assert.Equal("decimal(19,4)", await Chain("bi", "m", "d52"));
+        Assert.Equal("decimal(23,4)", await Chain("bi", "d52", "m"));
+        Assert.Equal("decimal(23,4)", await Chain("d52", "bi", "m"));
+        Assert.Equal("decimal(10,4)", await Chain("i", "sm", "d52"));
+        Assert.Equal("decimal(10,4)", await Chain("sm", "i", "d52"));
+        Assert.Equal("decimal(14,4)", await Chain("i", "d52", "sm"));
+        Assert.Equal("decimal(38,23)", await Chain("bi", "m", "d3838"));
+        Assert.Equal("decimal(19,4)", await Describe($"SELECT COALESCE(bi, m, d52) AS x FROM {Source}"));
+        Assert.Equal("decimal(23,4)", await Describe($"SELECT COALESCE(d52, bi, m) AS x FROM {Source}"));
+
+        // So the bigint is converted to decimal(19,4), which overflows at its ends.
+        Assert.Equal(
+            "8115 / NULL;1.0000;1.0000",
+            await Both("SELECT CAST(9223372036854775807 AS bigint) AS x UNION ALL SELECT CAST(1 AS money) UNION ALL SELECT CAST(1 AS decimal(5,2))"));
+    }
+
+    [Fact]
+    public async Task A_chain_takes_the_most_fractional_digits_of_every_date_and_time()
+    {
+        // Unlike the integer digits above, a time's fractional digits are kept through a date or datetime before it.
+        Assert.Equal("datetime2(7)", await Chain("dt", "tm7", "dt23"));
+        Assert.Equal("datetime2(7)", await Chain("dt23", "dt", "tm7"));
+        Assert.Equal("datetime2(7)", await Chain("tm7", "dtm", "dt23"));
+        Assert.Equal("datetimeoffset(7)", await Chain("dtm", "tm7", "dto3"));
+    }
+
+    [Fact]
+    public async Task A_chain_is_refused_only_when_a_value_cannot_become_its_type()
+    {
+        // Review round 1: an int and a date alone are refused, but beside a datetime both become datetime; so are a date and
+        // a time beside a datetime2. A uniqueidentifier that must become an int is refused wherever it stands.
+        Assert.Equal("datetime", await Chain("1", "dt", "dtm"));
+        Assert.Equal("datetime", await Chain("dtm", "dt", "1"));
+        Assert.Equal("datetime", await Chain("i", "tm3", "dtm"));
+        Assert.Equal("datetime2(7)", await Chain("dt23", "dt", "tm7"));
+        Assert.Equal("datetime", await Describe($"SELECT COALESCE(1, dt, dtm) AS x FROM {Source}"));
+        Assert.Equal("206", await Chain("i", "u", "v10"));
+        Assert.Equal("206", await Chain("v10", "u", "i"));
+        Assert.Equal("206", await Chain("tm3", "i", "dt"));
+    }
+
+    [Fact]
+    public async Task An_int_constant_counts_its_own_digits_beside_a_decimal()
+    {
+        // Review round 1. Beside decimal(38,38), an int column counts 10 integer digits (decimal(38,28)); an int the server
+        // treats as a constant counts its own: a literal, the NULL cast to int (1), a derived table's literal column, a CASE
+        // or IIF with a constant condition (folded to that literal), COALESCE(NULL, 1). Arithmetic, a scalar subquery, a
+        // CAST of a number, ISNULL, a CASE with a column in its condition and a set operation of literals are not folded so.
+        // Other typed NULLs count their type's digits. Decimal arithmetic counts the same way.
+        Assert.Equal("decimal(38,37)", await Chain("d3838", "CAST(NULL AS int)"));
+        Assert.Equal("decimal(38,37)", await Chain("d3838", "CONVERT(int, NULL)"));
+        Assert.Equal("decimal(38,37)", await Chain("d3838", "TRY_CAST(NULL AS int)"));
+        Assert.Equal("decimal(38,37)", await Chain("d3838", "CAST(CAST(NULL AS int) AS int)"));
+        Assert.Equal("decimal(38,33)", await Chain("d3838", "CAST(NULL AS smallint)"));
+        Assert.Equal("decimal(38,19)", await Chain("d3838", "CAST(NULL AS bigint)"));
+        Assert.Equal("decimal(38,36)", await Chain("d3838", "-(12)"));
+        Assert.Equal("decimal(38,37)", await Chain("1", "v10", "d3838"));
+        Assert.Equal("decimal(38,37)", await Chain("v10", "1", "d3838"));
+        Assert.Equal("decimal(38,37)", await Describe($"SELECT d3838 AS x FROM {Source} UNION ALL SELECT q.y FROM (SELECT 1 AS y FROM {Source}) AS q"));
+        Assert.Equal("decimal(38,37)", await Chain("d3838", "IIF(1 = 1, 1, 2)"));
+        Assert.Equal("decimal(38,36)", await Chain("d3838", "CASE WHEN 1 = 1 THEN 12 ELSE 2 END"));
+        Assert.Equal("decimal(38,37)", await Chain("d3838", "COALESCE(NULL, 1)"));
+        Assert.Equal("decimal(38,28)", await Chain("d3838", "CAST(2 AS int)"));
+        Assert.Equal("decimal(38,28)", await Chain("d3838", "1 + 1"));
+        Assert.Equal("decimal(38,28)", await Chain("d3838", "(SELECT 1)"));
+        Assert.Equal("decimal(38,28)", await Chain("d3838", "ISNULL(NULL, 1)"));
+        Assert.Equal("decimal(38,28)", await Chain("d3838", "IIF(i > 0, 1, 2)"));
+        Assert.Equal("decimal(38,28)", await Describe($"SELECT d3838 AS x FROM {Source} UNION ALL SELECT q.y FROM (SELECT 1 AS y UNION ALL SELECT 2) AS q"));
+        Assert.Equal("decimal(38,37)", await Describe($"SELECT d3838 + CAST(NULL AS int) AS x FROM {Source}"));
+        Assert.Equal("decimal(38,36)", await Describe($"SELECT d3838 * CAST(NULL AS int) AS x FROM {Source}"));
+        Assert.Equal("decimal(38,37)", await Describe($"SELECT COALESCE(d3838, CAST(NULL AS int)) AS x FROM {Source}"));
+    }
+
     [Fact]
     public async Task A_cut_scale_rounds_but_never_overflows_since_the_integer_digits_are_kept()
     {

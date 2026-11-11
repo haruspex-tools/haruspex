@@ -497,7 +497,8 @@ are in `Haruspex.SqlServer.Inference/README.md` ("Combining types"). For the IR:
   column has the looser of each, so a range or a length covers every query. Its `values` are kept only when every query's set
   still holds converted.
 - Types SQL Server refuses to combine (an operand type clash, 206) stay unknown (`unsupported-expression`), the detail naming
-  both types.
+  both types. So does a column whose scale turns on whether the server folds an int expression to a constant (a `CASE` or
+  `IIF` of int literals beside a decimal past 38 digits), the detail naming the expression.
 
 No record, rule or reason was added, and every meaning stays as 0.15 describes it, so the version is unchanged: a 0.15 reader
 reads these documents as they are.

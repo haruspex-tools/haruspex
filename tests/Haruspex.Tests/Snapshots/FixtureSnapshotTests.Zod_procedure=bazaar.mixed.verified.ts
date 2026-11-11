@@ -27,13 +27,23 @@ export const MixedResult4RowSchema = z.object({
 export type MixedResult4Row = z.infer<typeof MixedResult4RowSchema>
 
 export const MixedResult5RowSchema = z.object({
+  share: z.number().multipleOf(1e-37).nullable() /* the mssql driver may round decimal(38,37) past its bounds, so they are not checked in a row */,
+})
+export type MixedResult5Row = z.infer<typeof MixedResult5RowSchema>
+
+export const MixedResult6RowSchema = z.object({
+  share_or_flag: z.unknown() /* unsupported-expression */,
+})
+export type MixedResult6Row = z.infer<typeof MixedResult6RowSchema>
+
+export const MixedResult7RowSchema = z.object({
   order_id: z.int32(),
   voucher_or_ref: z.guid(),
   qty_or_price: z.number().multipleOf(1e-4) /* the mssql driver may round money past its bounds, so they are not checked in a row */,
   big_or_half: z.number().multipleOf(1) /* the mssql driver may round numeric(38,0) past its bounds, so they are not checked in a row */,
 })
-export type MixedResult5Row = z.infer<typeof MixedResult5RowSchema>
+export type MixedResult7Row = z.infer<typeof MixedResult7RowSchema>
 
-/** bazaar.mixed: returns 5 result sets: rows; rows; rows; rows; rows. */
-export const MixedSchema = z.tuple([z.array(MixedResult1RowSchema), z.array(MixedResult2RowSchema), z.array(MixedResult3RowSchema), z.array(MixedResult4RowSchema), z.array(MixedResult5RowSchema)])
+/** bazaar.mixed: returns 7 result sets: rows; rows; rows; rows; rows; rows; rows. */
+export const MixedSchema = z.tuple([z.array(MixedResult1RowSchema), z.array(MixedResult2RowSchema), z.array(MixedResult3RowSchema), z.array(MixedResult4RowSchema), z.array(MixedResult5RowSchema), z.array(MixedResult6RowSchema), z.array(MixedResult7RowSchema)])
 export type Mixed = z.infer<typeof MixedSchema>

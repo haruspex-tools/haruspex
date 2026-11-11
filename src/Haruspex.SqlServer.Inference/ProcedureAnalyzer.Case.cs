@@ -195,7 +195,9 @@ internal sealed partial class ProcedureAnalyzer
             .Concat(results.Where(r => r.Value is null).Select(r => (IReadOnlyList<IrNullReason>)[new IrNullReason(IrNullRules.NullLiteral, At(r.Expression).ToString())]))
             .Append(also)
             .Aggregate((IReadOnlyList<IrNullReason>)[], ShapeJoin.Reasons);
-        var value = Typed(type, because, at);
+        // A CASE whose condition is constant is folded to one result, an int literal then counting its own digits (observed:
+        // An_int_constant_counts_its_own_digits_beside_a_decimal); which, is not known here.
+        var value = Typed(type, because, at) with { Digits = type.Name == "int" ? IntDigits.Foldable(given.Select(r => r.Value.Digits)) : null };
         return LiteralSet(given.Select(r => r.Expression), type, at) is { } set && value.Shape is ScalarShape scalar
             ? value with { Shape = scalar with { Type = scalar.Type with { Facets = (scalar.Type.Facets ?? new IrFacets()) with { Values = set } } } }
             : value;
@@ -308,7 +310,7 @@ internal sealed partial class ProcedureAnalyzer
             return Typed(new ScalarType(smallest), because, nullIf);
         }
 
-        return value with { NullableBecause = because };
+        return value with { NullableBecause = because, Digits = IntDigits.Foldable([value.Digits]) };
     }
 
     // ---- COALESCE and ISNULL over JSON ----------------------------------------------------------------------------------
