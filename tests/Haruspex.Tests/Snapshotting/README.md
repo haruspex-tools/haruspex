@@ -5,7 +5,7 @@ small helper does that instead of a snapshot library.
 
 **Why not Verify.** Verify releases after 1 September 2026 are under the Open Source Maintenance Fee terms.
 The exemption for open-source projects lasts 12 months, so it would be a dated manual renewal on the main
-build path, and the fee is ambiguous for contributors whose employers generate revenue. haruspex's output
+build path, and the fee is ambiguous for contributors whose employers generate revenue. The output of haruspex
 is deterministic text by design, so the core loop is all it needs: compare, write what was received, show
 a diff.
 

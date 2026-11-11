@@ -1,6 +1,6 @@
 # Architecture: layers and what each may know
 
-haruspex is split into layers so that each can be tested alone, reused alone and, where it is useful to
+The code is split into layers so that each can be tested alone, reused alone and, where it is useful to
 others, published alone as a NuGet package from this repository. Each project under `src/` is one layer.
 
 ```

@@ -8,7 +8,7 @@ namespace Haruspex.Tests;
 /// every example, so the schema never accepts what haruspex refuses, nor the reverse.
 /// </summary>
 /// <remarks>
-/// What a schema can't say, or can't say plainly, is the reader's alone, and has its own tests in <c>ConfigReaderTests</c>:
+/// What a schema can't say, or can say only awkwardly, is the reader's alone, and has its own tests in <c>ConfigReaderTests</c>:
 /// that a procedure key has exactly two parts (the schema only rejects wildcards and empty keys), that a pattern or a
 /// path is well formed, that a regular expression compiles, that two schema keys differ in more than case, and that a
 /// name is not a reserved word.

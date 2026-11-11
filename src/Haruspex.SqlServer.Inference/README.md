@@ -1049,7 +1049,7 @@ where folding did).
 - **Not this rule:** the server folds `COALESCE` whose first argument is a string literal, beside a string that would not make
   it national or `max`, to that literal, and types it by the literal alone
   (`Coalesce_of_a_string_literal_first_is_folded_to_it_beside_a_string`: `COALESCE('abc', varchar(10))` is `varchar(3)`).
-  haruspex gives the wider type, which holds every value.
+  The inference gives the wider type, which holds every value.
 - `GENERATE_SERIES` keeps its own rule: decimals only when each converts to their common type without overflow.
 
 ## CROSS JOIN and FULL OUTER JOIN

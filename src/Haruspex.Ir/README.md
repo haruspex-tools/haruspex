@@ -281,7 +281,7 @@ What each constructor gives, every rule observed on SQL Server 2025 RTM-CU10 and
   padded. A value keeps its facets while it passes through unchanged.
 - `RETURNING json` changes the value's SQL type (`json` rather than `nvarchar(max)`), not what is written.
 - **Availability:** `json_object` and `json_array` exist from SQL Server 2022, `json_arrayagg`, `json_objectagg` and
-  the `json` type from SQL Server 2025 and Azure SQL. haruspex does not know the target's version yet, so it types
+  the `json` type from SQL Server 2025 and Azure SQL. The target's version is not known to haruspex yet, so it types
   them whatever the target; a procedure using one the target lacks fails when it is created.
 
 ## Scalar functions

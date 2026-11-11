@@ -54,8 +54,8 @@ objects: see [docs/configuration.md](docs/configuration.md).
 - **Databases other than SQL Server.** The IR is dialect-neutral, but SQL Server is the only front end.
 - **Code that builds its results at runtime.** The shape of dynamic SQL, `EXEC @procedure` or a CLR
   procedure is in no source file, so haruspex cannot type it, and it says so.
-- **Anyone looking for an ORM.** An ORM derives the database from the application's types, and haruspex goes
-  the other way: the database owns the interface, and the application's types are derived from it.
+- **Anyone looking for an ORM.** Here the database owns the interface, and the application's types are derived
+  from it.
 - **Anyone who won't use code written by AI.** The project is built by agentic engineering. AI coding
   agents write and review each change, in small slices, and every rule is checked by observing a real SQL
   Server. A person decides what is built and merges every change. If that rules it out for you, it's
