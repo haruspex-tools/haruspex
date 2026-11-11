@@ -97,11 +97,11 @@ guide calls such a description an **abstract value**, and the idea of computing 
   meet, or two calls may return, the join is what holds of both: the join of "never null" and "may be null" is "may be
   null".
 - **Bottom and top.** At the bottom is "never returns" (`NeverShape`), which allows no value at all. At the top is
-  "unknown", which allows anything. An ordered set like this, where any two elements have a join, is a **lattice**.
+  "unknown", which allows anything. An ordered set where any two elements have a join is a
+  **join-semilattice**; one where any two also have a *meet* (the least precise description allowing only what both
+  allow) is a **lattice**. Only joins are needed here.
 - **A step is monotone** when reading a body with an assumption that allows more never gives a result that allows less. A
   nullable argument may make a result nullable; it must never make it non-null.
-
-### Solving recursion: the least fixed point
 
 ### Solving recursion: the least fixed point
 

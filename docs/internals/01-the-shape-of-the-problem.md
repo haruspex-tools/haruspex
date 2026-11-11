@@ -133,6 +133,10 @@ The analysis here is sound, and the reason is the cost of each mistake to the pe
 a failure in production: code that trusted a field to be present, on the day it wasn't. A user forgives the first and not
 the second ([decision 0002](../decisions/0002-unknown-with-a-reason-never-a-guess.md)).
 
+In the literature this is an **over-approximation**: the set of values haruspex says a field may take always contains
+every value it can really take. "Nullable" means "may be null", never "is sometimes null"; "non-null" means "is never
+null". When haruspex can't bound the set at all, the field is **unknown**.
+
 ### Why not "soundy"?
 
 Many typed-SQL tools make the other trade on purpose: sound except for known holes, a position Livshits and others named
@@ -149,10 +153,6 @@ The runtime check is there so that the application can trust its types, and so t
 Nor is haruspex free of assumptions. It states each one where it is made rather than leaving holes to be found, for
 example that a caller doesn't read uncommitted data
 ([decision 0016](../decisions/0016-visible-read-uncommitted-drops-key-claims.md)).
-
-In the literature this is an **over-approximation**: the set of values haruspex says a field may take always contains
-every value it can really take. "Nullable" means "may be null", never "is sometimes null"; "non-null" means "is never
-null". When haruspex can't bound the set at all, the field is **unknown**.
 
 ### What unknown means
 

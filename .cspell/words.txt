@@ -113,6 +113,7 @@ nullability
 ordinally
 interprocedural
 kleene
+semilattice
 serialiser
 soundiness
 soundy

@@ -131,8 +131,8 @@ public partial class CodeReferenceTests
     [Fact]
     public void A_diagram_s_compound_names_are_references_and_its_plain_words_are_not() =>
         Assert.Equal(
-            [(3, "IrBuilder"), (4, "ResultTrack.Then")],
-            CodeReferences.DiagramNames("```mermaid\nflowchart LR\n    a[\"IrBuilder\"] --> b[\"Sources: the Model\"]\n    b --> c[\"ResultTrack.Then\"]\n```\n"));
+            [(3, "IrBuilder"), (4, "ResultTrack.Then"), (4, "ILocalRelations")],
+            CodeReferences.DiagramNames("```mermaid\nflowchart LR\n    a[\"IrBuilder\"] --> b[\"Sources: the Model\"]\n    b --> c[\"ResultTrack.Then, ILocalRelations, SQL, CTEs\"]\n```\n"));
 
     [Fact]
     public void A_link_into_this_repository_on_github_is_checked_on_disk() =>

@@ -165,7 +165,7 @@ internal sealed partial class CodeReferences
 
     /// <summary>
     /// The names a Mermaid diagram's labels give, with the line each is on: every word in PascalCase with at least two
-    /// capitals (<c>IrBuilder</c>, <c>ResultTrack.Then</c>), which in a diagram of haruspex's types is a type's name. Plain
+    /// capitals anywhere and a lower-case letter (<c>IrBuilder</c>, <c>ILocalRelations</c>, <c>ResultTrack.Then</c>), which in a diagram of haruspex's types is a type's name. An acronym's plural (<c>CTEs</c>) is not. Plain
     /// words (<c>Sources</c>, <c>Model</c>) are the layers' names in prose, and are not checked.
     /// </summary>
     public static IEnumerable<(int Line, string Name)> DiagramNames(string markdown)
@@ -296,7 +296,7 @@ internal sealed partial class CodeReferences
     [GeneratedRegex(@"\b(?:void|Task|ValueTask)\s+(?<name>[A-Z]\w*)\s*\(")]
     private static partial Regex MethodDeclaration();
 
-    [GeneratedRegex(@"(?<![\w.])[A-Z][a-z0-9]+[A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)*(?![\w])")]
+    [GeneratedRegex(@"(?<![\w.])(?![A-Z]+s\b)(?=[A-Z][a-z0-9]*[A-Z])(?=[A-Za-z0-9]*[a-z])[A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)*(?![\w])")]
     private static partial Regex DiagramName();
 
     [GeneratedRegex(@"\bexport\s+(?:const|type)\s+(?<name>[A-Za-z_]\w*)")]
