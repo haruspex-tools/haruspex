@@ -18,7 +18,8 @@ public class RecursiveValidationTests
         ["Node"] = new([
             new IrField("id", Int, IrPresence.Always, []),
             new IrField("children", new IrArray(new IrRef("Node")), IrPresence.OmittedWhenNull, [Because]),
-        ]) { Recursive = true },
+        ])
+        { Recursive = true },
     };
 
     private static IrDocument Doc(IrType result) => new(
