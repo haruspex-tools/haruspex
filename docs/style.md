@@ -10,7 +10,7 @@ Two readers, at once:
 
 - **An experienced developer meeting haruspex for the first time**, who wants to know what it does, whether to
   trust it, and where to look.
-- **Someone learning how a static analyser is built**, Richard included. The source is literate
+- **Someone learning how a static analyser is built**, the project's own maintainers included. The source is literate
   (`docs/internals/`), so an explanation should leave the reader understanding the idea, not only this code.
 
 Write for someone clever who doesn't yet know the subject. Explain an idea in general terms before showing how
@@ -21,7 +21,7 @@ haruspex does it, and name it as the literature does.
 - **Plain and precise.** Short sentences, common words, one idea per sentence where possible. Say exactly what
   is true and stop.
 - **No claim stronger than the evidence.** The documentation is held to haruspex's own rule: never claim more
-  than is guaranteed. "Typed on 96.9% of fields in one private corpus", not "types almost everything".
+  than is guaranteed. "Typed 412 of 430 fields in the sample database", not "types almost everything".
 - **No marketing words**: *powerful*, *seamless*, *blazing*, *robust*, *cutting-edge*, *best-in-class*,
   *revolutionary*. No minimisers: *simply*, *just*, *easily*, *obviously*, *of course*. What is easy for the
   writer may not be for the reader.
