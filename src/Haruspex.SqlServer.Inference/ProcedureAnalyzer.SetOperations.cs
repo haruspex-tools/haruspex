@@ -162,33 +162,48 @@ internal sealed partial class ProcedureAnalyzer
         if (given.Any(c => c.Value.IsLiveJson))
             return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, "A set operation over JSON is not modelled: whether it comes out as JSON or text depends on how it was made.", at));
 
-        var because = SetNulls(node, [.. columns.Select(c => IsNull(c) ? [new IrNullReason(IrNullRules.NullLiteral, c.At.ToString())] : c.Value.NullableBecause)]);
-        var output = node.Out.Select(i => columns[i]).Where(c => !IsNull(c)).ToList();
-
         // Text holding JSON stays text; its content is known when every query's is the same.
+        var output = node.Out.Select(i => columns[i]).Where(c => !IsNull(c)).ToList();
         if (given.All(c => c.Value.Shape is JsonTextShape))
         {
+            var because = SetNulls(node, [.. columns.Select(c => IsNull(c) ? [new IrNullReason(IrNullRules.NullLiteral, c.At.ToString())] : c.Value.NullableBecause)]);
             var contents = output.Select(c => ((JsonTextShape)c.Value.Shape).Content).ToList();
             var same = contents.Count > 0 && contents.All(x => x is not null && ShapeText.Of(x) == ShapeText.Of(contents[0]!));
             return new Value(new JsonTextShape(same ? contents[0] : null), because);
         }
 
-        var types = given.Select(c => TypeOf(c.Value, c.Expression ?? new NullLiteral())).ToList();
-        if (types.Any(t => t is null) || ScalarType.Union(types!) is not { } type)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, "A set operation over columns of these types is not modelled yet.", at));
+        // Each query's value is converted to the column's type, which may overflow, NULL under the caller's options; that is
+        // one more reason that query's value may be null, before INTERSECT and EXCEPT decide whose nulls come out.
+        var combined = Combined([.. given.Select(c => (c.Value, c.Expression ?? new NullLiteral(), c.At))]);
+        if (combined.Type is not { } type)
+            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"This set operation's column: {combined.Why}", at));
+        var next = 0;
+        var reasons = SetNulls(node, [.. columns.Select(c => IsNull(c)
+            ? [new IrNullReason(IrNullRules.NullLiteral, c.At.ToString())]
+            : ShapeJoin.Reasons(c.Value.NullableBecause, combined.Overflows[next++]))]);
 
         // When every query whose values come out is of the column's type already, nothing is converted, and the facets they
-        // all have hold; otherwise only the type's, as for any converted value.
+        // all have hold. Otherwise those of a query whose every value converts unchanged (ScalarType.Preserves: an int into a
+        // bigint or a decimal holding it, a varchar into a longer one) still hold, and a query whose values may change (rounded,
+        // made approximate, padded, cut short) brings only the column type's: so a range or a length widens to cover every
+        // query, and is never narrower than the type's.
         Value value;
         if (output.Count > 0 && output.All(c => c.Value.Shape is ScalarShape { Type.Sql: var sql } && sql == type.Text))
         {
-            value = output.Skip(1).Aggregate(output[0].Value, (a, b) => ShapeJoin.Either(a, b.Value, at, "this set operation's column")) with { NullableBecause = because };
+            value = output.Skip(1).Aggregate(output[0].Value, (a, b) => ShapeJoin.Either(a, b.Value, at, "this set operation's column")) with { NullableBecause = reasons };
             if (value.Shape is UnknownShape)
-                value = Typed(type, because, at);
+                value = Typed(type, reasons, at);
         }
         else
         {
-            value = Typed(type, because, at);
+            value = Typed(type, reasons, at);
+            if (output.Count > 0 && value.Shape is ScalarShape typed)
+            {
+                var each = output.Select(c => c.Value.Shape is ScalarShape { Type: var own } && ScalarType.Parse(own.Sql) is { } from && ScalarType.Preserves(from, type)
+                    ? own.Facets
+                    : typed.Type.Facets).ToList();
+                value = value with { Shape = typed with { Type = typed.Type with { Facets = ShapeJoin.Widened(each, typed.Type.Facets) } } };
+            }
         }
 
         return value.Shape is ScalarShape scalar
@@ -222,8 +237,11 @@ internal sealed partial class ProcedureAnalyzer
         var sets = new List<IrValueSet>();
         foreach (var column in output)
         {
-            var set = (column.Value.Shape as ScalarShape)?.Type.Facets?.Values
-                ?? (column.Expression is { } expression ? LiteralSet([expression], type, expression) : null);
+            var own = (column.Value.Shape as ScalarShape)?.Type;
+            var set = own?.Facets?.Values;
+            if (set is not null && !Keeps(set, ScalarType.Parse(own!.Sql), type))
+                return null;
+            set ??= column.Expression is { } expression ? LiteralSet([expression], type, expression) : null;
             if (set is null)
                 return null;
             sets.Add(set);
@@ -254,6 +272,21 @@ internal sealed partial class ProcedureAnalyzer
         }
 
         return new IrValueSet(merged, sets[0].Match, [.. sets.SelectMany(s => s.From).Distinct()]);
+    }
+
+    /// <summary>
+    /// Whether a query's closed set still holds of its values converted to the column's type: strings into a string type long
+    /// enough for each (not cut short; a fixed-length type is ruled out above), numbers into a type that keeps every value
+    /// (<see cref="ScalarType.Preserves"/>: not rounded, not made approximate). A string's set never holds of a number it is
+    /// converted to ('01' is 1), nor a number's of a string.
+    /// </summary>
+    private static bool Keeps(IrValueSet set, ScalarType? from, ScalarType type)
+    {
+        if (from is null)
+            return false;
+        if (set.Items.Any(i => i.IsString))
+            return from.IsString && type.IsString && (type.IsMax || set.Items.All(i => i.Text.Length <= type.Length));
+        return ScalarType.Preserves(from, type);
     }
 
     // ---- OPENJSON ---------------------------------------------------------------------------------------------------------

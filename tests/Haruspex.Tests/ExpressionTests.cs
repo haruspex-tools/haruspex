@@ -110,11 +110,12 @@ public class ExpressionTests
     }
 
     [Fact]
-    public void Coalesce_of_a_string_and_a_number_is_not_typed()
+    public void Coalesce_of_a_string_and_a_number_is_the_number_and_may_overflow()
     {
-        // The string is converted to the number, which may fail: not modelled.
+        // The string is converted to the number: a failure is an error, an overflow NULL under the caller's options (slice 6k:
+        // A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
         var doc = Procedure("SELECT COALESCE(short, 0) AS a FROM dbo.t;");
-        Assert.StartsWith("unknown", Sql(doc, "a"), StringComparison.Ordinal);
+        Assert.Equal("int arithmetic-overflow", Typed(doc, "a"));
     }
 
     [Fact]

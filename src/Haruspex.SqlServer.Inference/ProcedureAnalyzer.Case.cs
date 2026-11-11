@@ -166,9 +166,10 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The value of a CASE, IIF or CHOOSE from its results (a null value for the NULL literal): the type of highest precedence
-    /// over them, as COALESCE's (<see cref="ScalarType.Union"/>; observed:
-    /// Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results), every result converting to it without an
-    /// overflow; null when a result may be, or is the NULL literal (<c>null-literal</c>), or for <paramref name="also"/>. When
+    /// over them, as COALESCE's (<see cref="ScalarType.Common"/>; observed:
+    /// Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results); null when a result may be, or is the NULL
+    /// literal (<c>null-literal</c>), or converting one to the type may overflow (<c>arithmetic-overflow</c>), or for
+    /// <paramref name="also"/>. When
     /// every other result is a string literal, or every one a number, it is one of them exactly: a literal is varchar or
     /// nvarchar, never padded, so trailing spaces are its own (observed:
     /// A_literal_result_keeps_its_trailing_spaces_and_a_fixed_length_result_pads). JSON is not modelled: whether a CASE over
@@ -184,11 +185,13 @@ internal sealed partial class ProcedureAnalyzer
             return unknown;
         if (given.Any(r => r.Value.IsLiveJson))
             return NotModelled(at, "whether it nests as JSON depends on whether the server folds it to one result.");
-        var types = given.Select(r => TypeOf(r.Value, r.Expression)).ToList();
-        if (types.Any(t => t is null) || ScalarType.Union(types!) is not { } type)
-            return NotModelled(at, "results of these types are not modelled yet.");
+        var where = At(at);
+        var combined = Combined([.. given.Select(r => (r.Value, r.Expression, where))]);
+        if (combined.Type is not { } type)
+            return NotModelled(at, combined.Why!);
 
         var because = given.Select(r => r.Value.NullableBecause)
+            .Concat(combined.Overflows)
             .Concat(results.Where(r => r.Value is null).Select(r => (IReadOnlyList<IrNullReason>)[new IrNullReason(IrNullRules.NullLiteral, At(r.Expression).ToString())]))
             .Append(also)
             .Aggregate((IReadOnlyList<IrNullReason>)[], ShapeJoin.Reasons);
@@ -211,6 +214,9 @@ internal sealed partial class ProcedureAnalyzer
         IReadOnlyList<IrValue> items;
         if (type.IsString && literals.All(l => l!.Value.Literal is StringLiteral))
         {
+            // A string longer than the type is cut short (a national type stops at 4000 characters).
+            if (!type.IsMax && literals.Any(l => l!.Value.Literal.Value.Length > type.Length))
+                return null;
             items = [.. literals.Select(l => l!.Value.Literal.Value).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).Select(s => new IrValue(s, IsString: true))];
         }
         else if ((type.IsInteger || type.IsDecimal) && literals.All(l => l!.Value.Literal is IntegerLiteral or NumericLiteral))
@@ -221,6 +227,11 @@ internal sealed partial class ProcedureAnalyzer
                 if (!ExactDecimal.TryParse(literal.Value, out var number))
                     return null;
                 number = negative ? number.Negate() : number;
+
+                // Past 38 digits a decimal's scale is cut and a literal with more places is rounded (observed:
+                // Exact_numbers_past_38_digits_keep_their_integer_digits_and_cut_the_scale), so it is not one of its values.
+                if (type.IsDecimal && (number.Scale > type.Scale || number.IntegerDigits > type.Precision - type.Scale))
+                    return null;
                 if (!numbers.Any(n => n.CompareTo(number) == 0))
                     numbers.Add(number);
             }

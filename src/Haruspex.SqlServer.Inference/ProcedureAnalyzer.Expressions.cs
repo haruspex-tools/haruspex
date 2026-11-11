@@ -88,10 +88,58 @@ internal sealed partial class ProcedureAnalyzer
     private Value NotModelled(TSqlFragment expression, string why) =>
         Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"{Text(expression)}: {why}", At(expression)));
 
+    // ---- combining types --------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// The type values of different types take when they meet in one column: a set operation's, COALESCE's, a CASE's, IIF's or
+    /// CHOOSE's (one rule, <see cref="ScalarType.Common"/>, slice 6k).
+    /// </summary>
+    /// <param name="Type">The type, or null when it is not known.</param>
+    /// <param name="Overflows">For each value, the reason converting it may give NULL: an overflow, NULL under a caller's
+    /// ANSI_WARNINGS and ARITHABORT off (observed: A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options);
+    /// empty when it cannot (<see cref="ScalarType.NeverNull"/>, or a literal that fits).</param>
+    /// <param name="Why">When the type is not known, why, naming the types so a user knows what to change.</param>
+    private sealed record CombinedType(ScalarType? Type, IReadOnlyList<IReadOnlyList<IrNullReason>> Overflows, string? Why);
+
+    /// <param name="values">Each value, the expression it came from (for a literal's digits and value), and where an overflow
+    /// converting it would happen.</param>
+    private static CombinedType Combined(IReadOnlyList<(Value Value, ScalarExpression Expression, SourceLocation At)> values)
+    {
+        var types = values.Select(v => TypeOf(v.Value, v.Expression)).ToList();
+        static string Name(Value value, ScalarType? type) => type?.Text ?? value.Shape switch
+        {
+            ScalarShape { Type.Sql: { } sql } => sql,
+            _ when value.IsLiveJson => "JSON",
+            _ => "a value of another kind",
+        };
+
+        static string Names(IEnumerable<string> names)
+        {
+            var distinct = names.Distinct(StringComparer.Ordinal).ToList();
+            return distinct.Count == 1 ? distinct[0] : string.Join(", ", distinct.SkipLast(1)) + " and " + distinct[^1];
+        }
+
+        if (types.Any(t => t is null))
+            return new CombinedType(null, [], $"combining {Names(values.Select((v, i) => Name(v.Value, types[i])))} is not modelled yet.");
+        var known = types.Select(t => t!).ToList();
+        if (ScalarType.Clash(known) is var (first, second))
+            return new CombinedType(null, [], $"SQL Server refuses to combine {first.Text} and {second.Text}: there is no implicit conversion between them (206, an operand type clash).");
+        if (ScalarType.Common(known) is not { } type)
+            return new CombinedType(null, [], $"combining {Names(known.Select(t => t.Text))} is not modelled yet.");
+
+        var overflows = values.Select((v, i) =>
+        {
+            var fits = (LiteralOf(v.Expression) is ({ } literal, var negative) ? ScalarType.Fits(literal, type, negative) : null)
+                ?? ScalarType.NeverNull(known[i], type);
+            return fits ? (IReadOnlyList<IrNullReason>)[] : [new IrNullReason(IrNullRules.ArithmeticOverflow, v.At.ToString())];
+        }).ToList();
+        return new CombinedType(type, overflows, null);
+    }
+
     // ---- COALESCE and ISNULL ----------------------------------------------------------------------------------------
 
     /// <summary>
-    /// <c>COALESCE(a, b, …)</c>: the type of highest precedence (<see cref="ScalarType.Union"/>), to which every argument
+    /// <c>COALESCE(a, b, …)</c>: the type of highest precedence (<see cref="ScalarType.Common"/>, <see cref="Combined"/>), to which every argument
     /// converts without an overflow. It is <c>CASE WHEN a IS NOT NULL THEN a …</c>, so it is never null when an argument is
     /// never null, except that an argument before it that is a subquery or a call is read twice and may be NULL the second
     /// time (observed: Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot), which is <c>read-twice</c>: a value
@@ -115,10 +163,13 @@ internal sealed partial class ProcedureAnalyzer
         if (values.Any(IsJson))
             return CoalesceJson(coalesce, arguments, values, because);
 
-        var types = values.Select((v, i) => TypeOf(v, arguments[i])).ToList();
-        if (types.Any(t => t is null) || ScalarType.Union(types!) is not { } type)
-            return NotModelled(coalesce, "COALESCE of these types is not modelled yet.");
-        return Typed(type, because, coalesce);
+        // A value converted to the common type may overflow it, NULL under the caller's options, whichever argument it is
+        // (observed: A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
+        var at = At(coalesce);
+        var combined = Combined([.. values.Select((v, i) => (v, arguments[i], at))]);
+        if (combined.Type is not { } type)
+            return NotModelled(coalesce, combined.Why!);
+        return Typed(type, combined.Overflows.Aggregate(because, ShapeJoin.Reasons), coalesce);
     }
 
     /// <summary>

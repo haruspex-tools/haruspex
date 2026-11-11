@@ -389,7 +389,9 @@ writes are not claimed. Null when the operand is, and for `arithmetic-overflow` 
 | an integer | an integer | the target is as wide |
 | `decimal(p,s)` | an integer | p − s is less than the target's digits (`int` 10, `bigint` 19, `smallint` 5); never `tinyint`, which has no sign |
 | an exact number (an integer as its digits, `money` as `decimal(19,4)`) | `decimal(p2,s2)` | p2 − s2 > p − s, or p2 − s2 = p − s and s2 ≥ s (rounding to fewer places can carry: `99.999` as `decimal(4,2)` overflows) |
-| `date`, `datetime`, `smalldatetime`, `datetime2(n)` | `date`, `datetime2(m)` | always for `date`; for `datetime2(m)`, a `date` or `smalldatetime`, a `datetime` when m ≥ 3, a `datetime2(n)` when m ≥ n |
+| `date`, `datetime`, `smalldatetime`, `datetime2(n)` | `date`, `datetime2(m)` | always for `date`; for `datetime2(m)`, a `date` or `smalldatetime`, a `datetime` when m ≥ 3, a `datetime2(n)` or `time(n)` when m ≥ n |
+| `date`, `datetime`, `smalldatetime`, `datetime2(n)`, `time(n)`, `datetimeoffset(n)` | `datetimeoffset(m)` | a `date` or `smalldatetime`; a `datetime` when m ≥ 3; the others when m ≥ n (slice 6k, offset +00:00) |
+| `time`, `tinyint`, `bit`; `smallint` | `datetime`; `smalldatetime` | a time is that time on 1 January 1900 (rounding into the 2nd at most); a `tinyint` or `bit` that many days from 1900; a `smallint` only into `datetime` (1810 to 1989), not `smalldatetime`, which starts in 1900 (slice 6k) |
 | anything else | | not proved: `arithmetic-overflow` |
 
 A literal is checked by its value instead (`ISNULL(@d, 0)` into `decimal(10,2)` fits). An assignment to a variable converts
@@ -399,7 +401,8 @@ modelled.
 
 ### `COALESCE` and `ISNULL`
 
-- **`COALESCE(a, b, …)`** is of the type of highest precedence (`ScalarType.Union`,
+- **`COALESCE(a, b, …)`** is of the type of highest precedence, by the rule set operations and `CASE` share ("Combining types"
+  below; `ScalarType.Union` until slice 6k,
   `Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments`): strings give `nvarchar` if any is national,
   `varchar` if any varies, of the longest length, max if any is; exact numbers with a decimal give a decimal with every
   argument's integer digits and the largest scale (an `int` column or variable counts as `decimal(10,0)`, an integer literal
@@ -408,11 +411,11 @@ modelled.
   any `float` gives `float`, else any `real` `real`; `money` or `smallmoney` with integers gives `money` if any is, else
   `smallmoney`; among `date`, `smalldatetime`, `datetime` and `datetime2(n)`, any `datetime2` gives `datetime2` of the largest
   n, counting a `datetime` as 3 (`datetime2(1)` with `datetime` is `datetime2(3)`), else `datetime`, `smalldatetime`, `date` in
-  that order. **Every argument must then convert without overflow** (`ScalarType.Converts`), or it is not modelled:
-  `date` into `datetime` or `smalldatetime`, `bigint` into `money` and `int` into `smallmoney` can overflow, which is NULL under
-  the caller's options (`Coalesce_converting_to_a_narrower_range_overflows_to_null_under_the_callers_ansi_warnings_and_arithabort_off`),
-  and `CASE` and set operations, which use the same rule, count on a value not NULL staying so. Others (a string with a
-  number, `time` and `datetimeoffset` with other types) are not modelled. It is never null when an argument is never null, except: it is
+  that order. An argument that may not convert without overflow (`date` into `datetime` or `smalldatetime`, `bigint` into
+  `money`, `int` into `smallmoney`) may make it NULL under the caller's options
+  (`Coalesce_converting_to_a_narrower_range_overflows_to_null_under_the_callers_ansi_warnings_and_arithabort_off`): until slice
+  6k that left it unknown; now it is typed with `arithmetic-overflow` at the COALESCE ("Combining types"). It is never null
+  when an argument is never null and no argument may overflow, except: it is
   `CASE WHEN a IS NOT NULL THEN a …`, which reads an argument twice, so a subquery or a call before the never-null argument may
   be NULL the second time (`Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot`: NULL a quarter of the time
   over a subquery NULL half the time). Since 6g that is the rule `read-twice`, at the argument, in place of the argument's own
@@ -572,14 +575,14 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
 `ProcedureAnalyzer.Case.cs` reads them (slice 6g). Every rule is observed in `CaseObservationTests`.
 
 - **Type.** A `CASE` (searched or simple), `IIF` or `CHOOSE` is of the type of highest precedence over its *results*, by the
-  same rule as `COALESCE` (`ScalarType.Union`, above): `CASE … THEN 'a' ELSE 'longer' END` is `varchar(6)`, a `char(4)`
+  same rule as `COALESCE` and set operations ("Combining types" below): `CASE … THEN 'a' ELSE 'longer' END` is `varchar(6)`, a `char(4)`
   beside a varchar literal is `varchar(4)`, only `char` results give `char`
   (`Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results`). Conditions, a simple CASE's input and
   CHOOSE's index do not count; `IIF(c, a, b)` is `CASE WHEN c THEN a ELSE b END`. A `NULL` result adds nothing to the type;
   a CASE or IIF of `NULL` results only is error 8133 and CHOOSE of them an `int` NULL, neither modelled
-  (`A_case_whose_results_are_all_null_is_an_error_but_choose_of_nulls_is_null`). Every result then converts without overflow.
-  Results of types with no modelled precedence (a string beside a number, which converts the string and may fail) are not
-  modelled.
+  (`A_case_whose_results_are_all_null_is_an_error_but_choose_of_nulls_is_null`). A result that may overflow the type when
+  converted to it gives `arithmetic-overflow` (slice 6k; before, the CASE was not modelled). Types SQL Server refuses to
+  combine are unknown, the reason naming them.
 - **What makes it NULL.** A result that may be (with that result's reasons), a `NULL` result (`null-literal`, at it), no
   `ELSE` (`no-else`: NULL when no `WHEN` holds), and for `CHOOSE` an index that is NULL (its reasons) or below 1 or above the
   count (`out-of-range`; a decimal index is truncated, a string one converted)
@@ -923,13 +926,15 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
   (`Intersect_binds_tighter_than_union_and_except_whatever_the_parser_shows`). ScriptDom gives the chain left to right
   whatever the operators, so `Combine` flattens it (never through parentheses) and regroups it before reading nulls.
 - **Names** are the first query's. **Types** are the one of highest precedence over every query's at once, as `COALESCE`'s
-  (`ScalarType.Union`): over the whole chain, not pairwise, so an integer literal keeps its own digits
+  ("Combining types" below): over the whole chain, not pairwise, so an integer literal keeps its own digits
   (`A_chain_of_set_operations_is_typed_over_all_its_queries_at_once_so_an_integer_literal_keeps_its_digits`:
   `1 UNION ALL 2 UNION ALL 2.5` is `numeric(2,1)`); `INTERSECT` and `EXCEPT` are typed the same way
   (`A_set_operations_columns_are_named_by_its_first_query_and_typed_by_precedence_over_every_query`). A `NULL` literal adds
   nothing to the type (`A_null_literal_adds_nothing_to_a_set_operations_type_and_alone_is_int`) and gives `null-literal`; a
-  column that is `NULL` in every query is not modelled. Types `ScalarType.Union` does not model (a string with a number) are
-  unknown.
+  column that is `NULL` in every query is not modelled. Types SQL Server refuses to combine are unknown, the reason naming
+  them. A query's value that may overflow the column's type when converted to it gives `arithmetic-overflow` at that query's
+  column, before `INTERSECT` and `EXCEPT` decide whose nulls come out (slice 6k): a `bigint` that overflows `smallmoney` on the
+  left of an `INTERSECT` whose right side is never null is not in the result.
 - **Which values come out**: every query's for `UNION` and `UNION ALL`; the left side's for `INTERSECT` and `EXCEPT`, which
   compare under the collation and return the left side's spelling and trailing spaces
   (`Intersect_and_except_return_the_left_sides_values_and_compare_under_the_collation`).
@@ -938,9 +943,15 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
   left NULL only when the right side has one: never null when either side is never null, otherwise the left side's reasons.
   `EXCEPT`: the left side's.
 - **Facets.** When every query whose values come out is already of the column's type, nothing is converted, and the facets
-  they all prove hold (each the looser, as at a join of paths: `ShapeJoin.Either`); otherwise only the type's. A closed set
-  is the union of those queries' sets, each a `CHECK`'s set its value carries or the literal it is; none when any has none,
-  or the sets are of different kinds (a `CHECK`'s `collation` set beside a literal's `exact` one), or the type is
+  they all prove hold (each the looser, as at a join of paths: `ShapeJoin.Either`). Otherwise (slice 6k) a query whose every
+  value converts unchanged (`ScalarType.Preserves`: an integer into a wider one or a decimal holding it, a decimal into one
+  with as many integer digits and places, `smallmoney` into `money`, a string into a varying string as long and of the same
+  kind) keeps its facets, and any other query (rounded to fewer places, made approximate, padded, cut short, or a date or
+  time) brings only the column type's; the column has the looser of each (`ShapeJoin.Widened`), and the type's where none
+  is left: a range or a length widens to cover every query, and is never narrower than the type's. A closed set is the union
+  of those queries' sets, each a `CHECK`'s set its value carries, kept only when it holds converted (a string set into a
+  string type long enough for every item; a number set when the value converts unchanged), or the literal it is (not a
+  literal a cut scale would round, or a string cut short); none when any has none, or the sets are of different kinds (a `CHECK`'s `collation` set beside a literal's `exact` one), or the type is
   `char`/`nchar` and some query is not of it, since a fixed-length type pads a shorter value
   (`A_fixed_length_string_pads_a_shorter_one_through_a_set_operation`). A `UNION` that drops duplicates under the collation
   keeps one of them, still an item. `INTERSECT` and `EXCEPT` keep the left side's set: intersecting the sets would not be
@@ -958,6 +969,57 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
   the whole applies as on a query. No key passes through a set operation (`UNION ALL` repeats one), so a view or inline
   function over one has none, and `SELECT … INTO` from one copies no `IDENTITY`
   (`Select_into_from_a_union_does_not_copy_an_identity`).
+
+## Combining types
+
+Slice 6k. A set operation's column, `COALESCE`, and a `CASE`, `IIF` or `CHOOSE` all take one type over values of different
+types, by one rule: `ScalarType.Common` for the type, `ScalarType.Clash` for pairs SQL Server refuses, and
+`ProcedureAnalyzer.Combined` for what converting each value adds. Observed in `SetTypeObservationTests`, and over every
+ordered pair of a grid of 33 types and 5 literals, in all three forms, in `SetTypeGridTests` (the server describes a set
+operation and `COALESCE` alike over all 1,806 ordered pairs of a wider grid, binary and `xml` included, checked while
+building the slice; the `CASE` there had a constant condition, which the server folds to one result, so it differed only
+where folding did).
+
+- **The type** is the one of highest data type precedence (`datetimeoffset`, `datetime2`, `datetime`, `smalldatetime`,
+  `date`, `time`, `float`, `real`, `decimal`/`numeric`, `money`, `smallmoney`, `bigint`, `int`, `smallint`, `tinyint`, `bit`,
+  `uniqueidentifier`, `nvarchar`, `nchar`, `varchar`, `char`), whatever the range: `bigint` beside `smallmoney` is
+  `smallmoney`, `float` beside `datetime` `datetime`, a string beside anything the other type, `bit` beside a number that number
+  (a decimal's own precision and scale too).
+- **Its parameters.** `datetimeoffset` and `datetime2` take the most fractional digits of any `datetimeoffset`, `datetime2` or
+  `time`, 3 for a `datetime`; `time` the most of the times. A decimal holds every exact number's integer digits (`money` 15,
+  `smallmoney` 6, an integer column its type's, an integer literal its own) and the largest scale; **past 38 digits the
+  precision is 38 and the scale is cut to 38 less those integer digits, with no floor**
+  (`Exact_numbers_past_38_digits_keep_their_integer_digits_and_cut_the_scale`: `decimal(20,10)` beside `decimal(30,0)` is
+  `decimal(38,8)`, `decimal(38,38)` beside `money` `decimal(38,23)`). It is named `numeric` when the first decimal is
+  (`A_decimal_is_named_as_the_first_decimal_query`). A cut scale rounds a value but never overflows: a query whose scale is cut
+  has fewer integer digits than the column keeps, so rounding up still fits
+  (`A_cut_scale_rounds_but_never_overflows_since_the_integer_digits_are_kept`). Strings: `nvarchar` if any is national,
+  varying if any varies, of the longest length, cut at 4000 for a national one (`varchar(5000)` beside `nchar(5)` is
+  `nvarchar(4000)`, and a 5000-character value is cut short without an error), `max` if any is
+  (`Strings_are_national_if_any_is_varying_if_any_is_and_national_ones_stop_at_4000`).
+- **Refused pairs** (206, "Operand type clash"): `uniqueidentifier` with anything but a string; `date`, `time`, `datetime2` and
+  `datetimeoffset` with a number or `bit`; `date` with `time`
+  (`Types_without_an_implicit_conversion_are_refused_with_an_operand_type_clash`). The column is unknown, and its reason names
+  the two types: "SQL Server refuses to combine int and uniqueidentifier: there is no implicit conversion between them". A
+  value of a type not modelled (`xml`, binary) is unknown by its own reason, which names it.
+- **Converting each value.** A value whose type may not convert without overflow (`ScalarType.NeverNull`: `Converts`, or a
+  string into `uniqueidentifier`, which fails as an error and is never NULL) gives `arithmetic-overflow`: an overflow is an
+  error by default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off
+  (`A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options`, in all three forms: `bigint` into
+  `smallmoney`, `float` into `datetime`, `bit` into `decimal(38,38)`, `date` into `smalldatetime`, `'300'` into `tinyint`). A
+  string that is not a value of the type at all is an error even then
+  (`A_string_that_is_not_a_value_of_the_type_is_an_error_even_under_the_callers_options`), so it adds nothing. A literal is
+  checked by its value. Before slice 6k such a column was unknown.
+- **A wire trap**, for anyone testing this: over a table under those options, a set operation whose conversion overflows sends
+  a row SqlClient misreads (a wrong value, then "Internal connection fatal error"), though the server's value is NULL, as an
+  expression over it shows; `COALESCE` and `CASE` do not
+  (`A_set_operations_overflow_under_the_callers_options_is_null_on_the_server_and_misread_by_sqlclient`). The claim is the
+  server's; `bazaar.lenient` reads such columns through a `CONVERT` to their own type.
+- **Not this rule:** the server folds `COALESCE` whose first argument is a string literal, beside a string that would not make
+  it national or `max`, to that literal, and types it by the literal alone
+  (`Coalesce_of_a_string_literal_first_is_folded_to_it_beside_a_string`: `COALESCE('abc', varchar(10))` is `varchar(3)`).
+  haruspex gives the wider type, which holds every value.
+- `GENERATE_SERIES` keeps its own rule: decimals only when each converts to their common type without overflow.
 
 ## CROSS JOIN and FULL OUTER JOIN
 

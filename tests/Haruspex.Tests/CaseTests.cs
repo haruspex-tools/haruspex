@@ -97,12 +97,14 @@ public class CaseTests
     }
 
     [Fact]
-    public void Results_whose_types_have_no_modelled_precedence_are_not_typed()
+    public void Results_of_types_sql_server_refuses_to_combine_are_not_typed()
     {
-        // An int beside a string is int on the server, converting the string, which may fail; not modelled, as for COALESCE.
-        var doc = Procedure("SELECT CASE WHEN id = 1 THEN x ELSE short END AS m, CASE WHEN id = 1 THEN NULL ELSE short END AS ok FROM dbo.t;");
-        Assert.True(IsUnknown(doc, "m"));
+        // An int beside a string is int on the server, converting the string: a failure is an error, an overflow NULL under the
+        // caller's options (slice 6k, SetTypeObservationTests). An int beside a uniqueidentifier is refused (206).
+        var doc = Procedure("SELECT CASE WHEN id = 1 THEN x ELSE short END AS m, CASE WHEN id = 1 THEN NULL ELSE short END AS ok, CASE WHEN id = 1 THEN x ELSE NEWID() END AS no FROM dbo.t;");
+        Assert.Equal("int nullable-column nullable-column arithmetic-overflow", Typed(doc, "m"));
         Assert.Equal("varchar(10)", Sql(doc, "ok"));
+        Assert.True(IsUnknown(doc, "no"));
     }
 
     // ---- what is NULL ------------------------------------------------------------------------------------------------

@@ -477,17 +477,18 @@ public class FunctionTests
         Assert.Equal("decimal(11,4)", Typed(doc, "a5"));
         Assert.Equal("numeric(19,4)", Typed(doc, "a6"));
 
-        // An int may not fit smallmoney, a bigint money: NULL under the caller's options, so not typed.
-        Unknown(doc, "a7");
-        Unknown(doc, "a8");
+        // An int may not fit smallmoney, a bigint money: NULL under the caller's options (slice 6k:
+        // A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
+        Assert.Equal("smallmoney arithmetic-overflow", Typed(doc, "a7"));
+        Assert.Equal("money arithmetic-overflow", Typed(doc, "a8"));
         Assert.Equal("datetime2(3)", Typed(doc, "c1"));
         Assert.Equal("datetime2(3)", Typed(doc, "c2"));
         Assert.Equal("datetime2(1) nullable-column nullable-column", Typed(doc, "c3"));
         Assert.Equal("datetime2(1)", Typed(doc, "c4"));
         Assert.Equal("datetime", Typed(doc, "c5"));
 
-        // A date may not fit smalldatetime.
-        Unknown(doc, "c6");
+        // A date may not fit smalldatetime (out of range: NULL under the caller's options).
+        Assert.Equal("smalldatetime arithmetic-overflow", Typed(doc, "c6"));
         Assert.Equal("float", Typed(doc, "i1"));
     }
 

@@ -109,7 +109,7 @@ public class SetJoinTests
     [Fact]
     public void A_column_of_a_type_not_modelled_or_unknown_in_any_query_is_unknown()
     {
-        Assert.IsType<IrUnknownType>(Field(Procedure("SELECT t.id AS a FROM dbo.t AS t UNION ALL SELECT t.label FROM dbo.t AS t;"), "a").Type);
+        Assert.IsType<IrUnknownType>(Field(Procedure("SELECT t.id AS a FROM dbo.t AS t UNION ALL SELECT NEWID() FROM dbo.t AS t;"), "a").Type);
         Assert.IsType<IrUnknownType>(Field(Procedure("SELECT t.id AS a FROM dbo.t AS t INTERSECT SELECT SOUNDEX(t.label) FROM dbo.t AS t;"), "a").Type);
     }
 

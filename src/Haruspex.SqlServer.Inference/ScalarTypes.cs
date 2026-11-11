@@ -123,65 +123,136 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// <summary>Whether it is named numeric rather than decimal: a numeric column or a decimal literal.</summary>
     private bool IsNumericNamed => Name == "numeric";
 
-    // ---- COALESCE --------------------------------------------------------------------------------------------------
+    // ---- combining types ---------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// The type <c>COALESCE</c> gives, the one of highest precedence wide enough for every argument, or null when it is not
-    /// modelled (observed: <c>Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments</c>,
-    /// <c>Coalesce_over_float_money_and_dates_follows_data_type_precedence</c>):
-    /// <list type="bullet">
-    /// <item>strings: nvarchar if any is national, varchar if any varies, of the longest length, max if any is;</item>
-    /// <item>numbers with a float: float; with a real: real;</item>
-    /// <item>exact numbers with a decimal: a decimal holding every argument's integer digits and the largest scale (money as
-    /// decimal(19,4), smallmoney as decimal(10,4)), named as its first decimal argument; without one, money if any argument is,
-    /// smallmoney if any is, and otherwise the widest integer;</item>
-    /// <item>date, smalldatetime, datetime and datetime2: datetime2 if any is, of the largest precision among them and 3 for a
-    /// datetime; otherwise datetime, smalldatetime, date in that order; otherwise one type, the same for all.</item>
-    /// </list>
-    /// Null too unless every argument converts to it without an overflow (<see cref="Converts"/>): an overflow is NULL under the
-    /// caller's ANSI_WARNINGS and ARITHABORT off (observed:
-    /// <c>Coalesce_converting_to_a_narrower_range_overflows_to_null_under_the_callers_ansi_warnings_and_arithabort_off</c>), and
-    /// every caller (COALESCE, CASE, set operations) counts on a value that is not NULL staying so.
+    /// Data type precedence, highest first, for the types modelled here (Microsoft's "Data type precedence"): what a column
+    /// of a set operation, <c>COALESCE</c>, <c>CASE</c>, <c>IIF</c> and <c>CHOOSE</c> take when their values' types differ.
     /// </summary>
-    public static ScalarType? Union(IReadOnlyList<ScalarType> types)
+    private static int PrecedenceRank(string name) => name switch
     {
-        if (types.Count == 0)
+        "datetimeoffset" => 19,
+        "datetime2" => 18,
+        "datetime" => 17,
+        "smalldatetime" => 16,
+        "date" => 15,
+        "time" => 14,
+        "float" => 13,
+        "real" => 12,
+        "decimal" or "numeric" => 11,
+        "money" => 10,
+        "smallmoney" => 9,
+        "bigint" => 8,
+        "int" => 7,
+        "smallint" => 6,
+        "tinyint" => 5,
+        "bit" => 4,
+        "uniqueidentifier" => 3,
+        "nvarchar" => 2,
+        "nchar" => 1,
+        "varchar" => 0,
+        "char" => -1,
+        _ => throw new ArgumentOutOfRangeException(nameof(name), name, "Not a type modelled here."),
+    };
+
+    /// <summary>
+    /// The type a column takes whose values are of these types, as a set operation, <c>COALESCE</c>, <c>CASE</c>, <c>IIF</c> and
+    /// <c>CHOOSE</c> all type it (one rule, slice 6k; observed over every ordered pair of a grid, SetTypeGridTests, and in
+    /// SetTypeObservationTests), or null when SQL Server refuses them (<see cref="Clash"/>):
+    /// <list type="bullet">
+    /// <item>the type of highest precedence (<see cref="PrecedenceRank"/>), whatever the range: bigint beside smallmoney is
+    /// smallmoney, a float beside datetime datetime;</item>
+    /// <item>datetimeoffset and datetime2 take the most fractional digits of any datetimeoffset, datetime2 or time, and 3 for a
+    /// datetime; time the most of the times;</item>
+    /// <item>a decimal holds every exact number's integer digits (money 15, smallmoney 6, an integer column its type's, an
+    /// integer literal its own, bit none) and the largest scale; past 38 digits the precision is 38 and the scale is cut to
+    /// 38 less those integer digits, with no floor; named as its first decimal;</item>
+    /// <item>strings: nvarchar if any is national, varchar if any varies, of the longest length (cut at 4000 for national
+    /// ones, as concatenation's), max if any is.</item>
+    /// </list>
+    /// Whether each value converts without an overflow is the caller's question (<see cref="Converts"/>).
+    /// </summary>
+    public static ScalarType? Common(IReadOnlyList<ScalarType> types)
+    {
+        if (types.Count == 0 || Clash(types) is not null)
             return null;
-        var union = Precedence(types);
-        return union is not null && types.All(t => Converts(t, union)) ? union : null;
+        var top = types.MaxBy(t => PrecedenceRank(t.Name))!;
+        static int Fraction(ScalarType t) => t.Name switch
+        {
+            "datetimeoffset" or "datetime2" or "time" => t.Precision,
+            "datetime" => 3,
+            _ => 0,
+        };
+
+        switch (top.Name)
+        {
+            case "datetimeoffset" or "datetime2":
+                return new ScalarType(top.Name, Precision: types.Max(Fraction));
+            case "time":
+                return new ScalarType("time", Precision: types.Max(t => t.Precision));
+            case "decimal" or "numeric":
+            {
+                var decimals = types.Where(t => t.IsInteger || t.IsDecimal || t.IsMoney).Select(t => t.AsDecimal()).ToList();
+                var integer = decimals.Max(d => d.Precision - d.Scale);
+                var scale = Math.Min(decimals.Max(d => d.Scale), 38 - integer);
+                return new ScalarType(types.First(t => t.IsDecimal).Name, Precision: integer + scale, Scale: scale);
+            }
+
+            case "char" or "varchar" or "nchar" or "nvarchar":
+                var varying = types.Any(t => t.Name.EndsWith("varchar", StringComparison.Ordinal));
+                return String(types.Any(t => t.IsNational), varying, types.Any(t => t.IsMax) ? -1 : types.Max(t => t.Length));
+            default:
+                return Parse(top.Name);
+        }
     }
 
-    private static ScalarType? Precedence(IReadOnlyList<ScalarType> types)
+    /// <summary>
+    /// Two of these types that SQL Server refuses to combine, as it names them in 206 ("Operand type clash: int is incompatible
+    /// with uniqueidentifier"), in the order they come; null when it combines them all (observed:
+    /// Types_without_an_implicit_conversion_are_refused_with_an_operand_type_clash, and every pair in SetTypeGridTests):
+    /// uniqueidentifier with anything but a string; date, time, datetime2 and datetimeoffset with a number or bit; date with
+    /// time.
+    /// </summary>
+    public static (ScalarType First, ScalarType Second)? Clash(IReadOnlyList<ScalarType> types)
     {
-        if (types.All(t => t.IsString))
+        static bool Numeric(ScalarType t) => t.IsNumber || t.Name == "bit";
+        static bool Refused(ScalarType a, ScalarType b) =>
+            (a.Name == "uniqueidentifier" && b.Name != "uniqueidentifier" && !b.IsString)
+            || (a.Name is "date" or "time" or "datetime2" or "datetimeoffset" && Numeric(b))
+            || (a.Name == "date" && b.Name == "time");
+
+        for (var i = 0; i < types.Count; i++)
         {
-            var varying = types.Any(t => t.Name.EndsWith("varchar", StringComparison.Ordinal));
-            return String(types.Any(t => t.IsNational), varying, types.Any(t => t.IsMax) ? -1 : types.Max(t => t.Length));
+            for (var j = i + 1; j < types.Count; j++)
+            {
+                if (Refused(types[i], types[j]) || Refused(types[j], types[i]))
+                    return (types[i], types[j]);
+            }
         }
 
-        if (types.All(t => t.IsNumber) && types.Any(t => t.IsApproximate))
-            return new ScalarType(types.Any(t => t.Name == "float") ? "float" : "real");
+        return null;
+    }
 
-        if (types.All(t => t.IsInteger || t.IsDecimal || t.IsMoney) && types.FirstOrDefault(t => t.IsDecimal) is { } first)
-        {
-            var decimals = types.Select(t => t.AsDecimal()).ToList();
-            var scale = decimals.Max(d => d.Scale);
-            var precision = decimals.Max(d => d.Precision - d.Scale) + scale;
-            return precision > 38 ? null : new ScalarType(first.Name, Precision: precision, Scale: scale);
-        }
-
-        if (types.All(t => t.IsInteger || t.IsMoney) && types.Any(t => t.IsMoney))
-            return Parse(types.Any(t => t.Name == "money") ? "money" : "smallmoney");
-        if (types.All(t => t.IsInteger))
-            return types.MaxBy(t => Rank(t.Name))! with { Digits = null };
-        if (types.All(t => t.Name is "date" or "smalldatetime" or "datetime" or "datetime2"))
-        {
-            if (types.Any(t => t.Name == "datetime2"))
-                return new ScalarType("datetime2", Precision: types.Max(t => t.Name switch { "datetime2" => t.Precision, "datetime" => 3, _ => 0 }));
-            return new ScalarType(types.Any(t => t.Name == "datetime") ? "datetime" : types.Any(t => t.Name == "smalldatetime") ? "smalldatetime" : "date");
-        }
-
-        return types.Select(t => t.Text).Distinct().Count() == 1 ? types[0] with { Digits = null } : null;
+    /// <summary>
+    /// Whether every value of <paramref name="from"/> is the same value in <paramref name="to"/>, so the facts proved of it
+    /// (bounds, lengths, a closed set) still hold once converted: an exact number into one holding all its integer digits and
+    /// places, a string into a varying string as long, of the same kind. Not a float (whose digits are approximate), not a
+    /// rounded decimal, not a string padded or cut short.
+    /// </summary>
+    public static bool Preserves(ScalarType from, ScalarType to)
+    {
+        if (from.Text == to.Text)
+            return true;
+        if (from.IsString && to.IsString)
+            return from.IsNational == to.IsNational && to.Name.EndsWith("varchar", StringComparison.Ordinal) && (to.IsMax || (!from.IsMax && to.Length >= from.Length));
+        if (!(from.IsInteger || from.IsDecimal || from.IsMoney) || !Converts(from, to))
+            return false;
+        if (to.IsInteger || to.IsMoney)
+            return from.IsInteger || (from.Name == "smallmoney" && to.Name == "money");
+        if (!to.IsDecimal)
+            return false;
+        var (p, s) = from.AsDecimal();
+        return to.Precision - to.Scale >= p - s && to.Scale >= s;
     }
 
     // ---- arithmetic ---------------------------------------------------------------------------------------------------
@@ -412,19 +483,39 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
             "real" => from.IsExact || from.Name == "real",
             "money" => (from.IsInteger && from.Name != "bigint") || from.Name is "bit" or "smallmoney" || (from.IsDecimal && from.Precision - from.Scale <= 14),
             "date" => from.Name is "date" or "datetime" or "datetime2" or "smalldatetime" or "datetimeoffset",
-            "smalldatetime" => from.Name == "smalldatetime",
+
+            // A time is that time on 1 January 1900, rounding into the 2nd at most; a tinyint or bit that many days from 1900,
+            // a smallint too within datetime's range (1753 to 9999) but not smalldatetime's (1900 to 2079); a date before
+            // 1753 or 1900 overflows (observed: A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges,
+            // A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
+            "smalldatetime" => from.Name is "smalldatetime" or "time" or "tinyint" or "bit",
             "datetime2" => from.Name switch
             {
                 "date" or "smalldatetime" => true,
                 "datetime" => to.Precision >= 3,
-                "datetime2" => to.Precision >= from.Precision,
+                "datetime2" or "time" => to.Precision >= from.Precision,
                 _ => false,
             },
-            "datetime" => from.Name is "datetime" or "smalldatetime",
+            "datetimeoffset" => from.Name switch
+            {
+                "date" or "smalldatetime" => true,
+                "datetime" => to.Precision >= 3,
+                "datetime2" or "time" or "datetimeoffset" => to.Precision >= from.Precision,
+                _ => false,
+            },
+            "datetime" => from.Name is "datetime" or "smalldatetime" or "time" or "tinyint" or "smallint" or "bit",
             "time" => from.Name == "time" && to.Precision >= from.Precision,
             _ => false,
         };
     }
+
+    /// <summary>
+    /// Whether converting a value of <paramref name="from"/> to <paramref name="to"/> can never give NULL for a value that is
+    /// not: <see cref="Converts"/>, or a string into uniqueidentifier, which is the text's first 36 characters or fails, an error
+    /// under any options (observed: A_string_that_is_not_a_value_of_the_type_is_an_error_even_under_the_callers_options). Not
+    /// in <see cref="Converts"/>, which also says TRY_CAST cannot fail.
+    /// </summary>
+    public static bool NeverNull(ScalarType from, ScalarType to) => Converts(from, to) || (from.IsString && to.Name == "uniqueidentifier");
 
     /// <summary>
     /// Whether a literal's value converts to <paramref name="to"/> without an overflow: an integer within its range, or within

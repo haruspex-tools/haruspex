@@ -1,0 +1,160 @@
+{
+  "irVersion": "0.15",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "bazaar.lenient",
+      "name": "Lenient",
+      "kind": "procedure",
+      "at": "procedures/lenient.sql:8:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LenientResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LenientResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "LenientResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bazaar.lenient",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "fee",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "smallmoney",
+            "digits": {
+              "precision": 10,
+              "scale": 4,
+              "from": {
+                "type": "smallmoney"
+              }
+            },
+            "min": {
+              "value": -214748.3648,
+              "inclusive": true,
+              "from": {
+                "type": "smallmoney"
+              }
+            },
+            "max": {
+              "value": 214748.3647,
+              "inclusive": true,
+              "from": {
+                "type": "smallmoney"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/lenient.sql:14:12"
+            }
+          ]
+        },
+        {
+          "name": "moment",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/lenient.sql:14:28"
+            }
+          ]
+        },
+        {
+          "name": "ticket",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/lenient.sql:14:50"
+            }
+          ]
+        }
+      ]
+    },
+    "LenientResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bazaar.lenient",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "day",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "smalldatetime"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/lenient.sql:25:12"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

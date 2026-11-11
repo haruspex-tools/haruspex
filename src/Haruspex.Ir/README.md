@@ -380,7 +380,8 @@ rules, each observed, are in `Haruspex.SqlServer.Inference/README.md` ("Expressi
   `nvarchar(15)` for `CONCAT` of a `varchar(5)` and an `nvarchar(10)`), with that type's facets only: a column's `CHECK` set or
   bounds do not survive an expression, except a conversion to the column's own type or `ISNULL` of a value never null, which
   give the value unchanged. The differential tests compare each rowset column's `sql` with the server's own description.
-- **`arithmetic-overflow`**: arithmetic, a `SUM`, or a conversion (`CAST`, `CONVERT`, an assignment, a function's argument)
+- **`arithmetic-overflow`**: arithmetic, a `SUM`, or a conversion (`CAST`, `CONVERT`, an assignment, a function's argument,
+  and since slice 6k a value converted to the type of a set operation's column, `COALESCE` or `CASE`)
   that can overflow its type, or a division that can divide by zero. By default that is an error, which fails the call; under
   a caller's `ANSI_WARNINGS` and `ARITHABORT` off it is NULL, and a procedure cannot prevent that, as for `count-overflow`. So
   `CONVERT(decimal(19,2), SUM(amount))` is nullable for it, and `COALESCE(SUM(amount), 0)` is not. A conversion that cannot
@@ -430,7 +431,7 @@ FULL OUTER JOIN", "OPENJSON"). For the IR:
 
 - A set operation's column is named by its first query and has the SQL type SQL Server gives it, the one of highest
   precedence over every query's. Its facets are those every query whose values come out shares when each is already of
-  that type, and otherwise the type's; its `values` are the union of those queries' sets (a `CHECK`'s, or the literal a
+  that type, and otherwise the type's (widened in slice 6k: "Combining types" below); its `values` are the union of those queries' sets (a `CHECK`'s, or the literal a
   query gives, `from` `{ "expression": "<location>" }` as for `CASE`), left out when any has none or they are of different
   `match`. `INTERSECT` and `EXCEPT` give the left side's values only.
 - Its nullability: `UNION` and `UNION ALL` give every query's reasons (a `NULL` literal as `null-literal`), `INTERSECT` none
@@ -479,6 +480,27 @@ read (slice 6j); the engine rules, each observed, are in `Haruspex.SqlServer.Inf
 - New null rules: **`domain-error`** (`SQRT`, `LOG`, `LOG10` or `POWER` given a value outside its domain: an invalid floating
   point operation, error 3623 by default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off) and
   **`too-few-values`** (`STDEV` or `VAR`, NULL over fewer than two values, with `GROUP BY` and over a window too).
+
+## Combining types (slice 6k, still 0.15)
+
+A set operation's column, `COALESCE`, and `CASE`, `IIF` and `CHOOSE` over values of different types are typed by one rule,
+data type precedence over every value, for every pair of the types the expressions model; the engine rules, each observed,
+are in `Haruspex.SqlServer.Inference/README.md` ("Combining types"). For the IR:
+
+- The column has the SQL type SQL Server gives it. Pairs it used to leave unknown (decimals past 38 digits, a string beside a
+  number, a date or a `uniqueidentifier`, `bit` beside a number, the date and time types with each other, `float` beside a
+  date) now have one.
+- `arithmetic-overflow` also names a value converted to that type that may not fit it (`bigint` into `smallmoney`, `date` into
+  `smalldatetime`, a string into a number), at the value's set operation query or at the `COALESCE` or `CASE`. Such a column
+  used to be unknown.
+- A set operation's facets: a query whose values convert unchanged keeps its facets, any other brings the type's, and the
+  column has the looser of each, so a range or a length covers every query. Its `values` are kept only when every query's set
+  still holds converted.
+- Types SQL Server refuses to combine (an operand type clash, 206) stay unknown (`unsupported-expression`), the detail naming
+  both types.
+
+No record, rule or reason was added, and every meaning stays as 0.15 describes it, so the version is unchanged: a 0.15 reader
+reads these documents as they are.
 
 Changes in 0.15 (slice 6j, decimal arithmetic and the numeric functions): the null rules `domain-error` and `too-few-values`.
 Decimal arithmetic past 38 digits, `%`, `AVG`, the statistics and the numeric functions were unknown

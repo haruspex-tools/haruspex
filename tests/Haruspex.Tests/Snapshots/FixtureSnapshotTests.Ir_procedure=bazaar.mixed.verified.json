@@ -1,0 +1,430 @@
+{
+  "irVersion": "0.15",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "bazaar.mixed",
+      "name": "Mixed",
+      "kind": "procedure",
+      "at": "procedures/mixed.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MixedResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MixedResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MixedResult3Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MixedResult4Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MixedResult5Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "MixedResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bazaar.mixed",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,8)",
+            "digits": {
+              "precision": 38,
+              "scale": 8,
+              "from": {
+                "type": "decimal(38,8)"
+              }
+            },
+            "min": {
+              "value": -999999999999999999999999999999.99999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,8)"
+              }
+            },
+            "max": {
+              "value": 999999999999999999999999999999.99999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:14:8"
+            },
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:17:8"
+            },
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:20:8"
+            }
+          ]
+        },
+        {
+          "name": "at_time",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(7)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:8:32"
+            },
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:11:19"
+            },
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:20:14"
+            }
+          ]
+        },
+        {
+          "name": "ref",
+          "type": {
+            "kind": "uuid",
+            "sql": "uniqueidentifier"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:8:66"
+            },
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:11:25"
+            },
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:14:24"
+            },
+            {
+              "rule": "nullable-column",
+              "at": "bazaar.web_order.voucher"
+            }
+          ]
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:8:95"
+            },
+            {
+              "rule": "nullable-column",
+              "at": "bazaar.barter.memo"
+            },
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:20:31"
+            }
+          ]
+        },
+        {
+          "name": "count_of",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "null-literal",
+              "at": "procedures/mixed.sql:20:37"
+            }
+          ]
+        }
+      ]
+    },
+    "MixedResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bazaar.mixed",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "units",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": 1,
+              "inclusive": true,
+              "from": {
+                "check": "bazaar.ck_stall_sale_qty"
+              }
+            },
+            "max": {
+              "value": 100,
+              "inclusive": true,
+              "from": {
+                "check": "bazaar.ck_stall_sale_qty"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "MixedResult3Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bazaar.mixed",
+        "path": "results[2][]"
+      },
+      "fields": [
+        {
+          "name": "day",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(3)"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "MixedResult4Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bazaar.mixed",
+        "path": "results[3][]"
+      },
+      "fields": [
+        {
+          "name": "band",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,0)",
+            "digits": {
+              "precision": 38,
+              "scale": 0,
+              "from": {
+                "type": "decimal(38,0)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,0)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,0)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "MixedResult5Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bazaar.mixed",
+        "path": "results[4][]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "voucher_or_ref",
+          "type": {
+            "kind": "uuid",
+            "sql": "uniqueidentifier"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "qty_or_price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "big_or_half",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "numeric(38,0)",
+            "digits": {
+              "precision": 38,
+              "scale": 0,
+              "from": {
+                "type": "numeric(38,0)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(38,0)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(38,0)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

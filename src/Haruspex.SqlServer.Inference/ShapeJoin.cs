@@ -57,6 +57,21 @@ internal static class ShapeJoin
         return Either(typed, other, at, what);
     }
 
+    /// <summary>
+    /// The facets true of a value drawn from any of <paramref name="each"/> (as <see cref="Lub"/>: a fact one lacks is dropped,
+    /// of two the looser kept), and where none is left, the type's own (<paramref name="type"/>), which every value has. For a
+    /// set operation's column whose queries' values convert unchanged (slice 6k).
+    /// </summary>
+    public static IrFacets? Widened(IReadOnlyList<IrFacets?> each, IrFacets? type)
+    {
+        var lub = each.Count == 0 ? null : each.Skip(1).Aggregate(each[0], Lub);
+        if (lub is null)
+            return type;
+        if (type is null)
+            return lub;
+        return new IrFacets(lub.Length ?? type.Length, lub.MinLength ?? type.MinLength, lub.Digits ?? type.Digits, lub.Min ?? type.Min, lub.Max ?? type.Max, lub.Values ?? type.Values);
+    }
+
     /// <summary>The reasons of both, each once, in order.</summary>
     public static IReadOnlyList<IrNullReason> Reasons(IReadOnlyList<IrNullReason> a, IReadOnlyList<IrNullReason> b) =>
         b.Count == 0 ? a : a.Count == 0 ? b : [.. a.Concat(b).Distinct()];

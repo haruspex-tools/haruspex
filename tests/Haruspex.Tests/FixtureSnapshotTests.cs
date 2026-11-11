@@ -28,6 +28,7 @@ public class FixtureSnapshotTests
         ["sets"] = new(() => SqlProject.Load(TestPaths.Fixture("sets"))),
         ["funcs"] = new(() => SqlProject.Load(TestPaths.Fixture("funcs"))),
         ["ledger"] = new(() => SqlProject.Load(TestPaths.Fixture("ledger"))),
+        ["bazaar"] = new(() => SqlProject.Load(TestPaths.Fixture("bazaar"))),
     };
 
     /// <summary>Every fixture procedure, with its fixture. Procedure ids are unique across fixtures.</summary>
@@ -135,6 +136,9 @@ public class FixtureSnapshotTests
         ["ledger.account_stats"] = "ledger",
         ["ledger.line_windows"] = "ledger",
         ["ledger.lenient"] = "ledger",
+        ["bazaar.sales_feed"] = "bazaar",
+        ["bazaar.mixed"] = "bazaar",
+        ["bazaar.lenient"] = "bazaar",
         ["flow.region_report"] = "flow",
         ["flow.region_sales"] = "flow",
         ["flow.sales_by_mode"] = "flow",

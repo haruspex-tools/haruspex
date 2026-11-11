@@ -352,7 +352,7 @@ internal sealed partial class ProcedureAnalyzer
         if (types.Count > 0 && types.All(t => t is { IsInteger: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
             type = types[0]! with { Digits = null };
         else if (types.Count > 0 && types.All(t => t is { IsDecimal: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
-            type = ScalarType.Union(types!);
+            type = ScalarType.Common(types!) is { } common && types.All(t => ScalarType.Converts(t!, common)) ? common : null;
         if (type is null)
             return LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedSource, $"{Text(reference)}: its arguments must be of one integer type, or decimals.", at));
         return new LocalRelationValues(["value"], [Typed(type, [], reference)], null);

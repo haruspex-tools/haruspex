@@ -28,7 +28,7 @@ public sealed record ProcedureRun(
 public static class Runs
 {
     /// <summary>The fixtures deployed into the test database. Their schemas must not overlap.</summary>
-    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs", "cases", "sets", "funcs", "ledger"];
+    public static IReadOnlyList<string> Fixtures { get; } = ["orders", "values", "checks", "payloads", "trees", "flow", "calls", "refine", "dml", "apply", "tabs", "cases", "sets", "funcs", "ledger", "bazaar"];
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (Coverage.MissingEdges): each bound, each value
@@ -63,6 +63,7 @@ public static class Runs
     private const string NoGym = "DELETE FROM gym.visit; DELETE FROM gym.member;";
     private const string NoLines = "DELETE FROM ledger.line;";
     private const string Lenient = "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;";
+    private const string NoMarketDay = "DELETE FROM bazaar.stall_sale; DELETE FROM bazaar.web_order; DELETE FROM bazaar.auction_lot; DELETE FROM bazaar.barter;";
 
     private static readonly Dictionary<string, object?> None = [];
 
@@ -355,6 +356,11 @@ public static class Runs
         new("ledger: account_stats, empty ledger", "ledger", "ledger.account_stats", new Dictionary<string, object?> { ["@account_id"] = 1 }, NoLines),
         new("ledger: line_windows", "ledger", "ledger.line_windows", None),
         new("ledger: lenient, under ANSI_WARNINGS and ARITHABORT off", "ledger", "ledger.lenient", None, Lenient),
+        new("bazaar: sales_feed", "bazaar", "bazaar.sales_feed", None),
+        new("bazaar: sales_feed, no sales", "bazaar", "bazaar.sales_feed", None, NoMarketDay),
+        new("bazaar: mixed", "bazaar", "bazaar.mixed", None),
+        new("bazaar: mixed, under ANSI_WARNINGS and ARITHABORT off", "bazaar", "bazaar.mixed", None, Lenient),
+        new("bazaar: lenient, under ANSI_WARNINGS and ARITHABORT off", "bazaar", "bazaar.lenient", None, Lenient),
     ];
 
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>
