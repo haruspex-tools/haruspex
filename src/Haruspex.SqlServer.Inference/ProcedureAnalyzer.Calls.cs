@@ -178,7 +178,13 @@ internal sealed partial class ProcedureAnalyzer
         declaredUsed = declaredUsed.Union(walked.Declared);
         var own = target is ProcedureCall call ? Created(call.Procedure) : [];
         if (needEscapes)
-            Escaped([.. walked.Escapes.Select(e => { var back = Returned(state, e, own, at); return inserting ? back : back.WithResults(state.Results.Then(e.Results)); })]);
+        {
+            Escaped([.. walked.Escapes.Select(e =>
+            {
+                var back = Returned(state, e, own, at);
+                return inserting ? back : back.WithResults(state.Results.Then(e.Results));
+            })]);
+        }
         return walked.End is { } end
             ? new Called(Returned(state, end, own, at), end.Results, null)
             : new Called(null, ResultTrack.None, null);

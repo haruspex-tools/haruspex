@@ -147,7 +147,7 @@ internal sealed partial class ProcedureAnalyzer
         return ShapeJoin.Reasons(left, right);
     }
 
-    /// <summary>One column of a set operation, from that column of every query (see <see cref="Combine"/>).</summary>
+    /// <summary>One column of a set operation, from that column of every query (see <see cref="Combine(List{Row}, List{BinaryQueryExpression}, SourceLocation)"/>).</summary>
     private Value SetColumn(List<RowColumn> columns, SetNode node, SourceLocation at)
     {
         static bool IsNull(RowColumn c) => c.Expression is { } e && Strip(e) is NullLiteral;

@@ -64,7 +64,7 @@ internal readonly record struct Exact(BigInteger Unscaled, int Scale) : ICompara
     /// <summary>This moved by <paramref name="direction"/> steps of 10^-<paramref name="scale"/>.</summary>
     public Exact Step(int scale, int direction) =>
         Scale <= scale
-            ? Normalise(Unscaled * BigInteger.Pow(10, scale - Scale) + direction, scale)
+            ? Normalise((Unscaled * BigInteger.Pow(10, scale - Scale)) + direction, scale)
             : throw new InvalidOperationException($"{this} has more than {scale} decimal places.");
 
     public int CompareTo(Exact other)

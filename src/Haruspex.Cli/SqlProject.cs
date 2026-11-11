@@ -17,7 +17,7 @@ namespace Haruspex.Cli;
 /// composing the layers is the CLI's job and no layer below may know both how a model is read and how it is
 /// inferred.
 /// </remarks>
-public sealed class SqlProject
+internal sealed class SqlProject
 {
     private readonly DatabaseModel model;
 
@@ -109,4 +109,4 @@ public sealed class SqlProject
 }
 
 /// <summary>The outcome of <see cref="SqlProject.Select"/>.</summary>
-public sealed record Selection(IReadOnlyList<ObjectName> Procedures, IReadOnlyList<ObjectPattern> Unmatched);
+internal sealed record Selection(IReadOnlyList<ObjectName> Procedures, IReadOnlyList<ObjectPattern> Unmatched);

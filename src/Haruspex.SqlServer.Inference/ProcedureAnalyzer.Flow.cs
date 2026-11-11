@@ -534,7 +534,7 @@ internal sealed partial class ProcedureAnalyzer
         {
             if (bound[i] is not { } binding)
                 return element.Expression is ParenthesisExpression ? null : false;
-            bool? identity = binding switch
+            var identity = binding switch
             {
                 BoundColumn column => column.Column.IsIdentity,
                 BoundLocalColumn { Relation: var relation, Ordinal: >= 0 and var ordinal } when locals!.IsTemporary(relation)

@@ -9,25 +9,14 @@ namespace Haruspex.SqlServer.Model;
 /// follows from its declaration, its key and its identity together; that interpretation belongs to whoever reads
 /// the model (in haruspex, Haruspex.SqlServer.Semantics), not to the model.
 /// </remarks>
-public sealed class Table
+/// <param name="name">Its name.</param>
+/// <param name="columns">Its columns, in declaration order.</param>
+/// <param name="primaryKey">The names of its primary key's columns, or none.</param>
+/// <param name="at">Where it is defined.</param>
+/// <param name="checks">Its CHECK constraints, on the table or on a column, in declaration order.</param>
+/// <param name="uniqueKeys">Its primary key and unique constraints, and unique indexes without a filter declared with it.</param>
+public sealed class Table(ObjectName name, IReadOnlyList<Column> columns, IReadOnlyList<string> primaryKey, SourceLocation at, IReadOnlyList<CheckConstraint>? checks = null, IReadOnlyList<UniqueKey>? uniqueKeys = null)
 {
-    /// <summary>Creates a table.</summary>
-    /// <param name="name">Its name.</param>
-    /// <param name="columns">Its columns, in declaration order.</param>
-    /// <param name="primaryKey">The names of its primary key's columns, or none.</param>
-    /// <param name="at">Where it is defined.</param>
-    /// <param name="checks">Its CHECK constraints, on the table or on a column, in declaration order.</param>
-    /// <param name="uniqueKeys">Its primary key and unique constraints, and unique indexes without a filter declared with it.</param>
-    public Table(ObjectName name, IReadOnlyList<Column> columns, IReadOnlyList<string> primaryKey, SourceLocation at, IReadOnlyList<CheckConstraint>? checks = null, IReadOnlyList<UniqueKey>? uniqueKeys = null)
-    {
-        Name = name;
-        Columns = columns ?? throw new ArgumentNullException(nameof(columns));
-        PrimaryKey = primaryKey ?? throw new ArgumentNullException(nameof(primaryKey));
-        At = at ?? throw new ArgumentNullException(nameof(at));
-        Checks = checks ?? [];
-        UniqueKeys = uniqueKeys ?? [];
-    }
-
     /// <summary>
     /// Reads a table definition as written: in a <c>CREATE TABLE</c>, and equally in a body's <c>CREATE TABLE #t</c>,
     /// <c>DECLARE @t TABLE</c> or <c>ALTER TABLE … ADD</c>, which share ScriptDom's <see cref="TableDefinition"/>.
@@ -110,28 +99,28 @@ public sealed class Table
         new(check.ConstraintIdentifier?.Value, check.CheckCondition, column, check.NotForReplication, new SourceLocation(file, check.StartLine, check.StartColumn));
 
     /// <summary>The CHECK constraints, whether declared on the table or on a column, in declaration order.</summary>
-    public IReadOnlyList<CheckConstraint> Checks { get; }
+    public IReadOnlyList<CheckConstraint> Checks { get; } = checks ?? [];
 
     /// <summary>The table's name.</summary>
-    public ObjectName Name { get; }
+    public ObjectName Name { get; } = name;
 
     /// <summary>The columns, in declaration order.</summary>
-    public IReadOnlyList<Column> Columns { get; }
+    public IReadOnlyList<Column> Columns { get; } = columns ?? throw new ArgumentNullException(nameof(columns));
 
     /// <summary>
     /// The names of the primary key's columns, in key order, whether it is declared on the table or on a
     /// column. Empty when there is none.
     /// </summary>
-    public IReadOnlyList<string> PrimaryKey { get; }
+    public IReadOnlyList<string> PrimaryKey { get; } = primaryKey ?? throw new ArgumentNullException(nameof(primaryKey));
 
     /// <summary>Where the table is defined.</summary>
-    public SourceLocation At { get; }
+    public SourceLocation At { get; } = at ?? throw new ArgumentNullException(nameof(at));
 
     /// <summary>
     /// Its primary key, unique constraints and unique indexes, each a set of columns no two rows share (SQL Server counts
     /// NULLs as equal there, so one NULL at most). Only what the table's definition declares; see <see cref="UniqueKey.DisabledAt"/>.
     /// </summary>
-    public IReadOnlyList<UniqueKey> UniqueKeys { get; }
+    public IReadOnlyList<UniqueKey> UniqueKeys { get; } = uniqueKeys ?? [];
 
     /// <summary>
     /// Whether it is a graph table (<c>AS NODE</c> or <c>AS EDGE</c>), whose <c>SELECT *</c> includes pseudo-columns the
@@ -151,53 +140,41 @@ public sealed class Table
 }
 
 /// <summary>A column as declared.</summary>
-public sealed class Column
+/// <param name="name">Its name.</param>
+/// <param name="type">Its declared type; null for a computed column, whose type comes from its expression.</param>
+/// <param name="nullability">What its declaration says about null.</param>
+/// <param name="isIdentity">Whether it is an <c>IDENTITY</c> column.</param>
+/// <param name="computedExpression">The expression of a computed column, or null.</param>
+/// <param name="at">Where it is declared.</param>
+/// <param name="collation">The collation its declaration names (<c>COLLATE Latin1_General_100_BIN2</c>), or null.</param>
+public sealed class Column(string name, SqlType? type, DeclaredNullability nullability, bool isIdentity, ScalarExpression? computedExpression, SourceLocation at, string? collation = null)
 {
-    /// <summary>Creates a column.</summary>
-    /// <param name="name">Its name.</param>
-    /// <param name="type">Its declared type; null for a computed column, whose type comes from its expression.</param>
-    /// <param name="nullability">What its declaration says about null.</param>
-    /// <param name="isIdentity">Whether it is an <c>IDENTITY</c> column.</param>
-    /// <param name="computedExpression">The expression of a computed column, or null.</param>
-    /// <param name="at">Where it is declared.</param>
-    /// <param name="collation">The collation its declaration names (<c>COLLATE Latin1_General_100_BIN2</c>), or null.</param>
-    public Column(string name, SqlType? type, DeclaredNullability nullability, bool isIdentity, ScalarExpression? computedExpression, SourceLocation at, string? collation = null)
-    {
-        Collation = collation;
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Type = type;
-        Nullability = nullability;
-        IsIdentity = isIdentity;
-        ComputedExpression = computedExpression;
-        At = at ?? throw new ArgumentNullException(nameof(at));
-    }
-
     /// <summary>The column's name as declared.</summary>
-    public string Name { get; }
+    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
     /// <summary>The declared type, or null when none is declared (a computed column).</summary>
-    public SqlType? Type { get; }
+    public SqlType? Type { get; } = type;
 
     /// <summary>Whether the declaration says <c>NULL</c>, <c>NOT NULL</c> or neither.</summary>
-    public DeclaredNullability Nullability { get; }
+    public DeclaredNullability Nullability { get; } = nullability;
 
     /// <summary>Whether it is an <c>IDENTITY</c> column.</summary>
-    public bool IsIdentity { get; }
+    public bool IsIdentity { get; } = isIdentity;
 
     /// <summary>Whether it is a computed column.</summary>
     public bool IsComputed => ComputedExpression is not null;
 
     /// <summary>The expression of a computed column (<c>b AS a * 2</c>), as ScriptDom parsed it; null otherwise.</summary>
-    public ScalarExpression? ComputedExpression { get; }
+    public ScalarExpression? ComputedExpression { get; } = computedExpression;
 
     /// <summary>Where the column is declared.</summary>
-    public SourceLocation At { get; }
+    public SourceLocation At { get; } = at ?? throw new ArgumentNullException(nameof(at));
 
     /// <summary>
     /// The collation named by the column's <c>COLLATE</c> clause, or null when it names none. Without one the
     /// database's default applies, which a folder of scripts does not record.
     /// </summary>
-    public string? Collation { get; }
+    public string? Collation { get; } = collation;
 
     /// <summary>Whether it is declared <c>HIDDEN</c> (a period column of a temporal table), which <c>SELECT *</c> leaves out.</summary>
     public bool IsHidden { get; init; }
@@ -238,49 +215,38 @@ public sealed record UniqueKey(string? Name, IReadOnlyList<string> Columns, bool
 /// Only the declaration: what it implies for values (a value set, a range) is an interpretation, which belongs to
 /// whoever reads the model (in haruspex, Haruspex.SqlServer.Semantics).
 /// </remarks>
-public sealed class CheckConstraint
+/// <param name="name">Its name, or null when SQL Server is left to generate one.</param>
+/// <param name="expression">Its condition, as ScriptDom parsed it.</param>
+/// <param name="column">The column it is declared on, for a column constraint; null for a table constraint.</param>
+/// <param name="isNotForReplication">Whether it is declared <c>NOT FOR REPLICATION</c>.</param>
+/// <param name="at">Where it is declared.</param>
+/// <param name="disabledAt">Where a later statement may disable it (<c>ALTER TABLE … NOCHECK CONSTRAINT</c>), or null.</param>
+public sealed class CheckConstraint(string? name, BooleanExpression expression, string? column, bool isNotForReplication, SourceLocation at, SourceLocation? disabledAt = null)
 {
-    /// <summary>Creates a check constraint.</summary>
-    /// <param name="name">Its name, or null when SQL Server is left to generate one.</param>
-    /// <param name="expression">Its condition, as ScriptDom parsed it.</param>
-    /// <param name="column">The column it is declared on, for a column constraint; null for a table constraint.</param>
-    /// <param name="isNotForReplication">Whether it is declared <c>NOT FOR REPLICATION</c>.</param>
-    /// <param name="at">Where it is declared.</param>
-    /// <param name="disabledAt">Where a later statement may disable it (<c>ALTER TABLE … NOCHECK CONSTRAINT</c>), or null.</param>
-    public CheckConstraint(string? name, BooleanExpression expression, string? column, bool isNotForReplication, SourceLocation at, SourceLocation? disabledAt = null)
-    {
-        Name = name;
-        Expression = expression ?? throw new ArgumentNullException(nameof(expression));
-        Column = column;
-        IsNotForReplication = isNotForReplication;
-        At = at ?? throw new ArgumentNullException(nameof(at));
-        DisabledAt = disabledAt;
-    }
-
     /// <summary>The constraint's name, or null when none is declared.</summary>
-    public string? Name { get; }
+    public string? Name { get; } = name;
 
     /// <summary>The condition.</summary>
-    public BooleanExpression Expression { get; }
+    public BooleanExpression Expression { get; } = expression ?? throw new ArgumentNullException(nameof(expression));
 
     /// <summary>The column a column constraint is declared on; null for a table constraint.</summary>
-    public string? Column { get; }
+    public string? Column { get; } = column;
 
     /// <summary>
     /// Whether it is declared <c>NOT FOR REPLICATION</c>, so that rows written by a replication agent are not
     /// checked.
     /// </summary>
-    public bool IsNotForReplication { get; }
+    public bool IsNotForReplication { get; } = isNotForReplication;
 
     /// <summary>Where it is declared.</summary>
-    public SourceLocation At { get; }
+    public SourceLocation At { get; } = at ?? throw new ArgumentNullException(nameof(at));
 
     /// <summary>
     /// Where a statement after the definition may disable it, such as <c>ALTER TABLE … NOCHECK CONSTRAINT</c>
     /// naming it or <c>ALL</c>; null when none does. Which runs last depends on the order of the scripts, which
     /// the source does not say.
     /// </summary>
-    public SourceLocation? DisabledAt { get; }
+    public SourceLocation? DisabledAt { get; } = disabledAt;
 
     /// <summary>A copy that a later statement may disable.</summary>
     public CheckConstraint WithDisabledAt(SourceLocation at) => new(Name, Expression, Column, IsNotForReplication, At, at);

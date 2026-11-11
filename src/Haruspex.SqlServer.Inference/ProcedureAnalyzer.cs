@@ -39,8 +39,8 @@ internal sealed partial class ProcedureAnalyzer
     private readonly string file;
     private readonly FunctionSummaries functions;
 
-    /// <summary>Whether the body is read uncommitted where it is used (see <see cref="ReadUncommitted"/>).</summary>
-    private readonly bool uncommittedReads;
+    /// <summary>Whether the whole body is read uncommitted where it is used (see <see cref="ReadUncommitted"/>).</summary>
+    private bool BodyReadUncommitted { get; }
 
     /// <summary>What each view holds (ProcedureAnalyzer.Views.cs); null leaves views unmodelled.</summary>
     private readonly ViewSummaries? views;
@@ -57,7 +57,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <param name="parameters">Inside a function, its parameters' values.</param>
     /// <param name="calls">The calls being followed, inside a procedure; null inside a function, which cannot call one.</param>
     /// <param name="context">What a procedure's walk starts from: its caller's temporary tables, and how it is called.</param>
-    /// <param name="ansiNullsOff">Whether the body was created with ANSI_NULLS off (see <see cref="Refinement"/>).</param>
+    /// <param name="ansiNullsOff">Whether the body was created with ANSI_NULLS off (see <see cref="ansiNullsOff"/>).</param>
     /// <param name="views">What each view of the project holds, read from its definition; null leaves views unmodelled.</param>
     /// <param name="uncommittedReads">
     /// Whether the body (a view's, a function's) is read uncommitted where it is used, so that no key of what it reads holds.
@@ -73,7 +73,7 @@ internal sealed partial class ProcedureAnalyzer
         ViewSummaries? views = null,
         bool uncommittedReads = false)
     {
-        this.uncommittedReads = uncommittedReads;
+        BodyReadUncommitted = uncommittedReads;
         this.views = views;
         this.ansiNullsOff = ansiNullsOff;
         this.model = model;
@@ -118,9 +118,9 @@ internal sealed partial class ProcedureAnalyzer
     /// NOEXEC, FMTONLY and PARSEONLY stop the rows from being returned at all, and turning off ANSI_WARNINGS
     /// or CONCAT_NULL_YIELDS_NULL changes where expressions produce null.
     /// </summary>
-    private static readonly SetOptions AnyValue = SetOptions.NoCount | SetOptions.XactAbort;
+    private const SetOptions AnyValue = SetOptions.NoCount | SetOptions.XactAbort;
 
-    private static readonly SetOptions OnlyOn =
+    private const SetOptions OnlyOn =
         SetOptions.AnsiNulls | SetOptions.AnsiPadding | SetOptions.AnsiWarnings | SetOptions.QuotedIdentifier | SetOptions.ArithAbort;
 
     private static bool IsHarmless(PredicateSetStatement set) =>
@@ -154,7 +154,7 @@ internal sealed partial class ProcedureAnalyzer
                 var row = Query(query, parent: null);
                 return ForOf(query) switch
                 {
-                    JsonForClause json => new ResultShape(IrEncoding.Json, ForJson(row, json, at, subquery: false), NoRows(row), row.Rows),
+                    JsonForClause json => new ResultShape(IrEncoding.Json, ForJson(row, json, subquery: false), NoRows(row), row.Rows),
                     null => new ResultShape(IrEncoding.Rowset, Rowset(row), [], row.Rows),
                     var other => new ResultShape(IrEncoding.Rowset, Unsupported(IrUnknownReasons.UnsupportedQuery, $"{Text(other)} is not modelled yet.", at), []),
                 };
@@ -264,7 +264,7 @@ internal sealed partial class ProcedureAnalyzer
     /// item, and at most one when the query returns at most one row. A result's bounds are its cardinality instead, since
     /// a result that may be absent reads as [] (the IR's reader convention).
     /// </param>
-    private Shape ForJson(Row row, JsonForClause clause, SourceLocation at, bool subquery)
+    private Shape ForJson(Row row, JsonForClause clause, bool subquery)
     {
         var options = clause.Options.Select(o => o.OptionKind).ToHashSet();
         if (options.Contains(JsonForClauseOptions.Auto))
@@ -509,7 +509,7 @@ internal sealed partial class ProcedureAnalyzer
         // makes it JSON again (both observed). Either is null when the subquery returns no rows, unless its query always
         // returns exactly one.
         var forJson = Query(query, scope);
-        var shape = ForJson(forJson, json, at, subquery: true);
+        var shape = ForJson(forJson, json, subquery: true);
         if (shape is UnknownShape unknown)
             return Value.Unknown(unknown);
         IReadOnlyList<IrNullReason> empty = forJson.Rows == IrCardinality.One ? [] : [new IrNullReason(IrNullRules.EmptySubquery, at.ToString())];

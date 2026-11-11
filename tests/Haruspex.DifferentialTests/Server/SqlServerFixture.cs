@@ -163,7 +163,9 @@ public sealed class SqlServerFixture : IAsyncLifetime
                     "CREATE PROCEDURE dbo.gate_probe_write AS SET NOCOUNT ON; INSERT INTO dbo.gate_probe VALUES (1);",
                 })
                 {
+#pragma warning disable CA2100 // The batches are the constant statements just above.
                     await using var command = new SqlCommand(batch, connection);
+#pragma warning restore CA2100
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
 
@@ -319,7 +321,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
             await using var become = new SqlCommand(
                 $"DECLARE @cookie varbinary(8000); EXECUTE AS USER = N'{Reader}' WITH COOKIE INTO @cookie; SELECT @cookie;",
                 connection);
-            var cookie = (byte[])(await become.ExecuteScalarAsync(token).ConfigureAwait(false));
+            var cookie = (byte[])await become.ExecuteScalarAsync(token).ConfigureAwait(false);
             return new ReadSession(connection, cookie, pass);
         }
         catch

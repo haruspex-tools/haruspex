@@ -547,7 +547,9 @@ public static class ConfigReader
                                 result = result with { Type = type };
                             }
                             else
+                            {
                                 Error(member.Value, memberPath, "must be the name of an exported schema, with [] for each level of array, such as \"TagSchema[]\".");
+                            }
                         }
 
                         break;

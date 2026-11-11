@@ -263,16 +263,13 @@ internal sealed class FlowState
                 at));
         }
 
-        switch (a, b)
+        return (a, b) switch
         {
-            case (UnknownTable, _):
-                return a;
-            case (_, UnknownTable):
-                return b;
-            case (AbsentTable, AbsentTable):
-                return a;
-            case (KnownTable x, KnownTable y) when x.Columns.Select(c => c.Name).SequenceEqual(y.Columns.Select(c => c.Name), Names):
-                return new KnownTable(x.Name, [.. x.Columns.Zip(y.Columns, (c, d) => c with
+            (UnknownTable, _) => a,
+            (_, UnknownTable) => b,
+            (AbsentTable, AbsentTable) => a,
+            (KnownTable x, KnownTable y) when x.Columns.Select(c => c.Name).SequenceEqual(y.Columns.Select(c => c.Name), Names)
+                => new KnownTable(x.Name, [.. x.Columns.Zip(y.Columns, (c, d) => c with
                 {
                     Value = ShapeJoin.Either(c.Value, d.Value, at, $"{name}.{c.Name}"),
                     // A column declared alike on both paths keeps its declaration. One declared on some paths only, or
@@ -281,12 +278,10 @@ internal sealed class FlowState
                     Declaration = ReferenceEquals(c.Declaration, d.Declaration) ? c.Declaration : null,
                     Identity = c.Identity == d.Identity ? c.Identity : null,
                     Json = c.Json is { } x && d.Json is { } y ? JsonSlot.Join(x, y) : null,
-                })]);
-            case (KnownTable, KnownTable):
-                return new UnknownTable(new UnknownShape(IrUnknownReasons.UnsupportedStatement, $"{name} has different columns on different paths before {at}.", at));
-            default:
-                return new UnknownTable(new UnknownShape(IrUnknownReasons.UnresolvedTable, $"{name} is dropped on some paths before {at}, so it may not exist there.", at));
-        }
+                })]),
+            (KnownTable, KnownTable) => new UnknownTable(new UnknownShape(IrUnknownReasons.UnsupportedStatement, $"{name} has different columns on different paths before {at}.", at)),
+            _ => new UnknownTable(new UnknownShape(IrUnknownReasons.UnresolvedTable, $"{name} is dropped on some paths before {at}, so it may not exist there.", at)),
+        };
     }
 
     /// <summary>The state as text, for a loop to tell when another pass changes nothing.</summary>

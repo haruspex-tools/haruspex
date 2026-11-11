@@ -1,6 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Haruspex.DifferentialTests.Server;
 
 /// <summary>The gate's rules, without a server. A wait that should not end is given a tenth of a second to.</summary>
+[SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
+    Justification = "Each test releases what it holds by hand, at the moment the rule it tests needs; a using would release it too late.")]
 public class DatabaseGateTests
 {
     private static readonly TimeSpan Moment = TimeSpan.FromMilliseconds(100);

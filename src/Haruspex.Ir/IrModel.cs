@@ -49,8 +49,10 @@ public sealed record IrObject(
     IReadOnlyList<IrParameter> Parameters,
     IReadOnlyList<IrResult>? Results);
 
+/// <summary>What kind of database object an <see cref="IrObject"/> is; each kind is called in its own way.</summary>
 public enum IrObjectKind
 {
+    /// <summary>A stored procedure: called with parameters, it returns zero or more result sets.</summary>
     Procedure,
 }
 
@@ -70,6 +72,7 @@ public sealed record IrParameter(string Name, IrType Type, bool HasDefault, bool
 /// </param>
 public sealed record IrResult(IrEncoding Encoding, IrType Type, IReadOnlyList<IrNullReason> AbsentBecause)
 {
+    /// <summary>Whether the result can arrive with no value at all, which <see cref="AbsentBecause"/> explains.</summary>
     public bool MayBeAbsent => AbsentBecause.Count > 0;
 
     /// <summary>
@@ -93,6 +96,7 @@ public enum IrCardinality
     One,
 }
 
+/// <summary>How a result reaches the caller, which decides how a reader must decode its values.</summary>
 public enum IrEncoding
 {
     /// <summary>Rows and columns, typed by the database driver.</summary>
@@ -189,6 +193,7 @@ public static class IrOverrideSettings
 /// </param>
 public sealed record IrField(string Name, IrType Type, IrPresence Presence, IReadOnlyList<IrNullReason> NullableBecause)
 {
+    /// <summary>Whether the value can be null: true exactly when <see cref="NullableBecause"/> gives a reason.</summary>
     public bool Nullable => NullableBecause.Count > 0;
 }
 
@@ -198,7 +203,10 @@ public sealed record IrField(string Name, IrType Type, IrPresence Presence, IRea
 /// </summary>
 public enum IrPresence
 {
+    /// <summary>The key is always there, with a null value when the value is null: every column of a rowset.</summary>
     Always,
+
+    /// <summary>The key is left out when its value is null, as <c>FOR JSON</c> does without <c>INCLUDE_NULL_VALUES</c>.</summary>
     OmittedWhenNull,
 }
 
@@ -373,6 +381,7 @@ public sealed record IrArray(IrType Items) : IrType
     /// </summary>
     public IReadOnlyList<IrNullReason> ItemsNullableBecause { get; init; } = [];
 
+    /// <summary>Whether an item can be null: true exactly when <see cref="ItemsNullableBecause"/> gives a reason.</summary>
     public bool ItemsNullable => ItemsNullableBecause.Count > 0;
 
     /// <summary>The fewest items a non-null array has, when more than none is proved.</summary>
@@ -393,6 +402,7 @@ public sealed record IrTuple(IReadOnlyList<IrElement> Items) : IrType;
 /// <param name="NullableBecause">Why it can be null; empty when it is proved never null.</param>
 public sealed record IrElement(IrType Type, IReadOnlyList<IrNullReason> NullableBecause)
 {
+    /// <summary>Whether the element can be null: true exactly when <see cref="NullableBecause"/> gives a reason.</summary>
     public bool Nullable => NullableBecause.Count > 0;
 }
 
@@ -404,6 +414,7 @@ public sealed record IrElement(IrType Type, IReadOnlyList<IrNullReason> Nullable
 /// <param name="ValuesNullableBecause">Why a value can be null; empty when no value is ever null.</param>
 public sealed record IrRecord(IrType Values, IReadOnlyList<IrNullReason> ValuesNullableBecause) : IrType
 {
+    /// <summary>Whether a value can be null: true exactly when <see cref="ValuesNullableBecause"/> gives a reason.</summary>
     public bool ValuesNullable => ValuesNullableBecause.Count > 0;
 }
 
@@ -446,8 +457,13 @@ public sealed record IrUnknownType(string Reason) : IrType;
 /// </summary>
 public enum IrScalarKind
 {
+    /// <summary>Text, such as SQL Server's character types give.</summary>
     String,
+
+    /// <summary>A number; <see cref="IrScalar.Format"/> says which (an integer of some width, a decimal, a float).</summary>
     Number,
+
+    /// <summary>True or false: SQL Server's <c>bit</c>.</summary>
     Boolean,
 
     /// <summary>A calendar date, with no time and no time zone.</summary>
@@ -466,8 +482,13 @@ public enum IrScalarKind
 /// <summary>Format refinements of scalar kinds. Dialect-neutral: they describe values, not SQL types.</summary>
 public static class IrFormats
 {
+    /// <summary>An integer from 0 to 255, such as SQL Server's <c>tinyint</c>.</summary>
     public const string Uint8 = "uint8";
+
+    /// <summary>A signed 16-bit integer.</summary>
     public const string Int16 = "int16";
+
+    /// <summary>A signed 32-bit integer, which a JavaScript number holds exactly.</summary>
     public const string Int32 = "int32";
 
     /// <summary>A 64-bit integer: more than a JavaScript number holds exactly.</summary>

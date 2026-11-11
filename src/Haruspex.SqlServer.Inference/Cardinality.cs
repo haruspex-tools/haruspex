@@ -16,7 +16,7 @@ internal sealed partial class ProcedureAnalyzer
     /// Whether the statement being read may read uncommitted: by the procedure's isolation level (FlowState), or because the
     /// view or function body being read is read so where it is used.
     /// </summary>
-    private bool ReadUncommitted => uncommittedReads || locals?.State.ReadUncommitted == true;
+    private bool ReadUncommitted => BodyReadUncommitted || locals?.State.ReadUncommitted == true;
 
     private IrCardinality Cardinality(QuerySpecification query, BindingScope scope)
     {
@@ -343,35 +343,27 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private string? ValueType(ScalarExpression value, BoundSource keySource, BindingScope scope, HashSet<BoundSource> fixedSources)
     {
-        switch (value)
+        return value switch
         {
-            case PrimaryExpression { Collation: not null }:
-                return null;
-            case NullLiteral:
-                return "null";
-            case IntegerLiteral literal:
-                return long.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n <= int.MaxValue ? "int" : "numeric";
-            case NumericLiteral:
-                return "numeric";
-            case StringLiteral literal:
-                return literal.IsNational ? "nvarchar" : "varchar";
-            case VariableReference variable:
-                return variableTypes.TryGetValue(variable.Name, out var declared)
-                    ? SchemaRules.ResolveType(model, declared)?.BuiltIn.Name
-                    : null;
-            case ColumnReferenceExpression reference:
-                return binder.BindColumn(reference, scope) switch
-                {
-                    // A column of an enclosing query is one value while this query runs; one of this query is, once its
-                    // source is fixed. Never the key's own source: t.id = t.n fixes nothing.
-                    BoundColumn bound when !ReferenceEquals(bound.Source, keySource)
-                        && (!scope.Sources.Contains(bound.Source, ReferenceEqualityComparer.Instance) || fixedSources.Contains(bound.Source))
-                        => SchemaRules.ResolveType(model, bound.Column.Type)?.BuiltIn.Name,
-                    _ => null,
-                };
-            default:
-                return null;
-        }
+            PrimaryExpression { Collation: not null } => null,
+            NullLiteral => "null",
+            IntegerLiteral literal => long.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n <= int.MaxValue ? "int" : "numeric",
+            NumericLiteral => "numeric",
+            StringLiteral literal => literal.IsNational ? "nvarchar" : "varchar",
+            VariableReference variable => variableTypes.TryGetValue(variable.Name, out var declared)
+                ? SchemaRules.ResolveType(model, declared)?.BuiltIn.Name
+                : null,
+            ColumnReferenceExpression reference => binder.BindColumn(reference, scope) switch
+            {
+                // A column of an enclosing query is one value while this query runs; one of this query is, once its
+                // source is fixed. Never the key's own source: t.id = t.n fixes nothing.
+                BoundColumn bound when !ReferenceEquals(bound.Source, keySource)
+                    && (!scope.Sources.Contains(bound.Source, ReferenceEqualityComparer.Instance) || fixedSources.Contains(bound.Source))
+                    => SchemaRules.ResolveType(model, bound.Column.Type)?.BuiltIn.Name,
+                _ => null,
+            },
+            _ => null,
+        };
     }
 
     private static readonly HashSet<string> Integers = new(StringComparer.OrdinalIgnoreCase) { "tinyint", "smallint", "int", "bigint" };

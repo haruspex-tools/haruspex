@@ -356,19 +356,14 @@ public sealed class Binder(DatabaseModel model, string file)
         if (execute.LinkedServer is not null)
             return Unknowable(UnknowableCallKind.MissingProcedure, $"{text} runs on the linked server {execute.LinkedServer.Value}, whose procedures are not in the project.");
 
-        switch (execute.ExecutableEntity)
+        return execute.ExecutableEntity switch
         {
-            case ExecutableStringList:
-                return Unknowable(UnknowableCallKind.DynamicSql, $"{text} runs dynamic SQL, a string built when the procedure runs, so its result sets are not known.");
-            case ExecutableProcedureReference { ProcedureReference.ProcedureVariable: { } variable }:
-                return Unknowable(UnknowableCallKind.ProcedureVariable, $"{text} runs the procedure named in {variable.Name}, which is chosen when it runs.");
-            case ExecutableProcedureReference { AdHocDataSource: not null }:
-                return Unknowable(UnknowableCallKind.MissingProcedure, $"{text} runs a procedure through OPENDATASOURCE, which is not in the project.");
-            case ExecutableProcedureReference { ProcedureReference.ProcedureReference.Name: { } name }:
-                return BindProcedure(name, text, at);
-            default:
-                return Unknowable(UnknowableCallKind.MissingProcedure, $"{text} is not a form of EXEC that is modelled.");
-        }
+            ExecutableStringList => Unknowable(UnknowableCallKind.DynamicSql, $"{text} runs dynamic SQL, a string built when the procedure runs, so its result sets are not known."),
+            ExecutableProcedureReference { ProcedureReference.ProcedureVariable: { } variable } => Unknowable(UnknowableCallKind.ProcedureVariable, $"{text} runs the procedure named in {variable.Name}, which is chosen when it runs."),
+            ExecutableProcedureReference { AdHocDataSource: not null } => Unknowable(UnknowableCallKind.MissingProcedure, $"{text} runs a procedure through OPENDATASOURCE, which is not in the project."),
+            ExecutableProcedureReference { ProcedureReference.ProcedureReference.Name: { } name } => BindProcedure(name, text, at),
+            _ => Unknowable(UnknowableCallKind.MissingProcedure, $"{text} is not a form of EXEC that is modelled."),
+        };
     }
 
     private CallTarget BindProcedure(SchemaObjectName name, string text, SourceLocation at)

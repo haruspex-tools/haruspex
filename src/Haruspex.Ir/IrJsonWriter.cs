@@ -23,6 +23,7 @@ public static class IrJsonWriter
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
+    /// <summary>The document as the JSON text of an IR file: the same document always gives the same bytes.</summary>
     public static string Write(IrDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);

@@ -138,7 +138,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The expression json_query is reading, while it is read: a CASE, IIF, CHOOSE or COALESCE there holds JSON whether or not the
-    /// server folds it to one result, so its results' JSON is joined (<see cref="Results"/>, <see cref="Coalesce"/>).
+    /// server folds it to one result, so its results' JSON is joined (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, IReadOnlyList{IrNullReason})"/>, <see cref="Coalesce"/>).
     /// </summary>
     private TSqlFragment? jsonQueryArgument;
 

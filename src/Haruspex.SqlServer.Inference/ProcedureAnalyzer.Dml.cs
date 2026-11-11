@@ -338,7 +338,7 @@ internal sealed partial class ProcedureAnalyzer
             return Outcome.Ends;
         }
 
-        var row = FetchRow(fetch, at);
+        var row = FetchRow(fetch);
         for (var i = 0; i < fetch.IntoVariables.Count; i++)
         {
             var value = row is not null && row.Count == fetch.IntoVariables.Count
@@ -361,7 +361,7 @@ internal sealed partial class ProcedureAnalyzer
     /// known either; a cursor is declared when its DECLARE runs, not when the procedure is compiled (observed:
     /// A_cursor_is_declared_when_its_declare_runs_not_when_the_procedure_is_compiled), so a FETCH where none ran fails.
     /// </summary>
-    private List<Value>? FetchRow(FetchCursorStatement fetch, SourceLocation at)
+    private List<Value>? FetchRow(FetchCursorStatement fetch)
     {
         if (fetch.Cursor?.Name?.Identifier is not { } name || !cursors.TryGetValue(name.Value, out var declared))
             return null;

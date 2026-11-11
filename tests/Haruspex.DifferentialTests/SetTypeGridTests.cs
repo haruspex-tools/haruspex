@@ -126,7 +126,7 @@ public class SetTypeGridTests(SqlServerFixture server)
             if (sql is not null)
             {
                 if (!string.Equals(inferred.GetValueOrDefault(Name(i)), sql, StringComparison.OrdinalIgnoreCase))
-                    differences.Add($"{operands}: haruspex {inferred.GetValueOrDefault(Name(i)) ?? "(unknown: " + unknowns.GetValueOrDefault(Name(i)) + ")"}, SQL Server {sql}");
+                    differences.Add($"{operands}: haruspex {inferred.GetValueOrDefault(Name(i)) ?? ("(unknown: " + unknowns.GetValueOrDefault(Name(i)) + ")")}, SQL Server {sql}");
                 continue;
             }
 
@@ -134,7 +134,7 @@ public class SetTypeGridTests(SqlServerFixture server)
             var why = unknowns.GetValueOrDefault(Name(i));
             var named = combos[i].Select(TypeOf).Distinct().Count(t => why?.Contains(t, StringComparison.Ordinal) == true);
             if (inferred.ContainsKey(Name(i)) || why is null || !why.Contains("refuses", StringComparison.Ordinal) || named < Math.Min(2, combos[i].Select(TypeOf).Distinct().Count()))
-                differences.Add($"{operands}: SQL Server refuses it; haruspex {inferred.GetValueOrDefault(Name(i)) ?? "unknown: " + why}");
+                differences.Add($"{operands}: SQL Server refuses it; haruspex {inferred.GetValueOrDefault(Name(i)) ?? ("unknown: " + why)}");
         }
 
         Assert.True(differences.Count == 0, $"{differences.Count} of {combos.Count} differ:\n" + string.Join("\n", differences));

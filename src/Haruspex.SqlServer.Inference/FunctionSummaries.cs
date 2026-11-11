@@ -80,14 +80,12 @@ internal sealed class FunctionSummaries
     /// <summary>Whether every body is read uncommitted, so that no key of what it reads holds.</summary>
     private readonly bool uncommitted;
 
-    private FunctionSummaries? uncommittedSibling;
-
     /// <summary>
     /// The same functions read uncommitted, for calls in a statement that reads uncommitted (review round 1 of slice 6f). A
     /// recursive function is not read there: it gives its declared type only, so that its named node (<see cref="Nodes"/>,
     /// which the IR's type table holds once) comes from the committed reading alone. That only claims less.
     /// </summary>
-    public FunctionSummaries Uncommitted => uncommitted ? this : uncommittedSibling ??= new FunctionSummaries(model, uncommitted: true) { Views = Views };
+    public FunctionSummaries Uncommitted => uncommitted ? this : field ??= new FunctionSummaries(model, uncommitted: true) { Views = Views };
 
     public FunctionSummaries(DatabaseModel model, bool uncommitted = false)
     {
@@ -149,7 +147,7 @@ internal sealed class FunctionSummaries
         var outer = assumed;
         var functions = members.Select(m => model.FindFunction(m)!).ToList();
         var current = functions.ToDictionary(f => f.Name, Start);
-        var steps = StepsPerFunction * members.Count + ExtraSteps;
+        var steps = (StepsPerFunction * members.Count) + ExtraSteps;
         var settled = false;
         try
         {

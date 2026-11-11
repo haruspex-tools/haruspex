@@ -3,35 +3,26 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 namespace Haruspex.SqlServer.Model;
 
 /// <summary>A data type as declared: <c>decimal(19,2)</c>, <c>nvarchar(max)</c>, <c>sysname</c>.</summary>
-public sealed class SqlType
+/// <param name="kind">Whether it is built in, <c>xml</c>, or referred to by name.</param>
+/// <param name="name">For a built-in type its name in lower case; otherwise the name as written.</param>
+/// <param name="arguments">Its arguments as written, such as <c>19</c> and <c>2</c>, or <c>max</c>.</param>
+/// <param name="schema">The schema a named type was qualified with, or null.</param>
+public sealed class SqlType(SqlTypeKind kind, string name, IReadOnlyList<string> arguments, string? schema = null)
 {
-    /// <summary>Creates a type.</summary>
-    /// <param name="kind">Whether it is built in, <c>xml</c>, or referred to by name.</param>
-    /// <param name="name">For a built-in type its name in lower case; otherwise the name as written.</param>
-    /// <param name="arguments">Its arguments as written, such as <c>19</c> and <c>2</c>, or <c>max</c>.</param>
-    /// <param name="schema">The schema a named type was qualified with, or null.</param>
-    public SqlType(SqlTypeKind kind, string name, IReadOnlyList<string> arguments, string? schema = null)
-    {
-        Kind = kind;
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Arguments = arguments ?? throw new ArgumentNullException(nameof(arguments));
-        Schema = schema;
-    }
-
     /// <summary>Whether it is built in, <c>xml</c>, or referred to by name.</summary>
-    public SqlTypeKind Kind { get; }
+    public SqlTypeKind Kind { get; } = kind;
 
     /// <summary>
     /// For a built-in type, its name in lower case as <c>sys.types</c> lists it (<c>datetime2</c>), whatever case
     /// it was written in. Otherwise the name as written, without its schema.
     /// </summary>
-    public string Name { get; }
+    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
     /// <summary>The arguments as written: <c>19</c> and <c>2</c> for <c>decimal(19,2)</c>, <c>MAX</c> for <c>nvarchar(MAX)</c>.</summary>
-    public IReadOnlyList<string> Arguments { get; }
+    public IReadOnlyList<string> Arguments { get; } = arguments ?? throw new ArgumentNullException(nameof(arguments));
 
     /// <summary>The schema a named type was qualified with, or null.</summary>
-    public string? Schema { get; }
+    public string? Schema { get; } = schema;
 
     /// <summary>The type from a ScriptDom data type reference, or null when there is none or it has no name.</summary>
     public static SqlType? From(DataTypeReference? type)

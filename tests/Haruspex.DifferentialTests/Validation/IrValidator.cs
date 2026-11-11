@@ -535,7 +535,7 @@ public static partial class IrValidator
             return $"at most {digits.Precision} digits, {digits.Scale} after the point ({scalar.Sql})";
 
         // The step to the nearest value inside an exclusive bound: the type's scale, or 1 for an integer format.
-        int? scale = facets.Digits?.Scale ?? (IntegerRange(scalar.Format) is null ? null : 0);
+        var scale = facets.Digits?.Scale ?? (IntegerRange(scalar.Format) is null ? null : 0);
         if (facets.Min is { } min)
         {
             var bound = Exact.Parse(min.Value);
@@ -614,24 +614,17 @@ public static partial class IrValidator
     /// </summary>
     private static bool MatchesFormat(IrScalar scalar, string text)
     {
-        switch (scalar.Kind)
+        return scalar.Kind switch
         {
-            case IrScalarKind.Date:
-                return DateFormat().IsMatch(text) && ValidDate(text);
-            case IrScalarKind.Time:
-                return TimeFormat().Match(text) is { Success: true } time && ValidTime(time);
-            case IrScalarKind.Datetime when scalar.Format == IrFormats.Local:
-                return LocalDatetimeFormat().Match(text) is { Success: true } local && ValidDate(local.Groups["date"].Value) && ValidTime(local);
-            case IrScalarKind.Datetime when scalar.Format == IrFormats.Offset:
-                return OffsetDatetimeFormat().Match(text) is { Success: true } offset && ValidDate(offset.Groups["date"].Value) && ValidTime(offset) && ValidOffset(offset);
-            case IrScalarKind.Datetime:
-                // Without a format the IR does not say whether there is an offset.
-                return LocalDatetimeFormat().IsMatch(text) || OffsetDatetimeFormat().IsMatch(text);
-            case IrScalarKind.Uuid:
-                return UuidFormat().IsMatch(text);
-            default:
-                throw new InvalidOperationException($"Unknown scalar kind {scalar.Kind}.");
-        }
+            IrScalarKind.Date => DateFormat().IsMatch(text) && ValidDate(text),
+            IrScalarKind.Time => TimeFormat().Match(text) is { Success: true } time && ValidTime(time),
+            IrScalarKind.Datetime when scalar.Format == IrFormats.Local => LocalDatetimeFormat().Match(text) is { Success: true } local && ValidDate(local.Groups["date"].Value) && ValidTime(local),
+            IrScalarKind.Datetime when scalar.Format == IrFormats.Offset => OffsetDatetimeFormat().Match(text) is { Success: true } offset && ValidDate(offset.Groups["date"].Value) && ValidTime(offset) && ValidOffset(offset),
+            // Without a format the IR does not say whether there is an offset.
+            IrScalarKind.Datetime => LocalDatetimeFormat().IsMatch(text) || OffsetDatetimeFormat().IsMatch(text),
+            IrScalarKind.Uuid => UuidFormat().IsMatch(text),
+            _ => throw new InvalidOperationException($"Unknown scalar kind {scalar.Kind}."),
+        };
     }
 
     private static bool ValidDate(string text) =>
@@ -646,7 +639,7 @@ public static partial class IrValidator
     private static bool ValidOffset(Match m) =>
         m.Groups["oh"].Value.Length == 0
         || (int.Parse(m.Groups["om"].Value, CultureInfo.InvariantCulture) < 60
-            && int.Parse(m.Groups["oh"].Value, CultureInfo.InvariantCulture) * 60 + int.Parse(m.Groups["om"].Value, CultureInfo.InvariantCulture) <= 14 * 60);
+            && (int.Parse(m.Groups["oh"].Value, CultureInfo.InvariantCulture) * 60) + int.Parse(m.Groups["om"].Value, CultureInfo.InvariantCulture) <= 14 * 60);
 
     [GeneratedRegex(@"^-?(0|[1-9][0-9]*)$")]
     private static partial Regex IntegerLiteral();

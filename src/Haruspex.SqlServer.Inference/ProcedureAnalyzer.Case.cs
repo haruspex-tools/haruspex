@@ -147,7 +147,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The branches of a CASE: each read knowing what held (<see cref="Branch"/>). Its type is the precedence over its results
-    /// (<see cref="Results"/>); without ELSE it is NULL when no WHEN holds (<c>no-else</c>).
+    /// (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, IReadOnlyList{IrNullReason})"/>); without ELSE it is NULL when no WHEN holds (<c>no-else</c>).
     /// </summary>
     private Value Branches(TSqlFragment at, IReadOnlyList<(BooleanExpression When, ScalarExpression Then)> whens, ScalarExpression? otherwise, BindingScope scope)
     {
@@ -269,7 +269,7 @@ internal sealed partial class ProcedureAnalyzer
     // ---- CHOOSE ---------------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// <c>CHOOSE(i, a, b, …)</c>: the precedence over its values, as CASE (<see cref="Results"/>). NULL when i is, or is below 1
+    /// <c>CHOOSE(i, a, b, …)</c>: the precedence over its values, as CASE (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, IReadOnlyList{IrNullReason})"/>). NULL when i is, or is below 1
     /// or above the count (<c>out-of-range</c>; observed: Case_without_else_choose_out_of_range_and_nullif_of_equal_values_are_null),
     /// unless i is an integer literal in range or an integer whose bounds (a CHECK's) keep it in range. Its values are not read
     /// as branches: which one is taken is a number, not a condition.

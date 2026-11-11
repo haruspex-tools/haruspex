@@ -8,7 +8,7 @@ namespace Haruspex.DifferentialTests;
 /// Runs every fixture procedure in SQL Server and checks the real output against the IR inferred for it. A
 /// failure is a soundness bug in the inferencer (or a wrong claim in the IR), never something to accept.
 /// </summary>
-public class DifferentialTests(SqlServerFixture server)
+public class FixtureOutputTests(SqlServerFixture server)
 {
     public static TheoryData<string> RunNames { get; } = [.. Runs.All.Select(r => r.Name)];
 

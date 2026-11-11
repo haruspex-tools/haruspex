@@ -106,7 +106,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     public ProcedureAnalysis Analyse(Procedure procedure)
     {
         var parameters = ProcedureAnalyzer.Parameters(model, procedure);
-        if (Unwalkable(procedure, procedure.At) is { } why)
+        if (Unwalkable(procedure) is { } why)
             return new ProcedureAnalysis(parameters, null, why, []);
 
         var walked = Run(procedure, CallContext.Top);
@@ -121,7 +121,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     /// <summary>What a call of <paramref name="callee"/> from a caller in <paramref name="context"/> does.</summary>
     public Walked Follow(Procedure callee, CallContext context, SourceLocation at)
     {
-        if (Unwalkable(callee, at) is { } why)
+        if (Unwalkable(callee) is { } why)
             return new Walked(null, [], why, []);
 
         var index = stack.FindIndex(f => f.Name == callee.Name);
@@ -156,7 +156,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     }
 
     /// <summary>Why a procedure cannot be walked at all: a CLR procedure, or one changed after its definition.</summary>
-    private static UnknownShape? Unwalkable(Procedure procedure, SourceLocation at)
+    private static UnknownShape? Unwalkable(Procedure procedure)
     {
         if (procedure.Body.MethodSpecifier is not null || procedure.Body.StatementList is null)
             return new UnknownShape(IrUnknownReasons.ExternalCode, $"{procedure.Name} is a CLR procedure: its results come from .NET code, which is not in the project.", procedure.At);

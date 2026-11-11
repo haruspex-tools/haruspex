@@ -80,7 +80,9 @@ internal sealed class SnapshotStore(string directory, bool isCi, bool accept)
         if ((long)a.Length * b.Length > 4_000_000)
             return $"--- {expectedName}\n+++ {actualName}\n(too large to diff: {a.Length} and {b.Length} lines)\n";
 
+#pragma warning disable CA1814 // The longest-common-subsequence table is rectangular; a jagged array would only add allocations.
         var lcs = new int[a.Length + 1, b.Length + 1];
+#pragma warning restore CA1814
         for (var i = a.Length - 1; i >= 0; i--)
         {
             for (var j = b.Length - 1; j >= 0; j--)

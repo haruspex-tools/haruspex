@@ -8,10 +8,10 @@ using Haruspex.SqlServer.Model;
 namespace Haruspex.Cli;
 
 /// <summary>The <c>haruspex</c> command line. Results go to standard output, errors to standard error.</summary>
-public static class HaruspexCli
+internal static class HaruspexCli
 {
     /// <summary>Exit codes, fixed so scripts and CI can rely on them.</summary>
-    public static class ExitCodes
+    internal static class ExitCodes
     {
         public const int Success = 0;
 

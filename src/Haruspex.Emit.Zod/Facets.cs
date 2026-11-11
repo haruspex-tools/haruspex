@@ -203,7 +203,7 @@ internal static class Facets
         if (fraction.Length > scale)
             return null;
         var digits = (point < 0 ? body : body[..point]) + fraction.PadRight(scale, '0');
-        var unscaled = BigInteger.Parse(digits, NumberStyles.None, CultureInfo.InvariantCulture) * (negative ? -1 : 1) + direction;
+        var unscaled = (BigInteger.Parse(digits, NumberStyles.None, CultureInfo.InvariantCulture) * (negative ? -1 : 1)) + direction;
 
         var magnitude = BigInteger.Abs(unscaled).ToString(CultureInfo.InvariantCulture).PadLeft(scale + 1, '0');
         var result = scale == 0 ? magnitude : magnitude[..^scale] + "." + magnitude[^scale..];

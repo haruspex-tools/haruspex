@@ -47,7 +47,7 @@ internal static partial class Deployer
     {
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync().ConfigureAwait(false);
-        foreach (var batch in Batches(File.ReadAllText(path)))
+        foreach (var batch in Batches(await File.ReadAllTextAsync(path).ConfigureAwait(false)))
             await ExecuteAsync(connection, batch).ConfigureAwait(false);
     }
 

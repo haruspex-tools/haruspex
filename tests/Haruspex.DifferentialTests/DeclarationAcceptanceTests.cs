@@ -55,7 +55,7 @@ public class DeclarationAcceptanceTests(SqlServerFixture server)
         Directory.CreateDirectory(folder);
         try
         {
-            File.WriteAllText(Path.Combine(folder, "calls.zod.ts"), ZodEmitter.Emit(document));
+            await File.WriteAllTextAsync(Path.Combine(folder, "calls.zod.ts"), ZodEmitter.Emit(document), TestContext.Current.CancellationToken);
             using (var cases = File.Create(Path.Combine(folder, "cases.json")))
             using (var json = new Utf8JsonWriter(cases))
             {

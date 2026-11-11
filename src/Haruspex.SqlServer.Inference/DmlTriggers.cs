@@ -308,39 +308,28 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
 
     private string? Statement(TSqlStatement statement, HashSet<SelectStatement> cursorQueries, Binder binder, SourceLocation at, HashSet<string> visited)
     {
-        switch (statement)
+        return statement switch
         {
-            case SelectStatement select when cursorQueries.Contains(select) || select.Into is not null
-                || (select.QueryExpression is QuerySpecification { SelectElements: var elements } && elements.All(e => e is SelectSetVariable)):
-                return null;
-            case SelectStatement:
-                return $"returns a result set at {at}";
-            case FetchCursorStatement { IntoVariables.Count: 0 }:
-                return $"returns a row with FETCH at {at}";
-            case FetchCursorStatement:
-                return null;
-            case InsertStatement insert:
-                return Write(insert.InsertSpecification, null, insert.WithCtesAndXmlNamespaces, DmlEvents.Insert, binder, at, visited)
-                    ?? (insert.InsertSpecification.InsertSource is ExecuteInsertSource source ? Call(source.Execute, binder, at, visited) : null);
-            case UpdateStatement update:
-                return Write(update.UpdateSpecification, update.UpdateSpecification.FromClause, update.WithCtesAndXmlNamespaces, DmlEvents.Update, binder, at, visited);
-            case DeleteStatement delete:
-                return Write(delete.DeleteSpecification, delete.DeleteSpecification.FromClause, delete.WithCtesAndXmlNamespaces, DmlEvents.Delete, binder, at, visited);
-            case MergeStatement merge:
-                return Write(merge.MergeSpecification, null, merge.WithCtesAndXmlNamespaces, MergeEvents(merge.MergeSpecification), binder, at, visited);
-            case ExecuteStatement execute:
-                return Call(execute.ExecuteSpecification, binder, at, visited);
-            case BeginEndBlockStatement or IfStatement or WhileStatement or TryCatchStatement
+            SelectStatement select when cursorQueries.Contains(select) || select.Into is not null
+                || (select.QueryExpression is QuerySpecification { SelectElements: var elements } && elements.All(e => e is SelectSetVariable)) => null,
+            SelectStatement => $"returns a result set at {at}",
+            FetchCursorStatement { IntoVariables.Count: 0 } => $"returns a row with FETCH at {at}",
+            FetchCursorStatement => null,
+            InsertStatement insert => Write(insert.InsertSpecification, null, insert.WithCtesAndXmlNamespaces, DmlEvents.Insert, binder, at, visited)
+                ?? (insert.InsertSpecification.InsertSource is ExecuteInsertSource source ? Call(source.Execute, binder, at, visited) : null),
+            UpdateStatement update => Write(update.UpdateSpecification, update.UpdateSpecification.FromClause, update.WithCtesAndXmlNamespaces, DmlEvents.Update, binder, at, visited),
+            DeleteStatement delete => Write(delete.DeleteSpecification, delete.DeleteSpecification.FromClause, delete.WithCtesAndXmlNamespaces, DmlEvents.Delete, binder, at, visited),
+            MergeStatement merge => Write(merge.MergeSpecification, null, merge.WithCtesAndXmlNamespaces, MergeEvents(merge.MergeSpecification), binder, at, visited),
+            ExecuteStatement execute => Call(execute.ExecuteSpecification, binder, at, visited),
+            BeginEndBlockStatement or IfStatement or WhileStatement or TryCatchStatement
                 or DeclareVariableStatement or DeclareTableVariableStatement or SetVariableStatement or PredicateSetStatement
                 or PrintStatement or RaiseErrorStatement or ThrowStatement or ReturnStatement or BreakStatement or ContinueStatement
                 or BeginTransactionStatement or CommitTransactionStatement or RollbackTransactionStatement or SaveTransactionStatement
                 or CreateTableStatement or DropTableStatement or AlterTableStatement or CreateIndexStatement or TruncateTableStatement
                 or DeclareCursorStatement or OpenCursorStatement or CloseCursorStatement or DeallocateCursorStatement
-                or GoToStatement or LabelStatement or SetRowCountStatement:
-                return null;
-            default:
-                return $"runs {statement.ScriptTokenStream[statement.FirstTokenIndex].Text.ToUpperInvariant()} at {at}, which is not known to return no result set";
-        }
+                or GoToStatement or LabelStatement or SetRowCountStatement => null,
+            _ => $"runs {statement.ScriptTokenStream[statement.FirstTokenIndex].Text.ToUpperInvariant()} at {at}, which is not known to return no result set",
+        };
     }
 
     private string? Write(DataModificationSpecification spec, FromClause? from, WithCtesAndXmlNamespaces? with, DmlEvents events, Binder binder, SourceLocation at, HashSet<string> visited)

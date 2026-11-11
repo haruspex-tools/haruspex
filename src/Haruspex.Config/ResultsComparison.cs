@@ -44,24 +44,17 @@ internal static class ResultsComparison
     {
         public string? Type(IrType a, IrType b, string path)
         {
-            switch (a, b)
+            return (a, b) switch
             {
-                case (IrUnknownType unknown, _):
-                    return $"{path}: the inference can't type it ({unknown.Reason}), so it can't agree with a declaration. To type one value, override its path under \"paths\" with \"type\" and \"import\".";
-                case (IrScalar x, IrScalar y) when Same(x, y):
-                    return null;
-                case (IrJsonText, IrScalar { Kind: IrScalarKind.String, Format: null }):
-                    // JSON text is a string, which is all a declaration can say of it.
-                    return null;
-                case (IrArray x, IrArray y):
-                    return Nulls(x.ItemsNullableBecause.Count > 0, y.ItemsNullableBecause.Count > 0, path + "[]") ?? Type(x.Items, y.Items, path + "[]");
-                case (IrRecord x, IrRecord y):
-                    return Nulls(x.ValuesNullableBecause.Count > 0, y.ValuesNullableBecause.Count > 0, path + "{}") ?? Type(x.Values, y.Values, path + "{}");
-                case (IrRef x, IrRef y):
-                    return Object(inferred[x.Name], declared[y.Name], path);
-                default:
-                    return $"{path}: the inference says {Describe(a)}, the declaration {Describe(b)}.";
-            }
+                (IrUnknownType unknown, _) => $"{path}: the inference can't type it ({unknown.Reason}), so it can't agree with a declaration. To type one value, override its path under \"paths\" with \"type\" and \"import\".",
+                (IrScalar x, IrScalar y) when Same(x, y) => null,
+                // JSON text is a string, which is all a declaration can say of it.
+                (IrJsonText, IrScalar { Kind: IrScalarKind.String, Format: null }) => null,
+                (IrArray x, IrArray y) => Nulls(x.ItemsNullableBecause.Count > 0, y.ItemsNullableBecause.Count > 0, path + "[]") ?? Type(x.Items, y.Items, path + "[]"),
+                (IrRecord x, IrRecord y) => Nulls(x.ValuesNullableBecause.Count > 0, y.ValuesNullableBecause.Count > 0, path + "{}") ?? Type(x.Values, y.Values, path + "{}"),
+                (IrRef x, IrRef y) => Object(inferred[x.Name], declared[y.Name], path),
+                _ => $"{path}: the inference says {Describe(a)}, the declaration {Describe(b)}.",
+            };
         }
 
         private string? Object(IrObjectType a, IrObjectType b, string path)

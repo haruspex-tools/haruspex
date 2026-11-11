@@ -21,7 +21,7 @@ public class ForJsonObservationTests(SqlServerFixture server)
         {
             var rows = new List<string?>();
             while (await reader.ReadAsync(TestContext.Current.CancellationToken))
-                rows.Add(reader.IsDBNull(0) ? null : reader.GetString(0));
+                rows.Add(await reader.IsDBNullAsync(0, TestContext.Current.CancellationToken) ? null : reader.GetString(0));
             sets.Add(rows);
         }
         while (await reader.NextResultAsync(TestContext.Current.CancellationToken));

@@ -17,7 +17,10 @@
     <ProjectReference Include="..\Haruspex.Config\Haruspex.Config.csproj" />
     <ProjectReference Include="..\Haruspex.Emit.Zod\Haruspex.Emit.Zod.csproj" />
   </ItemGroup>
+  <!-- An application's types are internal (CA1515); the tests reach the CLI and SqlProject, the composition of the
+       layers, through these. -->
   <ItemGroup>
     <InternalsVisibleTo Include="Haruspex.Tests" />
+    <InternalsVisibleTo Include="Haruspex.DifferentialTests" />
   </ItemGroup>
 </Project>

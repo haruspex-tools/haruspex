@@ -13,22 +13,15 @@ namespace Haruspex.SqlServer.Semantics;
 /// A relation is compared by reference: each state of a temporary table, or each step of a recursive CTE's fixed point,
 /// is a relation of its own, so a binding always says which one it read.
 /// </remarks>
-public sealed class LocalRelation
+/// <param name="name">Its name as written: <c>#t</c>, <c>@t</c>, or a CTE's name.</param>
+/// <param name="columns">Its columns' names in order, or null when they are not known, so that any column may be one of its.</param>
+public sealed class LocalRelation(string name, IReadOnlyList<string>? columns)
 {
-    /// <summary>Creates a relation.</summary>
-    /// <param name="name">Its name as written: <c>#t</c>, <c>@t</c>, or a CTE's name.</param>
-    /// <param name="columns">Its columns' names in order, or null when they are not known, so that any column may be one of its.</param>
-    public LocalRelation(string name, IReadOnlyList<string>? columns)
-    {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Columns = columns;
-    }
-
     /// <summary>The name.</summary>
-    public string Name { get; }
+    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
     /// <summary>The columns' names in order, or null when not known.</summary>
-    public IReadOnlyList<string>? Columns { get; }
+    public IReadOnlyList<string>? Columns { get; } = columns;
 
     /// <summary>The position of the column with this name, ignoring case as SQL Server does; -1 when there is none.</summary>
     public int IndexOf(string column)

@@ -152,25 +152,18 @@ public static class CheckReader
 
         public Proved? Condition(BooleanExpression expression)
         {
-            switch (expression)
+            return expression switch
             {
-                case BooleanParenthesisExpression parenthesis:
-                    return Condition(parenthesis.Expression);
-                case BooleanBinaryExpression { BinaryExpressionType: BooleanBinaryExpressionType.And } and:
-                    return And(Condition(and.FirstExpression), Condition(and.SecondExpression));
-                case BooleanBinaryExpression { BinaryExpressionType: BooleanBinaryExpressionType.Or } or:
-                    return Or(Condition(or.FirstExpression), Condition(or.SecondExpression));
-                case InPredicate { NotDefined: false, Subquery: null } inList when IsColumn(inList.Expression):
-                    return ValueSet(inList.Values);
-                case BooleanTernaryExpression { TernaryExpressionType: BooleanTernaryExpressionType.Between } between
+                BooleanParenthesisExpression parenthesis => Condition(parenthesis.Expression),
+                BooleanBinaryExpression { BinaryExpressionType: BooleanBinaryExpressionType.And } and => And(Condition(and.FirstExpression), Condition(and.SecondExpression)),
+                BooleanBinaryExpression { BinaryExpressionType: BooleanBinaryExpressionType.Or } or => Or(Condition(or.FirstExpression), Condition(or.SecondExpression)),
+                InPredicate { NotDefined: false, Subquery: null } inList when IsColumn(inList.Expression) => ValueSet(inList.Values),
+                BooleanTernaryExpression { TernaryExpressionType: BooleanTernaryExpressionType.Between } between
                     when !family.IsString && IsColumn(between.FirstExpression)
-                    && Number(between.SecondExpression) is { } low && Number(between.ThirdExpression) is { } high:
-                    return new Proved(Min: (low, true), Max: (high, true));
-                case BooleanComparisonExpression comparison:
-                    return Comparison(comparison);
-                default:
-                    return null;
-            }
+                    && Number(between.SecondExpression) is { } low && Number(between.ThirdExpression) is { } high => new Proved(Min: (low, true), Max: (high, true)),
+                BooleanComparisonExpression comparison => Comparison(comparison),
+                _ => null,
+            };
         }
 
         private static Proved? And(Proved? a, Proved? b)
@@ -244,7 +237,7 @@ public static class CheckReader
             {
                 // col <> '' (and so not all spaces either, which compare equal to it): at least one character.
                 return type is BooleanComparisonType.NotEqualToBrackets or BooleanComparisonType.NotEqualToExclamation
-                    && String(other) == "" ? new Proved(MinLength: 1) : null;
+                    && String(other) is "" ? new Proved(MinLength: 1) : null;
             }
 
             if (Number(other) is not { } bound)

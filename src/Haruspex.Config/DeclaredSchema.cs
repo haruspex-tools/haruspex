@@ -403,9 +403,6 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
     private void Error(JsonValue value, string path, string message) =>
         problems.Add(new ConfigProblem(ConfigSeverity.Error, file, new ConfigLocation(path, value.Line, value.Column), message));
 
-    private void Error(JsonMember member, string path, string message) =>
-        problems.Add(new ConfigProblem(ConfigSeverity.Error, file, new ConfigLocation(path, member.Line, member.Column), message));
-
     private void Warning(JsonValue value, string path, string message) =>
         problems.Add(new ConfigProblem(ConfigSeverity.Warning, file, new ConfigLocation(path, value.Line, value.Column), message));
 
