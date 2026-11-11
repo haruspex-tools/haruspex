@@ -48,6 +48,26 @@ public static class SqlScriptFolder
         if (!Directory.Exists(directory))
             throw new DirectoryNotFoundException($"Directory not found: {directory}");
 
+        return Read(directory, Directory.EnumerateFiles(directory, "*.sql", SearchOption.AllDirectories)
+            .Select(path => Path.GetRelativePath(directory, path)));
+    }
+
+    /// <summary>
+    /// Reads the <c>.sql</c> files named, relative to <paramref name="directory"/>: a chosen set of a folder's scripts, such as
+    /// the ones a project file builds.
+    /// </summary>
+    /// <remarks>As <see cref="Read(string)"/> does, it reads them in order of their relative path.</remarks>
+    /// <param name="directory">The project's folder, which positions in the model are relative to.</param>
+    /// <param name="files">The scripts, relative to <paramref name="directory"/>, with either kind of slash.</param>
+    /// <exception cref="DirectoryNotFoundException">The directory does not exist.</exception>
+    /// <exception cref="FileNotFoundException">A file named does not exist.</exception>
+    public static SchemaReadResult Read(string directory, IEnumerable<string> files)
+    {
+        ArgumentNullException.ThrowIfNull(directory);
+        ArgumentNullException.ThrowIfNull(files);
+        if (!Directory.Exists(directory))
+            throw new DirectoryNotFoundException($"Directory not found: {directory}");
+
         var diagnostics = new List<Diagnostic>();
         var tables = new Dictionary<ObjectName, Table>();
         var procedures = new Dictionary<ObjectName, Procedure>();
@@ -69,11 +89,16 @@ public static class SqlScriptFolder
 
         // Sorted by relative path so that which of two duplicate definitions is reported does not depend on
         // the file system's enumeration order.
-        var files = Directory.EnumerateFiles(directory, "*.sql", SearchOption.AllDirectories)
-            .Select(path => (Path: path, Relative: Path.GetRelativePath(directory, path).Replace('\\', '/')))
-            .OrderBy(f => f.Relative, StringComparer.Ordinal);
+        var scripts = files
+            .Select(file => file.Replace('\\', '/'))
+            .Distinct(StringComparer.Ordinal)
+            .Select(relative => (Path: Path.Combine(directory, relative), Relative: relative))
+            .OrderBy(f => f.Relative, StringComparer.Ordinal)
+            .ToList();
+        if (scripts.FirstOrDefault(f => !File.Exists(f.Path)) is { Path: not null } missing)
+            throw new FileNotFoundException($"File not found: {missing.Relative}", missing.Path);
 
-        foreach (var (path, relative) in files)
+        foreach (var (path, relative) in scripts)
         {
             if (Parse(path, relative, diagnostics) is not { } script)
                 continue;
@@ -428,7 +453,12 @@ public static class SqlScriptFolder
     private static TSqlScript? Parse(string path, string relative, List<Diagnostic> diagnostics)
     {
         // UTF-8 unless a byte order mark says otherwise, which covers the UTF-16 files SSMS writes.
-        using var reader = new StreamReader(path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        string text;
+        using (var file = new StreamReader(path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+            text = file.ReadToEnd();
+
+        // What the server would receive from sqlcmd, which an install script written for it needs.
+        using var reader = new StringReader(SqlcmdVariables.Substitute(text));
 
         // The SQL Server 2025 grammar. Later the target platform will come from the project file.
         var parser = new TSql170Parser(initialQuotedIdentifiers: true);

@@ -18,7 +18,10 @@ flowchart LR
 ```
 
 Files are read in order of their relative path, so the result doesn't depend on the file system. Each file is UTF-8 unless
-a byte order mark says otherwise (SSMS writes UTF-16), and is parsed with the SQL Server 2025 grammar.
+a byte order mark says otherwise (SSMS writes UTF-16), and is parsed with the SQL Server 2025 grammar. A script written for
+sqlcmd is read as the server would receive it: each `:setvar` defines a variable and each `$(name)` is replaced by its value
+first (`SqlcmdVariables`). `SqlScriptFolder.Read` can also be given which of a folder's scripts to read, such as the ones a
+project file builds.
 
 ## Example
 
@@ -49,6 +52,13 @@ var orders = read.Model.FindTable(new ObjectName("sales", "orders"));
 - **No DacFx.** DacFx's licence asks anyone who redistributes it to indemnify Microsoft, which no free tool should have to
   take on; ScriptDom is enough to read a project
   ([decision 0004](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0004-scriptdom-is-the-only-sql-dependency.md)).
+- **No other sqlcmd commands.** `:r`, which includes another file, is not followed, so a script that uses it fails to parse
+  rather than being read as a different script from the one that runs. Variables defined outside a script (sqlcmd's `-v`,
+  the environment, a project's own variables) are not known.
+- **One database.** `USE` is not followed: every object the scripts define is read into one model, whichever database a
+  script has switched to by then.
+- **No project files yet.** It doesn't read a `.sqlproj`'s list of scripts or its settings; given a folder, it reads every
+  script in it.
 - **No running scripts.** A folder of scripts doesn't say the order they run in, so a statement that changes an object after
   its definition (`ALTER TABLE … ALTER COLUMN`, `DROP TABLE`, `ALTER PROCEDURE`, `DROP PROCEDURE`) is recorded as a
   `Redefinition`, not applied. Changes made only through code that would have to run, such as `EXEC sp_rename` or dynamic
