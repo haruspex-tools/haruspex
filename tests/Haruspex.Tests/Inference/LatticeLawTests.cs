@@ -157,6 +157,28 @@ public class LatticeLawTests
         }
     }
 
+    // ---- facts dropped by default ------------------------------------------------------------------------------------
+
+    [Theory]
+    [MemberData(nameof(Seeds))]
+    public void A_with_drops_the_digits_to_unknown_unless_it_sets_them_and_keeps_every_other_fact(int seed)
+    {
+        // Value's copy constructor, which every `with` runs, leaves the digits out: a rule that forgets them claims less.
+        var draw = new LatticeSample(seed);
+        foreach (var value in LatticeSample.Many(PerSeed, draw.Value))
+        {
+            var reasons = draw.Reasons();
+            var changed = value with { NullableBecause = reasons };
+
+            Assert.Equal(IntDigits.Unknown, changed.Digits);
+            Assert.Equal(new Value(value.Shape, reasons, value.IsLiveJson, value.JsonWhy) { Digits = IntDigits.Unknown }, changed);
+            Assert.Equal(value.Digits, (value with { Digits = value.Digits }).Digits);
+            Assert.Equal(value.Digits, value.WithNullableBecause(reasons).Digits);
+            Assert.Equal(IntDigits.Unknown, new Value(value.Shape, value.NullableBecause).Digits);
+            Assert.Equal(IntDigits.OfType, Value.Computed(value.Shape, value.NullableBecause).Digits);
+        }
+    }
+
     // ---- joins the laws found wrong ---------------------------------------------------------------------------------
 
     [Fact]
