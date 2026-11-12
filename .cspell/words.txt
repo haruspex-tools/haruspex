@@ -107,6 +107,7 @@ optout
 # Words of the subject that the dictionary lacks
 bigints
 callees
+consing
 datetimes
 linters
 lookarounds
@@ -128,6 +129,9 @@ vendoring
 writable
 
 # Authors the guide cites (docs/internals), named as their works are
+christophe
+conchon
+filliâtre
 flemming
 hankin
 hanne

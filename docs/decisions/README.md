@@ -27,6 +27,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0019](0019-the-guide-is-held-to-the-code-by-tests.md) | 11 Nov 2026 | The guide is held to the code by tests |
 | [0020](0020-public-figures-come-from-public-corpora.md) | 11 Nov 2026 | Public figures come only from public corpora, written by a test |
 | [0021](0021-fixtures-are-found-never-listed.md) | 11 Nov 2026 | Fixtures are found by listing their folder, never named in a list |
+| [0022](0022-values-compare-by-structure.md) | 12 Nov 2026 | Values compare by structure, never by their rendered text |
 
 ## Writing a record
 

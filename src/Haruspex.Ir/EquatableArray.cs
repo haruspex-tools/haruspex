@@ -6,7 +6,9 @@ namespace Haruspex.Ir;
 
 /// <summary>
 /// An immutable sequence that is equal to another when it holds equal items in the same order, so that a record holding
-/// one compares by value. Every list in the IR, and in the inference's shapes and values, is one of these.
+/// one compares by value. Every list in the IR, and in the inference's shapes and values, is one of these. Why records
+/// need it, and why comparing their rendered text instead was a trap, is in the guide:
+/// <c>docs/internals/05-values-as-a-lattice.md</c>.
 /// </summary>
 /// <remarks>
 /// A record's generated equality compares each field with that field's own equality. For <see cref="IReadOnlyList{T}"/>
