@@ -133,9 +133,9 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
             {
                 case (JsonTextShape x, JsonTextShape y):
                     return (new JsonTextShape(x.Content is null || y.Content is null ? null : JsonShapes.Join(x.Content, y.Content)), false, null);
-                case (JsonTextShape, ScalarShape { Type.Sql: "nvarchar(max)" } text):
+                case (JsonTextShape, ScalarShape text) when SqlTypes.IsNVarCharMax(text.Type.Sql):
                     return (new ScalarShape(text.Type with { Facets = ScalarFacets.TypeOnly(text.Type.Facets) }), false, NotJson(at, what));
-                case (ScalarShape { Type.Sql: "nvarchar(max)" } text, JsonTextShape):
+                case (ScalarShape text, JsonTextShape) when SqlTypes.IsNVarCharMax(text.Type.Sql):
                     return (new ScalarShape(text.Type with { Facets = ScalarFacets.TypeOnly(text.Type.Facets) }), false, NotJson(at, what));
             }
         }
@@ -200,7 +200,7 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
             return false;
         return (a.Shape, b.Shape) switch
         {
-            (JsonTextShape, ScalarShape { Type: { Sql: "nvarchar(max)" } text }) => !a.IsLiveJson && ScalarFacets.Same(text.Facets, ScalarFacets.TypeOnly(text.Facets)),
+            (JsonTextShape, ScalarShape { Type: var text }) when SqlTypes.IsNVarCharMax(text.Sql) => !a.IsLiveJson && ScalarFacets.Same(text.Facets, ScalarFacets.TypeOnly(text.Facets)),
             _ => JsonShapes.Below(a.Shape, b.Shape),
         };
     }

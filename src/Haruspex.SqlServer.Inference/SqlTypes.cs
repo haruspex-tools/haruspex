@@ -77,6 +77,9 @@ internal static class SqlTypes
     /// <summary>The type, when inference gives a value of it as a scalar; otherwise null, which the caller makes unknown.</summary>
     public static ScalarType? Modelled(ScalarType? type) => type is not null && IsModelled(type.Type) ? type : null;
 
+    /// <summary>Whether an IR scalar's SQL text names <c>nvarchar(max)</c>, which holds any JSON text unchanged.</summary>
+    public static bool IsNVarCharMax(string? sql) => Parse(sql) is { IsMax: true } type && type.Type == BuiltInType.NVarChar;
+
     /// <summary>The type an IR scalar's SQL text names, when inference models it: <c>decimal(19,2)</c>.</summary>
     public static ScalarType? Parse(string? sql) => Modelled(ScalarType.Parse(sql));
 

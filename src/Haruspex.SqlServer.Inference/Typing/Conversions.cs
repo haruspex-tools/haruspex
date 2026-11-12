@@ -33,13 +33,57 @@ internal static class Conversions
         return to.Precision - to.Scale >= p - s && to.Scale >= s;
     }
 
+    private static readonly BuiltInType[] Integers = [BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Int, BuiltInType.BigInt];
+
+    private static readonly BuiltInType[] Decimals = [BuiltInType.Decimal, BuiltInType.Numeric];
+
+    private static readonly BuiltInType[] Exact = [BuiltInType.Bit, .. Integers, .. Decimals, BuiltInType.Money, BuiltInType.SmallMoney];
+
+    private static readonly BuiltInType[] Strings = [BuiltInType.Char, BuiltInType.VarChar, BuiltInType.NChar, BuiltInType.NVarChar];
+
+    private static readonly BuiltInType[] DatesAndTimes =
+        [BuiltInType.Date, BuiltInType.Time, BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.DateTime2, BuiltInType.DateTimeOffset];
+
+    /// <summary>The observation test that converts each row's types at their edges.</summary>
+    private const string AtTheEdges = "Each_conversion_the_table_lists_keeps_every_value_at_the_edges_of_its_types";
+
+    /// <summary>
+    /// The conversions that keep every value, without an overflow, for the types inference models: a pair not listed may
+    /// overflow, or is not modelled, which is the safe answer. Microsoft's conversion chart ("CAST and CONVERT
+    /// (Transact-SQL)") says which conversions are allowed; this says which of them can't overflow, a fact the chart doesn't
+    /// give, so each row is observed (<see cref="ConversionRow.ObservedIn"/>). A row's dates are about ranges: a time is that
+    /// time on 1 January 1900; a tinyint or bit that many days from 1900, and a smallint too within datetime's range (1753
+    /// to 9999) but not smalldatetime's (1900 to 2079); and a date before 1753 or 1900 overflows.
+    /// </summary>
+    public static IReadOnlyList<ConversionRow> Table { get; } =
+    [
+        // A string, a date or a time is cut short to fit, as strings are; a number or a GUID must fit whole.
+        new(Strings, [.. Strings, .. DatesAndTimes], ConversionCondition.Always, ["A_conversion_that_cannot_overflow_keeps_every_value", AtTheEdges]),
+        new(Strings, [BuiltInType.Bit, .. Integers, .. Decimals, BuiltInType.UniqueIdentifier], ConversionCondition.FitsAsText, ["A_conversion_that_cannot_overflow_keeps_every_value", AtTheEdges]),
+        new(Integers, [BuiltInType.Bit, .. Integers], ConversionCondition.WiderInteger, [AtTheEdges]),
+        new([BuiltInType.SmallInt, BuiltInType.Int, BuiltInType.BigInt, BuiltInType.SmallMoney, BuiltInType.Money], Decimals, ConversionCondition.IntegerPartFits, [AtTheEdges]),
+        new(Decimals, Exact, ConversionCondition.DecimalDigitsFit, ["A_conversion_that_cannot_overflow_keeps_every_value", AtTheEdges]),
+        new([BuiltInType.Bit], Exact, ConversionCondition.Always, [AtTheEdges]),
+        new([BuiltInType.SmallMoney], [BuiltInType.Bit, BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.SmallMoney], ConversionCondition.Always, [AtTheEdges]),
+        new([BuiltInType.Money], [BuiltInType.Bit, BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Int, BuiltInType.SmallMoney], ConversionCondition.Always, [AtTheEdges]),
+        new([BuiltInType.Float], [.. Exact, BuiltInType.Real, BuiltInType.Float], ConversionCondition.Always, [AtTheEdges]),
+        new([BuiltInType.Real], [.. Exact, BuiltInType.Real], ConversionCondition.Always, [AtTheEdges]),
+        new([BuiltInType.Date], [BuiltInType.Date, BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.DateTime2, BuiltInType.DateTimeOffset], ConversionCondition.Always, [AtTheEdges]),
+        new([BuiltInType.SmallDateTime], [BuiltInType.Bit, BuiltInType.TinyInt, BuiltInType.Time, BuiltInType.SmallDateTime], ConversionCondition.Always, ["A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges", AtTheEdges]),
+        new([BuiltInType.DateTime], [BuiltInType.Bit, BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Time, BuiltInType.DateTime, BuiltInType.SmallDateTime], ConversionCondition.Always, ["A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges", AtTheEdges]),
+        new([BuiltInType.DateTime2], [BuiltInType.Date, BuiltInType.Time, BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.DateTime2], ConversionCondition.KeepsFraction, [AtTheEdges]),
+        new([BuiltInType.DateTimeOffset], DatesAndTimes, ConversionCondition.KeepsFraction, ["A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges", AtTheEdges]),
+        new([BuiltInType.Time], [BuiltInType.Time], ConversionCondition.KeepsFraction, [AtTheEdges]),
+    ];
+
     /// <summary>
     /// Whether every value of <paramref name="operand"/> converts to <paramref name="to"/> without an overflow, which is an error by
     /// default and NULL under a caller's ANSI_WARNINGS and ARITHABORT off (observed:
     /// <c>An_overflow_is_an_error_by_default_and_null_under_the_callers_ansi_warnings_and_arithabort_off</c>). A conversion that
     /// fails for a value (a string that is not a number) is an error even then
-    /// (<c>A_failed_conversion_is_an_error_even_under_ansi_warnings_and_arithabort_off</c>), so only overflow makes NULL. False
-    /// when not proved: each case below was observed at its edge (<c>A_conversion_that_cannot_overflow_keeps_every_value</c>).
+    /// (<c>A_failed_conversion_is_an_error_even_under_ansi_warnings_and_arithabort_off</c>), so only overflow makes NULL. A
+    /// conversion to the same type keeps every value; any other is the <see cref="Table"/>'s row for the two types, and false
+    /// when there is none.
     /// </summary>
     /// <param name="styled">Whether CONVERT gives a style, which changes a number's characters, so a number's length is not known.</param>
     public static bool Converts(Operand operand, ScalarType to, bool styled = false)
@@ -47,75 +91,33 @@ internal static class Conversions
         var from = operand.Type;
         if (from.Text == to.Text && !styled)
             return true;
-
-        if (to.IsString)
+        if (Table.FirstOrDefault(r => r.To.Contains(to.Type) && r.From.Contains(from.Type)) is not { } row)
+            return false;
+        return row.When switch
         {
-            // A string, a date or a time is cut short to fit, as strings are; anything else must fit whole.
-            if (from.IsString || from.IsDateOrTime)
-                return true;
-            if (styled)
-                return false;
-            // A sign, the digits, a point when there are places, and a 0 before it when there are only places: -0.5.
-            var longest = from.IsDecimal
-                ? from.Precision + 1 + (from.Scale > 0 ? 1 : 0) + (from.Precision == from.Scale ? 1 : 0)
-                : from.Type.LongestText ?? int.MaxValue;
-            return to.IsMax ? longest < int.MaxValue : to.Length >= longest;
-        }
+            ConversionCondition.Always => true,
+            ConversionCondition.FitsAsText => !styled && (to.IsMax || to.Length >= LongestText(from)),
+            ConversionCondition.WiderInteger => to.IntegerDigits >= from.IntegerDigits,
+            ConversionCondition.IntegerPartFits => from.Precision - from.Scale <= to.IntegerDigits - 1,
+            ConversionCondition.DecimalDigitsFit => DecimalDigitsFit(operand, to),
+            ConversionCondition.KeepsFraction => to.FractionalSeconds >= from.FractionalSeconds,
+            _ => false,
+        };
+    }
 
-        if (to.IsInteger)
-        {
-            if (from.IsInteger || from.IsBit)
-                return to.IntegerDigits >= from.IntegerDigits;
+    /// <summary>
+    /// The characters the longest value of a type takes as text: a decimal's sign, digits, a point when there are places, and
+    /// a 0 before it when there are only places (-0.5); any other type's from the catalogue.
+    /// </summary>
+    private static int LongestText(ScalarType type) => type.IsDecimal
+        ? type.Precision + 1 + (type.Scale > 0 ? 1 : 0) + (type.Precision == type.Scale ? 1 : 0)
+        : type.Type.LongestText ?? int.MaxValue;
 
-            // A decimal is cut to its integer part, which must fit with any sign: tinyint has none.
-            return from.IsDecimal && to.Type != BuiltInType.TinyInt && from.Precision - from.Scale <= to.IntegerDigits - 1;
-        }
-
-        if (to.IsDecimal)
-        {
-            if (!from.IsExact)
-                return false;
-
-            // Rounding to fewer places can carry into one more integer digit: 99.999 as decimal(4,2) is 100.00.
-            var (p, s) = operand.AsDecimal();
-            return to.Precision - to.Scale > p - s || (to.Precision - to.Scale == p - s && to.Scale >= s);
-        }
-
-        var t = to.Type;
-        if (t == BuiltInType.Bit)
-            return from.IsExact;
-        if (t == BuiltInType.SmallMoney)
-            return from.Type.IsAnyOf(BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Bit, BuiltInType.SmallMoney) || (from.IsDecimal && from.Precision - from.Scale <= 5);
-        if (t == BuiltInType.Float)
-            return from.IsExact || from.Type.IsAnyOf(BuiltInType.Real, BuiltInType.Float);
-        if (t == BuiltInType.Real)
-            return from.IsExact || from.Type == BuiltInType.Real;
-        if (t == BuiltInType.Money)
-            return (from.IsInteger && from.Type != BuiltInType.BigInt) || from.Type.IsAnyOf(BuiltInType.Bit, BuiltInType.SmallMoney) || (from.IsDecimal && from.Precision - from.Scale <= 14);
-        if (t == BuiltInType.Date)
-            return from.Type.IsAnyOf(BuiltInType.Date, BuiltInType.DateTime, BuiltInType.DateTime2, BuiltInType.SmallDateTime, BuiltInType.DateTimeOffset);
-
-        // A time is that time on 1 January 1900, rounding into the 2nd at most; a tinyint or bit that many days from 1900,
-        // a smallint too within datetime's range (1753 to 9999) but not smalldatetime's (1900 to 2079); a date before
-        // 1753 or 1900 overflows (observed: A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges,
-        // A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
-        if (t == BuiltInType.SmallDateTime)
-            return from.Type.IsAnyOf(BuiltInType.SmallDateTime, BuiltInType.Time, BuiltInType.TinyInt, BuiltInType.Bit);
-        if (t == BuiltInType.DateTime2)
-        {
-            return from.Type.IsAnyOf(BuiltInType.Date, BuiltInType.SmallDateTime) || (from.Type == BuiltInType.DateTime && to.Precision >= 3)
-                || (from.Type.IsAnyOf(BuiltInType.DateTime2, BuiltInType.Time) && to.Precision >= from.Precision);
-        }
-
-        if (t == BuiltInType.DateTimeOffset)
-        {
-            return from.Type.IsAnyOf(BuiltInType.Date, BuiltInType.SmallDateTime) || (from.Type == BuiltInType.DateTime && to.Precision >= 3)
-                || (from.Type.IsAnyOf(BuiltInType.DateTime2, BuiltInType.Time, BuiltInType.DateTimeOffset) && to.Precision >= from.Precision);
-        }
-
-        if (t == BuiltInType.DateTime)
-            return from.Type.IsAnyOf(BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.Time, BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Bit);
-        return t == BuiltInType.Time && from.Type == BuiltInType.Time && to.Precision >= from.Precision;
+    /// <summary>Rounding to fewer places can carry into one more integer digit: 99.999 as decimal(4,2) is 100.00.</summary>
+    private static bool DecimalDigitsFit(Operand operand, ScalarType to)
+    {
+        var (p, s) = operand.AsDecimal();
+        return to.Precision - to.Scale > p - s || (to.Precision - to.Scale == p - s && to.Scale >= s);
     }
 
     /// <summary>

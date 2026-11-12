@@ -15,7 +15,7 @@ internal sealed partial class ProcedureAnalyzer
     /// it short without an error, and <c>varchar</c> may change characters its code page lacks (observed), so neither is traced.
     /// </summary>
     private static bool Traced(Shape declared) =>
-        declared is ScalarShape { Type.Sql: "nvarchar(max)" };
+        declared is ScalarShape { Type.Sql: var sql } && SqlTypes.IsNVarCharMax(sql);
 
     private static bool Traced(Value declared) => !declared.IsLiveJson && Traced(declared.Shape);
 

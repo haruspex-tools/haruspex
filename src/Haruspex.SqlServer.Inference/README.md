@@ -446,7 +446,10 @@ Of the target type, whatever the style (`Cast_and_convert_are_of_the_target_type
 a length is 30 long in `CAST` and `CONVERT`, 1 in a declaration
 (`A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration`); `numeric` alone is `numeric(18,0)`. The characters a style
 writes are not claimed. Null when the operand is, and for `arithmetic-overflow` unless every value of the operand's type fits
-(`Conversions.Converts`, each case observed at its edge in `A_conversion_that_cannot_overflow_keeps_every_value`):
+(`Conversions.Converts`). The rule is a table, `Conversions.Table`, a row for each set of pairs and a condition on their
+arguments (`ConversionCondition`), each row naming the observation tests it rests on, among them
+`Each_conversion_the_table_lists_keeps_every_value_at_the_edges_of_its_types`, which converts every pair a row allows at
+its types' edges. In words:
 
 | From | To | Fits when |
 |---|---|---|

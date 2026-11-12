@@ -14,5 +14,7 @@
   <ItemGroup>
     <!-- For ValueEqualityTests: the laws of equality are about the shapes and values the fixed points compare, which are internal. -->
     <InternalsVisibleTo Include="Haruspex.Tests" />
+    <!-- For ConversionObservationTests: each row of the table of conversions (Typing/Conversions.cs) is checked against the server. -->
+    <InternalsVisibleTo Include="Haruspex.DifferentialTests" />
   </ItemGroup>
 </Project>
