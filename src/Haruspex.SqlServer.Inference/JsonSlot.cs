@@ -1,3 +1,5 @@
+using Haruspex.SqlServer.Inference.Lattice;
+
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
@@ -34,7 +36,7 @@ internal sealed record JsonSlot(Shape? Content, UnknownShape? NotJson)
             return b;
         if (b.Content is null)
             return a;
-        return Json(ShapeJoin.Content(a.Content, b.Content));
+        return Json(JsonShapes.Join(a.Content, b.Content));
     }
 
     /// <summary>

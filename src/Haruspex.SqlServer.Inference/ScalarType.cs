@@ -156,16 +156,21 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     };
 
     /// <summary>
-    /// The type a column takes whose values are of these types, as a set operation, <c>COALESCE</c>, <c>CASE</c>, <c>IIF</c> and
-    /// <c>CHOOSE</c> all type it (one rule; observed over every ordered pair of a grid, SetTypeGridTests, and in
+    /// The server's type rule for a chain: the type a column takes whose values are of these types, as a set operation,
+    /// <c>COALESCE</c>, <c>CASE</c>, <c>IIF</c> and <c>CHOOSE</c> all type it (one rule; observed over every ordered pair of a grid, SetTypeGridTests, and in
     /// SetTypeObservationTests), or null when SQL Server refuses them (<see cref="Clash"/>). It is a fold, left to right, of
     /// <see cref="Pair"/> (observed: A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal): bigint, then
     /// money, then decimal(5,2) is decimal(19,4), money having taken the bigint in; bigint, decimal(5,2), money is
     /// decimal(23,4). The date and time types are the exception: their fractional digits are the most over every value
     /// (observed: A_chain_takes_the_most_fractional_digits_of_every_date_and_time). Whether each value converts to the result
     /// without an overflow is the caller's question (<see cref="Converts"/>).
+    /// <para>
+    /// It is not a join. A join is associative and commutative, and the fold is neither: money between bigint and decimal(5,2)
+    /// changes the result. So it is never used to say what is known where paths meet (<see cref="Value.Join"/>), and nothing
+    /// regroups or reorders a chain's types before folding them.
+    /// </para>
     /// </summary>
-    public static ScalarType? Common(IReadOnlyList<ScalarType> types) => Clash(types) is null ? Fold(types) : null;
+    public static ScalarType? Chain(IReadOnlyList<ScalarType> types) => Clash(types) is null ? Fold(types) : null;
 
     private static ScalarType? Fold(IReadOnlyList<ScalarType> types)
     {

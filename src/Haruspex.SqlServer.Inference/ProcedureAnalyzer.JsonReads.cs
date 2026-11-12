@@ -1,6 +1,7 @@
 using System.Globalization;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -130,7 +131,7 @@ internal sealed partial class ProcedureAnalyzer
         }
 
         static Found Either(Found a, Found b) => new(
-            a.Shape is null ? b.Shape : b.Shape is null ? a.Shape : ShapeJoin.Content(a.Shape, b.Shape),
+            a.Shape is null ? b.Shape : b.Shape is null ? a.Shape : JsonShapes.Join(a.Shape, b.Shape),
             a.MayBeMissing || b.MayBeMissing,
             a.MayBeNull || b.MayBeNull);
     }
@@ -305,7 +306,7 @@ internal sealed partial class ProcedureAnalyzer
                 }
 
                 found = found is null ? one : new Found(
-                    found.Shape is null ? one.Shape : one.Shape is null ? found.Shape : ShapeJoin.Content(found.Shape, one.Shape),
+                    found.Shape is null ? one.Shape : one.Shape is null ? found.Shape : JsonShapes.Join(found.Shape, one.Shape),
                     found.MayBeMissing || one.MayBeMissing,
                     found.MayBeNull || one.MayBeNull);
             }
@@ -428,7 +429,7 @@ internal sealed partial class ProcedureAnalyzer
         var type = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["4000"]), at);
 
         // A NULL document gives NULL.
-        var nullable = ShapeJoin.Reasons(documentNull, [new IrNullReason(IrNullRule.JsonNullOrAbsent, at.ToString())]);
+        var nullable = NullReasons.Join(documentNull, [new IrNullReason(IrNullRule.JsonNullOrAbsent, at.ToString())]);
         if (found.Shape is not ScalarShape { Type: var scalar })
             return new Value(type, nullable);
 

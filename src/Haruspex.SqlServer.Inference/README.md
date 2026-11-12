@@ -61,7 +61,7 @@ them gives: calls ("Calls" below), what filters and single-row queries prove ("R
 `VALUES` lists and views ("APPLY", "Views"), expressions ("Expressions", "CASE, IIF, CHOOSE and NULLIF", "Built-in
 functions", "Window functions"), table-valued functions, set operations and the other joins, `OPENJSON`, and JSON built in
 the project and traced to where it is read. The walk is `ProcedureAnalyzer.Flow.cs`, with `FlowState.cs` (the state and
-its join), `FlowLocals.cs` (what the binder sees) and `ShapeJoin.cs` (joins of values). Every engine rule it leans on is
+its join), `FlowLocals.cs` (what the binder sees) and `Lattice/` (the knowledge join of values, one lattice per fact, composed in `Value.Join`). Every engine rule it leans on is
 observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`; the test names are given below. Each later section
 names its own code and its own test class. A construct's unit tests are in the class of the same family, in
@@ -108,7 +108,7 @@ always its declaration: nothing a statement does changes what its columns may ho
   nullability by its own reading of the select, which haruspex does not reproduce
   (`Select_into_a_column_from_a_not_null_column_refuses_null_but_others_take_it`; a column from a variable takes null
   whatever the variable holds, `Select_into_a_column_from_a_variable_takes_null`), so every later write is joined in:
-  `ShapeJoin.Converted` keeps the column's SQL type (the write converts to it), keeps the facets both sides prove and
+  `Value.JoinConverted` keeps the column's SQL type (the write converts to it), keeps the facets both sides prove and
   at least the type's own, and unions the reasons to be null. A column an `INSERT` leaves out gets null.
 - **JSON** stored in a column is text once stored (`Json_stored_in_a_temporary_table_is_text_but_json_through_a_cte_stays_json`).
   `SELECT … INTO` makes `nvarchar(max)` of a `FOR JSON` subquery or a constructor, so the column is JSON text of its content
@@ -172,7 +172,7 @@ anchor's types: a recursive member of any other type, length included, is refuse
 `A_recursive_member_of_another_type_than_the_anchor_is_an_error`), while nullability may differ
 (`A_recursive_member_may_differ_from_the_anchor_in_nullability`). So the column keeps the anchor's SQL type, and only
 nullability and the facets the members share need a fixed point: the recursive members are read with the CTE as it
-stands, joined in by `ShapeJoin.Converted`, and read again until nothing changes (at most 20 passes). A recursive
+stands, joined in by `Value.JoinConverted`, and read again until nothing changes (at most 20 passes). A recursive
 member's column that is not modelled (`depth + 1`) is still of the anchor's type; only its nullability is unknown.
 
 A CTE whose query is a set operation is read as any set operation is (below, "Set operations"). Not modelled
@@ -1014,11 +1014,11 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
   left NULL only when the right side has one: never null when either side is never null, otherwise the left side's reasons.
   `EXCEPT`: the left side's.
 - **Facets.** When every query whose values come out is already of the column's type, nothing is converted, and the facets
-  they all prove hold (each the looser, as at a join of paths: `ShapeJoin.Either`). Otherwise a query whose every
+  they all prove hold (each the looser, as at a join of paths: `Value.Join`). Otherwise a query whose every
   value converts unchanged (`ScalarType.Preserves`: an integer into a wider one or a decimal holding it, a decimal into one
   with as many integer digits and places, `smallmoney` into `money`, a string into a varying string as long and of the same
   kind) keeps its facets, and any other query (rounded to fewer places, made approximate, padded, cut short, or a date or
-  time) brings only the column type's; the column has the looser of each (`ShapeJoin.Widened`), and the type's where none
+  time) brings only the column type's; the column has the looser of each (`ScalarFacets.Widened`), and the type's where none
   is left: a range or a length widens to cover every query, and is never narrower than the type's. A closed set is the union
   of those queries' sets, each a `CHECK`'s set its value carries, kept only when it holds converted (a string set into a
   string type long enough for every item; a number set when the value converts unchanged), or the literal it is (not a
@@ -1044,8 +1044,9 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
 ## Combining types
 
 A set operation's column, `COALESCE`, and a `CASE`, `IIF` or `CHOOSE` all take one type over values of different
-types, by one rule: `ScalarType.Common` for the type, `ScalarType.Clash` for pairs SQL Server refuses, and
-`ProcedureAnalyzer.Combined` for what converting each value adds. Observed in `SetTypeObservationTests`, and over every
+types, by one rule, the server's type rule for a chain: `ScalarType.Chain` for the type, `ScalarType.Clash` for pairs SQL
+Server refuses, and `ProcedureAnalyzer.Chained` for what converting each value adds. The rule is a fold from left to
+right, not a join: it is neither associative nor commutative, so it is never used where paths meet (`Value.Join`). Observed in `SetTypeObservationTests`, and over every
 ordered pair of a grid of 33 types and 5 literals, in all three forms, in `SetTypeGridTests` (the server describes a set
 operation and `COALESCE` alike over all 1,806 ordered pairs of a wider grid, binary and `xml` included, checked once
 when the rule was written, not kept as a test; the `CASE` there had a constant condition, which the server folds to one result, so it differed only
@@ -1184,7 +1185,7 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   for a temporary table, so a callee's writes come back with the table. A parameter is the caller's, so it is not traced.
 - **Writes join.** A place written on several paths, in a loop, by several statements, or by an assignment that may not
   happen (`SELECT @x = … FROM` over no rows keeps what `@x` held, observed), holds the join of what each wrote
-  (`ShapeJoin.Content`): the same shape is itself; arrays and tuples are an array of both's items, between the fewest and most
+  (`JsonShapes.Join`): the same shape is itself; arrays and tuples are an array of both's items, between the fewest and most
   of both (so `'[]'` keeps an array's items and only drops its least count); objects with the same keys in the same order join
   key by key; scalars of one type keep the facts both prove; anything else is a `union` of both, which is exact. NULL adds
   nothing. A write of a value that may not be JSON built here (a parameter, a stored column, concatenation, `json_modify`, a

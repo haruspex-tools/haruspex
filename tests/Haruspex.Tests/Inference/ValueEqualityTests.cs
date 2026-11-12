@@ -107,19 +107,19 @@ public class ValueEqualityTests
     [Fact]
     public void A_join_takes_values_differing_only_in_digits_or_json_why_as_one()
     {
-        // ShapeJoin.Either's one deliberate exception to equality: it combines constant digits itself (the fewest of both,
+        // Value.Join's one deliberate exception to equality: it combines constant digits itself (the fewest of both,
         // up to 10) and keeps the first value's why its JSON is not known.
         var at = new SourceLocation("p.sql", 4, 1);
         var one = new Value(new ScalarShape(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), [], Digits: new IntDigits(1, 1));
         var three = one with { Digits = new IntDigits(3, 3) };
 
-        Assert.Equal(one with { Digits = new IntDigits(1, 10) }, ShapeJoin.Either(one, three, at, "@n"));
+        Assert.Equal(one with { Digits = new IntDigits(1, 10) }, Value.Join(one, three, at, "@n"));
 
         var text = new Value(new ScalarShape(new IrScalar(IrScalarKind.String, null, "nvarchar(max)")), []);
         var first = text with { JsonWhy = new UnknownShape(IrUnknownReason.JsonShapeUnknown, "first", at) };
         var second = text with { JsonWhy = new UnknownShape(IrUnknownReason.JsonShapeUnknown, "second", at) };
 
-        Assert.Equal(first, ShapeJoin.Either(first, second, at, "@t"));
+        Assert.Equal(first, Value.Join(first, second, at, "@t"));
     }
 
     [Fact]

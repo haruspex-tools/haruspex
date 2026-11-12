@@ -1,5 +1,6 @@
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -180,7 +181,7 @@ internal sealed partial class ProcedureAnalyzer
 
         if (merged is null || values.Values is null)
             return values;
-        return values with { Values = [.. values.Values.Select(v => v.Shape is UnknownShape ? v : v with { NullableBecause = ShapeJoin.Reasons(v.NullableBecause, [merged]) })] };
+        return values with { Values = [.. values.Values.Select(v => v.Shape is UnknownShape ? v : v with { NullableBecause = NullReasons.Join(v.NullableBecause, [merged]) })] };
     }
 
     /// <summary>

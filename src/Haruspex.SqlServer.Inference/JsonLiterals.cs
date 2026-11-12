@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.SqlServer.Inference;
@@ -25,7 +26,7 @@ namespace Haruspex.SqlServer.Inference;
 /// numbers have value sets of exactly their values (fact source <c>expression</c>, the
 /// literal's location); a number whose value a JavaScript number cannot hold exactly has none. A JSON <c>null</c> is
 /// <c>null-literal</c>. An array is a tuple, each position its own type, so <c>'[]'</c> is the empty tuple, which joins with
-/// any array (<see cref="ShapeJoin.Content"/>).
+/// any array (<see cref="JsonShapes.Join"/>).
 /// </para>
 /// </remarks>
 internal static class JsonLiterals

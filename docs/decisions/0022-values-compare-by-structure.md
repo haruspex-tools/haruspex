@@ -13,7 +13,7 @@ overrides in the order the file sorts them, since their order in the records mea
 for the IR's round trip, in which a document read back from its file must equal the one written).
 
 **Exceptions, each compared by nothing.** A declaration's map of named types (`DeclaredResults.Types`), the set of declarations a walk used (`Walked.Declared`) and the inference's private working
-records, which hold syntax or live within one statement (`Row`, `SetNode`, `JsonPath`, `CombinedType`), keep .NET's
+records, which hold syntax or live within one statement (`Row`, `SetNode`, `JsonPath`, `ChainType`), keep .NET's
 collections and so compare by reference. Nothing compares them; whatever first does must give them value equality. A value
 set's items and sources keep the order they were found in, so two sets with the same items in another order are different
 records: equality is stricter than meaning there, which costs a pass or a cache entry, never a wrong claim.

@@ -1,4 +1,5 @@
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -55,8 +56,8 @@ internal sealed partial class ProcedureAnalyzer
 
         EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call)];
         if (name is "stdev" or "var")
-            because = ShapeJoin.Reasons(because, [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())]);
-        return Typed(type, overflows ? ShapeJoin.Reasons(because, [Overflow(call)]) : because, call);
+            because = NullReasons.Join(because, [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())]);
+        return Typed(type, overflows ? NullReasons.Join(because, [Overflow(call)]) : because, call);
     }
 
     /// <summary>The type of AVG or a statistic of a value of this type, and whether it may overflow; null when not a number.</summary>
@@ -115,9 +116,9 @@ internal sealed partial class ProcedureAnalyzer
         if (others.Select((o, i) => o.IsLiveJson ? null : TypeOf(o, p[i + 1])).Any(t => t is not ({ IsNumber: true } or { Name: "bit" })))
             return NotModelled(call, "an argument of this type is not modelled.");
         var counted = call.FunctionName.Value.Equals("round", StringComparison.OrdinalIgnoreCase) ? others.Take(1) : others;
-        var because = ShapeJoin.Reasons(value.NullableBecause, Reasons(counted));
+        var because = NullReasons.Join(value.NullableBecause, Reasons(counted));
         EquatableArray<IrNullReason> With(bool overflows, bool domain = false) =>
-            ShapeJoin.Reasons(because, [.. overflows ? [Overflow(call)] : (EquatableArray<IrNullReason>)[], .. domain ? [Domain(call)] : (EquatableArray<IrNullReason>)[]]);
+            NullReasons.Join(because, [.. overflows ? [Overflow(call)] : (EquatableArray<IrNullReason>)[], .. domain ? [Domain(call)] : (EquatableArray<IrNullReason>)[]]);
         var flt = new ScalarType("float");
 
 #pragma warning disable CA1308 // Built-in function names are ASCII, so lower case matches them exactly, and the cases are written as T-SQL usually is.
@@ -187,9 +188,9 @@ internal sealed partial class ProcedureAnalyzer
     {
         var typed = result.IsDecimal ? result with { Precision = 38 } : result;
         if (WholeOf(call.Parameters[1]) is not { } n)
-            return Typed(typed, ShapeJoin.Reasons(because, [Overflow(call), Domain(call)]), call);
+            return Typed(typed, NullReasons.Join(because, [Overflow(call), Domain(call)]), call);
         if (n < 0)
-            return Typed(typed, ShapeJoin.Reasons(because, [Overflow(call)]), call);
+            return Typed(typed, NullReasons.Join(because, [Overflow(call)]), call);
         var fits = type switch
         {
             { IsDecimal: true } d => (d.Precision - d.Scale) * n < 38 - d.Scale,
@@ -200,6 +201,6 @@ internal sealed partial class ProcedureAnalyzer
             { Name: "bit" } => true,
             _ => false,
         };
-        return Typed(typed, fits ? because : ShapeJoin.Reasons(because, [Overflow(call)]), call);
+        return Typed(typed, fits ? because : NullReasons.Join(because, [Overflow(call)]), call);
     }
 }

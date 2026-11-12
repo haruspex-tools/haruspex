@@ -1,4 +1,5 @@
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -173,6 +174,6 @@ internal sealed partial class ProcedureAnalyzer
         var fits = (LiteralOf(parameters[2]) is ({ } literal, var negative) ? ScalarType.Fits(literal, type, negative) : null)
             ?? (!fallback.IsLiveJson && TypeOf(fallback, parameters[2]) is { } from && ScalarType.Converts(from, type));
         EquatableArray<IrNullReason> because = [.. value.NullableBecause, .. offsetBecause, .. itself ? [] : fallback.NullableBecause];
-        return Typed(type with { Digits = null }, fits || itself ? because : ShapeJoin.Reasons(because, [Overflow(call)]), call);
+        return Typed(type with { Digits = null }, fits || itself ? because : NullReasons.Join(because, [Overflow(call)]), call);
     }
 }

@@ -1,5 +1,6 @@
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -144,7 +145,7 @@ internal sealed partial class ProcedureAnalyzer
         var right = SetNulls(node.Right, because);
         if (node.Intersect)
             return left.Count == 0 || right.Count == 0 ? [] : left;
-        return ShapeJoin.Reasons(left, right);
+        return NullReasons.Join(left, right);
     }
 
     /// <summary>One column of a set operation, from that column of every query (see <see cref="Combine(List{Row}, List{BinaryQueryExpression}, SourceLocation)"/>).</summary>
@@ -174,13 +175,13 @@ internal sealed partial class ProcedureAnalyzer
 
         // Each query's value is converted to the column's type, which may overflow, NULL under the caller's options; that is
         // one more reason that query's value may be null, before INTERSECT and EXCEPT decide whose nulls come out.
-        var combined = Combined([.. given.Select(c => (c.Value, c.Expression ?? new NullLiteral(), c.At))]);
+        var combined = Chained([.. given.Select(c => (c.Value, c.Expression ?? new NullLiteral(), c.At))]);
         if (combined.Type is not { } type)
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This set operation's column: {combined.Why}", at));
         var next = 0;
         var reasons = SetNulls(node, [.. columns.Select(c => IsNull(c)
             ? [new IrNullReason(IrNullRule.NullLiteral, c.At.ToString())]
-            : ShapeJoin.Reasons(c.Value.NullableBecause, combined.Overflows[next++]))]);
+            : NullReasons.Join(c.Value.NullableBecause, combined.Overflows[next++]))]);
 
         // When every query whose values come out is of the column's type already, nothing is converted, and the facets they
         // all have hold. Otherwise those of a query whose every value converts unchanged (ScalarType.Preserves: an int into a
@@ -190,7 +191,7 @@ internal sealed partial class ProcedureAnalyzer
         Value value;
         if (output.Count > 0 && output.All(c => c.Value.Shape is ScalarShape { Type.Sql: var sql } && sql == type.Text))
         {
-            value = output.Skip(1).Aggregate(output[0].Value, (a, b) => ShapeJoin.Either(a, b.Value, at, "this set operation's column")) with { NullableBecause = reasons };
+            value = output.Skip(1).Aggregate(output[0].Value, (a, b) => Value.Join(a, b.Value, at, "this set operation's column")) with { NullableBecause = reasons };
             if (value.Shape is UnknownShape)
                 value = Typed(type, reasons, at);
         }
@@ -202,7 +203,7 @@ internal sealed partial class ProcedureAnalyzer
                 var each = output.Select(c => c.Value.Shape is ScalarShape { Type: var own } && ScalarType.Parse(own.Sql) is { } from && ScalarType.Preserves(from, type)
                     ? own.Facets
                     : typed.Type.Facets).ToList();
-                value = value with { Shape = typed with { Type = typed.Type with { Facets = ShapeJoin.Widened(each, typed.Type.Facets) } } };
+                value = value with { Shape = typed with { Type = typed.Type with { Facets = ScalarFacets.Widened(each, typed.Type.Facets) } } };
             }
         }
 

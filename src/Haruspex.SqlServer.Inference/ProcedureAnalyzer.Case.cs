@@ -1,5 +1,6 @@
 using System.Globalization;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -166,7 +167,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The value of a CASE, IIF or CHOOSE from its results (a null value for the NULL literal): the type of highest precedence
-    /// over them, as COALESCE's (<see cref="ScalarType.Common"/>; observed:
+    /// over them, as COALESCE's (<see cref="ScalarType.Chain"/>; observed:
     /// Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results); null when a result may be, or is the NULL
     /// literal (<c>null-literal</c>), or converting one to the type may overflow (<c>arithmetic-overflow</c>), or for
     /// <paramref name="also"/>. When
@@ -198,13 +199,13 @@ internal sealed partial class ProcedureAnalyzer
                 var nulls = given.Select(r => r.Value.NullableBecause)
                     .Concat(results.Where(r => r.Value is null).Select(r => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRule.NullLiteral, At(r.Expression).ToString())]))
                     .Append(also)
-                    .Aggregate((EquatableArray<IrNullReason>)[], ShapeJoin.Reasons);
+                    .Aggregate((EquatableArray<IrNullReason>)[], NullReasons.Join);
                 return new Value(new JsonTextShape(content), nulls);
             }
         }
 
         var where = At(at);
-        var combined = Combined([.. given.Select(r => (r.Value, r.Expression, where))]);
+        var combined = Chained([.. given.Select(r => (r.Value, r.Expression, where))]);
         if (combined.Type is not { } type)
             return NotModelled(at, combined.Why!);
 
@@ -212,7 +213,7 @@ internal sealed partial class ProcedureAnalyzer
             .Concat(combined.Overflows)
             .Concat(results.Where(r => r.Value is null).Select(r => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRule.NullLiteral, At(r.Expression).ToString())]))
             .Append(also)
-            .Aggregate((EquatableArray<IrNullReason>)[], ShapeJoin.Reasons);
+            .Aggregate((EquatableArray<IrNullReason>)[], NullReasons.Join);
         // A CASE whose condition is constant is folded to one result, an int literal then counting its own digits (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal); which, is not known here.
         var value = Typed(type, because, at) with { Digits = type.Name == "int" ? IntDigits.Foldable(given.Select(r => r.Value.Digits)) : null };
@@ -281,7 +282,7 @@ internal sealed partial class ProcedureAnalyzer
         var results = call.Parameters.Skip(1).Select(p => (p, Strip(p) is NullLiteral ? null : Expression(p, scope))).ToList();
         var because = InRange(index, call.Parameters[0], count)
             ? index.NullableBecause
-            : ShapeJoin.Reasons(index.NullableBecause, [new IrNullReason(IrNullRule.OutOfRange, At(call).ToString())]);
+            : NullReasons.Join(index.NullableBecause, [new IrNullReason(IrNullRule.OutOfRange, At(call).ToString())]);
         return Results(call, results, because);
     }
 
@@ -319,7 +320,7 @@ internal sealed partial class ProcedureAnalyzer
         if (value.IsLiveJson || value.Shape is JsonTextShape)
             return NotModelled(nullIf, "whether NULLIF over JSON nests as JSON depends on whether the server folds it.");
 
-        var because = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRule.NullWhenEqual, At(nullIf).ToString())]);
+        var because = NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.NullWhenEqual, At(nullIf).ToString())]);
         if (LiteralOf(nullIf.FirstExpression) is ({ } literal and IntegerLiteral, var negative)
             && long.TryParse(literal.Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n))
         {
@@ -340,7 +341,7 @@ internal sealed partial class ProcedureAnalyzer
     /// content, and a literal that is a JSON document its parsed shape (<see cref="JsonLiterals"/>), not only
     /// <c>'[]'</c> and <c>'{}'</c>. <c>NotJson</c> when a part may not be JSON (a column, a literal that is not a
     /// document); otherwise JSON, its content null when not known (a JSON text of unknown content, or <c>'null'</c>, which is
-    /// JSON but not a document). The content is the join of the parts' (<see cref="ShapeJoin.Content"/>): <c>'[]'</c> lets
+    /// JSON but not a document). The content is the join of the parts' (<see cref="JsonShapes.Join"/>): <c>'[]'</c> lets
     /// arrays have no items, and shapes that do not join are a union.
     /// </summary>
     private (bool Json, Shape? Content) JsonContent(IEnumerable<(ScalarExpression Expression, Value Value)> parts)
@@ -381,7 +382,7 @@ internal sealed partial class ProcedureAnalyzer
                 return (false, null);
             }
 
-            content = content is null ? shape : ShapeJoin.Content(content, shape);
+            content = content is null ? shape : JsonShapes.Join(content, shape);
         }
 
         return (true, known ? content : null);

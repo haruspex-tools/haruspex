@@ -48,7 +48,7 @@ These are the places in haruspex where an equality decides:
 | Recursive procedures' fixed point | the result sets returned | `ResultTrack` |
 | The cache of procedure walks | the procedure and the tables it starts from | `CallContext` |
 | The cache of table-valued function reads | the function and each argument's value | `ViewSummaries` |
-| Joining two values | whether they are already the same | `ShapeJoin.Either`, `ShapeJoin.Content` |
+| Joining two values | whether they are already the same | `Value.Join`, `JsonShapes.Join` |
 
 ### What an equality must satisfy
 
@@ -168,7 +168,7 @@ full at every pass, to be compared once and thrown away.
   through, and of `with`, which builds a value outside it. Nothing has measured equality as a cost worth that.
 - **A comparer per place** that compares only what that place cares about. Each place would hold its own idea of
   sameness, and the laws would have to be argued once per comparer. There is one equality, the records', and a place
-  that deliberately ignores a fact says so in code: `ShapeJoin.Either` takes two values that differ only in their digits
+  that deliberately ignores a fact says so in code: `Value.Join` takes two values that differ only in their digits
   and their JSON's why as one value, because it combines the digits itself and keeps the first value's why.
 - **`ImmutableArray<T>` for the lists.** It is immutable, but its equality compares the array it wraps, so it has the same
   trap as any other list.

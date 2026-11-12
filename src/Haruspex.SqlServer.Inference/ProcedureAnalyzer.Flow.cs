@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -429,9 +430,9 @@ internal sealed partial class ProcedureAnalyzer
     {
         if (!variableShapes.TryGetValue(name, out var shape) || !state.Variables.TryGetValue(name, out var old))
             return state;
-        var because = shape is UnknownShape unknown ? ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]) : Converting(value, shape, at);
+        var because = shape is UnknownShape unknown ? NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]) : Converting(value, shape, at);
         var assigned = new Value(shape, because, old.IsLiveJson);
-        state = state.WithVariable(name, definitely ? assigned : ShapeJoin.Either(old, assigned, at, name));
+        state = state.WithVariable(name, definitely ? assigned : Value.Join(old, assigned, at, name));
         if (state.Json.TryGetValue(name, out var slot))
         {
             var written = JsonWritten(value, expression, at, name);
@@ -629,7 +630,7 @@ internal sealed partial class ProcedureAnalyzer
             var written = position < 0
                 ? [new Value(column.Value.Shape, [new IrNullReason(IrNullRule.NullableColumn, where)])]
                 : all.Select(r => Stored(r[position], where, at));
-            columns[i] = column with { Value = written.Aggregate(column.Value, (all, value) => ShapeJoin.Converted(all, value, at, where)) };
+            columns[i] = column with { Value = written.Aggregate(column.Value, (all, value) => Value.JoinConverted(all, value, at, where)) };
         }
 
         return table with { Columns = [.. columns] };
@@ -723,7 +724,7 @@ internal sealed partial class ProcedureAnalyzer
                 if (columns[i].Declaration is null)
                 {
                     var where = $"{target}.{columns[i].Name}";
-                    columns[i] = columns[i] with { Value = ShapeJoin.Converted(columns[i].Value, Stored(value, where, at), at, where) };
+                    columns[i] = columns[i] with { Value = Value.JoinConverted(columns[i].Value, Stored(value, where, at), at, where) };
                 }
                 else if (columns[i].Json is { } slot)
                 {
@@ -984,7 +985,7 @@ internal sealed partial class ProcedureAnalyzer
                 if (row.Star is not null || row.Columns.Count != next.Count)
                     return Fails(IrUnknownReason.UnsupportedQuery, "a recursive member's columns cannot be listed against the anchor's.");
                 for (var i = 0; i < next.Count; i++)
-                    next[i] = ShapeJoin.Converted(next[i], row.Columns[i].Value, row.Columns[i].At, $"{name}.{current.Names![i]}");
+                    next[i] = Value.JoinConverted(next[i], row.Columns[i].Value, row.Columns[i].At, $"{name}.{current.Names![i]}");
             }
 
             if (next.SequenceEqual(current.Values!))
@@ -1052,11 +1053,11 @@ internal sealed partial class ProcedureAnalyzer
         if (value.Shape is not UnknownShape && bound.Ordinal >= 0 && Proved(bound.Source, Key(bound)))
             value = value with { NullableBecause = [] };
         if (bound.Source.OptionalSideOf is { } optional && !Matched(bound.Source) && !AlwaysApplied(bound))
-            value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(bound.Source.OuterApply ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.ToString())]) };
+            value = value with { NullableBecause = NullReasons.Join(value.NullableBecause, [new IrNullReason(bound.Source.OuterApply ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.ToString())]) };
         if (Unmatched(bound.Source) is { } unmatched && value.Shape is not UnknownShape)
-            value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [unmatched]) };
+            value = value with { NullableBecause = NullReasons.Join(value.NullableBecause, [unmatched]) };
         if (Rolled(bound.Source) is { } rolled && value.Shape is not UnknownShape)
-            value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [rolled]) };
+            value = value with { NullableBecause = NullReasons.Join(value.NullableBecause, [rolled]) };
 
         // A CASE branch that tested this very value proves it, whatever made it nullable (ProcedureAnalyzer.Case.cs).
         return value.Shape is not UnknownShape && bound.Ordinal >= 0 && BranchProved(bound.Source, Key(bound))
@@ -1128,7 +1129,7 @@ internal sealed partial class ProcedureAnalyzer
             if (i >= always)
                 absent.AddRange(produced.Select(p => new IrNullReason(IrNullRule.NotRun, p.At.ToString())));
             // The fewest rows any statement here proves at most: a statement that may return many makes the position many.
-            var cardinality = produced.Min(p => p.Result.Cardinality);
+            var cardinality = produced.Select(p => p.Result.Cardinality).Aggregate(Cardinalities.Join);
             results.Add(new ResultShape(encoding, Union(shapes), [.. absent.Distinct()], cardinality));
         }
 

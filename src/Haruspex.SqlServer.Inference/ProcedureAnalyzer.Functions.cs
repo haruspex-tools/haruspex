@@ -1,4 +1,5 @@
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -72,7 +73,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     private static EquatableArray<IrNullReason> Reasons(IEnumerable<Value> values) =>
-        values.Select(v => v.NullableBecause).Aggregate((EquatableArray<IrNullReason>)[], ShapeJoin.Reasons);
+        values.Select(v => v.NullableBecause).Aggregate((EquatableArray<IrNullReason>)[], NullReasons.Join);
 
     // ---- dates ------------------------------------------------------------------------------------------------------
 
@@ -354,7 +355,7 @@ internal sealed partial class ProcedureAnalyzer
         if (types.Count > 0 && types.All(t => t is { IsInteger: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
             type = types[0]! with { Digits = null };
         else if (types.Count > 0 && types.All(t => t is { IsDecimal: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
-            type = ScalarType.Common(types!) is { } common && types.All(t => ScalarType.Converts(t!, common)) ? common : null;
+            type = ScalarType.Chain(types!) is { } common && types.All(t => ScalarType.Converts(t!, common)) ? common : null;
         if (type is null)
             return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(reference)}: its arguments must be of one integer type, or decimals.", at));
         return new LocalRelationValues(["value"], [Typed(type, [], reference)], null);

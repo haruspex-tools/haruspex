@@ -1,5 +1,6 @@
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -102,18 +103,19 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The type values of different types take when they meet in one column: a set operation's, COALESCE's, a CASE's, IIF's or
-    /// CHOOSE's (one rule, <see cref="ScalarType.Common"/>).
+    /// CHOOSE's, by the server's type rule for a chain (<see cref="ScalarType.Chain"/>), a fold from left to right. It is not the
+    /// knowledge join (<see cref="Value.Join"/>), which says what is known of a value that may come from either side.
     /// </summary>
     /// <param name="Type">The type, or null when it is not known.</param>
     /// <param name="Overflows">For each value, the reason converting it may give NULL: an overflow, NULL under a caller's
     /// ANSI_WARNINGS and ARITHABORT off (observed: A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options);
     /// empty when it cannot (<see cref="ScalarType.NeverNull"/>, or a literal that fits).</param>
     /// <param name="Why">When the type is not known, why, naming the types so a user knows what to change.</param>
-    private sealed record CombinedType(ScalarType? Type, IReadOnlyList<EquatableArray<IrNullReason>> Overflows, string? Why);
+    private sealed record ChainType(ScalarType? Type, IReadOnlyList<EquatableArray<IrNullReason>> Overflows, string? Why);
 
     /// <param name="values">Each value, the expression it came from (for a literal's digits and value), and where an overflow
     /// converting it would happen.</param>
-    private static CombinedType Combined(IReadOnlyList<(Value Value, ScalarExpression Expression, SourceLocation At)> values)
+    private static ChainType Chained(IReadOnlyList<(Value Value, ScalarExpression Expression, SourceLocation At)> values)
     {
         var types = values.Select(v => TypeOf(v.Value, v.Expression)).ToList();
         static string Name(Value value, ScalarType? type) => type?.Text ?? value.Shape switch
@@ -130,20 +132,20 @@ internal sealed partial class ProcedureAnalyzer
         }
 
         if (types.Any(t => t is null))
-            return new CombinedType(null, [], $"combining {Names(values.Select((v, i) => Name(v.Value, types[i])))} is not modelled yet.");
+            return new ChainType(null, [], $"combining {Names(values.Select((v, i) => Name(v.Value, types[i])))} is not modelled yet.");
         var known = types.Select(t => t!).ToList();
         if (ScalarType.Clash(known) is var (first, second))
-            return new CombinedType(null, [], $"SQL Server refuses to combine {first.Text} and {second.Text}: there is no implicit conversion between them (206, an operand type clash).");
-        if (ScalarType.Common(known) is not { } type)
-            return new CombinedType(null, [], $"combining {Names(known.Select(t => t.Text))} is not modelled yet.");
+            return new ChainType(null, [], $"SQL Server refuses to combine {first.Text} and {second.Text}: there is no implicit conversion between them (206, an operand type clash).");
+        if (ScalarType.Chain(known) is not { } type)
+            return new ChainType(null, [], $"combining {Names(known.Select(t => t.Text))} is not modelled yet.");
 
         // An int the server may or may not fold to a literal counts between that literal's digits and 10; when that changes the
         // scale, which values come back is not known (observed: An_int_constant_counts_its_own_digits_beside_a_decimal). When it
         // changes only the precision, the most digits hold every value.
-        if (values.Any(v => Uncertain(v.Value)) && ScalarType.Common([.. values.Select(v => TypeOf(v.Value, v.Expression, least: true)!)]) is var fewest
+        if (values.Any(v => Uncertain(v.Value)) && ScalarType.Chain([.. values.Select(v => TypeOf(v.Value, v.Expression, least: true)!)]) is var fewest
             && (fewest is null || fewest.Name != type.Name || fewest.Scale != type.Scale))
         {
-            return new CombinedType(null, [], $"its type depends on whether SQL Server folds {Names(values.Where(v => Uncertain(v.Value)).Select(v => Text(v.Expression)))} to a constant, whose digits it would count.");
+            return new ChainType(null, [], $"its type depends on whether SQL Server folds {Names(values.Where(v => Uncertain(v.Value)).Select(v => Text(v.Expression)))} to a constant, whose digits it would count.");
         }
 
         var overflows = values.Select((v, i) =>
@@ -152,13 +154,13 @@ internal sealed partial class ProcedureAnalyzer
                 ?? ScalarType.NeverNull(known[i], type);
             return fits ? (EquatableArray<IrNullReason>)[] : [new IrNullReason(IrNullRule.ArithmeticOverflow, v.At.ToString())];
         }).ToList();
-        return new CombinedType(type, overflows, null);
+        return new ChainType(type, overflows, null);
     }
 
     // ---- COALESCE and ISNULL ----------------------------------------------------------------------------------------
 
     /// <summary>
-    /// <c>COALESCE(a, b, …)</c>: the type of highest precedence (<see cref="ScalarType.Common"/>, <see cref="Combined"/>), to which every argument
+    /// <c>COALESCE(a, b, …)</c>: the type of highest precedence (<see cref="ScalarType.Chain"/>, <see cref="Chained"/>), to which every argument
     /// converts without an overflow. It is <c>CASE WHEN a IS NOT NULL THEN a …</c>, so it is never null when an argument is
     /// never null, except that an argument before it that is a subquery or a call is read twice and may be NULL the second
     /// time (observed: Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot), which is <c>read-twice</c>: a value
@@ -175,10 +177,10 @@ internal sealed partial class ProcedureAnalyzer
             return unknown;
         var first = values.FindIndex(v => v.NullableBecause.Count == 0);
         var because = first < 0
-            ? values.Select(v => v.NullableBecause).Aggregate(ShapeJoin.Reasons)
+            ? values.Select(v => v.NullableBecause).Aggregate(NullReasons.Join)
             : values.Take(first).Select((v, i) => i).Where(i => ReadTwice(arguments[i]))
                 .Select(i => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRule.ReadTwice, At(arguments[i]).ToString())])
-                .Aggregate((EquatableArray<IrNullReason>)[], ShapeJoin.Reasons);
+                .Aggregate((EquatableArray<IrNullReason>)[], NullReasons.Join);
         if (values.Any(IsJson) || ReferenceEquals(coalesce, jsonQueryArgument))
         {
             var json = CoalesceJson(coalesce, arguments, values, because);
@@ -189,12 +191,12 @@ internal sealed partial class ProcedureAnalyzer
         // A value converted to the common type may overflow it, NULL under the caller's options, whichever argument it is
         // (observed: A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
         var at = At(coalesce);
-        var combined = Combined([.. values.Select((v, i) => (v, arguments[i], at))]);
+        var combined = Chained([.. values.Select((v, i) => (v, arguments[i], at))]);
         if (combined.Type is not { } type)
             return NotModelled(coalesce, combined.Why!);
 
         // COALESCE(NULL, 1) is folded to 1 and counts its digits (observed: An_int_constant_counts_its_own_digits_beside_a_decimal).
-        return Typed(type, combined.Overflows.Aggregate(because, ShapeJoin.Reasons), coalesce) with
+        return Typed(type, combined.Overflows.Aggregate(because, NullReasons.Join), coalesce) with
         {
             Digits = type.Name == "int" ? IntDigits.Foldable(values.Select(v => v.Digits)) : null,
         };
@@ -261,8 +263,8 @@ internal sealed partial class ProcedureAnalyzer
             ?? (TypeOf(second, b) is { } from && ScalarType.Converts(from, type));
         if (second.NullableBecause.Count == 0 && fits)
             return Typed(type, [], call);
-        var because = ShapeJoin.Reasons(first.NullableBecause, second.NullableBecause);
-        return Typed(type, fits ? because : ShapeJoin.Reasons(because, [Overflow(call)]), call);
+        var because = NullReasons.Join(first.NullableBecause, second.NullableBecause);
+        return Typed(type, fits ? because : NullReasons.Join(because, [Overflow(call)]), call);
     }
 
     // ---- CAST and CONVERT -------------------------------------------------------------------------------------------
@@ -304,7 +306,7 @@ internal sealed partial class ProcedureAnalyzer
             return value.Digits is { Least: 1, Most: 1 } && IsNullCast(operand) ? value : value with { Digits = null };
         var because = fits
             ? value.NullableBecause
-            : ShapeJoin.Reasons(value.NullableBecause, [attempt ? new IrNullReason(IrNullRule.FailedConversion, At(call).ToString()) : Overflow(call)]);
+            : NullReasons.Join(value.NullableBecause, [attempt ? new IrNullReason(IrNullRule.FailedConversion, At(call).ToString()) : Overflow(call)]);
         return new Value(shape, because);
     }
 
@@ -370,7 +372,7 @@ internal sealed partial class ProcedureAnalyzer
     private Value Plus(BinaryExpression plus, Value left, Value right, ScalarType l, ScalarType r) =>
         Typed(
             ScalarType.String(l.IsNational || r.IsNational, varying: l.Name.EndsWith("varchar", StringComparison.Ordinal) || r.Name.EndsWith("varchar", StringComparison.Ordinal), l.IsMax || r.IsMax ? -1 : l.Length + r.Length),
-            ShapeJoin.Reasons(left.NullableBecause, right.NullableBecause),
+            NullReasons.Join(left.NullableBecause, right.NullableBecause),
             plus);
 
     // ---- arithmetic ---------------------------------------------------------------------------------------------------
@@ -419,8 +421,8 @@ internal sealed partial class ProcedureAnalyzer
             mayOverflow |= ScalarType.MayOverflow(op, lf, rf, NumberOf(binary.SecondExpression));
         }
 
-        var because = ShapeJoin.Reasons(left.NullableBecause, right.NullableBecause);
-        return Typed(type, mayOverflow ? ShapeJoin.Reasons(because, [Overflow(binary)]) : because, binary);
+        var because = NullReasons.Join(left.NullableBecause, right.NullableBecause);
+        return Typed(type, mayOverflow ? NullReasons.Join(because, [Overflow(binary)]) : because, binary);
     }
 
     /// <summary>The value of an integer or decimal literal, through parentheses and signs; null for anything else.</summary>
@@ -465,7 +467,7 @@ internal sealed partial class ProcedureAnalyzer
         {
             ({ IsDecimal: true } or { IsApproximate: true }) and var exact => Typed(exact with { Digits = null }, operand.NullableBecause, unary),
             { Name: "tinyint" } => Typed(new ScalarType("smallint"), operand.NullableBecause, unary),
-            ({ IsInteger: true } or { IsMoney: true }) and var integer => Typed(integer with { Digits = null }, ShapeJoin.Reasons(operand.NullableBecause, [Overflow(unary)]), unary),
+            ({ IsInteger: true } or { IsMoney: true }) and var integer => Typed(integer with { Digits = null }, NullReasons.Join(operand.NullableBecause, [Overflow(unary)]), unary),
             _ => NotModelled(unary, "negating a value of this type is not modelled yet."),
         };
     }
@@ -492,7 +494,7 @@ internal sealed partial class ProcedureAnalyzer
 
         var from = TypeOf(argument, call.Parameters[0]);
         EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call)];
-        return Typed(type, from is { IsDecimal: true, Precision: <= 19 } ? because : ShapeJoin.Reasons(because, [Overflow(call)]), call);
+        return Typed(type, from is { IsDecimal: true, Precision: <= 19 } ? because : NullReasons.Join(because, [Overflow(call)]), call);
     }
 
     /// <summary>The type SUM gives a value of this type, over a window too (observed: Sum_widens_its_argument).</summary>
@@ -524,6 +526,6 @@ internal sealed partial class ProcedureAnalyzer
         };
         return from is not null && ScalarType.Converts(from, to)
             ? value.NullableBecause
-            : ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRule.ArithmeticOverflow, at.ToString())]);
+            : NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.ArithmeticOverflow, at.ToString())]);
     }
 }

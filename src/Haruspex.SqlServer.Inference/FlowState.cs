@@ -77,7 +77,7 @@ internal sealed class FlowState : IEquatable<FlowState>
         foreach (var (name, value) in b.Variables)
         {
             variables = a.Variables.TryGetValue(name, out var mine)
-                ? variables.SetItem(name, ShapeJoin.Either(mine, value, at, name))
+                ? variables.SetItem(name, Value.Join(mine, value, at, name))
                 : variables.SetItem(name, value);
         }
 
@@ -119,7 +119,7 @@ internal sealed class FlowState : IEquatable<FlowState>
             (KnownTable x, KnownTable y) when x.Columns.Select(c => c.Name).SequenceEqual(y.Columns.Select(c => c.Name), Names)
                 => new KnownTable(x.Name, [.. x.Columns.Zip(y.Columns, (c, d) => c with
                 {
-                    Value = ShapeJoin.Either(c.Value, d.Value, at, $"{name}.{c.Name}"),
+                    Value = Value.Join(c.Value, d.Value, at, $"{name}.{c.Name}"),
                     // A column declared alike on both paths keeps its declaration. One declared on some paths only, or
                     // differently, is not guaranteed by either declaration, so it joins later writes like a column SELECT …
                     // INTO made, and is never read again from one path's declaration.
