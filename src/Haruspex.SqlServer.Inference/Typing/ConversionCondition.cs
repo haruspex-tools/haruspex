@@ -20,7 +20,4 @@ internal enum ConversionCondition
 
     /// <summary>When the target decimal holds the source's integer digits, and one more if it rounds to fewer places.</summary>
     DecimalDigitsFit,
-
-    /// <summary>When the target keeps at least the source's fractional seconds.</summary>
-    KeepsFraction,
 }

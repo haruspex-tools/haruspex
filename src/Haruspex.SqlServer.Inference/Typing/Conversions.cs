@@ -49,12 +49,19 @@ internal static class Conversions
     private const string AtTheEdges = "Each_conversion_the_table_lists_keeps_every_value_at_the_edges_of_its_types";
 
     /// <summary>
+    /// The observation that a date or time rounded to fewer fractional digits never overflows: at the type's greatest value the
+    /// server keeps it.
+    /// </summary>
+    private const string Rounded = "A_date_or_time_rounded_to_fewer_fractional_digits_never_overflows_since_the_greatest_is_kept";
+
+    /// <summary>
     /// The conversions that keep every value, without an overflow, for the types inference models: a pair not listed may
     /// overflow, or is not modelled, which is the safe answer. Microsoft's conversion chart ("CAST and CONVERT
     /// (Transact-SQL)") says which conversions are allowed; this says which of them can't overflow, a fact the chart doesn't
     /// give, so each row is observed (<see cref="ConversionRow.ObservedIn"/>). A row's dates are about ranges: a time is that
     /// time on 1 January 1900; a tinyint or bit that many days from 1900, and a smallint too within datetime's range (1753
-    /// to 9999) but not smalldatetime's (1900 to 2079); and a date before 1753 or 1900 overflows.
+    /// to 9999) but not smalldatetime's (1900 to 2079); and a date before 1753 or 1900 overflows. Rounded to fewer fractional
+    /// digits, a date or time never overflows: at the greatest value the server keeps it.
     /// </summary>
     public static IReadOnlyList<ConversionRow> Table { get; } =
     [
@@ -72,9 +79,9 @@ internal static class Conversions
         new([BuiltInType.Date], [BuiltInType.Date, BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.DateTime2, BuiltInType.DateTimeOffset], ConversionCondition.Always, [AtTheEdges]),
         new([BuiltInType.SmallDateTime], [BuiltInType.Bit, BuiltInType.TinyInt, BuiltInType.Time, BuiltInType.SmallDateTime], ConversionCondition.Always, ["A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges", AtTheEdges]),
         new([BuiltInType.DateTime], [BuiltInType.Bit, BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Time, BuiltInType.DateTime, BuiltInType.SmallDateTime], ConversionCondition.Always, ["A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges", AtTheEdges]),
-        new([BuiltInType.DateTime2], [BuiltInType.Date, BuiltInType.Time, BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.DateTime2], ConversionCondition.KeepsFraction, [AtTheEdges]),
-        new([BuiltInType.DateTimeOffset], DatesAndTimes, ConversionCondition.KeepsFraction, ["A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges", AtTheEdges]),
-        new([BuiltInType.Time], [BuiltInType.Time], ConversionCondition.KeepsFraction, [AtTheEdges]),
+        new([BuiltInType.DateTime2], [BuiltInType.Date, BuiltInType.Time, BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.DateTime2], ConversionCondition.Always, [Rounded, AtTheEdges]),
+        new([BuiltInType.DateTimeOffset], DatesAndTimes, ConversionCondition.Always, ["A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges", Rounded, AtTheEdges]),
+        new([BuiltInType.Time], [BuiltInType.Time], ConversionCondition.Always, [Rounded, AtTheEdges]),
     ];
 
     /// <summary>
@@ -101,7 +108,6 @@ internal static class Conversions
             ConversionCondition.WiderInteger => to.IntegerDigits >= from.IntegerDigits,
             ConversionCondition.IntegerPartFits => from.Precision - from.Scale <= to.IntegerDigits - 1,
             ConversionCondition.DecimalDigitsFit => DecimalDigitsFit(operand, to),
-            ConversionCondition.KeepsFraction => to.FractionalSeconds >= from.FractionalSeconds,
             _ => false,
         };
     }

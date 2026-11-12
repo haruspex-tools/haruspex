@@ -128,7 +128,7 @@ target types, a set of source types, and a condition on their arguments (`Conver
 | an integer | `bit` or an integer | the target has as many integer digits |
 | `smallint`, `int`, `bigint`, `smallmoney`, `money` | a decimal | the decimal has fewer integer digits than the target |
 | a decimal | an exact number | the target holds its integer digits, and one more if it rounds to fewer places |
-| `datetime2`, `datetimeoffset`, `time` | a date or time | the target keeps as many fractional digits |
+| `datetime2`, `datetimeoffset`, `time` | a date or time | always: rounded to fewer fractional digits, the greatest value is kept, not overflowed (`A_date_or_time_rounded_to_fewer_fractional_digits_never_overflows_since_the_greatest_is_kept`) |
 
 with a few rows of `ConversionCondition.Always` besides (an exact number into `bit` or `float`, a `tinyint` into `datetime`). Written as rows,
 two limits the code had spelt out, `smallmoney`'s "at most 5 integer digits" and `money`'s "at most 14", turned out to be the

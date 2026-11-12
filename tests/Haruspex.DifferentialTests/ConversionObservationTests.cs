@@ -66,6 +66,25 @@ public class ConversionObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_date_or_time_rounded_to_fewer_fractional_digits_never_overflows_since_the_greatest_is_kept()
+    {
+        // Elsewhere a value rounds to the nearest (half a second up into the next day, and year); at the greatest value of the
+        // type the server keeps it rather than overflow, whatever the offset.
+        var outcome = await ObservedCall.Run(server, [], """
+            SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;
+            SELECT CONVERT(varchar(40), CAST(CAST('9999-12-31 23:59:59.9999999' AS datetime2(7)) AS datetime2(0)), 121) AS a,
+                   CONVERT(varchar(40), CAST(CAST('9999-12-31 23:59:59.997' AS datetime) AS datetime2(0)), 121) AS b,
+                   CONVERT(varchar(40), CAST(CAST('23:59:59.9999999' AS time(7)) AS time(0)), 121) AS c,
+                   CONVERT(varchar(40), CAST(CAST('9999-12-31 23:59:59.9999999 +14:00' AS datetimeoffset(7)) AS datetimeoffset(0)), 121) AS d,
+                   CONVERT(varchar(40), CAST(CAST('2020-12-31 23:59:59.5' AS datetime2(1)) AS datetime2(0)), 121) AS e;
+            """);
+        Assert.Null(outcome.Error);
+        Assert.Equal(
+            ["a,b,c,d,e: 9999-12-31 23:59:59,9999-12-31 23:59:59,23:59:59,9999-12-31 23:59:59 +14:00,2021-01-01 00:00:00"],
+            outcome.Sets);
+    }
+
+    [Fact]
     public async Task Each_conversion_the_table_lists_keeps_every_value_at_the_edges_of_its_types()
     {
         var instances = BuiltInType.All.Where(SqlTypes.IsModelled).SelectMany(Instances).ToList();

@@ -247,6 +247,15 @@ public class ExpressionTests
     }
 
     [Fact]
+    public void A_date_or_time_rounded_to_fewer_fractional_digits_is_never_null_from_overflow()
+    {
+        // A_date_or_time_rounded_to_fewer_fractional_digits_never_overflows_since_the_greatest_is_kept.
+        var doc = Procedure("SELECT CAST(at AS datetime2(0)) AS a, CAST(at AS datetimeoffset(0)) AS b FROM dbo.t;");
+        Assert.Equal("datetime2(0) nullable-column", Typed(doc, "a"));
+        Assert.Equal("datetimeoffset(0) nullable-column", Typed(doc, "b"));
+    }
+
+    [Fact]
     public void A_conversion_sql_server_refuses_is_unknown_even_where_the_first_value_is_never_null()
     {
         // The conversion chart (ConversionChart; observed: The_conversion_chart_is_what_the_server_allows_implicitly_explicitly_or_not_at_all):

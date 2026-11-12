@@ -458,8 +458,8 @@ its types' edges. In words:
 | an integer | an integer | the target is as wide |
 | `decimal(p,s)` | an integer | p − s is less than the target's digits (`int` 10, `bigint` 19, `smallint` 5); never `tinyint`, which has no sign |
 | an exact number (an integer as its digits, `money` as `decimal(19,4)`) | `decimal(p2,s2)` | p2 − s2 > p − s, or p2 − s2 = p − s and s2 ≥ s (rounding to fewer places can carry: `99.999` as `decimal(4,2)` overflows) |
-| `date`, `datetime`, `smalldatetime`, `datetime2(n)` | `date`, `datetime2(m)` | always for `date`; for `datetime2(m)`, a `date` or `smalldatetime`, a `datetime` when m ≥ 3, a `datetime2(n)` or `time(n)` when m ≥ n |
-| `date`, `datetime`, `smalldatetime`, `datetime2(n)`, `time(n)`, `datetimeoffset(n)` | `datetimeoffset(m)` | a `date` or `smalldatetime`; a `datetime` when m ≥ 3; the others when m ≥ n (offset +00:00) |
+| `date`, `datetime`, `smalldatetime`, `datetime2(n)`, `time(n)` | `date`, `datetime2(m)` | always: rounded to fewer fractional digits, a value rounds to the nearest, and the greatest is kept, not overflowed (`A_date_or_time_rounded_to_fewer_fractional_digits_never_overflows_since_the_greatest_is_kept`) |
+| `date`, `datetime`, `smalldatetime`, `datetime2(n)`, `time(n)`, `datetimeoffset(n)` | `datetimeoffset(m)`; `time(m)` from `time(n)` | always, likewise (offset +00:00) |
 | `time`, `tinyint`, `bit`; `smallint` | `datetime`; `smalldatetime` | a time is that time on 1 January 1900 (rounding into the 2nd at most); a `tinyint` or `bit` that many days from 1900; a `smallint` only into `datetime` (1810 to 1989), not `smalldatetime`, which starts in 1900 |
 | anything else | | not proved: `arithmetic-overflow` |
 
