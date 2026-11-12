@@ -103,6 +103,7 @@ zizmor
 zizmorcore
 nologo
 optout
+scriban
 
 # Words of the subject that the dictionary lacks
 bigints
@@ -127,6 +128,7 @@ unmodelled
 vendored
 vendoring
 writable
+prettyprinting
 
 # Authors the guide cites (docs/internals), named as their works are
 adve
@@ -153,9 +155,14 @@ schwartzbach
 shahbaz
 sharir
 zhendong
+appel
+cormen
+oppen
+wadler
 
-# A conference the guide cites a paper from
+# A conference and a journal the guide cites papers from
 OOPSLA
+TOPLAS
 
 # Adjectives coined in this project's code, each meaning "cannot be <verb>ed": a seed that can't be made,
 # an expression that can't be folded, a procedure whose body can't be walked

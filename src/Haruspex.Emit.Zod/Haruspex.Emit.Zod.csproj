@@ -4,6 +4,8 @@
   </PropertyGroup>
   <!-- An emitter reads only the IR. It must never reference a front end. -->
   <ItemGroup>
+    <!-- The stages (plan, lower, print) are internal; their unit tests reach them. -->
+    <InternalsVisibleTo Include="Haruspex.Tests" />
     <ProjectReference Include="..\Haruspex.Ir\Haruspex.Ir.csproj" />
   </ItemGroup>
 </Project>

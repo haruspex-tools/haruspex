@@ -2,12 +2,14 @@ using System.Globalization;
 using System.Numerics;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using Haruspex.Emit.Zod.Model;
 using Haruspex.Ir;
+using static Haruspex.Emit.Zod.Model.ZodExpression;
 
-namespace Haruspex.Emit.Zod;
+namespace Haruspex.Emit.Zod.Lowering;
 
 /// <summary>
-/// Strings and numbers with every fact the IR carries about them, as Zod checks: lengths, bounds, steps and value
+/// Strings and numbers lowered with every fact the IR carries about them, as Zod checks: lengths, bounds, steps and value
 /// sets. "Claim everything the database guarantees": each check here is a guarantee the IR states, and each one
 /// that is left out says why in a comment, because the target cannot hold it exactly.
 /// </summary>
@@ -41,17 +43,18 @@ internal static class Facets
 {
     private static readonly BigInteger SafeInteger = BigInteger.Pow(2, 53);
 
-    public static (string Code, string? Comment) String(IrScalar scalar)
+    /// <summary>A string, with its value set, pattern and length as checks, and a note for each fact left out or weakened.</summary>
+    public static ZodExpression String(IrScalar scalar)
     {
         var facets = scalar.Facets;
         if (facets?.Values is { Match: IrValueMatch.Exact } exact && exact.Items.All(i => i.IsString))
-            return exact.Items.Count == 0 ? ("z.never()", null) : ("z.enum([" + string.Join(", ", exact.Items.Select(i => Quote(i.Text))) + "])", null);
+            return exact.Items.Count == 0 ? Z("never") : Z("enum", new ArrayLiteral([.. exact.Items.Select(i => new Text(i.Text))]));
 
-        var code = "z.string()";
+        var code = Z("string");
         var notes = new List<string>();
         if (facets?.Values is { Match: IrValueMatch.Collation } set)
         {
-            notes.Add("one of " + string.Join(", ", set.Items.Select(i => Quote(i.Text)))
+            notes.Add("one of " + string.Join(", ", set.Items.Select(i => Quoted(i.Text)))
                 + " as the database compares strings (case, accents and trailing spaces may differ), so not an enum");
         }
 
@@ -60,21 +63,21 @@ internal static class Facets
             // Trimmed again, although the IR stores them trimmed: an item's own trailing spaces would make the regex
             // require them, and a value without them is in the set ('a' = 'a ').
             var items = padded.Items.Select(i => i.Text.TrimEnd(' ')).Distinct(StringComparer.Ordinal);
-            code += $".regex(/^(?:{string.Join("|", items.Select(RegexEscape))})\\u0020*$/)";
+            code = code.Then("regex", new Regex($"^(?:{string.Join("|", items.Select(RegexEscape))})\\u0020*$"));
         }
 
         if (facets?.MinLength is { } minLength)
-            code += $".min({minLength.Value})";
+            code = code.Then("min", Count(minLength.Value));
 
         if (facets?.Length is { } length)
         {
             var exactLength = length.Unit == IrLengthUnit.Utf16 || length.Encoding == IrByteEncoding.SingleByte;
-            code += length.IsFixed && exactLength ? $".length({length.Value})" : $".max({length.Value})";
+            code = code.Then(length.IsFixed && exactLength ? "length" : "max", Count(length.Value));
             if (length.Unit == IrLengthUnit.Bytes)
                 notes.Add(BytesNote(scalar.Sql ?? "the string", length));
         }
 
-        return (code, notes.Count == 0 ? null : string.Join("; ", notes));
+        return notes.Count == 0 ? code : new Noted(code, string.Join("; ", notes));
     }
 
     private static string BytesNote(string sql, IrLength length) => (length.IsFixed, length.Encoding) switch
@@ -89,7 +92,8 @@ internal static class Facets
         (true, _) => $"{sql} pads to {length.Value} bytes: {length.Value} characters in a single-byte collation, at most {length.Value} otherwise; no collation is declared",
     };
 
-    public static (string Code, string? Comment) Number(IrScalar scalar, bool json)
+    /// <summary>A number as it arrives in <paramref name="json"/> or a row, with its range, step and value set as checks.</summary>
+    public static ZodExpression Number(IrScalar scalar, bool json)
     {
         var facets = scalar.Facets;
         switch (scalar.Format)
@@ -97,32 +101,32 @@ internal static class Facets
             case IrFormat.Uint8 or IrFormat.Int16 or IrFormat.Int32:
             {
                 if (ExactNumbers(facets) is { } values)
-                    return (values, null);
+                    return values;
                 var (min, max) = FormatRange(scalar.Format.Value);
                 var lower = facets?.Min ?? new IrBound(min.ToString(CultureInfo.InvariantCulture), true, new IrFactSource(IrFactSourceKind.Type, scalar.Sql ?? IrWireNames.Of(scalar.Format.Value)));
                 var upper = facets?.Max ?? new IrBound(max.ToString(CultureInfo.InvariantCulture), true, new IrFactSource(IrFactSourceKind.Type, scalar.Sql ?? IrWireNames.Of(scalar.Format.Value)));
                 if (lower is { Inclusive: true, Value: "-2147483648" } && upper is { Inclusive: true, Value: "2147483647" })
-                    return ("z.int32()", null);
-                return ("z.int()" + Lower(lower, 0) + Upper(upper, 0), null);
+                    return Z("int32");
+                return Upper(Lower(Z("int"), lower, 0), upper, 0);
             }
 
             case IrFormat.Int64 when !json:
                 // The driver delivers a bigint as a string: its values are strings too, and a range isn't checkable.
                 if (facets?.Values is { Match: IrValueMatch.Exact } strings && strings.Items.All(i => !i.IsString))
-                    return (strings.Items.Count == 0 ? "z.never()" : "z.enum([" + string.Join(", ", strings.Items.Select(i => Quote(i.Text))) + "])", null);
-                return ("z.string()", FromChecks(facets) ? "a bigint arrives as a string, so its CHECK range is not checked" : null);
+                    return strings.Items.Count == 0 ? Z("never") : Z("enum", new ArrayLiteral([.. strings.Items.Select(i => new Text(i.Text))]));
+                return FromChecks(facets) ? new Noted(Z("string"), "a bigint arrives as a string, so its CHECK range is not checked") : Z("string");
 
             case IrFormat.Int64:
             {
                 const string precision = "int64: exact only up to 2^53 once parsed";
                 if (ExactNumbers(facets) is { } values)
-                    return (values, precision);
+                    return new Noted(values, precision);
 
                 // The type's own range is left out (keeping the bare number this mapping always had); a CHECK's is kept.
-                var code = "z.number()"
-                    + (facets?.Min is { From.Kind: IrFactSourceKind.Check } lower ? Lower(lower, 0, exclusiveAllowed: false) : "")
-                    + (facets?.Max is { From.Kind: IrFactSourceKind.Check } upper ? Upper(upper, 0, exclusiveAllowed: false) : "");
-                return (code, precision);
+                var code = Z("number");
+                code = Lower(code, facets?.Min is { From.Kind: IrFactSourceKind.Check } lower ? lower : null, 0, exclusiveAllowed: false);
+                code = Upper(code, facets?.Max is { From.Kind: IrFactSourceKind.Check } upper ? upper : null, 0, exclusiveAllowed: false);
+                return new Noted(code, precision);
             }
 
             case IrFormat.Decimal:
@@ -130,24 +134,23 @@ internal static class Facets
                 var digits = facets?.Digits;
                 var exactInDriver = json || digits is { Precision: <= 15 };
                 if (exactInDriver && ExactNumbers(facets) is { } values)
-                    return (values, null);
+                    return values;
 
                 var integers = digits is { Scale: 0, Precision: <= 15 };
-                var code = integers ? "z.int()" : "z.number()";
+                var code = integers ? Z("int") : Z("number");
                 if (exactInDriver)
-                    code += Lower(facets?.Min, digits?.Scale, exclusiveAllowed: false) + Upper(facets?.Max, digits?.Scale, exclusiveAllowed: false);
+                    code = Upper(Lower(code, facets?.Min, digits?.Scale, exclusiveAllowed: false), facets?.Max, digits?.Scale, exclusiveAllowed: false);
                 if (digits is not null && !integers)
-                    code += digits.Scale == 0 ? ".multipleOf(1)" : $".multipleOf(1e-{digits.Scale.ToString(CultureInfo.InvariantCulture)})";
-                var comment = exactInDriver || (facets?.Min is null && facets?.Max is null && facets?.Values is null)
-                    ? null
-                    : $"the mssql driver may round {scalar.Sql ?? "a decimal"} past its bounds, so they are not checked in a row";
-                return (code, comment);
+                    code = code.Then("multipleOf", new Number(digits.Scale == 0 ? "1" : "1e-" + digits.Scale.ToString(CultureInfo.InvariantCulture)));
+                return exactInDriver || (facets?.Min is null && facets?.Max is null && facets?.Values is null)
+                    ? code
+                    : new Noted(code, $"the mssql driver may round {scalar.Sql ?? "a decimal"} past its bounds, so they are not checked in a row");
             }
 
             default:
                 // Floating point, or a number of no stated format: inclusive bounds only, since an exclusive one can't
                 // survive rounding (see the remarks).
-                return ("z.number()" + Lower(facets?.Min, null, exclusiveAllowed: false) + Upper(facets?.Max, null, exclusiveAllowed: false), null);
+                return Upper(Lower(Z("number"), facets?.Min, null, exclusiveAllowed: false), facets?.Max, null, exclusiveAllowed: false);
         }
     }
 
@@ -155,9 +158,9 @@ internal static class Facets
         facets?.Min is { From.Kind: IrFactSourceKind.Check } || facets?.Max is { From.Kind: IrFactSourceKind.Check };
 
     /// <summary><c>z.literal([…])</c> for an exact set of numbers; null when there is none.</summary>
-    private static string? ExactNumbers(IrFacets? facets) =>
+    private static ZodExpression? ExactNumbers(IrFacets? facets) =>
         facets?.Values is { Match: IrValueMatch.Exact } set && set.Items.All(i => !i.IsString)
-            ? set.Items.Count == 0 ? "z.never()" : "z.literal([" + string.Join(", ", set.Items.Select(i => i.Text)) + "])"
+            ? set.Items.Count == 0 ? Z("never") : Z("literal", new ArrayLiteral([.. set.Items.Select(i => new Number(i.Text))]))
             : null;
 
     private static (BigInteger Min, BigInteger Max) FormatRange(IrFormat format) => format switch
@@ -168,27 +171,27 @@ internal static class Facets
         _ => throw new ArgumentOutOfRangeException(nameof(format), format, "Only a format of 32 bits or fewer has a range here."),
     };
 
+    /// <param name="code">The schema the bound checks.</param>
+    /// <param name="bound">The bound; none adds no check.</param>
     /// <param name="scale">The type's scale, for turning an exclusive bound into an inclusive one; null when unknown.</param>
     /// <param name="exclusiveAllowed">Whether <c>.gt</c> may be used for a safe integer (see the remarks).</param>
-    private static string Lower(IrBound? bound, int? scale, bool exclusiveAllowed = true) => Bound(bound, scale, exclusiveAllowed, lower: true);
+    private static ZodExpression Lower(ZodExpression code, IrBound? bound, int? scale, bool exclusiveAllowed = true) => Bound(code, bound, scale, exclusiveAllowed, lower: true);
 
-    private static string Upper(IrBound? bound, int? scale, bool exclusiveAllowed = true) => Bound(bound, scale, exclusiveAllowed, lower: false);
+    private static ZodExpression Upper(ZodExpression code, IrBound? bound, int? scale, bool exclusiveAllowed = true) => Bound(code, bound, scale, exclusiveAllowed, lower: false);
 
-    private static string Bound(IrBound? bound, int? scale, bool exclusiveAllowed, bool lower)
+    private static ZodExpression Bound(ZodExpression code, IrBound? bound, int? scale, bool exclusiveAllowed, bool lower)
     {
         if (bound is null)
-            return "";
-        var inclusive = lower ? ".min" : ".max";
+            return code;
+        var inclusive = lower ? "min" : "max";
         if (bound.Inclusive)
-            return $"{inclusive}({bound.Value})";
+            return code.Then(inclusive, new Number(bound.Value));
         if (exclusiveAllowed && scale == 0 && IsSafeInteger(bound.Value))
-            return $"{(lower ? ".gt" : ".lt")}({bound.Value})";
+            return code.Then(lower ? "gt" : "lt", new Number(bound.Value));
 
         // The nearest value inside the bound at the type's step; without a known scale, the bound itself, inclusive,
         // which is weaker but still true.
-        return scale is { } s && Step(bound.Value, s, lower ? 1 : -1) is { } inside
-            ? $"{inclusive}({inside})"
-            : $"{inclusive}({bound.Value})";
+        return code.Then(inclusive, new Number(scale is { } s && Step(bound.Value, s, lower ? 1 : -1) is { } inside ? inside : bound.Value));
     }
 
     private static bool IsSafeInteger(string text) =>
@@ -221,5 +224,8 @@ internal static class Facets
     private static string RegexEscape(string text) =>
         string.Concat(text.Select(c => char.IsAsciiLetterOrDigit(c) || c == '_' ? c.ToString() : $"\\u{(int)c:x4}"));
 
-    private static string Quote(string text) => "\"" + JsonEncodedText.Encode(text, JavaScriptEncoder.UnsafeRelaxedJsonEscaping) + "\"";
+    private static Number Count(int value) => new(value.ToString(CultureInfo.InvariantCulture));
+
+    /// <summary>A value quoted inside a note, as it would be written in code, so that spaces and quotes in it stay visible.</summary>
+    private static string Quoted(string text) => "\"" + JsonEncodedText.Encode(text, JavaScriptEncoder.UnsafeRelaxedJsonEscaping) + "\"";
 }

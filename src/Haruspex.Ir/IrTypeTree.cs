@@ -7,7 +7,8 @@ namespace Haruspex.Ir;
 /// </summary>
 /// <remarks>
 /// What lies behind a reference is the document's (<see cref="IrTypeGraph"/>): a type alone is a tree, and the references
-/// that join its trees into a graph, possibly with cycles, are followed only there.
+/// that join its trees into a graph, possibly with cycles, are followed only there. The guide explains why the walks were
+/// gathered here: <c>docs/internals/11-emitting-code.md</c>.
 /// </remarks>
 public static class IrTypeTree
 {

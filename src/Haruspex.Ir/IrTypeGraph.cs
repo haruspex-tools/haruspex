@@ -16,7 +16,8 @@ namespace Haruspex.Ir;
 /// search and linear graph algorithms", 1972), the algorithm the inference uses for functions that call each other. The same
 /// depth-first search gives the order: a type is finished after every type it reaches, so the order in which types finish
 /// puts each after the types it refers to, except within a cycle, where no order can. The search starts from the results, in
-/// the order the IR file lists the objects, so that the order follows the document rather than the alphabet.
+/// the order the IR file lists the objects, so that the order follows the document rather than the alphabet. The guide
+/// explains the graph: <c>docs/internals/11-emitting-code.md</c>.
 /// </para>
 /// </remarks>
 public sealed class IrTypeGraph

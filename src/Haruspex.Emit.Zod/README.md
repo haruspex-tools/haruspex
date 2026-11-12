@@ -7,23 +7,27 @@ the IR.
 
 ## How data flows through it
 
+Three stages, each with one job. The plan decides what the module declares, in what order and under what names, asking the
+IR's type graph about references and cycles. The lowering turns each IR type into a small model of Zod expressions, records
+that compare by value. The printer writes that model as TypeScript, and is the only part that knows TypeScript's syntax.
+Why three stages, rather than text written as the IR is walked, is argued in the guide's chapter
+[Emitting code](https://github.com/sharpblue/haruspex/blob/main/docs/internals/11-emitting-code.md).
+
 ```mermaid
 flowchart LR
-    document["IrDocument"] --> emitter["ZodEmitter.Emit"]
-    options["ZodOptions: strip or strict objects"] --> emitter
-    emitter --> types["a schema and a type per named object type, dependencies first"]
-    emitter --> procedures["a schema and a type per procedure's results"]
-    types --> module["one TypeScript module"]
-    procedures --> module
+    document["IrDocument"] --> typeGraph["IrTypeGraph"]
+    document --> plan["ZodPlanner: a ZodPlan"]
+    typeGraph --> plan
+    options["ZodOptions: strip or strict objects"] --> plan
+    plan --> lower["ZodLowering and TypeLowering: a ZodModule"]
+    lower --> print["ZodPrinter"]
+    print --> module["one TypeScript module"]
 ```
 
 ## Example
 
-The IR can't yet be read back from `haruspex.ir.json`, so today the document comes straight from inference:
-
 ```csharp
-var model = SqlScriptFolder.Read("path/to/database").Model;
-var document = IrInference.Infer(model, [new ObjectName("sales", "get_order")]);
+var document = IrJsonReader.Read(File.ReadAllText("haruspex.ir.json"));
 var module = ZodEmitter.Emit(document, new ZodOptions { Objects = ZodObjects.Strip });
 File.WriteAllText("haruspex.zod.ts", module);
 ```
@@ -69,5 +73,5 @@ a CI check can compare it byte for byte.
   layer already proved.
 
 It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API and its output will change. Its
-chapter of [the guide](https://github.com/sharpblue/haruspex/blob/main/docs/internals/README.md), *Emitting code*, is
-planned.
+chapter of [the guide](https://github.com/sharpblue/haruspex/blob/main/docs/internals/README.md) is
+[Emitting code](https://github.com/sharpblue/haruspex/blob/main/docs/internals/11-emitting-code.md).
