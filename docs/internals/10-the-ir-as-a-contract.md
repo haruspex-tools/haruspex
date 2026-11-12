@@ -72,16 +72,36 @@ the writer that writes it and the reader that reads it. Deriving it by reflectio
 rejected: the file is not a mechanical image of the records. Keys are named for the reader (`output`, not `IrParameter.IsOutput`), a
 flag is written only when it says something (`recursive`), and a scalar's facets sit beside its kind rather than in an
 object of their own. Each of those choices would have to be restated as an attribute on the model, a second description of
-the writer that nothing checks. Three tests hold the hand-written structure to the other two instead. Every file the
-writer produces, from every fixture and both public corpora, passes the schema. Every way of breaking a file in the tests
-fails the schema and the reader alike. And every property of every IR record is either a key the schema lists, or named
-in a table, with the reason, as written another way; a property added to a record fails that test until it is
-accounted for.
+the writer that nothing checks.
+
+The other way round, *schema first*, is the alternative most readers think of first: write one description of the format
+(a JSON Schema, or a format of its own as Protocol Buffers and Smithy have) and generate the rest from it, the records or
+the reader and writer or both. It is the right design for a format many teams write against in many languages, and the
+wrong one here, for now. The records are not plain data. They are the model every layer of haruspex programs against,
+documented member by member and holding invariants of their own (a scalar stores empty facets as none, a nullable flag is
+true exactly when a reason is given), and a generator would either drop those or need a language of its own to say them.
+The reader and the writer are the two smallest parts of the IR, and the most deliberate: the order of keys is chosen for a
+person reading a diff, and every refusal says where and why in words. A generated serialiser makes neither choice. So the
+format has three descriptions written by hand (the writer, the reader and the schema's structure), and one generated part
+(the vocabularies), and tests stand in for the generator ([decision 0023](../decisions/0023-the-ir-schema-is-generated-from-the-model.md)).
+If a second implementation of the format appears, in another language, the balance changes, and a description from which
+both are generated becomes worth its cost.
+
+Four tests hold the three hand-written descriptions together. Every file the writer produces, from every fixture and both
+public corpora, passes the schema. Every way of breaking a file in the tests fails the schema and the reader alike. For
+every property of every object in a document that holds the whole format, removing it is refused by the reader exactly
+when the schema refuses it, at that property's path, and adding a property the format lacks is refused by both
+(`IrReaderSchemaAgreementTests`). And every property of every IR record is either a key the schema lists, or named in a
+table, with the reason, as written another way; a property added to a record fails that test until it is accounted for.
 
 The schema is strict where the format is closed. Every object refuses a property it doesn't list
 (`additionalProperties: false`), every vocabulary is an `enum`, and a flag must agree with its reasons: `nullable: true`
-with at least one entry in `nullableBecause`, and `nullable: false` with none. It uses only the core of JSON Schema 2020-12,
-so any validator can check it.
+with at least one entry in `nullableBecause`, and `nullable: false` with none. Every integer is a count, from 0 to the
+largest 32-bit integer. It uses only the core of JSON Schema 2020-12, and Ajv compiles it in strict mode. Two rules it
+can't state, because JSON Schema sees a document after it is parsed. One is a number's form: a bound written `1e5` passes
+the schema, though the IR writes every number as plain decimal text so that a reader can take it exactly, and the reader
+refuses any other form; the schema's descriptions say so. The other is a key given twice in one object, which a parser
+keeps one of and the reader refuses. Those are the two ways a file can pass the schema and still not read.
 
 ## The round trip is a law
 

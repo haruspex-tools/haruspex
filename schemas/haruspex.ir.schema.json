@@ -176,10 +176,12 @@
       "additionalProperties": false,
       "anyOf": [
         {
+          "type": "object",
           "properties": {
             "mayBeAbsent": {
               "const": true
-            }
+            },
+            "absentBecause": true
           },
           "required": [
             "mayBeAbsent",
@@ -187,19 +189,24 @@
           ]
         },
         {
+          "type": "object",
           "properties": {
             "mayBeAbsent": {
               "const": false
             }
           },
+          "required": [
+            "mayBeAbsent"
+          ],
           "not": {
+            "type": "object",
+            "properties": {
+              "absentBecause": true
+            },
             "required": [
               "absentBecause"
             ]
-          },
-          "required": [
-            "mayBeAbsent"
-          ]
+          }
         }
       ]
     },
@@ -254,11 +261,19 @@
       "maxProperties": 2,
       "anyOf": [
         {
+          "type": "object",
+          "properties": {
+            "procedure": true
+          },
           "required": [
             "procedure"
           ]
         },
         {
+          "type": "object",
+          "properties": {
+            "function": true
+          },
           "required": [
             "function"
           ]
@@ -299,10 +314,12 @@
       "additionalProperties": false,
       "anyOf": [
         {
+          "type": "object",
           "properties": {
             "nullable": {
               "const": true
-            }
+            },
+            "nullableBecause": true
           },
           "required": [
             "nullable",
@@ -310,19 +327,24 @@
           ]
         },
         {
+          "type": "object",
           "properties": {
             "nullable": {
               "const": false
             }
           },
+          "required": [
+            "nullable"
+          ],
           "not": {
+            "type": "object",
+            "properties": {
+              "nullableBecause": true
+            },
             "required": [
               "nullableBecause"
             ]
-          },
-          "required": [
-            "nullable"
-          ]
+          }
         }
       ]
     },
@@ -486,6 +508,11 @@
       ],
       "additionalProperties": false,
       "not": {
+        "type": "object",
+        "properties": {
+          "length": true,
+          "maxLength": true
+        },
         "required": [
           "length",
           "maxLength"
@@ -497,7 +524,9 @@
       "type": "object",
       "properties": {
         "value": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
         },
         "unit": {
           "enum": [
@@ -528,7 +557,9 @@
       "type": "object",
       "properties": {
         "value": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
         },
         "from": {
           "$ref": "#/$defs/factSource"
@@ -545,10 +576,14 @@
       "type": "object",
       "properties": {
         "precision": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
         },
         "scale": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
         },
         "from": {
           "$ref": "#/$defs/factSource"
@@ -562,7 +597,7 @@
       "additionalProperties": false
     },
     "bound": {
-      "description": "A bound on a number, as exact decimal text written as a JSON number.",
+      "description": "A bound on a number: exact decimal text written as a JSON number, in plain form (no exponent), which a reader must not round. JSON Schema can't check a number's form; the reader refuses any other.",
       "type": "object",
       "properties": {
         "value": {
@@ -595,6 +630,7 @@
           ]
         },
         "items": {
+          "description": "The values: strings, or numbers in plain decimal form (no exponent), which JSON Schema can't check and the reader does.",
           "type": "array",
           "items": {
             "anyOf": [
@@ -646,21 +682,37 @@
       "maxProperties": 1,
       "anyOf": [
         {
+          "type": "object",
+          "properties": {
+            "type": true
+          },
           "required": [
             "type"
           ]
         },
         {
+          "type": "object",
+          "properties": {
+            "check": true
+          },
           "required": [
             "check"
           ]
         },
         {
+          "type": "object",
+          "properties": {
+            "engine": true
+          },
           "required": [
             "engine"
           ]
         },
         {
+          "type": "object",
+          "properties": {
+            "expression": true
+          },
           "required": [
             "expression"
           ]
@@ -685,10 +737,14 @@
           "$ref": "#/$defs/reasons"
         },
         "minItems": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
         },
         "maxItems": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
         }
       },
       "required": [
@@ -698,10 +754,12 @@
       "additionalProperties": false,
       "anyOf": [
         {
+          "type": "object",
           "properties": {
             "itemsNullable": {
               "const": true
-            }
+            },
+            "itemsNullableBecause": true
           },
           "required": [
             "itemsNullable",
@@ -709,12 +767,17 @@
           ]
         },
         {
+          "type": "object",
           "properties": {
             "itemsNullable": {
               "const": false
             }
           },
           "not": {
+            "type": "object",
+            "properties": {
+              "itemsNullableBecause": true
+            },
             "required": [
               "itemsNullableBecause"
             ]
@@ -764,10 +827,12 @@
       "additionalProperties": false,
       "anyOf": [
         {
+          "type": "object",
           "properties": {
             "nullable": {
               "const": true
-            }
+            },
+            "nullableBecause": true
           },
           "required": [
             "nullable",
@@ -775,19 +840,24 @@
           ]
         },
         {
+          "type": "object",
           "properties": {
             "nullable": {
               "const": false
             }
           },
+          "required": [
+            "nullable"
+          ],
           "not": {
+            "type": "object",
+            "properties": {
+              "nullableBecause": true
+            },
             "required": [
               "nullableBecause"
             ]
-          },
-          "required": [
-            "nullable"
-          ]
+          }
         }
       ]
     },
@@ -817,10 +887,12 @@
       "additionalProperties": false,
       "anyOf": [
         {
+          "type": "object",
           "properties": {
             "valuesNullable": {
               "const": true
-            }
+            },
+            "valuesNullableBecause": true
           },
           "required": [
             "valuesNullable",
@@ -828,19 +900,24 @@
           ]
         },
         {
+          "type": "object",
           "properties": {
             "valuesNullable": {
               "const": false
             }
           },
+          "required": [
+            "valuesNullable"
+          ],
           "not": {
+            "type": "object",
+            "properties": {
+              "valuesNullableBecause": true
+            },
             "required": [
               "valuesNullableBecause"
             ]
-          },
-          "required": [
-            "valuesNullable"
-          ]
+          }
         }
       ]
     },

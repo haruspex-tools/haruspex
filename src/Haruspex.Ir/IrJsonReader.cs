@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 
 namespace Haruspex.Ir;
@@ -11,9 +12,9 @@ namespace Haruspex.Ir;
 /// <para>
 /// The reader is as strict as the format is closed. It refuses, with an <see cref="IrFormatException"/> that names the path
 /// in the document: text that is not JSON; a version other than <see cref="IrDocument.CurrentVersion"/>; a property missing,
-/// of the wrong type, unknown or given twice; a name outside its vocabulary; and a flag that disagrees with its reasons
-/// (<c>nullable</c> without <c>nullableBecause</c>). It supplies no default: a property is either in the file or, where the
-/// format lets the writer leave it out, absent with the meaning the format gives that.
+/// of the wrong type, unknown or given twice; a name outside its vocabulary; a negative count; and a flag that disagrees with
+/// its reasons (<c>nullable</c> without <c>nullableBecause</c>). It supplies no default: a property is either in the file or,
+/// where the format lets the writer leave it out, absent with the meaning the format gives that.
 /// </para>
 /// <para>
 /// A version it doesn't read is refused before anything else, rather than read with its differences guessed at: the IR has
@@ -40,7 +41,11 @@ public static class IrJsonReader
         }
         catch (JsonException e)
         {
-            throw new IrFormatException(e.Path ?? "$", $"is not JSON: {e.Message}", e);
+            // The parser counts lines and bytes from 0; a person counts from 1.
+            var where = e.LineNumber is { } line && e.BytePositionInLine is { } position
+                ? $" at line {(line + 1).ToString(CultureInfo.InvariantCulture)}, byte {(position + 1).ToString(CultureInfo.InvariantCulture)}"
+                : "";
+            throw new IrFormatException(e.Path ?? "$", $"is not JSON{where}: {e.Message}", e);
         }
 
         using (parsed)
@@ -229,8 +234,8 @@ public static class IrJsonReader
     {
         // Left out when no item is ever null, as FOR JSON's arrays are.
         ItemsNullableBecause = Reasons(json, "itemsNullable", "itemsNullableBecause", flagOptional: true),
-        MinItems = json.OptionalInteger("minItems"),
-        MaxItems = json.OptionalInteger("maxItems"),
+        MinItems = json.OptionalCount("minItems"),
+        MaxItems = json.OptionalCount("maxItems"),
     };
 
     private static IrElement Element(IrJsonObject json)
@@ -266,7 +271,7 @@ public static class IrJsonReader
     private static IrLength Length(IrJsonObject json, bool isFixed)
     {
         var length = new IrLength(
-            json.Integer("value"),
+            json.Count("value"),
             isFixed,
             json.Name<IrLengthUnit>("unit", IrWireNames.TryParse, "a length's unit"),
 
@@ -279,14 +284,14 @@ public static class IrJsonReader
 
     private static IrMinLength MinLength(IrJsonObject json)
     {
-        var minLength = new IrMinLength(json.Integer("value"), Source(json.Object("from")));
+        var minLength = new IrMinLength(json.Count("value"), Source(json.Object("from")));
         json.End();
         return minLength;
     }
 
     private static IrDigits Digits(IrJsonObject json)
     {
-        var digits = new IrDigits(json.Integer("precision"), json.Integer("scale"), Source(json.Object("from")));
+        var digits = new IrDigits(json.Count("precision"), json.Count("scale"), Source(json.Object("from")));
         json.End();
         return digits;
     }

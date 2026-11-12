@@ -16,7 +16,7 @@ internal sealed class SchemaSubset(JsonElement root)
 
     private static readonly HashSet<string> Implemented = new(StringComparer.Ordinal)
     {
-        "type", "enum", "const", "properties", "additionalProperties", "required", "items", "minItems", "maxProperties", "minLength", "pattern",
+        "type", "enum", "const", "properties", "additionalProperties", "required", "items", "minItems", "maxProperties", "minimum", "maximum", "minLength", "pattern",
         "$ref", "dependentRequired", "dependentSchemas", "anyOf", "not", "propertyNames",
     };
 
@@ -30,6 +30,15 @@ internal sealed class SchemaSubset(JsonElement root)
 
     private void Check(JsonElement schema, JsonElement value, string at, List<string> errors)
     {
+        // A boolean schema: true allows anything, false nothing.
+        if (schema.ValueKind is JsonValueKind.True)
+            return;
+        if (schema.ValueKind is JsonValueKind.False)
+        {
+            errors.Add($"{at}: is not allowed");
+            return;
+        }
+
         foreach (var keyword in schema.EnumerateObject())
         {
             if (Annotations.Contains(keyword.Name))
@@ -89,6 +98,14 @@ internal sealed class SchemaSubset(JsonElement root)
                 case "minItems" when value.ValueKind == JsonValueKind.Array:
                     if (value.GetArrayLength() < k.GetInt32())
                         errors.Add($"{at}: has fewer than {k.GetInt32()} items");
+                    break;
+                case "minimum" when value.ValueKind == JsonValueKind.Number:
+                    if (value.GetDecimal() < k.GetDecimal())
+                        errors.Add($"{at}: is less than {k.GetRawText()}");
+                    break;
+                case "maximum" when value.ValueKind == JsonValueKind.Number:
+                    if (value.GetDecimal() > k.GetDecimal())
+                        errors.Add($"{at}: is more than {k.GetRawText()}");
                     break;
                 case "maxProperties" when value.ValueKind == JsonValueKind.Object:
                     if (value.EnumerateObject().Count() > k.GetInt32())

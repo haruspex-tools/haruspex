@@ -67,11 +67,11 @@ internal sealed class IrJsonObject
     /// <summary>An optional <c>true</c> or <c>false</c>, null when left out.</summary>
     public bool? OptionalBoolean(string name) => Optional(name) is { } value ? AsBoolean(value, PathOf(name)) : null;
 
-    /// <summary>A required integer that fits 32 bits.</summary>
-    public int Integer(string name) => AsInteger(Required(name), PathOf(name));
+    /// <summary>A required count: a length, a number of digits or of items, from 0 to <see cref="int.MaxValue"/>.</summary>
+    public int Count(string name) => AsCount(Required(name), PathOf(name));
 
-    /// <summary>An optional integer, null when left out.</summary>
-    public int? OptionalInteger(string name) => Optional(name) is { } value ? AsInteger(value, PathOf(name)) : null;
+    /// <summary>An optional count, null when left out.</summary>
+    public int? OptionalCount(string name) => Optional(name) is { } value ? AsCount(value, PathOf(name)) : null;
 
     /// <summary>A required object.</summary>
     public IrJsonObject Object(string name) => At(Required(name), PathOf(name));
@@ -122,10 +122,11 @@ internal sealed class IrJsonObject
         _ => throw new IrFormatException(path, "must be true or false."),
     };
 
-    private static int AsInteger(JsonElement element, string path) =>
-        element.ValueKind == JsonValueKind.Number && element.TryGetInt32(out var value)
+    /// <summary>Every integer in the IR counts something, so none is negative; the schema says the same (<c>minimum</c>, <c>maximum</c>).</summary>
+    private static int AsCount(JsonElement element, string path) =>
+        element.ValueKind == JsonValueKind.Number && element.TryGetInt32(out var value) && value >= 0
             ? value
-            : throw new IrFormatException(path, "must be an integer.");
+            : throw new IrFormatException(path, $"must be a whole number from 0 to {int.MaxValue.ToString(CultureInfo.InvariantCulture)}.");
 
     private static T AsName<T>(JsonElement element, string path, IrWireNameParser<T> parse, string what)
         where T : struct, Enum

@@ -66,10 +66,10 @@ public class IrJsonReaderTests
     [Fact]
     public void Text_that_is_not_json_is_refused_naming_where_the_parser_stopped()
     {
-        var e = Assert.Throws<IrFormatException>(() => IrJsonReader.Read("{ \"irVersion\": "));
+        var e = Assert.Throws<IrFormatException>(() => IrJsonReader.Read("{\n  \"irVersion\": \"0.15\",\n  \"source\": }"));
 
-        Assert.StartsWith("$", e.Path, StringComparison.Ordinal);
-        Assert.StartsWith("is not JSON", e.Problem, StringComparison.Ordinal);
+        Assert.Equal("$", e.Path);
+        Assert.StartsWith("is not JSON at line 3, byte 13: ", e.Problem, StringComparison.Ordinal);
     }
 
     [Fact]

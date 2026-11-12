@@ -24,7 +24,10 @@ namespace Haruspex.Ir;
 /// The schema is strict where the format is closed: every object refuses properties it doesn't list, every vocabulary is an
 /// <c>enum</c>, and a flag and its reasons must agree. It uses a small part of JSON Schema 2020-12 (<c>type</c>, <c>enum</c>,
 /// <c>const</c>, <c>properties</c>, <c>required</c>, <c>additionalProperties</c>, <c>items</c>, <c>minItems</c>,
-/// <c>maxProperties</c>, <c>anyOf</c>, <c>not</c> and <c>$ref</c>), which every validator implements.
+/// <c>maxProperties</c>, <c>minimum</c>, <c>maximum</c>, <c>anyOf</c>, <c>not</c> and <c>$ref</c>), written so that Ajv's strict
+/// mode compiles it too. Two things JSON Schema can't say, since it sees a document after parsing: a number's form (a bound or
+/// a value set's number must be plain decimal text, with no exponent), and that no key is given twice. The reader checks both;
+/// the schema's descriptions state the first.
 /// </para>
 /// </remarks>
 public static class IrJsonSchema
@@ -150,7 +153,7 @@ public static class IrJsonSchema
             ("scale", Integer()),
             ("from", Ref("factSource")))),
         ("bound", Closed(
-            "A bound on a number, as exact decimal text written as a JSON number.",
+            "A bound on a number: exact decimal text written as a JSON number, in plain form (no exponent), which a reader must not round. JSON Schema can't check a number's form; the reader refuses any other.",
             ["value", "inclusive", "from"],
             ("value", Node(("type", "number"))),
             ("inclusive", Flag("Whether the bound itself is allowed.")),
@@ -159,7 +162,10 @@ public static class IrJsonSchema
             "A set the value is drawn from.",
             ["match", "items", "from"],
             ("match", Vocabulary<IrValueMatch>(IrWireNames.Of)),
-            ("items", ArrayOf(Node(("anyOf", new JsonArray(Node(("type", "string")), Node(("type", "number"))))))),
+            ("items", Node(
+                ("description", "The values: strings, or numbers in plain decimal form (no exponent), which JSON Schema can't check and the reader does."),
+                ("type", "array"),
+                ("items", Node(("anyOf", new JsonArray(Node(("type", "string")), Node(("type", "number")))))))),
             ("from", ArrayOf(Ref("factSource"))))),
         ("factSource", FactSource()),
         ("array", Agreeing(
@@ -255,7 +261,7 @@ public static class IrJsonSchema
             ("values", Ref("values")));
 
         // A length is fixed or a maximum, never both.
-        scalar.Add("not", Node(("required", Names("length", "maxLength"))));
+        scalar.Add("not", Having("length", "maxLength"));
         return scalar;
     }
 
@@ -268,7 +274,7 @@ public static class IrJsonSchema
             ["path"],
             [.. owners.Select(o => (o, (JsonNode)Text($"The {o} the type belongs to."))), ("path", Text("The path to the type, in the IR's path syntax."))]);
         identity.Add("maxProperties", 2);
-        identity.Add("anyOf", new JsonArray([.. owners.Select(o => Node(("required", Names(o))))]));
+        identity.Add("anyOf", new JsonArray([.. owners.Select(o => Having(o))]));
         return identity;
     }
 
@@ -281,7 +287,7 @@ public static class IrJsonSchema
             [],
             [.. kinds.Select(k => (k, (JsonNode)Text($"The {k} the fact came from.")))]);
         source.Add("maxProperties", 1);
-        source.Add("anyOf", new JsonArray([.. kinds.Select(k => Node(("required", Names(k))))]));
+        source.Add("anyOf", new JsonArray([.. kinds.Select(k => Having(k))]));
         return source;
     }
 
@@ -291,14 +297,24 @@ public static class IrJsonSchema
     /// </summary>
     private static JsonObject Agreeing(JsonObject schema, string flag, string reasons, bool flagOptional = false)
     {
-        var without = Node(("properties", Node((flag, Node(("const", false))))), ("not", Node(("required", Names(reasons)))));
-        if (!flagOptional)
-            without.Add("required", Names(flag));
-        schema.Add("anyOf", new JsonArray(
-            Node(("properties", Node((flag, Node(("const", true))))), ("required", Names(flag, reasons))),
-            without));
+        var given = Having(flag, reasons);
+        given["properties"]![flag] = Node(("const", true));
+        var without = flagOptional ? Node(("type", "object")) : Having(flag);
+        without["properties"] = Node((flag, Node(("const", false))));
+        without.Add("not", Having(reasons));
+        schema.Add("anyOf", new JsonArray(given, without));
         return schema;
     }
+
+    /// <summary>
+    /// An object that has the properties <paramref name="names"/>, whatever their values: for <c>anyOf</c> and <c>not</c>. The
+    /// properties are named as well as required, so that a validator's strict mode (Ajv's <c>strictRequired</c>) finds each
+    /// defined where it is required.
+    /// </summary>
+    private static JsonObject Having(params string[] names) => Node(
+        ("type", "object"),
+        ("properties", Node([.. names.Select(n => (n, (JsonNode?)true))])),
+        ("required", Names(names)));
 
     /// <summary>An object that refuses properties it doesn't list.</summary>
     private static JsonObject Closed(string description, string[] required, params (string Name, JsonNode Schema)[] properties)
@@ -322,7 +338,8 @@ public static class IrJsonSchema
 
     private static JsonObject Flag(string description) => Node(("description", description), ("type", "boolean"));
 
-    private static JsonObject Integer() => Node(("type", "integer"));
+    /// <summary>A count: every integer in the IR is one, from 0 to the largest a 32-bit integer holds.</summary>
+    private static JsonObject Integer() => Node(("type", "integer"), ("minimum", 0), ("maximum", int.MaxValue));
 
     private static JsonObject ArrayOf(JsonNode items) => Node(("type", "array"), ("items", items));
 
