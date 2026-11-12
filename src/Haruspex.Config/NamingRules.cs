@@ -39,10 +39,12 @@ public sealed record NamingRules(IReadOnlyList<NamingReplacement> Replace, Namin
 
     /// <summary>The generated name for an object, or why there is none.</summary>
     /// <param name="name">The object's name within its schema.</param>
+    /// <param name="reserved">The words the generated code's language keeps, which the name must not be.</param>
     /// <param name="error">Why the rules give no valid name, when they don't.</param>
-    public string? Name(string name, out string? error)
+    public string? Name(string name, ReservedWords reserved, out string? error)
     {
         ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(reserved);
         var text = name;
         foreach (var rule in Replace)
         {
@@ -80,9 +82,9 @@ public sealed record NamingRules(IReadOnlyList<NamingReplacement> Replace, Namin
             result = Join([.. Words(Prefix), .. words], Case == NamingCase.Camel);
         }
 
-        if (IrIdentifiers.IsReserved(result))
+        if (reserved.Contains(result))
         {
-            error = $"the rules give '{result}', which is a reserved word in TypeScript. Give it a name in \"procedures\".";
+            error = $"the rules give '{result}', which is a reserved word in {reserved.Language}. Give it a name in \"procedures\".";
             return null;
         }
 

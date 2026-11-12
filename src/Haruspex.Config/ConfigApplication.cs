@@ -222,9 +222,10 @@ public static class ConfigApplication
     }
 
     /// <summary>
-    /// A module to import from, as the generated module must write it. A relative path (<c>./</c>, <c>../</c>) is written
-    /// relative to the config file, like every path in it, so it is made relative to the output folder; anything else (a
-    /// package, a path alias such as <c>@app/types</c>) is kept as written.
+    /// A module to import from, in the IR's terms (<see cref="IrImport.From"/>). A relative path (<c>./</c>, <c>../</c>) is
+    /// written relative to the config file, like every path in it, and the IR's is relative to the folder the IR is written
+    /// to, the output folder, so it is re-based; anything else (a package, a path alias such as <c>@app/types</c>) is kept
+    /// as written. This is the config file's path rule, not any language's: how an emitter writes the import is its own.
     /// </summary>
     private static string Import(string from, string configDirectory, string? outputDirectory)
     {

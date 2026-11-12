@@ -65,14 +65,10 @@ public class IrPathTests
         Assert.Equal(identifier, zod.Contains($"  {key}: z.boolean(),", StringComparison.Ordinal));
     }
 
+    // Whether a target reserves an identifier is the target's: TypeScriptNamesTests.
     [Theory]
     [InlineData("string")]
     [InlineData("delete")]
     [InlineData("class")]
-    public void A_reserved_word_is_an_identifier_but_not_a_name(string word)
-    {
-        Assert.True(IrIdentifiers.IsIdentifier(word));
-        Assert.True(IrIdentifiers.IsReserved(word));
-        Assert.False(IrIdentifiers.IsReserved("String"));
-    }
+    public void A_word_a_target_reserves_is_still_an_identifier(string word) => Assert.True(IrIdentifiers.IsIdentifier(word));
 }

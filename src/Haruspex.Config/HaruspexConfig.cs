@@ -27,6 +27,9 @@ public sealed record HaruspexConfig
     /// <summary>The naming rules every schema starts from (the top-level <c>naming</c>).</summary>
     public NamingRules Naming { get; init; } = NamingRules.Default;
 
+    /// <summary>The words the generated code's language reserves, which no name settled for it may be; handed in by the CLI.</summary>
+    public ReservedWords Reserved { get; init; } = ReservedWords.None;
+
     /// <summary>Where the top-level <c>naming</c> is written, or null.</summary>
     public ConfigLocation? NamingAt { get; init; }
 
@@ -49,5 +52,6 @@ public sealed record HaruspexConfig
     public IReadOnlyList<ProcedureOverride> Procedures { get; init; } = [];
 
     /// <summary>The settings that apply when there is no config file: nothing selected, every default.</summary>
-    public static HaruspexConfig None(string directory) => new() { File = "", Directory = directory };
+    public static HaruspexConfig None(string directory, ReservedWords? reserved = null) =>
+        new() { File = "", Directory = directory, Reserved = reserved ?? ReservedWords.None };
 }

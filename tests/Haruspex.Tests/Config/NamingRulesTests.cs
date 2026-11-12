@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Haruspex.Emit.Zod;
 
 namespace Haruspex.Tests.Config;
 
@@ -10,7 +11,10 @@ public class NamingRulesTests
     private static NamingRules Rules(NamingCase style = NamingCase.Pascal, string prefix = "", params (string Pattern, string With)[] replace) =>
         new([.. replace.Select(r => Rule(r.Pattern, r.With))], style, prefix);
 
-    private static string? Name(NamingRules rules, string name) => rules.Name(name, out _);
+    /// <summary>TypeScript's reserved words, as the CLI hands them to the config.</summary>
+    private static readonly ReservedWords TypeScript = new(TypeScriptNames.Language, TypeScriptNames.IsReserved);
+
+    private static string? Name(NamingRules rules, string name) => rules.Name(name, TypeScript, out _);
 
     [Theory]
     [InlineData("get_order", "GetOrder")]
@@ -80,7 +84,7 @@ public class NamingRulesTests
     [Fact]
     public void Preserve_with_a_name_that_is_not_an_identifier_is_an_error()
     {
-        Assert.Null(Rules(NamingCase.Preserve).Name("person#", out var why));
+        Assert.Null(Rules(NamingCase.Preserve).Name("person#", TypeScript, out var why));
 
         Assert.Equal(
             "\"case\": \"preserve\" gives 'person#', which is not a valid identifier (an ASCII letter, _ or $, then letters, digits, _ or $). Add a replacement, or give it a name in \"procedures\".",
@@ -94,15 +98,25 @@ public class NamingRulesTests
     [Fact]
     public void A_reserved_word_is_an_error()
     {
-        Assert.Null(Rules(NamingCase.Camel).Name("delete", out var why));
+        Assert.Null(Rules(NamingCase.Camel).Name("delete", TypeScript, out var why));
 
         Assert.Equal("the rules give 'delete', which is a reserved word in TypeScript. Give it a name in \"procedures\".", why);
     }
 
     [Fact]
+    public void A_word_reserved_only_in_another_language_is_a_name()
+    {
+        var other = new ReservedWords("another language", name => name == "order");
+
+        Assert.Equal("delete", Rules(NamingCase.Camel).Name("delete", other, out _));
+        Assert.Null(Rules(NamingCase.Camel).Name("order", other, out var why));
+        Assert.Equal("the rules give 'order', which is a reserved word in another language. Give it a name in \"procedures\".", why);
+    }
+
+    [Fact]
     public void A_name_with_no_letters_or_digits_is_an_error()
     {
-        Assert.Null(Rules(NamingCase.Pascal).Name("#", out var why));
+        Assert.Null(Rules(NamingCase.Pascal).Name("#", TypeScript, out var why));
 
         Assert.Equal("'#' has no letters or digits to make a name from. Give it a name in \"procedures\".", why);
     }

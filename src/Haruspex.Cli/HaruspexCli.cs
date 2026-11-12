@@ -118,7 +118,9 @@ internal static class HaruspexCli
     {
         // The config file: named, or found by walking up from the working directory, or none.
         var configPath = request.Config is { } named ? request.Resolve(named) : ConfigReader.Find(request.WorkingDirectory);
-        var config = HaruspexConfig.None(request.WorkingDirectory);
+        // Names are settled for TypeScript, whose reserved words are the Zod emitter's to know; the config is told them.
+        var reserved = new ReservedWords(TypeScriptNames.Language, TypeScriptNames.IsReserved);
+        var config = HaruspexConfig.None(request.WorkingDirectory, reserved);
         if (configPath is not null)
         {
             if (!File.Exists(configPath))
@@ -127,7 +129,7 @@ internal static class HaruspexCli
                 return ExitCodes.Usage;
             }
 
-            var read = ConfigReader.Read(configPath);
+            var read = ConfigReader.Read(configPath, reserved);
             foreach (var problem in read.Problems)
                 error.WriteLine(problem);
             if (read.Config is null)

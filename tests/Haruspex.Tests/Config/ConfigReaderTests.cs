@@ -1,4 +1,5 @@
 using System.Text;
+using Haruspex.Emit.Zod;
 
 namespace Haruspex.Tests.Config;
 
@@ -9,7 +10,7 @@ namespace Haruspex.Tests.Config;
 public class ConfigReaderTests
 {
     private static ConfigReadResult Read(string text) =>
-        ConfigReader.Read(Encoding.UTF8.GetBytes(text), "haruspex.json", Path.Combine(Path.GetTempPath(), "project"));
+        ConfigReader.Read(Encoding.UTF8.GetBytes(text), "haruspex.json", Path.Combine(Path.GetTempPath(), "project"), new ReservedWords(TypeScriptNames.Language, TypeScriptNames.IsReserved));
 
     private static string Single(string text)
     {

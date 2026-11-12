@@ -46,7 +46,9 @@ Why these lines:
 - **Config transforms the IR; it never reaches into inference.** Overrides and naming apply to the document inference
   produced, so they work the same however it was produced, and an emitter never needs to know they existed. Inference
   leaves names unsettled (each object's id, each type keyed by its identity); Config settles them. The emitter is
-  handed its settings (`ZodOptions`) by the CLI and never reads the config file.
+  handed its settings (`ZodOptions`) by the CLI and never reads the config file. The other way, the config is handed the words the
+  generated code's language reserves (`ReservedWords`), which no name it settles may be: which words those are is the
+  emitter's knowledge (`TypeScriptNames`), never the IR's.
 - **Declared results are an input to inference, in the IR's terms.** A procedure's declared results stand in
   for a call of it inside another, and a call's result sets are placed among its caller's by the statement walk, through
   branches and loops; that can't be done to a finished document. So Config reads the declaration into IR results, the CLI

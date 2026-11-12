@@ -54,6 +54,23 @@ public class ArchitectureTests
         Assert.True(missing.Count == 0, $"No project under src/ for: {string.Join(", ", missing)}.");
     }
 
+    /// <summary>
+    /// The IR knows no target language: which words a language reserves, how it writes an import, and anything else an
+    /// emitter needs of its own target belong to that emitter (decision 0003, and <c>src/Haruspex.Ir/README.md</c>). A
+    /// reference can't show it, since such knowledge is plain strings, so this reads the names the IR's assembly declares:
+    /// a type or member named for a language or for its keywords is the knowledge coming back.
+    /// </summary>
+    [Fact]
+    public void The_ir_declares_nothing_named_for_a_target_language()
+    {
+        string[] targets = ["TypeScript", "JavaScript", "ECMAScript", "Zod", "Reserved", "Keyword"];
+        var names = typeof(Haruspex.Ir.IrDocument).Assembly.GetTypes()
+            .SelectMany(t => t.GetMembers(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.DeclaredOnly)
+                .Select(m => $"{t.Name}.{m.Name}").Prepend(t.Name));
+
+        Assert.Empty(names.Where(n => targets.Any(target => n.Contains(target, StringComparison.OrdinalIgnoreCase))).Order(StringComparer.Ordinal));
+    }
+
     [Fact]
     public void Each_assembly_refers_only_to_what_its_layer_may_know()
     {

@@ -34,7 +34,9 @@ public static class ConfigReader
     }
 
     /// <summary>Reads and checks the file at <paramref name="path"/>.</summary>
-    public static ConfigReadResult Read(string path)
+    /// <param name="path">The file.</param>
+    /// <param name="reserved">The words the generated code's language keeps, which no name in the file may be; none if null.</param>
+    public static ConfigReadResult Read(string path, ReservedWords? reserved = null)
     {
         ArgumentNullException.ThrowIfNull(path);
         byte[] bytes;
@@ -47,14 +49,15 @@ public static class ConfigReader
             return new(null, [new ConfigProblem(ConfigSeverity.Error, path, null, $"cannot read the config file: {e.Message}")]);
         }
 
-        return Read(bytes, path, Path.GetDirectoryName(Path.GetFullPath(path))!);
+        return Read(bytes, path, Path.GetDirectoryName(Path.GetFullPath(path))!, reserved);
     }
 
     /// <summary>Reads and checks config text.</summary>
     /// <param name="utf8">The file's bytes.</param>
     /// <param name="file">The file's name, for problems.</param>
     /// <param name="directory">The folder its relative paths are relative to.</param>
-    public static ConfigReadResult Read(byte[] utf8, string file, string directory)
+    /// <param name="reserved">The words the generated code's language keeps, which no name in the file may be; none if null.</param>
+    public static ConfigReadResult Read(byte[] utf8, string file, string directory, ReservedWords? reserved = null)
     {
         ArgumentNullException.ThrowIfNull(utf8);
         ArgumentNullException.ThrowIfNull(file);
@@ -69,20 +72,20 @@ public static class ConfigReader
             return new(null, [new ConfigProblem(ConfigSeverity.Error, file, new ConfigLocation(e.Path, e.Line, e.Column), e.Message)]);
         }
 
-        var reader = new Checker(file, directory);
+        var reader = new Checker(file, directory, reserved ?? ReservedWords.None);
         var config = reader.Root(root, directory);
 
         // A warning (a JSON Schema keyword in a declaration that is not checked) leaves the config usable.
         return new(reader.Problems.Any(p => p.Severity == ConfigSeverity.Error) ? null : config, reader.Problems);
     }
 
-    private sealed class Checker(string file, string directory)
+    private sealed class Checker(string file, string directory, ReservedWords reserved)
     {
         public List<ConfigProblem> Problems { get; } = [];
 
         public HaruspexConfig Root(JsonValue value, string directory)
         {
-            var config = new HaruspexConfig { File = file, Directory = directory };
+            var config = new HaruspexConfig { File = file, Directory = directory, Reserved = reserved };
             if (Object(value, "") is not { } root)
                 return config;
 
@@ -539,7 +542,7 @@ public static class ConfigReader
                         if (String(member.Value, memberPath) is { } type)
                         {
                             if (Regex.IsMatch(type, @"^[A-Za-z_$][A-Za-z0-9_$]*(\[\])*$", RegexOptions.CultureInvariant)
-                                && !IrIdentifiers.IsReserved(type.TrimEnd('[', ']')))
+                                && !reserved.Contains(type.TrimEnd('[', ']')))
                             {
                                 result = result with { Type = type };
                             }
@@ -601,7 +604,7 @@ public static class ConfigReader
         {
             if (String(value, path) is not { } name)
                 return null;
-            if (IrIdentifiers.IsIdentifier(name) && !IrIdentifiers.IsReserved(name))
+            if (IrIdentifiers.IsIdentifier(name) && !reserved.Contains(name))
                 return name;
             Error(value, path, $"'{name}' is not a valid name: an ASCII letter, _ or $, then letters, digits, _ or $, and not a reserved word.");
             return null;

@@ -152,7 +152,7 @@ public static class ZodEmitter
             var modules = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var import in AllTypes().SelectMany(Imports))
             {
-                if (!IrIdentifiers.IsIdentifier(import.Name) || IrIdentifiers.IsReserved(import.Name))
+                if (!IrIdentifiers.IsIdentifier(import.Name) || TypeScriptNames.IsReserved(import.Name))
                     throw new ZodEmitException($"The imported name '{import.Name}' is not a valid TypeScript identifier.");
                 if (modules.TryGetValue(import.Name, out var other) && other != import.From)
                     throw new ZodEmitException($"'{import.Name}' is imported from both '{other}' and '{import.From}'.");
@@ -170,9 +170,18 @@ public static class ZodEmitter
             foreach (var (from, names) in imports)
             {
                 output.Append("import { ").Append(string.Join(", ", names)).Append(" } from ")
-                    .Append(Quote(from)).Append('\n');
+                    .Append(Quote(ModuleSpecifier(from))).Append('\n');
             }
         }
+
+        /// <summary>
+        /// An IR module (<see cref="IrImport.From"/>) as an ES module specifier, in a module written beside the IR file, as the
+        /// CLI writes <c>haruspex.zod.ts</c> beside <c>haruspex.ir.json</c>. The IR's path, relative to the IR file's folder
+        /// and starting <c>./</c> or <c>../</c>, is already a relative specifier from that folder, and its other modules are
+        /// bare specifiers that the application's module resolution looks up, so each is written as it is. A Zod module
+        /// written to another folder would re-base the path here.
+        /// </summary>
+        private static string ModuleSpecifier(string from) => from;
 
         private IEnumerable<IrType> AllTypes() =>
             document.Types.Values.SelectMany(t => t.Fields.Select(f => f.Type))
@@ -486,7 +495,7 @@ public static class ZodEmitter
         /// </summary>
         private static void RequireIdentifier(string name)
         {
-            if (!IrIdentifiers.IsIdentifier(name) || IrIdentifiers.IsReserved(name))
+            if (!IrIdentifiers.IsIdentifier(name) || TypeScriptNames.IsReserved(name))
                 throw new ZodEmitException($"The IR name '{name}' is not a valid TypeScript identifier.");
         }
 

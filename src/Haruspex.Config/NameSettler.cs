@@ -130,7 +130,7 @@ internal sealed class NameSettler(
             return null;
         }
 
-        return config.NamingFor(schema).Name(name, out why);
+        return config.NamingFor(schema).Name(name, config.Reserved, out why);
     }
 
     /// <summary>A result's root: its object, or its rows' object, is <c>…Row</c>, and nested names build on the stem.</summary>
