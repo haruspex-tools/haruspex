@@ -230,20 +230,24 @@ public class NumericObservationTests(SqlServerFixture server)
     public async Task The_statistical_aggregates_are_float_and_the_sample_forms_null_over_fewer_than_two_values()
     {
         // STDEV, STDEVP, VAR and VARP are float whatever they read, with a window too; a bit is an error (8117). Over one value the
-        // sample forms (STDEV, VAR) are NULL, over a window too, and the population forms 0; over no rows or only NULLs all are
+        // sample forms (STDEV, VAR) are NULL and the population forms 0, over a window too; over no rows or only NULLs all are
         // NULL.
         Assert.Equal(
             "a float, b float, c float, d float, e float, g float",
             await Describe($"SELECT STDEV(i) a, STDEVP(d) b, VAR(m) c, VARP(f) d, STDEV(r) e, VAR(ti) g FROM {Row}"));
-        Assert.Equal("h float, k float", await Describe($"SELECT STDEV(i) OVER () h, VARP(d) OVER () k FROM {Row}"));
+        Assert.Equal(
+            "h float, j float, k float, l float",
+            await Describe($"SELECT STDEV(i) OVER () h, STDEVP(m) OVER () j, VARP(d) OVER () k, VAR(f) OVER () l FROM {Row}"));
         Assert.Equal(8117, await DescribeError($"SELECT STDEV(bt) a FROM {Row}"));
         Assert.Equal(
-            "sd,sdp,v,vp,none,nulls,window: null,0,null,0,null,null,null",
+            "sd,sdp,v,vp,none,nulls,window,vwindow,pwindow: null,0,null,0,null,null,null,null,0",
             (await Run("""
                 SELECT (SELECT STDEV(v) FROM (VALUES (1)) AS s (v)) AS sd, (SELECT STDEVP(v) FROM (VALUES (1)) AS s (v)) AS sdp,
                        (SELECT VAR(v) FROM (VALUES (1), (NULL)) AS s (v)) AS v, (SELECT VARP(v) FROM (VALUES (1)) AS s (v)) AS vp,
                        (SELECT VARP(v) FROM (VALUES (1)) AS s (v) WHERE v = 0) AS none, (SELECT STDEVP(v) FROM (VALUES (CAST(NULL AS int))) AS s (v)) AS nulls,
-                       (SELECT MAX(s) FROM (SELECT STDEV(v) OVER () AS s FROM (VALUES (1)) AS t (v)) AS u) AS window;
+                       (SELECT MAX(s) FROM (SELECT STDEV(v) OVER () AS s FROM (VALUES (1)) AS t (v)) AS u) AS window,
+                       (SELECT MAX(s) FROM (SELECT VAR(v) OVER () AS s FROM (VALUES (1)) AS t (v)) AS u) AS vwindow,
+                       (SELECT MAX(s) FROM (SELECT STDEVP(v) OVER () AS s FROM (VALUES (1)) AS t (v)) AS u) AS pwindow;
                 """)).ToString());
     }
 

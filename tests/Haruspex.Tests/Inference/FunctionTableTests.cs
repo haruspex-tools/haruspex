@@ -7,8 +7,9 @@ namespace Haruspex.Tests.Inference;
 
 /// <summary>
 /// The function table (<c>ProcedureAnalyzer.FunctionTable</c>) as data: a row for each function of the catalogue and no other;
-/// each row's observation tests exist and call its function; the reasons to be NULL the sweep finds for a call are among those
-/// its row declares; and a function's name is read only through the catalogue, so the table is the one path a call is typed by.
+/// each row's observation tests exist and call its function in its form; the reasons to be NULL the sweep finds for a call are
+/// among those its row declares; and a function's name is read only through the catalogue, so the table is the one path a call
+/// is typed by.
 /// </summary>
 public partial class FunctionTableTests
 {
@@ -32,12 +33,12 @@ public partial class FunctionTableTests
     }
 
     [Fact]
-    public void Every_row_cites_observation_tests_that_exist_and_call_its_function()
+    public void Every_row_cites_observation_tests_that_exist_and_call_its_function_in_its_form()
     {
         var problems = Table
             .SelectMany(t => t.ObservedIn.Count == 0 ? [$"{t.Function.Code}: cites no observation test"] : t.ObservedIn.Select(name =>
                 !Observations.TryGetValue(name, out var body) ? $"{t.Function.Code}: no observation test {name}"
-                : !Calls(body, t.Function) ? $"{t.Function.Code}: {name} doesn't call {t.Function.Name.ToUpperInvariant()}"
+                : !Calls(body, t.Function) ? $"{t.Function.Code}: {name} doesn't call {t.Function.Name.ToUpperInvariant()} as {t.Function.Form.ToString().ToLowerInvariant()}"
                 : null))
             .OfType<string>()
             .ToList();
@@ -92,11 +93,41 @@ public partial class FunctionTableTests
         Assert.True(problems.Count == 0, "A function's name read outside the catalogue:\n" + string.Join("\n", problems));
     }
 
-    /// <summary>Whether a test's body calls the function: its name then a parenthesis, or a keyword alone.</summary>
-    private static bool Calls(string body, BuiltInFunction function) =>
-        Regex.IsMatch(body, function == ScalarFunctions.CurrentTimestamp || function == RowsetFunctions.OpenJson
-            ? $@"\b{function.Name}\b"
-            : $@"\b{function.Name}\s*\(", RegexOptions.IgnoreCase);
+    /// <summary>
+    /// Whether a test's body calls the function in its form: a window function's name, its arguments, and <c>OVER</c> (after
+    /// any <c>WITHIN GROUP</c>); any other's name and its arguments with no <c>OVER</c> after them; a keyword alone.
+    /// </summary>
+    private static bool Calls(string body, BuiltInFunction function)
+    {
+        if (function == ScalarFunctions.CurrentTimestamp || function == RowsetFunctions.OpenJson)
+            return Regex.IsMatch(body, $@"\b{function.Name}\b", RegexOptions.IgnoreCase);
+        return Regex.Matches(body, $@"\b{function.Name}\s*\(", RegexOptions.IgnoreCase)
+            .Any(m => Windowed(body, m.Index + m.Length - 1) == (function.Form == FunctionForm.Window));
+    }
+
+    /// <summary>Whether the arguments opening at <paramref name="open"/> are followed by <c>OVER</c>, after any <c>WITHIN GROUP</c>.</summary>
+    private static bool Windowed(string body, int open)
+    {
+        var rest = body[(Closing(body, open) + 1)..];
+        var within = Regex.Match(rest, @"^\s*WITHIN\s+GROUP\s*\(", RegexOptions.IgnoreCase);
+        if (within.Success)
+            rest = rest[(Closing(rest, within.Length - 1) + 1)..];
+        return Regex.IsMatch(rest, @"^\s*OVER\b", RegexOptions.IgnoreCase);
+    }
+
+    /// <summary>The index of the parenthesis that closes the one at <paramref name="open"/>, or the text's last index.</summary>
+    private static int Closing(string text, int open)
+    {
+        var depth = 0;
+        for (var i = open; i < text.Length; i++)
+        {
+            depth += text[i] switch { '(' => 1, ')' => -1, _ => 0 };
+            if (depth == 0)
+                return i;
+        }
+
+        return text.Length - 1;
+    }
 
     /// <summary>The function an expression of the sweep is one call of, or null when it is anything else.</summary>
     private static BuiltInFunction? CalledIn(string expression)

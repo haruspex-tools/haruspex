@@ -200,7 +200,8 @@ holds the list as a snapshot, so a change to one shows in review, and checks no 
 `FunctionTableTests` holds the table to the catalogue and to the code:
 
 - every entry has one row, and every row an entry;
-- each row cites observation tests that exist and call its function, so a citation of a test about something else fails;
+- each row cites observation tests that exist and call its function in its form, a window function followed by `OVER` and any
+  other without it, so a citation of a test about another function, or about the same function in the other form, fails;
 - every reason the sweep finds a call may be NULL is one its row declares, so a row says no less than the code does;
 - the sweep reaches every function the table types (but `GROUPING` and `GROUPING_ID`, which need a `GROUP BY`);
 - a function's name is read nowhere else in Semantics or Inference.
