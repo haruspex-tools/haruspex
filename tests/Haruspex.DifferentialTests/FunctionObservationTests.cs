@@ -26,6 +26,31 @@ public class FunctionObservationTests(SqlServerFixture server)
     private async Task<string> Select(string query) => (await Run([Rows], query)).ToString();
 
     [Fact]
+    public async Task A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow()
+    {
+        // Under the caller's options an overflow is NULL: an int past datetime's days, or a date before 1753 beside an integer.
+        // A smallint's days, a tinyint beside a datetime, a string and two dates without an integer all fit.
+        const string Off = "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; ";
+        Assert.Equal(
+            "a,b,c,d,e,f,g,h: null,null,null,null,null,null,null,null",
+            (await Run([], Off + """
+                SELECT YEAR(2147483647) AS a, DATEADD(day, 1, 2147483647) AS b, DATEDIFF(day, 1, CAST('0001-01-01' AS date)) AS c,
+                       DATENAME(month, CAST(-2147483648 AS int)) AS d, DATEPART(year, CAST(9223372036854775807 AS bigint)) AS e,
+                       MONTH(2147483647) AS f, DAY(-2147483648) AS g, DATEDIFF_BIG(day, 0, CAST('0001-01-01' AS date)) AS h;
+                """)).ToString());
+        // An integer is that many days from 1900-01-01, so datetime holds -53690 (1753-01-01) to 2958463 (9999-12-31).
+        Assert.Equal(
+            "a,b,c,d: 1753,9999,null,null",
+            (await Run([], Off + "SELECT YEAR(-53690) AS a, YEAR(2958463) AS b, YEAR(-53691) AS c, YEAR(2958464) AS d;")).ToString());
+        Assert.Equal(
+            "a,b,c,d: 1810,-53945,-693595,-639905",
+            (await Run([], Off + """
+                SELECT YEAR(CAST(-32768 AS smallint)) AS a, DATEDIFF(day, CAST(255 AS tinyint), CAST('1753-01-01' AS datetime)) AS b,
+                       DATEDIFF(day, '1900-01-01', CAST('0001-01-01' AS date)) AS c, DATEDIFF(day, CAST('1753-01-01' AS datetime), CAST('0001-01-01' AS date)) AS d;
+                """)).ToString());
+    }
+
+    [Fact]
     public async Task Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read()
     {
         // When the procedure is created: JSON_VALUE of a value that isn't text (8116) or of a literal that isn't JSON (13609);

@@ -150,7 +150,13 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/member_dates.sql:7:8"
+            }
+          ]
         },
         {
           "name": "renews_on",

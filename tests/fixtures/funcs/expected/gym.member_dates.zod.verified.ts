@@ -6,7 +6,7 @@ export const MemberDatesRowSchema = z.object({
   member_id: z.int32(),
   days_member: z.int32().nullable(),
   minutes_alive: z.string().nullable(),
-  day_number: z.int32(),
+  day_number: z.int32().nullable(),
   renews_on: z.date(),
   seen_later: z.date().nullable(),
   adult_on: z.date().nullable(),

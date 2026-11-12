@@ -27,7 +27,7 @@ public partial class FunctionTests
         Assert.Equal("datetimeoffset(4) nullable-column", Typed(doc, "a7"));
         Assert.Equal("time(2) nullable-column", Typed(doc, "a8"));
         Assert.Equal("datetime", Typed(doc, "a9"));
-        Assert.Equal("datetime", Typed(doc, "a10"));
+        Assert.Equal("datetime arithmetic-overflow", Typed(doc, "a10"));
         Assert.Equal("int", Typed(doc, "a11"));
         Assert.Equal("int", Typed(doc, "b1"));
         Assert.Equal("int nullable-column", Typed(doc, "b2"));
@@ -39,6 +39,25 @@ public partial class FunctionTests
         // A NULL month offset is taken as 0.
         Assert.Equal("date", Typed(doc, "b7"));
         Assert.Equal("int", Typed(doc, "b8"));
+    }
+
+    [Fact]
+    public void A_date_function_given_an_integer_may_overflow_datetime_unless_every_date_fits_it()
+    {
+        // A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow.
+        var doc = Procedure("""
+            SELECT YEAR(n) AS a, YEAR(ti) AS b, YEAR(2958464) AS c, YEAR(2958463) AS d, DATEDIFF(day, 0, da) AS e,
+                   DATEDIFF(day, 0, dt) AS f, DATEDIFF(day, da, d2) AS g, DATEADD(day, 1, bi) AS h
+            FROM dbo.t;
+            """);
+        Assert.Equal("int arithmetic-overflow", Typed(doc, "a"));
+        Assert.Equal("int", Typed(doc, "b"));
+        Assert.Equal("int arithmetic-overflow", Typed(doc, "c"));
+        Assert.Equal("int", Typed(doc, "d"));
+        Assert.Equal("int arithmetic-overflow", Typed(doc, "e"));
+        Assert.Equal("int", Typed(doc, "f"));
+        Assert.Equal("int", Typed(doc, "g"));
+        Assert.StartsWith("datetime nullable-column arithmetic-overflow", Typed(doc, "h"), StringComparison.Ordinal);
     }
 
     [Fact]

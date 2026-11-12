@@ -13,6 +13,7 @@ namespace Haruspex.SqlServer.Inference;
 internal sealed partial class ProcedureAnalyzer
 {
     private const string DateKinds = "Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type";
+    private const string DateIntegers = "A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow";
     private const string DateNulls = "A_date_function_is_null_when_an_argument_is_but_eomonth_ignores_a_null_offset";
     private const string Now = "The_current_date_and_time_functions_are_never_null";
     private const string Trims = "Trimming_and_case_keep_the_strings_length_and_make_a_fixed_length_string_varying";
@@ -50,14 +51,14 @@ internal sealed partial class ProcedureAnalyzer
     internal static IReadOnlyList<FunctionTyping> FunctionTable { get; } =
     [
         // ---- dates ----
-        Typing(ScalarFunctions.DateDiff, (3, 3), "int", [], [DateKinds, DateNulls], (a, e, s) => a.DateDiff(Call(e), ScalarType.Of(BuiltInType.Int), s)),
-        Typing(ScalarFunctions.DateDiffBig, (3, 3), "bigint", [], [DateKinds, DateNulls], (a, e, s) => a.DateDiff(Call(e), ScalarType.Of(BuiltInType.BigInt), s)),
-        Typing(ScalarFunctions.DateAdd, (3, 3), "the date's type, datetime for a string or an integer", [], [DateKinds, DateNulls], (a, e, s) => a.DateAdd(Call(e), s)),
-        Typing(ScalarFunctions.DatePart, (2, 2), "int", [], [DateKinds, DateNulls], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[1], ScalarType.Of(BuiltInType.Int), s)),
-        Typing(ScalarFunctions.Year, (1, 1), "int", [], [DateKinds, DateNulls], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[0], ScalarType.Of(BuiltInType.Int), s)),
-        Typing(ScalarFunctions.Month, (1, 1), "int", [], [DateKinds], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[0], ScalarType.Of(BuiltInType.Int), s)),
-        Typing(ScalarFunctions.Day, (1, 1), "int", [], [DateKinds], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[0], ScalarType.Of(BuiltInType.Int), s)),
-        Typing(ScalarFunctions.DateName, (2, 2), "nvarchar(30)", [], [DateKinds, DateNulls], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[1], new ScalarType(BuiltInType.NVarChar, 30), s)),
+        Typing(ScalarFunctions.DateDiff, (3, 3), "int", [ArithmeticOverflow], [DateIntegers, DateKinds, DateNulls], (a, e, s) => a.DateDiff(Call(e), ScalarType.Of(BuiltInType.Int), s)),
+        Typing(ScalarFunctions.DateDiffBig, (3, 3), "bigint", [ArithmeticOverflow], [DateIntegers, DateKinds, DateNulls], (a, e, s) => a.DateDiff(Call(e), ScalarType.Of(BuiltInType.BigInt), s)),
+        Typing(ScalarFunctions.DateAdd, (3, 3), "the date's type, datetime for a string or an integer", [ArithmeticOverflow], [DateIntegers, DateKinds, DateNulls], (a, e, s) => a.DateAdd(Call(e), s)),
+        Typing(ScalarFunctions.DatePart, (2, 2), "int", [ArithmeticOverflow], [DateIntegers, DateKinds, DateNulls], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[1], ScalarType.Of(BuiltInType.Int), s)),
+        Typing(ScalarFunctions.Year, (1, 1), "int", [ArithmeticOverflow], [DateIntegers, DateKinds, DateNulls], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[0], ScalarType.Of(BuiltInType.Int), s)),
+        Typing(ScalarFunctions.Month, (1, 1), "int", [ArithmeticOverflow], [DateIntegers, DateKinds], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[0], ScalarType.Of(BuiltInType.Int), s)),
+        Typing(ScalarFunctions.Day, (1, 1), "int", [ArithmeticOverflow], [DateIntegers, DateKinds], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[0], ScalarType.Of(BuiltInType.Int), s)),
+        Typing(ScalarFunctions.DateName, (2, 2), "nvarchar(30)", [ArithmeticOverflow], [DateIntegers, DateKinds, DateNulls], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[1], new ScalarType(BuiltInType.NVarChar, 30), s)),
         Typing(ScalarFunctions.EndOfMonth, (1, 2), "date", [], [DateKinds, DateNulls, Refusals], (a, e, s) => a.EndOfMonth(Call(e), s)),
         Typing(ScalarFunctions.DateFromParts, (3, 3), "date", [], [DateKinds, DateNulls], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.Date), s)),
         Typing(ScalarFunctions.DateTimeFromParts, (7, 7), "datetime", [], [DateKinds, DateNulls], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.DateTime), s)),

@@ -1,8 +1,8 @@
 DATEDIFF(day, bt, dt) -> unknown unsupported-expression: DATEDIFF(day, bt, dt): an argument of this type is not modelled as a date.
-DATEDIFF(day, ti, dt) -> int number/int32 {[-2147483648 2147483647]}
-DATEDIFF(day, si, dt) -> int number/int32 {[-2147483648 2147483647]}
-DATEDIFF(day, i, dt) -> int number/int32 {[-2147483648 2147483647]}
-DATEDIFF(day, bi, dt) -> int number/int32 {[-2147483648 2147483647]}
+DATEDIFF(day, ti, dt) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+DATEDIFF(day, si, dt) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+DATEDIFF(day, i, dt) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+DATEDIFF(day, bi, dt) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 DATEDIFF(day, d52, dt) -> unknown unsupported-expression: DATEDIFF(day, d52, dt): an argument of this type is not modelled as a date.
 DATEDIFF(day, d380, dt) -> unknown unsupported-expression: DATEDIFF(day, d380, dt): an argument of this type is not modelled as a date.
 DATEDIFF(day, d3838, dt) -> unknown unsupported-expression: DATEDIFF(day, d3838, dt): an argument of this type is not modelled as a date.
@@ -31,18 +31,18 @@ DATEDIFF(day, vb10, dt) -> unknown unsupported-sql-type: The type varbinary(10) 
 DATEDIFF(day, x, dt) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 DATEDIFF(day, sv, dt) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATEDIFF(day, j, dt) -> unknown (no unknown recorded)
-DATEDIFF(day, 1, dt) -> int number/int32 {[-2147483648 2147483647]}
-DATEDIFF(day, 12345, dt) -> int number/int32 {[-2147483648 2147483647]}
+DATEDIFF(day, 1, dt) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+DATEDIFF(day, 12345, dt) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 DATEDIFF(day, 2.50, dt) -> unknown unsupported-expression: DATEDIFF(day, 2.50, dt): an argument of this type is not modelled as a date.
 DATEDIFF(day, 'ab', dt) -> int number/int32 {[-2147483648 2147483647]}
 DATEDIFF(day, N'ab', dt) -> int number/int32 {[-2147483648 2147483647]}
 DATEDIFF(day, 1e0, dt) -> unknown unsupported-expression: DATEDIFF(day, 1e0, dt): an argument of this type is not modelled as a date.
 DATEDIFF(day, $1, dt) -> unknown unsupported-expression: DATEDIFF(day, $1, dt): an argument of this type is not modelled as a date.
 DATEDIFF_BIG(day, bt, dt) -> unknown unsupported-expression: DATEDIFF_BIG(day, bt, dt): an argument of this type is not modelled as a date.
-DATEDIFF_BIG(day, ti, dt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-DATEDIFF_BIG(day, si, dt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-DATEDIFF_BIG(day, i, dt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-DATEDIFF_BIG(day, bi, dt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+DATEDIFF_BIG(day, ti, dt) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+DATEDIFF_BIG(day, si, dt) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+DATEDIFF_BIG(day, i, dt) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+DATEDIFF_BIG(day, bi, dt) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 DATEDIFF_BIG(day, d52, dt) -> unknown unsupported-expression: DATEDIFF_BIG(day, d52, dt): an argument of this type is not modelled as a date.
 DATEDIFF_BIG(day, d380, dt) -> unknown unsupported-expression: DATEDIFF_BIG(day, d380, dt): an argument of this type is not modelled as a date.
 DATEDIFF_BIG(day, d3838, dt) -> unknown unsupported-expression: DATEDIFF_BIG(day, d3838, dt): an argument of this type is not modelled as a date.
@@ -71,8 +71,8 @@ DATEDIFF_BIG(day, vb10, dt) -> unknown unsupported-sql-type: The type varbinary(
 DATEDIFF_BIG(day, x, dt) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 DATEDIFF_BIG(day, sv, dt) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATEDIFF_BIG(day, j, dt) -> unknown (no unknown recorded)
-DATEDIFF_BIG(day, 1, dt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-DATEDIFF_BIG(day, 12345, dt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+DATEDIFF_BIG(day, 1, dt) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+DATEDIFF_BIG(day, 12345, dt) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 DATEDIFF_BIG(day, 2.50, dt) -> unknown unsupported-expression: DATEDIFF_BIG(day, 2.50, dt): an argument of this type is not modelled as a date.
 DATEDIFF_BIG(day, 'ab', dt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 DATEDIFF_BIG(day, N'ab', dt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
@@ -81,8 +81,8 @@ DATEDIFF_BIG(day, $1, dt) -> unknown unsupported-expression: DATEDIFF_BIG(day, $
 DATEADD(day, 1, bt) -> unknown unsupported-expression: DATEADD(day, 1, bt): a date of this type is not modelled.
 DATEADD(day, 1, ti) -> datetime datetime/local
 DATEADD(day, 1, si) -> datetime datetime/local
-DATEADD(day, 1, i) -> datetime datetime/local
-DATEADD(day, 1, bi) -> datetime datetime/local
+DATEADD(day, 1, i) -> datetime datetime/local null:arithmetic-overflow
+DATEADD(day, 1, bi) -> datetime datetime/local null:arithmetic-overflow
 DATEADD(day, 1, d52) -> unknown unsupported-expression: DATEADD(day, 1, d52): a date of this type is not modelled.
 DATEADD(day, 1, d380) -> unknown unsupported-expression: DATEADD(day, 1, d380): a date of this type is not modelled.
 DATEADD(day, 1, d3838) -> unknown unsupported-expression: DATEADD(day, 1, d3838): a date of this type is not modelled.
@@ -161,8 +161,8 @@ DATEADD(day, $1, dt) -> date date
 DATEPART(year, bt) -> unknown unsupported-expression: DATEPART(year, bt): a date of this type is not modelled.
 DATEPART(year, ti) -> int number/int32 {[-2147483648 2147483647]}
 DATEPART(year, si) -> int number/int32 {[-2147483648 2147483647]}
-DATEPART(year, i) -> int number/int32 {[-2147483648 2147483647]}
-DATEPART(year, bi) -> int number/int32 {[-2147483648 2147483647]}
+DATEPART(year, i) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+DATEPART(year, bi) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 DATEPART(year, d52) -> unknown unsupported-expression: DATEPART(year, d52): a date of this type is not modelled.
 DATEPART(year, d380) -> unknown unsupported-expression: DATEPART(year, d380): a date of this type is not modelled.
 DATEPART(year, d3838) -> unknown unsupported-expression: DATEPART(year, d3838): a date of this type is not modelled.
@@ -201,8 +201,8 @@ DATEPART(year, $1) -> unknown unsupported-expression: DATEPART(year, $1): a date
 YEAR(bt) -> unknown unsupported-expression: YEAR(bt): a date of this type is not modelled.
 YEAR(ti) -> int number/int32 {[-2147483648 2147483647]}
 YEAR(si) -> int number/int32 {[-2147483648 2147483647]}
-YEAR(i) -> int number/int32 {[-2147483648 2147483647]}
-YEAR(bi) -> int number/int32 {[-2147483648 2147483647]}
+YEAR(i) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+YEAR(bi) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 YEAR(d52) -> unknown unsupported-expression: YEAR(d52): a date of this type is not modelled.
 YEAR(d380) -> unknown unsupported-expression: YEAR(d380): a date of this type is not modelled.
 YEAR(d3838) -> unknown unsupported-expression: YEAR(d3838): a date of this type is not modelled.
@@ -241,8 +241,8 @@ YEAR($1) -> unknown unsupported-expression: YEAR($1): a date of this type is not
 MONTH(bt) -> unknown unsupported-expression: MONTH(bt): a date of this type is not modelled.
 MONTH(ti) -> int number/int32 {[-2147483648 2147483647]}
 MONTH(si) -> int number/int32 {[-2147483648 2147483647]}
-MONTH(i) -> int number/int32 {[-2147483648 2147483647]}
-MONTH(bi) -> int number/int32 {[-2147483648 2147483647]}
+MONTH(i) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+MONTH(bi) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 MONTH(d52) -> unknown unsupported-expression: MONTH(d52): a date of this type is not modelled.
 MONTH(d380) -> unknown unsupported-expression: MONTH(d380): a date of this type is not modelled.
 MONTH(d3838) -> unknown unsupported-expression: MONTH(d3838): a date of this type is not modelled.
@@ -281,8 +281,8 @@ MONTH($1) -> unknown unsupported-expression: MONTH($1): a date of this type is n
 DAY(bt) -> unknown unsupported-expression: DAY(bt): a date of this type is not modelled.
 DAY(ti) -> int number/int32 {[-2147483648 2147483647]}
 DAY(si) -> int number/int32 {[-2147483648 2147483647]}
-DAY(i) -> int number/int32 {[-2147483648 2147483647]}
-DAY(bi) -> int number/int32 {[-2147483648 2147483647]}
+DAY(i) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+DAY(bi) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 DAY(d52) -> unknown unsupported-expression: DAY(d52): a date of this type is not modelled.
 DAY(d380) -> unknown unsupported-expression: DAY(d380): a date of this type is not modelled.
 DAY(d3838) -> unknown unsupported-expression: DAY(d3838): a date of this type is not modelled.
@@ -321,8 +321,8 @@ DAY($1) -> unknown unsupported-expression: DAY($1): a date of this type is not m
 DATENAME(month, bt) -> unknown unsupported-expression: DATENAME(month, bt): a date of this type is not modelled.
 DATENAME(month, ti) -> nvarchar(30) string {length<=30}
 DATENAME(month, si) -> nvarchar(30) string {length<=30}
-DATENAME(month, i) -> nvarchar(30) string {length<=30}
-DATENAME(month, bi) -> nvarchar(30) string {length<=30}
+DATENAME(month, i) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
+DATENAME(month, bi) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
 DATENAME(month, d52) -> unknown unsupported-expression: DATENAME(month, d52): a date of this type is not modelled.
 DATENAME(month, d380) -> unknown unsupported-expression: DATENAME(month, d380): a date of this type is not modelled.
 DATENAME(month, d3838) -> unknown unsupported-expression: DATENAME(month, d3838): a date of this type is not modelled.

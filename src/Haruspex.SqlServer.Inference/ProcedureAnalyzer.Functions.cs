@@ -58,10 +58,31 @@ internal sealed partial class ProcedureAnalyzer
         var (values, unknown) = Arguments(call.Parameters.Skip(1), scope);
         if (unknown is not null)
             return unknown;
-        if (values.Select((v, i) => DateOperand(v, call.Parameters[i + 1])).Any(t => t is null))
+        var dates = values.Select((v, i) => DateOperand(v, call.Parameters[i + 1])).ToList();
+        if (dates.Any(t => t is null))
             return NotModelled(call, "an argument of this type is not modelled as a date.");
-        return Typed(type, Reasons(values), call);
+        return Typed(type, NullReasons.Join(Reasons(values), DatetimeOverflow([.. dates.Select((t, i) => (t!, call.Parameters[i + 1]))], call)), call);
     }
+
+    /// <summary>
+    /// Whether reading these as dates may overflow: an integer is converted to datetime, and so is every date beside it, and
+    /// either may be past datetime's range (1753 to 9999), which is NULL under a caller's ANSI_WARNINGS and ARITHABORT off
+    /// (observed: A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow:
+    /// YEAR(2147483647), and DATEDIFF of 1 and 0001-01-01). Without an integer the dates are read as they are; a tinyint, a
+    /// smallint, a datetime, a smalldatetime or a time always fits (<see cref="Conversions.Converts"/>).
+    /// </summary>
+    private EquatableArray<IrNullReason> DatetimeOverflow(IReadOnlyList<(ScalarType Type, ScalarExpression Expression)> dates, TSqlFragment call) =>
+        dates.Any(d => d.Type.IsInteger) && !dates.All(d => Fits(d.Type, d.Expression))
+            ? [Overflow(call)]
+            : [];
+
+    /// <summary>
+    /// Whether a date read as datetime fits it: by its type (<see cref="Conversions.Converts"/>), or an integer literal of a
+    /// number of days from 1900-01-01 that datetime holds, -53690 (1753-01-01) to 2958463 (9999-12-31), observed in the same test.
+    /// </summary>
+    private static bool Fits(ScalarType type, ScalarExpression expression) =>
+        Conversions.Converts(Operand.OfType(type), ScalarType.Of(BuiltInType.DateTime))
+        || (type.IsInteger && NumberOf(expression) is >= -53690 and <= 2958463);
 
     /// <summary>
     /// <c>DATEADD(part, n, d)</c>: d's type, or datetime for a string or an integer; NULL when n or d is. An overflow is an
@@ -78,7 +99,7 @@ internal sealed partial class ProcedureAnalyzer
         var date = DateOperand(values[1], call.Parameters[2]);
         if (date is null)
             return NotModelled(call, "a date of this type is not modelled.");
-        return Typed(date.IsDateOrTime ? date : ScalarType.Of(BuiltInType.DateTime), Reasons(values), call);
+        return Typed(date.IsDateOrTime ? date : ScalarType.Of(BuiltInType.DateTime), NullReasons.Join(Reasons(values), DatetimeOverflow([(date, call.Parameters[2])], call)), call);
     }
 
     /// <summary><c>DATEPART</c>, <c>YEAR</c>, <c>MONTH</c>, <c>DAY</c> (int) and <c>DATENAME</c> (nvarchar(30), whose names
@@ -88,9 +109,9 @@ internal sealed partial class ProcedureAnalyzer
         var value = Expression(date, scope);
         if (value.Shape is UnknownShape)
             return value;
-        if (DateOperand(value, date) is null)
+        if (DateOperand(value, date) is not { } read)
             return NotModelled(call, "a date of this type is not modelled.");
-        return Typed(type, value.NullableBecause, call);
+        return Typed(type, NullReasons.Join(value.NullableBecause, DatetimeOverflow([(read, date)], call)), call);
     }
 
     /// <summary>
