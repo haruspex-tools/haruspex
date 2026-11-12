@@ -7,7 +7,7 @@ holds declarations as written; this layer holds the rules SQL Server applies to 
 
 ## How data flows through it
 
-It does two things, side by side:
+It does three things, side by side:
 
 ```mermaid
 flowchart LR
@@ -18,6 +18,7 @@ flowchart LR
     binder --> column["ColumnBinding: the column a reference reads, or why not"]
     binder --> call["CallTarget: the procedure an EXEC runs, or why its results are unknowable"]
     model --> rules["SchemaRules, CheckReader"]
+    catalogue["BuiltInType, ScalarType, ConversionChart"] --> rules
     rules --> facts["ColumnFacts: never null, lengths, digits, ranges, value sets"]
 ```
 
@@ -31,6 +32,11 @@ flowchart LR
   null (declared `NOT NULL`, in the primary key, or `IDENTITY`), which keys every row satisfies, what an alias type stands
   for, and what a type and its CHECK constraints guarantee about a column's non-null values (lengths, digits, ranges,
   minimum lengths and closed value sets).
+- **SQL Server's type system, as data.** `BuiltInType` is the catalogue of every built-in type, with its family, its place
+  in data type precedence, its digits, range and defaults; `ScalarType` is a type with its arguments (`decimal(19,2)`); and
+  `ConversionChart` says which conversions the server allows, implicitly or only explicitly. Each row is observed against a
+  real server; [the guide's chapter](https://github.com/sharpblue/haruspex/blob/main/docs/internals/08-the-sql-server-type-system-as-data.md)
+  says why it is data and how. Bounds on numbers are one lattice, `Bounds`, which the schema rules and inference both use.
 
 ## Example
 

@@ -6,7 +6,8 @@ namespace Haruspex.SqlServer.Inference.Typing;
 /// <summary>
 /// The server's rules for converting a value to another type: whether every value converts without an overflow, whether
 /// it keeps the facts proved of it, and whether a literal fits. README.md in the project ("Conversions") gives the rules
-/// and the observations they rest on.
+/// and the observations they rest on, and the guide's chapter <c>docs/internals/08-the-sql-server-type-system-as-data.md</c>
+/// why they are a table.
 /// </summary>
 internal static class Conversions
 {

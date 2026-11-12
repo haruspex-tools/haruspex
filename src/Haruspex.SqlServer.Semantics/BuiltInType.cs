@@ -9,7 +9,8 @@ namespace Haruspex.SqlServer.Semantics;
 /// One of SQL Server's built-in data types, with what the server says about it: its family, its place in data type precedence,
 /// its digits, its range, its arguments and their defaults. The catalogue is closed: every built-in type a column or a value
 /// can have is a static instance here, listed in <see cref="All"/>, and no other can be made. Semantics and Inference read a
-/// type's facts from here, and a type's name is compared as a string only in <see cref="Named"/>, the catalogue's parser.
+/// type's facts from here, and a type's name is compared as a string only in <see cref="Named"/>, the catalogue's parser. The
+/// guide's chapter <c>docs/internals/08-the-sql-server-type-system-as-data.md</c> explains why, and how an entry is observed.
 /// </summary>
 /// <remarks>
 /// <para>
