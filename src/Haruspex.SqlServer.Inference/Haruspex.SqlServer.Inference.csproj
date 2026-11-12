@@ -11,4 +11,8 @@
     <ProjectReference Include="..\Haruspex.SqlServer.Semantics\Haruspex.SqlServer.Semantics.csproj" />
     <ProjectReference Include="..\Haruspex.Ir\Haruspex.Ir.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- For ValueEqualityTests: the laws of equality are about the shapes and values the fixed points compare, which are internal. -->
+    <InternalsVisibleTo Include="Haruspex.Tests" />
+  </ItemGroup>
 </Project>
