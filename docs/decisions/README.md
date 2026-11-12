@@ -33,6 +33,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0025](0025-null-reasons-in-neutral-terms.md) | 12 Nov 2026 | Reasons to be null are named for the reason, not the SQL |
 | [0026](0026-the-emitter-plans-lowers-and-prints.md) | 12 Nov 2026 | The emitter plans, lowers and prints, and walks over types go through one graph |
 | [0027](0027-one-lattice-per-fact.md) | 12 Nov 2026 | One lattice per fact, facts dropped to their top by default, and the type rule named apart from the join |
+| [0028](0028-one-fixed-point-and-one-environment-of-facts.md) | 12 Nov 2026 | One fixed-point iteration with one cap, and one immutable environment of what conditions prove |
 
 ## Writing a record
 

@@ -4,7 +4,7 @@ namespace Haruspex.SqlServer.Inference.Lattice;
 /// The one Kleene iteration every solver in the inference uses: a <c>WHILE</c> loop's state, a recursive CTE's columns, a
 /// recursive procedure's result sets and a component of recursive functions are each the least fixed point of a step, reached
 /// by applying the step from a start below it until a pass gives back what it started from. The guide's chapter
-/// <c>docs/internals/07-summaries-and-recursion.md</c> explains the idea and the policy.
+/// <c>docs/internals/06-flow-joins-and-fixed-points.md</c> explains the idea and the policy.
 /// </summary>
 /// <remarks>
 /// <para>

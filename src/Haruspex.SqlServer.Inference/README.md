@@ -5,9 +5,10 @@ type, whether it may be null or absent, its facets, and how many rows it has. It
 interpretation: each body is walked as SQL Server would run it, over descriptions of values rather than values, and
 anything not modelled is unknown, with a reason. The guide explains the ideas:
 [the shape of the problem](../../docs/internals/01-the-shape-of-the-problem.md),
-[values as a lattice](../../docs/internals/05-values-as-a-lattice.md) and
-[summaries and recursion](../../docs/internals/07-summaries-and-recursion.md); its chapters on abstract interpretation,
-flow and fixed points, and the type system are planned.
+[values as a lattice](../../docs/internals/05-values-as-a-lattice.md),
+[flow, joins and fixed points](../../docs/internals/06-flow-joins-and-fixed-points.md) and
+[summaries and recursion](../../docs/internals/07-summaries-and-recursion.md); its chapters on abstract interpretation and the
+type system are planned.
 
 ## How data flows through it
 

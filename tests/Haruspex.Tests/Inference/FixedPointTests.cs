@@ -9,7 +9,7 @@ namespace Haruspex.Tests.Inference;
 /// The one iteration every solver uses (<see cref="FixedPoint.Iterate"/>): it stops at the first pass that gives back what it
 /// started from, compared as records; it applies a solver's widening from <see cref="FixedPoint.WidenAfter"/> on; it gives up
 /// at <see cref="FixedPoint.MostPasses"/>; and a step can stop it. The guide's chapter
-/// <c>docs/internals/07-summaries-and-recursion.md</c> explains the policy.
+/// <c>docs/internals/06-flow-joins-and-fixed-points.md</c> explains the policy.
 /// </summary>
 public class FixedPointTests
 {

@@ -120,6 +120,8 @@ kleene
 preorder
 semilattice
 semilattices
+worklist
+fixpoints
 serialiser
 soundiness
 soundy
@@ -137,6 +139,7 @@ adve
 christophe
 claessen
 conchon
+cousot
 filliâtre
 flemming
 greenwald
@@ -153,7 +156,9 @@ pnueli
 postel
 riis
 schinazi
+radhia
 schwartzbach
+popl
 shahbaz
 sharir
 zhendong

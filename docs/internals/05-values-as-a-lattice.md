@@ -8,7 +8,8 @@ one that allows both. [Summaries and recursion](07-summaries-and-recursion.md) i
 lines; this chapter treats them properly.
 
 It has three parts: equality; the order and the join, built one lattice per fact; and why SQL Server's type rule for
-`CASE` and `UNION` is not a join. The statement walk that uses them is the subject of the next chapter, planned.
+`CASE` and `UNION` is not a join. The statement walk that uses them is the subject of the next chapter,
+[Flow, joins and fixed points](06-flow-joins-and-fixed-points.md).
 
 ## Equality
 
