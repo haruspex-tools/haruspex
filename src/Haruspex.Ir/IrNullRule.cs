@@ -104,7 +104,7 @@ public enum IrNullRule
     ReadTwice,
 
     /// <summary>It is made NULL when it equals a given value (<c>NULLIF</c>, NULL when its two arguments compare equal).</summary>
-    NulledWhenEqual,
+    NullWhenEqual,
 
     /// <summary>
     /// It is read from JSON at a path, and the JSON holds <c>null</c> there or, read leniently, nothing or the wrong kind of

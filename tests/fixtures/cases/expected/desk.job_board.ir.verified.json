@@ -387,7 +387,7 @@
               "at": "desk.customer.phone"
             },
             {
-              "rule": "nulled-when-equal",
+              "rule": "null-when-equal",
               "at": "procedures/job_board.sql:18:8"
             }
           ]
@@ -417,7 +417,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "nulled-when-equal",
+              "rule": "null-when-equal",
               "at": "procedures/job_board.sql:19:8"
             }
           ]

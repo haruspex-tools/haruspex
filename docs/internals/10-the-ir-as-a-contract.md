@@ -97,11 +97,13 @@ table, with the reason, as written another way; a property added to a record fai
 The schema is strict where the format is closed. Every object refuses a property it doesn't list
 (`additionalProperties: false`), every vocabulary is an `enum`, and a flag must agree with its reasons: `nullable: true`
 with at least one entry in `nullableBecause`, and `nullable: false` with none. Every integer is a count, from 0 to the
-largest 32-bit integer. It uses only the core of JSON Schema 2020-12, and Ajv compiles it in strict mode. Two rules it
-can't state, because JSON Schema sees a document after it is parsed. One is a number's form: a bound written `1e5` passes
-the schema, though the IR writes every number as plain decimal text so that a reader can take it exactly, and the reader
-refuses any other form; the schema's descriptions say so. The other is a key given twice in one object, which a parser
-keeps one of and the reader refuses. Those are the two ways a file can pass the schema and still not read.
+largest 32-bit integer. It uses only the core of JSON Schema 2020-12, and Ajv compiles it in strict mode. Three rules it
+can't state. Two because JSON Schema sees a document after it is parsed: a number's form (a bound written `1e5` passes the
+schema, though the IR writes every number as plain decimal text so that a reader can take it exactly, and the reader
+refuses any other form; the schema's descriptions say so), and a key given twice in one object, which a parser keeps one
+of and the reader refuses. The third because JSON Schema can't compare a value with a key elsewhere in the document: a
+`ref` must name a type in `types`, and the reader refuses one that doesn't. Those are the three ways a file can pass the
+schema and still not read, and the specification lists them.
 
 ## The round trip is a law
 
@@ -152,7 +154,7 @@ The version is read first, before anything else in the file. A file of any versi
 a message that names the file's version, the version the reader reads and where:
 
 ```text
-$.irVersion is "0.14", and this reader reads IR 0.15 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.16 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -164,7 +166,7 @@ The alternative was to migrate: to read an older file by mapping its differences
   a migration could map. Others change what a claim means or which rules made it: a rule observed wrong and corrected, a
   construct that was unknown and is now typed, a reason that was too wide. A migrated file would present an old engine's
   claims with a new version's label, and a reader would trust them as the new version's.
-- **Each migration is another reader to test.** The format has had fifteen versions so far. A chain of migrations is a
+- **Each migration is another reader to test.** The format has had sixteen versions so far. A chain of migrations is a
   reader per version, each needing fixtures of its own, for a format that promises no compatibility while it is 0.x.
 
 A newer version than the reader's is refused for the same reason and more plainly: the reader can't know what it would be
@@ -177,8 +179,36 @@ says that not every addition can be. Until then, the rule is the simple one: a r
 
 ## Names that belong to no dialect
 
-*Planned*: why the IR names the reason a value can be null rather than the SQL construct that causes it, so that a second
-front end can write the same format; and how the names were chosen.
+A format between front ends and emitters must not speak any one front end's language. That sounds easy and isn't, because
+the first front end writes the first vocabulary, and the words that come to hand are its own. The first front end here
+reads SQL Server, and until version 0.16 seven of the reasons a value can be null were named for the T-SQL that causes them:
+`outer-apply`, `merge-action`, `nullif`, `json-value`, `no-else`, `grouping-set`, `outer-join`. Each was accurate, and each
+would have made a PostgreSQL front end write SQL Server's vocabulary (`outer-apply` for its `LEFT JOIN LATERAL`), or add a
+second name for the same reason, which every consumer would then have to know is the same.
+
+The rule since 0.16 is that **a reason is named for why the value can be null, never for what made it so**
+([decision 0025](../decisions/0025-null-reasons-in-neutral-terms.md)). `nullif` became `null-when-equal`: the value is
+made null when it equals a given one, which is what `NULLIF` does in every dialect that has it and what a function by
+another name would do too. `json-value` became `json-null-or-absent`, since what matters to a consumer is that the JSON may
+hold null or nothing at the path, not which function read it. The construct is not lost: every reason carries `at`, the
+place in the source that gave it, and the SQL Server front end's README lists which constructs give each reason. The
+specification says what a reason means; the front end says where it comes from.
+
+**Two names became one.** `outer-join` and `outer-apply` were one reason: the row a value comes from is missing because the
+optional side of a join matched nothing. SQL Server's `OUTER APPLY` is a lateral join, a join whose right side may read
+the left, and what makes its columns null is the same as for a left join. Keeping two names would have encoded a
+distinction of syntax that no consumer acts on, so both are now `unmatched-row`. The opposite test was applied to the
+three reasons that are errors made null by a session setting (`count-overflow`, `arithmetic-overflow`, `domain-error`):
+they stay apart, because what a person does about each differs.
+
+**The code uses the same names.** The C# members were renamed with the wire names (`IrNullRule.UnmatchedRow`), though the
+old ones read naturally beside the SQL in the inference. One vocabulary with two sets of names is the drift that the one
+table of names, `IrWireNames`, exists to prevent, and a name that says why reads as well in the code as in the file.
+
+**A 0.15 file is refused, not mapped.** The table of old and new names makes reading 0.15 look free: rename seven words
+and read on. The reader refuses it anyway, for the reasons in "A version the reader doesn't read": the mapping would be a
+reader to keep and test for every version after, to save one command, and a 0.15 file holds an older engine's claims, which
+a mapped reader would present as 0.16's.
 
 ## Reading further
 

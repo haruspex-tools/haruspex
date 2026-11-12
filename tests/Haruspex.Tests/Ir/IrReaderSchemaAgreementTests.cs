@@ -42,6 +42,14 @@ public class IrReaderSchemaAgreementTests
         var schemaErrors = SchemaErrors(text);
         var refusal = Refusal(text);
 
+        // The one thing the reader refuses that the schema can't see: a type removed while something still refers to it.
+        if (location == "/types" && File.Contains($"\"ref\": \"{key}\"", StringComparison.Ordinal))
+        {
+            Assert.Empty(schemaErrors);
+            Assert.EndsWith($"which names no type in $.types.", refusal?.Problem, StringComparison.Ordinal);
+            return;
+        }
+
         if (schemaErrors.Count == 0)
         {
             Assert.True(refusal is null, $"The schema accepts the file without {location}/{key}, but the reader refuses it: {refusal?.Message}");

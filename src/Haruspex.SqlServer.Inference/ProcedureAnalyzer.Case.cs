@@ -304,7 +304,7 @@ internal sealed partial class ProcedureAnalyzer
     // ---- NULLIF ---------------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// <c>NULLIF(a, b)</c>: a's value, unchanged, or NULL when a and b compare equal (<c>nulled-when-equal</c>), so a's type and facts; never
+    /// <c>NULLIF(a, b)</c>: a's value, unchanged, or NULL when a and b compare equal (<c>null-when-equal</c>), so a's type and facts; never
     /// equal when b is the NULL literal. An integer literal a is the smallest integer type that holds it (observed:
     /// Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it). Over JSON it is text
     /// unless the server folds it (observed, as for CASE), which is not modelled.
@@ -319,7 +319,7 @@ internal sealed partial class ProcedureAnalyzer
         if (value.IsLiveJson || value.Shape is JsonTextShape)
             return NotModelled(nullIf, "whether NULLIF over JSON nests as JSON depends on whether the server folds it.");
 
-        var because = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRule.NulledWhenEqual, At(nullIf).ToString())]);
+        var because = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRule.NullWhenEqual, At(nullIf).ToString())]);
         if (LiteralOf(nullIf.FirstExpression) is ({ } literal and IntegerLiteral, var negative)
             && long.TryParse(literal.Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n))
         {

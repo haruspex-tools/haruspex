@@ -66,6 +66,8 @@ observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`; the test names are given below. Each later section
 names its own code and its own test class. A construct's unit tests are in the class of the same family, in
 `tests/Haruspex.Tests/Inference` ([CONTRIBUTING](../../CONTRIBUTING.md#where-a-constructs-tests-are) lists the families).
+The last section, "What each construct gives in the IR", says what each construct writes in the IR's own terms: its null
+reasons, facets, unknown reasons and nodes.
 
 ## What the IR describes: calls that succeed
 
@@ -318,7 +320,7 @@ it on the stack of calls.
   and `inserted`'s values may differ).
 - **`MERGE`** (`Merge_output_has_null_deleted_columns_for_inserted_rows_null_inserted_columns_for_deleted_rows_and_null_source_columns_when_not_matched_by_source`):
   `deleted` is null for the rows it inserts, `inserted` for the rows it deletes, and the source's columns for the rows it
-  changes under `WHEN NOT MATCHED BY SOURCE`. Each such column has the null rule `merge-action`, when the statement has that
+  changes under `WHEN NOT MATCHED BY SOURCE`. Each such column has the null rule `missing-for-action`, when the statement has that
   action. `$action` is an `nvarchar(10)` (`Merge_action_is_an_nvarchar_10`), never null, whose values are the actions the
   statement has: an exact set, from `engine`.
 - A column read through the target's own alias in `FROM` (`UPDATE i … OUTPUT i.label FROM t AS i`) is unknown: whether it
@@ -644,7 +646,7 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   converted to it gives `arithmetic-overflow`. Types SQL Server refuses to
   combine are unknown, the reason naming them.
 - **What makes it NULL.** A result that may be (with that result's reasons), a `NULL` result (`null-literal`, at it), no
-  `ELSE` (`no-else`: NULL when no `WHEN` holds), and for `CHOOSE` an index that is NULL (its reasons) or below 1 or above the
+  `ELSE` (`no-branch-matched`: NULL when no `WHEN` holds), and for `CHOOSE` an index that is NULL (its reasons) or below 1 or above the
   count (`out-of-range`; a decimal index is truncated, a string one converted)
   (`Case_without_else_choose_out_of_range_and_nullif_of_equal_values_are_null`). `CHOOSE` is not `out-of-range` when its
   index is an integer literal in range, or an integer whose bounds (a `CHECK … BETWEEN 1 AND n`) keep it in range.
@@ -655,7 +657,7 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   ELSE x END` is never NULL, but `CASE WHEN x = 1 THEN 0 ELSE x END` may be: `x = 1` is UNKNOWN for a NULL `x`, which is not
   TRUE either. A simple CASE's `WHEN v` is read as `input = v`; `WHEN NULL` never matches. What is proved is the value itself
   in the row being read, after grouping, so it removes every reason the value had, not only `nullable-column`: an outer
-  join's (and that source's row is proved there, as by WHERE), and a ROLLUP's `grouping-set`. Only values that are the same
+  join's (and that source's row is proved there, as by WHERE), and a ROLLUP's `rolled-up`. Only values that are the same
   wherever they are read in a row are proved: a column, a variable or parameter (one value throughout an expression), and an
   aggregate of the query being read (computed once per group, so `CASE WHEN SUM(x) IS NULL THEN 0 ELSE SUM(x) END` is never
   NULL). A subquery or a call may give another value when read again, so testing one proves nothing about it. CHOOSE's
@@ -672,7 +674,7 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   optimiser, and `OPTION (RECOMPILE)` folds a parameter's value too, so the shape cannot be known from the code. The
   exceptions: one whose results are all JSON text (or JSON literals) is JSON text of their join, and under `json_query`, where folding no
   longer matters, any is ("JSON built here, traced").
-- **`NULLIF(a, b)`** is `a`, unchanged, or NULL when `a` and `b` compare equal (`nullif`): `a`'s type and facets, a CHECK set
+- **`NULLIF(a, b)`** is `a`, unchanged, or NULL when `a` and `b` compare equal (`null-when-equal`): `a`'s type and facets, a CHECK set
   included. `a`'s type, except that an integer literal `a` is the smallest integer type that holds it, `tinyint` for `1`,
   `smallint` for `-1` or `1000` (`Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it`;
   everywhere else such a literal is `int`). With the `NULL` literal as `b` nothing is equal, and it is `a`. Of the `NULL`
@@ -761,10 +763,10 @@ compared by reference, since one table read twice is two sources.
 
 - **A column fact** (`QueryFacts.Values`): the column is non-null whenever its source's row is there. It removes `nullable-column`, or
   every reason of a CTE's, derived table's or temporary table's column (whatever made it nullable inside, the filter
-  proves it is not), but not `outer-join`.
+  proves it is not), but not `unmatched-row`.
 - **A row fact** (`QueryFacts.Rows`): the source's row is there, not null-extended by an outer join. A null-extended row has every
   column NULL, so a filter that proves any of the source's columns non-null removes it; the source's columns lose
-  `outer-join` and keep `nullable-column` (`A_where_condition_on_the_optional_side_of_an_outer_join_drops_the_rows_that_did_not_match`).
+  `unmatched-row` and keep `nullable-column` (`A_where_condition_on_the_optional_side_of_an_outer_join_drops_the_rows_that_did_not_match`).
   It is the soundest model of "the outer join became an inner join for that side": only the source whose column is
   tested is proved there. In `a LEFT JOIN (b LEFT JOIN c …) …` a test of `b` says nothing of `c`, which shares `b`'s
   optional side in the binder's terms but has an outer join of its own.
@@ -786,7 +788,7 @@ compared by reference, since one table read twice is two sources.
   call of a function the project does not show to be scalar (it may be a CLR aggregate).
 - `ROLLUP`, `CUBE` and `GROUPING SETS` (and `WITH ROLLUP`, `WITH CUBE`) add super-aggregate rows in which the rolled-up
   columns are NULL (`Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null`). Every column of such a query's
-  own sources read outside its aggregates gets `grouping-set`, which no filter removes, and the query returns many rows.
+  own sources read outside its aggregates gets `rolled-up`, which no filter removes, and the query returns many rows.
   This also corrects a claim older than refinement: a `NOT NULL` grouped column was non-null there.
 
 `HAVING` also proves aggregates non-null: one compared there (`MAX(c) > 0`) is non-null in every group kept, matched in the
@@ -882,8 +884,8 @@ side is evaluated once for each row of its left input. Each rule is observed in 
 - **Rows.** `CROSS APPLY` keeps only outer rows with a right-side row; `OUTER APPLY` keeps every outer row and null-extends
   the ones without (`Cross_apply_keeps_only_outer_rows_with_a_right_row_and_outer_apply_fills_the_others_with_null`). So
   `CROSS APPLY` leaves the right side's columns their own nullability, and `OUTER APPLY` makes each of them nullable with the
-  null rule `outer-apply`, at the right side, exactly as a left join's optional side gets `outer-join`. Inside an outer
-  join's optional side the enclosing join's rule is used, as for nested outer joins.
+  null rule `unmatched-row`, at the right side, exactly as a left join's optional side does. Inside an outer
+  join's optional side the reason is the enclosing join's, at it, as for nested outer joins.
 - **A right side that always has a row is never null-extended.** An aggregate without `GROUP BY` returns one row over no
   rows (`An_ungrouped_aggregate_applied_gives_one_row_for_every_outer_row`), a query without `FROM` one row
   (`A_for_json_subquery_applied_without_from_is_one_row_whose_json_is_null_when_there_are_no_rows`), and a `VALUES` list its
@@ -895,7 +897,7 @@ side is evaluated once for each row of its left input. Each rule is observed in 
 - **Filters.** The applied query's `WHERE` is its own: its facts are pushed only while its select list is read (as for any
   subquery), so they refine its own columns and never the outer columns read outside it. Inside it, an outer column read in
   an aggregate query is not refined either (as in "Refinement", `An_outer_column_read_in_an_applied_aggregate_is_not_filtered_by_its_where`).
-  An outer `WHERE` on a right-side column proves the row matched, as for a left join, and drops `outer-apply`. Joins inside an
+  An outer `WHERE` on a right-side column proves the row matched, as for a left join, and drops `unmatched-row`. Joins inside an
   `OUTER APPLY`'s right side refine as an outer join's optional side does.
 - **Cardinality.** A right side of at most one row per outer row (`TOP (1)`, an aggregate, a key fixed by the outer row,
   a one-row `VALUES`) counts as fixed in `ProcedureAnalyzer.Keyed`, so the query keeps the outer side's bound: at most one stays at most one,
@@ -1122,12 +1124,12 @@ Bound by the binder; observed in `SetJoinObservationTests`.
   Otherwise keys bound it as for any join.
 - **`FULL OUTER JOIN`** null-extends each side where nothing on the other matches
   (`A_full_outer_join_null_extends_both_sides_where_nothing_matches`), so both sides are optional, each at its own location,
-  with the null rule `outer-join`, as a left join's right side is. Inside an outer join's optional side the enclosing one is
+  with the null rule `unmatched-row`, as a left join's right side is. Inside an outer join's optional side the enclosing one is
   kept, as for nested left joins.
   - Its `ON` proves nothing of either side: a row of one side that fails it comes back unmatched with whatever it holds
     (`A_full_outer_joins_on_proves_nothing_of_either_side`). Joins inside it are read as inside an optional side.
   - A `WHERE` (or an inner join after it) that proves a column of one side non-null proves that side's row and drops
-    `outer-join` for that side only (`A_where_on_one_side_of_a_full_join_drops_that_sides_unmatched_rows_only`), as row facts do
+    `unmatched-row` for that side only (`A_where_on_one_side_of_a_full_join_drops_that_sides_unmatched_rows_only`), as row facts do
     for a left join ("Refinement").
   - It is never bounded by its sides: two sides of one row each that do not match give two rows, and a key tested `IS NULL`
     matches every row the other side null-extends (`A_full_join_of_two_queries_of_at_most_one_row_can_return_two`). A
@@ -1141,12 +1143,12 @@ table-valued function's call; its arguments are not read. How many rows it gives
 lax path that finds nothing), so it is many and never sure to have a row. Observed in `SetJoinObservationTests`.
 
 - **Without `WITH`**: `key` `nvarchar(4000)` and `type` `tinyint`, never null, and `value` `nvarchar(max)`, NULL for a JSON
-  `null` (`json-value`); `type` is 0 to 5 (null, string, number, true/false, array, object), an exact set from the engine
+  `null` (`json-null-or-absent`); `type` is 0 to 5 (null, string, number, true/false, array, object), an exact set from the engine
   (`Openjson_without_with_gives_key_value_and_type`). `value` nests in `FOR JSON` as escaped text, as any string.
 - **With `WITH`**: each column of its declared type, the value converted to it as `CAST` does: a longer string is cut to its
   length, a failed conversion is an error, and a number too large is an error, or NULL under the caller's `ANSI_WARNINGS`
   and `ARITHABORT` off (`Openjson_with_converts_as_cast_does_a_failure_an_error_and_an_overflow_null_under_the_callers_options`).
-  So it has its type's facets, and is nullable with `json-value`: NULL where the JSON holds `null` or, under a lax path,
+  So it has its type's facets, and is nullable with `json-null-or-absent`: NULL where the JSON holds `null` or, under a lax path,
   where nothing is there or an object or array stands where a scalar is declared.
 - **`strict` does not make a column non-null** (a deviation from the brief, which expected it to): it turns a missing
   property into an error (13608), but a JSON `null` under a strict path is still NULL
@@ -1278,10 +1280,10 @@ not listed is not modelled.
   only when the format is: a NULL or missing argument is written `(null)`, and a bad `%d` gives terse error text, not an
   error (`String_escape_is_nvarchar_max_and_formatmessage_nvarchar_4000_writing_a_null_argument_as_null_in_brackets`). A
   message number names a message the project does not hold: not modelled.
-- **`JSON_VALUE(doc, path)`**: `nvarchar(4000)`, always nullable (`json-value`): NULL for a JSON `null` under any path, and
+- **`JSON_VALUE(doc, path)`**: `nvarchar(4000)`, always nullable (`json-null-or-absent`): NULL for a JSON `null` under any path, and
   under a lax path for a missing property, an object or array, or a string longer than 4,000 characters; invalid JSON is an
   error (13609) (`Json_value_is_nvarchar_4000_and_null_for_a_json_null_a_missing_path_an_object_or_a_long_string`). Its
-  arguments are not read: neither changes the type, and `json-value` covers a NULL document.
+  arguments are not read: neither changes the type, and `json-null-or-absent` covers a NULL document.
 
 ### `STRING_AGG`
 
@@ -1327,3 +1329,434 @@ holds the current row. Observed in `FunctionObservationTests`.
   so NULL only when every value in the partition is (the argument's reasons).
 - A window function inside `COALESCE` still counts as a call read twice (`read-twice`): that it is computed once per row, as
   an aggregate is, is likely but not observed.
+
+## What each construct gives in the IR
+
+What the IR holds for each construct, in the format's terms: which null reasons, facets, unknown reasons and node kinds
+SQL Server's constructs give. The format itself, and what each of those means, is specified in
+[the IR's README](../Haruspex.Ir/README.md); the rules above say why each is sound.
+
+### Null reasons and the constructs that give them
+
+The IR names each reason a value can be null for the reason, not the construct
+([decision 0025](../../docs/decisions/0025-null-reasons-in-neutral-terms.md)); `at` points at the construct. These are the
+constructs this front end gives each reason for:
+
+| Reason | SQL Server constructs |
+|---|---|
+| `nullable-column` | a column declared nullable (or not declared `NOT NULL`), read directly or through a view, CTE, temporary table or table-valued function |
+| `unmatched-row` | the optional side of a `LEFT`, `RIGHT` or `FULL OUTER JOIN`, and the right side of an `OUTER APPLY` whose query may return no row |
+| `empty-subquery` | a scalar subquery, NULL when it returns no rows; a `FOR JSON` subquery over no rows |
+| `all-fields-null` | a nested object `FOR JSON PATH` builds from dotted aliases, left out when every value in it is null |
+| `empty-aggregate` | an aggregate without `GROUP BY`, NULL over no rows: `MIN`, `MAX`, `SUM`, `AVG`, the statistical aggregates, `STRING_AGG`, `json_arrayagg` and `json_objectagg` |
+| `function-result` | a scalar user function typed from its declared return type |
+| `parameter` | a function's or procedure's parameter, which a caller may pass as NULL |
+| `null-input` | a call of a function declared `WITH RETURNS NULL ON NULL INPUT` with an argument that may be null |
+| `no-rows` | a top-level `FOR JSON` result over no rows, which returns no row at all |
+| `not-run` | a result inside a branch, or after a `RETURN` that may be taken |
+| `variable` | a variable until a value never null is assigned on every path |
+| `count-overflow` | `COUNT` (an `int`) under a caller's `ANSI_WARNINGS` and `ARITHABORT` off |
+| `arithmetic-overflow` | arithmetic, `SUM`, `AVG`, numeric functions and conversions that can overflow or divide by zero, under the same session options |
+| `failed-conversion` | `TRY_CAST` and `TRY_CONVERT` |
+| `rolled-up` | a grouped column of a query with `ROLLUP`, `CUBE` or `GROUPING SETS` |
+| `missing-for-action` | a column of a `MERGE`'s `OUTPUT` that some of its actions don't set |
+| `no-branch-matched` | `CASE` without `ELSE` |
+| `null-literal` | a `NULL` literal, bare, converted, or a result of `CASE`, `IIF` or `CHOOSE`; a JSON `null` in a JSON literal |
+| `out-of-range` | `CHOOSE` with an index that may be out of range |
+| `read-twice` | `COALESCE` whose argument holding a subquery or a call is read a second time |
+| `null-when-equal` | `NULLIF` |
+| `json-null-or-absent` | a column `OPENJSON` reads, `JSON_VALUE` |
+| `empty-frame` | an aggregate, `FIRST_VALUE` or `LAST_VALUE` over a `ROWS` frame that may leave out the current row |
+| `window-edge` | `LAG` and `LEAD` without a default |
+| `domain-error` | `SQRT`, `LOG`, `LOG10` and `POWER` given a value outside their domain, under the session options above |
+| `too-few-values` | `STDEV` and `VAR` over fewer than two values |
+| `unknown` | a value of unknown type |
+| `declared` | a value the config file declares may be null, in declared results |
+
+### Facets from types and constraints
+
+The SQL Server front end derives them from types (`tinyint`'s range, `decimal(p, s)`'s digits and range,
+`money`'s, string lengths and, from the collation, their encoding), alias types (`CREATE TYPE … FROM`, and
+`sysname`), and CHECK constraints on one column: `IN`, `=` and OR-ed equalities give a set; `BETWEEN` and
+comparisons combined by AND give bounds; `len(col) > n` and `col <> ''` give a minimum length. Anything else is
+ignored, which is always safe. `Haruspex.SqlServer.Semantics` (`CheckReader`) says why each form is sound.
+
+Only a **trusted** constraint is read. One disabled by `ALTER TABLE … NOCHECK CONSTRAINT` checks no row, and one
+added `WITH NOCHECK` never checked the rows already there, so neither guarantees anything; they are ignored, as is
+`NOT FOR REPLICATION`. A NOCHECK counts wherever it is in a script, under IF or in a procedure body
+(the bulk-load pattern) included, and when its table has no schema it may mean a table of that name in any schema;
+when it names a constraint the table doesn't declare, it may mean an unnamed one by its generated name. A disabled
+constraint counts again only when `WITH CHECK CHECK CONSTRAINT`, which validates every row, follows it in the same
+script as a statement of its own, naming the table with its schema (across scripts the order isn't known, and inside
+a body it may not run).
+
+**The facts are about the project, not about a live database.** They hold for a database deployed from the project
+and not changed since. A database can drift from its project, for example through a constraint disabled by hand on
+the server, a column altered outside a deployment, rows written while a constraint was off, or a NOCHECK run from
+dynamic SQL (`EXEC` of a string), whose text isn't visible. Static analysis can't see any of that. Comparing a deployed database with its project is a job for a schema-compare or a later haruspex check,
+not for these facts.
+
+- **Where facts come from** (`from`): `{ "engine": "$action" }` for a `MERGE`'s `$action` (0.9) and `{ "engine": "OPENJSON type" }`
+  for `OPENJSON`'s `type` (0.13); `{ "expression": "<location>" }` for the literals a `CASE`, `IIF` or `CHOOSE` gives (0.12) or
+  a set operation's queries give (0.13).
+- **A length's encoding** is left out when the collation is unknown: none declared, since a folder of scripts doesn't record
+  the database's default.
+- **A `padded` value set** is what a binary collation gives: it compares exactly but, like every comparison in SQL Server,
+  ignores trailing spaces. String items of a `CHECK`'s set never end in a space: SQL Server pads the shorter side before
+  comparing, so `'a'` passes `IN ('a ')`, and the front end removes an item's trailing spaces. Those of an `expression`'s set
+  (0.12) are the values written, trailing spaces and all.
+
+### Results, presence and JSON
+
+How SQL Server's results meet the format's rules for results, presence and JSON text ("Results" and "Decisions" in the IR's
+README):
+
+- **Dates, times and identifiers are kinds, not strings.** Inside JSON they arrive as strings in a known
+  format, and in a rowset as the driver's native values, so an emitter can only validate them if it knows
+  which kind each one is: `date` (no time, no zone), `time` (no date, no zone), `datetime` with `local` (no
+  offset: `datetime`, `datetime2`, `smalldatetime`) or `offset` (`datetimeoffset`), and `uuid` (8-4-4-4-12
+  hex, not necessarily an RFC 9562 UUID). JSON *text* in a column (`json-text`) is unaffected: it is a
+  string to parse.
+- **A result can be absent.** A top-level `FOR JSON` query that matches no rows returns a result set with no
+  row in it, not `[]`, `{}` or a NULL (observed, with and without `WITHOUT_ARRAY_WRAPPER` and
+  `INCLUDE_NULL_VALUES`), so a JSON result has `mayBeAbsent: true` with the reason `no-rows`. A rowset is always
+  present (with no rows, it is an empty result set). **Reader convention:** a reader that finds no row for
+  a result that may be absent yields `[]` when the result's type is an array, and `null` otherwise. Emitters
+  rely on it: a single-object result is nullable, an array result is not.
+- **A result can be missing.** A result returned inside a branch, or after a `RETURN` that may be taken, may not run,
+  and then its result set is not there at all, not empty; a result after it arrives in its place (observed). Results
+  are listed by position: `results[k]` is everything a successful path can return k-th, a `union` of the whole results when
+  paths differ (a rowset is then a union of arrays: every row of one result set comes from one statement). A position some path does not reach
+  has `not-run` in `absentBecause`, at each statement that can return it there, and so does every position after it:
+  the result sets a client receives are always the first ones listed. **Reader convention:** a reader pads the
+  missing ones as absent, `[]` for a rowset or an array result and `null` otherwise, as for a JSON result with no row.
+- **The IR describes calls that succeed.** A path that ends in an error the caller sees (`THROW`, `RAISERROR` of
+  severity 11 or more, observed to fail the call even where the procedure goes on) describes no call that returns,
+  and is left out: `IF @x IS NULL THROW …` is a guard, after which the results always run.
+- **A result says how many rows it returns** (`cardinality`): `one`, `atMostOne` or `many`, counting a rowset's
+  rows, or a `FOR JSON` result's objects (its array's items, or its one object without the array wrapper). It is how many
+  the query returns when it runs; whether the result set may be missing is `absentBecause`. `one` is an aggregate query
+  without `GROUP BY` or `HAVING`, or a query with no `FROM` and no filter; `atMostOne` adds `TOP (1)`, `FETCH NEXT 1`, and
+  a filter that fixes every column of a primary key or unique constraint with `=` in the key's own type (or `IS NULL`: a
+  key holds one NULL at most); `many` claims nothing. A generated client can return one row, or a row or null, rather
+  than a list. Emitters bound an array result by it, except one that may be absent, which reads as `[]` and is only
+  bounded above. A `FOR JSON` query that always returns exactly one row is never absent (observed).
+- **`WITHOUT_ARRAY_WRAPPER` is claimed as one object** even where the query is not proved to return at most one row
+  (`cardinality` is `many`). The claim is accepted because it cannot be silently wrong: several rows produce
+  `{...},{...}`, which is not valid JSON, so parsing fails loudly before any schema is applied. Where `cardinality` is
+  `one` or `atMostOne`, it is proved and the caveat does not apply.
+- **Filters refine.** A column is non-null where a `WHERE`, an inner join's `ON` or a `HAVING` keeps only rows in which
+  it cannot be null, by three-valued logic (`@x IS NULL OR c = @x` does not narrow `c`); an outer join's optional side
+  is not null-extended where a filter proves its row matched; an aggregate query's scalar subquery is never empty;
+  `COUNT_BIG` is never null, and `COUNT` only for `count-overflow`. The rules, each observed, are in
+  "Refinement" above. A `FOR JSON` subquery that is not null has at least one item,
+  since over no rows it is NULL, not `[]`.
+- **Changes after a definition withdraw claims.** A table altered (other than by adding or checking
+  constraints) or dropped after its `CREATE TABLE` becomes unknown (`unsupported-source`), and a procedure
+  altered or dropped has unknown results (`redefined`), because which definition applies depends on the
+  order scripts run. A CLR procedure's results are unknown (`external-code`).
+- **Live JSON versus JSON text.** A `FOR JSON` subquery with its array wrapper, a JSON constructor, `json_query`
+  over any JSON, and a value of the native `json` type nest as JSON, in `FOR JSON` and in the constructors, also
+  through a scalar subquery. Any other string is escaped as text, even one holding JSON: a `FOR JSON` subquery
+  `WITHOUT_ARRAY_WRAPPER` nests as a string (`{"a":"{\"x\":1}"}`, so `json-text`) until `json_query` makes it JSON
+  again, and JSON passed through a variable is text too (all observed). Once JSON is returned as a column it is a string holding JSON (`json-text`), which the
+  consumer must parse; a `json` column and a `json` parameter are `json-text` too. A `json` value inside JSON is
+  live but of unknown shape (`json-shape-unknown`): its shape is in the data.
+- **A nested object that may be absent.** `FOR JSON PATH` builds nested objects from dotted aliases. Without
+  `INCLUDE_NULL_VALUES` an object whose values are all null is left out, so it is `omittedWhenNull` with the
+  reason `all-fields-null` when every field in it can be null. With `INCLUDE_NULL_VALUES` it is always
+  written, its keys null, however deeply nested: `{"a":{"b":{"y":null}}}`. Both observed (see "Scalars in JSON").
+
+### Scalars in JSON
+
+What each kind claims about a JSON value, which the differential tests' validator checks:
+
+| Kind | JSON value |
+|---|---|
+| `string` | a string, within its length facets (counted in their unit) and `values` |
+| `number` | a number; with `uint8`, `int16`, `int32` or `int64`, an integer in that range (read exactly, not as a double); within its `min`, `max`, `digits` and `values` (compared exactly) |
+| `boolean` | `true` or `false` |
+| `date` | `"YYYY-MM-DD"` |
+| `time` | `"hh:mm:ss"`, optionally with a fraction of a second |
+| `datetime`, `local` | `"YYYY-MM-DDThh:mm:ss"`, optionally with a fraction, never an offset |
+| `datetime`, `offset` | the same followed by `Z` or `+hh:mm`/`-hh:mm` |
+| `uuid` | `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"` in hex digits |
+
+The IR does not claim a precision. SQL Server's exact output was observed on SQL Server 2025 (RTM-CU10) and
+is kept as tests in `tests/Haruspex.DifferentialTests/ForJsonObservationTests.cs`:
+
+- A fraction of a second has exactly the type's scale in digits (`time(3)` gives `.100`, `datetime2(7)`
+  `.1000000`, `datetime` three), and is **left out entirely when it is zero**: `datetime2(7)` can give
+  `"2026-03-04T05:06:07"`. So a fraction may be absent whatever the scale; scale 0 never has one.
+- `smalldatetime` always has `:00` seconds and no fraction.
+- `datetimeoffset` writes a zero offset as **`Z`**, any other as `+hh:mm` or `-hh:mm`.
+- `uniqueidentifier` is written in upper case.
+- `decimal`, `numeric`, `money` and `smallmoney` keep their scale (`12.50`, `12.5000`); `bigint` is written in
+  full, beyond 2^53; `float` and `real` in exponent form (`1.000000000000000e+000`). All are JSON numbers.
+- `char(n)` and `nchar(n)` arrive padded with spaces to `n`: UTF-16 code units for `nchar`, bytes for `char`, so
+  in a UTF-8 collation `char(3)` holding `é` arrives as `"é "` (kept as a test in `CheckConstraintObservationTests`).
+
+### JSON constructors
+
+What each constructor gives, every rule observed on SQL Server 2025 RTM-CU10 and kept as a test in
+`tests/Haruspex.DifferentialTests/JsonConstructorObservationTests.cs`:
+
+| Constructor | Default null option | IR |
+|---|---|---|
+| `json_object('k': v, …)` | `NULL ON NULL`: a null value's key is kept, with null | an object; each field's presence is `always`, or `omittedWhenNull` under `ABSENT ON NULL`. Never null. Keys must be literals: a key that is an expression makes the keys data (`unsupported-expression`), and a repeated key is written twice (`duplicate-column`). Keys differing in case are two keys |
+| `json_array(v, …)` | `ABSENT ON NULL`: a null element is dropped and the rest close up | under `NULL ON NULL`, or when no element can be null, a tuple; otherwise an array of the elements' types (a union when they differ) with `minItems` the elements never null and `maxItems` all of them. Never null |
+| `json_arrayagg(v [ORDER BY …])` | `ABSENT ON NULL` | an array of v; items nullable only under `NULL ON NULL`; `minItems` 1 when no item can be dropped |
+| `json_objectagg(k: v)` | `NULL ON NULL` | a record of v; values nullable only under `NULL ON NULL`. Every key is a string, whatever k's type; a repeated key is written each time |
+
+- **The aggregates over no rows are `NULL`**, not `[]` or `{}`, so without `GROUP BY` they are nullable with the reason
+  `empty-aggregate`. Under `GROUP BY` (with `ROLLUP` and `GROUP BY ()` too) no rows give no groups at all, so there
+  they are never null. A correlated subquery around one without `GROUP BY` always has its one row, so it adds nothing
+  (0.8; it added `empty-subquery` before); with `GROUP BY` it adds `empty-subquery`.
+- **Scalars are written as `FOR JSON` writes them** ("Scalars in JSON" below holds for the constructors too): the
+  same strings for `date`, `time(n)`, `datetime2(n)`, `datetimeoffset(n)`, `datetime`, `smalldatetime` and
+  `uniqueidentifier`, `true`/`false` for `bit`, decimals and money with their scale, `bigint` in full, `char(n)`
+  padded. A value keeps its facets while it passes through unchanged.
+- `RETURNING json` changes the value's SQL type (`json` rather than `nvarchar(max)`), not what is written.
+- **Availability:** `json_object` and `json_array` exist from SQL Server 2022, `json_arrayagg`, `json_objectagg` and
+  the `json` type from SQL Server 2025 and Azure SQL. Since haruspex does not yet know the target's version, it types
+  them whatever the target; a procedure using one the target lacks fails when it is created.
+
+### Scalar functions
+
+A call of a scalar user function is typed from the function. Observed on SQL Server 2025 RTM-CU10 and kept as tests
+in `tests/Haruspex.DifferentialTests/JsonFunctionObservationTests.cs`:
+
+- **A function returning JSON** (`nvarchar(max)` or `json`) whose body is `RETURN (SELECT … FOR JSON …)`,
+  `RETURN json_object(…)` (any constructor, or `json_query`), or a variable assigned one of them and returned, carries
+  that JSON's shape. A plain call returning `nvarchar(max)` is text, escaped wherever it nests (`{"x":"[{\"id\":2}]"}`):
+  `json-text` with the shape as `content`. `json_query(f(…))` embeds it as JSON, and so does a call of a function
+  returning `json`, without `json_query`.
+- **Its nullability is the body's.** FOR JSON over no rows returns NULL from the function (so a FOR JSON PATH key
+  holding it is left out: `omittedWhenNull`, `empty-subquery`); a constructor never returns NULL.
+- **Parameters** inside the body are nullable (`parameter`), since the shape is the same for every call, and keep their
+  type's facets: an argument is converted to the parameter's type (a string cut short, a decimal rounded). With
+  `RETURNS NULL ON NULL INPUT` they are non-null, because a null argument makes the call NULL without running the
+  body; such a call is nullable (`null-input`) when an argument may be null.
+- **Any other function** gives its declared return type, nullable (`function-result`): a scalar function may return
+  NULL from any body. That includes a JSON body returned as a type shorter than `nvarchar(max)` (observed:
+  `nvarchar(10)` cuts the text to `[{"id":1,"`), and any body with control flow.
+- **A function that calls itself**, directly or through others, gives a recursive type named after it
+  (`<Function>Node`): its object, or the object items of its array. It is found as a least fixed point, starting from
+  no information and reading every body again until nothing changes, at most 4 steps per function in the cycle plus 4.
+  A cycle that reaches no fixed point by then, or a function every return of which calls itself again, is unknown
+  (`unresolved-recursion`). `Haruspex.SqlServer.Inference/FunctionSummaries.cs` says why the method is sound.
+- An altered or dropped function is unknown (`redefined`), as a procedure is; a function not in the project, or a
+  table-valued one called as a scalar, is unknown (`unsupported-expression`).
+
+### Statement flow
+
+A procedure's statements are read in order, through temporary tables (`#t`), table variables (`@t`),
+variables, `IF`, `WHILE`, `TRY … CATCH` and CTEs, recursive ones included. What each gives, and why each join is
+sound, is above; the engine rules are observed and kept as tests in
+`tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`. What it means for the IR:
+
+- A value that passes unchanged through a temporary table or a CTE keeps its facets and its origins: `nullable-column`
+  still names the base column, and a facet's `from` still names the base table's CHECK. A temporary table's or table
+  variable's own CHECK is named by its table: `{ "check": "#totals.ck_amount" }`, and its nullable columns as
+  `#totals.amount`.
+- A variable has its declared type, with the type's facets, and is nullable (`variable`) until a value that is never
+  null is assigned on every path. A procedure's parameter read in its body is nullable (`parameter`).
+- A `#t` the procedure does not create on every path before it reads it is the caller's, if any: unknown,
+  `caller-temp-table`. Results that cannot be lined up by position are unknown, `varying-results`.
+
+### Calls and declared results
+
+A procedure's `EXEC` of another of the project is followed: the callee's result sets are its caller's at that
+point, as if its statements were there, so they carry the callee's locations (a `not-run` or `no-rows` reason, an unknown's
+`at`). What the engine does across a call is above ("Calls"). For the IR:
+
+- Calls whose results the project cannot show give the unknown reasons `dynamic-sql`, `procedure-variable`,
+  `system-procedure`, `missing-procedure` and `ambiguous-procedure` (and `external-code` for a CLR procedure, as before).
+- **Declared results.** The config file can declare a procedure's results where they can't be inferred. A selected
+  procedure's own declared results are its `results`, with an override `{ "object", "path": "results", "setting":
+  "results", "why" }`; a caller whose results include a declared callee's lists the same override with `"via"`, the
+  callee's name. So every result that rests on a person's word, not the database's, is listed.
+- Inside declared results, a value that may be null, or a key that may be left out, or a result that may be absent, has the
+  reason `declared`, at the procedure declared. A declared scalar has no SQL type, so it has no `sql`: that key is the
+  database's type, which other dialects and backends read, and a JSON Schema type is not one.
+
+### Writes, triggers and cursors
+
+Statements that write tables are read; the engine rules, each observed, are above ("DML", "Triggers", "Cursors"). For
+the IR:
+
+- A write returns no result set, on any table, unless it has an `OUTPUT` without `INTO`, which is a rowset result of
+  `cardinality` `many`, always there (with no rows when nothing was written).
+- In a `MERGE`'s `OUTPUT`, `$action` is a string whose `values` are the actions the statement has, `match` `exact`, from
+  `{ "engine": "$action" }`; a column with no value for some of its actions (`deleted` for rows inserted, `inserted` for
+  rows deleted, the source's for rows not matched by the source) has the null rule `missing-for-action`, at the statement.
+- A write that fires a trigger of the project that may return result sets makes the results unknown,
+  `trigger-results`, its detail naming the trigger and the statement in it.
+- `FETCH` without `INTO` makes the results unknown, `hidden-column`: its row carries `ROWSTAT`, a column the server marks
+  hidden, which some drivers list and others leave out, so the row's keys depend on the client.
+
+### APPLY and views
+
+`CROSS APPLY`, `OUTER APPLY`, `VALUES` lists and views of the project are read; the engine rules, each observed,
+are above ("APPLY", "Views"). For the IR:
+
+- A column from the right side of an `OUTER APPLY` has the null rule `unmatched-row`, at the right side, unless the applied
+  query always returns a row (an aggregate without `GROUP BY`, a query without `FROM`, a `VALUES` list) or a filter proves
+  the row matched: the reason a left join's optional side gives, since what makes the column null is the same (an applied
+  query that always returns a row, unlike a join's side, never gives it).
+- A view's columns carry their reasons from its definition: a `nullable-column` names the base table's column, an
+  `unmatched-row` inside the view points into the view's file.
+
+### Expressions, table-valued functions and read-uncommitted
+
+The common expressions, table-valued functions as table sources, and visible read-uncommitted are read; the engine
+rules, each observed, are above ("Expressions", "Table-valued functions",
+"Cardinality"). For the IR:
+
+- An expression's scalar has the SQL type SQL Server gives it (`decimal(38,2)` for `SUM` of a `decimal(10,2)`,
+  `nvarchar(15)` for `CONCAT` of a `varchar(5)` and an `nvarchar(10)`), with that type's facets only: a column's `CHECK` set or
+  bounds do not survive an expression, except a conversion to the column's own type or `ISNULL` of a value never null, which
+  give the value unchanged. The differential tests compare each rowset column's `sql` with the server's own description.
+- **`arithmetic-overflow`**: arithmetic, a `SUM`, or a conversion (`CAST`, `CONVERT`, an assignment, a function's argument,
+  and a value converted to the type of a set operation's column, `COALESCE` or `CASE`)
+  that can overflow its type, or a division that can divide by zero. By default that is an error, which fails the call; under
+  a caller's `ANSI_WARNINGS` and `ARITHABORT` off it is NULL, and a procedure cannot prevent that, as for `count-overflow`. So
+  `CONVERT(decimal(19,2), SUM(amount))` is nullable for it, and `COALESCE(SUM(amount), 0)` is not. A conversion that cannot
+  overflow (to a wider type, a string long enough, a date into a string) does not have it.
+- **`failed-conversion`**: `TRY_CAST` or `TRY_CONVERT` of a value that may not convert, which is NULL rather than an error.
+- `COALESCE` and `ISNULL` are never null when an argument is never null, except that `COALESCE` reads an argument with a
+  subquery or a call twice, so one before the never-null argument keeps its reasons. `CONCAT` and `CONCAT_WS` are never null.
+  String `+` is null when an operand is, which holds whether or not the session concatenates NULL as empty.
+- A table-valued function's columns carry their reasons from its body or its return table: a `nullable-column` names the base
+  table's column, or `<function>.<column>` for a multi-statement function's declared table; an argument that may be null keeps
+  its reasons through the body, and one not modelled is `parameter`. A result may be `atMostOne` through a function's key or
+  its one row per call.
+- A `NOLOCK` or `READUNCOMMITTED` hint, or `READ UNCOMMITTED` set in the procedure or a caller, removes the keys of what it
+  reads, so a result once `atMostOne` by a key is `many`. An isolation level the outermost caller sets is not seen: the
+  IR assumes it does not read uncommitted.
+
+### CASE, IIF, CHOOSE, NULLIF and COALESCE over JSON
+
+`CASE`, `IIF`, `CHOOSE` and `NULLIF`, and `COALESCE` and `ISNULL` over JSON, are read; the engine rules, each
+observed, are above ("CASE, IIF, CHOOSE and NULLIF", "COALESCE and ISNULL over JSON").
+For the IR:
+
+- A `CASE`, `IIF` or `CHOOSE` has the SQL type SQL Server gives it, with that type's facets. When every result other than
+  `NULL` is a literal, it has a `values` facet of those literals, `match` `exact`, `from` `{ "expression": "<location>" }`.
+  These are values the procedure writes, so they are exact, not compared under a collation, and a string item keeps its
+  trailing spaces: `CASE … THEN 'a ' …` gives `"a "` (a literal is `varchar`, never padded). The rule above that string items
+  never end in a space is about the sets a `CHECK` gives.
+- New null rules: **`no-branch-matched`** (a `CASE` without `ELSE`, NULL when no `WHEN` holds), **`null-literal`** (a result that is the
+  `NULL` literal, at it), **`out-of-range`** (a `CHOOSE` whose index may be below 1 or above its count), **`null-when-equal`** (a
+  `NULLIF`, NULL when its arguments are equal; otherwise it is its first argument with its facets).
+- **`read-twice`**: a `COALESCE` whose argument holding a subquery or a call, before one never null, is read a second time
+  after it was tested, and may then be NULL. It replaces the reasons that argument had: an argument tested NULL is passed
+  over, so only its second read can make the `COALESCE` NULL. In 0.11 the argument's own reasons were given, which was
+  sound but named the wrong cause. No seed can reach it, as for `arithmetic-overflow`.
+- A branch knows its condition: in `CASE WHEN x IS NULL THEN 0 ELSE x END` the `ELSE`'s `x` is never null, whatever made it
+  nullable (a column, an outer join, a `ROLLUP`), so the `CASE` is not.
+- `COALESCE` over JSON is `json-text` wherever it nests, its `content` what the arguments hold (a fallback `'[]'` removes the
+  array's `minItems`, `'{}'` adds the empty object as a variant of a `union`); `ISNULL` over JSON is JSON where it nests, with
+  the same content, and never null with a literal fallback. A `CASE`, `IIF`, `CHOOSE` or `NULLIF` over JSON is unknown
+  (`unsupported-expression`): whether it nests as JSON depends on whether the server folds it. The exceptions: under
+  `json_query`, and when every result is JSON text, `CASE`, `IIF` and `CHOOSE` hold the join of their results' JSON, and any
+  literal that is a JSON document counts as JSON, not only `'[]'` and `'{}'` ("JSON built here, traced" below).
+
+### Set operations, CROSS JOIN, FULL OUTER JOIN and OPENJSON
+
+`UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT` and parenthesised queries, `CROSS JOIN`, `FULL OUTER JOIN` and `OPENJSON` are read;
+the engine rules, each observed, are above ("Set operations", "CROSS JOIN and
+FULL OUTER JOIN", "OPENJSON"). For the IR:
+
+- A set operation's column is named by its first query and has the SQL type SQL Server gives it, the one of highest
+  precedence over every query's. Its facets are those every query whose values come out shares when each is already of
+  that type, and otherwise the type's ("Combining types" below); its `values` are the union of those queries' sets (a `CHECK`'s, or the literal a
+  query gives, `from` `{ "expression": "<location>" }` as for `CASE`), left out when any has none or they are of different
+  `match`. `INTERSECT` and `EXCEPT` give the left side's values only.
+- Its nullability: `UNION` and `UNION ALL` give every query's reasons (a `NULL` literal as `null-literal`), `INTERSECT` none
+  when either side has none and otherwise the left side's, `EXCEPT` the left side's. Its `cardinality` is `many` for a
+  `UNION`, at most the left side's for `EXCEPT` and the fewer side's for `INTERSECT`; no key passes through one.
+- A `FULL OUTER JOIN` makes both sides' columns nullable with **`unmatched-row`**, at each side, removed by a `WHERE` that proves
+  the side's row, as for a left join; such a query is `many`. A `CROSS JOIN` reads both sides as they are; it is `one` when
+  both sides are one row.
+- New null rule **`json-null-or-absent`**: a column `OPENJSON` reads, NULL where the JSON holds `null` (under a `strict` path too) or,
+  under a lax path, where nothing is there. `OPENJSON` without `WITH` gives `key` (`nvarchar(4000)`, never null), `value`
+  (`nvarchar(max)`, `json-null-or-absent`) and `type` (`tinyint`, never null, `values` 0 to 5 `from` `{ "engine": "OPENJSON type" }`);
+  with `WITH`, each column of its declared type with that type's facets and `json-null-or-absent`; an `AS JSON` column is JSON text
+  in a rowset and unknown (`json-shape-unknown`) where it nests, since its shape is in the data.
+
+### Built-in and window functions
+
+Date and string functions, `STRING_AGG`, `JSON_VALUE`, window functions, arithmetic and precedence over `float`, `real`,
+`money`, `smallmoney`, `datetime` and `smalldatetime`, the bare `NULL` and `GENERATE_SERIES` are read; the engine
+rules, each observed, are above ("Built-in functions", "Window functions", "Arithmetic
+and `SUM`"). For the IR:
+
+- Each has the SQL type SQL Server gives it, with that type's facets; `MIN`, `MAX`, `FIRST_VALUE`, `LAST_VALUE`,
+  `PERCENTILE_DISC` and `LAG`/`LEAD` without a default give their argument's values and keep its facets. `DATENAME` has no
+  `values`: the names depend on the session's language.
+- New null rules: **`empty-frame`** (an aggregate, `FIRST_VALUE` or `LAST_VALUE` over a `ROWS` frame that may leave out the
+  current row, NULL there over a column never null too) and **`window-edge`** (`LAG` or `LEAD` without a default, NULL past
+  the partition's edge). `json-null-or-absent` also names a `JSON_VALUE`, always nullable; `null-literal` also names a bare `NULL` (an
+  `int`) or a converted one; `arithmetic-overflow` also names arithmetic over `float`, `real`, `money`, `smallmoney`,
+  `datetime` and `smalldatetime`, unary minus over `money`, and a `LAG`/`LEAD` default that may not fit.
+- The date functions never have `arithmetic-overflow`: their overflows are errors under any session options. Ranking
+  functions are never null; `COUNT` over a window keeps `count-overflow` as `COUNT` does.
+- `GENERATE_SERIES` is a table source of one column, `value`, never null, of its arguments' type.
+
+### Decimal arithmetic, `AVG` and the numeric functions
+
+Decimal arithmetic in full (the cap at 38 digits, `%`, a `bit` beside a number), `AVG`, `STDEV`, `STDEVP`, `VAR`, `VARP`
+(with and without `OVER`) and `ROUND`, `FLOOR`, `CEILING`, `ABS`, `SIGN`, `POWER`, `SQRT`, `SQUARE`, `LOG`, `LOG10`, `EXP` are
+read; the engine rules, each observed, are above ("Decimal arithmetic",
+"`SUM`, `AVG` and the statistical aggregates", "Numeric functions"). For the IR:
+
+- Each has the SQL type SQL Server gives it, with that type's facets (a decimal's digits and bounds, as for any decimal).
+- `arithmetic-overflow` also names a decimal result capped at 38 digits whose integer digits may not fit, a division or modulo
+  that may divide by zero, `AVG` (as `SUM`), a statistic over `float`, and `ROUND`, `FLOOR`, `CEILING`, `ABS`, `POWER`,
+  `SQUARE` and `EXP` where they may overflow. A division or modulo by a number literal of at least 1 no longer has it, for
+  any type, nor a decimal division by any literal other than 0 whose result fits.
+- New null rules: **`domain-error`** (`SQRT`, `LOG`, `LOG10` or `POWER` given a value outside its domain: an invalid floating
+  point operation, error 3623 by default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off) and
+  **`too-few-values`** (`STDEV` or `VAR`, NULL over fewer than two values, with `GROUP BY` and over a window too).
+
+### Combining types
+
+A set operation's column, `COALESCE`, and `CASE`, `IIF` and `CHOOSE` over values of different types are typed by one rule,
+data type precedence over every value, for every pair of the types the expressions model; the engine rules, each observed,
+are above ("Combining types"). For the IR:
+
+- The column has the SQL type SQL Server gives it. Pairs it used to leave unknown (decimals past 38 digits, a string beside a
+  number, a date or a `uniqueidentifier`, `bit` beside a number, the date and time types with each other, `float` beside a
+  date) now have one.
+- `arithmetic-overflow` also names a value converted to that type that may not fit it (`bigint` into `smallmoney`, `date` into
+  `smalldatetime`, a string into a number), at the value's set operation query or at the `COALESCE` or `CASE`. Such a column
+  used to be unknown.
+- A set operation's facets: a query whose values convert unchanged keeps its facets, any other brings the type's, and the
+  column has the looser of each, so a range or a length covers every query. Its `values` are kept only when every query's set
+  still holds converted.
+- Types SQL Server refuses to combine (an operand type clash, 206) stay unknown (`unsupported-expression`), the detail naming
+  both types. So does a column whose scale turns on whether the server folds an int expression to a constant (a `CASE` or
+  `IIF` of int literals beside a decimal past 38 digits), the detail naming the expression.
+
+
+### JSON built here, traced
+
+JSON built in the project keeps its shape on the way to where it is read: through variables, table variables, temporary tables,
+multi-statement functions' return tables, JSON literals, `COALESCE`, `CASE`, `IIF` and `ISNULL`, and into `OPENJSON` and
+`JSON_VALUE`. The engine rules, each observed, are above ("JSON built here, traced"). For
+the IR:
+
+- More values are `json-text` with `content`, and more `json_query` results are JSON of a known type, where they were unknown
+  (`json-shape-unknown`) before. Where a place may also hold text that is not JSON built here, `json_query` over it is still
+  `json-shape-unknown`, located at the write that made it so and naming it.
+- A JSON literal's content is exact: an array is a `tuple` (`'[]'` the empty one), an object's keys are `always` present, a
+  JSON `null` is `null-literal`, and a string's or number's `values` is the literal's own, with the fact source `expression`
+  at the literal. Its scalars have no `sql` (they are JSON, not a SQL type), as 0.7 allows. JSON that may be either of two
+  shapes that do not join is a `union`.
+- `OPENJSON` and `JSON_VALUE` over such JSON can be never null, and keep the facets and `values` the JSON's own type proves.
+  `OPENJSON`'s `key` and `type`, and `JSON_VALUE` of `true` or `false`, have `values` from the fact source `engine`, its ref
+  naming the function.
+
+No record, rule or reason was added, and every meaning stays as 0.15 describes it, so the version is unchanged: a 0.15 reader
+reads these documents as they are.

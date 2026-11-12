@@ -8,7 +8,7 @@
 unknown property, a name outside its vocabulary, a missing or mistyped property, a flag that disagrees with its reasons.
 Nothing is read with a default.
 
-**Context.** The IR is at 0.x and has had fifteen versions. Some changes renamed things; others changed what a
+**Context.** The IR is at 0.x and has had sixteen versions. Some changes renamed things; others changed what a
 claim means or how it is made. A reader has to do something with a file from another version.
 
 **Alternatives.**

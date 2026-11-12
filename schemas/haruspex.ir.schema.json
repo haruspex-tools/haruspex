@@ -382,7 +382,7 @@
             "null-literal",
             "out-of-range",
             "read-twice",
-            "nulled-when-equal",
+            "null-when-equal",
             "json-null-or-absent",
             "empty-frame",
             "window-edge",

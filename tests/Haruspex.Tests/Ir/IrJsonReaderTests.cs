@@ -211,6 +211,14 @@ public class IrJsonReaderTests
     }
 
     [Fact]
+    public void A_reference_to_no_type_is_refused_where_it_is()
+    {
+        var e = Refused(json => json["types"]!.AsObject().Remove("LineRow"));
+
+        Assert.Equal("$.objects[0].results[1].type.items.ref is \"LineRow\", which names no type in $.types.", e.Message);
+    }
+
+    [Fact]
     public void Results_that_cannot_be_listed_read_as_null_not_as_none()
     {
         var unlisted = IrSamples.Everything with

@@ -25,8 +25,9 @@ namespace Haruspex.Ir;
 /// <c>enum</c>, and a flag and its reasons must agree. It uses a small part of JSON Schema 2020-12 (<c>type</c>, <c>enum</c>,
 /// <c>const</c>, <c>properties</c>, <c>required</c>, <c>additionalProperties</c>, <c>items</c>, <c>minItems</c>,
 /// <c>maxProperties</c>, <c>minimum</c>, <c>maximum</c>, <c>anyOf</c>, <c>not</c> and <c>$ref</c>), written so that Ajv's strict
-/// mode compiles it too. Two things JSON Schema can't say, since it sees a document after parsing: a number's form (a bound or
-/// a value set's number must be plain decimal text, with no exponent), and that no key is given twice. The reader checks both;
+/// mode compiles it too. Three things JSON Schema can't say: a number's form (a bound or a value set's number must be plain
+/// decimal text, with no exponent) and that no key is given twice, since it sees a document after parsing; and that a
+/// <c>ref</c> names a type in <c>types</c>, since it can't compare a value with a key elsewhere. The reader checks all three;
 /// the schema's descriptions state the first.
 /// </para>
 /// </remarks>

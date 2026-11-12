@@ -15,7 +15,7 @@ members are renamed with them.
 | `grouping-set` | `rolled-up` | `IrNullRule.RolledUp` | a row that totals over a grouped column holds null in it |
 | `merge-action` | `missing-for-action` | `IrNullRule.MissingForAction` | a statement taking several actions reports a column that some of them don't set |
 | `no-else` | `no-branch-matched` | `IrNullRule.NoBranchMatched` | a choice with no branch for when no condition holds |
-| `nullif` | `nulled-when-equal` | `IrNullRule.NulledWhenEqual` | the value is made null when it equals a given one |
+| `nullif` | `null-when-equal` | `IrNullRule.NullWhenEqual` | the value is made null when it equals a given one |
 | `json-value` | `json-null-or-absent` | `IrNullRule.JsonNullOrAbsent` | the JSON holds null there, or (read leniently) nothing or the wrong kind of value |
 
 The other 22 names already named a reason in shared terms and are unchanged: a nullable column, an empty subquery or
@@ -51,4 +51,4 @@ both.
 other front end translate its own reasons into that dialect's terms, and every consumer learn them.
 
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "Names that belong to no dialect";
-[the IR's specification and changelog](../../src/Haruspex.Ir/README.md).
+[the IR's changelog](../../src/Haruspex.Ir/README.md#changelog).

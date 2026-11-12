@@ -25,7 +25,7 @@ Each file is named for its version (`0.15.ir.json`) and holds the IR of the inve
 | 0.13 | `f98e9c4` |
 | 0.14 | `3bdcf35` |
 | 0.15 | `89756aa` |
-| 0.16 | the commit that renamed the null rules (see the changelog in `src/Haruspex.Ir/README.md`) |
+| 0.16 | `8a7c00d` |
 
 **When the version changes**, add the new version's file here, written by the new version, and a row for it. The test fails
 until there is one, so that every version the format has ever had is kept. The previous current file then becomes one the

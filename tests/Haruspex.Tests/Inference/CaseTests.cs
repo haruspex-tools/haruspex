@@ -160,15 +160,15 @@ public class CaseTests
                    NULLIF(1, x) AS e, NULLIF(1000, x) AS f, NULLIF(100000, x) AS g, NULLIF(-1, x) AS h, NULLIF(label, NULL) AS i
             FROM dbo.t;
             """);
-        Assert.Equal("int nullable-column nulled-when-equal", Typed(doc, "a"));
-        Assert.Equal("varchar(10) nullable-column nulled-when-equal", Typed(doc, "b"));
-        Assert.Equal("varchar(8) nulled-when-equal", Typed(doc, "c"));
-        Assert.Equal("varchar(10) nullable-column nulled-when-equal", Typed(doc, "d"));
+        Assert.Equal("int nullable-column null-when-equal", Typed(doc, "a"));
+        Assert.Equal("varchar(10) nullable-column null-when-equal", Typed(doc, "b"));
+        Assert.Equal("varchar(8) null-when-equal", Typed(doc, "c"));
+        Assert.Equal("varchar(10) nullable-column null-when-equal", Typed(doc, "d"));
         Assert.NotNull(((IrScalar)Field(doc, "d").Type).Facets?.Values);
-        Assert.Equal("tinyint nulled-when-equal", Typed(doc, "e"));
-        Assert.Equal("smallint nulled-when-equal", Typed(doc, "f"));
-        Assert.Equal("int nulled-when-equal", Typed(doc, "g"));
-        Assert.Equal("smallint nulled-when-equal", Typed(doc, "h"));
+        Assert.Equal("tinyint null-when-equal", Typed(doc, "e"));
+        Assert.Equal("smallint null-when-equal", Typed(doc, "f"));
+        Assert.Equal("int null-when-equal", Typed(doc, "g"));
+        Assert.Equal("smallint null-when-equal", Typed(doc, "h"));
         Assert.Equal("varchar(8)", Typed(doc, "i"));
     }
 

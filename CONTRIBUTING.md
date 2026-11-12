@@ -177,7 +177,7 @@ split into parts along the constructs it covers. The families today:
 | Set operations and joins | `SetJoinTests` | `SetJoinObservationTests` | `tests/fixtures/sets` | "Set operations", "CROSS JOIN and FULL OUTER JOIN", "OPENJSON" |
 | Combining types | `SetTypeTests` | `SetTypeObservationTests`, `SetTypeGridTests` | `tests/fixtures/bazaar` | "Combining types" |
 | JSON traced | `JsonTracingTests` | `JsonTracingObservationTests` | `tests/fixtures/kits` | "JSON built here, traced", "OPENJSON" |
-| JSON constructors | `JsonConstructorTests` | `JsonConstructorObservationTests` | `tests/fixtures/payloads` | the IR README's "JSON constructors" |
+| JSON constructors | `JsonConstructorTests` | `JsonConstructorObservationTests` | `tests/fixtures/payloads` | "JSON constructors" |
 | Functions that return JSON | `JsonFunctionTests` | `JsonFunctionObservationTests` | `tests/fixtures/trees` | the guide's [Summaries and recursion](docs/internals/07-summaries-and-recursion.md) |
 | Read uncommitted | `ReadUncommittedTests` | `ReadUncommittedObservationTests` | `tests/fixtures/tabs` | [decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md) |
 

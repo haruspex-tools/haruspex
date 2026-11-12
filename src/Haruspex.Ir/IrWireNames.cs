@@ -96,7 +96,7 @@ public static class IrWireNames
         IrNullRule.NullLiteral => "null-literal",
         IrNullRule.OutOfRange => "out-of-range",
         IrNullRule.ReadTwice => "read-twice",
-        IrNullRule.NulledWhenEqual => "nulled-when-equal",
+        IrNullRule.NullWhenEqual => "null-when-equal",
         IrNullRule.JsonNullOrAbsent => "json-null-or-absent",
         IrNullRule.EmptyFrame => "empty-frame",
         IrNullRule.WindowEdge => "window-edge",

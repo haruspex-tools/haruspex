@@ -12,9 +12,10 @@ namespace Haruspex.Ir;
 /// <para>
 /// The reader is as strict as the format is closed. It refuses, with an <see cref="IrFormatException"/> that names the path
 /// in the document: text that is not JSON; a version other than <see cref="IrDocument.CurrentVersion"/>; a property missing,
-/// of the wrong type, unknown or given twice; a name outside its vocabulary; a negative count; and a flag that disagrees with
-/// its reasons (<c>nullable</c> without <c>nullableBecause</c>). It supplies no default: a property is either in the file or,
-/// where the format lets the writer leave it out, absent with the meaning the format gives that.
+/// of the wrong type, unknown or given twice; a name outside its vocabulary; a negative count; a flag that disagrees with
+/// its reasons (<c>nullable</c> without <c>nullableBecause</c>); and a reference that names no type. It supplies no default: a
+/// property is either in the file or, where the format lets the writer leave it out, absent with the meaning the format gives
+/// that.
 /// </para>
 /// <para>
 /// A version it doesn't read is refused before anything else, rather than read with its differences guessed at: the IR has
@@ -49,7 +50,38 @@ public static class IrJsonReader
         }
 
         using (parsed)
-            return Document(IrJsonObject.At(parsed.RootElement, "$"));
+        {
+            var document = Document(IrJsonObject.At(parsed.RootElement, "$"));
+            RequireReferencesResolve(parsed.RootElement, "$", document.Types);
+            return document;
+        }
+    }
+
+    /// <summary>
+    /// Every reference names a type in <c>types</c>: a dangling one would leave a reader with a value of no type at all. JSON
+    /// Schema can't say this (it can't compare a value with a key elsewhere in the document), so the reader does. A
+    /// reference is the one object of the format with a <c>ref</c> property, so the file is searched for them as it is.
+    /// </summary>
+    private static void RequireReferencesResolve(JsonElement element, string path, IReadOnlyDictionary<string, IrObjectType> types)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                foreach (var property in element.EnumerateObject())
+                {
+                    var at = path + IrPath.Key(property.Name);
+                    if (property.Name == "ref" && property.Value.ValueKind == JsonValueKind.String && !types.ContainsKey(property.Value.GetString()!))
+                        throw new IrFormatException(at, $"is \"{property.Value.GetString()}\", which names no type in $.types.");
+                    RequireReferencesResolve(property.Value, at, types);
+                }
+
+                break;
+            case JsonValueKind.Array:
+                var i = 0;
+                foreach (var item in element.EnumerateArray())
+                    RequireReferencesResolve(item, path + "[" + i++.ToString(CultureInfo.InvariantCulture) + "]", types);
+                break;
+        }
     }
 
     private static IrDocument Document(IrJsonObject json)
