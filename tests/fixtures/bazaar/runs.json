@@ -14,6 +14,8 @@
     { "name": "mixed, under ANSI_WARNINGS and ARITHABORT off", "procedure": "bazaar.mixed", "setup": "lenient" },
     { "name": "lenient, under ANSI_WARNINGS and ARITHABORT off", "procedure": "bazaar.lenient", "setup": "lenient" },
     { "name": "swap_tally_types", "procedure": "bazaar.swap_tally_types" },
-    { "name": "swap_tally_types, no tallies", "procedure": "bazaar.swap_tally_types", "setup": "no tallies" }
+    { "name": "swap_tally_types, no tallies", "procedure": "bazaar.swap_tally_types", "setup": "no tallies" },
+    { "name": "swap_tally_json", "procedure": "bazaar.swap_tally_json" },
+    { "name": "swap_tally_json, no tallies", "procedure": "bazaar.swap_tally_json", "setup": "no tallies" }
   ]
 }

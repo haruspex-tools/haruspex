@@ -1,0 +1,204 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "bazaar.swap_tally_json",
+      "name": "SwapTallyJson",
+      "kind": "procedure",
+      "at": "procedures/swap_tally_json.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SwapTallyJsonRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/swap_tally_json.sql:7:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "SwapTallyJsonRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bazaar.swap_tally_json",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "tally_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "worth",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(18,0)",
+            "digits": {
+              "precision": 18,
+              "scale": 0,
+              "from": {
+                "type": "decimal"
+              }
+            },
+            "min": {
+              "value": -999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal"
+              }
+            },
+            "max": {
+              "value": 999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "share",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "numeric(18,0)",
+            "digits": {
+              "precision": 18,
+              "scale": 0,
+              "from": {
+                "type": "numeric"
+              }
+            },
+            "min": {
+              "value": -999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric"
+              }
+            },
+            "max": {
+              "value": 999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "grade",
+          "type": {
+            "kind": "string",
+            "sql": "char(1)",
+            "length": {
+              "value": 1,
+              "unit": "bytes",
+              "from": {
+                "type": "char"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "mark",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(1)",
+            "maxLength": {
+              "value": 1,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "opened",
+          "type": {
+            "kind": "time",
+            "sql": "time(7)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "logged",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(7)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "counted",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(7)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "weight",
+          "type": {
+            "kind": "number",
+            "format": "float",
+            "sql": "real"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}
