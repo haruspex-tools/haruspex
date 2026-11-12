@@ -11,6 +11,8 @@ ISNULL(bt, m) -> bit boolean
 ISNULL(bt, sm) -> bit boolean
 ISNULL(bt, f) -> bit boolean
 ISNULL(bt, r) -> bit boolean
+ISNULL(bt, f24) -> bit boolean
+ISNULL(bt, f25) -> bit boolean
 ISNULL(bt, c3) -> bit boolean
 ISNULL(bt, v10) -> bit boolean
 ISNULL(bt, vx) -> bit boolean
@@ -49,6 +51,8 @@ ISNULL(ti, m) -> tinyint number/uint8 {[0 255]}
 ISNULL(ti, sm) -> tinyint number/uint8 {[0 255]}
 ISNULL(ti, f) -> tinyint number/uint8 {[0 255]}
 ISNULL(ti, r) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, f24) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, f25) -> tinyint number/uint8 {[0 255]}
 ISNULL(ti, c3) -> tinyint number/uint8 {[0 255]}
 ISNULL(ti, v10) -> tinyint number/uint8 {[0 255]}
 ISNULL(ti, vx) -> tinyint number/uint8 {[0 255]}
@@ -87,6 +91,8 @@ ISNULL(si, m) -> smallint number/int16 {[-32768 32767]}
 ISNULL(si, sm) -> smallint number/int16 {[-32768 32767]}
 ISNULL(si, f) -> smallint number/int16 {[-32768 32767]}
 ISNULL(si, r) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, f24) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, f25) -> smallint number/int16 {[-32768 32767]}
 ISNULL(si, c3) -> smallint number/int16 {[-32768 32767]}
 ISNULL(si, v10) -> smallint number/int16 {[-32768 32767]}
 ISNULL(si, vx) -> smallint number/int16 {[-32768 32767]}
@@ -125,6 +131,8 @@ ISNULL(i, m) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(i, sm) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(i, f) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(i, r) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, f24) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, f25) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(i, c3) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(i, v10) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(i, vx) -> int number/int32 {[-2147483648 2147483647]}
@@ -163,6 +171,8 @@ ISNULL(bi, m) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]
 ISNULL(bi, sm) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 ISNULL(bi, f) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 ISNULL(bi, r) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, f24) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, f25) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 ISNULL(bi, c3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 ISNULL(bi, v10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 ISNULL(bi, vx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
@@ -201,6 +211,8 @@ ISNULL(d52, m) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
 ISNULL(d52, sm) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
 ISNULL(d52, f) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
 ISNULL(d52, r) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, f24) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, f25) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
 ISNULL(d52, c3) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
 ISNULL(d52, v10) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
 ISNULL(d52, vx) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
@@ -239,6 +251,8 @@ ISNULL(d380, m) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999
 ISNULL(d380, sm) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 ISNULL(d380, f) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 ISNULL(d380, r) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, f24) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, f25) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 ISNULL(d380, c3) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 ISNULL(d380, v10) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 ISNULL(d380, vx) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
@@ -277,6 +291,8 @@ ISNULL(d3838, m) -> decimal(38,38) number/decimal {digits=38,38 [-0.999999999999
 ISNULL(d3838, sm) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 ISNULL(d3838, f) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 ISNULL(d3838, r) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, f24) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, f25) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 ISNULL(d3838, c3) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 ISNULL(d3838, v10) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 ISNULL(d3838, vx) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
@@ -315,6 +331,8 @@ ISNULL(n102, m) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999
 ISNULL(n102, sm) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
 ISNULL(n102, f) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
 ISNULL(n102, r) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, f24) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, f25) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
 ISNULL(n102, c3) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
 ISNULL(n102, v10) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
 ISNULL(n102, vx) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
@@ -353,6 +371,8 @@ ISNULL(m, m) -> money number/decimal {digits=19,4 [-922337203685477.5808 9223372
 ISNULL(m, sm) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL(m, f) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL(m, r) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, f24) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, f25) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL(m, c3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL(m, v10) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL(m, vx) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -391,6 +411,8 @@ ISNULL(sm, m) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.364
 ISNULL(sm, sm) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 ISNULL(sm, f) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 ISNULL(sm, r) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, f24) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, f25) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 ISNULL(sm, c3) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 ISNULL(sm, v10) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 ISNULL(sm, vx) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
@@ -429,6 +451,8 @@ ISNULL(f, m) -> float number/float
 ISNULL(f, sm) -> float number/float
 ISNULL(f, f) -> float number/float
 ISNULL(f, r) -> float number/float
+ISNULL(f, f24) -> float number/float
+ISNULL(f, f25) -> float number/float
 ISNULL(f, c3) -> float number/float
 ISNULL(f, v10) -> float number/float
 ISNULL(f, vx) -> float number/float
@@ -467,6 +491,8 @@ ISNULL(r, m) -> real number/float
 ISNULL(r, sm) -> real number/float
 ISNULL(r, f) -> real number/float
 ISNULL(r, r) -> real number/float
+ISNULL(r, f24) -> real number/float
+ISNULL(r, f25) -> real number/float
 ISNULL(r, c3) -> real number/float
 ISNULL(r, v10) -> real number/float
 ISNULL(r, vx) -> real number/float
@@ -492,6 +518,86 @@ ISNULL(r, 'ab') -> real number/float
 ISNULL(r, N'ab') -> real number/float
 ISNULL(r, 1e0) -> real number/float
 ISNULL(r, $1) -> real number/float
+ISNULL(f24, bt) -> float(24) number/float
+ISNULL(f24, ti) -> float(24) number/float
+ISNULL(f24, si) -> float(24) number/float
+ISNULL(f24, i) -> float(24) number/float
+ISNULL(f24, bi) -> float(24) number/float
+ISNULL(f24, d52) -> float(24) number/float
+ISNULL(f24, d380) -> float(24) number/float
+ISNULL(f24, d3838) -> float(24) number/float
+ISNULL(f24, n102) -> float(24) number/float
+ISNULL(f24, m) -> float(24) number/float
+ISNULL(f24, sm) -> float(24) number/float
+ISNULL(f24, f) -> float(24) number/float
+ISNULL(f24, r) -> float(24) number/float
+ISNULL(f24, f24) -> float(24) number/float
+ISNULL(f24, f25) -> float(24) number/float
+ISNULL(f24, c3) -> float(24) number/float
+ISNULL(f24, v10) -> float(24) number/float
+ISNULL(f24, vx) -> float(24) number/float
+ISNULL(f24, nc3) -> float(24) number/float
+ISNULL(f24, nv10) -> float(24) number/float
+ISNULL(f24, nvx) -> float(24) number/float
+ISNULL(f24, dt) -> unknown unsupported-expression: ISNULL(f24, dt): SQL Server refuses it: date doesn't convert implicitly to real.
+ISNULL(f24, tm3) -> unknown unsupported-expression: ISNULL(f24, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to real.
+ISNULL(f24, dtm) -> unknown unsupported-expression: ISNULL(f24, dtm): SQL Server refuses it: datetime doesn't convert implicitly to real.
+ISNULL(f24, dt23) -> unknown unsupported-expression: ISNULL(f24, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to real.
+ISNULL(f24, sdt) -> unknown unsupported-expression: ISNULL(f24, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to real.
+ISNULL(f24, dto3) -> unknown unsupported-expression: ISNULL(f24, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to real.
+ISNULL(f24, u) -> unknown unsupported-expression: ISNULL(f24, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to real.
+ISNULL(f24, bin4) -> float(24) number/float
+ISNULL(f24, vb10) -> float(24) number/float
+ISNULL(f24, x) -> float(24) number/float
+ISNULL(f24, sv) -> float(24) number/float
+ISNULL(f24, j) -> float(24) number/float
+ISNULL(f24, 1) -> float(24) number/float
+ISNULL(f24, 12345) -> float(24) number/float
+ISNULL(f24, 2.50) -> float(24) number/float
+ISNULL(f24, 'ab') -> float(24) number/float
+ISNULL(f24, N'ab') -> float(24) number/float
+ISNULL(f24, 1e0) -> float(24) number/float
+ISNULL(f24, $1) -> float(24) number/float
+ISNULL(f25, bt) -> float(25) number/float
+ISNULL(f25, ti) -> float(25) number/float
+ISNULL(f25, si) -> float(25) number/float
+ISNULL(f25, i) -> float(25) number/float
+ISNULL(f25, bi) -> float(25) number/float
+ISNULL(f25, d52) -> float(25) number/float
+ISNULL(f25, d380) -> float(25) number/float
+ISNULL(f25, d3838) -> float(25) number/float
+ISNULL(f25, n102) -> float(25) number/float
+ISNULL(f25, m) -> float(25) number/float
+ISNULL(f25, sm) -> float(25) number/float
+ISNULL(f25, f) -> float(25) number/float
+ISNULL(f25, r) -> float(25) number/float
+ISNULL(f25, f24) -> float(25) number/float
+ISNULL(f25, f25) -> float(25) number/float
+ISNULL(f25, c3) -> float(25) number/float
+ISNULL(f25, v10) -> float(25) number/float
+ISNULL(f25, vx) -> float(25) number/float
+ISNULL(f25, nc3) -> float(25) number/float
+ISNULL(f25, nv10) -> float(25) number/float
+ISNULL(f25, nvx) -> float(25) number/float
+ISNULL(f25, dt) -> unknown unsupported-expression: ISNULL(f25, dt): SQL Server refuses it: date doesn't convert implicitly to float.
+ISNULL(f25, tm3) -> unknown unsupported-expression: ISNULL(f25, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to float.
+ISNULL(f25, dtm) -> unknown unsupported-expression: ISNULL(f25, dtm): SQL Server refuses it: datetime doesn't convert implicitly to float.
+ISNULL(f25, dt23) -> unknown unsupported-expression: ISNULL(f25, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to float.
+ISNULL(f25, sdt) -> unknown unsupported-expression: ISNULL(f25, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to float.
+ISNULL(f25, dto3) -> unknown unsupported-expression: ISNULL(f25, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to float.
+ISNULL(f25, u) -> unknown unsupported-expression: ISNULL(f25, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to float.
+ISNULL(f25, bin4) -> float(25) number/float
+ISNULL(f25, vb10) -> float(25) number/float
+ISNULL(f25, x) -> float(25) number/float
+ISNULL(f25, sv) -> float(25) number/float
+ISNULL(f25, j) -> float(25) number/float
+ISNULL(f25, 1) -> float(25) number/float
+ISNULL(f25, 12345) -> float(25) number/float
+ISNULL(f25, 2.50) -> float(25) number/float
+ISNULL(f25, 'ab') -> float(25) number/float
+ISNULL(f25, N'ab') -> float(25) number/float
+ISNULL(f25, 1e0) -> float(25) number/float
+ISNULL(f25, $1) -> float(25) number/float
 ISNULL(c3, bt) -> char(3) string {length=3}
 ISNULL(c3, ti) -> char(3) string {length=3}
 ISNULL(c3, si) -> char(3) string {length=3}
@@ -505,6 +611,8 @@ ISNULL(c3, m) -> char(3) string {length=3}
 ISNULL(c3, sm) -> char(3) string {length=3}
 ISNULL(c3, f) -> char(3) string {length=3}
 ISNULL(c3, r) -> char(3) string {length=3}
+ISNULL(c3, f24) -> char(3) string {length=3}
+ISNULL(c3, f25) -> char(3) string {length=3}
 ISNULL(c3, c3) -> char(3) string {length=3}
 ISNULL(c3, v10) -> char(3) string {length=3}
 ISNULL(c3, vx) -> char(3) string {length=3}
@@ -543,6 +651,8 @@ ISNULL(v10, m) -> varchar(10) string {length<=10}
 ISNULL(v10, sm) -> varchar(10) string {length<=10}
 ISNULL(v10, f) -> varchar(10) string {length<=10}
 ISNULL(v10, r) -> varchar(10) string {length<=10}
+ISNULL(v10, f24) -> varchar(10) string {length<=10}
+ISNULL(v10, f25) -> varchar(10) string {length<=10}
 ISNULL(v10, c3) -> varchar(10) string {length<=10}
 ISNULL(v10, v10) -> varchar(10) string {length<=10}
 ISNULL(v10, vx) -> varchar(10) string {length<=10}
@@ -581,6 +691,8 @@ ISNULL(vx, m) -> varchar(max) string
 ISNULL(vx, sm) -> varchar(max) string
 ISNULL(vx, f) -> varchar(max) string
 ISNULL(vx, r) -> varchar(max) string
+ISNULL(vx, f24) -> varchar(max) string
+ISNULL(vx, f25) -> varchar(max) string
 ISNULL(vx, c3) -> varchar(max) string
 ISNULL(vx, v10) -> varchar(max) string
 ISNULL(vx, vx) -> varchar(max) string
@@ -619,6 +731,8 @@ ISNULL(nc3, m) -> nchar(3) string {length=3}
 ISNULL(nc3, sm) -> nchar(3) string {length=3}
 ISNULL(nc3, f) -> nchar(3) string {length=3}
 ISNULL(nc3, r) -> nchar(3) string {length=3}
+ISNULL(nc3, f24) -> nchar(3) string {length=3}
+ISNULL(nc3, f25) -> nchar(3) string {length=3}
 ISNULL(nc3, c3) -> nchar(3) string {length=3}
 ISNULL(nc3, v10) -> nchar(3) string {length=3}
 ISNULL(nc3, vx) -> nchar(3) string {length=3}
@@ -657,6 +771,8 @@ ISNULL(nv10, m) -> nvarchar(10) string {length<=10}
 ISNULL(nv10, sm) -> nvarchar(10) string {length<=10}
 ISNULL(nv10, f) -> nvarchar(10) string {length<=10}
 ISNULL(nv10, r) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, f24) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, f25) -> nvarchar(10) string {length<=10}
 ISNULL(nv10, c3) -> nvarchar(10) string {length<=10}
 ISNULL(nv10, v10) -> nvarchar(10) string {length<=10}
 ISNULL(nv10, vx) -> nvarchar(10) string {length<=10}
@@ -695,6 +811,8 @@ ISNULL(nvx, m) -> nvarchar(max) string
 ISNULL(nvx, sm) -> nvarchar(max) string
 ISNULL(nvx, f) -> nvarchar(max) string
 ISNULL(nvx, r) -> nvarchar(max) string
+ISNULL(nvx, f24) -> nvarchar(max) string
+ISNULL(nvx, f25) -> nvarchar(max) string
 ISNULL(nvx, c3) -> nvarchar(max) string
 ISNULL(nvx, v10) -> nvarchar(max) string
 ISNULL(nvx, vx) -> nvarchar(max) string
@@ -733,6 +851,8 @@ ISNULL(dt, m) -> unknown unsupported-expression: ISNULL(dt, m): SQL Server refus
 ISNULL(dt, sm) -> unknown unsupported-expression: ISNULL(dt, sm): SQL Server refuses it: smallmoney doesn't convert implicitly to date.
 ISNULL(dt, f) -> unknown unsupported-expression: ISNULL(dt, f): SQL Server refuses it: float doesn't convert implicitly to date.
 ISNULL(dt, r) -> unknown unsupported-expression: ISNULL(dt, r): SQL Server refuses it: real doesn't convert implicitly to date.
+ISNULL(dt, f24) -> unknown unsupported-expression: ISNULL(dt, f24): SQL Server refuses it: real doesn't convert implicitly to date.
+ISNULL(dt, f25) -> unknown unsupported-expression: ISNULL(dt, f25): SQL Server refuses it: float doesn't convert implicitly to date.
 ISNULL(dt, c3) -> date date
 ISNULL(dt, v10) -> date date
 ISNULL(dt, vx) -> date date
@@ -771,6 +891,8 @@ ISNULL(tm3, m) -> unknown unsupported-expression: ISNULL(tm3, m): SQL Server ref
 ISNULL(tm3, sm) -> unknown unsupported-expression: ISNULL(tm3, sm): SQL Server refuses it: smallmoney doesn't convert implicitly to time(3).
 ISNULL(tm3, f) -> unknown unsupported-expression: ISNULL(tm3, f): SQL Server refuses it: float doesn't convert implicitly to time(3).
 ISNULL(tm3, r) -> unknown unsupported-expression: ISNULL(tm3, r): SQL Server refuses it: real doesn't convert implicitly to time(3).
+ISNULL(tm3, f24) -> unknown unsupported-expression: ISNULL(tm3, f24): SQL Server refuses it: real doesn't convert implicitly to time(3).
+ISNULL(tm3, f25) -> unknown unsupported-expression: ISNULL(tm3, f25): SQL Server refuses it: float doesn't convert implicitly to time(3).
 ISNULL(tm3, c3) -> time(3) time
 ISNULL(tm3, v10) -> time(3) time
 ISNULL(tm3, vx) -> time(3) time
@@ -809,6 +931,8 @@ ISNULL(dtm, m) -> datetime datetime/local
 ISNULL(dtm, sm) -> datetime datetime/local
 ISNULL(dtm, f) -> datetime datetime/local
 ISNULL(dtm, r) -> datetime datetime/local
+ISNULL(dtm, f24) -> datetime datetime/local
+ISNULL(dtm, f25) -> datetime datetime/local
 ISNULL(dtm, c3) -> datetime datetime/local
 ISNULL(dtm, v10) -> datetime datetime/local
 ISNULL(dtm, vx) -> datetime datetime/local
@@ -847,6 +971,8 @@ ISNULL(dt23, m) -> unknown unsupported-expression: ISNULL(dt23, m): SQL Server r
 ISNULL(dt23, sm) -> unknown unsupported-expression: ISNULL(dt23, sm): SQL Server refuses it: smallmoney doesn't convert implicitly to datetime2(3).
 ISNULL(dt23, f) -> unknown unsupported-expression: ISNULL(dt23, f): SQL Server refuses it: float doesn't convert implicitly to datetime2(3).
 ISNULL(dt23, r) -> unknown unsupported-expression: ISNULL(dt23, r): SQL Server refuses it: real doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, f24) -> unknown unsupported-expression: ISNULL(dt23, f24): SQL Server refuses it: real doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, f25) -> unknown unsupported-expression: ISNULL(dt23, f25): SQL Server refuses it: float doesn't convert implicitly to datetime2(3).
 ISNULL(dt23, c3) -> datetime2(3) datetime/local
 ISNULL(dt23, v10) -> datetime2(3) datetime/local
 ISNULL(dt23, vx) -> datetime2(3) datetime/local
@@ -885,6 +1011,8 @@ ISNULL(sdt, m) -> smalldatetime datetime/local
 ISNULL(sdt, sm) -> smalldatetime datetime/local
 ISNULL(sdt, f) -> smalldatetime datetime/local
 ISNULL(sdt, r) -> smalldatetime datetime/local
+ISNULL(sdt, f24) -> smalldatetime datetime/local
+ISNULL(sdt, f25) -> smalldatetime datetime/local
 ISNULL(sdt, c3) -> smalldatetime datetime/local
 ISNULL(sdt, v10) -> smalldatetime datetime/local
 ISNULL(sdt, vx) -> smalldatetime datetime/local
@@ -923,6 +1051,8 @@ ISNULL(dto3, m) -> unknown unsupported-expression: ISNULL(dto3, m): SQL Server r
 ISNULL(dto3, sm) -> unknown unsupported-expression: ISNULL(dto3, sm): SQL Server refuses it: smallmoney doesn't convert implicitly to datetimeoffset(3).
 ISNULL(dto3, f) -> unknown unsupported-expression: ISNULL(dto3, f): SQL Server refuses it: float doesn't convert implicitly to datetimeoffset(3).
 ISNULL(dto3, r) -> unknown unsupported-expression: ISNULL(dto3, r): SQL Server refuses it: real doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, f24) -> unknown unsupported-expression: ISNULL(dto3, f24): SQL Server refuses it: real doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, f25) -> unknown unsupported-expression: ISNULL(dto3, f25): SQL Server refuses it: float doesn't convert implicitly to datetimeoffset(3).
 ISNULL(dto3, c3) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, v10) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, vx) -> datetimeoffset(3) datetime/offset
@@ -961,6 +1091,8 @@ ISNULL(u, m) -> unknown unsupported-expression: ISNULL(u, m): SQL Server refuses
 ISNULL(u, sm) -> unknown unsupported-expression: ISNULL(u, sm): SQL Server refuses it: smallmoney doesn't convert implicitly to uniqueidentifier.
 ISNULL(u, f) -> unknown unsupported-expression: ISNULL(u, f): SQL Server refuses it: float doesn't convert implicitly to uniqueidentifier.
 ISNULL(u, r) -> unknown unsupported-expression: ISNULL(u, r): SQL Server refuses it: real doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, f24) -> unknown unsupported-expression: ISNULL(u, f24): SQL Server refuses it: real doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, f25) -> unknown unsupported-expression: ISNULL(u, f25): SQL Server refuses it: float doesn't convert implicitly to uniqueidentifier.
 ISNULL(u, c3) -> uniqueidentifier uuid
 ISNULL(u, v10) -> uniqueidentifier uuid
 ISNULL(u, vx) -> uniqueidentifier uuid
@@ -999,6 +1131,8 @@ ISNULL(bin4, m) -> unknown unsupported-sql-type: The type binary(4) is not model
 ISNULL(bin4, sm) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 ISNULL(bin4, f) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 ISNULL(bin4, r) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, f24) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, f25) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 ISNULL(bin4, c3) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 ISNULL(bin4, v10) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 ISNULL(bin4, vx) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
@@ -1037,6 +1171,8 @@ ISNULL(vb10, m) -> unknown unsupported-sql-type: The type varbinary(10) is not m
 ISNULL(vb10, sm) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 ISNULL(vb10, f) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 ISNULL(vb10, r) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, f24) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, f25) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 ISNULL(vb10, c3) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 ISNULL(vb10, v10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 ISNULL(vb10, vx) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
@@ -1075,6 +1211,8 @@ ISNULL(x, m) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 ISNULL(x, sm) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 ISNULL(x, f) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 ISNULL(x, r) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, f24) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, f25) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 ISNULL(x, c3) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 ISNULL(x, v10) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 ISNULL(x, vx) -> unknown unsupported-sql-type: The type xml is not modelled yet.
@@ -1113,6 +1251,8 @@ ISNULL(sv, m) -> unknown unsupported-sql-type: The type sql_variant is not model
 ISNULL(sv, sm) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ISNULL(sv, f) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ISNULL(sv, r) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, f24) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, f25) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ISNULL(sv, c3) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ISNULL(sv, v10) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ISNULL(sv, vx) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -1151,6 +1291,8 @@ ISNULL(j, m) -> unknown (no unknown recorded)
 ISNULL(j, sm) -> unknown (no unknown recorded)
 ISNULL(j, f) -> unknown (no unknown recorded)
 ISNULL(j, r) -> unknown (no unknown recorded)
+ISNULL(j, f24) -> unknown (no unknown recorded)
+ISNULL(j, f25) -> unknown (no unknown recorded)
 ISNULL(j, c3) -> unknown (no unknown recorded)
 ISNULL(j, v10) -> unknown (no unknown recorded)
 ISNULL(j, vx) -> unknown (no unknown recorded)
@@ -1189,6 +1331,8 @@ ISNULL(1, m) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(1, sm) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(1, f) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(1, r) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, f24) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, f25) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(1, c3) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(1, v10) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(1, vx) -> int number/int32 {[-2147483648 2147483647]}
@@ -1227,6 +1371,8 @@ ISNULL(12345, m) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(12345, sm) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(12345, f) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(12345, r) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, f24) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, f25) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(12345, c3) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(12345, v10) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(12345, vx) -> int number/int32 {[-2147483648 2147483647]}
@@ -1265,6 +1411,8 @@ ISNULL(2.50, m) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
 ISNULL(2.50, sm) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
 ISNULL(2.50, f) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
 ISNULL(2.50, r) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, f24) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, f25) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
 ISNULL(2.50, c3) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
 ISNULL(2.50, v10) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
 ISNULL(2.50, vx) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
@@ -1303,6 +1451,8 @@ ISNULL('ab', m) -> varchar(2) string {length<=2}
 ISNULL('ab', sm) -> varchar(2) string {length<=2}
 ISNULL('ab', f) -> varchar(2) string {length<=2}
 ISNULL('ab', r) -> varchar(2) string {length<=2}
+ISNULL('ab', f24) -> varchar(2) string {length<=2}
+ISNULL('ab', f25) -> varchar(2) string {length<=2}
 ISNULL('ab', c3) -> varchar(2) string {length<=2}
 ISNULL('ab', v10) -> varchar(2) string {length<=2}
 ISNULL('ab', vx) -> varchar(2) string {length<=2}
@@ -1341,6 +1491,8 @@ ISNULL(N'ab', m) -> nvarchar(2) string {length<=2}
 ISNULL(N'ab', sm) -> nvarchar(2) string {length<=2}
 ISNULL(N'ab', f) -> nvarchar(2) string {length<=2}
 ISNULL(N'ab', r) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', f24) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', f25) -> nvarchar(2) string {length<=2}
 ISNULL(N'ab', c3) -> nvarchar(2) string {length<=2}
 ISNULL(N'ab', v10) -> nvarchar(2) string {length<=2}
 ISNULL(N'ab', vx) -> nvarchar(2) string {length<=2}
@@ -1379,6 +1531,8 @@ ISNULL(1e0, m) -> float number/float
 ISNULL(1e0, sm) -> float number/float
 ISNULL(1e0, f) -> float number/float
 ISNULL(1e0, r) -> float number/float
+ISNULL(1e0, f24) -> float number/float
+ISNULL(1e0, f25) -> float number/float
 ISNULL(1e0, c3) -> float number/float
 ISNULL(1e0, v10) -> float number/float
 ISNULL(1e0, vx) -> float number/float
@@ -1417,6 +1571,8 @@ ISNULL($1, m) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337
 ISNULL($1, sm) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL($1, f) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL($1, r) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, f24) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, f25) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL($1, c3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL($1, v10) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL($1, vx) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}

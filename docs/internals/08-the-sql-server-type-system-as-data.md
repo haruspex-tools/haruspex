@@ -50,7 +50,9 @@ can make a 36th. Each row says:
 | `BuiltInType.LongestText` | `int` 11, `uniqueidentifier` 36 | the characters of its longest value written as text |
 
 and the defaults a declaration and a conversion apply: `decimal` alone is `decimal(18,0)`, `char` alone is `char(1)` in a
-declaration but `char(30)` in a `CAST`, `datetime2` alone has 7 fractional digits.
+declaration but `char(30)` in a `CAST`, `datetime2` alone has 7 fractional digits. An argument can also pick the type:
+`float(n)` of 24 bits or fewer is `real` (observed: `A_float_of_24_bits_or_fewer_is_real_and_of_25_to_53_is_float`). An
+argument a type doesn't take gives no type at all, so it is unknown rather than read as something else.
 
 A type with its arguments is a `ScalarType`: `decimal(19,2)` is `BuiltInType.Decimal` with precision 19 and scale 2. It is
 what Semantics reads a column's facts from (`SchemaRules.TypeFacts`) and what Inference's rules compute with, so both layers

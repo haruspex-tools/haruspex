@@ -11,6 +11,8 @@
 -sm -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 -f -> float number/float
 -r -> real number/float
+-f24 -> real number/float
+-f25 -> float number/float
 -c3 -> unknown unsupported-expression: -c3: negating a value of this type is not modelled yet.
 -v10 -> unknown unsupported-expression: -v10: negating a value of this type is not modelled yet.
 -vx -> unknown unsupported-expression: -vx: negating a value of this type is not modelled yet.

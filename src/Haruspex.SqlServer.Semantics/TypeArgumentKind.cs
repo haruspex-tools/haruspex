@@ -15,6 +15,12 @@ public enum TypeArgumentKind
     /// <summary>The digits of a fraction of a second: <c>datetime2(3)</c>.</summary>
     FractionalSeconds,
 
+    /// <summary>
+    /// The bits of a <c>float</c>'s mantissa, <c>float(24)</c>: from 1 to 24 the type is <c>real</c>, from 25 to 53 <c>float</c>,
+    /// so the argument picks the type and is not kept.
+    /// </summary>
+    MantissaBits,
+
     /// <summary>A number of dimensions: <c>vector(3)</c>.</summary>
     Dimensions,
 }

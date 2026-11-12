@@ -63,6 +63,14 @@ public class BuiltInTypeObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_float_of_24_bits_or_fewer_is_real_and_of_25_to_53_is_float()
+    {
+        int[] bits = [1, 24, 25, 53];
+        var described = await Describe([.. bits.Select(n => $"SELECT CAST(c_int AS float({n})) AS e FROM dbo.t")]);
+        Assert.Equal(bits.Select(n => ScalarType.Parse($"float({n})")!.Type.Name), described);
+    }
+
+    [Fact]
     public async Task Rowversion_is_another_name_for_timestamp()
     {
         var row = Assert.Single(await Rows(

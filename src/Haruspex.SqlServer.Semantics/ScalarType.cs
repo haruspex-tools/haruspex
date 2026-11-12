@@ -28,8 +28,8 @@ public sealed record ScalarType(BuiltInType Type, int Length = 0, int Precision 
 
     /// <summary>
     /// A built-in type as declared, with the defaults of a declaration: <c>decimal</c> is <c>decimal(18,0)</c>, <c>char</c>
-    /// <c>char(1)</c>. Null for a type that isn't built in, or whose arguments are not whole numbers (or <c>max</c>, for a
-    /// varying type).
+    /// <c>char(1)</c>, and <c>float(24)</c> is <c>real</c>. Null for a type that isn't built in, or whose arguments it doesn't
+    /// take: not whole numbers in range (or <c>max</c>, for a varying type), or any for a type that takes none.
     /// </summary>
     public static ScalarType? Of(SqlType type)
     {
@@ -75,8 +75,11 @@ public sealed record ScalarType(BuiltInType Type, int Length = 0, int Precision 
                     : null;
             case TypeArgumentKind.Dimensions:
                 return arguments is [_] && Whole(0, 0) is { } dimensions ? new ScalarType(type, Precision: dimensions) : null;
+            case TypeArgumentKind.MantissaBits:
+                return arguments.Count > 1 || Whole(0, BuiltInType.FloatMantissaBits) is not { } bits || bits is < 1 || bits > BuiltInType.FloatMantissaBits ? null
+                    : Of(bits <= BuiltInType.RealMantissaBits ? BuiltInType.Real : type);
             default:
-                return Of(type);
+                return arguments.Count == 0 ? Of(type) : null;
         }
     }
 

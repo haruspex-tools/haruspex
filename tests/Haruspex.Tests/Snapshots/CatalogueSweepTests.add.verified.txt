@@ -11,6 +11,8 @@ bt + m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203
 bt + sm -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 bt + f -> float number/float null:arithmetic-overflow
 bt + r -> real number/float null:arithmetic-overflow
+bt + f24 -> real number/float null:arithmetic-overflow
+bt + f25 -> float number/float null:arithmetic-overflow
 bt + c3 -> unknown unsupported-expression: bt + c3: arithmetic on these types is not modelled yet.
 bt + v10 -> unknown unsupported-expression: bt + v10: arithmetic on these types is not modelled yet.
 bt + vx -> unknown unsupported-expression: bt + vx: arithmetic on these types is not modelled yet.
@@ -49,6 +51,8 @@ ti + m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203
 ti + sm -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 ti + f -> float number/float null:arithmetic-overflow
 ti + r -> real number/float null:arithmetic-overflow
+ti + f24 -> real number/float null:arithmetic-overflow
+ti + f25 -> float number/float null:arithmetic-overflow
 ti + c3 -> unknown unsupported-expression: ti + c3: arithmetic on these types is not modelled yet.
 ti + v10 -> unknown unsupported-expression: ti + v10: arithmetic on these types is not modelled yet.
 ti + vx -> unknown unsupported-expression: ti + vx: arithmetic on these types is not modelled yet.
@@ -87,6 +91,8 @@ si + m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203
 si + sm -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 si + f -> float number/float null:arithmetic-overflow
 si + r -> real number/float null:arithmetic-overflow
+si + f24 -> real number/float null:arithmetic-overflow
+si + f25 -> float number/float null:arithmetic-overflow
 si + c3 -> unknown unsupported-expression: si + c3: arithmetic on these types is not modelled yet.
 si + v10 -> unknown unsupported-expression: si + v10: arithmetic on these types is not modelled yet.
 si + vx -> unknown unsupported-expression: si + vx: arithmetic on these types is not modelled yet.
@@ -125,6 +131,8 @@ i + m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-9223372036
 i + sm -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 i + f -> float number/float null:arithmetic-overflow
 i + r -> real number/float null:arithmetic-overflow
+i + f24 -> real number/float null:arithmetic-overflow
+i + f25 -> float number/float null:arithmetic-overflow
 i + c3 -> unknown unsupported-expression: i + c3: arithmetic on these types is not modelled yet.
 i + v10 -> unknown unsupported-expression: i + v10: arithmetic on these types is not modelled yet.
 i + vx -> unknown unsupported-expression: i + vx: arithmetic on these types is not modelled yet.
@@ -163,6 +171,8 @@ bi + m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203
 bi + sm -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 bi + f -> float number/float null:arithmetic-overflow
 bi + r -> real number/float null:arithmetic-overflow
+bi + f24 -> real number/float null:arithmetic-overflow
+bi + f25 -> float number/float null:arithmetic-overflow
 bi + c3 -> unknown unsupported-expression: bi + c3: arithmetic on these types is not modelled yet.
 bi + v10 -> unknown unsupported-expression: bi + v10: arithmetic on these types is not modelled yet.
 bi + vx -> unknown unsupported-expression: bi + vx: arithmetic on these types is not modelled yet.
@@ -201,6 +211,8 @@ d52 + m -> decimal(20,4) number/decimal {digits=20,4 [-9999999999999999.9999 999
 d52 + sm -> decimal(11,4) number/decimal {digits=11,4 [-9999999.9999 9999999.9999]}
 d52 + f -> float number/float null:arithmetic-overflow
 d52 + r -> real number/float null:arithmetic-overflow
+d52 + f24 -> real number/float null:arithmetic-overflow
+d52 + f25 -> float number/float null:arithmetic-overflow
 d52 + c3 -> unknown unsupported-expression: d52 + c3: arithmetic on these types is not modelled yet.
 d52 + v10 -> unknown unsupported-expression: d52 + v10: arithmetic on these types is not modelled yet.
 d52 + vx -> unknown unsupported-expression: d52 + vx: arithmetic on these types is not modelled yet.
@@ -239,6 +251,8 @@ d380 + m -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [
 d380 + sm -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 d380 + f -> float number/float null:arithmetic-overflow
 d380 + r -> real number/float null:arithmetic-overflow
+d380 + f24 -> real number/float null:arithmetic-overflow
+d380 + f25 -> float number/float null:arithmetic-overflow
 d380 + c3 -> unknown unsupported-expression: d380 + c3: arithmetic on these types is not modelled yet.
 d380 + v10 -> unknown unsupported-expression: d380 + v10: arithmetic on these types is not modelled yet.
 d380 + vx -> unknown unsupported-expression: d380 + vx: arithmetic on these types is not modelled yet.
@@ -277,6 +291,8 @@ d3838 + m -> decimal(38,23) number/decimal null:arithmetic-overflow {digits=38,2
 d3838 + sm -> decimal(38,32) number/decimal null:arithmetic-overflow {digits=38,32 [-999999.99999999999999999999999999999999 999999.99999999999999999999999999999999]}
 d3838 + f -> float number/float null:arithmetic-overflow
 d3838 + r -> real number/float null:arithmetic-overflow
+d3838 + f24 -> real number/float null:arithmetic-overflow
+d3838 + f25 -> float number/float null:arithmetic-overflow
 d3838 + c3 -> unknown unsupported-expression: d3838 + c3: arithmetic on these types is not modelled yet.
 d3838 + v10 -> unknown unsupported-expression: d3838 + v10: arithmetic on these types is not modelled yet.
 d3838 + vx -> unknown unsupported-expression: d3838 + vx: arithmetic on these types is not modelled yet.
@@ -315,6 +331,8 @@ n102 + m -> numeric(20,4) number/decimal {digits=20,4 [-9999999999999999.9999 99
 n102 + sm -> numeric(13,4) number/decimal {digits=13,4 [-999999999.9999 999999999.9999]}
 n102 + f -> float number/float null:arithmetic-overflow
 n102 + r -> real number/float null:arithmetic-overflow
+n102 + f24 -> real number/float null:arithmetic-overflow
+n102 + f25 -> float number/float null:arithmetic-overflow
 n102 + c3 -> unknown unsupported-expression: n102 + c3: arithmetic on these types is not modelled yet.
 n102 + v10 -> unknown unsupported-expression: n102 + v10: arithmetic on these types is not modelled yet.
 n102 + vx -> unknown unsupported-expression: n102 + vx: arithmetic on these types is not modelled yet.
@@ -353,6 +371,8 @@ m + m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-9223372036
 m + sm -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 m + f -> float number/float null:arithmetic-overflow
 m + r -> real number/float null:arithmetic-overflow
+m + f24 -> real number/float null:arithmetic-overflow
+m + f25 -> float number/float null:arithmetic-overflow
 m + c3 -> unknown unsupported-expression: m + c3: arithmetic on these types is not modelled yet.
 m + v10 -> unknown unsupported-expression: m + v10: arithmetic on these types is not modelled yet.
 m + vx -> unknown unsupported-expression: m + vx: arithmetic on these types is not modelled yet.
@@ -391,6 +411,8 @@ sm + m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203
 sm + sm -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 sm + f -> float number/float null:arithmetic-overflow
 sm + r -> real number/float null:arithmetic-overflow
+sm + f24 -> real number/float null:arithmetic-overflow
+sm + f25 -> float number/float null:arithmetic-overflow
 sm + c3 -> unknown unsupported-expression: sm + c3: arithmetic on these types is not modelled yet.
 sm + v10 -> unknown unsupported-expression: sm + v10: arithmetic on these types is not modelled yet.
 sm + vx -> unknown unsupported-expression: sm + vx: arithmetic on these types is not modelled yet.
@@ -429,6 +451,8 @@ f + m -> float number/float null:arithmetic-overflow
 f + sm -> float number/float null:arithmetic-overflow
 f + f -> float number/float null:arithmetic-overflow
 f + r -> float number/float null:arithmetic-overflow
+f + f24 -> float number/float null:arithmetic-overflow
+f + f25 -> float number/float null:arithmetic-overflow
 f + c3 -> unknown unsupported-expression: f + c3: arithmetic on these types is not modelled yet.
 f + v10 -> unknown unsupported-expression: f + v10: arithmetic on these types is not modelled yet.
 f + vx -> unknown unsupported-expression: f + vx: arithmetic on these types is not modelled yet.
@@ -467,6 +491,8 @@ r + m -> real number/float null:arithmetic-overflow
 r + sm -> real number/float null:arithmetic-overflow
 r + f -> float number/float null:arithmetic-overflow
 r + r -> real number/float null:arithmetic-overflow
+r + f24 -> real number/float null:arithmetic-overflow
+r + f25 -> float number/float null:arithmetic-overflow
 r + c3 -> unknown unsupported-expression: r + c3: arithmetic on these types is not modelled yet.
 r + v10 -> unknown unsupported-expression: r + v10: arithmetic on these types is not modelled yet.
 r + vx -> unknown unsupported-expression: r + vx: arithmetic on these types is not modelled yet.
@@ -492,6 +518,86 @@ r + 'ab' -> unknown unsupported-expression: r + 'ab': arithmetic on these types 
 r + N'ab' -> unknown unsupported-expression: r + N'ab': arithmetic on these types is not modelled yet.
 r + 1e0 -> float number/float null:arithmetic-overflow
 r + $1 -> real number/float null:arithmetic-overflow
+f24 + bt -> real number/float null:arithmetic-overflow
+f24 + ti -> real number/float null:arithmetic-overflow
+f24 + si -> real number/float null:arithmetic-overflow
+f24 + i -> real number/float null:arithmetic-overflow
+f24 + bi -> real number/float null:arithmetic-overflow
+f24 + d52 -> real number/float null:arithmetic-overflow
+f24 + d380 -> real number/float null:arithmetic-overflow
+f24 + d3838 -> real number/float null:arithmetic-overflow
+f24 + n102 -> real number/float null:arithmetic-overflow
+f24 + m -> real number/float null:arithmetic-overflow
+f24 + sm -> real number/float null:arithmetic-overflow
+f24 + f -> float number/float null:arithmetic-overflow
+f24 + r -> real number/float null:arithmetic-overflow
+f24 + f24 -> real number/float null:arithmetic-overflow
+f24 + f25 -> float number/float null:arithmetic-overflow
+f24 + c3 -> unknown unsupported-expression: f24 + c3: arithmetic on these types is not modelled yet.
+f24 + v10 -> unknown unsupported-expression: f24 + v10: arithmetic on these types is not modelled yet.
+f24 + vx -> unknown unsupported-expression: f24 + vx: arithmetic on these types is not modelled yet.
+f24 + nc3 -> unknown unsupported-expression: f24 + nc3: arithmetic on these types is not modelled yet.
+f24 + nv10 -> unknown unsupported-expression: f24 + nv10: arithmetic on these types is not modelled yet.
+f24 + nvx -> unknown unsupported-expression: f24 + nvx: arithmetic on these types is not modelled yet.
+f24 + dt -> unknown unsupported-expression: f24 + dt: arithmetic on these types is not modelled yet.
+f24 + tm3 -> unknown unsupported-expression: f24 + tm3: arithmetic on these types is not modelled yet.
+f24 + dtm -> datetime datetime/local null:arithmetic-overflow
+f24 + dt23 -> unknown unsupported-expression: f24 + dt23: arithmetic on these types is not modelled yet.
+f24 + sdt -> smalldatetime datetime/local null:arithmetic-overflow
+f24 + dto3 -> unknown unsupported-expression: f24 + dto3: arithmetic on these types is not modelled yet.
+f24 + u -> unknown unsupported-expression: f24 + u: arithmetic on these types is not modelled yet.
+f24 + bin4 -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+f24 + vb10 -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+f24 + x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+f24 + sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+f24 + j -> unknown (no unknown recorded)
+f24 + 1 -> real number/float null:arithmetic-overflow
+f24 + 12345 -> real number/float null:arithmetic-overflow
+f24 + 2.50 -> real number/float null:arithmetic-overflow
+f24 + 'ab' -> unknown unsupported-expression: f24 + 'ab': arithmetic on these types is not modelled yet.
+f24 + N'ab' -> unknown unsupported-expression: f24 + N'ab': arithmetic on these types is not modelled yet.
+f24 + 1e0 -> float number/float null:arithmetic-overflow
+f24 + $1 -> real number/float null:arithmetic-overflow
+f25 + bt -> float number/float null:arithmetic-overflow
+f25 + ti -> float number/float null:arithmetic-overflow
+f25 + si -> float number/float null:arithmetic-overflow
+f25 + i -> float number/float null:arithmetic-overflow
+f25 + bi -> float number/float null:arithmetic-overflow
+f25 + d52 -> float number/float null:arithmetic-overflow
+f25 + d380 -> float number/float null:arithmetic-overflow
+f25 + d3838 -> float number/float null:arithmetic-overflow
+f25 + n102 -> float number/float null:arithmetic-overflow
+f25 + m -> float number/float null:arithmetic-overflow
+f25 + sm -> float number/float null:arithmetic-overflow
+f25 + f -> float number/float null:arithmetic-overflow
+f25 + r -> float number/float null:arithmetic-overflow
+f25 + f24 -> float number/float null:arithmetic-overflow
+f25 + f25 -> float number/float null:arithmetic-overflow
+f25 + c3 -> unknown unsupported-expression: f25 + c3: arithmetic on these types is not modelled yet.
+f25 + v10 -> unknown unsupported-expression: f25 + v10: arithmetic on these types is not modelled yet.
+f25 + vx -> unknown unsupported-expression: f25 + vx: arithmetic on these types is not modelled yet.
+f25 + nc3 -> unknown unsupported-expression: f25 + nc3: arithmetic on these types is not modelled yet.
+f25 + nv10 -> unknown unsupported-expression: f25 + nv10: arithmetic on these types is not modelled yet.
+f25 + nvx -> unknown unsupported-expression: f25 + nvx: arithmetic on these types is not modelled yet.
+f25 + dt -> unknown unsupported-expression: f25 + dt: arithmetic on these types is not modelled yet.
+f25 + tm3 -> unknown unsupported-expression: f25 + tm3: arithmetic on these types is not modelled yet.
+f25 + dtm -> datetime datetime/local null:arithmetic-overflow
+f25 + dt23 -> unknown unsupported-expression: f25 + dt23: arithmetic on these types is not modelled yet.
+f25 + sdt -> smalldatetime datetime/local null:arithmetic-overflow
+f25 + dto3 -> unknown unsupported-expression: f25 + dto3: arithmetic on these types is not modelled yet.
+f25 + u -> unknown unsupported-expression: f25 + u: arithmetic on these types is not modelled yet.
+f25 + bin4 -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+f25 + vb10 -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+f25 + x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+f25 + sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+f25 + j -> unknown (no unknown recorded)
+f25 + 1 -> float number/float null:arithmetic-overflow
+f25 + 12345 -> float number/float null:arithmetic-overflow
+f25 + 2.50 -> float number/float null:arithmetic-overflow
+f25 + 'ab' -> unknown unsupported-expression: f25 + 'ab': arithmetic on these types is not modelled yet.
+f25 + N'ab' -> unknown unsupported-expression: f25 + N'ab': arithmetic on these types is not modelled yet.
+f25 + 1e0 -> float number/float null:arithmetic-overflow
+f25 + $1 -> float number/float null:arithmetic-overflow
 c3 + bt -> unknown unsupported-expression: c3 + bt: arithmetic on these types is not modelled yet.
 c3 + ti -> unknown unsupported-expression: c3 + ti: arithmetic on these types is not modelled yet.
 c3 + si -> unknown unsupported-expression: c3 + si: arithmetic on these types is not modelled yet.
@@ -505,6 +611,8 @@ c3 + m -> unknown unsupported-expression: c3 + m: arithmetic on these types is n
 c3 + sm -> unknown unsupported-expression: c3 + sm: arithmetic on these types is not modelled yet.
 c3 + f -> unknown unsupported-expression: c3 + f: arithmetic on these types is not modelled yet.
 c3 + r -> unknown unsupported-expression: c3 + r: arithmetic on these types is not modelled yet.
+c3 + f24 -> unknown unsupported-expression: c3 + f24: arithmetic on these types is not modelled yet.
+c3 + f25 -> unknown unsupported-expression: c3 + f25: arithmetic on these types is not modelled yet.
 c3 + c3 -> char(6) string {length=6}
 c3 + v10 -> varchar(13) string {length<=13}
 c3 + vx -> varchar(max) string
@@ -543,6 +651,8 @@ v10 + m -> unknown unsupported-expression: v10 + m: arithmetic on these types is
 v10 + sm -> unknown unsupported-expression: v10 + sm: arithmetic on these types is not modelled yet.
 v10 + f -> unknown unsupported-expression: v10 + f: arithmetic on these types is not modelled yet.
 v10 + r -> unknown unsupported-expression: v10 + r: arithmetic on these types is not modelled yet.
+v10 + f24 -> unknown unsupported-expression: v10 + f24: arithmetic on these types is not modelled yet.
+v10 + f25 -> unknown unsupported-expression: v10 + f25: arithmetic on these types is not modelled yet.
 v10 + c3 -> varchar(13) string {length<=13}
 v10 + v10 -> varchar(20) string {length<=20}
 v10 + vx -> varchar(max) string
@@ -581,6 +691,8 @@ vx + m -> unknown unsupported-expression: vx + m: arithmetic on these types is n
 vx + sm -> unknown unsupported-expression: vx + sm: arithmetic on these types is not modelled yet.
 vx + f -> unknown unsupported-expression: vx + f: arithmetic on these types is not modelled yet.
 vx + r -> unknown unsupported-expression: vx + r: arithmetic on these types is not modelled yet.
+vx + f24 -> unknown unsupported-expression: vx + f24: arithmetic on these types is not modelled yet.
+vx + f25 -> unknown unsupported-expression: vx + f25: arithmetic on these types is not modelled yet.
 vx + c3 -> varchar(max) string
 vx + v10 -> varchar(max) string
 vx + vx -> varchar(max) string
@@ -619,6 +731,8 @@ nc3 + m -> unknown unsupported-expression: nc3 + m: arithmetic on these types is
 nc3 + sm -> unknown unsupported-expression: nc3 + sm: arithmetic on these types is not modelled yet.
 nc3 + f -> unknown unsupported-expression: nc3 + f: arithmetic on these types is not modelled yet.
 nc3 + r -> unknown unsupported-expression: nc3 + r: arithmetic on these types is not modelled yet.
+nc3 + f24 -> unknown unsupported-expression: nc3 + f24: arithmetic on these types is not modelled yet.
+nc3 + f25 -> unknown unsupported-expression: nc3 + f25: arithmetic on these types is not modelled yet.
 nc3 + c3 -> nchar(6) string {length=6}
 nc3 + v10 -> nvarchar(13) string {length<=13}
 nc3 + vx -> nvarchar(max) string
@@ -657,6 +771,8 @@ nv10 + m -> unknown unsupported-expression: nv10 + m: arithmetic on these types 
 nv10 + sm -> unknown unsupported-expression: nv10 + sm: arithmetic on these types is not modelled yet.
 nv10 + f -> unknown unsupported-expression: nv10 + f: arithmetic on these types is not modelled yet.
 nv10 + r -> unknown unsupported-expression: nv10 + r: arithmetic on these types is not modelled yet.
+nv10 + f24 -> unknown unsupported-expression: nv10 + f24: arithmetic on these types is not modelled yet.
+nv10 + f25 -> unknown unsupported-expression: nv10 + f25: arithmetic on these types is not modelled yet.
 nv10 + c3 -> nvarchar(13) string {length<=13}
 nv10 + v10 -> nvarchar(20) string {length<=20}
 nv10 + vx -> nvarchar(max) string
@@ -695,6 +811,8 @@ nvx + m -> unknown unsupported-expression: nvx + m: arithmetic on these types is
 nvx + sm -> unknown unsupported-expression: nvx + sm: arithmetic on these types is not modelled yet.
 nvx + f -> unknown unsupported-expression: nvx + f: arithmetic on these types is not modelled yet.
 nvx + r -> unknown unsupported-expression: nvx + r: arithmetic on these types is not modelled yet.
+nvx + f24 -> unknown unsupported-expression: nvx + f24: arithmetic on these types is not modelled yet.
+nvx + f25 -> unknown unsupported-expression: nvx + f25: arithmetic on these types is not modelled yet.
 nvx + c3 -> nvarchar(max) string
 nvx + v10 -> nvarchar(max) string
 nvx + vx -> nvarchar(max) string
@@ -733,6 +851,8 @@ dt + m -> unknown unsupported-expression: dt + m: arithmetic on these types is n
 dt + sm -> unknown unsupported-expression: dt + sm: arithmetic on these types is not modelled yet.
 dt + f -> unknown unsupported-expression: dt + f: arithmetic on these types is not modelled yet.
 dt + r -> unknown unsupported-expression: dt + r: arithmetic on these types is not modelled yet.
+dt + f24 -> unknown unsupported-expression: dt + f24: arithmetic on these types is not modelled yet.
+dt + f25 -> unknown unsupported-expression: dt + f25: arithmetic on these types is not modelled yet.
 dt + c3 -> unknown unsupported-expression: dt + c3: arithmetic on these types is not modelled yet.
 dt + v10 -> unknown unsupported-expression: dt + v10: arithmetic on these types is not modelled yet.
 dt + vx -> unknown unsupported-expression: dt + vx: arithmetic on these types is not modelled yet.
@@ -771,6 +891,8 @@ tm3 + m -> unknown unsupported-expression: tm3 + m: arithmetic on these types is
 tm3 + sm -> unknown unsupported-expression: tm3 + sm: arithmetic on these types is not modelled yet.
 tm3 + f -> unknown unsupported-expression: tm3 + f: arithmetic on these types is not modelled yet.
 tm3 + r -> unknown unsupported-expression: tm3 + r: arithmetic on these types is not modelled yet.
+tm3 + f24 -> unknown unsupported-expression: tm3 + f24: arithmetic on these types is not modelled yet.
+tm3 + f25 -> unknown unsupported-expression: tm3 + f25: arithmetic on these types is not modelled yet.
 tm3 + c3 -> unknown unsupported-expression: tm3 + c3: arithmetic on these types is not modelled yet.
 tm3 + v10 -> unknown unsupported-expression: tm3 + v10: arithmetic on these types is not modelled yet.
 tm3 + vx -> unknown unsupported-expression: tm3 + vx: arithmetic on these types is not modelled yet.
@@ -809,6 +931,8 @@ dtm + m -> datetime datetime/local null:arithmetic-overflow
 dtm + sm -> datetime datetime/local null:arithmetic-overflow
 dtm + f -> datetime datetime/local null:arithmetic-overflow
 dtm + r -> datetime datetime/local null:arithmetic-overflow
+dtm + f24 -> datetime datetime/local null:arithmetic-overflow
+dtm + f25 -> datetime datetime/local null:arithmetic-overflow
 dtm + c3 -> unknown unsupported-expression: dtm + c3: arithmetic on these types is not modelled yet.
 dtm + v10 -> unknown unsupported-expression: dtm + v10: arithmetic on these types is not modelled yet.
 dtm + vx -> unknown unsupported-expression: dtm + vx: arithmetic on these types is not modelled yet.
@@ -847,6 +971,8 @@ dt23 + m -> unknown unsupported-expression: dt23 + m: arithmetic on these types 
 dt23 + sm -> unknown unsupported-expression: dt23 + sm: arithmetic on these types is not modelled yet.
 dt23 + f -> unknown unsupported-expression: dt23 + f: arithmetic on these types is not modelled yet.
 dt23 + r -> unknown unsupported-expression: dt23 + r: arithmetic on these types is not modelled yet.
+dt23 + f24 -> unknown unsupported-expression: dt23 + f24: arithmetic on these types is not modelled yet.
+dt23 + f25 -> unknown unsupported-expression: dt23 + f25: arithmetic on these types is not modelled yet.
 dt23 + c3 -> unknown unsupported-expression: dt23 + c3: arithmetic on these types is not modelled yet.
 dt23 + v10 -> unknown unsupported-expression: dt23 + v10: arithmetic on these types is not modelled yet.
 dt23 + vx -> unknown unsupported-expression: dt23 + vx: arithmetic on these types is not modelled yet.
@@ -885,6 +1011,8 @@ sdt + m -> smalldatetime datetime/local null:arithmetic-overflow
 sdt + sm -> smalldatetime datetime/local null:arithmetic-overflow
 sdt + f -> smalldatetime datetime/local null:arithmetic-overflow
 sdt + r -> smalldatetime datetime/local null:arithmetic-overflow
+sdt + f24 -> smalldatetime datetime/local null:arithmetic-overflow
+sdt + f25 -> smalldatetime datetime/local null:arithmetic-overflow
 sdt + c3 -> unknown unsupported-expression: sdt + c3: arithmetic on these types is not modelled yet.
 sdt + v10 -> unknown unsupported-expression: sdt + v10: arithmetic on these types is not modelled yet.
 sdt + vx -> unknown unsupported-expression: sdt + vx: arithmetic on these types is not modelled yet.
@@ -923,6 +1051,8 @@ dto3 + m -> unknown unsupported-expression: dto3 + m: arithmetic on these types 
 dto3 + sm -> unknown unsupported-expression: dto3 + sm: arithmetic on these types is not modelled yet.
 dto3 + f -> unknown unsupported-expression: dto3 + f: arithmetic on these types is not modelled yet.
 dto3 + r -> unknown unsupported-expression: dto3 + r: arithmetic on these types is not modelled yet.
+dto3 + f24 -> unknown unsupported-expression: dto3 + f24: arithmetic on these types is not modelled yet.
+dto3 + f25 -> unknown unsupported-expression: dto3 + f25: arithmetic on these types is not modelled yet.
 dto3 + c3 -> unknown unsupported-expression: dto3 + c3: arithmetic on these types is not modelled yet.
 dto3 + v10 -> unknown unsupported-expression: dto3 + v10: arithmetic on these types is not modelled yet.
 dto3 + vx -> unknown unsupported-expression: dto3 + vx: arithmetic on these types is not modelled yet.
@@ -961,6 +1091,8 @@ u + m -> unknown unsupported-expression: u + m: arithmetic on these types is not
 u + sm -> unknown unsupported-expression: u + sm: arithmetic on these types is not modelled yet.
 u + f -> unknown unsupported-expression: u + f: arithmetic on these types is not modelled yet.
 u + r -> unknown unsupported-expression: u + r: arithmetic on these types is not modelled yet.
+u + f24 -> unknown unsupported-expression: u + f24: arithmetic on these types is not modelled yet.
+u + f25 -> unknown unsupported-expression: u + f25: arithmetic on these types is not modelled yet.
 u + c3 -> unknown unsupported-expression: u + c3: arithmetic on these types is not modelled yet.
 u + v10 -> unknown unsupported-expression: u + v10: arithmetic on these types is not modelled yet.
 u + vx -> unknown unsupported-expression: u + vx: arithmetic on these types is not modelled yet.
@@ -999,6 +1131,8 @@ bin4 + m -> unknown unsupported-sql-type: The type binary(4) is not modelled yet
 bin4 + sm -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 bin4 + f -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 bin4 + r -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+bin4 + f24 -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+bin4 + f25 -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 bin4 + c3 -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 bin4 + v10 -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 bin4 + vx -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
@@ -1037,6 +1171,8 @@ vb10 + m -> unknown unsupported-sql-type: The type varbinary(10) is not modelled
 vb10 + sm -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 vb10 + f -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 vb10 + r -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+vb10 + f24 -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+vb10 + f25 -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 vb10 + c3 -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 vb10 + v10 -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 vb10 + vx -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
@@ -1075,6 +1211,8 @@ x + m -> unknown unsupported-sql-type: The type xml is not modelled yet.
 x + sm -> unknown unsupported-sql-type: The type xml is not modelled yet.
 x + f -> unknown unsupported-sql-type: The type xml is not modelled yet.
 x + r -> unknown unsupported-sql-type: The type xml is not modelled yet.
+x + f24 -> unknown unsupported-sql-type: The type xml is not modelled yet.
+x + f25 -> unknown unsupported-sql-type: The type xml is not modelled yet.
 x + c3 -> unknown unsupported-sql-type: The type xml is not modelled yet.
 x + v10 -> unknown unsupported-sql-type: The type xml is not modelled yet.
 x + vx -> unknown unsupported-sql-type: The type xml is not modelled yet.
@@ -1113,6 +1251,8 @@ sv + m -> unknown unsupported-sql-type: The type sql_variant is not modelled yet
 sv + sm -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 sv + f -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 sv + r -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+sv + f24 -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+sv + f25 -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 sv + c3 -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 sv + v10 -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 sv + vx -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -1151,6 +1291,8 @@ j + m -> unknown (no unknown recorded)
 j + sm -> unknown (no unknown recorded)
 j + f -> unknown (no unknown recorded)
 j + r -> unknown (no unknown recorded)
+j + f24 -> unknown (no unknown recorded)
+j + f25 -> unknown (no unknown recorded)
 j + c3 -> unknown (no unknown recorded)
 j + v10 -> unknown (no unknown recorded)
 j + vx -> unknown (no unknown recorded)
@@ -1189,6 +1331,8 @@ j + $1 -> unknown (no unknown recorded)
 1 + sm -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 1 + f -> float number/float null:arithmetic-overflow
 1 + r -> real number/float null:arithmetic-overflow
+1 + f24 -> real number/float null:arithmetic-overflow
+1 + f25 -> float number/float null:arithmetic-overflow
 1 + c3 -> unknown unsupported-expression: 1 + c3: arithmetic on these types is not modelled yet.
 1 + v10 -> unknown unsupported-expression: 1 + v10: arithmetic on these types is not modelled yet.
 1 + vx -> unknown unsupported-expression: 1 + vx: arithmetic on these types is not modelled yet.
@@ -1227,6 +1371,8 @@ j + $1 -> unknown (no unknown recorded)
 12345 + sm -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 12345 + f -> float number/float null:arithmetic-overflow
 12345 + r -> real number/float null:arithmetic-overflow
+12345 + f24 -> real number/float null:arithmetic-overflow
+12345 + f25 -> float number/float null:arithmetic-overflow
 12345 + c3 -> unknown unsupported-expression: 12345 + c3: arithmetic on these types is not modelled yet.
 12345 + v10 -> unknown unsupported-expression: 12345 + v10: arithmetic on these types is not modelled yet.
 12345 + vx -> unknown unsupported-expression: 12345 + vx: arithmetic on these types is not modelled yet.
@@ -1265,6 +1411,8 @@ j + $1 -> unknown (no unknown recorded)
 2.50 + sm -> numeric(11,4) number/decimal {digits=11,4 [-9999999.9999 9999999.9999]}
 2.50 + f -> float number/float null:arithmetic-overflow
 2.50 + r -> real number/float null:arithmetic-overflow
+2.50 + f24 -> real number/float null:arithmetic-overflow
+2.50 + f25 -> float number/float null:arithmetic-overflow
 2.50 + c3 -> unknown unsupported-expression: 2.50 + c3: arithmetic on these types is not modelled yet.
 2.50 + v10 -> unknown unsupported-expression: 2.50 + v10: arithmetic on these types is not modelled yet.
 2.50 + vx -> unknown unsupported-expression: 2.50 + vx: arithmetic on these types is not modelled yet.
@@ -1303,6 +1451,8 @@ j + $1 -> unknown (no unknown recorded)
 'ab' + sm -> unknown unsupported-expression: 'ab' + sm: arithmetic on these types is not modelled yet.
 'ab' + f -> unknown unsupported-expression: 'ab' + f: arithmetic on these types is not modelled yet.
 'ab' + r -> unknown unsupported-expression: 'ab' + r: arithmetic on these types is not modelled yet.
+'ab' + f24 -> unknown unsupported-expression: 'ab' + f24: arithmetic on these types is not modelled yet.
+'ab' + f25 -> unknown unsupported-expression: 'ab' + f25: arithmetic on these types is not modelled yet.
 'ab' + c3 -> varchar(5) string {length<=5}
 'ab' + v10 -> varchar(12) string {length<=12}
 'ab' + vx -> varchar(max) string
@@ -1341,6 +1491,8 @@ N'ab' + m -> unknown unsupported-expression: N'ab' + m: arithmetic on these type
 N'ab' + sm -> unknown unsupported-expression: N'ab' + sm: arithmetic on these types is not modelled yet.
 N'ab' + f -> unknown unsupported-expression: N'ab' + f: arithmetic on these types is not modelled yet.
 N'ab' + r -> unknown unsupported-expression: N'ab' + r: arithmetic on these types is not modelled yet.
+N'ab' + f24 -> unknown unsupported-expression: N'ab' + f24: arithmetic on these types is not modelled yet.
+N'ab' + f25 -> unknown unsupported-expression: N'ab' + f25: arithmetic on these types is not modelled yet.
 N'ab' + c3 -> nvarchar(5) string {length<=5}
 N'ab' + v10 -> nvarchar(12) string {length<=12}
 N'ab' + vx -> nvarchar(max) string
@@ -1379,6 +1531,8 @@ N'ab' + $1 -> unknown unsupported-expression: N'ab' + $1: arithmetic on these ty
 1e0 + sm -> float number/float null:arithmetic-overflow
 1e0 + f -> float number/float null:arithmetic-overflow
 1e0 + r -> float number/float null:arithmetic-overflow
+1e0 + f24 -> float number/float null:arithmetic-overflow
+1e0 + f25 -> float number/float null:arithmetic-overflow
 1e0 + c3 -> unknown unsupported-expression: 1e0 + c3: arithmetic on these types is not modelled yet.
 1e0 + v10 -> unknown unsupported-expression: 1e0 + v10: arithmetic on these types is not modelled yet.
 1e0 + vx -> unknown unsupported-expression: 1e0 + vx: arithmetic on these types is not modelled yet.
@@ -1417,6 +1571,8 @@ $1 + m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203
 $1 + sm -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 $1 + f -> float number/float null:arithmetic-overflow
 $1 + r -> real number/float null:arithmetic-overflow
+$1 + f24 -> real number/float null:arithmetic-overflow
+$1 + f25 -> float number/float null:arithmetic-overflow
 $1 + c3 -> unknown unsupported-expression: $1 + c3: arithmetic on these types is not modelled yet.
 $1 + v10 -> unknown unsupported-expression: $1 + v10: arithmetic on these types is not modelled yet.
 $1 + vx -> unknown unsupported-expression: $1 + vx: arithmetic on these types is not modelled yet.

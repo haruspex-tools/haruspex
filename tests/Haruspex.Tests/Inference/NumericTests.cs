@@ -15,7 +15,7 @@ public class NumericTests
             id int NOT NULL PRIMARY KEY, g int NOT NULL, i int NOT NULL, v int NULL, ti tinyint NOT NULL, si smallint NOT NULL, bi bigint NOT NULL,
             bt bit NOT NULL, d decimal(10,2) NOT NULL, d192 decimal(19,2) NOT NULL, d196 decimal(19,6) NULL, d380 decimal(38,0) NOT NULL,
             d3838 decimal(38,38) NOT NULL, d3810 decimal(38,10) NOT NULL, nd numeric(10,2) NULL, d55 decimal(5,5) NOT NULL, d42 decimal(4,2) NOT NULL,
-            m money NOT NULL, sm smallmoney NOT NULL, f float NOT NULL, r real NOT NULL);
+            m money NOT NULL, sm smallmoney NOT NULL, f float NOT NULL, r real NOT NULL, f24 float(24) NOT NULL, f25 float(25) NOT NULL);
         GO
         """;
 
@@ -37,6 +37,23 @@ public class NumericTests
         return string.Join("\n", Fields(doc).Select(f => f.Name + ": " + (f.Type is IrScalar scalar
             ? string.Join(" ", [scalar.Sql ?? "(none)", .. f.NullableBecause.Select(r => IrWireNames.Of(r.Rule))])
             : "unknown")));
+    }
+
+    // ---- float(n) -----------------------------------------------------------------------------------------------------
+
+    [Fact]
+    public void A_float_of_24_bits_or_fewer_is_real_and_of_more_is_float()
+    {
+        // A_float_of_24_bits_or_fewer_is_real_and_of_25_to_53_is_float.
+        Assert.Equal(
+            """
+            a: real arithmetic-overflow
+            b: float arithmetic-overflow
+            c: real
+            d: float
+            e: real
+            """,
+            Typed("SELECT f24 + 1 AS a, f25 + 1 AS b, CAST(i AS float(10)) AS c, CAST(i AS float(53)) AS d, COALESCE(f24, i) AS e FROM dbo.t;"));
     }
 
     // ---- decimal arithmetic -------------------------------------------------------------------------------------------

@@ -33,12 +33,19 @@ public class CatalogueSweepGridTests(SqlServerFixture server)
 
         var differences = typed
             .Select((o, i) => (o.Expression, Haruspex: o.Sql, Server: described[i]))
-            .Where(d => !string.Equals(d.Haruspex, d.Server, StringComparison.OrdinalIgnoreCase))
+            .Where(d => !SameType(d.Haruspex, d.Server))
             .Where(d => !(d.Server.StartsWith('!') && ReadsAnUnmodelledType(d.Expression)))
             .Select(d => $"{d.Expression}: haruspex {d.Haruspex}, SQL Server {d.Server}")
             .ToList();
         Assert.True(differences.Count == 0, $"{differences.Count} of {typed.Count} typed expressions differ:\n" + string.Join("\n", differences));
     }
+
+    /// <summary>
+    /// Whether haruspex's type and the server's are one: the IR writes a column's type as declared (<c>float(24)</c>), and the
+    /// server describes the type it is (<c>real</c>), so the two are compared as types, and as text only where either names none.
+    /// </summary>
+    private static bool SameType(string? haruspex, string server) =>
+        ScalarType.Parse(haruspex) is { } a && ScalarType.Parse(server) is { } b ? a == b : string.Equals(haruspex, server, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Whether an expression reads a column of a type inference doesn't model (binary, <c>xml</c>, <c>sql_variant</c>,

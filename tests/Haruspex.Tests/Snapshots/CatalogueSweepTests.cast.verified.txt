@@ -11,6 +11,8 @@ CAST(bt AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 92
 CAST(bt AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 CAST(bt AS float) -> float number/float
 CAST(bt AS real) -> real number/float
+CAST(bt AS float(24)) -> real number/float
+CAST(bt AS float(25)) -> float number/float
 CAST(bt AS char(3)) -> char(3) string {length=3}
 CAST(bt AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(bt AS varchar(max)) -> varchar(max) string
@@ -44,6 +46,8 @@ CAST(ti AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 92
 CAST(ti AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 CAST(ti AS float) -> float number/float
 CAST(ti AS real) -> real number/float
+CAST(ti AS float(24)) -> real number/float
+CAST(ti AS float(25)) -> float number/float
 CAST(ti AS char(3)) -> char(3) string {length=3}
 CAST(ti AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(ti AS varchar(max)) -> varchar(max) string
@@ -77,6 +81,8 @@ CAST(si AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 92
 CAST(si AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 CAST(si AS float) -> float number/float
 CAST(si AS real) -> real number/float
+CAST(si AS float(24)) -> real number/float
+CAST(si AS float(25)) -> float number/float
 CAST(si AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(si AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(si AS varchar(max)) -> varchar(max) string
@@ -110,6 +116,8 @@ CAST(i AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922
 CAST(i AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(i AS float) -> float number/float
 CAST(i AS real) -> real number/float
+CAST(i AS float(24)) -> real number/float
+CAST(i AS float(25)) -> float number/float
 CAST(i AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(i AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(i AS varchar(max)) -> varchar(max) string
@@ -143,6 +151,8 @@ CAST(bi AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 
 CAST(bi AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(bi AS float) -> float number/float
 CAST(bi AS real) -> real number/float
+CAST(bi AS float(24)) -> real number/float
+CAST(bi AS float(25)) -> float number/float
 CAST(bi AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(bi AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(bi AS varchar(max)) -> varchar(max) string
@@ -176,6 +186,8 @@ CAST(d52 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 9
 CAST(d52 AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 CAST(d52 AS float) -> float number/float
 CAST(d52 AS real) -> real number/float
+CAST(d52 AS float(24)) -> real number/float
+CAST(d52 AS float(25)) -> float number/float
 CAST(d52 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(d52 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(d52 AS varchar(max)) -> varchar(max) string
@@ -209,6 +221,8 @@ CAST(d380 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,
 CAST(d380 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(d380 AS float) -> float number/float
 CAST(d380 AS real) -> real number/float
+CAST(d380 AS float(24)) -> real number/float
+CAST(d380 AS float(25)) -> float number/float
 CAST(d380 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(d380 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(d380 AS varchar(max)) -> varchar(max) string
@@ -242,6 +256,8 @@ CAST(d3838 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808
 CAST(d3838 AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 CAST(d3838 AS float) -> float number/float
 CAST(d3838 AS real) -> real number/float
+CAST(d3838 AS float(24)) -> real number/float
+CAST(d3838 AS float(25)) -> float number/float
 CAST(d3838 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(d3838 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(d3838 AS varchar(max)) -> varchar(max) string
@@ -275,6 +291,8 @@ CAST(n102 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 
 CAST(n102 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(n102 AS float) -> float number/float
 CAST(n102 AS real) -> real number/float
+CAST(n102 AS float(24)) -> real number/float
+CAST(n102 AS float(25)) -> float number/float
 CAST(n102 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(n102 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(n102 AS varchar(max)) -> varchar(max) string
@@ -308,6 +326,8 @@ CAST(m AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922
 CAST(m AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(m AS float) -> float number/float
 CAST(m AS real) -> real number/float
+CAST(m AS float(24)) -> real number/float
+CAST(m AS float(25)) -> float number/float
 CAST(m AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(m AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(m AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
@@ -341,6 +361,8 @@ CAST(sm AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 92
 CAST(sm AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 CAST(sm AS float) -> float number/float
 CAST(sm AS real) -> real number/float
+CAST(sm AS float(24)) -> real number/float
+CAST(sm AS float(25)) -> float number/float
 CAST(sm AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(sm AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(sm AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
@@ -374,6 +396,8 @@ CAST(f AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [
 CAST(f AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(f AS float) -> float number/float
 CAST(f AS real) -> real number/float null:arithmetic-overflow
+CAST(f AS float(24)) -> real number/float null:arithmetic-overflow
+CAST(f AS float(25)) -> float number/float
 CAST(f AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(f AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(f AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
@@ -407,6 +431,8 @@ CAST(r AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [
 CAST(r AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(r AS float) -> float number/float
 CAST(r AS real) -> real number/float
+CAST(r AS float(24)) -> real number/float
+CAST(r AS float(25)) -> float number/float
 CAST(r AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(r AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(r AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
@@ -427,6 +453,76 @@ CAST(r AS sql_variant) -> unknown unsupported-expression: CAST(r AS sql_variant)
 CAST(r AS json) -> unknown unsupported-expression: CAST(r AS json): a conversion to this type is not modelled yet.
 CAST(r AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
 CAST(r AS nvarchar) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
+CAST(f24 AS bit) -> bit boolean null:arithmetic-overflow
+CAST(f24 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(f24 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(f24 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(f24 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(f24 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(f24 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(f24 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(f24 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(f24 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(f24 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(f24 AS float) -> float number/float
+CAST(f24 AS real) -> float(24) number/float
+CAST(f24 AS float(24)) -> float(24) number/float
+CAST(f24 AS float(25)) -> float number/float
+CAST(f24 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(f24 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(f24 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
+CAST(f24 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(f24 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(f24 AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
+CAST(f24 AS date) -> unknown unsupported-expression: CAST(f24 AS date): SQL Server refuses to convert real to date.
+CAST(f24 AS time(3)) -> unknown unsupported-expression: CAST(f24 AS time(3)): SQL Server refuses to convert real to time(3).
+CAST(f24 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(f24 AS datetime2(3)) -> unknown unsupported-expression: CAST(f24 AS datetime2(3)): SQL Server refuses to convert real to datetime2(3).
+CAST(f24 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(f24 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(f24 AS datetimeoffset(3)): SQL Server refuses to convert real to datetimeoffset(3).
+CAST(f24 AS uniqueidentifier) -> unknown unsupported-expression: CAST(f24 AS uniqueidentifier): SQL Server refuses to convert real to uniqueidentifier.
+CAST(f24 AS binary(4)) -> unknown unsupported-expression: CAST(f24 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(f24 AS varbinary(10)) -> unknown unsupported-expression: CAST(f24 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(f24 AS xml) -> unknown unsupported-expression: CAST(f24 AS xml): a conversion to this type is not modelled yet.
+CAST(f24 AS sql_variant) -> unknown unsupported-expression: CAST(f24 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(f24 AS json) -> unknown unsupported-expression: CAST(f24 AS json): a conversion to this type is not modelled yet.
+CAST(f24 AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
+CAST(f24 AS nvarchar) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
+CAST(f25 AS bit) -> bit boolean null:arithmetic-overflow
+CAST(f25 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(f25 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(f25 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(f25 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(f25 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(f25 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(f25 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(f25 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(f25 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(f25 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(f25 AS float) -> float(25) number/float
+CAST(f25 AS real) -> real number/float null:arithmetic-overflow
+CAST(f25 AS float(24)) -> real number/float null:arithmetic-overflow
+CAST(f25 AS float(25)) -> float(25) number/float
+CAST(f25 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(f25 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(f25 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
+CAST(f25 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(f25 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(f25 AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
+CAST(f25 AS date) -> unknown unsupported-expression: CAST(f25 AS date): SQL Server refuses to convert float to date.
+CAST(f25 AS time(3)) -> unknown unsupported-expression: CAST(f25 AS time(3)): SQL Server refuses to convert float to time(3).
+CAST(f25 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(f25 AS datetime2(3)) -> unknown unsupported-expression: CAST(f25 AS datetime2(3)): SQL Server refuses to convert float to datetime2(3).
+CAST(f25 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(f25 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(f25 AS datetimeoffset(3)): SQL Server refuses to convert float to datetimeoffset(3).
+CAST(f25 AS uniqueidentifier) -> unknown unsupported-expression: CAST(f25 AS uniqueidentifier): SQL Server refuses to convert float to uniqueidentifier.
+CAST(f25 AS binary(4)) -> unknown unsupported-expression: CAST(f25 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(f25 AS varbinary(10)) -> unknown unsupported-expression: CAST(f25 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(f25 AS xml) -> unknown unsupported-expression: CAST(f25 AS xml): a conversion to this type is not modelled yet.
+CAST(f25 AS sql_variant) -> unknown unsupported-expression: CAST(f25 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(f25 AS json) -> unknown unsupported-expression: CAST(f25 AS json): a conversion to this type is not modelled yet.
+CAST(f25 AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
+CAST(f25 AS nvarchar) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
 CAST(c3 AS bit) -> bit boolean null:arithmetic-overflow
 CAST(c3 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
 CAST(c3 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
@@ -440,6 +536,8 @@ CAST(c3 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 
 CAST(c3 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(c3 AS float) -> float number/float null:arithmetic-overflow
 CAST(c3 AS real) -> real number/float null:arithmetic-overflow
+CAST(c3 AS float(24)) -> real number/float null:arithmetic-overflow
+CAST(c3 AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(c3 AS char(3)) -> char(3) string {length=3}
 CAST(c3 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(c3 AS varchar(max)) -> varchar(max) string
@@ -473,6 +571,8 @@ CAST(v10 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4
 CAST(v10 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(v10 AS float) -> float number/float null:arithmetic-overflow
 CAST(v10 AS real) -> real number/float null:arithmetic-overflow
+CAST(v10 AS float(24)) -> real number/float null:arithmetic-overflow
+CAST(v10 AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(v10 AS char(3)) -> char(3) string {length=3}
 CAST(v10 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(v10 AS varchar(max)) -> varchar(max) string
@@ -506,6 +606,8 @@ CAST(vx AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 
 CAST(vx AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(vx AS float) -> float number/float null:arithmetic-overflow
 CAST(vx AS real) -> real number/float null:arithmetic-overflow
+CAST(vx AS float(24)) -> real number/float null:arithmetic-overflow
+CAST(vx AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(vx AS char(3)) -> char(3) string {length=3}
 CAST(vx AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(vx AS varchar(max)) -> varchar(max) string
@@ -539,6 +641,8 @@ CAST(nc3 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4
 CAST(nc3 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(nc3 AS float) -> float number/float null:arithmetic-overflow
 CAST(nc3 AS real) -> real number/float null:arithmetic-overflow
+CAST(nc3 AS float(24)) -> real number/float null:arithmetic-overflow
+CAST(nc3 AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(nc3 AS char(3)) -> char(3) string {length=3}
 CAST(nc3 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(nc3 AS varchar(max)) -> varchar(max) string
@@ -572,6 +676,8 @@ CAST(nv10 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,
 CAST(nv10 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(nv10 AS float) -> float number/float null:arithmetic-overflow
 CAST(nv10 AS real) -> real number/float null:arithmetic-overflow
+CAST(nv10 AS float(24)) -> real number/float null:arithmetic-overflow
+CAST(nv10 AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(nv10 AS char(3)) -> char(3) string {length=3}
 CAST(nv10 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(nv10 AS varchar(max)) -> varchar(max) string
@@ -605,6 +711,8 @@ CAST(nvx AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4
 CAST(nvx AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(nvx AS float) -> float number/float null:arithmetic-overflow
 CAST(nvx AS real) -> real number/float null:arithmetic-overflow
+CAST(nvx AS float(24)) -> real number/float null:arithmetic-overflow
+CAST(nvx AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(nvx AS char(3)) -> char(3) string {length=3}
 CAST(nvx AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(nvx AS varchar(max)) -> varchar(max) string
@@ -638,6 +746,8 @@ CAST(dt AS money) -> unknown unsupported-expression: CAST(dt AS money): SQL Serv
 CAST(dt AS smallmoney) -> unknown unsupported-expression: CAST(dt AS smallmoney): SQL Server refuses to convert date to smallmoney.
 CAST(dt AS float) -> unknown unsupported-expression: CAST(dt AS float): SQL Server refuses to convert date to float.
 CAST(dt AS real) -> unknown unsupported-expression: CAST(dt AS real): SQL Server refuses to convert date to real.
+CAST(dt AS float(24)) -> unknown unsupported-expression: CAST(dt AS float(24)): SQL Server refuses to convert date to real.
+CAST(dt AS float(25)) -> unknown unsupported-expression: CAST(dt AS float(25)): SQL Server refuses to convert date to float.
 CAST(dt AS char(3)) -> char(3) string {length=3}
 CAST(dt AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(dt AS varchar(max)) -> varchar(max) string
@@ -671,6 +781,8 @@ CAST(tm3 AS money) -> unknown unsupported-expression: CAST(tm3 AS money): SQL Se
 CAST(tm3 AS smallmoney) -> unknown unsupported-expression: CAST(tm3 AS smallmoney): SQL Server refuses to convert time(3) to smallmoney.
 CAST(tm3 AS float) -> unknown unsupported-expression: CAST(tm3 AS float): SQL Server refuses to convert time(3) to float.
 CAST(tm3 AS real) -> unknown unsupported-expression: CAST(tm3 AS real): SQL Server refuses to convert time(3) to real.
+CAST(tm3 AS float(24)) -> unknown unsupported-expression: CAST(tm3 AS float(24)): SQL Server refuses to convert time(3) to real.
+CAST(tm3 AS float(25)) -> unknown unsupported-expression: CAST(tm3 AS float(25)): SQL Server refuses to convert time(3) to float.
 CAST(tm3 AS char(3)) -> char(3) string {length=3}
 CAST(tm3 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(tm3 AS varchar(max)) -> varchar(max) string
@@ -704,6 +816,8 @@ CAST(dtm AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4
 CAST(dtm AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(dtm AS float) -> float number/float null:arithmetic-overflow
 CAST(dtm AS real) -> real number/float null:arithmetic-overflow
+CAST(dtm AS float(24)) -> real number/float null:arithmetic-overflow
+CAST(dtm AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(dtm AS char(3)) -> char(3) string {length=3}
 CAST(dtm AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(dtm AS varchar(max)) -> varchar(max) string
@@ -737,6 +851,8 @@ CAST(dt23 AS money) -> unknown unsupported-expression: CAST(dt23 AS money): SQL 
 CAST(dt23 AS smallmoney) -> unknown unsupported-expression: CAST(dt23 AS smallmoney): SQL Server refuses to convert datetime2(3) to smallmoney.
 CAST(dt23 AS float) -> unknown unsupported-expression: CAST(dt23 AS float): SQL Server refuses to convert datetime2(3) to float.
 CAST(dt23 AS real) -> unknown unsupported-expression: CAST(dt23 AS real): SQL Server refuses to convert datetime2(3) to real.
+CAST(dt23 AS float(24)) -> unknown unsupported-expression: CAST(dt23 AS float(24)): SQL Server refuses to convert datetime2(3) to real.
+CAST(dt23 AS float(25)) -> unknown unsupported-expression: CAST(dt23 AS float(25)): SQL Server refuses to convert datetime2(3) to float.
 CAST(dt23 AS char(3)) -> char(3) string {length=3}
 CAST(dt23 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(dt23 AS varchar(max)) -> varchar(max) string
@@ -770,6 +886,8 @@ CAST(sdt AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4
 CAST(sdt AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(sdt AS float) -> float number/float null:arithmetic-overflow
 CAST(sdt AS real) -> real number/float null:arithmetic-overflow
+CAST(sdt AS float(24)) -> real number/float null:arithmetic-overflow
+CAST(sdt AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(sdt AS char(3)) -> char(3) string {length=3}
 CAST(sdt AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(sdt AS varchar(max)) -> varchar(max) string
@@ -803,6 +921,8 @@ CAST(dto3 AS money) -> unknown unsupported-expression: CAST(dto3 AS money): SQL 
 CAST(dto3 AS smallmoney) -> unknown unsupported-expression: CAST(dto3 AS smallmoney): SQL Server refuses to convert datetimeoffset(3) to smallmoney.
 CAST(dto3 AS float) -> unknown unsupported-expression: CAST(dto3 AS float): SQL Server refuses to convert datetimeoffset(3) to float.
 CAST(dto3 AS real) -> unknown unsupported-expression: CAST(dto3 AS real): SQL Server refuses to convert datetimeoffset(3) to real.
+CAST(dto3 AS float(24)) -> unknown unsupported-expression: CAST(dto3 AS float(24)): SQL Server refuses to convert datetimeoffset(3) to real.
+CAST(dto3 AS float(25)) -> unknown unsupported-expression: CAST(dto3 AS float(25)): SQL Server refuses to convert datetimeoffset(3) to float.
 CAST(dto3 AS char(3)) -> char(3) string {length=3}
 CAST(dto3 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(dto3 AS varchar(max)) -> varchar(max) string
@@ -836,6 +956,8 @@ CAST(u AS money) -> unknown unsupported-expression: CAST(u AS money): SQL Server
 CAST(u AS smallmoney) -> unknown unsupported-expression: CAST(u AS smallmoney): SQL Server refuses to convert uniqueidentifier to smallmoney.
 CAST(u AS float) -> unknown unsupported-expression: CAST(u AS float): SQL Server refuses to convert uniqueidentifier to float.
 CAST(u AS real) -> unknown unsupported-expression: CAST(u AS real): SQL Server refuses to convert uniqueidentifier to real.
+CAST(u AS float(24)) -> unknown unsupported-expression: CAST(u AS float(24)): SQL Server refuses to convert uniqueidentifier to real.
+CAST(u AS float(25)) -> unknown unsupported-expression: CAST(u AS float(25)): SQL Server refuses to convert uniqueidentifier to float.
 CAST(u AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(u AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(u AS varchar(max)) -> varchar(max) string
@@ -869,6 +991,8 @@ CAST(bin4 AS money) -> unknown unsupported-sql-type: The type binary(4) is not m
 CAST(bin4 AS smallmoney) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 CAST(bin4 AS float) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 CAST(bin4 AS real) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS float(24)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS float(25)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 CAST(bin4 AS char(3)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 CAST(bin4 AS varchar(10)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 CAST(bin4 AS varchar(max)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
@@ -902,6 +1026,8 @@ CAST(vb10 AS money) -> unknown unsupported-sql-type: The type varbinary(10) is n
 CAST(vb10 AS smallmoney) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 CAST(vb10 AS float) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 CAST(vb10 AS real) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS float(24)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS float(25)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 CAST(vb10 AS char(3)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 CAST(vb10 AS varchar(10)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 CAST(vb10 AS varchar(max)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
@@ -935,6 +1061,8 @@ CAST(x AS money) -> unknown unsupported-sql-type: The type xml is not modelled y
 CAST(x AS smallmoney) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 CAST(x AS float) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 CAST(x AS real) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS float(24)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS float(25)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 CAST(x AS char(3)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 CAST(x AS varchar(10)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 CAST(x AS varchar(max)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
@@ -968,6 +1096,8 @@ CAST(sv AS money) -> unknown unsupported-sql-type: The type sql_variant is not m
 CAST(sv AS smallmoney) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS float) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS real) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS float(24)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS float(25)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS char(3)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS varchar(10)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS varchar(max)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -1001,6 +1131,8 @@ CAST(j AS money) -> unknown (no unknown recorded)
 CAST(j AS smallmoney) -> unknown (no unknown recorded)
 CAST(j AS float) -> unknown (no unknown recorded)
 CAST(j AS real) -> unknown (no unknown recorded)
+CAST(j AS float(24)) -> unknown (no unknown recorded)
+CAST(j AS float(25)) -> unknown (no unknown recorded)
 CAST(j AS char(3)) -> unknown (no unknown recorded)
 CAST(j AS varchar(10)) -> unknown (no unknown recorded)
 CAST(j AS varchar(max)) -> unknown (no unknown recorded)
@@ -1034,6 +1166,8 @@ CAST(1 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922
 CAST(1 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(1 AS float) -> float number/float
 CAST(1 AS real) -> real number/float
+CAST(1 AS float(24)) -> real number/float
+CAST(1 AS float(25)) -> float number/float
 CAST(1 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(1 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(1 AS varchar(max)) -> varchar(max) string
@@ -1067,6 +1201,8 @@ CAST(12345 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808
 CAST(12345 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(12345 AS float) -> float number/float
 CAST(12345 AS real) -> real number/float
+CAST(12345 AS float(24)) -> real number/float
+CAST(12345 AS float(25)) -> float number/float
 CAST(12345 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(12345 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(12345 AS varchar(max)) -> varchar(max) string
@@ -1100,6 +1236,8 @@ CAST(2.50 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 
 CAST(2.50 AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 CAST(2.50 AS float) -> float number/float
 CAST(2.50 AS real) -> real number/float
+CAST(2.50 AS float(24)) -> real number/float
+CAST(2.50 AS float(25)) -> float number/float
 CAST(2.50 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(2.50 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(2.50 AS varchar(max)) -> varchar(max) string
@@ -1133,6 +1271,8 @@ CAST('ab' AS money) -> money number/decimal null:arithmetic-overflow {digits=19,
 CAST('ab' AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST('ab' AS float) -> float number/float null:arithmetic-overflow
 CAST('ab' AS real) -> real number/float null:arithmetic-overflow
+CAST('ab' AS float(24)) -> real number/float null:arithmetic-overflow
+CAST('ab' AS float(25)) -> float number/float null:arithmetic-overflow
 CAST('ab' AS char(3)) -> char(3) string {length=3}
 CAST('ab' AS varchar(10)) -> varchar(10) string {length<=10}
 CAST('ab' AS varchar(max)) -> varchar(max) string
@@ -1166,6 +1306,8 @@ CAST(N'ab' AS money) -> money number/decimal null:arithmetic-overflow {digits=19
 CAST(N'ab' AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(N'ab' AS float) -> float number/float null:arithmetic-overflow
 CAST(N'ab' AS real) -> real number/float null:arithmetic-overflow
+CAST(N'ab' AS float(24)) -> real number/float null:arithmetic-overflow
+CAST(N'ab' AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(N'ab' AS char(3)) -> char(3) string {length=3}
 CAST(N'ab' AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(N'ab' AS varchar(max)) -> varchar(max) string
@@ -1199,6 +1341,8 @@ CAST(1e0 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4
 CAST(1e0 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(1e0 AS float) -> float number/float
 CAST(1e0 AS real) -> real number/float null:arithmetic-overflow
+CAST(1e0 AS float(24)) -> real number/float null:arithmetic-overflow
+CAST(1e0 AS float(25)) -> float number/float
 CAST(1e0 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(1e0 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(1e0 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
@@ -1232,6 +1376,8 @@ CAST($1 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 92
 CAST($1 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST($1 AS float) -> float number/float
 CAST($1 AS real) -> real number/float
+CAST($1 AS float(24)) -> real number/float
+CAST($1 AS float(25)) -> float number/float
 CAST($1 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST($1 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST($1 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow

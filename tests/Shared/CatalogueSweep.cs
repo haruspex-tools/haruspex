@@ -20,7 +20,7 @@ internal static class CatalogueSweep
     [
         ("bt", "bit"), ("ti", "tinyint"), ("si", "smallint"), ("i", "int"), ("bi", "bigint"),
         ("d52", "decimal(5,2)"), ("d380", "decimal(38,0)"), ("d3838", "decimal(38,38)"), ("n102", "numeric(10,2)"),
-        ("m", "money"), ("sm", "smallmoney"), ("f", "float"), ("r", "real"),
+        ("m", "money"), ("sm", "smallmoney"), ("f", "float"), ("r", "real"), ("f24", "float(24)"), ("f25", "float(25)"),
         ("c3", "char(3)"), ("v10", "varchar(10)"), ("vx", "varchar(max)"), ("nc3", "nchar(3)"), ("nv10", "nvarchar(10)"), ("nvx", "nvarchar(max)"),
         ("dt", "date"), ("tm3", "time(3)"), ("dtm", "datetime"), ("dt23", "datetime2(3)"), ("sdt", "smalldatetime"), ("dto3", "datetimeoffset(3)"),
         ("u", "uniqueidentifier"),

@@ -102,6 +102,22 @@ MIN(r) -> real number/float null:empty-aggregate
 MAX(r) -> real number/float null:empty-aggregate
 STDEV(r) -> float number/float null:empty-aggregate,too-few-values
 VAR(r) -> float number/float null:empty-aggregate,too-few-values
+COUNT(f24) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(f24) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(f24) -> float number/float null:empty-aggregate,arithmetic-overflow
+AVG(f24) -> float number/float null:empty-aggregate,arithmetic-overflow
+MIN(f24) -> float(24) number/float null:empty-aggregate
+MAX(f24) -> float(24) number/float null:empty-aggregate
+STDEV(f24) -> float number/float null:empty-aggregate,too-few-values
+VAR(f24) -> float number/float null:empty-aggregate,too-few-values
+COUNT(f25) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(f25) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
+AVG(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
+MIN(f25) -> float(25) number/float null:empty-aggregate
+MAX(f25) -> float(25) number/float null:empty-aggregate
+STDEV(f25) -> float number/float null:empty-aggregate,too-few-values,arithmetic-overflow
+VAR(f25) -> float number/float null:empty-aggregate,too-few-values,arithmetic-overflow
 COUNT(c3) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(c3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(c3) -> unknown unsupported-expression: SUM(c3): SUM of a value of this type is not modelled yet.
@@ -272,6 +288,10 @@ COUNT(*) + MIN(f) -> float number/float null:count-overflow,empty-aggregate,arit
 MIN(f) + COUNT(*) -> float number/float null:empty-aggregate,count-overflow,arithmetic-overflow
 COUNT(*) + MIN(r) -> real number/float null:count-overflow,empty-aggregate,arithmetic-overflow
 MIN(r) + COUNT(*) -> real number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) + MIN(f24) -> real number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(f24) + COUNT(*) -> real number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) + MIN(f25) -> float number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(f25) + COUNT(*) -> float number/float null:empty-aggregate,count-overflow,arithmetic-overflow
 COUNT(*) + MIN(c3) -> unknown unsupported-expression: COUNT(*) + MIN(c3): arithmetic on these types is not modelled yet.
 MIN(c3) + COUNT(*) -> unknown unsupported-expression: MIN(c3) + COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) + MIN(v10) -> unknown unsupported-expression: COUNT(*) + MIN(v10): arithmetic on these types is not modelled yet.
@@ -348,6 +368,10 @@ COUNT(*) - MIN(f) -> float number/float null:count-overflow,empty-aggregate,arit
 MIN(f) - COUNT(*) -> float number/float null:empty-aggregate,count-overflow,arithmetic-overflow
 COUNT(*) - MIN(r) -> real number/float null:count-overflow,empty-aggregate,arithmetic-overflow
 MIN(r) - COUNT(*) -> real number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) - MIN(f24) -> real number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(f24) - COUNT(*) -> real number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) - MIN(f25) -> float number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(f25) - COUNT(*) -> float number/float null:empty-aggregate,count-overflow,arithmetic-overflow
 COUNT(*) - MIN(c3) -> unknown unsupported-expression: COUNT(*) - MIN(c3): arithmetic on these types is not modelled yet.
 MIN(c3) - COUNT(*) -> unknown unsupported-expression: MIN(c3) - COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) - MIN(v10) -> unknown unsupported-expression: COUNT(*) - MIN(v10): arithmetic on these types is not modelled yet.
@@ -424,6 +448,10 @@ COUNT(*) * MIN(f) -> float number/float null:count-overflow,empty-aggregate,arit
 MIN(f) * COUNT(*) -> float number/float null:empty-aggregate,count-overflow,arithmetic-overflow
 COUNT(*) * MIN(r) -> real number/float null:count-overflow,empty-aggregate,arithmetic-overflow
 MIN(r) * COUNT(*) -> real number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) * MIN(f24) -> real number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(f24) * COUNT(*) -> real number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) * MIN(f25) -> float number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(f25) * COUNT(*) -> float number/float null:empty-aggregate,count-overflow,arithmetic-overflow
 COUNT(*) * MIN(c3) -> unknown unsupported-expression: COUNT(*) * MIN(c3): arithmetic on these types is not modelled yet.
 MIN(c3) * COUNT(*) -> unknown unsupported-expression: MIN(c3) * COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) * MIN(v10) -> unknown unsupported-expression: COUNT(*) * MIN(v10): arithmetic on these types is not modelled yet.
@@ -500,6 +528,10 @@ COUNT(*) / MIN(f) -> float number/float null:count-overflow,empty-aggregate,arit
 MIN(f) / COUNT(*) -> float number/float null:empty-aggregate,count-overflow,arithmetic-overflow
 COUNT(*) / MIN(r) -> real number/float null:count-overflow,empty-aggregate,arithmetic-overflow
 MIN(r) / COUNT(*) -> real number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) / MIN(f24) -> real number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(f24) / COUNT(*) -> real number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) / MIN(f25) -> float number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(f25) / COUNT(*) -> float number/float null:empty-aggregate,count-overflow,arithmetic-overflow
 COUNT(*) / MIN(c3) -> unknown unsupported-expression: COUNT(*) / MIN(c3): arithmetic on these types is not modelled yet.
 MIN(c3) / COUNT(*) -> unknown unsupported-expression: MIN(c3) / COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) / MIN(v10) -> unknown unsupported-expression: COUNT(*) / MIN(v10): arithmetic on these types is not modelled yet.
@@ -576,6 +608,10 @@ COUNT(*) % MIN(f) -> unknown unsupported-expression: COUNT(*) % MIN(f): arithmet
 MIN(f) % COUNT(*) -> unknown unsupported-expression: MIN(f) % COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) % MIN(r) -> unknown unsupported-expression: COUNT(*) % MIN(r): arithmetic on these types is not modelled yet.
 MIN(r) % COUNT(*) -> unknown unsupported-expression: MIN(r) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(f24) -> unknown unsupported-expression: COUNT(*) % MIN(f24): arithmetic on these types is not modelled yet.
+MIN(f24) % COUNT(*) -> unknown unsupported-expression: MIN(f24) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(f25) -> unknown unsupported-expression: COUNT(*) % MIN(f25): arithmetic on these types is not modelled yet.
+MIN(f25) % COUNT(*) -> unknown unsupported-expression: MIN(f25) % COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) % MIN(c3) -> unknown unsupported-expression: COUNT(*) % MIN(c3): arithmetic on these types is not modelled yet.
 MIN(c3) % COUNT(*) -> unknown unsupported-expression: MIN(c3) % COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) % MIN(v10) -> unknown unsupported-expression: COUNT(*) % MIN(v10): arithmetic on these types is not modelled yet.
@@ -652,6 +688,10 @@ COUNT_BIG(*) + MIN(f) -> float number/float null:empty-aggregate,arithmetic-over
 MIN(f) + COUNT_BIG(*) -> float number/float null:empty-aggregate,arithmetic-overflow
 COUNT_BIG(*) + MIN(r) -> real number/float null:empty-aggregate,arithmetic-overflow
 MIN(r) + COUNT_BIG(*) -> real number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) + MIN(f24) -> real number/float null:empty-aggregate,arithmetic-overflow
+MIN(f24) + COUNT_BIG(*) -> real number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) + MIN(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
+MIN(f25) + COUNT_BIG(*) -> float number/float null:empty-aggregate,arithmetic-overflow
 COUNT_BIG(*) + MIN(c3) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(c3): arithmetic on these types is not modelled yet.
 MIN(c3) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(c3) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) + MIN(v10) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(v10): arithmetic on these types is not modelled yet.
@@ -728,6 +768,10 @@ COUNT_BIG(*) - MIN(f) -> float number/float null:empty-aggregate,arithmetic-over
 MIN(f) - COUNT_BIG(*) -> float number/float null:empty-aggregate,arithmetic-overflow
 COUNT_BIG(*) - MIN(r) -> real number/float null:empty-aggregate,arithmetic-overflow
 MIN(r) - COUNT_BIG(*) -> real number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) - MIN(f24) -> real number/float null:empty-aggregate,arithmetic-overflow
+MIN(f24) - COUNT_BIG(*) -> real number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) - MIN(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
+MIN(f25) - COUNT_BIG(*) -> float number/float null:empty-aggregate,arithmetic-overflow
 COUNT_BIG(*) - MIN(c3) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(c3): arithmetic on these types is not modelled yet.
 MIN(c3) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(c3) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) - MIN(v10) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(v10): arithmetic on these types is not modelled yet.
@@ -804,6 +848,10 @@ COUNT_BIG(*) * MIN(f) -> float number/float null:empty-aggregate,arithmetic-over
 MIN(f) * COUNT_BIG(*) -> float number/float null:empty-aggregate,arithmetic-overflow
 COUNT_BIG(*) * MIN(r) -> real number/float null:empty-aggregate,arithmetic-overflow
 MIN(r) * COUNT_BIG(*) -> real number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) * MIN(f24) -> real number/float null:empty-aggregate,arithmetic-overflow
+MIN(f24) * COUNT_BIG(*) -> real number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) * MIN(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
+MIN(f25) * COUNT_BIG(*) -> float number/float null:empty-aggregate,arithmetic-overflow
 COUNT_BIG(*) * MIN(c3) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(c3): arithmetic on these types is not modelled yet.
 MIN(c3) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(c3) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) * MIN(v10) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(v10): arithmetic on these types is not modelled yet.
@@ -880,6 +928,10 @@ COUNT_BIG(*) / MIN(f) -> float number/float null:empty-aggregate,arithmetic-over
 MIN(f) / COUNT_BIG(*) -> float number/float null:empty-aggregate,arithmetic-overflow
 COUNT_BIG(*) / MIN(r) -> real number/float null:empty-aggregate,arithmetic-overflow
 MIN(r) / COUNT_BIG(*) -> real number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) / MIN(f24) -> real number/float null:empty-aggregate,arithmetic-overflow
+MIN(f24) / COUNT_BIG(*) -> real number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) / MIN(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
+MIN(f25) / COUNT_BIG(*) -> float number/float null:empty-aggregate,arithmetic-overflow
 COUNT_BIG(*) / MIN(c3) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(c3): arithmetic on these types is not modelled yet.
 MIN(c3) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(c3) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) / MIN(v10) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(v10): arithmetic on these types is not modelled yet.
@@ -956,6 +1008,10 @@ COUNT_BIG(*) % MIN(f) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(f): 
 MIN(f) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(f) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) % MIN(r) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(r): arithmetic on these types is not modelled yet.
 MIN(r) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(r) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(f24) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(f24): arithmetic on these types is not modelled yet.
+MIN(f24) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(f24) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(f25) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(f25): arithmetic on these types is not modelled yet.
+MIN(f25) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(f25) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) % MIN(c3) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(c3): arithmetic on these types is not modelled yet.
 MIN(c3) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(c3) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) % MIN(v10) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(v10): arithmetic on these types is not modelled yet.

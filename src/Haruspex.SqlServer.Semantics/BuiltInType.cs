@@ -90,8 +90,11 @@ public sealed class BuiltInType
     /// <summary><c>smallmoney</c>.</summary>
     public static readonly BuiltInType SmallMoney = new("smallmoney", TypeFamily.Money, 14, digits: (10, 4), least: int.MinValue, greatest: int.MaxValue, scaleOfRange: 4);
 
-    /// <summary><c>float</c>, 53 bits of mantissa; no range is claimed of an approximate number.</summary>
-    public static readonly BuiltInType Float = new("float", TypeFamily.Approximate, 10);
+    /// <summary>
+    /// <c>float</c>, 53 bits of mantissa; declared with 24 or fewer, <c>float(n)</c> is <c>real</c>. No range is claimed of an
+    /// approximate number.
+    /// </summary>
+    public static readonly BuiltInType Float = new("float", TypeFamily.Approximate, 10, TypeArgumentKind.MantissaBits);
 
     /// <summary><c>real</c>, 24 bits of mantissa.</summary>
     public static readonly BuiltInType Real = new("real", TypeFamily.Approximate, 11);
@@ -229,6 +232,12 @@ public sealed class BuiltInType
 
     /// <summary>The longest a <c>char</c>, <c>varchar</c>, <c>binary</c> or <c>varbinary</c> can be without max, in bytes.</summary>
     public static int MostBytes => 8000;
+
+    /// <summary>The most bits of a mantissa that make a <c>float(n)</c> a <c>real</c>: 24, of 53 at most.</summary>
+    public static int RealMantissaBits => 24;
+
+    /// <summary>The most bits of a mantissa a <c>float(n)</c> may have: 53.</summary>
+    public static int FloatMantissaBits => 53;
 
     /// <summary>The precision and scale of <c>decimal</c> or <c>numeric</c> declared without them: (18, 0).</summary>
     public static (int Precision, int Scale) DigitsDeclared => (18, 0);
