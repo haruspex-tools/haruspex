@@ -303,7 +303,6 @@ public sealed class Binder(DatabaseModel model, string file)
         NamedObjectKind.View => "view",
         NamedObjectKind.Synonym => "synonym",
         NamedObjectKind.Function => "function",
-        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown kind."),
     };
 
     /// <summary>

@@ -67,13 +67,15 @@ Two more follow from how the equality is used:
   property a *congruence* for those steps. It is the law that decides which facts an equality must compare: all of them
   that some later step reads.
 
-Where two representations mean the same thing, the last law has a corollary: choose one, a *canonical form*, so that
-equal meanings are equal representations. In haruspex, facets with nothing in them are stored as no facets
-(`IrScalar.Facets`), and an array whose items are never null has an empty list of reasons, never a missing one
-(`ArrayShape`).
+Where two representations mean the same thing, the last law suggests choosing one, a *canonical form*, so that equal
+meanings are equal representations. Facets with nothing in them are stored as no facets (`IrScalar.Facets`), and an array
+whose items are never null has an empty list of reasons, never a missing one (`ArrayShape`). Not every case is
+canonical: a value set keeps its items in the order they were found, so two sets of the same items in another order are
+different records. An equality stricter than meaning is safe, by the table above: it costs a pass or a cache entry.
 
-`ValueEqualityTests` checks all five laws over a sample of values and shapes generated from fixed seeds, and that a value
-differing in any one fact, however deeply nested, is not equal.
+`ValueEqualityTests` checks the first four laws over a sample of values and shapes generated from fixed seeds. For the
+fifth it checks the condition it rests on, that a value differing in any one fact, however deeply nested, is not equal:
+a congruence for every later step can only be argued step by step, and the steps are the next part of this chapter.
 
 ### Records compare by value, except their lists
 
@@ -97,7 +99,9 @@ and missing.
 
 The states that are classes rather than records (`FlowState`, `ResultTrack`) and the record that holds a dictionary
 (`CallContext`) compare their parts the same way, their maps entry by entry (`ImmutableMaps`). Their keys are SQL names,
-which SQL Server compares ignoring case, so `#Lines` and `#lines` are one key.
+which SQL Server compares ignoring case, so `#Lines` and `#lines` are one key. A few collections still compare by
+reference because nothing compares them: a document's map of named types, and the inference's private working records
+([decision 0022](../decisions/0022-values-compare-by-structure.md) lists them).
 
 ### Why comparing rendered text was a trap
 

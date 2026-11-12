@@ -35,7 +35,7 @@ internal sealed class ViewSummaries
     /// <param name="uncommitted">Whether it is read uncommitted (Cardinality.cs), so that no key of what it reads holds.</param>
     public LocalRelationValues Function(UserFunction function, IReadOnlyDictionary<string, Value> arguments, bool uncommitted)
     {
-        var key = new Reading(function.Name, uncommitted, [.. arguments.OrderBy(a => a.Key, StringComparer.OrdinalIgnoreCase)]);
+        var key = new Reading(function.Name, uncommitted, [.. arguments.OrderBy(a => a.Key, StringComparer.OrdinalIgnoreCase).Select(a => new Argument(a.Key, a.Value))]);
         if (calls.TryGetValue(key, out var found))
             return found;
         if (!reading.Add(function.Name))
@@ -99,5 +99,8 @@ internal sealed class ViewSummaries
     /// One reading of a table-valued function: the function, whether it is read uncommitted, and each argument's value by
     /// parameter name, in name order. Two calls with equal arguments, compared by value, read the same rows.
     /// </summary>
-    private sealed record Reading(ObjectName Function, bool Uncommitted, EquatableArray<KeyValuePair<string, Value>> Arguments);
+    private sealed record Reading(ObjectName Function, bool Uncommitted, EquatableArray<Argument> Arguments);
+
+    /// <summary>One argument of a reading: the parameter's name and the value passed, compared and hashed by both.</summary>
+    private sealed record Argument(string Parameter, Value Value);
 }

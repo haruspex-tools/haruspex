@@ -24,6 +24,23 @@ public class EquatableArrayTests
     }
 
     [Fact]
+    public void Every_item_counts_in_the_hash_first_middle_and_last()
+    {
+        // A hash that left an item out would still be lawful (equal sequences would hash equal), but every sequence differing
+        // only there would share a bucket. HashCode is seeded per process, so two different sequences may hash alike by
+        // chance, about once in 2^32 runs.
+        var other = new IrNullReason(IrNullRule.NoRows, "a.sql:9:1");
+        EquatableArray<IrNullReason> three = [Column, Join, Column];
+        EquatableArray<IrNullReason> first = [other, Join, Column];
+        EquatableArray<IrNullReason> middle = [Column, other, Column];
+        EquatableArray<IrNullReason> last = [Column, Join, other];
+
+        Assert.NotEqual(three.GetHashCode(), first.GetHashCode());
+        Assert.NotEqual(three.GetHashCode(), middle.GetHashCode());
+        Assert.NotEqual(three.GetHashCode(), last.GetHashCode());
+    }
+
+    [Fact]
     public void Order_and_length_matter()
     {
         EquatableArray<IrNullReason> both = [Column, Join];

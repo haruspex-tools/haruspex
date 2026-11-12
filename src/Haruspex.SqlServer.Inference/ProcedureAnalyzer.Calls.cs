@@ -307,6 +307,5 @@ internal sealed partial class ProcedureAnalyzer
         UnknowableCallKind.SystemProcedure => IrUnknownReason.SystemProcedure,
         UnknowableCallKind.MissingProcedure => IrUnknownReason.MissingProcedure,
         UnknowableCallKind.AmbiguousProcedure => IrUnknownReason.AmbiguousProcedure,
-        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown kind of call."),
     };
 }

@@ -3,9 +3,17 @@
 **Date:** 12 Nov 2026
 
 **Decision.** Two abstract values, shapes, IR types or states are the same exactly when their records are equal, field by
-field, lists item by item (`EquatableArray`) and maps entry by entry. Every fixed point, cache and merge in the inference
-uses that equality; none compares values by writing them out as text. Where two representations mean the same thing, one
-is chosen, so that equal meanings are equal records.
+field, lists item by item (`EquatableArray`), and the maps of a state or a call context (`FlowState`, `CallContext`)
+entry by entry. Every fixed point, cache and merge in the inference uses that equality; none compares values by writing
+them out as text. Where two representations of "nothing known" mean the same, one is chosen: empty facets are stored as
+none, and an array whose items are never null has an empty list of reasons.
+
+**Exceptions, each compared by nothing.** A document's and a declaration's map of named types (`IrDocument.Types`,
+`DeclaredResults.Types`), the set of declarations a walk used (`Walked.Declared`) and the inference's private working
+records, which hold syntax or live within one statement (`Row`, `SetNode`, `JsonPath`, `CombinedType`), keep .NET's
+collections and so compare by reference. Nothing compares them; whatever first does must give them value equality. A value
+set's items and sources keep the order they were found in, so two sets with the same items in another order are different
+records: equality is stricter than meaning there, which costs a pass or a cache entry, never a wrong claim.
 
 **Context.** Records' generated equality compares lists by reference, so the inference compared values by writing them as
 text instead, through the IR's writer and a writer of its own. The text was written for a reader and left out facts a

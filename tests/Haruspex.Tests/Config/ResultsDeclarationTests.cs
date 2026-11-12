@@ -316,6 +316,17 @@ public class ResultsDeclarationTests
     }
 
     [Fact]
+    public void A_declaration_of_another_type_names_both_types_as_the_ir_does()
+    {
+        // The kind and format are written by their names in the IR's JSON (int32), never as the enum's members (Int32).
+        var run = Apply("""
+            { "procedures": { "rpt.list_items": { "results": { "rowset": { "type": "object", "properties": { "item_id": { "type": "string" }, "label": { "type": ["string", "null"] } } } }, "why": "x" } } }
+            """, "rpt.list_items");
+
+        Assert.Contains(run.Problems, p => p.Contains("results[0][].item_id: the inference says a number (int32), the declaration a string.", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void A_declaration_of_a_procedure_not_selected_is_still_checked_against_the_inference()
     {
         var run = Apply("""

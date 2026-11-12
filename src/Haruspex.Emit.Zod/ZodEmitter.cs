@@ -462,10 +462,10 @@ public static class ZodEmitter
                     IrFormat.Local => ("z.iso.datetime({ local: true })", null),
                     IrFormat.Offset => ("z.iso.datetime({ offset: true })", null),
                     // Without a format the offset is not known, so no format is claimed.
-                    _ => ("z.string()", null),
+                    null => ("z.string()", null),
+                    _ => throw new ArgumentOutOfRangeException(nameof(scalar), scalar.Format, "A date and time's format is local or offset."),
                 },
                 IrScalarKind.Number => Facets.Number(scalar, json),
-                _ => throw new ArgumentOutOfRangeException(nameof(scalar), scalar.Kind, "Unknown scalar kind."),
             };
         }
 

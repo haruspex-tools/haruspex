@@ -164,7 +164,8 @@ internal static class Facets
     {
         IrFormat.Uint8 => (byte.MinValue, byte.MaxValue),
         IrFormat.Int16 => (short.MinValue, short.MaxValue),
-        _ => (int.MinValue, int.MaxValue),
+        IrFormat.Int32 => (int.MinValue, int.MaxValue),
+        _ => throw new ArgumentOutOfRangeException(nameof(format), format, "Only a format of 32 bits or fewer has a range here."),
     };
 
     /// <param name="scale">The type's scale, for turning an exclusive bound into an inclusive one; null when unknown.</param>

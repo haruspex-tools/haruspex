@@ -454,7 +454,6 @@ internal sealed partial class ProcedureAnalyzer
             BindingProblemKind.UnresolvedTable => IrUnknownReason.UnresolvedTable,
             BindingProblemKind.UnresolvedColumn => IrUnknownReason.UnresolvedColumn,
             BindingProblemKind.UnsupportedReference => IrUnknownReason.UnsupportedExpression,
-            _ => throw new ArgumentOutOfRangeException(nameof(problem), problem.Kind, "Unknown binding problem."),
         },
         problem.Detail,
         problem.At);
