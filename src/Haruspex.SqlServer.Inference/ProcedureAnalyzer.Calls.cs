@@ -288,7 +288,7 @@ internal sealed partial class ProcedureAnalyzer
 
         // Assign keeps the variable's declared type, which the value is converted to; only why it may be null is taken.
         Value Nulls(string name, EquatableArray<IrNullReason> because) =>
-            new(variableShapes.TryGetValue(name, out var shape) ? shape : new NeverShape(at), because);
+            Value.Computed(variableShapes.TryGetValue(name, out var shape) ? shape : new NeverShape(at), because);
     }
 
     /// <summary>The result sets a declaration gives, as one path returning each in turn, from the call at <paramref name="at"/>.</summary>

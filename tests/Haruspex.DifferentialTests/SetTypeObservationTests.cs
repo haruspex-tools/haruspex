@@ -163,6 +163,16 @@ public class SetTypeObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task An_aggregate_counts_its_types_digits_beside_a_decimal()
+    {
+        // COUNT is an int the server computes, never a constant: numeric(4,1) divided by it has the scale 1 + 10 + 1, as by an
+        // int column, alone and through a derived table; COUNT_BIG counts bigint's 19.
+        Assert.Equal("numeric(15,12)", await Describe($"SELECT 100.0 / COUNT(*) AS x FROM {Source}"));
+        Assert.Equal("numeric(15,12)", await Describe($"SELECT 100.0 / s.n AS x FROM (SELECT COUNT(*) AS n FROM {Source}) AS s"));
+        Assert.Equal("numeric(24,21)", await Describe($"SELECT 100.0 / COUNT_BIG(*) AS x FROM {Source}"));
+    }
+
+    [Fact]
     public async Task A_values_lists_int_column_is_a_constant_in_one_row_only()
     {
         // A VALUES list of one row is folded to its literal, as a derived table's literal column is; of several rows it is

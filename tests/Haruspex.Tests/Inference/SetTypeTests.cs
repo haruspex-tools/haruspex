@@ -124,6 +124,93 @@ public class SetTypeTests
         Assert.StartsWith("unknown: ", Typed(Procedure("SELECT s.frac + IIF(s.id > 0, 1, 2) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Every int haruspex models that the server computes rather than folds, read beside a decimal where its digits change the
+    /// type: as it is, and through a derived table. Each counts its type's 10 digits, so each is typed: one whose rule forgot to
+    /// say so would carry unknown digits (the top) and be unknown. A guard over every such rule, rather than over the fixtures.
+    /// </summary>
+    [Theory]
+    [InlineData("s.qty")]
+    [InlineData("s.qty + 1")]
+    [InlineData("-s.qty")]
+    [InlineData("ABS(s.qty)")]
+    [InlineData("SIGN(s.qty)")]
+    [InlineData("CAST(s.tiny AS int)")]
+    [InlineData("CONVERT(int, s.big)")]
+    [InlineData("TRY_CAST(s.code AS int)")]
+    [InlineData("ISNULL(s.qty, 0)")]
+    [InlineData("COALESCE(s.qty, s.id)")]
+    [InlineData("NULLIF(s.qty, 3)")]
+    [InlineData("IIF(s.flag = 1, s.qty, s.id)")]
+    [InlineData("CASE WHEN s.flag = 1 THEN s.qty ELSE s.id END")]
+    [InlineData("CHOOSE(s.tiny, s.qty, s.id)")]
+    [InlineData("LEN(s.code)")]
+    [InlineData("DATALENGTH(s.code)")]
+    [InlineData("DATEDIFF(day, s.sold, s.stamp)")]
+    [InlineData("DATEPART(year, s.sold)")]
+    [InlineData("YEAR(s.sold)")]
+    [InlineData("DAY(s.sold)")]
+    [InlineData("ROW_NUMBER() OVER (ORDER BY s.id)")]
+    [InlineData("RANK() OVER (ORDER BY s.id)")]
+    [InlineData("DENSE_RANK() OVER (ORDER BY s.id)")]
+    [InlineData("NTILE(2) OVER (ORDER BY s.id)")]
+    [InlineData("LAG(s.qty) OVER (ORDER BY s.id)")]
+    [InlineData("FIRST_VALUE(s.qty) OVER (ORDER BY s.id)")]
+    [InlineData("COUNT(*) OVER ()")]
+    [InlineData("SUM(s.qty) OVER ()")]
+    [InlineData("(SELECT COUNT(*) FROM dbo.sale)")]
+    [InlineData("(SELECT MAX(t.qty) FROM dbo.sale AS t)")]
+    public void Every_int_the_server_computes_counts_its_types_digits_beside_a_decimal(string expression)
+    {
+        // An_int_constant_counts_its_own_digits_beside_a_decimal: decimal(9,2) divided by an int, whose scale is 2 + its digits + 1.
+        Assert.StartsWith("decimal(", Typed(Procedure($"SELECT s.price / ({expression}) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
+        Assert.StartsWith("decimal(", Typed(Procedure($"SELECT x.price / x.n AS v FROM (SELECT s.price, {expression} AS n FROM dbo.sale AS s) AS x;")), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Counts_divided_into_a_decimal_through_apply_and_a_derived_table_are_typed()
+    {
+        // An_aggregate_counts_its_types_digits_beside_a_decimal: a net score from counts applied per unit, and a percentage
+        // from counts in a derived table.
+        const string tables = """
+            CREATE TABLE dbo.unit (id int NOT NULL PRIMARY KEY);
+            CREATE TABLE dbo.response (id int NOT NULL PRIMARY KEY, unit_id int NOT NULL, kind tinyint NOT NULL, grade tinyint NOT NULL);
+            CREATE TABLE dbo.deal (id int NOT NULL PRIMARY KEY, is_order int NOT NULL);
+            GO
+            """;
+        static string Score(string body) => Typed(InferProcedure.Infer("dbo.p", ("tables.sql", tables), ("p.sql", $"CREATE PROCEDURE dbo.p AS\n{body}")), "score");
+
+        Assert.StartsWith("int ", Score("""
+            SELECT CONVERT(int, ROUND(100.0 * (a.promoters - a.detractors) / a.responses, 0)) AS score
+            FROM dbo.unit AS u
+            CROSS APPLY (SELECT COUNT(CASE WHEN r.kind = 1 THEN 1 END) AS responses,
+                                COUNT(CASE WHEN r.kind = 1 AND r.grade = 2 THEN 1 END) AS promoters,
+                                COUNT(CASE WHEN r.kind = 1 AND r.grade = 0 THEN 1 END) AS detractors
+                         FROM dbo.response AS r WHERE r.unit_id = u.id) AS a;
+            """), StringComparison.Ordinal);
+        Assert.StartsWith("decimal(5,1)", Score("""
+            SELECT CONVERT(decimal(5,1), COALESCE(100.0 * s.became / NULLIF(s.opened, 0), 0)) AS score
+            FROM (SELECT COUNT(*) AS opened, SUM(d.is_order) AS became FROM dbo.deal AS d) AS s;
+            """), StringComparison.Ordinal);
+    }
+
+    /// <summary>The same for the aggregates, which group: beside the decimal's MAX, alone, through a derived table and applied.</summary>
+    [Theory]
+    [InlineData("COUNT(*)")]
+    [InlineData("COUNT(s.code)")]
+    [InlineData("COUNT_BIG(*)")]
+    [InlineData("SUM(s.qty)")]
+    [InlineData("MIN(s.qty)")]
+    [InlineData("MAX(s.qty)")]
+    [InlineData("AVG(s.qty)")]
+    [InlineData("COUNT(DISTINCT s.qty)")]
+    public void Every_aggregate_counts_its_types_digits_beside_a_decimal(string aggregate)
+    {
+        Assert.StartsWith("decimal(", Typed(Procedure($"SELECT MAX(s.price) / {aggregate} AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
+        Assert.StartsWith("decimal(", Typed(Procedure($"SELECT x.price / x.n AS v FROM (SELECT MAX(s.price) AS price, {aggregate} AS n FROM dbo.sale AS s) AS x;")), StringComparison.Ordinal);
+        Assert.StartsWith("decimal(", Typed(Procedure($"SELECT s.price / a.n AS v FROM dbo.sale AS s CROSS APPLY (SELECT {aggregate.Replace("s.", "t.", StringComparison.Ordinal)} AS n FROM dbo.sale AS t WHERE t.id = s.id) AS a;")), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void A_recursive_ctes_column_counts_its_types_digits_even_when_every_member_is_one_literal()
     {
