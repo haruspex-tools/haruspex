@@ -157,7 +157,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
             Walked walked = null!;
             var iteration = FixedPoint.Iterate(
                 new Assumption(null, context),
-                (assumption, _) =>
+                assumption =>
                 {
                     if (assumption.Results is null)
                         assumed.Remove(procedure.Name);

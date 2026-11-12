@@ -19,7 +19,7 @@ public class FixedPointTests
     public void An_iteration_settles_at_the_first_pass_that_gives_back_its_state()
     {
         var passes = 0;
-        var iteration = FixedPoint.Iterate(0, (n, _) =>
+        var iteration = FixedPoint.Iterate(0, n =>
         {
             passes++;
             return Pass<int>.To(Math.Min(n + 1, 3));
@@ -39,7 +39,7 @@ public class FixedPointTests
         var start = Value.Computed(number, [first]);
         var passes = 0;
 
-        var iteration = FixedPoint.Iterate(start, (head, _) =>
+        var iteration = FixedPoint.Iterate(start, head =>
         {
             passes++;
             return Pass<Value>.To(Value.Join(head, Value.Computed(number, [second, first]), At, "@v"));
@@ -56,7 +56,7 @@ public class FixedPointTests
         var widened = new List<int>();
         var iteration = FixedPoint.Iterate(
             0,
-            (n, pass) => Pass<int>.To(n + 1),
+            n => Pass<int>.To(n + 1),
             widen: (current, next) =>
             {
                 widened.Add(next);
@@ -71,7 +71,7 @@ public class FixedPointTests
     public void An_iteration_that_never_settles_is_given_up_at_the_cap()
     {
         var passes = 0;
-        var iteration = FixedPoint.Iterate(0, (n, _) =>
+        var iteration = FixedPoint.Iterate(0, n =>
         {
             passes++;
             return Pass<int>.To(n + 1);
@@ -84,7 +84,7 @@ public class FixedPointTests
     [Fact]
     public void A_step_can_stop_the_iteration()
     {
-        var iteration = FixedPoint.Iterate(0, (n, _) => n == 2 ? Pass<int>.Stop() : Pass<int>.To(n + 1));
+        var iteration = FixedPoint.Iterate(0, n => n == 2 ? Pass<int>.Stop() : Pass<int>.To(n + 1));
 
         Assert.Equal(new Iteration<int>(IterationEnd.Stopped, 2), iteration);
     }

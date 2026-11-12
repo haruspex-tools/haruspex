@@ -137,7 +137,7 @@ internal sealed class FunctionSummaries
         {
             iteration = FixedPoint.Iterate<EquatableArray<FunctionReturn>>(
                 [.. functions.Select(Start)],
-                (results, _) =>
+                results =>
                 {
                     assumed = functions.Select((f, i) => (f.Name, Result: Abstract(f.Name, results[i]))).ToDictionary(p => p.Name, p => p.Result);
                     return Pass<EquatableArray<FunctionReturn>>.To([.. functions.Select(f => Read(f))]);

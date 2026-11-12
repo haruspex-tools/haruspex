@@ -147,7 +147,9 @@ that settle do so in a few passes, well inside it.
 itself, `SET @x = (SELECT json_query(@x) AS c FOR JSON PATH)`, which nests one level deeper at every pass. A solver may give
 a widening, which `FixedPoint.Iterate` applies from pass `FixedPoint.WidenAfter` on, so that what settles in a pass or two
 keeps its precision. The loop's widening turns only the JSON that is still changing into unknown, naming the loop, and the
-loop then settles with everything else it knows.
+loop then settles with everything else it knows. What it settles on is then a fixed point above the least one: it allows
+more than the least would, so it is still sound, but it is no longer the most precise answer the descriptions can give.
+Without a widening, the iteration's answer is the least fixed point.
 
 ### Alternatives
 

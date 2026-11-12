@@ -42,6 +42,7 @@ public class FactsTests
         var facts = Facts.None.With(filter).With(branch);
 
         Assert.Equal(Facts.Proof.OfTheValue, facts.Proved(Lines, "c:qty"));
+        Assert.Equal(Facts.Proof.OfTheValue, Facts.None.With(branch).With(filter).Proved(Lines, "c:qty"));
         Assert.True(facts.Proved("@LIMIT"));
         Assert.False(Facts.None.With(filter).Proved("@limit"));
     }

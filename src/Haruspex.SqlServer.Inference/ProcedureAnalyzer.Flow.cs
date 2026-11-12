@@ -326,7 +326,7 @@ internal sealed partial class ProcedureAnalyzer
         var body = Outcome.Ends;
         var iteration = FixedPoint.Iterate(
             state,
-            (head, _) =>
+            head =>
             {
                 body = Walk([loop.Statement], head);
                 if (blocker is not null)
@@ -978,7 +978,7 @@ internal sealed partial class ProcedureAnalyzer
         LocalRelationValues? failed = null;
         var iteration = FixedPoint.Iterate(
             current.Values!,
-            (values, _) =>
+            values =>
             {
                 frame[name] = locals!.Register(name, current with { Values = values });
                 var next = values.ToList();

@@ -2,8 +2,10 @@ namespace Haruspex.SqlServer.Inference.Lattice;
 
 /// <summary>
 /// The one Kleene iteration every solver in the inference uses: a <c>WHILE</c> loop's state, a recursive CTE's columns, a
-/// recursive procedure's result sets and a component of recursive functions are each the least fixed point of a step, reached
-/// by applying the step from a start below it until a pass gives back what it started from. The guide's chapter
+/// recursive procedure's result sets and a component of recursive functions are each a fixed point of a step, reached by
+/// applying the step from a start below it until a pass gives back what it started from: the least one, when the steps are
+/// monotone and no widening applied; above the least, and still sound, when a widening did (the loop's, from
+/// <see cref="WidenAfter"/> on). The guide's chapter
 /// <c>docs/internals/06-flow-joins-and-fixed-points.md</c> explains the idea and the policy.
 /// </summary>
 /// <remarks>
@@ -37,14 +39,14 @@ internal static class FixedPoint
     /// stops it, or <see cref="MostPasses"/> passes are taken.
     /// </summary>
     /// <param name="start">Where the iteration starts: below the fixed point, so that it is the least one reached.</param>
-    /// <param name="step">One pass: the next state from the current and the pass's number, or a stop.</param>
+    /// <param name="step">One pass: the next state from the current, or a stop.</param>
     /// <param name="widen">The solver's widening, applied to the current state and the next from <see cref="WidenAfter"/> on.</param>
-    public static Iteration<T> Iterate<T>(T start, Func<T, int, Pass<T>> step, Func<T, T, T>? widen = null)
+    public static Iteration<T> Iterate<T>(T start, Func<T, Pass<T>> step, Func<T, T, T>? widen = null)
     {
         var current = start;
         for (var pass = 0; pass < MostPasses; pass++)
         {
-            var taken = step(current, pass);
+            var taken = step(current);
             if (taken.Stopped)
                 return new Iteration<T>(IterationEnd.Stopped, current);
             var next = widen is not null && pass >= WidenAfter ? widen(current, taken.Next) : taken.Next;

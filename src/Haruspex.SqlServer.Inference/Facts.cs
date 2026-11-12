@@ -49,7 +49,20 @@ internal sealed class Facts
 
     /// <summary>How strongly a column, by its source and key among the source's columns, is proved non-null.</summary>
     public Proof Proved(BoundSource source, string key) =>
-        frames.Where(f => f.Values.TryGetValue(source, out var keys) && keys.Contains(key)).Select(f => f.Strength).DefaultIfEmpty(Proof.None).Max();
+        frames.Where(f => f.Values.TryGetValue(source, out var keys) && keys.Contains(key)).Select(f => f.Strength).Aggregate(Proof.None, Stronger);
+
+    /// <summary>
+    /// The stronger of two proofs, by an order written here rather than read from the enum's values: proving the value itself
+    /// says more than proving it where the row is there, which says more than nothing.
+    /// </summary>
+    private static Proof Stronger(Proof a, Proof b) => Rank(a) >= Rank(b) ? a : b;
+
+    private static int Rank(Proof proof) => proof switch
+    {
+        Proof.None => 0,
+        Proof.WhereTheRowIsThere => 1,
+        Proof.OfTheValue => 2,
+    };
 
     /// <summary>Whether a source's row is proved there, not null-extended by an outer join.</summary>
     public bool Matched(BoundSource source) => frames.Any(f => f.Rows.Contains(source));
