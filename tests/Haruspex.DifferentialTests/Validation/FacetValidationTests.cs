@@ -10,7 +10,7 @@ namespace Haruspex.DifferentialTests.Validation;
 public class FacetValidationTests
 {
     private const string JsonColumn = "JSON_F52E2B61-18A1-11d1-B105-00805F49916B";
-    private static readonly IrFactSource From = new(IrFactSources.Check, "dbo.ck");
+    private static readonly IrFactSource From = new(IrFactSourceKind.Check, "dbo.ck");
 
     private static ValidationReport Json(IrScalar scalar, string valueJson)
     {
@@ -34,7 +34,7 @@ public class FacetValidationTests
 
     private static IrScalar Text(string sql, IrFacets facets) => new(IrScalarKind.String, null, sql, facets);
 
-    private static IrScalar Number(string format, string sql, IrFacets facets) => new(IrScalarKind.Number, format, sql, facets);
+    private static IrScalar Number(IrFormat format, string sql, IrFacets facets) => new(IrScalarKind.Number, format, sql, facets);
 
     private static IrFacets Length(int n, bool isFixed, IrLengthUnit unit = IrLengthUnit.Utf16, IrByteEncoding encoding = IrByteEncoding.Unknown) =>
         new(Length: new IrLength(n, isFixed, unit, encoding, From));
@@ -131,7 +131,7 @@ public class FacetValidationTests
     [InlineData("0", false)]
     [InlineData("6", false)]
     public void Inclusive_bounds_are_checked(string value, bool keeps) =>
-        Assert.Equal(keeps, Json(Number(IrFormats.Int32, "int", Bounds("1", true, "5", true)), value).Violations.Count == 0);
+        Assert.Equal(keeps, Json(Number(IrFormat.Int32, "int", Bounds("1", true, "5", true)), value).Violations.Count == 0);
 
     [Theory]
     [InlineData("0.0001", true)]
@@ -139,7 +139,7 @@ public class FacetValidationTests
     [InlineData("0", false)]
     [InlineData("1.0000", false)]
     public void Exclusive_bounds_are_checked(string value, bool keeps) =>
-        Assert.Equal(keeps, Json(Number(IrFormats.Decimal, "decimal(9,4)", Bounds("0", false, "1", false, new IrDigits(9, 4, From))), value).Violations.Count == 0);
+        Assert.Equal(keeps, Json(Number(IrFormat.Decimal, "decimal(9,4)", Bounds("0", false, "1", false, new IrDigits(9, 4, From))), value).Violations.Count == 0);
 
     [Fact]
     public void Bounds_are_compared_exactly_not_as_doubles()
@@ -147,8 +147,8 @@ public class FacetValidationTests
         // 9223372036854775807 and 9223372036854775806 are the same double.
         var facets = Bounds("0", true, "9223372036854775806", true);
 
-        Assert.Single(Json(Number(IrFormats.Int64, "bigint", facets), "9223372036854775807").Violations);
-        Assert.Single(Row(Number(IrFormats.Int64, "bigint", facets), long.MaxValue).Violations);
+        Assert.Single(Json(Number(IrFormat.Int64, "bigint", facets), "9223372036854775807").Violations);
+        Assert.Single(Row(Number(IrFormat.Int64, "bigint", facets), long.MaxValue).Violations);
     }
 
     [Fact]
@@ -156,9 +156,9 @@ public class FacetValidationTests
     {
         var facets = Bounds("0", false, "1", false, new IrDigits(9, 4, From));
 
-        Assert.Equal(["min"], Edges(Json(Number(IrFormats.Decimal, "decimal(9,4)", facets), "0.0001")));
-        Assert.Equal(["max"], Edges(Row(Number(IrFormats.Decimal, "decimal(9,4)", facets), 0.9999m)));
-        Assert.Empty(Edges(Json(Number(IrFormats.Decimal, "decimal(9,4)", facets), "0.5")));
+        Assert.Equal(["min"], Edges(Json(Number(IrFormat.Decimal, "decimal(9,4)", facets), "0.0001")));
+        Assert.Equal(["max"], Edges(Row(Number(IrFormat.Decimal, "decimal(9,4)", facets), 0.9999m)));
+        Assert.Empty(Edges(Json(Number(IrFormat.Decimal, "decimal(9,4)", facets), "0.5")));
     }
 
     [Theory]
@@ -167,25 +167,25 @@ public class FacetValidationTests
     [InlineData("12.505", false)]
     [InlineData("1000", false)]
     public void Digits_are_checked(string value, bool keeps) =>
-        Assert.Equal(keeps, Json(Number(IrFormats.Decimal, "decimal(5,2)", new IrFacets(Digits: new IrDigits(5, 2, From))), value).Violations.Count == 0);
+        Assert.Equal(keeps, Json(Number(IrFormat.Decimal, "decimal(5,2)", new IrFacets(Digits: new IrDigits(5, 2, From))), value).Violations.Count == 0);
 
     [Fact]
     public void Digits_are_checked_on_a_wide_decimal_in_a_row() =>
-        Assert.Single(Row(Number(IrFormats.Decimal, "decimal(38,0)", new IrFacets(Digits: new IrDigits(37, 0, From))), SqlDecimal.Parse("99999999999999999999999999999999999999")).Violations);
+        Assert.Single(Row(Number(IrFormat.Decimal, "decimal(38,0)", new IrFacets(Digits: new IrDigits(37, 0, From))), SqlDecimal.Parse("99999999999999999999999999999999999999")).Violations);
 
     [Fact]
     public void An_exact_set_of_numbers_is_matched_by_value()
     {
         var facets = new IrFacets(Values: new IrValueSet([new IrValue("1.5", false), new IrValue("2", false)], IrValueMatch.Exact, [From]));
 
-        Assert.Equal(["value 1.5"], Edges(Json(Number(IrFormats.Decimal, "decimal(5,2)", facets), "1.50")));
-        Assert.Single(Json(Number(IrFormats.Decimal, "decimal(5,2)", facets), "2.5").Violations);
+        Assert.Equal(["value 1.5"], Edges(Json(Number(IrFormat.Decimal, "decimal(5,2)", facets), "1.50")));
+        Assert.Single(Json(Number(IrFormat.Decimal, "decimal(5,2)", facets), "2.5").Violations);
     }
 
     [Fact]
     public void A_violation_names_the_facet_and_the_value()
     {
-        var violation = Assert.Single(Json(Number(IrFormats.Int32, "int", Bounds("1", true, "5", true)), "7").Violations);
+        var violation = Assert.Single(Json(Number(IrFormat.Int32, "int", Bounds("1", true, "5", true)), "7").Violations);
 
         Assert.Equal("results[0][0].v", violation.Path);
         Assert.Equal("at most 5 (int; check dbo.ck)", violation.Claim);

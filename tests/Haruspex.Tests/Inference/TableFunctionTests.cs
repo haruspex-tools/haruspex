@@ -68,8 +68,8 @@ public class TableFunctionTests
         var field = Field(doc, name);
         var type = field.Type is IrScalar scalar
             ? scalar.Sql ?? "(none)"
-            : "unknown: " + string.Join("; ", doc.Unknowns.Where(u => u.Path.EndsWith("." + name, StringComparison.Ordinal)).Select(u => u.Reason));
-        return string.Join(" ", [type, .. field.NullableBecause.Select(r => r.Rule)]);
+            : "unknown: " + string.Join("; ", doc.Unknowns.Where(u => u.Path.EndsWith("." + name, StringComparison.Ordinal)).Select(u => IrWireNames.Of(u.Reason)));
+        return string.Join(" ", [type, .. field.NullableBecause.Select(r => IrWireNames.Of(r.Rule))]);
     }
 
     // ---- inline functions -------------------------------------------------------------------------------------------
@@ -136,7 +136,7 @@ public class TableFunctionTests
     {
         var doc = Procedure("SELECT JSON_QUERY(dbo.names_json()) AS names;", "");
         Assert.IsType<IrArray>(Field(doc, "names").Type is IrJsonText { Content: { } content } ? content : Field(doc, "names").Type);
-        Assert.DoesNotContain(doc.Unknowns, u => u.Reason == IrUnknownReasons.UnresolvedTable);
+        Assert.DoesNotContain(doc.Unknowns, u => u.Reason == IrUnknownReason.UnresolvedTable);
     }
 
     [Fact]

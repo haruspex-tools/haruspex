@@ -22,7 +22,7 @@ public partial class ExecTests
         Assert.Equal(["d"], Names(doc, results[3].Type));
         Assert.All(results, r => Assert.False(r.MayBeAbsent));
         Assert.False(Field(doc, "b", 1).Nullable);
-        Assert.Equal([new IrNullReason(IrNullRules.NullableColumn, "dbo.t.name")], Field(doc, "c", 2).NullableBecause);
+        Assert.Equal([new IrNullReason(IrNullRule.NullableColumn, "dbo.t.name")], Field(doc, "c", 2).NullableBecause);
         Assert.DoesNotContain(doc.Unknowns, u => u.Object == "dbo.p");
     }
 
@@ -80,7 +80,7 @@ public partial class ExecTests
         var union = Assert.IsType<IrUnion>(results[0].Type);
         Assert.Equal(["id", "name"], union.Variants.SelectMany(v => Names(doc, v)).Order(StringComparer.Ordinal));
         Assert.False(results[0].MayBeAbsent);
-        Assert.Equal(IrNullRules.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
+        Assert.Equal(IrNullRule.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public partial class ExecTests
         Assert.Equal(2, results.Count);
         Assert.Equal(["id", "name"], Assert.IsType<IrUnion>(results[0].Type).Variants.SelectMany(v => Names(doc, v)).Order(StringComparer.Ordinal));
         Assert.False(results[0].MayBeAbsent);
-        Assert.Equal(IrNullRules.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
+        Assert.Equal(IrNullRule.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public partial class ExecTests
             ("q", "CREATE PROCEDURE dbo.q AS SELECT t.id FROM dbo.t AS t;"),
             ("p", "CREATE PROCEDURE dbo.p AS DECLARE @i int = 0; WHILE @i < 3 BEGIN EXEC dbo.q; SET @i = 1; END"));
 
-        Assert.Equal(IrUnknownReasons.VaryingResults, ResultsUnknown(doc).Reason);
+        Assert.Equal(IrUnknownReason.VaryingResults, ResultsUnknown(doc).Reason);
     }
 
     [Fact]

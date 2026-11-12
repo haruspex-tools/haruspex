@@ -31,5 +31,5 @@ namespace Haruspex.SqlServer.Inference;
 internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableBecause, bool IsLiveJson = false, IntDigits? Digits = null, UnknownShape? JsonWhy = null)
 {
     public static Value Unknown(UnknownShape shape) =>
-        new(shape, [new IrNullReason(IrNullRules.Unknown, shape.At.ToString())]);
+        new(shape, [new IrNullReason(IrNullRule.Unknown, shape.At.ToString())]);
 }

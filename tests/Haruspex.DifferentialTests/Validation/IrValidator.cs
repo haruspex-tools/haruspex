@@ -36,7 +36,7 @@ public static partial class IrValidator
 
         // A result whose statement may not run (not-run) may be missing altogether, and only results after which every one
         // may be missing too have the reason, so the sets that arrive are the first ones listed (IR 0.6).
-        var fewest = claimed.TakeWhile(r => !r.AbsentBecause.Any(a => a.Rule == IrNullRules.NotRun)).Count();
+        var fewest = claimed.TakeWhile(r => !r.AbsentBecause.Any(a => a.Rule == IrNullRule.NotRun)).Count();
         if (results.Count > claimed.Count || results.Count < fewest)
         {
             var expected = fewest == claimed.Count ? $"{claimed.Count}" : $"{fewest} to {claimed.Count}";
@@ -92,7 +92,7 @@ public static partial class IrValidator
             if (set.Rows.Count == 0)
             {
                 seen.Add((path, Seen.Absent));
-                if (!result.AbsentBecause.Any(a => a.Rule == IrNullRules.NoRows))
+                if (!result.AbsentBecause.Any(a => a.Rule == IrNullRule.NoRows))
                     Violation(path, "a result that has a row whenever it runs", "(absent: no rows)");
                 return;
             }
@@ -542,7 +542,7 @@ public static partial class IrValidator
         {
             var bound = Exact.Parse(min.Value);
             if (min.Inclusive ? number.CompareTo(bound) < 0 : number.CompareTo(bound) <= 0)
-                return $"{(min.Inclusive ? "at least" : "more than")} {min.Value} ({scalar.Sql}; {min.From.Kind} {min.From.Ref})";
+                return $"{(min.Inclusive ? "at least" : "more than")} {min.Value} ({scalar.Sql}; {IrWireNames.Of(min.From.Kind)} {min.From.Ref})";
             if (min.Inclusive ? number.CompareTo(bound) == 0 : scale is { } s && number.CompareTo(bound.Step(s, 1)) == 0)
                 edge("min");
         }
@@ -551,7 +551,7 @@ public static partial class IrValidator
         {
             var bound = Exact.Parse(max.Value);
             if (max.Inclusive ? number.CompareTo(bound) > 0 : number.CompareTo(bound) >= 0)
-                return $"{(max.Inclusive ? "at most" : "less than")} {max.Value} ({scalar.Sql}; {max.From.Kind} {max.From.Ref})";
+                return $"{(max.Inclusive ? "at most" : "less than")} {max.Value} ({scalar.Sql}; {IrWireNames.Of(max.From.Kind)} {max.From.Ref})";
             if (max.Inclusive ? number.CompareTo(bound) == 0 : scale is { } s && number.CompareTo(bound.Step(s, -1)) == 0)
                 edge("max");
         }
@@ -590,18 +590,17 @@ public static partial class IrValidator
         }
     }
 
-#pragma warning disable CA1308 // Lower case to write the kind in a message, not to compare it.
-    private static string Name(IrScalar scalar) => scalar.Format is null
-        ? scalar.Kind.ToString().ToLowerInvariant()
-        : $"{scalar.Kind.ToString().ToLowerInvariant()} {scalar.Format}";
-#pragma warning restore CA1308
+    /// <summary>The scalar as the IR names it, for a message: <c>number int32</c>.</summary>
+    private static string Name(IrScalar scalar) => scalar.Format is { } format
+        ? $"{IrWireNames.Of(scalar.Kind)} {IrWireNames.Of(format)}"
+        : IrWireNames.Of(scalar.Kind);
 
-    private static (BigInteger Min, BigInteger Max)? IntegerRange(string? format) => format switch
+    private static (BigInteger Min, BigInteger Max)? IntegerRange(IrFormat? format) => format switch
     {
-        IrFormats.Uint8 => (byte.MinValue, byte.MaxValue),
-        IrFormats.Int16 => (short.MinValue, short.MaxValue),
-        IrFormats.Int32 => (int.MinValue, int.MaxValue),
-        IrFormats.Int64 => (long.MinValue, long.MaxValue),
+        IrFormat.Uint8 => (byte.MinValue, byte.MaxValue),
+        IrFormat.Int16 => (short.MinValue, short.MaxValue),
+        IrFormat.Int32 => (int.MinValue, int.MaxValue),
+        IrFormat.Int64 => (long.MinValue, long.MaxValue),
         _ => null,
     };
 
@@ -622,8 +621,8 @@ public static partial class IrValidator
         {
             IrScalarKind.Date => DateFormat().IsMatch(text) && ValidDate(text),
             IrScalarKind.Time => TimeFormat().Match(text) is { Success: true } time && ValidTime(time),
-            IrScalarKind.Datetime when scalar.Format == IrFormats.Local => LocalDatetimeFormat().Match(text) is { Success: true } local && ValidDate(local.Groups["date"].Value) && ValidTime(local),
-            IrScalarKind.Datetime when scalar.Format == IrFormats.Offset => OffsetDatetimeFormat().Match(text) is { Success: true } offset && ValidDate(offset.Groups["date"].Value) && ValidTime(offset) && ValidOffset(offset),
+            IrScalarKind.Datetime when scalar.Format == IrFormat.Local => LocalDatetimeFormat().Match(text) is { Success: true } local && ValidDate(local.Groups["date"].Value) && ValidTime(local),
+            IrScalarKind.Datetime when scalar.Format == IrFormat.Offset => OffsetDatetimeFormat().Match(text) is { Success: true } offset && ValidDate(offset.Groups["date"].Value) && ValidTime(offset) && ValidOffset(offset),
             // Without a format the IR does not say whether there is an offset.
             IrScalarKind.Datetime => LocalDatetimeFormat().IsMatch(text) || OffsetDatetimeFormat().IsMatch(text),
             IrScalarKind.Uuid => UuidFormat().IsMatch(text),
@@ -680,20 +679,20 @@ public static partial class IrValidator
                     IrScalarKind.Boolean => value is bool,
                     IrScalarKind.Number => scalar.Format switch
                     {
-                        IrFormats.Uint8 => value is byte,
-                        IrFormats.Int16 => value is short,
-                        IrFormats.Int32 => value is int,
-                        IrFormats.Int64 => value is long,
-                        IrFormats.Decimal => value is decimal or SqlDecimal,
-                        IrFormats.Float => value is double or float,
+                        IrFormat.Uint8 => value is byte,
+                        IrFormat.Int16 => value is short,
+                        IrFormat.Int32 => value is int,
+                        IrFormat.Int64 => value is long,
+                        IrFormat.Decimal => value is decimal or SqlDecimal,
+                        IrFormat.Float => value is double or float,
                         _ => value is byte or short or int or long or decimal or SqlDecimal or double or float,
                     },
                     IrScalarKind.Date => value is DateTime { TimeOfDay.Ticks: 0 },
                     IrScalarKind.Time => value is TimeSpan,
                     IrScalarKind.Datetime => scalar.Format switch
                     {
-                        IrFormats.Local => value is DateTime,
-                        IrFormats.Offset => value is DateTimeOffset,
+                        IrFormat.Local => value is DateTime,
+                        IrFormat.Offset => value is DateTimeOffset,
                         _ => value is DateTime or DateTimeOffset,
                     },
                     IrScalarKind.Uuid => value is Guid,

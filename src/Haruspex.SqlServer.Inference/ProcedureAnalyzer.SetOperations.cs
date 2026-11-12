@@ -85,7 +85,7 @@ internal sealed partial class ProcedureAnalyzer
         if (rows.Any(r => r.Columns.Count != count))
         {
             // SQL Server refuses it (205), so the procedure is never created; nothing to describe.
-            var refused = Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, "The queries of this set operation list different numbers of columns, which SQL Server refuses.", at));
+            var refused = Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "The queries of this set operation list different numbers of columns, which SQL Server refuses.", at));
             return new Row([.. rows[0].Columns.Select(c => c with { Value = refused, Origin = null })], null);
         }
 
@@ -153,20 +153,20 @@ internal sealed partial class ProcedureAnalyzer
         static bool IsNull(RowColumn c) => c.Expression is { } e && Strip(e) is NullLiteral;
         var given = columns.Where(c => !IsNull(c)).ToList();
         if (given.Count == 0)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, "Every query of this set operation gives NULL in this column.", at));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, "Every query of this set operation gives NULL in this column.", at));
         if (given.FirstOrDefault(c => c.Value.Shape is UnknownShape) is { } unknown)
             return unknown.Value;
 
         // JSON comes out of a set operation as text, but json_query's stays JSON (observed:
         // Json_through_a_set_operation_is_text_except_json_query), which a value here does not record.
         if (given.Any(c => c.Value.IsLiveJson))
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, "A set operation over JSON is not modelled: whether it comes out as JSON or text depends on how it was made.", at));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, "A set operation over JSON is not modelled: whether it comes out as JSON or text depends on how it was made.", at));
 
         // Text holding JSON stays text; its content is known when every query's is the same.
         var output = node.Out.Select(i => columns[i]).Where(c => !IsNull(c)).ToList();
         if (given.All(c => c.Value.Shape is JsonTextShape))
         {
-            var because = SetNulls(node, [.. columns.Select(c => IsNull(c) ? [new IrNullReason(IrNullRules.NullLiteral, c.At.ToString())] : c.Value.NullableBecause)]);
+            var because = SetNulls(node, [.. columns.Select(c => IsNull(c) ? [new IrNullReason(IrNullRule.NullLiteral, c.At.ToString())] : c.Value.NullableBecause)]);
             var contents = output.Select(c => ((JsonTextShape)c.Value.Shape).Content).ToList();
             var same = contents.Count > 0 && contents.All(x => x is not null && x == contents[0]);
             return new Value(new JsonTextShape(same ? contents[0] : null), because);
@@ -176,10 +176,10 @@ internal sealed partial class ProcedureAnalyzer
         // one more reason that query's value may be null, before INTERSECT and EXCEPT decide whose nulls come out.
         var combined = Combined([.. given.Select(c => (c.Value, c.Expression ?? new NullLiteral(), c.At))]);
         if (combined.Type is not { } type)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"This set operation's column: {combined.Why}", at));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This set operation's column: {combined.Why}", at));
         var next = 0;
         var reasons = SetNulls(node, [.. columns.Select(c => IsNull(c)
-            ? [new IrNullReason(IrNullRules.NullLiteral, c.At.ToString())]
+            ? [new IrNullReason(IrNullRule.NullLiteral, c.At.ToString())]
             : ShapeJoin.Reasons(c.Value.NullableBecause, combined.Overflows[next++]))]);
 
         // When every query whose values come out is of the column's type already, nothing is converted, and the facets they
@@ -308,14 +308,14 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = At(reference);
         var name = reference.Alias?.Value ?? "OPENJSON";
-        static IrNullReason JsonValue(SourceLocation where) => new(IrNullRules.JsonValue, where.ToString());
+        static IrNullReason JsonValue(SourceLocation where) => new(IrNullRule.JsonValue, where.ToString());
 
         // Over JSON built here its shape says more (ProcedureAnalyzer.JsonReads.cs).
         if (TracedOpenJson(reference, outer ?? NoFrom(), at) is { } traced)
         {
             List<string> columns = reference.SchemaDeclarationItems.Count == 0 ? ["key", "value", "type"] : [.. reference.SchemaDeclarationItems.Select(i => i.ColumnDefinition.ColumnIdentifier.Value)];
             return columns.Distinct(StringComparer.OrdinalIgnoreCase).Count() != columns.Count
-                ? LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: its column names are not distinct.", at))
+                ? LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{name}: its column names are not distinct.", at))
                 : new LocalRelationValues([.. columns], [.. traced], null);
         }
 
@@ -324,7 +324,7 @@ internal sealed partial class ProcedureAnalyzer
             var type = new IrValueSet(
                 [.. Enumerable.Range(0, 6).Select(n => new IrValue(n.ToString(System.Globalization.CultureInfo.InvariantCulture), IsString: false))],
                 IrValueMatch.Exact,
-                [new IrFactSource(IrFactSources.Engine, "OPENJSON type")]);
+                [new IrFactSource(IrFactSourceKind.Engine, "OPENJSON type")]);
             var tinyint = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "tinyint", []), at);
             return new LocalRelationValues(
                 ["key", "value", "type"],
@@ -346,7 +346,7 @@ internal sealed partial class ProcedureAnalyzer
             if (item is SchemaDeclarationItemOpenjson { AsJson: true })
             {
                 values.Add(new Value(
-                    Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{name}.{column.ColumnIdentifier.Value} is JSON read from a document: its shape is in the data.", where),
+                    Unsupported(IrUnknownReason.JsonShapeUnknown, $"{name}.{column.ColumnIdentifier.Value} is JSON read from a document: its shape is in the data.", where),
                     [JsonValue(where)],
                     IsLiveJson: true));
                 continue;
@@ -356,7 +356,7 @@ internal sealed partial class ProcedureAnalyzer
         }
 
         if (names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Count)
-            return LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: its column names are not distinct.", at));
+            return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{name}: its column names are not distinct.", at));
         return new LocalRelationValues([.. names], [.. values], null);
     }
 }

@@ -15,7 +15,7 @@ public partial class ExecTests
         Assert.False(Field(doc, "a").Nullable);
         Assert.Equal("nvarchar(5)", Assert.IsType<IrScalar>(Field(doc, "b").Type).Sql);
         Assert.DoesNotContain(doc.Unknowns, u => u.Object == "dbo.p");
-        Assert.Contains(doc.Unknowns, u => u.Object == "dbo.q" && u.Reason == IrUnknownReasons.CallerTempTable);
+        Assert.Contains(doc.Unknowns, u => u.Object == "dbo.q" && u.Reason == IrUnknownReason.CallerTempTable);
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public partial class ExecTests
         var dropped = Infer(
             ("q", "CREATE PROCEDURE dbo.q AS DROP TABLE #x;"),
             ("p", "CREATE PROCEDURE dbo.p AS CREATE TABLE #x (a int NOT NULL); EXEC dbo.q; SELECT x.a FROM #x AS x;"));
-        Assert.Contains(dropped.Unknowns, u => u.Object == "dbo.p" && u.Reason == IrUnknownReasons.UnresolvedTable);
+        Assert.Contains(dropped.Unknowns, u => u.Object == "dbo.p" && u.Reason == IrUnknownReason.UnresolvedTable);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public partial class ExecTests
             ("q", "CREATE PROCEDURE dbo.q AS CREATE TABLE #made (a int NOT NULL);"),
             ("p", "CREATE PROCEDURE dbo.p AS EXEC dbo.q; SELECT m.a FROM #made AS m;"));
 
-        Assert.Contains(doc.Unknowns, u => u.Object == "dbo.p" && u.Reason == IrUnknownReasons.CallerTempTable);
+        Assert.Contains(doc.Unknowns, u => u.Object == "dbo.p" && u.Reason == IrUnknownReason.CallerTempTable);
     }
 
     [Fact]

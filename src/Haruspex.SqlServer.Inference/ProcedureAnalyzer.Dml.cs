@@ -66,7 +66,7 @@ internal sealed partial class ProcedureAnalyzer
 
         // A temporary table changed underneath a CTE is not followed, so what it holds is not known.
         foreach (var name in target.Temps.Where(t => after.Temp(t) is KnownTable))
-            after = after.WithTemp(name, Unknown(name, Unsupported(IrUnknownReasons.UnsupportedStatement, $"It is written through a CTE or derived table at {at}, which is not followed.", at)));
+            after = after.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnsupportedStatement, $"It is written through a CTE or derived table at {at}, which is not followed.", at)));
 
         // So is a table variable's JSON: one a write through a CTE or derived table may change is no longer known.
         if (target.Direct is null)
@@ -108,7 +108,7 @@ internal sealed partial class ProcedureAnalyzer
         }).ToList();
 
         // Observed: Merge_output_has_null_deleted_columns_for_inserted_rows_null_inserted_columns_for_deleted_rows_and_null_source_columns_when_not_matched_by_source.
-        var because = new IrNullReason(IrNullRules.MergeAction, at.ToString());
+        var because = new IrNullReason(IrNullRule.MergeAction, at.ToString());
         var inserted = spec is DeleteSpecification ? null : Pseudo(spec, target, after, actions?.Contains("DELETE") == true ? because : null, at);
         var deleted = spec is InsertSpecification ? null : Pseudo(spec, target, before, actions?.Contains("INSERT") == true ? because : null, at);
 
@@ -163,7 +163,7 @@ internal sealed partial class ProcedureAnalyzer
         if (target.Direct is { } direct)
         {
             locals!.State = state;
-            values = locals.Find(direct) is { } relation ? locals.Values(relation) : LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnresolvedTable, $"{direct} is not declared.", at));
+            values = locals.Find(direct) is { } relation ? locals.Values(relation) : LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnresolvedTable, $"{direct} is not declared.", at));
         }
         else if (target.Named is { } only
             && binder.ResolveWritten(only) is [var name] && model.FindTable(name) is { } table && model.FindTableRedefinition(name) is null)
@@ -173,7 +173,7 @@ internal sealed partial class ProcedureAnalyzer
         }
         else
         {
-            values = LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedStatement, target.Named is { } through
+            values = LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedStatement, target.Named is { } through
                 ? $"The OUTPUT at {at} of a write to {Text(through)}, which is not one table of the project (a view, a synonym, a table defined elsewhere or more than one), is not modelled."
                 : $"The OUTPUT at {at} of a write through a CTE or derived table, {Text(spec.Target)}, is not modelled.", at));
         }
@@ -272,12 +272,12 @@ internal sealed partial class ProcedureAnalyzer
         if (state.Temp(table) is not KnownTable known)
             return state;
         if (row.Star is not null || (into.IntoTableColumns.Count == 0 && known.Columns.Any(c => c.Identity != false)))
-            return state.WithTemp(table, Unknown(table, Unsupported(IrUnknownReasons.UnsupportedStatement, $"Which columns the OUTPUT at {at} writes in {table} is not modelled.", at)));
+            return state.WithTemp(table, Unknown(table, Unsupported(IrUnknownReason.UnsupportedStatement, $"Which columns the OUTPUT at {at} writes in {table} is not modelled.", at)));
         var targets = into.IntoTableColumns.Count == 0
             ? [.. Enumerable.Range(0, known.Columns.Count)]
             : into.IntoTableColumns.Select(c => IndexOf(known, c.MultiPartIdentifier.Identifiers[^1].Value)).ToList();
         if (targets.Any(i => i < 0) || targets.Count != row.Columns.Count)
-            return state.WithTemp(table, Unknown(table, Unsupported(IrUnknownReasons.UnresolvedColumn, $"The OUTPUT at {at} does not match the columns of {table} one to one.", at)));
+            return state.WithTemp(table, Unknown(table, Unsupported(IrUnknownReason.UnresolvedColumn, $"The OUTPUT at {at} does not match the columns of {table} one to one.", at)));
         return state.WithTemp(table, Written(known, targets, [[.. row.Columns.Select(c => c.Value)]], at, [[.. row.Columns.Select(c => c.Expression)]]));
     }
 
@@ -289,9 +289,9 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = At(action);
         if (mergeActions is null)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"{Text(action)} outside a MERGE's OUTPUT is not modelled.", at));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{Text(action)} outside a MERGE's OUTPUT is not modelled.", at));
         var shape = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["10"]), at);
-        var values = new IrValueSet([.. mergeActions.Select(a => new IrValue(a, IsString: true))], IrValueMatch.Exact, [new IrFactSource(IrFactSources.Engine, "$action")]);
+        var values = new IrValueSet([.. mergeActions.Select(a => new IrValue(a, IsString: true))], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Engine, "$action")]);
         return new Value(shape with { Type = shape.Type with { Facets = (shape.Type.Facets ?? new IrFacets()) with { Values = values } } }, []);
     }
 
@@ -335,7 +335,7 @@ internal sealed partial class ProcedureAnalyzer
         // Which columns the row has depends on the driver (docs/decisions/0015-fetch-without-into-is-unknown.md).
         if (fetch.IntoVariables.Count == 0)
         {
-            blocker ??= new UnknownShape(IrUnknownReasons.HiddenColumn, $"FETCH without INTO at {at} returns the row with a hidden ROWSTAT column, which some drivers list among its columns and others leave out.", at);
+            blocker ??= new UnknownShape(IrUnknownReason.HiddenColumn, $"FETCH without INTO at {at} returns the row with a hidden ROWSTAT column, which some drivers list among its columns and others leave out.", at);
             return Outcome.Ends;
         }
 
@@ -344,7 +344,7 @@ internal sealed partial class ProcedureAnalyzer
         {
             var value = row is not null && row.Count == fetch.IntoVariables.Count
                 ? row[i]
-                : Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedStatement, $"The row FETCH at {at} reads is not known: its cursor is not one declared once in this procedure with a query whose columns can be listed.", at));
+                : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedStatement, $"The row FETCH at {at} reads is not known: its cursor is not one declared once in this procedure with a query whose columns can be listed.", at));
             state = Assign(state, fetch.IntoVariables[i].Name, value, definitely: false, at);
         }
 

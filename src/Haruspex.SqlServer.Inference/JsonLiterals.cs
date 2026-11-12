@@ -64,7 +64,7 @@ internal static class JsonLiterals
     private static UnknownShape NotJson(string text, SourceLocation at, string why)
     {
         var shown = text.Length > 40 ? text[..40] + "…" : text;
-        return new UnknownShape(IrUnknownReasons.JsonShapeUnknown, $"The literal '{shown}' {why}, so it is not read as JSON here.", at);
+        return new UnknownShape(IrUnknownReason.JsonShapeUnknown, $"The literal '{shown}' {why}, so it is not read as JSON here.", at);
     }
 
     /// <summary>A JSON value's shape; null when it is not read, <paramref name="why"/>[0] saying why.</summary>
@@ -138,10 +138,10 @@ internal static class JsonLiterals
     }
 
     private static EquatableArray<IrNullReason> Null(JsonElement element, SourceLocation at) =>
-        element.ValueKind == JsonValueKind.Null ? [new IrNullReason(IrNullRules.NullLiteral, at.ToString())] : [];
+        element.ValueKind == JsonValueKind.Null ? [new IrNullReason(IrNullRule.NullLiteral, at.ToString())] : [];
 
     private static ScalarShape Scalar(IrScalarKind kind, IrValue value, SourceLocation at) =>
-        new(new IrScalar(kind, null, null, new IrFacets(Values: new IrValueSet([value], IrValueMatch.Exact, [new IrFactSource(IrFactSources.Expression, at.ToString())]))));
+        new(new IrScalar(kind, null, null, new IrFacets(Values: new IrValueSet([value], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Expression, at.ToString())]))));
 
     /// <summary>A JSON number written without an exponent, which <see cref="ExactDecimal"/> reads; null when it has one.</summary>
     private static string Plain(string raw) => raw.Contains('e', StringComparison.OrdinalIgnoreCase) ? "" : raw;

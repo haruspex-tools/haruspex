@@ -9,7 +9,7 @@ namespace Haruspex.SqlServer.Inference;
 // (NumericObservationTests in the differential tests).
 internal sealed partial class ProcedureAnalyzer
 {
-    private IrNullReason Domain(TSqlFragment at) => new(IrNullRules.DomainError, At(at).ToString());
+    private IrNullReason Domain(TSqlFragment at) => new(IrNullRule.DomainError, At(at).ToString());
 
     // ---- AVG and the statistical aggregates ---------------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ internal sealed partial class ProcedureAnalyzer
 
         EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call)];
         if (name is "stdev" or "var")
-            because = ShapeJoin.Reasons(because, [new IrNullReason(IrNullRules.TooFewValues, At(call).ToString())]);
+            because = ShapeJoin.Reasons(because, [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())]);
         return Typed(type, overflows ? ShapeJoin.Reasons(because, [Overflow(call)]) : because, call);
     }
 

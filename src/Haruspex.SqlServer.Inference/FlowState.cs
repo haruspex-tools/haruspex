@@ -106,7 +106,7 @@ internal sealed class FlowState : IEquatable<FlowState>
         {
             var known = a ?? b;
             return known is UnknownTable unknown ? unknown : new UnknownTable(new UnknownShape(
-                IrUnknownReasons.CallerTempTable,
+                IrUnknownReason.CallerTempTable,
                 $"{name} is created on some paths only before {at}; on the others it is the caller's table of that name, if there is one.",
                 at));
         }
@@ -127,8 +127,8 @@ internal sealed class FlowState : IEquatable<FlowState>
                     Identity = c.Identity == d.Identity ? c.Identity : null,
                     Json = c.Json is { } x && d.Json is { } y ? JsonSlot.Join(x, y) : null,
                 })]),
-            (KnownTable, KnownTable) => new UnknownTable(new UnknownShape(IrUnknownReasons.UnsupportedStatement, $"{name} has different columns on different paths before {at}.", at)),
-            _ => new UnknownTable(new UnknownShape(IrUnknownReasons.UnresolvedTable, $"{name} is dropped on some paths before {at}, so it may not exist there.", at)),
+            (KnownTable, KnownTable) => new UnknownTable(new UnknownShape(IrUnknownReason.UnsupportedStatement, $"{name} has different columns on different paths before {at}.", at)),
+            _ => new UnknownTable(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{name} is dropped on some paths before {at}, so it may not exist there.", at)),
         };
     }
 

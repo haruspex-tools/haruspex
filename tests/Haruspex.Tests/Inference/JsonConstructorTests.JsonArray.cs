@@ -50,7 +50,7 @@ public partial class JsonConstructorTests
 
         var tuple = Assert.IsType<IrTuple>(Field(doc, "v").Type);
         Assert.False(tuple.Items[0].Nullable);
-        Assert.Equal(["nullable-column"], Rules(tuple.Items[1].NullableBecause));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(tuple.Items[1].NullableBecause));
     }
 
     [Fact]
@@ -58,6 +58,6 @@ public partial class JsonConstructorTests
     {
         var doc = Procedure("SELECT json_array(t.id, reverse(t.label) NULL ON NULL) AS v FROM dbo.t AS t FOR JSON PATH;");
 
-        Assert.Equal(IrUnknownReasons.UnsupportedExpression, Unknown(doc, "results[0][].v[1]").Reason);
+        Assert.Equal(IrUnknownReason.UnsupportedExpression, Unknown(doc, "results[0][].v[1]").Reason);
     }
 }

@@ -16,7 +16,7 @@ public partial class StatementFlowTests
 
         Assert.Empty(doc.Unknowns);
         Assert.False(Field(doc, "id").Nullable);
-        Assert.Equal([new IrNullReason(IrNullRules.NullableColumn, "@v.name")], Field(doc, "name").NullableBecause);
+        Assert.Equal([new IrNullReason(IrNullRule.NullableColumn, "@v.name")], Field(doc, "name").NullableBecause);
 
         // A table variable takes the database's alias types, NOT NULL included (observed).
         Assert.False(Field(doc, "c").Nullable);

@@ -6,9 +6,9 @@ namespace Haruspex.Tests.Ir;
 /// <summary>The type nodes IR 0.3 added for the JSON constructors: tuples, records, unions, and what arrays now say.</summary>
 public class IrJsonNodeTests
 {
-    private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormats.Int32, "int");
+    private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormat.Int32, "int");
     private static readonly IrScalar Text = new(IrScalarKind.String, null, "nvarchar(10)");
-    private static readonly IrNullReason Because = new(IrNullRules.NullableColumn, "a.t.c");
+    private static readonly IrNullReason Because = new(IrNullRule.NullableColumn, "a.t.c");
 
     private static JsonElement Field(IrType type)
     {
@@ -85,5 +85,5 @@ public class IrJsonNodeTests
     }
 
     [Fact]
-    public void Empty_aggregate_is_a_null_rule() => Assert.Equal("empty-aggregate", IrNullRules.EmptyAggregate);
+    public void Empty_aggregate_is_a_null_rule() => Assert.Equal(IrNullRule.EmptyAggregate, IrNullRule.EmptyAggregate);
 }

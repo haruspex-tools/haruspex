@@ -37,16 +37,16 @@ internal static class IrNavigation
     public static string[] Names(IrDocument doc, IrType type) => [.. Fields(doc, type).Select(f => f.Name)];
 
     /// <summary>The rules that make a field nullable, such as <c>nullable-column</c>.</summary>
-    public static string[] Rules(IrField field) => [.. field.NullableBecause.Select(r => r.Rule)];
+    public static IrNullRule[] Rules(IrField field) => [.. field.NullableBecause.Select(r => r.Rule)];
 
     /// <summary>The rules that make the named field of the first result nullable.</summary>
-    public static string[] Rules(IrDocument doc, string name) => Rules(Field(doc, name));
+    public static IrNullRule[] Rules(IrDocument doc, string name) => Rules(Field(doc, name));
 
     /// <summary>The unknown at this path.</summary>
     public static IrUnknown Unknown(IrDocument doc, string path) => Assert.Single(doc.Unknowns, u => u.Path == path);
 
     /// <summary>Asserts the unknown at this path has this reason.</summary>
-    public static void AssertUnknown(IrDocument doc, string path, string reason) => Assert.Equal(reason, Unknown(doc, path).Reason);
+    public static void AssertUnknown(IrDocument doc, string path, IrUnknownReason reason) => Assert.Equal(reason, Unknown(doc, path).Reason);
 
     /// <summary>Asserts nothing in the document is unknown, listing what is.</summary>
     public static void AllTyped(IrDocument doc) =>

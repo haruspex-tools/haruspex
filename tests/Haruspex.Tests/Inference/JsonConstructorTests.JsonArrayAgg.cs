@@ -10,7 +10,7 @@ public partial class JsonConstructorTests
         var doc = Procedure("SELECT json_arrayagg(t.id ORDER BY t.id) AS v FROM dbo.t AS t FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;");
         var v = Field(doc, "v");
 
-        Assert.Equal(["empty-aggregate"], Rules(v.NullableBecause));
+        Assert.Equal([IrNullRule.EmptyAggregate], Rules(v.NullableBecause));
         var array = Assert.IsType<IrArray>(v.Type);
         Assert.False(array.ItemsNullable);
         // A non-null result means a row, and a value never null is never dropped.
@@ -35,7 +35,7 @@ public partial class JsonConstructorTests
         var doc = Procedure("SELECT json_arrayagg(u.qty NULL ON NULL) AS v FROM dbo.u AS u FOR JSON PATH;");
 
         var array = Assert.IsType<IrArray>(Field(doc, "v").Type);
-        Assert.Equal(["nullable-column"], Rules(array.ItemsNullableBecause));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(array.ItemsNullableBecause));
         Assert.Equal(1, array.MinItems);
     }
 
@@ -59,10 +59,10 @@ public partial class JsonConstructorTests
 
         Assert.IsType<IrArray>(lines.Type);
         Assert.Equal(IrPresence.OmittedWhenNull, lines.Presence);
-        Assert.Contains("empty-aggregate", Rules(lines.NullableBecause));
+        Assert.Contains(IrNullRule.EmptyAggregate, Rules(lines.NullableBecause));
 
         // An aggregate without GROUP BY always returns its one row, so the subquery is never empty.
-        Assert.DoesNotContain("empty-subquery", Rules(lines.NullableBecause));
+        Assert.DoesNotContain(IrNullRule.EmptySubquery, Rules(lines.NullableBecause));
     }
 
     [Fact]
@@ -72,6 +72,6 @@ public partial class JsonConstructorTests
         var doc = Procedure("SELECT t.id, (SELECT u.qty FROM dbo.u AS u WHERE u.id = t.id) AS q FROM dbo.t AS t FOR JSON PATH;");
 
         Assert.Empty(doc.Unknowns);
-        Assert.Contains("empty-subquery", Rules(Field(doc, "q").NullableBecause));
+        Assert.Contains(IrNullRule.EmptySubquery, Rules(Field(doc, "q").NullableBecause));
     }
 }

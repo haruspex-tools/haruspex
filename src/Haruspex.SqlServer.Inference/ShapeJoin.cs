@@ -49,12 +49,12 @@ internal static class ShapeJoin
         if (a.IsLiveJson == b.IsLiveJson && a.Shape == b.Shape)
             return new Value(a.Shape, because, a.IsLiveJson);
 
-        var unknown = new UnknownShape(IrUnknownReasons.UnsupportedExpression, $"{what} holds values of different shapes on different paths, which are not joined yet.", at);
+        var unknown = new UnknownShape(IrUnknownReason.UnsupportedExpression, $"{what} holds values of different shapes on different paths, which are not joined yet.", at);
         return new Value(unknown, WithUnknown(because, unknown));
     }
 
     private static UnknownShape NotJson(SourceLocation at, string what) =>
-        new(IrUnknownReasons.JsonShapeUnknown, $"{what} holds JSON built here on some paths and other text on others, which meet {at}.", at);
+        new(IrUnknownReason.JsonShapeUnknown, $"{what} holds JSON built here on some paths and other text on others, which meet {at}.", at);
 
     /// <summary>
     /// A value of <paramref name="typed"/>'s SQL type that is either <paramref name="typed"/> or <paramref name="other"/>
@@ -191,7 +191,7 @@ internal static class ShapeJoin
 
     /// <summary>A value whose shape is unknown proves nothing, so it may be null, which its reasons say.</summary>
     private static EquatableArray<IrNullReason> WithUnknown(EquatableArray<IrNullReason> because, UnknownShape unknown) =>
-        Reasons(because, [new IrNullReason(IrNullRules.Unknown, unknown.At.ToString())]);
+        Reasons(because, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]);
 
     private static ScalarShape? Scalars(Shape a, Shape b) =>
         a is ScalarShape { Type: var x } && b is ScalarShape { Type: var y } && SameType(x, y)
@@ -205,7 +205,7 @@ internal static class ShapeJoin
     {
         if (facets is null)
             return null;
-        static bool FromType(IrFactSource from) => from.Kind == IrFactSources.Type;
+        static bool FromType(IrFactSource from) => from.Kind == IrFactSourceKind.Type;
         var kept = new IrFacets(
             Length: facets.Length is { } l && FromType(l.From) ? l : null,
             MinLength: facets.MinLength is { } m && FromType(m.From) ? m : null,

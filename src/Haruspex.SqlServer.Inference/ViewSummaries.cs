@@ -39,7 +39,7 @@ internal sealed class ViewSummaries
         if (calls.TryGetValue(key, out var found))
             return found;
         if (!reading.Add(function.Name))
-            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReasons.UnresolvedTable, $"{function.Name} reads itself through the functions and views it reads.", function.At));
+            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{function.Name} reads itself through the functions and views it reads.", function.At));
 
         try
         {
@@ -78,9 +78,9 @@ internal sealed class ViewSummaries
 
         // A view created and altered, or defined twice, depends on the order the scripts run (Sources).
         if (view.View is null || view.File is null)
-            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReasons.UnresolvedTable, $"{view.Name} is defined more than once, and which definition applies depends on the order the scripts run.", Nowhere));
+            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{view.Name} is defined more than once, and which definition applies depends on the order the scripts run.", Nowhere));
         if (!reading.Add(view.Name))
-            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReasons.UnresolvedTable, $"{view.Name} reads itself through the views it reads, which SQL Server refuses.", Nowhere));
+            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{view.Name} reads itself through the views it reads, which SQL Server refuses.", Nowhere));
 
         try
         {

@@ -11,8 +11,8 @@ public partial class RefinementTests
         // Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off.
         var doc = Procedure("SELECT COUNT(*) AS n, COUNT(t.name) AS named, COUNT_BIG(*) AS nb, COUNT_BIG(DISTINCT t.name) AS kinds FROM dbo.t AS t;");
 
-        Assert.Equal(["count-overflow"], Rules(doc, "n"));
-        Assert.Equal(["count-overflow"], Rules(doc, "named"));
+        Assert.Equal([IrNullRule.CountOverflow], Rules(doc, "n"));
+        Assert.Equal([IrNullRule.CountOverflow], Rules(doc, "named"));
         Assert.False(Field(doc, "nb").Nullable);
         Assert.False(Field(doc, "kinds").Nullable);
         Assert.Equal("int", Assert.IsType<IrScalar>(Field(doc, "n").Type).Sql);
@@ -26,9 +26,9 @@ public partial class RefinementTests
         var doc = Procedure("SELECT MAX(t.status) AS high, MIN(t.id) AS low FROM dbo.t AS t;");
 
         var high = Field(doc, "high");
-        Assert.Equal(["nullable-column", "empty-aggregate"], Rules(high));
+        Assert.Equal([IrNullRule.NullableColumn, IrNullRule.EmptyAggregate], Rules(high));
         Assert.Equal(["open", "shut"], Assert.IsType<IrScalar>(high.Type).Facets!.Values!.Items.Select(v => v.Text));
-        Assert.Equal(["empty-aggregate"], Rules(doc, "low"));
+        Assert.Equal([IrNullRule.EmptyAggregate], Rules(doc, "low"));
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public partial class RefinementTests
         // An_aggregate_with_group_by_returns_no_row_over_no_rows: a group's MAX is null only when every value in it is.
         var doc = Procedure("SELECT t.n, MAX(t.name) AS high, MAX(t.id) AS top_id FROM dbo.t AS t GROUP BY t.n;");
 
-        Assert.Equal(["nullable-column"], Rules(doc, "high"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "high"));
         Assert.False(Field(doc, "top_id").Nullable);
     }
 
@@ -60,7 +60,7 @@ public partial class RefinementTests
 
         Assert.False(Field(doc, "n").Nullable);
         Assert.False(Field(doc, "high").Nullable);
-        Assert.Equal(["nullable-column"], Rules(doc, "low"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "low"));
         Assert.False(Field(doc, "c").Nullable);
     }
 
@@ -71,6 +71,6 @@ public partial class RefinementTests
         // (NumericTests); CHECKSUM_AGG is not, with a window or without.
         var doc = Procedure("SELECT CHECKSUM_AGG(t.id) OVER () AS m FROM dbo.t AS t;");
 
-        Assert.Equal(IrUnknownReasons.UnsupportedExpression, Assert.Single(doc.Unknowns).Reason);
+        Assert.Equal(IrUnknownReason.UnsupportedExpression, Assert.Single(doc.Unknowns).Reason);
     }
 }

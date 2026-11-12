@@ -109,7 +109,7 @@ internal sealed record CorpusFigures(
             if (procedure.Results is not { } listed)
             {
                 unlisted++;
-                var why = document.Unknowns.Where(u => u.Object == procedure.Id && u.Path == "results").Select(u => u.Reason).Distinct();
+                var why = document.Unknowns.Where(u => u.Object == procedure.Id && u.Path == "results").Select(u => IrWireNames.Of(u.Reason)).Distinct();
                 foreach (var reason in why)
                     Add(reason, procedures: 1);
                 continue;
@@ -130,7 +130,7 @@ internal sealed record CorpusFigures(
                     continue;
                 resultsUnknown++;
                 unknownShape = true;
-                foreach (var reason in reasons.DefaultIfEmpty(IrUnknownReasons.JsonShapeUnknown))
+                foreach (var reason in reasons.DefaultIfEmpty(IrWireNames.Of(IrUnknownReason.JsonShapeUnknown)))
                     Add(reason, results: 1);
             }
 
@@ -203,7 +203,7 @@ internal sealed record CorpusFigures(
             switch (t)
             {
                 case IrUnknownType unknown:
-                    reasons.Add(unknown.Reason);
+                    reasons.Add(IrWireNames.Of(unknown.Reason));
                     break;
                 case IrArray array:
                     Visit(array.Items);
@@ -270,7 +270,7 @@ internal sealed record CorpusFigures(
     }
 
     /// <summary>What is unknown for one reason.</summary>
-    /// <param name="Name">The reason, one of <see cref="IrUnknownReasons"/>.</param>
+    /// <param name="Name">The reason, as the IR names it (<see cref="IrWireNames"/>).</param>
     /// <param name="Fields">Fields unknown for it.</param>
     /// <param name="Results">Results unknown as a whole for it.</param>
     /// <param name="Procedures">Procedures whose results can't be listed for it.</param>

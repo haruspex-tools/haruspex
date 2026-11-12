@@ -8,14 +8,14 @@ namespace Haruspex.Tests.Ir;
 /// </summary>
 public class EquatableArrayTests
 {
-    private static readonly IrNullReason Column = new(IrNullRules.NullableColumn, "a.t.c");
-    private static readonly IrNullReason Join = new(IrNullRules.OuterJoin, "a.sql:3:1");
+    private static readonly IrNullReason Column = new(IrNullRule.NullableColumn, "a.t.c");
+    private static readonly IrNullReason Join = new(IrNullRule.OuterJoin, "a.sql:3:1");
 
     [Fact]
     public void Sequences_built_apart_with_equal_items_are_equal_and_hash_equal()
     {
         EquatableArray<IrNullReason> a = [Column, Join];
-        EquatableArray<IrNullReason> b = [.. new List<IrNullReason> { new(IrNullRules.NullableColumn, "a.t.c"), new(IrNullRules.OuterJoin, "a.sql:3:1") }];
+        EquatableArray<IrNullReason> b = [.. new List<IrNullReason> { new(IrNullRule.NullableColumn, "a.t.c"), new(IrNullRule.OuterJoin, "a.sql:3:1") }];
 
         Assert.NotSame(a, b);
         Assert.Equal(a, b);
@@ -37,8 +37,8 @@ public class EquatableArrayTests
     public void A_record_holding_one_compares_by_value()
     {
         // The reason this type exists: with IReadOnlyList, these two fields were different.
-        var a = new IrField("total", new IrScalar(IrScalarKind.Number, IrFormats.Int32, "int"), IrPresence.Always, [Column]);
-        var b = new IrField("total", new IrScalar(IrScalarKind.Number, IrFormats.Int32, "int"), IrPresence.Always, [new(IrNullRules.NullableColumn, "a.t.c")]);
+        var a = new IrField("total", new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int"), IrPresence.Always, [Column]);
+        var b = new IrField("total", new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int"), IrPresence.Always, [new(IrNullRule.NullableColumn, "a.t.c")]);
 
         Assert.Equal(a, b);
         Assert.Equal(a.GetHashCode(), b.GetHashCode());

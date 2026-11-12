@@ -93,11 +93,11 @@ internal sealed class FunctionSummaries
     {
         var function = model.FindFunction(name);
         if (function is null)
-            return new OneOf(null, new UnknownShape(IrUnknownReasons.UnsupportedExpression, $"{name} is not a function of the project.", at));
+            return new OneOf(null, new UnknownShape(IrUnknownReason.UnsupportedExpression, $"{name} is not a function of the project.", at));
         if (function.Redefinition is { } redefinition)
-            return new OneOf(null, new UnknownShape(IrUnknownReasons.Redefined, redefinition.Message, redefinition.At));
+            return new OneOf(null, new UnknownShape(IrUnknownReason.Redefined, redefinition.Message, redefinition.At));
         if (function.Body.ReturnType is not ScalarFunctionReturnType)
-            return new OneOf(null, new UnknownShape(IrUnknownReasons.UnsupportedExpression, $"{name} is not a scalar function.", at));
+            return new OneOf(null, new UnknownShape(IrUnknownReason.UnsupportedExpression, $"{name} is not a scalar function.", at));
         return new OneOf(Return(function), null);
     }
 
@@ -130,7 +130,7 @@ internal sealed class FunctionSummaries
         if (uncommitted)
         {
             foreach (var member in members.Select(m => model.FindFunction(m)!))
-                done[member.Name] = Read(member, header: true) with { Content = null, NullableBecause = [new IrNullReason(IrNullRules.FunctionResult, member.At.ToString())] };
+                done[member.Name] = Read(member, header: true) with { Content = null, NullableBecause = [new IrNullReason(IrNullRule.FunctionResult, member.At.ToString())] };
             return;
         }
 
@@ -167,21 +167,21 @@ internal sealed class FunctionSummaries
             if (endless && result.Content is not null)
             {
                 result = Unresolved(result, new UnknownShape(
-                    IrUnknownReasons.UnresolvedRecursion,
+                    IrUnknownReason.UnresolvedRecursion,
                     $"{function.Name} calls itself through keys that are always present and never null, so no call ends: it never returns a value.",
                     at));
             }
             else if (!settled)
             {
                 result = Unresolved(result, new UnknownShape(
-                    IrUnknownReasons.UnresolvedRecursion,
+                    IrUnknownReason.UnresolvedRecursion,
                     $"{function.Name} calls itself, and its JSON's shape reached no fixed point in {steps} steps.",
                     at));
             }
             else if (result.Content is NeverShape)
             {
                 result = Unresolved(result, new UnknownShape(
-                    IrUnknownReasons.UnresolvedRecursion,
+                    IrUnknownReason.UnresolvedRecursion,
                     $"Every return of {function.Name} calls itself again, so it never returns a value.",
                     at));
             }
@@ -239,7 +239,7 @@ internal sealed class FunctionSummaries
     }
 
     private static FunctionReturn Unresolved(FunctionReturn result, UnknownShape why) =>
-        result with { Content = why, NullableBecause = [new IrNullReason(IrNullRules.Unknown, why.At.ToString())] };
+        result with { Content = why, NullableBecause = [new IrNullReason(IrNullRule.Unknown, why.At.ToString())] };
 
     /// <summary>
     /// What a call of a function in the component gives: a reference to its node in place of the node (its object, or the
@@ -274,9 +274,9 @@ internal sealed class FunctionSummaries
 
         // The declared type: a json return is live JSON whose shape is in the data; anything else as a variable is typed.
         var declared = returnsJson
-            ? new UnknownShape(IrUnknownReasons.JsonShapeUnknown, $"{function.Name} returns json that is not built in a form read here.", at)
+            ? new UnknownShape(IrUnknownReason.JsonShapeUnknown, $"{function.Name} returns json that is not built in a form read here.", at)
             : SqlTypes.ToShape(model, returnType, at);
-        var declaredOnly = new FunctionReturn(declared, returnsJson, null, [new IrNullReason(IrNullRules.FunctionResult, at.ToString())], nullOnNull);
+        var declaredOnly = new FunctionReturn(declared, returnsJson, null, [new IrNullReason(IrNullRule.FunctionResult, at.ToString())], nullOnNull);
 
         if (body.MethodSpecifier is not null || body.StatementList is null || !HoldsAnyJson(resolved))
             return declaredOnly;
@@ -307,12 +307,12 @@ internal sealed class FunctionSummaries
     private Value Parameter(ProcedureParameter parameter, bool nullOnNull, string file)
     {
         var at = new SourceLocation(file, parameter.StartLine, parameter.StartColumn);
-        EquatableArray<IrNullReason> because = nullOnNull ? [] : [new IrNullReason(IrNullRules.Parameter, parameter.VariableName.Value)];
+        EquatableArray<IrNullReason> because = nullOnNull ? [] : [new IrNullReason(IrNullRule.Parameter, parameter.VariableName.Value)];
         var type = SqlType.From(parameter.DataType);
 
         // A json value nests as JSON (observed for variables and columns), and its shape is in the data.
         return SchemaRules.ResolveType(model, type)?.BuiltIn.Name == "json"
-            ? new Value(new UnknownShape(IrUnknownReasons.JsonShapeUnknown, $"{parameter.VariableName.Value} is a json parameter: its shape is in the data.", at), because, IsLiveJson: true)
+            ? new Value(new UnknownShape(IrUnknownReason.JsonShapeUnknown, $"{parameter.VariableName.Value} is a json parameter: its shape is in the data.", at), because, IsLiveJson: true)
             : new Value(SqlTypes.ToConvertedShape(model, type, at), because);
     }
 

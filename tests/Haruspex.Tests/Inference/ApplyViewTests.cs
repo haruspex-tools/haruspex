@@ -29,7 +29,7 @@ public partial class ApplyViewTests
     // Stricter than IrNavigation.Field: asserts the procedure has exactly one result. Rules reads it, so it is kept too.
     private static IrField Field(IrDocument doc, string name) => Assert.Single(Fields(doc, Assert.Single(Results(doc)).Type), f => f.Name == name);
 
-    private static string[] Rules(IrDocument doc, string name) => [.. Field(doc, name).NullableBecause.Select(r => r.Rule)];
+    private static IrNullRule[] Rules(IrDocument doc, string name) => [.. Field(doc, name).NullableBecause.Select(r => r.Rule)];
 
     // IrNavigation.AllTyped, under the name these tests use.
     private static void Typed(IrDocument doc) => AllTyped(doc);

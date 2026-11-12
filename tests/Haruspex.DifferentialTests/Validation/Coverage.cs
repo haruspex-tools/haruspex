@@ -104,7 +104,7 @@ public static class Coverage
     /// So is COALESCE's second read of a subquery, NULL only when the rows change between its two reads, or a call gives another
     /// value (<c>read-twice</c>; ExpressionObservationTests, CaseObservationTests).
     /// </summary>
-    private static readonly HashSet<string> Unseedable = [IrNullRules.CountOverflow, IrNullRules.ArithmeticOverflow, IrNullRules.DomainError, IrNullRules.ReadTwice];
+    private static readonly HashSet<IrNullRule> Unseedable = [IrNullRule.CountOverflow, IrNullRule.ArithmeticOverflow, IrNullRule.DomainError, IrNullRule.ReadTwice];
 
     private static void Element(IrDocument document, IrType type, bool nullable, string path, Action<string, Seen> need, HashSet<string> walked)
     {
@@ -169,7 +169,7 @@ public static class Coverage
         if (scalar.Facets is not { } facets)
             yield break;
         var exactSet = facets.Values is { Match: IrValueMatch.Exact };
-        var stepKnown = facets.Digits is not null || scalar.Format is IrFormats.Uint8 or IrFormats.Int16 or IrFormats.Int32 or IrFormats.Int64;
+        var stepKnown = facets.Digits is not null || scalar.Format is IrFormat.Uint8 or IrFormat.Int16 or IrFormat.Int32 or IrFormat.Int64;
         if (!exactSet && facets.Min is { } min && (min.Inclusive || stepKnown))
             yield return "min";
         if (!exactSet && facets.Max is { } max && (max.Inclusive || stepKnown))

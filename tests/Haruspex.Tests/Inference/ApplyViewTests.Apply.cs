@@ -14,7 +14,7 @@ public partial class ApplyViewTests
 
         Typed(doc);
         Assert.Empty(Rules(doc, "id"));
-        Assert.Equal([IrNullRules.NullableColumn], Rules(doc, "note"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "note"));
         Assert.Empty(Rules(doc, "label"));
     }
 
@@ -25,8 +25,8 @@ public partial class ApplyViewTests
 
         Typed(doc);
         Assert.Empty(Rules(doc, "id"));
-        Assert.Equal([IrNullRules.NullableColumn, IrNullRules.OuterApply], Rules(doc, "note"));
-        Assert.Equal([IrNullRules.OuterApply], Rules(doc, "label"));
+        Assert.Equal([IrNullRule.NullableColumn, IrNullRule.OuterApply], Rules(doc, "note"));
+        Assert.Equal([IrNullRule.OuterApply], Rules(doc, "label"));
         Assert.Equal("p.sql:2:58", Field(doc, "label").NullableBecause[0].At);
     }
 
@@ -36,7 +36,7 @@ public partial class ApplyViewTests
         var doc = Procedure("SELECT t.id, u.label FROM dbo.t AS t OUTER APPLY dbo.u AS u;");
 
         Typed(doc);
-        Assert.Equal([IrNullRules.OuterApply], Rules(doc, "label"));
+        Assert.Equal([IrNullRule.OuterApply], Rules(doc, "label"));
     }
 
     [Theory]
@@ -49,7 +49,7 @@ public partial class ApplyViewTests
 
         Typed(doc);
         Assert.Empty(Rules(doc, "n"));
-        Assert.Equal([IrNullRules.EmptyAggregate], Rules(doc, "m"));
+        Assert.Equal([IrNullRule.EmptyAggregate], Rules(doc, "m"));
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public partial class ApplyViewTests
         // A_grouped_aggregate_applied_gives_no_row_for_an_outer_row_without_rows.
         var doc = Procedure("SELECT t.id, a.n FROM dbo.t AS t OUTER APPLY (SELECT COUNT_BIG(*) AS n FROM dbo.u AS u WHERE u.t_id = t.id GROUP BY ()) AS a;");
 
-        Assert.Equal([IrNullRules.OuterApply], Rules(doc, "n"));
+        Assert.Equal([IrNullRule.OuterApply], Rules(doc, "n"));
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public partial class ApplyViewTests
     {
         var doc = Procedure("SELECT t.id, a.n FROM dbo.t AS t OUTER APPLY (SELECT COUNT_BIG(*) AS n FROM dbo.u AS u WHERE u.t_id = t.id HAVING COUNT_BIG(*) > 1) AS a;");
 
-        Assert.Equal([IrNullRules.OuterApply], Rules(doc, "n"));
+        Assert.Equal([IrNullRule.OuterApply], Rules(doc, "n"));
     }
 
     [Theory]
@@ -85,7 +85,7 @@ public partial class ApplyViewTests
 
         Typed(doc);
         var lines = Field(doc, "lines");
-        Assert.Equal([IrNullRules.EmptySubquery], lines.NullableBecause.Select(r => r.Rule));
+        Assert.Equal([IrNullRule.EmptySubquery], lines.NullableBecause.Select(r => r.Rule));
         var items = forJson.Length > 0 ? Assert.IsType<IrArray>(lines.Type) : Assert.IsType<IrArray>(Assert.IsType<IrJsonText>(lines.Type).Content);
         Assert.Equal(["id", "label"], Fields(doc, items).Select(f => f.Name));
     }
@@ -96,7 +96,7 @@ public partial class ApplyViewTests
         var doc = Procedure("SELECT t.id, x.label FROM dbo.t AS t LEFT JOIN (dbo.pair AS p OUTER APPLY (SELECT u.label FROM dbo.u AS u WHERE u.t_id = p.a) AS x) ON p.a = t.id;");
 
         Typed(doc);
-        Assert.Equal([IrNullRules.OuterJoin], Rules(doc, "label"));
+        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "label"));
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public partial class ApplyViewTests
         // As for a correlated subquery: the filter holds for the applied query's rows, not for the outer row read outside it.
         var doc = Procedure("SELECT t.name FROM dbo.t AS t CROSS APPLY (SELECT u.note FROM dbo.u AS u WHERE t.name IS NOT NULL AND u.t_id = t.id) AS x;");
 
-        Assert.Equal([IrNullRules.NullableColumn], Rules(doc, "name"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "name"));
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public partial class ApplyViewTests
         // An_outer_column_read_in_an_applied_aggregate_is_not_filtered_by_its_where (refinement's rule for aggregate subqueries).
         var doc = Procedure("SELECT a.tn FROM dbo.t AS t CROSS APPLY (SELECT t.name AS tn, COUNT_BIG(*) AS n FROM dbo.u AS u WHERE t.name IS NOT NULL AND u.t_id = t.id) AS a;");
 
-        Assert.Equal([IrNullRules.NullableColumn], Rules(doc, "tn"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "tn"));
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public partial class ApplyViewTests
         var doc = Procedure("SELECT x.label, x.note FROM dbo.t AS t OUTER APPLY (SELECT u.note, u.label FROM dbo.u AS u WHERE u.t_id = t.id) AS x WHERE x.label = N'a';");
 
         Assert.Empty(Rules(doc, "label"));
-        Assert.Equal([IrNullRules.NullableColumn], Rules(doc, "note"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "note"));
     }
 
     [Fact]
@@ -151,7 +151,7 @@ public partial class ApplyViewTests
         // The query fails with 4104; nothing is claimed of a column it cannot bind.
         var doc = Procedure("SELECT z.code FROM dbo.t AS t, dbo.u AS u CROSS APPLY (SELECT t.code) AS z;");
 
-        Assert.Equal(IrUnknownReasons.UnresolvedColumn, Unknown(doc, "results[0][].code").Reason);
+        Assert.Equal(IrUnknownReason.UnresolvedColumn, Unknown(doc, "results[0][].code").Reason);
     }
 
     [Fact]

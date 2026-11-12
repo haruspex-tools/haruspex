@@ -14,7 +14,7 @@ public partial class DmlTests
             ("p", "CREATE PROCEDURE dbo.p AS UPDATE dbo.item SET qty = 1; SELECT 1 AS a;"));
 
         var unknown = ResultsUnknown(doc);
-        Assert.Equal(IrUnknownReasons.TriggerResults, unknown.Reason);
+        Assert.Equal(IrUnknownReason.TriggerResults, unknown.Reason);
         Assert.Contains("dbo.item_loud", unknown.Detail, StringComparison.Ordinal);
     }
 
@@ -55,7 +55,7 @@ public partial class DmlTests
         if (typed)
             Assert.Single(Results(doc));
         else
-            Assert.Equal(IrUnknownReasons.TriggerResults, ResultsUnknown(doc).Reason);
+            Assert.Equal(IrUnknownReason.TriggerResults, ResultsUnknown(doc).Reason);
     }
 
     [Fact]
@@ -77,8 +77,8 @@ public partial class DmlTests
             ("trigger", "CREATE TRIGGER dbo.item_loud ON dbo.item AFTER UPDATE AS SELECT N'fired' AS what;"),
             ("p", "CREATE PROCEDURE dbo.p AS INSERT INTO dbo.item_view (id) VALUES (1); SELECT 1 AS a;"));
 
-        Assert.Equal(IrUnknownReasons.TriggerResults, ResultsUnknown(instead).Reason);
-        Assert.Equal(IrUnknownReasons.TriggerResults, ResultsUnknown(underneath).Reason);
+        Assert.Equal(IrUnknownReason.TriggerResults, ResultsUnknown(instead).Reason);
+        Assert.Equal(IrUnknownReason.TriggerResults, ResultsUnknown(underneath).Reason);
         Assert.Single(Results(quiet));
     }
 
@@ -94,7 +94,7 @@ public partial class DmlTests
             ("synonym", "CREATE SYNONYM dbo.far_syn FOR other_db.dbo.far;"),
             ("p", "CREATE PROCEDURE dbo.p AS INSERT INTO dbo.far_syn (id) VALUES (1); SELECT 2 AS two;"));
 
-        Assert.Equal(IrUnknownReasons.TriggerResults, ResultsUnknown(inside.Doc).Reason);
+        Assert.Equal(IrUnknownReason.TriggerResults, ResultsUnknown(inside.Doc).Reason);
         Assert.Empty(inside.Warnings);
         Assert.Single(Results(outside.Doc));
         var warning = Assert.Single(outside.Warnings);
@@ -121,8 +121,8 @@ public partial class DmlTests
             ("trigger", Trigger),
             ("p", Procedure));
 
-        Assert.Equal(IrUnknownReasons.TriggerResults, ResultsUnknown(inline).Reason);
-        Assert.Equal(IrUnknownReasons.TriggerResults, ResultsUnknown(altered).Reason);
+        Assert.Equal(IrUnknownReason.TriggerResults, ResultsUnknown(inline).Reason);
+        Assert.Equal(IrUnknownReason.TriggerResults, ResultsUnknown(altered).Reason);
         Assert.Single(Results(plain));
     }
 
@@ -147,8 +147,8 @@ public partial class DmlTests
             ("self", "CREATE TRIGGER dbo.item_self ON dbo.item AFTER INSERT, UPDATE AS UPDATE dbo.item SET qty = qty + 0 WHERE id IN (SELECT id FROM inserted);"),
             ("p", Procedure));
 
-        Assert.Equal(IrUnknownReasons.TriggerResults, ResultsUnknown(nested).Reason);
-        Assert.Equal(IrUnknownReasons.TriggerResults, ResultsUnknown(called).Reason);
+        Assert.Equal(IrUnknownReason.TriggerResults, ResultsUnknown(nested).Reason);
+        Assert.Equal(IrUnknownReason.TriggerResults, ResultsUnknown(called).Reason);
         Assert.Single(Results(quietCall));
         Assert.Single(Results(recursive));
     }
@@ -167,7 +167,7 @@ public partial class DmlTests
             ("trigger", $"CREATE TRIGGER dbo.item_odd ON dbo.item AFTER INSERT AS {statement}"),
             ("p", "CREATE PROCEDURE dbo.p AS INSERT INTO dbo.item (id) VALUES (1); SELECT 1 AS a;"));
 
-        Assert.Equal(IrUnknownReasons.TriggerResults, ResultsUnknown(doc).Reason);
+        Assert.Equal(IrUnknownReason.TriggerResults, ResultsUnknown(doc).Reason);
     }
 
     [Fact]

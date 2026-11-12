@@ -50,7 +50,7 @@ public partial class ExecTests
             IF @n > 0 BEGIN DECLARE @m int = @n - 1; EXEC dbo.p @m; END
             """)));
 
-        Assert.Equal(IrUnknownReasons.UnresolvedRecursion, why.Reason);
+        Assert.Equal(IrUnknownReason.UnresolvedRecursion, why.Reason);
     }
 
     [Fact]

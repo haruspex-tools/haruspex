@@ -14,7 +14,7 @@ public partial class ConfigApplicationTests
         var doc = Apply(GetCustomer, """{ "procedures": { "sales.get_customer": { "paths": { "[].status": { "values": "exact", "why": "written in lower case only" } } } } }""").Document;
 
         Assert.Contains("  status: z.enum([\"open\", \"closed\"]),\n", ZodEmitter.Emit(doc), StringComparison.Ordinal);
-        Assert.Equal(new IrOverride("sales.get_customer", "results[0][].status", IrOverrideSettings.ExactValues, "written in lower case only"), Assert.Single(doc.Overrides));
+        Assert.Equal(new IrOverride("sales.get_customer", "results[0][].status", IrOverrideSetting.ExactValues, "written in lower case only"), Assert.Single(doc.Overrides));
     }
 
     [Fact]

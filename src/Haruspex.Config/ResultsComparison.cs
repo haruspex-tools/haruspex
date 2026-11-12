@@ -46,7 +46,7 @@ internal static class ResultsComparison
         {
             return (a, b) switch
             {
-                (IrUnknownType unknown, _) => $"{path}: the inference can't type it ({unknown.Reason}), so it can't agree with a declaration. To type one value, override its path under \"paths\" with \"type\" and \"import\".",
+                (IrUnknownType unknown, _) => $"{path}: the inference can't type it ({IrWireNames.Of(unknown.Reason)}), so it can't agree with a declaration. To type one value, override its path under \"paths\" with \"type\" and \"import\".",
                 (IrScalar x, IrScalar y) when Same(x, y) => null,
                 // JSON text is a string, which is all a declaration can say of it.
                 (IrJsonText, IrScalar { Kind: IrScalarKind.String, Format: null }) => null,

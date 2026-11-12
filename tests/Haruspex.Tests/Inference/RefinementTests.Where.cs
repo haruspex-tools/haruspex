@@ -1,3 +1,4 @@
+using Haruspex.Ir;
 using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests.Inference;
@@ -35,8 +36,8 @@ public partial class RefinementTests
         var doc = Procedure("SELECT t.name, t.n, t.status FROM dbo.t AS t WHERE t.name = N'a';");
 
         Assert.False(Field(doc, "name").Nullable);
-        Assert.Equal(["nullable-column"], Rules(doc, "n"));
-        Assert.Equal(["nullable-column"], Rules(doc, "status"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "n"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "status"));
     }
 
     [Fact]
@@ -75,7 +76,7 @@ public partial class RefinementTests
     {
         var doc = Procedure($"SELECT t.name FROM dbo.t AS t WHERE {predicate};");
 
-        Assert.Equal(["nullable-column"], Rules(doc, "name"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "name"));
     }
 
     [Theory]
@@ -87,8 +88,8 @@ public partial class RefinementTests
         // The_catch_all_filter_keeps_every_row_when_its_parameter_is_null: with @x null, every row comes back, null names included.
         var doc = Procedure($"SELECT t.name, t.n FROM dbo.t AS t WHERE {predicate};", "@x nvarchar(10), @y int");
 
-        Assert.Equal(["nullable-column"], Rules(doc, "name"));
-        Assert.Equal(["nullable-column"], Rules(doc, "n"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "name"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "n"));
     }
 
     [Theory]
@@ -108,7 +109,7 @@ public partial class RefinementTests
         // In_a_subquery_with_no_rows_is_false_and_not_in_it_is_true_even_for_a_null.
         var doc = Procedure($"SELECT t.name FROM dbo.t AS t WHERE {predicate};", "@x nvarchar(10)");
 
-        Assert.Equal(["nullable-column"], Rules(doc, "name"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "name"));
     }
 
     [Theory]
@@ -137,7 +138,7 @@ public partial class RefinementTests
             SELECT t.name, t.n, u.t_id FROM dbo.t AS t JOIN dbo.u AS u ON u.t_id = t.n WHERE t.name = @x AND t.status <> 'open';
             """));
 
-        Assert.Equal(["nullable-column"], Rules(doc, "name"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "name"));
         Assert.False(Field(doc, "n").Nullable);
         Assert.False(Field(doc, "t_id").Nullable);
     }

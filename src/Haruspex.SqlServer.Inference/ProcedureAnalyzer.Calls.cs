@@ -94,7 +94,7 @@ internal sealed partial class ProcedureAnalyzer
         // copied); when a column may be one, which columns they go into is not known.
         if (spec.Columns.Count == 0 && table.Columns.FirstOrDefault(c => c.Identity is null) is { } maybe)
         {
-            return Continue(after.WithTemp(target, Unknown(target, Unsupported(IrUnknownReasons.UnsupportedStatement,
+            return Continue(after.WithTemp(target, Unknown(target, Unsupported(IrUnknownReason.UnsupportedStatement,
                 $"{maybe.Name} may be an identity column SELECT … INTO copied, which the insert at {at} skips without a column list, so which columns its rows go into is not known.", at))));
         }
 
@@ -102,7 +102,7 @@ internal sealed partial class ProcedureAnalyzer
             ? [.. Enumerable.Range(0, table.Columns.Count).Where(i => table.Columns[i].Identity != true)]
             : spec.Columns.Select(c => IndexOf(table, c.MultiPartIdentifier.Identifiers[^1].Value)).ToList();
         if (targets.Any(i => i < 0))
-            return Continue(after.WithTemp(target, Unknown(target, Unsupported(IrUnknownReasons.UnresolvedColumn, "The insert names a column the table does not have.", at))));
+            return Continue(after.WithTemp(target, Unknown(target, Unsupported(IrUnknownReason.UnresolvedColumn, "The insert names a column the table does not have.", at))));
 
         var rows = new List<IReadOnlyList<Value>>();
         foreach (var produced in called.Received.All.Where(p => p.Result.Encoding == IrEncoding.Rowset))
@@ -118,7 +118,7 @@ internal sealed partial class ProcedureAnalyzer
                         // Of another width: it fails the insert (213), so a successful one never received it.
                         break;
                     default:
-                        var unknown = shape as UnknownShape ?? Unsupported(IrUnknownReasons.UnsupportedStatement, $"The rows {produced.At} returns into {target} are not of a form modelled.", produced.At);
+                        var unknown = shape as UnknownShape ?? Unsupported(IrUnknownReason.UnsupportedStatement, $"The rows {produced.At} returns into {target} are not of a form modelled.", produced.At);
                         rows.Add([.. targets.Select(_ => Value.Unknown(unknown))]);
                         break;
                 }
@@ -214,7 +214,7 @@ internal sealed partial class ProcedureAnalyzer
                 if (caller.Temps.ContainsKey(name))
                 {
                     temps = temps.SetItem(name, new UnknownTable(new UnknownShape(
-                        IrUnknownReasons.UnsupportedStatement,
+                        IrUnknownReason.UnsupportedStatement,
                         $"The procedure called at {at} creates a temporary table named {name} too, and what it does to the caller's before that is not followed.",
                         at)));
                 }
@@ -281,7 +281,7 @@ internal sealed partial class ProcedureAnalyzer
         foreach (var parameter in execute.ExecutableEntity?.Parameters ?? [])
         {
             if (parameter.IsOutput && parameter.ParameterValue is VariableReference output)
-                state = Assign(state, output.Name, Nulls(output.Name, [new IrNullReason(IrNullRules.Parameter, parameter.Variable?.Name ?? FragmentText.OneLine(execute))]), definitely: true, at);
+                state = Assign(state, output.Name, Nulls(output.Name, [new IrNullReason(IrNullRule.Parameter, parameter.Variable?.Name ?? FragmentText.OneLine(execute))]), definitely: true, at);
         }
 
         return state;
@@ -300,13 +300,13 @@ internal sealed partial class ProcedureAnalyzer
         return track;
     }
 
-    private static string Reason(UnknowableCallKind kind) => kind switch
+    private static IrUnknownReason Reason(UnknowableCallKind kind) => kind switch
     {
-        UnknowableCallKind.DynamicSql => IrUnknownReasons.DynamicSql,
-        UnknowableCallKind.ProcedureVariable => IrUnknownReasons.ProcedureVariable,
-        UnknowableCallKind.SystemProcedure => IrUnknownReasons.SystemProcedure,
-        UnknowableCallKind.MissingProcedure => IrUnknownReasons.MissingProcedure,
-        UnknowableCallKind.AmbiguousProcedure => IrUnknownReasons.AmbiguousProcedure,
+        UnknowableCallKind.DynamicSql => IrUnknownReason.DynamicSql,
+        UnknowableCallKind.ProcedureVariable => IrUnknownReason.ProcedureVariable,
+        UnknowableCallKind.SystemProcedure => IrUnknownReason.SystemProcedure,
+        UnknowableCallKind.MissingProcedure => IrUnknownReason.MissingProcedure,
+        UnknowableCallKind.AmbiguousProcedure => IrUnknownReason.AmbiguousProcedure,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown kind of call."),
     };
 }

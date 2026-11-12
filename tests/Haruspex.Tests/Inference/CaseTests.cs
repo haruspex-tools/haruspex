@@ -35,7 +35,7 @@ public class CaseTests
         return Assert.Single(Fields(doc, ((IrArray)results[0].Type).Items), f => f.Name == name);
     }
 
-    private static string[] Rules(IrDocument doc, string name) => [.. Field(doc, name).NullableBecause.Select(r => r.Rule)];
+    private static IrNullRule[] Rules(IrDocument doc, string name) => [.. Field(doc, name).NullableBecause.Select(r => r.Rule)];
 
     /// <summary>The field's SQL type, or "unknown" when it is not typed.</summary>
     private static string Sql(IrDocument doc, string name) => Field(doc, name).Type switch
@@ -45,7 +45,7 @@ public class CaseTests
     };
 
     /// <summary>The type and the reasons to be null, as one string: <c>varchar(6) no-else</c>.</summary>
-    private static string Typed(IrDocument doc, string name) => string.Join(" ", [Sql(doc, name), .. Rules(doc, name)]);
+    private static string Typed(IrDocument doc, string name) => string.Join(" ", [Sql(doc, name), .. Rules(doc, name).Select(r => IrWireNames.Of(r))]);
 
     /// <summary>The field's exact value set, as <c>a|b</c>, or null when it has none.</summary>
     private static string? Values(IrDocument doc, string name) =>
@@ -281,7 +281,7 @@ public class CaseTests
         Assert.Equal("high|low|mid", Values(doc, "level"));
 
         var from = ((IrScalar)Field(doc, "label").Type).Facets!.Values!.From;
-        Assert.Equal(IrFactSources.Expression, Assert.Single(from).Kind);
+        Assert.Equal(IrFactSourceKind.Expression, Assert.Single(from).Kind);
     }
 
     // ---- COALESCE and ISNULL over JSON -------------------------------------------------------------------------------
@@ -310,7 +310,7 @@ public class CaseTests
         // subquery twice (Coalesce_reads_a_for_json_subquery_twice_so_it_can_be_null_though_its_fallback_is_not).
         var doc = Procedure($"SELECT t.id, COALESCE({Lines}, '[]') AS lines FROM dbo.t AS t FOR JSON PATH;");
         var lines = Field(doc, "lines");
-        Assert.Equal(["read-twice"], Rules(doc, "lines"));
+        Assert.Equal([IrNullRule.ReadTwice], Rules(doc, "lines"));
         var text = Assert.IsType<IrJsonText>(lines.Type);
         var array = Assert.IsType<IrArray>(text.Content);
         Assert.Null(array.MinItems);
@@ -323,7 +323,7 @@ public class CaseTests
         var doc = Procedure($"SELECT t.id, JSON_QUERY(COALESCE({Lines}, '[]')) AS lines, JSON_QUERY(ISNULL({Lines}, '[]')) AS once FROM dbo.t AS t FOR JSON PATH;");
         var array = Assert.IsType<IrArray>(Field(doc, "lines").Type);
         Assert.Null(array.MinItems);
-        Assert.Equal(["read-twice"], Rules(doc, "lines"));
+        Assert.Equal([IrNullRule.ReadTwice], Rules(doc, "lines"));
         Assert.IsType<IrArray>(Field(doc, "once").Type);
         Assert.Empty(Rules(doc, "once"));
     }
@@ -336,7 +336,7 @@ public class CaseTests
         Assert.IsType<IrArray>(Assert.IsType<IrJsonText>(Field(doc, "once").Type).Content);
         Assert.Empty(Rules(doc, "once"));
         Assert.IsType<IrArray>(Assert.IsType<IrJsonText>(Field(doc, "twice").Type).Content);
-        Assert.Equal(["read-twice"], Rules(doc, "twice"));
+        Assert.Equal([IrNullRule.ReadTwice], Rules(doc, "twice"));
     }
 
     [Fact]
@@ -377,7 +377,7 @@ public class CaseTests
         Assert.Null(Assert.IsType<IrJsonText>(Field(doc, "d").Type).Content);
         Assert.Equal("nvarchar(max)", Sql(doc, "e"));
         Assert.IsType<IrArray>(Field(doc, "f").Type);
-        Assert.Equal(["empty-subquery"], Rules(doc, "f"));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "f"));
     }
 
     [Fact]

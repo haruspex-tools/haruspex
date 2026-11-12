@@ -17,7 +17,7 @@ public partial class JsonTracingTests
         Assert.Equal(["x"], Assert.IsType<IrScalar>(Sub(doc, obj.Type, "s").Type).Facets!.Values!.Items.Select(v => v.Text));
         Assert.Equal(["1.5"], Assert.IsType<IrScalar>(Sub(doc, obj.Type, "n").Type).Facets!.Values!.Items.Select(v => v.Text));
         Assert.Equal(IrScalarKind.Boolean, Assert.IsType<IrScalar>(Sub(doc, obj.Type, "b").Type).Kind);
-        Assert.Equal(["null-literal"], Rules(Sub(doc, obj.Type, "z")));
+        Assert.Equal([IrNullRule.NullLiteral], Rules(Sub(doc, obj.Type, "z")));
         Assert.Equal(IrPresence.Always, Sub(doc, obj.Type, "z").Presence);
         Assert.Equal(2, Assert.IsType<IrTuple>(Sub(doc, obj.Type, "a").Type).Items.Count);
         Assert.Empty(doc.Unknowns);
@@ -70,8 +70,8 @@ public partial class JsonTracingTests
 
         Assert.False(Field(doc, "a").Nullable);
         Assert.False(Field(doc, "c").Nullable);
-        Assert.Equal(["empty-subquery"], Rules(Field(doc, "b")));
-        Assert.Equal(["empty-subquery"], Rules(Field(doc, "d")));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(Field(doc, "b")));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(Field(doc, "d")));
         Assert.Empty(doc.Unknowns);
     }
 

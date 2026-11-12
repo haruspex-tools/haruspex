@@ -17,7 +17,7 @@ public partial class JsonTracingTests
         Assert.Equal(1, Assert.IsType<IrArray>(lines.Type).MinItems);
 
         // FOR JSON over no rows is NULL, so the key is left out.
-        Assert.Equal(["empty-subquery"], Rules(lines));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(lines));
         Assert.Empty(doc.Unknowns);
     }
 
@@ -34,7 +34,7 @@ public partial class JsonTracingTests
             """);
 
         var summary = Field(doc, "summary");
-        Assert.Equal(["variable"], Rules(summary));
+        Assert.Equal([IrNullRule.Variable], Rules(summary));
         Assert.Equal(["total", "items"], Fields(doc, summary.Type).Select(f => f.Name));
 
         // @kept is its first value or the select's: never null, its items an empty tuple or the lines, so an array of lines.
@@ -78,7 +78,7 @@ public partial class JsonTracingTests
             """);
 
         var unknown = Unknown(doc, "x");
-        Assert.Equal(IrUnknownReasons.JsonShapeUnknown, unknown.Reason);
+        Assert.Equal(IrUnknownReason.JsonShapeUnknown, unknown.Reason);
         Assert.Contains(named, unknown.Detail, StringComparison.Ordinal);
         Assert.StartsWith("p.sql:3:", unknown.At, StringComparison.Ordinal);
     }

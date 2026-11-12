@@ -11,7 +11,7 @@ public partial class StatementFlowTests
         var doc = Procedure("DECLARE @n nvarchar(5);\nSELECT @n AS n;");
 
         Assert.Equal("nvarchar(5)", Scalar(Field(doc, "n")).Sql);
-        Assert.Equal([IrNullRules.Variable], Rules(Field(doc, "n")));
+        Assert.Equal([IrNullRule.Variable], Rules(Field(doc, "n")));
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public partial class StatementFlowTests
     {
         var doc = Procedure("DECLARE @n int;\nSELECT @n = t.code FROM dbo.t AS t;\nSELECT @n AS n;");
 
-        Assert.Equal([IrNullRules.Variable], Rules(Field(doc, "n")));
+        Assert.Equal([IrNullRule.Variable], Rules(Field(doc, "n")));
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public partial class StatementFlowTests
         var doc = Procedure("SELECT @x AS x;", "@x tinyint");
 
         Assert.Equal("tinyint", Scalar(Field(doc, "x")).Sql);
-        Assert.Equal([IrNullRules.Parameter], Rules(Field(doc, "x")));
+        Assert.Equal([IrNullRule.Parameter], Rules(Field(doc, "x")));
     }
 
     [Fact]
@@ -94,5 +94,5 @@ public partial class StatementFlowTests
     [Fact]
     public void A_cast_to_a_type_not_modelled_is_not_modelled_yet() =>
         // Other casts are typed (ExpressionTests); a binary type is not modelled at all.
-        AssertUnknown(Procedure("SELECT CAST(t.id AS varbinary(5)) AS a FROM dbo.t AS t;"), "results[0][].a", IrUnknownReasons.UnsupportedExpression);
+        AssertUnknown(Procedure("SELECT CAST(t.id AS varbinary(5)) AS a FROM dbo.t AS t;"), "results[0][].a", IrUnknownReason.UnsupportedExpression);
 }

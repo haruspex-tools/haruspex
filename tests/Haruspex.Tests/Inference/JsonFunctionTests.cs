@@ -32,7 +32,7 @@ public partial class JsonFunctionTests
 
     private static IrField Sub(IrDocument doc, IrType type, string name) => Fields(doc, type).Single(f => f.Name == name);
 
-    private static IEnumerable<string> Rules(IEnumerable<IrNullReason> reasons) => reasons.Select(r => r.Rule);
+    private static IEnumerable<IrNullRule> Rules(IEnumerable<IrNullReason> reasons) => reasons.Select(r => r.Rule);
 
     private const string Children = """
         CREATE FUNCTION dbo.children(@id int) RETURNS nvarchar(max) AS

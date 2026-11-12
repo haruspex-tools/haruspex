@@ -218,6 +218,9 @@ dotnet_diagnostic.IDE0058.severity = none
 # misses a case is still an error (CS8509).
 dotnet_diagnostic.IDE0010.severity = none
 dotnet_diagnostic.IDE0072.severity = none
+# A switch expression over an enum that names every member is complete: an integer cast to the enum is not a case to
+# write, and a discard arm for it would also swallow a member added later, which CS8509 otherwise reports.
+dotnet_diagnostic.CS8524.severity = none
 # Its flow analysis misreads property patterns: both places it flagged here are reachable.
 dotnet_diagnostic.CA1508.severity = none
 # Public members are documented where the API is reusable (below); elsewhere a comment is written where it says

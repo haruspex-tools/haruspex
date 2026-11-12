@@ -68,7 +68,7 @@ internal sealed partial class ProcedureAnalyzer
             var name = parameter.VariableName.Value;
             variableTypes[name] = SqlType.From(parameter.DataType);
             variableShapes[name] = DeclaredShape(SqlType.From(parameter.DataType), At(parameter), name, out var live);
-            start.Add(new(name, new Value(variableShapes[name], Because(IrNullRules.Parameter, name, variableShapes[name]), live)));
+            start.Add(new(name, new Value(variableShapes[name], Because(IrNullRule.Parameter, name, variableShapes[name]), live)));
         }
 
         body = procedure.StatementList;
@@ -90,7 +90,7 @@ internal sealed partial class ProcedureAnalyzer
             variableShapes[name] = DeclaredShape(SqlType.From(element.DataType), At(element), name, out var live);
 
             // A variable holds NULL until it is assigned.
-            start.Add(new(name, new Value(variableShapes[name], Because(IrNullRules.Variable, name, variableShapes[name]), live)));
+            start.Add(new(name, new Value(variableShapes[name], Because(IrNullRule.Variable, name, variableShapes[name]), live)));
         }
 
         foreach (var table in returnTable is null ? declarations.Tables : declarations.Tables.Prepend(returnTable))
@@ -142,8 +142,8 @@ internal sealed partial class ProcedureAnalyzer
         return new Walked(end, escapes is null ? [] : [.. escapes], null, declaredUsed);
     }
 
-    private static EquatableArray<IrNullReason> Because(string rule, string name, Shape shape) =>
-        shape is UnknownShape unknown ? [new IrNullReason(rule, name), new IrNullReason(IrNullRules.Unknown, unknown.At.ToString())] : [new IrNullReason(rule, name)];
+    private static EquatableArray<IrNullReason> Because(IrNullRule rule, string name, Shape shape) =>
+        shape is UnknownShape unknown ? [new IrNullReason(rule, name), new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())] : [new IrNullReason(rule, name)];
 
     /// <summary>A variable's or parameter's type: every value it holds has been converted to it, so the type's facets hold.</summary>
     private Shape DeclaredShape(SqlType? type, SourceLocation at, string name, out bool live)
@@ -151,7 +151,7 @@ internal sealed partial class ProcedureAnalyzer
         // A json value nests as JSON (observed for variables and columns), and its shape is in the data.
         live = SchemaRules.ResolveType(model, type)?.BuiltIn.Name == "json";
         return live
-            ? Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{name} is a json variable: its shape is in the data.", at)
+            ? Unsupported(IrUnknownReason.JsonShapeUnknown, $"{name} is a json variable: its shape is in the data.", at)
             : SqlTypes.ToConvertedShape(model, type, at);
     }
 
@@ -309,7 +309,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var keyword = statement.ScriptTokenStream[statement.FirstTokenIndex].Text.ToUpperInvariant();
         blocker ??= new UnknownShape(
-            IrUnknownReasons.UnsupportedStatement,
+            IrUnknownReason.UnsupportedStatement,
             $"{keyword} is not modelled yet, so the procedure's result sets cannot be listed.",
             At(statement));
         return Outcome.Ends;
@@ -338,7 +338,7 @@ internal sealed partial class ProcedureAnalyzer
             // How many times the body runs is not known, so neither is how many result sets it returns.
             if (appended != before)
             {
-                blocker = new UnknownShape(IrUnknownReasons.VaryingResults, "A result set is returned inside a loop, which may return it any number of times.", at);
+                blocker = new UnknownShape(IrUnknownReason.VaryingResults, "A result set is returned inside a loop, which may return it any number of times.", at);
                 return Outcome.Ends;
             }
 
@@ -353,7 +353,7 @@ internal sealed partial class ProcedureAnalyzer
             head = next;
         }
 
-        blocker = new UnknownShape(IrUnknownReasons.UnsupportedStatement, $"What the loop does to the procedure's tables and variables reached no fixed point in {MostPasses} passes.", at);
+        blocker = new UnknownShape(IrUnknownReason.UnsupportedStatement, $"What the loop does to the procedure's tables and variables reached no fixed point in {MostPasses} passes.", at);
         return Outcome.Ends;
     }
 
@@ -390,7 +390,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private static FlowState RolledBack(FlowState state, SourceLocation at)
     {
-        var why = new UnknownTable(new UnknownShape(IrUnknownReasons.UnsupportedStatement, $"The ROLLBACK at {at} may have undone what the procedure did to it.", at));
+        var why = new UnknownTable(new UnknownShape(IrUnknownReason.UnsupportedStatement, $"The ROLLBACK at {at} may have undone what the procedure did to it.", at));
         return state.WithTemps(state.Temps.ToImmutableDictionary(t => t.Key, _ => (TempTable)why, state.Temps.KeyComparer));
     }
 
@@ -402,13 +402,13 @@ internal sealed partial class ProcedureAnalyzer
     private Value Variable(VariableReference variable)
     {
         if (!locals!.State.Variables.TryGetValue(variable.Name, out var value))
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The variable {variable.Name} is not declared.", At(variable)));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The variable {variable.Name} is not declared.", At(variable)));
 
         // A cursor's query takes its variables as they were when its DECLARE ran (observed:
         // A_cursors_query_takes_its_variables_as_they_are_when_it_is_declared), not where the FETCH reads it: any value of
         // the variable's declared type, which every assignment converts to, or null.
         if (unfiltered && variableShapes.TryGetValue(variable.Name, out var declared))
-            return new Value(declared, Because(IrNullRules.Variable, variable.Name, declared), value.IsLiveJson);
+            return new Value(declared, Because(IrNullRule.Variable, variable.Name, declared), value.IsLiveJson);
 
         // A variable holding JSON built here holds it as text.
         return locals.State.Json.TryGetValue(variable.Name, out var slot) ? slot.Read(value) : value;
@@ -418,7 +418,7 @@ internal sealed partial class ProcedureAnalyzer
     private Value Assigned(AssignmentKind kind, ScalarExpression expression, BindingScope scope, TSqlFragment at) =>
         kind == AssignmentKind.Equals
             ? Expression(expression, scope)
-            : Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The compound assignment {Text(at)} is not modelled yet.", At(at)));
+            : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The compound assignment {Text(at)} is not modelled yet.", At(at)));
 
     /// <summary>
     /// Assigns a variable: its type stays its declared one, which the value is converted to, and it is null when the value
@@ -429,7 +429,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         if (!variableShapes.TryGetValue(name, out var shape) || !state.Variables.TryGetValue(name, out var old))
             return state;
-        var because = shape is UnknownShape unknown ? ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.Unknown, unknown.At.ToString())]) : Converting(value, shape, at);
+        var because = shape is UnknownShape unknown ? ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]) : Converting(value, shape, at);
         var assigned = new Value(shape, because, old.IsLiveJson);
         state = state.WithVariable(name, definitely ? assigned : ShapeJoin.Either(old, assigned, at, name));
         if (state.Json.TryGetValue(name, out var slot))
@@ -471,7 +471,7 @@ internal sealed partial class ProcedureAnalyzer
             foreach (var assignment in query.SelectElements.Cast<SelectSetVariable>())
             {
                 var value = unknown
-                    ? Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, "WITH XMLNAMESPACES is not modelled yet.", At(assignment)))
+                    ? Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "WITH XMLNAMESPACES is not modelled yet.", At(assignment)))
                     : Assigned(assignment.AssignmentKind, assignment.Expression, scope, assignment);
                 state = Assign(state, assignment.Variable.Name, value, once, At(assignment), unknown ? null : assignment.Expression);
             }
@@ -503,9 +503,9 @@ internal sealed partial class ProcedureAnalyzer
         {
             var row = Query(select.QueryExpression, parent: null);
             if (row.Star is { } star)
-                return Unknown(name, Unsupported(IrUnknownReasons.UnsupportedQuery, "SELECT * is not expanded yet.", star));
+                return Unknown(name, Unsupported(IrUnknownReason.UnsupportedQuery, "SELECT * is not expanded yet.", star));
             if (row.Columns.Any(c => string.IsNullOrEmpty(c.Name)) || row.Columns.GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
-                return Unknown(name, Unsupported(IrUnknownReasons.UnnamedColumn, $"SELECT … INTO {name} has a column without a name, or two of one name, which SQL Server refuses.", at));
+                return Unknown(name, Unsupported(IrUnknownReason.UnnamedColumn, $"SELECT … INTO {name} has a column without a name, or two of one name, which SQL Server refuses.", at));
             // Through a set operation SQL Server does not copy IDENTITY (observed: Select_into_from_a_union_does_not_copy_an_identity).
             var identity = select.QueryExpression is QuerySpecification query ? Identities(query) : new bool?[row.Columns.Count];
             return new KnownTable(name, [.. row.Columns.Select((c, i) => new TempColumn(c.Name!, Stored(c.Value, $"{name}.{c.Name}", c.At, c.Expression), null, identity[i]))]);
@@ -563,7 +563,7 @@ internal sealed partial class ProcedureAnalyzer
     private static Value Stored(Value value, string column, SourceLocation at, ScalarExpression? expression = null) => value.IsLiveJson
         ? expression is not null && BuiltAsText(expression) && value.Shape is not UnknownShape
             ? new Value(new JsonTextShape(value.Shape), value.NullableBecause)
-            : Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"JSON stored in {column} is text unless its SQL type is json, which is not tracked yet.", at))
+            : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"JSON stored in {column} is text unless its SQL type is json, which is not tracked yet.", at))
         : value;
 
     // ---- writes to temporary tables -------------------------------------------------------------------------------
@@ -589,11 +589,11 @@ internal sealed partial class ProcedureAnalyzer
             ? [.. Enumerable.Range(0, table.Columns.Count)]
             : spec.Columns.Select(c => IndexOf(table, c.MultiPartIdentifier.Identifiers[^1].Value)).ToList();
         if (targets.Any(i => i < 0))
-            return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReasons.UnresolvedColumn, "The insert names a column the table does not have.", at)));
+            return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnresolvedColumn, "The insert names a column the table does not have.", at)));
 
         var rows = WithCtes(insert.WithCtesAndXmlNamespaces, () => InsertedRows(spec.InsertSource, targets.Count, at), why => [[.. targets.Select(_ => Value.Unknown(why))]]);
         if (rows is null)
-            return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReasons.UnsupportedStatement, "The insert's values do not match its columns one to one.", at)));
+            return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnsupportedStatement, "The insert's values do not match its columns one to one.", at)));
 
         return state.WithTemp(name, Written(table, targets, rows, at, InsertedExpressions(spec.InsertSource, rows.Count)));
     }
@@ -627,7 +627,7 @@ internal sealed partial class ProcedureAnalyzer
             if (position < 0 && column.Identity == true)
                 continue;
             var written = position < 0
-                ? [new Value(column.Value.Shape, [new IrNullReason(IrNullRules.NullableColumn, where)])]
+                ? [new Value(column.Value.Shape, [new IrNullReason(IrNullRule.NullableColumn, where)])]
                 : all.Select(r => Stored(r[position], where, at));
             columns[i] = column with { Value = written.Aggregate(column.Value, (all, value) => ShapeJoin.Converted(all, value, at, where)) };
         }
@@ -642,7 +642,7 @@ internal sealed partial class ProcedureAnalyzer
     private JsonSlot JsonRows(IReadOnlyList<IReadOnlyList<Value>> rows, IReadOnlyList<IReadOnlyList<ScalarExpression?>>? expressions, int position, SourceLocation at, string where)
     {
         if (position < 0)
-            return JsonSlot.Text(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{where} is left out by the write {Text(at)}, so it takes its default, which is not read.", at));
+            return JsonSlot.Text(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{where} is left out by the write {Text(at)}, so it takes its default, which is not read.", at));
         return rows.Select((r, n) => JsonWritten(r[position], expressions?[n][position], at, where)).Aggregate(JsonSlot.Empty, JsonSlot.Join);
     }
 
@@ -672,10 +672,10 @@ internal sealed partial class ProcedureAnalyzer
             case SelectInsertSource { Select: { } query }:
                 var row = Query(query, parent: null);
                 if (row.Star is { } star)
-                    return [[.. Enumerable.Range(0, count).Select(_ => Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, "SELECT * is not expanded yet.", star)))]];
+                    return [[.. Enumerable.Range(0, count).Select(_ => Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "SELECT * is not expanded yet.", star)))]];
                 return row.Columns.Count == count ? [[.. row.Columns.Select(c => c.Value)]] : null;
             default:
-                return [[.. Enumerable.Range(0, count).Select(_ => Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, "This insert's source is not modelled yet.", at)))]];
+                return [[.. Enumerable.Range(0, count).Select(_ => Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "This insert's source is not modelled yet.", at)))]];
         }
     }
 
@@ -703,7 +703,7 @@ internal sealed partial class ProcedureAnalyzer
             foreach (var clause in spec.SetClauses)
             {
                 if (clause is not AssignmentSetClause set)
-                    return table is null ? state : state.WithTemp(target, Unknown(target, Unsupported(IrUnknownReasons.UnsupportedStatement, $"The update {Text(clause)} is not modelled yet.", At(clause))));
+                    return table is null ? state : state.WithTemp(target, Unknown(target, Unsupported(IrUnknownReason.UnsupportedStatement, $"The update {Text(clause)} is not modelled yet.", At(clause))));
 
                 var value = Assigned(set.AssignmentKind, set.NewValue, scope, set);
                 if (set.Variable is { } variable)
@@ -719,7 +719,7 @@ internal sealed partial class ProcedureAnalyzer
 
                 var i = IndexOf(table!, set.Column.MultiPartIdentifier.Identifiers[^1].Value);
                 if (i < 0)
-                    return state.WithTemp(target, Unknown(target, Unsupported(IrUnknownReasons.UnresolvedColumn, $"The update sets {Text(set.Column)}, which {target} does not have.", At(set))));
+                    return state.WithTemp(target, Unknown(target, Unsupported(IrUnknownReason.UnresolvedColumn, $"The update sets {Text(set.Column)}, which {target} does not have.", At(set))));
                 if (columns[i].Declaration is null)
                 {
                     var where = $"{target}.{columns[i].Name}";
@@ -738,7 +738,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>MERGE into a temporary table is not modelled, so the table becomes unknown; a table variable is as declared.</summary>
     private FlowState Merge(MergeStatement merge, DmlTarget target, FlowState state) =>
         target.Direct is { } name && name.StartsWith('#') && state.Temp(name) is KnownTable
-            ? state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReasons.UnsupportedStatement, $"MERGE at {At(merge)} is not modelled yet.", At(merge))))
+            ? state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnsupportedStatement, $"MERGE at {At(merge)} is not modelled yet.", At(merge))))
             : target.Direct is { } variable && variable.StartsWith('@') ? TableVariableWritten(state, variable, null, null, null, At(merge))
             : state;
 
@@ -773,7 +773,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var value = Declared(definition, column, name, temporary: true);
         var json = !Traced(value) || column.IsComputed ? null
-            : filled is { } at ? JsonSlot.Text(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{name}.{column.Name} is given values {Text(at)} that are not read.", at))
+            : filled is { } at ? JsonSlot.Text(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{name}.{column.Name} is given values {Text(at)} that are not read.", at))
             : JsonSlot.Empty;
         return new TempColumn(column.Name, value, definition, identity, json);
     }
@@ -785,7 +785,7 @@ internal sealed partial class ProcedureAnalyzer
     private Value Declared(Table table, Column column, string name, bool temporary)
     {
         var where = $"{name}.{column.Name}";
-        EquatableArray<IrNullReason> because = SchemaRules.IsNeverNull(model, table, column) ? [] : [new IrNullReason(IrNullRules.NullableColumn, where)];
+        EquatableArray<IrNullReason> because = SchemaRules.IsNeverNull(model, table, column) ? [] : [new IrNullReason(IrNullRule.NullableColumn, where)];
 
         // A #table is created in tempdb, which does not have the database's alias types (observed: 2715), so a name there
         // does not mean this project's type. sysname is the system's own, which tempdb has. A table variable takes them from
@@ -793,11 +793,11 @@ internal sealed partial class ProcedureAnalyzer
         if (temporary && column.Type is { Kind: SqlTypeKind.Named } named
             && !(named.Name.Equals("sysname", StringComparison.OrdinalIgnoreCase) && named.Schema is null or "sys"))
         {
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedSqlType, $"{where} is of the alias type {named}, which tempdb has only if it was created there.", column.At));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedSqlType, $"{where} is of the alias type {named}, which tempdb has only if it was created there.", column.At));
         }
 
         if (!column.IsComputed && SchemaRules.ResolveType(model, column.Type)?.BuiltIn.Name == "json")
-            return new Value(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{where} is a json column: its shape is in the data.", column.At), because, IsLiveJson: true);
+            return new Value(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{where} is a json column: its shape is in the data.", column.At), because, IsLiveJson: true);
 
         var shape = ColumnShape(table, column);
         return shape is UnknownShape unknown ? Value.Unknown(unknown) : new Value(shape, because);
@@ -864,7 +864,7 @@ internal sealed partial class ProcedureAnalyzer
                         case TableElementType.Index:
                             break;
                         default:
-                            return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReasons.UnsupportedStatement, $"{Text(alter)} is not modelled yet.", at)));
+                            return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnsupportedStatement, $"{Text(alter)} is not modelled yet.", at)));
                     }
                 }
 
@@ -887,7 +887,7 @@ internal sealed partial class ProcedureAnalyzer
                 return state;
         }
 
-        return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReasons.UnsupportedStatement, $"{Text(alter)} is not modelled yet.", at)));
+        return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnsupportedStatement, $"{Text(alter)} is not modelled yet.", at)));
     }
 
     /// <summary>
@@ -925,9 +925,9 @@ internal sealed partial class ProcedureAnalyzer
         if (with is null)
             return body();
         if (with.XmlNamespaces is not null)
-            return failed(Unsupported(IrUnknownReasons.UnsupportedQuery, "WITH XMLNAMESPACES is not modelled yet.", At(with)));
+            return failed(Unsupported(IrUnknownReason.UnsupportedQuery, "WITH XMLNAMESPACES is not modelled yet.", At(with)));
         if (locals is null)
-            return failed(Unsupported(IrUnknownReasons.UnsupportedQuery, "A common table expression (WITH) is not modelled here yet.", At(with)));
+            return failed(Unsupported(IrUnknownReason.UnsupportedQuery, "A common table expression (WITH) is not modelled here yet.", At(with)));
 
         var frame = locals.PushCtes();
         try
@@ -946,7 +946,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var name = cte.ExpressionName.Value;
         var at = At(cte);
-        LocalRelationValues Fails(string reason, string detail) => LocalRelationValues.Unknown(Unsupported(reason, $"{name}: {detail}", at));
+        LocalRelationValues Fails(IrUnknownReason reason, string detail) => LocalRelationValues.Unknown(Unsupported(reason, $"{name}: {detail}", at));
 
         var members = new List<QueryExpression>();
         var operators = new List<BinaryQueryExpression>();
@@ -955,7 +955,7 @@ internal sealed partial class ProcedureAnalyzer
 
         if (!recursive.Contains(true))
         {
-            return Relation(cte, Query(cte.QueryExpression, parent: null)) ?? Fails(IrUnknownReasons.UnsupportedQuery, "its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
+            return Relation(cte, Query(cte.QueryExpression, parent: null)) ?? Fails(IrUnknownReason.UnsupportedQuery, "its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
         }
 
         // A recursive CTE is an anchor member, then recursive members, each joined by UNION ALL; SQL Server refuses any
@@ -963,7 +963,7 @@ internal sealed partial class ProcedureAnalyzer
         if (recursive[0] || recursive.Skip(1).Contains(false) || members.Any(m => m is not QuerySpecification)
             || operators.Any(o => o.BinaryQueryExpressionType != BinaryQueryExpressionType.Union || !o.All))
         {
-            return Fails(IrUnknownReasons.UnsupportedQuery, "only a recursive CTE of one anchor member and recursive members, joined by UNION ALL, is modelled.");
+            return Fails(IrUnknownReason.UnsupportedQuery, "only a recursive CTE of one anchor member and recursive members, joined by UNION ALL, is modelled.");
         }
 
         // The column types are the anchor's exactly (SQL Server refuses a recursive member of any other, error 240,
@@ -973,7 +973,7 @@ internal sealed partial class ProcedureAnalyzer
         // (observed: A_recursive_ctes_column_is_not_a_constant_even_when_every_member_is_one_literal), and the join drops
         // the anchor's digits (Value.Digits), so even a member that gives the anchor's literal again takes one more pass.
         if (Relation(cte, Query((QuerySpecification)members[0], parent: null)) is not { } current)
-            return Fails(IrUnknownReasons.UnsupportedQuery, "its anchor's columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
+            return Fails(IrUnknownReason.UnsupportedQuery, "its anchor's columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
         for (var pass = 0; pass < MostPasses; pass++)
         {
             frame[name] = locals!.Register(name, current);
@@ -982,7 +982,7 @@ internal sealed partial class ProcedureAnalyzer
             {
                 var row = Query(member, parent: null);
                 if (row.Star is not null || row.Columns.Count != next.Count)
-                    return Fails(IrUnknownReasons.UnsupportedQuery, "a recursive member's columns cannot be listed against the anchor's.");
+                    return Fails(IrUnknownReason.UnsupportedQuery, "a recursive member's columns cannot be listed against the anchor's.");
                 for (var i = 0; i < next.Count; i++)
                     next[i] = ShapeJoin.Converted(next[i], row.Columns[i].Value, row.Columns[i].At, $"{name}.{current.Names![i]}");
             }
@@ -992,7 +992,7 @@ internal sealed partial class ProcedureAnalyzer
             current = current with { Values = [.. next] };
         }
 
-        return Fails(IrUnknownReasons.UnresolvedRecursion, $"its columns reached no fixed point in {MostPasses} passes.");
+        return Fails(IrUnknownReason.UnresolvedRecursion, $"its columns reached no fixed point in {MostPasses} passes.");
     }
 
     /// <summary>A CTE's columns from its query's row, named by its column list when it has one; null when they cannot be listed.</summary>
@@ -1052,7 +1052,7 @@ internal sealed partial class ProcedureAnalyzer
         if (value.Shape is not UnknownShape && bound.Ordinal >= 0 && Proved(bound.Source, Key(bound)))
             value = value with { NullableBecause = [] };
         if (bound.Source.OptionalSideOf is { } optional && !Matched(bound.Source) && !AlwaysApplied(bound))
-            value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(bound.Source.OuterApply ? IrNullRules.OuterApply : IrNullRules.OuterJoin, optional.ToString())]) };
+            value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(bound.Source.OuterApply ? IrNullRule.OuterApply : IrNullRule.OuterJoin, optional.ToString())]) };
         if (Unmatched(bound.Source) is { } unmatched && value.Shape is not UnknownShape)
             value = value with { NullableBecause = ShapeJoin.Reasons(value.NullableBecause, [unmatched]) };
         if (Rolled(bound.Source) is { } rolled && value.Shape is not UnknownShape)
@@ -1077,7 +1077,7 @@ internal sealed partial class ProcedureAnalyzer
         var row = Query(derived.QueryExpression, outer);
         return Relation(derived.Columns, row) is { } relation
             ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One }
-            : LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.", at));
+            : LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{name}: its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.", at));
     }
 
     /// <summary>
@@ -1096,7 +1096,7 @@ internal sealed partial class ProcedureAnalyzer
         var digits = literal.Value.TrimStart('-', '+').TrimStart('0').Length;
         return digits <= 38
             ? new Value(SqlTypes.ToConvertedShape(model, new ScalarType("numeric", Precision: digits).ToSqlType(), At(literal)), [])
-            : Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The literal {literal.Value} has more than 38 digits.", At(literal)));
+            : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The literal {literal.Value} has more than 38 digits.", At(literal)));
     }
 
     // ---- the results ----------------------------------------------------------------------------------------------
@@ -1114,7 +1114,7 @@ internal sealed partial class ProcedureAnalyzer
         {
             var produced = track.Positions[i];
             if (produced.Select(p => p.Result.Encoding).Distinct().Count() > 1)
-                return (null, new UnknownShape(IrUnknownReasons.VaryingResults, $"Result set {i + 1} is a rowset on some paths and JSON on others.", produced[0].At));
+                return (null, new UnknownShape(IrUnknownReason.VaryingResults, $"Result set {i + 1} is a rowset on some paths and JSON on others.", produced[0].At));
 
             var shapes = new List<Shape>();
             foreach (var shape in produced.Select(p => p.Result.Shape))
@@ -1126,7 +1126,7 @@ internal sealed partial class ProcedureAnalyzer
             var encoding = produced[0].Result.Encoding;
             var absent = produced.SelectMany(p => p.Result.AbsentBecause).ToList();
             if (i >= always)
-                absent.AddRange(produced.Select(p => new IrNullReason(IrNullRules.NotRun, p.At.ToString())));
+                absent.AddRange(produced.Select(p => new IrNullReason(IrNullRule.NotRun, p.At.ToString())));
             // The fewest rows any statement here proves at most: a statement that may return many makes the position many.
             var cardinality = produced.Min(p => p.Result.Cardinality);
             results.Add(new ResultShape(encoding, Union(shapes), [.. absent.Distinct()], cardinality));

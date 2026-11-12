@@ -22,7 +22,7 @@ public enum IrScalarKind
     /// <summary>A time of day, with no date and no time zone.</summary>
     Time,
 
-    /// <summary>A date and time; <see cref="IrFormats.Local"/> or <see cref="IrFormats.Offset"/> says whether it has an offset.</summary>
+    /// <summary>A date and time; <see cref="IrFormat.Local"/> or <see cref="IrFormat.Offset"/> says whether it has an offset.</summary>
     Datetime,
 
     /// <summary>A 128-bit identifier written as 8-4-4-4-12 hex digits; not necessarily an RFC 9562 UUID.</summary>

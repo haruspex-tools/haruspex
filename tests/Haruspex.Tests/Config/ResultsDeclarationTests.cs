@@ -108,8 +108,8 @@ public class ResultsDeclarationTests
         Assert.Equal(["item_id", "label"], row.Fields.Select(f => f.Name));
         Assert.All(row.Fields, f => Assert.Equal(IrPresence.Always, f.Presence));
         Assert.False(row.Fields[0].Nullable);
-        Assert.Equal(new IrScalar(IrScalarKind.Number, IrFormats.Int32, null), row.Fields[0].Type);
-        Assert.Equal([new IrNullReason(IrNullRules.Declared, "rpt.search")], row.Fields[1].NullableBecause);
+        Assert.Equal(new IrScalar(IrScalarKind.Number, IrFormat.Int32, null), row.Fields[0].Type);
+        Assert.Equal([new IrNullReason(IrNullRule.Declared, "rpt.search")], row.Fields[1].NullableBecause);
         Assert.Equal(IrScalarKind.String, Assert.IsType<IrScalar>(row.Fields[1].Type).Kind);
     }
 
@@ -147,11 +147,11 @@ public class ResultsDeclarationTests
         Assert.Equal(2, declared.Results.Count);
         var json = declared.Results[0];
         Assert.Equal(IrEncoding.Json, json.Encoding);
-        Assert.Equal([new IrNullReason(IrNullRules.Declared, "rpt.export")], json.AbsentBecause);
+        Assert.Equal([new IrNullReason(IrNullRule.Declared, "rpt.export")], json.AbsentBecause);
         var fields = declared.Types[Assert.IsType<IrRef>(json.Type).Name].Fields.ToDictionary(f => f.Name);
         Assert.Equal(IrScalarKind.Date, ((IrScalar)fields["on"].Type).Kind);
-        Assert.Equal((IrScalarKind.Datetime, IrFormats.Offset), (((IrScalar)fields["at"].Type).Kind, ((IrScalar)fields["at"].Type).Format));
-        Assert.Equal((IrScalarKind.Datetime, IrFormats.Local), (((IrScalar)fields["local"].Type).Kind, ((IrScalar)fields["local"].Type).Format));
+        Assert.Equal((IrScalarKind.Datetime, IrFormat.Offset), (((IrScalar)fields["at"].Type).Kind, ((IrScalar)fields["at"].Type).Format));
+        Assert.Equal((IrScalarKind.Datetime, IrFormat.Local), (((IrScalar)fields["local"].Type).Kind, ((IrScalar)fields["local"].Type).Format));
         Assert.Equal(IrScalarKind.Time, ((IrScalar)fields["time"].Type).Kind);
         Assert.Equal(IrScalarKind.Uuid, ((IrScalar)fields["id"].Type).Kind);
         Assert.Equal((IrScalarKind.Number, null), (((IrScalar)fields["count"].Type).Kind, ((IrScalar)fields["count"].Type).Format));
@@ -260,7 +260,7 @@ public class ResultsDeclarationTests
         var result = Assert.Single(doc.Objects.Single().Results!);
         Assert.Equal(["item_id", "label"], Fields(doc, result.Type).Select(f => f.Name));
         Assert.DoesNotContain(doc.Unknowns, u => u.Object == "rpt.search");
-        Assert.Equal([new IrOverride("rpt.search", "results", IrOverrideSettings.Results, "the filter is SQL the caller builds")], doc.Overrides);
+        Assert.Equal([new IrOverride("rpt.search", "results", IrOverrideSetting.Results, "the filter is SQL the caller builds")], doc.Overrides);
 
         var zod = ZodEmitter.Emit(doc);
         Assert.Contains("export const SearchRowSchema = z.object({", zod, StringComparison.Ordinal);
@@ -277,7 +277,7 @@ public class ResultsDeclarationTests
         var results = doc.Objects.Single().Results!;
         Assert.Equal(2, results.Count);
         Assert.Equal(["item_id", "label"], Fields(doc, results[1].Type).Select(f => f.Name));
-        Assert.Equal([new IrOverride("rpt.search_page", "results", IrOverrideSettings.Results, "the filter is SQL the caller builds") { Via = "rpt.search" }], doc.Overrides);
+        Assert.Equal([new IrOverride("rpt.search_page", "results", IrOverrideSetting.Results, "the filter is SQL the caller builds") { Via = "rpt.search" }], doc.Overrides);
     }
 
     [Fact]

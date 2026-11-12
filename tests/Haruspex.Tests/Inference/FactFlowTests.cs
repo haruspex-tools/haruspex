@@ -45,7 +45,7 @@ public class FactFlowTests
         // An alias type: its facets, attributed to it, and its NOT NULL.
         var code = Field(doc, "PRow", "code");
         Assert.False(code.Nullable);
-        Assert.Equal(new IrFactSource(IrFactSources.Type, "dbo.code"), Facets(code)!.Length!.From);
+        Assert.Equal(new IrFactSource(IrFactSourceKind.Type, "dbo.code"), Facets(code)!.Length!.From);
         Assert.Equal("nvarchar(8)", Assert.IsType<IrScalar>(code.Type).Sql);
     }
 

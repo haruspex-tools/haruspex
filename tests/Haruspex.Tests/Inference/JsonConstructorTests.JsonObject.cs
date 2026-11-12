@@ -18,7 +18,7 @@ public partial class JsonConstructorTests
         Assert.False(id.Nullable);
         var name = Sub(doc, v, "name");
         Assert.Equal(IrPresence.Always, name.Presence);
-        Assert.Equal(["nullable-column"], Rules(name.NullableBecause));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(name.NullableBecause));
         Assert.Empty(doc.Unknowns);
     }
 
@@ -43,7 +43,7 @@ public partial class JsonConstructorTests
         var name = Assert.IsType<IrScalar>(Sub(doc, v, "name").Type);
         Assert.Equal(10, name.Facets!.Length!.Value);
         var id = Assert.IsType<IrScalar>(Sub(doc, v, "id").Type);
-        Assert.Equal(IrFormats.Int32, id.Format);
+        Assert.Equal(IrFormat.Int32, id.Format);
     }
 
     [Theory]
@@ -54,7 +54,7 @@ public partial class JsonConstructorTests
     {
         var doc = Procedure($"SELECT json_object({key}: t.id) AS v FROM dbo.t AS t FOR JSON PATH;", "@k nvarchar(10)");
 
-        Assert.Equal(IrUnknownReasons.UnsupportedExpression, Unknown(doc, "results[0][].v").Reason);
+        Assert.Equal(IrUnknownReason.UnsupportedExpression, Unknown(doc, "results[0][].v").Reason);
         Assert.Contains("key", Unknown(doc, "results[0][].v").Detail, StringComparison.Ordinal);
     }
 
@@ -64,7 +64,7 @@ public partial class JsonConstructorTests
         // SQL Server writes both ({"a":1,"a":2}), which JSON.parse reads as the last: no fixed shape says that.
         var doc = Procedure("SELECT json_object('a': t.id, N'a': t.code) AS v FROM dbo.t AS t FOR JSON PATH;");
 
-        Assert.Equal(IrUnknownReasons.DuplicateColumn, Unknown(doc, "results[0][].v").Reason);
+        Assert.Equal(IrUnknownReason.DuplicateColumn, Unknown(doc, "results[0][].v").Reason);
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public partial class JsonConstructorTests
         Assert.IsType<IrRef>(Sub(doc, v, "q").Type);
         var sub = Sub(doc, v, "sub");
         Assert.IsType<IrArray>(sub.Type);
-        Assert.Equal(["empty-subquery"], Rules(sub.NullableBecause));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(sub.NullableBecause));
         Assert.Equal(IrPresence.Always, sub.Presence);
         Assert.Equal(IrScalarKind.String, Assert.IsType<IrScalar>(Sub(doc, v, "text").Type).Kind);
     }
@@ -120,7 +120,7 @@ public partial class JsonConstructorTests
 
         var one = Sub(doc, Field(doc, "o"), "one");
         Assert.IsType<IrJsonText>(one.Type);
-        Assert.Equal(["empty-subquery"], Rules(one.NullableBecause));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(one.NullableBecause));
         Assert.IsType<IrJsonText>(Assert.IsType<IrArray>(Field(doc, "a").Type).Items);
         var f = Field(doc, "f");
         Assert.IsType<IrJsonText>(f.Type);
@@ -138,7 +138,7 @@ public partial class JsonConstructorTests
 
         var one = Sub(doc, Field(doc, "o"), "one");
         Assert.Equal("id", Assert.Single(Fields(doc, one.Type)).Name);
-        Assert.Equal(["empty-subquery"], Rules(one.NullableBecause));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(one.NullableBecause));
         Assert.Equal("id", Assert.Single(Fields(doc, Field(doc, "f").Type)).Name);
     }
 

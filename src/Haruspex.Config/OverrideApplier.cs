@@ -89,7 +89,7 @@ internal sealed class OverrideApplier(
             else
             {
                 slot = slot with { Reasons = [] };
-                claims.Add(new IrOverride(objectId, path, IrOverrideSettings.NotNull, entry.Why));
+                claims.Add(new IrOverride(objectId, path, IrOverrideSetting.NotNull, entry.Why));
             }
         }
 
@@ -108,7 +108,7 @@ internal sealed class OverrideApplier(
             else
             {
                 slot = slot with { Type = scalar with { Facets = scalar.Facets! with { Values = set with { Match = IrValueMatch.Exact } } } };
-                claims.Add(new IrOverride(objectId, path, IrOverrideSettings.ExactValues, entry.Why));
+                claims.Add(new IrOverride(objectId, path, IrOverrideSetting.ExactValues, entry.Why));
             }
         }
 
@@ -118,7 +118,7 @@ internal sealed class OverrideApplier(
             for (var depth = (type.Length - type.TrimEnd('[', ']').Length) / 2; depth > 0; depth--)
                 imported = new IrArray(imported);
             slot = slot with { Type = imported };
-            claims.Add(new IrOverride(objectId, path, IrOverrideSettings.Type, entry.Why));
+            claims.Add(new IrOverride(objectId, path, IrOverrideSetting.Type, entry.Why));
 
             // What was unknown at or under the path is now declared.
             unknowns.RemoveAll(u => u.Object == objectId && (u.Path == path || (u.Path.StartsWith(path, StringComparison.Ordinal) && u.Path[path.Length] is '.' or '[' or '{' or '<')));

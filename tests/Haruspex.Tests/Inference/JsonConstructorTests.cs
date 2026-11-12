@@ -36,5 +36,5 @@ public partial class JsonConstructorTests
 
     private static IrField Sub(IrDocument doc, IrField field, string name) => Fields(doc, field.Type).Single(f => f.Name == name);
 
-    private static IEnumerable<string> Rules(IEnumerable<IrNullReason> reasons) => reasons.Select(r => r.Rule);
+    private static IEnumerable<IrNullRule> Rules(IEnumerable<IrNullReason> reasons) => reasons.Select(r => r.Rule);
 }

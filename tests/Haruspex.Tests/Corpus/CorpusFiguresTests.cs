@@ -119,7 +119,7 @@ public class CorpusFiguresTests
             new Dictionary<string, IrObjectType>
             {
                 ["Order"] = new([Field("id", Int), Field("lines", new IrJsonText(new IrArray(new IrRef("Line"))))]),
-                ["Line"] = new([Field("qty", Int), Field("note", new IrUnknownType(IrUnknownReasons.UnsupportedExpression))]),
+                ["Line"] = new([Field("qty", Int), Field("note", new IrUnknownType(IrUnknownReason.UnsupportedExpression))]),
             },
             []);
 
@@ -129,13 +129,13 @@ public class CorpusFiguresTests
         Assert.Equal(2, figures.FieldsTyped);
         Assert.Equal(1, figures.ProceduresReturningFields);
         Assert.Equal(0, figures.ProceduresFullyTyped);
-        Assert.Equal([new CorpusFigures.Reason(IrUnknownReasons.UnsupportedExpression, 1, 0, 0, 0)], figures.Unknowns);
+        Assert.Equal([new CorpusFigures.Reason(IrWireNames.Of(IrUnknownReason.UnsupportedExpression), 1, 0, 0, 0)], figures.Unknowns);
     }
 
     [Fact]
     public void A_union_or_tuple_of_objects_is_not_a_field_unless_part_of_it_is_unknown()
     {
-        var unknown = new IrUnknownType(IrUnknownReasons.UnsupportedQuery);
+        var unknown = new IrUnknownType(IrUnknownReason.UnsupportedQuery);
         var document = new IrDocument(
             new IrSource("tsql"),
             [Procedure("s.p", [Rowset("Holder")])],
@@ -156,7 +156,7 @@ public class CorpusFiguresTests
 
         // a, b, and "maybe", whose unknown part would otherwise go uncounted.
         Assert.Equal((3, 2), (figures.Fields, figures.FieldsTyped));
-        Assert.Equal([new CorpusFigures.Reason(IrUnknownReasons.UnsupportedQuery, 1, 0, 0, 0)], figures.Unknowns);
+        Assert.Equal([new CorpusFigures.Reason(IrWireNames.Of(IrUnknownReason.UnsupportedQuery), 1, 0, 0, 0)], figures.Unknowns);
     }
 
     [Fact]
@@ -196,11 +196,11 @@ public class CorpusFiguresTests
             new IrSource("tsql"),
             [
                 Procedure("s.dynamic", null),
-                Procedure("s.opaque", [new IrResult(IrEncoding.Rowset, new IrArray(new IrUnknownType(IrUnknownReasons.UnsupportedQuery)), [])]),
+                Procedure("s.opaque", [new IrResult(IrEncoding.Rowset, new IrArray(new IrUnknownType(IrUnknownReason.UnsupportedQuery)), [])]),
                 Procedure("s.writes", []),
             ],
             new Dictionary<string, IrObjectType>(),
-            [new IrUnknown("s.dynamic", "results", IrUnknownReasons.DynamicSql, "EXEC (@sql)", "p.sql:2:1")]);
+            [new IrUnknown("s.dynamic", "results", IrUnknownReason.DynamicSql, "EXEC (@sql)", "p.sql:2:1")]);
 
         var figures = CorpusFigures.Count(document);
 
@@ -208,14 +208,14 @@ public class CorpusFiguresTests
         Assert.Equal((1, 1, 1), (figures.ProceduresWithUnlistedResults, figures.ProceduresWithUnknownResults, figures.ProceduresWithNoResults));
         Assert.Equal((1, 2), (figures.ResultsUnknown, figures.ProceduresNotDescribed));
         Assert.Equal(
-            [new CorpusFigures.Reason(IrUnknownReasons.DynamicSql, 0, 0, 1, 0), new CorpusFigures.Reason(IrUnknownReasons.UnsupportedQuery, 0, 1, 0, 0)],
+            [new CorpusFigures.Reason(IrWireNames.Of(IrUnknownReason.DynamicSql), 0, 0, 1, 0), new CorpusFigures.Reason(IrWireNames.Of(IrUnknownReason.UnsupportedQuery), 0, 1, 0, 0)],
             figures.Unknowns);
     }
 
     [Fact]
     public void A_parameter_of_unknown_type_is_counted_by_reason_and_not_as_a_field()
     {
-        var parameter = new IrParameter("@rows", new IrUnknownType(IrUnknownReasons.UnsupportedSqlType), HasDefault: false, IsOutput: false);
+        var parameter = new IrParameter("@rows", new IrUnknownType(IrUnknownReason.UnsupportedSqlType), HasDefault: false, IsOutput: false);
         var document = new IrDocument(
             new IrSource("tsql"),
             [Procedure("s.load", []) with { Parameters = [parameter] }],
@@ -225,7 +225,7 @@ public class CorpusFiguresTests
         var figures = CorpusFigures.Count(document);
 
         Assert.Equal(0, figures.Fields);
-        Assert.Equal([new CorpusFigures.Reason(IrUnknownReasons.UnsupportedSqlType, 0, 0, 0, 1)], figures.Unknowns);
+        Assert.Equal([new CorpusFigures.Reason(IrWireNames.Of(IrUnknownReason.UnsupportedSqlType), 0, 0, 0, 1)], figures.Unknowns);
     }
 
     private static int QuotedNames(string path)

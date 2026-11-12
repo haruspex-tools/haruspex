@@ -26,7 +26,7 @@ internal sealed class IrBuilder(FunctionSummaries functions)
     private readonly Dictionary<ObjectName, string> nodeNames = [];
 
     /// <summary>The unknowns inside each node, with paths from the node, and the nodes each refers to.</summary>
-    private readonly Dictionary<string, List<(string Path, string Reason, string Detail, string At)>> nodeUnknowns = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, List<(string Path, IrUnknownReason Reason, string Detail, string At)>> nodeUnknowns = new(StringComparer.Ordinal);
     private readonly Dictionary<string, HashSet<string>> nodeEdges = new(StringComparer.Ordinal);
 
     /// <summary>The nodes being written, innermost on top.</summary>
@@ -86,8 +86,8 @@ internal sealed class IrBuilder(FunctionSummaries functions)
             case RecursiveShape recursive:
                 return Node(recursive.Function, id);
             case NeverShape never:
-                Report(id, path, IrUnknownReasons.UnresolvedRecursion, "The function called here never returns a value: every return calls itself again.", never.At.ToString());
-                return new IrUnknownType(IrUnknownReasons.UnresolvedRecursion);
+                Report(id, path, IrUnknownReason.UnresolvedRecursion, "The function called here never returns a value: every return calls itself again.", never.At.ToString());
+                return new IrUnknownType(IrUnknownReason.UnresolvedRecursion);
             case ArrayShape array:
                 return Array(array, Convert(array.Items, owner, id, path + "[]"));
             case TupleShape tuple:
@@ -167,7 +167,7 @@ internal sealed class IrBuilder(FunctionSummaries functions)
     }
 
     /// <summary>An unknown at <paramref name="path"/>: kept with the node being written, if any, to list under each object that reaches it.</summary>
-    private void Report(string id, string path, string reason, string detail, string at)
+    private void Report(string id, string path, IrUnknownReason reason, string detail, string at)
     {
         if (enclosingNodes.TryPeek(out var node))
             nodeUnknowns[node].Add((path, reason, detail, at));

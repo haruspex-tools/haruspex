@@ -17,14 +17,14 @@ internal sealed partial class ProcedureAnalyzer
     private LocalRelationValues TableFunction(SchemaObjectFunctionTableReference call, BindingScope? outer)
     {
         var at = At(call);
-        LocalRelationValues Fails(string reason, string detail) => LocalRelationValues.Unknown(Unsupported(reason, $"{Text(call)}: {detail}", at));
+        LocalRelationValues Fails(IrUnknownReason reason, string detail) => LocalRelationValues.Unknown(Unsupported(reason, $"{Text(call)}: {detail}", at));
 
         // A column list at the call is refused for a function (observed: 317), and so are table hints (a syntax error).
         if (call.Columns.Count > 0)
-            return Fails(IrUnknownReasons.UnsupportedSource, "a table-valued function cannot have a column alias (317).");
+            return Fails(IrUnknownReason.UnsupportedSource, "a table-valued function cannot have a column alias (317).");
         var name = call.SchemaObject;
         if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
-            return Fails(IrUnknownReasons.UnsupportedSource, "a function of another database is not modelled yet.");
+            return Fails(IrUnknownReason.UnsupportedSource, "a function of another database is not modelled yet.");
 
         // An unqualified name resolves in the caller's default schema and then in dbo, as a table's does (Binder): the one
         // function of that name when exactly one schema has it.
@@ -37,22 +37,22 @@ internal sealed partial class ProcedureAnalyzer
         {
             var candidates = model.Functions.Where(f => f.Name.Name.Equals(name.BaseIdentifier.Value, StringComparison.OrdinalIgnoreCase)).ToList();
             if (candidates.Count > 1)
-                return Fails(IrUnknownReasons.UnresolvedTable, $"{name.BaseIdentifier.Value} is not schema-qualified, and {string.Join(" and ", candidates.Select(c => c.Name))} have that name.");
+                return Fails(IrUnknownReason.UnresolvedTable, $"{name.BaseIdentifier.Value} is not schema-qualified, and {string.Join(" and ", candidates.Select(c => c.Name))} have that name.");
             function = candidates.FirstOrDefault();
         }
 
         if (function is null)
-            return Fails(IrUnknownReasons.UnresolvedTable, "there is no such function in the project.");
+            return Fails(IrUnknownReason.UnresolvedTable, "there is no such function in the project.");
         if (function.Redefinition is { } redefinition)
-            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReasons.Redefined, redefinition.Message, redefinition.At));
+            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.Redefined, redefinition.Message, redefinition.At));
         if (function.Body.MethodSpecifier is not null)
-            return Fails(IrUnknownReasons.ExternalCode, $"{function.Name} is a CLR function: its rows come from .NET code.");
+            return Fails(IrUnknownReason.ExternalCode, $"{function.Name} is a CLR function: its rows come from .NET code.");
         if (function.Body.ReturnType is not (SelectFunctionReturnType or TableValuedFunctionReturnType))
-            return Fails(IrUnknownReasons.UnresolvedTable, $"{function.Name} is a scalar function, not a table.");
+            return Fails(IrUnknownReason.UnresolvedTable, $"{function.Name} is a scalar function, not a table.");
 
         var parameters = function.Body.Parameters;
         if (call.Parameters.Count != parameters.Count)
-            return Fails(IrUnknownReasons.UnsupportedSource, $"{function.Name} takes {parameters.Count} arguments.");
+            return Fails(IrUnknownReason.UnsupportedSource, $"{function.Name} takes {parameters.Count} arguments.");
 
         var scope = binder.BindFrom(new QuerySpecification(), outer, outer is null ? locals : null);
         var arguments = new Dictionary<string, Value>(StringComparer.OrdinalIgnoreCase);
@@ -73,7 +73,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = new SourceLocation(function.File, parameter.StartLine, parameter.StartColumn);
         var declared = SqlTypes.ToConvertedShape(model, SqlType.From(parameter.DataType), at);
-        var any = new Value(declared, [new IrNullReason(IrNullRules.Parameter, parameter.VariableName.Value)]);
+        var any = new Value(declared, [new IrNullReason(IrNullRule.Parameter, parameter.VariableName.Value)]);
         if (declared is UnknownShape unknown)
             return Value.Unknown(unknown);
 
@@ -113,7 +113,7 @@ internal sealed partial class ProcedureAnalyzer
             variableTypes[parameter.VariableName.Value] = SqlType.From(parameter.DataType);
         locals = Locals(new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase));
         var at = At(select);
-        LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{function.Name}: {detail}", at));
+        LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{function.Name}: {detail}", at));
 
         return WithCtes(
             select.WithCtesAndXmlNamespaces,

@@ -39,7 +39,7 @@ it, claim by claim.
 ## What it guarantees
 
 - **Every claim holds for every execution**, under the rules below, each observed on SQL Server and named by its test.
-  What isn't proved is unknown, with a reason from `IrUnknownReasons`, never guessed
+  What isn't proved is unknown, with a reason from `IrUnknownReason`, never guessed
   ([decision 0002](../../docs/decisions/0002-unknown-with-a-reason-never-a-guess.md)).
 - **Unknowns stay local.** An unmodelled expression makes its column unknown, not its row; only what can't be placed (a
   result set of unknown shape) makes a procedure's results unknown.

@@ -18,5 +18,5 @@ its caller doing that.
 `COUNT_BIG`, or override the field in the config file with a reason. Users will notice the `.nullable()`, so the
 documentation says why wherever a count is shown.
 
-**In the code:** `IrNullRules.CountOverflow`, applied in `Refinement.cs`; the Inference README, "Aggregates and scalar
+**In the code:** `IrNullRule.CountOverflow`, applied in `Refinement.cs`; the Inference README, "Aggregates and scalar
 subqueries".

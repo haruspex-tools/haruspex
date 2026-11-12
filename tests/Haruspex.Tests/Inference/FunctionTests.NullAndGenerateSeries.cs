@@ -33,7 +33,7 @@ public partial class FunctionTests
             var result = doc.Objects[0].Results![index];
             var row = (IrRef)((IrArray)result.Type).Items;
             var field = Assert.Single(doc.Types[row.Name].Fields, f => f.Name == name);
-            return field.Type is IrScalar scalar ? string.Join(" ", [scalar.Sql!, .. field.NullableBecause.Select(r => r.Rule)]) : "unknown";
+            return field.Type is IrScalar scalar ? string.Join(" ", [scalar.Sql!, .. field.NullableBecause.Select(r => IrWireNames.Of(r.Rule))]) : "unknown";
         }
 
         Assert.Equal("int", Of(0, "a"));

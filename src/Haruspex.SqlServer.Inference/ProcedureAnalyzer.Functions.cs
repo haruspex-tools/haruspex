@@ -306,7 +306,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>json-value</c>, which covers a NULL document too. Neither argument changes the type.
     /// </summary>
     private Value JsonValue(FunctionCall call) =>
-        Typed(new ScalarType("nvarchar", 4000), [new IrNullReason(IrNullRules.JsonValue, At(call).ToString())], call);
+        Typed(new ScalarType("nvarchar", 4000), [new IrNullReason(IrNullRule.JsonValue, At(call).ToString())], call);
 
     // ---- STRING_AGG -------------------------------------------------------------------------------------------------------
 
@@ -344,7 +344,7 @@ internal sealed partial class ProcedureAnalyzer
         var scope = binder.BindFrom(new QuerySpecification(), outer, outer is null ? locals : null);
         var arguments = reference.Parameters.ToList();
         if (arguments.Count is not (2 or 3))
-            return LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedSource, "GENERATE_SERIES takes two or three arguments.", at));
+            return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, "GENERATE_SERIES takes two or three arguments.", at));
 
         var (values, unknown) = Arguments(arguments, scope);
         if (unknown is not null)
@@ -356,7 +356,7 @@ internal sealed partial class ProcedureAnalyzer
         else if (types.Count > 0 && types.All(t => t is { IsDecimal: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
             type = ScalarType.Common(types!) is { } common && types.All(t => ScalarType.Converts(t!, common)) ? common : null;
         if (type is null)
-            return LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedSource, $"{Text(reference)}: its arguments must be of one integer type, or decimals.", at));
+            return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(reference)}: its arguments must be of one integer type, or decimals.", at));
         return new LocalRelationValues(["value"], [Typed(type, [], reference)], null);
     }
 }

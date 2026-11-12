@@ -11,12 +11,12 @@ public class IrValidatorTests
 {
     private const string JsonColumn = "JSON_F52E2B61-18A1-11d1-B105-00805F49916B";
 
-    private static readonly IrNullReason Because = new(IrNullRules.NullableColumn, "dbo.t.c");
+    private static readonly IrNullReason Because = new(IrNullRule.NullableColumn, "dbo.t.c");
 
     private static IrField Field(string name, IrType type, IrPresence presence = IrPresence.Always, bool nullable = false) =>
         new(name, type, presence, nullable ? [Because] : []);
 
-    private static IrScalar Scalar(IrScalarKind kind, string? format = null) => new(kind, format, "sql");
+    private static IrScalar Scalar(IrScalarKind kind, IrFormat? format = null) => new(kind, format, "sql");
 
     private static IrDocument Doc(IrResult result, params (string Name, IrField[] Fields)[] types) =>
         new(
@@ -26,7 +26,7 @@ public class IrValidatorTests
             []);
 
     private static IrResult JsonResult(IrType type, bool mayBeAbsent = true) =>
-        new(IrEncoding.Json, type, mayBeAbsent ? [new IrNullReason(IrNullRules.NoRows, "p.sql:1:1")] : []);
+        new(IrEncoding.Json, type, mayBeAbsent ? [new IrNullReason(IrNullRule.NoRows, "p.sql:1:1")] : []);
 
     private static IrResult RowsetResult(string row) => new(IrEncoding.Rowset, new IrArray(new IrRef(row)), []);
 
@@ -43,7 +43,7 @@ public class IrValidatorTests
     [Fact]
     public void A_null_in_a_non_null_field_names_the_procedure_the_path_the_claim_and_the_value()
     {
-        var v = Single(ValidateRows("""[{"a":1},{"a":null}]""", Field("a", Scalar(IrScalarKind.Number, IrFormats.Int32))));
+        var v = Single(ValidateRows("""[{"a":1},{"a":null}]""", Field("a", Scalar(IrScalarKind.Number, IrFormat.Int32))));
 
         Assert.Equal("dbo.p", v.Procedure);
         Assert.Equal("results[0][1].a", v.Path);
@@ -98,7 +98,7 @@ public class IrValidatorTests
         var doc = Doc(
             JsonResult(new IrRef("Row")),
             ("Row", [Field("lines", new IrArray(new IrRef("Line")), nullable: true)]),
-            ("Line", [Field("qty", Scalar(IrScalarKind.Number, IrFormats.Int16))]));
+            ("Line", [Field("qty", Scalar(IrScalarKind.Number, IrFormat.Int16))]));
 
         var v = Single(IrValidator.Validate(doc, "dbo.p", [Json("""{"lines":[{"qty":1},{"qty":"2"}]}""")]));
 
@@ -116,28 +116,28 @@ public class IrValidatorTests
 
     // ---- scalars in JSON ----------------------------------------------------------------------------
 
-    public static TheoryData<IrScalarKind, string?, string, bool> JsonScalars { get; } = new()
+    public static TheoryData<IrScalarKind, IrFormat?, string, bool> JsonScalars { get; } = new()
     {
         { IrScalarKind.String, null, "\"AB   \"", true },
         { IrScalarKind.String, null, "1", false },
         { IrScalarKind.Boolean, null, "true", true },
         { IrScalarKind.Boolean, null, "1", false },
-        { IrScalarKind.Number, IrFormats.Uint8, "255", true },
-        { IrScalarKind.Number, IrFormats.Uint8, "256", false },
-        { IrScalarKind.Number, IrFormats.Uint8, "-1", false },
-        { IrScalarKind.Number, IrFormats.Int16, "-32768", true },
-        { IrScalarKind.Number, IrFormats.Int16, "32768", false },
-        { IrScalarKind.Number, IrFormats.Int32, "2147483647", true },
-        { IrScalarKind.Number, IrFormats.Int32, "2147483648", false },
-        { IrScalarKind.Number, IrFormats.Int32, "1.5", false },
-        { IrScalarKind.Number, IrFormats.Int32, "\"1\"", false },
-        { IrScalarKind.Number, IrFormats.Int64, "-9223372036854775808", true },
-        { IrScalarKind.Number, IrFormats.Int64, "9223372036854775808", false },
-        { IrScalarKind.Number, IrFormats.Decimal, "12345678901234567890123456789012345678", true },
-        { IrScalarKind.Number, IrFormats.Decimal, "-0.001", true },
-        { IrScalarKind.Number, IrFormats.Decimal, "\"1.5\"", false },
-        { IrScalarKind.Number, IrFormats.Float, "1.0000000e-001", true },
-        { IrScalarKind.Number, IrFormats.Float, "true", false },
+        { IrScalarKind.Number, IrFormat.Uint8, "255", true },
+        { IrScalarKind.Number, IrFormat.Uint8, "256", false },
+        { IrScalarKind.Number, IrFormat.Uint8, "-1", false },
+        { IrScalarKind.Number, IrFormat.Int16, "-32768", true },
+        { IrScalarKind.Number, IrFormat.Int16, "32768", false },
+        { IrScalarKind.Number, IrFormat.Int32, "2147483647", true },
+        { IrScalarKind.Number, IrFormat.Int32, "2147483648", false },
+        { IrScalarKind.Number, IrFormat.Int32, "1.5", false },
+        { IrScalarKind.Number, IrFormat.Int32, "\"1\"", false },
+        { IrScalarKind.Number, IrFormat.Int64, "-9223372036854775808", true },
+        { IrScalarKind.Number, IrFormat.Int64, "9223372036854775808", false },
+        { IrScalarKind.Number, IrFormat.Decimal, "12345678901234567890123456789012345678", true },
+        { IrScalarKind.Number, IrFormat.Decimal, "-0.001", true },
+        { IrScalarKind.Number, IrFormat.Decimal, "\"1.5\"", false },
+        { IrScalarKind.Number, IrFormat.Float, "1.0000000e-001", true },
+        { IrScalarKind.Number, IrFormat.Float, "true", false },
         { IrScalarKind.Date, null, "\"0001-01-01\"", true },
         { IrScalarKind.Date, null, "\"2026-02-30\"", false },
         { IrScalarKind.Date, null, "\"2026-03-04T00:00:00\"", false },
@@ -145,13 +145,13 @@ public class IrValidatorTests
         { IrScalarKind.Time, null, "\"05:06:07.1234567\"", true },
         { IrScalarKind.Time, null, "\"05:06\"", false },
         { IrScalarKind.Time, null, "\"24:00:00\"", false },
-        { IrScalarKind.Datetime, IrFormats.Local, "\"9999-12-31T23:59:59.9999999\"", true },
-        { IrScalarKind.Datetime, IrFormats.Local, "\"2026-03-04T05:06:07Z\"", false },
-        { IrScalarKind.Datetime, IrFormats.Local, "\"2026-03-04 05:06:07\"", false },
-        { IrScalarKind.Datetime, IrFormats.Offset, "\"2026-03-04T05:06:07Z\"", true },
-        { IrScalarKind.Datetime, IrFormats.Offset, "\"2026-03-04T05:06:07.500-08:00\"", true },
-        { IrScalarKind.Datetime, IrFormats.Offset, "\"2026-03-04T05:06:07\"", false },
-        { IrScalarKind.Datetime, IrFormats.Offset, "\"2026-03-04T05:06:07+0530\"", false },
+        { IrScalarKind.Datetime, IrFormat.Local, "\"9999-12-31T23:59:59.9999999\"", true },
+        { IrScalarKind.Datetime, IrFormat.Local, "\"2026-03-04T05:06:07Z\"", false },
+        { IrScalarKind.Datetime, IrFormat.Local, "\"2026-03-04 05:06:07\"", false },
+        { IrScalarKind.Datetime, IrFormat.Offset, "\"2026-03-04T05:06:07Z\"", true },
+        { IrScalarKind.Datetime, IrFormat.Offset, "\"2026-03-04T05:06:07.500-08:00\"", true },
+        { IrScalarKind.Datetime, IrFormat.Offset, "\"2026-03-04T05:06:07\"", false },
+        { IrScalarKind.Datetime, IrFormat.Offset, "\"2026-03-04T05:06:07+0530\"", false },
         { IrScalarKind.Uuid, null, "\"6F9619FF-8B86-D011-B42D-00C04FC964FF\"", true },
         { IrScalarKind.Uuid, null, "\"6f9619ff-8b86-d011-b42d-00c04fc964ff\"", true },
         { IrScalarKind.Uuid, null, "\"6F9619FF8B86D011B42D00C04FC964FF\"", false },
@@ -159,7 +159,7 @@ public class IrValidatorTests
 
     [Theory]
     [MemberData(nameof(JsonScalars))]
-    public void A_json_scalar_must_have_the_form_its_kind_claims(IrScalarKind kind, string? format, string json, bool valid)
+    public void A_json_scalar_must_have_the_form_its_kind_claims(IrScalarKind kind, IrFormat? format, string json, bool valid)
     {
         var report = ValidateRows($$"""[{"a":{{json}}}]""", Field("a", Scalar(kind, format)));
 
@@ -179,7 +179,7 @@ public class IrValidatorTests
     [Fact]
     public void An_unknown_type_accepts_any_value_but_presence_and_null_are_still_claimed()
     {
-        var unknown = new IrUnknownType(IrUnknownReasons.UnsupportedExpression);
+        var unknown = new IrUnknownType(IrUnknownReason.UnsupportedExpression);
 
         Assert.Empty(ValidateRows("""[{"a":{"x":[1]}},{"a":"y"},{"a":null}]""", Field("a", unknown, nullable: true)).Violations);
         Assert.Empty(ValidateRows("""[{"a":1},{}]""", Field("a", unknown, IrPresence.OmittedWhenNull, nullable: true)).Violations);
@@ -191,7 +191,7 @@ public class IrValidatorTests
     [Fact]
     public void A_json_result_split_over_several_rows_is_joined_before_parsing() =>
         Assert.Empty(IrValidator.Validate(
-            Doc(JsonResult(new IrArray(new IrRef("Row"))), ("Row", [Field("a", Scalar(IrScalarKind.Number, IrFormats.Int32))])),
+            Doc(JsonResult(new IrArray(new IrRef("Row"))), ("Row", [Field("a", Scalar(IrScalarKind.Number, IrFormat.Int32))])),
             "dbo.p",
             [Json("""[{"a":""", """1},{"a":2}]""")]).Violations);
 
@@ -211,7 +211,7 @@ public class IrValidatorTests
 
     [Fact]
     public void Json_that_does_not_parse_is_a_violation() =>
-        Assert.Contains("JSON", Single(ValidateRows("""{"a":1},{"a":2}""", Field("a", Scalar(IrScalarKind.Number, IrFormats.Int32)))).Claim, StringComparison.Ordinal);
+        Assert.Contains("JSON", Single(ValidateRows("""{"a":1},{"a":2}""", Field("a", Scalar(IrScalarKind.Number, IrFormat.Int32)))).Claim, StringComparison.Ordinal);
 
     [Fact]
     public void A_json_result_must_be_one_column() =>
@@ -231,7 +231,7 @@ public class IrValidatorTests
         Assert.Equal("2", v.Value);
     }
 
-    private static readonly IrNullReason NotRun = new(IrNullRules.NotRun, "p.sql:2:1");
+    private static readonly IrNullReason NotRun = new(IrNullRule.NotRun, "p.sql:2:1");
 
     private static IrDocument Results(params IrResult[] results) =>
         new(new IrSource("tsql"), [new IrObject("dbo.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [.. results])], new Dictionary<string, IrObjectType> { ["Row"] = new([]) }, []);
@@ -311,33 +311,33 @@ public class IrValidatorTests
     public void A_null_in_a_non_null_column_is_a_violation() =>
         Assert.Equal("null", Single(ValidateRowset(["a"], [null], Field("a", Scalar(IrScalarKind.String)))).Value);
 
-    public static TheoryData<IrScalarKind, string?, object, bool> RowsetScalars { get; } = new()
+    public static TheoryData<IrScalarKind, IrFormat?, object, bool> RowsetScalars { get; } = new()
     {
         { IrScalarKind.String, null, "x", true },
         { IrScalarKind.String, null, 1, false },
-        { IrScalarKind.Number, IrFormats.Uint8, (byte)1, true },
-        { IrScalarKind.Number, IrFormats.Int16, (short)1, true },
-        { IrScalarKind.Number, IrFormats.Int32, 1, true },
-        { IrScalarKind.Number, IrFormats.Int32, 1L, false },
-        { IrScalarKind.Number, IrFormats.Int64, 1L, true },
-        { IrScalarKind.Number, IrFormats.Decimal, 1.5m, true },
-        { IrScalarKind.Number, IrFormats.Decimal, 1.5d, false },
-        { IrScalarKind.Number, IrFormats.Float, 1.5d, true },
-        { IrScalarKind.Number, IrFormats.Float, 1.5f, true },
+        { IrScalarKind.Number, IrFormat.Uint8, (byte)1, true },
+        { IrScalarKind.Number, IrFormat.Int16, (short)1, true },
+        { IrScalarKind.Number, IrFormat.Int32, 1, true },
+        { IrScalarKind.Number, IrFormat.Int32, 1L, false },
+        { IrScalarKind.Number, IrFormat.Int64, 1L, true },
+        { IrScalarKind.Number, IrFormat.Decimal, 1.5m, true },
+        { IrScalarKind.Number, IrFormat.Decimal, 1.5d, false },
+        { IrScalarKind.Number, IrFormat.Float, 1.5d, true },
+        { IrScalarKind.Number, IrFormat.Float, 1.5f, true },
         { IrScalarKind.Boolean, null, true, true },
         { IrScalarKind.Date, null, new DateTime(2026, 3, 4), true },
         { IrScalarKind.Date, null, new DateTime(2026, 3, 4, 5, 6, 7), false },
         { IrScalarKind.Time, null, new TimeSpan(5, 6, 7), true },
-        { IrScalarKind.Datetime, IrFormats.Local, new DateTime(2026, 3, 4, 5, 6, 7), true },
-        { IrScalarKind.Datetime, IrFormats.Local, new DateTimeOffset(2026, 3, 4, 5, 6, 7, TimeSpan.Zero), false },
-        { IrScalarKind.Datetime, IrFormats.Offset, new DateTimeOffset(2026, 3, 4, 5, 6, 7, TimeSpan.Zero), true },
+        { IrScalarKind.Datetime, IrFormat.Local, new DateTime(2026, 3, 4, 5, 6, 7), true },
+        { IrScalarKind.Datetime, IrFormat.Local, new DateTimeOffset(2026, 3, 4, 5, 6, 7, TimeSpan.Zero), false },
+        { IrScalarKind.Datetime, IrFormat.Offset, new DateTimeOffset(2026, 3, 4, 5, 6, 7, TimeSpan.Zero), true },
         { IrScalarKind.Uuid, null, Guid.Empty, true },
         { IrScalarKind.Uuid, null, "00000000-0000-0000-0000-000000000000", false },
     };
 
     [Theory]
     [MemberData(nameof(RowsetScalars))]
-    public void A_rowset_value_must_have_the_type_its_kind_claims(IrScalarKind kind, string? format, object value, bool valid)
+    public void A_rowset_value_must_have_the_type_its_kind_claims(IrScalarKind kind, IrFormat? format, object value, bool valid)
     {
         var report = ValidateRowset(["a"], [value], Field("a", Scalar(kind, format)));
 
@@ -364,7 +364,7 @@ public class IrValidatorTests
         var doc = Doc(
             JsonResult(new IrRef("Row")),
             ("Row", [Field("sp", new IrRef("Sp"), IrPresence.OmittedWhenNull, nullable: true)]),
-            ("Sp", [Field("id", Scalar(IrScalarKind.Number, IrFormats.Int32), IrPresence.OmittedWhenNull, nullable: true)]));
+            ("Sp", [Field("id", Scalar(IrScalarKind.Number, IrFormat.Int32), IrPresence.OmittedWhenNull, nullable: true)]));
 
         var report = IrValidator.Validate(doc, "dbo.p", [Json("{}")]);
 
@@ -378,7 +378,7 @@ public class IrValidatorTests
     {
         var report = ValidateRows(
             """[{"a":1,"b":null},{"a":2,"b":"x"}]""",
-            Field("a", Scalar(IrScalarKind.Number, IrFormats.Int32)),
+            Field("a", Scalar(IrScalarKind.Number, IrFormat.Int32)),
             Field("b", Scalar(IrScalarKind.String), nullable: true),
             Field("c", Scalar(IrScalarKind.String), IrPresence.OmittedWhenNull, nullable: true));
 

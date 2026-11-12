@@ -16,13 +16,13 @@ public class IrJsonWriterFacetTests
         return json.RootElement.GetProperty("types").GetProperty("PRow").GetProperty("fields")[0].GetProperty("type").GetRawText();
     }
 
-    private static readonly IrFactSource Type = new(IrFactSources.Type, "decimal(38,2)");
-    private static readonly IrFactSource Check = new(IrFactSources.Check, "dbo.ck_v");
+    private static readonly IrFactSource Type = new(IrFactSourceKind.Type, "decimal(38,2)");
+    private static readonly IrFactSource Check = new(IrFactSourceKind.Check, "dbo.ck_v");
 
     [Fact]
     public void Writes_bounds_as_exact_json_numbers_with_their_sources()
     {
-        var text = Field(new IrScalar(IrScalarKind.Number, IrFormats.Decimal, "decimal(38,2)", new IrFacets(
+        var text = Field(new IrScalar(IrScalarKind.Number, IrFormat.Decimal, "decimal(38,2)", new IrFacets(
             Digits: new IrDigits(38, 2, Type),
             Min: new IrBound("0", false, Check),
             Max: new IrBound("999999999999999999999999999999999999.99", true, Type))));
@@ -59,8 +59,8 @@ public class IrJsonWriterFacetTests
     {
         using var strings = JsonDocument.Parse(Field(new IrScalar(IrScalarKind.String, null, "varchar(10)", new IrFacets(
             Values: new IrValueSet([new IrValue("open", true), new IrValue("1.50", true)], IrValueMatch.Collation, [Check])))));
-        using var numbers = JsonDocument.Parse(Field(new IrScalar(IrScalarKind.Number, IrFormats.Int32, "int", new IrFacets(
-            Values: new IrValueSet([new IrValue("-3", false), new IrValue("12345678901234567890", false)], IrValueMatch.Exact, [Check, new IrFactSource(IrFactSources.Check, "dbo.ck_w")])))));
+        using var numbers = JsonDocument.Parse(Field(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int", new IrFacets(
+            Values: new IrValueSet([new IrValue("-3", false), new IrValue("12345678901234567890", false)], IrValueMatch.Exact, [Check, new IrFactSource(IrFactSourceKind.Check, "dbo.ck_w")])))));
 
         var s = strings.RootElement.GetProperty("values");
         Assert.Equal("collation", s.GetProperty("match").GetString());
@@ -73,7 +73,7 @@ public class IrJsonWriterFacetTests
 
     [Fact]
     public void Writes_no_facets_when_none_are_known() =>
-        Assert.DoesNotContain("from", Field(new IrScalar(IrScalarKind.Number, IrFormats.Int32, "int", new IrFacets())), StringComparison.Ordinal);
+        Assert.DoesNotContain("from", Field(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int", new IrFacets())), StringComparison.Ordinal);
 
     [Theory]
     [InlineData("1e5")]

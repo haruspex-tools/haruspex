@@ -5,7 +5,7 @@ namespace Haruspex.Tests.Ir;
 
 public class IrJsonWriterTests
 {
-    private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormats.Int32, "int");
+    private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormat.Int32, "int");
 
     private static IrDocument Document() => new(
         new IrSource("tsql"),
@@ -16,11 +16,11 @@ public class IrJsonWriterTests
         new Dictionary<string, IrObjectType>
         {
             ["SecondRow"] = new([new IrField("x", Int, IrPresence.Always, [])]),
-            ["FirstRow"] = new([new IrField("y", Int, IrPresence.Always, [new IrNullReason(IrNullRules.NullableColumn, "a.t.y")])]),
+            ["FirstRow"] = new([new IrField("y", Int, IrPresence.Always, [new IrNullReason(IrNullRule.NullableColumn, "a.t.y")])]),
         },
         [
-            new IrUnknown("b.second", "results[0][].z", IrUnknownReasons.UnsupportedExpression, "z", "b.sql:2:1"),
-            new IrUnknown("a.first", "results[0][].z", IrUnknownReasons.UnsupportedExpression, "z", "a.sql:2:1"),
+            new IrUnknown("b.second", "results[0][].z", IrUnknownReason.UnsupportedExpression, "z", "b.sql:2:1"),
+            new IrUnknown("a.first", "results[0][].z", IrUnknownReason.UnsupportedExpression, "z", "a.sql:2:1"),
         ]);
 
     [Fact]

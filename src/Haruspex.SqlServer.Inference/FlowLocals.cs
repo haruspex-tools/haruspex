@@ -76,15 +76,15 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
 
         // A global temporary table (##t) is shared with every session, which may change it at any time.
         if (name.StartsWith("##", StringComparison.Ordinal))
-            return Register(name, LocalRelationValues.Unknown(new UnknownShape(IrUnknownReasons.UnsupportedSource, $"{name} is a global temporary table, which any session may change.", Nowhere)));
+            return Register(name, LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnsupportedSource, $"{name} is a global temporary table, which any session may change.", Nowhere)));
 
         var found = State.Temp(name) switch
         {
             KnownTable known => Register(name, new LocalRelationValues([.. known.Columns.Select(c => c.Name)], [.. known.Columns.Select(c => c.Read)], null)),
             UnknownTable unknown => Register(name, LocalRelationValues.Unknown(unknown.Why)),
-            AbsentTable absent => Register(name, LocalRelationValues.Unknown(new UnknownShape(IrUnknownReasons.UnresolvedTable, $"{name} was dropped at {absent.At}, so it is not there to read.", absent.At))),
+            AbsentTable absent => Register(name, LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{name} was dropped at {absent.At}, so it is not there to read.", absent.At))),
             _ => Register(name, LocalRelationValues.Unknown(new UnknownShape(
-                IrUnknownReasons.CallerTempTable,
+                IrUnknownReason.CallerTempTable,
                 $"{name} is not created by the procedure before this, so it is the caller's, whose shape depends on who calls.",
                 Nowhere))),
         };

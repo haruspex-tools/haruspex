@@ -98,7 +98,7 @@ public partial class StatementFlowTests
         // A recursive column has its anchor's type exactly (observed: A_recursive_member_of_another_type_than_the_anchor_is_an_error).
         // The recursive member's depth + 1 is an int that can overflow, so it is null only for that.
         Assert.Equal("int", Scalar(Field(doc, "depth")).Sql);
-        Assert.Equal([IrNullRules.ArithmeticOverflow], Rules(Field(doc, "depth")));
+        Assert.Equal([IrNullRule.ArithmeticOverflow], Rules(Field(doc, "depth")));
     }
 
     [Fact]

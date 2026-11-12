@@ -37,11 +37,11 @@ public partial class SetJoinTests
         // Openjson_as_json_is_nvarchar_max_holding_an_object_or_array_that_nests_as_json.
         var doc = Procedure("SELECT j.items FROM dbo.t AS t CROSS APPLY OPENJSON(t.doc) WITH (items nvarchar(max) '$.items' AS JSON) AS j;");
         Assert.IsType<IrJsonText>(Field(doc, "items").Type);
-        Assert.Equal(["json-value"], Rules(doc, "items"));
+        Assert.Equal([IrNullRule.JsonValue], Rules(doc, "items"));
 
         doc = Procedure("SELECT j.items FROM dbo.t AS t CROSS APPLY OPENJSON(t.doc) WITH (items nvarchar(max) '$.items' AS JSON) AS j FOR JSON PATH;");
         Assert.IsType<IrUnknownType>(Field(doc, "items").Type);
-        Assert.Equal(IrUnknownReasons.JsonShapeUnknown, Assert.Single(doc.Unknowns).Reason);
+        Assert.Equal(IrUnknownReason.JsonShapeUnknown, Assert.Single(doc.Unknowns).Reason);
     }
 
     [Fact]

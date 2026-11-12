@@ -24,29 +24,29 @@ public class ZodEmitterTests
     }
 
     [Theory]
-    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormats.Int64, "bigint", "z.number()")]
-    [InlineData(IrEncoding.Rowset, IrScalarKind.Number, IrFormats.Int64, "bigint", "z.string()")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormat.Int64, "bigint", "z.number()")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Number, IrFormat.Int64, "bigint", "z.string()")]
     // Without facets an integer format still states its range: the IR's format is a claim about the values.
-    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormats.Int32, "int", "z.int32()")]
-    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormats.Int16, "smallint", "z.int().min(-32768).max(32767)")]
-    [InlineData(IrEncoding.Rowset, IrScalarKind.Number, IrFormats.Uint8, "tinyint", "z.int().min(0).max(255)")]
-    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormats.Decimal, "decimal(19,2)", "z.number()")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormat.Int32, "int", "z.int32()")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormat.Int16, "smallint", "z.int().min(-32768).max(32767)")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Number, IrFormat.Uint8, "tinyint", "z.int().min(0).max(255)")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormat.Decimal, "decimal(19,2)", "z.number()")]
     [InlineData(IrEncoding.Json, IrScalarKind.String, null, "nvarchar(10)", "z.string()")]
     // In JSON, dates, times and GUIDs are strings in a known format, validated but not converted.
     [InlineData(IrEncoding.Json, IrScalarKind.Date, null, "date", "z.iso.date()")]
     [InlineData(IrEncoding.Json, IrScalarKind.Time, null, "time(0)", "z.iso.time()")]
-    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormats.Local, "datetime2(0)", "z.iso.datetime({ local: true })")]
-    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormats.Local, "smalldatetime", "z.iso.datetime({ local: true })")]
-    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormats.Offset, "datetimeoffset", "z.iso.datetime({ offset: true })")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormat.Local, "datetime2(0)", "z.iso.datetime({ local: true })")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormat.Local, "smalldatetime", "z.iso.datetime({ local: true })")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormat.Offset, "datetimeoffset", "z.iso.datetime({ offset: true })")]
     [InlineData(IrEncoding.Json, IrScalarKind.Uuid, null, "uniqueidentifier", "z.guid()")]
     // In a rowset the mssql driver returns them as Date objects.
     [InlineData(IrEncoding.Rowset, IrScalarKind.Date, null, "date", "z.date()")]
     [InlineData(IrEncoding.Rowset, IrScalarKind.Time, null, "time(0)", "z.date()")]
-    [InlineData(IrEncoding.Rowset, IrScalarKind.Datetime, IrFormats.Local, "datetime2", "z.date()")]
-    [InlineData(IrEncoding.Rowset, IrScalarKind.Datetime, IrFormats.Offset, "datetimeoffset", "z.date()")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Datetime, IrFormat.Local, "datetime2", "z.date()")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Datetime, IrFormat.Offset, "datetimeoffset", "z.date()")]
     [InlineData(IrEncoding.Rowset, IrScalarKind.Uuid, null, "uniqueidentifier", "z.guid()")]
     [InlineData(IrEncoding.Rowset, IrScalarKind.Boolean, null, "bit", "z.boolean()")]
-    public void Maps_each_scalar_as_its_encoding_delivers_it(IrEncoding encoding, IrScalarKind kind, string? format, string sql, string zod)
+    public void Maps_each_scalar_as_its_encoding_delivers_it(IrEncoding encoding, IrScalarKind kind, IrFormat? format, string sql, string zod)
     {
         var ts = ZodEmitter.Emit(OneResult(encoding, Field("v", new IrScalar(kind, format, sql))));
 
@@ -57,7 +57,7 @@ public class ZodEmitterTests
     [Fact]
     public void Separates_absent_keys_from_null_values()
     {
-        var because = new[] { new IrNullReason(IrNullRules.NullableColumn, "s.t.c") };
+        var because = new[] { new IrNullReason(IrNullRule.NullableColumn, "s.t.c") };
         var text = new IrScalar(IrScalarKind.String, null, "nvarchar(10)");
         var ts = ZodEmitter.Emit(OneResult(
             IrEncoding.Json,
@@ -79,7 +79,7 @@ public class ZodEmitterTests
     [Fact]
     public void Emits_an_unknown_with_its_reason_and_never_a_guess()
     {
-        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Rowset, Field("v", new IrUnknownType(IrUnknownReasons.UnsupportedExpression))));
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Rowset, Field("v", new IrUnknownType(IrUnknownReason.UnsupportedExpression))));
 
         Assert.Contains("  v: z.unknown() /* unsupported-expression */,\n", ts, StringComparison.Ordinal);
     }
@@ -91,7 +91,7 @@ public class ZodEmitterTests
             new IrSource("tsql"),
             [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], null)],
             new Dictionary<string, IrObjectType>(),
-            [new IrUnknown("s.p", "results", IrUnknownReasons.UnsupportedStatement, "IF", "p.sql:3:1")]);
+            [new IrUnknown("s.p", "results", IrUnknownReason.UnsupportedStatement, "IF", "p.sql:3:1")]);
 
         var ts = ZodEmitter.Emit(doc);
 
@@ -101,7 +101,7 @@ public class ZodEmitterTests
 
     private static IrDocument Absent(IrType type) => new(
         new IrSource("tsql"),
-        [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, type, [new IrNullReason(IrNullRules.NoRows, "p.sql:2:1")])])],
+        [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, type, [new IrNullReason(IrNullRule.NoRows, "p.sql:2:1")])])],
         new Dictionary<string, IrObjectType> { ["PRow"] = new([Field("v", new IrScalar(IrScalarKind.String, null, "nvarchar(10)"))]) },
         []);
 
@@ -133,7 +133,7 @@ public class ZodEmitterTests
             new IrSource("tsql"),
             [new IrObject(id, "P", IrObjectKind.Procedure, "p.sql:1:1", [], null)],
             new Dictionary<string, IrObjectType>(),
-            [new IrUnknown(id, "results", IrUnknownReasons.UnsupportedStatement, "d", "p.sql:1:1")]);
+            [new IrUnknown(id, "results", IrUnknownReason.UnsupportedStatement, "d", "p.sql:1:1")]);
 
         var ts = ZodEmitter.Emit(doc);
 

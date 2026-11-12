@@ -45,20 +45,20 @@ public class ConstructTests
     [InlineData("SELECT * FROM dbo.t AS t;")]
     [InlineData("SELECT t.* FROM dbo.t AS t FOR JSON PATH;")]
     public void A_query_form_not_modelled_makes_the_result_unknown(string body) =>
-        AssertUnknown(Procedure(body), "results[0]", IrUnknownReasons.UnsupportedQuery);
+        AssertUnknown(Procedure(body), "results[0]", IrUnknownReason.UnsupportedQuery);
 
     [Theory]
     [InlineData("SELECT (t.id) FROM dbo.t AS t;")]
     [InlineData("SELECT (t.id) FROM dbo.t AS t FOR JSON PATH;")]
     public void An_unnamed_column_makes_the_result_unknown(string body) =>
-        AssertUnknown(Procedure(body), "results[0]", IrUnknownReasons.UnnamedColumn);
+        AssertUnknown(Procedure(body), "results[0]", IrUnknownReason.UnnamedColumn);
 
     [Fact]
     public void A_repeated_rowset_column_name_makes_the_result_unknown() =>
         AssertUnknown(
             Procedure("SELECT t.id, u.id FROM dbo.t AS t JOIN dbo.u AS u ON u.t_id = t.id;"),
             "results[0]",
-            IrUnknownReasons.DuplicateColumn);
+            IrUnknownReason.DuplicateColumn);
 
     [Theory]
     [InlineData("t.id AS a, t.code AS [a.b]")]
@@ -66,7 +66,7 @@ public class ConstructTests
     [InlineData("t.id AS a, t.code AS A")]
     [InlineData("t.id AS [a.x], t.code AS [A.y]")]
     public void Clashing_for_json_keys_make_the_result_unknown(string columns) =>
-        AssertUnknown(Procedure($"SELECT {columns} FROM dbo.t AS t FOR JSON PATH;"), "results[0]", IrUnknownReasons.DuplicateColumn);
+        AssertUnknown(Procedure($"SELECT {columns} FROM dbo.t AS t FOR JSON PATH;"), "results[0]", IrUnknownReason.DuplicateColumn);
 
     [Fact]
     public void Adjacent_dotted_aliases_nest_in_one_object()
@@ -86,7 +86,7 @@ public class ConstructTests
 
         var a = RowFields(doc)[1];
         Assert.Equal(IrPresence.OmittedWhenNull, a.Presence);
-        Assert.Equal(IrNullRules.AllFieldsNull, Assert.Single(a.NullableBecause).Rule);
+        Assert.Equal(IrNullRule.AllFieldsNull, Assert.Single(a.NullableBecause).Rule);
     }
 
     [Theory]
@@ -111,7 +111,7 @@ public class ConstructTests
     [InlineData("[.a]")]
     [InlineData("[a.]")]
     public void An_invalid_for_json_path_makes_the_result_unknown(string alias) =>
-        AssertUnknown(Procedure($"SELECT t.id AS {alias} FROM dbo.t AS t FOR JSON PATH;"), "results[0]", IrUnknownReasons.UnsupportedQuery);
+        AssertUnknown(Procedure($"SELECT t.id AS {alias} FROM dbo.t AS t FOR JSON PATH;"), "results[0]", IrUnknownReason.UnsupportedQuery);
 
     // ---- results ------------------------------------------------------------------------------------
 
@@ -121,7 +121,7 @@ public class ConstructTests
         var result = Assert.Single(Procedure("SELECT t.id FROM dbo.t AS t FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;").Objects[0].Results!);
 
         Assert.True(result.MayBeAbsent);
-        Assert.Equal(IrNullRules.NoRows, Assert.Single(result.AbsentBecause).Rule);
+        Assert.Equal(IrNullRule.NoRows, Assert.Single(result.AbsentBecause).Rule);
     }
 
     [Fact]
@@ -162,8 +162,8 @@ public class ConstructTests
     {
         var doc = Procedure($"SELECT t.id, u.name FROM {from};");
 
-        AssertUnknown(doc, "results[0][].id", IrUnknownReasons.UnsupportedSource);
-        AssertUnknown(doc, "results[0][].name", IrUnknownReasons.UnsupportedSource);
+        AssertUnknown(doc, "results[0][].id", IrUnknownReason.UnsupportedSource);
+        AssertUnknown(doc, "results[0][].name", IrUnknownReason.UnsupportedSource);
     }
 
     [Theory]
@@ -171,18 +171,18 @@ public class ConstructTests
     [InlineData("otherdb.dbo.t AS s")]
     [InlineData("otherdb.dbo.f(1) AS s")]
     public void A_source_not_modelled_makes_its_columns_unknown(string from) =>
-        AssertUnknown(Procedure($"SELECT s.id FROM {from};"), "results[0][].id", IrUnknownReasons.UnsupportedSource);
+        AssertUnknown(Procedure($"SELECT s.id FROM {from};"), "results[0][].id", IrUnknownReason.UnsupportedSource);
 
     [Fact]
     public void A_function_the_project_does_not_define_is_unresolved() =>
-        AssertUnknown(Procedure("SELECT s.id FROM dbo.f(1) AS s;"), "results[0][].id", IrUnknownReasons.UnresolvedTable);
+        AssertUnknown(Procedure("SELECT s.id FROM dbo.f(1) AS s;"), "results[0][].id", IrUnknownReason.UnresolvedTable);
 
     [Fact]
     public void An_ambiguous_unqualified_column_is_unknown()
     {
         var unknown = Unknown(Procedure("SELECT name FROM dbo.t AS t JOIN dbo.u AS u ON u.t_id = t.id;"), "results[0][].name");
 
-        Assert.Equal(IrUnknownReasons.UnresolvedColumn, unknown.Reason);
+        Assert.Equal(IrUnknownReason.UnresolvedColumn, unknown.Reason);
         Assert.Contains("ambiguous", unknown.Detail, StringComparison.Ordinal);
     }
 
@@ -214,7 +214,7 @@ public class ConstructTests
             ("tables.sql", "CREATE TABLE dbo.customer (name nvarchar(10) NOT NULL);\nGO\nCREATE TABLE sales.customer (name nvarchar(10) NULL);"),
             ("p.sql", "CREATE PROCEDURE sales.p AS SELECT c.name FROM customer AS c;"));
 
-        AssertUnknown(doc, "results[0][].name", IrUnknownReasons.UnresolvedTable);
+        AssertUnknown(doc, "results[0][].name", IrUnknownReason.UnresolvedTable);
     }
 
     [Theory]
@@ -229,7 +229,7 @@ public class ConstructTests
             ("rival.sql", rival),
             ("p.sql", "CREATE PROCEDURE sales.p AS SELECT c.name FROM customer AS c;"));
 
-        AssertUnknown(doc, "results[0][].name", IrUnknownReasons.UnresolvedTable);
+        AssertUnknown(doc, "results[0][].name", IrUnknownReason.UnresolvedTable);
     }
 
     [Theory]
@@ -252,7 +252,7 @@ public class ConstructTests
         var fields = RowFields(Procedure("SELECT t.id, u.name FROM dbo.t AS t LEFT JOIN dbo.u AS u ON u.t_id = t.id;"));
 
         Assert.False(fields[0].Nullable);
-        Assert.Equal(IrNullRules.OuterJoin, Assert.Single(fields[1].NullableBecause).Rule);
+        Assert.Equal(IrNullRule.OuterJoin, Assert.Single(fields[1].NullableBecause).Rule);
     }
 
     // ---- statements ---------------------------------------------------------------------------------
@@ -289,7 +289,7 @@ public class ConstructTests
         var doc = Procedure($"{set}\nSELECT t.id FROM dbo.t AS t;");
 
         Assert.Null(doc.Objects[0].Results);
-        AssertUnknown(doc, "results", IrUnknownReasons.UnsupportedStatement);
+        AssertUnknown(doc, "results", IrUnknownReason.UnsupportedStatement);
     }
 
     [Fact]
@@ -298,14 +298,14 @@ public class ConstructTests
         var doc = Infer(("p.sql", "CREATE PROCEDURE dbo.clr @x int AS EXTERNAL NAME asm.[Ns.Cls].Method;"));
 
         Assert.Null(doc.Objects[0].Results);
-        AssertUnknown(doc, "results", IrUnknownReasons.ExternalCode);
+        AssertUnknown(doc, "results", IrUnknownReason.ExternalCode);
     }
 
     // ---- types --------------------------------------------------------------------------------------
 
     [Fact]
     public void A_computed_column_is_unknown() =>
-        AssertUnknown(Procedure("SELECT c.b FROM dbo.c AS c;"), "results[0][].b", IrUnknownReasons.UnsupportedSqlType);
+        AssertUnknown(Procedure("SELECT c.b FROM dbo.c AS c;"), "results[0][].b", IrUnknownReason.UnsupportedSqlType);
 
     // ---- statements outside procedures --------------------------------------------------------------
 
@@ -318,7 +318,7 @@ public class ConstructTests
     {
         var doc = Infer(("tables.sql", Tables), ("change.sql", change), ("p.sql", "CREATE PROCEDURE dbo.p AS SELECT t.code FROM dbo.t AS t;"));
 
-        AssertUnknown(doc, "results[0][].code", IrUnknownReasons.UnsupportedSource);
+        AssertUnknown(doc, "results[0][].code", IrUnknownReason.UnsupportedSource);
     }
 
     [Theory]
@@ -340,7 +340,7 @@ public class ConstructTests
         var doc = Infer(("tables.sql", Tables), ("a.sql", "CREATE PROCEDURE dbo.p AS SELECT t.id FROM dbo.t AS t;"), ("b.sql", change));
 
         Assert.Null(Assert.Single(doc.Objects).Results);
-        AssertUnknown(doc, "results", IrUnknownReasons.Redefined);
+        AssertUnknown(doc, "results", IrUnknownReason.Redefined);
     }
 
     [Fact]
@@ -349,7 +349,7 @@ public class ConstructTests
         var doc = Infer(("tables.sql", Tables), ("b.sql", "ALTER PROCEDURE dbo.p AS SELECT t.id FROM dbo.t AS t;"));
 
         Assert.Null(Assert.Single(doc.Objects).Results);
-        AssertUnknown(doc, "results", IrUnknownReasons.Redefined);
+        AssertUnknown(doc, "results", IrUnknownReason.Redefined);
     }
 
     // ---- generated code -----------------------------------------------------------------------------

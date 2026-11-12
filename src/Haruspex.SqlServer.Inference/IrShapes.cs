@@ -40,7 +40,7 @@ internal static class IrShapes
                 // A declaration's types do not refer to themselves (the config file refuses a recursive $ref), but a cycle
                 // here would not end, so it is refused rather than followed.
                 if (!expanding.Add(reference.Name))
-                    return Unknown(IrUnknownReasons.UnresolvedRecursion, $"The declared results of {procedure} refer to {reference.Name} inside itself, which is not modelled.");
+                    return Unknown(IrUnknownReason.UnresolvedRecursion, $"The declared results of {procedure} refer to {reference.Name} inside itself, which is not modelled.");
                 try
                 {
                     return new ObjectShape([.. obj.Fields.Select(f => new FieldShape(f.Name, Of(f.Type), f.Presence, f.NullableBecause))]);
@@ -53,9 +53,9 @@ internal static class IrShapes
             case IrUnknownType unknown:
                 return Unknown(unknown.Reason, $"The declared results of {procedure} leave this unknown.");
             default:
-                return Unknown(IrUnknownReasons.UnsupportedExpression, $"The declared results of {procedure} hold a type that is not modelled here.");
+                return Unknown(IrUnknownReason.UnsupportedExpression, $"The declared results of {procedure} hold a type that is not modelled here.");
         }
 
-        UnknownShape Unknown(string reason, string detail) => new(reason, detail, at);
+        UnknownShape Unknown(IrUnknownReason reason, string detail) => new(reason, detail, at);
     }
 }

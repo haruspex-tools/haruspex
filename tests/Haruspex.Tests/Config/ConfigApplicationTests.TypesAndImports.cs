@@ -15,7 +15,7 @@ public partial class ConfigApplicationTests
 
         Assert.Empty(doc.Unknowns);
         Assert.Equal(new IrImport("ShoutSchema", "@app/types"), Field(doc, "PRow", "shout").Type);
-        Assert.Equal(new IrOverride("dbo.p", "results[0][].shout", IrOverrideSettings.Type, "reverse of a name"), Assert.Single(doc.Overrides));
+        Assert.Equal(new IrOverride("dbo.p", "results[0][].shout", IrOverrideSetting.Type, "reverse of a name"), Assert.Single(doc.Overrides));
         var zod = ZodEmitter.Emit(doc);
         Assert.Contains("import { ShoutSchema } from '@app/types'\n", zod, StringComparison.Ordinal);
         Assert.Contains("  shout: ShoutSchema.optional(),\n", zod, StringComparison.Ordinal);

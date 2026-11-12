@@ -94,25 +94,25 @@ internal static class Facets
         var facets = scalar.Facets;
         switch (scalar.Format)
         {
-            case IrFormats.Uint8 or IrFormats.Int16 or IrFormats.Int32:
+            case IrFormat.Uint8 or IrFormat.Int16 or IrFormat.Int32:
             {
                 if (ExactNumbers(facets) is { } values)
                     return (values, null);
-                var (min, max) = FormatRange(scalar.Format);
-                var lower = facets?.Min ?? new IrBound(min.ToString(CultureInfo.InvariantCulture), true, new IrFactSource(IrFactSources.Type, scalar.Sql ?? scalar.Format));
-                var upper = facets?.Max ?? new IrBound(max.ToString(CultureInfo.InvariantCulture), true, new IrFactSource(IrFactSources.Type, scalar.Sql ?? scalar.Format));
+                var (min, max) = FormatRange(scalar.Format.Value);
+                var lower = facets?.Min ?? new IrBound(min.ToString(CultureInfo.InvariantCulture), true, new IrFactSource(IrFactSourceKind.Type, scalar.Sql ?? IrWireNames.Of(scalar.Format.Value)));
+                var upper = facets?.Max ?? new IrBound(max.ToString(CultureInfo.InvariantCulture), true, new IrFactSource(IrFactSourceKind.Type, scalar.Sql ?? IrWireNames.Of(scalar.Format.Value)));
                 if (lower is { Inclusive: true, Value: "-2147483648" } && upper is { Inclusive: true, Value: "2147483647" })
                     return ("z.int32()", null);
                 return ("z.int()" + Lower(lower, 0) + Upper(upper, 0), null);
             }
 
-            case IrFormats.Int64 when !json:
+            case IrFormat.Int64 when !json:
                 // The driver delivers a bigint as a string: its values are strings too, and a range isn't checkable.
                 if (facets?.Values is { Match: IrValueMatch.Exact } strings && strings.Items.All(i => !i.IsString))
                     return (strings.Items.Count == 0 ? "z.never()" : "z.enum([" + string.Join(", ", strings.Items.Select(i => Quote(i.Text))) + "])", null);
                 return ("z.string()", FromChecks(facets) ? "a bigint arrives as a string, so its CHECK range is not checked" : null);
 
-            case IrFormats.Int64:
+            case IrFormat.Int64:
             {
                 const string precision = "int64: exact only up to 2^53 once parsed";
                 if (ExactNumbers(facets) is { } values)
@@ -120,12 +120,12 @@ internal static class Facets
 
                 // The type's own range is left out (keeping the bare number this mapping always had); a CHECK's is kept.
                 var code = "z.number()"
-                    + (facets?.Min is { From.Kind: IrFactSources.Check } lower ? Lower(lower, 0, exclusiveAllowed: false) : "")
-                    + (facets?.Max is { From.Kind: IrFactSources.Check } upper ? Upper(upper, 0, exclusiveAllowed: false) : "");
+                    + (facets?.Min is { From.Kind: IrFactSourceKind.Check } lower ? Lower(lower, 0, exclusiveAllowed: false) : "")
+                    + (facets?.Max is { From.Kind: IrFactSourceKind.Check } upper ? Upper(upper, 0, exclusiveAllowed: false) : "");
                 return (code, precision);
             }
 
-            case IrFormats.Decimal:
+            case IrFormat.Decimal:
             {
                 var digits = facets?.Digits;
                 var exactInDriver = json || digits is { Precision: <= 15 };
@@ -152,7 +152,7 @@ internal static class Facets
     }
 
     private static bool FromChecks(IrFacets? facets) =>
-        facets?.Min is { From.Kind: IrFactSources.Check } || facets?.Max is { From.Kind: IrFactSources.Check };
+        facets?.Min is { From.Kind: IrFactSourceKind.Check } || facets?.Max is { From.Kind: IrFactSourceKind.Check };
 
     /// <summary><c>z.literal([…])</c> for an exact set of numbers; null when there is none.</summary>
     private static string? ExactNumbers(IrFacets? facets) =>
@@ -160,10 +160,10 @@ internal static class Facets
             ? set.Items.Count == 0 ? "z.never()" : "z.literal([" + string.Join(", ", set.Items.Select(i => i.Text)) + "])"
             : null;
 
-    private static (BigInteger Min, BigInteger Max) FormatRange(string format) => format switch
+    private static (BigInteger Min, BigInteger Max) FormatRange(IrFormat format) => format switch
     {
-        IrFormats.Uint8 => (byte.MinValue, byte.MaxValue),
-        IrFormats.Int16 => (short.MinValue, short.MaxValue),
+        IrFormat.Uint8 => (byte.MinValue, byte.MaxValue),
+        IrFormat.Int16 => (short.MinValue, short.MaxValue),
         _ => (int.MinValue, int.MaxValue),
     };
 

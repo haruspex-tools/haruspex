@@ -20,10 +20,10 @@ public partial class RefinementTests
             """);
 
         Assert.False(Field(doc, "lines").Nullable);
-        Assert.Equal(["count-overflow"], Rules(doc, "small"));
-        Assert.Equal(["empty-aggregate"], Rules(doc, "last_label"));
-        Assert.Equal(["count-overflow", "empty-subquery"], Rules(doc, "grouped"));
-        Assert.Equal(["empty-subquery"], Rules(doc, "label"));
+        Assert.Equal([IrNullRule.CountOverflow], Rules(doc, "small"));
+        Assert.Equal([IrNullRule.EmptyAggregate], Rules(doc, "last_label"));
+        Assert.Equal([IrNullRule.CountOverflow, IrNullRule.EmptySubquery], Rules(doc, "grouped"));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "label"));
         Assert.Equal("nvarchar(10)", Assert.IsType<IrScalar>(Field(doc, "label").Type).Sql);
     }
 
@@ -33,7 +33,7 @@ public partial class RefinementTests
         var doc = Procedure("SELECT (SELECT 1) AS one, (SELECT 1 WHERE 1 = 0) AS none_;");
 
         Assert.False(Field(doc, "one").Nullable);
-        Assert.Equal(["empty-subquery"], Rules(doc, "none_"));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "none_"));
     }
 
     [Fact]
@@ -66,6 +66,6 @@ public partial class RefinementTests
         var one = Assert.IsType<IrArray>(Field(doc, "one").Type);
         Assert.Equal(1, one.MinItems);
         Assert.Equal(1, one.MaxItems);
-        Assert.Equal(["empty-subquery"], Rules(doc, "one"));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "one"));
     }
 }

@@ -144,7 +144,7 @@ public partial class ExecTests
 
         var results = Results(doc);
         Assert.Equal(2, results.Count);
-        Assert.Contains(doc.Unknowns, u => u.Object == "dbo.p" && u.Path == "results[1][].a" && u.Reason == IrUnknownReasons.DynamicSql);
+        Assert.Contains(doc.Unknowns, u => u.Object == "dbo.p" && u.Path == "results[1][].a" && u.Reason == IrUnknownReason.DynamicSql);
         Assert.DoesNotContain(doc.Unknowns, u => u.Object == "dbo.p" && u.Path.StartsWith("results[0]", StringComparison.Ordinal));
     }
 }

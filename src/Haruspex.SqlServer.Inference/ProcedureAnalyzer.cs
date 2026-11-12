@@ -124,8 +124,8 @@ internal sealed partial class ProcedureAnalyzer
         // A top-level FOR JSON query that matches no rows returns no row at all, rather than [] or {}. A
         // rowset that matches no rows is still a result set, with no rows. A query that always returns exactly one row
         // always returns its JSON (observed: For_json_over_an_aggregate_without_group_by_always_returns_its_one_object).
-        EquatableArray<IrNullReason> NoRows(Row row) => encoding == IrEncoding.Json && row.Rows != IrCardinality.One ? [new IrNullReason(IrNullRules.NoRows, at.ToString())] : [];
-        EquatableArray<IrNullReason> absent = encoding == IrEncoding.Json ? [new IrNullReason(IrNullRules.NoRows, at.ToString())] : [];
+        EquatableArray<IrNullReason> NoRows(Row row) => encoding == IrEncoding.Json && row.Rows != IrCardinality.One ? [new IrNullReason(IrNullRule.NoRows, at.ToString())] : [];
+        EquatableArray<IrNullReason> absent = encoding == IrEncoding.Json ? [new IrNullReason(IrNullRule.NoRows, at.ToString())] : [];
 
         return WithCtes(
             select.WithCtesAndXmlNamespaces,
@@ -139,7 +139,7 @@ internal sealed partial class ProcedureAnalyzer
                 {
                     JsonForClause json => new ResultShape(IrEncoding.Json, ForJson(row, json, subquery: false), NoRows(row), row.Rows),
                     null => new ResultShape(IrEncoding.Rowset, Rowset(row), [], row.Rows),
-                    var other => new ResultShape(IrEncoding.Rowset, Unsupported(IrUnknownReasons.UnsupportedQuery, $"{Text(other)} is not modelled yet.", at), []),
+                    var other => new ResultShape(IrEncoding.Rowset, Unsupported(IrUnknownReason.UnsupportedQuery, $"{Text(other)} is not modelled yet.", at), []),
                 };
             },
             why => new ResultShape(encoding, why, absent));
@@ -212,15 +212,15 @@ internal sealed partial class ProcedureAnalyzer
     private static Shape Rowset(Row row)
     {
         if (row.Star is { } star)
-            return Unsupported(IrUnknownReasons.UnsupportedQuery, "SELECT * is not expanded yet.", star);
+            return Unsupported(IrUnknownReason.UnsupportedQuery, "SELECT * is not expanded yet.", star);
         if (row.Columns.FirstOrDefault(c => string.IsNullOrEmpty(c.Name)) is { } unnamed)
-            return Unsupported(IrUnknownReasons.UnnamedColumn, $"The column {Text(unnamed.At)} has no name.", unnamed.At);
+            return Unsupported(IrUnknownReason.UnnamedColumn, $"The column {Text(unnamed.At)} has no name.", unnamed.At);
 
         // Drivers key a row by column name, and the mssql driver turns a repeated name into an array, so a
         // repeated name changes the row's shape.
         var duplicate = row.Columns.GroupBy(c => c.Name, StringComparer.Ordinal).FirstOrDefault(g => g.Count() > 1);
         if (duplicate is not null)
-            return Unsupported(IrUnknownReasons.DuplicateColumn, $"The column name '{duplicate.Key}' is used more than once.", duplicate.Skip(1).First().At);
+            return Unsupported(IrUnknownReason.DuplicateColumn, $"The column name '{duplicate.Key}' is used more than once.", duplicate.Skip(1).First().At);
 
         var fields = row.Columns.Select(c => new FieldShape(
             c.Name!,
@@ -251,11 +251,11 @@ internal sealed partial class ProcedureAnalyzer
     {
         var options = clause.Options.Select(o => o.OptionKind).ToHashSet();
         if (options.Contains(JsonForClauseOptions.Auto))
-            return Unsupported(IrUnknownReasons.UnsupportedQuery, "FOR JSON AUTO is not modelled yet.", At(clause));
+            return Unsupported(IrUnknownReason.UnsupportedQuery, "FOR JSON AUTO is not modelled yet.", At(clause));
         if (options.Contains(JsonForClauseOptions.Root))
-            return Unsupported(IrUnknownReasons.UnsupportedQuery, "FOR JSON ... ROOT is not modelled yet.", At(clause));
+            return Unsupported(IrUnknownReason.UnsupportedQuery, "FOR JSON ... ROOT is not modelled yet.", At(clause));
         if (row.Star is { } star)
-            return Unsupported(IrUnknownReasons.UnsupportedQuery, "SELECT * is not expanded yet.", star);
+            return Unsupported(IrUnknownReason.UnsupportedQuery, "SELECT * is not expanded yet.", star);
 
         var root = new JsonNode();
         foreach (var column in row.Columns)
@@ -263,11 +263,11 @@ internal sealed partial class ProcedureAnalyzer
             // SQL Server rejects an unnamed column in FOR JSON, so the procedure fails rather than returning
             // anything; it is reported rather than modelled.
             if (string.IsNullOrEmpty(column.Name))
-                return Unsupported(IrUnknownReasons.UnnamedColumn, $"The column {Text(column.At)} has no name, which FOR JSON rejects.", column.At);
+                return Unsupported(IrUnknownReason.UnnamedColumn, $"The column {Text(column.At)} has no name, which FOR JSON rejects.", column.At);
 
             var path = column.Name.Split('.');
             if (path.Any(p => p.Length == 0))
-                return Unsupported(IrUnknownReasons.UnsupportedQuery, $"The alias '{column.Name}' is not a valid FOR JSON path.", column.At);
+                return Unsupported(IrUnknownReason.UnsupportedQuery, $"The alias '{column.Name}' is not a valid FOR JSON path.", column.At);
 
             var node = root;
             foreach (var key in path[..^1])
@@ -307,7 +307,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     private static UnknownShape KeyConflict(RowColumn column) =>
-        new(IrUnknownReasons.DuplicateColumn, $"The alias '{column.Name}' clashes with another key in the same JSON object.", column.At);
+        new(IrUnknownReason.DuplicateColumn, $"The alias '{column.Name}' clashes with another key in the same JSON object.", column.At);
 
     private static ObjectShape JsonObject(JsonNode node, bool includeNulls)
     {
@@ -332,7 +332,7 @@ internal sealed partial class ProcedureAnalyzer
             // observed on SQL Server 2025 and are kept as tests (ForJsonObservationTests, differential tests).
             var allNull = !includeNulls && nested.Fields.All(f => f.NullableBecause.Count > 0);
             fields.Add(allNull
-                ? new FieldShape(key, nested, IrPresence.OmittedWhenNull, [new IrNullReason(IrNullRules.AllFieldsNull, at.ToString())])
+                ? new FieldShape(key, nested, IrPresence.OmittedWhenNull, [new IrNullReason(IrNullRule.AllFieldsNull, at.ToString())])
                 : new FieldShape(key, nested, IrPresence.Always, []));
         }
 
@@ -364,7 +364,7 @@ internal sealed partial class ProcedureAnalyzer
         NumericLiteral literal => FromNumeric(literal),
         RealLiteral literal => Typed(new ScalarType("float"), [], literal),
         MoneyLiteral literal => Typed(new ScalarType("money"), [], literal),
-        NullLiteral literal => Typed(new ScalarType("int"), [new IrNullReason(IrNullRules.NullLiteral, At(literal).ToString())], literal),
+        NullLiteral literal => Typed(new ScalarType("int"), [new IrNullReason(IrNullRule.NullLiteral, At(literal).ToString())], literal),
         CoalesceExpression coalesce => Coalesce(coalesce, scope),
         SearchedCaseExpression searched => Case(searched, scope),
         SimpleCaseExpression simple => Case(simple, scope),
@@ -384,13 +384,13 @@ internal sealed partial class ProcedureAnalyzer
         TryConvertCall convert => Cast(convert.DataType, convert.Parameter, convert, scope, styled: convert.Style is not null, attempt: true),
         BinaryExpression binary => Binary(binary, scope),
         UnaryExpression unary => Unary(unary, scope),
-        _ => Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
+        _ => Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
     };
 
     private Value Column(ColumnReferenceExpression column, BindingScope scope) => binder.BindColumn(column, scope) switch
     {
         var target when ReadsOutputTarget(target) => Value.Unknown(Unsupported(
-            IrUnknownReasons.UnsupportedExpression,
+            IrUnknownReason.UnsupportedExpression,
             $"{Text(column)} names the table the write changes, which OUTPUT may read before or after the change; read inserted or deleted instead.",
             At(column))),
         BoundColumn bound => FromColumn(bound),
@@ -409,12 +409,12 @@ internal sealed partial class ProcedureAnalyzer
         var (source, table, column) = bound;
         var because = new List<IrNullReason>();
         if (!SchemaRules.IsNeverNull(model, table, column) && !Proved(source, Key(bound)))
-            because.Add(new IrNullReason(IrNullRules.NullableColumn, $"{table.Name}.{column.Name}"));
+            because.Add(new IrNullReason(IrNullRule.NullableColumn, $"{table.Name}.{column.Name}"));
 
         // The optional side of an outer join, or of an OUTER APPLY, has no row when nothing matches, so every column read
         // from it can be null, whatever its declaration says; unless a filter proves the row matched.
         if (source.OptionalSideOf is { } optional && !Matched(source))
-            because.Add(new IrNullReason(source.OuterApply ? IrNullRules.OuterApply : IrNullRules.OuterJoin, optional.ToString()));
+            because.Add(new IrNullReason(source.OuterApply ? IrNullRule.OuterApply : IrNullRule.OuterJoin, optional.ToString()));
         if (Rolled(source) is { } rolled)
             because.Add(rolled);
         if (Unmatched(source) is { } unmatched)
@@ -429,7 +429,7 @@ internal sealed partial class ProcedureAnalyzer
         if (!column.IsComputed && SchemaRules.ResolveType(model, column.Type)?.BuiltIn.Name == "json")
         {
             return new Value(
-                Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{table.Name}.{column.Name} is a json column: its shape is in the data, not the schema.", column.At),
+                Unsupported(IrUnknownReason.JsonShapeUnknown, $"{table.Name}.{column.Name} is a json column: its shape is in the data, not the schema.", column.At),
                 [.. because],
                 IsLiveJson: true);
         }
@@ -439,7 +439,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>A column's shape when it is not null.</summary>
     private Shape ColumnShape(Table table, Column column) => column.IsComputed
-        ? new UnknownShape(IrUnknownReasons.UnsupportedSqlType, $"{table.Name}.{column.Name} is a computed column, which is not modelled yet.", column.At)
+        ? new UnknownShape(IrUnknownReason.UnsupportedSqlType, $"{table.Name}.{column.Name} is a computed column, which is not modelled yet.", column.At)
         : SqlTypes.ToShape(SchemaRules.ColumnFacts(model, table, column), column.Type, column.At);
 
     /// <summary>
@@ -450,10 +450,10 @@ internal sealed partial class ProcedureAnalyzer
     private static UnknownShape Unknown(BindingProblem problem) => new(
         problem.Kind switch
         {
-            BindingProblemKind.UnsupportedSource or BindingProblemKind.TableRedefined => IrUnknownReasons.UnsupportedSource,
-            BindingProblemKind.UnresolvedTable => IrUnknownReasons.UnresolvedTable,
-            BindingProblemKind.UnresolvedColumn => IrUnknownReasons.UnresolvedColumn,
-            BindingProblemKind.UnsupportedReference => IrUnknownReasons.UnsupportedExpression,
+            BindingProblemKind.UnsupportedSource or BindingProblemKind.TableRedefined => IrUnknownReason.UnsupportedSource,
+            BindingProblemKind.UnresolvedTable => IrUnknownReason.UnresolvedTable,
+            BindingProblemKind.UnresolvedColumn => IrUnknownReason.UnresolvedColumn,
+            BindingProblemKind.UnsupportedReference => IrUnknownReason.UnsupportedExpression,
             _ => throw new ArgumentOutOfRangeException(nameof(problem), problem.Kind, "Unknown binding problem."),
         },
         problem.Detail,
@@ -473,19 +473,19 @@ internal sealed partial class ProcedureAnalyzer
             var plain = subquery.QueryExpression;
             var row = Query(plain, scope);
             if (row is not { Star: null, Columns: [var only] })
-                return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"A subquery of other than one listed column is not modelled: {Text(subquery)}", at));
+                return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"A subquery of other than one listed column is not modelled: {Text(subquery)}", at));
             if (only.Value.Shape is UnknownShape)
                 return only.Value;
             // A scalar subquery is not folded: (SELECT 1) counts an int's 10 digits beside a decimal (observed:
             // An_int_constant_counts_its_own_digits_beside_a_decimal).
             return row.Rows == IrCardinality.One
                 ? only.Value with { Digits = null }
-                : only.Value with { Digits = null, NullableBecause = [.. only.Value.NullableBecause, new IrNullReason(IrNullRules.EmptySubquery, at.ToString())] };
+                : only.Value with { Digits = null, NullableBecause = [.. only.Value.NullableBecause, new IrNullReason(IrNullRule.EmptySubquery, at.ToString())] };
         }
 
         var query = subquery.QueryExpression;
         if (ForOf(query) is not JsonForClause json)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"A FOR XML subquery is not modelled yet: {Text(subquery)}", at));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"A FOR XML subquery is not modelled yet: {Text(subquery)}", at));
 
         // A FOR JSON subquery is JSON that an enclosing FOR JSON or constructor embeds without escaping, but only with
         // its array wrapper: WITHOUT_ARRAY_WRAPPER makes it text, escaped as a string wherever it nests, until json_query
@@ -495,7 +495,7 @@ internal sealed partial class ProcedureAnalyzer
         var shape = ForJson(forJson, json, subquery: true);
         if (shape is UnknownShape unknown)
             return Value.Unknown(unknown);
-        EquatableArray<IrNullReason> empty = forJson.Rows == IrCardinality.One ? [] : [new IrNullReason(IrNullRules.EmptySubquery, at.ToString())];
+        EquatableArray<IrNullReason> empty = forJson.Rows == IrCardinality.One ? [] : [new IrNullReason(IrNullRule.EmptySubquery, at.ToString())];
         return json.Options.Any(o => o.OptionKind == JsonForClauseOptions.WithoutArrayWrapper)
             ? new Value(new JsonTextShape(shape), empty)
             : new Value(shape, empty, IsLiveJson: true);
@@ -513,7 +513,7 @@ internal sealed partial class ProcedureAnalyzer
             return Value.Unknown(why);
 
         // json_query over text (a column, a variable) makes it live JSON, but its shape is in data haruspex cannot see.
-        return Value.Unknown(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{Text(call)} reads JSON that is not built here, so its shape is unknown.", At(call)));
+        return Value.Unknown(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{Text(call)} reads JSON that is not built here, so its shape is unknown.", At(call)));
     }
 
     // ---- scalar functions ---------------------------------------------------------------------------------
@@ -528,18 +528,18 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = At(call);
         if (call.OverClause is not null || call.WithinGroupClause is not null)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"This form of call is not modelled: {Text(call)}", at));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This form of call is not modelled: {Text(call)}", at));
 
         // A function's body read in a statement that reads uncommitted reads its tables so too.
         var (result, why) = (ReadUncommitted ? functions.Uncommitted : functions).Find(callee, at);
         if (result is null)
             return Value.Unknown(why!);
 
-        var because = new List<IrNullReason>(result.Content is null ? [new IrNullReason(IrNullRules.FunctionResult, at.ToString())] : result.NullableBecause);
+        var because = new List<IrNullReason>(result.Content is null ? [new IrNullReason(IrNullRule.FunctionResult, at.ToString())] : result.NullableBecause);
 
         // With RETURNS NULL ON NULL INPUT a null argument makes the call NULL. The arguments are read only for that.
         if (result.NullOnNullInput && call.Parameters.Any(p => Expression(p, scope).NullableBecause.Count > 0))
-            because.Add(new IrNullReason(IrNullRules.NullInput, at.ToString()));
+            because.Add(new IrNullReason(IrNullRule.NullInput, at.ToString()));
 
         return result switch
         {
@@ -585,12 +585,12 @@ internal sealed partial class ProcedureAnalyzer
         if (call.OverClause is not null || call.WithinGroupClause is not null || call.UniqueRowFilter != UniqueRowFilter.NotSpecified
             || call.IgnoreRespectNulls is { Count: > 0 } || call.WithArrayWrapper)
         {
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"This form of {name} is not modelled: {Text(call)}", at));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This form of {name} is not modelled: {Text(call)}", at));
         }
 
         // RETURNING json changes the value's SQL type, not what it writes or how it nests (observed).
         if (call.ReturnType is { Count: > 0 } returns && returns is not [SqlDataTypeReference { SqlDataTypeOption: SqlDataTypeOption.Json }])
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"{name} returning anything but json is not modelled: {Text(call)}", at));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{name} returning anything but json is not modelled: {Text(call)}", at));
 
         bool? nullOnNull = call.AbsentOrNullOnNull switch
         {
@@ -618,9 +618,9 @@ internal sealed partial class ProcedureAnalyzer
         {
             // Keys are compared by case, as JSON compares them: 'a' and 'A' are two keys (observed).
             if (pair.JsonKeyName is not StringLiteral key)
-                return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The key {Text(pair.JsonKeyName)} of json_object is not a literal, so the object's keys are data.", At(pair.JsonKeyName)));
+                return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The key {Text(pair.JsonKeyName)} of json_object is not a literal, so the object's keys are data.", At(pair.JsonKeyName)));
             if (!keys.Add(key.Value))
-                return Value.Unknown(Unsupported(IrUnknownReasons.DuplicateColumn, $"The key '{key.Value}' is used more than once in json_object, which writes it twice.", At(pair.JsonKeyName)));
+                return Value.Unknown(Unsupported(IrUnknownReason.DuplicateColumn, $"The key '{key.Value}' is used more than once in json_object, which writes it twice.", At(pair.JsonKeyName)));
 
             var value = Expression(pair.JsonValue, scope);
             var presence = value.NullableBecause.Count > 0 && !nullOnNull ? IrPresence.OmittedWhenNull : IrPresence.Always;
@@ -675,7 +675,7 @@ internal sealed partial class ProcedureAnalyzer
     private Value ArrayAggregate(FunctionCall call, BindingScope scope, bool nullOnNull)
     {
         if (call.Parameters.Count != 1)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"json_arrayagg of {call.Parameters.Count} values is not modelled: {Text(call)}", At(call)));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"json_arrayagg of {call.Parameters.Count} values is not modelled: {Text(call)}", At(call)));
 
         var value = InAggregate(() => Expression(call.Parameters[0], scope));
         var neverEmpty = nullOnNull || value.NullableBecause.Count == 0;
@@ -692,7 +692,7 @@ internal sealed partial class ProcedureAnalyzer
     private Value ObjectAggregate(FunctionCall call, BindingScope scope, bool nullOnNull)
     {
         if (call.JsonParameters is not [var pair])
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"This form of json_objectagg is not modelled: {Text(call)}", At(call)));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This form of json_objectagg is not modelled: {Text(call)}", At(call)));
 
         var value = InAggregate(() => Expression(pair.JsonValue, scope));
         return new Value(new RecordShape(value.Shape, nullOnNull ? value.NullableBecause : []), Aggregate(call), IsLiveJson: true);
@@ -703,11 +703,11 @@ internal sealed partial class ProcedureAnalyzer
     /// GROUP BY, no rows means no groups at all).
     /// </summary>
     private EquatableArray<IrNullReason> Aggregate(FunctionCall call) =>
-        current?.GroupByClause is null && !ProvedAggregate(call) ? [new IrNullReason(IrNullRules.EmptyAggregate, At(call).ToString())] : [];
+        current?.GroupByClause is null && !ProvedAggregate(call) ? [new IrNullReason(IrNullRule.EmptyAggregate, At(call).ToString())] : [];
 
     // ---- helpers ------------------------------------------------------------------------------------
 
-    private static UnknownShape Unsupported(string reason, string detail, SourceLocation at) => new(reason, detail, at);
+    private static UnknownShape Unsupported(IrUnknownReason reason, string detail, SourceLocation at) => new(reason, detail, at);
 
     private SourceLocation At(TSqlFragment fragment) => new(file, fragment.StartLine, fragment.StartColumn);
 

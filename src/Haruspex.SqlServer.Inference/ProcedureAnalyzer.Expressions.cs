@@ -21,7 +21,7 @@ internal sealed partial class ProcedureAnalyzer
     private Value FromString(StringLiteral literal) =>
         LiteralType(literal) is { } type
             ? new Value(SqlTypes.ToConvertedShape(model, type.ToSqlType(), At(literal)), [])
-            : Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The literal {Text(literal)} is not ASCII, so its length in bytes depends on the code page.", At(literal)));
+            : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The literal {Text(literal)} is not ASCII, so its length in bytes depends on the code page.", At(literal)));
 
     private static ScalarType? LiteralType(StringLiteral literal) =>
         literal.Collation is not null || (!literal.IsNational && literal.Value.Any(c => c > '\u007f'))
@@ -40,7 +40,7 @@ internal sealed partial class ProcedureAnalyzer
         var scale = point < 0 ? 0 : text.Length - point - 1;
         var precision = Math.Max(1, whole.Length + scale);
         if (precision > 38)
-            return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The literal {literal.Value} has more than 38 digits.", At(literal)));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The literal {literal.Value} has more than 38 digits.", At(literal)));
         return new Value(SqlTypes.ToConvertedShape(model, new ScalarType("numeric", Precision: precision, Scale: scale).ToSqlType(), At(literal)), []);
     }
 
@@ -93,10 +93,10 @@ internal sealed partial class ProcedureAnalyzer
     private Value Typed(ScalarType type, EquatableArray<IrNullReason> because, TSqlFragment at) =>
         new(SqlTypes.ToConvertedShape(model, type.ToSqlType(), At(at)), because);
 
-    private IrNullReason Overflow(TSqlFragment at) => new(IrNullRules.ArithmeticOverflow, At(at).ToString());
+    private IrNullReason Overflow(TSqlFragment at) => new(IrNullRule.ArithmeticOverflow, At(at).ToString());
 
     private Value NotModelled(TSqlFragment expression, string why) =>
-        Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"{Text(expression)}: {why}", At(expression)));
+        Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{Text(expression)}: {why}", At(expression)));
 
     // ---- combining types --------------------------------------------------------------------------------------------
 
@@ -150,7 +150,7 @@ internal sealed partial class ProcedureAnalyzer
         {
             var fits = (LiteralOf(v.Expression) is ({ } literal, var negative) ? ScalarType.Fits(literal, type, negative) : null)
                 ?? ScalarType.NeverNull(known[i], type);
-            return fits ? (EquatableArray<IrNullReason>)[] : [new IrNullReason(IrNullRules.ArithmeticOverflow, v.At.ToString())];
+            return fits ? (EquatableArray<IrNullReason>)[] : [new IrNullReason(IrNullRule.ArithmeticOverflow, v.At.ToString())];
         }).ToList();
         return new CombinedType(type, overflows, null);
     }
@@ -177,7 +177,7 @@ internal sealed partial class ProcedureAnalyzer
         var because = first < 0
             ? values.Select(v => v.NullableBecause).Aggregate(ShapeJoin.Reasons)
             : values.Take(first).Select((v, i) => i).Where(i => ReadTwice(arguments[i]))
-                .Select(i => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRules.ReadTwice, At(arguments[i]).ToString())])
+                .Select(i => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRule.ReadTwice, At(arguments[i]).ToString())])
                 .Aggregate((EquatableArray<IrNullReason>)[], ShapeJoin.Reasons);
         if (values.Any(IsJson) || ReferenceEquals(coalesce, jsonQueryArgument))
         {
@@ -290,7 +290,7 @@ internal sealed partial class ProcedureAnalyzer
         // As an int it counts 1 integer digit beside a decimal, as a literal would (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal: CAST(NULL AS int) beside decimal(38,38) is decimal(38,37)).
         if (Strip(operand) is NullLiteral)
-            return new Value(shape, [new IrNullReason(IrNullRules.NullLiteral, At(operand).ToString())], Digits: to.Name == "int" ? new IntDigits(1, 1) : null);
+            return new Value(shape, [new IrNullReason(IrNullRule.NullLiteral, At(operand).ToString())], Digits: to.Name == "int" ? new IntDigits(1, 1) : null);
 
         var value = Expression(operand, scope);
         if (value.Shape is UnknownShape || value.IsLiveJson)
@@ -304,7 +304,7 @@ internal sealed partial class ProcedureAnalyzer
             return value.Digits is { Least: 1, Most: 1 } && IsNullCast(operand) ? value : value with { Digits = null };
         var because = fits
             ? value.NullableBecause
-            : ShapeJoin.Reasons(value.NullableBecause, [attempt ? new IrNullReason(IrNullRules.FailedConversion, At(call).ToString()) : Overflow(call)]);
+            : ShapeJoin.Reasons(value.NullableBecause, [attempt ? new IrNullReason(IrNullRule.FailedConversion, At(call).ToString()) : Overflow(call)]);
         return new Value(shape, because);
     }
 
@@ -524,6 +524,6 @@ internal sealed partial class ProcedureAnalyzer
         };
         return from is not null && ScalarType.Converts(from, to)
             ? value.NullableBecause
-            : ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.ArithmeticOverflow, at.ToString())]);
+            : ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRule.ArithmeticOverflow, at.ToString())]);
     }
 }

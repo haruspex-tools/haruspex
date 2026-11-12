@@ -105,7 +105,7 @@ public static class ConfigApplication
                     // runtime by the generated validator.
                     results[index] = Declared(declaration, obj.Id, types);
                     unknowns.RemoveAll(u => u.Object == obj.Id && u.Path == "results");
-                    claims.Add(new IrOverride(obj.Id, "results", IrOverrideSettings.Results, declaration.Why));
+                    claims.Add(new IrOverride(obj.Id, "results", IrOverrideSetting.Results, declaration.Why));
                     declaredHere.Add(obj.Id);
                 }
             }
@@ -172,15 +172,15 @@ public static class ConfigApplication
     }
 
     /// <summary>The reasons for results that the project cannot show, which only a declaration can supply.</summary>
-    private static readonly HashSet<string> Unknowable = new(StringComparer.Ordinal)
-    {
-        IrUnknownReasons.DynamicSql,
-        IrUnknownReasons.ProcedureVariable,
-        IrUnknownReasons.SystemProcedure,
-        IrUnknownReasons.MissingProcedure,
-        IrUnknownReasons.AmbiguousProcedure,
-        IrUnknownReasons.ExternalCode,
-    };
+    private static readonly HashSet<IrUnknownReason> Unknowable =
+    [
+        IrUnknownReason.DynamicSql,
+        IrUnknownReason.ProcedureVariable,
+        IrUnknownReason.SystemProcedure,
+        IrUnknownReason.MissingProcedure,
+        IrUnknownReason.AmbiguousProcedure,
+        IrUnknownReason.ExternalCode,
+    ];
 
     /// <summary>
     /// A declaration's results for the procedure <paramref name="id"/>, its types added to <paramref name="types"/> under keys

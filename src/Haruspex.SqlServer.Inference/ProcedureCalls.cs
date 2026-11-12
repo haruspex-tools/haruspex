@@ -115,7 +115,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
         if (context.Inserting != frame.Context.Inserting)
         {
             return new Walked(null, [], new UnknownShape(
-                IrUnknownReasons.UnresolvedRecursion,
+                IrUnknownReason.UnresolvedRecursion,
                 $"{callee.Name} calls itself under INSERT … EXEC and outside it, which is not modelled.",
                 at), []);
         }
@@ -135,11 +135,11 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     private static UnknownShape? Unwalkable(Procedure procedure)
     {
         if (procedure.Body.MethodSpecifier is not null || procedure.Body.StatementList is null)
-            return new UnknownShape(IrUnknownReasons.ExternalCode, $"{procedure.Name} is a CLR procedure: its results come from .NET code, which is not in the project.", procedure.At);
+            return new UnknownShape(IrUnknownReason.ExternalCode, $"{procedure.Name} is a CLR procedure: its results come from .NET code, which is not in the project.", procedure.At);
 
         // The parameters are still read from the definition the model kept, but which body runs depends on the order the
         // scripts run, so the results are withdrawn.
-        return procedure.Redefinition is { } redefinition ? new UnknownShape(IrUnknownReasons.Redefined, redefinition.Message, redefinition.At) : null;
+        return procedure.Redefinition is { } redefinition ? new UnknownShape(IrUnknownReason.Redefined, redefinition.Message, redefinition.At) : null;
     }
 
     private Walked Run(Procedure procedure, CallContext context)
@@ -188,7 +188,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
             }
 
             return new Walked(null, [], new UnknownShape(
-                IrUnknownReasons.UnresolvedRecursion,
+                IrUnknownReason.UnresolvedRecursion,
                 $"{procedure.Name} calls itself, directly or through other procedures, and the result sets it returns reached no fixed point in {MostPasses} walks: it may return more at each depth.",
                 procedure.At), []);
         }
@@ -210,7 +210,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
         foreach (var name in temps.Keys.Where(written.Contains).ToList())
         {
             temps = temps.SetItem(name, new UnknownTable(new UnknownShape(
-                IrUnknownReasons.UnresolvedRecursion,
+                IrUnknownReason.UnresolvedRecursion,
                 $"{name} may be changed by the recursive call of {callee.Name} at {at}, which is not followed.",
                 at)));
         }

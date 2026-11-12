@@ -103,7 +103,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var found = new QueryFacts(query, scope)
         {
-            Rolled = SuperAggregate(query) ? new IrNullReason(IrNullRules.GroupingSet, At(query.GroupByClause).ToString()) : null,
+            Rolled = SuperAggregate(query) ? new IrNullReason(IrNullRule.GroupingSet, At(query.GroupByClause).ToString()) : null,
         };
 
         // A query that aggregates without GROUP BY returns its one row even when WHERE and ON removed every row (observed:
@@ -454,7 +454,7 @@ internal sealed partial class ProcedureAnalyzer
                 // COUNT is NULL past int's range under a caller's options, which a procedure can't prevent
                 // (docs/decisions/0014-count-is-nullable.md); COUNT_BIG can't overflow.
                 var type = new SqlType(SqlTypeKind.BuiltIn, name == "count" ? "int" : "bigint", []);
-                EquatableArray<IrNullReason> because = name == "count" && !ProvedAggregate(call) ? [new IrNullReason(IrNullRules.CountOverflow, at.ToString())] : [];
+                EquatableArray<IrNullReason> because = name == "count" && !ProvedAggregate(call) ? [new IrNullReason(IrNullRule.CountOverflow, at.ToString())] : [];
                 return new Value(SqlTypes.ToConvertedShape(model, type, at), because);
             }
 
@@ -464,7 +464,7 @@ internal sealed partial class ProcedureAnalyzer
                 if (argument.Shape is UnknownShape unknown)
                     return Value.Unknown(unknown);
                 if (argument.IsLiveJson || argument.Shape is not ScalarShape)
-                    return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"{name.ToUpperInvariant()} of a value that is not a scalar is not modelled: {Text(call)}", at));
+                    return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{name.ToUpperInvariant()} of a value that is not a scalar is not modelled: {Text(call)}", at));
                 return ProvedAggregate(call)
                     ? argument with { NullableBecause = [] }
                     : argument with { NullableBecause = [.. argument.NullableBecause, .. Aggregate(call)] };
@@ -480,7 +480,7 @@ internal sealed partial class ProcedureAnalyzer
                 return StringAggregate(call, scope);
 
             default:
-                return Value.Unknown(Unsupported(IrUnknownReasons.UnsupportedExpression, $"The aggregate {Text(call)} is not modelled yet.", at));
+                return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The aggregate {Text(call)} is not modelled yet.", at));
         }
     }
 }

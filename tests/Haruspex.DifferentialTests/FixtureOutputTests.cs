@@ -84,11 +84,11 @@ public class FixtureOutputTests(SqlServerFixture server)
 
         foreach (var untrusted in new[] { "muted", "late" })
         {
-            Assert.Equal(new IrFactSource(IrFactSources.Type, "int"), Facets(untrusted).Min!.From);
+            Assert.Equal(new IrFactSource(IrFactSourceKind.Type, "int"), Facets(untrusted).Min!.From);
             Assert.Equal("-2147483648", Facets(untrusted).Min!.Value);
         }
 
-        Assert.Equal(new IrBound("0", false, new IrFactSource(IrFactSources.Check, "chk.ck_ticket_restored")), Facets("restored").Min);
+        Assert.Equal(new IrBound("0", false, new IrFactSource(IrFactSourceKind.Check, "chk.ck_ticket_restored")), Facets("restored").Min);
 
         var rows = Assert.Single(await server.ObserveAsync(Runs.Named("checks: ticket_rows"))).Rows;
         var columns = Assert.Single(await server.ObserveAsync(Runs.Named("checks: ticket_rows"))).Columns;

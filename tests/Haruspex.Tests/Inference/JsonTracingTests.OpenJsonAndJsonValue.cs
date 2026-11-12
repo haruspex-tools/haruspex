@@ -27,10 +27,10 @@ public partial class JsonTracingTests
 
         // A narrower number may overflow; a key FOR JSON leaves out when null is NULL, and under strict is an error, but then
         // the call fails; a key never there is NULL.
-        Assert.Equal(["json-value"], Rules(Field(doc, "small")));
-        Assert.Equal(["json-value"], Rules(Field(doc, "colour")));
+        Assert.Equal([IrNullRule.JsonValue], Rules(Field(doc, "small")));
+        Assert.Equal([IrNullRule.JsonValue], Rules(Field(doc, "colour")));
         Assert.False(Field(doc, "strict_colour").Nullable);
-        Assert.Equal(["json-value"], Rules(Field(doc, "missing")));
+        Assert.Equal([IrNullRule.JsonValue], Rules(Field(doc, "missing")));
         Assert.Empty(doc.Unknowns);
     }
 
@@ -96,7 +96,7 @@ public partial class JsonTracingTests
 
         Assert.Equal(["b", "n", "s", "z"], Assert.IsType<IrScalar>(Field(doc, "key").Type).Facets!.Values!.Items.Select(v => v.Text));
         Assert.Equal(["0", "1", "2", "3"], Assert.IsType<IrScalar>(Field(doc, "type").Type).Facets!.Values!.Items.Select(v => v.Text));
-        Assert.Equal(["json-value"], Rules(Field(doc, "value")));
+        Assert.Equal([IrNullRule.JsonValue], Rules(Field(doc, "value")));
     }
 
     [Fact]
@@ -110,8 +110,8 @@ public partial class JsonTracingTests
             """);
 
         // @x may be NULL (no rows), so its values may be, and colour may be left out; @y is never NULL.
-        Assert.Equal(["empty-subquery"], Rules(Field(doc, "a")));
-        Assert.Equal(["empty-subquery", "json-value"], Rules(Field(doc, "b")));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(Field(doc, "a")));
+        Assert.Equal([IrNullRule.EmptySubquery, IrNullRule.JsonValue], Rules(Field(doc, "b")));
         var c = Field(doc, "c");
         Assert.False(c.Nullable);
         Assert.Equal(["ab12"], Assert.IsType<IrScalar>(c.Type).Facets!.Values!.Items.Select(v => v.Text));

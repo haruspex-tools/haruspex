@@ -33,7 +33,7 @@ internal sealed partial class ProcedureAnalyzer
         var name = call.FunctionName.Value.ToLowerInvariant();
 #pragma warning restore CA1308
         var over = call.OverClause;
-        EquatableArray<IrNullReason> Framed() => MayBeEmpty(over) ? [new IrNullReason(IrNullRules.EmptyFrame, At(call).ToString())] : [];
+        EquatableArray<IrNullReason> Framed() => MayBeEmpty(over) ? [new IrNullReason(IrNullRule.EmptyFrame, At(call).ToString())] : [];
 
         switch (name, call.Parameters.Count)
         {
@@ -44,7 +44,7 @@ internal sealed partial class ProcedureAnalyzer
             // COUNT is an int over a frame as without one: past 2,147,483,647 rows it would overflow, which is NULL under a
             // caller's options (count-overflow, as for COUNT: no partition that large can be read to observe it).
             case ("count", 1):
-                return Typed(new ScalarType("int"), [new IrNullReason(IrNullRules.CountOverflow, At(call).ToString())], call);
+                return Typed(new ScalarType("int"), [new IrNullReason(IrNullRule.CountOverflow, At(call).ToString())], call);
             case ("count_big", 1):
                 return Typed(new ScalarType("bigint"), [], call);
 
@@ -71,7 +71,7 @@ internal sealed partial class ProcedureAnalyzer
                 EquatableArray<IrNullReason> because =
                 [
                     .. argument.NullableBecause,
-                    .. name is "stdev" or "var" ? [new IrNullReason(IrNullRules.TooFewValues, At(call).ToString())] : (EquatableArray<IrNullReason>)[],
+                    .. name is "stdev" or "var" ? [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())] : (EquatableArray<IrNullReason>)[],
                     .. overflows ? [Overflow(call)] : (EquatableArray<IrNullReason>)[],
                     .. Framed(),
                 ];
@@ -161,7 +161,7 @@ internal sealed partial class ProcedureAnalyzer
 
         if (parameters.Count < 3 || Strip(parameters[2]) is NullLiteral)
         {
-            EquatableArray<IrNullReason> edge = itself ? [] : [new IrNullReason(IrNullRules.WindowEdge, At(call).ToString())];
+            EquatableArray<IrNullReason> edge = itself ? [] : [new IrNullReason(IrNullRule.WindowEdge, At(call).ToString())];
             return value with { NullableBecause = [.. value.NullableBecause, .. edge, .. offsetBecause] };
         }
 

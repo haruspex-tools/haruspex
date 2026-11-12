@@ -17,7 +17,7 @@ public partial class StatementFlowTests
         Assert.False(Field(doc, "a").Nullable);
         Assert.Equal("nvarchar(10)", Scalar(Field(doc, "b")).Sql);
         Assert.Equal(10, Scalar(Field(doc, "b")).Facets!.Length!.Value);
-        Assert.Equal([new IrNullReason(IrNullRules.NullableColumn, "#t.b")], Field(doc, "b").NullableBecause);
+        Assert.Equal([new IrNullReason(IrNullRule.NullableColumn, "#t.b")], Field(doc, "b").NullableBecause);
         Assert.False(Field(doc, "c").Nullable);
         Assert.True(Field(doc, "d").Nullable);
         Assert.False(Field(doc, "e").Nullable);
@@ -33,7 +33,7 @@ public partial class StatementFlowTests
 
         var values = Scalar(Field(doc, "s")).Facets!.Values!;
         Assert.Equal(["a", "b"], values.Items.Select(v => v.Text));
-        Assert.Equal([new IrFactSource(IrFactSources.Check, "#t.ck_s")], values.From);
+        Assert.Equal([new IrFactSource(IrFactSourceKind.Check, "#t.ck_s")], values.From);
     }
 
     [Fact]
@@ -71,10 +71,10 @@ public partial class StatementFlowTests
 
         Assert.Empty(doc.Unknowns);
         Assert.False(Field(doc, "id").Nullable);
-        Assert.Equal([new IrNullReason(IrNullRules.NullableColumn, "dbo.t.name")], Field(doc, "name").NullableBecause);
+        Assert.Equal([new IrNullReason(IrNullRule.NullableColumn, "dbo.t.name")], Field(doc, "name").NullableBecause);
         var values = Scalar(Field(doc, "status")).Facets!.Values!;
         Assert.Equal(["open", "shut"], values.Items.Select(v => v.Text));
-        Assert.Equal([new IrFactSource(IrFactSources.Check, "dbo.ck_t_status")], values.From);
+        Assert.Equal([new IrFactSource(IrFactSourceKind.Check, "dbo.ck_t_status")], values.From);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public partial class StatementFlowTests
             SELECT x.name FROM #t AS x;
             """);
 
-        Assert.Equal([IrNullRules.OuterJoin], Rules(Field(doc, "name")));
+        Assert.Equal([IrNullRule.OuterJoin], Rules(Field(doc, "name")));
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public partial class StatementFlowTests
             """);
 
         Assert.False(Field(doc, "id").Nullable);
-        Assert.Equal([IrNullRules.OuterJoin], Rules(Field(doc, "code")));
+        Assert.Equal([IrNullRule.OuterJoin], Rules(Field(doc, "code")));
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public partial class StatementFlowTests
             """);
 
         Assert.False(Field(doc, "id").Nullable);
-        Assert.Equal([IrNullRules.NullableColumn], Rules(Field(doc, "code")));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(Field(doc, "code")));
         Assert.Equal("dbo.node.parent_id", Field(doc, "code").NullableBecause[0].At);
     }
 
@@ -174,7 +174,7 @@ public partial class StatementFlowTests
 
         Assert.IsType<IrJsonText>(Field(doc, "j").Type);
         Assert.IsType<IrRef>(Field(doc, "q").Type);
-        AssertUnknown(doc, "results[0][].k", IrUnknownReasons.UnsupportedExpression);
+        AssertUnknown(doc, "results[0][].k", IrUnknownReason.UnsupportedExpression);
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public partial class StatementFlowTests
 
         Assert.False(Field(doc, "c").Nullable);
         Assert.True(Field(doc, "d").Nullable);
-        AssertUnknown(doc, "results[1][].b", IrUnknownReasons.UnresolvedColumn);
+        AssertUnknown(doc, "results[1][].b", IrUnknownReason.UnresolvedColumn);
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public partial class StatementFlowTests
     {
         var doc = Procedure("SELECT t.a FROM #t AS t;");
 
-        AssertUnknown(doc, "results[0][].a", IrUnknownReasons.CallerTempTable);
+        AssertUnknown(doc, "results[0][].a", IrUnknownReason.CallerTempTable);
     }
 
     [Fact]
@@ -209,7 +209,7 @@ public partial class StatementFlowTests
             SELECT t.a FROM #t AS t;
             """, "@x int");
 
-        AssertUnknown(doc, "results[0][].a", IrUnknownReasons.CallerTempTable);
+        AssertUnknown(doc, "results[0][].a", IrUnknownReason.CallerTempTable);
     }
 
     [Fact]
@@ -221,7 +221,7 @@ public partial class StatementFlowTests
             SELECT t.a FROM #t AS t;
             """, "@x int");
 
-        AssertUnknown(doc, "results[0][].a", IrUnknownReasons.UnresolvedTable);
+        AssertUnknown(doc, "results[0][].a", IrUnknownReason.UnresolvedTable);
     }
 
     [Fact]
@@ -263,7 +263,7 @@ public partial class StatementFlowTests
             """);
 
         Assert.False(Field(doc, "a").Nullable);
-        Assert.Equal([new IrNullReason(IrNullRules.NullableColumn, "#t.b")], Field(doc, "b").NullableBecause);
+        Assert.Equal([new IrNullReason(IrNullRule.NullableColumn, "#t.b")], Field(doc, "b").NullableBecause);
     }
 
     [Fact]
@@ -274,7 +274,7 @@ public partial class StatementFlowTests
             SELECT u.id, x.id AS t_id FROM dbo.u AS u LEFT JOIN #t AS x ON x.id = u.t_id;
             """);
 
-        Assert.Equal([IrNullRules.OuterJoin], Rules(Field(doc, "t_id")));
+        Assert.Equal([IrNullRule.OuterJoin], Rules(Field(doc, "t_id")));
     }
 
     [Fact]
@@ -314,7 +314,7 @@ public partial class StatementFlowTests
         // tempdb does not have the database's alias types (observed: 2715), so the name does not mean this project's type.
         var doc = Procedure("CREATE TABLE #t (c dbo.code);\nSELECT t.c FROM #t AS t;");
 
-        AssertUnknown(doc, "results[0][].c", IrUnknownReasons.UnsupportedSqlType);
+        AssertUnknown(doc, "results[0][].c", IrUnknownReason.UnsupportedSqlType);
     }
 
     [Fact]
@@ -328,7 +328,7 @@ public partial class StatementFlowTests
             """);
 
         Assert.Equal(2, Results(doc).Count);
-        AssertUnknown(doc, "results[0][].a", IrUnknownReasons.UnsupportedStatement);
+        AssertUnknown(doc, "results[0][].a", IrUnknownReason.UnsupportedStatement);
     }
 
     [Fact]
@@ -342,7 +342,7 @@ public partial class StatementFlowTests
             SELECT t.a FROM #t AS t;
             """);
 
-        AssertUnknown(doc, "results[0][].a", IrUnknownReasons.UnsupportedStatement);
+        AssertUnknown(doc, "results[0][].a", IrUnknownReason.UnsupportedStatement);
     }
 
     [Fact]

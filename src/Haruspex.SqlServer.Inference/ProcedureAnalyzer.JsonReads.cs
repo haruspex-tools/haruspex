@@ -270,13 +270,13 @@ internal sealed partial class ProcedureAnalyzer
 
         if (Rows(document) is not { } rows)
             return null;
-        static IrNullReason JsonValue(SourceLocation where) => new(IrNullRules.JsonValue, where.ToString());
+        static IrNullReason JsonValue(SourceLocation where) => new(IrNullRule.JsonValue, where.ToString());
 
         if (reference.SchemaDeclarationItems.Count == 0)
         {
             var key = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["4000"]), at);
             var type = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "tinyint", []), at);
-            var from = new IrFactSource(IrFactSources.Engine, "OPENJSON over JSON built here");
+            var from = new IrFactSource(IrFactSourceKind.Engine, "OPENJSON over JSON built here");
             var keys = Keys(document);
             var types = Types(document);
             var mayBeNull = types is null || types.Contains(0);
@@ -318,7 +318,7 @@ internal sealed partial class ProcedureAnalyzer
                     ? new Value(found.Shape, [], IsLiveJson: true)
                     : found?.Shape is { } some && Openable(some)
                         ? new Value(some, [JsonValue(where)], IsLiveJson: true)
-                        : new Value(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{column.ColumnIdentifier.Value} is JSON read from a document whose shape there is not known.", where), [JsonValue(where)], IsLiveJson: true));
+                        : new Value(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{column.ColumnIdentifier.Value} is JSON read from a document whose shape there is not known.", where), [JsonValue(where)], IsLiveJson: true));
                 continue;
             }
 
@@ -428,7 +428,7 @@ internal sealed partial class ProcedureAnalyzer
         var type = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["4000"]), at);
 
         // A NULL document gives NULL.
-        var nullable = ShapeJoin.Reasons(documentNull, [new IrNullReason(IrNullRules.JsonValue, at.ToString())]);
+        var nullable = ShapeJoin.Reasons(documentNull, [new IrNullReason(IrNullRule.JsonValue, at.ToString())]);
         if (found.Shape is not ScalarShape { Type: var scalar })
             return new Value(type, nullable);
 
@@ -447,7 +447,7 @@ internal sealed partial class ProcedureAnalyzer
             case IrScalarKind.Boolean:
                 facets = (facets ?? new IrFacets()) with
                 {
-                    Values = new IrValueSet([new IrValue("false", IsString: true), new IrValue("true", IsString: true)], IrValueMatch.Exact, [new IrFactSource(IrFactSources.Engine, "JSON_VALUE of true or false")]),
+                    Values = new IrValueSet([new IrValue("false", IsString: true), new IrValue("true", IsString: true)], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Engine, "JSON_VALUE of true or false")]),
                 };
                 break;
         }

@@ -20,7 +20,7 @@ public partial class ApplyViewTests
 
         Typed(doc);
         Assert.Empty(Rules(doc, "id"));
-        Assert.Equal([IrNullRules.NullableColumn], Rules(doc, "name"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "name"));
         Assert.Equal("dbo.t.name", Field(doc, "name").NullableBecause[0].At);
     }
 
@@ -31,7 +31,7 @@ public partial class ApplyViewTests
 
         Typed(doc);
         Assert.Empty(Rules(doc, "a"));
-        Assert.Equal([IrNullRules.NullableColumn], Rules(doc, "b"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "b"));
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public partial class ApplyViewTests
         // A_view_keeps_ansi_nulls_as_it_was_when_it_was_created: t.name = N'a' does not prove t.name non-null there.
         var doc = Procedure("SELECT x.name FROM dbo.w AS x;", views: "SET ANSI_NULLS OFF;\nGO\nCREATE VIEW dbo.w AS SELECT t.name FROM dbo.t AS t WHERE t.name = N'a';\nGO\nSET ANSI_NULLS ON;\nGO\n");
 
-        Assert.Equal([IrNullRules.NullableColumn], Rules(doc, "name"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "name"));
     }
 
     [Fact]
@@ -75,8 +75,8 @@ public partial class ApplyViewTests
 
         Typed(doc);
         Assert.Empty(Rules(doc, "id"));
-        Assert.Equal([IrNullRules.OuterJoin], Rules(doc, "label"));
-        Assert.Equal([IrNullRules.OuterApply], Rules(doc, "top_note"));
+        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "label"));
+        Assert.Equal([IrNullRule.OuterApply], Rules(doc, "top_note"));
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public partial class ApplyViewTests
     {
         var doc = Procedure("SELECT u.id, x.code FROM dbo.u AS u LEFT JOIN dbo.v AS x ON x.id = u.t_id;", views: View);
 
-        Assert.Equal([IrNullRules.OuterJoin], Rules(doc, "code"));
+        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "code"));
     }
 
     [Fact]
@@ -122,18 +122,18 @@ public partial class ApplyViewTests
             ("views.sql", "CREATE VIEW dbo.w AS SELECT * FROM dbo.h AS h;"),
             ("p.sql", "CREATE PROCEDURE dbo.p AS SELECT x.id FROM dbo.w AS x;"));
 
-        Assert.Equal(IrUnknownReasons.UnsupportedQuery, Unknown(doc, "results[0][].id").Reason);
+        Assert.Equal(IrUnknownReason.UnsupportedQuery, Unknown(doc, "results[0][].id").Reason);
     }
 
     [Theory]
-    [InlineData("CREATE VIEW dbo.w AS SELECT t.id FROM dbo.t AS t;\nGO\nALTER VIEW dbo.w AS SELECT u.id FROM dbo.u AS u;", IrUnknownReasons.UnresolvedTable)]
-    [InlineData("CREATE VIEW dbo.w AS SELECT y.id FROM dbo.y AS y;\nGO\nCREATE VIEW dbo.y AS SELECT w.id FROM dbo.w AS w;", IrUnknownReasons.UnresolvedTable)]
-    public void A_view_that_cannot_be_read_is_unknown(string views, string reason) =>
+    [InlineData("CREATE VIEW dbo.w AS SELECT t.id FROM dbo.t AS t;\nGO\nALTER VIEW dbo.w AS SELECT u.id FROM dbo.u AS u;", IrUnknownReason.UnresolvedTable)]
+    [InlineData("CREATE VIEW dbo.w AS SELECT y.id FROM dbo.y AS y;\nGO\nCREATE VIEW dbo.y AS SELECT w.id FROM dbo.w AS w;", IrUnknownReason.UnresolvedTable)]
+    public void A_view_that_cannot_be_read_is_unknown(string views, IrUnknownReason reason) =>
         Assert.Equal(reason, Unknown(Procedure("SELECT x.id FROM dbo.w AS x;", views: views), "results[0][].id").Reason);
 
     [Fact]
     public void A_view_outside_the_project_stays_unknown() =>
-        Assert.Equal(IrUnknownReasons.UnresolvedTable, Unknown(Procedure("SELECT x.id FROM dbo.nowhere AS x;"), "results[0][].id").Reason);
+        Assert.Equal(IrUnknownReason.UnresolvedTable, Unknown(Procedure("SELECT x.id FROM dbo.nowhere AS x;"), "results[0][].id").Reason);
 
     [Theory]
     [InlineData("CREATE VIEW dbo.w AS SELECT t.id, t.name FROM dbo.t AS t WHERE t.n > 0;", "x.id = @id", IrCardinality.AtMostOne)]

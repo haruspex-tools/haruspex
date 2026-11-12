@@ -15,4 +15,4 @@ server marks hidden: SqlClient lists it among the columns, and a driver that hon
 **Reason.** Which keys the row has depends on the client, so no shape holds for every caller. Real procedures fetch `INTO`
 variables, which haruspex types, so this costs little.
 
-**In the code:** `IrUnknownReasons.HiddenColumn`, applied in `ProcedureAnalyzer.Dml.cs`; the Inference README, "Cursors".
+**In the code:** `IrUnknownReason.HiddenColumn`, applied in `ProcedureAnalyzer.Dml.cs`; the Inference README, "Cursors".

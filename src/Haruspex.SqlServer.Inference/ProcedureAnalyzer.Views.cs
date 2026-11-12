@@ -49,7 +49,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = At(table);
         var name = table.Alias?.Value ?? "(VALUES)";
-        LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{name}: {detail}", at));
+        LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{name}: {detail}", at));
 
         // SQL Server requires a name for every column (8155) and the same number of values in every row (10709).
         if (table.Columns.Count == 0 || table.RowValues.Any(r => r.ColumnValues.Count != table.Columns.Count))
@@ -82,7 +82,7 @@ internal sealed partial class ProcedureAnalyzer
             values.Add(same
                 ? first with { NullableBecause = column.Select(v => v.NullableBecause).Aggregate(ShapeJoin.Reasons) }
                 : Value.Unknown(Unsupported(
-                    IrUnknownReasons.UnsupportedExpression,
+                    IrUnknownReason.UnsupportedExpression,
                     $"{name}.{names[i]}: its rows' values have different types, which SQL Server converts to the one of highest precedence; that is not modelled yet.",
                     at)));
         }
@@ -135,7 +135,7 @@ internal sealed partial class ProcedureAnalyzer
         expandStars = true;
         locals = Locals(new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase));
         var at = At(view);
-        LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReasons.UnsupportedQuery, $"{named.Name}: {detail}", at));
+        LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{named.Name}: {detail}", at));
 
         var select = view.SelectStatement;
         return WithCtes(

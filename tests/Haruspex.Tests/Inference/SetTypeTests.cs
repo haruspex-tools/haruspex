@@ -46,7 +46,7 @@ public class SetTypeTests
         var field = Field(doc, name);
         if (field.Type is not IrScalar { Sql: { } sql })
             return "unknown: " + string.Join("; ", doc.Unknowns.Select(u => u.Detail));
-        return string.Join(" ", [sql, .. field.NullableBecause.Select(r => r.Rule)]);
+        return string.Join(" ", [sql, .. field.NullableBecause.Select(r => IrWireNames.Of(r.Rule))]);
     }
 
     private static string Union(string left, string right) => Typed(Procedure($"SELECT s.{left} AS v FROM dbo.sale AS s UNION ALL SELECT s.{right} FROM dbo.sale AS s;"));

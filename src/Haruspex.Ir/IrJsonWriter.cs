@@ -57,12 +57,12 @@ public static class IrJsonWriter
                          .OrderBy(u => u.Object, StringComparer.Ordinal)
                          .ThenBy(u => u.Path, StringComparer.Ordinal)
                          .ThenBy(u => u.At, StringComparer.Ordinal)
-                         .ThenBy(u => u.Reason, StringComparer.Ordinal))
+                         .ThenBy(u => IrWireNames.Of(u.Reason), StringComparer.Ordinal))
             {
                 json.WriteStartObject();
                 json.WriteString("object", unknown.Object);
                 json.WriteString("path", unknown.Path);
-                json.WriteString("reason", unknown.Reason);
+                json.WriteString("reason", IrWireNames.Of(unknown.Reason));
                 json.WriteString("detail", unknown.Detail);
                 json.WriteString("at", unknown.At);
                 json.WriteEndObject();
@@ -74,13 +74,13 @@ public static class IrJsonWriter
             foreach (var claim in document.Overrides
                          .OrderBy(o => o.Object, StringComparer.Ordinal)
                          .ThenBy(o => o.Path, StringComparer.Ordinal)
-                         .ThenBy(o => o.Setting, StringComparer.Ordinal)
+                         .ThenBy(o => IrWireNames.Of(o.Setting), StringComparer.Ordinal)
                          .ThenBy(o => o.Via, StringComparer.Ordinal))
             {
                 json.WriteStartObject();
                 json.WriteString("object", claim.Object);
                 json.WriteString("path", claim.Path);
-                json.WriteString("setting", claim.Setting);
+                json.WriteString("setting", IrWireNames.Of(claim.Setting));
                 if (claim.Via is not null)
                     json.WriteString("via", claim.Via);
                 if (claim.Why is not null)
@@ -100,11 +100,7 @@ public static class IrJsonWriter
         json.WriteStartObject();
         json.WriteString("id", obj.Id);
         json.WriteString("name", obj.Name);
-        json.WriteString("kind", obj.Kind switch
-        {
-            IrObjectKind.Procedure => "procedure",
-            _ => throw new ArgumentOutOfRangeException(nameof(obj), obj.Kind, "Unknown object kind."),
-        });
+        json.WriteString("kind", IrWireNames.Of(obj.Kind));
         json.WriteString("at", obj.At);
 
         json.WriteStartArray("parameters");
@@ -132,24 +128,13 @@ public static class IrJsonWriter
             foreach (var result in obj.Results)
             {
                 json.WriteStartObject();
-                json.WriteString("encoding", result.Encoding switch
-                {
-                    IrEncoding.Rowset => "rowset",
-                    IrEncoding.Json => "json",
-                    _ => throw new ArgumentOutOfRangeException(nameof(obj), result.Encoding, "Unknown encoding."),
-                });
+                json.WriteString("encoding", IrWireNames.Of(result.Encoding));
                 json.WritePropertyName("type");
                 WriteType(json, result.Type);
                 json.WriteBoolean("mayBeAbsent", result.MayBeAbsent);
                 if (result.MayBeAbsent)
                     WriteReasons(json, "absentBecause", result.AbsentBecause);
-                json.WriteString("cardinality", result.Cardinality switch
-                {
-                    IrCardinality.Many => "many",
-                    IrCardinality.AtMostOne => "atMostOne",
-                    IrCardinality.One => "one",
-                    _ => throw new ArgumentOutOfRangeException(nameof(obj), result.Cardinality, "Unknown cardinality."),
-                });
+                json.WriteString("cardinality", IrWireNames.Of(result.Cardinality));
                 json.WriteEndObject();
             }
 
@@ -170,12 +155,7 @@ public static class IrJsonWriter
         if (type.Identity is { } identity)
         {
             json.WriteStartObject("identity");
-            json.WriteString(identity.Owner switch
-            {
-                IrTypeOwner.Procedure => "procedure",
-                IrTypeOwner.Function => "function",
-                _ => throw new ArgumentOutOfRangeException(nameof(type), identity.Owner, "Unknown owner."),
-            }, identity.Object);
+            json.WriteString(IrWireNames.Of(identity.Owner), identity.Object);
             json.WriteString("path", identity.Path);
             json.WriteEndObject();
         }
@@ -187,12 +167,7 @@ public static class IrJsonWriter
             json.WriteString("name", field.Name);
             json.WritePropertyName("type");
             WriteType(json, field.Type);
-            json.WriteString("presence", field.Presence switch
-            {
-                IrPresence.Always => "always",
-                IrPresence.OmittedWhenNull => "omittedWhenNull",
-                _ => throw new ArgumentOutOfRangeException(nameof(type), field.Presence, "Unknown presence."),
-            });
+            json.WriteString("presence", IrWireNames.Of(field.Presence));
             json.WriteBoolean("nullable", field.Nullable);
             if (field.Nullable)
                 WriteReasons(json, "nullableBecause", field.NullableBecause);
@@ -210,7 +185,7 @@ public static class IrJsonWriter
         foreach (var reason in reasons)
         {
             json.WriteStartObject();
-            json.WriteString("rule", reason.Rule);
+            json.WriteString("rule", IrWireNames.Of(reason.Rule));
             json.WriteString("at", reason.At);
             json.WriteEndObject();
         }
@@ -224,9 +199,9 @@ public static class IrJsonWriter
         switch (type)
         {
             case IrScalar scalar:
-                json.WriteString("kind", ScalarKindName(scalar.Kind));
-                if (scalar.Format is not null)
-                    json.WriteString("format", scalar.Format);
+                json.WriteString("kind", IrWireNames.Of(scalar.Kind));
+                if (scalar.Format is { } format)
+                    json.WriteString("format", IrWireNames.Of(format));
                 if (scalar.Sql is not null)
                     json.WriteString("sql", scalar.Sql);
                 if (scalar.Facets is { IsEmpty: false } facets)
@@ -299,7 +274,7 @@ public static class IrJsonWriter
                 break;
             case IrUnknownType unknown:
                 json.WriteString("kind", "unknown");
-                json.WriteString("reason", unknown.Reason);
+                json.WriteString("reason", IrWireNames.Of(unknown.Reason));
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown IR type node.");
@@ -319,21 +294,10 @@ public static class IrJsonWriter
         {
             json.WriteStartObject(length.IsFixed ? "length" : "maxLength");
             json.WriteNumber("value", length.Value);
-            json.WriteString("unit", length.Unit switch
-            {
-                IrLengthUnit.Utf16 => "utf16",
-                IrLengthUnit.Bytes => "bytes",
-                _ => throw new ArgumentOutOfRangeException(nameof(facets), length.Unit, "Unknown length unit."),
-            });
+            json.WriteString("unit", IrWireNames.Of(length.Unit));
             if (length.Encoding != IrByteEncoding.Unknown)
             {
-                json.WriteString("encoding", length.Encoding switch
-                {
-                    IrByteEncoding.SingleByte => "single-byte",
-                    IrByteEncoding.Utf8 => "utf-8",
-                    IrByteEncoding.DoubleByte => "double-byte",
-                    _ => throw new ArgumentOutOfRangeException(nameof(facets), length.Encoding, "Unknown encoding."),
-                });
+                json.WriteString("encoding", IrWireNames.Of(length.Encoding));
             }
 
             WriteSource(json, length.From);
@@ -363,13 +327,7 @@ public static class IrJsonWriter
         if (facets.Values is { } values)
         {
             json.WriteStartObject("values");
-            json.WriteString("match", values.Match switch
-            {
-                IrValueMatch.Exact => "exact",
-                IrValueMatch.Collation => "collation",
-                IrValueMatch.Padded => "padded",
-                _ => throw new ArgumentOutOfRangeException(nameof(facets), values.Match, "Unknown match."),
-            });
+            json.WriteString("match", IrWireNames.Of(values.Match));
             json.WriteStartArray("items");
             foreach (var item in values.Items)
             {
@@ -409,7 +367,7 @@ public static class IrJsonWriter
     private static void WriteSourceObject(Utf8JsonWriter json, IrFactSource from)
     {
         json.WriteStartObject();
-        json.WriteString(from.Kind, from.Ref);
+        json.WriteString(IrWireNames.Of(from.Kind), from.Ref);
         json.WriteEndObject();
     }
 
@@ -422,17 +380,4 @@ public static class IrJsonWriter
             && (parts[0] == "0" || parts[0][0] != '0');
         return valid ? text : throw new ArgumentException($"'{text}' is not a plain decimal number.", nameof(text));
     }
-
-    /// <summary>The kind's name in the IR file.</summary>
-    public static string ScalarKindName(IrScalarKind kind) => kind switch
-    {
-        IrScalarKind.String => "string",
-        IrScalarKind.Number => "number",
-        IrScalarKind.Boolean => "boolean",
-        IrScalarKind.Date => "date",
-        IrScalarKind.Time => "time",
-        IrScalarKind.Datetime => "datetime",
-        IrScalarKind.Uuid => "uuid",
-        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown scalar kind."),
-    };
 }

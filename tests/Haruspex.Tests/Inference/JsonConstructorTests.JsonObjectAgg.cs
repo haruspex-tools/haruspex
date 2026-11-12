@@ -10,10 +10,10 @@ public partial class JsonConstructorTests
         var doc = Procedure("SELECT json_objectagg(t.label: t.name) AS v FROM dbo.t AS t FOR JSON PATH;");
         var v = Field(doc, "v");
 
-        Assert.Equal(["empty-aggregate"], Rules(v.NullableBecause));
+        Assert.Equal([IrNullRule.EmptyAggregate], Rules(v.NullableBecause));
         var record = Assert.IsType<IrRecord>(v.Type);
         Assert.Equal(IrScalarKind.String, Assert.IsType<IrScalar>(record.Values).Kind);
-        Assert.Equal(["nullable-column"], Rules(record.ValuesNullableBecause));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(record.ValuesNullableBecause));
     }
 
     [Fact]

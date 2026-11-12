@@ -34,7 +34,7 @@ public partial class SetJoinTests
     };
 
     /// <summary>The type and the reasons to be null, as one string: <c>varchar(6) nullable-column</c>.</summary>
-    private static string Typed(IrDocument doc, string name) => string.Join(" ", [Sql(doc, name), .. Rules(doc, name)]);
+    private static string Typed(IrDocument doc, string name) => string.Join(" ", [Sql(doc, name), .. Rules(doc, name).Select(r => IrWireNames.Of(r))]);
 
     private static string? Values(IrDocument doc, string name) =>
         Field(doc, name).Type is IrScalar { Facets.Values: { } set }

@@ -11,7 +11,7 @@ public partial class ConfigApplicationTests
         var doc = Apply(GetCustomer, """{ "procedures": { "sales.get_customer": { "paths": { "[].name": { "nullable": false, "why": "every customer has a name" } } } } }""").Document;
 
         Assert.False(Field(doc, "GetCustomerRow", "name").Nullable);
-        Assert.Equal(new IrOverride("sales.get_customer", "results[0][].name", IrOverrideSettings.NotNull, "every customer has a name"), Assert.Single(doc.Overrides));
+        Assert.Equal(new IrOverride("sales.get_customer", "results[0][].name", IrOverrideSetting.NotNull, "every customer has a name"), Assert.Single(doc.Overrides));
 
         // Never null, so never left out: the key is required.
         Assert.Contains("  name: z.string().max(40),\n", ZodEmitter.Emit(doc), StringComparison.Ordinal);

@@ -14,7 +14,7 @@ public partial class JsonFunctionTests
         var text = Assert.IsType<IrJsonText>(kids.Type);
         var items = Assert.IsType<IrArray>(text.Content);
         Assert.Equal(["id", "name"], Fields(doc, items.Items).Select(f => f.Name));
-        Assert.Equal(["empty-subquery"], Rules(kids.NullableBecause));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(kids.NullableBecause));
         Assert.Equal(IrPresence.OmittedWhenNull, kids.Presence);
         Assert.Empty(doc.Unknowns);
     }
@@ -28,8 +28,8 @@ public partial class JsonFunctionTests
         var items = Assert.IsType<IrArray>(kids.Type);
         var id = Sub(doc, items.Items, "id");
         Assert.False(id.Nullable);
-        Assert.Equal(IrFormats.Int32, Assert.IsType<IrScalar>(id.Type).Format);
-        Assert.Equal(["empty-subquery"], Rules(kids.NullableBecause));
+        Assert.Equal(IrFormat.Int32, Assert.IsType<IrScalar>(id.Type).Format);
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(kids.NullableBecause));
         Assert.Equal(IrPresence.OmittedWhenNull, kids.Presence);
     }
 
@@ -52,9 +52,9 @@ public partial class JsonFunctionTests
 
         // Inside the function a parameter can be null whatever the caller passes, so its keys are nullable.
         var id = Sub(doc, live.Type, "id");
-        Assert.Equal(["parameter"], Rules(id.NullableBecause));
+        Assert.Equal([IrNullRule.Parameter], Rules(id.NullableBecause));
         Assert.Equal(IrPresence.Always, id.Presence);
-        Assert.Equal(IrFormats.Int32, Assert.IsType<IrScalar>(id.Type).Format);
+        Assert.Equal(IrFormat.Int32, Assert.IsType<IrScalar>(id.Type).Format);
 
         // The argument has been converted to the parameter's type (cut short, rounded: observed), so its facts hold.
         Assert.Equal(10, Assert.IsType<IrScalar>(Sub(doc, live.Type, "name").Type).Facets!.Length!.Value);
@@ -100,7 +100,7 @@ public partial class JsonFunctionTests
         var v = Field(doc, "v");
 
         Assert.Equal("id", Assert.Single(Fields(doc, Assert.IsType<IrArray>(v.Type).Items)).Name);
-        Assert.Equal(["empty-subquery"], Rules(v.NullableBecause));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(v.NullableBecause));
     }
 
     [Theory]
@@ -128,8 +128,8 @@ public partial class JsonFunctionTests
 
         var v = Field(doc, "v");
         Assert.Equal(IrScalarKind.String, Assert.IsType<IrScalar>(v.Type).Kind);
-        Assert.Equal(["function-result"], Rules(v.NullableBecause));
-        Assert.Equal(IrUnknownReasons.JsonShapeUnknown, Assert.IsType<IrUnknownType>(Field(doc, "q").Type).Reason);
+        Assert.Equal([IrNullRule.FunctionResult], Rules(v.NullableBecause));
+        Assert.Equal(IrUnknownReason.JsonShapeUnknown, Assert.IsType<IrUnknownType>(Field(doc, "q").Type).Reason);
     }
 
     [Fact]
@@ -140,8 +140,8 @@ public partial class JsonFunctionTests
             "SELECT dbo.twice(t.id) AS v FROM dbo.t AS t FOR JSON PATH;");
         var v = Field(doc, "v");
 
-        Assert.Equal(IrFormats.Int32, Assert.IsType<IrScalar>(v.Type).Format);
-        Assert.Equal(["function-result"], Rules(v.NullableBecause));
+        Assert.Equal(IrFormat.Int32, Assert.IsType<IrScalar>(v.Type).Format);
+        Assert.Equal([IrNullRule.FunctionResult], Rules(v.NullableBecause));
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public partial class JsonFunctionTests
         Assert.False(sure.Nullable);
         Assert.False(Sub(doc, sure.Type, "id").Nullable);
         var maybe = Field(doc, "maybe");
-        Assert.Equal(["null-input"], Rules(maybe.NullableBecause));
+        Assert.Equal([IrNullRule.NullInput], Rules(maybe.NullableBecause));
         Assert.Equal(IrPresence.OmittedWhenNull, maybe.Presence);
     }
 
@@ -179,6 +179,6 @@ public partial class JsonFunctionTests
     {
         var doc = Infer(Children + "\nALTER FUNCTION dbo.children(@id int) RETURNS int AS BEGIN RETURN 1; END\nGO\n", "SELECT dbo.children(t.id) AS v FROM dbo.t AS t FOR JSON PATH;");
 
-        Assert.Equal(IrUnknownReasons.Redefined, Assert.Single(doc.Unknowns, u => u.Path == "results[0][].v").Reason);
+        Assert.Equal(IrUnknownReason.Redefined, Assert.Single(doc.Unknowns, u => u.Path == "results[0][].v").Reason);
     }
 }

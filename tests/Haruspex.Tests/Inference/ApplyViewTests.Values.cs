@@ -12,7 +12,7 @@ public partial class ApplyViewTests
 
         Typed(doc);
         Assert.Empty(Rules(doc, "c"));
-        Assert.Equal([IrNullRules.NullableColumn], Rules(doc, "nm"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "nm"));
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public partial class ApplyViewTests
         var doc = Procedure("SELECT v.c FROM dbo.t AS t CROSS APPLY (VALUES (t.n), (t.id)) AS v (c);");
 
         Typed(doc);
-        Assert.Equal([IrNullRules.NullableColumn], Rules(doc, "c"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "c"));
         Assert.Equal((IrScalarKind.Number, "int"), (Assert.IsType<IrScalar>(Field(doc, "c").Type).Kind, Assert.IsType<IrScalar>(Field(doc, "c").Type).Sql));
     }
 
@@ -40,7 +40,7 @@ public partial class ApplyViewTests
         // A_values_column_takes_the_type_of_highest_precedence_among_its_rows: the values are converted, which is not modelled.
         var doc = Procedure("SELECT v.c FROM dbo.t AS t CROSS APPLY (VALUES (t.name), (t.code)) AS v (c);");
 
-        Assert.Equal(IrUnknownReasons.UnsupportedExpression, Unknown(doc, "results[0][].c").Reason);
+        Assert.Equal(IrUnknownReason.UnsupportedExpression, Unknown(doc, "results[0][].c").Reason);
     }
 
     [Theory]
@@ -63,7 +63,7 @@ public partial class ApplyViewTests
     [InlineData("('caf\u00e9'), ('tea')")]
     [InlineData("(t.name), (N'zz')")]
     public void A_values_column_of_other_strings_is_unknown(string rows) =>
-        Assert.Equal(IrUnknownReasons.UnsupportedExpression, Unknown(Procedure($"SELECT v.label FROM dbo.t AS t CROSS APPLY (VALUES {rows}) AS v (label);"), "results[0][].label").Reason);
+        Assert.Equal(IrUnknownReason.UnsupportedExpression, Unknown(Procedure($"SELECT v.label FROM dbo.t AS t CROSS APPLY (VALUES {rows}) AS v (label);"), "results[0][].label").Reason);
 
     [Fact]
     public void A_values_list_in_from_is_modelled_too()

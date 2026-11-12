@@ -1,3 +1,4 @@
+using Haruspex.Ir;
 using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests.Inference;
@@ -11,7 +12,7 @@ public partial class RefinementTests
 
         Assert.False(Field(doc, "n").Nullable);
         Assert.False(Field(doc, "t_id").Nullable);
-        Assert.Equal(["nullable-column"], Rules(doc, "note"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "note"));
     }
 
     [Fact]
@@ -24,7 +25,7 @@ public partial class RefinementTests
         Assert.False(Field(doc, "uid").Nullable);
         Assert.False(Field(doc, "label").Nullable);
         Assert.False(Field(doc, "t_id").Nullable);
-        Assert.Equal(["nullable-column"], Rules(doc, "note"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "note"));
     }
 
     [Fact]
@@ -33,9 +34,9 @@ public partial class RefinementTests
         // A_condition_in_the_on_of_an_outer_join_never_drops_a_row_of_the_kept_side.
         var doc = Procedure("SELECT t.n, u.t_id, u.note FROM dbo.t AS t LEFT JOIN dbo.u AS u ON u.t_id = t.n AND t.name = N'a';");
 
-        Assert.Equal(["nullable-column"], Rules(doc, "n"));
-        Assert.Equal(["outer-join"], Rules(doc, "t_id"));
-        Assert.Equal(["nullable-column", "outer-join"], Rules(doc, "note"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "n"));
+        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "t_id"));
+        Assert.Equal([IrNullRule.NullableColumn, IrNullRule.OuterJoin], Rules(doc, "note"));
     }
 
     [Fact]
@@ -57,7 +58,7 @@ public partial class RefinementTests
             """);
 
         Assert.False(Field(doc, "label").Nullable);
-        Assert.Equal(["nullable-column"], Rules(doc, "note"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "note"));
     }
 
     [Fact]
@@ -68,8 +69,8 @@ public partial class RefinementTests
             LEFT JOIN (dbo.u AS u JOIN dbo.pair AS p ON p.v = u.t_id) ON u.id = t.id;
             """);
 
-        Assert.Equal(["outer-join"], Rules(doc, "t_id"));
-        Assert.Equal(["outer-join"], Rules(doc, "v"));
+        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "t_id"));
+        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "v"));
     }
 
     [Fact]
@@ -83,6 +84,6 @@ public partial class RefinementTests
             """);
 
         Assert.False(Field(doc, "label").Nullable);
-        Assert.Equal(["outer-join"], Rules(doc, "a"));
+        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "a"));
     }
 }

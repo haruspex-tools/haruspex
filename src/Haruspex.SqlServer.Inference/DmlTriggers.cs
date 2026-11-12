@@ -50,7 +50,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
             foreach (var name in resolved)
             {
                 if (Reaches(name, events, at, visited) is { } why)
-                    return new UnknownShape(IrUnknownReasons.TriggerResults, $"The write at {at} {why}", at);
+                    return new UnknownShape(IrUnknownReason.TriggerResults, $"The write at {at} {why}", at);
             }
         }
 

@@ -161,7 +161,7 @@ internal sealed partial class ProcedureAnalyzer
 
         if (otherwise is not null)
             results.Add((otherwise, Strip(otherwise) is NullLiteral ? null : InBranch(Branch(failed, null, scope), () => Expression(otherwise, scope))));
-        return Results(at, results, otherwise is null ? [new IrNullReason(IrNullRules.NoElse, At(at).ToString())] : []);
+        return Results(at, results, otherwise is null ? [new IrNullReason(IrNullRule.NoElse, At(at).ToString())] : []);
     }
 
     /// <summary>
@@ -196,7 +196,7 @@ internal sealed partial class ProcedureAnalyzer
             if (json)
             {
                 var nulls = given.Select(r => r.Value.NullableBecause)
-                    .Concat(results.Where(r => r.Value is null).Select(r => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRules.NullLiteral, At(r.Expression).ToString())]))
+                    .Concat(results.Where(r => r.Value is null).Select(r => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRule.NullLiteral, At(r.Expression).ToString())]))
                     .Append(also)
                     .Aggregate((EquatableArray<IrNullReason>)[], ShapeJoin.Reasons);
                 return new Value(new JsonTextShape(content), nulls);
@@ -210,7 +210,7 @@ internal sealed partial class ProcedureAnalyzer
 
         var because = given.Select(r => r.Value.NullableBecause)
             .Concat(combined.Overflows)
-            .Concat(results.Where(r => r.Value is null).Select(r => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRules.NullLiteral, At(r.Expression).ToString())]))
+            .Concat(results.Where(r => r.Value is null).Select(r => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRule.NullLiteral, At(r.Expression).ToString())]))
             .Append(also)
             .Aggregate((EquatableArray<IrNullReason>)[], ShapeJoin.Reasons);
         // A CASE whose condition is constant is folded to one result, an int literal then counting its own digits (observed:
@@ -263,7 +263,7 @@ internal sealed partial class ProcedureAnalyzer
             return null;
         }
 
-        return new IrValueSet([.. items], IrValueMatch.Exact, [new IrFactSource(IrFactSources.Expression, At(at).ToString())]);
+        return new IrValueSet([.. items], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Expression, At(at).ToString())]);
     }
 
     // ---- CHOOSE ---------------------------------------------------------------------------------------------------------
@@ -281,7 +281,7 @@ internal sealed partial class ProcedureAnalyzer
         var results = call.Parameters.Skip(1).Select(p => (p, Strip(p) is NullLiteral ? null : Expression(p, scope))).ToList();
         var because = InRange(index, call.Parameters[0], count)
             ? index.NullableBecause
-            : ShapeJoin.Reasons(index.NullableBecause, [new IrNullReason(IrNullRules.OutOfRange, At(call).ToString())]);
+            : ShapeJoin.Reasons(index.NullableBecause, [new IrNullReason(IrNullRule.OutOfRange, At(call).ToString())]);
         return Results(call, results, because);
     }
 
@@ -319,7 +319,7 @@ internal sealed partial class ProcedureAnalyzer
         if (value.IsLiveJson || value.Shape is JsonTextShape)
             return NotModelled(nullIf, "whether NULLIF over JSON nests as JSON depends on whether the server folds it.");
 
-        var because = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRules.NullIf, At(nullIf).ToString())]);
+        var because = ShapeJoin.Reasons(value.NullableBecause, [new IrNullReason(IrNullRule.NullIf, At(nullIf).ToString())]);
         if (LiteralOf(nullIf.FirstExpression) is ({ } literal and IntegerLiteral, var negative)
             && long.TryParse(literal.Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n))
         {

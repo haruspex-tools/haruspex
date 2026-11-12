@@ -42,33 +42,33 @@ internal static class SqlTypes
         var type = facts.Type!.BuiltIn;
         var text = Text(type);
         var irFacets = withFacets ? Facets(facts) : null;
-        ScalarShape Scalar(IrScalarKind kind, string? format) => new(new IrScalar(kind, format, text, irFacets));
+        ScalarShape Scalar(IrScalarKind kind, IrFormat? format) => new(new IrScalar(kind, format, text, irFacets));
 
         return type.Name switch
         {
-            "tinyint" => Scalar(IrScalarKind.Number, IrFormats.Uint8),
-            "smallint" => Scalar(IrScalarKind.Number, IrFormats.Int16),
-            "int" => Scalar(IrScalarKind.Number, IrFormats.Int32),
-            "bigint" => Scalar(IrScalarKind.Number, IrFormats.Int64),
-            "decimal" or "numeric" or "money" or "smallmoney" => Scalar(IrScalarKind.Number, IrFormats.Decimal),
-            "float" or "real" => Scalar(IrScalarKind.Number, IrFormats.Float),
+            "tinyint" => Scalar(IrScalarKind.Number, IrFormat.Uint8),
+            "smallint" => Scalar(IrScalarKind.Number, IrFormat.Int16),
+            "int" => Scalar(IrScalarKind.Number, IrFormat.Int32),
+            "bigint" => Scalar(IrScalarKind.Number, IrFormat.Int64),
+            "decimal" or "numeric" or "money" or "smallmoney" => Scalar(IrScalarKind.Number, IrFormat.Decimal),
+            "float" or "real" => Scalar(IrScalarKind.Number, IrFormat.Float),
             "bit" => Scalar(IrScalarKind.Boolean, null),
             "char" or "varchar" or "nchar" or "nvarchar" => Scalar(IrScalarKind.String, null),
             "date" => Scalar(IrScalarKind.Date, null),
             "time" => Scalar(IrScalarKind.Time, null),
-            "datetime" or "datetime2" or "smalldatetime" => Scalar(IrScalarKind.Datetime, IrFormats.Local),
-            "datetimeoffset" => Scalar(IrScalarKind.Datetime, IrFormats.Offset),
+            "datetime" or "datetime2" or "smalldatetime" => Scalar(IrScalarKind.Datetime, IrFormat.Local),
+            "datetimeoffset" => Scalar(IrScalarKind.Datetime, IrFormat.Offset),
             "uniqueidentifier" => Scalar(IrScalarKind.Uuid, null),
             // A json parameter is text the caller sends, and a driver returns a json column as text. A json column
             // inside FOR JSON or a constructor is live JSON instead, which ProcedureAnalyzer decides before this.
             "json" => new JsonTextShape(),
-            _ => new UnknownShape(IrUnknownReasons.UnsupportedSqlType, $"The type {text} is not modelled yet.", at),
+            _ => new UnknownShape(IrUnknownReason.UnsupportedSqlType, $"The type {text} is not modelled yet.", at),
         };
     }
 
     private static UnknownShape Unsupported(SqlType? type, SourceLocation at) =>
         // XML, CLR types, and alias types that cannot be resolved for certain.
-        new(IrUnknownReasons.UnsupportedSqlType, $"The type {type?.ToString() ?? "(none)"} is not modelled yet.", at);
+        new(IrUnknownReason.UnsupportedSqlType, $"The type {type?.ToString() ?? "(none)"} is not modelled yet.", at);
 
     private static IrFacets? Facets(ColumnFacts facts)
     {
@@ -112,11 +112,11 @@ internal static class SqlTypes
     /// </summary>
     private static IrFactSource Source(FactSource from) => from switch
     {
-        TypeSource type => new IrFactSource(IrFactSources.Type, type.Type),
+        TypeSource type => new IrFactSource(IrFactSourceKind.Type, type.Type),
         CheckSource { Check.Name: { } name } check when check.Table.Name.Name.StartsWith('#') || check.Table.Name.Name.StartsWith('@')
-            => new IrFactSource(IrFactSources.Check, $"{check.Table.Name.Name}.{name}"),
-        CheckSource { Check.Name: { } name } check => new IrFactSource(IrFactSources.Check, $"{check.Table.Name.Schema}.{name}"),
-        CheckSource check => new IrFactSource(IrFactSources.Check, check.Check.At.ToString()),
+            => new IrFactSource(IrFactSourceKind.Check, $"{check.Table.Name.Name}.{name}"),
+        CheckSource { Check.Name: { } name } check => new IrFactSource(IrFactSourceKind.Check, $"{check.Table.Name.Schema}.{name}"),
+        CheckSource check => new IrFactSource(IrFactSourceKind.Check, check.Check.At.ToString()),
         _ => throw new ArgumentOutOfRangeException(nameof(from), from, "Unknown fact source."),
     };
 

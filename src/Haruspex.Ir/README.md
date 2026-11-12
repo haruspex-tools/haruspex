@@ -41,6 +41,9 @@ File.WriteAllText("haruspex.ir.json", IrJsonWriter.Write(document));
   with a reason from a closed list, a sentence and a location.
 - **The format is closed.** An emitter that handles the nodes listed here handles every document of this version.
 - **The same input gives the same bytes**, on every machine ("Decisions", below).
+- **Types compare by value.** Two type nodes, fields or results describing the same thing are equal, lists included
+  (`EquatableArray`), so code that asks whether two types are the same asks the records, never their JSON.
+- **Every closed vocabulary is an enum**, and its names in the JSON are in one table, `IrWireNames`, which the writer uses.
 
 ## What it deliberately doesn't do
 

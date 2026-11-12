@@ -15,7 +15,7 @@ public partial class ExecTests
     {
         var why = ResultsUnknown(Infer(("p", $"CREATE PROCEDURE dbo.p AS SELECT t.id FROM dbo.t AS t; {call}")));
 
-        Assert.Equal(IrUnknownReasons.DynamicSql, why.Reason);
+        Assert.Equal(IrUnknownReason.DynamicSql, why.Reason);
         Assert.Contains("dynamic SQL", why.Detail, StringComparison.Ordinal);
         Assert.StartsWith("p.sql:1:", why.At, StringComparison.Ordinal);
     }
@@ -25,7 +25,7 @@ public partial class ExecTests
     {
         var why = ResultsUnknown(Infer(("p", "CREATE PROCEDURE dbo.p AS DECLARE @name sysname = N'dbo.q'; EXEC @name;")));
 
-        Assert.Equal(IrUnknownReasons.ProcedureVariable, why.Reason);
+        Assert.Equal(IrUnknownReason.ProcedureVariable, why.Reason);
     }
 
     [Theory]
@@ -38,7 +38,7 @@ public partial class ExecTests
     {
         var why = ResultsUnknown(Infer(("p", $"CREATE PROCEDURE dbo.p AS {call}")));
 
-        Assert.Equal(IrUnknownReasons.SystemProcedure, why.Reason);
+        Assert.Equal(IrUnknownReason.SystemProcedure, why.Reason);
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public partial class ExecTests
             ("sp_mine", "CREATE PROCEDURE dbo.sp_mine AS SELECT t.id FROM dbo.t AS t;"),
             ("p", "CREATE PROCEDURE dbo.p AS EXEC dbo.sp_mine;")));
 
-        Assert.Equal(IrUnknownReasons.SystemProcedure, why.Reason);
+        Assert.Equal(IrUnknownReason.SystemProcedure, why.Reason);
         Assert.Contains("dbo.sp_mine", why.Detail, StringComparison.Ordinal);
     }
 
@@ -66,7 +66,7 @@ public partial class ExecTests
             ("q", "CREATE PROCEDURE dbo.q AS SELECT t.id FROM dbo.t AS t;"),
             ("p", $"CREATE PROCEDURE dbo.p AS {call}")));
 
-        Assert.Equal(IrUnknownReasons.MissingProcedure, why.Reason);
+        Assert.Equal(IrUnknownReason.MissingProcedure, why.Reason);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public partial class ExecTests
             ("q2", "CREATE SCHEMA other;\nGO\nCREATE PROCEDURE other.q AS SELECT t.name FROM dbo.t AS t;"),
             ("p", "CREATE PROCEDURE dbo.p AS EXEC q;")));
 
-        Assert.Equal(IrUnknownReasons.AmbiguousProcedure, why.Reason);
+        Assert.Equal(IrUnknownReason.AmbiguousProcedure, why.Reason);
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public partial class ExecTests
             ("q", "CREATE PROCEDURE dbo.q AS EXTERNAL NAME Lib.[Lib.Procs].Q;"),
             ("p", "CREATE PROCEDURE dbo.p AS EXEC dbo.q;")));
 
-        Assert.Equal(IrUnknownReasons.ExternalCode, why.Reason);
+        Assert.Equal(IrUnknownReason.ExternalCode, why.Reason);
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public partial class ExecTests
             ("p", "CREATE PROCEDURE dbo.p AS EXEC dbo.q;"));
 
         var why = ResultsUnknown(doc);
-        Assert.Equal(IrUnknownReasons.DynamicSql, why.Reason);
+        Assert.Equal(IrUnknownReason.DynamicSql, why.Reason);
         Assert.StartsWith("q.sql:1:", why.At, StringComparison.Ordinal);
         Assert.Contains("dbo.q", why.Detail, StringComparison.Ordinal);
         Assert.Contains("p.sql:1:", why.Detail, StringComparison.Ordinal);
@@ -112,6 +112,6 @@ public partial class ExecTests
             ("q", "CREATE PROCEDURE dbo.q AS SELECT t.id FROM dbo.t AS t;\nGO\nALTER PROCEDURE dbo.q AS SELECT t.name FROM dbo.t AS t;"),
             ("p", "CREATE PROCEDURE dbo.p AS EXEC dbo.q;")));
 
-        Assert.Equal(IrUnknownReasons.Redefined, why.Reason);
+        Assert.Equal(IrUnknownReason.Redefined, why.Reason);
     }
 }

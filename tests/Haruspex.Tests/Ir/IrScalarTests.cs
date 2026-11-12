@@ -8,12 +8,12 @@ namespace Haruspex.Tests.Ir;
 /// </summary>
 public class IrScalarTests
 {
-    private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormats.Int32, "int");
+    private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormat.Int32, "int");
 
     [Fact]
     public void Empty_facets_are_kept_as_none_since_they_claim_nothing()
     {
-        var empty = new IrScalar(IrScalarKind.Number, IrFormats.Int32, "int", new IrFacets());
+        var empty = new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int", new IrFacets());
 
         Assert.Null(empty.Facets);
         Assert.Equal(Int, empty);
@@ -24,7 +24,7 @@ public class IrScalarTests
     [Fact]
     public void Facets_that_claim_something_are_kept_and_compared()
     {
-        var length = new IrFacets(Length: new IrLength(10, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, new IrFactSource(IrFactSources.Type, "nvarchar(10)")));
+        var length = new IrFacets(Length: new IrLength(10, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Type, "nvarchar(10)")));
         var text = new IrScalar(IrScalarKind.String, null, "nvarchar(10)", length);
 
         Assert.Same(length, text.Facets);

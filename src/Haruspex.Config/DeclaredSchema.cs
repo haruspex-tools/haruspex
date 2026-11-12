@@ -32,7 +32,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
 
     private readonly Stack<string> refs = new();
 
-    private IrNullReason Declared => new(IrNullRules.Declared, procedure);
+    private IrNullReason Declared => new(IrNullRule.Declared, procedure);
 
     /// <summary>A rowset: the schema of one row, an object whose properties are its columns, each always there.</summary>
     public IrResult? Rowset(int index)
@@ -168,16 +168,16 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
                 null => new IrScalar(IrScalarKind.String, null, null),
                 "date" => new IrScalar(IrScalarKind.Date, null, null),
                 "time" => new IrScalar(IrScalarKind.Time, null, null),
-                "date-time" => new IrScalar(IrScalarKind.Datetime, IrFormats.Offset, null),
-                "date-time-local" => new IrScalar(IrScalarKind.Datetime, IrFormats.Local, null),
+                "date-time" => new IrScalar(IrScalarKind.Datetime, IrFormat.Offset, null),
+                "date-time-local" => new IrScalar(IrScalarKind.Datetime, IrFormat.Local, null),
                 "uuid" => new IrScalar(IrScalarKind.Uuid, null, null),
                 _ => Unchecked(new IrScalar(IrScalarKind.String, null, null)),
             },
             "integer" => format switch
             {
                 null => new IrScalar(IrScalarKind.Number, null, null),
-                "int32" => new IrScalar(IrScalarKind.Number, IrFormats.Int32, null),
-                "int64" => new IrScalar(IrScalarKind.Number, IrFormats.Int64, null),
+                "int32" => new IrScalar(IrScalarKind.Number, IrFormat.Int32, null),
+                "int64" => new IrScalar(IrScalarKind.Number, IrFormat.Int64, null),
                 _ => Unchecked(new IrScalar(IrScalarKind.Number, null, null)),
             },
             "number" => format is null ? new IrScalar(IrScalarKind.Number, null, null) : Unchecked(new IrScalar(IrScalarKind.Number, null, null)),

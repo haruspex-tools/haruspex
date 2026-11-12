@@ -11,13 +11,13 @@ public partial class JsonConstructorTests
         var doc = Procedure("SELECT j.id, j.doc, j.body, json_object('d': j.doc) AS o FROM dbo.j AS j FOR JSON PATH;");
 
         var docField = Field(doc, "doc");
-        Assert.Equal(IrUnknownReasons.JsonShapeUnknown, Assert.IsType<IrUnknownType>(docField.Type).Reason);
-        Assert.Equal(["nullable-column"], Rules(docField.NullableBecause));
+        Assert.Equal(IrUnknownReason.JsonShapeUnknown, Assert.IsType<IrUnknownType>(docField.Type).Reason);
+        Assert.Equal([IrNullRule.NullableColumn], Rules(docField.NullableBecause));
         Assert.Equal(IrPresence.OmittedWhenNull, docField.Presence);
         var body = Field(doc, "body");
         Assert.IsType<IrUnknownType>(body.Type);
         Assert.Empty(body.NullableBecause);
-        Assert.Equal(IrUnknownReasons.JsonShapeUnknown, Unknown(doc, "results[0][].o.d").Reason);
+        Assert.Equal(IrUnknownReason.JsonShapeUnknown, Unknown(doc, "results[0][].o.d").Reason);
     }
 
     [Fact]

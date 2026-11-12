@@ -4,7 +4,7 @@
 
 **Decision.** Every claim haruspex makes must hold for every execution. A field reported non-null is never null, and a
 value set holds every value the code can produce. What cannot be proved is *unknown*, with a reason from a closed list
-(`IrUnknownReasons`), a sentence saying why, and where in the source it arose.
+(`IrUnknownReason`), a sentence saying why, and where in the source it arose.
 
 **Context.** No static analysis of a real language that always terminates can be both sound (every claim true) and
 complete (every true fact claimed): Rice's theorem rules it out. So a tool must choose which way to be wrong when it

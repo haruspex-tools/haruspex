@@ -10,7 +10,7 @@ public partial class RefinementTests
     {
         var doc = Procedure("SELECT t.name, (SELECT COUNT_BIG(*) FROM dbo.u AS u WHERE u.note = t.name) AS hits FROM dbo.t AS t;");
 
-        Assert.Equal(["nullable-column"], Rules(doc, "name"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "name"));
     }
 
     [Fact]
@@ -19,7 +19,7 @@ public partial class RefinementTests
         var doc = Procedure("SELECT t.id, (SELECT TOP (1) t.name FROM dbo.u AS u) AS name FROM dbo.t AS t WHERE t.name IS NOT NULL;");
 
         // The subquery may have no row, which is null; but not for want of a name.
-        Assert.Equal(["empty-subquery"], Rules(doc, "name"));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "name"));
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public partial class RefinementTests
 
         Assert.Empty(doc.Unknowns);
         Assert.False(Field(doc, "id").Nullable);
-        Assert.Equal([new IrNullReason(IrNullRules.NullableColumn, "dbo.t.name")], Field(doc, "label").NullableBecause);
+        Assert.Equal([new IrNullReason(IrNullRule.NullableColumn, "dbo.t.name")], Field(doc, "label").NullableBecause);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public partial class RefinementTests
     {
         var doc = Procedure("SELECT d.id FROM dbo.u AS u LEFT JOIN (SELECT t.id FROM dbo.t AS t) AS d ON d.id = u.t_id;");
 
-        Assert.Equal(["outer-join"], Rules(doc, "id"));
+        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "id"));
     }
 
     [Fact]
@@ -88,11 +88,11 @@ public partial class RefinementTests
 
         var stats = Assert.IsType<IrJsonText>(Field(doc, "stats").Type);
         var n = Assert.Single(doc.Types[Assert.IsType<IrRef>(stats.Content).Name].Fields, f => f.Name == "n");
-        Assert.Equal(["nullable-column"], Rules(n));
-        Assert.Contains("nullable-column", Rules(doc, "kept"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(n));
+        Assert.Contains(IrNullRule.NullableColumn, Rules(doc, "kept"));
 
         // Without an aggregate, a row the subquery returns passed its WHERE.
-        Assert.Equal(["empty-subquery"], Rules(doc, "plain"));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "plain"));
     }
 
     [Fact]
@@ -105,8 +105,8 @@ public partial class RefinementTests
             FROM dbo.t AS t;
             """);
 
-        Assert.Equal(["empty-aggregate"], Rules(doc, "note"));
-        Assert.Equal(["empty-subquery"], Rules(doc, "n"));
+        Assert.Equal([IrNullRule.EmptyAggregate], Rules(doc, "note"));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "n"));
     }
 
     [Theory]
@@ -121,8 +121,8 @@ public partial class RefinementTests
         var doc = Procedure($"SELECT t.n, t.id, COUNT_BIG(*) AS c, MAX(t.id) AS top_id FROM dbo.t AS t WHERE t.n IS NOT NULL AND t.id = @x {groupBy.Replace("t.n", "t.n, t.id", StringComparison.Ordinal)};", "@x int");
 
         Assert.Equal(IrCardinality.Many, Assert.Single(Results(doc)).Cardinality);
-        Assert.Contains("grouping-set", Rules(doc, "n"));
-        Assert.Contains("grouping-set", Rules(doc, "id"));
+        Assert.Contains(IrNullRule.GroupingSet, Rules(doc, "n"));
+        Assert.Contains(IrNullRule.GroupingSet, Rules(doc, "id"));
         Assert.False(Field(doc, "c").Nullable);
         Assert.False(Field(doc, "top_id").Nullable);
     }

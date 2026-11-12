@@ -6,9 +6,9 @@ namespace Haruspex.Tests.Emit.Zod;
 /// <summary>How the Zod emitter writes the nodes the JSON constructors produce.</summary>
 public class ZodJsonNodeTests
 {
-    private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormats.Int32, "int");
+    private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormat.Int32, "int");
     private static readonly IrScalar Text = new(IrScalarKind.String, null, "nvarchar(10)");
-    private static readonly IrNullReason Because = new(IrNullRules.NullableColumn, "a.t.c");
+    private static readonly IrNullReason Because = new(IrNullRule.NullableColumn, "a.t.c");
 
     private static string Emit(IrType type, Dictionary<string, IrObjectType>? more = null)
     {
@@ -43,7 +43,7 @@ public class ZodJsonNodeTests
     public void A_union_with_an_unknown_variant_keeps_the_unknown_and_says_why() =>
         Assert.Contains(
             "\n  v: z.union([z.int32(), z.unknown()]) /* unsupported-expression */,\n",
-            Emit(new IrUnion([Int, new IrUnknownType(IrUnknownReasons.UnsupportedExpression)])),
+            Emit(new IrUnion([Int, new IrUnknownType(IrUnknownReason.UnsupportedExpression)])),
             StringComparison.Ordinal);
 
     [Fact]

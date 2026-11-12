@@ -35,7 +35,7 @@ internal sealed partial class ProcedureAnalyzer
         {
             return JsonSlot.Text(unknown with
             {
-                Reason = IrUnknownReasons.JsonShapeUnknown,
+                Reason = IrUnknownReason.JsonShapeUnknown,
                 Detail = $"{where} is assigned {(expression is null ? "a value" : Text(expression))} {Text(at)}, which is not known: {unknown.Detail}",
                 At = at,
             });
@@ -44,7 +44,7 @@ internal sealed partial class ProcedureAnalyzer
             return JsonSlot.Json(value.Shape);
         if (value.Shape is JsonTextShape text)
         {
-            return JsonSlot.Json(text.Content ?? Unsupported(IrUnknownReasons.JsonShapeUnknown,
+            return JsonSlot.Json(text.Content ?? Unsupported(IrUnknownReason.JsonShapeUnknown,
                 $"{where} is assigned JSON whose shape is not known {Text(at)}{(expression is null ? "" : $": {Text(expression)}")}.", at));
         }
 
@@ -57,7 +57,7 @@ internal sealed partial class ProcedureAnalyzer
         if (value.JsonWhy is { } why)
             return JsonSlot.Text(why);
         var what = expression is null ? "a value" : Text(expression);
-        return JsonSlot.Text(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{where} is assigned {what} {Text(at)}, which is not JSON built here.", at));
+        return JsonSlot.Text(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{where} is assigned {what} {Text(at)}, which is not JSON built here.", at));
     }
 
     // ---- table variables ----------------------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ internal sealed partial class ProcedureAnalyzer
         foreach (var (position, key) in TracedColumns(state, name, columns).ToList())
         {
             var written = targets is null || rows is null
-                ? JsonSlot.Text(Unsupported(IrUnknownReasons.JsonShapeUnknown, $"{key} is written {Text(at)} {how}.", at))
+                ? JsonSlot.Text(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{key} is written {Text(at)} {how}.", at))
                 : JsonRows(rows, expressions, targets.IndexOf(position), at, key);
             state = state.WithJson(key, JsonSlot.Join(state.Json[key], written));
         }
@@ -190,7 +190,7 @@ internal sealed partial class ProcedureAnalyzer
     private static FlowState Widened(FlowState head, FlowState next, SourceLocation at)
     {
         UnknownShape Why(string where) =>
-            new(IrUnknownReasons.JsonShapeUnknown, $"{where} holds JSON that changes at every pass of the loop {Text(at)}, so its shape is not followed.", at);
+            new(IrUnknownReason.JsonShapeUnknown, $"{where} holds JSON that changes at every pass of the loop {Text(at)}, so its shape is not followed.", at);
 
         foreach (var (name, slot) in next.Json)
         {

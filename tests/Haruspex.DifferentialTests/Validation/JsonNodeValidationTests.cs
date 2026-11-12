@@ -9,8 +9,8 @@ namespace Haruspex.DifferentialTests.Validation;
 /// </summary>
 public class JsonNodeValidationTests
 {
-    private static readonly IrNullReason Because = new(IrNullRules.NullableColumn, "dbo.t.c");
-    private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormats.Int32, "int");
+    private static readonly IrNullReason Because = new(IrNullRule.NullableColumn, "dbo.t.c");
+    private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormat.Int32, "int");
     private static readonly IrScalar Text = new(IrScalarKind.String, null, "nvarchar(10)");
 
     private static IrDocument Doc(IrType type, params (string Name, IrField[] Fields)[] more) => new(
@@ -107,7 +107,7 @@ public class JsonNodeValidationTests
     [Fact]
     public void A_value_of_several_variants_reaches_the_edges_of_each()
     {
-        var from = new IrFactSource(IrFactSources.Type, "t");
+        var from = new IrFactSource(IrFactSourceKind.Type, "t");
         var union = new IrUnion([
             new IrScalar(IrScalarKind.String, null, "nvarchar(60)", new IrFacets(Length: new IrLength(60, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, from))),
             new IrScalar(IrScalarKind.String, null, "nchar(3)", new IrFacets(Length: new IrLength(3, true, IrLengthUnit.Utf16, IrByteEncoding.Unknown, from))),
@@ -141,7 +141,7 @@ public class JsonNodeValidationTests
             new IrElement(new IrRecord(Int, [Because]), []),
             new IrElement(new IrArray(Int) { ItemsNullableBecause = [Because] }, []),
             new IrElement(new IrUnion([Int, new IrRecord(Text, [])]), []),
-            new IrElement(new IrUnknownType(IrUnknownReasons.JsonShapeUnknown), [Because]),
+            new IrElement(new IrUnknownType(IrUnknownReason.JsonShapeUnknown), [Because]),
         ]));
 
         Assert.Equal(

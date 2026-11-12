@@ -109,8 +109,8 @@ public static class ZodEmitter
         /// </summary>
         private static string Describe(IrResult result)
         {
-            var noRows = result.AbsentBecause.Any(r => r.Rule == IrNullRules.NoRows);
-            var notRun = result.AbsentBecause.Any(r => r.Rule == IrNullRules.NotRun);
+            var noRows = result.AbsentBecause.Any(r => r.Rule == IrNullRule.NoRows);
+            var notRun = result.AbsentBecause.Any(r => r.Rule == IrNullRule.NotRun);
             var when = (noRows, notRun) switch
             {
                 (true, true) => "when no rows match or it does not run",
@@ -334,7 +334,7 @@ public static class ZodEmitter
             IrImport import => (import.Name, null),
             IrJsonText { Content: { } content } => JsonText(Expression(content, IrEncoding.Json)),
             IrJsonText => ("z.string()", "JSON text"),
-            IrUnknownType unknown => ("z.unknown()", unknown.Reason),
+            IrUnknownType unknown => ("z.unknown()", IrWireNames.Of(unknown.Reason)),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown IR type node."),
         };
 
@@ -459,8 +459,8 @@ public static class ZodEmitter
                 IrScalarKind.Datetime when !json => ("z.date()", null),
                 IrScalarKind.Datetime => scalar.Format switch
                 {
-                    IrFormats.Local => ("z.iso.datetime({ local: true })", null),
-                    IrFormats.Offset => ("z.iso.datetime({ offset: true })", null),
+                    IrFormat.Local => ("z.iso.datetime({ local: true })", null),
+                    IrFormat.Offset => ("z.iso.datetime({ offset: true })", null),
                     // Without a format the offset is not known, so no format is claimed.
                     _ => ("z.string()", null),
                 },

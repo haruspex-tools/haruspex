@@ -28,7 +28,7 @@ public partial class DmlTests
         // FETCH INTO may not assign (observed: Fetch_into_leaves_the_variables_as_they_were_past_the_end), and a cursor's
         // WHERE proves nothing of the row fetched (observed: A_keyset_cursor_fetches_a_row_changed_after_open_that_its_where_no_longer_keeps).
         Assert.False(Field(doc, "id").Nullable);
-        Assert.Equal([IrNullRules.Variable, IrNullRules.NullableColumn], Rules(Field(doc, "label")));
+        Assert.Equal([IrNullRule.Variable, IrNullRule.NullableColumn], Rules(Field(doc, "label")));
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public partial class DmlTests
         // Observed: the row carries a hidden ROWSTAT column, which some drivers list and others leave out.
         var doc = Doc(("p", "CREATE PROCEDURE dbo.p AS DECLARE c CURSOR LOCAL FOR SELECT i.id FROM dbo.item AS i; OPEN c; FETCH NEXT FROM c; CLOSE c; DEALLOCATE c;"));
 
-        Assert.Equal(IrUnknownReasons.HiddenColumn, ResultsUnknown(doc).Reason);
+        Assert.Equal(IrUnknownReason.HiddenColumn, ResultsUnknown(doc).Reason);
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public partial class DmlTests
             """));
 
         // A variable keeps its declared type, which FETCH converts to; only whether it is null is not known.
-        Assert.Contains(IrNullRules.Unknown, Rules(Field(doc, "id")));
+        Assert.Contains(IrNullRule.Unknown, Rules(Field(doc, "id")));
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public partial class DmlTests
             SELECT @n AS n;
             """));
 
-        Assert.Contains(IrNullRules.Unknown, Rules(Field(doc, "n")));
+        Assert.Contains(IrNullRule.Unknown, Rules(Field(doc, "n")));
     }
 
     [Fact]

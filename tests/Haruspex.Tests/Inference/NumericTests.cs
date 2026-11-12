@@ -35,7 +35,7 @@ public class NumericTests
     {
         var doc = Procedure(body);
         return string.Join("\n", Fields(doc).Select(f => f.Name + ": " + (f.Type is IrScalar scalar
-            ? string.Join(" ", [scalar.Sql ?? "(none)", .. f.NullableBecause.Select(r => r.Rule)])
+            ? string.Join(" ", [scalar.Sql ?? "(none)", .. f.NullableBecause.Select(r => IrWireNames.Of(r.Rule))])
             : "unknown")));
     }
 

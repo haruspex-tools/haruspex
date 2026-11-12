@@ -36,7 +36,7 @@ public partial class StatementFlowTests
         Assert.Equal(2, results.Count);
         Assert.False(results[0].MayBeAbsent);
         Assert.IsType<IrUnion>(results[0].Type);
-        Assert.Equal(IrNullRules.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
+        Assert.Equal(IrNullRule.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
         Assert.Equal("name", Assert.Single(Fields(doc, 1)).Name);
     }
 
@@ -47,7 +47,7 @@ public partial class StatementFlowTests
 
         var results = Results(doc);
         Assert.False(results[0].MayBeAbsent);
-        Assert.Equal(IrNullRules.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
+        Assert.Equal(IrNullRule.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
     }
 
     [Theory]
@@ -140,7 +140,7 @@ public partial class StatementFlowTests
         var results = Results(doc);
         Assert.Equal(2, results.Count);
         Assert.False(results[0].MayBeAbsent);
-        Assert.Equal(IrNullRules.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
+        Assert.Equal(IrNullRule.NotRun, Assert.Single(results[1].AbsentBecause).Rule);
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public partial class StatementFlowTests
     {
         var doc = Procedure("WHILE @x > 0 BEGIN SELECT t.id FROM dbo.t AS t; SET @x = 0; END", "@x int");
 
-        AssertUnknown(doc, "results", IrUnknownReasons.VaryingResults);
+        AssertUnknown(doc, "results", IrUnknownReason.VaryingResults);
     }
 
     [Fact]
@@ -206,7 +206,7 @@ public partial class StatementFlowTests
     {
         var doc = Procedure("IF @x = 1 SELECT t.id FROM dbo.t AS t;\nELSE SELECT t.id FROM dbo.t AS t FOR JSON PATH;", "@x int");
 
-        AssertUnknown(doc, "results", IrUnknownReasons.VaryingResults);
+        AssertUnknown(doc, "results", IrUnknownReason.VaryingResults);
     }
 
     [Theory]
@@ -218,7 +218,7 @@ public partial class StatementFlowTests
     {
         var doc = Procedure(body + "\nSELECT t.id FROM dbo.t AS t;", "@x int");
 
-        AssertUnknown(doc, "results", IrUnknownReasons.UnsupportedStatement);
+        AssertUnknown(doc, "results", IrUnknownReason.UnsupportedStatement);
     }
 
     [Theory]

@@ -156,7 +156,7 @@ example that a caller doesn't read uncommitted data
 
 ### What unknown means
 
-An unknown is never a silent `any`. It always carries a reason from a closed list (`IrUnknownReasons`), a sentence saying
+An unknown is never a silent `any`. It always carries a reason from a closed list (`IrUnknownReason`), a sentence saying
 why, and where in the source it arose. Here a procedure runs a query built as a string, so its shape is in no source file:
 
 ```sql haruspex-example
@@ -269,6 +269,6 @@ otherwise with a reason.
 ## In the code
 
 - `IrInference.Infer` is the front door of inference: a model and the procedures to infer, in; an IR document, out.
-- `IrUnknownReasons` and `IrNullRules` are the closed lists of reasons for an unknown and for a value that may be null.
+- `IrUnknownReason` and `IrNullRule` are the closed lists of reasons for an unknown and for a value that may be null.
 - `SqlProject` is the composition the CLI and the tests use: read a folder, infer, apply the config file.
 - [`src/Haruspex.Ir/README.md`](../../src/Haruspex.Ir/README.md) specifies what each claim in the IR means.

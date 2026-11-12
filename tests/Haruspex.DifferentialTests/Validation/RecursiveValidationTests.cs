@@ -9,8 +9,8 @@ namespace Haruspex.DifferentialTests.Validation;
 /// </summary>
 public class RecursiveValidationTests
 {
-    private static readonly IrNullReason Because = new(IrNullRules.EmptySubquery, "f.sql:3:5");
-    private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormats.Int32, "int");
+    private static readonly IrNullReason Because = new(IrNullRule.EmptySubquery, "f.sql:3:5");
+    private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormat.Int32, "int");
 
     private static readonly Dictionary<string, IrObjectType> Types = new()
     {

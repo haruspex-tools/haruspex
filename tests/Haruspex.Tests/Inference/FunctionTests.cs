@@ -37,8 +37,8 @@ public partial class FunctionTests
     /// <summary>The field's SQL type and its reasons to be null, <c>int nullable-column</c>, or "unknown: reason".</summary>
     private static string Typed(IrDocument doc, string name) => Field(doc, name).Type switch
     {
-        IrScalar scalar => string.Join(" ", [scalar.Sql ?? "(none)", .. Field(doc, name).NullableBecause.Select(r => r.Rule)]),
-        _ => "unknown: " + string.Join("; ", doc.Unknowns.Where(u => u.Path.EndsWith("." + name, StringComparison.Ordinal)).Select(u => u.Reason)),
+        IrScalar scalar => string.Join(" ", [scalar.Sql ?? "(none)", .. Field(doc, name).NullableBecause.Select(r => IrWireNames.Of(r.Rule))]),
+        _ => "unknown: " + string.Join("; ", doc.Unknowns.Where(u => u.Path.EndsWith("." + name, StringComparison.Ordinal)).Select(u => IrWireNames.Of(u.Reason))),
     };
 
     private static void Unknown(IrDocument doc, string name) => Assert.StartsWith("unknown", Typed(doc, name), StringComparison.Ordinal);

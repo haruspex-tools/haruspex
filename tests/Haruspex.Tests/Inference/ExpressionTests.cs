@@ -33,17 +33,17 @@ public class ExpressionTests
 
     private static IrField Field(IrDocument doc, string name) => Assert.Single(Fields(doc), f => f.Name == name);
 
-    private static string[] Rules(IrDocument doc, string name) => [.. Field(doc, name).NullableBecause.Select(r => r.Rule)];
+    private static IrNullRule[] Rules(IrDocument doc, string name) => [.. Field(doc, name).NullableBecause.Select(r => r.Rule)];
 
     /// <summary>The field's SQL type, or "unknown: reason" when it is not typed.</summary>
     private static string Sql(IrDocument doc, string name) => Field(doc, name).Type switch
     {
         IrScalar scalar => scalar.Sql ?? "(none)",
-        _ => "unknown: " + string.Join("; ", doc.Unknowns.Where(u => u.Path.EndsWith("." + name, StringComparison.Ordinal)).Select(u => u.Reason)),
+        _ => "unknown: " + string.Join("; ", doc.Unknowns.Where(u => u.Path.EndsWith("." + name, StringComparison.Ordinal)).Select(u => IrWireNames.Of(u.Reason))),
     };
 
     /// <summary>The type and the reasons to be null, as one string: <c>decimal(10,2) nullable-column</c>.</summary>
-    private static string Typed(IrDocument doc, string name) => string.Join(" ", [Sql(doc, name), .. Rules(doc, name)]);
+    private static string Typed(IrDocument doc, string name) => string.Join(" ", [Sql(doc, name), .. Rules(doc, name).Select(r => IrWireNames.Of(r))]);
 
     // ---- literals ----------------------------------------------------------------------------------------------------
 
