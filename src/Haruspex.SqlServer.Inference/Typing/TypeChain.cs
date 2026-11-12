@@ -94,24 +94,20 @@ internal static class TypeChain
     /// the order they come; null when every value converts (observed:
     /// Types_without_an_implicit_conversion_are_refused_with_an_operand_type_clash, and every pair in SetTypeGridTests; for a
     /// chain, A_chain_is_refused_only_when_a_value_cannot_become_its_type: 1, a date, a datetime is datetime, though 1 and a
-    /// date alone are refused). Refused: uniqueidentifier with anything but a string; date, time, datetime2 and datetimeoffset
-    /// with a number or bit; date with time.
+    /// date alone are refused). A value is refused when the conversion chart (<see cref="ConversionChart"/>) doesn't convert
+    /// it to the chain's type implicitly: uniqueidentifier with anything but a string; date, time, datetime2 and
+    /// datetimeoffset with a number or bit; date with time.
     /// </summary>
     public static (ScalarType First, ScalarType Second)? Clash(IReadOnlyList<Operand> operands)
     {
         var types = operands.Select(o => o.Type).ToList();
-        static bool Numeric(ScalarType t) => t.IsNumber || t.IsBit;
-        static bool Refused(ScalarType a, ScalarType b) =>
-            (a.Type == BuiltInType.UniqueIdentifier && b.Type != BuiltInType.UniqueIdentifier && !b.IsString)
-            || (a.Type.IsAnyOf(BuiltInType.Date, BuiltInType.Time, BuiltInType.DateTime2, BuiltInType.DateTimeOffset) && Numeric(b))
-            || (a.Type == BuiltInType.Date && b.Type == BuiltInType.Time);
-
         if (Fold(operands) is not { } final)
             return null;
         var own = types.FindIndex(t => t.Type == final.Type);
         for (var i = 0; i < types.Count; i++)
         {
-            if (!Refused(types[i], final) && !Refused(final, types[i]))
+            // Each value is converted to the chain's type implicitly, which the conversion chart says the server allows or not.
+            if (ConversionChart.Of(types[i].Type, final.Type) == ConversionKind.Implicit)
                 continue;
             if (own < 0)
                 return (types[i], final);
