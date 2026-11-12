@@ -76,6 +76,64 @@ internal static class CatalogueSweep
     public static string Table =>
         $"CREATE TABLE dbo.g (id int NOT NULL PRIMARY KEY, {string.Join(", ", Columns.Select(c => $"{c.Name} {c.Type} NOT NULL"))});";
 
+    /// <summary>
+    /// Each column type's values at its edges, as SQL literals: its least and greatest, and 0 and 1 where it holds them, the
+    /// empty and the longest string, the first and last instant. The rows of the edge table (<see cref="EdgeRows"/>) mix them.
+    /// </summary>
+    public static IReadOnlyList<string> Edges(string type) => type switch
+    {
+        "bit" => ["0", "1"],
+        "tinyint" => ["0", "255", "1"],
+        "smallint" => ["-32768", "32767", "0", "1"],
+        "int" => ["-2147483648", "2147483647", "0", "1"],
+        "bigint" => ["-9223372036854775808", "9223372036854775807", "0", "1"],
+        "decimal(5,2)" => ["-999.99", "999.99", "0", "1"],
+        "decimal(38,0)" => ["-" + new string('9', 38), new string('9', 38), "0", "1"],
+        "decimal(38,38)" => ["-0." + new string('9', 38), "0." + new string('9', 38), "0"],
+        "numeric(10,2)" => ["-99999999.99", "99999999.99", "0", "1"],
+        "money" => ["-922337203685477.5808", "922337203685477.5807", "0", "1"],
+        "smallmoney" => ["-214748.3648", "214748.3647", "0", "1"],
+        "float" or "float(25)" => ["-1.79E+308", "1.79E+308", "0", "1"],
+        "real" or "float(24)" => ["-3.40E+38", "3.40E+38", "0", "1"],
+        "char(3)" => ["''", "'abc'", "'1'"],
+        "varchar(10)" => ["''", "'abcdefghij'", "'1'"],
+        "varchar(max)" => ["''", "REPLICATE(CAST('x' AS varchar(max)), 9000)", "'1'"],
+        "nchar(3)" => ["N''", "N'abc'", "N'1'"],
+        "nvarchar(10)" => ["N''", "N'abcdefghij'", "N'1'"],
+        "nvarchar(max)" => ["N''", "REPLICATE(CAST(N'x' AS nvarchar(max)), 9000)", "N'1'"],
+        "date" => ["'0001-01-01'", "'9999-12-31'"],
+        "time(3)" => ["'00:00:00'", "'23:59:59.999'"],
+        "datetime" => ["'1753-01-01'", "'9999-12-31 23:59:59.997'"],
+        "datetime2(3)" => ["'0001-01-01'", "'9999-12-31 23:59:59.999'"],
+        "smalldatetime" => ["'1900-01-01'", "'2079-06-06 23:59'"],
+        "datetimeoffset(3)" => ["'0001-01-01 00:00:00 -14:00'", "'9999-12-31 23:59:59.999 +14:00'"],
+        "uniqueidentifier" => ["'00000000-0000-0000-0000-000000000000'", "'FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF'"],
+        "binary(4)" => ["0x00000000", "0xFFFFFFFF"],
+        "varbinary(10)" => ["0x", "0xFFFFFFFFFFFFFFFFFFFF"],
+        "xml" => ["'<a/>'"],
+        "sql_variant" => ["1", "'x'"],
+        "json" => ["'{}'", "'[1]'"],
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "No edges for this type."),
+    };
+
+    /// <summary>
+    /// The edge table's rows, as <c>INSERT</c> statements: one of every column's first edge, one of every column's second, then
+    /// rows mixing them so that each value meets the others' least and greatest.
+    /// </summary>
+    public static IReadOnlyList<string> EdgeRows()
+    {
+        const int Rows = 24;
+        static string ValueOf(int row, int column)
+        {
+            var edges = Edges(Columns[column].Type);
+            var index = row < 2 ? row : ((row * (column + 1)) + column) % edges.Count;
+            return edges[Math.Min(index, edges.Count - 1)];
+        }
+
+        return [.. Enumerable.Range(0, Rows).Select(r =>
+            $"INSERT INTO dbo.g VALUES ({r.ToString(CultureInfo.InvariantCulture)}, {string.Join(", ", Columns.Select((_, c) => ValueOf(r, c)))});")];
+    }
+
     /// <summary>The expressions of one form, in a stable order.</summary>
     public static IReadOnlyList<string> Expressions(string form) => form switch
     {

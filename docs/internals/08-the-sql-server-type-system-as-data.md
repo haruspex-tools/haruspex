@@ -197,17 +197,21 @@ Every entry has a **stable code**, its form and name: `scalar.datediff`, `window
 cite the function's code, and a code is a link that must last, so a code is never changed or reused: `BuiltInFunctionsTests`
 holds the list as a snapshot, so a change to one shows in review, and checks no two entries share one.
 
-`FunctionTableTests` holds the table to the catalogue and the catalogue to the server's behaviour:
+`FunctionTableTests` holds the table to the catalogue and to the code:
 
 - every entry has one row, and every row an entry;
 - each row cites observation tests that exist and call its function, so a citation of a test about something else fails;
-- every reason the sweep finds a call may be NULL is one its row declares, so a row's null behaviour is the code's;
+- every reason the sweep finds a call may be NULL is one its row declares, so a row says no less than the code does;
 - the sweep reaches every function the table types (but `GROUPING` and `GROUPING_ID`, which need a `GROUP BY`);
 - a function's name is read nowhere else in Semantics or Inference.
 
-The sweep runs every function with each type in its argument, and `CatalogueSweepGridTests` checks what it types against the
-server. That found calls haruspex typed and the server refuses when the procedure is created (`JSON_VALUE` of a number,
-`EOMONTH` with a date as its offset, `STRING_AGG` of a GUID, a percentile ordered by a constant), now unknown.
+The sweep runs every function with each type in its argument, and `CatalogueSweepGridTests` holds what it types to the
+server twice. It asks the server for each call's type, which found calls haruspex typed and the server refuses when the
+procedure is created (`JSON_VALUE` of a number, `EOMONTH` with a date as its offset, `STRING_AGG` of a GUID, a percentile
+ordered by a constant), now unknown. And it runs each call haruspex claims never NULL, or within a range or a length, over rows
+of every type's least and greatest values, with `ANSI_WARNINGS` and `ARITHABORT` off so that an overflow gives NULL, and fails
+on a NULL or a value outside the claim. That found a date function given an integer claimed never NULL: the integer converts to
+`datetime`, which a large one overflows, and so does a `date` before 1753 beside it.
 
 The catalogue lists the functions haruspex reads, not every function SQL Server has: a call of one it lacks is unknown. That
 list, the entries and their codes, is what a coverage table of functions can be generated from.
@@ -243,8 +247,8 @@ was once found only in a private corpus. So a sweep, `CatalogueSweep`, runs a co
 each kind through the operators that type a value (`+`, `-`, `*`, `/`, `%`, a sign, `CAST` into every type, `ISNULL` over
 every pair, the aggregates, and the counts beside every operand): nearly 11,000 expressions, each a procedure of its own.
 `CatalogueSweepTests` holds what haruspex infers for each as a snapshot, so a change to any row changes a line.
-`CatalogueSweepGridTests` asks the server for the type of each one haruspex types, so the snapshot holds only what the server
-does. What it found wrong was one kind of claim: expressions the server refuses when the procedure is created (a `CAST` the
+`CatalogueSweepGridTests` asks the server for the type of each one haruspex types, and runs those it claims never NULL or
+bounded over rows at every type's edges, so the snapshot holds only what the server does. What it found wrong was one kind of claim: expressions the server refuses when the procedure is created (a `CAST` the
 chart refuses, an `ISNULL` whose values don't convert implicitly, `MIN` of a `bit`), which haruspex typed. They are unknown
 now. One kind is counted and left: `ISNULL` whose second value is of a type inference doesn't model, whose
 value haruspex can't see, so can't see the refusal either.

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Haruspex.DifferentialTests.Server;
+using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.SqlServer.Semantics;
 
@@ -38,6 +39,93 @@ public class CatalogueSweepGridTests(SqlServerFixture server)
             .Select(d => $"{d.Expression}: haruspex {d.Haruspex}, SQL Server {d.Server}")
             .ToList();
         Assert.True(differences.Count == 0, $"{differences.Count} of {typed.Count} typed expressions differ:\n" + string.Join("\n", differences));
+    }
+
+    [Theory]
+    [MemberData(nameof(Forms))]
+    public async Task Each_expression_claimed_never_null_or_bounded_holds_over_its_types_edges(string form)
+    {
+        // Each expression haruspex types never null, or within a range or a length, is run over rows at every type's edges,
+        // under the caller's options that make an overflow NULL rather than an error. Each runs on its own, since a failed
+        // conversion is an error that ends its statement; it is recorded, and claims nothing about a value. They run in a read
+        // session, over a temporary copy of the table, so that no transaction is open for an error to doom.
+        server.Require();
+        static string Temporary(string sql) => sql.Replace("dbo.g", "#g", StringComparison.Ordinal);
+        var claims = CatalogueSweep.Infer(form)
+            .Where(o => o.Field is { Type: IrScalar scalar } field && (field.NullableBecause.Count == 0 || scalar.Facets is { Min: not null } or { Max: not null } or { Length: not null }))
+            .ToList();
+        var batch = new StringBuilder("""
+            SET NOCOUNT ON; SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;
+            CREATE TABLE #r (n int NOT NULL, absent bit NOT NULL, v nvarchar(400) NULL, bytes bigint NULL);
+            CREATE TABLE #e (n int NOT NULL, error int NOT NULL);
+
+            """);
+        for (var i = 0; i < claims.Count; i++)
+        {
+            // money is written with its four places by style 2; other numbers by their own text.
+            var scalar = (IrScalar)claims[i].Field!.Type;
+            var text = scalar.Kind != IrScalarKind.Number || scalar.Format == IrFormat.Float ? "NULL"
+                : ScalarType.Parse(scalar.Sql) is { IsMoney: true } ? "CONVERT(nvarchar(400), x.e, 2)" : "CONVERT(nvarchar(400), x.e)";
+            var n = i.ToString(CultureInfo.InvariantCulture);
+            var inner = $"SELECT {n}, CASE WHEN x.e IS NULL THEN 1 ELSE 0 END, {text}, DATALENGTH(x.e) FROM ({Temporary(CatalogueSweep.Query(claims[i].Expression))}) AS x";
+            batch.Append(CultureInfo.InvariantCulture, $"BEGIN TRY INSERT INTO #r EXEC sp_executesql N'{inner.Replace("'", "''", StringComparison.Ordinal)}'; END TRY BEGIN CATCH INSERT INTO #e VALUES ({n}, ERROR_NUMBER()); END CATCH;\n");
+        }
+
+        batch.Append("SELECT n, absent, ISNULL(v, N''), ISNULL(bytes, -1) FROM #r ORDER BY n; SELECT n FROM #e;");
+        var cancel = TestContext.Current.CancellationToken;
+        await using var session = await server.ReadAsync(cancel);
+        await using (var setup = session.Command(Temporary(CatalogueSweep.Table + "\n" + string.Join("\n", CatalogueSweep.EdgeRows()))))
+            await setup.ExecuteNonQueryAsync(cancel);
+        var results = new List<string[]>();
+        var failed = new List<int>();
+        await using (var command = session.Command(batch.ToString()))
+        {
+            command.CommandTimeout = 600;
+            await using var reader = await command.ExecuteReaderAsync(cancel);
+            while (await reader.ReadAsync(cancel))
+            {
+                results.Add([
+                    reader.GetInt32(0).ToString(CultureInfo.InvariantCulture), reader.GetBoolean(1) ? "1" : "0",
+                    reader.GetString(2), reader.GetInt64(3).ToString(CultureInfo.InvariantCulture),
+                ]);
+            }
+
+            await reader.NextResultAsync(cancel);
+            while (await reader.ReadAsync(cancel))
+                failed.Add(reader.GetInt32(0));
+        }
+
+        // Every claim was read: it gave its rows, or an error, which claims nothing about a value.
+        Assert.Equal(claims.Count, results.Select(r => int.Parse(r[0], CultureInfo.InvariantCulture)).Concat(failed).Distinct().Count());
+
+        var problems = new List<string>();
+        foreach (var row in results)
+        {
+            var claim = claims[int.Parse(row[0], CultureInfo.InvariantCulture)];
+            var (field, scalar) = (claim.Field!, (IrScalar)claim.Field!.Type);
+            if (row[1] == "1")
+            {
+                if (field.NullableBecause.Count == 0)
+                    problems.Add($"{claim.Expression}: claimed never null, and NULL");
+                continue;
+            }
+
+            if (ExactDecimal.TryParse(row[2], out var value))
+            {
+                if (scalar.Facets?.Min is { } min && ExactDecimal.TryParse(min.Value, out var least) && !Bounds.Admits(new Bound(least, min.Inclusive), value, BoundSide.Lower))
+                    problems.Add($"{claim.Expression}: {value} below {min.Value}");
+                if (scalar.Facets?.Max is { } max && ExactDecimal.TryParse(max.Value, out var most) && !Bounds.Admits(new Bound(most, max.Inclusive), value, BoundSide.Upper))
+                    problems.Add($"{claim.Expression}: {value} above {max.Value}");
+            }
+
+            if (scalar.Facets?.Length is { } length && long.TryParse(row[3], CultureInfo.InvariantCulture, out var bytes) && bytes >= 0
+                && bytes / (length.Unit == IrLengthUnit.Utf16 ? 2 : 1) > length.Value)
+            {
+                problems.Add($"{claim.Expression}: {bytes} bytes, longer than {length.Value}");
+            }
+        }
+
+        Assert.True(problems.Count == 0, $"{problems.Distinct().Count()} of {claims.Count} claims fail at the edges:\n" + string.Join("\n", problems.Distinct()));
     }
 
     /// <summary>
