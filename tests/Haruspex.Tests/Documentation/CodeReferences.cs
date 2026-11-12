@@ -21,7 +21,7 @@ namespace Haruspex.Tests.Documentation;
 /// Three kinds of text are references. A <b>path</b> starts with one of the repository's top-level folders (a project's
 /// folder under <c>src/</c>, or <c>tests/</c>, <c>docs/</c>, <c>schemas/</c>) and must name a file or folder that exists. A
 /// <b>C# file name</b> (<c>FlowState.cs</c>) must name a file under <c>src/</c> or <c>tests/</c>. A <b>name</b> in PascalCase,
-/// optionally followed by members (<c>ResultTrack</c>, <c>ResultTrack.Then</c>, <c>ProcedureCalls.MostPasses</c>), or a
+/// optionally followed by members (<c>ResultTrack</c>, <c>ResultTrack.Then</c>, <c>FixedPoint.MostPasses</c>), or a
 /// test's name (<c>Calls_nest_at_most_32_deep</c>), must name something declared.
 /// </para>
 /// <para>

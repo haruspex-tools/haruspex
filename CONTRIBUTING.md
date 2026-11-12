@@ -185,10 +185,11 @@ split into parts along the constructs it covers. The families today:
 | Functions that return JSON | `JsonFunctionTests` | `JsonFunctionObservationTests` | `tests/fixtures/trees` | the guide's [Summaries and recursion](docs/internals/07-summaries-and-recursion.md) |
 | Read uncommitted | `ReadUncommittedTests` | `ReadUncommittedObservationTests` | `tests/fixtures/tabs` | [decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md) |
 
-Five classes are named otherwise, for what they cover across families: `ConstructTests` (queries, results and sources
+Six classes are named otherwise, for what they cover across families: `ConstructTests` (queries, results and sources
 in general, with `FOR JSON`'s rules in `ForJsonObservationTests` and `tests/fixtures/orders`), `FactFlowTests` (facts a
 value carries through expressions), `ValueEqualityTests` (the laws equality of values and shapes keeps, over a generated
-sample), `LatticeLawTests` (the laws of each fact's lattice and of the join of values, over a generated sample) and, in
+sample), `LatticeLawTests` (the laws of each fact's lattice and of the join of values, over a generated sample), `FixedPointTests`
+(the one iteration every solver uses) and, in
 Semantics, `SchemaFactsTests` (what types, alias types and CHECK constraints
 guarantee, observed in `CheckConstraintObservationTests` on `tests/fixtures/checks`). `OPENJSON` belongs to two families: as
 a source of rows with its `WITH` columns (`SetJoinTests.OpenJson.cs`), and reading JSON a procedure built and traced

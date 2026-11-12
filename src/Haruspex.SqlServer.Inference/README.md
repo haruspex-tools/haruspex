@@ -267,7 +267,7 @@ declaration is never applied here: the config layer applies it, and checks it ag
 
 A call of a procedure that is already being walked does not walk it again: it gives what is assumed of it, at first that
 it never returns, then the result sets its last walk returned, until a walk returns what was assumed (at most 20 walks,
-`ProcedureCalls.MostPasses`). The assumption must hold for the temporary tables the recursive call starts from, which the
+`FixedPoint.MostPasses`, the one cap every solver has). The assumption must hold for the temporary tables the recursive call starts from, which the
 procedure may have written before calling itself; so the walk starts from the join of the tables it was called with and
 those of every recursive call met, and when a call widens them, it starts over from the wider tables. A recursive call both
 under `INSERT … EXEC` and outside it is `unresolved-recursion`. With monotone steps result sets only grow between walks, so this reaches the least fixed

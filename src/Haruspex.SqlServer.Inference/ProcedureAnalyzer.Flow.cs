@@ -40,12 +40,6 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>Each parameter's and variable's declared type, for comparing it with a key (Cardinality.cs).</summary>
     private readonly Dictionary<string, SqlType?> variableTypes = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The most passes a loop or a recursive CTE gets to reach a fixed point. Each joins only upwards, so a few are enough.</summary>
-    private const int MostPasses = 20;
-
-    /// <summary>The passes of a loop after which JSON whose content still changes is widened to unknown (<see cref="Widened"/>).</summary>
-    private const int WidenAfter = 2;
-
     private sealed record Outcome(FlowState? Next, FlowState? Breaks, FlowState? Continues)
     {
         public static Outcome Ends { get; } = new(null, null, null);
@@ -329,33 +323,39 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = At(loop);
         var before = appended;
-        var head = state;
-        for (var pass = 0; pass < MostPasses; pass++)
-        {
-            var body = Walk([loop.Statement], head);
-            if (blocker is not null)
-                return Outcome.Ends;
-
-            // How many times the body runs is not known, so neither is how many result sets it returns.
-            if (appended != before)
+        var body = Outcome.Ends;
+        var iteration = FixedPoint.Iterate(
+            state,
+            (head, _) =>
             {
-                blocker = new UnknownShape(IrUnknownReason.VaryingResults, "A result set is returned inside a loop, which may return it any number of times.", at);
-                return Outcome.Ends;
-            }
+                body = Walk([loop.Statement], head);
+                if (blocker is not null)
+                    return Pass<FlowState>.Stop();
 
-            var next = FlowState.Join([state, body.Next, body.Continues], at)!;
+                // How many times the body runs is not known, so neither is how many result sets it returns.
+                if (appended != before)
+                {
+                    blocker = new UnknownShape(IrUnknownReason.VaryingResults, "A result set is returned inside a loop, which may return it any number of times.", at);
+                    return Pass<FlowState>.Stop();
+                }
+
+                return Pass<FlowState>.To(FlowState.Join([state, body.Next, body.Continues], at)!);
+            },
 
             // JSON built from itself grows at every pass (SET @x = (SELECT json_query(@x) AS c FOR JSON PATH)), so after a few its
             // content is widened to unknown, naming the loop, and the loop settles.
-            if (pass >= WidenAfter)
-                next = Widened(head, next, at);
-            if (next.Equals(head))
-                return new Outcome(FlowState.Join(head, body.Breaks, at), null, null);
-            head = next;
-        }
+            widen: (head, next) => Widened(head, next, at));
 
-        blocker = new UnknownShape(IrUnknownReason.UnsupportedStatement, $"What the loop does to the procedure's tables and variables reached no fixed point in {MostPasses} passes.", at);
-        return Outcome.Ends;
+        switch (iteration.End)
+        {
+            case IterationEnd.Settled:
+                return new Outcome(FlowState.Join(iteration.Last, body.Breaks, at), null, null);
+            case IterationEnd.Stopped:
+                return Outcome.Ends;
+            default:
+                blocker = new UnknownShape(IrUnknownReason.UnsupportedStatement, $"What the loop does to the procedure's tables and variables reached no fixed point in {FixedPoint.MostPasses} passes.", at);
+                return Outcome.Ends;
+        }
     }
 
     /// <summary>
@@ -975,25 +975,35 @@ internal sealed partial class ProcedureAnalyzer
         // the anchor's digits (Value.Digits), so even a member that gives the anchor's literal again takes one more pass.
         if (Relation(cte, Query((QuerySpecification)members[0], parent: null)) is not { } current)
             return Fails(IrUnknownReason.UnsupportedQuery, "its anchor's columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
-        for (var pass = 0; pass < MostPasses; pass++)
-        {
-            frame[name] = locals!.Register(name, current);
-            var next = current.Values!.ToList();
-            foreach (var member in members.Skip(1).Cast<QuerySpecification>())
+        LocalRelationValues? failed = null;
+        var iteration = FixedPoint.Iterate(
+            current.Values!,
+            (values, _) =>
             {
-                var row = Query(member, parent: null);
-                if (row.Star is not null || row.Columns.Count != next.Count)
-                    return Fails(IrUnknownReason.UnsupportedQuery, "a recursive member's columns cannot be listed against the anchor's.");
-                for (var i = 0; i < next.Count; i++)
-                    next[i] = Value.JoinConverted(next[i], row.Columns[i].Value, row.Columns[i].At, $"{name}.{current.Names![i]}");
-            }
+                frame[name] = locals!.Register(name, current with { Values = values });
+                var next = values.ToList();
+                foreach (var member in members.Skip(1).Cast<QuerySpecification>())
+                {
+                    var row = Query(member, parent: null);
+                    if (row.Star is not null || row.Columns.Count != next.Count)
+                    {
+                        failed = Fails(IrUnknownReason.UnsupportedQuery, "a recursive member's columns cannot be listed against the anchor's.");
+                        return Pass<EquatableArray<Value>>.Stop();
+                    }
 
-            if (next.SequenceEqual(current.Values!))
-                return current;
-            current = current with { Values = [.. next] };
-        }
+                    for (var i = 0; i < next.Count; i++)
+                        next[i] = Value.JoinConverted(next[i], row.Columns[i].Value, row.Columns[i].At, $"{name}.{current.Names![i]}");
+                }
 
-        return Fails(IrUnknownReason.UnresolvedRecursion, $"its columns reached no fixed point in {MostPasses} passes.");
+                return Pass<EquatableArray<Value>>.To([.. next]);
+            });
+
+        return iteration.End switch
+        {
+            IterationEnd.Settled => current with { Values = iteration.Last },
+            IterationEnd.Stopped => failed!,
+            _ => Fails(IrUnknownReason.UnresolvedRecursion, $"its columns reached no fixed point in {FixedPoint.MostPasses} passes."),
+        };
     }
 
     /// <summary>A CTE's columns from its query's row, named by its column list when it has one; null when they cannot be listed.</summary>

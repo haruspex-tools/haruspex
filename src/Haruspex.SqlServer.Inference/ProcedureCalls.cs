@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -22,7 +23,7 @@ namespace Haruspex.SqlServer.Inference;
 /// of the temporary tables it was called with and those every recursive call of it starts from (the procedure may have
 /// written them first), widened and walked again until no call adds to them, so the assumption holds for each call's tables.
 /// With monotone steps result sets only grow from one walk to the next, so this reaches the least fixed point, which
-/// describes every call that returns, by induction on its depth. At most <see cref="MostPasses"/> walks are taken, which is
+/// describes every call that returns, by induction on its depth. At most <see cref="FixedPoint.MostPasses"/> walks are taken (<see cref="FixedPoint.Iterate"/>), which is
 /// what makes it end; a procedure that returns more result sets at each depth never settles,
 /// and is unknown (<c>unresolved-recursion</c>). What the recursive call does to temporary tables is not iterated: every
 /// table that the procedures it can reach write is unknown after it. SQL Server stops at 32 nested calls (error 217,
@@ -38,8 +39,8 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     /// <summary>What the triggers a write fires may return, shared by every walk so that each gap is warned of once.</summary>
     public DmlTriggers Triggers => triggers;
 
-    /// <summary>The most walks a recursive procedure gets to reach a fixed point.</summary>
-    public const int MostPasses = 20;
+    /// <summary>What a recursive procedure's walk assumes: the result sets its calls of itself return (none: they never return), and the tables it starts from.</summary>
+    private sealed record Assumption(ResultTrack? Results, CallContext Context);
 
     private sealed class Frame(ObjectName name, CallContext context)
     {
@@ -151,45 +152,40 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
         stack.Add(frame);
         try
         {
-            for (var pass = 0; pass < MostPasses; pass++)
+            // The least fixed point of a walk, over what the recursive calls are assumed to return and the tables they start
+            // from. A walk that meets no call of itself, or can't be listed, is the answer at once.
+            Walked walked = null!;
+            var iteration = FixedPoint.Iterate(
+                new Assumption(null, context),
+                (assumption, _) =>
+                {
+                    if (assumption.Results is null)
+                        assumed.Remove(procedure.Name);
+                    else
+                        assumed[procedure.Name] = assumption.Results;
+                    frame.Context = assumption.Context;
+                    frame.Recursive = false;
+                    frame.Widened = false;
+                    walked = new ProcedureAnalyzer(model, procedure.File, functions, calls: this, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff, views: views).Walk(procedure.Body);
+                    if (!frame.Recursive || walked.Blocker is not null)
+                        return Pass<Assumption>.Stop();
+
+                    // A call of itself was met: settled when it returned what the call was assumed to, from tables that cover
+                    // the call's. When a call widened the tables, what was assumed was read from narrower ones, so the next
+                    // walk assumes nothing again, from the wider ones.
+                    return Pass<Assumption>.To(new Assumption(frame.Widened ? null : walked.End?.Results, frame.Context));
+                });
+
+            if (iteration.End != IterationEnd.Unsettled)
             {
-                frame.Recursive = false;
-                frame.Widened = false;
-                var walked = new ProcedureAnalyzer(model, procedure.File, functions, calls: this, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff, views: views).Walk(procedure.Body);
-                if (!frame.Recursive || walked.Blocker is not null)
-                {
-                    if (!frame.Dependent)
-                        cache[(procedure.Name, context)] = walked;
-                    return walked;
-                }
-
-                // A call of itself was met: settled when it returned what the call was assumed to, from tables that cover
-                // the call's.
-                var track = walked.End?.Results;
-                var before = assumed.GetValueOrDefault(procedure.Name);
-                if (frame.Widened)
-                {
-                    // What was assumed was read from narrower tables; the next walk starts over from wider ones.
-                    assumed.Remove(procedure.Name);
-                    continue;
-                }
-
-                if (Equals(track, before))
-                {
-                    if (!frame.Dependent)
-                        cache[(procedure.Name, context)] = walked;
-                    return walked;
-                }
-
-                if (track is null)
-                    assumed.Remove(procedure.Name);
-                else
-                    assumed[procedure.Name] = track;
+                if (!frame.Dependent)
+                    cache[(procedure.Name, context)] = walked;
+                return walked;
             }
 
             return new Walked(null, [], new UnknownShape(
                 IrUnknownReason.UnresolvedRecursion,
-                $"{procedure.Name} calls itself, directly or through other procedures, and the result sets it returns reached no fixed point in {MostPasses} walks: it may return more at each depth.",
+                $"{procedure.Name} calls itself, directly or through other procedures, and the result sets it returns reached no fixed point in {FixedPoint.MostPasses} walks: it may return more at each depth.",
                 procedure.At), []);
         }
         finally

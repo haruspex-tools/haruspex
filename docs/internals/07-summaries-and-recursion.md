@@ -193,9 +193,9 @@ The steps, for `subcategories`:
 
 Shapes can grow for ever: an array of arrays of arrays, a tuple holding a tuple. A lattice with ascending chains that never
 end needs **widening**: an operator that, when an iteration may climb without end, jumps to an upper bound at which it can
-stop and still be sound. The bound on steps is haruspex's widening, in its coarsest form. `FunctionSummaries` stops after
-`FunctionSummaries.StepsPerFunction` steps per function in the component, plus `FunctionSummaries.ExtraSteps`, and a
-component that hasn't settled by then jumps to the top: unknown (`unresolved-recursion`), which claims nothing and so is
+stop and still be sound. The bound on steps is haruspex's widening, in its coarsest form. Every solver, this one included,
+iterates with `FixedPoint.Iterate` and stops after `FixedPoint.MostPasses` steps, and a component that hasn't settled by
+then jumps to the top: unknown (`unresolved-recursion`), which claims nothing and so is
 always sound. A finer widening would keep more of what was found; this one keeps nothing, and is simple to trust.
 
 That bound is what guarantees the iteration ends. Two things make the common cases settle well inside it:
@@ -231,7 +231,7 @@ The recursive call is not walked again. At first it is assumed to return nothing
 return what the last walk returned, until a walk returns what was assumed. One thing is harder than for functions: a
 procedure may write a temporary table before calling itself, so the recursive call may start from wider tables than the
 outer one. The walk starts from the join of both, and starts again whenever a call widens them. With monotone steps each
-walk returns at least what the last did, so this too reaches the least fixed point; the bound, `ProcedureCalls.MostPasses`
+walk returns at least what the last did, so this too reaches the least fixed point; the bound, `FixedPoint.MostPasses`
 walks, is again what makes it end. A procedure that returns more result sets at each depth never settles, and is
 unknown.
 

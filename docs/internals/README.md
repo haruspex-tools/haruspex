@@ -79,7 +79,7 @@ to check when it is one of these:
 |---|---|---|
 | A path from the repository root, starting `src/Haruspex.…`, `tests/`, `docs/` or `schemas/` | `src/Haruspex.SqlServer.Inference/FunctionSummaries.cs` | name a file or folder that exists |
 | A C# file's name | `FlowState.cs` | name a file under `src/` or `tests/` |
-| A name in PascalCase, with members after dots | `ResultTrack.Then`, `FunctionSummaries.StepsPerFunction` | name a type of haruspex, then a member of it at each dot |
+| A name in PascalCase, with members after dots | `ResultTrack.Then`, `FixedPoint.MostPasses` | name a type of haruspex, then a member of it at each dot |
 | A test's name | `Calls_nest_at_most_32_deep` | name a test method |
 
 Types and members are found by reflection over haruspex's assemblies, and for the differential tests from their source. A

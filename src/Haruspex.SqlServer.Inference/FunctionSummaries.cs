@@ -1,5 +1,6 @@
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -39,8 +40,8 @@ namespace Haruspex.SqlServer.Inference;
 /// items of its array (what FOR JSON PATH and <c>json_object</c> build), so that each step's shape is finite and the
 /// steps can settle. Any other result (a tuple, a record) is not named and so grows at each step. Nullability only
 /// grows (reasons are added, never removed), and a result goes from no information to a shape once, so a component of n
-/// functions settles within a few steps per function; at most <see cref="StepsPerFunction"/> per function, plus
-/// <see cref="ExtraSteps"/>, are taken. A component that has not settled by then, and a function whose result is still no
+/// functions settles within a few steps per function; at most <see cref="FixedPoint.MostPasses"/> are taken
+/// (<see cref="FixedPoint.Iterate"/>). A component that has not settled by then, and a function whose result is still no
 /// information when it settles (every return calls itself again, so it never returns), is unknown
 /// (<c>unresolved-recursion</c>). The type does not say how deep a tree goes: SQL Server stops at 32 nested calls with
 /// error 217 (observed), which is an error, not a value.
@@ -48,12 +49,6 @@ namespace Haruspex.SqlServer.Inference;
 /// </remarks>
 internal sealed class FunctionSummaries
 {
-    /// <summary>Steps allowed per function of a recursive component, before giving up.</summary>
-    public const int StepsPerFunction = 4;
-
-    /// <summary>Steps allowed per recursive component on top of <see cref="StepsPerFunction"/>.</summary>
-    public const int ExtraSteps = 4;
-
     private readonly DatabaseModel model;
     private readonly Dictionary<ObjectName, FunctionReturn> done = [];
     private readonly Dictionary<ObjectName, ObjectShape> nodes = [];
@@ -134,25 +129,27 @@ internal sealed class FunctionSummaries
             return;
         }
 
+        // The least fixed point, from no information, of reading every body with the results assumed so far.
         var outer = assumed;
         var functions = members.Select(m => model.FindFunction(m)!).ToList();
-        var current = functions.ToDictionary(f => f.Name, Start);
-        var steps = (StepsPerFunction * members.Count) + ExtraSteps;
-        var settled = false;
+        Iteration<EquatableArray<FunctionReturn>> iteration;
         try
         {
-            for (var step = 0; step < steps && !settled; step++)
-            {
-                assumed = current.ToDictionary(p => p.Key, p => Abstract(p.Key, p.Value));
-                var next = functions.ToDictionary(f => f.Name, f => Read(f));
-                settled = functions.All(f => next[f.Name] == current[f.Name]);
-                current = next;
-            }
+            iteration = FixedPoint.Iterate<EquatableArray<FunctionReturn>>(
+                [.. functions.Select(Start)],
+                (results, _) =>
+                {
+                    assumed = functions.Select((f, i) => (f.Name, Result: Abstract(f.Name, results[i]))).ToDictionary(p => p.Name, p => p.Result);
+                    return Pass<EquatableArray<FunctionReturn>>.To([.. functions.Select(f => Read(f))]);
+                });
         }
         finally
         {
             assumed = outer;
         }
+
+        var settled = iteration.End == IterationEnd.Settled;
+        var current = functions.Select((f, i) => (f.Name, Result: iteration.Last[i])).ToDictionary(p => p.Name, p => p.Result);
 
         // A node that no finite value can have (every cycle through it goes through keys that are always present and
         // never null, such as json_object('c': json_query(f(@x)))) means the call never returns: SQL Server raises error
@@ -175,7 +172,7 @@ internal sealed class FunctionSummaries
             {
                 result = Unresolved(result, new UnknownShape(
                     IrUnknownReason.UnresolvedRecursion,
-                    $"{function.Name} calls itself, and its JSON's shape reached no fixed point in {steps} steps.",
+                    $"{function.Name} calls itself, and its JSON's shape reached no fixed point in {FixedPoint.MostPasses} steps.",
                     at));
             }
             else if (result.Content is NeverShape)
