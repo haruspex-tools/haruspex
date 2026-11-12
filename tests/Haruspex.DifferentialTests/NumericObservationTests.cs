@@ -240,14 +240,14 @@ public class NumericObservationTests(SqlServerFixture server)
             await Describe($"SELECT STDEV(i) OVER () h, STDEVP(m) OVER () j, VARP(d) OVER () k, VAR(f) OVER () l FROM {Row}"));
         Assert.Equal(8117, await DescribeError($"SELECT STDEV(bt) a FROM {Row}"));
         Assert.Equal(
-            "sd,sdp,v,vp,none,nulls,window,vwindow,pwindow: null,0,null,0,null,null,null,null,0",
+            "sd,sdp,v,vp,none,nulls,window,variance,population: null,0,null,0,null,null,null,null,0",
             (await Run("""
                 SELECT (SELECT STDEV(v) FROM (VALUES (1)) AS s (v)) AS sd, (SELECT STDEVP(v) FROM (VALUES (1)) AS s (v)) AS sdp,
                        (SELECT VAR(v) FROM (VALUES (1), (NULL)) AS s (v)) AS v, (SELECT VARP(v) FROM (VALUES (1)) AS s (v)) AS vp,
                        (SELECT VARP(v) FROM (VALUES (1)) AS s (v) WHERE v = 0) AS none, (SELECT STDEVP(v) FROM (VALUES (CAST(NULL AS int))) AS s (v)) AS nulls,
                        (SELECT MAX(s) FROM (SELECT STDEV(v) OVER () AS s FROM (VALUES (1)) AS t (v)) AS u) AS window,
-                       (SELECT MAX(s) FROM (SELECT VAR(v) OVER () AS s FROM (VALUES (1)) AS t (v)) AS u) AS vwindow,
-                       (SELECT MAX(s) FROM (SELECT STDEVP(v) OVER () AS s FROM (VALUES (1)) AS t (v)) AS u) AS pwindow;
+                       (SELECT MAX(s) FROM (SELECT VAR(v) OVER () AS s FROM (VALUES (1)) AS t (v)) AS u) AS variance,
+                       (SELECT MAX(s) FROM (SELECT STDEVP(v) OVER () AS s FROM (VALUES (1)) AS t (v)) AS u) AS population;
                 """)).ToString());
     }
 
