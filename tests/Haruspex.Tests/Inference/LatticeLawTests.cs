@@ -240,6 +240,43 @@ public class LatticeLawTests
         Assert.False(ScalarFacets.Below(Lengths(1, 10), Lengths(5, 6)));
     }
 
+    [Fact]
+    public void Each_facet_is_ordered_by_what_it_allows()
+    {
+        // One case per clause of ScalarFacets.Below: tighter is below, looser is not.
+        IrFactSource from = new(IrFactSourceKind.Check, "ck_t_a");
+        IrFacets Max(int value, bool isFixed) => new(Length: new IrLength(value, isFixed, IrLengthUnit.Utf16, IrByteEncoding.Unknown, from));
+        IrFacets Least(string value, bool inclusive) => new(Min: new IrBound(value, inclusive, from));
+        IrFacets Most(string value, bool inclusive) => new(Max: new IrBound(value, inclusive, from));
+        IrFacets In(params string[] items) => new(Values: new IrValueSet([.. items.Select(i => new IrValue(i, false))], IrValueMatch.Exact, [from]));
+        IrFacets Digits(int precision, int scale) => new(Digits: new IrDigits(precision, scale, from));
+
+        Assert.True(ScalarFacets.Below(Max(5, isFixed: true), Max(5, isFixed: false)));
+        Assert.True(ScalarFacets.Below(Max(5, isFixed: false), Max(10, isFixed: false)));
+        Assert.False(ScalarFacets.Below(Max(10, isFixed: false), Max(5, isFixed: false)));
+        Assert.False(ScalarFacets.Below(Max(5, isFixed: false), Max(5, isFixed: true)));
+        Assert.False(ScalarFacets.Below(Max(5, isFixed: true), Max(10, isFixed: true)));
+
+        Assert.True(ScalarFacets.Below(Least("1", inclusive: true), Least("0", inclusive: true)));
+        Assert.False(ScalarFacets.Below(Least("0", inclusive: true), Least("1", inclusive: true)));
+        Assert.True(ScalarFacets.Below(Least("0", inclusive: false), Least("0", inclusive: true)));
+        Assert.False(ScalarFacets.Below(Least("0", inclusive: true), Least("0", inclusive: false)));
+        Assert.True(ScalarFacets.Below(Most("0", inclusive: true), Most("1", inclusive: true)));
+        Assert.False(ScalarFacets.Below(Most("1", inclusive: true), Most("0", inclusive: true)));
+        Assert.True(ScalarFacets.Below(Most("1", inclusive: false), Most("1", inclusive: true)));
+        Assert.False(ScalarFacets.Below(Most("1", inclusive: true), Most("1", inclusive: false)));
+
+        Assert.True(ScalarFacets.Below(In("1"), In("1", "2")));
+        Assert.False(ScalarFacets.Below(In("1", "2"), In("1")));
+        Assert.False(ScalarFacets.Below(In("3"), In("1", "2")));
+
+        Assert.True(ScalarFacets.Below(Digits(5, 2), Digits(5, 2)));
+        Assert.False(ScalarFacets.Below(Digits(5, 2), Digits(6, 2)));
+
+        Assert.True(ScalarFacets.Below(In("1"), null));
+        Assert.False(ScalarFacets.Below(null, In("1")));
+    }
+
     private static readonly ScalarShape Number = new(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int"));
     private static readonly ScalarShape Text = new(new IrScalar(IrScalarKind.String, null, "nvarchar(max)"));
     private static readonly IrNullReason Null = new(IrNullRule.NullableColumn, "dbo.t.a");
