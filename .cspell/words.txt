@@ -129,19 +129,26 @@ vendoring
 writable
 
 # Authors the guide cites (docs/internals), named as their works are
+adve
 christophe
+claessen
 conchon
 filliâtre
 flemming
+greenwald
 hankin
 hanne
+kleppmann
+lattner
 livshits
 mckeeman
 mcminn
 micha
 muzammil
 pnueli
+postel
 riis
+schinazi
 schwartzbach
 shahbaz
 sharir

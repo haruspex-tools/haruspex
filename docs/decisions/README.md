@@ -28,6 +28,8 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0020](0020-public-figures-come-from-public-corpora.md) | 11 Nov 2026 | Public figures come only from public corpora, written by a test |
 | [0021](0021-fixtures-are-found-never-listed.md) | 11 Nov 2026 | Fixtures are found by listing their folder, never named in a list |
 | [0022](0022-values-compare-by-structure.md) | 12 Nov 2026 | Values compare by structure, never by their rendered text |
+| [0023](0023-the-ir-schema-is-generated-from-the-model.md) | 12 Nov 2026 | The IR's JSON Schema is generated from the model |
+| [0024](0024-an-ir-reader-refuses-other-versions.md) | 12 Nov 2026 | An IR reader refuses a version other than its own |
 
 ## Writing a record
 

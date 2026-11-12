@@ -210,11 +210,12 @@ Nested types stay in the type they belong to, and a partial type's parts are nam
 | Path | What it holds |
 |---|---|
 | `src/Haruspex.*` | The layers, one project each. What each knows and may refer to is in [the table in docs/architecture.md](docs/architecture.md#the-table); each project's `README.md` describes it. |
-| `schemas` | The published JSON Schema of `haruspex.json`, checked against examples by `ConfigSchemaTests`. |
+| `schemas` | The published JSON Schemas: of `haruspex.json`, checked against examples by `ConfigSchemaTests`; and of the IR's file, generated from the model by `IrJsonSchema` and never edited by hand (`IrJsonSchemaTests` fails when it is stale; rewrite it with `HARUSPEX_ACCEPT=1`). |
 | `tests/Haruspex.Tests` | Unit, snapshot, end-to-end and architecture tests, a folder per layer ("Where a construct's tests are", above). |
 | `tests/Haruspex.DifferentialTests` | Runs the fixtures in SQL Server and checks the output against the IR and the generated Zod. |
 | `tests/Shared` | Test support compiled into both test projects (`Haruspex.TestSupport`): the fixtures, found by listing their folder (`Fixture`); inferring procedures from SQL a test writes (`InferProcedure`) and finding things in the IR (`IrNavigation`); temporary folders, the repository's paths, and running the emit-check npm package. |
 | `tests/fixtures` | The fixtures, one folder each: schema, seed, runs and expected outputs ([its README](tests/fixtures/README.md)). |
+| `tests/ir-versions` | One IR file from each version of the format, which the reader must read (the current one) or refuse ([its README](tests/ir-versions/README.md)). |
 | `tests/emit-check` | A small npm package that type-checks the generated Zod. |
 | `tests/prose` | The prose checks (`check.sh`), their npm package and the fixtures that test them. |
 
