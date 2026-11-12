@@ -40,6 +40,14 @@ internal sealed record JsonSlot(Shape? Content, UnknownShape? NotJson)
     }
 
     /// <summary>
+    /// Whether two slots say the same: both not JSON (whichever write is named, a witness), or both the same content up to
+    /// witnesses (<see cref="JsonShapes.Same"/>), or both empty.
+    /// </summary>
+    public static bool Same(JsonSlot a, JsonSlot b) =>
+        (a.NotJson is null) == (b.NotJson is null)
+        && (a.NotJson is not null || (a.Content is null ? b.Content is null : b.Content is not null && JsonShapes.Same(a.Content, b.Content)));
+
+    /// <summary>
     /// What a read of the place gives, its declared value being <paramref name="declared"/>: JSON text of the content, null as
     /// the declared value is; or the declared value, carrying why its JSON is not known for <c>json_query</c> to report.
     /// </summary>

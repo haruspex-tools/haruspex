@@ -84,7 +84,8 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     /// <para>
     /// It joins each fact in its own lattice: the reasons in <see cref="NullReasons"/>, the digits in <see cref="IntDigits"/>,
     /// and the shape, with whether it is live JSON, in <see cref="JoinShapes"/>. The JSON's why, a witness, is the left
-    /// side's when it has one. An unknown shape allows null, which the reasons then say.
+    /// side's when it has one. An unknown shape allows null, which the reasons then say, and has no why of its own: an
+    /// unknown is what <c>json_query</c> over it gives anyway.
     /// </para>
     /// <para>
     /// <b>Laws</b> (held by <c>ValueLatticeTests</c>): idempotent and associative as records, and commutative up to the
@@ -98,7 +99,10 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     {
         var because = NullReasons.Join(a.NullableBecause, b.NullableBecause);
         var (shape, live, notJson) = JoinShapes(a, b, at, what);
-        return new Value(shape, shape is UnknownShape unknown ? WithUnknown(because, unknown) : because, live, a.JsonWhy ?? b.JsonWhy ?? notJson)
+        var same = a.Shape == b.Shape && a.IsLiveJson == b.IsLiveJson && a.NullableBecause == b.NullableBecause;
+        if (shape is UnknownShape unknown)
+            return new Value(unknown, same ? because : WithUnknown(because, unknown), live) { Digits = IntDigits.Join(a.Digits, b.Digits) };
+        return new Value(shape, because, live, a.JsonWhy ?? b.JsonWhy ?? notJson)
         {
             Digits = IntDigits.Join(a.Digits, b.Digits),
         };
@@ -171,11 +175,18 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     /// one early.
     /// </summary>
     public static bool Same(Value a, Value b) =>
-        NullReasons.Same(a.NullableBecause, b.NullableBecause)
+        NullReasons.Same(Explained(a), Explained(b))
         && a.Digits == b.Digits
         && a.IsLiveJson == b.IsLiveJson
         && (a.JsonWhy is null) == (b.JsonWhy is null)
         && JsonShapes.Same(a.Shape, b.Shape);
+
+    /// <summary>
+    /// The reasons a value may be null that say something of it: of a value of unknown shape, those that do not merely name
+    /// the unknown, which is a witness (any unknown allows null).
+    /// </summary>
+    private static IEnumerable<IrNullReason> Explained(Value value) =>
+        value.Shape is UnknownShape ? value.NullableBecause.Where(r => r.Rule != IrNullRule.Unknown) : value.NullableBecause;
 
     /// <summary>A value whose shape is unknown proves nothing, so it may be null, which its reasons say.</summary>
     private static EquatableArray<IrNullReason> WithUnknown(EquatableArray<IrNullReason> because, UnknownShape unknown) =>

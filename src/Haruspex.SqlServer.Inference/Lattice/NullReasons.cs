@@ -28,8 +28,8 @@ internal static class NullReasons
         b.Count == 0 ? a : a.Count == 0 ? b : [.. a.Concat(b).Distinct()];
 
     /// <summary>Whether <paramref name="a"/> allows no more than <paramref name="b"/>: each of its reasons is one of <paramref name="b"/>'s.</summary>
-    public static bool Below(EquatableArray<IrNullReason> a, EquatableArray<IrNullReason> b) => a.All(b.Contains);
+    public static bool Below(IEnumerable<IrNullReason> a, IEnumerable<IrNullReason> b) => a.All(b.Contains);
 
     /// <summary>Whether two lists say the same: the same reasons, in any order. Structural equality also compares the order.</summary>
-    public static bool Same(EquatableArray<IrNullReason> a, EquatableArray<IrNullReason> b) => Below(a, b) && Below(b, a);
+    public static bool Same(IEnumerable<IrNullReason> a, IEnumerable<IrNullReason> b) => Below(a, b) && Below(b, a);
 }

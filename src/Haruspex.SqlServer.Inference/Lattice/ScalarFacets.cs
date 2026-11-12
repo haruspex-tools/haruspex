@@ -19,7 +19,7 @@ namespace Haruspex.SqlServer.Inference.Lattice;
 /// </para>
 /// <para>
 /// <b>Witnesses.</b> Each facet carries where it came from (<see cref="IrFactSource"/>). Of two equal facts from different
-/// sources the join keeps the left one's source; the source is a witness to the fact, not part of it, and either justifies
+/// sources the join keeps the fact, with the left one's source; the source is a witness to the fact, not part of it, and either justifies
 /// it for both sides, since both sides' values are bounded by the same value. A value set's items and sources are kept in
 /// the order they were found. So the join is commutative only up to <see cref="Same"/>, which compares sources and value
 /// sets as sets. One caveat: <see cref="TypeOnly"/> reads the source after a join, and keeps a fact only when its source is
@@ -39,12 +39,12 @@ internal static class ScalarFacets
         if (a is null || b is null)
             return null;
 
-        var length = a.Length == b.Length ? a.Length
+        var length = a.Length is { } la && b.Length is { } lb && la == lb with { From = la.From } ? la
             : a.Length is { IsFixed: false } x && b.Length is { IsFixed: false } y && x.Unit == y.Unit && x.Encoding == y.Encoding
                 ? x.Value >= y.Value ? x : y
                 : null;
         var minLength = a.MinLength is { } ma && b.MinLength is { } mb ? (ma.Value <= mb.Value ? ma : mb) : null;
-        var digits = a.Digits == b.Digits ? a.Digits : null;
+        var digits = a.Digits is { } da && b.Digits is { } db && da == db with { From = da.From } ? da : null;
         var joined = new IrFacets(length, minLength, digits, Looser(a.Min, b.Min, lower: true), Looser(a.Max, b.Max, lower: false), Union(a.Values, b.Values));
         return joined.IsEmpty ? null : joined;
     }
@@ -108,7 +108,7 @@ internal static class ScalarFacets
             return null;
         var order = x.CompareTo(y);
         if (order == 0)
-            return a.Inclusive ? a : b; // an inclusive bound at the same value is the looser one
+            return b.Inclusive && !a.Inclusive ? b : a; // an inclusive bound at the same value is the looser one
         return (order < 0) == lower ? a : b;
     }
 

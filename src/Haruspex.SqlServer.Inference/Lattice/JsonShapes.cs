@@ -26,7 +26,8 @@ internal static class JsonShapes
     /// several writes of JSON built here, and what <c>COALESCE</c>, <c>CASE</c> or <c>ISNULL</c> over JSON holds. The same shape
     /// is itself; an unknown stays unknown; arrays and tuples become an array of the items of both (the empty tuple <c>[]</c>
     /// adds no item, so <c>COALESCE(@lines, '[]')</c> keeps the lines' items and only loses their least count); objects with the
-    /// same keys in the same order join key by key; scalars of one type keep the facts both prove; anything else is a union of
+    /// same keys in the same order, each present the same way, join key by key; records join value by value; scalars of one
+    /// type keep the facts both prove; anything else is a union of
     /// both, which is exact.
     /// </summary>
     public static Shape Join(Shape a, Shape b)
@@ -107,15 +108,21 @@ internal static class JsonShapes
         return true;
     }
 
-    /// <summary>Whether two variants of a union join into one without a union: arrays and tuples, or the same shape.</summary>
+    /// <summary>
+    /// Whether two variants of a union join into one without a union, as the same two would alone (<see cref="Join"/>): arrays
+    /// and tuples, records, objects of the same keys, scalars of one type, or the same shape.
+    /// </summary>
     private static bool Mergeable(Shape a, Shape b) =>
-        (a is TupleShape or ArrayShape && b is TupleShape or ArrayShape) || a == b
+        (a is TupleShape or ArrayShape && b is TupleShape or ArrayShape) || a == b || (a is RecordShape && b is RecordShape)
         || (a is ObjectShape x && b is ObjectShape y && Objects(x, y) is not null)
         || (a is ScalarShape { Type: var s } && b is ScalarShape { Type: var t } && s.Kind == t.Kind && s.Format == t.Format && s.Sql == t.Sql);
 
     /// <summary>
-    /// Two objects with the same keys in the same order, key by key; null when they differ, or when a key is present as null
-    /// on one side and left out when null on the other, which one field cannot say (a union of both objects can).
+    /// Two objects with the same keys in the same order, each present the same way, key by key; null otherwise, and a union of
+    /// both objects says it exactly. A key present as null and one left out when null can't be one field. Nor is a key never
+    /// null merged with either: it could go with both, so merging it with the first met would make the join depend on the
+    /// order of the joins (associativity, held by <c>LatticeLawTests</c>). Presence compared whole is an equivalence, so it
+    /// doesn't.
     /// </summary>
     private static ObjectShape? Objects(ObjectShape x, ObjectShape y)
     {
@@ -124,9 +131,9 @@ internal static class JsonShapes
         var fields = new List<FieldShape>();
         foreach (var (f, g) in x.Fields.Zip(y.Fields))
         {
-            if (f.Presence != g.Presence && (f.Presence == IrPresence.Always ? f : g).NullableBecause.Count > 0)
+            if (f.Presence != g.Presence)
                 return null;
-            fields.Add(new FieldShape(f.Name, Join(f.Type, g.Type), f.Presence == g.Presence ? f.Presence : IrPresence.OmittedWhenNull, NullReasons.Join(f.NullableBecause, g.NullableBecause)));
+            fields.Add(new FieldShape(f.Name, Join(f.Type, g.Type), f.Presence, NullReasons.Join(f.NullableBecause, g.NullableBecause)));
         }
 
         return new ObjectShape([.. fields]);

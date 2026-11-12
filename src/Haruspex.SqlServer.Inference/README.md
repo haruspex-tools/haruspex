@@ -1187,8 +1187,8 @@ column is never traced: someone else may write it. Every rule is observed in `Js
 - **Writes join.** A place written on several paths, in a loop, by several statements, or by an assignment that may not
   happen (`SELECT @x = … FROM` over no rows keeps what `@x` held, observed), holds the join of what each wrote
   (`JsonShapes.Join`): the same shape is itself; arrays and tuples are an array of both's items, between the fewest and most
-  of both (so `'[]'` keeps an array's items and only drops its least count); objects with the same keys in the same order join
-  key by key; scalars of one type keep the facts both prove; anything else is a `union` of both, which is exact. NULL adds
+  of both (so `'[]'` keeps an array's items and only drops its least count); objects with the same keys in the same order, each
+  present the same way, join key by key, and records join value by value; scalars of one type keep the facts both prove; anything else is a `union` of both, which is exact. NULL adds
   nothing. A write of a value that may not be JSON built here (a parameter, a stored column, concatenation, `json_modify`, a
   literal that is not a JSON document, a default, a `MERGE`, an `INSERT … EXEC`, a write through a CTE or derived table)
   makes the content unknown, and `json_query` over the place reports `json-shape-unknown` at that write, naming it.
