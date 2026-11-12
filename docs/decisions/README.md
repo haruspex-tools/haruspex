@@ -35,6 +35,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0027](0027-one-lattice-per-fact.md) | 12 Nov 2026 | One lattice per fact, facts dropped to their top by default, and the type rule named apart from the join |
 | [0028](0028-one-fixed-point-and-one-environment-of-facts.md) | 12 Nov 2026 | One fixed-point iteration with one cap, and one immutable environment of what conditions prove |
 | [0029](0029-built-in-types-are-one-catalogue-observed-row-by-row.md) | 12 Nov 2026 | Built-in types and conversions are one catalogue of data, observed row by row |
+| [0030](0030-built-in-functions-are-entries-with-stable-codes-typed-through-one-table.md) | 13 Nov 2026 | Built-in functions are entries with stable codes, typed through one table |
 
 ## Writing a record
 

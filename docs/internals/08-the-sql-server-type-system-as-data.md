@@ -173,9 +173,48 @@ export type PriceForms = z.infer<typeof PriceFormsSchema>
 
 `-999.99` is seven characters, so `varchar(7)` holds every value, and is never NULL.
 
+## Functions
+
+A built-in function is the other half of the type system: `DATEDIFF` gives an `int`, `SUM` of an `int` is an `int` that may
+overflow, `LAG` is NULL past the edge of its partition. They are held the way types are, in two parts.
+
+**Which functions there are** is a catalogue in Semantics, `BuiltInFunctions`, by form: `ScalarFunctions`,
+`AggregateFunctions`, `WindowFunctions` (called with `OVER`) and `RowsetFunctions` (read in `FROM`). `COUNT` as an aggregate
+and `COUNT` over a window are two entries, because they give different things. The functions ScriptDom parses as syntax of
+their own (`CAST`, `COALESCE`, `LEFT`, `CURRENT_TIMESTAMP`, `OPENJSON`) are entries too, so every function has one entry
+however it is written. `BuiltInFunctions.Named` is the only place a function's name is compared, and the CHECK reader (for
+`LEN`) and the binder (for `GENERATE_SERIES`) use it as inference does.
+
+**How each is typed** is a table in Inference, the function table (`FunctionTyping`, one row per entry): the numbers of
+arguments it reads, what other forms give, its rule in words, the reasons to be NULL it adds to its arguments', the
+observation tests that establish it, whether it reads only its arguments (so a `COALESCE` may read it twice), and the method
+that types a call. One arm of the expression switch looks a call up and types it through its row; nothing else matches a
+function by name. Window functions go a step further: their rows hold a `WindowRule` (what the function gives, and whether it
+adds `count-overflow`, `empty-frame` or `too-few-values`, or is refused over `bit`), which one method reads, so the eight kinds
+of window function are data rather than eight branches.
+
+Every entry has a **stable code**, its form and name: `scalar.datediff`, `window.count`. Explaining why a value is as it is will
+cite the function's code, and a code is a link that must last, so a code is never changed or reused: `BuiltInFunctionsTests`
+holds the list as a snapshot, so a change to one shows in review, and checks no two entries share one.
+
+`FunctionTableTests` holds the table to the catalogue and the catalogue to the server's behaviour:
+
+- every entry has one row, and every row an entry;
+- each row cites observation tests that exist and call its function, so a citation of a test about something else fails;
+- every reason the sweep finds a call may be NULL is one its row declares, so a row's null behaviour is the code's;
+- the sweep reaches every function the table types (but `GROUPING` and `GROUPING_ID`, which need a `GROUP BY`);
+- a function's name is read nowhere else in Semantics or Inference.
+
+The sweep runs every function with each type in its argument, and `CatalogueSweepGridTests` checks what it types against the
+server. That found calls haruspex typed and the server refuses when the procedure is created (`JSON_VALUE` of a number,
+`EOMONTH` with a date as its offset, `STRING_AGG` of a GUID, a percentile ordered by a constant), now unknown.
+
+The catalogue lists the functions haruspex reads, not every function SQL Server has: a call of one it lacks is unknown. That
+list, the entries and their codes, is what a coverage table of functions can be generated from.
+
 ## Why data beats code here
 
-The catalogue replaced the same facts written out five times: a family as a `switch` in the schema rules, again in the
+The catalogue of types replaced the same facts written out five times: a family as a `switch` in the schema rules, again in the
 CHECK reader, again in the type's own predicates, again in the IR mapping, and as literal names through the analyser, with
 one method, `Conversions.Converts`, of 80 lines. Each copy was right, as far as anyone checked, but checking meant reading all five.
 

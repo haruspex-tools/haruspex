@@ -36,7 +36,8 @@ flowchart LR
   in data type precedence, its digits, range and defaults; `ScalarType` is a type with its arguments (`decimal(19,2)`); and
   `ConversionChart` says which conversions the server allows, implicitly or only explicitly. Each row is observed against a
   real server; [the guide's chapter](https://github.com/sharpblue/haruspex/blob/main/docs/internals/08-the-sql-server-type-system-as-data.md)
-  says why it is data and how. Bounds on numbers are one lattice, `Bounds`, which the schema rules and inference both use.
+  says why it is data and how. Bounds on numbers are one lattice, `Bounds`, which the schema rules and inference both use. The built-in functions haruspex reads are a catalogue
+  too, `BuiltInFunctions`, each with a stable code (`window.count`).
 
 ## Example
 

@@ -1251,7 +1251,9 @@ column is never traced: someone else may write it. Every rule is observed in `Js
 
 ## Built-in functions
 
-`ProcedureAnalyzer.Functions.cs` reads them. Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
+Each is a row of the function table, `ProcedureAnalyzer.FunctionTable.cs`, the one path a call is typed by, keyed by the
+catalogue of functions in Semantics (`BuiltInFunctions`); [the guide](../../docs/internals/08-the-sql-server-type-system-as-data.md#functions)
+says how. `ProcedureAnalyzer.Functions.cs` holds their typing methods. Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
 runs and `DescribedTypeTests` check them on data. Each is null when an argument it reads is (its reasons), unless said
 otherwise; a value it computes has its type's facets only (`LOWER` of a `CHECK`ed column has no set). An argument of a type
 not listed is not modelled.
