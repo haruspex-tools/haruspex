@@ -12,12 +12,18 @@ public enum IrNullRule
     NullableColumn,
 
     /// <summary>
-    /// It comes from the optional side of a join, which has no row when nothing matches: a left join's right side, either side
-    /// of a full join, or a lateral join's query that returns no row for an outer row (SQL Server's <c>OUTER APPLY</c>). A
-    /// lateral query that always returns a row (an aggregate without <c>GROUP BY</c>, a query without <c>FROM</c>, a
-    /// <c>VALUES</c> list) never gives it.
+    /// It comes from the optional side of an outer join, which has no row when nothing matches: a left join's right side, or
+    /// either side of a full join (0.13).
     /// </summary>
     UnmatchedRow,
+
+    /// <summary>
+    /// It comes from the right side of an outer lateral join (SQL Server's <c>OUTER APPLY</c>), whose query returns no row for
+    /// some row of the left. A lateral query that always returns a row (an aggregate without <c>GROUP BY</c>, a query without
+    /// <c>FROM</c>, a <c>VALUES</c> list) never gives it. Apart from <see cref="UnmatchedRow"/> because what removes it differs:
+    /// a query that always returns a row, rather than a condition that the row matched.
+    /// </summary>
+    UnmatchedLateralRow,
 
     /// <summary>It is a subquery, which is null when it returns no rows.</summary>
     EmptySubquery,
@@ -72,10 +78,10 @@ public enum IrNullRule
     FailedConversion,
 
     /// <summary>
-    /// It is a grouped column, and the query adds rows that total over it (super-aggregate rows: <c>ROLLUP</c>, <c>CUBE</c>,
-    /// <c>GROUPING SETS</c>), which hold NULL in the columns they roll up, whatever the filters proved of them.
+    /// It is a grouped column, and the query adds subtotal rows, which total over it and hold NULL in it (super-aggregate rows:
+    /// <c>ROLLUP</c>, <c>CUBE</c>, <c>GROUPING SETS</c>), whatever the filters proved of it.
     /// </summary>
-    RolledUp,
+    SubtotalRow,
 
     /// <summary>
     /// It is a column a statement that takes several actions reports, which has no value for some of them: in SQL Server's

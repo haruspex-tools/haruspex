@@ -260,6 +260,39 @@ public class ConfigCliTests
         Assert.Equal($"haruspex: nothing is selected: give --include, or a schema with \"include\" in {Path.Combine(copy.Path, "haruspex.json")}, such as \"schemas\": {{ \"dbo\": {{ \"include\": [\"*\"] }} }}.\n", error);
     }
 
+    // TypeScript's reserved words are the emitter's knowledge, which the CLI hands to the config (ReservedWords), so a reserved
+    // name is reported where the config file gives it, not later by the emitter without a line.
+    [Fact]
+    public void A_reserved_word_given_as_a_name_is_an_error_at_its_line()
+    {
+        using var copy = ShopWith("""
+            { "source": "database", "schemas": { "shop": { "include": ["list_products"] } },
+              "procedures": { "shop.list_products": { "name": "delete" } } }
+            """);
+
+        var (exitCode, _, error) = Run(copy.Path, "generate", "--out", Path.Combine(copy.Path, "out"));
+
+        Assert.Equal(2, exitCode);
+        Assert.StartsWith($"{Path.Combine(copy.Path, "haruspex.json")}:2:", error, StringComparison.Ordinal);
+        Assert.Contains("error: procedures[\"shop.list_products\"].name: 'delete' is not a valid name", error, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(Path.Combine(copy.Path, "out")));
+    }
+
+    [Fact]
+    public void Naming_rules_that_give_a_reserved_word_are_an_error_naming_typescript()
+    {
+        using var copy = ShopWith("""
+            { "source": "database",
+              "schemas": { "shop": { "include": ["list_products"], "naming": { "case": "camel", "replace": [{ "pattern": "^list_products$", "with": "delete" }] } } } }
+            """);
+
+        var (exitCode, _, error) = Run(copy.Path, "generate", "--out", Path.Combine(copy.Path, "out"));
+
+        Assert.Equal(2, exitCode);
+        Assert.Contains("the rules give 'delete', which is a reserved word in TypeScript.", error, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(Path.Combine(copy.Path, "out")));
+    }
+
     [Fact]
     public void Clashing_names_are_an_error_and_nothing_is_written()
     {

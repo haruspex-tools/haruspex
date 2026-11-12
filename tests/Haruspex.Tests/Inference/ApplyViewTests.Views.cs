@@ -76,7 +76,7 @@ public partial class ApplyViewTests
         Typed(doc);
         Assert.Empty(Rules(doc, "id"));
         Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "label"));
-        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "top_note"));
+        Assert.Equal([IrNullRule.UnmatchedLateralRow], Rules(doc, "top_note"));
     }
 
     [Fact]

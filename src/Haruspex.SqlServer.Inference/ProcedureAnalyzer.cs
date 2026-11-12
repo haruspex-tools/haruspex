@@ -414,7 +414,7 @@ internal sealed partial class ProcedureAnalyzer
         // The optional side of an outer join, or of an OUTER APPLY, has no row when nothing matches, so every column read
         // from it can be null, whatever its declaration says; unless a filter proves the row matched.
         if (source.OptionalSideOf is { } optional && !Matched(source))
-            because.Add(new IrNullReason(IrNullRule.UnmatchedRow, optional.ToString()));
+            because.Add(new IrNullReason(source.OuterApply ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.ToString()));
         if (Rolled(source) is { } rolled)
             because.Add(rolled);
         if (Unmatched(source) is { } unmatched)

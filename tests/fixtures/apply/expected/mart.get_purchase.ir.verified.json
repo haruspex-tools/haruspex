@@ -175,7 +175,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "unmatched-row",
+              "rule": "unmatched-lateral-row",
               "at": "procedures/get_purchase.sql:20:13"
             }
           ]

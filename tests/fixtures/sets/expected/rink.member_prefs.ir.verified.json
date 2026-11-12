@@ -249,7 +249,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "unmatched-row",
+              "rule": "unmatched-lateral-row",
               "at": "procedures/member_prefs.sql:23:13"
             }
           ]
@@ -268,7 +268,7 @@
               "at": "procedures/member_prefs.sql:23:13"
             },
             {
-              "rule": "unmatched-row",
+              "rule": "unmatched-lateral-row",
               "at": "procedures/member_prefs.sql:23:13"
             }
           ]
@@ -308,7 +308,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "unmatched-row",
+              "rule": "unmatched-lateral-row",
               "at": "procedures/member_prefs.sql:23:13"
             }
           ]

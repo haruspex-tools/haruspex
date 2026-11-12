@@ -98,7 +98,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "unmatched-row",
+              "rule": "unmatched-lateral-row",
               "at": "procedures/guests_with_open_tab.sql:8:13"
             }
           ]
@@ -114,7 +114,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "unmatched-row",
+              "rule": "unmatched-lateral-row",
               "at": "procedures/guests_with_open_tab.sql:8:13"
             }
           ]

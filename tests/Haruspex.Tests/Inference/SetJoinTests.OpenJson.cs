@@ -48,7 +48,7 @@ public partial class SetJoinTests
     public void Openjson_under_outer_apply_is_null_extended()
     {
         var doc = Procedure("SELECT t.id, j.a FROM dbo.t AS t OUTER APPLY OPENJSON(t.doc) WITH (a int) AS j;");
-        Assert.Equal("int json-null-or-absent unmatched-row", Typed(doc, "a"));
+        Assert.Equal("int json-null-or-absent unmatched-lateral-row", Typed(doc, "a"));
         Assert.Equal(IrCardinality.Many, Rows(doc));
     }
 }

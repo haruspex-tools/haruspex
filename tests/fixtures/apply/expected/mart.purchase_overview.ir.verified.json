@@ -123,7 +123,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "unmatched-row",
+              "rule": "unmatched-lateral-row",
               "at": "views/purchase_summary.sql:13:13"
             }
           ]

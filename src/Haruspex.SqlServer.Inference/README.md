@@ -657,7 +657,7 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   ELSE x END` is never NULL, but `CASE WHEN x = 1 THEN 0 ELSE x END` may be: `x = 1` is UNKNOWN for a NULL `x`, which is not
   TRUE either. A simple CASE's `WHEN v` is read as `input = v`; `WHEN NULL` never matches. What is proved is the value itself
   in the row being read, after grouping, so it removes every reason the value had, not only `nullable-column`: an outer
-  join's (and that source's row is proved there, as by WHERE), and a ROLLUP's `rolled-up`. Only values that are the same
+  join's (and that source's row is proved there, as by WHERE), and a ROLLUP's `subtotal-row`. Only values that are the same
   wherever they are read in a row are proved: a column, a variable or parameter (one value throughout an expression), and an
   aggregate of the query being read (computed once per group, so `CASE WHEN SUM(x) IS NULL THEN 0 ELSE SUM(x) END` is never
   NULL). A subquery or a call may give another value when read again, so testing one proves nothing about it. CHOOSE's
@@ -788,7 +788,7 @@ compared by reference, since one table read twice is two sources.
   call of a function the project does not show to be scalar (it may be a CLR aggregate).
 - `ROLLUP`, `CUBE` and `GROUPING SETS` (and `WITH ROLLUP`, `WITH CUBE`) add super-aggregate rows in which the rolled-up
   columns are NULL (`Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null`). Every column of such a query's
-  own sources read outside its aggregates gets `rolled-up`, which no filter removes, and the query returns many rows.
+  own sources read outside its aggregates gets `subtotal-row`, which no filter removes, and the query returns many rows.
   This also corrects a claim older than refinement: a `NOT NULL` grouped column was non-null there.
 
 `HAVING` also proves aggregates non-null: one compared there (`MAX(c) > 0`) is non-null in every group kept, matched in the
@@ -884,8 +884,8 @@ side is evaluated once for each row of its left input. Each rule is observed in 
 - **Rows.** `CROSS APPLY` keeps only outer rows with a right-side row; `OUTER APPLY` keeps every outer row and null-extends
   the ones without (`Cross_apply_keeps_only_outer_rows_with_a_right_row_and_outer_apply_fills_the_others_with_null`). So
   `CROSS APPLY` leaves the right side's columns their own nullability, and `OUTER APPLY` makes each of them nullable with the
-  null rule `unmatched-row`, at the right side, exactly as a left join's optional side does. Inside an outer
-  join's optional side the reason is the enclosing join's, at it, as for nested outer joins.
+  null rule `unmatched-lateral-row`, at the right side, as a left join's optional side gets `unmatched-row`. Inside an outer
+  join's optional side the enclosing join's reason is used, as for nested outer joins.
 - **A right side that always has a row is never null-extended.** An aggregate without `GROUP BY` returns one row over no
   rows (`An_ungrouped_aggregate_applied_gives_one_row_for_every_outer_row`), a query without `FROM` one row
   (`A_for_json_subquery_applied_without_from_is_one_row_whose_json_is_null_when_there_are_no_rows`), and a `VALUES` list its
@@ -897,7 +897,7 @@ side is evaluated once for each row of its left input. Each rule is observed in 
 - **Filters.** The applied query's `WHERE` is its own: its facts are pushed only while its select list is read (as for any
   subquery), so they refine its own columns and never the outer columns read outside it. Inside it, an outer column read in
   an aggregate query is not refined either (as in "Refinement", `An_outer_column_read_in_an_applied_aggregate_is_not_filtered_by_its_where`).
-  An outer `WHERE` on a right-side column proves the row matched, as for a left join, and drops `unmatched-row`. Joins inside an
+  An outer `WHERE` on a right-side column proves the row matched, as for a left join, and drops `unmatched-lateral-row`. Joins inside an
   `OUTER APPLY`'s right side refine as an outer join's optional side does.
 - **Cardinality.** A right side of at most one row per outer row (`TOP (1)`, an aggregate, a key fixed by the outer row,
   a one-row `VALUES`) counts as fixed in `ProcedureAnalyzer.Keyed`, so the query keeps the outer side's bound: at most one stays at most one,
@@ -1345,7 +1345,8 @@ constructs this front end gives each reason for:
 | Reason | SQL Server constructs |
 |---|---|
 | `nullable-column` | a column declared nullable (or not declared `NOT NULL`), read directly or through a view, CTE, temporary table or table-valued function |
-| `unmatched-row` | the optional side of a `LEFT`, `RIGHT` or `FULL OUTER JOIN`, and the right side of an `OUTER APPLY` whose query may return no row |
+| `unmatched-row` | the optional side of a `LEFT`, `RIGHT` or `FULL OUTER JOIN` |
+| `unmatched-lateral-row` | the right side of an `OUTER APPLY` whose query may return no row |
 | `empty-subquery` | a scalar subquery, NULL when it returns no rows; a `FOR JSON` subquery over no rows |
 | `all-fields-null` | a nested object `FOR JSON PATH` builds from dotted aliases, left out when every value in it is null |
 | `empty-aggregate` | an aggregate without `GROUP BY`, NULL over no rows: `MIN`, `MAX`, `SUM`, `AVG`, the statistical aggregates, `STRING_AGG`, `json_arrayagg` and `json_objectagg` |
@@ -1358,7 +1359,7 @@ constructs this front end gives each reason for:
 | `count-overflow` | `COUNT` (an `int`) under a caller's `ANSI_WARNINGS` and `ARITHABORT` off |
 | `arithmetic-overflow` | arithmetic, `SUM`, `AVG`, numeric functions and conversions that can overflow or divide by zero, under the same session options |
 | `failed-conversion` | `TRY_CAST` and `TRY_CONVERT` |
-| `rolled-up` | a grouped column of a query with `ROLLUP`, `CUBE` or `GROUPING SETS` |
+| `subtotal-row` | a grouped column of a query with `ROLLUP`, `CUBE` or `GROUPING SETS` |
 | `missing-for-action` | a column of a `MERGE`'s `OUTPUT` that some of its actions don't set |
 | `no-branch-matched` | `CASE` without `ELSE` |
 | `null-literal` | a `NULL` literal, bare, converted, or a result of `CASE`, `IIF` or `CHOOSE`; a JSON `null` in a JSON literal |
@@ -1600,12 +1601,12 @@ the IR:
 `CROSS APPLY`, `OUTER APPLY`, `VALUES` lists and views of the project are read; the engine rules, each observed,
 are above ("APPLY", "Views"). For the IR:
 
-- A column from the right side of an `OUTER APPLY` has the null rule `unmatched-row`, at the right side, unless the applied
-  query always returns a row (an aggregate without `GROUP BY`, a query without `FROM`, a `VALUES` list) or a filter proves
-  the row matched: the reason a left join's optional side gives, since what makes the column null is the same (an applied
-  query that always returns a row, unlike a join's side, never gives it).
+- A column from the right side of an `OUTER APPLY` has the null rule `unmatched-lateral-row`, at the right side, unless the
+  applied query always returns a row (an aggregate without `GROUP BY`, a query without `FROM`, a `VALUES` list) or a filter
+  proves the row matched. It is the lateral counterpart of `unmatched-row`, kept apart because the fix differs: an applied
+  query that always returns a row removes it.
 - A view's columns carry their reasons from its definition: a `nullable-column` names the base table's column, an
-  `unmatched-row` inside the view points into the view's file.
+  `unmatched-row` or `unmatched-lateral-row` inside the view points into the view's file.
 
 ### Expressions, table-valued functions and read-uncommitted
 

@@ -262,7 +262,7 @@
               "at": "functions/parts_of.sql:6:22"
             },
             {
-              "rule": "unmatched-row",
+              "rule": "unmatched-lateral-row",
               "at": "procedures/kit_routes.sql:19:13"
             }
           ]
@@ -283,7 +283,7 @@
               "at": "kit.part_sheet.parts"
             },
             {
-              "rule": "unmatched-row",
+              "rule": "unmatched-lateral-row",
               "at": "procedures/kit_routes.sql:20:13"
             }
           ]

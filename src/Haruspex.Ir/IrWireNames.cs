@@ -78,6 +78,7 @@ public static class IrWireNames
     {
         IrNullRule.NullableColumn => "nullable-column",
         IrNullRule.UnmatchedRow => "unmatched-row",
+        IrNullRule.UnmatchedLateralRow => "unmatched-lateral-row",
         IrNullRule.EmptySubquery => "empty-subquery",
         IrNullRule.AllFieldsNull => "all-fields-null",
         IrNullRule.EmptyAggregate => "empty-aggregate",
@@ -90,7 +91,7 @@ public static class IrWireNames
         IrNullRule.CountOverflow => "count-overflow",
         IrNullRule.ArithmeticOverflow => "arithmetic-overflow",
         IrNullRule.FailedConversion => "failed-conversion",
-        IrNullRule.RolledUp => "rolled-up",
+        IrNullRule.SubtotalRow => "subtotal-row",
         IrNullRule.MissingForAction => "missing-for-action",
         IrNullRule.NoBranchMatched => "no-branch-matched",
         IrNullRule.NullLiteral => "null-literal",

@@ -3,20 +3,21 @@
 **Date:** 12 Nov 2026
 
 **Decision.** Every reason a value can be null (`IrNullRule`) is named for why the value can be null, in terms any SQL
-dialect shares, never for the T-SQL construct that causes it. Seven names that named a construct are renamed, and two of
-them become one; the IR goes from 0.15 to 0.16. The construct stays findable: every reason's `at` is the column or the
+dialect shares, never for the T-SQL construct that causes it. Seven names that named a construct are renamed; the IR goes
+from 0.15 to 0.16. Two reasons are one when nothing a person or a program does about them differs, and stay apart when what
+removes them differs: one test, applied to every pair. The construct stays findable: every reason's `at` is the column or the
 source location it applies to, and the SQL Server front end's README lists the constructs that give each reason. The C#
 members are renamed with them.
 
 | 0.15 | 0.16 | C# member | Why the new name |
 |---|---|---|---|
-| `outer-join` | `unmatched-row` | `IrNullRule.UnmatchedRow` | the optional side of a join had no row to match |
-| `outer-apply` | `unmatched-row` | `IrNullRule.UnmatchedRow` | the same reason, for a lateral join (SQL Server's `OUTER APPLY`) |
-| `grouping-set` | `rolled-up` | `IrNullRule.RolledUp` | a row that totals over a grouped column holds null in it |
+| `outer-join` | `unmatched-row` | `IrNullRule.UnmatchedRow` | the optional side of an outer join had no row to match |
+| `outer-apply` | `unmatched-lateral-row` | `IrNullRule.UnmatchedLateralRow` | the same for a lateral join (SQL Server's `OUTER APPLY`), whose query returned no row; *lateral* is the SQL standard's word, and PostgreSQL's |
+| `grouping-set` | `subtotal-row` | `IrNullRule.SubtotalRow` | a subtotal row, which totals over a grouped column, holds null in it; it covers the rows `ROLLUP`, `CUBE` and `GROUPING SETS` all add, where `rolled-up` would have echoed one of them |
 | `merge-action` | `missing-for-action` | `IrNullRule.MissingForAction` | a statement taking several actions reports a column that some of them don't set |
 | `no-else` | `no-branch-matched` | `IrNullRule.NoBranchMatched` | a choice with no branch for when no condition holds |
 | `nullif` | `null-when-equal` | `IrNullRule.NullWhenEqual` | the value is made null when it equals a given one |
-| `json-value` | `json-null-or-absent` | `IrNullRule.JsonNullOrAbsent` | the JSON holds null there, or (read leniently) nothing or the wrong kind of value |
+| `json-value` | `json-null-or-absent` | `IrNullRule.JsonNullOrAbsent` | the JSON holds null there, or (read leniently) nothing or the wrong kind of value; a lenient read of the wrong kind finds no value of the kind asked for, which counts as absent |
 
 The other 22 names already named a reason in shared terms and are unchanged: a nullable column, an empty subquery or
 aggregate, a function's result or parameter, a variable, no rows, a statement not run, an overflow, a failed
@@ -29,10 +30,12 @@ own `MERGE`, in SQL Server's vocabulary, or add a name of its own for the same r
 both.
 
 **Alternatives.**
-- *Keep `outer-join` and `outer-apply` apart*, as `unmatched-row` and `unmatched-lateral-row`. They are one reason: the row
-  a value comes from is missing because the optional side of a join matched nothing. A lateral join is a join whose right
-  side may read the left; what makes a column null is the same. No consumer acts differently on the two, and a reader who
-  wants to know which construct it was has `at`, which points at the join. One reason, one name.
+- *Merge `outer-join` and `outer-apply` into one `unmatched-row`.* Both say the row a value comes from is missing because
+  the optional side matched nothing, and `at` points at the join either way. But what removes them differs: a condition
+  that proves the row matched removes either, while only a lateral query that always returns a row (an aggregate without
+  `GROUP BY`, a `VALUES` list) removes the lateral one, and a person making a field non-null does different things for
+  each. That is the test that keeps the three overflow reasons apart, below, so it keeps these apart too: one test for
+  every pair. Merging would also drop a distinction 0.15 files carried, which the format promised to keep as detail.
 - *Merge further*: `count-overflow`, `arithmetic-overflow` and `domain-error` all become null only when the caller's
   session turns an error into NULL. They stay apart because the remedy differs (`COUNT_BIG`, a wider type or a `COALESCE`,
   a check of the argument), and a person reading why a field is nullable is helped by the difference.

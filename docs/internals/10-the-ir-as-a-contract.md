@@ -194,12 +194,14 @@ hold null or nothing at the path, not which function read it. The construct is n
 place in the source that gave it, and the SQL Server front end's README lists which constructs give each reason. The
 specification says what a reason means; the front end says where it comes from.
 
-**Two names became one.** `outer-join` and `outer-apply` were one reason: the row a value comes from is missing because the
-optional side of a join matched nothing. SQL Server's `OUTER APPLY` is a lateral join, a join whose right side may read
-the left, and what makes its columns null is the same as for a left join. Keeping two names would have encoded a
-distinction of syntax that no consumer acts on, so both are now `unmatched-row`. The opposite test was applied to the
-three reasons that are errors made null by a session setting (`count-overflow`, `arithmetic-overflow`, `domain-error`):
-they stay apart, because what a person does about each differs.
+**When two reasons are one.** A neutral name tempts a merge: `outer-join` and `outer-apply` both say that the row a value
+comes from is missing because the optional side matched nothing, and SQL Server's `OUTER APPLY` is a lateral join, a join
+whose right side may read the left. One test decides every such pair: two reasons are one when nothing a person or a
+program does about them differs, and stay apart when what removes them differs. A condition proving the row matched
+removes either, but only a lateral query that always returns a row removes the lateral one, so they stay apart, as
+`unmatched-row` and `unmatched-lateral-row` (*lateral* is the SQL standard's word, and PostgreSQL's). The same test keeps
+the three reasons that are errors made null by a session setting apart (`count-overflow`, `arithmetic-overflow`,
+`domain-error`): what a person does about each differs. Names are neutral; distinctions that matter are kept.
 
 **The code uses the same names.** The C# members were renamed with the wire names (`IrNullRule.UnmatchedRow`), though the
 old ones read naturally beside the SQL in the inference. One vocabulary with two sets of names is the drift that the one

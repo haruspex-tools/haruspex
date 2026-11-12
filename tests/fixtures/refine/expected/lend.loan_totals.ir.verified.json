@@ -80,7 +80,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "rolled-up",
+              "rule": "subtotal-row",
               "at": "procedures/loan_totals.sql:11:1"
             }
           ]
@@ -110,7 +110,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "rolled-up",
+              "rule": "subtotal-row",
               "at": "procedures/loan_totals.sql:11:1"
             }
           ]
@@ -173,7 +173,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "rolled-up",
+              "rule": "subtotal-row",
               "at": "procedures/loan_totals.sql:17:1"
             }
           ]

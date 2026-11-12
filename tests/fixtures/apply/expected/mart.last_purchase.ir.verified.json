@@ -98,7 +98,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "unmatched-row",
+              "rule": "unmatched-lateral-row",
               "at": "procedures/last_purchase.sql:13:13"
             }
           ]
@@ -113,7 +113,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "unmatched-row",
+              "rule": "unmatched-lateral-row",
               "at": "procedures/last_purchase.sql:13:13"
             }
           ]
@@ -148,7 +148,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "unmatched-row",
+              "rule": "unmatched-lateral-row",
               "at": "procedures/last_purchase.sql:13:13"
             }
           ]

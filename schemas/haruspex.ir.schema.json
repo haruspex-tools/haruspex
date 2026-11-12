@@ -364,6 +364,7 @@
           "enum": [
             "nullable-column",
             "unmatched-row",
+            "unmatched-lateral-row",
             "empty-subquery",
             "all-fields-null",
             "empty-aggregate",
@@ -376,7 +377,7 @@
             "count-overflow",
             "arithmetic-overflow",
             "failed-conversion",
-            "rolled-up",
+            "subtotal-row",
             "missing-for-action",
             "no-branch-matched",
             "null-literal",
