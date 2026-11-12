@@ -84,6 +84,14 @@ public class TypeLoweringTests
     }
 
     [Fact]
+    public void Padded_values_are_lowered_as_they_are_and_left_to_the_printer_to_escape()
+    {
+        var padded = new IrScalar(IrScalarKind.String, null, "char(4)", new IrFacets(Values: new IrValueSet([new IrValue("a/b ", true), new IrValue("a/b", true), new IrValue("x", true)], IrValueMatch.Padded, [])));
+
+        Assert.Equal(Z("string").Then("regex", new PaddedValues(["a/b", "x"])), Lowering.Type(padded, IrEncoding.Json));
+    }
+
+    [Fact]
     public void A_field_left_out_when_null_is_optional_and_one_kept_as_null_is_nullable()
     {
         Assert.Equal(String10.Then("optional"), Lowering.Field(new IrField("v", Text10, IrPresence.OmittedWhenNull, [Because]), IrEncoding.Json));

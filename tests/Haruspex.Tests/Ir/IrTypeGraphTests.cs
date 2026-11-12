@@ -120,4 +120,120 @@ public class IrTypeGraphTests
 
         Assert.StartsWith("The type A refers to Missing, which names no type in the document.", error.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void A_type_reached_two_ways_is_ordered_once_before_both()
+    {
+        var graph = IrTypeGraph.Of(Document(
+            new() { ["Top"] = Type(new IrRef("Left"), new IrRef("Right")), ["Left"] = Type(new IrRef("Shared")), ["Right"] = Type(new IrRef("Shared")), ["Shared"] = Type(Number) },
+            ("s.p", Json(new IrRef("Top")))));
+
+        Assert.Equal(["Shared", "Left", "Right", "Top"], graph.DependenciesFirst);
+        Assert.False(graph.IsRecursive("Shared"));
+    }
+
+    public static TheoryData<string> Containers => ["union", "record", "tuple", "json text"];
+
+    [Theory]
+    [MemberData(nameof(Containers))]
+    public void A_cycle_through_any_container_is_found(string container)
+    {
+        IrType Around(IrType reference) => container switch
+        {
+            "union" => new IrUnion([reference, Number]),
+            "record" => new IrRecord(reference, []),
+            "tuple" => new IrTuple([new IrElement(reference, [])]),
+            _ => new IrJsonText(reference),
+        };
+        var graph = IrTypeGraph.Of(Document(
+            new() { ["A"] = Type(Around(new IrRef("B"))), ["B"] = Type(Around(new IrRef("A"))) },
+            ("s.p", Json(new IrRef("A")))));
+
+        Assert.True(graph.OnOneCycle("A", "B"));
+    }
+
+    [Fact]
+    public void A_type_outside_a_cycle_that_refers_into_it_comes_after_the_whole_cycle()
+    {
+        var graph = IrTypeGraph.Of(Document(
+            new() { ["Outside"] = Type(new IrRef("A")), ["A"] = Type(new IrRef("B")), ["B"] = Type(new IrRef("A")) },
+            ("s.p", Json(new IrRef("Outside")))));
+
+        Assert.Equal(["B", "A", "Outside"], graph.DependenciesFirst);
+        Assert.False(graph.IsRecursive("Outside"));
+    }
+
+    /// <summary>
+    /// The graph's laws over 500 generated documents (seeded, so a failure repeats): the order lists every type once; every
+    /// reference that is not on a cycle points to a type earlier in the order; a type is recursive exactly when it reaches
+    /// itself; two types share a cycle exactly when each reaches the other; and what is reachable is what a plain search finds.
+    /// Reachability here is found apart from the graph, by following references field by field.
+    /// </summary>
+    [Fact]
+    public void The_graph_keeps_its_laws_on_generated_documents()
+    {
+        for (var seed = 0; seed < 500; seed++)
+        {
+            var document = Generated(new Random(seed));
+            var graph = IrTypeGraph.Of(document);
+            var names = document.Types.Keys.ToList();
+            var position = graph.DependenciesFirst.Select((n, i) => (n, i)).ToDictionary(x => x.n, x => x.i);
+            HashSet<string> Reaches(string from) => Searched(document, document.Types[from].Fields.Select(f => f.Type));
+
+            Assert.Equal(names.Order(StringComparer.Ordinal), graph.DependenciesFirst.Order(StringComparer.Ordinal));
+            foreach (var a in names)
+            {
+                var reached = Reaches(a);
+                Assert.True(graph.IsRecursive(a) == reached.Contains(a), $"seed {seed}: {a}");
+                foreach (var b in graph.ReferencesOf(a).Where(b => !graph.OnOneCycle(a, b)))
+                    Assert.True(position[b] < position[a], $"seed {seed}: {a} refers to {b}, which comes later");
+                foreach (var b in names.Where(b => b != a))
+                    Assert.True(graph.OnOneCycle(a, b) == (reached.Contains(b) && Reaches(b).Contains(a)), $"seed {seed}: {a}, {b}");
+            }
+
+            var roots = document.Objects.SelectMany(o => o.Results ?? []).Select(r => r.Type).ToList();
+            Assert.True(graph.ReachableFrom(roots).SetEquals(Searched(document, roots)), $"seed {seed}");
+        }
+    }
+
+    /// <summary>The named types a search reaches from some types, through every reference in every field.</summary>
+    private static HashSet<string> Searched(IrDocument document, IEnumerable<IrType> roots)
+    {
+        var reached = new HashSet<string>(StringComparer.Ordinal);
+        var pending = new Stack<string>(roots.SelectMany(IrTypeTree.Within).OfType<IrRef>().Select(r => r.Name));
+        while (pending.TryPop(out var name))
+        {
+            if (!reached.Add(name))
+                continue;
+            foreach (var next in document.Types[name].Fields.SelectMany(f => IrTypeTree.Within(f.Type)).OfType<IrRef>())
+                pending.Push(next.Name);
+        }
+
+        return reached;
+    }
+
+#pragma warning disable CA5394 // A seeded Random gives the same documents on every run, which is the point; nothing here is secret.
+    /// <summary>A document of one to eight types, each with up to three fields that refer to a random type in a random container.</summary>
+    private static IrDocument Generated(Random random)
+    {
+        var names = Enumerable.Range(0, random.Next(1, 9)).Select(i => "T" + i.ToString(System.Globalization.CultureInfo.InvariantCulture)).ToList();
+        IrType Field()
+        {
+            var reference = new IrRef(names[random.Next(names.Count)]);
+            return random.Next(7) switch
+            {
+                0 => Number,
+                1 => new IrArray(reference),
+                2 => new IrUnion([reference, Number]),
+                3 => new IrRecord(reference, []),
+                4 => new IrTuple([new IrElement(Number, []), new IrElement(reference, [])]),
+                5 => new IrJsonText(reference),
+                _ => reference,
+            };
+        }
+
+        var types = names.ToDictionary(n => n, _ => Type([.. Enumerable.Range(0, random.Next(4)).Select(_ => Field())]));
+        return Document(types, ("s.p", Json(new IrRef(names[random.Next(names.Count)]))));
+    }
+#pragma warning restore CA5394
 }

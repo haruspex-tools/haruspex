@@ -20,7 +20,7 @@ internal abstract record ZodExpression
     }
 
     /// <summary>A call of one of <c>z</c>'s schema builders: <c>z.string()</c>, <c>z.array(…)</c>.</summary>
-    public static ZodExpression Z(string builder, params ZodExpression[] arguments) => new Call(new Name("z"), builder, [.. arguments]);
+    public static ZodExpression Z(string builder, params ZodExpression[] arguments) => new Call(new Name(ZodModule.ZodName), builder, [.. arguments]);
 
     /// <summary>This expression with a method called on it: <c>.max(10)</c>, <c>.nullable()</c>.</summary>
     public ZodExpression Then(string method, params ZodExpression[] arguments) => new Call(this, method, [.. arguments]);
@@ -71,9 +71,16 @@ internal abstract record ZodExpression
     /// <param name="Value">The value.</param>
     public sealed record Boolean(bool Value) : ZodExpression;
 
-    /// <summary>A regular expression argument, from its pattern: <c>/^(?:a|b)$/</c>.</summary>
-    /// <param name="Pattern">The pattern, already escaped for a regular expression literal.</param>
-    public sealed record Regex(string Pattern) : ZodExpression;
+    /// <summary>
+    /// A regular expression argument matching exactly one of <paramref name="Values"/> followed by any number of spaces, as a
+    /// value of a padded type compares equal to its value set. The printer writes the pattern and escapes each value.
+    /// </summary>
+    /// <param name="Values">The values, as they are, without their trailing spaces.</param>
+    public sealed record PaddedValues(EquatableArray<string> Values) : ZodExpression;
+
+    /// <summary>A number argument that is a power of ten, such as a decimal's step: <c>1</c>, <c>1e-2</c>.</summary>
+    /// <param name="Exponent">The power, zero or less for a step.</param>
+    public sealed record PowerOfTen(int Exponent) : ZodExpression;
 
     /// <summary>An array argument: <c>[a, b]</c>, as <c>z.tuple</c>, <c>z.enum</c> and <c>z.literal</c> take.</summary>
     /// <param name="Items">The items, in order.</param>

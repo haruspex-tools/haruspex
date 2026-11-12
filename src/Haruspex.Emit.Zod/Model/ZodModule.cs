@@ -15,4 +15,13 @@ internal sealed record ZodModule(
 {
     /// <summary>The name the JSON text helper binds in the module, which no imported name may take.</summary>
     public const string JsonTextHelperName = "jsonText";
+
+    /// <summary>The name Zod is imported under, which no imported name may take.</summary>
+    public const string ZodName = "z";
+
+    /// <summary>What follows a type's name in the name of its schema: <c>Order</c> and <c>OrderSchema</c>.</summary>
+    public const string SchemaSuffix = "Schema";
+
+    /// <summary>The name of the schema of the type <paramref name="name"/>.</summary>
+    public static string SchemaOf(string name) => name + SchemaSuffix;
 }

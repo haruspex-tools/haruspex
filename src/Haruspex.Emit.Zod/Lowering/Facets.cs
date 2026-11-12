@@ -63,7 +63,7 @@ internal static class Facets
             // Trimmed again, although the IR stores them trimmed: an item's own trailing spaces would make the regex
             // require them, and a value without them is in the set ('a' = 'a ').
             var items = padded.Items.Select(i => i.Text.TrimEnd(' ')).Distinct(StringComparer.Ordinal);
-            code = code.Then("regex", new Regex($"^(?:{string.Join("|", items.Select(RegexEscape))})\\u0020*$"));
+            code = code.Then("regex", new PaddedValues([.. items]));
         }
 
         if (facets?.MinLength is { } minLength)
@@ -141,7 +141,7 @@ internal static class Facets
                 if (exactInDriver)
                     code = Upper(Lower(code, facets?.Min, digits?.Scale, exclusiveAllowed: false), facets?.Max, digits?.Scale, exclusiveAllowed: false);
                 if (digits is not null && !integers)
-                    code = code.Then("multipleOf", new Number(digits.Scale == 0 ? "1" : "1e-" + digits.Scale.ToString(CultureInfo.InvariantCulture)));
+                    code = code.Then("multipleOf", new PowerOfTen(-digits.Scale));
                 return exactInDriver || (facets?.Min is null && facets?.Max is null && facets?.Values is null)
                     ? code
                     : new Noted(code, $"the mssql driver may round {scalar.Sql ?? "a decimal"} past its bounds, so they are not checked in a row");
@@ -215,14 +215,6 @@ internal static class Facets
             result = result.TrimEnd('0').TrimEnd('.');
         return unscaled.Sign < 0 ? "-" + result : result;
     }
-
-    /// <summary>
-    /// Text that matches itself in a regular expression literal: anything but a letter, digit or underscore as a
-    /// <c>\uXXXX</c> escape, which can't be a metacharacter, close the literal or break the line. Without the
-    /// <c>u</c> flag, a character outside the BMP is two such escapes, which match its UTF-16 code units in turn.
-    /// </summary>
-    private static string RegexEscape(string text) =>
-        string.Concat(text.Select(c => char.IsAsciiLetterOrDigit(c) || c == '_' ? c.ToString() : $"\\u{(int)c:x4}"));
 
     private static Number Count(int value) => new(value.ToString(CultureInfo.InvariantCulture));
 

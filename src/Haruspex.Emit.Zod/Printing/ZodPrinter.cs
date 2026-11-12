@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -24,8 +25,8 @@ internal static class ZodPrinter
     private const string JsonTextHelper = $$"""
 
         // JSON text: a string that must parse to a value of its content's schema. Its type stays string.
-        const {{ZodModule.JsonTextHelperName}} = (content: () => z.ZodType) =>
-          z.string().refine((text) => {
+        const {{ZodModule.JsonTextHelperName}} = (content: () => {{ZodModule.ZodName}}.ZodType) =>
+          {{ZodModule.ZodName}}.string().refine((text) => {
             try {
               return content().safeParse(JSON.parse(text)).success
             } catch {
@@ -42,7 +43,7 @@ internal static class ZodPrinter
         var output = new StringBuilder();
         foreach (var line in module.Header)
             output.Append("// ").Append(Comment(line)).Append('\n');
-        output.Append("import { z } from 'zod'\n");
+        output.Append("import { " + ZodModule.ZodName + " } from 'zod'\n");
         foreach (var import in module.Imports)
             output.Append("import { ").Append(string.Join(", ", import.Names)).Append(" } from ").Append(SingleQuoted(import.From)).Append('\n');
         if (module.JsonTextHelper)
@@ -53,8 +54,9 @@ internal static class ZodPrinter
             output.Append('\n');
             if (declaration.Summary is { } summary)
                 output.Append("/** ").Append(Comment(summary)).Append(" */\n");
-            output.Append("export const ").Append(declaration.Name).Append("Schema = ").Append(Expression(declaration.Schema)).Append('\n')
-                .Append("export type ").Append(declaration.Name).Append(" = z.infer<typeof ").Append(declaration.Name).Append("Schema>\n");
+            var schema = ZodModule.SchemaOf(declaration.Name);
+            output.Append("export const ").Append(schema).Append(" = ").Append(Expression(declaration.Schema)).Append('\n')
+                .Append("export type ").Append(declaration.Name).Append(" = " + ZodModule.ZodName + ".infer<typeof ").Append(schema).Append(">\n");
         }
 
         return output.ToString();
@@ -68,14 +70,15 @@ internal static class ZodPrinter
         {
             ZodExpression.Name name => name.Path,
             ZodExpression.Call call => Expression(call.Target) + "." + call.Method + "(" + List(call.Arguments) + ")",
-            ZodExpression.Union union => "z.union([" + List(union.Variants) + "])",
+            ZodExpression.Union union => ZodModule.ZodName + ".union([" + List(union.Variants) + "])",
             ZodExpression.ObjectSchema obj => ObjectSchema(obj),
             ZodExpression.JsonText text => ZodModule.JsonTextHelperName + "(() => " + Expression(text.Content) + ")",
             ZodExpression.Noted noted => Expression(noted.Expression),
             ZodExpression.Number number => number.Value,
             ZodExpression.Text text => DoubleQuoted(text.Value),
             ZodExpression.Boolean boolean => boolean.Value ? "true" : "false",
-            ZodExpression.Regex regex => "/" + regex.Pattern + "/",
+            ZodExpression.PaddedValues padded => "/^(?:" + string.Join("|", padded.Values.Select(RegexEscape)) + ")\\u0020*$/",
+            ZodExpression.PowerOfTen power => power.Exponent == 0 ? "1" : "1e" + power.Exponent.ToString(CultureInfo.InvariantCulture),
             ZodExpression.ArrayLiteral array => "[" + List(array.Items) + "]",
             ZodExpression.ObjectLiteral obj => "{ " + string.Join(", ", obj.Properties.Select(p => Key(p.Key) + ": " + Expression(p.Value))) + " }",
             _ => throw new ArgumentOutOfRangeException(nameof(expression), expression, "An expression outside the model's closed set."),
@@ -88,7 +91,7 @@ internal static class ZodPrinter
     /// </summary>
     private static string ObjectSchema(ZodExpression.ObjectSchema obj)
     {
-        var text = new StringBuilder(obj.Strict ? "z.strictObject({\n" : "z.object({\n");
+        var text = new StringBuilder(ZodModule.ZodName).Append(obj.Strict ? ".strictObject({\n" : ".object({\n");
         foreach (var property in obj.Properties)
         {
             var value = Expression(property.Value) + (ZodNotes.Of(property.Value) is { } notes ? " /* " + Comment(notes) + " */" : "");
@@ -100,6 +103,14 @@ internal static class ZodPrinter
 
         return text.Append("})").ToString();
     }
+
+    /// <summary>
+    /// Text that matches itself in a regular expression literal: anything but a letter, digit or underscore as a
+    /// <c>\uXXXX</c> escape, which can't be a metacharacter, close the literal or break the line. Without the
+    /// <c>u</c> flag, a character outside the BMP is two such escapes, which match its UTF-16 code units in turn.
+    /// </summary>
+    private static string RegexEscape(string text) =>
+        string.Concat(text.Select(c => char.IsAsciiLetterOrDigit(c) || c == '_' ? c.ToString() : $"\\u{(int)c:x4}"));
 
     private static string List(IEnumerable<ZodExpression> items) => string.Join(", ", items.Select(Expression));
 
