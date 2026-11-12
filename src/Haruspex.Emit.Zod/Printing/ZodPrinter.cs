@@ -40,8 +40,8 @@ internal static class ZodPrinter
     {
         ArgumentNullException.ThrowIfNull(module);
         var output = new StringBuilder();
-        foreach (var line in module.Header)
-            output.Append("// ").Append(Comment(line)).Append('\n');
+        foreach (var line in module.Header.SelectMany(Wrapped))
+            output.Append(line.Length == 0 ? "//" : "// " + Comment(line)).Append('\n');
         output.Append("import { z } from 'zod'\n");
         foreach (var import in module.Imports)
             output.Append("import { ").Append(string.Join(", ", import.Names)).Append(" } from ").Append(SingleQuoted(import.From)).Append('\n');
@@ -72,7 +72,7 @@ internal static class ZodPrinter
             ZodExpression.ObjectSchema obj => ObjectSchema(obj),
             ZodExpression.JsonText text => ZodModule.JsonTextHelperName + "(() => " + Expression(text.Content) + ")",
             ZodExpression.Noted noted => Expression(noted.Expression),
-            ZodExpression.Number number => number.Value,
+            ZodExpression.Number number => JavaScriptNumbers.Literal(number.Value),
             ZodExpression.Text text => DoubleQuoted(text.Value),
             ZodExpression.Boolean boolean => boolean.Value ? "true" : "false",
             ZodExpression.Regex regex => "/" + regex.Pattern + "/",
@@ -83,22 +83,61 @@ internal static class ZodPrinter
     }
 
     /// <summary>
-    /// An object schema, a property to a line. A property's notes follow its value as a block comment, so they stay with the
-    /// property when a formatter wraps it.
+    /// An object schema, a property to a line. A property's notes are a documentation comment above it, one line for one
+    /// note and a line each for more, so that an editor shows them with the property, and a formatter keeps them with it.
     /// </summary>
     private static string ObjectSchema(ZodExpression.ObjectSchema obj)
     {
         var text = new StringBuilder(obj.Strict ? "z.strictObject({\n" : "z.object({\n");
         foreach (var property in obj.Properties)
         {
-            var value = Expression(property.Value) + (ZodNotes.Of(property.Value) is { } notes ? " /* " + Comment(notes) + " */" : "");
+            switch (ZodNotes.Of(property.Value))
+            {
+                case []:
+                    break;
+                case [var note]:
+                    text.Append("  /** ").Append(Comment(note.Text)).Append(" */\n");
+                    break;
+                case var notes:
+                    text.Append("  /**\n");
+                    foreach (var note in notes)
+                        text.Append("   * ").Append(Comment(note.Text)).Append('\n');
+                    text.Append("   */\n");
+                    break;
+            }
+
             if (property.Getter)
-                text.Append("  get ").Append(Key(property.Key)).Append("() { return ").Append(value).Append(" },\n");
+                text.Append("  get ").Append(Key(property.Key)).Append("() { return ").Append(Expression(property.Value)).Append(" },\n");
             else
-                text.Append("  ").Append(Key(property.Key)).Append(": ").Append(value).Append(",\n");
+                text.Append("  ").Append(Key(property.Key)).Append(": ").Append(Expression(property.Value)).Append(",\n");
         }
 
         return text.Append("})").ToString();
+    }
+
+    /// <summary>
+    /// A header line broken between words to fit 120 columns with its <c>// </c>; a list item's continuation lines are
+    /// indented under its text.
+    /// </summary>
+    private static IEnumerable<string> Wrapped(string line)
+    {
+        const int width = 120 - 3;
+        var indent = line.StartsWith("- ", StringComparison.Ordinal) ? "  " : "";
+        var current = new StringBuilder();
+        foreach (var word in line.Split(' '))
+        {
+            if (current.Length > 0 && current.Length + 1 + word.Length > width)
+            {
+                yield return current.ToString();
+                current.Clear().Append(indent);
+            }
+
+            if (current.Length > 0 && current.ToString() != indent)
+                current.Append(' ');
+            current.Append(word);
+        }
+
+        yield return current.ToString();
     }
 
     private static string List(IEnumerable<ZodExpression> items) => string.Join(", ", items.Select(Expression));

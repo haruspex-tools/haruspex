@@ -51,12 +51,9 @@ internal static class Facets
             return exact.Items.Count == 0 ? Z("never") : Z("enum", new ArrayLiteral([.. exact.Items.Select(i => new Text(i.Text))]));
 
         var code = Z("string");
-        var notes = new List<string>();
+        var notes = new List<ZodNote>();
         if (facets?.Values is { Match: IrValueMatch.Collation } set)
-        {
-            notes.Add("one of " + string.Join(", ", set.Items.Select(i => Quoted(i.Text)))
-                + " as the database compares strings (case, accents and trailing spaces may differ), so not an enum");
-        }
+            notes.Add(new ZodNote($"One of {string.Join(", ", set.Items.Select(i => Quoted(i.Text)))}, as the database compares strings.", ZodCaveat.CollationValueSets));
 
         if (facets?.Values is { Match: IrValueMatch.Padded } padded && padded.Items.All(i => i.IsString))
         {
@@ -73,24 +70,32 @@ internal static class Facets
         {
             var exactLength = length.Unit == IrLengthUnit.Utf16 || length.Encoding == IrByteEncoding.SingleByte;
             code = code.Then(length.IsFixed && exactLength ? "length" : "max", Count(length.Value));
-            if (length.Unit == IrLengthUnit.Bytes)
-                notes.Add(BytesNote(scalar.Sql ?? "the string", length));
+            if (length.Unit == IrLengthUnit.Bytes && !exactLength)
+                notes.Add(BytesNote(scalar.Sql ?? "The string", length));
         }
 
-        return notes.Count == 0 ? code : new Noted(code, string.Join("; ", notes));
+        return WithNotes(code, notes);
     }
 
-    private static string BytesNote(string sql, IrLength length) => (length.IsFixed, length.Encoding) switch
+    /// <summary><paramref name="code"/> with its notes, which its reader meets in the order given.</summary>
+    private static ZodExpression WithNotes(ZodExpression code, IEnumerable<ZodNote> notes) =>
+        notes.Reverse().Aggregate(code, (inner, note) => new Noted(inner, note));
+
+    /// <summary>
+    /// Why a length counted in bytes is only an upper bound on the length in characters: the collation takes more than one
+    /// byte a character, or isn't declared. (A single-byte collation's length is exact and needs no note.)
+    /// </summary>
+    private static ZodNote BytesNote(string sql, IrLength length)
     {
-        (false, IrByteEncoding.SingleByte) => $"{sql} counts bytes, one per character in its single-byte collation: exact",
-        (false, IrByteEncoding.Utf8) => $"{sql} counts bytes, and UTF-8 takes up to four per character: an upper bound",
-        (false, IrByteEncoding.DoubleByte) => $"{sql} counts bytes, and its double-byte collation takes up to two per character: an upper bound",
-        (false, _) => $"{sql} counts bytes: exact in a single-byte collation, an upper bound otherwise; no collation is declared",
-        (true, IrByteEncoding.SingleByte) => $"{sql} pads to {length.Value} bytes, one per character in its single-byte collation",
-        (true, IrByteEncoding.Utf8) => $"{sql} pads to {length.Value} bytes, and UTF-8 takes up to four per character, so the length is at most {length.Value}",
-        (true, IrByteEncoding.DoubleByte) => $"{sql} pads to {length.Value} bytes, and its double-byte collation takes up to two per character, so the length is at most {length.Value}",
-        (true, _) => $"{sql} pads to {length.Value} bytes: {length.Value} characters in a single-byte collation, at most {length.Value} otherwise; no collation is declared",
-    };
+        var counts = length.IsFixed ? $"{sql} pads to {length.Value} bytes" : $"{sql} counts bytes";
+        var why = length.Encoding switch
+        {
+            IrByteEncoding.Utf8 => "UTF-8 takes up to four a character",
+            IrByteEncoding.DoubleByte => "its double-byte collation takes up to two a character",
+            _ => "its collation isn't declared",
+        };
+        return new ZodNote($"{counts} and {why}, so the length is at most {length.Value}.", ZodCaveat.ByteLengths);
+    }
 
     /// <summary>A number as it arrives in <paramref name="json"/> or a row, with its range, step and value set as checks.</summary>
     public static ZodExpression Number(IrScalar scalar, bool json)
@@ -105,8 +110,15 @@ internal static class Facets
                 var (min, max) = FormatRange(scalar.Format.Value);
                 var lower = facets?.Min ?? new IrBound(min.ToString(CultureInfo.InvariantCulture), true, new IrFactSource(IrFactSourceKind.Type, scalar.Sql ?? IrWireNames.Of(scalar.Format.Value)));
                 var upper = facets?.Max ?? new IrBound(max.ToString(CultureInfo.InvariantCulture), true, new IrFactSource(IrFactSourceKind.Type, scalar.Sql ?? IrWireNames.Of(scalar.Format.Value)));
-                if (lower is { Inclusive: true, Value: "-2147483648" } && upper is { Inclusive: true, Value: "2147483647" })
-                    return Z("int32");
+
+                // z.int32() checks int's own range, so where a bound is only that range, z.int32() says it and the bound
+                // goes; where both bounds are tighter, z.int() and the two bounds say it all. Zod has no builder for
+                // smallint's or tinyint's range.
+                var ownLower = lower is { Inclusive: true, Value: "-2147483648" };
+                var ownUpper = upper is { Inclusive: true, Value: "2147483647" };
+                if (scalar.Format == IrFormat.Int32 && (ownLower || ownUpper))
+                    return Upper(Lower(Z("int32"), ownLower ? null : lower, 0), ownUpper ? null : upper, 0);
+
                 return Upper(Lower(Z("int"), lower, 0), upper, 0);
             }
 
@@ -114,11 +126,11 @@ internal static class Facets
                 // The driver delivers a bigint as a string: its values are strings too, and a range isn't checkable.
                 if (facets?.Values is { Match: IrValueMatch.Exact } strings && strings.Items.All(i => !i.IsString))
                     return strings.Items.Count == 0 ? Z("never") : Z("enum", new ArrayLiteral([.. strings.Items.Select(i => new Text(i.Text))]));
-                return FromChecks(facets) ? new Noted(Z("string"), "a bigint arrives as a string, so its CHECK range is not checked") : Z("string");
+                return FromChecks(facets) ? new Noted(Z("string"), new ZodNote("A bigint arrives as a string, so its CHECK range is not checked.")) : Z("string");
 
             case IrFormat.Int64:
             {
-                const string precision = "int64: exact only up to 2^53 once parsed";
+                var precision = new ZodNote("A bigint, exact only up to 2^53 once parsed.", ZodCaveat.JsonIntegers);
                 if (ExactNumbers(facets) is { } values)
                     return new Noted(values, precision);
 
@@ -144,7 +156,7 @@ internal static class Facets
                     code = code.Then("multipleOf", new Number(digits.Scale == 0 ? "1" : "1e-" + digits.Scale.ToString(CultureInfo.InvariantCulture)));
                 return exactInDriver || (facets?.Min is null && facets?.Max is null && facets?.Values is null)
                     ? code
-                    : new Noted(code, $"the mssql driver may round {scalar.Sql ?? "a decimal"} past its bounds, so they are not checked in a row");
+                    : new Noted(code, new ZodNote($"The driver may round {scalar.Sql ?? "a decimal"} past its bounds in a row, so they are not checked.", ZodCaveat.DriverDecimals));
             }
 
             default:

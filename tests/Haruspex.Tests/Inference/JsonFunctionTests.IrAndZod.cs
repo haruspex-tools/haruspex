@@ -31,7 +31,7 @@ public partial class JsonFunctionTests
         var zod = ZodEmitter.Emit(Infer(Children, "SELECT dbo.children(t.id) AS kids FROM dbo.t AS t FOR JSON PATH;"));
 
         Assert.Contains("const jsonText = (content: () => z.ZodType) =>", zod, StringComparison.Ordinal);
-        Assert.Contains("  kids: jsonText(() => z.array(PKidsSchema).min(1)).optional() /* JSON text */,\n", zod, StringComparison.Ordinal);
+        Assert.Contains("  /** A string holding JSON, checked against the schema inside. */\n  kids: jsonText(() => z.array(PKidsSchema).min(1)).optional(),\n", zod, StringComparison.Ordinal);
     }
 
     [Fact]

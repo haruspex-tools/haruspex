@@ -22,9 +22,12 @@ public class ZodFacetsTests
             new Dictionary<string, IrObjectType> { ["PRow"] = new([new IrField("v", scalar, IrPresence.Always, [])]) },
             []);
         var ts = ZodEmitter.Emit(doc);
-        var line = Regex.Match(ts, @"\n  v: (?<code>.*),\n");
+        var line = Regex.Match(ts, @"\n(?:  /\*\* (?<note>.*) \*/\n|  /\*\*\n(?:   \* (?<note>.*)\n)+   \*/\n)?  v: (?<code>.*),\n");
         Assert.True(line.Success, ts);
-        return line.Groups["code"].Value;
+
+        // The code, then its notes after "//", as one line a case can compare.
+        var notes = line.Groups["note"].Captures.Select(c => c.Value).ToList();
+        return notes.Count == 0 ? line.Groups["code"].Value : line.Groups["code"].Value + " // " + string.Join(" ", notes);
     }
 
     private static string Json(IrScalar scalar) => Emit(IrEncoding.Json, scalar);
@@ -48,16 +51,16 @@ public class ZodFacetsTests
     [Theory]
     [InlineData("nvarchar(40)", 40, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, "z.string().max(40)")]
     [InlineData("nchar(5)", 5, true, IrLengthUnit.Utf16, IrByteEncoding.Unknown, "z.string().length(5)")]
-    // In a single-byte collation a byte is a character, so varchar and char are exact.
-    [InlineData("varchar(5)", 5, false, IrLengthUnit.Bytes, IrByteEncoding.SingleByte, "z.string().max(5) /* varchar(5) counts bytes, one per character in its single-byte collation: exact */")]
-    [InlineData("char(5)", 5, true, IrLengthUnit.Bytes, IrByteEncoding.SingleByte, "z.string().length(5) /* char(5) pads to 5 bytes, one per character in its single-byte collation */")]
+    // In a single-byte collation a byte is a character, so varchar and char are exact, and need no note.
+    [InlineData("varchar(5)", 5, false, IrLengthUnit.Bytes, IrByteEncoding.SingleByte, "z.string().max(5)")]
+    [InlineData("char(5)", 5, true, IrLengthUnit.Bytes, IrByteEncoding.SingleByte, "z.string().length(5)")]
     // In UTF-8 the byte count only bounds the length, and a padded value can be shorter than n.
-    [InlineData("varchar(5)", 5, false, IrLengthUnit.Bytes, IrByteEncoding.Utf8, "z.string().max(5) /* varchar(5) counts bytes, and UTF-8 takes up to four per character: an upper bound */")]
-    [InlineData("char(5)", 5, true, IrLengthUnit.Bytes, IrByteEncoding.Utf8, "z.string().max(5) /* char(5) pads to 5 bytes, and UTF-8 takes up to four per character, so the length is at most 5 */")]
-    [InlineData("varchar(5)", 5, false, IrLengthUnit.Bytes, IrByteEncoding.DoubleByte, "z.string().max(5) /* varchar(5) counts bytes, and its double-byte collation takes up to two per character: an upper bound */")]
+    [InlineData("varchar(5)", 5, false, IrLengthUnit.Bytes, IrByteEncoding.Utf8, "z.string().max(5) // varchar(5) counts bytes and UTF-8 takes up to four a character, so the length is at most 5.")]
+    [InlineData("char(5)", 5, true, IrLengthUnit.Bytes, IrByteEncoding.Utf8, "z.string().max(5) // char(5) pads to 5 bytes and UTF-8 takes up to four a character, so the length is at most 5.")]
+    [InlineData("varchar(5)", 5, false, IrLengthUnit.Bytes, IrByteEncoding.DoubleByte, "z.string().max(5) // varchar(5) counts bytes and its double-byte collation takes up to two a character, so the length is at most 5.")]
     // With no collation declared, only what holds in every encoding.
-    [InlineData("varchar(5)", 5, false, IrLengthUnit.Bytes, IrByteEncoding.Unknown, "z.string().max(5) /* varchar(5) counts bytes: exact in a single-byte collation, an upper bound otherwise; no collation is declared */")]
-    [InlineData("char(5)", 5, true, IrLengthUnit.Bytes, IrByteEncoding.Unknown, "z.string().max(5) /* char(5) pads to 5 bytes: 5 characters in a single-byte collation, at most 5 otherwise; no collation is declared */")]
+    [InlineData("varchar(5)", 5, false, IrLengthUnit.Bytes, IrByteEncoding.Unknown, "z.string().max(5) // varchar(5) counts bytes and its collation isn't declared, so the length is at most 5.")]
+    [InlineData("char(5)", 5, true, IrLengthUnit.Bytes, IrByteEncoding.Unknown, "z.string().max(5) // char(5) pads to 5 bytes and its collation isn't declared, so the length is at most 5.")]
     public void A_length_is_exact_where_the_target_counts_the_same_units(string sql, int n, bool isFixed, IrLengthUnit unit, IrByteEncoding encoding, string zod)
     {
         Assert.Equal(zod, Json(Text(sql, new IrFacets(Length: new IrLength(n, isFixed, unit, encoding, Type)))));
@@ -77,7 +80,7 @@ public class ZodFacetsTests
     {
         var zod = Json(Text("varchar(10)", new IrFacets(Values: Strings(IrValueMatch.Collation, "open", "held"))));
 
-        Assert.StartsWith("z.string() /* one of \"open\", \"held\" as the database compares strings", zod, StringComparison.Ordinal);
+        Assert.Equal("z.string() // One of \"open\", \"held\", as the database compares strings.", zod);
         Assert.DoesNotContain("z.enum", zod, StringComparison.Ordinal);
     }
 
@@ -130,11 +133,11 @@ public class ZodFacetsTests
     public void A_bigint_in_json_keeps_its_bare_number_and_only_a_checks_range_inclusively()
     {
         var typeRange = new IrFacets(Min: Inclusive("-9223372036854775808"), Max: Inclusive("9223372036854775807"));
-        Assert.Equal("z.number() /* int64: exact only up to 2^53 once parsed */", Json(Number(IrFormat.Int64, "bigint", typeRange)));
+        Assert.Equal("z.number() // A bigint, exact only up to 2^53 once parsed.", Json(Number(IrFormat.Int64, "bigint", typeRange)));
 
         // Exclusive bounds become inclusive, because two bigints past 2^53 can parse to the same double.
         var checkRange = new IrFacets(Min: Exclusive("0"), Max: new IrBound("9007199254740993", false, Check));
-        Assert.Equal("z.number().min(1).max(9007199254740992) /* int64: exact only up to 2^53 once parsed */", Json(Number(IrFormat.Int64, "bigint", checkRange)));
+        Assert.Equal("z.number().min(1).max(9007199254740992) // A bigint, exact only up to 2^53 once parsed.", Json(Number(IrFormat.Int64, "bigint", checkRange)));
     }
 
     [Fact]
@@ -142,7 +145,7 @@ public class ZodFacetsTests
     {
         Assert.Equal("z.string()", Rows(Number(IrFormat.Int64, "bigint", new IrFacets(Min: Inclusive("-9223372036854775808"), Max: Inclusive("9223372036854775807")))));
         Assert.Equal("z.enum([\"1\", \"20\"])", Rows(Number(IrFormat.Int64, "bigint", new IrFacets(Values: Numbers("1", "20")))));
-        Assert.Equal("z.string() /* a bigint arrives as a string, so its CHECK range is not checked */", Rows(Number(IrFormat.Int64, "bigint", new IrFacets(Min: Inclusive("0", Check)))));
+        Assert.Equal("z.string() // A bigint arrives as a string, so its CHECK range is not checked.", Rows(Number(IrFormat.Int64, "bigint", new IrFacets(Min: Inclusive("0", Check)))));
     }
 
     // ---- decimals -----------------------------------------------------------------------------------
@@ -150,13 +153,14 @@ public class ZodFacetsTests
     private static IrFacets Decimal(int precision, int scale, IrBound min, IrBound max, IrValueSet? values = null) =>
         new(Digits: new IrDigits(precision, scale, Type), Min: min, Max: max, Values: values);
 
+    // A bound a double can't hold is written as the double JavaScript reads it as, which is the check it always was.
     [Theory]
-    [InlineData(19, 2, "-99999999999999999.99", "99999999999999999.99", "z.number().min(-99999999999999999.99).max(99999999999999999.99).multipleOf(1e-2)")]
+    [InlineData(19, 2, "-99999999999999999.99", "99999999999999999.99", "z.number().min(-100000000000000000).max(100000000000000000).multipleOf(1e-2)")]
     [InlineData(5, 5, "-0.99999", "0.99999", "z.number().min(-0.99999).max(0.99999).multipleOf(1e-5)")]
-    [InlineData(19, 4, "-922337203685477.5808", "922337203685477.5807", "z.number().min(-922337203685477.5808).max(922337203685477.5807).multipleOf(1e-4)")]
+    [InlineData(19, 4, "-922337203685477.5808", "922337203685477.5807", "z.number().min(-922337203685477.6).max(922337203685477.6).multipleOf(1e-4)")]
     // An integer decimal within 2^53 is an integer; a wider one can't be z.int(), which wants safe integers.
     [InlineData(10, 0, "-9999999999", "9999999999", "z.int().min(-9999999999).max(9999999999)")]
-    [InlineData(38, 0, "-99999999999999999999999999999999999999", "99999999999999999999999999999999999999", "z.number().min(-99999999999999999999999999999999999999).max(99999999999999999999999999999999999999).multipleOf(1)")]
+    [InlineData(38, 0, "-99999999999999999999999999999999999999", "99999999999999999999999999999999999999", "z.number().min(-1e+38).max(1e+38).multipleOf(1)")]
     public void A_decimal_in_json_has_its_range_and_its_step(int precision, int scale, string min, string max, string zod) =>
         Assert.Equal(zod, Json(Number(IrFormat.Decimal, "decimal", Decimal(precision, scale, Inclusive(min), Inclusive(max)))));
 
@@ -179,7 +183,7 @@ public class ZodFacetsTests
     public void A_wide_decimal_in_a_row_keeps_its_step_but_not_its_bounds_or_values()
     {
         Assert.Equal(
-            "z.number().multipleOf(1e-2) /* the mssql driver may round decimal(19,2) past its bounds, so they are not checked in a row */",
+            "z.number().multipleOf(1e-2) // The driver may round decimal(19,2) past its bounds in a row, so they are not checked.",
             Rows(Number(IrFormat.Decimal, "decimal(19,2)", Decimal(19, 2, Inclusive("-99999999999999999.99"), Inclusive("99999999999999999.99"), Numbers("1.5")))));
     }
 

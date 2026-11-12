@@ -138,7 +138,8 @@ SELECT f.rate FROM flat AS f;
 
 ```ts haruspex-zod
 export const RatesRowSchema = z.object({
-  rate: z.number().multipleOf(1e-28) /* the mssql driver may round decimal(38,28) past its bounds, so they are not checked in a row */,
+  /** The driver may round decimal(38,28) past its bounds in a row, so they are not checked. */
+  rate: z.number().multipleOf(1e-28),
 })
 export type RatesRow = z.infer<typeof RatesRowSchema>
 

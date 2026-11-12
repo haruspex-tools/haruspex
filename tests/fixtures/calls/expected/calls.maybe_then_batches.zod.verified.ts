@@ -14,12 +14,10 @@ export const MaybeThenBatchesResult1Row2Schema = z.object({
 })
 export type MaybeThenBatchesResult1Row2 = z.infer<typeof MaybeThenBatchesResult1Row2Schema>
 
-export const MaybeThenBatchesResult2RowSchema = z.object({
-  batch_id: z.int32(),
-  product: z.string().max(30),
-})
+/** The same shape as MaybeThenBatchesResult1Row2. */
+export const MaybeThenBatchesResult2RowSchema = MaybeThenBatchesResult1Row2Schema
 export type MaybeThenBatchesResult2Row = z.infer<typeof MaybeThenBatchesResult2RowSchema>
 
 /** calls.maybe_then_batches: returns 2 result sets: rows; rows, [] when it does not run. */
-export const MaybeThenBatchesSchema = z.tuple([z.union([z.array(MaybeThenBatchesResult1RowSchema.extend({ batch_id: z.never().optional(), product: z.never().optional() })), z.array(MaybeThenBatchesResult1Row2Schema.extend({ oven_id: z.never().optional(), label: z.never().optional() }))]), z.array(MaybeThenBatchesResult2RowSchema)])
+export const MaybeThenBatchesSchema = z.tuple([z.union([z.array(MaybeThenBatchesResult1RowSchema.extend({ batch_id: z.never().optional(), product: z.never().optional() })), z.array(MaybeThenBatchesResult1Row2Schema.extend({ oven_id: z.never().optional(), label: z.never().optional() }))]), z.array(MaybeThenBatchesResult1Row2Schema)])
 export type MaybeThenBatches = z.infer<typeof MaybeThenBatchesSchema>

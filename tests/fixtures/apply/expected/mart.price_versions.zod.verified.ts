@@ -7,19 +7,16 @@ export const PriceVersionsResult1RowSchema = z.object({
 })
 export type PriceVersionsResult1Row = z.infer<typeof PriceVersionsResult1RowSchema>
 
-export const PriceVersionsResult2RowSchema = z.object({
-  amount: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2),
-})
+/** The same shape as PriceVersionsResult1Row. */
+export const PriceVersionsResult2RowSchema = PriceVersionsResult1RowSchema
 export type PriceVersionsResult2Row = z.infer<typeof PriceVersionsResult2RowSchema>
 
-export const PriceVersionsResult3RowSchema = z.object({
-  amount: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2),
-})
+/** The same shape as PriceVersionsResult1Row. */
+export const PriceVersionsResult3RowSchema = PriceVersionsResult1RowSchema
 export type PriceVersionsResult3Row = z.infer<typeof PriceVersionsResult3RowSchema>
 
-export const PriceVersionsResult4RowSchema = z.object({
-  amount: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2),
-})
+/** The same shape as PriceVersionsResult1Row. */
+export const PriceVersionsResult4RowSchema = PriceVersionsResult1RowSchema
 export type PriceVersionsResult4Row = z.infer<typeof PriceVersionsResult4RowSchema>
 
 export const PriceVersionsResult5RowSchema = z.object({
@@ -29,5 +26,5 @@ export const PriceVersionsResult5RowSchema = z.object({
 export type PriceVersionsResult5Row = z.infer<typeof PriceVersionsResult5RowSchema>
 
 /** mart.price_versions: returns 5 result sets: rows; rows; rows; rows; rows. */
-export const PriceVersionsSchema = z.tuple([z.array(PriceVersionsResult1RowSchema), z.array(PriceVersionsResult2RowSchema), z.array(PriceVersionsResult3RowSchema), z.array(PriceVersionsResult4RowSchema), z.array(PriceVersionsResult5RowSchema)])
+export const PriceVersionsSchema = z.tuple([z.array(PriceVersionsResult1RowSchema), z.array(PriceVersionsResult1RowSchema), z.array(PriceVersionsResult1RowSchema), z.array(PriceVersionsResult1RowSchema), z.array(PriceVersionsResult5RowSchema)])
 export type PriceVersions = z.infer<typeof PriceVersionsSchema>

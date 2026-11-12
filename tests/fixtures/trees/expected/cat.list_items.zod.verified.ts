@@ -20,12 +20,8 @@ export const ListItemsRelatedTextSchema = z.object({
 })
 export type ListItemsRelatedText = z.infer<typeof ListItemsRelatedTextSchema>
 
-export const ListItemsRelatedSchema = z.object({
-  id: z.int32(),
-  title: z.string().max(20),
-  note: z.string().max(20).optional(),
-  category: z.string().max(20),
-})
+/** The same shape as ListItemsRelatedText. */
+export const ListItemsRelatedSchema = ListItemsRelatedTextSchema
 export type ListItemsRelated = z.infer<typeof ListItemsRelatedSchema>
 
 export const ListItemsLabelSchema = z.object({
@@ -34,10 +30,8 @@ export const ListItemsLabelSchema = z.object({
 })
 export type ListItemsLabel = z.infer<typeof ListItemsLabelSchema>
 
-export const ListItemsNoteLabelSchema = z.object({
-  id: z.int32(),
-  text: z.string().max(20),
-})
+/** The same shape as ListItemsLabel. */
+export const ListItemsNoteLabelSchema = ListItemsLabelSchema
 export type ListItemsNoteLabel = z.infer<typeof ListItemsNoteLabelSchema>
 
 export const ListItemsTagSchema = z.object({
@@ -48,10 +42,11 @@ export type ListItemsTag = z.infer<typeof ListItemsTagSchema>
 
 export const ListItemsRowSchema = z.object({
   id: z.int32(),
-  relatedText: jsonText(() => ListItemsRelatedTextSchema).optional() /* JSON text */,
-  related: ListItemsRelatedSchema.optional(),
+  /** A string holding JSON, checked against the schema inside. */
+  relatedText: jsonText(() => ListItemsRelatedTextSchema).optional(),
+  related: ListItemsRelatedTextSchema.optional(),
   label: ListItemsLabelSchema,
-  noteLabel: ListItemsNoteLabelSchema.optional(),
+  noteLabel: ListItemsLabelSchema.optional(),
   tag: ListItemsTagSchema,
 })
 export type ListItemsRow = z.infer<typeof ListItemsRowSchema>

@@ -24,7 +24,8 @@ export type ListPurchasesLines = z.infer<typeof ListPurchasesLinesSchema>
 export const ListPurchasesRowSchema = z.object({
   purchase_id: z.int32(),
   placed_on: z.date(),
-  lines: jsonText(() => z.array(ListPurchasesLinesSchema).min(1)).nullable() /* JSON text */,
+  /** A string holding JSON, checked against the schema inside. */
+  lines: jsonText(() => z.array(ListPurchasesLinesSchema).min(1)).nullable(),
 })
 export type ListPurchasesRow = z.infer<typeof ListPurchasesRowSchema>
 

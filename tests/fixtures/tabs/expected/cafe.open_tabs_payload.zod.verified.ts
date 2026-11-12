@@ -19,7 +19,8 @@ export const OpenTabsPayloadOpenTabsSchema = z.object({
 export type OpenTabsPayloadOpenTabs = z.infer<typeof OpenTabsPayloadOpenTabsSchema>
 
 export const OpenTabsPayloadRowSchema = z.object({
-  open_tabs: jsonText(() => z.array(OpenTabsPayloadOpenTabsSchema).min(1)).nullable() /* JSON text */,
+  /** A string holding JSON, checked against the schema inside. */
+  open_tabs: jsonText(() => z.array(OpenTabsPayloadOpenTabsSchema).min(1)).nullable(),
 })
 export type OpenTabsPayloadRow = z.infer<typeof OpenTabsPayloadRowSchema>
 

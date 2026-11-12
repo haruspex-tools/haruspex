@@ -22,7 +22,8 @@ export type ItemRowsRelated = z.infer<typeof ItemRowsRelatedSchema>
 
 export const ItemRowsRowSchema = z.object({
   id: z.int32(),
-  related: jsonText(() => ItemRowsRelatedSchema).nullable() /* JSON text */,
+  /** A string holding JSON, checked against the schema inside. */
+  related: jsonText(() => ItemRowsRelatedSchema).nullable(),
 })
 export type ItemRowsRow = z.infer<typeof ItemRowsRowSchema>
 

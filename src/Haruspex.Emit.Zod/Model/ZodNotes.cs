@@ -4,14 +4,15 @@ namespace Haruspex.Emit.Zod.Model;
 internal static class ZodNotes
 {
     /// <summary>
-    /// The notes of <paramref name="expression"/> as one text, or null when it has none. A note comes first, followed by the
-    /// notes of what it is about (<c>JSON text; …</c>); the notes of an expression's parts follow in order, each distinct text
-    /// once, so a tuple of two strings of the same type says its caveat once.
+    /// The notes of <paramref name="expression"/>, in order: a note before the notes of what it is about, and the notes of an
+    /// expression's parts in order, each once, so a tuple of two strings of the same type says its note once.
     /// </summary>
-    public static string? Of(ZodExpression expression) => expression switch
+    public static IReadOnlyList<ZodNote> Of(ZodExpression expression) => [.. All(expression).Distinct()];
+
+    private static IEnumerable<ZodNote> All(ZodExpression expression) => expression switch
     {
-        ZodExpression.Noted noted => Of(noted.Expression) is { } inner ? noted.Note + "; " + inner : noted.Note,
-        _ => Join(Parts(expression).Select(Of)),
+        ZodExpression.Noted noted => [noted.Note, .. All(noted.Expression)],
+        _ => Parts(expression).SelectMany(All),
     };
 
     private static IEnumerable<ZodExpression> Parts(ZodExpression expression) => expression switch
@@ -22,15 +23,9 @@ internal static class ZodNotes
         ZodExpression.ArrayLiteral array => array.Items,
         ZodExpression.ObjectLiteral obj => obj.Properties.Select(p => p.Value),
 
-        // An object schema's properties each carry their own notes, written beside the property.
+        // An object schema's properties each carry their own notes, written above the property.
         ZodExpression.ObjectSchema => [],
         ZodExpression.Name or ZodExpression.Number or ZodExpression.Text or ZodExpression.Boolean or ZodExpression.Regex => [],
         _ => throw new ArgumentOutOfRangeException(nameof(expression), expression, "An expression outside the model's closed set."),
     };
-
-    private static string? Join(IEnumerable<string?> notes)
-    {
-        var distinct = notes.OfType<string>().Distinct(StringComparer.Ordinal).ToList();
-        return distinct.Count == 0 ? null : string.Join("; ", distinct);
-    }
 }

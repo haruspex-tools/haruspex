@@ -13,8 +13,10 @@ const jsonText = (content: () => z.ZodType) =>
   }, { error: 'Expected JSON text holding a value of its content type' })
 
 export const ReviewDigestRowSchema = z.object({
-  ids: jsonText(() => z.array(z.int32()).min(1)).nullable() /* JSON text */,
-  stars: jsonText(() => z.record(z.string(), z.int().min(1).max(5))).nullable() /* JSON text */,
+  /** A string holding JSON, checked against the schema inside. */
+  ids: jsonText(() => z.array(z.int32()).min(1)).nullable(),
+  /** A string holding JSON, checked against the schema inside. */
+  stars: jsonText(() => z.record(z.string(), z.int().min(1).max(5))).nullable(),
 })
 export type ReviewDigestRow = z.infer<typeof ReviewDigestRowSchema>
 

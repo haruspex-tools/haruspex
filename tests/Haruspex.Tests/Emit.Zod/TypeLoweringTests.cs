@@ -16,7 +16,7 @@ public class TypeLoweringTests
     {
         ["Small"] = new([new IrField("a", Text10, IrPresence.Always, [])]),
         ["Large"] = new([new IrField("a", Text10, IrPresence.Always, []), new IrField("b", Text10, IrPresence.OmittedWhenNull, [Because])]),
-    });
+    }, name => name);
 
     [Fact]
     public void A_reference_is_the_named_schema() => Assert.Equal(new Name("OrderSchema"), Lowering.Type(new IrRef("Order"), IrEncoding.Json));
@@ -49,16 +49,16 @@ public class TypeLoweringTests
     {
         var text = new IrJsonText(new IrScalar(IrScalarKind.Date, null, "date"));
 
-        Assert.Equal(new Noted(new JsonText(new Call(new Name("z.iso"), "date", [])), "JSON text"), Lowering.Type(text, IrEncoding.Rowset));
+        Assert.Equal(new Noted(new JsonText(new Call(new Name("z.iso"), "date", [])), new ZodNote("A string holding JSON, checked against the schema inside.")), Lowering.Type(text, IrEncoding.Rowset));
     }
 
     [Fact]
     public void Json_text_of_unknown_content_is_a_string_with_a_note() =>
-        Assert.Equal(new Noted(Z("string"), "JSON text"), Lowering.Type(new IrJsonText(), IrEncoding.Json));
+        Assert.Equal(new Noted(Z("string"), new ZodNote("A string holding JSON.")), Lowering.Type(new IrJsonText(), IrEncoding.Json));
 
     [Fact]
     public void An_unknown_is_z_unknown_with_its_reason_as_a_note() =>
-        Assert.Equal(new Noted(Z("unknown"), "unsupported-expression"), Lowering.Type(new IrUnknownType(IrUnknownReason.UnsupportedExpression), IrEncoding.Json));
+        Assert.Equal(new Noted(Z("unknown"), new ZodNote("Not known (unsupported-expression); the IR's unknowns say why.")), Lowering.Type(new IrUnknownType(IrUnknownReason.UnsupportedExpression), IrEncoding.Json));
 
     [Theory]
     [InlineData(IrEncoding.Json, "z.iso.date()")]
@@ -84,6 +84,37 @@ public class TypeLoweringTests
     }
 
     [Fact]
+    public void A_union_leaves_out_a_variant_another_accepts_every_value_of()
+    {
+        var bigint = new IrScalar(IrScalarKind.Number, IrFormat.Int64, "bigint");
+        var tinyint = new IrScalar(IrScalarKind.Number, IrFormat.Uint8, "tinyint");
+        var spare = new IrScalar(IrScalarKind.String, null, "varchar(5)", new IrFacets(Values: new IrValueSet([new IrValue("SPARE", true)], IrValueMatch.Exact, [])));
+        var text60 = new IrScalar(IrScalarKind.String, null, "nvarchar(60)", new IrFacets(Length: new IrLength(60, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Type, "nvarchar(60)"))));
+
+        Assert.Equal(Z("string").Then("max", new Number("60")), Lowering.Type(new IrUnion([Text10, text60]), IrEncoding.Json));
+        Assert.Equal(String10, Lowering.Type(new IrUnion([Text10, spare]), IrEncoding.Json));
+        Assert.Equal(Lowering.Type(bigint, IrEncoding.Json), Lowering.Type(new IrUnion([bigint, bigint]), IrEncoding.Json));
+        Assert.Equal(Lowering.Type(bigint, IrEncoding.Json), Lowering.Type(new IrUnion([tinyint, bigint]), IrEncoding.Json));
+    }
+
+    [Fact]
+    public void A_union_keeps_variants_neither_of_which_covers_the_other()
+    {
+        var number = new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int");
+
+        Assert.Equal(new Union([String10, Z("int32")]), Lowering.Type(new IrUnion([Text10, number]), IrEncoding.Json));
+    }
+
+    [Fact]
+    public void An_int_states_only_the_bounds_its_own_range_does_not()
+    {
+        var check = new IrFactSource(IrFactSourceKind.Check, "dbo.ck");
+        var positive = new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int", new IrFacets(Min: new IrBound("0", false, check), Max: new IrBound("2147483647", true, new IrFactSource(IrFactSourceKind.Type, "int"))));
+
+        Assert.Equal(Z("int32").Then("gt", new Number("0")), Lowering.Type(positive, IrEncoding.Json));
+    }
+
+    [Fact]
     public void A_field_left_out_when_null_is_optional_and_one_kept_as_null_is_nullable()
     {
         Assert.Equal(String10.Then("optional"), Lowering.Field(new IrField("v", Text10, IrPresence.OmittedWhenNull, [Because]), IrEncoding.Json));
@@ -94,7 +125,7 @@ public class TypeLoweringTests
     [Fact]
     public void An_unknown_field_is_not_made_nullable_since_unknown_accepts_null() =>
         Assert.Equal(
-            new Noted(Z("unknown"), "unsupported-expression"),
+            new Noted(Z("unknown"), new ZodNote("Not known (unsupported-expression); the IR's unknowns say why.")),
             Lowering.Field(new IrField("v", new IrUnknownType(IrUnknownReason.UnsupportedExpression), IrPresence.Always, [Because]), IrEncoding.Json));
 
     [Fact]

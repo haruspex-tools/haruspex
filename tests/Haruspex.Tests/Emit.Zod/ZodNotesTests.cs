@@ -3,27 +3,30 @@ using static Haruspex.Emit.Zod.Model.ZodExpression;
 
 namespace Haruspex.Tests.Emit.Zod;
 
-/// <summary>How the notes inside an expression become the one text written beside its property.</summary>
+/// <summary>How the notes inside an expression are gathered for the property that holds it.</summary>
 public class ZodNotesTests
 {
+    private static readonly ZodNote First = new("First.");
+    private static readonly ZodNote Second = new("Second.", ZodCaveat.ByteLengths);
+
     [Fact]
-    public void An_expression_without_notes_has_none() => Assert.Null(ZodNotes.Of(Z("string").Then("max", new Number("10"))));
+    public void An_expression_without_notes_has_none() => Assert.Empty(ZodNotes.Of(Z("string").Then("max", new Number("10"))));
 
     [Fact]
     public void A_note_comes_before_the_notes_of_what_it_is_about() =>
-        Assert.Equal("JSON text; an upper bound", ZodNotes.Of(new Noted(new JsonText(new Noted(Z("string"), "an upper bound")), "JSON text")));
+        Assert.Equal([First, Second], ZodNotes.Of(new Noted(new JsonText(new Noted(Z("string"), Second)), First)));
 
     [Fact]
     public void A_note_survives_the_checks_chained_after_it() =>
-        Assert.Equal("an upper bound", ZodNotes.Of(new Noted(Z("string"), "an upper bound").Then("nullable")));
+        Assert.Equal([First], ZodNotes.Of(new Noted(Z("string"), First).Then("nullable")));
 
     [Fact]
-    public void The_parts_notes_follow_in_order_each_distinct_text_once() =>
+    public void The_parts_notes_follow_in_order_each_once() =>
         Assert.Equal(
-            "first; second",
-            ZodNotes.Of(Z("tuple", new ArrayLiteral([new Noted(Z("string"), "first"), new Noted(Z("string"), "second"), new Noted(Z("number"), "first")]))));
+            [First, Second],
+            ZodNotes.Of(Z("tuple", new ArrayLiteral([new Noted(Z("string"), First), new Noted(Z("string"), Second), new Noted(Z("number"), First)]))));
 
     [Fact]
     public void An_object_schema_leaves_its_properties_notes_to_them() =>
-        Assert.Null(ZodNotes.Of(new ObjectSchema([new ZodProperty("v", new Noted(Z("string"), "a note"))], Strict: false)));
+        Assert.Empty(ZodNotes.Of(new ObjectSchema([new ZodProperty("v", new Noted(Z("string"), First))], Strict: false)));
 }

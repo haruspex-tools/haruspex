@@ -40,33 +40,33 @@ export const JobCardPartsOrNone2Schema = z.object({
 })
 export type JobCardPartsOrNone2 = z.infer<typeof JobCardPartsOrNone2Schema>
 
-export const JobCardFirstTextSchema = z.object({
-  part: z.string().max(30),
-})
+/** The same shape as JobCardPartsOrNone. */
+export const JobCardFirstTextSchema = JobCardPartsOrNoneSchema
 export type JobCardFirstText = z.infer<typeof JobCardFirstTextSchema>
 
-export const JobCardFirstText2Schema = z.object({
-})
+/** The same shape as JobCardPartsOrNone2. */
+export const JobCardFirstText2Schema = JobCardPartsOrNone2Schema
 export type JobCardFirstText2 = z.infer<typeof JobCardFirstText2Schema>
 
-export const JobCardFirstLineSchema = z.object({
-  part: z.string().max(30),
-})
+/** The same shape as JobCardPartsOrNone. */
+export const JobCardFirstLineSchema = JobCardPartsOrNoneSchema
 export type JobCardFirstLine = z.infer<typeof JobCardFirstLineSchema>
 
-export const JobCardFirstLine2Schema = z.object({
-})
+/** The same shape as JobCardPartsOrNone2. */
+export const JobCardFirstLine2Schema = JobCardPartsOrNone2Schema
 export type JobCardFirstLine2 = z.infer<typeof JobCardFirstLine2Schema>
 
 export const JobCardRowSchema = z.object({
   id: z.int32(),
   status: z.enum(["Cancelled", "Done", "In work", "New"]),
-  lines_text: jsonText(() => z.array(JobCardLinesTextSchema)).optional() /* JSON text */,
+  /** A string holding JSON, checked against the schema inside. */
+  lines_text: jsonText(() => z.array(JobCardLinesTextSchema)).optional(),
   lines: z.array(JobCardLineSchema),
   line_ids: z.array(JobCardLineIdSchema).optional(),
   parts_or_none: z.union([z.array(JobCardPartsOrNoneSchema).min(1), JobCardPartsOrNone2Schema]),
-  first_text: jsonText(() => z.union([JobCardFirstTextSchema, JobCardFirstText2Schema.extend({ part: z.never().optional() })])) /* JSON text */,
-  first_line: z.union([JobCardFirstLineSchema, JobCardFirstLine2Schema.extend({ part: z.never().optional() })]),
+  /** A string holding JSON, checked against the schema inside. */
+  first_text: jsonText(() => z.union([JobCardPartsOrNoneSchema, JobCardPartsOrNone2Schema.extend({ part: z.never().optional() })])),
+  first_line: z.union([JobCardPartsOrNoneSchema, JobCardPartsOrNone2Schema.extend({ part: z.never().optional() })]),
 })
 export type JobCardRow = z.infer<typeof JobCardRowSchema>
 

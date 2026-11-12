@@ -16,7 +16,7 @@ export type BasketLineRow = z.infer<typeof BasketLineRowSchema>
 
 export const BasketItemSchema = z.strictObject({
   position: z.int32(),
-  sku: z.string().max(12) /* varchar(12) counts bytes, one per character in its single-byte collation: exact */,
+  sku: z.string().max(12),
   quantity: z.int32(),
 })
 export type BasketItem = z.infer<typeof BasketItemSchema>
@@ -34,7 +34,7 @@ export type Basket = z.infer<typeof BasketSchema>
 
 export const ListProductsRowSchema = z.strictObject({
   product_id: z.int32(),
-  sku: z.string().max(12) /* varchar(12) counts bytes, one per character in its single-byte collation: exact */,
+  sku: z.string().max(12),
   name: z.string().max(80),
   status: z.enum(["active", "retired"]),
   attributes: ProductAttributesSchema.nullable(),
@@ -47,7 +47,7 @@ export const ListProductsSchema = z.array(ListProductsRowSchema)
 export type ListProducts = z.infer<typeof ListProductsSchema>
 
 export const AdminSalesRowSchema = z.strictObject({
-  sku: z.string().max(12) /* varchar(12) counts bytes, one per character in its single-byte collation: exact */,
+  sku: z.string().max(12),
   price: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2),
 })
 export type AdminSalesRow = z.infer<typeof AdminSalesRowSchema>

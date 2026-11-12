@@ -304,10 +304,8 @@ export type ProductHeaderRow = z.infer<typeof ProductHeaderRowSchema>
 export const ProductHeaderSchema = z.array(ProductHeaderRowSchema).max(1)
 export type ProductHeader = z.infer<typeof ProductHeaderSchema>
 
-export const ProductPageResult1RowSchema = z.object({
-  product_id: z.int32(),
-  name: z.string().max(80),
-})
+/** The same shape as ProductHeaderRow. */
+export const ProductPageResult1RowSchema = ProductHeaderRowSchema
 export type ProductPageResult1Row = z.infer<typeof ProductPageResult1RowSchema>
 
 export const ProductPageResult2RowSchema = z.object({
@@ -317,12 +315,13 @@ export const ProductPageResult2RowSchema = z.object({
 export type ProductPageResult2Row = z.infer<typeof ProductPageResult2RowSchema>
 
 /** shop.product_page: returns 2 result sets: rows; rows, [] when it does not run. */
-export const ProductPageSchema = z.tuple([z.array(ProductPageResult1RowSchema).max(1), z.array(ProductPageResult2RowSchema)])
+export const ProductPageSchema = z.tuple([z.array(ProductHeaderRowSchema).max(1), z.array(ProductPageResult2RowSchema)])
 export type ProductPage = z.infer<typeof ProductPageSchema>
 ```
 
 The header's `.max(1)` comes from the filter on the primary key, through the call: a callee's claims arrive with its
-results.
+results. The page's first result set has the header's row shape exactly, so the module declares that shape once and
+keeps the page's name for it as an alias ([Emitting code](11-emitting-code.md)).
 
 Why a set of counts, rather than something simpler:
 

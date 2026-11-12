@@ -3,7 +3,8 @@
 import { z } from 'zod'
 
 export const RecountRowSchema = z.object({
-  x: z.unknown() /* caller-temp-table */,
+  /** Not known (caller-temp-table); the IR's unknowns say why. */
+  x: z.unknown(),
 })
 export type RecountRow = z.infer<typeof RecountRowSchema>
 

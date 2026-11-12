@@ -16,13 +16,10 @@ export const OvensOrBatchesResult1Row2Schema = z.object({
 })
 export type OvensOrBatchesResult1Row2 = z.infer<typeof OvensOrBatchesResult1Row2Schema>
 
-export const OvensOrBatchesResult2RowSchema = z.object({
-  oven_id: z.int32(),
-  label: z.string().max(20),
-  rack_count: z.int().min(0).max(255).nullable(),
-})
+/** The same shape as OvensOrBatchesResult1Row. */
+export const OvensOrBatchesResult2RowSchema = OvensOrBatchesResult1RowSchema
 export type OvensOrBatchesResult2Row = z.infer<typeof OvensOrBatchesResult2RowSchema>
 
 /** calls.ovens_or_batches: returns 2 result sets: rows; rows, [] when it does not run. */
-export const OvensOrBatchesSchema = z.tuple([z.union([z.array(OvensOrBatchesResult1RowSchema.extend({ batch_id: z.never().optional(), product: z.never().optional(), weight_g: z.never().optional() })), z.array(OvensOrBatchesResult1Row2Schema.extend({ oven_id: z.never().optional(), label: z.never().optional(), rack_count: z.never().optional() }))]), z.array(OvensOrBatchesResult2RowSchema).max(1)])
+export const OvensOrBatchesSchema = z.tuple([z.union([z.array(OvensOrBatchesResult1RowSchema.extend({ batch_id: z.never().optional(), product: z.never().optional(), weight_g: z.never().optional() })), z.array(OvensOrBatchesResult1Row2Schema.extend({ oven_id: z.never().optional(), label: z.never().optional(), rack_count: z.never().optional() }))]), z.array(OvensOrBatchesResult1RowSchema).max(1)])
 export type OvensOrBatches = z.infer<typeof OvensOrBatchesSchema>

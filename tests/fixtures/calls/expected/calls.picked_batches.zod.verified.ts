@@ -3,10 +3,14 @@
 import { z } from 'zod'
 
 export const PickedBatchesRowSchema = z.object({
-  batch_id: z.unknown() /* caller-temp-table */,
-  product: z.unknown() /* caller-temp-table */,
-  weight_g: z.unknown() /* caller-temp-table */,
-  round_no: z.unknown() /* caller-temp-table */,
+  /** Not known (caller-temp-table); the IR's unknowns say why. */
+  batch_id: z.unknown(),
+  /** Not known (caller-temp-table); the IR's unknowns say why. */
+  product: z.unknown(),
+  /** Not known (caller-temp-table); the IR's unknowns say why. */
+  weight_g: z.unknown(),
+  /** Not known (caller-temp-table); the IR's unknowns say why. */
+  round_no: z.unknown(),
 })
 export type PickedBatchesRow = z.infer<typeof PickedBatchesRowSchema>
 

@@ -9,7 +9,8 @@ public partial class ConfigApplicationTests
     public void Values_exact_makes_a_collation_set_an_enum()
     {
         var before = ZodEmitter.Emit(Apply(GetCustomer, "{}").Document);
-        Assert.Contains("  status: z.string().max(8) /* one of \"open\", \"closed\" as the database compares", before, StringComparison.Ordinal);
+        Assert.Contains("One of \"open\", \"closed\", as the database compares strings.", before, StringComparison.Ordinal);
+        Assert.Contains("  status: z.string().max(8),\n", before, StringComparison.Ordinal);
 
         var doc = Apply(GetCustomer, """{ "procedures": { "sales.get_customer": { "paths": { "[].status": { "values": "exact", "why": "written in lower case only" } } } } }""").Document;
 

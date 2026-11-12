@@ -73,7 +73,7 @@ public class ZodEmitterTests
     {
         var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("v", new IrJsonText())));
 
-        Assert.Contains("  v: z.string() /* JSON text */,\n", ts, StringComparison.Ordinal);
+        Assert.Contains("  /** A string holding JSON. */\n  v: z.string(),\n", ts, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class ZodEmitterTests
     {
         var ts = ZodEmitter.Emit(OneResult(IrEncoding.Rowset, Field("v", new IrUnknownType(IrUnknownReason.UnsupportedExpression))));
 
-        Assert.Contains("  v: z.unknown() /* unsupported-expression */,\n", ts, StringComparison.Ordinal);
+        Assert.Contains("  /** Not known (unsupported-expression); the IR's unknowns say why. */\n  v: z.unknown(),\n", ts, StringComparison.Ordinal);
     }
 
     [Fact]

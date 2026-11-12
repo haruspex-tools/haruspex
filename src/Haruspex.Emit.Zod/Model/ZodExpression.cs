@@ -53,11 +53,11 @@ internal abstract record ZodExpression
 
     /// <summary>
     /// An expression with a note for the reader of the generated file, such as why a check the IR states was left out. The
-    /// note is not code: the printer writes it beside the property that holds the expression.
+    /// note is not code: the printer writes it above the property that holds the expression.
     /// </summary>
     /// <param name="Expression">The expression the note is about.</param>
-    /// <param name="Note">The note, in plain words.</param>
-    public sealed record Noted(ZodExpression Expression, string Note) : ZodExpression;
+    /// <param name="Note">The note.</param>
+    public sealed record Noted(ZodExpression Expression, ZodNote Note) : ZodExpression;
 
     /// <summary>A number argument, as decimal text written as it is: <c>0</c>, <c>-32768</c>, <c>99.99</c>, <c>1e-2</c>.</summary>
     /// <param name="Value">The number.</param>

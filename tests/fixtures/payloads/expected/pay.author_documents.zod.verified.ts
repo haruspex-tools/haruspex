@@ -20,8 +20,10 @@ export type AuthorDocumentsDocument = z.infer<typeof AuthorDocumentsDocumentSche
 
 export const AuthorDocumentsRowSchema = z.object({
   id: z.int32(),
-  document: jsonText(() => AuthorDocumentsDocumentSchema) /* JSON text */,
-  profile: z.string().nullable() /* JSON text */,
+  /** A string holding JSON, checked against the schema inside. */
+  document: jsonText(() => AuthorDocumentsDocumentSchema),
+  /** A string holding JSON. */
+  profile: z.string().nullable(),
 })
 export type AuthorDocumentsRow = z.infer<typeof AuthorDocumentsRowSchema>
 

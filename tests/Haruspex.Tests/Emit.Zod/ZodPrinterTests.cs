@@ -20,7 +20,7 @@ public class ZodPrinterTests
         ["a regular expression"] = (Z("string").Then("regex", new Regex("^(?:a)\\u0020*$")), "z.string().regex(/^(?:a)\\u0020*$/)"),
         ["an empty array"] = (Z("tuple", new ArrayLiteral([])), "z.tuple([])"),
         ["a key that is not an identifier"] = (new Name("RowSchema").Then("extend", new ObjectLiteral([new ZodProperty("unit price", Z("never").Then("optional"))])), "RowSchema.extend({ \"unit price\": z.never().optional() })"),
-        ["a note, which is not code"] = (new Noted(Z("string"), "written beside the property, not here"), "z.string()"),
+        ["a note, which is not code"] = (new Noted(Z("string"), new ZodNote("Written above the property, not here.")), "z.string()"),
     };
 
     public static TheoryData<string> FormNames => [.. Forms.Keys];
@@ -30,19 +30,44 @@ public class ZodPrinterTests
     public void Each_expression_form_prints_as_typescript(string form) => Assert.Equal(Forms[form].Printed, ZodPrinter.Expression(Forms[form].Expression));
 
     [Fact]
-    public void An_object_schema_puts_a_property_on_each_line_with_its_notes_and_getters()
+    public void An_object_schema_puts_a_property_on_each_line_with_its_notes_above_it()
     {
         var schema = new ObjectSchema(
             [
                 new ZodProperty("id", Z("int32")),
-                new ZodProperty("first name", new Noted(Z("string"), "ends */ here")),
-                new ZodProperty("children", Z("array", new Name("NodeSchema")), Getter: true),
+                new ZodProperty("first name", new Noted(Z("string"), new ZodNote("Ends */ here."))),
+                new ZodProperty("children", new Noted(new Noted(Z("array", new Name("NodeSchema")), new ZodNote("Two.")), new ZodNote("One.")), Getter: true),
             ],
             Strict: false);
 
         Assert.Equal(
-            "z.object({\n  id: z.int32(),\n  \"first name\": z.string() /* ends *\\/ here */,\n  get children() { return z.array(NodeSchema) },\n})",
+            "z.object({\n  id: z.int32(),\n  /** Ends *\\/ here. */\n  \"first name\": z.string(),\n" +
+            "  /**\n   * One.\n   * Two.\n   */\n  get children() { return z.array(NodeSchema) },\n})",
             ZodPrinter.Expression(schema));
+    }
+
+    [Theory]
+    [InlineData("99.99", "99.99")]
+    [InlineData("1e-2", "1e-2")]
+    [InlineData("-2147483648", "-2147483648")]
+    [InlineData("99999999999999999.99", "100000000000000000")]
+    [InlineData("922337203685477.5807", "922337203685477.6")]
+    [InlineData("-922337203685477.5808", "-922337203685477.6")]
+    [InlineData("12345678901234567890123", "1.2345678901234568e+22")]
+    [InlineData("0.00000012345678901234567", "1.2345678901234566e-7")]
+    public void A_number_a_double_cannot_hold_is_written_as_the_double_javascript_reads(string value, string written) =>
+        Assert.Equal(written, ZodPrinter.Expression(Z("number").Then("max", new Number(value))).Replace("z.number().max(", "", StringComparison.Ordinal).TrimEnd(')'));
+
+    [Fact]
+    public void A_long_header_line_is_wrapped_and_a_list_item_continues_under_its_text()
+    {
+        var item = "- " + string.Join(' ', Enumerable.Repeat("word", 30));
+
+        var text = ZodPrinter.Print(new ZodModule(["", item], [], JsonTextHelper: false, []));
+
+        Assert.StartsWith("//\n// - word word", text, StringComparison.Ordinal);
+        Assert.Contains("\n//   word", text, StringComparison.Ordinal);
+        Assert.All(text.Split('\n'), line => Assert.True(line.Length <= 120, line));
     }
 
     [Fact]

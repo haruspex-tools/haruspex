@@ -10,7 +10,8 @@ namespace Haruspex.Emit.Zod.Lowering;
 /// each fact becomes in Zod; it writes no text.
 /// </summary>
 /// <param name="types">The document's named types, whose keys a union's variants are told apart by.</param>
-internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> types)
+/// <param name="declaredAs">The name each named type's schema is declared under: its own, or that of a type of the same shape.</param>
+internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> types, Func<string, string> declaredAs)
 {
     /// <summary>The schema of a value of <paramref name="type"/> that is not null, as <paramref name="encoding"/> delivers it.</summary>
     public ZodExpression Type(IrType type, IrEncoding encoding) => type switch
@@ -24,9 +25,9 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
         IrImport import => new Name(import.Name),
 
         // What the text holds is JSON, even in a rowset.
-        IrJsonText { Content: { } content } => new Noted(new JsonText(Type(content, IrEncoding.Json)), "JSON text"),
-        IrJsonText => new Noted(Z("string"), "JSON text"),
-        IrUnknownType unknown => new Noted(Z("unknown"), IrWireNames.Of(unknown.Reason)),
+        IrJsonText { Content: { } content } => new Noted(new JsonText(Type(content, IrEncoding.Json)), new ZodNote("A string holding JSON, checked against the schema inside.")),
+        IrJsonText => new Noted(Z("string"), new ZodNote("A string holding JSON.")),
+        IrUnknownType unknown => new Noted(Z("unknown"), new ZodNote($"Not known ({IrWireNames.Of(unknown.Reason)}); the IR's unknowns say why.")),
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, "A type node outside the IR's closed set."),
     };
 
@@ -43,7 +44,7 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     }
 
     /// <summary>The schema a named type is declared under.</summary>
-    public static Name Reference(IrRef reference) => new(reference.Name + "Schema");
+    public Name Reference(IrRef reference) => new(declaredAs(reference.Name) + "Schema");
 
     /// <summary>
     /// An array, with its items' nullability and its length when the IR knows them (<c>json_array</c> and the aggregates; an
@@ -60,17 +61,17 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     }
 
     /// <summary>
-    /// A union. <c>z.union</c> returns the first variant that accepts a value, and a <c>z.object</c> strips the keys it doesn't
+    /// A union, without the variants another already accepts (<see cref="Unions"/>). <c>z.union</c> returns the first variant that accepts a value, and a <c>z.object</c> strips the keys it doesn't
     /// know, so a variant would accept another's object and drop its keys: a key left out when null is <c>.optional()</c>, so
     /// even a variant with more keys accepts an object of fewer, and no order prevents it. So each object variant (or array
     /// of one) also rejects every key that only the other variants have, <c>.extend({ k: z.never().optional() })</c>: an
     /// object takes the variant whose keys it has, and keeps them all. Keys no variant knows are still stripped (or refused,
     /// for strict objects), as everywhere else.
     /// </summary>
-    private Union Union(IrUnion union, IrEncoding encoding)
+    private ZodExpression Union(IrUnion union, IrEncoding encoding)
     {
         var keys = union.Variants.Select(ObjectKeys).ToList();
-        return new Union([.. SupersetsFirst(union.Variants).Select(i => Variant(union.Variants[i], keys[i], keys.Where((_, j) => j != i)))]);
+        return Unions.Of(SupersetsFirst(union.Variants).Select(i => Variant(union.Variants[i], keys[i], keys.Where((_, j) => j != i))));
 
         ZodExpression Variant(IrType variant, IReadOnlyList<string>? mine, IEnumerable<IReadOnlyList<string>?> others)
         {

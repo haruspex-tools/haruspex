@@ -42,7 +42,7 @@ public class ZodJsonNodeTests
     [Fact]
     public void A_union_with_an_unknown_variant_keeps_the_unknown_and_says_why() =>
         Assert.Contains(
-            "\n  v: z.union([z.int32(), z.unknown()]) /* unsupported-expression */,\n",
+            "\n  /** Not known (unsupported-expression); the IR's unknowns say why. */\n  v: z.union([z.int32(), z.unknown()]),\n",
             Emit(new IrUnion([Int, new IrUnknownType(IrUnknownReason.UnsupportedExpression)])),
             StringComparison.Ordinal);
 
