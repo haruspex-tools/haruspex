@@ -130,8 +130,8 @@ public static class CheckReader
     private sealed record Proved(
         IReadOnlyList<ExactDecimal>? Numbers = null,
         IReadOnlyList<string>? Strings = null,
-        (ExactDecimal Value, bool Inclusive)? Min = null,
-        (ExactDecimal Value, bool Inclusive)? Max = null,
+        Bound? Min = null,
+        Bound? Max = null,
         int? MinLength = null)
     {
         public bool IsValueSet => (Numbers is not null || Strings is not null) && Min is null && Max is null && MinLength is null;
@@ -160,7 +160,7 @@ public static class CheckReader
                 InPredicate { NotDefined: false, Subquery: null } inList when IsColumn(inList.Expression) => ValueSet(inList.Values),
                 BooleanTernaryExpression { TernaryExpressionType: BooleanTernaryExpressionType.Between } between
                     when !family.IsString && IsColumn(between.FirstExpression)
-                    && Number(between.SecondExpression) is { } low && Number(between.ThirdExpression) is { } high => new Proved(Min: (low, true), Max: (high, true)),
+                    && Number(between.SecondExpression) is { } low && Number(between.ThirdExpression) is { } high => new Proved(Min: new Bound(low, true), Max: new Bound(high, true)),
                 BooleanComparisonExpression comparison => Comparison(comparison),
                 _ => null,
             };
@@ -173,19 +173,9 @@ public static class CheckReader
             return new Proved(
                 Numbers: a.Numbers is null || b.Numbers is null ? a.Numbers ?? b.Numbers : [.. a.Numbers.Where(b.Numbers.Contains)],
                 Strings: a.Strings ?? b.Strings, // see SchemaRules.Intersect: strings under a collation aren't intersected
-                Min: Pick(a.Min, b.Min, lower: true),
-                Max: Pick(a.Max, b.Max, lower: false),
+                Min: Bounds.Tighter(a.Min, b.Min, BoundSide.Lower),
+                Max: Bounds.Tighter(a.Max, b.Max, BoundSide.Upper),
                 MinLength: a.MinLength is null || b.MinLength is null ? a.MinLength ?? b.MinLength : Math.Max(a.MinLength.Value, b.MinLength.Value));
-        }
-
-        private static (ExactDecimal, bool)? Pick((ExactDecimal Value, bool Inclusive)? a, (ExactDecimal Value, bool Inclusive)? b, bool lower)
-        {
-            if (a is not { } x || b is not { } y)
-                return a ?? b;
-            var order = x.Value.CompareTo(y.Value);
-            if (order == 0)
-                return x.Inclusive ? y : x;
-            return (order > 0) == lower ? x : y;
         }
 
         /// <summary>Only a union of value sets is read: anything else on one side could be the TRUE one.</summary>
@@ -244,10 +234,10 @@ public static class CheckReader
                 return null;
             return type switch
             {
-                BooleanComparisonType.GreaterThan => new Proved(Min: (bound, false)),
-                BooleanComparisonType.GreaterThanOrEqualTo => new Proved(Min: (bound, true)),
-                BooleanComparisonType.LessThan => new Proved(Max: (bound, false)),
-                BooleanComparisonType.LessThanOrEqualTo => new Proved(Max: (bound, true)),
+                BooleanComparisonType.GreaterThan => new Proved(Min: new Bound(bound, false)),
+                BooleanComparisonType.GreaterThanOrEqualTo => new Proved(Min: new Bound(bound, true)),
+                BooleanComparisonType.LessThan => new Proved(Max: new Bound(bound, false)),
+                BooleanComparisonType.LessThanOrEqualTo => new Proved(Max: new Bound(bound, true)),
                 _ => null,
             };
         }

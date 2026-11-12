@@ -186,21 +186,11 @@ public static class SchemaRules
     /// <summary>The facts true of every value that satisfies both: the tighter bound, the longer minimum length, and the narrower set.</summary>
     private static ColumnFacts Narrow(ColumnFacts facts, ColumnFacts proved) => facts with
     {
-        Min = Tighter(facts.Min, proved.Min, lower: true),
-        Max = Tighter(facts.Max, proved.Max, lower: false),
+        Min = Bounds.Tighter(facts.Min, proved.Min, BoundSide.Lower, m => m.Bound),
+        Max = Bounds.Tighter(facts.Max, proved.Max, BoundSide.Upper, m => m.Bound),
         MinLength = proved.MinLength is { } m && (facts.MinLength is null || m.Value > facts.MinLength.Value) ? m : facts.MinLength,
         Values = Intersect(facts.Values, proved.Values),
     };
-
-    private static BoundFact? Tighter(BoundFact? a, BoundFact? b, bool lower)
-    {
-        if (a is null || b is null)
-            return a ?? b;
-        var order = a.Value.CompareTo(b.Value);
-        if (order == 0)
-            return a.Inclusive ? b : a; // an exclusive bound at the same value is the tighter one
-        return (order > 0) == lower ? a : b;
-    }
 
     private static ValueSetFact? Intersect(ValueSetFact? a, ValueSetFact? b)
     {
@@ -221,8 +211,8 @@ public static class SchemaRules
             return facts;
 
         bool Inside(ExactDecimal n) =>
-            (facts.Min is not { } min || (min.Inclusive ? n >= min.Value : n > min.Value))
-            && (facts.Max is not { } max || (max.Inclusive ? n <= max.Value : n < max.Value))
+            (facts.Min is not { } min || Bounds.Admits(min.Bound, n, BoundSide.Lower))
+            && (facts.Max is not { } max || Bounds.Admits(max.Bound, n, BoundSide.Upper))
             && (facts.Digits is not { } digits || n.Scale <= digits.Scale);
 
         return facts with { Values = facts.Values with { Numbers = [.. numbers.Where(Inside).Distinct().Order()] } };

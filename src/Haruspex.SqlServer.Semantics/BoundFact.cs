@@ -3,4 +3,8 @@ namespace Haruspex.SqlServer.Semantics;
 /// <param name="Value">The bound.</param>
 /// <param name="Inclusive">Whether the bound itself is allowed.</param>
 /// <param name="From">The type or constraint it came from.</param>
-public sealed record BoundFact(ExactDecimal Value, bool Inclusive, FactSource From);
+public sealed record BoundFact(ExactDecimal Value, bool Inclusive, FactSource From)
+{
+    /// <summary>The bound, without its source, as <see cref="Bounds"/> orders it.</summary>
+    public Bound Bound => new(Value, Inclusive);
+}

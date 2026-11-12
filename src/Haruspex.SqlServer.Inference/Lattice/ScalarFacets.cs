@@ -45,7 +45,7 @@ internal static class ScalarFacets
                 : null;
         var minLength = a.MinLength is { } ma && b.MinLength is { } mb ? (ma.Value <= mb.Value ? ma : mb) : null;
         var digits = a.Digits is { } da && b.Digits is { } db && da == db with { From = da.From } ? da : null;
-        var joined = new IrFacets(length, minLength, digits, Looser(a.Min, b.Min, lower: true), Looser(a.Max, b.Max, lower: false), Union(a.Values, b.Values));
+        var joined = new IrFacets(length, minLength, digits, Bounds.Looser(a.Min, b.Min, BoundSide.Lower, BoundOf), Bounds.Looser(a.Max, b.Max, BoundSide.Upper, BoundOf), Union(a.Values, b.Values));
         return joined.IsEmpty ? null : joined;
     }
 
@@ -67,19 +67,14 @@ internal static class ScalarFacets
         return Holds(a.Length, b.Length, (x, y) => x.Unit == y.Unit && x.Encoding == y.Encoding && (y.IsFixed ? x.IsFixed && x.Value == y.Value : x.Value <= y.Value))
             && Holds(a.MinLength, b.MinLength, (x, y) => x.Value >= y.Value)
             && Holds(a.Digits, b.Digits, (x, y) => x.Precision == y.Precision && x.Scale == y.Scale)
-            && Holds(a.Min, b.Min, (x, y) => Bound(x, y, lower: true))
-            && Holds(a.Max, b.Max, (x, y) => Bound(x, y, lower: false))
+            && Holds(a.Min, b.Min, (x, y) => BoundBelow(x, y, BoundSide.Lower))
+            && Holds(a.Max, b.Max, (x, y) => BoundBelow(x, y, BoundSide.Upper))
             && Holds(a.Values, b.Values, (x, y) => x.Match == y.Match && x.Items.All(y.Items.Contains));
 
         static bool Holds<T>(T? x, T? y, Func<T, T, bool> tighter) where T : class => y is null || (x is not null && tighter(x, y));
 
-        static bool Bound(IrBound x, IrBound y, bool lower)
-        {
-            if (!ExactDecimal.TryParse(x.Value, out var p) || !ExactDecimal.TryParse(y.Value, out var q))
-                return false;
-            var order = p.CompareTo(q);
-            return order == 0 ? y.Inclusive || !x.Inclusive : (order > 0) == lower;
-        }
+        static bool BoundBelow(IrBound x, IrBound y, BoundSide side) =>
+            BoundOf(x) is { } p && BoundOf(y) is { } q && Bounds.Below(p, q, side);
     }
 
     /// <summary>
@@ -132,15 +127,8 @@ internal static class ScalarFacets
         return kept.IsEmpty ? null : kept;
     }
 
-    private static IrBound? Looser(IrBound? a, IrBound? b, bool lower)
-    {
-        if (a is null || b is null || !ExactDecimal.TryParse(a.Value, out var x) || !ExactDecimal.TryParse(b.Value, out var y))
-            return null;
-        var order = x.CompareTo(y);
-        if (order == 0)
-            return b.Inclusive && !a.Inclusive ? b : a; // an inclusive bound at the same value is the looser one
-        return (order < 0) == lower ? a : b;
-    }
+    /// <summary>An IR bound as the bound lattice orders it, or null when its value isn't a plain decimal.</summary>
+    private static Bound? BoundOf(IrBound bound) => ExactDecimal.TryParse(bound.Value, out var value) ? new Bound(value, bound.Inclusive) : null;
 
     private static IrValueSet? Union(IrValueSet? a, IrValueSet? b)
     {
