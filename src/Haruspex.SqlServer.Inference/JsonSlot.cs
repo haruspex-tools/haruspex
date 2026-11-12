@@ -61,7 +61,7 @@ internal sealed record JsonSlot(Shape? Content, UnknownShape? NotJson)
     public Value Read(Value declared)
     {
         if (NotJson is { } why)
-            return declared with { JsonWhy = why };
+            return declared with { JsonWhy = why, Digits = declared.Digits };
         return Content is { } content ? new Value(new JsonTextShape(content), declared.NullableBecause) : declared;
     }
 }

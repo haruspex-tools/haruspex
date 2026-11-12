@@ -455,7 +455,7 @@ internal sealed partial class ProcedureAnalyzer
                 // (docs/decisions/0014-count-is-nullable.md); COUNT_BIG can't overflow.
                 var type = new SqlType(SqlTypeKind.BuiltIn, name == "count" ? "int" : "bigint", []);
                 EquatableArray<IrNullReason> because = name == "count" && !ProvedAggregate(call) ? [new IrNullReason(IrNullRule.CountOverflow, at.ToString())] : [];
-                return new Value(SqlTypes.ToConvertedShape(model, type, at), because);
+                return Value.Computed(SqlTypes.ToConvertedShape(model, type, at), because);
             }
 
             case "min" or "max" when call.Parameters.Count == 1:
