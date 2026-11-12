@@ -128,13 +128,13 @@ internal static class JsonLiterals
 
                 return ExactDecimal.TryParse(Plain(raw), out var number) && Exact(raw)
                     ? Scalar(IrScalarKind.Number, new IrValue(number.ToString(), IsString: false), at)
-                    : new ScalarShape(new IrScalar(IrScalarKind.Number, null, null));
+                    : new ScalarShape(new IrScalar(IrScalarKind.Number, null, null), null);
             case JsonValueKind.True:
             case JsonValueKind.False:
-                return new ScalarShape(new IrScalar(IrScalarKind.Boolean, null, null));
+                return new ScalarShape(new IrScalar(IrScalarKind.Boolean, null, null), null);
             default:
                 // JSON null: the value is null, its type anything; a string is as good as any, and the reason says it is null.
-                return new ScalarShape(new IrScalar(IrScalarKind.String, null, null));
+                return new ScalarShape(new IrScalar(IrScalarKind.String, null, null), null);
         }
     }
 
@@ -142,7 +142,7 @@ internal static class JsonLiterals
         element.ValueKind == JsonValueKind.Null ? [new IrNullReason(IrNullRule.NullLiteral, at.ToString())] : [];
 
     private static ScalarShape Scalar(IrScalarKind kind, IrValue value, SourceLocation at) =>
-        new(new IrScalar(kind, null, null, new IrFacets(Values: new IrValueSet([value], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Expression, at.ToString())]))));
+        new(new IrScalar(kind, null, null, new IrFacets(Values: new IrValueSet([value], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Expression, at.ToString())]))), null);
 
     /// <summary>A JSON number written without an exponent, which <see cref="ExactDecimal"/> reads; null when it has one.</summary>
     private static string Plain(string raw) => raw.Contains('e', StringComparison.OrdinalIgnoreCase) ? "" : raw;

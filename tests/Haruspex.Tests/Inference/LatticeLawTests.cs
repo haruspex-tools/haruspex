@@ -279,8 +279,8 @@ public class LatticeLawTests
         Assert.False(ScalarFacets.Below(null, In("1")));
     }
 
-    private static readonly ScalarShape Number = new(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int"));
-    private static readonly ScalarShape Text = new(new IrScalar(IrScalarKind.String, null, "nvarchar(max)"));
+    private static readonly ScalarShape Number = ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int"));
+    private static readonly ScalarShape Text = ScalarShape.FromIr(new IrScalar(IrScalarKind.String, null, "nvarchar(max)"));
     private static readonly IrNullReason Null = new(IrNullRule.NullableColumn, "dbo.t.a");
 
     // ---- the server's type rule is not a join -----------------------------------------------------------------------

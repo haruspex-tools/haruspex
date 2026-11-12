@@ -111,12 +111,12 @@ public class ValueEqualityTests
         // The join joins each fact in its own lattice: the digits of 1 and of 3 give the range from 1 to 10, and of two
         // values the same but for why their JSON is not known, a witness, the left one's why is kept.
         var at = new SourceLocation("p.sql", 4, 1);
-        var one = new Value(new ScalarShape(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []) { Digits = IntDigits.Literal(1) };
+        var one = new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []) { Digits = IntDigits.Literal(1) };
         var three = one with { Digits = IntDigits.Literal(3) };
 
         Assert.Equal(one with { Digits = IntDigits.Unknown }, Value.Join(one, three, at, "@n"));
 
-        var text = new Value(new ScalarShape(new IrScalar(IrScalarKind.String, null, "nvarchar(max)")), []);
+        var text = new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.String, null, "nvarchar(max)")), []);
         var first = text with { JsonWhy = new UnknownShape(IrUnknownReason.JsonShapeUnknown, "first", at) };
         var second = text with { JsonWhy = new UnknownShape(IrUnknownReason.JsonShapeUnknown, "second", at) };
 
@@ -147,8 +147,8 @@ public class ValueEqualityTests
     [Fact]
     public void States_with_the_same_variables_are_equal_whatever_the_order_or_case_of_their_names()
     {
-        var number = new Value(new ScalarShape(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []);
-        var text = new Value(new ScalarShape(new IrScalar(IrScalarKind.String, null, "nvarchar(10)")), [new IrNullReason(IrNullRule.Variable, "@name")]);
+        var number = new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []);
+        var text = new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.String, null, "nvarchar(10)")), [new IrNullReason(IrNullRule.Variable, "@name")]);
 
         var a = FlowState.Start([new("@id", number), new("@name", text)]);
         var b = FlowState.Start([new("@NAME", text with { NullableBecause = [new IrNullReason(IrNullRule.Variable, "@name")] }), new("@Id", number)]);
@@ -162,7 +162,7 @@ public class ValueEqualityTests
     public void Call_contexts_compare_their_tables_by_value()
     {
         // The call cache is keyed by context: a context built again from equal tables must find the walk already made.
-        var column = new TempColumn("qty", new Value(new ScalarShape(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []), null);
+        var column = new TempColumn("qty", new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []), null);
         CallContext Context(string name) => CallContext.Top with { Temps = ImmutableDictionary.Create<string, TempTable>(StringComparer.OrdinalIgnoreCase).Add(name, new KnownTable("#lines", [column with { }])) };
 
         Assert.Equal(Context("#lines"), Context("#LINES"));
@@ -199,7 +199,7 @@ public class ValueEqualityTests
 
         public Shape Shape(int depth) => random.Next(depth == 0 ? 4 : 10) switch
         {
-            0 or 1 => new ScalarShape(Scalar()),
+            0 or 1 => ScalarShape.FromIr(Scalar()),
             2 => Unknown(),
             3 => random.Next(2) == 0 ? new NeverShape(Pick(Places)) : new RecursiveShape(new ObjectName("dbo", random.Next(2) == 0 ? "tree" : "Tree")),
             4 => new ArrayShape(Shape(depth - 1), ReasonList(), random.Next(2) == 0 ? null : 1, null),
@@ -213,7 +213,7 @@ public class ValueEqualityTests
         /// <summary>The shape with one fact changed, at the first place a walk down its first children reaches.</summary>
         public static Shape Changed(Shape shape) => shape switch
         {
-            ScalarShape scalar => new ScalarShape(scalar.Type with { Sql = scalar.Type.Sql + " changed" }),
+            ScalarShape scalar => ScalarShape.FromIr(scalar.Type with { Sql = scalar.Type.Sql + " changed" }),
             UnknownShape unknown => unknown with { Detail = unknown.Detail + " changed" },
             NeverShape never => never with { At = never.At with { Line = never.At.Line + 1 } },
             RecursiveShape => new RecursiveShape(new ObjectName("dbo", "other")),

@@ -53,7 +53,7 @@ internal sealed partial class ProcedureAnalyzer
             return null;
         return value.Shape switch
         {
-            ScalarShape { Type.Sql: var sql } => SqlTypes.Parse(sql),
+            ScalarShape { BuiltIn: var type } => type,
             JsonTextShape => new ScalarType(BuiltInType.NVarChar, -1),
             _ => null,
         };
@@ -76,7 +76,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>Whether the server may count an int's digits as a literal's or as its type's, depending on what it folds.</summary>
-    private static bool Uncertain(Value value) => value.Shape is ScalarShape { Type.Sql: var sql } && SqlTypes.Parse(sql)?.Type == BuiltInType.Int && !value.IsLiveJson && value.Digits.IsUncertain;
+    private static bool Uncertain(Value value) => value.Shape is ScalarShape { BuiltIn.Type: var type } && type == BuiltInType.Int && !value.IsLiveJson && value.Digits.IsUncertain;
 
     /// <summary>An integer literal, through parentheses and a sign.</summary>
     private static IntegerLiteral? IntegerLiteralOf(ScalarExpression expression) => Strip(expression) switch
@@ -542,11 +542,11 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private static EquatableArray<IrNullReason> Converting(Value value, Shape declared, SourceLocation at)
     {
-        if (value.Shape is UnknownShape || value.IsLiveJson || declared is not ScalarShape { Type.Sql: var sql } || SqlTypes.Parse(sql) is not { } to)
+        if (value.Shape is UnknownShape || value.IsLiveJson || declared is not ScalarShape { BuiltIn: { } to })
             return value.NullableBecause;
         var from = value.Shape switch
         {
-            ScalarShape { Type.Sql: var s } => SqlTypes.Parse(s),
+            ScalarShape { BuiltIn: var s } => s,
             JsonTextShape => new ScalarType(BuiltInType.NVarChar, -1),
             _ => null,
         };

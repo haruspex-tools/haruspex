@@ -190,7 +190,7 @@ internal sealed partial class ProcedureAnalyzer
         // made approximate, padded, cut short) brings only the column type's: so a range or a length widens to cover every
         // query, and is never narrower than the type's.
         Value value;
-        if (output.Count > 0 && output.All(c => c.Value.Shape is ScalarShape { Type.Sql: var sql } && sql == type.Text))
+        if (output.Count > 0 && output.All(c => c.Value.Shape is ScalarShape { BuiltIn: var own } && own == type))
         {
             value = output.Skip(1).Aggregate(output[0].Value, (a, b) => Value.Join(a, b.Value, at, "this set operation's column")) with { NullableBecause = reasons };
             if (value.Shape is UnknownShape)
@@ -201,7 +201,7 @@ internal sealed partial class ProcedureAnalyzer
             value = Typed(type, reasons, at);
             if (output.Count > 0 && value.Shape is ScalarShape typed)
             {
-                var each = output.Select(c => c.Value.Shape is ScalarShape { Type: var own } && SqlTypes.Parse(own.Sql) is { } from && Conversions.Preserves(Operand.OfType(from), type)
+                var each = output.Select(c => c.Value.Shape is ScalarShape { Type: var own, BuiltIn: { } from } && Conversions.Preserves(Operand.OfType(from), type)
                     ? own.Facets
                     : typed.Type.Facets).ToList();
                 value = value with { Shape = typed with { Type = typed.Type with { Facets = ScalarFacets.Widened(each, typed.Type.Facets) } } };
@@ -211,7 +211,7 @@ internal sealed partial class ProcedureAnalyzer
         // A set operation is not folded to a constant: an int column of one counts 10 digits (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal).
         return value.Shape is ScalarShape scalar
-            ? value with { Shape = scalar with { Type = scalar.Type with { Facets = WithValues(scalar.Type.Facets, SetValues(output, type, scalar.Type.Sql)) } }, Digits = IntDigits.OfType }
+            ? value with { Shape = scalar with { Type = scalar.Type with { Facets = WithValues(scalar.Type.Facets, SetValues(output, type)) } }, Digits = IntDigits.OfType }
             : value with { Digits = IntDigits.OfType };
     }
 
@@ -232,19 +232,19 @@ internal sealed partial class ProcedureAnalyzer
     /// so there only queries already of that type count. A UNION that removes duplicates under the collation keeps one of
     /// them, which is still one of the items.
     /// </summary>
-    private IrValueSet? SetValues(List<RowColumn> output, ScalarType type, string? sql)
+    private IrValueSet? SetValues(List<RowColumn> output, ScalarType type)
     {
         if (output.Count == 0)
             return null;
-        if (type.Type.IsAnyOf(BuiltInType.Char, BuiltInType.NChar) && output.Any(c => c.Value.Shape is not ScalarShape { Type.Sql: var own } || own != sql))
+        if (type.Type.IsAnyOf(BuiltInType.Char, BuiltInType.NChar) && output.Any(c => c.Value.Shape is not ScalarShape { BuiltIn: var own } || own != type))
             return null;
 
         var sets = new List<IrValueSet>();
         foreach (var column in output)
         {
-            var own = (column.Value.Shape as ScalarShape)?.Type;
-            var set = own?.Facets?.Values;
-            if (set is not null && !Keeps(set, SqlTypes.Parse(own!.Sql), type))
+            var own = column.Value.Shape as ScalarShape;
+            var set = own?.Type.Facets?.Values;
+            if (set is not null && !Keeps(set, own!.BuiltIn, type))
                 return null;
             set ??= column.Expression is { } expression ? LiteralSet([expression], type, expression) : null;
             if (set is null)

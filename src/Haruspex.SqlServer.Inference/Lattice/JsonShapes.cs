@@ -47,8 +47,8 @@ internal static class JsonShapes
                 return Items(a, b);
             case (ObjectShape x, ObjectShape y) when Objects(x, y) is { } joined:
                 return joined;
-            case (ScalarShape { Type: var x }, ScalarShape { Type: var y }) when x.Kind == y.Kind && x.Format == y.Format && x.Sql == y.Sql:
-                return new ScalarShape(x with { Facets = ScalarFacets.Join(x.Facets, y.Facets) });
+            case (ScalarShape x, ScalarShape y) when x.SameType(y):
+                return x.WithFacets(ScalarFacets.Join(x.Type.Facets, y.Type.Facets));
             case (RecordShape x, RecordShape y):
                 return new RecordShape(Join(x.Values, y.Values), NullReasons.Join(x.ValuesNullableBecause, y.ValuesNullableBecause));
         }
@@ -146,7 +146,7 @@ internal static class JsonShapes
     private static bool Mergeable(Shape a, Shape b) =>
         (a is TupleShape or ArrayShape && b is TupleShape or ArrayShape) || a == b || (a is RecordShape && b is RecordShape)
         || (a is ObjectShape x && b is ObjectShape y && Objects(x, y) is not null)
-        || (a is ScalarShape { Type: var s } && b is ScalarShape { Type: var t } && s.Kind == t.Kind && s.Format == t.Format && s.Sql == t.Sql);
+        || (a is ScalarShape s && b is ScalarShape t && s.SameType(t));
 
     /// <summary>
     /// Two objects with the same keys in the same order, each present the same way, key by key; null otherwise, and a union of

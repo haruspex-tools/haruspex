@@ -261,7 +261,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         if (LiteralOf(expression) is ({ } literal and IntegerLiteral, var negative))
             return !negative && long.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n >= 1 && n <= count;
-        if (index.Shape is not ScalarShape { Type: { Sql: var sql, Facets: { Min: { } min, Max: { } max } } } || SqlTypes.Parse(sql) is not { IsInteger: true })
+        if (index.Shape is not ScalarShape { Type.Facets: { Min: { } min, Max: { } max }, BuiltIn.IsInteger: true })
             return false;
         if (!ExactDecimal.TryParse(min.Value, out var low) || !ExactDecimal.TryParse(max.Value, out var high))
             return false;

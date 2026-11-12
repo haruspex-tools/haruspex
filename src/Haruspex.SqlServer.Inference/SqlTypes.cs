@@ -77,8 +77,8 @@ internal static class SqlTypes
     /// <summary>The type, when inference gives a value of it as a scalar; otherwise null, which the caller makes unknown.</summary>
     public static ScalarType? Modelled(ScalarType? type) => type is not null && IsModelled(type.Type) ? type : null;
 
-    /// <summary>Whether an IR scalar's SQL text names <c>nvarchar(max)</c>, which holds any JSON text unchanged.</summary>
-    public static bool IsNVarCharMax(string? sql) => Parse(sql) is { IsMax: true } type && type.Type == BuiltInType.NVarChar;
+    /// <summary>Whether a scalar is <c>nvarchar(max)</c>, which holds any JSON text unchanged.</summary>
+    public static bool IsNVarCharMax(ScalarShape scalar) => scalar.BuiltIn is { IsMax: true } type && type.Type == BuiltInType.NVarChar;
 
     /// <summary>The type an IR scalar's SQL text names, when inference models it: <c>decimal(19,2)</c>.</summary>
     public static ScalarType? Parse(string? sql) => Modelled(ScalarType.Parse(sql));
@@ -94,7 +94,7 @@ internal static class SqlTypes
             return new JsonTextShape();
         if (type is null || !Scalars.TryGetValue(type, out var scalar))
             return new UnknownShape(IrUnknownReason.UnsupportedSqlType, $"The type {text} is not modelled yet.", at);
-        return new ScalarShape(new IrScalar(scalar.Kind, scalar.Format, text, withFacets ? Facets(facts) : null));
+        return new ScalarShape(new IrScalar(scalar.Kind, scalar.Format, text, withFacets ? Facets(facts) : null), facts.Type.Scalar);
     }
 
     private static UnknownShape Unsupported(SqlType? type, SourceLocation at) =>

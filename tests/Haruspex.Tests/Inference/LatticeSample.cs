@@ -71,9 +71,9 @@ internal sealed class LatticeSample(int seed)
 
     public ScalarShape Scalar() => random.Next(3) switch
     {
-        0 => new ScalarShape(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int", NumberFacets())),
-        1 => new ScalarShape(new IrScalar(IrScalarKind.String, null, "nvarchar(10)", StringFacets())),
-        _ => new ScalarShape(new IrScalar(IrScalarKind.String, null, "nvarchar(max)")),
+        0 => ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int", NumberFacets())),
+        1 => ScalarShape.FromIr(new IrScalar(IrScalarKind.String, null, "nvarchar(10)", StringFacets())),
+        _ => ScalarShape.FromIr(new IrScalar(IrScalarKind.String, null, "nvarchar(max)")),
     };
 
     public UnknownShape Unknown() =>

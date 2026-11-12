@@ -34,7 +34,7 @@ public class FixedPointTests
     {
         // The state is kept on the left of the join, so a pass that gives its reasons in another order adds nothing, and the
         // record comes back the same: the iteration stops on structural equality without reaching the cap.
-        var number = new ScalarShape(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int"));
+        var number = ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int"));
         IrNullReason first = new(IrNullRule.Variable, "@a"), second = new(IrNullRule.NullableColumn, "dbo.t.b");
         var start = Value.Computed(number, [first]);
         var passes = 0;

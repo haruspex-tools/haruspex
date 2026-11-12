@@ -57,6 +57,11 @@ what Semantics reads a column's facts from (`SchemaRules.TypeFacts`) and what In
 read one copy. `BuiltInType.Named` is the only place a type's name is compared as a string; everything else compares
 catalogue entries.
 
+A value carries its `ScalarType` beside what the IR says of it (`ScalarShape.BuiltIn`), and the rules read that. The IR's
+`sql` is the type as the source wrote it, for people (`decimal`, where the server describes `decimal(18,0)`), so it is never
+read back, except where a scalar comes in from the IR itself, a declared result's (`ScalarShape.FromIr`). Two values are of
+one type when their `ScalarType` records are equal (`ScalarShape.SameType`), whatever text they were declared with.
+
 **Every type, modelled or not.** The catalogue lists the types haruspex doesn't type a value of (`xml`, `sql_variant`, the
 binary types), because what isn't modelled should be listed rather than found by accident. Which ones Inference models is its
 own table, `SqlTypes`, keyed by the catalogue: what each is in the IR. A type outside that table reaches the IR as unknown,

@@ -32,7 +32,7 @@ internal static class IrShapes
         switch (type)
         {
             case IrScalar scalar:
-                return new ScalarShape(scalar);
+                return ScalarShape.FromIr(scalar);
             case IrArray array:
                 return new ArrayShape(Of(array.Items), array.ItemsNullableBecause, array.MinItems, array.MaxItems);
             case IrTuple tuple:

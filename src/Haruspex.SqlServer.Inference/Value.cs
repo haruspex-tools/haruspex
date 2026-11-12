@@ -133,15 +133,15 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
             {
                 case (JsonTextShape x, JsonTextShape y):
                     return (new JsonTextShape(x.Content is null || y.Content is null ? null : JsonShapes.Join(x.Content, y.Content)), false, null);
-                case (JsonTextShape, ScalarShape text) when SqlTypes.IsNVarCharMax(text.Type.Sql):
-                    return (new ScalarShape(text.Type with { Facets = ScalarFacets.TypeOnly(text.Type.Facets) }), false, NotJson(at, what));
-                case (ScalarShape text, JsonTextShape) when SqlTypes.IsNVarCharMax(text.Type.Sql):
-                    return (new ScalarShape(text.Type with { Facets = ScalarFacets.TypeOnly(text.Type.Facets) }), false, NotJson(at, what));
+                case (JsonTextShape, ScalarShape text) when SqlTypes.IsNVarCharMax(text):
+                    return (text.WithFacets(ScalarFacets.TypeOnly(text.Type.Facets)), false, NotJson(at, what));
+                case (ScalarShape text, JsonTextShape) when SqlTypes.IsNVarCharMax(text):
+                    return (text.WithFacets(ScalarFacets.TypeOnly(text.Type.Facets)), false, NotJson(at, what));
             }
         }
 
-        if (a.IsLiveJson == b.IsLiveJson && a.Shape is ScalarShape { Type: var s } && b.Shape is ScalarShape { Type: var t } && SameType(s, t))
-            return (new ScalarShape(s with { Facets = ScalarFacets.Join(s.Facets, t.Facets) }), a.IsLiveJson, null);
+        if (a.IsLiveJson == b.IsLiveJson && a.Shape is ScalarShape s && b.Shape is ScalarShape t && s.SameType(t))
+            return (s.WithFacets(ScalarFacets.Join(s.Type.Facets, t.Type.Facets)), a.IsLiveJson, null);
 
         return (new UnknownShape(IrUnknownReason.UnsupportedExpression, $"{what} holds values of different shapes on different paths, which are not joined yet.", at), false, null);
     }
@@ -161,8 +161,8 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     public static Value JoinConverted(Value typed, Value other, SourceLocation at, string what)
     {
         var converted = typed.Shape is ScalarShape scalar && !typed.IsLiveJson
-            && !(other.Shape is ScalarShape { Type: var o } && !other.IsLiveJson && SameType(scalar.Type, o))
-            ? new Value(new ScalarShape(scalar.Type with { Facets = ScalarFacets.TypeOnly(scalar.Type.Facets) }), other.NullableBecause)
+            && !(other.Shape is ScalarShape o && !other.IsLiveJson && scalar.SameType(o))
+            ? new Value(scalar.WithFacets(ScalarFacets.TypeOnly(scalar.Type.Facets)), other.NullableBecause)
             : other;
         return Join(typed, converted, at, what) with { Digits = IntDigits.OfType };
     }
@@ -200,7 +200,7 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
             return false;
         return (a.Shape, b.Shape) switch
         {
-            (JsonTextShape, ScalarShape { Type: var text }) when SqlTypes.IsNVarCharMax(text.Sql) => !a.IsLiveJson && ScalarFacets.Same(text.Facets, ScalarFacets.TypeOnly(text.Facets)),
+            (JsonTextShape, ScalarShape { Type: var text } shape) when SqlTypes.IsNVarCharMax(shape) => !a.IsLiveJson && ScalarFacets.Same(text.Facets, ScalarFacets.TypeOnly(text.Facets)),
             _ => JsonShapes.Below(a.Shape, b.Shape),
         };
     }
@@ -216,5 +216,4 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     private static EquatableArray<IrNullReason> WithUnknown(EquatableArray<IrNullReason> because, UnknownShape unknown) =>
         NullReasons.Join(because, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]);
 
-    private static bool SameType(IrScalar a, IrScalar b) => a.Kind == b.Kind && a.Format == b.Format && a.Sql == b.Sql;
 }
