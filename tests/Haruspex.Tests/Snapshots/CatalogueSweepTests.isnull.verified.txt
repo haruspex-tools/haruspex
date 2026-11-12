@@ -1,0 +1,1444 @@
+ISNULL(bt, bt) -> bit boolean
+ISNULL(bt, ti) -> bit boolean
+ISNULL(bt, si) -> bit boolean
+ISNULL(bt, i) -> bit boolean
+ISNULL(bt, bi) -> bit boolean
+ISNULL(bt, d52) -> bit boolean
+ISNULL(bt, d380) -> bit boolean
+ISNULL(bt, d3838) -> bit boolean
+ISNULL(bt, n102) -> bit boolean
+ISNULL(bt, m) -> bit boolean
+ISNULL(bt, sm) -> bit boolean
+ISNULL(bt, f) -> bit boolean
+ISNULL(bt, r) -> bit boolean
+ISNULL(bt, c3) -> bit boolean
+ISNULL(bt, v10) -> bit boolean
+ISNULL(bt, vx) -> bit boolean
+ISNULL(bt, nc3) -> bit boolean
+ISNULL(bt, nv10) -> bit boolean
+ISNULL(bt, nvx) -> bit boolean
+ISNULL(bt, dt) -> bit boolean
+ISNULL(bt, tm3) -> bit boolean
+ISNULL(bt, dtm) -> bit boolean
+ISNULL(bt, dt23) -> bit boolean
+ISNULL(bt, sdt) -> bit boolean
+ISNULL(bt, dto3) -> bit boolean
+ISNULL(bt, u) -> bit boolean
+ISNULL(bt, bin4) -> bit boolean
+ISNULL(bt, vb10) -> bit boolean
+ISNULL(bt, x) -> bit boolean
+ISNULL(bt, sv) -> bit boolean
+ISNULL(bt, j) -> bit boolean
+ISNULL(bt, 1) -> bit boolean
+ISNULL(bt, 12345) -> bit boolean
+ISNULL(bt, 2.50) -> bit boolean
+ISNULL(bt, 'ab') -> bit boolean
+ISNULL(bt, N'ab') -> bit boolean
+ISNULL(bt, 1e0) -> bit boolean
+ISNULL(bt, $1) -> bit boolean
+ISNULL(ti, bt) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, ti) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, si) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, i) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, bi) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, d52) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, d380) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, d3838) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, n102) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, m) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, sm) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, f) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, r) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, c3) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, v10) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, vx) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, nc3) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, nv10) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, nvx) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, dt) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, tm3) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, dtm) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, dt23) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, sdt) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, dto3) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, u) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, bin4) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, vb10) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, x) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, sv) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, j) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, 1) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, 12345) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, 2.50) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, 'ab') -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, N'ab') -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, 1e0) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, $1) -> tinyint number/uint8 {[0 255]}
+ISNULL(si, bt) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, ti) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, si) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, i) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, bi) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, d52) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, d380) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, d3838) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, n102) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, m) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, sm) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, f) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, r) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, c3) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, v10) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, vx) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, nc3) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, nv10) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, nvx) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, dt) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, tm3) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, dtm) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, dt23) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, sdt) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, dto3) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, u) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, bin4) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, vb10) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, x) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, sv) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, j) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, 1) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, 12345) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, 2.50) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, 'ab') -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, N'ab') -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, 1e0) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, $1) -> smallint number/int16 {[-32768 32767]}
+ISNULL(i, bt) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, ti) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, si) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, i) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, bi) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, d52) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, d380) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, d3838) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, n102) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, m) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, sm) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, f) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, r) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, c3) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, v10) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, vx) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, nc3) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, nv10) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, nvx) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, dt) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, tm3) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, dtm) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, dt23) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, sdt) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, dto3) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, u) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, bin4) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, vb10) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, x) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, sv) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, j) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, 1) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, 12345) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, 2.50) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, 'ab') -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, N'ab') -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, 1e0) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, $1) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(bi, bt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, ti) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, si) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, i) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, bi) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, d52) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, d380) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, d3838) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, n102) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, m) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, sm) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, f) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, r) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, c3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, v10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, vx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, nc3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, nv10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, nvx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, dt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, tm3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, dtm) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, dt23) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, sdt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, dto3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, u) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, bin4) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, vb10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, x) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, sv) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, j) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, 1) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, 12345) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, 2.50) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, 'ab') -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, N'ab') -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, 1e0) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, $1) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(d52, bt) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, ti) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, si) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, i) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, bi) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, d52) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, d380) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, d3838) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, n102) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, m) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, sm) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, f) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, r) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, c3) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, v10) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, vx) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, nc3) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, nv10) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, nvx) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, dt) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, tm3) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, dtm) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, dt23) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, sdt) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, dto3) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, u) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, bin4) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, vb10) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, x) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, sv) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, j) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, 1) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, 12345) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, 2.50) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, 'ab') -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, N'ab') -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, 1e0) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, $1) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d380, bt) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, ti) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, si) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, i) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, bi) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, d52) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, d380) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, d3838) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, n102) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, m) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, sm) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, f) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, r) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, c3) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, v10) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, vx) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, nc3) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, nv10) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, nvx) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, dt) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, tm3) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, dtm) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, dt23) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, sdt) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, dto3) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, u) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, bin4) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, vb10) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, x) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, sv) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, j) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, 1) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, 12345) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, 2.50) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, 'ab') -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, N'ab') -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, 1e0) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, $1) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d3838, bt) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, ti) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, si) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, i) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, bi) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, d52) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, d380) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, d3838) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, n102) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, m) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, sm) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, f) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, r) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, c3) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, v10) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, vx) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, nc3) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, nv10) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, nvx) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, dt) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, tm3) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, dtm) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, dt23) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, sdt) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, dto3) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, u) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, bin4) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, vb10) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, x) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, sv) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, j) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, 1) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, 12345) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, 2.50) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, 'ab') -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, N'ab') -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, 1e0) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, $1) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(n102, bt) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, ti) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, si) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, i) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, bi) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, d52) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, d380) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, d3838) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, n102) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, m) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, sm) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, f) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, r) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, c3) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, v10) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, vx) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, nc3) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, nv10) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, nvx) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, dt) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, tm3) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, dtm) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, dt23) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, sdt) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, dto3) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, u) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, bin4) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, vb10) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, x) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, sv) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, j) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, 1) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, 12345) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, 2.50) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, 'ab') -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, N'ab') -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, 1e0) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, $1) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(m, bt) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, ti) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, si) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, i) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, bi) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, d52) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, d380) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, d3838) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, n102) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, m) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, sm) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, f) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, r) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, c3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, v10) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, vx) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, nc3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, nv10) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, nvx) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, dt) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, tm3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, dtm) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, dt23) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, sdt) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, dto3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, u) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, bin4) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, vb10) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, x) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, sv) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, j) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, 1) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, 12345) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, 2.50) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, 'ab') -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, N'ab') -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, 1e0) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, $1) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(sm, bt) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, ti) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, si) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, i) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, bi) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, d52) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, d380) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, d3838) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, n102) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, m) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, sm) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, f) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, r) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, c3) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, v10) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, vx) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, nc3) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, nv10) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, nvx) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, dt) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, tm3) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, dtm) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, dt23) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, sdt) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, dto3) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, u) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, bin4) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, vb10) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, x) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, sv) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, j) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, 1) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, 12345) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, 2.50) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, 'ab') -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, N'ab') -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, 1e0) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, $1) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(f, bt) -> float number/float
+ISNULL(f, ti) -> float number/float
+ISNULL(f, si) -> float number/float
+ISNULL(f, i) -> float number/float
+ISNULL(f, bi) -> float number/float
+ISNULL(f, d52) -> float number/float
+ISNULL(f, d380) -> float number/float
+ISNULL(f, d3838) -> float number/float
+ISNULL(f, n102) -> float number/float
+ISNULL(f, m) -> float number/float
+ISNULL(f, sm) -> float number/float
+ISNULL(f, f) -> float number/float
+ISNULL(f, r) -> float number/float
+ISNULL(f, c3) -> float number/float
+ISNULL(f, v10) -> float number/float
+ISNULL(f, vx) -> float number/float
+ISNULL(f, nc3) -> float number/float
+ISNULL(f, nv10) -> float number/float
+ISNULL(f, nvx) -> float number/float
+ISNULL(f, dt) -> float number/float
+ISNULL(f, tm3) -> float number/float
+ISNULL(f, dtm) -> float number/float
+ISNULL(f, dt23) -> float number/float
+ISNULL(f, sdt) -> float number/float
+ISNULL(f, dto3) -> float number/float
+ISNULL(f, u) -> float number/float
+ISNULL(f, bin4) -> float number/float
+ISNULL(f, vb10) -> float number/float
+ISNULL(f, x) -> float number/float
+ISNULL(f, sv) -> float number/float
+ISNULL(f, j) -> float number/float
+ISNULL(f, 1) -> float number/float
+ISNULL(f, 12345) -> float number/float
+ISNULL(f, 2.50) -> float number/float
+ISNULL(f, 'ab') -> float number/float
+ISNULL(f, N'ab') -> float number/float
+ISNULL(f, 1e0) -> float number/float
+ISNULL(f, $1) -> float number/float
+ISNULL(r, bt) -> real number/float
+ISNULL(r, ti) -> real number/float
+ISNULL(r, si) -> real number/float
+ISNULL(r, i) -> real number/float
+ISNULL(r, bi) -> real number/float
+ISNULL(r, d52) -> real number/float
+ISNULL(r, d380) -> real number/float
+ISNULL(r, d3838) -> real number/float
+ISNULL(r, n102) -> real number/float
+ISNULL(r, m) -> real number/float
+ISNULL(r, sm) -> real number/float
+ISNULL(r, f) -> real number/float
+ISNULL(r, r) -> real number/float
+ISNULL(r, c3) -> real number/float
+ISNULL(r, v10) -> real number/float
+ISNULL(r, vx) -> real number/float
+ISNULL(r, nc3) -> real number/float
+ISNULL(r, nv10) -> real number/float
+ISNULL(r, nvx) -> real number/float
+ISNULL(r, dt) -> real number/float
+ISNULL(r, tm3) -> real number/float
+ISNULL(r, dtm) -> real number/float
+ISNULL(r, dt23) -> real number/float
+ISNULL(r, sdt) -> real number/float
+ISNULL(r, dto3) -> real number/float
+ISNULL(r, u) -> real number/float
+ISNULL(r, bin4) -> real number/float
+ISNULL(r, vb10) -> real number/float
+ISNULL(r, x) -> real number/float
+ISNULL(r, sv) -> real number/float
+ISNULL(r, j) -> real number/float
+ISNULL(r, 1) -> real number/float
+ISNULL(r, 12345) -> real number/float
+ISNULL(r, 2.50) -> real number/float
+ISNULL(r, 'ab') -> real number/float
+ISNULL(r, N'ab') -> real number/float
+ISNULL(r, 1e0) -> real number/float
+ISNULL(r, $1) -> real number/float
+ISNULL(c3, bt) -> char(3) string {length=3}
+ISNULL(c3, ti) -> char(3) string {length=3}
+ISNULL(c3, si) -> char(3) string {length=3}
+ISNULL(c3, i) -> char(3) string {length=3}
+ISNULL(c3, bi) -> char(3) string {length=3}
+ISNULL(c3, d52) -> char(3) string {length=3}
+ISNULL(c3, d380) -> char(3) string {length=3}
+ISNULL(c3, d3838) -> char(3) string {length=3}
+ISNULL(c3, n102) -> char(3) string {length=3}
+ISNULL(c3, m) -> char(3) string {length=3}
+ISNULL(c3, sm) -> char(3) string {length=3}
+ISNULL(c3, f) -> char(3) string {length=3}
+ISNULL(c3, r) -> char(3) string {length=3}
+ISNULL(c3, c3) -> char(3) string {length=3}
+ISNULL(c3, v10) -> char(3) string {length=3}
+ISNULL(c3, vx) -> char(3) string {length=3}
+ISNULL(c3, nc3) -> char(3) string {length=3}
+ISNULL(c3, nv10) -> char(3) string {length=3}
+ISNULL(c3, nvx) -> char(3) string {length=3}
+ISNULL(c3, dt) -> char(3) string {length=3}
+ISNULL(c3, tm3) -> char(3) string {length=3}
+ISNULL(c3, dtm) -> char(3) string {length=3}
+ISNULL(c3, dt23) -> char(3) string {length=3}
+ISNULL(c3, sdt) -> char(3) string {length=3}
+ISNULL(c3, dto3) -> char(3) string {length=3}
+ISNULL(c3, u) -> char(3) string {length=3}
+ISNULL(c3, bin4) -> char(3) string {length=3}
+ISNULL(c3, vb10) -> char(3) string {length=3}
+ISNULL(c3, x) -> char(3) string {length=3}
+ISNULL(c3, sv) -> char(3) string {length=3}
+ISNULL(c3, j) -> char(3) string {length=3}
+ISNULL(c3, 1) -> char(3) string {length=3}
+ISNULL(c3, 12345) -> char(3) string {length=3}
+ISNULL(c3, 2.50) -> char(3) string {length=3}
+ISNULL(c3, 'ab') -> char(3) string {length=3}
+ISNULL(c3, N'ab') -> char(3) string {length=3}
+ISNULL(c3, 1e0) -> char(3) string {length=3}
+ISNULL(c3, $1) -> char(3) string {length=3}
+ISNULL(v10, bt) -> varchar(10) string {length<=10}
+ISNULL(v10, ti) -> varchar(10) string {length<=10}
+ISNULL(v10, si) -> varchar(10) string {length<=10}
+ISNULL(v10, i) -> varchar(10) string {length<=10}
+ISNULL(v10, bi) -> varchar(10) string {length<=10}
+ISNULL(v10, d52) -> varchar(10) string {length<=10}
+ISNULL(v10, d380) -> varchar(10) string {length<=10}
+ISNULL(v10, d3838) -> varchar(10) string {length<=10}
+ISNULL(v10, n102) -> varchar(10) string {length<=10}
+ISNULL(v10, m) -> varchar(10) string {length<=10}
+ISNULL(v10, sm) -> varchar(10) string {length<=10}
+ISNULL(v10, f) -> varchar(10) string {length<=10}
+ISNULL(v10, r) -> varchar(10) string {length<=10}
+ISNULL(v10, c3) -> varchar(10) string {length<=10}
+ISNULL(v10, v10) -> varchar(10) string {length<=10}
+ISNULL(v10, vx) -> varchar(10) string {length<=10}
+ISNULL(v10, nc3) -> varchar(10) string {length<=10}
+ISNULL(v10, nv10) -> varchar(10) string {length<=10}
+ISNULL(v10, nvx) -> varchar(10) string {length<=10}
+ISNULL(v10, dt) -> varchar(10) string {length<=10}
+ISNULL(v10, tm3) -> varchar(10) string {length<=10}
+ISNULL(v10, dtm) -> varchar(10) string {length<=10}
+ISNULL(v10, dt23) -> varchar(10) string {length<=10}
+ISNULL(v10, sdt) -> varchar(10) string {length<=10}
+ISNULL(v10, dto3) -> varchar(10) string {length<=10}
+ISNULL(v10, u) -> varchar(10) string {length<=10}
+ISNULL(v10, bin4) -> varchar(10) string {length<=10}
+ISNULL(v10, vb10) -> varchar(10) string {length<=10}
+ISNULL(v10, x) -> varchar(10) string {length<=10}
+ISNULL(v10, sv) -> varchar(10) string {length<=10}
+ISNULL(v10, j) -> varchar(10) string {length<=10}
+ISNULL(v10, 1) -> varchar(10) string {length<=10}
+ISNULL(v10, 12345) -> varchar(10) string {length<=10}
+ISNULL(v10, 2.50) -> varchar(10) string {length<=10}
+ISNULL(v10, 'ab') -> varchar(10) string {length<=10}
+ISNULL(v10, N'ab') -> varchar(10) string {length<=10}
+ISNULL(v10, 1e0) -> varchar(10) string {length<=10}
+ISNULL(v10, $1) -> varchar(10) string {length<=10}
+ISNULL(vx, bt) -> varchar(max) string
+ISNULL(vx, ti) -> varchar(max) string
+ISNULL(vx, si) -> varchar(max) string
+ISNULL(vx, i) -> varchar(max) string
+ISNULL(vx, bi) -> varchar(max) string
+ISNULL(vx, d52) -> varchar(max) string
+ISNULL(vx, d380) -> varchar(max) string
+ISNULL(vx, d3838) -> varchar(max) string
+ISNULL(vx, n102) -> varchar(max) string
+ISNULL(vx, m) -> varchar(max) string
+ISNULL(vx, sm) -> varchar(max) string
+ISNULL(vx, f) -> varchar(max) string
+ISNULL(vx, r) -> varchar(max) string
+ISNULL(vx, c3) -> varchar(max) string
+ISNULL(vx, v10) -> varchar(max) string
+ISNULL(vx, vx) -> varchar(max) string
+ISNULL(vx, nc3) -> varchar(max) string
+ISNULL(vx, nv10) -> varchar(max) string
+ISNULL(vx, nvx) -> varchar(max) string
+ISNULL(vx, dt) -> varchar(max) string
+ISNULL(vx, tm3) -> varchar(max) string
+ISNULL(vx, dtm) -> varchar(max) string
+ISNULL(vx, dt23) -> varchar(max) string
+ISNULL(vx, sdt) -> varchar(max) string
+ISNULL(vx, dto3) -> varchar(max) string
+ISNULL(vx, u) -> varchar(max) string
+ISNULL(vx, bin4) -> varchar(max) string
+ISNULL(vx, vb10) -> varchar(max) string
+ISNULL(vx, x) -> varchar(max) string
+ISNULL(vx, sv) -> varchar(max) string
+ISNULL(vx, j) -> varchar(max) string
+ISNULL(vx, 1) -> varchar(max) string
+ISNULL(vx, 12345) -> varchar(max) string
+ISNULL(vx, 2.50) -> varchar(max) string
+ISNULL(vx, 'ab') -> varchar(max) string
+ISNULL(vx, N'ab') -> varchar(max) string
+ISNULL(vx, 1e0) -> varchar(max) string
+ISNULL(vx, $1) -> varchar(max) string
+ISNULL(nc3, bt) -> nchar(3) string {length=3}
+ISNULL(nc3, ti) -> nchar(3) string {length=3}
+ISNULL(nc3, si) -> nchar(3) string {length=3}
+ISNULL(nc3, i) -> nchar(3) string {length=3}
+ISNULL(nc3, bi) -> nchar(3) string {length=3}
+ISNULL(nc3, d52) -> nchar(3) string {length=3}
+ISNULL(nc3, d380) -> nchar(3) string {length=3}
+ISNULL(nc3, d3838) -> nchar(3) string {length=3}
+ISNULL(nc3, n102) -> nchar(3) string {length=3}
+ISNULL(nc3, m) -> nchar(3) string {length=3}
+ISNULL(nc3, sm) -> nchar(3) string {length=3}
+ISNULL(nc3, f) -> nchar(3) string {length=3}
+ISNULL(nc3, r) -> nchar(3) string {length=3}
+ISNULL(nc3, c3) -> nchar(3) string {length=3}
+ISNULL(nc3, v10) -> nchar(3) string {length=3}
+ISNULL(nc3, vx) -> nchar(3) string {length=3}
+ISNULL(nc3, nc3) -> nchar(3) string {length=3}
+ISNULL(nc3, nv10) -> nchar(3) string {length=3}
+ISNULL(nc3, nvx) -> nchar(3) string {length=3}
+ISNULL(nc3, dt) -> nchar(3) string {length=3}
+ISNULL(nc3, tm3) -> nchar(3) string {length=3}
+ISNULL(nc3, dtm) -> nchar(3) string {length=3}
+ISNULL(nc3, dt23) -> nchar(3) string {length=3}
+ISNULL(nc3, sdt) -> nchar(3) string {length=3}
+ISNULL(nc3, dto3) -> nchar(3) string {length=3}
+ISNULL(nc3, u) -> nchar(3) string {length=3}
+ISNULL(nc3, bin4) -> nchar(3) string {length=3}
+ISNULL(nc3, vb10) -> nchar(3) string {length=3}
+ISNULL(nc3, x) -> nchar(3) string {length=3}
+ISNULL(nc3, sv) -> nchar(3) string {length=3}
+ISNULL(nc3, j) -> nchar(3) string {length=3}
+ISNULL(nc3, 1) -> nchar(3) string {length=3}
+ISNULL(nc3, 12345) -> nchar(3) string {length=3}
+ISNULL(nc3, 2.50) -> nchar(3) string {length=3}
+ISNULL(nc3, 'ab') -> nchar(3) string {length=3}
+ISNULL(nc3, N'ab') -> nchar(3) string {length=3}
+ISNULL(nc3, 1e0) -> nchar(3) string {length=3}
+ISNULL(nc3, $1) -> nchar(3) string {length=3}
+ISNULL(nv10, bt) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, ti) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, si) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, i) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, bi) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, d52) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, d380) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, d3838) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, n102) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, m) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, sm) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, f) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, r) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, c3) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, v10) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, vx) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, nc3) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, nv10) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, nvx) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, dt) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, tm3) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, dtm) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, dt23) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, sdt) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, dto3) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, u) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, bin4) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, vb10) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, x) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, sv) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, j) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, 1) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, 12345) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, 2.50) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, 'ab') -> nvarchar(10) string {length<=10}
+ISNULL(nv10, N'ab') -> nvarchar(10) string {length<=10}
+ISNULL(nv10, 1e0) -> nvarchar(10) string {length<=10}
+ISNULL(nv10, $1) -> nvarchar(10) string {length<=10}
+ISNULL(nvx, bt) -> nvarchar(max) string
+ISNULL(nvx, ti) -> nvarchar(max) string
+ISNULL(nvx, si) -> nvarchar(max) string
+ISNULL(nvx, i) -> nvarchar(max) string
+ISNULL(nvx, bi) -> nvarchar(max) string
+ISNULL(nvx, d52) -> nvarchar(max) string
+ISNULL(nvx, d380) -> nvarchar(max) string
+ISNULL(nvx, d3838) -> nvarchar(max) string
+ISNULL(nvx, n102) -> nvarchar(max) string
+ISNULL(nvx, m) -> nvarchar(max) string
+ISNULL(nvx, sm) -> nvarchar(max) string
+ISNULL(nvx, f) -> nvarchar(max) string
+ISNULL(nvx, r) -> nvarchar(max) string
+ISNULL(nvx, c3) -> nvarchar(max) string
+ISNULL(nvx, v10) -> nvarchar(max) string
+ISNULL(nvx, vx) -> nvarchar(max) string
+ISNULL(nvx, nc3) -> nvarchar(max) string
+ISNULL(nvx, nv10) -> nvarchar(max) string
+ISNULL(nvx, nvx) -> nvarchar(max) string
+ISNULL(nvx, dt) -> nvarchar(max) string
+ISNULL(nvx, tm3) -> nvarchar(max) string
+ISNULL(nvx, dtm) -> nvarchar(max) string
+ISNULL(nvx, dt23) -> nvarchar(max) string
+ISNULL(nvx, sdt) -> nvarchar(max) string
+ISNULL(nvx, dto3) -> nvarchar(max) string
+ISNULL(nvx, u) -> nvarchar(max) string
+ISNULL(nvx, bin4) -> nvarchar(max) string
+ISNULL(nvx, vb10) -> nvarchar(max) string
+ISNULL(nvx, x) -> nvarchar(max) string
+ISNULL(nvx, sv) -> nvarchar(max) string
+ISNULL(nvx, j) -> nvarchar(max) string
+ISNULL(nvx, 1) -> nvarchar(max) string
+ISNULL(nvx, 12345) -> nvarchar(max) string
+ISNULL(nvx, 2.50) -> nvarchar(max) string
+ISNULL(nvx, 'ab') -> nvarchar(max) string
+ISNULL(nvx, N'ab') -> nvarchar(max) string
+ISNULL(nvx, 1e0) -> nvarchar(max) string
+ISNULL(nvx, $1) -> nvarchar(max) string
+ISNULL(dt, bt) -> date date
+ISNULL(dt, ti) -> date date
+ISNULL(dt, si) -> date date
+ISNULL(dt, i) -> date date
+ISNULL(dt, bi) -> date date
+ISNULL(dt, d52) -> date date
+ISNULL(dt, d380) -> date date
+ISNULL(dt, d3838) -> date date
+ISNULL(dt, n102) -> date date
+ISNULL(dt, m) -> date date
+ISNULL(dt, sm) -> date date
+ISNULL(dt, f) -> date date
+ISNULL(dt, r) -> date date
+ISNULL(dt, c3) -> date date
+ISNULL(dt, v10) -> date date
+ISNULL(dt, vx) -> date date
+ISNULL(dt, nc3) -> date date
+ISNULL(dt, nv10) -> date date
+ISNULL(dt, nvx) -> date date
+ISNULL(dt, dt) -> date date
+ISNULL(dt, tm3) -> date date
+ISNULL(dt, dtm) -> date date
+ISNULL(dt, dt23) -> date date
+ISNULL(dt, sdt) -> date date
+ISNULL(dt, dto3) -> date date
+ISNULL(dt, u) -> date date
+ISNULL(dt, bin4) -> date date
+ISNULL(dt, vb10) -> date date
+ISNULL(dt, x) -> date date
+ISNULL(dt, sv) -> date date
+ISNULL(dt, j) -> date date
+ISNULL(dt, 1) -> date date
+ISNULL(dt, 12345) -> date date
+ISNULL(dt, 2.50) -> date date
+ISNULL(dt, 'ab') -> date date
+ISNULL(dt, N'ab') -> date date
+ISNULL(dt, 1e0) -> date date
+ISNULL(dt, $1) -> date date
+ISNULL(tm3, bt) -> time(3) time
+ISNULL(tm3, ti) -> time(3) time
+ISNULL(tm3, si) -> time(3) time
+ISNULL(tm3, i) -> time(3) time
+ISNULL(tm3, bi) -> time(3) time
+ISNULL(tm3, d52) -> time(3) time
+ISNULL(tm3, d380) -> time(3) time
+ISNULL(tm3, d3838) -> time(3) time
+ISNULL(tm3, n102) -> time(3) time
+ISNULL(tm3, m) -> time(3) time
+ISNULL(tm3, sm) -> time(3) time
+ISNULL(tm3, f) -> time(3) time
+ISNULL(tm3, r) -> time(3) time
+ISNULL(tm3, c3) -> time(3) time
+ISNULL(tm3, v10) -> time(3) time
+ISNULL(tm3, vx) -> time(3) time
+ISNULL(tm3, nc3) -> time(3) time
+ISNULL(tm3, nv10) -> time(3) time
+ISNULL(tm3, nvx) -> time(3) time
+ISNULL(tm3, dt) -> time(3) time
+ISNULL(tm3, tm3) -> time(3) time
+ISNULL(tm3, dtm) -> time(3) time
+ISNULL(tm3, dt23) -> time(3) time
+ISNULL(tm3, sdt) -> time(3) time
+ISNULL(tm3, dto3) -> time(3) time
+ISNULL(tm3, u) -> time(3) time
+ISNULL(tm3, bin4) -> time(3) time
+ISNULL(tm3, vb10) -> time(3) time
+ISNULL(tm3, x) -> time(3) time
+ISNULL(tm3, sv) -> time(3) time
+ISNULL(tm3, j) -> time(3) time
+ISNULL(tm3, 1) -> time(3) time
+ISNULL(tm3, 12345) -> time(3) time
+ISNULL(tm3, 2.50) -> time(3) time
+ISNULL(tm3, 'ab') -> time(3) time
+ISNULL(tm3, N'ab') -> time(3) time
+ISNULL(tm3, 1e0) -> time(3) time
+ISNULL(tm3, $1) -> time(3) time
+ISNULL(dtm, bt) -> datetime datetime/local
+ISNULL(dtm, ti) -> datetime datetime/local
+ISNULL(dtm, si) -> datetime datetime/local
+ISNULL(dtm, i) -> datetime datetime/local
+ISNULL(dtm, bi) -> datetime datetime/local
+ISNULL(dtm, d52) -> datetime datetime/local
+ISNULL(dtm, d380) -> datetime datetime/local
+ISNULL(dtm, d3838) -> datetime datetime/local
+ISNULL(dtm, n102) -> datetime datetime/local
+ISNULL(dtm, m) -> datetime datetime/local
+ISNULL(dtm, sm) -> datetime datetime/local
+ISNULL(dtm, f) -> datetime datetime/local
+ISNULL(dtm, r) -> datetime datetime/local
+ISNULL(dtm, c3) -> datetime datetime/local
+ISNULL(dtm, v10) -> datetime datetime/local
+ISNULL(dtm, vx) -> datetime datetime/local
+ISNULL(dtm, nc3) -> datetime datetime/local
+ISNULL(dtm, nv10) -> datetime datetime/local
+ISNULL(dtm, nvx) -> datetime datetime/local
+ISNULL(dtm, dt) -> datetime datetime/local
+ISNULL(dtm, tm3) -> datetime datetime/local
+ISNULL(dtm, dtm) -> datetime datetime/local
+ISNULL(dtm, dt23) -> datetime datetime/local
+ISNULL(dtm, sdt) -> datetime datetime/local
+ISNULL(dtm, dto3) -> datetime datetime/local
+ISNULL(dtm, u) -> datetime datetime/local
+ISNULL(dtm, bin4) -> datetime datetime/local
+ISNULL(dtm, vb10) -> datetime datetime/local
+ISNULL(dtm, x) -> datetime datetime/local
+ISNULL(dtm, sv) -> datetime datetime/local
+ISNULL(dtm, j) -> datetime datetime/local
+ISNULL(dtm, 1) -> datetime datetime/local
+ISNULL(dtm, 12345) -> datetime datetime/local
+ISNULL(dtm, 2.50) -> datetime datetime/local
+ISNULL(dtm, 'ab') -> datetime datetime/local
+ISNULL(dtm, N'ab') -> datetime datetime/local
+ISNULL(dtm, 1e0) -> datetime datetime/local
+ISNULL(dtm, $1) -> datetime datetime/local
+ISNULL(dt23, bt) -> datetime2(3) datetime/local
+ISNULL(dt23, ti) -> datetime2(3) datetime/local
+ISNULL(dt23, si) -> datetime2(3) datetime/local
+ISNULL(dt23, i) -> datetime2(3) datetime/local
+ISNULL(dt23, bi) -> datetime2(3) datetime/local
+ISNULL(dt23, d52) -> datetime2(3) datetime/local
+ISNULL(dt23, d380) -> datetime2(3) datetime/local
+ISNULL(dt23, d3838) -> datetime2(3) datetime/local
+ISNULL(dt23, n102) -> datetime2(3) datetime/local
+ISNULL(dt23, m) -> datetime2(3) datetime/local
+ISNULL(dt23, sm) -> datetime2(3) datetime/local
+ISNULL(dt23, f) -> datetime2(3) datetime/local
+ISNULL(dt23, r) -> datetime2(3) datetime/local
+ISNULL(dt23, c3) -> datetime2(3) datetime/local
+ISNULL(dt23, v10) -> datetime2(3) datetime/local
+ISNULL(dt23, vx) -> datetime2(3) datetime/local
+ISNULL(dt23, nc3) -> datetime2(3) datetime/local
+ISNULL(dt23, nv10) -> datetime2(3) datetime/local
+ISNULL(dt23, nvx) -> datetime2(3) datetime/local
+ISNULL(dt23, dt) -> datetime2(3) datetime/local
+ISNULL(dt23, tm3) -> datetime2(3) datetime/local
+ISNULL(dt23, dtm) -> datetime2(3) datetime/local
+ISNULL(dt23, dt23) -> datetime2(3) datetime/local
+ISNULL(dt23, sdt) -> datetime2(3) datetime/local
+ISNULL(dt23, dto3) -> datetime2(3) datetime/local
+ISNULL(dt23, u) -> datetime2(3) datetime/local
+ISNULL(dt23, bin4) -> datetime2(3) datetime/local
+ISNULL(dt23, vb10) -> datetime2(3) datetime/local
+ISNULL(dt23, x) -> datetime2(3) datetime/local
+ISNULL(dt23, sv) -> datetime2(3) datetime/local
+ISNULL(dt23, j) -> datetime2(3) datetime/local
+ISNULL(dt23, 1) -> datetime2(3) datetime/local
+ISNULL(dt23, 12345) -> datetime2(3) datetime/local
+ISNULL(dt23, 2.50) -> datetime2(3) datetime/local
+ISNULL(dt23, 'ab') -> datetime2(3) datetime/local
+ISNULL(dt23, N'ab') -> datetime2(3) datetime/local
+ISNULL(dt23, 1e0) -> datetime2(3) datetime/local
+ISNULL(dt23, $1) -> datetime2(3) datetime/local
+ISNULL(sdt, bt) -> smalldatetime datetime/local
+ISNULL(sdt, ti) -> smalldatetime datetime/local
+ISNULL(sdt, si) -> smalldatetime datetime/local
+ISNULL(sdt, i) -> smalldatetime datetime/local
+ISNULL(sdt, bi) -> smalldatetime datetime/local
+ISNULL(sdt, d52) -> smalldatetime datetime/local
+ISNULL(sdt, d380) -> smalldatetime datetime/local
+ISNULL(sdt, d3838) -> smalldatetime datetime/local
+ISNULL(sdt, n102) -> smalldatetime datetime/local
+ISNULL(sdt, m) -> smalldatetime datetime/local
+ISNULL(sdt, sm) -> smalldatetime datetime/local
+ISNULL(sdt, f) -> smalldatetime datetime/local
+ISNULL(sdt, r) -> smalldatetime datetime/local
+ISNULL(sdt, c3) -> smalldatetime datetime/local
+ISNULL(sdt, v10) -> smalldatetime datetime/local
+ISNULL(sdt, vx) -> smalldatetime datetime/local
+ISNULL(sdt, nc3) -> smalldatetime datetime/local
+ISNULL(sdt, nv10) -> smalldatetime datetime/local
+ISNULL(sdt, nvx) -> smalldatetime datetime/local
+ISNULL(sdt, dt) -> smalldatetime datetime/local
+ISNULL(sdt, tm3) -> smalldatetime datetime/local
+ISNULL(sdt, dtm) -> smalldatetime datetime/local
+ISNULL(sdt, dt23) -> smalldatetime datetime/local
+ISNULL(sdt, sdt) -> smalldatetime datetime/local
+ISNULL(sdt, dto3) -> smalldatetime datetime/local
+ISNULL(sdt, u) -> smalldatetime datetime/local
+ISNULL(sdt, bin4) -> smalldatetime datetime/local
+ISNULL(sdt, vb10) -> smalldatetime datetime/local
+ISNULL(sdt, x) -> smalldatetime datetime/local
+ISNULL(sdt, sv) -> smalldatetime datetime/local
+ISNULL(sdt, j) -> smalldatetime datetime/local
+ISNULL(sdt, 1) -> smalldatetime datetime/local
+ISNULL(sdt, 12345) -> smalldatetime datetime/local
+ISNULL(sdt, 2.50) -> smalldatetime datetime/local
+ISNULL(sdt, 'ab') -> smalldatetime datetime/local
+ISNULL(sdt, N'ab') -> smalldatetime datetime/local
+ISNULL(sdt, 1e0) -> smalldatetime datetime/local
+ISNULL(sdt, $1) -> smalldatetime datetime/local
+ISNULL(dto3, bt) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, ti) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, si) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, i) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, bi) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, d52) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, d380) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, d3838) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, n102) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, m) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, sm) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, f) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, r) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, c3) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, v10) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, vx) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, nc3) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, nv10) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, nvx) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, dt) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, tm3) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, dtm) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, dt23) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, sdt) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, dto3) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, u) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, bin4) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, vb10) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, x) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, sv) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, j) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, 1) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, 12345) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, 2.50) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, 'ab') -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, N'ab') -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, 1e0) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, $1) -> datetimeoffset(3) datetime/offset
+ISNULL(u, bt) -> uniqueidentifier uuid
+ISNULL(u, ti) -> uniqueidentifier uuid
+ISNULL(u, si) -> uniqueidentifier uuid
+ISNULL(u, i) -> uniqueidentifier uuid
+ISNULL(u, bi) -> uniqueidentifier uuid
+ISNULL(u, d52) -> uniqueidentifier uuid
+ISNULL(u, d380) -> uniqueidentifier uuid
+ISNULL(u, d3838) -> uniqueidentifier uuid
+ISNULL(u, n102) -> uniqueidentifier uuid
+ISNULL(u, m) -> uniqueidentifier uuid
+ISNULL(u, sm) -> uniqueidentifier uuid
+ISNULL(u, f) -> uniqueidentifier uuid
+ISNULL(u, r) -> uniqueidentifier uuid
+ISNULL(u, c3) -> uniqueidentifier uuid
+ISNULL(u, v10) -> uniqueidentifier uuid
+ISNULL(u, vx) -> uniqueidentifier uuid
+ISNULL(u, nc3) -> uniqueidentifier uuid
+ISNULL(u, nv10) -> uniqueidentifier uuid
+ISNULL(u, nvx) -> uniqueidentifier uuid
+ISNULL(u, dt) -> uniqueidentifier uuid
+ISNULL(u, tm3) -> uniqueidentifier uuid
+ISNULL(u, dtm) -> uniqueidentifier uuid
+ISNULL(u, dt23) -> uniqueidentifier uuid
+ISNULL(u, sdt) -> uniqueidentifier uuid
+ISNULL(u, dto3) -> uniqueidentifier uuid
+ISNULL(u, u) -> uniqueidentifier uuid
+ISNULL(u, bin4) -> uniqueidentifier uuid
+ISNULL(u, vb10) -> uniqueidentifier uuid
+ISNULL(u, x) -> uniqueidentifier uuid
+ISNULL(u, sv) -> uniqueidentifier uuid
+ISNULL(u, j) -> uniqueidentifier uuid
+ISNULL(u, 1) -> uniqueidentifier uuid
+ISNULL(u, 12345) -> uniqueidentifier uuid
+ISNULL(u, 2.50) -> uniqueidentifier uuid
+ISNULL(u, 'ab') -> uniqueidentifier uuid
+ISNULL(u, N'ab') -> uniqueidentifier uuid
+ISNULL(u, 1e0) -> uniqueidentifier uuid
+ISNULL(u, $1) -> uniqueidentifier uuid
+ISNULL(bin4, bt) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, ti) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, si) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, i) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, bi) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, d52) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, d380) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, d3838) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, n102) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, m) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, sm) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, f) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, r) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, c3) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, v10) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, vx) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, nc3) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, nv10) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, nvx) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, dt) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, tm3) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, dtm) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, dt23) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, sdt) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, dto3) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, u) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, vb10) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, x) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, sv) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, j) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, 1) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, 12345) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, 2.50) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, 'ab') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, N'ab') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, 1e0) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(bin4, $1) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISNULL(vb10, bt) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, ti) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, si) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, i) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, bi) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, d52) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, d380) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, d3838) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, n102) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, m) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, sm) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, f) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, r) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, c3) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, v10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, vx) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, nc3) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, nv10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, nvx) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, dt) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, tm3) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, dtm) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, dt23) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, sdt) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, dto3) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, u) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, bin4) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, x) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, sv) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, j) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, 1) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, 12345) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, 2.50) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, 'ab') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, N'ab') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, 1e0) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(vb10, $1) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(x, bt) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, ti) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, si) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, i) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, bi) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, d52) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, d380) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, d3838) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, n102) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, m) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, sm) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, f) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, r) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, c3) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, v10) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, vx) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, nc3) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, nv10) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, nvx) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, dt) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, tm3) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, dtm) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, dt23) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, sdt) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, dto3) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, u) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, bin4) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, vb10) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, sv) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, j) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, 12345) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, 2.50) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, 'ab') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, N'ab') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, 1e0) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(x, $1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISNULL(sv, bt) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, ti) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, si) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, i) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, bi) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, d52) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, d380) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, d3838) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, n102) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, m) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, sm) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, f) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, r) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, c3) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, v10) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, vx) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, nc3) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, nv10) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, nvx) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, dt) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, tm3) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, dtm) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, dt23) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, sdt) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, dto3) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, u) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, bin4) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, vb10) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, x) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, j) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, 12345) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, 2.50) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, 'ab') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, N'ab') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, 1e0) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(sv, $1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISNULL(j, bt) -> unknown (no unknown recorded)
+ISNULL(j, ti) -> unknown (no unknown recorded)
+ISNULL(j, si) -> unknown (no unknown recorded)
+ISNULL(j, i) -> unknown (no unknown recorded)
+ISNULL(j, bi) -> unknown (no unknown recorded)
+ISNULL(j, d52) -> unknown (no unknown recorded)
+ISNULL(j, d380) -> unknown (no unknown recorded)
+ISNULL(j, d3838) -> unknown (no unknown recorded)
+ISNULL(j, n102) -> unknown (no unknown recorded)
+ISNULL(j, m) -> unknown (no unknown recorded)
+ISNULL(j, sm) -> unknown (no unknown recorded)
+ISNULL(j, f) -> unknown (no unknown recorded)
+ISNULL(j, r) -> unknown (no unknown recorded)
+ISNULL(j, c3) -> unknown (no unknown recorded)
+ISNULL(j, v10) -> unknown (no unknown recorded)
+ISNULL(j, vx) -> unknown (no unknown recorded)
+ISNULL(j, nc3) -> unknown (no unknown recorded)
+ISNULL(j, nv10) -> unknown (no unknown recorded)
+ISNULL(j, nvx) -> unknown (no unknown recorded)
+ISNULL(j, dt) -> unknown (no unknown recorded)
+ISNULL(j, tm3) -> unknown (no unknown recorded)
+ISNULL(j, dtm) -> unknown (no unknown recorded)
+ISNULL(j, dt23) -> unknown (no unknown recorded)
+ISNULL(j, sdt) -> unknown (no unknown recorded)
+ISNULL(j, dto3) -> unknown (no unknown recorded)
+ISNULL(j, u) -> unknown (no unknown recorded)
+ISNULL(j, bin4) -> unknown (no unknown recorded)
+ISNULL(j, vb10) -> unknown (no unknown recorded)
+ISNULL(j, x) -> unknown (no unknown recorded)
+ISNULL(j, sv) -> unknown (no unknown recorded)
+ISNULL(j, j) -> unknown (no unknown recorded)
+ISNULL(j, 1) -> unknown (no unknown recorded)
+ISNULL(j, 12345) -> unknown (no unknown recorded)
+ISNULL(j, 2.50) -> unknown (no unknown recorded)
+ISNULL(j, 'ab') -> unknown (no unknown recorded)
+ISNULL(j, N'ab') -> unknown (no unknown recorded)
+ISNULL(j, 1e0) -> unknown (no unknown recorded)
+ISNULL(j, $1) -> unknown (no unknown recorded)
+ISNULL(1, bt) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, ti) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, si) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, i) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, bi) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, d52) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, d380) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, d3838) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, n102) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, m) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, sm) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, f) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, r) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, c3) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, v10) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, vx) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, nc3) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, nv10) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, nvx) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, dt) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, tm3) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, dtm) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, dt23) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, sdt) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, dto3) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, u) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, bin4) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, vb10) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, x) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, sv) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, j) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, 1) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, 12345) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, 2.50) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, 'ab') -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, N'ab') -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, 1e0) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, $1) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, bt) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, ti) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, si) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, i) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, bi) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, d52) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, d380) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, d3838) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, n102) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, m) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, sm) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, f) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, r) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, c3) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, v10) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, vx) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, nc3) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, nv10) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, nvx) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, dt) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, tm3) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, dtm) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, dt23) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, sdt) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, dto3) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, u) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, bin4) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, vb10) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, x) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, sv) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, j) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, 1) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, 12345) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, 2.50) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, 'ab') -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, N'ab') -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, 1e0) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, $1) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(2.50, bt) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, ti) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, si) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, i) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, bi) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, d52) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, d380) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, d3838) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, n102) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, m) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, sm) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, f) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, r) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, c3) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, v10) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, vx) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, nc3) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, nv10) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, nvx) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, dt) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, tm3) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, dtm) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, dt23) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, sdt) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, dto3) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, u) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, bin4) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, vb10) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, x) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, sv) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, j) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, 1) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, 12345) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, 2.50) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, 'ab') -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, N'ab') -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, 1e0) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, $1) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL('ab', bt) -> varchar(2) string {length<=2}
+ISNULL('ab', ti) -> varchar(2) string {length<=2}
+ISNULL('ab', si) -> varchar(2) string {length<=2}
+ISNULL('ab', i) -> varchar(2) string {length<=2}
+ISNULL('ab', bi) -> varchar(2) string {length<=2}
+ISNULL('ab', d52) -> varchar(2) string {length<=2}
+ISNULL('ab', d380) -> varchar(2) string {length<=2}
+ISNULL('ab', d3838) -> varchar(2) string {length<=2}
+ISNULL('ab', n102) -> varchar(2) string {length<=2}
+ISNULL('ab', m) -> varchar(2) string {length<=2}
+ISNULL('ab', sm) -> varchar(2) string {length<=2}
+ISNULL('ab', f) -> varchar(2) string {length<=2}
+ISNULL('ab', r) -> varchar(2) string {length<=2}
+ISNULL('ab', c3) -> varchar(2) string {length<=2}
+ISNULL('ab', v10) -> varchar(2) string {length<=2}
+ISNULL('ab', vx) -> varchar(2) string {length<=2}
+ISNULL('ab', nc3) -> varchar(2) string {length<=2}
+ISNULL('ab', nv10) -> varchar(2) string {length<=2}
+ISNULL('ab', nvx) -> varchar(2) string {length<=2}
+ISNULL('ab', dt) -> varchar(2) string {length<=2}
+ISNULL('ab', tm3) -> varchar(2) string {length<=2}
+ISNULL('ab', dtm) -> varchar(2) string {length<=2}
+ISNULL('ab', dt23) -> varchar(2) string {length<=2}
+ISNULL('ab', sdt) -> varchar(2) string {length<=2}
+ISNULL('ab', dto3) -> varchar(2) string {length<=2}
+ISNULL('ab', u) -> varchar(2) string {length<=2}
+ISNULL('ab', bin4) -> varchar(2) string {length<=2}
+ISNULL('ab', vb10) -> varchar(2) string {length<=2}
+ISNULL('ab', x) -> varchar(2) string {length<=2}
+ISNULL('ab', sv) -> varchar(2) string {length<=2}
+ISNULL('ab', j) -> varchar(2) string {length<=2}
+ISNULL('ab', 1) -> varchar(2) string {length<=2}
+ISNULL('ab', 12345) -> varchar(2) string {length<=2}
+ISNULL('ab', 2.50) -> varchar(2) string {length<=2}
+ISNULL('ab', 'ab') -> varchar(2) string {length<=2}
+ISNULL('ab', N'ab') -> varchar(2) string {length<=2}
+ISNULL('ab', 1e0) -> varchar(2) string {length<=2}
+ISNULL('ab', $1) -> varchar(2) string {length<=2}
+ISNULL(N'ab', bt) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', ti) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', si) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', i) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', bi) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', d52) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', d380) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', d3838) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', n102) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', m) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', sm) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', f) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', r) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', c3) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', v10) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', vx) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', nc3) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', nv10) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', nvx) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', dt) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', tm3) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', dtm) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', dt23) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', sdt) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', dto3) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', u) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', bin4) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', vb10) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', x) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', sv) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', j) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', 1) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', 12345) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', 2.50) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', 'ab') -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', N'ab') -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', 1e0) -> nvarchar(2) string {length<=2}
+ISNULL(N'ab', $1) -> nvarchar(2) string {length<=2}
+ISNULL(1e0, bt) -> float number/float
+ISNULL(1e0, ti) -> float number/float
+ISNULL(1e0, si) -> float number/float
+ISNULL(1e0, i) -> float number/float
+ISNULL(1e0, bi) -> float number/float
+ISNULL(1e0, d52) -> float number/float
+ISNULL(1e0, d380) -> float number/float
+ISNULL(1e0, d3838) -> float number/float
+ISNULL(1e0, n102) -> float number/float
+ISNULL(1e0, m) -> float number/float
+ISNULL(1e0, sm) -> float number/float
+ISNULL(1e0, f) -> float number/float
+ISNULL(1e0, r) -> float number/float
+ISNULL(1e0, c3) -> float number/float
+ISNULL(1e0, v10) -> float number/float
+ISNULL(1e0, vx) -> float number/float
+ISNULL(1e0, nc3) -> float number/float
+ISNULL(1e0, nv10) -> float number/float
+ISNULL(1e0, nvx) -> float number/float
+ISNULL(1e0, dt) -> float number/float
+ISNULL(1e0, tm3) -> float number/float
+ISNULL(1e0, dtm) -> float number/float
+ISNULL(1e0, dt23) -> float number/float
+ISNULL(1e0, sdt) -> float number/float
+ISNULL(1e0, dto3) -> float number/float
+ISNULL(1e0, u) -> float number/float
+ISNULL(1e0, bin4) -> float number/float
+ISNULL(1e0, vb10) -> float number/float
+ISNULL(1e0, x) -> float number/float
+ISNULL(1e0, sv) -> float number/float
+ISNULL(1e0, j) -> float number/float
+ISNULL(1e0, 1) -> float number/float
+ISNULL(1e0, 12345) -> float number/float
+ISNULL(1e0, 2.50) -> float number/float
+ISNULL(1e0, 'ab') -> float number/float
+ISNULL(1e0, N'ab') -> float number/float
+ISNULL(1e0, 1e0) -> float number/float
+ISNULL(1e0, $1) -> float number/float
+ISNULL($1, bt) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, ti) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, si) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, i) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, bi) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, d52) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, d380) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, d3838) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, n102) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, m) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, sm) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, f) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, r) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, c3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, v10) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, vx) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, nc3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, nv10) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, nvx) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, dt) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, tm3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, dtm) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, dt23) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, sdt) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, dto3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, u) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, bin4) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, vb10) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, x) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, sv) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, j) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, 1) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, 12345) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, 2.50) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, 'ab') -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, N'ab') -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, 1e0) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, $1) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}

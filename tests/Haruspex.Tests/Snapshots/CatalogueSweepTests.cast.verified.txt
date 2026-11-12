@@ -1,0 +1,1254 @@
+CAST(bt AS bit) -> bit boolean
+CAST(bt AS tinyint) -> tinyint number/uint8 {[0 255]}
+CAST(bt AS smallint) -> smallint number/int16 {[-32768 32767]}
+CAST(bt AS int) -> int number/int32 {[-2147483648 2147483647]}
+CAST(bt AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CAST(bt AS decimal(5,2)) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+CAST(bt AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(bt AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(bt AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+CAST(bt AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(bt AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+CAST(bt AS float) -> float number/float
+CAST(bt AS real) -> real number/float
+CAST(bt AS char(3)) -> char(3) string {length=3}
+CAST(bt AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(bt AS varchar(max)) -> varchar(max) string
+CAST(bt AS nchar(3)) -> nchar(3) string {length=3}
+CAST(bt AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(bt AS nvarchar(max)) -> nvarchar(max) string
+CAST(bt AS date) -> date date null:arithmetic-overflow
+CAST(bt AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(bt AS datetime) -> datetime datetime/local
+CAST(bt AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(bt AS smalldatetime) -> smalldatetime datetime/local
+CAST(bt AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(bt AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(bt AS binary(4)) -> unknown unsupported-expression: CAST(bt AS binary(4)): a conversion to this type is not modelled yet.
+CAST(bt AS varbinary(10)) -> unknown unsupported-expression: CAST(bt AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(bt AS xml) -> unknown unsupported-expression: CAST(bt AS xml): a conversion to this type is not modelled yet.
+CAST(bt AS sql_variant) -> unknown unsupported-expression: CAST(bt AS sql_variant): a conversion to this type is not modelled yet.
+CAST(bt AS json) -> unknown unsupported-expression: CAST(bt AS json): a conversion to this type is not modelled yet.
+CAST(bt AS varchar) -> varchar(30) string {length<=30}
+CAST(bt AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(ti AS bit) -> bit boolean
+CAST(ti AS tinyint) -> tinyint number/uint8 {[0 255]}
+CAST(ti AS smallint) -> smallint number/int16 {[-32768 32767]}
+CAST(ti AS int) -> int number/int32 {[-2147483648 2147483647]}
+CAST(ti AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CAST(ti AS decimal(5,2)) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+CAST(ti AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(ti AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(ti AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+CAST(ti AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(ti AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+CAST(ti AS float) -> float number/float
+CAST(ti AS real) -> real number/float
+CAST(ti AS char(3)) -> char(3) string {length=3}
+CAST(ti AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(ti AS varchar(max)) -> varchar(max) string
+CAST(ti AS nchar(3)) -> nchar(3) string {length=3}
+CAST(ti AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(ti AS nvarchar(max)) -> nvarchar(max) string
+CAST(ti AS date) -> date date null:arithmetic-overflow
+CAST(ti AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(ti AS datetime) -> datetime datetime/local
+CAST(ti AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(ti AS smalldatetime) -> smalldatetime datetime/local
+CAST(ti AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(ti AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(ti AS binary(4)) -> unknown unsupported-expression: CAST(ti AS binary(4)): a conversion to this type is not modelled yet.
+CAST(ti AS varbinary(10)) -> unknown unsupported-expression: CAST(ti AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(ti AS xml) -> unknown unsupported-expression: CAST(ti AS xml): a conversion to this type is not modelled yet.
+CAST(ti AS sql_variant) -> unknown unsupported-expression: CAST(ti AS sql_variant): a conversion to this type is not modelled yet.
+CAST(ti AS json) -> unknown unsupported-expression: CAST(ti AS json): a conversion to this type is not modelled yet.
+CAST(ti AS varchar) -> varchar(30) string {length<=30}
+CAST(ti AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(si AS bit) -> bit boolean
+CAST(si AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(si AS smallint) -> smallint number/int16 {[-32768 32767]}
+CAST(si AS int) -> int number/int32 {[-2147483648 2147483647]}
+CAST(si AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CAST(si AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(si AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(si AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(si AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+CAST(si AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(si AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+CAST(si AS float) -> float number/float
+CAST(si AS real) -> real number/float
+CAST(si AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(si AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(si AS varchar(max)) -> varchar(max) string
+CAST(si AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(si AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(si AS nvarchar(max)) -> nvarchar(max) string
+CAST(si AS date) -> date date null:arithmetic-overflow
+CAST(si AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(si AS datetime) -> datetime datetime/local
+CAST(si AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(si AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(si AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(si AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(si AS binary(4)) -> unknown unsupported-expression: CAST(si AS binary(4)): a conversion to this type is not modelled yet.
+CAST(si AS varbinary(10)) -> unknown unsupported-expression: CAST(si AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(si AS xml) -> unknown unsupported-expression: CAST(si AS xml): a conversion to this type is not modelled yet.
+CAST(si AS sql_variant) -> unknown unsupported-expression: CAST(si AS sql_variant): a conversion to this type is not modelled yet.
+CAST(si AS json) -> unknown unsupported-expression: CAST(si AS json): a conversion to this type is not modelled yet.
+CAST(si AS varchar) -> varchar(30) string {length<=30}
+CAST(si AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(i AS bit) -> bit boolean
+CAST(i AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(i AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(i AS int) -> int number/int32 {[-2147483648 2147483647]}
+CAST(i AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CAST(i AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(i AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(i AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(i AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(i AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(i AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(i AS float) -> float number/float
+CAST(i AS real) -> real number/float
+CAST(i AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(i AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(i AS varchar(max)) -> varchar(max) string
+CAST(i AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(i AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(i AS nvarchar(max)) -> nvarchar(max) string
+CAST(i AS date) -> date date null:arithmetic-overflow
+CAST(i AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(i AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(i AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(i AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(i AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(i AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(i AS binary(4)) -> unknown unsupported-expression: CAST(i AS binary(4)): a conversion to this type is not modelled yet.
+CAST(i AS varbinary(10)) -> unknown unsupported-expression: CAST(i AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(i AS xml) -> unknown unsupported-expression: CAST(i AS xml): a conversion to this type is not modelled yet.
+CAST(i AS sql_variant) -> unknown unsupported-expression: CAST(i AS sql_variant): a conversion to this type is not modelled yet.
+CAST(i AS json) -> unknown unsupported-expression: CAST(i AS json): a conversion to this type is not modelled yet.
+CAST(i AS varchar) -> varchar(30) string {length<=30}
+CAST(i AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(bi AS bit) -> bit boolean
+CAST(bi AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(bi AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(bi AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(bi AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CAST(bi AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(bi AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(bi AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(bi AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(bi AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(bi AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(bi AS float) -> float number/float
+CAST(bi AS real) -> real number/float
+CAST(bi AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(bi AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(bi AS varchar(max)) -> varchar(max) string
+CAST(bi AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(bi AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(bi AS nvarchar(max)) -> nvarchar(max) string
+CAST(bi AS date) -> date date null:arithmetic-overflow
+CAST(bi AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(bi AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(bi AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(bi AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(bi AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(bi AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(bi AS binary(4)) -> unknown unsupported-expression: CAST(bi AS binary(4)): a conversion to this type is not modelled yet.
+CAST(bi AS varbinary(10)) -> unknown unsupported-expression: CAST(bi AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(bi AS xml) -> unknown unsupported-expression: CAST(bi AS xml): a conversion to this type is not modelled yet.
+CAST(bi AS sql_variant) -> unknown unsupported-expression: CAST(bi AS sql_variant): a conversion to this type is not modelled yet.
+CAST(bi AS json) -> unknown unsupported-expression: CAST(bi AS json): a conversion to this type is not modelled yet.
+CAST(bi AS varchar) -> varchar(30) string {length<=30}
+CAST(bi AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(d52 AS bit) -> bit boolean
+CAST(d52 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(d52 AS smallint) -> smallint number/int16 {[-32768 32767]}
+CAST(d52 AS int) -> int number/int32 {[-2147483648 2147483647]}
+CAST(d52 AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CAST(d52 AS decimal(5,2)) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+CAST(d52 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(d52 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(d52 AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+CAST(d52 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(d52 AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+CAST(d52 AS float) -> float number/float
+CAST(d52 AS real) -> real number/float
+CAST(d52 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(d52 AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(d52 AS varchar(max)) -> varchar(max) string
+CAST(d52 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(d52 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(d52 AS nvarchar(max)) -> nvarchar(max) string
+CAST(d52 AS date) -> date date null:arithmetic-overflow
+CAST(d52 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(d52 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(d52 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(d52 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(d52 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(d52 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(d52 AS binary(4)) -> unknown unsupported-expression: CAST(d52 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(d52 AS varbinary(10)) -> unknown unsupported-expression: CAST(d52 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(d52 AS xml) -> unknown unsupported-expression: CAST(d52 AS xml): a conversion to this type is not modelled yet.
+CAST(d52 AS sql_variant) -> unknown unsupported-expression: CAST(d52 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(d52 AS json) -> unknown unsupported-expression: CAST(d52 AS json): a conversion to this type is not modelled yet.
+CAST(d52 AS varchar) -> varchar(30) string {length<=30}
+CAST(d52 AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(d380 AS bit) -> bit boolean
+CAST(d380 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(d380 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(d380 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(d380 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(d380 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(d380 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(d380 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(d380 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(d380 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(d380 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(d380 AS float) -> float number/float
+CAST(d380 AS real) -> real number/float
+CAST(d380 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(d380 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(d380 AS varchar(max)) -> varchar(max) string
+CAST(d380 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(d380 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(d380 AS nvarchar(max)) -> nvarchar(max) string
+CAST(d380 AS date) -> date date null:arithmetic-overflow
+CAST(d380 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(d380 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(d380 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(d380 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(d380 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(d380 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(d380 AS binary(4)) -> unknown unsupported-expression: CAST(d380 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(d380 AS varbinary(10)) -> unknown unsupported-expression: CAST(d380 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(d380 AS xml) -> unknown unsupported-expression: CAST(d380 AS xml): a conversion to this type is not modelled yet.
+CAST(d380 AS sql_variant) -> unknown unsupported-expression: CAST(d380 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(d380 AS json) -> unknown unsupported-expression: CAST(d380 AS json): a conversion to this type is not modelled yet.
+CAST(d380 AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
+CAST(d380 AS nvarchar) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
+CAST(d3838 AS bit) -> bit boolean
+CAST(d3838 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(d3838 AS smallint) -> smallint number/int16 {[-32768 32767]}
+CAST(d3838 AS int) -> int number/int32 {[-2147483648 2147483647]}
+CAST(d3838 AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CAST(d3838 AS decimal(5,2)) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+CAST(d3838 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(d3838 AS decimal(38,38)) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(d3838 AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+CAST(d3838 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(d3838 AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+CAST(d3838 AS float) -> float number/float
+CAST(d3838 AS real) -> real number/float
+CAST(d3838 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(d3838 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(d3838 AS varchar(max)) -> varchar(max) string
+CAST(d3838 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(d3838 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(d3838 AS nvarchar(max)) -> nvarchar(max) string
+CAST(d3838 AS date) -> date date null:arithmetic-overflow
+CAST(d3838 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(d3838 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(d3838 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(d3838 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(d3838 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(d3838 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(d3838 AS binary(4)) -> unknown unsupported-expression: CAST(d3838 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(d3838 AS varbinary(10)) -> unknown unsupported-expression: CAST(d3838 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(d3838 AS xml) -> unknown unsupported-expression: CAST(d3838 AS xml): a conversion to this type is not modelled yet.
+CAST(d3838 AS sql_variant) -> unknown unsupported-expression: CAST(d3838 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(d3838 AS json) -> unknown unsupported-expression: CAST(d3838 AS json): a conversion to this type is not modelled yet.
+CAST(d3838 AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
+CAST(d3838 AS nvarchar) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
+CAST(n102 AS bit) -> bit boolean
+CAST(n102 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(n102 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(n102 AS int) -> int number/int32 {[-2147483648 2147483647]}
+CAST(n102 AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CAST(n102 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(n102 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(n102 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(n102 AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+CAST(n102 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(n102 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(n102 AS float) -> float number/float
+CAST(n102 AS real) -> real number/float
+CAST(n102 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(n102 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(n102 AS varchar(max)) -> varchar(max) string
+CAST(n102 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(n102 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(n102 AS nvarchar(max)) -> nvarchar(max) string
+CAST(n102 AS date) -> date date null:arithmetic-overflow
+CAST(n102 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(n102 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(n102 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(n102 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(n102 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(n102 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(n102 AS binary(4)) -> unknown unsupported-expression: CAST(n102 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(n102 AS varbinary(10)) -> unknown unsupported-expression: CAST(n102 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(n102 AS xml) -> unknown unsupported-expression: CAST(n102 AS xml): a conversion to this type is not modelled yet.
+CAST(n102 AS sql_variant) -> unknown unsupported-expression: CAST(n102 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(n102 AS json) -> unknown unsupported-expression: CAST(n102 AS json): a conversion to this type is not modelled yet.
+CAST(n102 AS varchar) -> varchar(30) string {length<=30}
+CAST(n102 AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(m AS bit) -> bit boolean
+CAST(m AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(m AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(m AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(m AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(m AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(m AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(m AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(m AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(m AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(m AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(m AS float) -> float number/float
+CAST(m AS real) -> real number/float
+CAST(m AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(m AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(m AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
+CAST(m AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(m AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(m AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
+CAST(m AS date) -> date date null:arithmetic-overflow
+CAST(m AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(m AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(m AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(m AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(m AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(m AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(m AS binary(4)) -> unknown unsupported-expression: CAST(m AS binary(4)): a conversion to this type is not modelled yet.
+CAST(m AS varbinary(10)) -> unknown unsupported-expression: CAST(m AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(m AS xml) -> unknown unsupported-expression: CAST(m AS xml): a conversion to this type is not modelled yet.
+CAST(m AS sql_variant) -> unknown unsupported-expression: CAST(m AS sql_variant): a conversion to this type is not modelled yet.
+CAST(m AS json) -> unknown unsupported-expression: CAST(m AS json): a conversion to this type is not modelled yet.
+CAST(m AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
+CAST(m AS nvarchar) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
+CAST(sm AS bit) -> bit boolean
+CAST(sm AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(sm AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(sm AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(sm AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(sm AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(sm AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(sm AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(sm AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+CAST(sm AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(sm AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+CAST(sm AS float) -> float number/float
+CAST(sm AS real) -> real number/float
+CAST(sm AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(sm AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(sm AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
+CAST(sm AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(sm AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(sm AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
+CAST(sm AS date) -> date date null:arithmetic-overflow
+CAST(sm AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(sm AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(sm AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(sm AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(sm AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(sm AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(sm AS binary(4)) -> unknown unsupported-expression: CAST(sm AS binary(4)): a conversion to this type is not modelled yet.
+CAST(sm AS varbinary(10)) -> unknown unsupported-expression: CAST(sm AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(sm AS xml) -> unknown unsupported-expression: CAST(sm AS xml): a conversion to this type is not modelled yet.
+CAST(sm AS sql_variant) -> unknown unsupported-expression: CAST(sm AS sql_variant): a conversion to this type is not modelled yet.
+CAST(sm AS json) -> unknown unsupported-expression: CAST(sm AS json): a conversion to this type is not modelled yet.
+CAST(sm AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
+CAST(sm AS nvarchar) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
+CAST(f AS bit) -> bit boolean null:arithmetic-overflow
+CAST(f AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(f AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(f AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(f AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(f AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(f AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(f AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(f AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(f AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(f AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(f AS float) -> float number/float
+CAST(f AS real) -> real number/float null:arithmetic-overflow
+CAST(f AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(f AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(f AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
+CAST(f AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(f AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(f AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
+CAST(f AS date) -> date date null:arithmetic-overflow
+CAST(f AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(f AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(f AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(f AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(f AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(f AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(f AS binary(4)) -> unknown unsupported-expression: CAST(f AS binary(4)): a conversion to this type is not modelled yet.
+CAST(f AS varbinary(10)) -> unknown unsupported-expression: CAST(f AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(f AS xml) -> unknown unsupported-expression: CAST(f AS xml): a conversion to this type is not modelled yet.
+CAST(f AS sql_variant) -> unknown unsupported-expression: CAST(f AS sql_variant): a conversion to this type is not modelled yet.
+CAST(f AS json) -> unknown unsupported-expression: CAST(f AS json): a conversion to this type is not modelled yet.
+CAST(f AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
+CAST(f AS nvarchar) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
+CAST(r AS bit) -> bit boolean null:arithmetic-overflow
+CAST(r AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(r AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(r AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(r AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(r AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(r AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(r AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(r AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(r AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(r AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(r AS float) -> float number/float
+CAST(r AS real) -> real number/float
+CAST(r AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(r AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(r AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
+CAST(r AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(r AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(r AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
+CAST(r AS date) -> date date null:arithmetic-overflow
+CAST(r AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(r AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(r AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(r AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(r AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(r AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(r AS binary(4)) -> unknown unsupported-expression: CAST(r AS binary(4)): a conversion to this type is not modelled yet.
+CAST(r AS varbinary(10)) -> unknown unsupported-expression: CAST(r AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(r AS xml) -> unknown unsupported-expression: CAST(r AS xml): a conversion to this type is not modelled yet.
+CAST(r AS sql_variant) -> unknown unsupported-expression: CAST(r AS sql_variant): a conversion to this type is not modelled yet.
+CAST(r AS json) -> unknown unsupported-expression: CAST(r AS json): a conversion to this type is not modelled yet.
+CAST(r AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
+CAST(r AS nvarchar) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
+CAST(c3 AS bit) -> bit boolean null:arithmetic-overflow
+CAST(c3 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(c3 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(c3 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(c3 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(c3 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(c3 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(c3 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(c3 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(c3 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(c3 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(c3 AS float) -> float number/float null:arithmetic-overflow
+CAST(c3 AS real) -> real number/float null:arithmetic-overflow
+CAST(c3 AS char(3)) -> char(3) string {length=3}
+CAST(c3 AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(c3 AS varchar(max)) -> varchar(max) string
+CAST(c3 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(c3 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(c3 AS nvarchar(max)) -> nvarchar(max) string
+CAST(c3 AS date) -> date date null:arithmetic-overflow
+CAST(c3 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(c3 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(c3 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(c3 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(c3 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(c3 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(c3 AS binary(4)) -> unknown unsupported-expression: CAST(c3 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(c3 AS varbinary(10)) -> unknown unsupported-expression: CAST(c3 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(c3 AS xml) -> unknown unsupported-expression: CAST(c3 AS xml): a conversion to this type is not modelled yet.
+CAST(c3 AS sql_variant) -> unknown unsupported-expression: CAST(c3 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(c3 AS json) -> unknown unsupported-expression: CAST(c3 AS json): a conversion to this type is not modelled yet.
+CAST(c3 AS varchar) -> varchar(30) string {length<=30}
+CAST(c3 AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(v10 AS bit) -> bit boolean null:arithmetic-overflow
+CAST(v10 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(v10 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(v10 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(v10 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(v10 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(v10 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(v10 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(v10 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(v10 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(v10 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(v10 AS float) -> float number/float null:arithmetic-overflow
+CAST(v10 AS real) -> real number/float null:arithmetic-overflow
+CAST(v10 AS char(3)) -> char(3) string {length=3}
+CAST(v10 AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(v10 AS varchar(max)) -> varchar(max) string
+CAST(v10 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(v10 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(v10 AS nvarchar(max)) -> nvarchar(max) string
+CAST(v10 AS date) -> date date null:arithmetic-overflow
+CAST(v10 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(v10 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(v10 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(v10 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(v10 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(v10 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(v10 AS binary(4)) -> unknown unsupported-expression: CAST(v10 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(v10 AS varbinary(10)) -> unknown unsupported-expression: CAST(v10 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(v10 AS xml) -> unknown unsupported-expression: CAST(v10 AS xml): a conversion to this type is not modelled yet.
+CAST(v10 AS sql_variant) -> unknown unsupported-expression: CAST(v10 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(v10 AS json) -> unknown unsupported-expression: CAST(v10 AS json): a conversion to this type is not modelled yet.
+CAST(v10 AS varchar) -> varchar(30) string {length<=30}
+CAST(v10 AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(vx AS bit) -> bit boolean null:arithmetic-overflow
+CAST(vx AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(vx AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(vx AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(vx AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(vx AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(vx AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(vx AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(vx AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(vx AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(vx AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(vx AS float) -> float number/float null:arithmetic-overflow
+CAST(vx AS real) -> real number/float null:arithmetic-overflow
+CAST(vx AS char(3)) -> char(3) string {length=3}
+CAST(vx AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(vx AS varchar(max)) -> varchar(max) string
+CAST(vx AS nchar(3)) -> nchar(3) string {length=3}
+CAST(vx AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(vx AS nvarchar(max)) -> nvarchar(max) string
+CAST(vx AS date) -> date date null:arithmetic-overflow
+CAST(vx AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(vx AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(vx AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(vx AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(vx AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(vx AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(vx AS binary(4)) -> unknown unsupported-expression: CAST(vx AS binary(4)): a conversion to this type is not modelled yet.
+CAST(vx AS varbinary(10)) -> unknown unsupported-expression: CAST(vx AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(vx AS xml) -> unknown unsupported-expression: CAST(vx AS xml): a conversion to this type is not modelled yet.
+CAST(vx AS sql_variant) -> unknown unsupported-expression: CAST(vx AS sql_variant): a conversion to this type is not modelled yet.
+CAST(vx AS json) -> unknown unsupported-expression: CAST(vx AS json): a conversion to this type is not modelled yet.
+CAST(vx AS varchar) -> varchar(30) string {length<=30}
+CAST(vx AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(nc3 AS bit) -> bit boolean null:arithmetic-overflow
+CAST(nc3 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(nc3 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(nc3 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(nc3 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(nc3 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(nc3 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(nc3 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(nc3 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(nc3 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(nc3 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(nc3 AS float) -> float number/float null:arithmetic-overflow
+CAST(nc3 AS real) -> real number/float null:arithmetic-overflow
+CAST(nc3 AS char(3)) -> char(3) string {length=3}
+CAST(nc3 AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(nc3 AS varchar(max)) -> varchar(max) string
+CAST(nc3 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(nc3 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(nc3 AS nvarchar(max)) -> nvarchar(max) string
+CAST(nc3 AS date) -> date date null:arithmetic-overflow
+CAST(nc3 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(nc3 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(nc3 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(nc3 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(nc3 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(nc3 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(nc3 AS binary(4)) -> unknown unsupported-expression: CAST(nc3 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(nc3 AS varbinary(10)) -> unknown unsupported-expression: CAST(nc3 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(nc3 AS xml) -> unknown unsupported-expression: CAST(nc3 AS xml): a conversion to this type is not modelled yet.
+CAST(nc3 AS sql_variant) -> unknown unsupported-expression: CAST(nc3 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(nc3 AS json) -> unknown unsupported-expression: CAST(nc3 AS json): a conversion to this type is not modelled yet.
+CAST(nc3 AS varchar) -> varchar(30) string {length<=30}
+CAST(nc3 AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(nv10 AS bit) -> bit boolean null:arithmetic-overflow
+CAST(nv10 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(nv10 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(nv10 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(nv10 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(nv10 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(nv10 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(nv10 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(nv10 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(nv10 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(nv10 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(nv10 AS float) -> float number/float null:arithmetic-overflow
+CAST(nv10 AS real) -> real number/float null:arithmetic-overflow
+CAST(nv10 AS char(3)) -> char(3) string {length=3}
+CAST(nv10 AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(nv10 AS varchar(max)) -> varchar(max) string
+CAST(nv10 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(nv10 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(nv10 AS nvarchar(max)) -> nvarchar(max) string
+CAST(nv10 AS date) -> date date null:arithmetic-overflow
+CAST(nv10 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(nv10 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(nv10 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(nv10 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(nv10 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(nv10 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(nv10 AS binary(4)) -> unknown unsupported-expression: CAST(nv10 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(nv10 AS varbinary(10)) -> unknown unsupported-expression: CAST(nv10 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(nv10 AS xml) -> unknown unsupported-expression: CAST(nv10 AS xml): a conversion to this type is not modelled yet.
+CAST(nv10 AS sql_variant) -> unknown unsupported-expression: CAST(nv10 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(nv10 AS json) -> unknown unsupported-expression: CAST(nv10 AS json): a conversion to this type is not modelled yet.
+CAST(nv10 AS varchar) -> varchar(30) string {length<=30}
+CAST(nv10 AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(nvx AS bit) -> bit boolean null:arithmetic-overflow
+CAST(nvx AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(nvx AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(nvx AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(nvx AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(nvx AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(nvx AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(nvx AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(nvx AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(nvx AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(nvx AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(nvx AS float) -> float number/float null:arithmetic-overflow
+CAST(nvx AS real) -> real number/float null:arithmetic-overflow
+CAST(nvx AS char(3)) -> char(3) string {length=3}
+CAST(nvx AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(nvx AS varchar(max)) -> varchar(max) string
+CAST(nvx AS nchar(3)) -> nchar(3) string {length=3}
+CAST(nvx AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(nvx AS nvarchar(max)) -> nvarchar(max) string
+CAST(nvx AS date) -> date date null:arithmetic-overflow
+CAST(nvx AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(nvx AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(nvx AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(nvx AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(nvx AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(nvx AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(nvx AS binary(4)) -> unknown unsupported-expression: CAST(nvx AS binary(4)): a conversion to this type is not modelled yet.
+CAST(nvx AS varbinary(10)) -> unknown unsupported-expression: CAST(nvx AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(nvx AS xml) -> unknown unsupported-expression: CAST(nvx AS xml): a conversion to this type is not modelled yet.
+CAST(nvx AS sql_variant) -> unknown unsupported-expression: CAST(nvx AS sql_variant): a conversion to this type is not modelled yet.
+CAST(nvx AS json) -> unknown unsupported-expression: CAST(nvx AS json): a conversion to this type is not modelled yet.
+CAST(nvx AS varchar) -> varchar(30) string {length<=30}
+CAST(nvx AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(dt AS bit) -> bit boolean null:arithmetic-overflow
+CAST(dt AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(dt AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(dt AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(dt AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(dt AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(dt AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(dt AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(dt AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(dt AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(dt AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(dt AS float) -> float number/float null:arithmetic-overflow
+CAST(dt AS real) -> real number/float null:arithmetic-overflow
+CAST(dt AS char(3)) -> char(3) string {length=3}
+CAST(dt AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(dt AS varchar(max)) -> varchar(max) string
+CAST(dt AS nchar(3)) -> nchar(3) string {length=3}
+CAST(dt AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(dt AS nvarchar(max)) -> nvarchar(max) string
+CAST(dt AS date) -> date date
+CAST(dt AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(dt AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(dt AS datetime2(3)) -> datetime2(3) datetime/local
+CAST(dt AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(dt AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
+CAST(dt AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(dt AS binary(4)) -> unknown unsupported-expression: CAST(dt AS binary(4)): a conversion to this type is not modelled yet.
+CAST(dt AS varbinary(10)) -> unknown unsupported-expression: CAST(dt AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(dt AS xml) -> unknown unsupported-expression: CAST(dt AS xml): a conversion to this type is not modelled yet.
+CAST(dt AS sql_variant) -> unknown unsupported-expression: CAST(dt AS sql_variant): a conversion to this type is not modelled yet.
+CAST(dt AS json) -> unknown unsupported-expression: CAST(dt AS json): a conversion to this type is not modelled yet.
+CAST(dt AS varchar) -> varchar(30) string {length<=30}
+CAST(dt AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(tm3 AS bit) -> bit boolean null:arithmetic-overflow
+CAST(tm3 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(tm3 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(tm3 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(tm3 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(tm3 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(tm3 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(tm3 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(tm3 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(tm3 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(tm3 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(tm3 AS float) -> float number/float null:arithmetic-overflow
+CAST(tm3 AS real) -> real number/float null:arithmetic-overflow
+CAST(tm3 AS char(3)) -> char(3) string {length=3}
+CAST(tm3 AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(tm3 AS varchar(max)) -> varchar(max) string
+CAST(tm3 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(tm3 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(tm3 AS nvarchar(max)) -> nvarchar(max) string
+CAST(tm3 AS date) -> date date null:arithmetic-overflow
+CAST(tm3 AS time(3)) -> time(3) time
+CAST(tm3 AS datetime) -> datetime datetime/local
+CAST(tm3 AS datetime2(3)) -> datetime2(3) datetime/local
+CAST(tm3 AS smalldatetime) -> smalldatetime datetime/local
+CAST(tm3 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
+CAST(tm3 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(tm3 AS binary(4)) -> unknown unsupported-expression: CAST(tm3 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(tm3 AS varbinary(10)) -> unknown unsupported-expression: CAST(tm3 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(tm3 AS xml) -> unknown unsupported-expression: CAST(tm3 AS xml): a conversion to this type is not modelled yet.
+CAST(tm3 AS sql_variant) -> unknown unsupported-expression: CAST(tm3 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(tm3 AS json) -> unknown unsupported-expression: CAST(tm3 AS json): a conversion to this type is not modelled yet.
+CAST(tm3 AS varchar) -> varchar(30) string {length<=30}
+CAST(tm3 AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(dtm AS bit) -> bit boolean null:arithmetic-overflow
+CAST(dtm AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(dtm AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(dtm AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(dtm AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(dtm AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(dtm AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(dtm AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(dtm AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(dtm AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(dtm AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(dtm AS float) -> float number/float null:arithmetic-overflow
+CAST(dtm AS real) -> real number/float null:arithmetic-overflow
+CAST(dtm AS char(3)) -> char(3) string {length=3}
+CAST(dtm AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(dtm AS varchar(max)) -> varchar(max) string
+CAST(dtm AS nchar(3)) -> nchar(3) string {length=3}
+CAST(dtm AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(dtm AS nvarchar(max)) -> nvarchar(max) string
+CAST(dtm AS date) -> date date
+CAST(dtm AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(dtm AS datetime) -> datetime datetime/local
+CAST(dtm AS datetime2(3)) -> datetime2(3) datetime/local
+CAST(dtm AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(dtm AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
+CAST(dtm AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(dtm AS binary(4)) -> unknown unsupported-expression: CAST(dtm AS binary(4)): a conversion to this type is not modelled yet.
+CAST(dtm AS varbinary(10)) -> unknown unsupported-expression: CAST(dtm AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(dtm AS xml) -> unknown unsupported-expression: CAST(dtm AS xml): a conversion to this type is not modelled yet.
+CAST(dtm AS sql_variant) -> unknown unsupported-expression: CAST(dtm AS sql_variant): a conversion to this type is not modelled yet.
+CAST(dtm AS json) -> unknown unsupported-expression: CAST(dtm AS json): a conversion to this type is not modelled yet.
+CAST(dtm AS varchar) -> varchar(30) string {length<=30}
+CAST(dtm AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(dt23 AS bit) -> bit boolean null:arithmetic-overflow
+CAST(dt23 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(dt23 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(dt23 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(dt23 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(dt23 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(dt23 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(dt23 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(dt23 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(dt23 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(dt23 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(dt23 AS float) -> float number/float null:arithmetic-overflow
+CAST(dt23 AS real) -> real number/float null:arithmetic-overflow
+CAST(dt23 AS char(3)) -> char(3) string {length=3}
+CAST(dt23 AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(dt23 AS varchar(max)) -> varchar(max) string
+CAST(dt23 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(dt23 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(dt23 AS nvarchar(max)) -> nvarchar(max) string
+CAST(dt23 AS date) -> date date
+CAST(dt23 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(dt23 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(dt23 AS datetime2(3)) -> datetime2(3) datetime/local
+CAST(dt23 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(dt23 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
+CAST(dt23 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(dt23 AS binary(4)) -> unknown unsupported-expression: CAST(dt23 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(dt23 AS varbinary(10)) -> unknown unsupported-expression: CAST(dt23 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(dt23 AS xml) -> unknown unsupported-expression: CAST(dt23 AS xml): a conversion to this type is not modelled yet.
+CAST(dt23 AS sql_variant) -> unknown unsupported-expression: CAST(dt23 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(dt23 AS json) -> unknown unsupported-expression: CAST(dt23 AS json): a conversion to this type is not modelled yet.
+CAST(dt23 AS varchar) -> varchar(30) string {length<=30}
+CAST(dt23 AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(sdt AS bit) -> bit boolean null:arithmetic-overflow
+CAST(sdt AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(sdt AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(sdt AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(sdt AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(sdt AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(sdt AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(sdt AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(sdt AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(sdt AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(sdt AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(sdt AS float) -> float number/float null:arithmetic-overflow
+CAST(sdt AS real) -> real number/float null:arithmetic-overflow
+CAST(sdt AS char(3)) -> char(3) string {length=3}
+CAST(sdt AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(sdt AS varchar(max)) -> varchar(max) string
+CAST(sdt AS nchar(3)) -> nchar(3) string {length=3}
+CAST(sdt AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(sdt AS nvarchar(max)) -> nvarchar(max) string
+CAST(sdt AS date) -> date date
+CAST(sdt AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(sdt AS datetime) -> datetime datetime/local
+CAST(sdt AS datetime2(3)) -> datetime2(3) datetime/local
+CAST(sdt AS smalldatetime) -> smalldatetime datetime/local
+CAST(sdt AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
+CAST(sdt AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(sdt AS binary(4)) -> unknown unsupported-expression: CAST(sdt AS binary(4)): a conversion to this type is not modelled yet.
+CAST(sdt AS varbinary(10)) -> unknown unsupported-expression: CAST(sdt AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(sdt AS xml) -> unknown unsupported-expression: CAST(sdt AS xml): a conversion to this type is not modelled yet.
+CAST(sdt AS sql_variant) -> unknown unsupported-expression: CAST(sdt AS sql_variant): a conversion to this type is not modelled yet.
+CAST(sdt AS json) -> unknown unsupported-expression: CAST(sdt AS json): a conversion to this type is not modelled yet.
+CAST(sdt AS varchar) -> varchar(30) string {length<=30}
+CAST(sdt AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(dto3 AS bit) -> bit boolean null:arithmetic-overflow
+CAST(dto3 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(dto3 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(dto3 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(dto3 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(dto3 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(dto3 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(dto3 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(dto3 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(dto3 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(dto3 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(dto3 AS float) -> float number/float null:arithmetic-overflow
+CAST(dto3 AS real) -> real number/float null:arithmetic-overflow
+CAST(dto3 AS char(3)) -> char(3) string {length=3}
+CAST(dto3 AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(dto3 AS varchar(max)) -> varchar(max) string
+CAST(dto3 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(dto3 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(dto3 AS nvarchar(max)) -> nvarchar(max) string
+CAST(dto3 AS date) -> date date
+CAST(dto3 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(dto3 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(dto3 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(dto3 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(dto3 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
+CAST(dto3 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(dto3 AS binary(4)) -> unknown unsupported-expression: CAST(dto3 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(dto3 AS varbinary(10)) -> unknown unsupported-expression: CAST(dto3 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(dto3 AS xml) -> unknown unsupported-expression: CAST(dto3 AS xml): a conversion to this type is not modelled yet.
+CAST(dto3 AS sql_variant) -> unknown unsupported-expression: CAST(dto3 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(dto3 AS json) -> unknown unsupported-expression: CAST(dto3 AS json): a conversion to this type is not modelled yet.
+CAST(dto3 AS varchar) -> varchar(30) string {length<=30}
+CAST(dto3 AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(u AS bit) -> bit boolean null:arithmetic-overflow
+CAST(u AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(u AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(u AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(u AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(u AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(u AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(u AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(u AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(u AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(u AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(u AS float) -> float number/float null:arithmetic-overflow
+CAST(u AS real) -> real number/float null:arithmetic-overflow
+CAST(u AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(u AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(u AS varchar(max)) -> varchar(max) string
+CAST(u AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(u AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(u AS nvarchar(max)) -> nvarchar(max) string
+CAST(u AS date) -> date date null:arithmetic-overflow
+CAST(u AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(u AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(u AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(u AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(u AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(u AS uniqueidentifier) -> uniqueidentifier uuid
+CAST(u AS binary(4)) -> unknown unsupported-expression: CAST(u AS binary(4)): a conversion to this type is not modelled yet.
+CAST(u AS varbinary(10)) -> unknown unsupported-expression: CAST(u AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(u AS xml) -> unknown unsupported-expression: CAST(u AS xml): a conversion to this type is not modelled yet.
+CAST(u AS sql_variant) -> unknown unsupported-expression: CAST(u AS sql_variant): a conversion to this type is not modelled yet.
+CAST(u AS json) -> unknown unsupported-expression: CAST(u AS json): a conversion to this type is not modelled yet.
+CAST(u AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
+CAST(u AS nvarchar) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
+CAST(bin4 AS bit) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS tinyint) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS smallint) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS int) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS bigint) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS decimal(5,2)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS decimal(38,0)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS decimal(38,38)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS numeric(10,2)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS money) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS smallmoney) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS float) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS real) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS char(3)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS varchar(10)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS varchar(max)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS nchar(3)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS nvarchar(10)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS nvarchar(max)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS date) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS time(3)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS datetime) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS datetime2(3)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS smalldatetime) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS datetimeoffset(3)) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS uniqueidentifier) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS binary(4)) -> unknown unsupported-expression: CAST(bin4 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(bin4 AS varbinary(10)) -> unknown unsupported-expression: CAST(bin4 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(bin4 AS xml) -> unknown unsupported-expression: CAST(bin4 AS xml): a conversion to this type is not modelled yet.
+CAST(bin4 AS sql_variant) -> unknown unsupported-expression: CAST(bin4 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(bin4 AS json) -> unknown unsupported-expression: CAST(bin4 AS json): a conversion to this type is not modelled yet.
+CAST(bin4 AS varchar) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(bin4 AS nvarchar) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CAST(vb10 AS bit) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS tinyint) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS smallint) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS int) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS bigint) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS decimal(5,2)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS decimal(38,0)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS decimal(38,38)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS numeric(10,2)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS money) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS smallmoney) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS float) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS real) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS char(3)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS varchar(10)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS varchar(max)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS nchar(3)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS nvarchar(10)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS nvarchar(max)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS date) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS time(3)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS datetime) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS datetime2(3)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS smalldatetime) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS datetimeoffset(3)) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS uniqueidentifier) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS binary(4)) -> unknown unsupported-expression: CAST(vb10 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(vb10 AS varbinary(10)) -> unknown unsupported-expression: CAST(vb10 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(vb10 AS xml) -> unknown unsupported-expression: CAST(vb10 AS xml): a conversion to this type is not modelled yet.
+CAST(vb10 AS sql_variant) -> unknown unsupported-expression: CAST(vb10 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(vb10 AS json) -> unknown unsupported-expression: CAST(vb10 AS json): a conversion to this type is not modelled yet.
+CAST(vb10 AS varchar) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(vb10 AS nvarchar) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CAST(x AS bit) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS tinyint) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS smallint) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS int) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS bigint) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS decimal(5,2)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS decimal(38,0)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS decimal(38,38)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS numeric(10,2)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS money) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS smallmoney) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS float) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS real) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS char(3)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS varchar(10)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS varchar(max)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS nchar(3)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS nvarchar(10)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS nvarchar(max)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS date) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS time(3)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS datetime) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS datetime2(3)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS smalldatetime) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS datetimeoffset(3)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS uniqueidentifier) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS binary(4)) -> unknown unsupported-expression: CAST(x AS binary(4)): a conversion to this type is not modelled yet.
+CAST(x AS varbinary(10)) -> unknown unsupported-expression: CAST(x AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(x AS xml) -> unknown unsupported-expression: CAST(x AS xml): a conversion to this type is not modelled yet.
+CAST(x AS sql_variant) -> unknown unsupported-expression: CAST(x AS sql_variant): a conversion to this type is not modelled yet.
+CAST(x AS json) -> unknown unsupported-expression: CAST(x AS json): a conversion to this type is not modelled yet.
+CAST(x AS varchar) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS nvarchar) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(sv AS bit) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS tinyint) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS smallint) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS int) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS bigint) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS decimal(5,2)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS decimal(38,0)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS decimal(38,38)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS numeric(10,2)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS money) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS smallmoney) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS float) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS real) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS char(3)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS varchar(10)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS varchar(max)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS nchar(3)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS nvarchar(10)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS nvarchar(max)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS date) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS time(3)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS datetime) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS datetime2(3)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS smalldatetime) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS datetimeoffset(3)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS uniqueidentifier) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS binary(4)) -> unknown unsupported-expression: CAST(sv AS binary(4)): a conversion to this type is not modelled yet.
+CAST(sv AS varbinary(10)) -> unknown unsupported-expression: CAST(sv AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(sv AS xml) -> unknown unsupported-expression: CAST(sv AS xml): a conversion to this type is not modelled yet.
+CAST(sv AS sql_variant) -> unknown unsupported-expression: CAST(sv AS sql_variant): a conversion to this type is not modelled yet.
+CAST(sv AS json) -> unknown unsupported-expression: CAST(sv AS json): a conversion to this type is not modelled yet.
+CAST(sv AS varchar) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(sv AS nvarchar) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CAST(j AS bit) -> unknown (no unknown recorded)
+CAST(j AS tinyint) -> unknown (no unknown recorded)
+CAST(j AS smallint) -> unknown (no unknown recorded)
+CAST(j AS int) -> unknown (no unknown recorded)
+CAST(j AS bigint) -> unknown (no unknown recorded)
+CAST(j AS decimal(5,2)) -> unknown (no unknown recorded)
+CAST(j AS decimal(38,0)) -> unknown (no unknown recorded)
+CAST(j AS decimal(38,38)) -> unknown (no unknown recorded)
+CAST(j AS numeric(10,2)) -> unknown (no unknown recorded)
+CAST(j AS money) -> unknown (no unknown recorded)
+CAST(j AS smallmoney) -> unknown (no unknown recorded)
+CAST(j AS float) -> unknown (no unknown recorded)
+CAST(j AS real) -> unknown (no unknown recorded)
+CAST(j AS char(3)) -> unknown (no unknown recorded)
+CAST(j AS varchar(10)) -> unknown (no unknown recorded)
+CAST(j AS varchar(max)) -> unknown (no unknown recorded)
+CAST(j AS nchar(3)) -> unknown (no unknown recorded)
+CAST(j AS nvarchar(10)) -> unknown (no unknown recorded)
+CAST(j AS nvarchar(max)) -> unknown (no unknown recorded)
+CAST(j AS date) -> unknown (no unknown recorded)
+CAST(j AS time(3)) -> unknown (no unknown recorded)
+CAST(j AS datetime) -> unknown (no unknown recorded)
+CAST(j AS datetime2(3)) -> unknown (no unknown recorded)
+CAST(j AS smalldatetime) -> unknown (no unknown recorded)
+CAST(j AS datetimeoffset(3)) -> unknown (no unknown recorded)
+CAST(j AS uniqueidentifier) -> unknown (no unknown recorded)
+CAST(j AS binary(4)) -> unknown unsupported-expression: CAST(j AS binary(4)): a conversion to this type is not modelled yet.
+CAST(j AS varbinary(10)) -> unknown unsupported-expression: CAST(j AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(j AS xml) -> unknown unsupported-expression: CAST(j AS xml): a conversion to this type is not modelled yet.
+CAST(j AS sql_variant) -> unknown unsupported-expression: CAST(j AS sql_variant): a conversion to this type is not modelled yet.
+CAST(j AS json) -> unknown unsupported-expression: CAST(j AS json): a conversion to this type is not modelled yet.
+CAST(j AS varchar) -> unknown (no unknown recorded)
+CAST(j AS nvarchar) -> unknown (no unknown recorded)
+CAST(1 AS bit) -> bit boolean
+CAST(1 AS tinyint) -> tinyint number/uint8 {[0 255]}
+CAST(1 AS smallint) -> smallint number/int16 {[-32768 32767]}
+CAST(1 AS int) -> int number/int32 {[-2147483648 2147483647]}
+CAST(1 AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CAST(1 AS decimal(5,2)) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+CAST(1 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(1 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(1 AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+CAST(1 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(1 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(1 AS float) -> float number/float
+CAST(1 AS real) -> real number/float
+CAST(1 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(1 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(1 AS varchar(max)) -> varchar(max) string
+CAST(1 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(1 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(1 AS nvarchar(max)) -> nvarchar(max) string
+CAST(1 AS date) -> date date null:arithmetic-overflow
+CAST(1 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(1 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(1 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(1 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(1 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(1 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(1 AS binary(4)) -> unknown unsupported-expression: CAST(1 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(1 AS varbinary(10)) -> unknown unsupported-expression: CAST(1 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(1 AS xml) -> unknown unsupported-expression: CAST(1 AS xml): a conversion to this type is not modelled yet.
+CAST(1 AS sql_variant) -> unknown unsupported-expression: CAST(1 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(1 AS json) -> unknown unsupported-expression: CAST(1 AS json): a conversion to this type is not modelled yet.
+CAST(1 AS varchar) -> varchar(30) string {length<=30}
+CAST(1 AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(12345 AS bit) -> bit boolean
+CAST(12345 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(12345 AS smallint) -> smallint number/int16 {[-32768 32767]}
+CAST(12345 AS int) -> int number/int32 {[-2147483648 2147483647]}
+CAST(12345 AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CAST(12345 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(12345 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(12345 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(12345 AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+CAST(12345 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(12345 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(12345 AS float) -> float number/float
+CAST(12345 AS real) -> real number/float
+CAST(12345 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(12345 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(12345 AS varchar(max)) -> varchar(max) string
+CAST(12345 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(12345 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(12345 AS nvarchar(max)) -> nvarchar(max) string
+CAST(12345 AS date) -> date date null:arithmetic-overflow
+CAST(12345 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(12345 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(12345 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(12345 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(12345 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(12345 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(12345 AS binary(4)) -> unknown unsupported-expression: CAST(12345 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(12345 AS varbinary(10)) -> unknown unsupported-expression: CAST(12345 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(12345 AS xml) -> unknown unsupported-expression: CAST(12345 AS xml): a conversion to this type is not modelled yet.
+CAST(12345 AS sql_variant) -> unknown unsupported-expression: CAST(12345 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(12345 AS json) -> unknown unsupported-expression: CAST(12345 AS json): a conversion to this type is not modelled yet.
+CAST(12345 AS varchar) -> varchar(30) string {length<=30}
+CAST(12345 AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(2.50 AS bit) -> bit boolean
+CAST(2.50 AS tinyint) -> tinyint number/uint8 {[0 255]}
+CAST(2.50 AS smallint) -> smallint number/int16 {[-32768 32767]}
+CAST(2.50 AS int) -> int number/int32 {[-2147483648 2147483647]}
+CAST(2.50 AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CAST(2.50 AS decimal(5,2)) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+CAST(2.50 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(2.50 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(2.50 AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+CAST(2.50 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(2.50 AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+CAST(2.50 AS float) -> float number/float
+CAST(2.50 AS real) -> real number/float
+CAST(2.50 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(2.50 AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(2.50 AS varchar(max)) -> varchar(max) string
+CAST(2.50 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(2.50 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(2.50 AS nvarchar(max)) -> nvarchar(max) string
+CAST(2.50 AS date) -> date date null:arithmetic-overflow
+CAST(2.50 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(2.50 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(2.50 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(2.50 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(2.50 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(2.50 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(2.50 AS binary(4)) -> unknown unsupported-expression: CAST(2.50 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(2.50 AS varbinary(10)) -> unknown unsupported-expression: CAST(2.50 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(2.50 AS xml) -> unknown unsupported-expression: CAST(2.50 AS xml): a conversion to this type is not modelled yet.
+CAST(2.50 AS sql_variant) -> unknown unsupported-expression: CAST(2.50 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(2.50 AS json) -> unknown unsupported-expression: CAST(2.50 AS json): a conversion to this type is not modelled yet.
+CAST(2.50 AS varchar) -> varchar(30) string {length<=30}
+CAST(2.50 AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST('ab' AS bit) -> bit boolean null:arithmetic-overflow
+CAST('ab' AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST('ab' AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST('ab' AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST('ab' AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST('ab' AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST('ab' AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST('ab' AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST('ab' AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST('ab' AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST('ab' AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST('ab' AS float) -> float number/float null:arithmetic-overflow
+CAST('ab' AS real) -> real number/float null:arithmetic-overflow
+CAST('ab' AS char(3)) -> char(3) string {length=3}
+CAST('ab' AS varchar(10)) -> varchar(10) string {length<=10}
+CAST('ab' AS varchar(max)) -> varchar(max) string
+CAST('ab' AS nchar(3)) -> nchar(3) string {length=3}
+CAST('ab' AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST('ab' AS nvarchar(max)) -> nvarchar(max) string
+CAST('ab' AS date) -> date date null:arithmetic-overflow
+CAST('ab' AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST('ab' AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST('ab' AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST('ab' AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST('ab' AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST('ab' AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST('ab' AS binary(4)) -> unknown unsupported-expression: CAST('ab' AS binary(4)): a conversion to this type is not modelled yet.
+CAST('ab' AS varbinary(10)) -> unknown unsupported-expression: CAST('ab' AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST('ab' AS xml) -> unknown unsupported-expression: CAST('ab' AS xml): a conversion to this type is not modelled yet.
+CAST('ab' AS sql_variant) -> unknown unsupported-expression: CAST('ab' AS sql_variant): a conversion to this type is not modelled yet.
+CAST('ab' AS json) -> unknown unsupported-expression: CAST('ab' AS json): a conversion to this type is not modelled yet.
+CAST('ab' AS varchar) -> varchar(30) string {length<=30}
+CAST('ab' AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(N'ab' AS bit) -> bit boolean null:arithmetic-overflow
+CAST(N'ab' AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(N'ab' AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(N'ab' AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(N'ab' AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(N'ab' AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(N'ab' AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(N'ab' AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(N'ab' AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(N'ab' AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(N'ab' AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(N'ab' AS float) -> float number/float null:arithmetic-overflow
+CAST(N'ab' AS real) -> real number/float null:arithmetic-overflow
+CAST(N'ab' AS char(3)) -> char(3) string {length=3}
+CAST(N'ab' AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(N'ab' AS varchar(max)) -> varchar(max) string
+CAST(N'ab' AS nchar(3)) -> nchar(3) string {length=3}
+CAST(N'ab' AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(N'ab' AS nvarchar(max)) -> nvarchar(max) string
+CAST(N'ab' AS date) -> date date null:arithmetic-overflow
+CAST(N'ab' AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(N'ab' AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(N'ab' AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(N'ab' AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(N'ab' AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(N'ab' AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(N'ab' AS binary(4)) -> unknown unsupported-expression: CAST(N'ab' AS binary(4)): a conversion to this type is not modelled yet.
+CAST(N'ab' AS varbinary(10)) -> unknown unsupported-expression: CAST(N'ab' AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(N'ab' AS xml) -> unknown unsupported-expression: CAST(N'ab' AS xml): a conversion to this type is not modelled yet.
+CAST(N'ab' AS sql_variant) -> unknown unsupported-expression: CAST(N'ab' AS sql_variant): a conversion to this type is not modelled yet.
+CAST(N'ab' AS json) -> unknown unsupported-expression: CAST(N'ab' AS json): a conversion to this type is not modelled yet.
+CAST(N'ab' AS varchar) -> varchar(30) string {length<=30}
+CAST(N'ab' AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(1e0 AS bit) -> bit boolean null:arithmetic-overflow
+CAST(1e0 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST(1e0 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST(1e0 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST(1e0 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST(1e0 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST(1e0 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(1e0 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(1e0 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(1e0 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST(1e0 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST(1e0 AS float) -> float number/float
+CAST(1e0 AS real) -> real number/float null:arithmetic-overflow
+CAST(1e0 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST(1e0 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST(1e0 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
+CAST(1e0 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(1e0 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST(1e0 AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
+CAST(1e0 AS date) -> date date null:arithmetic-overflow
+CAST(1e0 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(1e0 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST(1e0 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(1e0 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST(1e0 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(1e0 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(1e0 AS binary(4)) -> unknown unsupported-expression: CAST(1e0 AS binary(4)): a conversion to this type is not modelled yet.
+CAST(1e0 AS varbinary(10)) -> unknown unsupported-expression: CAST(1e0 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST(1e0 AS xml) -> unknown unsupported-expression: CAST(1e0 AS xml): a conversion to this type is not modelled yet.
+CAST(1e0 AS sql_variant) -> unknown unsupported-expression: CAST(1e0 AS sql_variant): a conversion to this type is not modelled yet.
+CAST(1e0 AS json) -> unknown unsupported-expression: CAST(1e0 AS json): a conversion to this type is not modelled yet.
+CAST(1e0 AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
+CAST(1e0 AS nvarchar) -> nvarchar(30) string null:arithmetic-overflow {length<=30}
+CAST($1 AS bit) -> bit boolean
+CAST($1 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
+CAST($1 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+CAST($1 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CAST($1 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+CAST($1 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+CAST($1 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST($1 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST($1 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST($1 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+CAST($1 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+CAST($1 AS float) -> float number/float
+CAST($1 AS real) -> real number/float
+CAST($1 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
+CAST($1 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
+CAST($1 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
+CAST($1 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST($1 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
+CAST($1 AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
+CAST($1 AS date) -> date date null:arithmetic-overflow
+CAST($1 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST($1 AS datetime) -> datetime datetime/local null:arithmetic-overflow
+CAST($1 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST($1 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
+CAST($1 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST($1 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST($1 AS binary(4)) -> unknown unsupported-expression: CAST($1 AS binary(4)): a conversion to this type is not modelled yet.
+CAST($1 AS varbinary(10)) -> unknown unsupported-expression: CAST($1 AS varbinary(10)): a conversion to this type is not modelled yet.
+CAST($1 AS xml) -> unknown unsupported-expression: CAST($1 AS xml): a conversion to this type is not modelled yet.
+CAST($1 AS sql_variant) -> unknown unsupported-expression: CAST($1 AS sql_variant): a conversion to this type is not modelled yet.
+CAST($1 AS json) -> unknown unsupported-expression: CAST($1 AS json): a conversion to this type is not modelled yet.
+CAST($1 AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
+CAST($1 AS nvarchar) -> nvarchar(30) string null:arithmetic-overflow {length<=30}

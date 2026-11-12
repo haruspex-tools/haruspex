@@ -1,0 +1,1008 @@
+COUNT(bt) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(bt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(bt) -> unknown unsupported-expression: SUM(bt): SUM of a value of this type is not modelled yet.
+AVG(bt) -> unknown unsupported-expression: AVG(bt): AVG of a value of this type is not modelled.
+MIN(bt) -> bit boolean null:empty-aggregate
+MAX(bt) -> bit boolean null:empty-aggregate
+STDEV(bt) -> unknown unsupported-expression: STDEV(bt): STDEV of a value of this type is not modelled.
+VAR(bt) -> unknown unsupported-expression: VAR(bt): VAR of a value of this type is not modelled.
+COUNT(ti) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(ti) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(ti) -> int number/int32 null:empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+AVG(ti) -> int number/int32 null:empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(ti) -> tinyint number/uint8 null:empty-aggregate {[0 255]}
+MAX(ti) -> tinyint number/uint8 null:empty-aggregate {[0 255]}
+STDEV(ti) -> float number/float null:empty-aggregate,too-few-values
+VAR(ti) -> float number/float null:empty-aggregate,too-few-values
+COUNT(si) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(si) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(si) -> int number/int32 null:empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+AVG(si) -> int number/int32 null:empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(si) -> smallint number/int16 null:empty-aggregate {[-32768 32767]}
+MAX(si) -> smallint number/int16 null:empty-aggregate {[-32768 32767]}
+STDEV(si) -> float number/float null:empty-aggregate,too-few-values
+VAR(si) -> float number/float null:empty-aggregate,too-few-values
+COUNT(i) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(i) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(i) -> int number/int32 null:empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+AVG(i) -> int number/int32 null:empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(i) -> int number/int32 null:empty-aggregate {[-2147483648 2147483647]}
+MAX(i) -> int number/int32 null:empty-aggregate {[-2147483648 2147483647]}
+STDEV(i) -> float number/float null:empty-aggregate,too-few-values
+VAR(i) -> float number/float null:empty-aggregate,too-few-values
+COUNT(bi) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(bi) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(bi) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+AVG(bi) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bi) -> bigint number/int64 null:empty-aggregate {[-9223372036854775808 9223372036854775807]}
+MAX(bi) -> bigint number/int64 null:empty-aggregate {[-9223372036854775808 9223372036854775807]}
+STDEV(bi) -> float number/float null:empty-aggregate,too-few-values
+VAR(bi) -> float number/float null:empty-aggregate,too-few-values
+COUNT(d52) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(d52) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(d52) -> decimal(38,2) number/decimal null:empty-aggregate {digits=38,2 [-999999999999999999999999999999999999.99 999999999999999999999999999999999999.99]}
+AVG(d52) -> decimal(38,6) number/decimal null:empty-aggregate {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+MIN(d52) -> decimal(5,2) number/decimal null:empty-aggregate {digits=5,2 [-999.99 999.99]}
+MAX(d52) -> decimal(5,2) number/decimal null:empty-aggregate {digits=5,2 [-999.99 999.99]}
+STDEV(d52) -> float number/float null:empty-aggregate,too-few-values
+VAR(d52) -> float number/float null:empty-aggregate,too-few-values
+COUNT(d380) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(d380) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(d380) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+AVG(d380) -> decimal(38,6) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+MIN(d380) -> decimal(38,0) number/decimal null:empty-aggregate {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+MAX(d380) -> decimal(38,0) number/decimal null:empty-aggregate {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+STDEV(d380) -> float number/float null:empty-aggregate,too-few-values
+VAR(d380) -> float number/float null:empty-aggregate,too-few-values
+COUNT(d3838) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(d3838) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(d3838) -> decimal(38,38) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+AVG(d3838) -> decimal(38,38) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+MIN(d3838) -> decimal(38,38) number/decimal null:empty-aggregate {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+MAX(d3838) -> decimal(38,38) number/decimal null:empty-aggregate {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+STDEV(d3838) -> float number/float null:empty-aggregate,too-few-values
+VAR(d3838) -> float number/float null:empty-aggregate,too-few-values
+COUNT(n102) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(n102) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(n102) -> numeric(38,2) number/decimal null:empty-aggregate {digits=38,2 [-999999999999999999999999999999999999.99 999999999999999999999999999999999999.99]}
+AVG(n102) -> numeric(38,6) number/decimal null:empty-aggregate {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+MIN(n102) -> numeric(10,2) number/decimal null:empty-aggregate {digits=10,2 [-99999999.99 99999999.99]}
+MAX(n102) -> numeric(10,2) number/decimal null:empty-aggregate {digits=10,2 [-99999999.99 99999999.99]}
+STDEV(n102) -> float number/float null:empty-aggregate,too-few-values
+VAR(n102) -> float number/float null:empty-aggregate,too-few-values
+COUNT(m) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(m) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+AVG(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(m) -> money number/decimal null:empty-aggregate {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MAX(m) -> money number/decimal null:empty-aggregate {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+STDEV(m) -> float number/float null:empty-aggregate,too-few-values
+VAR(m) -> float number/float null:empty-aggregate,too-few-values
+COUNT(sm) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(sm) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(sm) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+AVG(sm) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(sm) -> smallmoney number/decimal null:empty-aggregate {digits=10,4 [-214748.3648 214748.3647]}
+MAX(sm) -> smallmoney number/decimal null:empty-aggregate {digits=10,4 [-214748.3648 214748.3647]}
+STDEV(sm) -> float number/float null:empty-aggregate,too-few-values
+VAR(sm) -> float number/float null:empty-aggregate,too-few-values
+COUNT(f) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(f) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(f) -> float number/float null:empty-aggregate,arithmetic-overflow
+AVG(f) -> float number/float null:empty-aggregate,arithmetic-overflow
+MIN(f) -> float number/float null:empty-aggregate
+MAX(f) -> float number/float null:empty-aggregate
+STDEV(f) -> float number/float null:empty-aggregate,too-few-values,arithmetic-overflow
+VAR(f) -> float number/float null:empty-aggregate,too-few-values,arithmetic-overflow
+COUNT(r) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(r) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(r) -> float number/float null:empty-aggregate,arithmetic-overflow
+AVG(r) -> float number/float null:empty-aggregate,arithmetic-overflow
+MIN(r) -> real number/float null:empty-aggregate
+MAX(r) -> real number/float null:empty-aggregate
+STDEV(r) -> float number/float null:empty-aggregate,too-few-values
+VAR(r) -> float number/float null:empty-aggregate,too-few-values
+COUNT(c3) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(c3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(c3) -> unknown unsupported-expression: SUM(c3): SUM of a value of this type is not modelled yet.
+AVG(c3) -> unknown unsupported-expression: AVG(c3): AVG of a value of this type is not modelled.
+MIN(c3) -> char(3) string null:empty-aggregate {length=3}
+MAX(c3) -> char(3) string null:empty-aggregate {length=3}
+STDEV(c3) -> unknown unsupported-expression: STDEV(c3): STDEV of a value of this type is not modelled.
+VAR(c3) -> unknown unsupported-expression: VAR(c3): VAR of a value of this type is not modelled.
+COUNT(v10) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(v10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(v10) -> unknown unsupported-expression: SUM(v10): SUM of a value of this type is not modelled yet.
+AVG(v10) -> unknown unsupported-expression: AVG(v10): AVG of a value of this type is not modelled.
+MIN(v10) -> varchar(10) string null:empty-aggregate {length<=10}
+MAX(v10) -> varchar(10) string null:empty-aggregate {length<=10}
+STDEV(v10) -> unknown unsupported-expression: STDEV(v10): STDEV of a value of this type is not modelled.
+VAR(v10) -> unknown unsupported-expression: VAR(v10): VAR of a value of this type is not modelled.
+COUNT(vx) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(vx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(vx) -> unknown unsupported-expression: SUM(vx): SUM of a value of this type is not modelled yet.
+AVG(vx) -> unknown unsupported-expression: AVG(vx): AVG of a value of this type is not modelled.
+MIN(vx) -> varchar(max) string null:empty-aggregate
+MAX(vx) -> varchar(max) string null:empty-aggregate
+STDEV(vx) -> unknown unsupported-expression: STDEV(vx): STDEV of a value of this type is not modelled.
+VAR(vx) -> unknown unsupported-expression: VAR(vx): VAR of a value of this type is not modelled.
+COUNT(nc3) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(nc3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(nc3) -> unknown unsupported-expression: SUM(nc3): SUM of a value of this type is not modelled yet.
+AVG(nc3) -> unknown unsupported-expression: AVG(nc3): AVG of a value of this type is not modelled.
+MIN(nc3) -> nchar(3) string null:empty-aggregate {length=3}
+MAX(nc3) -> nchar(3) string null:empty-aggregate {length=3}
+STDEV(nc3) -> unknown unsupported-expression: STDEV(nc3): STDEV of a value of this type is not modelled.
+VAR(nc3) -> unknown unsupported-expression: VAR(nc3): VAR of a value of this type is not modelled.
+COUNT(nv10) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(nv10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(nv10) -> unknown unsupported-expression: SUM(nv10): SUM of a value of this type is not modelled yet.
+AVG(nv10) -> unknown unsupported-expression: AVG(nv10): AVG of a value of this type is not modelled.
+MIN(nv10) -> nvarchar(10) string null:empty-aggregate {length<=10}
+MAX(nv10) -> nvarchar(10) string null:empty-aggregate {length<=10}
+STDEV(nv10) -> unknown unsupported-expression: STDEV(nv10): STDEV of a value of this type is not modelled.
+VAR(nv10) -> unknown unsupported-expression: VAR(nv10): VAR of a value of this type is not modelled.
+COUNT(nvx) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(nvx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(nvx) -> unknown unsupported-expression: SUM(nvx): SUM of a value of this type is not modelled yet.
+AVG(nvx) -> unknown unsupported-expression: AVG(nvx): AVG of a value of this type is not modelled.
+MIN(nvx) -> nvarchar(max) string null:empty-aggregate
+MAX(nvx) -> nvarchar(max) string null:empty-aggregate
+STDEV(nvx) -> unknown unsupported-expression: STDEV(nvx): STDEV of a value of this type is not modelled.
+VAR(nvx) -> unknown unsupported-expression: VAR(nvx): VAR of a value of this type is not modelled.
+COUNT(dt) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(dt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(dt) -> unknown unsupported-expression: SUM(dt): SUM of a value of this type is not modelled yet.
+AVG(dt) -> unknown unsupported-expression: AVG(dt): AVG of a value of this type is not modelled.
+MIN(dt) -> date date null:empty-aggregate
+MAX(dt) -> date date null:empty-aggregate
+STDEV(dt) -> unknown unsupported-expression: STDEV(dt): STDEV of a value of this type is not modelled.
+VAR(dt) -> unknown unsupported-expression: VAR(dt): VAR of a value of this type is not modelled.
+COUNT(tm3) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(tm3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(tm3) -> unknown unsupported-expression: SUM(tm3): SUM of a value of this type is not modelled yet.
+AVG(tm3) -> unknown unsupported-expression: AVG(tm3): AVG of a value of this type is not modelled.
+MIN(tm3) -> time(3) time null:empty-aggregate
+MAX(tm3) -> time(3) time null:empty-aggregate
+STDEV(tm3) -> unknown unsupported-expression: STDEV(tm3): STDEV of a value of this type is not modelled.
+VAR(tm3) -> unknown unsupported-expression: VAR(tm3): VAR of a value of this type is not modelled.
+COUNT(dtm) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(dtm) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(dtm) -> unknown unsupported-expression: SUM(dtm): SUM of a value of this type is not modelled yet.
+AVG(dtm) -> unknown unsupported-expression: AVG(dtm): AVG of a value of this type is not modelled.
+MIN(dtm) -> datetime datetime/local null:empty-aggregate
+MAX(dtm) -> datetime datetime/local null:empty-aggregate
+STDEV(dtm) -> unknown unsupported-expression: STDEV(dtm): STDEV of a value of this type is not modelled.
+VAR(dtm) -> unknown unsupported-expression: VAR(dtm): VAR of a value of this type is not modelled.
+COUNT(dt23) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(dt23) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(dt23) -> unknown unsupported-expression: SUM(dt23): SUM of a value of this type is not modelled yet.
+AVG(dt23) -> unknown unsupported-expression: AVG(dt23): AVG of a value of this type is not modelled.
+MIN(dt23) -> datetime2(3) datetime/local null:empty-aggregate
+MAX(dt23) -> datetime2(3) datetime/local null:empty-aggregate
+STDEV(dt23) -> unknown unsupported-expression: STDEV(dt23): STDEV of a value of this type is not modelled.
+VAR(dt23) -> unknown unsupported-expression: VAR(dt23): VAR of a value of this type is not modelled.
+COUNT(sdt) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(sdt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(sdt) -> unknown unsupported-expression: SUM(sdt): SUM of a value of this type is not modelled yet.
+AVG(sdt) -> unknown unsupported-expression: AVG(sdt): AVG of a value of this type is not modelled.
+MIN(sdt) -> smalldatetime datetime/local null:empty-aggregate
+MAX(sdt) -> smalldatetime datetime/local null:empty-aggregate
+STDEV(sdt) -> unknown unsupported-expression: STDEV(sdt): STDEV of a value of this type is not modelled.
+VAR(sdt) -> unknown unsupported-expression: VAR(sdt): VAR of a value of this type is not modelled.
+COUNT(dto3) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(dto3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(dto3) -> unknown unsupported-expression: SUM(dto3): SUM of a value of this type is not modelled yet.
+AVG(dto3) -> unknown unsupported-expression: AVG(dto3): AVG of a value of this type is not modelled.
+MIN(dto3) -> datetimeoffset(3) datetime/offset null:empty-aggregate
+MAX(dto3) -> datetimeoffset(3) datetime/offset null:empty-aggregate
+STDEV(dto3) -> unknown unsupported-expression: STDEV(dto3): STDEV of a value of this type is not modelled.
+VAR(dto3) -> unknown unsupported-expression: VAR(dto3): VAR of a value of this type is not modelled.
+COUNT(u) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(u) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(u) -> unknown unsupported-expression: SUM(u): SUM of a value of this type is not modelled yet.
+AVG(u) -> unknown unsupported-expression: AVG(u): AVG of a value of this type is not modelled.
+MIN(u) -> uniqueidentifier uuid null:empty-aggregate
+MAX(u) -> uniqueidentifier uuid null:empty-aggregate
+STDEV(u) -> unknown unsupported-expression: STDEV(u): STDEV of a value of this type is not modelled.
+VAR(u) -> unknown unsupported-expression: VAR(u): VAR of a value of this type is not modelled.
+COUNT(bin4) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(bin4) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+AVG(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MAX(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+STDEV(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+VAR(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COUNT(vb10) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(vb10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+AVG(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MAX(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+STDEV(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+VAR(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT(x) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(x) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+AVG(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MAX(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STDEV(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+VAR(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT(sv) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(sv) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+AVG(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MAX(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+STDEV(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+VAR(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COUNT(j) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(j) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(j) -> unknown (no unknown recorded)
+AVG(j) -> unknown (no unknown recorded)
+MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+MAX(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+STDEV(j) -> unknown (no unknown recorded)
+VAR(j) -> unknown (no unknown recorded)
+COUNT(*) + MIN(bt) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(bt) + COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) + MIN(ti) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(ti) + COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) + MIN(si) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(si) + COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) + MIN(i) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(i) + COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) + MIN(bi) -> bigint number/int64 null:count-overflow,empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bi) + COUNT(*) -> bigint number/int64 null:empty-aggregate,count-overflow,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT(*) + MIN(d52) -> decimal(13,2) number/decimal null:count-overflow,empty-aggregate {digits=13,2 [-99999999999.99 99999999999.99]}
+MIN(d52) + COUNT(*) -> decimal(13,2) number/decimal null:empty-aggregate,count-overflow {digits=13,2 [-99999999999.99 99999999999.99]}
+COUNT(*) + MIN(d380) -> decimal(38,0) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+MIN(d380) + COUNT(*) -> decimal(38,0) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+COUNT(*) + MIN(d3838) -> decimal(38,28) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
+MIN(d3838) + COUNT(*) -> decimal(38,28) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
+COUNT(*) + MIN(n102) -> numeric(13,2) number/decimal null:count-overflow,empty-aggregate {digits=13,2 [-99999999999.99 99999999999.99]}
+MIN(n102) + COUNT(*) -> numeric(13,2) number/decimal null:empty-aggregate,count-overflow {digits=13,2 [-99999999999.99 99999999999.99]}
+COUNT(*) + MIN(m) -> money number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(m) + COUNT(*) -> money number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT(*) + MIN(sm) -> smallmoney number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+MIN(sm) + COUNT(*) -> smallmoney number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+COUNT(*) + MIN(f) -> float number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(f) + COUNT(*) -> float number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) + MIN(r) -> real number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(r) + COUNT(*) -> real number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) + MIN(c3) -> unknown unsupported-expression: COUNT(*) + MIN(c3): arithmetic on these types is not modelled yet.
+MIN(c3) + COUNT(*) -> unknown unsupported-expression: MIN(c3) + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + MIN(v10) -> unknown unsupported-expression: COUNT(*) + MIN(v10): arithmetic on these types is not modelled yet.
+MIN(v10) + COUNT(*) -> unknown unsupported-expression: MIN(v10) + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + MIN(vx) -> unknown unsupported-expression: COUNT(*) + MIN(vx): arithmetic on these types is not modelled yet.
+MIN(vx) + COUNT(*) -> unknown unsupported-expression: MIN(vx) + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + MIN(nc3) -> unknown unsupported-expression: COUNT(*) + MIN(nc3): arithmetic on these types is not modelled yet.
+MIN(nc3) + COUNT(*) -> unknown unsupported-expression: MIN(nc3) + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + MIN(nv10) -> unknown unsupported-expression: COUNT(*) + MIN(nv10): arithmetic on these types is not modelled yet.
+MIN(nv10) + COUNT(*) -> unknown unsupported-expression: MIN(nv10) + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + MIN(nvx) -> unknown unsupported-expression: COUNT(*) + MIN(nvx): arithmetic on these types is not modelled yet.
+MIN(nvx) + COUNT(*) -> unknown unsupported-expression: MIN(nvx) + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + MIN(dt) -> unknown unsupported-expression: COUNT(*) + MIN(dt): arithmetic on these types is not modelled yet.
+MIN(dt) + COUNT(*) -> unknown unsupported-expression: MIN(dt) + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + MIN(tm3) -> unknown unsupported-expression: COUNT(*) + MIN(tm3): arithmetic on these types is not modelled yet.
+MIN(tm3) + COUNT(*) -> unknown unsupported-expression: MIN(tm3) + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + MIN(dtm) -> datetime datetime/local null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(dtm) + COUNT(*) -> datetime datetime/local null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) + MIN(dt23) -> unknown unsupported-expression: COUNT(*) + MIN(dt23): arithmetic on these types is not modelled yet.
+MIN(dt23) + COUNT(*) -> unknown unsupported-expression: MIN(dt23) + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + MIN(sdt) -> smalldatetime datetime/local null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(sdt) + COUNT(*) -> smalldatetime datetime/local null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) + MIN(dto3) -> unknown unsupported-expression: COUNT(*) + MIN(dto3): arithmetic on these types is not modelled yet.
+MIN(dto3) + COUNT(*) -> unknown unsupported-expression: MIN(dto3) + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + MIN(u) -> unknown unsupported-expression: COUNT(*) + MIN(u): arithmetic on these types is not modelled yet.
+MIN(u) + COUNT(*) -> unknown unsupported-expression: MIN(u) + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MIN(bin4) + COUNT(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COUNT(*) + MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MIN(vb10) + COUNT(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT(*) + MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(x) + COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT(*) + MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MIN(sv) + COUNT(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COUNT(*) + MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+MIN(j) + COUNT(*) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+COUNT(*) + 1 -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+1 + COUNT(*) -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) + 12345 -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+12345 + COUNT(*) -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) + 2.50 -> numeric(13,2) number/decimal null:count-overflow {digits=13,2 [-99999999999.99 99999999999.99]}
+2.50 + COUNT(*) -> numeric(13,2) number/decimal null:count-overflow {digits=13,2 [-99999999999.99 99999999999.99]}
+COUNT(*) + 'ab' -> unknown unsupported-expression: COUNT(*) + 'ab': arithmetic on these types is not modelled yet.
+'ab' + COUNT(*) -> unknown unsupported-expression: 'ab' + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + N'ab' -> unknown unsupported-expression: COUNT(*) + N'ab': arithmetic on these types is not modelled yet.
+N'ab' + COUNT(*) -> unknown unsupported-expression: N'ab' + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + 1e0 -> float number/float null:count-overflow,arithmetic-overflow
+1e0 + COUNT(*) -> float number/float null:count-overflow,arithmetic-overflow
+COUNT(*) + $1 -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+$1 + COUNT(*) -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT(*) - MIN(bt) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(bt) - COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) - MIN(ti) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(ti) - COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) - MIN(si) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(si) - COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) - MIN(i) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(i) - COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) - MIN(bi) -> bigint number/int64 null:count-overflow,empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bi) - COUNT(*) -> bigint number/int64 null:empty-aggregate,count-overflow,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT(*) - MIN(d52) -> decimal(13,2) number/decimal null:count-overflow,empty-aggregate {digits=13,2 [-99999999999.99 99999999999.99]}
+MIN(d52) - COUNT(*) -> decimal(13,2) number/decimal null:empty-aggregate,count-overflow {digits=13,2 [-99999999999.99 99999999999.99]}
+COUNT(*) - MIN(d380) -> decimal(38,0) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+MIN(d380) - COUNT(*) -> decimal(38,0) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+COUNT(*) - MIN(d3838) -> decimal(38,28) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
+MIN(d3838) - COUNT(*) -> decimal(38,28) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
+COUNT(*) - MIN(n102) -> numeric(13,2) number/decimal null:count-overflow,empty-aggregate {digits=13,2 [-99999999999.99 99999999999.99]}
+MIN(n102) - COUNT(*) -> numeric(13,2) number/decimal null:empty-aggregate,count-overflow {digits=13,2 [-99999999999.99 99999999999.99]}
+COUNT(*) - MIN(m) -> money number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(m) - COUNT(*) -> money number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT(*) - MIN(sm) -> smallmoney number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+MIN(sm) - COUNT(*) -> smallmoney number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+COUNT(*) - MIN(f) -> float number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(f) - COUNT(*) -> float number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) - MIN(r) -> real number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(r) - COUNT(*) -> real number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) - MIN(c3) -> unknown unsupported-expression: COUNT(*) - MIN(c3): arithmetic on these types is not modelled yet.
+MIN(c3) - COUNT(*) -> unknown unsupported-expression: MIN(c3) - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - MIN(v10) -> unknown unsupported-expression: COUNT(*) - MIN(v10): arithmetic on these types is not modelled yet.
+MIN(v10) - COUNT(*) -> unknown unsupported-expression: MIN(v10) - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - MIN(vx) -> unknown unsupported-expression: COUNT(*) - MIN(vx): arithmetic on these types is not modelled yet.
+MIN(vx) - COUNT(*) -> unknown unsupported-expression: MIN(vx) - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - MIN(nc3) -> unknown unsupported-expression: COUNT(*) - MIN(nc3): arithmetic on these types is not modelled yet.
+MIN(nc3) - COUNT(*) -> unknown unsupported-expression: MIN(nc3) - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - MIN(nv10) -> unknown unsupported-expression: COUNT(*) - MIN(nv10): arithmetic on these types is not modelled yet.
+MIN(nv10) - COUNT(*) -> unknown unsupported-expression: MIN(nv10) - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - MIN(nvx) -> unknown unsupported-expression: COUNT(*) - MIN(nvx): arithmetic on these types is not modelled yet.
+MIN(nvx) - COUNT(*) -> unknown unsupported-expression: MIN(nvx) - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - MIN(dt) -> unknown unsupported-expression: COUNT(*) - MIN(dt): arithmetic on these types is not modelled yet.
+MIN(dt) - COUNT(*) -> unknown unsupported-expression: MIN(dt) - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - MIN(tm3) -> unknown unsupported-expression: COUNT(*) - MIN(tm3): arithmetic on these types is not modelled yet.
+MIN(tm3) - COUNT(*) -> unknown unsupported-expression: MIN(tm3) - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - MIN(dtm) -> datetime datetime/local null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(dtm) - COUNT(*) -> datetime datetime/local null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) - MIN(dt23) -> unknown unsupported-expression: COUNT(*) - MIN(dt23): arithmetic on these types is not modelled yet.
+MIN(dt23) - COUNT(*) -> unknown unsupported-expression: MIN(dt23) - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - MIN(sdt) -> smalldatetime datetime/local null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(sdt) - COUNT(*) -> smalldatetime datetime/local null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) - MIN(dto3) -> unknown unsupported-expression: COUNT(*) - MIN(dto3): arithmetic on these types is not modelled yet.
+MIN(dto3) - COUNT(*) -> unknown unsupported-expression: MIN(dto3) - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - MIN(u) -> unknown unsupported-expression: COUNT(*) - MIN(u): arithmetic on these types is not modelled yet.
+MIN(u) - COUNT(*) -> unknown unsupported-expression: MIN(u) - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MIN(bin4) - COUNT(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COUNT(*) - MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MIN(vb10) - COUNT(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT(*) - MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(x) - COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT(*) - MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MIN(sv) - COUNT(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COUNT(*) - MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+MIN(j) - COUNT(*) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+COUNT(*) - 1 -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+1 - COUNT(*) -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) - 12345 -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+12345 - COUNT(*) -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) - 2.50 -> numeric(13,2) number/decimal null:count-overflow {digits=13,2 [-99999999999.99 99999999999.99]}
+2.50 - COUNT(*) -> numeric(13,2) number/decimal null:count-overflow {digits=13,2 [-99999999999.99 99999999999.99]}
+COUNT(*) - 'ab' -> unknown unsupported-expression: COUNT(*) - 'ab': arithmetic on these types is not modelled yet.
+'ab' - COUNT(*) -> unknown unsupported-expression: 'ab' - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - N'ab' -> unknown unsupported-expression: COUNT(*) - N'ab': arithmetic on these types is not modelled yet.
+N'ab' - COUNT(*) -> unknown unsupported-expression: N'ab' - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - 1e0 -> float number/float null:count-overflow,arithmetic-overflow
+1e0 - COUNT(*) -> float number/float null:count-overflow,arithmetic-overflow
+COUNT(*) - $1 -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+$1 - COUNT(*) -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT(*) * MIN(bt) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(bt) * COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) * MIN(ti) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(ti) * COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) * MIN(si) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(si) * COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) * MIN(i) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(i) * COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) * MIN(bi) -> bigint number/int64 null:count-overflow,empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bi) * COUNT(*) -> bigint number/int64 null:empty-aggregate,count-overflow,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT(*) * MIN(d52) -> decimal(16,2) number/decimal null:count-overflow,empty-aggregate {digits=16,2 [-99999999999999.99 99999999999999.99]}
+MIN(d52) * COUNT(*) -> decimal(16,2) number/decimal null:empty-aggregate,count-overflow {digits=16,2 [-99999999999999.99 99999999999999.99]}
+COUNT(*) * MIN(d380) -> decimal(38,0) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+MIN(d380) * COUNT(*) -> decimal(38,0) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+COUNT(*) * MIN(d3838) -> decimal(38,27) number/decimal null:count-overflow,empty-aggregate {digits=38,27 [-99999999999.999999999999999999999999999 99999999999.999999999999999999999999999]}
+MIN(d3838) * COUNT(*) -> decimal(38,27) number/decimal null:empty-aggregate,count-overflow {digits=38,27 [-99999999999.999999999999999999999999999 99999999999.999999999999999999999999999]}
+COUNT(*) * MIN(n102) -> numeric(21,2) number/decimal null:count-overflow,empty-aggregate {digits=21,2 [-9999999999999999999.99 9999999999999999999.99]}
+MIN(n102) * COUNT(*) -> numeric(21,2) number/decimal null:empty-aggregate,count-overflow {digits=21,2 [-9999999999999999999.99 9999999999999999999.99]}
+COUNT(*) * MIN(m) -> money number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(m) * COUNT(*) -> money number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT(*) * MIN(sm) -> smallmoney number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+MIN(sm) * COUNT(*) -> smallmoney number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+COUNT(*) * MIN(f) -> float number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(f) * COUNT(*) -> float number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) * MIN(r) -> real number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(r) * COUNT(*) -> real number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) * MIN(c3) -> unknown unsupported-expression: COUNT(*) * MIN(c3): arithmetic on these types is not modelled yet.
+MIN(c3) * COUNT(*) -> unknown unsupported-expression: MIN(c3) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(v10) -> unknown unsupported-expression: COUNT(*) * MIN(v10): arithmetic on these types is not modelled yet.
+MIN(v10) * COUNT(*) -> unknown unsupported-expression: MIN(v10) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(vx) -> unknown unsupported-expression: COUNT(*) * MIN(vx): arithmetic on these types is not modelled yet.
+MIN(vx) * COUNT(*) -> unknown unsupported-expression: MIN(vx) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(nc3) -> unknown unsupported-expression: COUNT(*) * MIN(nc3): arithmetic on these types is not modelled yet.
+MIN(nc3) * COUNT(*) -> unknown unsupported-expression: MIN(nc3) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(nv10) -> unknown unsupported-expression: COUNT(*) * MIN(nv10): arithmetic on these types is not modelled yet.
+MIN(nv10) * COUNT(*) -> unknown unsupported-expression: MIN(nv10) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(nvx) -> unknown unsupported-expression: COUNT(*) * MIN(nvx): arithmetic on these types is not modelled yet.
+MIN(nvx) * COUNT(*) -> unknown unsupported-expression: MIN(nvx) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(dt) -> unknown unsupported-expression: COUNT(*) * MIN(dt): arithmetic on these types is not modelled yet.
+MIN(dt) * COUNT(*) -> unknown unsupported-expression: MIN(dt) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(tm3) -> unknown unsupported-expression: COUNT(*) * MIN(tm3): arithmetic on these types is not modelled yet.
+MIN(tm3) * COUNT(*) -> unknown unsupported-expression: MIN(tm3) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(dtm) -> unknown unsupported-expression: COUNT(*) * MIN(dtm): arithmetic on these types is not modelled yet.
+MIN(dtm) * COUNT(*) -> unknown unsupported-expression: MIN(dtm) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(dt23) -> unknown unsupported-expression: COUNT(*) * MIN(dt23): arithmetic on these types is not modelled yet.
+MIN(dt23) * COUNT(*) -> unknown unsupported-expression: MIN(dt23) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(sdt) -> unknown unsupported-expression: COUNT(*) * MIN(sdt): arithmetic on these types is not modelled yet.
+MIN(sdt) * COUNT(*) -> unknown unsupported-expression: MIN(sdt) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(dto3) -> unknown unsupported-expression: COUNT(*) * MIN(dto3): arithmetic on these types is not modelled yet.
+MIN(dto3) * COUNT(*) -> unknown unsupported-expression: MIN(dto3) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(u) -> unknown unsupported-expression: COUNT(*) * MIN(u): arithmetic on these types is not modelled yet.
+MIN(u) * COUNT(*) -> unknown unsupported-expression: MIN(u) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MIN(bin4) * COUNT(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COUNT(*) * MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MIN(vb10) * COUNT(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT(*) * MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(x) * COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT(*) * MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MIN(sv) * COUNT(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COUNT(*) * MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+MIN(j) * COUNT(*) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+COUNT(*) * 1 -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+1 * COUNT(*) -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) * 12345 -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+12345 * COUNT(*) -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) * 2.50 -> numeric(14,2) number/decimal null:count-overflow {digits=14,2 [-999999999999.99 999999999999.99]}
+2.50 * COUNT(*) -> numeric(14,2) number/decimal null:count-overflow {digits=14,2 [-999999999999.99 999999999999.99]}
+COUNT(*) * 'ab' -> unknown unsupported-expression: COUNT(*) * 'ab': arithmetic on these types is not modelled yet.
+'ab' * COUNT(*) -> unknown unsupported-expression: 'ab' * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * N'ab' -> unknown unsupported-expression: COUNT(*) * N'ab': arithmetic on these types is not modelled yet.
+N'ab' * COUNT(*) -> unknown unsupported-expression: N'ab' * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * 1e0 -> float number/float null:count-overflow,arithmetic-overflow
+1e0 * COUNT(*) -> float number/float null:count-overflow,arithmetic-overflow
+COUNT(*) * $1 -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+$1 * COUNT(*) -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT(*) / MIN(bt) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(bt) / COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) / MIN(ti) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(ti) / COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) / MIN(si) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(si) / COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) / MIN(i) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(i) / COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) / MIN(bi) -> bigint number/int64 null:count-overflow,empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bi) / COUNT(*) -> bigint number/int64 null:empty-aggregate,count-overflow,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT(*) / MIN(d52) -> decimal(18,6) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=18,6 [-999999999999.999999 999999999999.999999]}
+MIN(d52) / COUNT(*) -> decimal(16,13) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=16,13 [-999.9999999999999 999.9999999999999]}
+COUNT(*) / MIN(d380) -> decimal(38,28) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
+MIN(d380) / COUNT(*) -> decimal(38,6) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+COUNT(*) / MIN(d3838) -> decimal(38,6) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+MIN(d3838) / COUNT(*) -> decimal(38,38) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+COUNT(*) / MIN(n102) -> numeric(23,11) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=23,11 [-999999999999.99999999999 999999999999.99999999999]}
+MIN(n102) / COUNT(*) -> numeric(21,13) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=21,13 [-99999999.9999999999999 99999999.9999999999999]}
+COUNT(*) / MIN(m) -> money number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(m) / COUNT(*) -> money number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT(*) / MIN(sm) -> smallmoney number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+MIN(sm) / COUNT(*) -> smallmoney number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+COUNT(*) / MIN(f) -> float number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(f) / COUNT(*) -> float number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) / MIN(r) -> real number/float null:count-overflow,empty-aggregate,arithmetic-overflow
+MIN(r) / COUNT(*) -> real number/float null:empty-aggregate,count-overflow,arithmetic-overflow
+COUNT(*) / MIN(c3) -> unknown unsupported-expression: COUNT(*) / MIN(c3): arithmetic on these types is not modelled yet.
+MIN(c3) / COUNT(*) -> unknown unsupported-expression: MIN(c3) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(v10) -> unknown unsupported-expression: COUNT(*) / MIN(v10): arithmetic on these types is not modelled yet.
+MIN(v10) / COUNT(*) -> unknown unsupported-expression: MIN(v10) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(vx) -> unknown unsupported-expression: COUNT(*) / MIN(vx): arithmetic on these types is not modelled yet.
+MIN(vx) / COUNT(*) -> unknown unsupported-expression: MIN(vx) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(nc3) -> unknown unsupported-expression: COUNT(*) / MIN(nc3): arithmetic on these types is not modelled yet.
+MIN(nc3) / COUNT(*) -> unknown unsupported-expression: MIN(nc3) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(nv10) -> unknown unsupported-expression: COUNT(*) / MIN(nv10): arithmetic on these types is not modelled yet.
+MIN(nv10) / COUNT(*) -> unknown unsupported-expression: MIN(nv10) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(nvx) -> unknown unsupported-expression: COUNT(*) / MIN(nvx): arithmetic on these types is not modelled yet.
+MIN(nvx) / COUNT(*) -> unknown unsupported-expression: MIN(nvx) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(dt) -> unknown unsupported-expression: COUNT(*) / MIN(dt): arithmetic on these types is not modelled yet.
+MIN(dt) / COUNT(*) -> unknown unsupported-expression: MIN(dt) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(tm3) -> unknown unsupported-expression: COUNT(*) / MIN(tm3): arithmetic on these types is not modelled yet.
+MIN(tm3) / COUNT(*) -> unknown unsupported-expression: MIN(tm3) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(dtm) -> unknown unsupported-expression: COUNT(*) / MIN(dtm): arithmetic on these types is not modelled yet.
+MIN(dtm) / COUNT(*) -> unknown unsupported-expression: MIN(dtm) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(dt23) -> unknown unsupported-expression: COUNT(*) / MIN(dt23): arithmetic on these types is not modelled yet.
+MIN(dt23) / COUNT(*) -> unknown unsupported-expression: MIN(dt23) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(sdt) -> unknown unsupported-expression: COUNT(*) / MIN(sdt): arithmetic on these types is not modelled yet.
+MIN(sdt) / COUNT(*) -> unknown unsupported-expression: MIN(sdt) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(dto3) -> unknown unsupported-expression: COUNT(*) / MIN(dto3): arithmetic on these types is not modelled yet.
+MIN(dto3) / COUNT(*) -> unknown unsupported-expression: MIN(dto3) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(u) -> unknown unsupported-expression: COUNT(*) / MIN(u): arithmetic on these types is not modelled yet.
+MIN(u) / COUNT(*) -> unknown unsupported-expression: MIN(u) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MIN(bin4) / COUNT(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COUNT(*) / MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MIN(vb10) / COUNT(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT(*) / MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(x) / COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT(*) / MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MIN(sv) / COUNT(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COUNT(*) / MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+MIN(j) / COUNT(*) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+COUNT(*) / 1 -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+1 / COUNT(*) -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) / 12345 -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+12345 / COUNT(*) -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) / 2.50 -> numeric(18,6) number/decimal null:count-overflow {digits=18,6 [-999999999999.999999 999999999999.999999]}
+2.50 / COUNT(*) -> numeric(14,13) number/decimal null:count-overflow,arithmetic-overflow {digits=14,13 [-9.9999999999999 9.9999999999999]}
+COUNT(*) / 'ab' -> unknown unsupported-expression: COUNT(*) / 'ab': arithmetic on these types is not modelled yet.
+'ab' / COUNT(*) -> unknown unsupported-expression: 'ab' / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / N'ab' -> unknown unsupported-expression: COUNT(*) / N'ab': arithmetic on these types is not modelled yet.
+N'ab' / COUNT(*) -> unknown unsupported-expression: N'ab' / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / 1e0 -> float number/float null:count-overflow,arithmetic-overflow
+1e0 / COUNT(*) -> float number/float null:count-overflow,arithmetic-overflow
+COUNT(*) / $1 -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+$1 / COUNT(*) -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT(*) % MIN(bt) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(bt) % COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) % MIN(ti) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(ti) % COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) % MIN(si) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(si) % COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) % MIN(i) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
+MIN(i) % COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) % MIN(bi) -> bigint number/int64 null:count-overflow,empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bi) % COUNT(*) -> bigint number/int64 null:empty-aggregate,count-overflow,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT(*) % MIN(d52) -> decimal(5,2) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+MIN(d52) % COUNT(*) -> decimal(5,2) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+COUNT(*) % MIN(d380) -> decimal(10,0) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=10,0 [-9999999999 9999999999]}
+MIN(d380) % COUNT(*) -> decimal(10,0) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=10,0 [-9999999999 9999999999]}
+COUNT(*) % MIN(d3838) -> decimal(38,38) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+MIN(d3838) % COUNT(*) -> decimal(38,38) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+COUNT(*) % MIN(n102) -> numeric(10,2) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+MIN(n102) % COUNT(*) -> numeric(10,2) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+COUNT(*) % MIN(m) -> money number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(m) % COUNT(*) -> money number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT(*) % MIN(sm) -> smallmoney number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+MIN(sm) % COUNT(*) -> smallmoney number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+COUNT(*) % MIN(f) -> unknown unsupported-expression: COUNT(*) % MIN(f): arithmetic on these types is not modelled yet.
+MIN(f) % COUNT(*) -> unknown unsupported-expression: MIN(f) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(r) -> unknown unsupported-expression: COUNT(*) % MIN(r): arithmetic on these types is not modelled yet.
+MIN(r) % COUNT(*) -> unknown unsupported-expression: MIN(r) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(c3) -> unknown unsupported-expression: COUNT(*) % MIN(c3): arithmetic on these types is not modelled yet.
+MIN(c3) % COUNT(*) -> unknown unsupported-expression: MIN(c3) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(v10) -> unknown unsupported-expression: COUNT(*) % MIN(v10): arithmetic on these types is not modelled yet.
+MIN(v10) % COUNT(*) -> unknown unsupported-expression: MIN(v10) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(vx) -> unknown unsupported-expression: COUNT(*) % MIN(vx): arithmetic on these types is not modelled yet.
+MIN(vx) % COUNT(*) -> unknown unsupported-expression: MIN(vx) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(nc3) -> unknown unsupported-expression: COUNT(*) % MIN(nc3): arithmetic on these types is not modelled yet.
+MIN(nc3) % COUNT(*) -> unknown unsupported-expression: MIN(nc3) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(nv10) -> unknown unsupported-expression: COUNT(*) % MIN(nv10): arithmetic on these types is not modelled yet.
+MIN(nv10) % COUNT(*) -> unknown unsupported-expression: MIN(nv10) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(nvx) -> unknown unsupported-expression: COUNT(*) % MIN(nvx): arithmetic on these types is not modelled yet.
+MIN(nvx) % COUNT(*) -> unknown unsupported-expression: MIN(nvx) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(dt) -> unknown unsupported-expression: COUNT(*) % MIN(dt): arithmetic on these types is not modelled yet.
+MIN(dt) % COUNT(*) -> unknown unsupported-expression: MIN(dt) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(tm3) -> unknown unsupported-expression: COUNT(*) % MIN(tm3): arithmetic on these types is not modelled yet.
+MIN(tm3) % COUNT(*) -> unknown unsupported-expression: MIN(tm3) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(dtm) -> unknown unsupported-expression: COUNT(*) % MIN(dtm): arithmetic on these types is not modelled yet.
+MIN(dtm) % COUNT(*) -> unknown unsupported-expression: MIN(dtm) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(dt23) -> unknown unsupported-expression: COUNT(*) % MIN(dt23): arithmetic on these types is not modelled yet.
+MIN(dt23) % COUNT(*) -> unknown unsupported-expression: MIN(dt23) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(sdt) -> unknown unsupported-expression: COUNT(*) % MIN(sdt): arithmetic on these types is not modelled yet.
+MIN(sdt) % COUNT(*) -> unknown unsupported-expression: MIN(sdt) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(dto3) -> unknown unsupported-expression: COUNT(*) % MIN(dto3): arithmetic on these types is not modelled yet.
+MIN(dto3) % COUNT(*) -> unknown unsupported-expression: MIN(dto3) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(u) -> unknown unsupported-expression: COUNT(*) % MIN(u): arithmetic on these types is not modelled yet.
+MIN(u) % COUNT(*) -> unknown unsupported-expression: MIN(u) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MIN(bin4) % COUNT(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COUNT(*) % MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MIN(vb10) % COUNT(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT(*) % MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(x) % COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT(*) % MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MIN(sv) % COUNT(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COUNT(*) % MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+MIN(j) % COUNT(*) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+COUNT(*) % 1 -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+1 % COUNT(*) -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) % 12345 -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+12345 % COUNT(*) -> int number/int32 null:count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) % 2.50 -> numeric(3,2) number/decimal null:count-overflow {digits=3,2 [-9.99 9.99]}
+2.50 % COUNT(*) -> numeric(3,2) number/decimal null:count-overflow,arithmetic-overflow {digits=3,2 [-9.99 9.99]}
+COUNT(*) % 'ab' -> unknown unsupported-expression: COUNT(*) % 'ab': arithmetic on these types is not modelled yet.
+'ab' % COUNT(*) -> unknown unsupported-expression: 'ab' % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % N'ab' -> unknown unsupported-expression: COUNT(*) % N'ab': arithmetic on these types is not modelled yet.
+N'ab' % COUNT(*) -> unknown unsupported-expression: N'ab' % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % 1e0 -> unknown unsupported-expression: COUNT(*) % 1e0: arithmetic on these types is not modelled yet.
+1e0 % COUNT(*) -> unknown unsupported-expression: 1e0 % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % $1 -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+$1 % COUNT(*) -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT_BIG(*) + MIN(bt) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bt) + COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) + MIN(ti) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(ti) + COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) + MIN(si) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(si) + COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) + MIN(i) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(i) + COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) + MIN(bi) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bi) + COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) + MIN(d52) -> decimal(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
+MIN(d52) + COUNT_BIG(*) -> decimal(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
+COUNT_BIG(*) + MIN(d380) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+MIN(d380) + COUNT_BIG(*) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+COUNT_BIG(*) + MIN(d3838) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
+MIN(d3838) + COUNT_BIG(*) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
+COUNT_BIG(*) + MIN(n102) -> numeric(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
+MIN(n102) + COUNT_BIG(*) -> numeric(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
+COUNT_BIG(*) + MIN(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(m) + COUNT_BIG(*) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT_BIG(*) + MIN(sm) -> smallmoney number/decimal null:empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+MIN(sm) + COUNT_BIG(*) -> smallmoney number/decimal null:empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+COUNT_BIG(*) + MIN(f) -> float number/float null:empty-aggregate,arithmetic-overflow
+MIN(f) + COUNT_BIG(*) -> float number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) + MIN(r) -> real number/float null:empty-aggregate,arithmetic-overflow
+MIN(r) + COUNT_BIG(*) -> real number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) + MIN(c3) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(c3): arithmetic on these types is not modelled yet.
+MIN(c3) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(c3) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + MIN(v10) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(v10): arithmetic on these types is not modelled yet.
+MIN(v10) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(v10) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + MIN(vx) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(vx): arithmetic on these types is not modelled yet.
+MIN(vx) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(vx) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + MIN(nc3) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(nc3): arithmetic on these types is not modelled yet.
+MIN(nc3) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(nc3) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + MIN(nv10) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(nv10): arithmetic on these types is not modelled yet.
+MIN(nv10) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(nv10) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + MIN(nvx) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(nvx): arithmetic on these types is not modelled yet.
+MIN(nvx) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(nvx) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + MIN(dt) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(dt): arithmetic on these types is not modelled yet.
+MIN(dt) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(dt) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + MIN(tm3) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(tm3): arithmetic on these types is not modelled yet.
+MIN(tm3) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(tm3) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + MIN(dtm) -> datetime datetime/local null:empty-aggregate,arithmetic-overflow
+MIN(dtm) + COUNT_BIG(*) -> datetime datetime/local null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) + MIN(dt23) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(dt23): arithmetic on these types is not modelled yet.
+MIN(dt23) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(dt23) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + MIN(sdt) -> smalldatetime datetime/local null:empty-aggregate,arithmetic-overflow
+MIN(sdt) + COUNT_BIG(*) -> smalldatetime datetime/local null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) + MIN(dto3) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(dto3): arithmetic on these types is not modelled yet.
+MIN(dto3) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(dto3) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + MIN(u) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(u): arithmetic on these types is not modelled yet.
+MIN(u) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(u) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MIN(bin4) + COUNT_BIG(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COUNT_BIG(*) + MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MIN(vb10) + COUNT_BIG(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT_BIG(*) + MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(x) + COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT_BIG(*) + MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MIN(sv) + COUNT_BIG(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COUNT_BIG(*) + MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+MIN(j) + COUNT_BIG(*) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+COUNT_BIG(*) + 1 -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+1 + COUNT_BIG(*) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) + 12345 -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+12345 + COUNT_BIG(*) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) + 2.50 -> numeric(22,2) number/decimal {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
+2.50 + COUNT_BIG(*) -> numeric(22,2) number/decimal {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
+COUNT_BIG(*) + 'ab' -> unknown unsupported-expression: COUNT_BIG(*) + 'ab': arithmetic on these types is not modelled yet.
+'ab' + COUNT_BIG(*) -> unknown unsupported-expression: 'ab' + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + N'ab' -> unknown unsupported-expression: COUNT_BIG(*) + N'ab': arithmetic on these types is not modelled yet.
+N'ab' + COUNT_BIG(*) -> unknown unsupported-expression: N'ab' + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + 1e0 -> float number/float null:arithmetic-overflow
+1e0 + COUNT_BIG(*) -> float number/float null:arithmetic-overflow
+COUNT_BIG(*) + $1 -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+$1 + COUNT_BIG(*) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT_BIG(*) - MIN(bt) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bt) - COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) - MIN(ti) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(ti) - COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) - MIN(si) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(si) - COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) - MIN(i) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(i) - COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) - MIN(bi) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bi) - COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) - MIN(d52) -> decimal(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
+MIN(d52) - COUNT_BIG(*) -> decimal(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
+COUNT_BIG(*) - MIN(d380) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+MIN(d380) - COUNT_BIG(*) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+COUNT_BIG(*) - MIN(d3838) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
+MIN(d3838) - COUNT_BIG(*) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
+COUNT_BIG(*) - MIN(n102) -> numeric(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
+MIN(n102) - COUNT_BIG(*) -> numeric(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
+COUNT_BIG(*) - MIN(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(m) - COUNT_BIG(*) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT_BIG(*) - MIN(sm) -> smallmoney number/decimal null:empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+MIN(sm) - COUNT_BIG(*) -> smallmoney number/decimal null:empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+COUNT_BIG(*) - MIN(f) -> float number/float null:empty-aggregate,arithmetic-overflow
+MIN(f) - COUNT_BIG(*) -> float number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) - MIN(r) -> real number/float null:empty-aggregate,arithmetic-overflow
+MIN(r) - COUNT_BIG(*) -> real number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) - MIN(c3) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(c3): arithmetic on these types is not modelled yet.
+MIN(c3) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(c3) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - MIN(v10) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(v10): arithmetic on these types is not modelled yet.
+MIN(v10) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(v10) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - MIN(vx) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(vx): arithmetic on these types is not modelled yet.
+MIN(vx) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(vx) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - MIN(nc3) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(nc3): arithmetic on these types is not modelled yet.
+MIN(nc3) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(nc3) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - MIN(nv10) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(nv10): arithmetic on these types is not modelled yet.
+MIN(nv10) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(nv10) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - MIN(nvx) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(nvx): arithmetic on these types is not modelled yet.
+MIN(nvx) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(nvx) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - MIN(dt) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(dt): arithmetic on these types is not modelled yet.
+MIN(dt) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(dt) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - MIN(tm3) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(tm3): arithmetic on these types is not modelled yet.
+MIN(tm3) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(tm3) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - MIN(dtm) -> datetime datetime/local null:empty-aggregate,arithmetic-overflow
+MIN(dtm) - COUNT_BIG(*) -> datetime datetime/local null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) - MIN(dt23) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(dt23): arithmetic on these types is not modelled yet.
+MIN(dt23) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(dt23) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - MIN(sdt) -> smalldatetime datetime/local null:empty-aggregate,arithmetic-overflow
+MIN(sdt) - COUNT_BIG(*) -> smalldatetime datetime/local null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) - MIN(dto3) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(dto3): arithmetic on these types is not modelled yet.
+MIN(dto3) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(dto3) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - MIN(u) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(u): arithmetic on these types is not modelled yet.
+MIN(u) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(u) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MIN(bin4) - COUNT_BIG(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COUNT_BIG(*) - MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MIN(vb10) - COUNT_BIG(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT_BIG(*) - MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(x) - COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT_BIG(*) - MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MIN(sv) - COUNT_BIG(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COUNT_BIG(*) - MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+MIN(j) - COUNT_BIG(*) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+COUNT_BIG(*) - 1 -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+1 - COUNT_BIG(*) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) - 12345 -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+12345 - COUNT_BIG(*) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) - 2.50 -> numeric(22,2) number/decimal {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
+2.50 - COUNT_BIG(*) -> numeric(22,2) number/decimal {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
+COUNT_BIG(*) - 'ab' -> unknown unsupported-expression: COUNT_BIG(*) - 'ab': arithmetic on these types is not modelled yet.
+'ab' - COUNT_BIG(*) -> unknown unsupported-expression: 'ab' - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - N'ab' -> unknown unsupported-expression: COUNT_BIG(*) - N'ab': arithmetic on these types is not modelled yet.
+N'ab' - COUNT_BIG(*) -> unknown unsupported-expression: N'ab' - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - 1e0 -> float number/float null:arithmetic-overflow
+1e0 - COUNT_BIG(*) -> float number/float null:arithmetic-overflow
+COUNT_BIG(*) - $1 -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+$1 - COUNT_BIG(*) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT_BIG(*) * MIN(bt) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bt) * COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) * MIN(ti) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(ti) * COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) * MIN(si) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(si) * COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) * MIN(i) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(i) * COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) * MIN(bi) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bi) * COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) * MIN(d52) -> decimal(25,2) number/decimal null:empty-aggregate {digits=25,2 [-99999999999999999999999.99 99999999999999999999999.99]}
+MIN(d52) * COUNT_BIG(*) -> decimal(25,2) number/decimal null:empty-aggregate {digits=25,2 [-99999999999999999999999.99 99999999999999999999999.99]}
+COUNT_BIG(*) * MIN(d380) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+MIN(d380) * COUNT_BIG(*) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+COUNT_BIG(*) * MIN(d3838) -> decimal(38,18) number/decimal null:empty-aggregate {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
+MIN(d3838) * COUNT_BIG(*) -> decimal(38,18) number/decimal null:empty-aggregate {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
+COUNT_BIG(*) * MIN(n102) -> numeric(30,2) number/decimal null:empty-aggregate {digits=30,2 [-9999999999999999999999999999.99 9999999999999999999999999999.99]}
+MIN(n102) * COUNT_BIG(*) -> numeric(30,2) number/decimal null:empty-aggregate {digits=30,2 [-9999999999999999999999999999.99 9999999999999999999999999999.99]}
+COUNT_BIG(*) * MIN(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(m) * COUNT_BIG(*) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT_BIG(*) * MIN(sm) -> smallmoney number/decimal null:empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+MIN(sm) * COUNT_BIG(*) -> smallmoney number/decimal null:empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+COUNT_BIG(*) * MIN(f) -> float number/float null:empty-aggregate,arithmetic-overflow
+MIN(f) * COUNT_BIG(*) -> float number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) * MIN(r) -> real number/float null:empty-aggregate,arithmetic-overflow
+MIN(r) * COUNT_BIG(*) -> real number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) * MIN(c3) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(c3): arithmetic on these types is not modelled yet.
+MIN(c3) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(c3) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(v10) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(v10): arithmetic on these types is not modelled yet.
+MIN(v10) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(v10) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(vx) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(vx): arithmetic on these types is not modelled yet.
+MIN(vx) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(vx) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(nc3) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(nc3): arithmetic on these types is not modelled yet.
+MIN(nc3) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(nc3) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(nv10) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(nv10): arithmetic on these types is not modelled yet.
+MIN(nv10) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(nv10) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(nvx) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(nvx): arithmetic on these types is not modelled yet.
+MIN(nvx) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(nvx) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(dt) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(dt): arithmetic on these types is not modelled yet.
+MIN(dt) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(dt) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(tm3) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(tm3): arithmetic on these types is not modelled yet.
+MIN(tm3) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(tm3) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(dtm) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(dtm): arithmetic on these types is not modelled yet.
+MIN(dtm) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(dtm) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(dt23) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(dt23): arithmetic on these types is not modelled yet.
+MIN(dt23) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(dt23) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(sdt) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(sdt): arithmetic on these types is not modelled yet.
+MIN(sdt) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(sdt) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(dto3) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(dto3): arithmetic on these types is not modelled yet.
+MIN(dto3) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(dto3) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(u) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(u): arithmetic on these types is not modelled yet.
+MIN(u) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(u) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MIN(bin4) * COUNT_BIG(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COUNT_BIG(*) * MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MIN(vb10) * COUNT_BIG(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT_BIG(*) * MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(x) * COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT_BIG(*) * MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MIN(sv) * COUNT_BIG(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COUNT_BIG(*) * MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+MIN(j) * COUNT_BIG(*) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+COUNT_BIG(*) * 1 -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+1 * COUNT_BIG(*) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) * 12345 -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+12345 * COUNT_BIG(*) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) * 2.50 -> numeric(23,2) number/decimal {digits=23,2 [-999999999999999999999.99 999999999999999999999.99]}
+2.50 * COUNT_BIG(*) -> numeric(23,2) number/decimal {digits=23,2 [-999999999999999999999.99 999999999999999999999.99]}
+COUNT_BIG(*) * 'ab' -> unknown unsupported-expression: COUNT_BIG(*) * 'ab': arithmetic on these types is not modelled yet.
+'ab' * COUNT_BIG(*) -> unknown unsupported-expression: 'ab' * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * N'ab' -> unknown unsupported-expression: COUNT_BIG(*) * N'ab': arithmetic on these types is not modelled yet.
+N'ab' * COUNT_BIG(*) -> unknown unsupported-expression: N'ab' * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * 1e0 -> float number/float null:arithmetic-overflow
+1e0 * COUNT_BIG(*) -> float number/float null:arithmetic-overflow
+COUNT_BIG(*) * $1 -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+$1 * COUNT_BIG(*) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT_BIG(*) / MIN(bt) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bt) / COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) / MIN(ti) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(ti) / COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) / MIN(si) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(si) / COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) / MIN(i) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(i) / COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) / MIN(bi) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bi) / COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) / MIN(d52) -> decimal(27,6) number/decimal null:empty-aggregate,arithmetic-overflow {digits=27,6 [-999999999999999999999.999999 999999999999999999999.999999]}
+MIN(d52) / COUNT_BIG(*) -> decimal(25,22) number/decimal null:empty-aggregate,arithmetic-overflow {digits=25,22 [-999.9999999999999999999999 999.9999999999999999999999]}
+COUNT_BIG(*) / MIN(d380) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
+MIN(d380) / COUNT_BIG(*) -> decimal(38,6) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+COUNT_BIG(*) / MIN(d3838) -> decimal(38,6) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+MIN(d3838) / COUNT_BIG(*) -> decimal(38,38) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+COUNT_BIG(*) / MIN(n102) -> numeric(32,11) number/decimal null:empty-aggregate,arithmetic-overflow {digits=32,11 [-999999999999999999999.99999999999 999999999999999999999.99999999999]}
+MIN(n102) / COUNT_BIG(*) -> numeric(30,22) number/decimal null:empty-aggregate,arithmetic-overflow {digits=30,22 [-99999999.9999999999999999999999 99999999.9999999999999999999999]}
+COUNT_BIG(*) / MIN(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(m) / COUNT_BIG(*) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT_BIG(*) / MIN(sm) -> smallmoney number/decimal null:empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+MIN(sm) / COUNT_BIG(*) -> smallmoney number/decimal null:empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+COUNT_BIG(*) / MIN(f) -> float number/float null:empty-aggregate,arithmetic-overflow
+MIN(f) / COUNT_BIG(*) -> float number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) / MIN(r) -> real number/float null:empty-aggregate,arithmetic-overflow
+MIN(r) / COUNT_BIG(*) -> real number/float null:empty-aggregate,arithmetic-overflow
+COUNT_BIG(*) / MIN(c3) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(c3): arithmetic on these types is not modelled yet.
+MIN(c3) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(c3) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(v10) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(v10): arithmetic on these types is not modelled yet.
+MIN(v10) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(v10) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(vx) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(vx): arithmetic on these types is not modelled yet.
+MIN(vx) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(vx) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(nc3) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(nc3): arithmetic on these types is not modelled yet.
+MIN(nc3) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(nc3) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(nv10) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(nv10): arithmetic on these types is not modelled yet.
+MIN(nv10) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(nv10) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(nvx) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(nvx): arithmetic on these types is not modelled yet.
+MIN(nvx) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(nvx) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(dt) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(dt): arithmetic on these types is not modelled yet.
+MIN(dt) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(dt) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(tm3) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(tm3): arithmetic on these types is not modelled yet.
+MIN(tm3) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(tm3) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(dtm) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(dtm): arithmetic on these types is not modelled yet.
+MIN(dtm) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(dtm) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(dt23) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(dt23): arithmetic on these types is not modelled yet.
+MIN(dt23) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(dt23) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(sdt) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(sdt): arithmetic on these types is not modelled yet.
+MIN(sdt) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(sdt) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(dto3) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(dto3): arithmetic on these types is not modelled yet.
+MIN(dto3) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(dto3) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(u) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(u): arithmetic on these types is not modelled yet.
+MIN(u) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(u) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MIN(bin4) / COUNT_BIG(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COUNT_BIG(*) / MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MIN(vb10) / COUNT_BIG(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT_BIG(*) / MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(x) / COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT_BIG(*) / MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MIN(sv) / COUNT_BIG(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COUNT_BIG(*) / MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+MIN(j) / COUNT_BIG(*) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+COUNT_BIG(*) / 1 -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+1 / COUNT_BIG(*) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) / 12345 -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+12345 / COUNT_BIG(*) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) / 2.50 -> numeric(27,6) number/decimal {digits=27,6 [-999999999999999999999.999999 999999999999999999999.999999]}
+2.50 / COUNT_BIG(*) -> numeric(23,22) number/decimal null:arithmetic-overflow {digits=23,22 [-9.9999999999999999999999 9.9999999999999999999999]}
+COUNT_BIG(*) / 'ab' -> unknown unsupported-expression: COUNT_BIG(*) / 'ab': arithmetic on these types is not modelled yet.
+'ab' / COUNT_BIG(*) -> unknown unsupported-expression: 'ab' / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / N'ab' -> unknown unsupported-expression: COUNT_BIG(*) / N'ab': arithmetic on these types is not modelled yet.
+N'ab' / COUNT_BIG(*) -> unknown unsupported-expression: N'ab' / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / 1e0 -> float number/float null:arithmetic-overflow
+1e0 / COUNT_BIG(*) -> float number/float null:arithmetic-overflow
+COUNT_BIG(*) / $1 -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+$1 / COUNT_BIG(*) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT_BIG(*) % MIN(bt) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bt) % COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) % MIN(ti) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(ti) % COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) % MIN(si) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(si) % COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) % MIN(i) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(i) % COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) % MIN(bi) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+MIN(bi) % COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) % MIN(d52) -> decimal(5,2) number/decimal null:empty-aggregate,arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+MIN(d52) % COUNT_BIG(*) -> decimal(5,2) number/decimal null:empty-aggregate,arithmetic-overflow {digits=5,2 [-999.99 999.99]}
+COUNT_BIG(*) % MIN(d380) -> decimal(19,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,0 [-9999999999999999999 9999999999999999999]}
+MIN(d380) % COUNT_BIG(*) -> decimal(19,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,0 [-9999999999999999999 9999999999999999999]}
+COUNT_BIG(*) % MIN(d3838) -> decimal(38,38) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+MIN(d3838) % COUNT_BIG(*) -> decimal(38,38) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+COUNT_BIG(*) % MIN(n102) -> numeric(10,2) number/decimal null:empty-aggregate,arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+MIN(n102) % COUNT_BIG(*) -> numeric(10,2) number/decimal null:empty-aggregate,arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+COUNT_BIG(*) % MIN(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(m) % COUNT_BIG(*) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+COUNT_BIG(*) % MIN(sm) -> smallmoney number/decimal null:empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+MIN(sm) % COUNT_BIG(*) -> smallmoney number/decimal null:empty-aggregate,arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+COUNT_BIG(*) % MIN(f) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(f): arithmetic on these types is not modelled yet.
+MIN(f) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(f) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(r) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(r): arithmetic on these types is not modelled yet.
+MIN(r) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(r) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(c3) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(c3): arithmetic on these types is not modelled yet.
+MIN(c3) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(c3) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(v10) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(v10): arithmetic on these types is not modelled yet.
+MIN(v10) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(v10) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(vx) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(vx): arithmetic on these types is not modelled yet.
+MIN(vx) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(vx) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(nc3) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(nc3): arithmetic on these types is not modelled yet.
+MIN(nc3) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(nc3) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(nv10) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(nv10): arithmetic on these types is not modelled yet.
+MIN(nv10) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(nv10) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(nvx) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(nvx): arithmetic on these types is not modelled yet.
+MIN(nvx) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(nvx) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(dt) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(dt): arithmetic on these types is not modelled yet.
+MIN(dt) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(dt) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(tm3) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(tm3): arithmetic on these types is not modelled yet.
+MIN(tm3) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(tm3) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(dtm) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(dtm): arithmetic on these types is not modelled yet.
+MIN(dtm) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(dtm) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(dt23) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(dt23): arithmetic on these types is not modelled yet.
+MIN(dt23) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(dt23) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(sdt) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(sdt): arithmetic on these types is not modelled yet.
+MIN(sdt) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(sdt) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(dto3) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(dto3): arithmetic on these types is not modelled yet.
+MIN(dto3) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(dto3) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(u) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(u): arithmetic on these types is not modelled yet.
+MIN(u) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(u) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MIN(bin4) % COUNT_BIG(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COUNT_BIG(*) % MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MIN(vb10) % COUNT_BIG(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT_BIG(*) % MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(x) % COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT_BIG(*) % MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MIN(sv) % COUNT_BIG(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COUNT_BIG(*) % MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+MIN(j) % COUNT_BIG(*) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
+COUNT_BIG(*) % 1 -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+1 % COUNT_BIG(*) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) % 12345 -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+12345 % COUNT_BIG(*) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) % 2.50 -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+2.50 % COUNT_BIG(*) -> numeric(3,2) number/decimal null:arithmetic-overflow {digits=3,2 [-9.99 9.99]}
+COUNT_BIG(*) % 'ab' -> unknown unsupported-expression: COUNT_BIG(*) % 'ab': arithmetic on these types is not modelled yet.
+'ab' % COUNT_BIG(*) -> unknown unsupported-expression: 'ab' % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % N'ab' -> unknown unsupported-expression: COUNT_BIG(*) % N'ab': arithmetic on these types is not modelled yet.
+N'ab' % COUNT_BIG(*) -> unknown unsupported-expression: N'ab' % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % 1e0 -> unknown unsupported-expression: COUNT_BIG(*) % 1e0: arithmetic on these types is not modelled yet.
+1e0 % COUNT_BIG(*) -> unknown unsupported-expression: 1e0 % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % $1 -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+$1 % COUNT_BIG(*) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}

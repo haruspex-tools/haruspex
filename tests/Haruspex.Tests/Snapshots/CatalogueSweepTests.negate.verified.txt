@@ -1,0 +1,38 @@
+-bt -> unknown unsupported-expression: -bt: negating a value of this type is not modelled yet.
+-ti -> smallint number/int16 {[-32768 32767]}
+-si -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
+-i -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+-bi -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+-d52 -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+-d380 -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+-d3838 -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+-n102 -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+-m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+-sm -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
+-f -> float number/float
+-r -> real number/float
+-c3 -> unknown unsupported-expression: -c3: negating a value of this type is not modelled yet.
+-v10 -> unknown unsupported-expression: -v10: negating a value of this type is not modelled yet.
+-vx -> unknown unsupported-expression: -vx: negating a value of this type is not modelled yet.
+-nc3 -> unknown unsupported-expression: -nc3: negating a value of this type is not modelled yet.
+-nv10 -> unknown unsupported-expression: -nv10: negating a value of this type is not modelled yet.
+-nvx -> unknown unsupported-expression: -nvx: negating a value of this type is not modelled yet.
+-dt -> unknown unsupported-expression: -dt: negating a value of this type is not modelled yet.
+-tm3 -> unknown unsupported-expression: -tm3: negating a value of this type is not modelled yet.
+-dtm -> unknown unsupported-expression: -dtm: negating a value of this type is not modelled yet.
+-dt23 -> unknown unsupported-expression: -dt23: negating a value of this type is not modelled yet.
+-sdt -> unknown unsupported-expression: -sdt: negating a value of this type is not modelled yet.
+-dto3 -> unknown unsupported-expression: -dto3: negating a value of this type is not modelled yet.
+-u -> unknown unsupported-expression: -u: negating a value of this type is not modelled yet.
+-bin4 -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+-vb10 -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+-x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+-sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+-j -> unknown (no unknown recorded)
+-1 -> int number/int32 {[-2147483648 2147483647]}
+-12345 -> int number/int32 {[-2147483648 2147483647]}
+-2.50 -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+-'ab' -> unknown unsupported-expression: -'ab': negating a value of this type is not modelled yet.
+-N'ab' -> unknown unsupported-expression: -N'ab': negating a value of this type is not modelled yet.
+-1e0 -> float number/float
+-$1 -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
