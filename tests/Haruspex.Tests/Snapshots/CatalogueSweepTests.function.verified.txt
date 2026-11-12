@@ -419,13 +419,13 @@ EOMONTH(dt, vx) -> date date
 EOMONTH(dt, nc3) -> date date
 EOMONTH(dt, nv10) -> date date
 EOMONTH(dt, nvx) -> date date
-EOMONTH(dt, dt) -> date date
-EOMONTH(dt, tm3) -> date date
-EOMONTH(dt, dtm) -> date date
-EOMONTH(dt, dt23) -> date date
-EOMONTH(dt, sdt) -> date date
-EOMONTH(dt, dto3) -> date date
-EOMONTH(dt, u) -> date date
+EOMONTH(dt, dt) -> unknown unsupported-expression: EOMONTH(dt, dt): SQL Server refuses it: its offset, date, doesn't convert implicitly to int.
+EOMONTH(dt, tm3) -> unknown unsupported-expression: EOMONTH(dt, tm3): SQL Server refuses it: its offset, time(3), doesn't convert implicitly to int.
+EOMONTH(dt, dtm) -> unknown unsupported-expression: EOMONTH(dt, dtm): SQL Server refuses it: its offset, datetime, doesn't convert implicitly to int.
+EOMONTH(dt, dt23) -> unknown unsupported-expression: EOMONTH(dt, dt23): SQL Server refuses it: its offset, datetime2(3), doesn't convert implicitly to int.
+EOMONTH(dt, sdt) -> unknown unsupported-expression: EOMONTH(dt, sdt): SQL Server refuses it: its offset, smalldatetime, doesn't convert implicitly to int.
+EOMONTH(dt, dto3) -> unknown unsupported-expression: EOMONTH(dt, dto3): SQL Server refuses it: its offset, datetimeoffset(3), doesn't convert implicitly to int.
+EOMONTH(dt, u) -> unknown unsupported-expression: EOMONTH(dt, u): SQL Server refuses it: its offset, uniqueidentifier, doesn't convert implicitly to int.
 EOMONTH(dt, bin4) -> date date
 EOMONTH(dt, vb10) -> date date
 EOMONTH(dt, x) -> date date
@@ -1324,46 +1324,46 @@ FORMATMESSAGE('ab', 1) -> nvarchar(4000) string {length<=4000}
 FORMATMESSAGE(N'ab', 1) -> nvarchar(4000) string {length<=4000}
 FORMATMESSAGE(1e0, 1) -> unknown unsupported-expression: FORMATMESSAGE(1e0, 1): FORMATMESSAGE of a message number is not modelled.
 FORMATMESSAGE($1, 1) -> unknown unsupported-expression: FORMATMESSAGE($1, 1): FORMATMESSAGE of a message number is not modelled.
-JSON_VALUE(bt, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(ti, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(si, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(i, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(bi, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(d52, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(d380, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(d3838, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(n102, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(m, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(sm, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(f, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(r, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(f24, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(f25, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
+JSON_VALUE(bt, '$.a') -> unknown unsupported-expression: JSON_VALUE(bt, '$.a'): SQL Server refuses JSON_VALUE of bit.
+JSON_VALUE(ti, '$.a') -> unknown unsupported-expression: JSON_VALUE(ti, '$.a'): SQL Server refuses JSON_VALUE of tinyint.
+JSON_VALUE(si, '$.a') -> unknown unsupported-expression: JSON_VALUE(si, '$.a'): SQL Server refuses JSON_VALUE of smallint.
+JSON_VALUE(i, '$.a') -> unknown unsupported-expression: JSON_VALUE(i, '$.a'): SQL Server refuses JSON_VALUE of int.
+JSON_VALUE(bi, '$.a') -> unknown unsupported-expression: JSON_VALUE(bi, '$.a'): SQL Server refuses JSON_VALUE of bigint.
+JSON_VALUE(d52, '$.a') -> unknown unsupported-expression: JSON_VALUE(d52, '$.a'): SQL Server refuses JSON_VALUE of decimal(5,2).
+JSON_VALUE(d380, '$.a') -> unknown unsupported-expression: JSON_VALUE(d380, '$.a'): SQL Server refuses JSON_VALUE of decimal(38,0).
+JSON_VALUE(d3838, '$.a') -> unknown unsupported-expression: JSON_VALUE(d3838, '$.a'): SQL Server refuses JSON_VALUE of decimal(38,38).
+JSON_VALUE(n102, '$.a') -> unknown unsupported-expression: JSON_VALUE(n102, '$.a'): SQL Server refuses JSON_VALUE of numeric(10,2).
+JSON_VALUE(m, '$.a') -> unknown unsupported-expression: JSON_VALUE(m, '$.a'): SQL Server refuses JSON_VALUE of money.
+JSON_VALUE(sm, '$.a') -> unknown unsupported-expression: JSON_VALUE(sm, '$.a'): SQL Server refuses JSON_VALUE of smallmoney.
+JSON_VALUE(f, '$.a') -> unknown unsupported-expression: JSON_VALUE(f, '$.a'): SQL Server refuses JSON_VALUE of float.
+JSON_VALUE(r, '$.a') -> unknown unsupported-expression: JSON_VALUE(r, '$.a'): SQL Server refuses JSON_VALUE of real.
+JSON_VALUE(f24, '$.a') -> unknown unsupported-expression: JSON_VALUE(f24, '$.a'): SQL Server refuses JSON_VALUE of real.
+JSON_VALUE(f25, '$.a') -> unknown unsupported-expression: JSON_VALUE(f25, '$.a'): SQL Server refuses JSON_VALUE of float.
 JSON_VALUE(c3, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
 JSON_VALUE(v10, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
 JSON_VALUE(vx, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
 JSON_VALUE(nc3, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
 JSON_VALUE(nv10, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
 JSON_VALUE(nvx, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(dt, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(tm3, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(dtm, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(dt23, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(sdt, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(dto3, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(u, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
+JSON_VALUE(dt, '$.a') -> unknown unsupported-expression: JSON_VALUE(dt, '$.a'): SQL Server refuses JSON_VALUE of date.
+JSON_VALUE(tm3, '$.a') -> unknown unsupported-expression: JSON_VALUE(tm3, '$.a'): SQL Server refuses JSON_VALUE of time(3).
+JSON_VALUE(dtm, '$.a') -> unknown unsupported-expression: JSON_VALUE(dtm, '$.a'): SQL Server refuses JSON_VALUE of datetime.
+JSON_VALUE(dt23, '$.a') -> unknown unsupported-expression: JSON_VALUE(dt23, '$.a'): SQL Server refuses JSON_VALUE of datetime2(3).
+JSON_VALUE(sdt, '$.a') -> unknown unsupported-expression: JSON_VALUE(sdt, '$.a'): SQL Server refuses JSON_VALUE of smalldatetime.
+JSON_VALUE(dto3, '$.a') -> unknown unsupported-expression: JSON_VALUE(dto3, '$.a'): SQL Server refuses JSON_VALUE of datetimeoffset(3).
+JSON_VALUE(u, '$.a') -> unknown unsupported-expression: JSON_VALUE(u, '$.a'): SQL Server refuses JSON_VALUE of uniqueidentifier.
 JSON_VALUE(bin4, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
 JSON_VALUE(vb10, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
 JSON_VALUE(x, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
 JSON_VALUE(sv, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
 JSON_VALUE(j, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(1, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(12345, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(2.50, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE('ab', '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(N'ab', '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE(1e0, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
-JSON_VALUE($1, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
+JSON_VALUE(1, '$.a') -> unknown unsupported-expression: JSON_VALUE(1, '$.a'): SQL Server refuses JSON_VALUE of int.
+JSON_VALUE(12345, '$.a') -> unknown unsupported-expression: JSON_VALUE(12345, '$.a'): SQL Server refuses JSON_VALUE of int.
+JSON_VALUE(2.50, '$.a') -> unknown unsupported-expression: JSON_VALUE(2.50, '$.a'): SQL Server refuses JSON_VALUE of numeric(3,2).
+JSON_VALUE('ab', '$.a') -> unknown unsupported-expression: JSON_VALUE('ab', '$.a'): SQL Server refuses it: its document is not a JSON object or array.
+JSON_VALUE(N'ab', '$.a') -> unknown unsupported-expression: JSON_VALUE(N'ab', '$.a'): SQL Server refuses it: its document is not a JSON object or array.
+JSON_VALUE(1e0, '$.a') -> unknown unsupported-expression: JSON_VALUE(1e0, '$.a'): SQL Server refuses JSON_VALUE of float.
+JSON_VALUE($1, '$.a') -> unknown unsupported-expression: JSON_VALUE($1, '$.a'): SQL Server refuses JSON_VALUE of money.
 JSON_QUERY(bt) -> unknown json-shape-unknown: JSON_QUERY(bt) reads JSON that is not built here, so its shape is unknown.
 JSON_QUERY(ti) -> unknown json-shape-unknown: JSON_QUERY(ti) reads JSON that is not built here, so its shape is unknown.
 JSON_QUERY(si) -> unknown json-shape-unknown: JSON_QUERY(si) reads JSON that is not built here, so its shape is unknown.
@@ -2391,7 +2391,7 @@ STRING_AGG(dtm, ',') -> nvarchar(4000) string null:empty-aggregate {length<=4000
 STRING_AGG(dt23, ',') -> nvarchar(4000) string null:empty-aggregate {length<=4000}
 STRING_AGG(sdt, ',') -> nvarchar(4000) string null:empty-aggregate {length<=4000}
 STRING_AGG(dto3, ',') -> nvarchar(4000) string null:empty-aggregate {length<=4000}
-STRING_AGG(u, ',') -> nvarchar(4000) string null:empty-aggregate {length<=4000}
+STRING_AGG(u, ',') -> unknown unsupported-expression: STRING_AGG(u, ','): SQL Server refuses STRING_AGG of uniqueidentifier.
 STRING_AGG(bin4, ',') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 STRING_AGG(vb10, ',') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 STRING_AGG(x, ',') -> unknown unsupported-sql-type: The type xml is not modelled yet.

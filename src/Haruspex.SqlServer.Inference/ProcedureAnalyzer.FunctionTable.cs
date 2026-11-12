@@ -30,6 +30,7 @@ internal sealed partial class ProcedureAnalyzer
     private const string Frames = "A_frame_that_may_leave_out_the_current_row_can_be_empty_and_give_null_over_a_never_null_column";
     private const string Statistics = "The_statistical_aggregates_are_float_and_the_sample_forms_null_over_fewer_than_two_values";
     private const string OneRow = "An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows";
+    private const string Refusals = "Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read";
     private const string OtherAggregates = "Checksum_agg_grouping_id_and_approx_count_distinct_are_aggregates_that_make_one_row";
 
     private static FunctionTyping Typing(
@@ -57,7 +58,7 @@ internal sealed partial class ProcedureAnalyzer
         Typing(ScalarFunctions.Month, (1, 1), "int", [], [DateKinds], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[0], ScalarType.Of(BuiltInType.Int), s)),
         Typing(ScalarFunctions.Day, (1, 1), "int", [], [DateKinds], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[0], ScalarType.Of(BuiltInType.Int), s)),
         Typing(ScalarFunctions.DateName, (2, 2), "nvarchar(30)", [], [DateKinds, DateNulls], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[1], new ScalarType(BuiltInType.NVarChar, 30), s)),
-        Typing(ScalarFunctions.EndOfMonth, (1, 2), "date", [], [DateKinds, DateNulls], (a, e, s) => a.EndOfMonth(Call(e), s)),
+        Typing(ScalarFunctions.EndOfMonth, (1, 2), "date", [], [DateKinds, DateNulls, Refusals], (a, e, s) => a.EndOfMonth(Call(e), s)),
         Typing(ScalarFunctions.DateFromParts, (3, 3), "date", [], [DateKinds, DateNulls], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.Date), s)),
         Typing(ScalarFunctions.DateTimeFromParts, (7, 7), "datetime", [], [DateKinds, DateNulls], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.DateTime), s)),
         Typing(ScalarFunctions.SmallDateTimeFromParts, (5, 5), "smalldatetime", [], [DateKinds], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.SmallDateTime), s)),
@@ -115,7 +116,7 @@ internal sealed partial class ProcedureAnalyzer
         Typing(ScalarFunctions.Choose, (2, null), "the type of highest precedence over its results", [OutOfRange, ArithmeticOverflow], [Choices, "Case_without_else_choose_out_of_range_and_nullif_of_equal_values_are_null"], (a, e, s) => a.Choose(Call(e), s), otherForms: OtherForms.ExpressionNotModelled),
 
         // ---- JSON ----
-        Typing(ScalarFunctions.JsonValue, (2, 2), "nvarchar(4000), or what JSON built here holds", [JsonNullOrAbsent], ["Json_value_is_nvarchar_4000_and_null_for_a_json_null_a_missing_path_an_object_or_a_long_string", "Json_value_over_json_built_here_gives_its_scalars_as_text"], (a, e, s) => a.TracedJsonValue(Call(e), s) ?? a.JsonValue(Call(e))),
+        Typing(ScalarFunctions.JsonValue, (2, 2), "nvarchar(4000), or what JSON built here holds", [JsonNullOrAbsent], ["Json_value_is_nvarchar_4000_and_null_for_a_json_null_a_missing_path_an_object_or_a_long_string", "Json_value_over_json_built_here_gives_its_scalars_as_text", Refusals], (a, e, s) => a.RefusedJsonDocument(Call(e), s) ?? a.TracedJsonValue(Call(e), s) ?? a.JsonValue(Call(e))),
         Typing(ScalarFunctions.JsonQuery, (1, 1), "the JSON it is given, as JSON", [JsonNullOrAbsent], ["Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken"], (a, e, s) => a.JsonQuery(Call(e), s), readsOnlyItsArguments: false, otherForms: OtherForms.ExpressionNotModelled),
         Typing(ScalarFunctions.JsonObject, null, "an object of its keys, never null", [], ["Json_object_writes_a_repeated_literal_key_twice"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonObject), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.JsonArray, null, "an array or tuple of its values, never null", [], ["An_aggregate_over_no_rows_is_null_not_empty"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonArray), readsOnlyItsArguments: false),
@@ -131,7 +132,7 @@ internal sealed partial class ProcedureAnalyzer
         AggregateRow(AggregateFunctions.StdevP, (1, 1), "float", [EmptyAggregate, ArithmeticOverflow], [Statistics], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.StdevP)),
         AggregateRow(AggregateFunctions.Var, (1, 1), "float", [EmptyAggregate, TooFewValues, ArithmeticOverflow], [Statistics], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Var)),
         AggregateRow(AggregateFunctions.VarP, (1, 1), "float", [EmptyAggregate, ArithmeticOverflow], [Statistics], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.VarP)),
-        AggregateRow(AggregateFunctions.StringAgg, (2, 2), "varchar(8000) or nvarchar(4000), max over max", [EmptyAggregate], ["String_agg_is_8000_bytes_unless_max_and_null_over_no_rows_or_only_nulls", "String_agg_past_its_limit_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off"], (a, e, s) => a.StringAggregate(Call(e), s)),
+        AggregateRow(AggregateFunctions.StringAgg, (2, 2), "varchar(8000) or nvarchar(4000), max over max", [EmptyAggregate], ["String_agg_is_8000_bytes_unless_max_and_null_over_no_rows_or_only_nulls", "String_agg_past_its_limit_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off", Refusals], (a, e, s) => a.StringAggregate(Call(e), s)),
         AggregateRow(AggregateFunctions.ChecksumAgg, null, "not modelled: an aggregate, so one row without GROUP BY", [], [OtherAggregates], (a, e, s) => a.AggregateNotModelled(Call(e))),
         AggregateRow(AggregateFunctions.Grouping, null, "not modelled: an aggregate", [], ["Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null"], (a, e, s) => a.AggregateNotModelled(Call(e))),
         AggregateRow(AggregateFunctions.GroupingId, null, "not modelled: an aggregate", [], [OtherAggregates], (a, e, s) => a.AggregateNotModelled(Call(e))),
@@ -158,8 +159,8 @@ internal sealed partial class ProcedureAnalyzer
         WindowRow(WindowFunctions.LastValue, (1, 1), "the argument, with its facets", [EmptyFrame], [Windowed, Frames], new WindowRule(WindowResult.Argument, EmptyFrame: true)),
         WindowRow(WindowFunctions.Lag, (1, 3), "the argument's type, its facets without a default", [WindowEdge, ArithmeticOverflow], ["Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type"], new WindowRule(WindowResult.Offset)),
         WindowRow(WindowFunctions.Lead, (1, 3), "the argument's type, its facets without a default", [WindowEdge, ArithmeticOverflow], [Windowed], new WindowRule(WindowResult.Offset)),
-        WindowRow(WindowFunctions.PercentileCont, (1, 1), "float", [], [Ranking], new WindowRule(WindowResult.PercentileBetweenValues)),
-        WindowRow(WindowFunctions.PercentileDisc, (1, 1), "the argument, with its facets", [], [Ranking], new WindowRule(WindowResult.PercentileOfValues)),
+        WindowRow(WindowFunctions.PercentileCont, (1, 1), "float", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileBetweenValues)),
+        WindowRow(WindowFunctions.PercentileDisc, (1, 1), "the argument, with its facets", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileOfValues)),
 
         // ---- rowsets, typed by the relation readers ----
         Typing(RowsetFunctions.GenerateSeries, (2, 3), "one column, value, of its arguments' type, never null", [], ["Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument"], null, readsOnlyItsArguments: false),

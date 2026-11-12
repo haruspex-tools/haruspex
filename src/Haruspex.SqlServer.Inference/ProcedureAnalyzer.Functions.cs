@@ -11,6 +11,22 @@ namespace Haruspex.SqlServer.Inference;
 // differential tests). Window functions are in ProcedureAnalyzer.Windows.cs.
 internal sealed partial class ProcedureAnalyzer
 {
+    /// <summary>
+    /// <c>JSON_VALUE</c> of a document the server refuses when the procedure is created: a value that isn't text (8116), or a
+    /// string literal that isn't a JSON object or array (13609); null for any other (observed:
+    /// Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read).
+    /// </summary>
+    private Value? RefusedJsonDocument(FunctionCall call, BindingScope scope)
+    {
+        var document = call.Parameters[0];
+        if (Strip(document) is StringLiteral literal)
+            return JsonLiterals.IsDocumentText(literal.Value) ? null : NotModelled(call, "SQL Server refuses it: its document is not a JSON object or array.");
+        var value = Expression(document, scope);
+        return !value.IsLiveJson && value.Shape is ScalarShape && TypeOf(value) is { IsString: false } type
+            ? NotModelled(call, $"SQL Server refuses JSON_VALUE of {type.Text}.")
+            : null;
+    }
+
     /// <summary>Reads arguments, giving the first that is unknown, if any.</summary>
     private (List<Value> Values, Value? Unknown) Arguments(IEnumerable<ScalarExpression> arguments, BindingScope scope)
     {
@@ -87,6 +103,15 @@ internal sealed partial class ProcedureAnalyzer
         var value = Expression(date, scope);
         if (value.Shape is UnknownShape)
             return value;
+
+        // The offset is converted to int implicitly, which the server refuses for a date or a GUID (206) when the procedure is
+        // created (observed: Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read).
+        if (call.Parameters.Count == 2 && TypeOf(Expression(call.Parameters[1], scope)) is { } offset
+            && ConversionChart.Of(offset.Type, BuiltInType.Int) != ConversionKind.Implicit)
+        {
+            return NotModelled(call, $"SQL Server refuses it: its offset, {offset.Text}, doesn't convert implicitly to int.");
+        }
+
         if (DateOperand(value, date) is not { } type || type.IsInteger || type.Type == BuiltInType.Time)
             return NotModelled(call, "a date of this type is not modelled.");
         return Typed(ScalarType.Of(BuiltInType.Date), value.NullableBecause, call);
@@ -271,6 +296,10 @@ internal sealed partial class ProcedureAnalyzer
             return argument;
         if (argument.IsLiveJson || TypeOf(argument) is not { } from)
             return NotModelled(call, "STRING_AGG of a value of this type is not modelled.");
+
+        // Refused when the procedure is created (8116; observed: Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read).
+        if (from.Type == BuiltInType.UniqueIdentifier)
+            return NotModelled(call, "SQL Server refuses STRING_AGG of uniqueidentifier.");
         var type = from.IsString
             ? ScalarType.CharacterString(from.IsNational, varying: true, from.IsMax ? -1 : BuiltInType.MostBytes)
             : ScalarType.CharacterString(national: true, varying: true, BuiltInType.MostBytes);

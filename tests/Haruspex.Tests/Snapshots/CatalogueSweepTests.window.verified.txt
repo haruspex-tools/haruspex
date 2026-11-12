@@ -595,13 +595,13 @@ PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY vb10) OVER () -> unknown unsupported
 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY j) OVER () -> unknown (no unknown recorded)
-PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 1) OVER () -> float number/float
-PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 12345) OVER () -> float number/float
-PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 2.50) OVER () -> float number/float
-PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 'ab') OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 'ab') OVER (): PERCENTILE_CONT of a value of this type is not modelled.
-PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY N'ab') OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY N'ab') OVER (): PERCENTILE_CONT of a value of this type is not modelled.
-PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 1e0) OVER () -> float number/float
-PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY $1) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 1) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 1) OVER (): SQL Server refuses a percentile ordered by a constant.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 12345) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 12345) OVER (): SQL Server refuses a percentile ordered by a constant.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 2.50) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 2.50) OVER (): SQL Server refuses a percentile ordered by a constant.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 'ab') OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 'ab') OVER (): SQL Server refuses a percentile ordered by a constant.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY N'ab') OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY N'ab') OVER (): SQL Server refuses a percentile ordered by a constant.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 1e0) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 1e0) OVER (): SQL Server refuses a percentile ordered by a constant.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY $1) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY $1) OVER (): SQL Server refuses a percentile ordered by a constant.
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY bt) OVER () -> bit boolean
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY ti) OVER () -> tinyint number/uint8 {[0 255]}
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY si) OVER () -> smallint number/int16 {[-32768 32767]}
@@ -635,10 +635,10 @@ PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY vb10) OVER () -> unknown unsupported
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY j) OVER () -> unknown (no unknown recorded)
-PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 1) OVER () -> int number/int32 {[-2147483648 2147483647]}
-PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 12345) OVER () -> int number/int32 {[-2147483648 2147483647]}
-PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 2.50) OVER () -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
-PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 'ab') OVER () -> varchar(2) string {length<=2}
-PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY N'ab') OVER () -> nvarchar(2) string {length<=2}
-PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 1e0) OVER () -> float number/float
-PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY $1) OVER () -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 1) OVER () -> unknown unsupported-expression: PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 1) OVER (): SQL Server refuses a percentile ordered by a constant.
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 12345) OVER () -> unknown unsupported-expression: PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 12345) OVER (): SQL Server refuses a percentile ordered by a constant.
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 2.50) OVER () -> unknown unsupported-expression: PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 2.50) OVER (): SQL Server refuses a percentile ordered by a constant.
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 'ab') OVER () -> unknown unsupported-expression: PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 'ab') OVER (): SQL Server refuses a percentile ordered by a constant.
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY N'ab') OVER () -> unknown unsupported-expression: PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY N'ab') OVER (): SQL Server refuses a percentile ordered by a constant.
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 1e0) OVER () -> unknown unsupported-expression: PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 1e0) OVER (): SQL Server refuses a percentile ordered by a constant.
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY $1) OVER () -> unknown unsupported-expression: PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY $1) OVER (): SQL Server refuses a percentile ordered by a constant.

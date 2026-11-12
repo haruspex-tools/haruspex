@@ -42,4 +42,25 @@ public partial class FunctionTests
     };
 
     private static void Unknown(IrDocument doc, string name) => Assert.StartsWith("unknown", Typed(doc, name), StringComparison.Ordinal);
+
+    [Fact]
+    public void What_the_server_refuses_of_json_value_eomonth_string_agg_and_a_percentile_is_unknown()
+    {
+        // Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read.
+        var doc = Procedure("""
+            SELECT JSON_VALUE(n, '$.a') AS a, JSON_VALUE('not json', '$.a') AS b, EOMONTH(da, da) AS c,
+                   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 1) OVER () AS d, JSON_VALUE(s, '$.a') AS e, EOMONTH(da, n) AS f
+            FROM dbo.t;
+            """);
+        Unknown(doc, "a");
+        Unknown(doc, "b");
+        Unknown(doc, "c");
+        Unknown(doc, "d");
+        Assert.StartsWith("nvarchar(4000)", Typed(doc, "e"), StringComparison.Ordinal);
+        Assert.StartsWith("date", Typed(doc, "f"), StringComparison.Ordinal);
+
+        var aggregated = Procedure("SELECT STRING_AGG(CAST(s AS uniqueidentifier), ',') AS g, STRING_AGG(s, ',') AS h FROM dbo.t;");
+        Unknown(aggregated, "g");
+        Assert.StartsWith("varchar(8000)", Typed(aggregated, "h"), StringComparison.Ordinal);
+    }
 }

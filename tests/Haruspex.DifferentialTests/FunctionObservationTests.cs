@@ -26,6 +26,21 @@ public class FunctionObservationTests(SqlServerFixture server)
     private async Task<string> Select(string query) => (await Run([Rows], query)).ToString();
 
     [Fact]
+    public async Task Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read()
+    {
+        // When the procedure is created: JSON_VALUE of a value that isn't text (8116) or of a literal that isn't JSON (13609);
+        // EOMONTH with an offset that doesn't convert to int implicitly (206); STRING_AGG of a uniqueidentifier (8116); a
+        // percentile ordered by a constant (5308 for an integer, 5309 for any other).
+        string[] setup = ["CREATE TABLE dbo.obs_refused (id int NOT NULL PRIMARY KEY, d date NOT NULL, u uniqueidentifier NOT NULL);"];
+        Assert.Equal(8116, (await Run(setup, "SELECT JSON_VALUE(id, '$.a') AS x FROM dbo.obs_refused;")).Error);
+        Assert.Equal(13609, (await Run(setup, "SELECT JSON_VALUE('not json', '$.a') AS x FROM dbo.obs_refused;")).Error);
+        Assert.Equal(206, (await Run(setup, "SELECT EOMONTH(d, d) AS x FROM dbo.obs_refused;")).Error);
+        Assert.Equal(8116, (await Run(setup, "SELECT STRING_AGG(u, ',') AS x FROM dbo.obs_refused;")).Error);
+        Assert.Equal(5308, (await Run(setup, "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 1) OVER () AS x FROM dbo.obs_refused;")).Error);
+        Assert.Equal(5309, (await Run(setup, "SELECT PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 'a') OVER () AS x FROM dbo.obs_refused;")).Error);
+    }
+
+    [Fact]
     public async Task Min_and_max_of_a_bit_are_refused_with_or_without_a_window()
     {
         // 8117: the operand type bit is invalid for MIN and MAX, as an aggregate and over a window alike.

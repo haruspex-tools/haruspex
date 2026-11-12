@@ -59,6 +59,23 @@ internal static class JsonLiterals
         }
     }
 
+    /// <summary>
+    /// Whether text is a JSON document the server reads: valid JSON of an object or array. Anything else the server refuses in
+    /// json_query, OPENJSON and JSON_VALUE (13609), where <see cref="Parse"/> may also decline what it does read.
+    /// </summary>
+    public static bool IsDocumentText(string text)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(text, new JsonDocumentOptions { AllowTrailingCommas = false, CommentHandling = JsonCommentHandling.Disallow, MaxDepth = 128 });
+            return document.RootElement.ValueKind is JsonValueKind.Object or JsonValueKind.Array;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>Whether a literal is valid JSON of an object or array (its shape is not an unknown).</summary>
     public static bool IsDocument(Shape parsed) => parsed is not UnknownShape;
 

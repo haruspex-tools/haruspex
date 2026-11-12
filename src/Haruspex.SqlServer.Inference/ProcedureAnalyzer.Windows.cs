@@ -92,6 +92,11 @@ internal sealed partial class ProcedureAnalyzer
             {
                 if (call.WithinGroupClause?.OrderByClause.OrderByElements is not [var element])
                     return NotModelled(call, "this window function is not modelled yet.");
+
+                // Ordered by a constant, it is refused when the procedure is created (5308, 5309; observed:
+                // Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read).
+                if (LiteralOf(element.Expression) is not null)
+                    return NotModelled(call, "SQL Server refuses a percentile ordered by a constant.");
                 var argument = Expression(element.Expression, scope);
                 if (argument.Shape is UnknownShape)
                     return argument;
