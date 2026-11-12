@@ -135,7 +135,8 @@ two limits the code had spelt out, `smallmoney`'s "at most 5 integer digits" and
 integers' rule: one fewer integer digit than the target's own, since its top digit is never free (`int`'s greatest value is
 2147483647).
 
-Each row names the observation tests it rests on, and `ConversionsTests` checks each named test exists. The row's evidence is
+Each row names the observation tests it rests on, and `ConversionsTests` checks that each named test exists and reads the
+table, so that it checks the rows that cite it: a test about something else can't stand as a row's evidence. The evidence is
 `Each_conversion_the_table_lists_keeps_every_value_at_the_edges_of_its_types`: it takes every modelled type over a grid of
 arguments (lengths about each type's longest text, decimals of places only, of none and of 38 digits, fractional seconds of
 0, 3 and 7), and for every pair a row allows, converts the source type's least and greatest values under the options that

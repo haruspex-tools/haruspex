@@ -66,21 +66,21 @@ internal static class Conversions
     public static IReadOnlyList<ConversionRow> Table { get; } =
     [
         // A string, a date or a time is cut short to fit, as strings are; a number or a GUID must fit whole.
-        new(Strings, [.. Strings, .. DatesAndTimes], ConversionCondition.Always, ["A_conversion_that_cannot_overflow_keeps_every_value", AtTheEdges]),
-        new(Strings, [BuiltInType.Bit, .. Integers, .. Decimals, BuiltInType.UniqueIdentifier], ConversionCondition.FitsAsText, ["A_conversion_that_cannot_overflow_keeps_every_value", AtTheEdges]),
+        new(Strings, [.. Strings, .. DatesAndTimes], ConversionCondition.Always, [AtTheEdges]),
+        new(Strings, [BuiltInType.Bit, .. Integers, .. Decimals, BuiltInType.UniqueIdentifier], ConversionCondition.FitsAsText, [AtTheEdges]),
         new(Integers, [BuiltInType.Bit, .. Integers], ConversionCondition.WiderInteger, [AtTheEdges]),
         new([BuiltInType.SmallInt, BuiltInType.Int, BuiltInType.BigInt, BuiltInType.SmallMoney, BuiltInType.Money], Decimals, ConversionCondition.IntegerPartFits, [AtTheEdges]),
-        new(Decimals, Exact, ConversionCondition.DecimalDigitsFit, ["A_conversion_that_cannot_overflow_keeps_every_value", AtTheEdges]),
+        new(Decimals, Exact, ConversionCondition.DecimalDigitsFit, [AtTheEdges]),
         new([BuiltInType.Bit], Exact, ConversionCondition.Always, [AtTheEdges]),
         new([BuiltInType.SmallMoney], [BuiltInType.Bit, BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.SmallMoney], ConversionCondition.Always, [AtTheEdges]),
         new([BuiltInType.Money], [BuiltInType.Bit, BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Int, BuiltInType.SmallMoney], ConversionCondition.Always, [AtTheEdges]),
         new([BuiltInType.Float], [.. Exact, BuiltInType.Real, BuiltInType.Float], ConversionCondition.Always, [AtTheEdges]),
         new([BuiltInType.Real], [.. Exact, BuiltInType.Real], ConversionCondition.Always, [AtTheEdges]),
         new([BuiltInType.Date], [BuiltInType.Date, BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.DateTime2, BuiltInType.DateTimeOffset], ConversionCondition.Always, [AtTheEdges]),
-        new([BuiltInType.SmallDateTime], [BuiltInType.Bit, BuiltInType.TinyInt, BuiltInType.Time, BuiltInType.SmallDateTime], ConversionCondition.Always, ["A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges", AtTheEdges]),
-        new([BuiltInType.DateTime], [BuiltInType.Bit, BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Time, BuiltInType.DateTime, BuiltInType.SmallDateTime], ConversionCondition.Always, ["A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges", AtTheEdges]),
+        new([BuiltInType.SmallDateTime], [BuiltInType.Bit, BuiltInType.TinyInt, BuiltInType.Time, BuiltInType.SmallDateTime], ConversionCondition.Always, [AtTheEdges]),
+        new([BuiltInType.DateTime], [BuiltInType.Bit, BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Time, BuiltInType.DateTime, BuiltInType.SmallDateTime], ConversionCondition.Always, [AtTheEdges]),
         new([BuiltInType.DateTime2], [BuiltInType.Date, BuiltInType.Time, BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.DateTime2], ConversionCondition.Always, [Rounded, AtTheEdges]),
-        new([BuiltInType.DateTimeOffset], DatesAndTimes, ConversionCondition.Always, ["A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges", Rounded, AtTheEdges]),
+        new([BuiltInType.DateTimeOffset], DatesAndTimes, ConversionCondition.Always, [Rounded, AtTheEdges]),
         new([BuiltInType.Time], [BuiltInType.Time], ConversionCondition.Always, [Rounded, AtTheEdges]),
     ];
 
