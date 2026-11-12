@@ -198,16 +198,7 @@ public static class ConfigApplication
             keys[key] = candidate;
         }
 
-        IrType Rekey(IrType type) => type switch
-        {
-            IrRef reference => new IrRef(keys[reference.Name]),
-            IrArray array => array with { Items = Rekey(array.Items) },
-            IrRecord record => record with { Values = Rekey(record.Values) },
-            IrTuple tuple => new IrTuple([.. tuple.Items.Select(e => e with { Type = Rekey(e.Type) })]),
-            IrUnion union => new IrUnion([.. union.Variants.Select(Rekey)]),
-            IrJsonText { Content: { } content } => new IrJsonText(Rekey(content)),
-            _ => type,
-        };
+        IrType Rekey(IrType type) => IrTypeTree.RenameReferences(type, key => keys[key]);
 
         foreach (var (key, type) in declaration.Types)
         {

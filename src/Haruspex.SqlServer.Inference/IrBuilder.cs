@@ -66,8 +66,7 @@ internal sealed class IrBuilder(FunctionSummaries functions)
             objects.Add(new IrObject(id, id, IrObjectKind.Procedure, at.ToString(), [.. parameters], results is null ? null : [.. results]));
         }
 
-        MarkRecursive();
-        return new IrDocument(new IrSource("tsql"), [.. objects], types, [.. unknowns]);
+        return MarkRecursive(new IrDocument(new IrSource("tsql"), [.. objects], types, [.. unknowns]));
     }
 
     /// <summary>The object, procedure or recursive function, that the types being written belong to.</summary>
@@ -176,39 +175,17 @@ internal sealed class IrBuilder(FunctionSummaries functions)
     }
 
     /// <summary>
-    /// Marks every object type that can reach itself through references (inside arrays, tuples, records, unions and the
-    /// content of JSON text too), so that readers which expand references know where to stop.
+    /// The document with every object type that can reach itself through references marked, so that readers which expand
+    /// references know where to stop. The cycles are the type graph's (<see cref="IrTypeGraph"/>).
     /// </summary>
-    private void MarkRecursive()
+    private static IrDocument MarkRecursive(IrDocument document)
     {
-        var edges = types.ToDictionary(t => t.Key, t => t.Value.Fields.SelectMany(f => Refs(f.Type)).ToHashSet(StringComparer.Ordinal), StringComparer.Ordinal);
-        foreach (var name in types.Keys.ToList())
+        var graph = IrTypeGraph.Of(document);
+        return document with
         {
-            var seen = new HashSet<string>(StringComparer.Ordinal);
-            var queue = new Queue<string>(edges[name]);
-            while (queue.TryDequeue(out var next))
-            {
-                if (!seen.Add(next))
-                    continue;
-                foreach (var further in edges[next])
-                    queue.Enqueue(further);
-            }
-
-            if (seen.Contains(name))
-                types[name] = types[name] with { Recursive = true };
-        }
+            Types = document.Types.ToDictionary(t => t.Key, t => t.Value with { Recursive = graph.IsRecursive(t.Key) }, StringComparer.Ordinal),
+        };
     }
-
-    private static IEnumerable<string> Refs(IrType type) => type switch
-    {
-        IrRef reference => [reference.Name],
-        IrArray array => Refs(array.Items),
-        IrTuple tuple => tuple.Items.SelectMany(e => Refs(e.Type)),
-        IrRecord record => Refs(record.Values),
-        IrUnion union => union.Variants.SelectMany(Refs),
-        IrJsonText { Content: { } content } => Refs(content),
-        _ => [],
-    };
 
     private static IrArray Array(ArrayShape array, IrType items) =>
         new(items) { ItemsNullableBecause = array.ItemsNullableBecause, MinItems = array.MinItems, MaxItems = array.MaxItems };

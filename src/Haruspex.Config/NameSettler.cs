@@ -172,22 +172,9 @@ internal sealed class NameSettler(
             case IrRef reference:
                 Object(reference.Name, name, null, path, owner);
                 break;
-            case IrArray array:
-                Walk(array.Items, name, path + "[]", owner);
-                break;
-            case IrTuple tuple:
-                for (var i = 0; i < tuple.Items.Count; i++)
-                    Walk(tuple.Items[i].Type, name, path + "[" + i.ToString(CultureInfo.InvariantCulture) + "]", owner);
-                break;
-            case IrRecord record:
-                Walk(record.Values, name, path + "{}", owner);
-                break;
-            case IrUnion union:
-                foreach (var variant in union.Variants)
-                    Walk(variant, name, path, owner);
-                break;
-            case IrJsonText { Content: { } content }:
-                Walk(content, name, path + "<json>", owner);
+            default:
+                foreach (var child in IrTypeTree.Children(type))
+                    Walk(child.Type, name, child.Segment is { } segment ? path + IrPath.Render([segment]) : path, owner);
                 break;
         }
     }
@@ -309,16 +296,8 @@ internal sealed class NameSettler(
             $"\"{name}\" would name both {first.Description} and {second.Description}. Generated names must not clash: {string.Join(", or ", ways)}.{noFile}"));
     }
 
-    private IrType Rename(IrType type) => type switch
-    {
-        IrRef reference => new IrRef(named.TryGetValue(reference.Name, out var name) ? name : reference.Name),
-        IrArray array => array with { Items = Rename(array.Items) },
-        IrTuple tuple => new IrTuple([.. tuple.Items.Select(e => e with { Type = Rename(e.Type) })]),
-        IrRecord record => record with { Values = Rename(record.Values) },
-        IrUnion union => new IrUnion([.. union.Variants.Select(Rename)]),
-        IrJsonText { Content: { } content } => new IrJsonText(Rename(content)),
-        _ => type,
-    };
+    private IrType Rename(IrType type) =>
+        IrTypeTree.RenameReferences(type, key => named.TryGetValue(key, out var name) ? name : key);
 
     /// <summary>Splits an id written by the front end (<c>sales.get_order</c>, <c>[RDF.].GetPropertyList</c>).</summary>
     private static bool TrySplit(string id, out string schema, out string name)

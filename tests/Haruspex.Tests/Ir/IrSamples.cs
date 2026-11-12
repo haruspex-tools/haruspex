@@ -103,15 +103,5 @@ internal static class IrSamples
     public static IEnumerable<IrType> TypeNodes(IrDocument document) =>
         document.Objects.SelectMany(o => o.Parameters.Select(p => p.Type).Concat(o.Results?.Select(r => r.Type) ?? []))
             .Concat(document.Types.Values.SelectMany(t => t.Fields.Select(f => f.Type)))
-            .SelectMany(Within);
-
-    private static IEnumerable<IrType> Within(IrType type) => type switch
-    {
-        IrArray array => [type, .. Within(array.Items)],
-        IrTuple tuple => [type, .. tuple.Items.SelectMany(e => Within(e.Type))],
-        IrRecord record => [type, .. Within(record.Values)],
-        IrUnion union => [type, .. union.Variants.SelectMany(Within)],
-        IrJsonText { Content: { } content } => [type, .. Within(content)],
-        _ => [type],
-    };
+            .SelectMany(IrTypeTree.Within);
 }

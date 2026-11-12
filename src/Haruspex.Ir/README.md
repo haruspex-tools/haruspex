@@ -9,7 +9,9 @@ the IR's terms is the SQL Server front end's, in [its README](../Haruspex.SqlSer
 
 The IR is the product: front ends write it, emitters read it, and it is a file, so each side can be written in whatever
 language suits it. This project holds the model (`IrDocument` and the records it holds, one to a file), its writer, its
-reader and the generator of its schema.
+reader, the generator of its schema, and the walks every reader needs: `IrTypeTree` for the structure of one type and
+`IrTypeGraph` for what a document's types refer to, which of them lie on a cycle, and an order that puts each after the
+types it refers to.
 
 ## How data flows through it
 
@@ -30,6 +32,8 @@ flowchart LR
     json --> reader["IrJsonReader"]
     reader --> emitters["emitters: Zod"]
     schema["IrJsonSchema"] --> published["haruspex.ir.schema.json"]
+    document --> typeGraph["IrTypeGraph: references, cycles, order"]
+    typeGraph --> emitters
 ```
 
 ## Example
@@ -305,7 +309,8 @@ tree of any depth (a bill of materials, a category's subcategories). Such a type
 **A reader detects a cycle** by the flag, or by itself: follow `ref`s (through arrays, tuples, records, unions and
 JSON text's `content`) keeping the names it is expanding, and stop at a name already on that list. A reader that
 inlines references must do one or the other, or it never ends. The flag is set exactly on the types that can reach
-themselves.
+themselves. This project's `IrTypeGraph` finds them as the strongly connected components of the graph of references, and
+the SQL Server front end sets the flag from it.
 
 The type does not say how deep a tree goes. SQL Server stops at 32 nested calls of a function with error 217
 (observed), which fails the query rather than returning a value, so no output is deeper than that, but the IR does not

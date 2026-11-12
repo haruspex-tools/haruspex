@@ -66,6 +66,7 @@ internal sealed record CorpusFigures(
     {
         ArgumentNullException.ThrowIfNull(document);
 
+        var graph = IrTypeGraph.Of(document);
         var byReason = new SortedDictionary<string, Reason>(StringComparer.Ordinal);
         void Add(string reason, int fields = 0, int results = 0, int procedures = 0, int parameters = 0)
         {
@@ -134,7 +135,7 @@ internal sealed record CorpusFigures(
                     Add(reason, results: 1);
             }
 
-            var reached = Reached(document, listed.Select(r => r.Type));
+            var reached = graph.ReachableFrom(listed.Select(r => r.Type));
             if (reached.Sum(name => document.Types[name].Fields.Count(f => IsField(f.Type))) > 0)
             {
                 returningFields++;
@@ -173,16 +174,7 @@ internal sealed record CorpusFigures(
     /// <summary>
     /// Whether a value holds an object: a reference to a named type, through arrays, records, JSON text, tuples and unions.
     /// </summary>
-    private static bool HoldsObject(IrType type) => type switch
-    {
-        IrRef => true,
-        IrArray array => HoldsObject(array.Items),
-        IrRecord record => HoldsObject(record.Values),
-        IrJsonText { Content: { } content } => HoldsObject(content),
-        IrTuple tuple => tuple.Items.Any(e => HoldsObject(e.Type)),
-        IrUnion union => union.Variants.Any(HoldsObject),
-        _ => false,
-    };
+    private static bool HoldsObject(IrType type) => IrTypeTree.Within(type).Any(t => t is IrRef);
 
     /// <summary>Whether a value is JSON text whose content isn't known, through arrays and records.</summary>
     private static bool IsUnknownJsonText(IrType type) => type switch
@@ -195,79 +187,8 @@ internal sealed record CorpusFigures(
     };
 
     /// <summary>The reasons of the unknowns in a type, without following references (each named type is counted itself).</summary>
-    private static SortedSet<string> UnknownReasons(IrType type)
-    {
-        var reasons = new SortedSet<string>(StringComparer.Ordinal);
-        void Visit(IrType t)
-        {
-            switch (t)
-            {
-                case IrUnknownType unknown:
-                    reasons.Add(IrWireNames.Of(unknown.Reason));
-                    break;
-                case IrArray array:
-                    Visit(array.Items);
-                    break;
-                case IrRecord record:
-                    Visit(record.Values);
-                    break;
-                case IrJsonText { Content: { } content }:
-                    Visit(content);
-                    break;
-                case IrTuple tuple:
-                    foreach (var element in tuple.Items)
-                        Visit(element.Type);
-                    break;
-                case IrUnion union:
-                    foreach (var variant in union.Variants)
-                        Visit(variant);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        Visit(type);
-        return reasons;
-    }
-
-    /// <summary>The named types reachable from some types, following references in fields to any depth.</summary>
-    private static HashSet<string> Reached(IrDocument document, IEnumerable<IrType> roots)
-    {
-        var reached = new HashSet<string>(StringComparer.Ordinal);
-        var pending = new Stack<IrType>(roots);
-        while (pending.TryPop(out var type))
-        {
-            switch (type)
-            {
-                case IrRef reference when reached.Add(reference.Name):
-                    foreach (var field in document.Types[reference.Name].Fields)
-                        pending.Push(field.Type);
-                    break;
-                case IrArray array:
-                    pending.Push(array.Items);
-                    break;
-                case IrRecord record:
-                    pending.Push(record.Values);
-                    break;
-                case IrJsonText { Content: { } content }:
-                    pending.Push(content);
-                    break;
-                case IrTuple tuple:
-                    foreach (var element in tuple.Items)
-                        pending.Push(element.Type);
-                    break;
-                case IrUnion union:
-                    foreach (var variant in union.Variants)
-                        pending.Push(variant);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        return reached;
-    }
+    private static SortedSet<string> UnknownReasons(IrType type) =>
+        new(IrTypeTree.Within(type).OfType<IrUnknownType>().Select(u => IrWireNames.Of(u.Reason)), StringComparer.Ordinal);
 
     /// <summary>What is unknown for one reason.</summary>
     /// <param name="Name">The reason, as the IR names it (<see cref="IrWireNames"/>).</param>
