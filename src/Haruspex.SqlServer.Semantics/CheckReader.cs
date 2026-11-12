@@ -73,12 +73,12 @@ public static class CheckReader
         if (references.Names.Count == 0 || references.Names.Any(n => n is null || !Same(n, column.Name)))
             return null;
 
-        if (FamilyOf(type.BuiltIn) is not { } family)
+        if (FamilyOf(type) is not { } family)
             return null;
 
         var reader = new Reader(column.Name, family, new CheckSource(table, check));
         var proved = reader.Condition(check.Expression);
-        return proved?.ToFacts(type, reader.Source, StringComparisonOf(type.BuiltIn, column.Collation, proved.Strings));
+        return proved?.ToFacts(type, reader.Source, StringComparisonOf(type, column.Collation, proved.Strings));
     }
 
     /// <summary>
@@ -93,11 +93,11 @@ public static class CheckReader
     /// <c>~</c> are left out (code page 932 has the yen sign at 0x5C). A set with anything else stays a collation
     /// set. UTF-8 and Unicode columns hold every character, so they need no such care.
     /// </remarks>
-    private static ValueComparison StringComparisonOf(SqlType type, string? collation, IReadOnlyList<string>? strings)
+    private static ValueComparison StringComparisonOf(ResolvedType type, string? collation, IReadOnlyList<string>? strings)
     {
         if (collation is null || !collation.Split('_').Any(t => t.Equals("BIN", StringComparison.OrdinalIgnoreCase) || t.Equals("BIN2", StringComparison.OrdinalIgnoreCase)))
             return ValueComparison.Collation;
-        var codePage = type.Name is "char" or "varchar" && SchemaRules.EncodingOf(collation) != TextEncoding.Utf8;
+        var codePage = type.Scalar is { IsString: true, IsNational: false } && SchemaRules.EncodingOf(collation) != TextEncoding.Utf8;
         return codePage && strings is not null && strings.Any(s => s.Any(c => c is < ' ' or > '}' or '\\'))
             ? ValueComparison.Collation
             : ValueComparison.Padded;
@@ -106,23 +106,14 @@ public static class CheckReader
     private static bool Same(string a, string b) => a.Equals(b, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>How the column's values compare: as exact numbers of a precision and scale, or as strings. Null for any other type.</summary>
-    private static Family? FamilyOf(SqlType type)
+    private static Family? FamilyOf(ResolvedType type) => type.Scalar switch
     {
-        var arguments = type.Arguments;
-        int Arg(int i, int absent) => arguments.Count > i && int.TryParse(arguments[i], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : absent;
-        return type.Name switch
-        {
-            "tinyint" => new Family(false, 3, 0),
-            "smallint" => new Family(false, 5, 0),
-            "int" => new Family(false, 10, 0),
-            "bigint" => new Family(false, 19, 0),
-            "decimal" or "numeric" when arguments.Count <= 2 => new Family(false, Arg(0, 18), Arg(1, 0)),
-            "money" => new Family(false, 19, 4),
-            "smallmoney" => new Family(false, 10, 4),
-            "char" or "varchar" or "nchar" or "nvarchar" => new Family(true, 0, 0),
-            _ => null,
-        };
-    }
+        { IsInteger: true, Type.Digits: var (precision, scale) } => new Family(false, precision, scale),
+        { IsDecimal: true } exact => new Family(false, exact.Precision, exact.Scale),
+        { IsMoney: true } money => new Family(false, money.Precision, money.Scale),
+        { IsString: true } => new Family(true, 0, 0),
+        _ => null,
+    };
 
     private sealed record Family(bool IsString, int Precision, int Scale);
 

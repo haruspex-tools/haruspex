@@ -190,7 +190,7 @@ internal sealed partial class ProcedureAnalyzer
             else if (source.Table is { } table)
             {
                 keys[source] = [.. SchemaRules.EnforcedKeys(table).Select(k => k.Columns
-                    .Select(c => new KeyColumn(c, -1, SchemaRules.ResolveType(model, table.Column(c)?.Type)?.BuiltIn.Name)).ToList())];
+                    .Select(c => new KeyColumn(c, -1, SchemaRules.ResolveType(model, table.Column(c)?.Type)?.Type)).ToList())];
             }
             else if (source.Local is { } local && locals?.Values(local) is { Why: null } values)
             {
@@ -287,7 +287,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>A column of a source's key: a table's by name, a relation's by position; with its built-in type, when known.</summary>
-    private sealed record KeyColumn(string? Name, int Ordinal, string? Type);
+    private sealed record KeyColumn(string? Name, int Ordinal, BuiltInType? Type);
 
     /// <summary>The conjuncts of a condition joined by AND, through parentheses.</summary>
     private static IEnumerable<BooleanExpression> Conjuncts(BooleanExpression condition) => condition switch
@@ -339,19 +339,19 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The built-in type of a value that is the same for every row of the query, with no COLLATE of its own; null when it
-    /// is not such a value, or its type is not known. A null literal is "null": it matches no row.
+    /// is not such a value, or its type is not known. A null literal is <see cref="KeyValue.Null"/>: it matches no row.
     /// </summary>
-    private string? ValueType(ScalarExpression value, BoundSource keySource, BindingScope scope, HashSet<BoundSource> fixedSources)
+    private KeyValue? ValueType(ScalarExpression value, BoundSource keySource, BindingScope scope, HashSet<BoundSource> fixedSources)
     {
         return value switch
         {
             PrimaryExpression { Collation: not null } => null,
-            NullLiteral => "null",
-            IntegerLiteral literal => long.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n <= int.MaxValue ? "int" : "numeric",
-            NumericLiteral => "numeric",
-            StringLiteral literal => literal.IsNational ? "nvarchar" : "varchar",
+            NullLiteral => KeyValue.Null,
+            IntegerLiteral literal => new KeyValue(long.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n <= int.MaxValue ? BuiltInType.Int : BuiltInType.Numeric),
+            NumericLiteral => new KeyValue(BuiltInType.Numeric),
+            StringLiteral literal => new KeyValue(literal.IsNational ? BuiltInType.NVarChar : BuiltInType.VarChar),
             VariableReference variable => variableTypes.TryGetValue(variable.Name, out var declared)
-                ? SchemaRules.ResolveType(model, declared)?.BuiltIn.Name
+                ? KeyValue.Of(SchemaRules.ResolveType(model, declared)?.Type)
                 : null,
             ColumnReferenceExpression reference => binder.BindColumn(reference, scope) switch
             {
@@ -359,20 +359,20 @@ internal sealed partial class ProcedureAnalyzer
                 // source is fixed. Never the key's own source: t.id = t.n fixes nothing.
                 BoundColumn bound when !ReferenceEquals(bound.Source, keySource)
                     && (!scope.Sources.Contains(bound.Source, ReferenceEqualityComparer.Instance) || fixedSources.Contains(bound.Source))
-                    => SchemaRules.ResolveType(model, bound.Column.Type)?.BuiltIn.Name,
+                    => KeyValue.Of(SchemaRules.ResolveType(model, bound.Column.Type)?.Type),
                 _ => null,
             },
             _ => null,
         };
     }
 
-    private static readonly HashSet<string> Integers = new(StringComparer.OrdinalIgnoreCase) { "tinyint", "smallint", "int", "bigint" };
+    /// <summary>A value compared with a key: of a built-in type, or the NULL literal (<see cref="Type"/> null).</summary>
+    private sealed record KeyValue(BuiltInType? Type)
+    {
+        public static KeyValue Null { get; } = new((BuiltInType?)null);
 
-    private static readonly HashSet<string> Exact = new(StringComparer.OrdinalIgnoreCase) { "decimal", "numeric" };
-
-    private static readonly HashSet<string> Narrow = new(StringComparer.OrdinalIgnoreCase) { "char", "varchar" };
-
-    private static readonly HashSet<string> Wide = new(StringComparer.OrdinalIgnoreCase) { "nchar", "nvarchar" };
+        public static KeyValue? Of(BuiltInType? type) => type is null ? null : new KeyValue(type);
+    }
 
     /// <summary>
     /// Whether <c>key = value</c> compares in the key's own terms, so that it matches only rows whose key equals one value,
@@ -390,21 +390,20 @@ internal sealed partial class ProcedureAnalyzer
     /// collation's distinct varchar values can be equal (observed). Nor is a string key with a number (observed). sql_variant
     /// compares across types, and is left out.
     /// </summary>
-    private static bool InKeysType(string key, string value)
+    private static bool InKeysType(BuiltInType key, KeyValue value)
     {
-        if (value == "null")
+        if (value.Type is not { } type)
             return true;
-        if (key.Equals("sql_variant", StringComparison.OrdinalIgnoreCase) || value.Equals("sql_variant", StringComparison.OrdinalIgnoreCase))
+        if (key == BuiltInType.SqlVariant || type == BuiltInType.SqlVariant)
             return false;
-        if (key.Equals(value, StringComparison.OrdinalIgnoreCase))
+        if (key == type)
             return true;
-        if ((Integers.Contains(key) || Exact.Contains(key)) && (Integers.Contains(value) || Exact.Contains(value)))
+        static bool Exact(BuiltInType t) => t.Family is TypeFamily.Integer or TypeFamily.Decimal;
+        static bool Text(BuiltInType t) => t.Family == TypeFamily.String;
+        if (Exact(key) && Exact(type))
             return true;
-        if (Narrow.Contains(key) && Narrow.Contains(value))
+        if (Text(key) && Text(type) && (key.IsNational || !type.IsNational))
             return true;
-        if (Wide.Contains(key) && (Narrow.Contains(value) || Wide.Contains(value)))
-            return true;
-        var strings = Narrow.Contains(key) || Wide.Contains(key) || key is "binary" or "varbinary";
-        return !strings && (Narrow.Contains(value) || Wide.Contains(value));
+        return !Text(key) && key.Family != TypeFamily.Binary && Text(type);
     }
 }

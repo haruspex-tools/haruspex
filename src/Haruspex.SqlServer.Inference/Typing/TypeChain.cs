@@ -1,3 +1,5 @@
+using Haruspex.SqlServer.Semantics;
+
 namespace Haruspex.SqlServer.Inference.Typing;
 
 /// <summary>
@@ -29,25 +31,18 @@ internal static class TypeChain
         if (operands.Count == 0)
             return null;
         var types = operands.Select(o => o.Type).ToList();
-        static int Fraction(ScalarType t) => t.Name switch
-        {
-            "datetimeoffset" or "datetime2" or "time" => t.Precision,
-            "datetime" => 3,
-            _ => 0,
-        };
 
         // The chain's result is a type: the digits its operands counted were the operands', and stay with them.
         var folded = operands.Skip(1).Aggregate(operands[0], Pair).Type;
-        return folded.Name switch
-        {
-            "datetimeoffset" or "datetime2" => folded with { Precision = types.Max(Fraction) },
-            "time" => folded with { Precision = types.Where(t => t.Name == "time").Max(t => t.Precision) },
-            _ => folded,
-        };
+        if (folded.Type.IsAnyOf(BuiltInType.DateTimeOffset, BuiltInType.DateTime2))
+            return folded with { Precision = types.Max(t => t.FractionalSeconds) };
+        if (folded.Type == BuiltInType.Time)
+            return folded with { Precision = types.Where(t => t.Type == BuiltInType.Time).Max(t => t.Precision) };
+        return folded;
     }
 
     /// <summary>
-    /// Two types combined, as SQL Server does at each step of a chain: the one of higher precedence (<see cref="ScalarType.PrecedenceRank"/>),
+    /// Two types combined, as SQL Server does at each step of a chain: the one of higher precedence (<see cref="BuiltInType.Precedence"/>),
     /// whatever the range, with
     /// <list type="bullet">
     /// <item>two integers the wider, counting the more digits (an integer literal its own);</item>
@@ -73,24 +68,24 @@ internal static class TypeChain
             var (pb, sb) = y.AsDecimal();
             var integer = Math.Max(pa - sa, pb - sb);
             var scale = Math.Min(Math.Max(sa, sb), 38 - integer);
-            return Operand.OfType(new ScalarType(a.IsDecimal ? a.Name : b.Name, Precision: integer + scale, Scale: scale));
+            return Operand.OfType(new ScalarType(a.IsDecimal ? a.Type : b.Type, Precision: integer + scale, Scale: scale));
         }
 
         if (a.IsInteger && b.IsInteger)
         {
-            var wider = ScalarType.PrecedenceRank(a.Name) >= ScalarType.PrecedenceRank(b.Name) ? a : b;
+            var wider = a.Type.RanksAtLeast(b.Type) ? a : b;
             var digits = Math.Max(x.AsDecimal().Precision, y.AsDecimal().Precision);
-            return new Operand(wider, digits == ScalarType.IntegerDigits(wider.Name) ? null : digits);
+            return new Operand(wider, digits == wider.IntegerDigits ? null : digits);
         }
 
         if (a.IsString && b.IsString)
         {
-            var varying = a.Name.EndsWith("varchar", StringComparison.Ordinal) || b.Name.EndsWith("varchar", StringComparison.Ordinal);
-            return Operand.OfType(ScalarType.String(a.IsNational || b.IsNational, varying, a.IsMax || b.IsMax ? -1 : Math.Max(a.Length, b.Length)));
+            var varying = a.IsVarying || b.IsVarying;
+            return Operand.OfType(ScalarType.CharacterString(a.IsNational || b.IsNational, varying, a.IsMax || b.IsMax ? -1 : Math.Max(a.Length, b.Length)));
         }
 
         // bit beside an integer adds nothing: an integer literal keeps its digits (observed over the grid's triples).
-        var top = ScalarType.PrecedenceRank(a.Name) >= ScalarType.PrecedenceRank(b.Name) ? x : y;
+        var top = a.Type.RanksAtLeast(b.Type) ? x : y;
         return top.Type.IsDecimal || top.Type.IsInteger ? top : Operand.OfType(top.Type);
     }
 
@@ -105,15 +100,15 @@ internal static class TypeChain
     public static (ScalarType First, ScalarType Second)? Clash(IReadOnlyList<Operand> operands)
     {
         var types = operands.Select(o => o.Type).ToList();
-        static bool Numeric(ScalarType t) => t.IsNumber || t.Name == "bit";
+        static bool Numeric(ScalarType t) => t.IsNumber || t.IsBit;
         static bool Refused(ScalarType a, ScalarType b) =>
-            (a.Name == "uniqueidentifier" && b.Name != "uniqueidentifier" && !b.IsString)
-            || (a.Name is "date" or "time" or "datetime2" or "datetimeoffset" && Numeric(b))
-            || (a.Name == "date" && b.Name == "time");
+            (a.Type == BuiltInType.UniqueIdentifier && b.Type != BuiltInType.UniqueIdentifier && !b.IsString)
+            || (a.Type.IsAnyOf(BuiltInType.Date, BuiltInType.Time, BuiltInType.DateTime2, BuiltInType.DateTimeOffset) && Numeric(b))
+            || (a.Type == BuiltInType.Date && b.Type == BuiltInType.Time);
 
         if (Fold(operands) is not { } final)
             return null;
-        var own = types.FindIndex(t => t.Name == final.Name);
+        var own = types.FindIndex(t => t.Type == final.Type);
         for (var i = 0; i < types.Count; i++)
         {
             if (!Refused(types[i], final) && !Refused(final, types[i]))

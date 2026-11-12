@@ -41,14 +41,14 @@ internal sealed partial class ProcedureAnalyzer
         {
             case ("row_number" or "rank" or "dense_rank", 0):
             case ("ntile", 1):
-                return Typed(new ScalarType("bigint"), [], call);
+                return Typed(ScalarType.Of(BuiltInType.BigInt), [], call);
 
             // COUNT is an int over a frame as without one: past 2,147,483,647 rows it would overflow, which is NULL under a
             // caller's options (count-overflow, as for COUNT: no partition that large can be read to observe it).
             case ("count", 1):
-                return Typed(new ScalarType("int"), [new IrNullReason(IrNullRule.CountOverflow, At(call).ToString())], call);
+                return Typed(ScalarType.Of(BuiltInType.Int), [new IrNullReason(IrNullRule.CountOverflow, At(call).ToString())], call);
             case ("count_big", 1):
-                return Typed(new ScalarType("bigint"), [], call);
+                return Typed(ScalarType.Of(BuiltInType.BigInt), [], call);
 
             case ("sum", 1):
             {
@@ -103,8 +103,8 @@ internal sealed partial class ProcedureAnalyzer
                     return NotModelled(call, "a percentile of a value that is not a scalar is not modelled.");
                 if (name == "percentile_disc")
                     return argument;
-                return TypeOf(argument) is { IsNumber: true } or { Name: "bit" }
-                    ? Typed(new ScalarType("float"), argument.NullableBecause, call)
+                return TypeOf(argument) is { IsNumber: true } or { IsBit: true }
+                    ? Typed(ScalarType.Of(BuiltInType.Float), argument.NullableBecause, call)
                     : NotModelled(call, "PERCENTILE_CONT of a value of this type is not modelled.");
             }
 

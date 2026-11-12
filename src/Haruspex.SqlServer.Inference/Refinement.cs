@@ -1,5 +1,4 @@
 using Haruspex.Ir;
-using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -405,9 +404,9 @@ internal sealed partial class ProcedureAnalyzer
             {
                 // COUNT is NULL past int's range under a caller's options, which a procedure can't prevent
                 // (docs/decisions/0014-count-is-nullable.md); COUNT_BIG can't overflow.
-                var type = new SqlType(SqlTypeKind.BuiltIn, name == "count" ? "int" : "bigint", []);
+                var type = ScalarType.Of(name == "count" ? BuiltInType.Int : BuiltInType.BigInt);
                 EquatableArray<IrNullReason> because = name == "count" && !ProvedAggregate(call) ? [new IrNullReason(IrNullRule.CountOverflow, at.ToString())] : [];
-                return Value.Computed(SqlTypes.ToConvertedShape(model, type, at), because);
+                return Value.Computed(SqlTypes.ToConvertedShape(type, at), because);
             }
 
             case "min" or "max" when call.Parameters.Count == 1:

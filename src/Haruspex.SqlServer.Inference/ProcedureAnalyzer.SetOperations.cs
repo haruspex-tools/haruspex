@@ -201,7 +201,7 @@ internal sealed partial class ProcedureAnalyzer
             value = Typed(type, reasons, at);
             if (output.Count > 0 && value.Shape is ScalarShape typed)
             {
-                var each = output.Select(c => c.Value.Shape is ScalarShape { Type: var own } && ScalarType.Parse(own.Sql) is { } from && Conversions.Preserves(Operand.OfType(from), type)
+                var each = output.Select(c => c.Value.Shape is ScalarShape { Type: var own } && SqlTypes.Parse(own.Sql) is { } from && Conversions.Preserves(Operand.OfType(from), type)
                     ? own.Facets
                     : typed.Type.Facets).ToList();
                 value = value with { Shape = typed with { Type = typed.Type with { Facets = ScalarFacets.Widened(each, typed.Type.Facets) } } };
@@ -216,8 +216,8 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>A value the server computes, of this type: never folded to a constant, so it counts its type's digits.</summary>
-    private Value Typed(ScalarType type, EquatableArray<IrNullReason> because, SourceLocation at) =>
-        Value.Computed(SqlTypes.ToConvertedShape(model, type.ToSqlType(), at), because);
+    private static Value Typed(ScalarType type, EquatableArray<IrNullReason> because, SourceLocation at) =>
+        Value.Computed(SqlTypes.ToConvertedShape(type, at), because);
 
     private static IrFacets? WithValues(IrFacets? facets, IrValueSet? set)
     {
@@ -236,7 +236,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         if (output.Count == 0)
             return null;
-        if (type.Name is "char" or "nchar" && output.Any(c => c.Value.Shape is not ScalarShape { Type.Sql: var own } || own != sql))
+        if (type.Type.IsAnyOf(BuiltInType.Char, BuiltInType.NChar) && output.Any(c => c.Value.Shape is not ScalarShape { Type.Sql: var own } || own != sql))
             return null;
 
         var sets = new List<IrValueSet>();
@@ -244,7 +244,7 @@ internal sealed partial class ProcedureAnalyzer
         {
             var own = (column.Value.Shape as ScalarShape)?.Type;
             var set = own?.Facets?.Values;
-            if (set is not null && !Keeps(set, ScalarType.Parse(own!.Sql), type))
+            if (set is not null && !Keeps(set, SqlTypes.Parse(own!.Sql), type))
                 return null;
             set ??= column.Expression is { } expression ? LiteralSet([expression], type, expression) : null;
             if (set is null)
@@ -327,12 +327,12 @@ internal sealed partial class ProcedureAnalyzer
                 [.. Enumerable.Range(0, 6).Select(n => new IrValue(n.ToString(System.Globalization.CultureInfo.InvariantCulture), IsString: false))],
                 IrValueMatch.Exact,
                 [new IrFactSource(IrFactSourceKind.Engine, "OPENJSON type")]);
-            var tinyint = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "tinyint", []), at);
+            var tinyint = (ScalarShape)SqlTypes.ToConvertedShape(ScalarType.Of(BuiltInType.TinyInt), at);
             return new LocalRelationValues(
                 ["key", "value", "type"],
                 [
-                    Value.Computed(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["4000"]), at), []),
-                    Value.Computed(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["max"]), at), [JsonValue(at)]),
+                    Value.Computed(SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, 4000), at), []),
+                    Value.Computed(SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, -1), at), [JsonValue(at)]),
                     Value.Computed(tinyint with { Type = tinyint.Type with { Facets = WithValues(tinyint.Type.Facets, type) } }, []),
                 ],
                 null);

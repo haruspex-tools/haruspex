@@ -1,4 +1,3 @@
-using System.Numerics;
 using Haruspex.SqlServer.Model;
 
 namespace Haruspex.SqlServer.Semantics;
@@ -59,13 +58,8 @@ public static class SchemaRules
             case { Kind: SqlTypeKind.BuiltIn }:
                 return new ResolvedType(type, null, DeclaredNullability.NotDeclared);
             case { Kind: SqlTypeKind.Named }:
-                // sysname is the system's own alias: nvarchar(128), NOT NULL unless a column says NULL. System types
-                // are found before user types for an unqualified name.
-                if (type.Name.Equals("sysname", StringComparison.OrdinalIgnoreCase)
-                    && (type.Schema is null || type.Schema.Equals("sys", StringComparison.OrdinalIgnoreCase)))
-                {
-                    return new ResolvedType(new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["128"]), "sysname", DeclaredNullability.NotNull);
-                }
+                if (BuiltInType.SystemAlias(type) is { } system)
+                    return system;
 
                 // An unqualified name resolves in the caller's default schema and then in dbo, and the source does not
                 // say whose. With exactly one type of that name in the project, a script that deployed used that one.
@@ -88,42 +82,23 @@ public static class SchemaRules
     {
         ArgumentNullException.ThrowIfNull(type);
         var from = new TypeSource(type.SourceName);
-        var arguments = type.BuiltIn.Arguments;
 
-        switch (type.BuiltIn.Name)
+        // Floating point has no range worth claiming (any finite double); bit is a boolean in the IR; other kinds have no
+        // facets here, and a string of max no length to claim.
+        return type.Scalar switch
         {
-            case "tinyint":
-                return Range(type, from, 0, byte.MaxValue);
-            case "smallint":
-                return Range(type, from, short.MinValue, short.MaxValue);
-            case "int":
-                return Range(type, from, int.MinValue, int.MaxValue);
-            case "bigint":
-                return Range(type, from, long.MinValue, long.MaxValue);
-            case "decimal" or "numeric":
-                // decimal alone is decimal(18, 0), and decimal(p) is decimal(p, 0).
-                if (!TryInt(arguments, 0, 18, out var precision) || !TryInt(arguments, 1, 0, out var scale))
-                    return new ColumnFacts(type);
-                return Exact(type, from, precision, scale, ExactDecimal.Largest(precision, scale));
-            case "money":
-                return Exact(type, from, 19, 4, ExactDecimal.Of(long.MaxValue, 4), ExactDecimal.Of(long.MinValue, 4));
-            case "smallmoney":
-                return Exact(type, from, 10, 4, ExactDecimal.Of(int.MaxValue, 4), ExactDecimal.Of(int.MinValue, 4));
-            case "char" or "varchar" or "nchar" or "nvarchar":
-                // char and nchar alone are char(1) and nchar(1); (max) has no length to claim.
-                if (!TryInt(arguments, 0, 1, out var length))
-                    return new ColumnFacts(type);
-                var unicode = type.BuiltIn.Name.StartsWith('n');
-                return new ColumnFacts(type, Length: new LengthFact(
-                    length,
-                    IsFixed: type.BuiltIn.Name is "char" or "nchar",
-                    unicode ? TextUnit.Utf16 : TextUnit.Bytes,
-                    unicode ? TextEncoding.Unknown : EncodingOf(collation),
-                    from));
-            default:
-                // Floating point has no range worth claiming (any finite double); other kinds have no facets here.
-                return new ColumnFacts(type);
-        }
+            { IsInteger: true, Type: { Least: { } least, Greatest: { } greatest } } =>
+                new ColumnFacts(type, Min: new BoundFact(least, true, from), Max: new BoundFact(greatest, true, from)),
+            { IsDecimal: true } d => Exact(type, from, d.Precision, d.Scale, ExactDecimal.Largest(d.Precision, d.Scale)),
+            { IsMoney: true, Type: { Least: { } least, Greatest: { } greatest } } m => Exact(type, from, m.Precision, m.Scale, greatest, least),
+            { IsString: true, IsMax: false } text => new ColumnFacts(type, Length: new LengthFact(
+                text.Length,
+                IsFixed: !text.IsVarying,
+                text.IsNational ? TextUnit.Utf16 : TextUnit.Bytes,
+                text.IsNational ? TextEncoding.Unknown : EncodingOf(collation),
+                from)),
+            _ => new ColumnFacts(type),
+        };
     }
 
     /// <summary>
@@ -163,25 +138,11 @@ public static class SchemaRules
         _ => TextEncoding.SingleByte,
     };
 
-    private static ColumnFacts Range(ResolvedType type, FactSource from, BigInteger min, BigInteger max) =>
-        new(type, Min: new BoundFact(ExactDecimal.Of(min, 0), true, from), Max: new BoundFact(ExactDecimal.Of(max, 0), true, from));
-
     private static ColumnFacts Exact(ResolvedType type, FactSource from, int precision, int scale, ExactDecimal max, ExactDecimal? min = null) =>
         new(type,
             Digits: new DigitsFact(precision, scale, from),
             Min: new BoundFact(min ?? max.Negate(), true, from),
             Max: new BoundFact(max, true, from));
-
-    private static bool TryInt(IReadOnlyList<string> arguments, int index, int absent, out int value)
-    {
-        if (arguments.Count <= index)
-        {
-            value = absent;
-            return true;
-        }
-
-        return int.TryParse(arguments[index], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out value);
-    }
 
     /// <summary>The facts true of every value that satisfies both: the tighter bound, the longer minimum length, and the narrower set.</summary>
     private static ColumnFacts Narrow(ColumnFacts facts, ColumnFacts proved) => facts with

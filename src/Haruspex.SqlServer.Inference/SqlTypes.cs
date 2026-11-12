@@ -37,33 +37,61 @@ internal static class SqlTypes
     public static Shape ToShape(ColumnFacts facts, SqlType? declared, SourceLocation at) =>
         facts.Type is null ? Unsupported(declared, at) : ToShape(facts, at, withFacets: true);
 
+    /// <summary>A value of a type the server's rules computed: the type's facts, with no collation known.</summary>
+    public static Shape ToConvertedShape(ScalarType type, SourceLocation at) =>
+        ToShape(SchemaRules.TypeFacts(ResolvedType.Of(type), collation: null), at, withFacets: true);
+
+    /// <summary>
+    /// The built-in types inference gives a value of, and what each is in the IR. A type not listed reaches the IR as unknown
+    /// (<see cref="IrUnknownReason.UnsupportedSqlType"/>); <c>json</c> is text (<see cref="JsonTextShape"/>), not a scalar.
+    /// </summary>
+    private static readonly Dictionary<BuiltInType, (IrScalarKind Kind, IrFormat? Format)> Scalars = new()
+    {
+        [BuiltInType.TinyInt] = (IrScalarKind.Number, IrFormat.Uint8),
+        [BuiltInType.SmallInt] = (IrScalarKind.Number, IrFormat.Int16),
+        [BuiltInType.Int] = (IrScalarKind.Number, IrFormat.Int32),
+        [BuiltInType.BigInt] = (IrScalarKind.Number, IrFormat.Int64),
+        [BuiltInType.Decimal] = (IrScalarKind.Number, IrFormat.Decimal),
+        [BuiltInType.Numeric] = (IrScalarKind.Number, IrFormat.Decimal),
+        [BuiltInType.Money] = (IrScalarKind.Number, IrFormat.Decimal),
+        [BuiltInType.SmallMoney] = (IrScalarKind.Number, IrFormat.Decimal),
+        [BuiltInType.Float] = (IrScalarKind.Number, IrFormat.Float),
+        [BuiltInType.Real] = (IrScalarKind.Number, IrFormat.Float),
+        [BuiltInType.Bit] = (IrScalarKind.Boolean, null),
+        [BuiltInType.Char] = (IrScalarKind.String, null),
+        [BuiltInType.VarChar] = (IrScalarKind.String, null),
+        [BuiltInType.NChar] = (IrScalarKind.String, null),
+        [BuiltInType.NVarChar] = (IrScalarKind.String, null),
+        [BuiltInType.Date] = (IrScalarKind.Date, null),
+        [BuiltInType.Time] = (IrScalarKind.Time, null),
+        [BuiltInType.DateTime] = (IrScalarKind.Datetime, IrFormat.Local),
+        [BuiltInType.DateTime2] = (IrScalarKind.Datetime, IrFormat.Local),
+        [BuiltInType.SmallDateTime] = (IrScalarKind.Datetime, IrFormat.Local),
+        [BuiltInType.DateTimeOffset] = (IrScalarKind.Datetime, IrFormat.Offset),
+        [BuiltInType.UniqueIdentifier] = (IrScalarKind.Uuid, null),
+    };
+
+    /// <summary>Whether inference gives a value of this type as a scalar.</summary>
+    public static bool IsModelled(BuiltInType type) => Scalars.ContainsKey(type);
+
+    /// <summary>The type, when inference gives a value of it as a scalar; otherwise null, which the caller makes unknown.</summary>
+    public static ScalarType? Modelled(ScalarType? type) => type is not null && IsModelled(type.Type) ? type : null;
+
+    /// <summary>The type an IR scalar's SQL text names, when inference models it: <c>decimal(19,2)</c>.</summary>
+    public static ScalarType? Parse(string? sql) => Modelled(ScalarType.Parse(sql));
+
     private static Shape ToShape(ColumnFacts facts, SourceLocation at, bool withFacets)
     {
-        var type = facts.Type!.BuiltIn;
-        var text = Text(type);
-        var irFacets = withFacets ? Facets(facts) : null;
-        ScalarShape Scalar(IrScalarKind kind, IrFormat? format) => new(new IrScalar(kind, format, text, irFacets));
+        var text = Text(facts.Type!.BuiltIn);
+        var type = facts.Type.Type;
 
-        return type.Name switch
-        {
-            "tinyint" => Scalar(IrScalarKind.Number, IrFormat.Uint8),
-            "smallint" => Scalar(IrScalarKind.Number, IrFormat.Int16),
-            "int" => Scalar(IrScalarKind.Number, IrFormat.Int32),
-            "bigint" => Scalar(IrScalarKind.Number, IrFormat.Int64),
-            "decimal" or "numeric" or "money" or "smallmoney" => Scalar(IrScalarKind.Number, IrFormat.Decimal),
-            "float" or "real" => Scalar(IrScalarKind.Number, IrFormat.Float),
-            "bit" => Scalar(IrScalarKind.Boolean, null),
-            "char" or "varchar" or "nchar" or "nvarchar" => Scalar(IrScalarKind.String, null),
-            "date" => Scalar(IrScalarKind.Date, null),
-            "time" => Scalar(IrScalarKind.Time, null),
-            "datetime" or "datetime2" or "smalldatetime" => Scalar(IrScalarKind.Datetime, IrFormat.Local),
-            "datetimeoffset" => Scalar(IrScalarKind.Datetime, IrFormat.Offset),
-            "uniqueidentifier" => Scalar(IrScalarKind.Uuid, null),
-            // A json parameter is text the caller sends, and a driver returns a json column as text. A json column
-            // inside FOR JSON or a constructor is live JSON instead, which ProcedureAnalyzer decides before this.
-            "json" => new JsonTextShape(),
-            _ => new UnknownShape(IrUnknownReason.UnsupportedSqlType, $"The type {text} is not modelled yet.", at),
-        };
+        // A json parameter is text the caller sends, and a driver returns a json column as text. A json column inside FOR
+        // JSON or a constructor is live JSON instead, which ProcedureAnalyzer decides before this.
+        if (type == BuiltInType.Json)
+            return new JsonTextShape();
+        if (type is null || !Scalars.TryGetValue(type, out var scalar))
+            return new UnknownShape(IrUnknownReason.UnsupportedSqlType, $"The type {text} is not modelled yet.", at);
+        return new ScalarShape(new IrScalar(scalar.Kind, scalar.Format, text, withFacets ? Facets(facts) : null));
     }
 
     private static UnknownShape Unsupported(SqlType? type, SourceLocation at) =>

@@ -354,16 +354,16 @@ internal sealed partial class ProcedureAnalyzer
         FunctionCall call when IsBuiltIn(call) => BuiltIn(call, scope),
         LeftFunctionCall { Parameters.Count: 2 } left => Part(left, left.Parameters[0], [left.Parameters[1]], left.Parameters[1], scope),
         RightFunctionCall { Parameters.Count: 2 } right => Part(right, right.Parameters[0], [right.Parameters[1]], right.Parameters[1], scope),
-        ParameterlessCall { ParameterlessCallType: ParameterlessCallType.CurrentTimestamp } now => Typed(new ScalarType("datetime"), [], now),
+        ParameterlessCall { ParameterlessCallType: ParameterlessCallType.CurrentTimestamp } now => Typed(ScalarType.Of(BuiltInType.DateTime), [], now),
         FunctionCall call when FunctionSummaries.Callee(call) is { } callee => CallFunction(call, callee, scope),
         VariableReference variable when parameters.TryGetValue(variable.Name, out var parameter) => Branched(variable, parameter),
         VariableReference variable when locals is not null => Branched(variable, Variable(variable)),
         IntegerLiteral literal => Integer(literal),
         StringLiteral literal => FromString(literal),
         NumericLiteral literal => FromNumeric(literal),
-        RealLiteral literal => Typed(new ScalarType("float"), [], literal),
-        MoneyLiteral literal => Typed(new ScalarType("money"), [], literal),
-        NullLiteral literal => Typed(new ScalarType("int"), [new IrNullReason(IrNullRule.NullLiteral, At(literal).ToString())], literal),
+        RealLiteral literal => Typed(ScalarType.Of(BuiltInType.Float), [], literal),
+        MoneyLiteral literal => Typed(ScalarType.Of(BuiltInType.Money), [], literal),
+        NullLiteral literal => Typed(ScalarType.Of(BuiltInType.Int), [new IrNullReason(IrNullRule.NullLiteral, At(literal).ToString())], literal),
         CoalesceExpression coalesce => Coalesce(coalesce, scope),
         SearchedCaseExpression searched => Case(searched, scope),
         SimpleCaseExpression simple => Case(simple, scope),
@@ -425,7 +425,7 @@ internal sealed partial class ProcedureAnalyzer
 
         // A json column nests as JSON inside FOR JSON and the constructors (observed), but what it holds is data.
         // Through a driver it is text, which Rowset makes of any live value.
-        if (!column.IsComputed && SchemaRules.ResolveType(model, column.Type)?.BuiltIn.Name == "json")
+        if (!column.IsComputed && SchemaRules.ResolveType(model, column.Type)?.Type == BuiltInType.Json)
         {
             return new Value(
                 Unsupported(IrUnknownReason.JsonShapeUnknown, $"{table.Name}.{column.Name} is a json column: its shape is in the data, not the schema.", column.At),

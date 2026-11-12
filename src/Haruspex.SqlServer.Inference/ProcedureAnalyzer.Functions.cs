@@ -30,24 +30,24 @@ internal sealed partial class ProcedureAnalyzer
         return (call.FunctionName.Value.ToLowerInvariant(), p.Count) switch
 #pragma warning restore CA1308
         {
-            ("datediff", 3) => DateDiff(call, "int", scope),
-            ("datediff_big", 3) => DateDiff(call, "bigint", scope),
+            ("datediff", 3) => DateDiff(call, ScalarType.Of(BuiltInType.Int), scope),
+            ("datediff_big", 3) => DateDiff(call, ScalarType.Of(BuiltInType.BigInt), scope),
             ("dateadd", 3) => DateAdd(call, scope),
-            ("datepart", 2) => DatePart(call, p[1], new ScalarType("int"), scope),
-            ("year" or "month" or "day", 1) => DatePart(call, p[0], new ScalarType("int"), scope),
-            ("datename", 2) => DatePart(call, p[1], new ScalarType("nvarchar", 30), scope),
+            ("datepart", 2) => DatePart(call, p[1], ScalarType.Of(BuiltInType.Int), scope),
+            ("year" or "month" or "day", 1) => DatePart(call, p[0], ScalarType.Of(BuiltInType.Int), scope),
+            ("datename", 2) => DatePart(call, p[1], new ScalarType(BuiltInType.NVarChar, 30), scope),
             ("eomonth", 1 or 2) => EndOfMonth(call, scope),
-            ("datefromparts", 3) => FromParts(call, new ScalarType("date"), scope),
-            ("datetimefromparts", 7) => FromParts(call, new ScalarType("datetime"), scope),
-            ("smalldatetimefromparts", 5) => FromParts(call, new ScalarType("smalldatetime"), scope),
-            ("datetime2fromparts", 8) => FromParts(call, new ScalarType("datetime2"), scope, precision: true),
-            ("timefromparts", 5) => FromParts(call, new ScalarType("time"), scope, precision: true),
-            ("datetimeoffsetfromparts", 10) => FromParts(call, new ScalarType("datetimeoffset"), scope, precision: true),
+            ("datefromparts", 3) => FromParts(call, ScalarType.Of(BuiltInType.Date), scope),
+            ("datetimefromparts", 7) => FromParts(call, ScalarType.Of(BuiltInType.DateTime), scope),
+            ("smalldatetimefromparts", 5) => FromParts(call, ScalarType.Of(BuiltInType.SmallDateTime), scope),
+            ("datetime2fromparts", 8) => FromParts(call, ScalarType.Of(BuiltInType.DateTime2), scope, precision: true),
+            ("timefromparts", 5) => FromParts(call, ScalarType.Of(BuiltInType.Time), scope, precision: true),
+            ("datetimeoffsetfromparts", 10) => FromParts(call, ScalarType.Of(BuiltInType.DateTimeOffset), scope, precision: true),
 
             // The current date and time are never NULL (observed: The_current_date_and_time_functions_are_never_null).
-            ("sysdatetime" or "sysutcdatetime", 0) => Typed(new ScalarType("datetime2", Precision: 7), [], call),
-            ("getdate" or "getutcdate", 0) => Typed(new ScalarType("datetime"), [], call),
-            ("sysdatetimeoffset", 0) => Typed(new ScalarType("datetimeoffset", Precision: 7), [], call),
+            ("sysdatetime" or "sysutcdatetime", 0) => Typed(new ScalarType(BuiltInType.DateTime2, Precision: 7), [], call),
+            ("getdate" or "getutcdate", 0) => Typed(ScalarType.Of(BuiltInType.DateTime), [], call),
+            ("sysdatetimeoffset", 0) => Typed(new ScalarType(BuiltInType.DateTimeOffset, Precision: 7), [], call),
 
             ("ltrim" or "rtrim", 1) or ("upper" or "lower", 1) or ("trim", 1) => Trim(call, p[0], null, scope),
             ("ltrim" or "rtrim", 2) => Trim(call, p[0], p[1], scope),
@@ -92,14 +92,14 @@ internal sealed partial class ProcedureAnalyzer
     /// any session options (observed: A_date_overflow_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off), so
     /// no <c>arithmetic-overflow</c>. The part is a keyword, never read as an expression.
     /// </summary>
-    private Value DateDiff(FunctionCall call, string type, BindingScope scope)
+    private Value DateDiff(FunctionCall call, ScalarType type, BindingScope scope)
     {
         var (values, unknown) = Arguments(call.Parameters.Skip(1), scope);
         if (unknown is not null)
             return unknown;
         if (values.Select((v, i) => DateOperand(v, call.Parameters[i + 1])).Any(t => t is null))
             return NotModelled(call, "an argument of this type is not modelled as a date.");
-        return Typed(new ScalarType(type), Reasons(values), call);
+        return Typed(type, Reasons(values), call);
     }
 
     /// <summary>
@@ -117,7 +117,7 @@ internal sealed partial class ProcedureAnalyzer
         var date = DateOperand(values[1], call.Parameters[2]);
         if (date is null)
             return NotModelled(call, "a date of this type is not modelled.");
-        return Typed(date.IsDateOrTime ? date : new ScalarType("datetime"), Reasons(values), call);
+        return Typed(date.IsDateOrTime ? date : ScalarType.Of(BuiltInType.DateTime), Reasons(values), call);
     }
 
     /// <summary><c>DATEPART</c>, <c>YEAR</c>, <c>MONTH</c>, <c>DAY</c> (int) and <c>DATENAME</c> (nvarchar(30), whose names
@@ -142,9 +142,9 @@ internal sealed partial class ProcedureAnalyzer
         var value = Expression(date, scope);
         if (value.Shape is UnknownShape)
             return value;
-        if (DateOperand(value, date) is not { } type || type.IsInteger || type.Name == "time")
+        if (DateOperand(value, date) is not { } type || type.IsInteger || type.Type == BuiltInType.Time)
             return NotModelled(call, "a date of this type is not modelled.");
-        return Typed(new ScalarType("date"), value.NullableBecause, call);
+        return Typed(ScalarType.Of(BuiltInType.Date), value.NullableBecause, call);
     }
 
     /// <summary>
@@ -165,7 +165,7 @@ internal sealed partial class ProcedureAnalyzer
         var (values, unknown) = Arguments(parts, scope);
         if (unknown is not null)
             return unknown;
-        if (values.Select((v, i) => Strip(parts[i]) is NullLiteral || TypeOf(v) is { Name: "tinyint" or "smallint" or "int" }).Any(ok => !ok))
+        if (values.Select((v, i) => Strip(parts[i]) is NullLiteral || (TypeOf(v) is { IsInteger: true } part && part.Type != BuiltInType.BigInt)).Any(ok => !ok))
             return NotModelled(call, "a part that is not an int is not modelled.");
         return Typed(type, Reasons(values), call);
     }
@@ -189,7 +189,7 @@ internal sealed partial class ProcedureAnalyzer
         if (StringOf(values[0]) is not { } type || (characters is not null && StringOf(values[1]) is null))
             return NotModelled(call, "an argument that is not a string is not modelled.");
         var national = type.IsNational || (characters is not null && StringOf(values[1])!.IsNational);
-        return Typed(ScalarType.String(national, varying: true, type.Length), Reasons(values), call);
+        return Typed(ScalarType.CharacterString(national, varying: true, type.Length), Reasons(values), call);
     }
 
     /// <summary>
@@ -222,7 +222,7 @@ internal sealed partial class ProcedureAnalyzer
             }
         }
 
-        return Typed(ScalarType.String(type.IsNational, varying: true, n), Reasons(values), call);
+        return Typed(ScalarType.CharacterString(type.IsNational, varying: true, n), Reasons(values), call);
     }
 
     /// <summary>Whether an expression reads a column, a variable or a subquery, so that the server cannot fold it.</summary>
@@ -256,7 +256,7 @@ internal sealed partial class ProcedureAnalyzer
         var type = value.IsLiveJson ? null : TypeOf(value);
         if (type is null || (!bytes && !type.IsString))
             return NotModelled(call, "a length of a value of this type is not modelled.");
-        return Typed(new ScalarType(type.IsMax ? "bigint" : "int"), value.NullableBecause, call);
+        return Typed(ScalarType.Of(type.IsMax ? BuiltInType.BigInt : BuiltInType.Int), value.NullableBecause, call);
     }
 
     /// <summary>
@@ -271,7 +271,7 @@ internal sealed partial class ProcedureAnalyzer
         var types = values.Select(StringOf).ToList();
         if (types.Any(t => t is null))
             return NotModelled(call, "REPLACE of a value that is not a string is not modelled.");
-        return Typed(ScalarType.String(types.Any(t => t!.IsNational), varying: true, types[0]!.IsMax ? -1 : ScalarType.MostBytes), Reasons(values), call);
+        return Typed(ScalarType.CharacterString(types.Any(t => t!.IsNational), varying: true, types[0]!.IsMax ? -1 : BuiltInType.MostBytes), Reasons(values), call);
     }
 
     /// <summary><c>STRING_ESCAPE(s, 'json')</c>: nvarchar(max), NULL when s is.</summary>
@@ -282,7 +282,7 @@ internal sealed partial class ProcedureAnalyzer
             return value;
         if (StringOf(value) is null)
             return NotModelled(call, "STRING_ESCAPE of a value that is not a string is not modelled.");
-        return Typed(new ScalarType("nvarchar", -1), value.NullableBecause, call);
+        return Typed(new ScalarType(BuiltInType.NVarChar, -1), value.NullableBecause, call);
     }
 
     /// <summary>
@@ -298,7 +298,7 @@ internal sealed partial class ProcedureAnalyzer
             return format;
         if (StringOf(format) is null)
             return NotModelled(call, "FORMATMESSAGE of a message number is not modelled.");
-        return Typed(new ScalarType("nvarchar", 4000), format.NullableBecause, call);
+        return Typed(new ScalarType(BuiltInType.NVarChar, 4000), format.NullableBecause, call);
     }
 
     /// <summary>
@@ -308,7 +308,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>json-null-or-absent</c>, which covers a NULL document too. Neither argument changes the type.
     /// </summary>
     private Value JsonValue(FunctionCall call) =>
-        Typed(new ScalarType("nvarchar", 4000), [new IrNullReason(IrNullRule.JsonNullOrAbsent, At(call).ToString())], call);
+        Typed(new ScalarType(BuiltInType.NVarChar, 4000), [new IrNullReason(IrNullRule.JsonNullOrAbsent, At(call).ToString())], call);
 
     // ---- STRING_AGG -------------------------------------------------------------------------------------------------------
 
@@ -327,8 +327,8 @@ internal sealed partial class ProcedureAnalyzer
         if (argument.IsLiveJson || TypeOf(argument) is not { } from)
             return NotModelled(call, "STRING_AGG of a value of this type is not modelled.");
         var type = from.IsString
-            ? ScalarType.String(from.IsNational, varying: true, from.IsMax ? -1 : ScalarType.MostBytes)
-            : new ScalarType("nvarchar", ScalarType.MostBytes / 2);
+            ? ScalarType.CharacterString(from.IsNational, varying: true, from.IsMax ? -1 : BuiltInType.MostBytes)
+            : ScalarType.CharacterString(national: true, varying: true, BuiltInType.MostBytes);
         return Typed(type, ProvedAggregate(call) ? [] : [.. argument.NullableBecause, .. Aggregate(call)], call);
     }
 
@@ -353,9 +353,9 @@ internal sealed partial class ProcedureAnalyzer
             return LocalRelationValues.Unknown((UnknownShape)unknown.Shape);
         var types = values.Select((v, i) => v.IsLiveJson ? null : TypeOf(v)).ToList();
         ScalarType? type = null;
-        if (types.Count > 0 && types.All(t => t is { IsInteger: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
+        if (types.Count > 0 && types.All(t => t is { IsInteger: true }) && types.Select(t => t!.Type).Distinct().Count() == 1)
             type = types[0];
-        else if (types.Count > 0 && types.All(t => t is { IsDecimal: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
+        else if (types.Count > 0 && types.All(t => t is { IsDecimal: true }) && types.Select(t => t!.Type).Distinct().Count() == 1)
             // Decimals: each counts its own precision and scale, so every operand counts its type's.
             type = TypeChain.Of([.. types.Select(t => Operand.OfType(t!))]) is { } common && types.All(t => Conversions.Converts(Operand.OfType(t!), common)) ? common : null;
         if (type is null)

@@ -105,15 +105,14 @@ internal sealed partial class ProcedureAnalyzer
     /// database's code page, which the project does not show, so one with a character beyond ASCII is left out. Null when the
     /// column is anything else. Only VALUES reads string literals so far.
     /// </summary>
-    private Value? Literals(List<ScalarExpression> column, Diagnostics.SourceLocation at)
+    private static Value? Literals(List<ScalarExpression> column, Diagnostics.SourceLocation at)
     {
         var literals = column.Select(Strip).OfType<StringLiteral>().ToList();
         if (literals.Count != column.Count || literals.Any(l => l.Collation is not null || (!l.IsNational && l.Value.Any(c => c > '\u007f'))))
             return null;
         var national = literals.Any(l => l.IsNational);
         var length = Math.Max(1, literals.Max(l => l.Value.Length));
-        var type = new SqlType(SqlTypeKind.BuiltIn, national ? "nvarchar" : "varchar", [length.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
-        return new Value(SqlTypes.ToConvertedShape(model, type, at), []);
+        return new Value(SqlTypes.ToConvertedShape(ScalarType.CharacterString(national, varying: true, length), at), []);
     }
 
     // ---- views --------------------------------------------------------------------------------------------------------
@@ -176,12 +175,12 @@ internal sealed partial class ProcedureAnalyzer
         foreach (var key in SchemaRules.EnforcedKeys(table))
         {
             var ordinals = new List<int>();
-            var types = new List<string>();
+            var types = new List<BuiltInType>();
             foreach (var name in key.Columns)
             {
                 var ordinal = row.Columns.ToList().FindIndex(c => c.Origin is { } origin && ReferenceEquals(origin.Source, source)
                     && origin.Column.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-                if (ordinal < 0 || SchemaRules.ResolveType(model, table.Column(name)?.Type)?.BuiltIn.Name is not { } type)
+                if (ordinal < 0 || SchemaRules.ResolveType(model, table.Column(name)?.Type)?.Type is not { } type)
                     break;
                 ordinals.Add(ordinal);
                 types.Add(type);

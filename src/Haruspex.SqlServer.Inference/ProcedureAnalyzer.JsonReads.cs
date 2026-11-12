@@ -168,6 +168,17 @@ internal sealed partial class ProcedureAnalyzer
     // ---- conversions --------------------------------------------------------------------------------------------------
 
     /// <summary>
+    /// The types OPENJSON's WITH was observed to give back unchanged from the text FOR JSON writes of them (see
+    /// <see cref="Converted"/>): not float or real, whose text may round, nor the date and time types not observed.
+    /// </summary>
+    private static readonly BuiltInType[] Exact =
+    [
+        BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Int, BuiltInType.BigInt, BuiltInType.Decimal, BuiltInType.Numeric,
+        BuiltInType.Bit, BuiltInType.Date, BuiltInType.DateTime2, BuiltInType.DateTimeOffset, BuiltInType.UniqueIdentifier,
+        BuiltInType.Money, BuiltInType.SmallMoney, BuiltInType.Char, BuiltInType.NChar, BuiltInType.VarChar, BuiltInType.NVarChar,
+    ];
+
+    /// <summary>
     /// A JSON scalar of <paramref name="source"/> converted to <paramref name="target"/>, as OPENJSON's WITH converts it: the value
     /// it gives, and whether that is never NULL for a non-null JSON value; null when the conversion is not one known never to
     /// fail or give NULL. Observed (Openjson_with_over_json_built_here_converts_its_own_types_exactly_and_cuts_strings_short):
@@ -181,20 +192,19 @@ internal sealed partial class ProcedureAnalyzer
     {
         if (Unpadded(SqlTypes.ToConvertedShape(model, target, at)) is not ScalarShape { Type: var to })
             return null;
-        var exact = new[] { "tinyint", "smallint", "int", "bigint", "decimal", "numeric", "bit", "date", "datetime2", "datetimeoffset", "uniqueidentifier", "money", "smallmoney", "char", "nchar", "varchar", "nvarchar" };
-        if (source.Sql is { } sql && sql == to.Sql && ScalarType.Parse(sql) is { } same && exact.Contains(same.Name))
+        if (source.Sql is { } sql && sql == to.Sql && SqlTypes.Parse(sql) is { } same && same.Type.IsAnyOf(Exact))
         {
             // A varchar or char value converted to the database's code page and back may change a character that is not ASCII
             // (observed: Openjson_with_converts_a_varchar_to_the_databases_code_page), so its set holds only when every value is
             // ASCII. Which code page the source column has is not followed.
-            var codePage = same.Name is "varchar" or "char" && source.Facets?.Values is { } items && items.Items.Any(v => v.Text.Any(c => c > '\u007f'));
+            var codePage = same.Type.IsAnyOf(BuiltInType.VarChar, BuiltInType.Char) && source.Facets?.Values is { } items && items.Items.Any(v => v.Text.Any(c => c > '\u007f'));
             return Value.Computed(new ScalarShape(codePage ? source with { Facets = source.Facets! with { Values = null } } : source), []);
         }
 
-        var into = ScalarType.Parse(to.Sql!);
+        var into = SqlTypes.Parse(to.Sql!);
         if (into is null)
             return null;
-        var from = source.Sql is { } s ? ScalarType.Parse(s) : null;
+        var from = source.Sql is { } s ? SqlTypes.Parse(s) : null;
 
         // A string into a string: never NULL, cut short past the target's length (observed). Its facts hold when every value fits.
         if (source.Kind == IrScalarKind.String && into.IsString && (from is null ? source.Format is null : from.IsString))
@@ -204,34 +214,22 @@ internal sealed partial class ProcedureAnalyzer
                 : (int?)null;
             var ascii = source.Facets?.Values is { } values && values.Items.All(v => v.Text.All(c => c <= '\u007f'));
             var fits = into.IsMax || (longest is { } n && n <= into.Length);
-            var keeps = fits && (into.Name is "nvarchar" || (into.Name is "varchar" && from is null && ascii));
+            var keeps = fits && (into.Type.IsAnyOf(BuiltInType.NVarChar) || (into.Type.IsAnyOf(BuiltInType.VarChar) && from is null && ascii));
             return Value.Computed(new ScalarShape(keeps ? to with { Facets = Keep(to.Facets, source.Facets) } : to), []);
         }
 
         // An integer into a wider integer, or a JSON literal's integers into an integer type that holds them: the same numbers.
-        if (into.IsInteger && from is { IsInteger: true } && Rank(from.Name) <= Rank(into.Name))
+        if (into.IsInteger && from is { IsInteger: true } && from.IntegerDigits <= into.IntegerDigits)
             return Value.Computed(new ScalarShape(to), []);
         if (into.IsInteger && from is null && source.Kind == IrScalarKind.Number && source.Facets?.Values is { } numbers
-            && numbers.Items.All(v => ExactDecimal.TryParse(v.Text, out var d) && d.IsInteger && Within(d, into.Name)))
+            && numbers.Items.All(v => ExactDecimal.TryParse(v.Text, out var d) && d.IsInteger && Within(d, into)))
         {
             return Value.Computed(new ScalarShape(to with { Facets = (to.Facets ?? new IrFacets()) with { Values = numbers } }), []);
         }
 
         return null;
 
-        static int Rank(string name) => name switch { "tinyint" => 0, "smallint" => 1, "int" => 2, _ => 3 };
-
-        static bool Within(ExactDecimal d, string name)
-        {
-            var (low, high) = name switch
-            {
-                "tinyint" => ("0", "255"),
-                "smallint" => ("-32768", "32767"),
-                "int" => ("-2147483648", "2147483647"),
-                _ => ("-9223372036854775808", "9223372036854775807"),
-            };
-            return d >= ExactDecimal.Parse(low) && d <= ExactDecimal.Parse(high);
-        }
+        static bool Within(ExactDecimal d, ScalarType type) => d >= type.Type.Least!.Value && d <= type.Type.Greatest!.Value;
 
         // A string's facts that hold of the same values in the target type: its length bound and its set.
         static IrFacets? Keep(IrFacets? type, IrFacets? source) =>
@@ -275,8 +273,8 @@ internal sealed partial class ProcedureAnalyzer
 
         if (reference.SchemaDeclarationItems.Count == 0)
         {
-            var key = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["4000"]), at);
-            var type = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "tinyint", []), at);
+            var key = (ScalarShape)SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, 4000), at);
+            var type = (ScalarShape)SqlTypes.ToConvertedShape(ScalarType.Of(BuiltInType.TinyInt), at);
             var from = new IrFactSource(IrFactSourceKind.Engine, "OPENJSON over JSON built here");
             var keys = Keys(document);
             var types = Types(document);
@@ -284,7 +282,7 @@ internal sealed partial class ProcedureAnalyzer
             return
             [
                 Value.Computed(keys is null ? key : key with { Type = key.Type with { Facets = WithValues(key.Type.Facets, new IrValueSet([.. keys.Select(k => new IrValue(k, IsString: true))], IrValueMatch.Exact, [from])) } }, []),
-                Value.Computed(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["max"]), at), mayBeNull ? [JsonValue(at)] : []),
+                Value.Computed(SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, -1), at), mayBeNull ? [JsonValue(at)] : []),
                 Value.Computed(types is null ? type : type with { Type = type.Type with { Facets = WithValues(type.Type.Facets, new IrValueSet([.. types.Order().Select(n => new IrValue(n.ToString(CultureInfo.InvariantCulture), IsString: false))], IrValueMatch.Exact, [from])) } }, []),
             ];
         }
@@ -426,7 +424,7 @@ internal sealed partial class ProcedureAnalyzer
         if (DocumentOf(call.Parameters[0], scope) is not ({ } document, var documentNull) || Follow(document, path.Steps) is not { } found)
             return null;
         var at = At(call);
-        var type = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["4000"]), at);
+        var type = (ScalarShape)SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, 4000), at);
 
         // A NULL document gives NULL.
         var nullable = NullReasons.Join(documentNull, [new IrNullReason(IrNullRule.JsonNullOrAbsent, at.ToString())]);
@@ -438,7 +436,7 @@ internal sealed partial class ProcedureAnalyzer
         switch (scalar.Kind)
         {
             case IrScalarKind.String when scalar.Format is null:
-                var longest = scalar.Sql is { } sql && ScalarType.Parse(sql) is { IsMax: false } t ? t.Length
+                var longest = scalar.Sql is { } sql && SqlTypes.Parse(sql) is { IsMax: false } t ? t.Length
                     : scalar.Facets?.Values is { } set && set.Items.All(v => v.IsString) ? set.Items.Max(v => v.Text.Length)
                     : (int?)null;
                 fits = longest is { } n && n <= 4000;

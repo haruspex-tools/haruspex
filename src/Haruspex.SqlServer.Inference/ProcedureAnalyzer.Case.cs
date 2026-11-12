@@ -187,7 +187,7 @@ internal sealed partial class ProcedureAnalyzer
             .Aggregate((EquatableArray<IrNullReason>)[], NullReasons.Join);
         // A CASE whose condition is constant is folded to one result, an int literal then counting its own digits (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal); which, is not known here.
-        var value = Typed(type, because, at) with { Digits = type.Name == "int" ? IntDigits.Foldable(given.Select(r => r.Value.Digits)) : IntDigits.OfType };
+        var value = Typed(type, because, at) with { Digits = type.Type == BuiltInType.Int ? IntDigits.Foldable(given.Select(r => r.Value.Digits)) : IntDigits.OfType };
         return LiteralSet(given.Select(r => r.Expression), type, at) is { } set && value.Shape is ScalarShape scalar
             ? value with { Shape = scalar with { Type = scalar.Type with { Facets = (scalar.Type.Facets ?? new IrFacets()) with { Values = set } } }, Digits = value.Digits }
             : value;
@@ -261,7 +261,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         if (LiteralOf(expression) is ({ } literal and IntegerLiteral, var negative))
             return !negative && long.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n >= 1 && n <= count;
-        if (index.Shape is not ScalarShape { Type: { Sql: var sql, Facets: { Min: { } min, Max: { } max } } } || ScalarType.Parse(sql) is not { IsInteger: true })
+        if (index.Shape is not ScalarShape { Type: { Sql: var sql, Facets: { Min: { } min, Max: { } max } } } || SqlTypes.Parse(sql) is not { IsInteger: true })
             return false;
         if (!ExactDecimal.TryParse(min.Value, out var low) || !ExactDecimal.TryParse(max.Value, out var high))
             return false;
@@ -296,8 +296,8 @@ internal sealed partial class ProcedureAnalyzer
             && long.TryParse(literal.Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n))
         {
             n = negative ? -n : n;
-            var smallest = n is >= byte.MinValue and <= byte.MaxValue ? "tinyint" : n is >= short.MinValue and <= short.MaxValue ? "smallint" : "int";
-            return Typed(new ScalarType(smallest), because, nullIf);
+            var smallest = n is >= byte.MinValue and <= byte.MaxValue ? BuiltInType.TinyInt : n is >= short.MinValue and <= short.MaxValue ? BuiltInType.SmallInt : BuiltInType.Int;
+            return Typed(ScalarType.Of(smallest), because, nullIf);
         }
 
         return value with { NullableBecause = because, Digits = IntDigits.Foldable([value.Digits]) };
@@ -388,7 +388,7 @@ internal sealed partial class ProcedureAnalyzer
             return new Value(new JsonTextShape(content), because);
         return values.Where((v, i) => !IsJson(v) && TypeOf(v) is not { IsString: true }).Any()
             ? NotModelled(coalesce, "COALESCE of JSON and a value that is not a string is not modelled.")
-            : Typed(new ScalarType("nvarchar", -1), because, coalesce);
+            : Typed(new ScalarType(BuiltInType.NVarChar, -1), because, coalesce);
     }
 
     /// <summary>
@@ -413,6 +413,6 @@ internal sealed partial class ProcedureAnalyzer
                 : NotModelled(call, "ISNULL writes its fallback into the JSON as it is; only '[]', '{}' or JSON is modelled.");
         }
 
-        return json ? new Value(new JsonTextShape(content), second.NullableBecause) : Typed(new ScalarType("nvarchar", -1), second.NullableBecause, call);
+        return json ? new Value(new JsonTextShape(content), second.NullableBecause) : Typed(new ScalarType(BuiltInType.NVarChar, -1), second.NullableBecause, call);
     }
 }

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.SqlServer.Inference.Typing;
 
@@ -21,11 +22,11 @@ internal static class Conversions
         if (from.Text == to.Text)
             return true;
         if (from.IsString && to.IsString)
-            return from.IsNational == to.IsNational && to.Name.EndsWith("varchar", StringComparison.Ordinal) && (to.IsMax || (!from.IsMax && to.Length >= from.Length));
+            return from.IsNational == to.IsNational && to.IsVarying && (to.IsMax || (!from.IsMax && to.Length >= from.Length));
         if (!(from.IsInteger || from.IsDecimal || from.IsMoney) || !Converts(operand, to))
             return false;
         if (to.IsInteger || to.IsMoney)
-            return from.IsInteger || (from.Name == "smallmoney" && to.Name == "money");
+            return from.IsInteger || (from.Type == BuiltInType.SmallMoney && to.Type == BuiltInType.Money);
         if (!to.IsDecimal)
             return false;
         var (p, s) = operand.AsDecimal();
@@ -54,29 +55,20 @@ internal static class Conversions
                 return true;
             if (styled)
                 return false;
-            var longest = from switch
-            {
-                { Name: "bit" } => 1,
-                { Name: "tinyint" } => 3,
-                { Name: "smallint" } => 6,
-                { Name: "int" } => 11,
-                { Name: "bigint" } => 20,
-                { Name: "uniqueidentifier" } => 36,
-
-                // A sign, the digits, a point when there are places, and a 0 before it when there are only places: -0.5.
-                { IsDecimal: true } => from.Precision + 1 + (from.Scale > 0 ? 1 : 0) + (from.Precision == from.Scale ? 1 : 0),
-                _ => int.MaxValue,
-            };
+            // A sign, the digits, a point when there are places, and a 0 before it when there are only places: -0.5.
+            var longest = from.IsDecimal
+                ? from.Precision + 1 + (from.Scale > 0 ? 1 : 0) + (from.Precision == from.Scale ? 1 : 0)
+                : from.Type.LongestText ?? int.MaxValue;
             return to.IsMax ? longest < int.MaxValue : to.Length >= longest;
         }
 
         if (to.IsInteger)
         {
-            if (from.IsInteger || from.Name == "bit")
-                return ScalarType.Rank(to.Name) >= ScalarType.Rank(from.Name);
+            if (from.IsInteger || from.IsBit)
+                return to.IntegerDigits >= from.IntegerDigits;
 
             // A decimal is cut to its integer part, which must fit with any sign: tinyint has none.
-            return from.IsDecimal && to.Name != "tinyint" && from.Precision - from.Scale <= ScalarType.IntegerDigits(to.Name) - 1;
+            return from.IsDecimal && to.Type != BuiltInType.TinyInt && from.Precision - from.Scale <= to.IntegerDigits - 1;
         }
 
         if (to.IsDecimal)
@@ -89,38 +81,41 @@ internal static class Conversions
             return to.Precision - to.Scale > p - s || (to.Precision - to.Scale == p - s && to.Scale >= s);
         }
 
-        return to.Name switch
-        {
-            "bit" => from.IsExact,
-            "smallmoney" => from.Name is "tinyint" or "smallint" or "bit" or "smallmoney" || (from.IsDecimal && from.Precision - from.Scale <= 5),
-            "float" => from.IsExact || from.Name is "real" or "float",
-            "real" => from.IsExact || from.Name == "real",
-            "money" => (from.IsInteger && from.Name != "bigint") || from.Name is "bit" or "smallmoney" || (from.IsDecimal && from.Precision - from.Scale <= 14),
-            "date" => from.Name is "date" or "datetime" or "datetime2" or "smalldatetime" or "datetimeoffset",
+        var t = to.Type;
+        if (t == BuiltInType.Bit)
+            return from.IsExact;
+        if (t == BuiltInType.SmallMoney)
+            return from.Type.IsAnyOf(BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Bit, BuiltInType.SmallMoney) || (from.IsDecimal && from.Precision - from.Scale <= 5);
+        if (t == BuiltInType.Float)
+            return from.IsExact || from.Type.IsAnyOf(BuiltInType.Real, BuiltInType.Float);
+        if (t == BuiltInType.Real)
+            return from.IsExact || from.Type == BuiltInType.Real;
+        if (t == BuiltInType.Money)
+            return (from.IsInteger && from.Type != BuiltInType.BigInt) || from.Type.IsAnyOf(BuiltInType.Bit, BuiltInType.SmallMoney) || (from.IsDecimal && from.Precision - from.Scale <= 14);
+        if (t == BuiltInType.Date)
+            return from.Type.IsAnyOf(BuiltInType.Date, BuiltInType.DateTime, BuiltInType.DateTime2, BuiltInType.SmallDateTime, BuiltInType.DateTimeOffset);
 
-            // A time is that time on 1 January 1900, rounding into the 2nd at most; a tinyint or bit that many days from 1900,
-            // a smallint too within datetime's range (1753 to 9999) but not smalldatetime's (1900 to 2079); a date before
-            // 1753 or 1900 overflows (observed: A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges,
-            // A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
-            "smalldatetime" => from.Name is "smalldatetime" or "time" or "tinyint" or "bit",
-            "datetime2" => from.Name switch
-            {
-                "date" or "smalldatetime" => true,
-                "datetime" => to.Precision >= 3,
-                "datetime2" or "time" => to.Precision >= from.Precision,
-                _ => false,
-            },
-            "datetimeoffset" => from.Name switch
-            {
-                "date" or "smalldatetime" => true,
-                "datetime" => to.Precision >= 3,
-                "datetime2" or "time" or "datetimeoffset" => to.Precision >= from.Precision,
-                _ => false,
-            },
-            "datetime" => from.Name is "datetime" or "smalldatetime" or "time" or "tinyint" or "smallint" or "bit",
-            "time" => from.Name == "time" && to.Precision >= from.Precision,
-            _ => false,
-        };
+        // A time is that time on 1 January 1900, rounding into the 2nd at most; a tinyint or bit that many days from 1900,
+        // a smallint too within datetime's range (1753 to 9999) but not smalldatetime's (1900 to 2079); a date before
+        // 1753 or 1900 overflows (observed: A_conversion_that_cannot_overflow_keeps_every_value_at_its_edges,
+        // A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
+        if (t == BuiltInType.SmallDateTime)
+            return from.Type.IsAnyOf(BuiltInType.SmallDateTime, BuiltInType.Time, BuiltInType.TinyInt, BuiltInType.Bit);
+        if (t == BuiltInType.DateTime2)
+        {
+            return from.Type.IsAnyOf(BuiltInType.Date, BuiltInType.SmallDateTime) || (from.Type == BuiltInType.DateTime && to.Precision >= 3)
+                || (from.Type.IsAnyOf(BuiltInType.DateTime2, BuiltInType.Time) && to.Precision >= from.Precision);
+        }
+
+        if (t == BuiltInType.DateTimeOffset)
+        {
+            return from.Type.IsAnyOf(BuiltInType.Date, BuiltInType.SmallDateTime) || (from.Type == BuiltInType.DateTime && to.Precision >= 3)
+                || (from.Type.IsAnyOf(BuiltInType.DateTime2, BuiltInType.Time, BuiltInType.DateTimeOffset) && to.Precision >= from.Precision);
+        }
+
+        if (t == BuiltInType.DateTime)
+            return from.Type.IsAnyOf(BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.Time, BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Bit);
+        return t == BuiltInType.Time && from.Type == BuiltInType.Time && to.Precision >= from.Precision;
     }
 
     /// <summary>
@@ -129,7 +124,7 @@ internal static class Conversions
     /// under any options (observed: A_string_that_is_not_a_value_of_the_type_is_an_error_even_under_the_callers_options). Not
     /// in <see cref="Converts"/>, which also says TRY_CAST cannot fail.
     /// </summary>
-    public static bool NeverNull(Operand from, ScalarType to) => Converts(from, to) || (from.Type.IsString && to.Name == "uniqueidentifier");
+    public static bool NeverNull(Operand from, ScalarType to) => Converts(from, to) || (from.Type.IsString && to.Type == BuiltInType.UniqueIdentifier);
 
     /// <summary>
     /// Whether a literal's value converts to <paramref name="to"/> without an overflow: an integer within its range, or within
@@ -151,14 +146,8 @@ internal static class Conversions
 
         if (to.IsInteger)
         {
-            var whole = decimal.Truncate(value);
-            return to.Name switch
-            {
-                "tinyint" => whole is >= byte.MinValue and <= byte.MaxValue,
-                "smallint" => whole is >= short.MinValue and <= short.MaxValue,
-                "int" => whole is >= int.MinValue and <= int.MaxValue,
-                _ => whole is >= long.MinValue and <= long.MaxValue,
-            };
+            var whole = ExactDecimal.Parse(decimal.Truncate(value).ToString(CultureInfo.InvariantCulture));
+            return whole >= to.Type.Least!.Value && whole <= to.Type.Greatest!.Value;
         }
 
         if (to.IsDecimal)

@@ -22,13 +22,13 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private Value FromString(StringLiteral literal) =>
         LiteralType(literal) is { } type
-            ? new Value(SqlTypes.ToConvertedShape(model, type.ToSqlType(), At(literal)), [])
+            ? new Value(SqlTypes.ToConvertedShape(type, At(literal)), [])
             : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The literal {Text(literal)} is not ASCII, so its length in bytes depends on the code page.", At(literal)));
 
     private static ScalarType? LiteralType(StringLiteral literal) =>
         literal.Collation is not null || (!literal.IsNational && literal.Value.Any(c => c > '\u007f'))
             ? null
-            : new ScalarType(literal.IsNational ? "nvarchar" : "varchar", Math.Max(1, literal.Value.Length));
+            : new ScalarType(literal.IsNational ? BuiltInType.NVarChar : BuiltInType.VarChar, Math.Max(1, literal.Value.Length));
 
     /// <summary>
     /// A decimal literal, <c>2.50</c>: numeric whose scale is its digits after the point, trailing zeros too, and whose
@@ -43,7 +43,7 @@ internal sealed partial class ProcedureAnalyzer
         var precision = Math.Max(1, whole.Length + scale);
         if (precision > 38)
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The literal {literal.Value} has more than 38 digits.", At(literal)));
-        return new Value(SqlTypes.ToConvertedShape(model, new ScalarType("numeric", Precision: precision, Scale: scale).ToSqlType(), At(literal)), []);
+        return new Value(SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.Numeric, Precision: precision, Scale: scale), At(literal)), []);
     }
 
     /// <summary>The scalar type of a value, when it is a built-in scalar.</summary>
@@ -53,8 +53,8 @@ internal sealed partial class ProcedureAnalyzer
             return null;
         return value.Shape switch
         {
-            ScalarShape { Type.Sql: var sql } => ScalarType.Parse(sql),
-            JsonTextShape => new ScalarType("nvarchar", -1),
+            ScalarShape { Type.Sql: var sql } => SqlTypes.Parse(sql),
+            JsonTextShape => new ScalarType(BuiltInType.NVarChar, -1),
             _ => null,
         };
     }
@@ -70,13 +70,13 @@ internal sealed partial class ProcedureAnalyzer
             return null;
         if (IntegerLiteralOf(expression) is { } literal)
             return new Operand(type, literal.Value.TrimStart('-', '+').TrimStart('0').Length is var n and > 0 ? n : 1);
-        if (type is { Name: "int" } && (least ? value.Digits.Least : value.Digits.Most) is var d and < 10)
+        if (type.Type == BuiltInType.Int && (least ? value.Digits.Least : value.Digits.Most) is var d and < 10)
             return new Operand(type, d);
         return Operand.OfType(type);
     }
 
     /// <summary>Whether the server may count an int's digits as a literal's or as its type's, depending on what it folds.</summary>
-    private static bool Uncertain(Value value) => value.Shape is ScalarShape { Type.Sql: "int" } && !value.IsLiveJson && value.Digits.IsUncertain;
+    private static bool Uncertain(Value value) => value.Shape is ScalarShape { Type.Sql: var sql } && SqlTypes.Parse(sql)?.Type == BuiltInType.Int && !value.IsLiveJson && value.Digits.IsUncertain;
 
     /// <summary>An integer literal, through parentheses and a sign.</summary>
     private static IntegerLiteral? IntegerLiteralOf(ScalarExpression expression) => Strip(expression) switch
@@ -102,7 +102,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>A value the server computes, of this type: never folded to a constant, so it counts its type's digits.</summary>
     private Value Typed(ScalarType type, EquatableArray<IrNullReason> because, TSqlFragment at) =>
-        Value.Computed(SqlTypes.ToConvertedShape(model, type.ToSqlType(), At(at)), because);
+        Value.Computed(SqlTypes.ToConvertedShape(type, At(at)), because);
 
     private IrNullReason Overflow(TSqlFragment at) => new(IrNullRule.ArithmeticOverflow, At(at).ToString());
 
@@ -154,7 +154,7 @@ internal sealed partial class ProcedureAnalyzer
         // scale, which values come back is not known (observed: An_int_constant_counts_its_own_digits_beside_a_decimal). When it
         // changes only the precision, the most digits hold every value.
         if (values.Any(v => Uncertain(v.Value)) && TypeChain.Of([.. values.Select(v => OperandOf(v.Value, v.Expression, least: true)!)]) is var fewest
-            && (fewest is null || fewest.Name != type.Name || fewest.Scale != type.Scale))
+            && (fewest is null || fewest.Type != type.Type || fewest.Scale != type.Scale))
         {
             return new ChainType(null, [], $"its type depends on whether SQL Server folds {Names(values.Where(v => Uncertain(v.Value)).Select(v => Text(v.Expression)))} to a constant, whose digits it would count.");
         }
@@ -209,7 +209,7 @@ internal sealed partial class ProcedureAnalyzer
         // COALESCE(NULL, 1) is folded to 1 and counts its digits (observed: An_int_constant_counts_its_own_digits_beside_a_decimal).
         return Typed(type, combined.Overflows.Aggregate(because, NullReasons.Join), coalesce) with
         {
-            Digits = type.Name == "int" ? IntDigits.Foldable(values.Select(v => v.Digits)) : IntDigits.OfType,
+            Digits = type.Type == BuiltInType.Int ? IntDigits.Foldable(values.Select(v => v.Digits)) : IntDigits.OfType,
         };
     }
 
@@ -292,10 +292,10 @@ internal sealed partial class ProcedureAnalyzer
     private Value Cast(DataTypeReference target, ScalarExpression operand, TSqlFragment call, BindingScope scope, bool styled = false, bool attempt = false)
     {
         var type = SqlType.From(target);
-        if (type is { Kind: SqlTypeKind.BuiltIn, Name: "char" or "varchar" or "nchar" or "nvarchar", Arguments.Count: 0 })
-            type = new SqlType(SqlTypeKind.BuiltIn, type.Name, ["30"]);
-        var to = ScalarType.Parse(SchemaRules.ResolveType(model, type)?.BuiltIn.ToString());
-        var shape = to is null ? null : SqlTypes.ToConvertedShape(model, to.ToSqlType(), At(call));
+        var to = SqlTypes.Modelled(SchemaRules.ResolveType(model, type)?.Scalar);
+        if (to is { IsString: true } && type is { Kind: SqlTypeKind.BuiltIn, Arguments.Count: 0 })
+            to = to with { Length = BuiltInType.LengthInConversion };
+        var shape = to is null ? null : SqlTypes.ToConvertedShape(to, At(call));
         if (to is null || shape is null or UnknownShape)
             return NotModelled(call, "a conversion to this type is not modelled yet.");
 
@@ -303,7 +303,7 @@ internal sealed partial class ProcedureAnalyzer
         // As an int it counts 1 integer digit beside a decimal, as a literal would (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal: CAST(NULL AS int) beside decimal(38,38) is decimal(38,37)).
         if (Strip(operand) is NullLiteral)
-            return new Value(shape, [new IrNullReason(IrNullRule.NullLiteral, At(operand).ToString())]) { Digits = to.Name == "int" ? IntDigits.Literal(1) : IntDigits.OfType };
+            return new Value(shape, [new IrNullReason(IrNullRule.NullLiteral, At(operand).ToString())]) { Digits = to.Type == BuiltInType.Int ? IntDigits.Literal(1) : IntDigits.OfType };
 
         var value = Expression(operand, scope);
         if (value.Shape is UnknownShape || value.IsLiveJson)
@@ -341,13 +341,13 @@ internal sealed partial class ProcedureAnalyzer
     private (ScalarType Type, int Length)? Piece(ScalarExpression expression, BindingScope scope)
     {
         if (Strip(expression) is NullLiteral)
-            return (new ScalarType("varchar", 0), 0);
+            return (new ScalarType(BuiltInType.VarChar, 0), 0);
         var value = Expression(expression, scope);
         return TypeOf(value) switch
         {
             { IsString: true } s => (s, s.Length),
-            { Name: "int" } i => (i, 12),
-            { Name: "bit" } b => (b, 1),
+            { } i when i.Type == BuiltInType.Int => (i, 12),
+            { IsBit: true } b => (b, 1),
             _ => null,
         };
     }
@@ -371,7 +371,7 @@ internal sealed partial class ProcedureAnalyzer
         var separator = separated ? pieces[0]!.Value.Length * (parts.Count - 1) : 0;
         var max = pieces.Any(p => p!.Value.Type.IsMax);
         var national = pieces.Any(p => p!.Value.Type.IsNational);
-        return Typed(ScalarType.String(national, varying: true, max ? -1 : parts.Sum(p => p!.Value.Length) + separator), [], call);
+        return Typed(ScalarType.CharacterString(national, varying: true, max ? -1 : parts.Sum(p => p!.Value.Length) + separator), [], call);
     }
 
     /// <summary>
@@ -382,7 +382,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private Value Plus(BinaryExpression plus, Value left, Value right, ScalarType l, ScalarType r) =>
         Typed(
-            ScalarType.String(l.IsNational || r.IsNational, varying: l.Name.EndsWith("varchar", StringComparison.Ordinal) || r.Name.EndsWith("varchar", StringComparison.Ordinal), l.IsMax || r.IsMax ? -1 : l.Length + r.Length),
+            ScalarType.CharacterString(l.IsNational || r.IsNational, varying: l.IsVarying || r.IsVarying, l.IsMax || r.IsMax ? -1 : l.Length + r.Length),
             NullReasons.Join(left.NullableBecause, right.NullableBecause),
             plus);
 
@@ -427,7 +427,7 @@ internal sealed partial class ProcedureAnalyzer
         if (Uncertain(left) || Uncertain(right))
         {
             var (lf, rf) = (OperandOf(left, binary.FirstExpression, least: true)!, OperandOf(right, binary.SecondExpression, least: true)!);
-            if (Arithmetic.TypeOf(op, lf, rf) is not { } fewest || fewest.Scale != type.Scale || fewest.Name != type.Name)
+            if (Arithmetic.TypeOf(op, lf, rf) is not { } fewest || fewest.Scale != type.Scale || fewest.Type != type.Type)
                 return NotModelled(binary, "its type depends on whether SQL Server folds an operand to a constant, whose digits it would count.");
             mayOverflow |= Arithmetic.MayOverflow(op, lf, rf, NumberOf(binary.SecondExpression));
         }
@@ -467,7 +467,7 @@ internal sealed partial class ProcedureAnalyzer
                 return NotModelled(unary, "negating a signed literal is not modelled.");
             // The parser gives 2147483648 as a numeric literal, being beyond int.
             return literal.Value.TrimStart('0') == "2147483648"
-                ? Typed(new ScalarType("int"), [], unary)
+                ? Typed(ScalarType.Of(BuiltInType.Int), [], unary)
                 : Expression(literal, scope);
         }
 
@@ -477,7 +477,7 @@ internal sealed partial class ProcedureAnalyzer
         return TypeOf(operand) switch
         {
             ({ IsDecimal: true } or { IsApproximate: true }) and var exact => Typed(exact, operand.NullableBecause, unary),
-            { Name: "tinyint" } => Typed(new ScalarType("smallint"), operand.NullableBecause, unary),
+            { } tiny when tiny.Type == BuiltInType.TinyInt => Typed(ScalarType.Of(BuiltInType.SmallInt), operand.NullableBecause, unary),
             ({ IsInteger: true } or { IsMoney: true }) and var integer => Typed(integer, NullReasons.Join(operand.NullableBecause, [Overflow(unary)]), unary),
             _ => NotModelled(unary, "negating a value of this type is not modelled yet."),
         };
@@ -511,11 +511,11 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>The type SUM gives a value of this type, over a window too (observed: Sum_widens_its_argument).</summary>
     private static ScalarType? SumType(ScalarType of) => of switch
     {
-        { Name: "tinyint" or "smallint" or "int" } => new ScalarType("int"),
-        { Name: "bigint" } => new ScalarType("bigint"),
-        { IsDecimal: true } d => new ScalarType(d.Name, Precision: 38, Scale: d.Scale),
-        { Name: "money" or "smallmoney" } => new ScalarType("money"),
-        { Name: "float" or "real" } => new ScalarType("float"),
+        { IsInteger: true } when of.Type == BuiltInType.BigInt => ScalarType.Of(BuiltInType.BigInt),
+        { IsInteger: true } => ScalarType.Of(BuiltInType.Int),
+        { IsDecimal: true } d => new ScalarType(d.Type, Precision: 38, Scale: d.Scale),
+        { IsMoney: true } => ScalarType.Of(BuiltInType.Money),
+        { IsApproximate: true } => ScalarType.Of(BuiltInType.Float),
         _ => null,
     };
 
@@ -527,12 +527,12 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private static EquatableArray<IrNullReason> Converting(Value value, Shape declared, SourceLocation at)
     {
-        if (value.Shape is UnknownShape || value.IsLiveJson || declared is not ScalarShape { Type.Sql: var sql } || ScalarType.Parse(sql) is not { } to)
+        if (value.Shape is UnknownShape || value.IsLiveJson || declared is not ScalarShape { Type.Sql: var sql } || SqlTypes.Parse(sql) is not { } to)
             return value.NullableBecause;
         var from = value.Shape switch
         {
-            ScalarShape { Type.Sql: var s } => ScalarType.Parse(s),
-            JsonTextShape => new ScalarType("nvarchar", -1),
+            ScalarShape { Type.Sql: var s } => SqlTypes.Parse(s),
+            JsonTextShape => new ScalarType(BuiltInType.NVarChar, -1),
             _ => null,
         };
         return from is not null && Conversions.Converts(Operand.OfType(from), to)

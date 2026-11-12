@@ -265,8 +265,9 @@ internal sealed class FunctionSummaries
         var body = function.Body;
         var at = function.At;
         var returnType = SqlType.From(((ScalarFunctionReturnType)body.ReturnType).DataType);
-        var resolved = SchemaRules.ResolveType(model, returnType)?.BuiltIn;
-        var returnsJson = resolved?.Name == "json";
+        var resolvedType = SchemaRules.ResolveType(model, returnType);
+        var resolved = resolvedType?.BuiltIn;
+        var returnsJson = resolvedType?.Type == BuiltInType.Json;
         var nullOnNull = body.Options?.Any(o => o.OptionKind == FunctionOptionKind.ReturnsNullOnNullInput) == true;
 
         // The declared type: a json return is live JSON whose shape is in the data; anything else as a variable is typed.
@@ -308,15 +309,14 @@ internal sealed class FunctionSummaries
         var type = SqlType.From(parameter.DataType);
 
         // A json value nests as JSON (observed for variables and columns), and its shape is in the data.
-        return SchemaRules.ResolveType(model, type)?.BuiltIn.Name == "json"
+        return SchemaRules.ResolveType(model, type)?.Type == BuiltInType.Json
             ? new Value(new UnknownShape(IrUnknownReason.JsonShapeUnknown, $"{parameter.VariableName.Value} is a json parameter: its shape is in the data.", at), because, IsLiveJson: true)
             : Value.Computed(SqlTypes.ToConvertedShape(model, type, at), because);
     }
 
     /// <summary><c>nvarchar(max)</c> and <c>json</c> hold any JSON text unchanged.</summary>
     private static bool HoldsAnyJson(SqlType? type) =>
-        type is not null
-        && (type.Name == "json" || (type.Name == "nvarchar" && type.Arguments is [var length] && length.Equals("max", StringComparison.OrdinalIgnoreCase)));
+        type is not null && ScalarType.Of(type) is { } scalar && (scalar.Type == BuiltInType.Json || (scalar.Type == BuiltInType.NVarChar && scalar.IsMax));
 
     /// <summary>
     /// The expression the body returns, when the body is <c>RETURN expression</c> or a straight run of declarations and

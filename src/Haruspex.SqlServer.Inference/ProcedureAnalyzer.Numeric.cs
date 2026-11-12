@@ -21,11 +21,11 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private static ScalarType? AvgType(ScalarType of) => of switch
     {
-        { Name: "tinyint" or "smallint" or "int" } => new ScalarType("int"),
-        { Name: "bigint" } => new ScalarType("bigint"),
-        { IsDecimal: true } d => new ScalarType(d.Name, Precision: 38, Scale: Math.Max(d.Scale, 6)),
-        { Name: "money" or "smallmoney" } => new ScalarType("money"),
-        { Name: "float" or "real" } => new ScalarType("float"),
+        { IsInteger: true } when of.Type == BuiltInType.BigInt => ScalarType.Of(BuiltInType.BigInt),
+        { IsInteger: true } => ScalarType.Of(BuiltInType.Int),
+        { IsDecimal: true } d => new ScalarType(d.Type, Precision: 38, Scale: Math.Max(d.Scale, 6)),
+        { IsMoney: true } => ScalarType.Of(BuiltInType.Money),
+        { IsApproximate: true } => ScalarType.Of(BuiltInType.Float),
         _ => null,
     };
 
@@ -65,7 +65,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         if (name == "avg")
             return AvgType(of) is { } type ? (type, SumMayOverflow(of)) : null;
-        return of.IsNumber ? (new ScalarType("float"), of.Name == "float") : null;
+        return of.IsNumber ? (ScalarType.Of(BuiltInType.Float), of.Type == BuiltInType.Float) : null;
     }
 
     // ---- numeric functions --------------------------------------------------------------------------------------------
@@ -78,11 +78,11 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private static ScalarType? FunctionType(ScalarType of) => of switch
     {
-        { Name: "tinyint" or "smallint" or "int" } => new ScalarType("int"),
-        { Name: "bigint" } => new ScalarType("bigint"),
+        { IsInteger: true } when of.Type == BuiltInType.BigInt => ScalarType.Of(BuiltInType.BigInt),
+        { IsInteger: true } => ScalarType.Of(BuiltInType.Int),
         { IsDecimal: true } => of,
-        { IsMoney: true } => new ScalarType("money"),
-        { IsApproximate: true } or { Name: "bit" } => new ScalarType("float"),
+        { IsMoney: true } => ScalarType.Of(BuiltInType.Money),
+        { IsApproximate: true } or { IsBit: true } => ScalarType.Of(BuiltInType.Float),
         _ => null,
     };
 
@@ -96,7 +96,7 @@ internal sealed partial class ProcedureAnalyzer
     private (Value Value, ScalarType? Type) NumberArgument(ScalarExpression expression, BindingScope scope)
     {
         var value = Expression(expression, scope);
-        return (value, value.Shape is UnknownShape || value.IsLiveJson ? null : TypeOf(value) is { } t && (t.IsNumber || t.Name == "bit") ? t : null);
+        return (value, value.Shape is UnknownShape || value.IsLiveJson ? null : TypeOf(value) is { } t && (t.IsNumber || t.IsBit) ? t : null);
     }
 
     private Value Numeric(FunctionCall call, BindingScope scope)
@@ -113,13 +113,13 @@ internal sealed partial class ProcedureAnalyzer
         var (others, unknown) = Arguments(p.Skip(1), scope);
         if (unknown is not null)
             return unknown;
-        if (others.Select((o, i) => o.IsLiveJson ? null : TypeOf(o)).Any(t => t is not ({ IsNumber: true } or { Name: "bit" })))
+        if (others.Select((o, i) => o.IsLiveJson ? null : TypeOf(o)).Any(t => t is not ({ IsNumber: true } or { IsBit: true })))
             return NotModelled(call, "an argument of this type is not modelled.");
         var counted = call.FunctionName.Value.Equals("round", StringComparison.OrdinalIgnoreCase) ? others.Take(1) : others;
         var because = NullReasons.Join(value.NullableBecause, Reasons(counted));
         EquatableArray<IrNullReason> With(bool overflows, bool domain = false) =>
             NullReasons.Join(because, [.. overflows ? [Overflow(call)] : (EquatableArray<IrNullReason>)[], .. domain ? [Domain(call)] : (EquatableArray<IrNullReason>)[]]);
-        var flt = new ScalarType("float");
+        var flt = ScalarType.Of(BuiltInType.Float);
 
 #pragma warning disable CA1308 // Built-in function names are ASCII, so lower case matches them exactly, and the cases are written as T-SQL usually is.
         return (call.FunctionName.Value.ToLowerInvariant(), p.Count) switch
@@ -129,10 +129,10 @@ internal sealed partial class ProcedureAnalyzer
 
             // FLOOR and CEILING keep a decimal's precision with no places, which always holds the result (CEILING of
             // decimal(2,2) is 1); money at its extremes does not.
-            ("floor" or "ceiling", 1) => Typed(result.IsDecimal ? result with { Scale = 0 } : result, With(type.Name == "money"), call),
+            ("floor" or "ceiling", 1) => Typed(result.IsDecimal ? result with { Scale = 0 } : result, With(type.Type == BuiltInType.Money), call),
 
             // ABS of the least int, bigint or money overflows; tinyint and smallint become int, and a decimal is symmetric.
-            ("abs", 1) => Typed(result, With(type.Name is "int" or "bigint" or "money"), call),
+            ("abs", 1) => Typed(result, With(type.Type.IsAnyOf(BuiltInType.Int, BuiltInType.BigInt, BuiltInType.Money)), call),
 
             // SIGN gives -1, 0 or 1: a decimal of places only gains an integer digit to hold 1, within 38.
             ("sign", 1) => Typed(result.IsDecimal && result.Precision == result.Scale ? result with { Precision = Math.Min(result.Precision + 1, 38), Scale = Math.Min(result.Scale, 37) } : result, because, call),
@@ -140,14 +140,14 @@ internal sealed partial class ProcedureAnalyzer
             ("power", 2) => Power(call, type, result, because),
 
             // SQUARE of an exact type or a real is far within float's range (10^76 at most); of a float it can pass it.
-            ("square", 1) => Typed(flt, With(type.IsApproximate && type.Name == "float"), call),
+            ("square", 1) => Typed(flt, With(type.IsApproximate && type.Type == BuiltInType.Float), call),
 
             // EXP passes float's range past e^709: an argument below 709 cannot, a tinyint, a bit or a decimal of at most two
             // integer digits.
-            ("exp", 1) => Typed(flt, With(!(type.Name is "tinyint" or "bit" || (type.IsDecimal && type.Precision - type.Scale <= 2))), call),
+            ("exp", 1) => Typed(flt, With(!(type.Type.IsAnyOf(BuiltInType.TinyInt, BuiltInType.Bit) || (type.IsDecimal && type.Precision - type.Scale <= 2))), call),
 
             // SQRT of a negative is outside its domain, which a tinyint or a bit cannot be; LOG and LOG10 of 0 can be.
-            ("sqrt", 1) => Typed(flt, With(false, type.Name is not ("tinyint" or "bit")), call),
+            ("sqrt", 1) => Typed(flt, With(false, !type.Type.IsAnyOf(BuiltInType.TinyInt, BuiltInType.Bit)), call),
             ("log", 1 or 2) or ("log10", 1) => Typed(flt, With(false, domain: true), call),
             _ => NotModelled(call, "this form of the function is not modelled."),
         };
@@ -167,11 +167,11 @@ internal sealed partial class ProcedureAnalyzer
         var places = WholeOf(p[1]);
         return type switch
         {
-            { Name: "tinyint" or "smallint" or "real" or "bit" or "smallmoney" } => false,
+            _ when type.Type.IsAnyOf(BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Real, BuiltInType.Bit, BuiltInType.SmallMoney) => false,
             { IsDecimal: true } d => !(places >= d.Scale),
             // money's ends are ±922337203685477.58xx with .5807 and .5808 below .585, so rounding to 2 places never carries past
             // them; to 3, 1 or 0 places it can (observed).
-            { Name: "money" } => places is not (>= 4 or 2),
+            _ when type.Type == BuiltInType.Money => places is not (>= 4 or 2),
             _ => !(places >= 0),
         };
     }
@@ -194,11 +194,8 @@ internal sealed partial class ProcedureAnalyzer
         var fits = type switch
         {
             { IsDecimal: true } d => (d.Precision - d.Scale) * n < 38 - d.Scale,
-            { Name: "tinyint" } => 3 * n < 10,
-            { Name: "smallint" } => 5 * n < 10,
-            { Name: "int" } => 10 * n < 10,
-            { Name: "bigint" } => 19 * n < 19,
-            { Name: "bit" } => true,
+            { IsInteger: true } => type.IntegerDigits * n < result.IntegerDigits,
+            { IsBit: true } => true,
             _ => false,
         };
         return Typed(typed, fits ? because : NullReasons.Join(because, [Overflow(call)]), call);

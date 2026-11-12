@@ -95,7 +95,7 @@ internal sealed partial class ProcedureAnalyzer
             return any;
         if (TypeOf(value) is { } from && declared is ScalarShape { Type.Sql: var sql } && from.Text == sql)
             return value;
-        var fits = LiteralOf(argument) is ({ } literal, var negative) && ScalarType.Parse((declared as ScalarShape)?.Type.Sql) is { } to
+        var fits = LiteralOf(argument) is ({ } literal, var negative) && SqlTypes.Parse((declared as ScalarShape)?.Type.Sql) is { } to
             ? Conversions.Fits(literal, to, negative)
             : null;
         return Value.Computed(declared, fits == true ? value.NullableBecause : Converting(value, declared, At(argument)));
@@ -148,7 +148,7 @@ internal sealed partial class ProcedureAnalyzer
         foreach (var key in SchemaRules.EnforcedKeys(table))
         {
             var ordinals = key.Columns.Select(c => table.Columns.ToList().FindIndex(x => x.Name.Equals(c, StringComparison.OrdinalIgnoreCase))).ToList();
-            var types = key.Columns.Select(c => SchemaRules.ResolveType(model, table.Column(c)?.Type)?.BuiltIn.Name).ToList();
+            var types = key.Columns.Select(c => SchemaRules.ResolveType(model, table.Column(c)?.Type)?.Type).ToList();
             if (ordinals.All(o => o >= 0) && types.All(t => t is not null))
                 keys.Add(new RelationKey([.. ordinals], [.. types!]));
         }

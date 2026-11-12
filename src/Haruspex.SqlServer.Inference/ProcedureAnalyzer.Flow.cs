@@ -144,7 +144,7 @@ internal sealed partial class ProcedureAnalyzer
     private Shape DeclaredShape(SqlType? type, SourceLocation at, string name, out bool live)
     {
         // A json value nests as JSON (observed for variables and columns), and its shape is in the data.
-        live = SchemaRules.ResolveType(model, type)?.BuiltIn.Name == "json";
+        live = SchemaRules.ResolveType(model, type)?.Type == BuiltInType.Json;
         return live
             ? Unsupported(IrUnknownReason.JsonShapeUnknown, $"{name} is a json variable: its shape is in the data.", at)
             : SqlTypes.ToConvertedShape(model, type, at);
@@ -792,12 +792,12 @@ internal sealed partial class ProcedureAnalyzer
         // does not mean this project's type. sysname is the system's own, which tempdb has. A table variable takes them from
         // the database (observed).
         if (temporary && column.Type is { Kind: SqlTypeKind.Named } named
-            && !(named.Name.Equals("sysname", StringComparison.OrdinalIgnoreCase) && named.Schema is null or "sys"))
+            && BuiltInType.SystemAlias(named) is null)
         {
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedSqlType, $"{where} is of the alias type {named}, which tempdb has only if it was created there.", column.At));
         }
 
-        if (!column.IsComputed && SchemaRules.ResolveType(model, column.Type)?.BuiltIn.Name == "json")
+        if (!column.IsComputed && SchemaRules.ResolveType(model, column.Type)?.Type == BuiltInType.Json)
             return new Value(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{where} is a json column: its shape is in the data.", column.At), because, IsLiveJson: true);
 
         var shape = ColumnShape(table, column);
@@ -1101,12 +1101,12 @@ internal sealed partial class ProcedureAnalyzer
         if (long.TryParse(literal.Value, System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out var n) && n is >= int.MinValue and <= int.MaxValue)
         {
             var own = literal.Value.TrimStart('-', '+').TrimStart('0').Length is var d and > 0 ? d : 1;
-            return new Value(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "int", []), At(literal)), []) { Digits = IntDigits.Literal(own) };
+            return new Value(SqlTypes.ToConvertedShape(ScalarType.Of(BuiltInType.Int), At(literal)), []) { Digits = IntDigits.Literal(own) };
         }
 
         var digits = literal.Value.TrimStart('-', '+').TrimStart('0').Length;
         return digits <= 38
-            ? new Value(SqlTypes.ToConvertedShape(model, new ScalarType("numeric", Precision: digits).ToSqlType(), At(literal)), [])
+            ? new Value(SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.Numeric, Precision: digits), At(literal)), [])
             : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The literal {literal.Value} has more than 38 digits.", At(literal)));
     }
 

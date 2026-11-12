@@ -1,3 +1,5 @@
+using Haruspex.SqlServer.Semantics;
+
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
@@ -25,8 +27,8 @@ internal sealed record Operand(ScalarType Type, int? Digits)
     /// </summary>
     public (int Precision, int Scale) AsDecimal() => Type switch
     {
-        { IsDecimal: true } or { Name: "money" or "smallmoney" } => (Type.Precision, Type.Scale),
+        { IsDecimal: true } or { IsMoney: true } => (Type.Precision, Type.Scale),
         _ when Digits is { } digits => (digits, 0),
-        _ => (ScalarType.IntegerDigits(Type.Name), 0),
+        _ => (Type.IntegerDigits, 0),
     };
 }

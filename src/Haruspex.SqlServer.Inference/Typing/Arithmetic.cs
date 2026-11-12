@@ -1,3 +1,5 @@
+using Haruspex.SqlServer.Semantics;
+
 namespace Haruspex.SqlServer.Inference.Typing;
 
 /// <summary>
@@ -27,11 +29,11 @@ internal static class Arithmetic
     public static ScalarType? TypeOf(char op, Operand leftOperand, Operand rightOperand)
     {
         var (left, right) = (leftOperand.Type, rightOperand.Type);
-        if (left.Name is "datetime" or "smalldatetime" || right.Name is "datetime" or "smalldatetime")
+        if (left.Type.IsAnyOf(BuiltInType.DateTime, BuiltInType.SmallDateTime) || right.Type.IsAnyOf(BuiltInType.DateTime, BuiltInType.SmallDateTime))
         {
-            static bool Dated(ScalarType t) => t.Name is "datetime" or "smalldatetime" or "bit" || t.IsNumber;
+            static bool Dated(ScalarType t) => t.Type.IsAnyOf(BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.Bit) || t.IsNumber;
             return op is '+' or '-' && Dated(left) && Dated(right)
-                ? new ScalarType(left.Name == "datetime" || right.Name == "datetime" ? "datetime" : "smalldatetime")
+                ? ScalarType.Of(left.Type == BuiltInType.DateTime || right.Type == BuiltInType.DateTime ? BuiltInType.DateTime : BuiltInType.SmallDateTime)
                 : null;
         }
 
@@ -39,13 +41,13 @@ internal static class Arithmetic
             return null;
         var (l, r) = (lo.Type, ro.Type);
         if (l.IsApproximate || r.IsApproximate)
-            return op == '%' ? null : new ScalarType(l.Name == "float" || r.Name == "float" ? "float" : "real");
+            return op == '%' ? null : ScalarType.Of(l.Type == BuiltInType.Float || r.Type == BuiltInType.Float ? BuiltInType.Float : BuiltInType.Real);
         if ((l.IsMoney || r.IsMoney) && !l.IsDecimal && !r.IsDecimal)
-            return ScalarType.Parse(l.Name == "money" || r.Name == "money" ? "money" : "smallmoney");
+            return ScalarType.Of(l.Type == BuiltInType.Money || r.Type == BuiltInType.Money ? BuiltInType.Money : BuiltInType.SmallMoney);
         if (l.IsInteger && r.IsInteger)
-            return ScalarType.Rank(l.Name) >= ScalarType.Rank(r.Name) ? l : r;
+            return l.IntegerDigits >= r.IntegerDigits ? l : r;
 
-        var name = l.IsNumericNamed || r.IsNumericNamed ? "numeric" : "decimal";
+        var name = l.Type == BuiltInType.Numeric || r.Type == BuiltInType.Numeric ? BuiltInType.Numeric : BuiltInType.Decimal;
         return DecimalResult(op, lo, ro) is var (precision, scale, _, _) ? new ScalarType(name, Precision: precision, Scale: scale) : null;
     }
 
@@ -56,10 +58,10 @@ internal static class Arithmetic
     /// </summary>
     private static (Operand Left, Operand Right)? Operands(Operand left, Operand right)
     {
-        static bool Numeric(ScalarType t) => t.IsNumber || t.Name == "bit";
-        if (!Numeric(left.Type) || !Numeric(right.Type) || (left.Type.Name == "bit" && right.Type.Name == "bit"))
+        static bool Numeric(ScalarType t) => t.IsNumber || t.IsBit;
+        if (!Numeric(left.Type) || !Numeric(right.Type) || (left.Type.IsBit && right.Type.IsBit))
             return null;
-        return (left.Type.Name == "bit" ? right : left, right.Type.Name == "bit" ? left : right);
+        return (left.Type.IsBit ? right : left, right.Type.IsBit ? left : right);
     }
 
     /// <summary>
@@ -145,7 +147,7 @@ internal static class Arithmetic
 
         // A bit becomes the decimal's own type, which cannot hold its 1 when every digit is a place (observed:
         // A_bit_converted_to_a_decimal_of_places_only_overflows_when_it_is_1).
-        if ((left.Name == "bit" || right.Name == "bit") && l.IsDecimal && l.Precision == l.Scale)
+        if ((left.IsBit || right.IsBit) && l.IsDecimal && l.Precision == l.Scale)
             return true;
 
         var (p1, s1) = lo.AsDecimal();

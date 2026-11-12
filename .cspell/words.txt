@@ -26,6 +26,7 @@ formatmessage
 fromparts
 getdate
 getutcdate
+hierarchyid
 isnull
 keyset
 ltrim
@@ -34,6 +35,7 @@ nestlevel
 nocount
 noexec
 noexpand
+ntext
 ntile
 nvarchar
 objectagg
@@ -51,6 +53,7 @@ rowcount
 rowset
 rowsets
 rowstat
+rowversion
 rtrim
 schemabinding
 smalldatetime

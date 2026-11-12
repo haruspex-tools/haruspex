@@ -3,6 +3,7 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Inference.Typing;
+using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.Tests.Inference;
 
