@@ -66,7 +66,11 @@ and commit the updated lock files with the change. Dependency updates are read b
 automatically.
 
 The emit-check test (`tests/emit-check`) writes the Zod generated from the fixtures and compiles it with
-`tsc --noEmit` against a pinned `zod`. It runs `npm ci` there the first time. The same package holds
+`tsc --noEmit` (strict) against a pinned `zod`, and `tests/emit-lint` lints the same modules with the recommended rules of
+ESLint and typescript-eslint, failing on any warning. Each runs `npm ci` in its folder the first time. The lint has a
+package of its own because typescript-eslint reads TypeScript through the compiler's JavaScript API, which the TypeScript
+the emit check compiles with no longer has. The example application, `examples/greenhouse`, is compiled the same way
+against the module committed beside it (`ExampleAppTests`). The same package holds
 `tests/emit-check/src/multiple-of.mjs`, the evidence that Zod checks a decimal's step without floating-point false
 failures, and `tests/emit-check/src/accept.mjs`, through which the differential tests run real output into the generated schemas. CI sets
 `HARUSPEX_REQUIRE_NODE=1`, which turns a missing Node into a failure rather than a skip.
@@ -217,6 +221,8 @@ Nested types stay in the type they belong to, and a partial type's parts are nam
 | `tests/fixtures` | The fixtures, one folder each: schema, seed, runs and expected outputs ([its README](tests/fixtures/README.md)). |
 | `tests/ir-versions` | One IR file from each version of the format, which the reader must read (the current one) or refuse ([its README](tests/ir-versions/README.md)). |
 | `tests/emit-check` | A small npm package that type-checks the generated Zod. |
+| `tests/emit-lint` | A small npm package that lints the generated Zod. |
+| `examples` | Small applications that use what haruspex generates, compiled by the tests and in CI ([greenhouse](examples/greenhouse/README.md)). |
 | `tests/prose` | The prose checks (`check.sh`), their npm package and the fixtures that test them. |
 
 Only `Model` and `Sources` are packable (`IsPackable`, with package metadata and a readme), with `Diagnostics`
@@ -235,8 +241,11 @@ the maintainer's agreement.
 | `Microsoft.SqlServer.TransactSql.ScriptDom` | MIT | Model, Sources, Semantics, Inference | Microsoft's own T-SQL parser: the only way to read T-SQL as SQL Server does. |
 | `System.CommandLine` | MIT | CLI | Argument parsing, help and usage errors, maintained by the .NET team. |
 | `xunit.v3` | Apache-2.0 | tests | The test framework; runs on Microsoft.Testing.Platform (opted into in `global.json`). |
-| `typescript` (npm) | Apache-2.0 | emit-check | Compiles the generated Zod, to prove it type-checks. |
-| `zod` (npm) | MIT | emit-check | The library the generated code targets, pinned so the check is repeatable. |
+| `typescript` (npm) | Apache-2.0 | emit-check, examples | Compiles the generated Zod, to prove it type-checks. |
+| `zod` (npm) | MIT | emit-check, examples | The library the generated code targets, pinned so the check is repeatable. |
+| `eslint`, `@eslint/js` (npm) | MIT | emit-lint | Lints the generated Zod with ESLint's recommended rules, as a team that lints its own code would. |
+| `typescript-eslint` (npm) | MIT | emit-lint | The recommended rules for TypeScript, and the parser ESLint needs to read it. |
+| `typescript` 6 (npm) | Apache-2.0 | emit-lint | typescript-eslint's parser, which needs the compiler's JavaScript API (below 6.1). |
 | `cspell` (npm) | MIT | prose check | Spelling in British English across Markdown, C# and the workflows, identifiers included. |
 | `mermaid` (npm) | MIT | prose check | Mermaid's own parser, to prove every diagram in the Markdown parses. |
 | `jsdom` (npm) | MIT | prose check | The DOM that Mermaid's parser needs in Node for some diagram types, instead of a browser. |

@@ -4,8 +4,9 @@ using Haruspex.Emit.Zod;
 namespace Haruspex.Tests.Fixtures;
 
 /// <summary>
-/// Compiles the Zod generated from every procedure of every fixture with <c>tsc --noEmit</c>, against the zod and
-/// TypeScript versions pinned in <c>tests/emit-check/package-lock.json</c>. <c>src/usage.ts</c> and
+/// Compiles the Zod generated from every procedure of every fixture with <c>tsc --noEmit</c> (strict, see its
+/// <c>tsconfig.json</c>), against the zod and TypeScript versions pinned in <c>tests/emit-check/package-lock.json</c>, and
+/// lints it with the recommended rules pinned in <c>tests/emit-lint</c>. <c>src/usage.ts</c> and
 /// <c>src/checks-usage.ts</c> there also check the inferred types: that an omitted key is optional, a kept null is
 /// nullable, and a value set is a union of literals; <c>src/shop-usage.ts</c> checks what the shop fixture's config file
 /// changes.
@@ -16,9 +17,37 @@ public class EmitCheckTests
     public void Generated_zod_compiles_with_tsc()
     {
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated Zod was not type-checked");
+        WriteGenerated(RepositoryPaths.EmitCheck);
+        EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
 
+        Assert.True(
+            EmitCheckPackage.TryRun("node", [Path.Combine("node_modules", "typescript", "bin", "tsc"), "--noEmit", "-p", "."], RepositoryPaths.EmitCheck, out var tscOutput, out var tscWhy),
+            $"tsc rejected the generated Zod ({tscWhy}):\n{tscOutput}");
+    }
+
+    /// <summary>
+    /// Lints the same modules with the recommended rules of ESLint and typescript-eslint, any warning failing, as a team that
+    /// lints its own code would lint the files it commits. A separate package (<c>tests/emit-lint</c>), because
+    /// typescript-eslint reads TypeScript through the compiler's JavaScript API, which the TypeScript the emit check compiles
+    /// with no longer has.
+    /// </summary>
+    [Fact]
+    public void Generated_zod_passes_the_recommended_lint_rules()
+    {
+        EmitCheckPackage.RequireNode(RepositoryPaths.EmitLint, "the generated Zod was not checked by the linter");
+        WriteGenerated(RepositoryPaths.EmitLint);
+        EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitLint);
+
+        Assert.True(
+            EmitCheckPackage.TryRun("node", [Path.Combine("node_modules", "eslint", "bin", "eslint.js"), "--max-warnings", "0", "generated"], RepositoryPaths.EmitLint, out var output, out var why),
+            $"ESLint reported the generated Zod ({why}):\n{output}");
+    }
+
+    /// <summary>Every fixture's module in <c>generated</c> under <paramref name="package"/>.</summary>
+    private static void WriteGenerated(string package)
+    {
         // Emptied first, so a module left by an earlier run, of a fixture since renamed or removed, can't pass for one.
-        var generated = Path.Combine(RepositoryPaths.EmitCheck, "generated");
+        var generated = Path.Combine(package, "generated");
         if (Directory.Exists(generated))
             Directory.Delete(generated, recursive: true);
         Directory.CreateDirectory(generated);
@@ -36,12 +65,6 @@ public class EmitCheckTests
             var exitCode = HaruspexCli.Run(["generate", "--out", Path.Combine(generated, fixture.Name)], output, error, fixture.Folder);
             Assert.True(exitCode == 0, error.ToString());
         }
-
-        EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
-
-        Assert.True(
-            EmitCheckPackage.TryRun("node", [Path.Combine("node_modules", "typescript", "bin", "tsc"), "--noEmit", "-p", "."], RepositoryPaths.EmitCheck, out var tscOutput, out var tscWhy),
-            $"tsc rejected the generated Zod ({tscWhy}):\n{tscOutput}");
     }
 
     /// <summary>

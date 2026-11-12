@@ -1,0 +1,16 @@
+{
+  "name": "haruspex-emit-lint",
+  "private": true,
+  "description": "Lints the Zod that haruspex generates from the test fixtures with ESLint's and typescript-eslint's recommended rules. Driven by EmitCheckTests.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint --max-warnings 0 generated"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.14.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2"
+  }
+}

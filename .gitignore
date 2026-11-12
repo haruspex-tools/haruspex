@@ -7,10 +7,11 @@ TestResults/
 # Snapshots proposed by a failing test, awaiting review
 *.received.*
 
-# emit-check: dependencies, the modules the tests generate, and the install lock
+# emit-check and emit-lint: dependencies, the modules the tests generate, and the install lock
 node_modules/
 node_modules.lock
 tests/emit-check/generated/
+tests/emit-lint/generated/
 tests/emit-check/accept/
 
 # Local runs of the tool

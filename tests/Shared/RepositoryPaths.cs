@@ -15,6 +15,9 @@ internal static class RepositoryPaths
     /// <summary>The npm package that compiles the generated Zod and runs real output through it.</summary>
     public static string EmitCheck => Path.Combine(Root, "tests", "emit-check");
 
+    /// <summary>The npm package that lints the generated Zod: <c>tests/emit-lint</c>.</summary>
+    public static string EmitLint => Path.Combine(Root, "tests", "emit-lint");
+
     private static string FindRoot()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)

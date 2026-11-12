@@ -1,0 +1,9 @@
+// The example's config: every procedure in the garden schema, written to src/db for the application to import.
+{
+  "$schema": "../../schemas/haruspex.schema.json",
+  "source": "database",
+  "out": "src/db",
+  "schemas": {
+    "garden": { "include": ["*"] },
+  },
+}

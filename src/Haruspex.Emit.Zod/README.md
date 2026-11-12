@@ -41,9 +41,10 @@ What a module looks like is shown, procedure by procedure, in
 ([decision 0005](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0005-claim-everything-the-engine-guarantees.md)).
 Each fact the IR carries becomes a Zod check: lengths, integer and decimal ranges, decimal steps (`.multipleOf`), exact
 value sets as `z.enum` or `z.literal`, and whether a field may be null or absent. A fact the target can't hold exactly is
-left out, and a comment beside the field says why. For example, a `bigint` from a rowset arrives from the driver as a
-string, so its range can't be checked as a number. A value set that is true only under the database's collation is a
-comment, not an enum, because the value that arrives may differ in case or trailing spaces.
+left out, and a note above the property says why, in one sentence; a fact many notes rest on is stated once, in the
+module's header. For example, a `bigint` from a rowset arrives from the driver as a string, so its range can't be checked
+as a number. A value set that is true only under the database's collation is a note, not an enum, because the value that
+arrives may differ in case or trailing spaces.
 
 What a value looks like depends on how it arrives, and the module follows what actually arrives:
 
@@ -56,6 +57,11 @@ What a value looks like depends on how it arrives, and the module follows what a
   and the check parses it and validates its content against the inner schema.
 - **Recursive types** (a tree built by a function that calls itself) use Zod 4's getter form, so the inferred type needs
   no casts.
+- **Nothing is said twice.** A shape the module would declare twice is declared once, and the second name is kept as an
+  alias of the first, so code that imports either keeps working. A check the schema already makes is not repeated:
+  `z.int32()` rather than an `int`'s own bounds, and a union without a variant another one already accepts.
+- **It passes a linter.** A number a double can't hold is written as the double JavaScript reads it as, which is the check
+  it always was, and the tests lint every fixture's module with the recommended rules of ESLint and typescript-eslint.
 
 Objects strip unknown keys by default (`z.object`), so a database deployed ahead of its consumers can add a field without
 breaking them

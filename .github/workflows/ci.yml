@@ -54,6 +54,18 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
         working-directory: tests/emit-check
 
+      # typescript-eslint needs TypeScript's JavaScript API, so the lint of the generated Zod has its own package.
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: tests/emit-lint
+
+      # The example application, compiled against the module committed beside it; ExampleAppTests also checks that the
+      # module is what haruspex generates today.
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: examples/greenhouse
+
+      - run: npm run check
+        working-directory: examples/greenhouse
+
       - run: dotnet test --no-build --configuration Release
 
   workflows:

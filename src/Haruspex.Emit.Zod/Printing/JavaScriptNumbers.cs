@@ -51,7 +51,8 @@ internal static class JavaScriptNumbers
 
     /// <summary>
     /// A double's shortest round-trip digits (from .NET's <c>R</c> format) as JavaScript's <c>Number.prototype.toString</c>
-    /// writes them: plain digits from 1e-7 up to 1e21, and an exponent beyond (ECMAScript, Number::toString).
+    /// writes them: plain digits for a magnitude of at least 10^-6 and below 10^21, and an exponent beyond it (ECMAScript,
+    /// Number::toString).
     /// </summary>
     private static string Format(string shortest)
     {
