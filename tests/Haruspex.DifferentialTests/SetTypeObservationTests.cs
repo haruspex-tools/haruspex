@@ -163,6 +163,17 @@ public class SetTypeObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_values_lists_int_column_is_a_constant_in_one_row_only()
+    {
+        // A VALUES list of one row is folded to its literal, as a derived table's literal column is; of several rows it is
+        // not, even when every row is the same literal, and the column counts the type's 10 digits.
+        Assert.Equal("decimal(38,37)", await Describe($"SELECT d3838 AS x FROM {Source} UNION ALL SELECT v.y FROM (VALUES (1)) AS v(y)"));
+        Assert.Equal("decimal(38,28)", await Describe($"SELECT d3838 AS x FROM {Source} UNION ALL SELECT v.y FROM (VALUES (1), (1)) AS v(y)"));
+        Assert.Equal("decimal(38,28)", await Describe($"SELECT d3838 AS x FROM {Source} UNION ALL SELECT v.y FROM (VALUES (1), (22)) AS v(y)"));
+        Assert.Equal("decimal(38,28)", await Describe($"SELECT d3838 AS x FROM {Source} UNION ALL SELECT v.y FROM (VALUES (22), (1)) AS v(y)"));
+    }
+
+    [Fact]
     public async Task A_cut_scale_rounds_but_never_overflows_since_the_integer_digits_are_kept()
     {
         // A query whose scale is cut has fewer integer digits than the column keeps (or it would not need cutting), so rounding

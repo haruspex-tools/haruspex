@@ -16,7 +16,7 @@ namespace Haruspex.SqlServer.Inference.Lattice;
 /// <b>Order and join.</b> A range allows every count in it, so an exact count is below every range that holds it, and a range
 /// is below a wider one. <see cref="Unknown"/> is the top: a type rule over it is then worked out at both ends, and its
 /// type is claimed only where both agree. The join of two different counts is the range from the fewer to 10. There is no
-/// bottom: each exact count is a least element of its own, and the join is only ever taken of counts that exist.
+/// bottom: each exact count is a minimal element, and the join is only ever taken of counts that exist.
 /// </para>
 /// <para>
 /// <b>Dropped by default.</b> A <see cref="Value"/> made with <c>with</c> has <see cref="Unknown"/> digits unless the rule making

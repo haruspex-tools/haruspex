@@ -137,6 +137,18 @@ public class SetTypeTests
     }
 
     [Fact]
+    public void A_values_lists_int_column_counts_its_literals_digits_in_one_row_only()
+    {
+        // A_values_lists_int_column_is_a_constant_in_one_row_only. Several rows are joined, and the column is not a constant
+        // even when every row is the same literal.
+        static string Beside(string rows) => Typed(Procedure($"SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT r.n FROM (VALUES {rows}) AS r(n);"));
+        Assert.Equal("decimal(38,37)", Beside("(1)"));
+        Assert.Equal("decimal(38,28)", Beside("(1), (1)"));
+        Assert.Equal("decimal(38,28)", Beside("(1), (22)"));
+        Assert.Equal("decimal(38,28)", Beside("(22), (1)"));
+    }
+
+    [Fact]
     public void A_bit_takes_the_other_type_and_overflows_only_a_decimal_of_places_only()
     {
         // A_bit_takes_the_other_types_and_a_string_the_number_date_or_uniqueidentifier_beside_it;

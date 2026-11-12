@@ -1087,9 +1087,10 @@ where folding did).
   value of a type not modelled (`xml`, binary) is unknown by its own reason, which names it.
 - **An int constant's digits** (`An_int_constant_counts_its_own_digits_beside_a_decimal`). Beside a decimal an
   int counts 10 integer digits, but one the server treats as a constant counts its own: a literal, also as a derived table's,
-  CTE's or view's column; the NULL cast to int (`CAST`, `CONVERT`, `TRY_` forms, nested) 1; a `CASE` or `IIF` with a constant
+  CTE's or view's column or a `VALUES` list's of one row; the NULL cast to int (`CAST`, `CONVERT`, `TRY_` forms, nested) 1; a `CASE` or `IIF` with a constant
   condition and `COALESCE(NULL, 1)`, folded to that literal. Arithmetic, a scalar subquery, a `CAST` of a number, `ISNULL`, a
-  `CASE` reading a column and a set operation of literals count 10. A value carries the digits (`Value.Digits`, `IntDigits`):
+  `CASE` reading a column, a set operation of literals and a `VALUES` list of several rows, even of one literal, count 10
+  (`A_values_lists_int_column_is_a_constant_in_one_row_only`). A value carries the digits (`Value.Digits`, `IntDigits`):
   exact where the server folds; for a `CASE`, `IIF`, `CHOOSE`, `COALESCE` or `NULLIF` that has a literal among its results,
   a range from the fewest to 10, since whether the server folds it turns on its condition. Where the range changes the scale,
   the column is unknown (its reason names the expression); where it changes only the precision, the most digits hold every

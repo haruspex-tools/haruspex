@@ -78,10 +78,13 @@ internal sealed partial class ProcedureAnalyzer
                 continue;
             }
 
+            // Rows of one type hold what any of them holds (the knowledge join). The server folds the column to its literal
+            // only when there is one row: of several, even the same literal, it counts the type's digits (observed:
+            // A_values_lists_int_column_is_a_constant_in_one_row_only).
             var first = column[0];
             var same = column.All(v => v.IsLiveJson == first.IsLiveJson && v.Shape == first.Shape);
             values.Add(same
-                ? first.WithNullableBecause(column.Select(v => v.NullableBecause).Aggregate(NullReasons.Join))
+                ? column.Count == 1 ? first : column.Skip(1).Aggregate(first, (a, b) => Value.Join(a, b, at, $"{name}.{names[i]}")) with { Digits = IntDigits.OfType }
                 : Value.Unknown(Unsupported(
                     IrUnknownReason.UnsupportedExpression,
                     $"{name}.{names[i]}: its rows' values have different types, which SQL Server converts to the one of highest precedence; that is not modelled yet.",
