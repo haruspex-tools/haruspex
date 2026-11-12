@@ -7,8 +7,8 @@ done with such descriptions: telling whether two are the same, ordering them by 
 one that allows both. [Summaries and recursion](07-summaries-and-recursion.md) introduced the order and the join in a few
 lines; this chapter treats them properly.
 
-Its first part, equality, is written. The order, the join, and why SQL Server's type rules for `CASE` and `UNION` are not
-a join are planned as the rest of the chapter.
+It has three parts: equality; the order and the join, built one lattice per fact; and why SQL Server's type rule for
+`CASE` and `UNION` is not a join. The statement walk that uses them is the subject of the next chapter, planned.
 
 ## Equality
 
@@ -48,7 +48,7 @@ These are the places in haruspex where an equality decides:
 | Recursive procedures' fixed point | the result sets returned | `ResultTrack` |
 | The cache of procedure walks | the procedure and the tables it starts from | `CallContext` |
 | The cache of table-valued function reads | the function and each argument's value | `ViewSummaries` |
-| Joining two values | whether they are already the same | `Value.Join`, `JsonShapes.Join` |
+| Joining two values | whether they are already the same | `JsonShapes.Join` |
 
 ### What an equality must satisfy
 
@@ -167,9 +167,9 @@ full at every pass, to be compared once and thrown away.
   is a reference comparison. It makes equality as cheap as it can be, at the price of a table every constructor goes
   through, and of `with`, which builds a value outside it. Nothing has measured equality as a cost worth that.
 - **A comparer per place** that compares only what that place cares about. Each place would hold its own idea of
-  sameness, and the laws would have to be argued once per comparer. There is one equality, the records', and a place
-  that deliberately ignores a fact says so in code: `Value.Join` takes two values that differ only in their digits
-  and their JSON's why as one value, because it combines the digits itself and keeps the first value's why.
+  sameness, and the laws would have to be argued once per comparer. There is one equality, the records'. Where a question
+  is about meaning rather than records ("do these two say the same?"), it is a second, named relation, the equivalence
+  up to witnesses of "Witnesses" below, defined once per fact beside its join.
 - **`ImmutableArray<T>` for the lists.** It is immutable, but its equality compares the array it wraps, so it has the same
   trap as any other list.
 
@@ -182,15 +182,197 @@ The name each member has in the IR's JSON is part of the format, not of the anal
 vocabulary, `IrWireNames`, which the writer uses: `IrNullRule.NullableColumn` is `nullable-column` in the file, and only
 there. `IrWireNamesTests` holds every name to the format, used by a fixture or not.
 
-### What is not here yet
+## The order and the join
 
-Equality is the first of the operations on values this chapter is to cover. The order between descriptions, the join,
-their laws, and what stands in for a join where SQL Server's own rule is not one, are the chapter's planned remainder. Until
-then, [Summaries and recursion](07-summaries-and-recursion.md), "Shapes, ordered", gives the ideas in brief.
+### Descriptions are ordered by what they allow
+
+Each abstract value describes a set of real values: every value an expression could have on some execution. One
+description is **below** another, written a ⊑ b, when it allows no value the other doesn't. "An `int`, never null" is below
+"an `int`, may be null", which is below "unknown". Lower is more precise, and every description is sound as long as it
+still allows every real value.
+
+The **join** of two descriptions, a ⊔ b, is a description that allows everything either allows: what is known of a value
+that may come from either side. It is what holds where two paths of a body meet, where a column of a temporary table is
+written by two statements, and where a recursive CTE's members add rows to its anchor's. An ordered set in which any two
+elements have a join is a **join-semilattice**, and that is all the analysis needs; a **lattice** also has a meet,
+which nothing here uses. At the top is the description that allows anything, unknown, which claims nothing and so is
+always sound.
+
+The literature asks the join to be the *least* upper bound, the most precise description that allows both. The joins
+here are upper bounds, and least where that is cheap, but not always: two JSON objects of the same keys are merged key
+by key, which allows a little more than the union of the two would. An upper bound that is not least is sound, and it is
+the price of shapes that stay small. What the analysis does rely on are the laws below.
+
+### One lattice per fact
+
+A description is several facts, each with its own order: the shape, why the value may be null, the digits an `int`
+constant counts, a scalar's facets, whether it is live JSON. Each fact is a small lattice of its own, with its own join and
+its own order, and a value's lattice is their **product**: one value is below another when each of its facts is, and the
+join of two values joins them fact by fact.
+
+| Fact | Its elements | Bottom | Top | Join | Code |
+|---|---|---|---|---|---|
+| Why it may be null | sets of reasons, each a rule at a place | no reason (never null) | none needed | union | `NullReasons` |
+| Digits an `int` counts beside a decimal | exactly n, or from n to 10 | none: each exact count is minimal | 1 to 10 | the same count, or the range from the fewer to 10 | `IntDigits` |
+| A scalar's facets | lengths, bounds, digits, value sets | none | no facets | facet by facet, the looser; a facet one side lacks is dropped | `ScalarFacets` |
+| JSON built here | shapes, unions of shapes | none | unknown | key by key, item by item, or a union | `JsonShapes` |
+| How many rows | one, at most one, any | one | any | the higher in that chain | `Cardinalities` |
+| The value | all of the above, with whether it is live JSON | | | fact by fact | `Value.Join` |
+
+Building the value's join from its facts' joins is what keeps it right as facts are added. A new fact comes with its own
+small lattice and laws, tested on their own, and the product needs no new argument: a product of semilattices is a
+semilattice. The alternative, one join that knows every fact, is how a forgotten fact gets merged by hand in one place and
+not in another. The order of `IrCardinality` is written in `Cardinalities` by rank for the same reason: an order read from
+an enum's values holds only as long as nobody reorders its members.
+
+Two facts can't be joined apart, and are one fact here: a shape and whether it is live JSON. The same object shape means a
+JSON object when it is live and a string holding one when it is not, so `Value.Join` joins the pair. A shape that can't be
+joined as a SQL value (a string and a number, two different objects) is unknown there, since a column can't be a union of
+types. JSON built here can always be joined exactly, as a union, so it has a lattice of its own, `JsonShapes`.
+
+### The laws a join keeps, and why each matters
+
+| Law | Says | Without it |
+|---|---|---|
+| Idempotent | a ⊔ a = a | a loop that meets the same state again would see it change, and never stop |
+| Commutative | a ⊔ b = b ⊔ a | the result would depend on which path of an `IF` is written first |
+| Associative | (a ⊔ b) ⊔ c = a ⊔ (b ⊔ c) | the result would depend on how many paths met at once, and in what grouping |
+| An upper bound | a ⊑ a ⊔ b and b ⊑ a ⊔ b | a join could claim something one side doesn't guarantee: unsound |
+| The order agrees | a ⊑ b exactly when a ⊔ b = b | "nothing new" (the test a fixed point stops on) would mean something other than "already allowed" |
+
+`LatticeLawTests` checks each of them for every fact and for values, over elements drawn from small alphabets with fixed
+seeds (`LatticeSample`), so that equal and comparable elements built apart turn up by chance. It also checks that bottom is
+the join's identity and top absorbs it, and that equal elements hash equal. No property-testing library is used: seeded
+theories reproduce a failure from its seed, which is what a law test needs, and shrinking a failure to its smallest form
+has not been missed yet.
+
+### Witnesses
+
+Some of what a description holds is not knowledge but a **witness** to it: something that says *why* a fact holds, or
+*which* of several equally good explanations is reported. The join keeps the first one met.
+
+- **The order of reasons.** A list of reasons is a set, written in the order its reasons were found.
+- **Which unknown.** Every unknown is the top, but each names its reason and place, and a join of two keeps the left one.
+  The reason naming that unknown in the value's reasons goes with it.
+- **A fact's source.** Of two equal bounds, lengths or digits from different constraints, the join keeps the left one's
+  source. Either justifies the fact for both sides, since both sides' values meet the same bound.
+- **The order of a value set's items and of a union's variants**, the left side's first.
+- **Why a string's JSON is not known** (`Value.JsonWhy`), which only names the reason a later `json_query` reports.
+
+Witnesses make the join commutative only *up to* them: `a ⊔ b` and `b ⊔ a` list the same reasons in another order, or
+name another unknown. So each fact defines, beside its join, when two of its elements **say the same** (`NullReasons.Same`,
+`ScalarFacets.Same`, `JsonShapes.Same`, `JsonSlot.Same`, `Value.Same`): equal but for witnesses. Everything else, the
+digits, a facet's value, a key's presence, whether a value is live JSON, is compared exactly. Formally, the order is a
+**preorder**, and the lattice is on its equivalence classes; "says the same" is that equivalence.
+
+Which unknown is named, and in what order a union lists its variants, also depend on what was met first when three
+sides are joined in two groupings, so associativity holds as records for reasons, digits, rows and facets, and up to
+witnesses for JSON and values. Idempotence holds as records everywhere.
+
+The witnesses could be made canonical (reasons sorted, the least unknown kept), and every law would then hold as
+records. That was not done, because the order reaches the output. The IR lists reasons as they were found, and a union's
+variants in their order; Zod tries a union's variants in order, and with objects that strip unknown keys the first variant
+that matches decides which keys survive. What matters there is that the order is deterministic, which it is, since a body
+is always walked the same way.
+
+Witnesses also explain why a fixed point still stops. Its stopping test is structural equality, which compares witnesses
+too, so it is finer than "says the same": it may take a pass more than it needs, never a pass fewer (the table under
+"Equality"). And because each join keeps its left side's witnesses, a state joined with something that adds nothing comes
+back as the same record, as long as the state is kept on the left. `LatticeLawTests` checks that too, and the one exception:
+a value of unknown shape takes in the reason naming the other side's unknown once, and settles a pass later.
+
+### Facts dropped by default
+
+Some facts are claims that an operation can make false. The digits an `int` counts beside a decimal are one: SQL Server
+counts a literal's own digits, so `1` beside a `decimal(38, 38)` gives `decimal(38, 37)`, but it counts the type's 10 for
+anything it doesn't fold to a constant, so `1 + 1` gives `decimal(38, 28)` (observed:
+`An_int_constant_counts_its_own_digits_beside_a_decimal`). Each rule that makes a new value from an old one must say
+whether the digits survive. If a rule forgets, either answer can be false: keeping a literal's 1 where the server counts 10
+claims bounds of ±9.99…, too narrow; dropping to 10 where it counts 1 claims a scale of 28, too coarse.
+
+The lattice gives the safe default. A fact that no rule has stated is not "absent", it is unknown, the fact's top: for the
+digits, any count from 1 to 10 (`IntDigits.Unknown`). Where that range changes the type, the type is unknown, with a
+reason that names the expression; where it doesn't, nothing is lost. So a forgotten rule claims less, never
+something false.
+
+The default is enforced by the language rather than by care. A C# `with` copies a record through its copy constructor, and
+`Value` declares its own, which copies every fact but the digits. So `value with { NullableBecause = … }` has unknown
+digits unless the same `with` sets them, and a `Value` built new has unknown digits unless its rule states them:
+`Value.Computed` for a column, a variable or a computed result, which the server never folds (`IntDigits.OfType`), a
+literal's own count where one is read (`IntDigits.Literal`), and `Value.WithNullableBecause` where only whether it may be null
+changes and every other fact passes on. `ScalarType`, the server's type of one operand, does the same with the count a
+rule is being worked out at.
+
+The other facts survive a `with`. The shape, the reasons and whether a value is live JSON are what a `with` is written to
+change, and the JSON's why is a witness. A fact earns the default when a rule that forgets it can make a claim false.
+
+Alternatives:
+
+- **Clear the fact by hand where it must not survive**, as `with { Digits = null }` at each such rule. Forgetting one is
+  silent, and every rule that makes one value from another has to remember.
+- **A required parameter**, so that every construction states the fact. It catches a value built new, but not a `with`,
+  which copies.
+- **A default of "its type's digits"** rather than unknown. It is the commonest answer, but a forgotten rule would then
+  claim it where the server counts a literal's, which is false.
+
+## A knowledge join is not a type rule
+
+SQL Server also combines values. `CASE`, `COALESCE`, `IIF`, `CHOOSE` and the set operations give one type to values of
+several, by **data type precedence**. It is tempting to call that a join, and it is not one.
+
+The server's rule is a **fold from the left** (`ScalarType.Chain`, observed:
+`A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal`): it combines the first two types, then
+that with the third, and so on. Combining is not associative: `money` takes a `bigint` in and stays `money`, a decimal then
+takes the `money`'s 4 places; a decimal first takes the `bigint`'s 19 integer digits, and `money` adds its 4 places to
+those. So the same three values give two types in two orders:
+
+```sql haruspex-example
+CREATE TABLE shop.price
+(
+    price_id int           NOT NULL PRIMARY KEY,
+    units    bigint        NOT NULL,
+    fee      money         NOT NULL,
+    amount   decimal(5, 2) NOT NULL
+);
+GO
+CREATE PROCEDURE shop.charges
+AS
+SELECT COALESCE(p.units, p.fee, p.amount) AS fee_first,
+       COALESCE(p.units, p.amount, p.fee) AS amount_first
+FROM shop.price AS p;
+```
+
+```ts haruspex-zod
+export const ChargesRowSchema = z.object({
+  /** The driver may round decimal(19,4) past its bounds in a row, so they are not checked. */
+  fee_first: z.number().multipleOf(1e-4).nullable(),
+  /** The driver may round decimal(23,4) past its bounds in a row, so they are not checked. */
+  amount_first: z.number().multipleOf(1e-4),
+})
+export type ChargesRow = z.infer<typeof ChargesRowSchema>
+
+/** shop.charges: returns rows. */
+export const ChargesSchema = z.array(ChargesRowSchema)
+export type Charges = z.infer<typeof ChargesSchema>
+```
+
+`fee_first` is `decimal(19,4)`, which a `bigint` may not fit, so converting `units` to it may overflow, NULL under a
+caller's options, and the column may be null; `amount_first` is `decimal(23,4)`, which holds every value of all three.
+
+The two operations answer different questions. The type rule says what SQL Server *makes* of the values: a type, and the
+conversion of each value to it. The knowledge join says what haruspex *knows* of a value that comes from one side or the
+other. A `CASE` uses both, in turn: the type rule for its type, then the knowledge of its results (their reasons, the facets
+they all prove, the digits it may fold to) joined. So they are named apart, `ScalarType.Chain` and `ProcedureAnalyzer.Chained`
+for the rule and `Value.Join` and the facts' joins for knowledge, and nothing that wants one calls the other. Using the
+type rule as a join would make a value's type depend on the order of paths, and regroup the server's fold, which the
+server does not. `LatticeLawTests` holds the rule to its fold: grouping its first two types first gives its result, and
+grouping its last two first does not.
 
 ## Reading further
 
-- Anders Møller and Michael I. Schwartzbach, *Static Program Analysis*, chapters 4 and 5: lattices, and the fixed points
-  whose stopping test this chapter is about.
+- Anders Møller and Michael I. Schwartzbach, *Static Program Analysis*, chapters 4 and 5: lattices, product lattices,
+  and the fixed points whose stopping test this chapter is about.
+- Flemming Nielson, Hanne Riis Nielson and Chris Hankin, *Principles of Program Analysis*, chapter 4: abstract
+  interpretation, and building a domain from smaller ones.
 - Jean-Christophe Filliâtre and Sylvain Conchon, "Type-safe modular hash-consing" (ML Workshop, 2006): interning, the
   alternative haruspex did not take, done well.

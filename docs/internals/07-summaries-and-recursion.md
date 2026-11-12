@@ -122,8 +122,8 @@ would say nothing.
 
 The argument needs each step to be monotone. `FunctionSummaries.Solve` replaces each assumption with the next reading
 rather than joining the two, which comes to the same thing only when reading is monotone. The rules are written to be
-(a nullable argument never makes a result non-null), but no test checks that yet; property tests of the lattice's laws
-belong with chapter 5.
+(a nullable argument never makes a result non-null), but no test checks that yet. The laws of the joins themselves are
+tested ([chapter 5](05-values-as-a-lattice.md), `LatticeLawTests`).
 
 Here a function builds a tree of categories by calling itself for each child, and a procedure returns the roots:
 

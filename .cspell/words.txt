@@ -117,7 +117,9 @@ nullability
 ordinally
 interprocedural
 kleene
+preorder
 semilattice
+semilattices
 serialiser
 soundiness
 soundy
