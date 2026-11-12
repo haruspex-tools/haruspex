@@ -87,7 +87,7 @@ internal sealed partial class ProcedureAnalyzer
                     return argument;
                 if (argument.IsLiveJson || argument.Shape is not ScalarShape)
                     return NotModelled(call, "a window over a value that is not a scalar is not modelled.");
-                return argument with { NullableBecause = [.. argument.NullableBecause, .. Framed()] };
+                return argument.WithNullableBecause([.. argument.NullableBecause, .. Framed()]);
             }
 
             case ("lag" or "lead", >= 1 and <= 3):
@@ -163,7 +163,7 @@ internal sealed partial class ProcedureAnalyzer
         if (parameters.Count < 3 || Strip(parameters[2]) is NullLiteral)
         {
             EquatableArray<IrNullReason> edge = itself ? [] : [new IrNullReason(IrNullRule.WindowEdge, At(call).ToString())];
-            return value with { NullableBecause = [.. value.NullableBecause, .. edge, .. offsetBecause] };
+            return value.WithNullableBecause([.. value.NullableBecause, .. edge, .. offsetBecause]);
         }
 
         var fallback = Expression(parameters[2], scope);
@@ -174,6 +174,6 @@ internal sealed partial class ProcedureAnalyzer
         var fits = (LiteralOf(parameters[2]) is ({ } literal, var negative) ? ScalarType.Fits(literal, type, negative) : null)
             ?? (!fallback.IsLiveJson && TypeOf(fallback, parameters[2]) is { } from && ScalarType.Converts(from, type));
         EquatableArray<IrNullReason> because = [.. value.NullableBecause, .. offsetBecause, .. itself ? [] : fallback.NullableBecause];
-        return Typed(type with { Digits = null }, fits || itself ? because : NullReasons.Join(because, [Overflow(call)]), call);
+        return Typed(type, fits || itself ? because : NullReasons.Join(because, [Overflow(call)]), call);
     }
 }

@@ -5,33 +5,70 @@ using Haruspex.SqlServer.Inference.Lattice;
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
-/// The inferred type of an expression.
+/// The inferred type of an expression: an abstract value, which describes every value the expression can have. It is the
+/// product of one lattice per fact (<c>Lattice/</c>), joined fact by fact in <see cref="Join"/>; the guide's chapter
+/// <c>docs/internals/05-values-as-a-lattice.md</c> explains the idea.
 /// </summary>
 /// <param name="Shape">Its shape when not null.</param>
-/// <param name="NullableBecause">Why it can be null; empty when it is proved non-null.</param>
+/// <param name="NullableBecause">Why it can be null; empty when it is proved non-null (<see cref="NullReasons"/>).</param>
 /// <param name="IsLiveJson">
 /// Whether it is JSON that <c>FOR JSON</c> and the JSON constructors embed as JSON rather than escaping as a string:
 /// the output of a <c>FOR JSON</c> subquery with its array wrapper, of a constructor (<c>json_object</c>, <c>json_array</c>,
 /// <c>json_arrayagg</c>, <c>json_objectagg</c>), a value of the <c>json</c> type, <c>json_query</c> over any of them,
 /// or a scalar subquery returning one. <see cref="Shape"/> is then the JSON's shape.
 /// </param>
-/// <param name="Digits">
-/// For an <c>int</c> the server may treat as a constant, the integer digits it counts beside a decimal, when not the type's 10
-/// (observed: An_int_constant_counts_its_own_digits_beside_a_decimal): a literal its own, carried through a derived
-/// table, view column or CTE that does not recurse (one that does is never a constant, observed:
-/// A_recursive_ctes_column_is_not_a_constant_even_when_every_member_is_one_literal); a NULL cast to int 1; a CASE, IIF, CHOOSE, COALESCE or ISNULL that the server may fold to one
-/// of its literals a range, from the fewest of them to 10. Null for anything else, which counts as its type.
-/// </param>
-/// <remarks>
-/// JSON text whose shape is known (a <c>FOR JSON</c> subquery without its array wrapper, a call of a function returning
-/// JSON) has a <see cref="JsonTextShape"/> with its content, which <c>json_query</c> makes live again.
-/// </remarks>
 /// <param name="JsonWhy">
 /// For a string read from a place that holds JSON built here on some writes but may hold other text (<see cref="JsonSlot"/>), why
-/// its JSON's shape is not known, naming the write: what <c>json_query</c> over it reports. Null otherwise.
+/// its JSON's shape is not known, naming the write: what <c>json_query</c> over it reports. Null otherwise. It is a witness:
+/// <c>json_query</c> over such a string is unknown with or without it, and it only names the reason.
 /// </param>
-internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableBecause, bool IsLiveJson = false, IntDigits? Digits = null, UnknownShape? JsonWhy = null)
+/// <remarks>
+/// <para>
+/// JSON text whose shape is known (a <c>FOR JSON</c> subquery without its array wrapper, a call of a function returning
+/// JSON) has a <see cref="JsonTextShape"/> with its content, which <c>json_query</c> makes live again.
+/// </para>
+/// <para>
+/// <b>Facts dropped by default.</b> <see cref="Digits"/> is a claim that an operation can make false: the digits of
+/// <c>1</c> are not those of <c>-1</c> or of <c>@x + 1</c>. So it does not survive an operation unless the operation's rule
+/// passes it on. A value made with <c>with</c> has <see cref="IntDigits.Unknown"/> digits, the top, unless the
+/// <c>with</c> sets them (the copy constructor below leaves them out, and C# runs it for every <c>with</c>); and a value built
+/// new has them too unless its rule states them. A rule that forgets claims less, never something false. The other facts
+/// are kept by <c>with</c>: the shape, the reasons and whether it is live JSON are what <c>with</c> is used to change, and
+/// the JSON's why is a witness.
+/// </para>
+/// </remarks>
+internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableBecause, bool IsLiveJson = false, UnknownShape? JsonWhy = null)
 {
+    /// <summary>The copy <c>with</c> starts from: every fact but <see cref="Digits"/>, which it drops to the top.</summary>
+    private Value(Value original)
+    {
+        Shape = original.Shape;
+        NullableBecause = original.NullableBecause;
+        IsLiveJson = original.IsLiveJson;
+        JsonWhy = original.JsonWhy;
+        Digits = IntDigits.Unknown;
+    }
+
+    /// <summary>
+    /// For an <c>int</c>, how many integer digits the server counts for it beside a decimal (<see cref="IntDigits"/>):
+    /// <see cref="IntDigits.OfType"/> for a column, a variable, a parameter, a function's result or arithmetic; a literal its
+    /// own, carried through a derived table, view column or CTE that does not recurse (one that does is never a constant,
+    /// observed: A_recursive_ctes_column_is_not_a_constant_even_when_every_member_is_one_literal); a NULL cast to int 1; a CASE,
+    /// IIF, CHOOSE, COALESCE or ISNULL that the server may fold to one of its literals a range, from the fewest of them to 10
+    /// (<see cref="IntDigits.Foldable"/>). Unknown (any of 1 to 10) when no rule said. Read only for an <c>int</c>.
+    /// </summary>
+    public IntDigits Digits { get; init; } = IntDigits.Unknown;
+
+    /// <summary>
+    /// The same value with other reasons it may be null: a filter proving it non-null, an outer join or a rollup adding a reason.
+    /// Whether it may be null says nothing of what it is, so every other fact is passed on.
+    /// </summary>
+    public Value WithNullableBecause(EquatableArray<IrNullReason> because) => this with { NullableBecause = because, Digits = Digits };
+
+    /// <summary>A value of a column, a variable or a computed result: one the server never folds, so <see cref="Digits"/> are its type's.</summary>
+    public static Value Computed(Shape shape, EquatableArray<IrNullReason> nullableBecause, bool isLiveJson = false) =>
+        new(shape, nullableBecause, isLiveJson) { Digits = IntDigits.OfType };
+
     public static Value Unknown(UnknownShape shape) =>
         new(shape, [new IrNullReason(IrNullRule.Unknown, shape.At.ToString())]);
 
@@ -40,47 +77,68 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     /// <summary>
     /// The knowledge join: a value that is either <paramref name="a"/> or <paramref name="b"/>, null if either may be, of a
     /// shape both fit. What a place holds where paths meet after a branch, where a write adds values to a column of a
-    /// temporary table, and where a recursive CTE's members add rows to its anchor's. Shapes that cannot be joined (two
-    /// different objects, a string and a number) give an unknown. It is not the server's rule for the type of a <c>CASE</c>
-    /// or a set operation, which is <see cref="ScalarType.Chain"/>.
+    /// temporary table, and where a recursive CTE's members add rows to its anchor's. It is not the server's rule for the type
+    /// of a <c>CASE</c> or a set operation, which is <see cref="ScalarType.Chain"/>.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// It joins each fact in its own lattice: the reasons in <see cref="NullReasons"/>, the digits in <see cref="IntDigits"/>,
+    /// and the shape, with whether it is live JSON, in <see cref="JoinShapes"/>. The JSON's why, a witness, is the left
+    /// side's when it has one. An unknown shape allows null, which the reasons then say.
+    /// </para>
+    /// <para>
+    /// <b>Laws</b> (held by <c>ValueLatticeTests</c>): idempotent and associative as records, and commutative up to the
+    /// order of witnesses (<see cref="Same"/>). Joining values the same up to witnesses gives the left one back as a
+    /// record, so an iteration that keeps its state on the left stops when a pass adds nothing.
+    /// </para>
+    /// </remarks>
     /// <param name="at">Where the two meet, for an unknown.</param>
     /// <param name="what">What holds the two, for an unknown's detail.</param>
     public static Value Join(Value a, Value b, SourceLocation at, string what)
     {
-        // The same value but for the digits a constant counts and why its JSON isn't known, which are not compared: either
-        // one's digits may be counted (Value.Digits), so the fewest of both, up to 10; the first one's why is kept.
-        if (a.Shape == b.Shape && a.NullableBecause == b.NullableBecause && a.IsLiveJson == b.IsLiveJson)
-            return a.Digits == b.Digits ? a : a with { Digits = IntDigits.Foldable([a.Digits ?? new IntDigits(10, 10), b.Digits ?? new IntDigits(10, 10)]) };
-
         var because = NullReasons.Join(a.NullableBecause, b.NullableBecause);
-        if (a.Shape is UnknownShape known)
-            return new Value(known, WithUnknown(because, known));
-        if (b.Shape is UnknownShape other)
-            return new Value(other, WithUnknown(because, other));
+        var (shape, live, notJson) = JoinShapes(a, b, at, what);
+        return new Value(shape, shape is UnknownShape unknown ? WithUnknown(because, unknown) : because, live, a.JsonWhy ?? b.JsonWhy ?? notJson)
+        {
+            Digits = IntDigits.Join(a.Digits, b.Digits),
+        };
+    }
 
-        // JSON text built here on both: text of either's content. Text beside a string of its own type, nvarchar(max), is
-        // that string, which may not be JSON; json_query over it reports why.
+    /// <summary>
+    /// The shape of a value of either side, and whether it is live JSON: one fact, since a shape means one thing as a SQL value
+    /// and another as live JSON. The same shape stays; two scalars of one type keep the facets both prove
+    /// (<see cref="ScalarFacets"/>); two JSON texts hold either's content (<see cref="JsonShapes"/>); JSON text beside a string
+    /// of its own type, <c>nvarchar(max)</c>, is that string, which may not be JSON, so <c>json_query</c> over it reports why.
+    /// Anything else, an unknown on either side included, is unknown: a SQL value cannot be a union. The left side's unknown is
+    /// kept, a witness.
+    /// </summary>
+    /// <returns>The shape, whether it is live JSON, and why its JSON is not known when the join is what made it so.</returns>
+    private static (Shape Shape, bool IsLiveJson, UnknownShape? NotJson) JoinShapes(Value a, Value b, SourceLocation at, string what)
+    {
+        if (a.Shape == b.Shape && a.IsLiveJson == b.IsLiveJson)
+            return (a.Shape, a.IsLiveJson, null);
+        if (a.Shape is UnknownShape known)
+            return (known, false, null);
+        if (b.Shape is UnknownShape other)
+            return (other, false, null);
+
         if (!a.IsLiveJson && !b.IsLiveJson)
         {
             switch (a.Shape, b.Shape)
             {
                 case (JsonTextShape x, JsonTextShape y):
-                    return new Value(new JsonTextShape(x.Content is null || y.Content is null ? null : JsonShapes.Join(x.Content, y.Content)), because);
+                    return (new JsonTextShape(x.Content is null || y.Content is null ? null : JsonShapes.Join(x.Content, y.Content)), false, null);
                 case (JsonTextShape, ScalarShape { Type.Sql: "nvarchar(max)" } text):
-                    return new Value(new ScalarShape(text.Type with { Facets = ScalarFacets.TypeOnly(text.Type.Facets) }), because, JsonWhy: b.JsonWhy ?? NotJson(at, what));
+                    return (new ScalarShape(text.Type with { Facets = ScalarFacets.TypeOnly(text.Type.Facets) }), false, NotJson(at, what));
                 case (ScalarShape { Type.Sql: "nvarchar(max)" } text, JsonTextShape):
-                    return new Value(new ScalarShape(text.Type with { Facets = ScalarFacets.TypeOnly(text.Type.Facets) }), because, JsonWhy: a.JsonWhy ?? NotJson(at, what));
+                    return (new ScalarShape(text.Type with { Facets = ScalarFacets.TypeOnly(text.Type.Facets) }), false, NotJson(at, what));
             }
         }
 
-        if (a.IsLiveJson == b.IsLiveJson && Scalars(a.Shape, b.Shape) is { } scalar)
-            return new Value(scalar, because, a.IsLiveJson);
-        if (a.IsLiveJson == b.IsLiveJson && a.Shape == b.Shape)
-            return new Value(a.Shape, because, a.IsLiveJson);
+        if (a.IsLiveJson == b.IsLiveJson && a.Shape is ScalarShape { Type: var s } && b.Shape is ScalarShape { Type: var t } && SameType(s, t))
+            return (new ScalarShape(s with { Facets = ScalarFacets.Join(s.Facets, t.Facets) }), a.IsLiveJson, null);
 
-        var unknown = new UnknownShape(IrUnknownReason.UnsupportedExpression, $"{what} holds values of different shapes on different paths, which are not joined yet.", at);
-        return new Value(unknown, WithUnknown(because, unknown));
+        return (new UnknownShape(IrUnknownReason.UnsupportedExpression, $"{what} holds values of different shapes on different paths, which are not joined yet.", at), false, null);
     }
 
     private static UnknownShape NotJson(SourceLocation at, string what) =>
@@ -90,31 +148,38 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     /// A value of <paramref name="typed"/>'s SQL type that is either <paramref name="typed"/> or <paramref name="other"/>
     /// converted to that type: what a column holds after a write converts a value to the column's type, and what a
     /// recursive CTE's column holds, whose type is its anchor's exactly (SQL Server refuses any other, error 240, observed).
-    /// A scalar keeps the facets both sides prove, and at least those its type proves; any other shape stays only when
-    /// both are the same.
+    /// The conversion, then the knowledge join: a scalar of another type converts to one with only the facets its type
+    /// proves, and any other shape is joined as it is. The server never folds a column of a table or of a recursive CTE to a
+    /// constant (observed: A_recursive_ctes_column_is_not_a_constant_even_when_every_member_is_one_literal), so its digits are
+    /// the type's.
     /// </summary>
     public static Value JoinConverted(Value typed, Value other, SourceLocation at, string what)
     {
-        var because = NullReasons.Join(typed.NullableBecause, other.NullableBecause);
-        if (typed.Shape is ScalarShape scalar && !typed.IsLiveJson)
-        {
-            var joined = other.Shape is ScalarShape { Type: var o } && !other.IsLiveJson && SameType(scalar.Type, o)
-                ? new ScalarShape(scalar.Type with { Facets = ScalarFacets.Join(scalar.Type.Facets, o.Facets) })
-                : new ScalarShape(scalar.Type with { Facets = ScalarFacets.TypeOnly(scalar.Type.Facets) });
-            return new Value(joined, because);
-        }
-
-        return Join(typed, other, at, what);
+        var converted = typed.Shape is ScalarShape scalar && !typed.IsLiveJson
+            && !(other.Shape is ScalarShape { Type: var o } && !other.IsLiveJson && SameType(scalar.Type, o))
+            ? new Value(new ScalarShape(scalar.Type with { Facets = ScalarFacets.TypeOnly(scalar.Type.Facets) }), other.NullableBecause)
+            : other;
+        return Join(typed, converted, at, what) with { Digits = IntDigits.OfType };
     }
+
+    /// <summary>
+    /// Whether two values say the same: equal but for witnesses, which a join keeps from its left side. The reasons are
+    /// compared as sets (<see cref="NullReasons.Same"/>), a scalar's facets ignoring their sources and value sets' order
+    /// (<see cref="ScalarFacets.Same"/>), JSON content up to its unions' order (<see cref="JsonShapes.Same"/>), and an unknown,
+    /// or the JSON's why, as any other. Everything else, the digits and whether it is live JSON among them, is compared
+    /// exactly. The convergence test of a fixed point is structural equality, which is finer: it can cost a pass, never stop
+    /// one early.
+    /// </summary>
+    public static bool Same(Value a, Value b) =>
+        NullReasons.Same(a.NullableBecause, b.NullableBecause)
+        && a.Digits == b.Digits
+        && a.IsLiveJson == b.IsLiveJson
+        && (a.JsonWhy is null) == (b.JsonWhy is null)
+        && JsonShapes.Same(a.Shape, b.Shape);
 
     /// <summary>A value whose shape is unknown proves nothing, so it may be null, which its reasons say.</summary>
     private static EquatableArray<IrNullReason> WithUnknown(EquatableArray<IrNullReason> because, UnknownShape unknown) =>
         NullReasons.Join(because, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]);
-
-    private static ScalarShape? Scalars(Shape a, Shape b) =>
-        a is ScalarShape { Type: var x } && b is ScalarShape { Type: var y } && SameType(x, y)
-            ? new ScalarShape(x with { Facets = ScalarFacets.Join(x.Facets, y.Facets) })
-            : null;
 
     private static bool SameType(IrScalar a, IrScalar b) => a.Kind == b.Kind && a.Format == b.Format && a.Sql == b.Sql;
 }

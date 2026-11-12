@@ -313,7 +313,7 @@ internal sealed class FunctionSummaries
         // A json value nests as JSON (observed for variables and columns), and its shape is in the data.
         return SchemaRules.ResolveType(model, type)?.BuiltIn.Name == "json"
             ? new Value(new UnknownShape(IrUnknownReason.JsonShapeUnknown, $"{parameter.VariableName.Value} is a json parameter: its shape is in the data.", at), because, IsLiveJson: true)
-            : new Value(SqlTypes.ToConvertedShape(model, type, at), because);
+            : Value.Computed(SqlTypes.ToConvertedShape(model, type, at), because);
     }
 
     /// <summary><c>nvarchar(max)</c> and <c>json</c> hold any JSON text unchanged.</summary>

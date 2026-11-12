@@ -116,7 +116,7 @@ internal sealed partial class ProcedureAnalyzer
         var date = DateOperand(values[1], call.Parameters[2]);
         if (date is null)
             return NotModelled(call, "a date of this type is not modelled.");
-        return Typed(date.IsDateOrTime ? date with { Digits = null } : new ScalarType("datetime"), Reasons(values), call);
+        return Typed(date.IsDateOrTime ? date : new ScalarType("datetime"), Reasons(values), call);
     }
 
     /// <summary><c>DATEPART</c>, <c>YEAR</c>, <c>MONTH</c>, <c>DAY</c> (int) and <c>DATENAME</c> (nvarchar(30), whose names
@@ -353,7 +353,7 @@ internal sealed partial class ProcedureAnalyzer
         var types = values.Select((v, i) => v.IsLiveJson ? null : TypeOf(v, arguments[i])).ToList();
         ScalarType? type = null;
         if (types.Count > 0 && types.All(t => t is { IsInteger: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
-            type = types[0]! with { Digits = null };
+            type = types[0];
         else if (types.Count > 0 && types.All(t => t is { IsDecimal: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
             type = ScalarType.Chain(types!) is { } common && types.All(t => ScalarType.Converts(t!, common)) ? common : null;
         if (type is null)

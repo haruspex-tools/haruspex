@@ -117,16 +117,7 @@ internal sealed class FlowState : IEquatable<FlowState>
             (_, UnknownTable) => b,
             (AbsentTable, AbsentTable) => a,
             (KnownTable x, KnownTable y) when x.Columns.Select(c => c.Name).SequenceEqual(y.Columns.Select(c => c.Name), Names)
-                => new KnownTable(x.Name, [.. x.Columns.Zip(y.Columns, (c, d) => c with
-                {
-                    Value = Value.Join(c.Value, d.Value, at, $"{name}.{c.Name}"),
-                    // A column declared alike on both paths keeps its declaration. One declared on some paths only, or
-                    // differently, is not guaranteed by either declaration, so it joins later writes like a column SELECT …
-                    // INTO made, and is never read again from one path's declaration.
-                    Declaration = ReferenceEquals(c.Declaration, d.Declaration) ? c.Declaration : null,
-                    Identity = c.Identity == d.Identity ? c.Identity : null,
-                    Json = c.Json is { } x && d.Json is { } y ? JsonSlot.Join(x, y) : null,
-                })]),
+                => new KnownTable(x.Name, [.. x.Columns.Zip(y.Columns, (c, d) => TempColumn.Join(c, d, at, $"{name}.{c.Name}"))]),
             (KnownTable, KnownTable) => new UnknownTable(new UnknownShape(IrUnknownReason.UnsupportedStatement, $"{name} has different columns on different paths before {at}.", at)),
             _ => new UnknownTable(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{name} is dropped on some paths before {at}, so it may not exist there.", at)),
         };

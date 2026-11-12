@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Tests.Inference;
@@ -93,11 +94,11 @@ public class ValueEqualityTests
         {
             Value[] others =
             [
-                value with { Digits = value.Digits is null ? new IntDigits(1, 1) : null },
-                value with { JsonWhy = value.JsonWhy is null ? new UnknownShape(IrUnknownReason.JsonShapeUnknown, "a", Generator.Places[0]) : null },
-                value with { IsLiveJson = !value.IsLiveJson },
-                value with { NullableBecause = [.. value.NullableBecause, new IrNullReason(IrNullRule.Variable, "@x")] },
-                value with { Shape = Generator.Changed(value.Shape) },
+                value with { Digits = value.Digits == IntDigits.OfType ? IntDigits.Literal(1) : IntDigits.OfType },
+                value with { JsonWhy = value.JsonWhy is null ? new UnknownShape(IrUnknownReason.JsonShapeUnknown, "a", Generator.Places[0]) : null, Digits = value.Digits },
+                value with { IsLiveJson = !value.IsLiveJson, Digits = value.Digits },
+                value with { NullableBecause = [.. value.NullableBecause, new IrNullReason(IrNullRule.Variable, "@x")], Digits = value.Digits },
+                value with { Shape = Generator.Changed(value.Shape), Digits = value.Digits },
             ];
             foreach (var other in others)
                 Assert.False(value == other, $"seed {seed}: {value} equals {other}");
@@ -107,13 +108,13 @@ public class ValueEqualityTests
     [Fact]
     public void A_join_takes_values_differing_only_in_digits_or_json_why_as_one()
     {
-        // Value.Join's one deliberate exception to equality: it combines constant digits itself (the fewest of both,
-        // up to 10) and keeps the first value's why its JSON is not known.
+        // The join joins each fact in its own lattice: the digits of 1 and of 3 give the range from 1 to 10, and of two
+        // values the same but for why their JSON is not known, a witness, the left one's why is kept.
         var at = new SourceLocation("p.sql", 4, 1);
-        var one = new Value(new ScalarShape(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), [], Digits: new IntDigits(1, 1));
-        var three = one with { Digits = new IntDigits(3, 3) };
+        var one = new Value(new ScalarShape(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []) { Digits = IntDigits.Literal(1) };
+        var three = one with { Digits = IntDigits.Literal(3) };
 
-        Assert.Equal(one with { Digits = new IntDigits(1, 10) }, Value.Join(one, three, at, "@n"));
+        Assert.Equal(one with { Digits = IntDigits.Unknown }, Value.Join(one, three, at, "@n"));
 
         var text = new Value(new ScalarShape(new IrScalar(IrScalarKind.String, null, "nvarchar(max)")), []);
         var first = text with { JsonWhy = new UnknownShape(IrUnknownReason.JsonShapeUnknown, "first", at) };
@@ -186,8 +187,15 @@ public class ValueEqualityTests
             Shape(depth),
             ReasonList(),
             IsLiveJson: random.Next(4) == 0,
-            Digits: random.Next(3) == 0 ? new IntDigits(1, random.Next(1, 3)) : null,
-            JsonWhy: random.Next(4) == 0 ? Unknown() : null);
+            JsonWhy: random.Next(4) == 0 ? Unknown() : null)
+        {
+            Digits = random.Next(3) switch
+            {
+                0 => IntDigits.Literal(random.Next(1, 3)),
+                1 => IntDigits.Join(IntDigits.Literal(2), IntDigits.Literal(3)),
+                _ => IntDigits.OfType,
+            },
+        };
 
         public Shape Shape(int depth) => random.Next(depth == 0 ? 4 : 10) switch
         {

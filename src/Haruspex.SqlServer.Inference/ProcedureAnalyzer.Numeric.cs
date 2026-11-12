@@ -80,7 +80,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         { Name: "tinyint" or "smallint" or "int" } => new ScalarType("int"),
         { Name: "bigint" } => new ScalarType("bigint"),
-        { IsDecimal: true } => of with { Digits = null },
+        { IsDecimal: true } => of,
         { IsMoney: true } => new ScalarType("money"),
         { IsApproximate: true } or { Name: "bit" } => new ScalarType("float"),
         _ => null,

@@ -466,8 +466,8 @@ internal sealed partial class ProcedureAnalyzer
                 if (argument.IsLiveJson || argument.Shape is not ScalarShape)
                     return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{name.ToUpperInvariant()} of a value that is not a scalar is not modelled: {Text(call)}", at));
                 return ProvedAggregate(call)
-                    ? argument with { NullableBecause = [] }
-                    : argument with { NullableBecause = [.. argument.NullableBecause, .. Aggregate(call)] };
+                    ? argument.WithNullableBecause([])
+                    : argument.WithNullableBecause([.. argument.NullableBecause, .. Aggregate(call)]);
             }
 
             case "sum" when call.Parameters.Count == 1:

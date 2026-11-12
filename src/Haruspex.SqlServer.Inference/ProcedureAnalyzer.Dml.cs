@@ -181,7 +181,7 @@ internal sealed partial class ProcedureAnalyzer
 
         if (merged is null || values.Values is null)
             return values;
-        return values with { Values = [.. values.Values.Select(v => v.Shape is UnknownShape ? v : v with { NullableBecause = NullReasons.Join(v.NullableBecause, [merged]) })] };
+        return values with { Values = [.. values.Values.Select(v => v.Shape is UnknownShape ? v : v.WithNullableBecause(NullReasons.Join(v.NullableBecause, [merged])))] };
     }
 
     /// <summary>
@@ -293,7 +293,7 @@ internal sealed partial class ProcedureAnalyzer
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{Text(action)} outside a MERGE's OUTPUT is not modelled.", at));
         var shape = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["10"]), at);
         var values = new IrValueSet([.. mergeActions.Select(a => new IrValue(a, IsString: true))], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Engine, "$action")]);
-        return new Value(shape with { Type = shape.Type with { Facets = (shape.Type.Facets ?? new IrFacets()) with { Values = values } } }, []);
+        return Value.Computed(shape with { Type = shape.Type with { Facets = (shape.Type.Facets ?? new IrFacets()) with { Values = values } } }, []);
     }
 
     /// <summary>Whether a column read in an OUTPUT names the write's target through its alias, which is not modelled.</summary>

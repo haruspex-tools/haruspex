@@ -112,7 +112,7 @@ internal sealed partial class ProcedureAnalyzer
                 switch (shape)
                 {
                     case ArrayShape { Items: ObjectShape row } when row.Fields.Count == targets.Count:
-                        rows.Add([.. row.Fields.Select(f => new Value(f.Type, f.NullableBecause))]);
+                        rows.Add([.. row.Fields.Select(f => Value.Computed(f.Type, f.NullableBecause))]);
                         break;
                     case ArrayShape { Items: ObjectShape }:
                         // Of another width: it fails the insert (213), so a successful one never received it.

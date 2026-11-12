@@ -73,7 +73,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = new SourceLocation(function.File, parameter.StartLine, parameter.StartColumn);
         var declared = SqlTypes.ToConvertedShape(model, SqlType.From(parameter.DataType), at);
-        var any = new Value(declared, [new IrNullReason(IrNullRule.Parameter, parameter.VariableName.Value)]);
+        var any = Value.Computed(declared, [new IrNullReason(IrNullRule.Parameter, parameter.VariableName.Value)]);
         if (declared is UnknownShape unknown)
             return Value.Unknown(unknown);
 
@@ -97,7 +97,7 @@ internal sealed partial class ProcedureAnalyzer
         var fits = LiteralOf(argument) is ({ } literal, var negative) && ScalarType.Parse((declared as ScalarShape)?.Type.Sql) is { } to
             ? ScalarType.Fits(literal, to, negative)
             : null;
-        return new Value(declared, fits == true ? value.NullableBecause : Converting(value, declared, At(argument)));
+        return Value.Computed(declared, fits == true ? value.NullableBecause : Converting(value, declared, At(argument)));
     }
 
     /// <summary>

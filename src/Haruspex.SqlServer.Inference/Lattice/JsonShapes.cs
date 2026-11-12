@@ -68,6 +68,45 @@ internal static class JsonShapes
         static IEnumerable<Shape> Variants(Shape s) => s is UnionShape u ? u.Variants : [s];
     }
 
+    /// <summary>
+    /// Whether two shapes say the same: equal but for witnesses and presentation order. Any two unknowns are the same (the
+    /// top); a union's variants are matched one to one, in any order, each with this equivalence; reasons are compared as sets
+    /// (<see cref="NullReasons.Same"/>) and a scalar's facets ignoring their sources (<see cref="ScalarFacets.Same"/>). Keys,
+    /// presence, counts and every shape's kind are compared exactly.
+    /// </summary>
+    public static bool Same(Shape a, Shape b) => (a, b) switch
+    {
+        (UnknownShape, UnknownShape) => true,
+        (ScalarShape x, ScalarShape y) => x.Type with { Facets = null } == y.Type with { Facets = null } && ScalarFacets.Same(x.Type.Facets, y.Type.Facets),
+        (ArrayShape x, ArrayShape y) => Same(x.Items, y.Items) && NullReasons.Same(x.ItemsNullableBecause, y.ItemsNullableBecause) && x.MinItems == y.MinItems && x.MaxItems == y.MaxItems,
+        (TupleShape x, TupleShape y) => x.Items.Count == y.Items.Count
+            && x.Items.Zip(y.Items).All(p => Same(p.First.Type, p.Second.Type) && NullReasons.Same(p.First.NullableBecause, p.Second.NullableBecause)),
+        (ObjectShape x, ObjectShape y) => x.Fields.Count == y.Fields.Count
+            && x.Fields.Zip(y.Fields).All(p => p.First.Name == p.Second.Name && p.First.Presence == p.Second.Presence
+                && Same(p.First.Type, p.Second.Type) && NullReasons.Same(p.First.NullableBecause, p.Second.NullableBecause)),
+        (RecordShape x, RecordShape y) => Same(x.Values, y.Values) && NullReasons.Same(x.ValuesNullableBecause, y.ValuesNullableBecause),
+        (JsonTextShape x, JsonTextShape y) => x.Content is null || y.Content is null ? x.Content is null && y.Content is null : Same(x.Content, y.Content),
+        (UnionShape x, UnionShape y) => SameVariants(x.Variants, y.Variants),
+        _ => a == b,
+    };
+
+    /// <summary>Whether two unions' variants match one to one, each pair the same (<see cref="Same"/>, an equivalence, so a first match will do).</summary>
+    private static bool SameVariants(EquatableArray<Shape> x, EquatableArray<Shape> y)
+    {
+        if (x.Count != y.Count)
+            return false;
+        var unmatched = y.ToList();
+        foreach (var variant in x)
+        {
+            var i = unmatched.FindIndex(v => Same(variant, v));
+            if (i < 0)
+                return false;
+            unmatched.RemoveAt(i);
+        }
+
+        return true;
+    }
+
     /// <summary>Whether two variants of a union join into one without a union: arrays and tuples, or the same shape.</summary>
     private static bool Mergeable(Shape a, Shape b) =>
         (a is TupleShape or ArrayShape && b is TupleShape or ArrayShape) || a == b

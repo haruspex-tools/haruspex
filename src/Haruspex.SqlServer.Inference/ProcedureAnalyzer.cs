@@ -1,5 +1,6 @@
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -434,7 +435,7 @@ internal sealed partial class ProcedureAnalyzer
                 IsLiveJson: true);
         }
 
-        return new Value(ColumnShape(table, column), [.. because]);
+        return Value.Computed(ColumnShape(table, column), [.. because]);
     }
 
     /// <summary>A column's shape when it is not null.</summary>
@@ -478,8 +479,8 @@ internal sealed partial class ProcedureAnalyzer
             // A scalar subquery is not folded: (SELECT 1) counts an int's 10 digits beside a decimal (observed:
             // An_int_constant_counts_its_own_digits_beside_a_decimal).
             return row.Rows == IrCardinality.One
-                ? only.Value with { Digits = null }
-                : only.Value with { Digits = null, NullableBecause = [.. only.Value.NullableBecause, new IrNullReason(IrNullRule.EmptySubquery, at.ToString())] };
+                ? only.Value with { Digits = IntDigits.OfType }
+                : only.Value with { Digits = IntDigits.OfType, NullableBecause = [.. only.Value.NullableBecause, new IrNullReason(IrNullRule.EmptySubquery, at.ToString())] };
         }
 
         var query = subquery.QueryExpression;
@@ -543,7 +544,7 @@ internal sealed partial class ProcedureAnalyzer
         return result switch
         {
             { Content: null, ReturnsJson: true } => new Value(result.Declared, [.. because], IsLiveJson: true),
-            { Content: null } => new Value(result.Declared, [.. because]),
+            { Content: null } => Value.Computed(result.Declared, [.. because]),
             { ReturnsJson: true } => result.Content is UnknownShape unknown ? Value.Unknown(unknown) : new Value(result.Content, [.. because], IsLiveJson: true),
             _ => new Value(new JsonTextShape(result.Content), [.. because]),
         };

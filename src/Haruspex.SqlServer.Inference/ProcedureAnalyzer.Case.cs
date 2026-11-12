@@ -50,7 +50,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>A variable or parameter, never null in a branch that proved it so.</summary>
     private Value Branched(VariableReference variable, Value value) =>
-        value.Shape is not UnknownShape && branches.Any(b => b.Variables.Contains(variable.Name)) ? value with { NullableBecause = [] } : value;
+        value.Shape is not UnknownShape && branches.Any(b => b.Variables.Contains(variable.Name)) ? value.WithNullableBecause([]) : value;
 
     /// <summary>
     /// What a branch knows: <paramref name="held"/> was TRUE (none for an ELSE) and each of <paramref name="failed"/> was FALSE
@@ -216,9 +216,9 @@ internal sealed partial class ProcedureAnalyzer
             .Aggregate((EquatableArray<IrNullReason>)[], NullReasons.Join);
         // A CASE whose condition is constant is folded to one result, an int literal then counting its own digits (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal); which, is not known here.
-        var value = Typed(type, because, at) with { Digits = type.Name == "int" ? IntDigits.Foldable(given.Select(r => r.Value.Digits)) : null };
+        var value = Typed(type, because, at) with { Digits = type.Name == "int" ? IntDigits.Foldable(given.Select(r => r.Value.Digits)) : IntDigits.OfType };
         return LiteralSet(given.Select(r => r.Expression), type, at) is { } set && value.Shape is ScalarShape scalar
-            ? value with { Shape = scalar with { Type = scalar.Type with { Facets = (scalar.Type.Facets ?? new IrFacets()) with { Values = set } } } }
+            ? value with { Shape = scalar with { Type = scalar.Type with { Facets = (scalar.Type.Facets ?? new IrFacets()) with { Values = set } } }, Digits = value.Digits }
             : value;
     }
 

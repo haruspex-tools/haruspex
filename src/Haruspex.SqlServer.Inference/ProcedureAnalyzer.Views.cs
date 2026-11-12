@@ -81,7 +81,7 @@ internal sealed partial class ProcedureAnalyzer
             var first = column[0];
             var same = column.All(v => v.IsLiveJson == first.IsLiveJson && v.Shape == first.Shape);
             values.Add(same
-                ? first with { NullableBecause = column.Select(v => v.NullableBecause).Aggregate(NullReasons.Join) }
+                ? first.WithNullableBecause(column.Select(v => v.NullableBecause).Aggregate(NullReasons.Join))
                 : Value.Unknown(Unsupported(
                     IrUnknownReason.UnsupportedExpression,
                     $"{name}.{names[i]}: its rows' values have different types, which SQL Server converts to the one of highest precedence; that is not modelled yet.",

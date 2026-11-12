@@ -209,14 +209,14 @@ internal sealed partial class ProcedureAnalyzer
 
         // A set operation is not folded to a constant: an int column of one counts 10 digits (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal).
-        value = value with { Digits = null };
         return value.Shape is ScalarShape scalar
-            ? value with { Shape = scalar with { Type = scalar.Type with { Facets = WithValues(scalar.Type.Facets, SetValues(output, type, scalar.Type.Sql)) } } }
-            : value;
+            ? value with { Shape = scalar with { Type = scalar.Type with { Facets = WithValues(scalar.Type.Facets, SetValues(output, type, scalar.Type.Sql)) } }, Digits = IntDigits.OfType }
+            : value with { Digits = IntDigits.OfType };
     }
 
+    /// <summary>A value the server computes, of this type: never folded to a constant, so it counts its type's digits.</summary>
     private Value Typed(ScalarType type, EquatableArray<IrNullReason> because, SourceLocation at) =>
-        new(SqlTypes.ToConvertedShape(model, type.ToSqlType(), at), because);
+        Value.Computed(SqlTypes.ToConvertedShape(model, type.ToSqlType(), at), because);
 
     private static IrFacets? WithValues(IrFacets? facets, IrValueSet? set)
     {
@@ -330,9 +330,9 @@ internal sealed partial class ProcedureAnalyzer
             return new LocalRelationValues(
                 ["key", "value", "type"],
                 [
-                    new Value(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["4000"]), at), []),
-                    new Value(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["max"]), at), [JsonValue(at)]),
-                    new Value(tinyint with { Type = tinyint.Type with { Facets = WithValues(tinyint.Type.Facets, type) } }, []),
+                    Value.Computed(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["4000"]), at), []),
+                    Value.Computed(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["max"]), at), [JsonValue(at)]),
+                    Value.Computed(tinyint with { Type = tinyint.Type with { Facets = WithValues(tinyint.Type.Facets, type) } }, []),
                 ],
                 null);
         }
@@ -353,7 +353,7 @@ internal sealed partial class ProcedureAnalyzer
                 continue;
             }
 
-            values.Add(new Value(Unpadded(SqlTypes.ToConvertedShape(model, SqlType.From(column.DataType), where)), [JsonValue(where)]));
+            values.Add(Value.Computed(Unpadded(SqlTypes.ToConvertedShape(model, SqlType.From(column.DataType), where)), [JsonValue(where)]));
         }
 
         if (names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Count)

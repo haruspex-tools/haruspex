@@ -188,7 +188,7 @@ internal sealed partial class ProcedureAnalyzer
             // (observed: Openjson_with_converts_a_varchar_to_the_databases_code_page), so its set holds only when every value is
             // ASCII. Which code page the source column has is not followed.
             var codePage = same.Name is "varchar" or "char" && source.Facets?.Values is { } items && items.Items.Any(v => v.Text.Any(c => c > '\u007f'));
-            return new Value(new ScalarShape(codePage ? source with { Facets = source.Facets! with { Values = null } } : source), []);
+            return Value.Computed(new ScalarShape(codePage ? source with { Facets = source.Facets! with { Values = null } } : source), []);
         }
 
         var into = ScalarType.Parse(to.Sql!);
@@ -205,16 +205,16 @@ internal sealed partial class ProcedureAnalyzer
             var ascii = source.Facets?.Values is { } values && values.Items.All(v => v.Text.All(c => c <= '\u007f'));
             var fits = into.IsMax || (longest is { } n && n <= into.Length);
             var keeps = fits && (into.Name is "nvarchar" || (into.Name is "varchar" && from is null && ascii));
-            return new Value(new ScalarShape(keeps ? to with { Facets = Keep(to.Facets, source.Facets) } : to), []);
+            return Value.Computed(new ScalarShape(keeps ? to with { Facets = Keep(to.Facets, source.Facets) } : to), []);
         }
 
         // An integer into a wider integer, or a JSON literal's integers into an integer type that holds them: the same numbers.
         if (into.IsInteger && from is { IsInteger: true } && Rank(from.Name) <= Rank(into.Name))
-            return new Value(new ScalarShape(to), []);
+            return Value.Computed(new ScalarShape(to), []);
         if (into.IsInteger && from is null && source.Kind == IrScalarKind.Number && source.Facets?.Values is { } numbers
             && numbers.Items.All(v => ExactDecimal.TryParse(v.Text, out var d) && d.IsInteger && Within(d, into.Name)))
         {
-            return new Value(new ScalarShape(to with { Facets = (to.Facets ?? new IrFacets()) with { Values = numbers } }), []);
+            return Value.Computed(new ScalarShape(to with { Facets = (to.Facets ?? new IrFacets()) with { Values = numbers } }), []);
         }
 
         return null;
@@ -283,9 +283,9 @@ internal sealed partial class ProcedureAnalyzer
             var mayBeNull = types is null || types.Contains(0);
             return
             [
-                new Value(keys is null ? key : key with { Type = key.Type with { Facets = WithValues(key.Type.Facets, new IrValueSet([.. keys.Select(k => new IrValue(k, IsString: true))], IrValueMatch.Exact, [from])) } }, []),
-                new Value(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["max"]), at), mayBeNull ? [JsonValue(at)] : []),
-                new Value(types is null ? type : type with { Type = type.Type with { Facets = WithValues(type.Type.Facets, new IrValueSet([.. types.Order().Select(n => new IrValue(n.ToString(CultureInfo.InvariantCulture), IsString: false))], IrValueMatch.Exact, [from])) } }, []),
+                Value.Computed(keys is null ? key : key with { Type = key.Type with { Facets = WithValues(key.Type.Facets, new IrValueSet([.. keys.Select(k => new IrValue(k, IsString: true))], IrValueMatch.Exact, [from])) } }, []),
+                Value.Computed(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["max"]), at), mayBeNull ? [JsonValue(at)] : []),
+                Value.Computed(types is null ? type : type with { Type = type.Type with { Facets = WithValues(type.Type.Facets, new IrValueSet([.. types.Order().Select(n => new IrValue(n.ToString(CultureInfo.InvariantCulture), IsString: false))], IrValueMatch.Exact, [from])) } }, []),
             ];
         }
 
@@ -325,9 +325,9 @@ internal sealed partial class ProcedureAnalyzer
 
             var declared = SqlType.From(column.DataType);
             if (declared is not null && found?.Shape is ScalarShape { Type: var scalar } && Converted(scalar, declared, where) is { } converted)
-                values.Add(present ? converted : converted with { NullableBecause = [JsonValue(where)] });
+                values.Add(present ? converted : converted.WithNullableBecause([JsonValue(where)]));
             else
-                values.Add(new Value(Unpadded(SqlTypes.ToConvertedShape(model, declared, where)), [JsonValue(where)]));
+                values.Add(Value.Computed(Unpadded(SqlTypes.ToConvertedShape(model, declared, where)), [JsonValue(where)]));
         }
 
         return values;
@@ -431,7 +431,7 @@ internal sealed partial class ProcedureAnalyzer
         // A NULL document gives NULL.
         var nullable = NullReasons.Join(documentNull, [new IrNullReason(IrNullRule.JsonNullOrAbsent, at.ToString())]);
         if (found.Shape is not ScalarShape { Type: var scalar })
-            return new Value(type, nullable);
+            return Value.Computed(type, nullable);
 
         var facets = type.Type.Facets;
         var fits = true;
@@ -454,6 +454,6 @@ internal sealed partial class ProcedureAnalyzer
         }
 
         var present = !found.MayBeNull && (!found.MayBeMissing || path.Strict) && (fits || path.Strict);
-        return new Value(new ScalarShape(type.Type with { Facets = facets }), present ? documentNull : nullable);
+        return Value.Computed(new ScalarShape(type.Type with { Facets = facets }), present ? documentNull : nullable);
     }
 }

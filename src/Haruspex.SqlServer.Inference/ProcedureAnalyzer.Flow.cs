@@ -69,7 +69,7 @@ internal sealed partial class ProcedureAnalyzer
             var name = parameter.VariableName.Value;
             variableTypes[name] = SqlType.From(parameter.DataType);
             variableShapes[name] = DeclaredShape(SqlType.From(parameter.DataType), At(parameter), name, out var live);
-            start.Add(new(name, new Value(variableShapes[name], Because(IrNullRule.Parameter, name, variableShapes[name]), live)));
+            start.Add(new(name, Value.Computed(variableShapes[name], Because(IrNullRule.Parameter, name, variableShapes[name]), live)));
         }
 
         body = procedure.StatementList;
@@ -91,7 +91,7 @@ internal sealed partial class ProcedureAnalyzer
             variableShapes[name] = DeclaredShape(SqlType.From(element.DataType), At(element), name, out var live);
 
             // A variable holds NULL until it is assigned.
-            start.Add(new(name, new Value(variableShapes[name], Because(IrNullRule.Variable, name, variableShapes[name]), live)));
+            start.Add(new(name, Value.Computed(variableShapes[name], Because(IrNullRule.Variable, name, variableShapes[name]), live)));
         }
 
         foreach (var table in returnTable is null ? declarations.Tables : declarations.Tables.Prepend(returnTable))
@@ -409,7 +409,7 @@ internal sealed partial class ProcedureAnalyzer
         // A_cursors_query_takes_its_variables_as_they_are_when_it_is_declared), not where the FETCH reads it: any value of
         // the variable's declared type, which every assignment converts to, or null.
         if (unfiltered && variableShapes.TryGetValue(variable.Name, out var declared))
-            return new Value(declared, Because(IrNullRule.Variable, variable.Name, declared), value.IsLiveJson);
+            return Value.Computed(declared, Because(IrNullRule.Variable, variable.Name, declared), value.IsLiveJson);
 
         // A variable holding JSON built here holds it as text.
         return locals.State.Json.TryGetValue(variable.Name, out var slot) ? slot.Read(value) : value;
@@ -431,7 +431,7 @@ internal sealed partial class ProcedureAnalyzer
         if (!variableShapes.TryGetValue(name, out var shape) || !state.Variables.TryGetValue(name, out var old))
             return state;
         var because = shape is UnknownShape unknown ? NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]) : Converting(value, shape, at);
-        var assigned = new Value(shape, because, old.IsLiveJson);
+        var assigned = Value.Computed(shape, because, old.IsLiveJson);
         state = state.WithVariable(name, definitely ? assigned : Value.Join(old, assigned, at, name));
         if (state.Json.TryGetValue(name, out var slot))
         {
@@ -628,7 +628,7 @@ internal sealed partial class ProcedureAnalyzer
             if (position < 0 && column.Identity == true)
                 continue;
             var written = position < 0
-                ? [new Value(column.Value.Shape, [new IrNullReason(IrNullRule.NullableColumn, where)])]
+                ? [Value.Computed(column.Value.Shape, [new IrNullReason(IrNullRule.NullableColumn, where)])]
                 : all.Select(r => Stored(r[position], where, at));
             columns[i] = column with { Value = written.Aggregate(column.Value, (all, value) => Value.JoinConverted(all, value, at, where)) };
         }
@@ -801,7 +801,7 @@ internal sealed partial class ProcedureAnalyzer
             return new Value(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{where} is a json column: its shape is in the data.", column.At), because, IsLiveJson: true);
 
         var shape = ColumnShape(table, column);
-        return shape is UnknownShape unknown ? Value.Unknown(unknown) : new Value(shape, because);
+        return shape is UnknownShape unknown ? Value.Unknown(unknown) : Value.Computed(shape, because);
     }
 
     private FlowState Alter(AlterTableStatement alter, FlowState state)
@@ -1051,17 +1051,17 @@ internal sealed partial class ProcedureAnalyzer
     {
         var value = locals!.Column(bound.Relation, bound.Ordinal, at);
         if (value.Shape is not UnknownShape && bound.Ordinal >= 0 && Proved(bound.Source, Key(bound)))
-            value = value with { NullableBecause = [] };
+            value = value.WithNullableBecause([]);
         if (bound.Source.OptionalSideOf is { } optional && !Matched(bound.Source) && !AlwaysApplied(bound))
-            value = value with { NullableBecause = NullReasons.Join(value.NullableBecause, [new IrNullReason(bound.Source.OuterApply ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.ToString())]) };
+            value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [new IrNullReason(bound.Source.OuterApply ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.ToString())]));
         if (Unmatched(bound.Source) is { } unmatched && value.Shape is not UnknownShape)
-            value = value with { NullableBecause = NullReasons.Join(value.NullableBecause, [unmatched]) };
+            value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [unmatched]));
         if (Rolled(bound.Source) is { } rolled && value.Shape is not UnknownShape)
-            value = value with { NullableBecause = NullReasons.Join(value.NullableBecause, [rolled]) };
+            value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [rolled]));
 
         // A CASE branch that tested this very value proves it, whatever made it nullable (ProcedureAnalyzer.Case.cs).
         return value.Shape is not UnknownShape && bound.Ordinal >= 0 && BranchProved(bound.Source, Key(bound))
-            ? value with { NullableBecause = [] }
+            ? value.WithNullableBecause([])
             : value;
     }
 
@@ -1091,7 +1091,7 @@ internal sealed partial class ProcedureAnalyzer
         if (long.TryParse(literal.Value, System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out var n) && n is >= int.MinValue and <= int.MaxValue)
         {
             var own = literal.Value.TrimStart('-', '+').TrimStart('0').Length is var d and > 0 ? d : 1;
-            return new Value(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "int", []), At(literal)), [], Digits: new IntDigits(own, own));
+            return new Value(SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "int", []), At(literal)), []) { Digits = IntDigits.Literal(own) };
         }
 
         var digits = literal.Value.TrimStart('-', '+').TrimStart('0').Length;

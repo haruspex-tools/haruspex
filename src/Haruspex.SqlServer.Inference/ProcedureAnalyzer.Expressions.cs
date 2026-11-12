@@ -61,13 +61,13 @@ internal sealed partial class ProcedureAnalyzer
         };
         if (type is not null && IntegerLiteralOf(expression) is { } literal)
             return type with { Digits = literal.Value.TrimStart('-', '+').TrimStart('0').Length is var n and > 0 ? n : 1 };
-        if (type is { Name: "int" } && value.Digits is { } digits && (least ? digits.Least : digits.Most) is var d and < 10)
+        if (type is { Name: "int" } && (least ? value.Digits.Least : value.Digits.Most) is var d and < 10)
             return type with { Digits = d };
         return type;
     }
 
     /// <summary>Whether the server may count an int's digits as a literal's or as its type's, depending on what it folds.</summary>
-    private static bool Uncertain(Value value) => value.Digits is { } d && d.Least != d.Most;
+    private static bool Uncertain(Value value) => value.Shape is ScalarShape { Type.Sql: "int" } && !value.IsLiveJson && value.Digits.IsUncertain;
 
     /// <summary>An integer literal, through parentheses and a sign.</summary>
     private static IntegerLiteral? IntegerLiteralOf(ScalarExpression expression) => Strip(expression) switch
@@ -91,8 +91,9 @@ internal sealed partial class ProcedureAnalyzer
         return e is Literal literal ? (literal, negative) : null;
     }
 
+    /// <summary>A value the server computes, of this type: never folded to a constant, so it counts its type's digits.</summary>
     private Value Typed(ScalarType type, EquatableArray<IrNullReason> because, TSqlFragment at) =>
-        new(SqlTypes.ToConvertedShape(model, type.ToSqlType(), At(at)), because);
+        Value.Computed(SqlTypes.ToConvertedShape(model, type.ToSqlType(), At(at)), because);
 
     private IrNullReason Overflow(TSqlFragment at) => new(IrNullRule.ArithmeticOverflow, At(at).ToString());
 
@@ -198,7 +199,7 @@ internal sealed partial class ProcedureAnalyzer
         // COALESCE(NULL, 1) is folded to 1 and counts its digits (observed: An_int_constant_counts_its_own_digits_beside_a_decimal).
         return Typed(type, combined.Overflows.Aggregate(because, NullReasons.Join), coalesce) with
         {
-            Digits = type.Name == "int" ? IntDigits.Foldable(values.Select(v => v.Digits)) : null,
+            Digits = type.Name == "int" ? IntDigits.Foldable(values.Select(v => v.Digits)) : IntDigits.OfType,
         };
     }
 
@@ -245,7 +246,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var (a, b) = (call.Parameters[0], call.Parameters[1]);
         if (Strip(a) is NullLiteral)
-            return Strip(b) is NullLiteral ? NotModelled(call, "ISNULL of NULL and NULL is not typed.") : Expression(b, scope) with { Digits = null };
+            return Strip(b) is NullLiteral ? NotModelled(call, "ISNULL of NULL and NULL is not typed.") : Expression(b, scope) with { Digits = IntDigits.OfType };
         var first = Expression(a, scope);
         if (first.Shape is UnknownShape || first.NullableBecause.Count == 0)
             return first;
@@ -292,7 +293,7 @@ internal sealed partial class ProcedureAnalyzer
         // As an int it counts 1 integer digit beside a decimal, as a literal would (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal: CAST(NULL AS int) beside decimal(38,38) is decimal(38,37)).
         if (Strip(operand) is NullLiteral)
-            return new Value(shape, [new IrNullReason(IrNullRule.NullLiteral, At(operand).ToString())], Digits: to.Name == "int" ? new IntDigits(1, 1) : null);
+            return new Value(shape, [new IrNullReason(IrNullRule.NullLiteral, At(operand).ToString())]) { Digits = to.Name == "int" ? IntDigits.Literal(1) : IntDigits.OfType };
 
         var value = Expression(operand, scope);
         if (value.Shape is UnknownShape || value.IsLiveJson)
@@ -303,11 +304,11 @@ internal sealed partial class ProcedureAnalyzer
             ?? (from is not null && ScalarType.Converts(from, to, styled));
         // A NULL cast to int and cast again stays that constant; CAST(1 AS int) counts an int's 10 digits (same observation).
         if (fits && from?.Text == to.Text && !styled)
-            return value.Digits is { Least: 1, Most: 1 } && IsNullCast(operand) ? value : value with { Digits = null };
+            return value.Digits == IntDigits.Literal(1) && IsNullCast(operand) ? value : value with { Digits = IntDigits.OfType };
         var because = fits
             ? value.NullableBecause
             : NullReasons.Join(value.NullableBecause, [attempt ? new IrNullReason(IrNullRule.FailedConversion, At(call).ToString()) : Overflow(call)]);
-        return new Value(shape, because);
+        return Value.Computed(shape, because);
     }
 
     /// <summary>The NULL literal, cast or converted, however many times.</summary>
@@ -465,9 +466,9 @@ internal sealed partial class ProcedureAnalyzer
             return operand;
         return TypeOf(operand, unary.Expression) switch
         {
-            ({ IsDecimal: true } or { IsApproximate: true }) and var exact => Typed(exact with { Digits = null }, operand.NullableBecause, unary),
+            ({ IsDecimal: true } or { IsApproximate: true }) and var exact => Typed(exact, operand.NullableBecause, unary),
             { Name: "tinyint" } => Typed(new ScalarType("smallint"), operand.NullableBecause, unary),
-            ({ IsInteger: true } or { IsMoney: true }) and var integer => Typed(integer with { Digits = null }, NullReasons.Join(operand.NullableBecause, [Overflow(unary)]), unary),
+            ({ IsInteger: true } or { IsMoney: true }) and var integer => Typed(integer, NullReasons.Join(operand.NullableBecause, [Overflow(unary)]), unary),
             _ => NotModelled(unary, "negating a value of this type is not modelled yet."),
         };
     }

@@ -12,12 +12,38 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="Length">A string's length (bytes for char and varchar, characters for nchar and nvarchar); -1 for max.</param>
 /// <param name="Precision">An exact number's precision, or a date or time type's fractional digits.</param>
 /// <param name="Scale">An exact number's scale.</param>
-/// <param name="Digits">
-/// For an integer literal, its own digits: beside a decimal it counts as decimal(digits, 0), where an int column or variable
-/// counts as decimal(10, 0) (observed: <c>Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments</c>).
-/// </param>
-internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0, int Scale = 0, int? Digits = null)
+/// <remarks>
+/// <para>
+/// <b>An operand's digits.</b> A type an operand of a rule has may carry the integer digits the server counts for it
+/// (<see cref="Digits"/>), which the rules read and pass on where the server does. A <c>with</c> drops them, as
+/// <see cref="Value"/>'s does: the copy constructor leaves them out, so a result built from an operand counts its type's
+/// digits unless the rule says otherwise. They live here as well as on <see cref="Value.Digits"/> for a reason: there they are
+/// a fact about an expression, possibly a range; here they are one count, the end of that range a rule is being worked out at
+/// (<c>TypeOf</c>, its fewest or its most), and they never outlive the rule, since a result becomes a value through
+/// its SQL text, which has no digits.
+/// </para>
+/// </remarks>
+internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0, int Scale = 0)
 {
+    /// <summary>The copy <c>with</c> starts from: every part but <see cref="Digits"/>, which a rule passes on only by saying so.</summary>
+    private ScalarType(ScalarType original)
+    {
+        Name = original.Name;
+        Length = original.Length;
+        Precision = original.Precision;
+        Scale = original.Scale;
+    }
+
+    /// <summary>
+    /// For an integer literal, or an int the server folds to one (<see cref="Value.Digits"/>), the digits it counts: beside a
+    /// decimal it counts as decimal(digits, 0), where an int column or variable counts as decimal(10, 0) (observed:
+    /// <c>Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments</c>). Null for its type's own.
+    /// </summary>
+    public int? Digits { get; init; }
+
+    /// <summary>This type as a rule's result, which is not a literal: a copy, so it counts its type's digits.</summary>
+    private ScalarType AsResult => this with { };
+
     /// <summary>The longest a varchar can be without max, in bytes; nvarchar's is half, in characters.</summary>
     public const int MostBytes = 8000;
 
@@ -188,7 +214,7 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
         {
             "datetimeoffset" or "datetime2" => folded with { Precision = types.Max(Fraction) },
             "time" => folded with { Precision = types.Where(t => t.Name == "time").Max(t => t.Precision) },
-            _ => folded with { Digits = null },
+            _ => folded.AsResult,
         };
     }
 
@@ -232,7 +258,7 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
 
         // bit beside an integer adds nothing: an integer literal keeps its digits (observed over the grid's triples).
         var top = PrecedenceRank(a.Name) >= PrecedenceRank(b.Name) ? a : b;
-        return top.IsDecimal || top.IsInteger ? top : top with { Digits = null };
+        return top.IsDecimal || top.IsInteger ? top : top.AsResult;
     }
 
     /// <summary>
@@ -325,7 +351,7 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
         if ((l.IsMoney || r.IsMoney) && !l.IsDecimal && !r.IsDecimal)
             return Parse(l.Name == "money" || r.Name == "money" ? "money" : "smallmoney");
         if (l.IsInteger && r.IsInteger)
-            return (Rank(l.Name) >= Rank(r.Name) ? l : r) with { Digits = null };
+            return (Rank(l.Name) >= Rank(r.Name) ? l : r).AsResult;
 
         var name = l.IsNumericNamed || r.IsNumericNamed ? "numeric" : "decimal";
         return DecimalResult(op, l, r) is var (precision, scale, _, _) ? new ScalarType(name, Precision: precision, Scale: scale) : null;
