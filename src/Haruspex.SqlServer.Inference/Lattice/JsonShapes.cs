@@ -48,7 +48,7 @@ internal static class JsonShapes
             case (ObjectShape x, ObjectShape y) when Objects(x, y) is { } joined:
                 return joined;
             case (ScalarShape x, ScalarShape y) when x.SameType(y):
-                return x.WithFacets(ScalarFacets.Join(x.Type.Facets, y.Type.Facets));
+                return x.Joined(y, ScalarFacets.Join(x.Type.Facets, y.Type.Facets));
             case (RecordShape x, RecordShape y):
                 return new RecordShape(Join(x.Values, y.Values), NullReasons.Join(x.ValuesNullableBecause, y.ValuesNullableBecause));
         }

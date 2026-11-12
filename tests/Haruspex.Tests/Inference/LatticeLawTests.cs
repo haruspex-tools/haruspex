@@ -111,6 +111,18 @@ public class LatticeLawTests
     public void Equal_elements_hash_equal(int seed) => Each(new Laws(seed).HashEqual);
 
     [Fact]
+    public void A_join_of_one_type_written_with_and_without_its_arguments_is_written_as_the_server_describes_it()
+    {
+        // decimal and decimal(18,0) are one type (ScalarShape.SameType), so the join is typed; its text is the server's where
+        // the two were written differently, and theirs where they agree.
+        var bare = new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Decimal, "decimal")), []);
+        var full = new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Decimal, "decimal(18,0)")), []);
+        Assert.Equal("decimal(18,0)", Assert.IsType<ScalarShape>(Value.Join(bare, full, At, "@v").Shape).Type.Sql);
+        Assert.Equal("decimal(18,0)", Assert.IsType<ScalarShape>(Value.Join(full, bare, At, "@v").Shape).Type.Sql);
+        Assert.Equal("decimal", Assert.IsType<ScalarShape>(Value.Join(bare, bare, At, "@v").Shape).Type.Sql);
+    }
+
+    [Fact]
     public void The_samples_have_comparable_elements_and_elements_the_same_up_to_witnesses()
     {
         // Without both, the order and the equivalence above would be tested on equal elements alone.

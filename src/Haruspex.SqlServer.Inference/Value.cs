@@ -141,7 +141,7 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
         }
 
         if (a.IsLiveJson == b.IsLiveJson && a.Shape is ScalarShape s && b.Shape is ScalarShape t && s.SameType(t))
-            return (s.WithFacets(ScalarFacets.Join(s.Type.Facets, t.Type.Facets)), a.IsLiveJson, null);
+            return (s.Joined(t, ScalarFacets.Join(s.Type.Facets, t.Type.Facets)), a.IsLiveJson, null);
 
         return (new UnknownShape(IrUnknownReason.UnsupportedExpression, $"{what} holds values of different shapes on different paths, which are not joined yet.", at), false, null);
     }

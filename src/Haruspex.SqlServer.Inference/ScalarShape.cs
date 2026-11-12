@@ -35,6 +35,18 @@ internal sealed record ScalarShape(IrScalar Type, ScalarType? BuiltIn) : Shape
             && BuiltIn == other.BuiltIn && (BuiltIn is not null || Type.Sql == other.Type.Sql);
     }
 
+    /// <summary>
+    /// The scalar a value of either type has (they are <see cref="SameType"/>), with <paramref name="facets"/>: written as both
+    /// write it, or, where one was declared without its arguments (<c>decimal</c>) and the other with them, as the server
+    /// describes the type (<c>decimal(18,0)</c>).
+    /// </summary>
+    public ScalarShape Joined(ScalarShape other, IrFacets? facets)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        var sql = Type.Sql == other.Type.Sql || BuiltIn is null ? Type.Sql : BuiltIn.Text;
+        return this with { Type = Type with { Sql = sql, Facets = facets } };
+    }
+
     /// <summary>The same scalar with other facets, its type unchanged.</summary>
     public ScalarShape WithFacets(IrFacets? facets) => this with { Type = Type with { Facets = facets } };
 }
