@@ -1,5 +1,6 @@
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Typing;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -95,7 +96,7 @@ internal sealed partial class ProcedureAnalyzer
         if (TypeOf(value) is { } from && declared is ScalarShape { Type.Sql: var sql } && from.Text == sql)
             return value;
         var fits = LiteralOf(argument) is ({ } literal, var negative) && ScalarType.Parse((declared as ScalarShape)?.Type.Sql) is { } to
-            ? ScalarType.Fits(literal, to, negative)
+            ? Conversions.Fits(literal, to, negative)
             : null;
         return Value.Computed(declared, fits == true ? value.NullableBecause : Converting(value, declared, At(argument)));
     }

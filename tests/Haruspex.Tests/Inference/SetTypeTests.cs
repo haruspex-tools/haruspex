@@ -4,7 +4,7 @@ namespace Haruspex.Tests.Inference;
 
 /// <summary>
 /// A column whose values have different types: a set operation's, <c>COALESCE</c>'s and a <c>CASE</c>'s, all typed by one rule
-/// (<c>ScalarType.Chain</c>). Each rule rests on an observation in the differential tests' <c>SetTypeObservationTests</c>,
+/// (<c>TypeChain.Of</c>). Each rule rests on an observation in the differential tests' <c>SetTypeObservationTests</c>,
 /// named where it matters; <c>SetTypeGridTests</c> compares the types with the server's over every pair of a grid.
 /// </summary>
 public class SetTypeTests

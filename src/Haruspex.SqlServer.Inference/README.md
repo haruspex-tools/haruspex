@@ -446,7 +446,7 @@ Of the target type, whatever the style (`Cast_and_convert_are_of_the_target_type
 a length is 30 long in `CAST` and `CONVERT`, 1 in a declaration
 (`A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration`); `numeric` alone is `numeric(18,0)`. The characters a style
 writes are not claimed. Null when the operand is, and for `arithmetic-overflow` unless every value of the operand's type fits
-(`ScalarType.Converts`, each case observed at its edge in `A_conversion_that_cannot_overflow_keeps_every_value`):
+(`Conversions.Converts`, each case observed at its edge in `A_conversion_that_cannot_overflow_keeps_every_value`):
 
 | From | To | Fits when |
 |---|---|---|
@@ -518,7 +518,7 @@ every threshold (`ArithmeticGridTests`: 3,560 binary expressions and the functio
 the server's description of it). When the rules were written they were also checked over 144,500 pairs of decimal types under all five
 operators, with no difference; that took 14 minutes, so the grid kept as a test is smaller.
 
-- **Operands** (`ScalarType.Arithmetic`). An integer column or variable is a decimal of its type's digits (`int` (10,0),
+- **Operands** (`Arithmetic.TypeOf`). An integer column or variable is a decimal of its type's digits (`int` (10,0),
   `bigint` (19,0)), an integer literal one of its own digits (`2` is (1,0), `00012` (2,0)), `money` (19,4), `smallmoney`
   (10,4); a decimal literal is `numeric` of its own digits (`1.0` is `numeric(2,1)`, `-1.0` too: the sign is not a digit).
   A `bit` beside another number is converted to that number's own type, a decimal's precision and scale too (`bit * decimal(10,2)`
@@ -542,7 +542,7 @@ operators, with no difference; that took 14 minutes, so the grid kept as a test 
   So `decimal(19,2) * decimal(19,6)` is `decimal(38,7)`, `decimal(38,0) * decimal(38,0)` `decimal(38,0)`,
   `decimal(38,38) * decimal(38,38)` `decimal(38,37)`, `-1.0 * decimal(19,2)` `numeric(22,3)` (within 38) and
   `-1.0 * decimal(38,0)` `numeric(38,1)`. `%` never passes 38.
-- **Overflow and division by zero** (`ScalarType.MayOverflow`;
+- **Overflow and division by zero** (`Arithmetic.MayOverflow`;
   `Decimal_overflow_and_division_by_zero_are_errors_by_default_and_null_under_the_callers_options`,
   `Decimal_arithmetic_whose_integer_digits_fit_cannot_overflow_at_its_operands_extremes`,
   `Integer_and_money_division_overflow_only_at_the_least_value_divided_by_minus_one`). Each is an error by default (8115,
@@ -1018,7 +1018,7 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
   `EXCEPT`: the left side's.
 - **Facets.** When every query whose values come out is already of the column's type, nothing is converted, and the facets
   they all prove hold (each the looser, as at a join of paths: `Value.Join`). Otherwise a query whose every
-  value converts unchanged (`ScalarType.Preserves`: an integer into a wider one or a decimal holding it, a decimal into one
+  value converts unchanged (`Conversions.Preserves`: an integer into a wider one or a decimal holding it, a decimal into one
   with as many integer digits and places, `smallmoney` into `money`, a string into a varying string as long and of the same
   kind) keeps its facets, and any other query (rounded to fewer places, made approximate, padded, cut short, or a date or
   time) brings only the column type's; the column has the looser of each (`ScalarFacets.Widened`), and the type's where none
@@ -1047,7 +1047,7 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
 ## Combining types
 
 A set operation's column, `COALESCE`, and a `CASE`, `IIF` or `CHOOSE` all take one type over values of different
-types, by one rule, the server's type rule for a chain: `ScalarType.Chain` for the type, `ScalarType.Clash` for pairs SQL
+types, by one rule, the server's type rule for a chain: `TypeChain.Of` for the type, `TypeChain.Clash` for pairs SQL
 Server refuses, and `ProcedureAnalyzer.Chained` for what converting each value adds. The rule is a fold from left to
 right, not a join: it is neither associative nor commutative, so it is never used where paths meet (`Value.Join`). Observed in `SetTypeObservationTests`, and over every
 ordered pair of a grid of 33 types and 5 literals, in all three forms, in `SetTypeGridTests` (the server describes a set
@@ -1055,7 +1055,7 @@ operation and `COALESCE` alike over all 1,806 ordered pairs of a wider grid, bin
 when the rule was written, not kept as a test; the `CASE` there had a constant condition, which the server folds to one result, so it differed only
 where folding did).
 
-- **A fold, left to right** (`ScalarType.Fold` of `ScalarType.Pair`; observed:
+- **A fold, left to right** (`TypeChain.Fold` of `TypeChain.Pair`; observed:
   `A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal`, and over every triple of 13 exact numbers and
   of 9 dates, times and others in `SetTypeGridTests`): each step combines the type so far with the next value's. It matters
   where an integer meets `money` or `smallmoney` before a decimal: the money type takes the integer in and keeps only its own
@@ -1100,7 +1100,7 @@ where folding did).
   value. Claiming a literal's digits where the server counts 10 is still sound (the constant fits them, and the scale claimed
   is the larger); claiming 10 where it counts the literal's is not. Decimal arithmetic counts the same digits
   (`decimal(38,38) + CAST(NULL AS int)` is `decimal(38,37)`), and turns unknown on the same range.
-- **Converting each value.** A value whose type may not convert without overflow (`ScalarType.NeverNull`: `ScalarType.Converts`, or a
+- **Converting each value.** A value whose type may not convert without overflow (`Conversions.NeverNull`: `Conversions.Converts`, or a
   string into `uniqueidentifier`, which fails as an error and is never NULL) gives `arithmetic-overflow`: an overflow is an
   error by default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off
   (`A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options`, in all three forms: `bigint` into

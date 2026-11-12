@@ -1,6 +1,7 @@
 using System.Globalization;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
+using Haruspex.SqlServer.Inference.Typing;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -137,7 +138,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The value of a CASE, IIF or CHOOSE from its results (a null value for the NULL literal): the type of highest precedence
-    /// over them, as COALESCE's (<see cref="ScalarType.Chain"/>; observed:
+    /// over them, as COALESCE's (<see cref="TypeChain.Of"/>; observed:
     /// Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results); null when a result may be, or is the NULL
     /// literal (<c>null-literal</c>), or converting one to the type may overflow (<c>arithmetic-overflow</c>), or for
     /// <paramref name="also"/>. When

@@ -1,5 +1,6 @@
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
+using Haruspex.SqlServer.Inference.Typing;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -171,8 +172,8 @@ internal sealed partial class ProcedureAnalyzer
             return fallback;
         if (TypeOf(value) is not { } type)
             return NotModelled(call, "LAG or LEAD of a value of this type is not modelled.");
-        var fits = (LiteralOf(parameters[2]) is ({ } literal, var negative) ? ScalarType.Fits(literal, type, negative) : null)
-            ?? (!fallback.IsLiveJson && OperandOf(fallback, parameters[2]) is { } from && ScalarType.Converts(from, type));
+        var fits = (LiteralOf(parameters[2]) is ({ } literal, var negative) ? Conversions.Fits(literal, type, negative) : null)
+            ?? (!fallback.IsLiveJson && OperandOf(fallback, parameters[2]) is { } from && Conversions.Converts(from, type));
         EquatableArray<IrNullReason> because = [.. value.NullableBecause, .. offsetBecause, .. itself ? [] : fallback.NullableBecause];
         return Typed(type, fits || itself ? because : NullReasons.Join(because, [Overflow(call)]), call);
     }

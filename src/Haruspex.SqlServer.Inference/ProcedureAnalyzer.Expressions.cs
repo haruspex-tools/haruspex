@@ -1,6 +1,7 @@
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
+using Haruspex.SqlServer.Inference.Typing;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -112,13 +113,13 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The type values of different types take when they meet in one column: a set operation's, COALESCE's, a CASE's, IIF's or
-    /// CHOOSE's, by the server's type rule for a chain (<see cref="ScalarType.Chain"/>), a fold from left to right. It is not the
+    /// CHOOSE's, by the server's type rule for a chain (<see cref="TypeChain.Of"/>), a fold from left to right. It is not the
     /// knowledge join (<see cref="Value.Join"/>), which says what is known of a value that may come from either side.
     /// </summary>
     /// <param name="Type">The type, or null when it is not known.</param>
     /// <param name="Overflows">For each value, the reason converting it may give NULL: an overflow, NULL under a caller's
     /// ANSI_WARNINGS and ARITHABORT off (observed: A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options);
-    /// empty when it cannot (<see cref="ScalarType.NeverNull"/>, or a literal that fits).</param>
+    /// empty when it cannot (<see cref="Conversions.NeverNull"/>, or a literal that fits).</param>
     /// <param name="Why">When the type is not known, why, naming the types so a user knows what to change.</param>
     private sealed record ChainType(ScalarType? Type, IReadOnlyList<EquatableArray<IrNullReason>> Overflows, string? Why);
 
@@ -144,15 +145,15 @@ internal sealed partial class ProcedureAnalyzer
         if (types.Any(t => t is null))
             return new ChainType(null, [], $"combining {Names(values.Select((v, i) => Name(v.Value, types[i])))} is not modelled yet.");
         var known = operands.Select(o => o!).ToList();
-        if (ScalarType.Clash(known) is var (first, second))
+        if (TypeChain.Clash(known) is var (first, second))
             return new ChainType(null, [], $"SQL Server refuses to combine {first.Text} and {second.Text}: there is no implicit conversion between them (206, an operand type clash).");
-        if (ScalarType.Chain(known) is not { } type)
+        if (TypeChain.Of(known) is not { } type)
             return new ChainType(null, [], $"combining {Names(known.Select(o => o.Type.Text))} is not modelled yet.");
 
         // An int the server may or may not fold to a literal counts between that literal's digits and 10; when that changes the
         // scale, which values come back is not known (observed: An_int_constant_counts_its_own_digits_beside_a_decimal). When it
         // changes only the precision, the most digits hold every value.
-        if (values.Any(v => Uncertain(v.Value)) && ScalarType.Chain([.. values.Select(v => OperandOf(v.Value, v.Expression, least: true)!)]) is var fewest
+        if (values.Any(v => Uncertain(v.Value)) && TypeChain.Of([.. values.Select(v => OperandOf(v.Value, v.Expression, least: true)!)]) is var fewest
             && (fewest is null || fewest.Name != type.Name || fewest.Scale != type.Scale))
         {
             return new ChainType(null, [], $"its type depends on whether SQL Server folds {Names(values.Where(v => Uncertain(v.Value)).Select(v => Text(v.Expression)))} to a constant, whose digits it would count.");
@@ -160,8 +161,8 @@ internal sealed partial class ProcedureAnalyzer
 
         var overflows = values.Select((v, i) =>
         {
-            var fits = (LiteralOf(v.Expression) is ({ } literal, var negative) ? ScalarType.Fits(literal, type, negative) : null)
-                ?? ScalarType.NeverNull(known[i], type);
+            var fits = (LiteralOf(v.Expression) is ({ } literal, var negative) ? Conversions.Fits(literal, type, negative) : null)
+                ?? Conversions.NeverNull(known[i], type);
             return fits ? (EquatableArray<IrNullReason>)[] : [new IrNullReason(IrNullRule.ArithmeticOverflow, v.At.ToString())];
         }).ToList();
         return new ChainType(type, overflows, null);
@@ -170,7 +171,7 @@ internal sealed partial class ProcedureAnalyzer
     // ---- COALESCE and ISNULL ----------------------------------------------------------------------------------------
 
     /// <summary>
-    /// <c>COALESCE(a, b, …)</c>: the type of highest precedence (<see cref="ScalarType.Chain"/>, <see cref="Chained"/>), to which every argument
+    /// <c>COALESCE(a, b, …)</c>: the type of highest precedence (<see cref="TypeChain.Of"/>, <see cref="Chained"/>), to which every argument
     /// converts without an overflow. It is <c>CASE WHEN a IS NOT NULL THEN a …</c>, so it is never null when an argument is
     /// never null, except that an argument before it that is a subquery or a call is read twice and may be NULL the second
     /// time (observed: Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot), which is <c>read-twice</c>: a value
@@ -269,8 +270,8 @@ internal sealed partial class ProcedureAnalyzer
         var second = Expression(b, scope);
         if (second.Shape is UnknownShape)
             return second;
-        var fits = (LiteralOf(b) is ({ } literal, var negative) ? ScalarType.Fits(literal, type, negative) : null)
-            ?? (OperandOf(second, b) is { } from && ScalarType.Converts(from, type));
+        var fits = (LiteralOf(b) is ({ } literal, var negative) ? Conversions.Fits(literal, type, negative) : null)
+            ?? (OperandOf(second, b) is { } from && Conversions.Converts(from, type));
         if (second.NullableBecause.Count == 0 && fits)
             return Typed(type, [], call);
         var because = NullReasons.Join(first.NullableBecause, second.NullableBecause);
@@ -282,7 +283,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>
     /// <c>CAST(x AS t)</c>, <c>CONVERT(t, x [, style])</c>, and their <c>TRY_</c> forms: of type t whatever the style (observed:
     /// Cast_and_convert_are_of_the_target_type_whatever_the_style), null when x is; and, unless every value of x's type
-    /// converts to t without an overflow (<see cref="ScalarType.Converts"/>), NULL under a caller's ANSI_WARNINGS and ARITHABORT
+    /// converts to t without an overflow (<see cref="Conversions.Converts"/>), NULL under a caller's ANSI_WARNINGS and ARITHABORT
     /// off (<c>arithmetic-overflow</c>), or for TRY_ whenever the conversion may fail (<c>failed-conversion</c>, observed:
     /// Try_cast_and_try_convert_are_null_when_the_conversion_fails). A string type without a length is 30 long here, where a
     /// declaration's is 1 (observed: A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration). A conversion to
@@ -309,8 +310,8 @@ internal sealed partial class ProcedureAnalyzer
             return value.Shape is UnknownShape ? value : NotModelled(call, "a conversion of JSON is not modelled yet.");
 
         var from = OperandOf(value, operand);
-        var fits = (!styled && LiteralOf(operand) is ({ } literal, var negative) ? ScalarType.Fits(literal, to, negative) : null)
-            ?? (from is not null && ScalarType.Converts(from, to, styled));
+        var fits = (!styled && LiteralOf(operand) is ({ } literal, var negative) ? Conversions.Fits(literal, to, negative) : null)
+            ?? (from is not null && Conversions.Converts(from, to, styled));
         // A NULL cast to int and cast again stays that constant; CAST(1 AS int) counts an int's 10 digits (same observation).
         if (fits && from?.Type.Text == to.Text && !styled)
             return value.Digits == IntDigits.Literal(1) && IsNullCast(operand) ? value : value with { Digits = IntDigits.OfType };
@@ -389,8 +390,8 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// <c>a + b</c>, <c>a - b</c>, <c>a * b</c>, <c>a / b</c>, <c>a % b</c>: string + (<see cref="Plus"/>), or numbers and dates
-    /// typed by <see cref="ScalarType.Arithmetic"/>, null when an operand is, and NULL under a caller's ANSI_WARNINGS and
-    /// ARITHABORT off when it may overflow or divide by zero (<see cref="ScalarType.MayOverflow"/>, which reads a literal
+    /// typed by <see cref="Arithmetic.TypeOf"/>, null when an operand is, and NULL under a caller's ANSI_WARNINGS and
+    /// ARITHABORT off when it may overflow or divide by zero (<see cref="Arithmetic.MayOverflow"/>, which reads a literal
     /// divisor). A string with a number is not modelled yet.
     /// </summary>
     private Value Binary(BinaryExpression binary, BindingScope scope)
@@ -417,18 +418,18 @@ internal sealed partial class ProcedureAnalyzer
             return NotModelled(binary, "an operand of this type is not modelled yet.");
         if (op == '+' && l.Type.IsString && r.Type.IsString)
             return Plus(binary, left, right, l.Type, r.Type);
-        if (ScalarType.Arithmetic(op, l, r) is not { } type)
+        if (Arithmetic.TypeOf(op, l, r) is not { } type)
             return NotModelled(binary, "arithmetic on these types is not modelled yet.");
 
         // An int the server may fold to a literal counts that literal's digits (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal); when its fewest digits give another scale, not modelled.
-        var mayOverflow = ScalarType.MayOverflow(op, l, r, NumberOf(binary.SecondExpression));
+        var mayOverflow = Arithmetic.MayOverflow(op, l, r, NumberOf(binary.SecondExpression));
         if (Uncertain(left) || Uncertain(right))
         {
             var (lf, rf) = (OperandOf(left, binary.FirstExpression, least: true)!, OperandOf(right, binary.SecondExpression, least: true)!);
-            if (ScalarType.Arithmetic(op, lf, rf) is not { } fewest || fewest.Scale != type.Scale || fewest.Name != type.Name)
+            if (Arithmetic.TypeOf(op, lf, rf) is not { } fewest || fewest.Scale != type.Scale || fewest.Name != type.Name)
                 return NotModelled(binary, "its type depends on whether SQL Server folds an operand to a constant, whose digits it would count.");
-            mayOverflow |= ScalarType.MayOverflow(op, lf, rf, NumberOf(binary.SecondExpression));
+            mayOverflow |= Arithmetic.MayOverflow(op, lf, rf, NumberOf(binary.SecondExpression));
         }
 
         var because = NullReasons.Join(left.NullableBecause, right.NullableBecause);
@@ -534,7 +535,7 @@ internal sealed partial class ProcedureAnalyzer
             JsonTextShape => new ScalarType("nvarchar", -1),
             _ => null,
         };
-        return from is not null && ScalarType.Converts(Operand.OfType(from), to)
+        return from is not null && Conversions.Converts(Operand.OfType(from), to)
             ? value.NullableBecause
             : NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.ArithmeticOverflow, at.ToString())]);
     }

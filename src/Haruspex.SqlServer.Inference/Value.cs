@@ -1,6 +1,7 @@
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
+using Haruspex.SqlServer.Inference.Typing;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -78,7 +79,7 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     /// The knowledge join: a value that is either <paramref name="a"/> or <paramref name="b"/>, null if either may be, of a
     /// shape both fit. What a place holds where paths meet after a branch, where a write adds values to a column of a
     /// temporary table, and where a recursive CTE's members add rows to its anchor's. It is not the server's rule for the type
-    /// of a <c>CASE</c> or a set operation, which is <see cref="ScalarType.Chain"/>.
+    /// of a <c>CASE</c> or a set operation, which is <see cref="TypeChain.Of"/>.
     /// </summary>
     /// <remarks>
     /// <para>

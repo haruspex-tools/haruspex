@@ -1,6 +1,7 @@
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
+using Haruspex.SqlServer.Inference.Typing;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -184,7 +185,7 @@ internal sealed partial class ProcedureAnalyzer
             : NullReasons.Join(c.Value.NullableBecause, combined.Overflows[next++]))]);
 
         // When every query whose values come out is of the column's type already, nothing is converted, and the facets they
-        // all have hold. Otherwise those of a query whose every value converts unchanged (ScalarType.Preserves: an int into a
+        // all have hold. Otherwise those of a query whose every value converts unchanged (Conversions.Preserves: an int into a
         // bigint or a decimal holding it, a varchar into a longer one) still hold, and a query whose values may change (rounded,
         // made approximate, padded, cut short) brings only the column type's: so a range or a length widens to cover every
         // query, and is never narrower than the type's.
@@ -200,7 +201,7 @@ internal sealed partial class ProcedureAnalyzer
             value = Typed(type, reasons, at);
             if (output.Count > 0 && value.Shape is ScalarShape typed)
             {
-                var each = output.Select(c => c.Value.Shape is ScalarShape { Type: var own } && ScalarType.Parse(own.Sql) is { } from && ScalarType.Preserves(Operand.OfType(from), type)
+                var each = output.Select(c => c.Value.Shape is ScalarShape { Type: var own } && ScalarType.Parse(own.Sql) is { } from && Conversions.Preserves(Operand.OfType(from), type)
                     ? own.Facets
                     : typed.Type.Facets).ToList();
                 value = value with { Shape = typed with { Type = typed.Type with { Facets = ScalarFacets.Widened(each, typed.Type.Facets) } } };
@@ -281,7 +282,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>
     /// Whether a query's closed set still holds of its values converted to the column's type: strings into a string type long
     /// enough for each (not cut short; a fixed-length type is ruled out above), numbers into a type that keeps every value
-    /// (<see cref="ScalarType.Preserves"/>: not rounded, not made approximate). A string's set never holds of a number it is
+    /// (<see cref="Conversions.Preserves"/>: not rounded, not made approximate). A string's set never holds of a number it is
     /// converted to ('01' is 1), nor a number's of a string.
     /// </summary>
     private static bool Keeps(IrValueSet set, ScalarType? from, ScalarType type)
@@ -290,7 +291,7 @@ internal sealed partial class ProcedureAnalyzer
             return false;
         if (set.Items.Any(i => i.IsString))
             return from.IsString && type.IsString && (type.IsMax || set.Items.All(i => i.Text.Length <= type.Length));
-        return ScalarType.Preserves(Operand.OfType(from), type);
+        return Conversions.Preserves(Operand.OfType(from), type);
     }
 
     // ---- OPENJSON ---------------------------------------------------------------------------------------------------------

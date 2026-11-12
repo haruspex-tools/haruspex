@@ -1,5 +1,6 @@
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
+using Haruspex.SqlServer.Inference.Typing;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -356,7 +357,7 @@ internal sealed partial class ProcedureAnalyzer
             type = types[0];
         else if (types.Count > 0 && types.All(t => t is { IsDecimal: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
             // Decimals: each counts its own precision and scale, so every operand counts its type's.
-            type = ScalarType.Chain([.. types.Select(t => Operand.OfType(t!))]) is { } common && types.All(t => ScalarType.Converts(Operand.OfType(t!), common)) ? common : null;
+            type = TypeChain.Of([.. types.Select(t => Operand.OfType(t!))]) is { } common && types.All(t => Conversions.Converts(Operand.OfType(t!), common)) ? common : null;
         if (type is null)
             return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(reference)}: its arguments must be of one integer type, or decimals.", at));
         return new LocalRelationValues(["value"], [Typed(type, [], reference)], null);

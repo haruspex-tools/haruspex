@@ -2,6 +2,7 @@ using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.SqlServer.Inference.Lattice;
+using Haruspex.SqlServer.Inference.Typing;
 
 namespace Haruspex.Tests.Inference;
 
@@ -291,10 +292,10 @@ public class LatticeLawTests
         // decimal(23,4). So the rule is folded from the left over the values as written, and never regrouped as a join may be.
         var (bigint, money, small) = (Operand.OfType(ScalarType.Parse("bigint")!), Operand.OfType(ScalarType.Parse("money")!), Operand.OfType(ScalarType.Parse("decimal(5,2)")!));
 
-        Assert.Equal("decimal(19,4)", ScalarType.Chain([bigint, money, small])!.Text);
-        Assert.Equal(ScalarType.Chain([bigint, money, small]), ScalarType.Chain([Operand.OfType(ScalarType.Chain([bigint, money])!), small]));
-        Assert.Equal("decimal(23,4)", ScalarType.Chain([bigint, Operand.OfType(ScalarType.Chain([money, small])!)])!.Text);
-        Assert.Equal("decimal(23,4)", ScalarType.Chain([bigint, small, money])!.Text);
+        Assert.Equal("decimal(19,4)", TypeChain.Of([bigint, money, small])!.Text);
+        Assert.Equal(TypeChain.Of([bigint, money, small]), TypeChain.Of([Operand.OfType(TypeChain.Of([bigint, money])!), small]));
+        Assert.Equal("decimal(23,4)", TypeChain.Of([bigint, Operand.OfType(TypeChain.Of([money, small])!)])!.Text);
+        Assert.Equal("decimal(23,4)", TypeChain.Of([bigint, small, money])!.Text);
     }
 
     // ---- the laws ----------------------------------------------------------------------------------------------------

@@ -32,7 +32,7 @@ public class SetJoinObservationTests(SqlServerFixture server)
     [Fact]
     public async Task A_set_operations_columns_are_named_by_its_first_query_and_typed_by_precedence_over_every_query()
     {
-        // As COALESCE and CASE (ScalarType.Union): strings are nvarchar if any is, varchar if any varies, of the longest; exact
+        // As COALESCE and CASE (TypeChain.Of): strings are nvarchar if any is, varchar if any varies, of the longest; exact
         // numbers a decimal of every query's integer digits and the largest scale; integers the widest; a date with datetime2
         // that datetime2. INTERSECT and EXCEPT type the same way, though only the left side's values come out.
         Assert.Equal(

@@ -84,7 +84,7 @@ to check when it is one of these:
 
 Types and members are found by reflection over haruspex's assemblies, and for the differential tests from their source. A
 name alone may also be a test, a project or layer (`Ir`, `Sources`), or a name a committed Zod snapshot or a worked
-example's Zod holds, but never a member: write a member after its type (`ScalarType.Converts`), since a type renamed while a property keeps its
+example's Zod holds, but never a member: write a member after its type (`Conversions.Converts`), since a type renamed while a property keeps its
 old name would otherwise go unnoticed. In a Mermaid diagram, every word in PascalCase with two capitals or more
 (`IrBuilder`) is a name, checked the same way. A name that is not
 haruspex's (a .NET type, an MSBuild property) is listed in `CodeReferences.Outside`, which says why each is there; a

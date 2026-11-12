@@ -334,7 +334,7 @@ Alternatives:
 SQL Server also combines values. `CASE`, `COALESCE`, `IIF`, `CHOOSE` and the set operations give one type to values of
 several, by **data type precedence**. It is tempting to call that a join, and it is not one.
 
-The server's rule is a **fold from the left** (`ScalarType.Chain`, observed:
+The server's rule is a **fold from the left** (`TypeChain.Of`, observed:
 `A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal`): it combines the first two types, then
 that with the third, and so on. Combining is not associative: `money` takes a `bigint` in and stays `money`, a decimal then
 takes the `money`'s 4 places; a decimal first takes the `bigint`'s 19 integer digits, and `money` adds its 4 places to
@@ -377,7 +377,7 @@ The two operations answer different questions. The type rule says what SQL Serve
 conversion of each value to it. The knowledge join says what haruspex *knows* of a value that comes from one side or the
 other. A `CASE` uses each where it applies: the type rule for its type, the server's folding rule for
 its digits (`IntDigits.Foldable`, which is not the join either: one `1` folds to 1 or stays 10), and the knowledge join
-for why it may be null. Its facets are its type's, with the set of its literals where every result is one. So they are named apart, `ScalarType.Chain` and `ProcedureAnalyzer.Chained`
+for why it may be null. Its facets are its type's, with the set of its literals where every result is one. So they are named apart, `TypeChain.Of` and `ProcedureAnalyzer.Chained`
 for the rule and `Value.Join` and the facts' joins for knowledge, and nothing that wants one calls the other. Using the
 type rule as a join would make a value's type depend on the order of paths, and regroup the server's fold, which the
 server does not. `LatticeLawTests` holds the rule to its fold: grouping its first two types first gives its result, and
