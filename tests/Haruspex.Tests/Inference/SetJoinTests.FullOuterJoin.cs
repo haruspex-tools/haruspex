@@ -11,9 +11,9 @@ public partial class SetJoinTests
         // A_full_outer_join_null_extends_both_sides_where_nothing_matches.
         var doc = Procedure("SELECT t.id AS t_id, t.x, u.id AS u_id FROM dbo.t AS t FULL OUTER JOIN dbo.u AS u ON u.t_id = t.id;");
         AllTyped(doc);
-        Assert.Equal("int outer-join", Typed(doc, "t_id"));
-        Assert.Equal("int nullable-column outer-join", Typed(doc, "x"));
-        Assert.Equal("int outer-join", Typed(doc, "u_id"));
+        Assert.Equal("int unmatched-row", Typed(doc, "t_id"));
+        Assert.Equal("int nullable-column unmatched-row", Typed(doc, "x"));
+        Assert.Equal("int unmatched-row", Typed(doc, "u_id"));
         Assert.Equal(IrCardinality.Many, Rows(doc));
     }
 
@@ -22,8 +22,8 @@ public partial class SetJoinTests
     {
         // A_full_outer_joins_on_proves_nothing_of_either_side.
         var doc = Procedure("SELECT t.x, u.note FROM dbo.t AS t FULL JOIN dbo.u AS u ON u.t_id = t.id AND t.x IS NOT NULL AND u.note IS NOT NULL;");
-        Assert.Equal("int nullable-column outer-join", Typed(doc, "x"));
-        Assert.Equal("varchar(20) nullable-column outer-join", Typed(doc, "note"));
+        Assert.Equal("int nullable-column unmatched-row", Typed(doc, "x"));
+        Assert.Equal("varchar(20) nullable-column unmatched-row", Typed(doc, "note"));
     }
 
     [Fact]
@@ -33,11 +33,11 @@ public partial class SetJoinTests
         var doc = Procedure("SELECT t.id AS t_id, t.x, u.id AS u_id FROM dbo.t AS t FULL JOIN dbo.u AS u ON u.t_id = t.id WHERE t.id > 0;");
         Assert.Equal("int", Typed(doc, "t_id"));
         Assert.Equal("int nullable-column", Typed(doc, "x"));
-        Assert.Equal("int outer-join", Typed(doc, "u_id"));
+        Assert.Equal("int unmatched-row", Typed(doc, "u_id"));
 
         // An inner join after it on the other side proves that one.
         doc = Procedure("SELECT t.id AS t_id, u.id AS u_id FROM dbo.t AS t FULL JOIN dbo.u AS u ON u.t_id = t.id JOIN dbo.u AS w ON w.id = u.id;");
-        Assert.Equal("int outer-join", Typed(doc, "t_id"));
+        Assert.Equal("int unmatched-row", Typed(doc, "t_id"));
         Assert.Equal("int", Typed(doc, "u_id"));
     }
 

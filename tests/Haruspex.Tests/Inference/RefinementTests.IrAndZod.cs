@@ -10,7 +10,7 @@ public partial class RefinementTests
     {
         var json = IrJsonWriter.Write(Procedure("SELECT t.name FROM dbo.t AS t WHERE t.id = @x;", "@x int"));
 
-        Assert.Contains("\"irVersion\": \"0.15\"", json, StringComparison.Ordinal);
+        Assert.Contains($"\"irVersion\": \"{IrDocument.CurrentVersion}\"", json, StringComparison.Ordinal);
         Assert.Contains("\"cardinality\": \"atMostOne\"", json, StringComparison.Ordinal);
     }
 

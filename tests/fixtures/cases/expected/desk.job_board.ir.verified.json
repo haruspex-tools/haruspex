@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -229,7 +229,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "no-else",
+              "rule": "no-branch-matched",
               "at": "procedures/job_board.sql:13:8"
             }
           ]
@@ -387,7 +387,7 @@
               "at": "desk.customer.phone"
             },
             {
-              "rule": "nullif",
+              "rule": "nulled-when-equal",
               "at": "procedures/job_board.sql:18:8"
             }
           ]
@@ -417,7 +417,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "nullif",
+              "rule": "nulled-when-equal",
               "at": "procedures/job_board.sql:19:8"
             }
           ]

@@ -70,7 +70,7 @@ public partial class RefinementTests
     {
         var doc = Procedure("SELECT d.id FROM dbo.u AS u LEFT JOIN (SELECT t.id FROM dbo.t AS t) AS d ON d.id = u.t_id;");
 
-        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "id"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "id"));
     }
 
     [Fact]
@@ -121,8 +121,8 @@ public partial class RefinementTests
         var doc = Procedure($"SELECT t.n, t.id, COUNT_BIG(*) AS c, MAX(t.id) AS top_id FROM dbo.t AS t WHERE t.n IS NOT NULL AND t.id = @x {groupBy.Replace("t.n", "t.n, t.id", StringComparison.Ordinal)};", "@x int");
 
         Assert.Equal(IrCardinality.Many, Assert.Single(Results(doc)).Cardinality);
-        Assert.Contains(IrNullRule.GroupingSet, Rules(doc, "n"));
-        Assert.Contains(IrNullRule.GroupingSet, Rules(doc, "id"));
+        Assert.Contains(IrNullRule.RolledUp, Rules(doc, "n"));
+        Assert.Contains(IrNullRule.RolledUp, Rules(doc, "id"));
         Assert.False(Field(doc, "c").Nullable);
         Assert.False(Field(doc, "top_id").Nullable);
     }

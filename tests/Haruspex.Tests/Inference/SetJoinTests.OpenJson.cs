@@ -12,7 +12,7 @@ public partial class SetJoinTests
         var doc = Procedure("SELECT j.[key], j.value, j.type FROM dbo.t AS t CROSS APPLY OPENJSON(t.doc) AS j;");
         AllTyped(doc);
         Assert.Equal("nvarchar(4000)", Typed(doc, "key"));
-        Assert.Equal("nvarchar(max) json-value", Typed(doc, "value"));
+        Assert.Equal("nvarchar(max) json-null-or-absent", Typed(doc, "value"));
         Assert.Equal("tinyint", Typed(doc, "type"));
         Assert.Equal("exact:0|1|2|3|4|5", Values(doc, "type"));
     }
@@ -26,9 +26,9 @@ public partial class SetJoinTests
             SELECT j.a, j.s, j.d FROM OPENJSON(@doc) WITH (a int '$.a', s varchar(3) 'strict $.s', d date) AS j;
             """);
         AllTyped(doc);
-        Assert.Equal("int json-value", Typed(doc, "a"));
-        Assert.Equal("varchar(3) json-value", Typed(doc, "s"));
-        Assert.Equal("date json-value", Typed(doc, "d"));
+        Assert.Equal("int json-null-or-absent", Typed(doc, "a"));
+        Assert.Equal("varchar(3) json-null-or-absent", Typed(doc, "s"));
+        Assert.Equal("date json-null-or-absent", Typed(doc, "d"));
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public partial class SetJoinTests
         // Openjson_as_json_is_nvarchar_max_holding_an_object_or_array_that_nests_as_json.
         var doc = Procedure("SELECT j.items FROM dbo.t AS t CROSS APPLY OPENJSON(t.doc) WITH (items nvarchar(max) '$.items' AS JSON) AS j;");
         Assert.IsType<IrJsonText>(Field(doc, "items").Type);
-        Assert.Equal([IrNullRule.JsonValue], Rules(doc, "items"));
+        Assert.Equal([IrNullRule.JsonNullOrAbsent], Rules(doc, "items"));
 
         doc = Procedure("SELECT j.items FROM dbo.t AS t CROSS APPLY OPENJSON(t.doc) WITH (items nvarchar(max) '$.items' AS JSON) AS j FOR JSON PATH;");
         Assert.IsType<IrUnknownType>(Field(doc, "items").Type);
@@ -48,7 +48,7 @@ public partial class SetJoinTests
     public void Openjson_under_outer_apply_is_null_extended()
     {
         var doc = Procedure("SELECT t.id, j.a FROM dbo.t AS t OUTER APPLY OPENJSON(t.doc) WITH (a int) AS j;");
-        Assert.Equal("int json-value outer-apply", Typed(doc, "a"));
+        Assert.Equal("int json-null-or-absent unmatched-row", Typed(doc, "a"));
         Assert.Equal(IrCardinality.Many, Rows(doc));
     }
 }

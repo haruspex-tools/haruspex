@@ -30,6 +30,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0022](0022-values-compare-by-structure.md) | 12 Nov 2026 | Values compare by structure, never by their rendered text |
 | [0023](0023-the-ir-schema-is-generated-from-the-model.md) | 12 Nov 2026 | The IR's JSON Schema is generated from the model |
 | [0024](0024-an-ir-reader-refuses-other-versions.md) | 12 Nov 2026 | An IR reader refuses a version other than its own |
+| [0025](0025-null-reasons-in-neutral-terms.md) | 12 Nov 2026 | Reasons to be null are named for the reason, not the SQL |
 
 ## Writing a record
 

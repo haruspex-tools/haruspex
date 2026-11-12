@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -64,7 +64,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/get_member.sql:18:11"
             }
           ]
@@ -90,7 +90,7 @@
               "at": "lend.branch.city"
             },
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/get_member.sql:18:11"
             }
           ]

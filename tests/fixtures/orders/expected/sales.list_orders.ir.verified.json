@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -170,7 +170,7 @@
               "at": "sales.product.legacy_code"
             },
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/list_orders.sql:19:11"
             }
           ]
@@ -192,7 +192,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/list_orders.sql:20:17"
             }
           ]
@@ -207,7 +207,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/list_orders.sql:20:17"
             }
           ]

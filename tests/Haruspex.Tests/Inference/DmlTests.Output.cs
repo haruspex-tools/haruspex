@@ -55,9 +55,9 @@ public partial class DmlTests
             """));
 
         Assert.Equal(["$action", "new_id", "old_id", "source_id"], Names(doc, Results(doc)[0].Type));
-        Assert.Equal([IrNullRule.MergeAction], Rules(Field(doc, "new_id")));
-        Assert.Equal([IrNullRule.MergeAction], Rules(Field(doc, "old_id")));
-        Assert.Equal([IrNullRule.MergeAction], Rules(Field(doc, "source_id")));
+        Assert.Equal([IrNullRule.MissingForAction], Rules(Field(doc, "new_id")));
+        Assert.Equal([IrNullRule.MissingForAction], Rules(Field(doc, "old_id")));
+        Assert.Equal([IrNullRule.MissingForAction], Rules(Field(doc, "source_id")));
         var action = Assert.IsType<IrScalar>(Field(doc, "$action").Type);
         Assert.False(Field(doc, "$action").Nullable);
         Assert.Equal(["DELETE", "INSERT", "UPDATE"], action.Facets!.Values!.Items.Select(v => v.Text));
@@ -82,8 +82,8 @@ public partial class DmlTests
             OUTPUT s.id AS note_id, e.at;
             """));
 
-        Assert.Equal([IrNullRule.MergeAction], Rules(Field(doc, "note_id")));
-        Assert.Equal([IrNullRule.MergeAction], Rules(Field(doc, "at")));
+        Assert.Equal([IrNullRule.MissingForAction], Rules(Field(doc, "note_id")));
+        Assert.Equal([IrNullRule.MissingForAction], Rules(Field(doc, "at")));
     }
 
     [Theory]

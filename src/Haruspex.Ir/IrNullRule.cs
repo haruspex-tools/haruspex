@@ -1,23 +1,23 @@
 namespace Haruspex.Ir;
 
 /// <summary>A reason a value can be null. Its name in the IR's JSON is in <see cref="IrWireNames"/>.</summary>
+/// <remarks>
+/// Each names the reason, never the SQL that causes it, so that a front end for any dialect can give it: the construct is
+/// where the reason's <see cref="IrNullReason.At"/> points. The examples below are SQL Server's, which the SQL Server front
+/// end gives each reason for; its README lists them all (<c>docs/decisions/0025-null-reasons-in-neutral-terms.md</c>).
+/// </remarks>
 public enum IrNullRule
 {
     /// <summary>The column it reads is declared nullable (or not declared <c>NOT NULL</c>).</summary>
     NullableColumn,
 
     /// <summary>
-    /// It comes from the optional side of an outer join, which has no row when nothing matches: a left join's right side, or
-    /// either side of a full join (0.13).
-    /// </summary>
-    OuterJoin,
-
-    /// <summary>
-    /// It comes from the right side of an <c>OUTER APPLY</c>, which has no row for an outer row when the applied query returns
-    /// none. An applied query that always returns a row (an aggregate without <c>GROUP BY</c>, a query without <c>FROM</c>, a
+    /// It comes from the optional side of a join, which has no row when nothing matches: a left join's right side, either side
+    /// of a full join, or a lateral join's query that returns no row for an outer row (SQL Server's <c>OUTER APPLY</c>). A
+    /// lateral query that always returns a row (an aggregate without <c>GROUP BY</c>, a query without <c>FROM</c>, a
     /// <c>VALUES</c> list) never gives it.
     /// </summary>
-    OuterApply,
+    UnmatchedRow,
 
     /// <summary>It is a subquery, which is null when it returns no rows.</summary>
     EmptySubquery,
@@ -72,20 +72,20 @@ public enum IrNullRule
     FailedConversion,
 
     /// <summary>
-    /// It is a grouped column of a query grouped by <c>ROLLUP</c>, <c>CUBE</c> or <c>GROUPING SETS</c>, whose super-aggregate
-    /// rows hold NULL in the columns they roll up, whatever the filters proved of them.
+    /// It is a grouped column, and the query adds rows that total over it (super-aggregate rows: <c>ROLLUP</c>, <c>CUBE</c>,
+    /// <c>GROUPING SETS</c>), which hold NULL in the columns they roll up, whatever the filters proved of them.
     /// </summary>
-    GroupingSet,
+    RolledUp,
 
     /// <summary>
-    /// It is a column of a <c>MERGE</c>'s <c>OUTPUT</c> that has no value for some of the actions the statement takes: a
-    /// <c>deleted</c> column for the rows it inserts, an <c>inserted</c> column for the rows it deletes, and a column of its
-    /// source for the rows it changes because they are not matched by the source.
+    /// It is a column a statement that takes several actions reports, which has no value for some of them: in SQL Server's
+    /// <c>MERGE</c> ... <c>OUTPUT</c>, a <c>deleted</c> column for the rows it inserts, an <c>inserted</c> column for the rows it
+    /// deletes, and a column of its source for the rows it changes because they are not matched by the source.
     /// </summary>
-    MergeAction,
+    MissingForAction,
 
-    /// <summary>It is a <c>CASE</c> without <c>ELSE</c>, which is NULL when no <c>WHEN</c> holds.</summary>
-    NoElse,
+    /// <summary>It is a choice with no branch for when no condition holds (a <c>CASE</c> without <c>ELSE</c>), so NULL then.</summary>
+    NoBranchMatched,
 
     /// <summary>
     /// A result of a <c>CASE</c>, <c>IIF</c> or <c>CHOOSE</c> it may give is the <c>NULL</c> literal, or it is (or reads) the
@@ -103,17 +103,18 @@ public enum IrNullRule
     /// </summary>
     ReadTwice,
 
-    /// <summary>It is a <c>NULLIF</c>, NULL when its two arguments compare equal.</summary>
-    NullIf,
+    /// <summary>It is made NULL when it equals a given value (<c>NULLIF</c>, NULL when its two arguments compare equal).</summary>
+    NulledWhenEqual,
 
     /// <summary>
-    /// It is a column <c>OPENJSON</c> reads from JSON (0.13), or a <c>JSON_VALUE</c> (0.14): NULL where the JSON holds
-    /// <c>null</c> there, under a <c>strict</c> path too, and, under a lax path, where nothing is there, or an <c>AS JSON</c>
-    /// column finds a scalar, or a scalar column or <c>JSON_VALUE</c> an object or array (or, for <c>JSON_VALUE</c>, a string
-    /// longer than 4,000 characters). (A number too large for the column is NULL as well under the caller's
-    /// <c>ANSI_WARNINGS</c> and <c>ARITHABORT</c> off.)
+    /// It is read from JSON at a path, and the JSON holds <c>null</c> there or, read leniently, nothing or the wrong kind of
+    /// value. In SQL Server: a column <c>OPENJSON</c> reads (0.13), or a <c>JSON_VALUE</c> (0.14), NULL where the JSON holds
+    /// <c>null</c>, under a <c>strict</c> path too, and, under a lax path, where nothing is there, or an <c>AS JSON</c> column
+    /// finds a scalar, or a scalar column or <c>JSON_VALUE</c> an object or array (or, for <c>JSON_VALUE</c>, a string longer
+    /// than 4,000 characters). (A number too large for the column is NULL as well under the caller's <c>ANSI_WARNINGS</c> and
+    /// <c>ARITHABORT</c> off.)
     /// </summary>
-    JsonValue,
+    JsonNullOrAbsent,
 
     /// <summary>
     /// It is a window function over a frame that may hold no row (0.14): an aggregate, <c>FIRST_VALUE</c> or

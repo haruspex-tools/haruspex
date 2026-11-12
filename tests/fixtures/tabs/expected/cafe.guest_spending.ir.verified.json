@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -154,7 +154,7 @@
               "at": "cafe.tab.tip"
             },
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/guest_spending.sql:13:11"
             }
           ]

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -155,7 +155,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "no-else",
+              "rule": "no-branch-matched",
               "at": "procedures/status_totals.sql:12:8"
             }
           ]

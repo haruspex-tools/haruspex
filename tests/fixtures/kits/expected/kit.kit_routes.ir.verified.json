@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -262,7 +262,7 @@
               "at": "functions/parts_of.sql:6:22"
             },
             {
-              "rule": "outer-apply",
+              "rule": "unmatched-row",
               "at": "procedures/kit_routes.sql:19:13"
             }
           ]
@@ -283,7 +283,7 @@
               "at": "kit.part_sheet.parts"
             },
             {
-              "rule": "outer-apply",
+              "rule": "unmatched-row",
               "at": "procedures/kit_routes.sql:20:13"
             }
           ]

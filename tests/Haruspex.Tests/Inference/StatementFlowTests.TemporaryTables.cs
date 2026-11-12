@@ -85,7 +85,7 @@ public partial class StatementFlowTests
             SELECT x.name FROM #t AS x;
             """);
 
-        Assert.Equal([IrNullRule.OuterJoin], Rules(Field(doc, "name")));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(Field(doc, "name")));
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public partial class StatementFlowTests
             """);
 
         Assert.False(Field(doc, "id").Nullable);
-        Assert.Equal([IrNullRule.OuterJoin], Rules(Field(doc, "code")));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(Field(doc, "code")));
     }
 
     [Fact]
@@ -274,7 +274,7 @@ public partial class StatementFlowTests
             SELECT u.id, x.id AS t_id FROM dbo.u AS u LEFT JOIN #t AS x ON x.id = u.t_id;
             """);
 
-        Assert.Equal([IrNullRule.OuterJoin], Rules(Field(doc, "t_id")));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(Field(doc, "t_id")));
     }
 
     [Fact]

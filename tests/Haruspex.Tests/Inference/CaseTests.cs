@@ -44,7 +44,7 @@ public class CaseTests
         var other => other.GetType().Name,
     };
 
-    /// <summary>The type and the reasons to be null, as one string: <c>varchar(6) no-else</c>.</summary>
+    /// <summary>The type and the reasons to be null, as one string: <c>varchar(6) no-branch-matched</c>.</summary>
     private static string Typed(IrDocument doc, string name) => string.Join(" ", [Sql(doc, name), .. Rules(doc, name).Select(r => IrWireNames.Of(r))]);
 
     /// <summary>The field's exact value set, as <c>a|b</c>, or null when it has none.</summary>
@@ -114,7 +114,7 @@ public class CaseTests
             FROM dbo.t;
             """);
         Assert.Equal("varchar(1)", Typed(doc, "full_case"));
-        Assert.Equal("varchar(1) no-else", Typed(doc, "no_else"));
+        Assert.Equal("varchar(1) no-branch-matched", Typed(doc, "no_else"));
         Assert.Equal("varchar(1) null-literal", Typed(doc, "null_result"));
         Assert.Equal("varchar(10) nullable-column", Typed(doc, "nullable_result"));
         Assert.Equal("varchar(1)", Typed(doc, "iif_full"));
@@ -160,15 +160,15 @@ public class CaseTests
                    NULLIF(1, x) AS e, NULLIF(1000, x) AS f, NULLIF(100000, x) AS g, NULLIF(-1, x) AS h, NULLIF(label, NULL) AS i
             FROM dbo.t;
             """);
-        Assert.Equal("int nullable-column nullif", Typed(doc, "a"));
-        Assert.Equal("varchar(10) nullable-column nullif", Typed(doc, "b"));
-        Assert.Equal("varchar(8) nullif", Typed(doc, "c"));
-        Assert.Equal("varchar(10) nullable-column nullif", Typed(doc, "d"));
+        Assert.Equal("int nullable-column nulled-when-equal", Typed(doc, "a"));
+        Assert.Equal("varchar(10) nullable-column nulled-when-equal", Typed(doc, "b"));
+        Assert.Equal("varchar(8) nulled-when-equal", Typed(doc, "c"));
+        Assert.Equal("varchar(10) nullable-column nulled-when-equal", Typed(doc, "d"));
         Assert.NotNull(((IrScalar)Field(doc, "d").Type).Facets?.Values);
-        Assert.Equal("tinyint nullif", Typed(doc, "e"));
-        Assert.Equal("smallint nullif", Typed(doc, "f"));
-        Assert.Equal("int nullif", Typed(doc, "g"));
-        Assert.Equal("smallint nullif", Typed(doc, "h"));
+        Assert.Equal("tinyint nulled-when-equal", Typed(doc, "e"));
+        Assert.Equal("smallint nulled-when-equal", Typed(doc, "f"));
+        Assert.Equal("int nulled-when-equal", Typed(doc, "g"));
+        Assert.Equal("smallint nulled-when-equal", Typed(doc, "h"));
         Assert.Equal("varchar(8)", Typed(doc, "i"));
     }
 
@@ -272,7 +272,7 @@ public class CaseTests
             """);
         Assert.Equal("Closed|Open|Unknown", Values(doc, "label"));
         Assert.Equal("a |b", Values(doc, "spaced"));
-        Assert.Equal("varchar(2) no-else", Typed(doc, "spaced"));
+        Assert.Equal("varchar(2) no-branch-matched", Typed(doc, "spaced"));
         Assert.Equal("x", Values(doc, "with_null"));
         Assert.Equal("nvarchar(1) null-literal", Typed(doc, "with_null"));
         Assert.Equal("-5|1|2.5", Values(doc, "number"));

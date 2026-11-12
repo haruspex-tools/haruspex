@@ -303,10 +303,10 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>JSON_VALUE(doc, path)</c>: nvarchar(4000), NULL for a JSON null under any path, and under a lax path for a missing
     /// property, an object or array, or a string longer than 4000 (observed:
     /// Json_value_is_nvarchar_4000_and_null_for_a_json_null_a_missing_path_an_object_or_a_long_string), so always
-    /// <c>json-value</c>, which covers a NULL document too. Neither argument changes the type.
+    /// <c>json-null-or-absent</c>, which covers a NULL document too. Neither argument changes the type.
     /// </summary>
     private Value JsonValue(FunctionCall call) =>
-        Typed(new ScalarType("nvarchar", 4000), [new IrNullReason(IrNullRule.JsonValue, At(call).ToString())], call);
+        Typed(new ScalarType("nvarchar", 4000), [new IrNullReason(IrNullRule.JsonNullOrAbsent, At(call).ToString())], call);
 
     // ---- STRING_AGG -------------------------------------------------------------------------------------------------------
 

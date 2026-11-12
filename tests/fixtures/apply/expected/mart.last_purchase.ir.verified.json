@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -98,7 +98,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-apply",
+              "rule": "unmatched-row",
               "at": "procedures/last_purchase.sql:13:13"
             }
           ]
@@ -113,7 +113,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-apply",
+              "rule": "unmatched-row",
               "at": "procedures/last_purchase.sql:13:13"
             }
           ]
@@ -148,7 +148,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-apply",
+              "rule": "unmatched-row",
               "at": "procedures/last_purchase.sql:13:13"
             }
           ]

@@ -252,7 +252,7 @@ public class ConstructTests
         var fields = RowFields(Procedure("SELECT t.id, u.name FROM dbo.t AS t LEFT JOIN dbo.u AS u ON u.t_id = t.id;"));
 
         Assert.False(fields[0].Nullable);
-        Assert.Equal(IrNullRule.OuterJoin, Assert.Single(fields[1].NullableBecause).Rule);
+        Assert.Equal(IrNullRule.UnmatchedRow, Assert.Single(fields[1].NullableBecause).Rule);
     }
 
     // ---- statements ---------------------------------------------------------------------------------

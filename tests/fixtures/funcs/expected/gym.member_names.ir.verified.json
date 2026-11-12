@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -487,7 +487,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "json-value",
+              "rule": "json-null-or-absent",
               "at": "procedures/member_names.sql:25:8"
             }
           ]
@@ -580,7 +580,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "json-value",
+              "rule": "json-null-or-absent",
               "at": "procedures/member_names.sql:32:8"
             }
           ]

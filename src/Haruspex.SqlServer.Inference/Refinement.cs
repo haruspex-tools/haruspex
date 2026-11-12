@@ -103,7 +103,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var found = new QueryFacts(query, scope)
         {
-            Rolled = SuperAggregate(query) ? new IrNullReason(IrNullRule.GroupingSet, At(query.GroupByClause).ToString()) : null,
+            Rolled = SuperAggregate(query) ? new IrNullReason(IrNullRule.RolledUp, At(query.GroupByClause).ToString()) : null,
         };
 
         // A query that aggregates without GROUP BY returns its one row even when WHERE and ON removed every row (observed:

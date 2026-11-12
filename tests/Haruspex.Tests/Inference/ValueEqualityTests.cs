@@ -180,7 +180,7 @@ public class ValueEqualityTests
         public static readonly SourceLocation[] Places = [new("p.sql", 1, 1), new("p.sql", 2, 5)];
 
         private static readonly IrNullReason[] Reasons =
-            [new(IrNullRule.NullableColumn, "dbo.t.a"), new(IrNullRule.OuterJoin, "p.sql:2:5"), new(IrNullRule.NoRows, "p.sql:1:1")];
+            [new(IrNullRule.NullableColumn, "dbo.t.a"), new(IrNullRule.UnmatchedRow, "p.sql:2:5"), new(IrNullRule.NoRows, "p.sql:1:1")];
 
         public Value Value(int depth) => new(
             Shape(depth),

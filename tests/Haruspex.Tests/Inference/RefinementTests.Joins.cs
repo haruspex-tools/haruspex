@@ -35,8 +35,8 @@ public partial class RefinementTests
         var doc = Procedure("SELECT t.n, u.t_id, u.note FROM dbo.t AS t LEFT JOIN dbo.u AS u ON u.t_id = t.n AND t.name = N'a';");
 
         Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "n"));
-        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "t_id"));
-        Assert.Equal([IrNullRule.NullableColumn, IrNullRule.OuterJoin], Rules(doc, "note"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "t_id"));
+        Assert.Equal([IrNullRule.NullableColumn, IrNullRule.UnmatchedRow], Rules(doc, "note"));
     }
 
     [Fact]
@@ -69,8 +69,8 @@ public partial class RefinementTests
             LEFT JOIN (dbo.u AS u JOIN dbo.pair AS p ON p.v = u.t_id) ON u.id = t.id;
             """);
 
-        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "t_id"));
-        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "v"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "t_id"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "v"));
     }
 
     [Fact]
@@ -84,6 +84,6 @@ public partial class RefinementTests
             """);
 
         Assert.False(Field(doc, "label").Nullable);
-        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "a"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "a"));
     }
 }

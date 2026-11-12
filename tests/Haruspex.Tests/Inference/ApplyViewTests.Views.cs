@@ -75,8 +75,8 @@ public partial class ApplyViewTests
 
         Typed(doc);
         Assert.Empty(Rules(doc, "id"));
-        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "label"));
-        Assert.Equal([IrNullRule.OuterApply], Rules(doc, "top_note"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "label"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "top_note"));
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public partial class ApplyViewTests
     {
         var doc = Procedure("SELECT u.id, x.code FROM dbo.u AS u LEFT JOIN dbo.v AS x ON x.id = u.t_id;", views: View);
 
-        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "code"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "code"));
     }
 
     [Fact]

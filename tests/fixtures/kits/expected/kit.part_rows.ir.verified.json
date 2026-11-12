@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -226,7 +226,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "json-value",
+              "rule": "json-null-or-absent",
               "at": "procedures/part_rows.sql:12:29"
             }
           ]

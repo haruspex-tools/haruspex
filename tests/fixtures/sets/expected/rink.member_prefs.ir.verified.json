@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -102,7 +102,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "json-value",
+              "rule": "json-null-or-absent",
               "at": "procedures/member_prefs.sql:10:5"
             }
           ]
@@ -132,7 +132,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "json-value",
+              "rule": "json-null-or-absent",
               "at": "procedures/member_prefs.sql:11:5"
             }
           ]
@@ -146,7 +146,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "json-value",
+              "rule": "json-null-or-absent",
               "at": "procedures/member_prefs.sql:12:5"
             }
           ]
@@ -194,7 +194,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "json-value",
+              "rule": "json-null-or-absent",
               "at": "procedures/member_prefs.sql:17:37"
             }
           ]
@@ -249,7 +249,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-apply",
+              "rule": "unmatched-row",
               "at": "procedures/member_prefs.sql:23:13"
             }
           ]
@@ -264,11 +264,11 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "json-value",
+              "rule": "json-null-or-absent",
               "at": "procedures/member_prefs.sql:23:13"
             },
             {
-              "rule": "outer-apply",
+              "rule": "unmatched-row",
               "at": "procedures/member_prefs.sql:23:13"
             }
           ]
@@ -308,7 +308,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-apply",
+              "rule": "unmatched-row",
               "at": "procedures/member_prefs.sql:23:13"
             }
           ]

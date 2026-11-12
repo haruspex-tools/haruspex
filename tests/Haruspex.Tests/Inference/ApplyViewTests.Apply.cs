@@ -25,8 +25,8 @@ public partial class ApplyViewTests
 
         Typed(doc);
         Assert.Empty(Rules(doc, "id"));
-        Assert.Equal([IrNullRule.NullableColumn, IrNullRule.OuterApply], Rules(doc, "note"));
-        Assert.Equal([IrNullRule.OuterApply], Rules(doc, "label"));
+        Assert.Equal([IrNullRule.NullableColumn, IrNullRule.UnmatchedRow], Rules(doc, "note"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "label"));
         Assert.Equal("p.sql:2:58", Field(doc, "label").NullableBecause[0].At);
     }
 
@@ -36,7 +36,7 @@ public partial class ApplyViewTests
         var doc = Procedure("SELECT t.id, u.label FROM dbo.t AS t OUTER APPLY dbo.u AS u;");
 
         Typed(doc);
-        Assert.Equal([IrNullRule.OuterApply], Rules(doc, "label"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "label"));
     }
 
     [Theory]
@@ -58,7 +58,7 @@ public partial class ApplyViewTests
         // A_grouped_aggregate_applied_gives_no_row_for_an_outer_row_without_rows.
         var doc = Procedure("SELECT t.id, a.n FROM dbo.t AS t OUTER APPLY (SELECT COUNT_BIG(*) AS n FROM dbo.u AS u WHERE u.t_id = t.id GROUP BY ()) AS a;");
 
-        Assert.Equal([IrNullRule.OuterApply], Rules(doc, "n"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "n"));
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public partial class ApplyViewTests
     {
         var doc = Procedure("SELECT t.id, a.n FROM dbo.t AS t OUTER APPLY (SELECT COUNT_BIG(*) AS n FROM dbo.u AS u WHERE u.t_id = t.id HAVING COUNT_BIG(*) > 1) AS a;");
 
-        Assert.Equal([IrNullRule.OuterApply], Rules(doc, "n"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "n"));
     }
 
     [Theory]
@@ -96,7 +96,7 @@ public partial class ApplyViewTests
         var doc = Procedure("SELECT t.id, x.label FROM dbo.t AS t LEFT JOIN (dbo.pair AS p OUTER APPLY (SELECT u.label FROM dbo.u AS u WHERE u.t_id = p.a) AS x) ON p.a = t.id;");
 
         Typed(doc);
-        Assert.Equal([IrNullRule.OuterJoin], Rules(doc, "label"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "label"));
     }
 
     [Fact]

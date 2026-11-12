@@ -1,0 +1,568 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "sales.get_order",
+      "name": "GetOrder",
+      "kind": "procedure",
+      "at": "procedures/get_order.sql:1:1",
+      "parameters": [
+        {
+          "name": "@order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "GetOrderRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/get_order.sql:7:5"
+            }
+          ],
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GetOrderCustomer": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0].customer"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "email",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(256)",
+            "maxLength": {
+              "value": 256,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(256)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.customer.email"
+            }
+          ]
+        }
+      ]
+    },
+    "GetOrderLine": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0].lines[]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "unitPrice",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,2)",
+            "digits": {
+              "precision": 19,
+              "scale": 2,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.order_line.note"
+            }
+          ]
+        },
+        {
+          "name": "product",
+          "type": {
+            "ref": "GetOrderLineProduct"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "GetOrderLineProduct": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0].lines[].product"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "weightKg",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,3)",
+            "digits": {
+              "precision": 9,
+              "scale": 3,
+              "from": {
+                "type": "decimal(9,3)"
+              }
+            },
+            "min": {
+              "value": -999999.999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,3)"
+              }
+            },
+            "max": {
+              "value": 999999.999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,3)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.product.weight_kg"
+            }
+          ]
+        }
+      ]
+    },
+    "GetOrderRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "reference",
+          "type": {
+            "kind": "uuid",
+            "sql": "uniqueidentifier"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "placedAt",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "shippedAt",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(0)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.order.shipped_at"
+            }
+          ]
+        },
+        {
+          "name": "deliveryTime",
+          "type": {
+            "kind": "time",
+            "sql": "time(0)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.order.delivery_time"
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,2)",
+            "digits": {
+              "precision": 19,
+              "scale": 2,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "isPriority",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "customer",
+          "type": {
+            "ref": "GetOrderCustomer"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "salesperson",
+          "type": {
+            "ref": "GetOrderSalesperson"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "all-fields-null",
+              "at": "procedures/get_order.sql:18:12"
+            }
+          ]
+        },
+        {
+          "name": "lines",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetOrderLine"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/get_order.sql:21:23"
+            }
+          ]
+        }
+      ]
+    },
+    "GetOrderSalesperson": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0].salesperson"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unmatched-row",
+              "at": "procedures/get_order.sql:37:15"
+            }
+          ]
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unmatched-row",
+              "at": "procedures/get_order.sql:37:15"
+            }
+          ]
+        },
+        {
+          "name": "hiredOn",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unmatched-row",
+              "at": "procedures/get_order.sql:37:15"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

@@ -270,7 +270,7 @@ internal sealed partial class ProcedureAnalyzer
 
         if (Rows(document) is not { } rows)
             return null;
-        static IrNullReason JsonValue(SourceLocation where) => new(IrNullRule.JsonValue, where.ToString());
+        static IrNullReason JsonValue(SourceLocation where) => new(IrNullRule.JsonNullOrAbsent, where.ToString());
 
         if (reference.SchemaDeclarationItems.Count == 0)
         {
@@ -428,7 +428,7 @@ internal sealed partial class ProcedureAnalyzer
         var type = (ScalarShape)SqlTypes.ToConvertedShape(model, new SqlType(SqlTypeKind.BuiltIn, "nvarchar", ["4000"]), at);
 
         // A NULL document gives NULL.
-        var nullable = ShapeJoin.Reasons(documentNull, [new IrNullReason(IrNullRule.JsonValue, at.ToString())]);
+        var nullable = ShapeJoin.Reasons(documentNull, [new IrNullReason(IrNullRule.JsonNullOrAbsent, at.ToString())]);
         if (found.Shape is not ScalarShape { Type: var scalar })
             return new Value(type, nullable);
 

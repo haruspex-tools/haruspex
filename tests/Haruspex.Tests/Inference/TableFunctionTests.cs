@@ -117,8 +117,8 @@ public class TableFunctionTests
     public void A_function_of_many_rows_applied_is_many_and_outer_apply_makes_it_nullable()
     {
         var doc = Procedure("SELECT t.id, l.id AS line_id, l.qty FROM dbo.t AS t OUTER APPLY dbo.u_lines(t.id) AS l WHERE t.id = @id;");
-        Assert.Equal("int outer-apply", Typed(doc, "line_id"));
-        Assert.Equal("int nullable-column outer-apply", Typed(doc, "qty"));
+        Assert.Equal("int unmatched-row", Typed(doc, "line_id"));
+        Assert.Equal("int nullable-column unmatched-row", Typed(doc, "qty"));
         Assert.Equal(IrCardinality.Many, Result(doc).Cardinality);
     }
 

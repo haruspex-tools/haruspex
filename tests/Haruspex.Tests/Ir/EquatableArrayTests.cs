@@ -9,13 +9,13 @@ namespace Haruspex.Tests.Ir;
 public class EquatableArrayTests
 {
     private static readonly IrNullReason Column = new(IrNullRule.NullableColumn, "a.t.c");
-    private static readonly IrNullReason Join = new(IrNullRule.OuterJoin, "a.sql:3:1");
+    private static readonly IrNullReason Join = new(IrNullRule.UnmatchedRow, "a.sql:3:1");
 
     [Fact]
     public void Sequences_built_apart_with_equal_items_are_equal_and_hash_equal()
     {
         EquatableArray<IrNullReason> a = [Column, Join];
-        EquatableArray<IrNullReason> b = [.. new List<IrNullReason> { new(IrNullRule.NullableColumn, "a.t.c"), new(IrNullRule.OuterJoin, "a.sql:3:1") }];
+        EquatableArray<IrNullReason> b = [.. new List<IrNullReason> { new(IrNullRule.NullableColumn, "a.t.c"), new(IrNullRule.UnmatchedRow, "a.sql:3:1") }];
 
         Assert.NotSame(a, b);
         Assert.Equal(a, b);

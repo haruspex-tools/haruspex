@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -146,7 +146,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/list_parts.sql:10:15"
             }
           ]
@@ -172,7 +172,7 @@
               "at": "depot.stock.shelf"
             },
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/list_parts.sql:10:15"
             }
           ]

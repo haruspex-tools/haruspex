@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -80,7 +80,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/lockers.sql:8:6"
             }
           ]
@@ -102,7 +102,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/lockers.sql:8:6"
             }
           ]
@@ -132,7 +132,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/lockers.sql:9:17"
             }
           ]
@@ -166,7 +166,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/lockers.sql:9:17"
             }
           ]
@@ -249,7 +249,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/lockers.sql:13:6"
             }
           ]
@@ -288,7 +288,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/lockers.sql:20:6"
             }
           ]
@@ -318,7 +318,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/lockers.sql:21:11"
             }
           ]

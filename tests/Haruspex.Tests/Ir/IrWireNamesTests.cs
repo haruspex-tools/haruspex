@@ -55,7 +55,7 @@ public class IrWireNamesTests
 
     [Fact]
     public void Null_rules_keep_their_names() => Assert.Equal(
-        ["nullable-column", "outer-join", "outer-apply", "empty-subquery", "all-fields-null", "empty-aggregate", "function-result", "parameter", "null-input", "no-rows", "not-run", "variable", "count-overflow", "arithmetic-overflow", "failed-conversion", "grouping-set", "merge-action", "no-else", "null-literal", "out-of-range", "read-twice", "nullif", "json-value", "empty-frame", "window-edge", "domain-error", "too-few-values", "unknown", "declared"],
+        ["nullable-column", "unmatched-row", "empty-subquery", "all-fields-null", "empty-aggregate", "function-result", "parameter", "null-input", "no-rows", "not-run", "variable", "count-overflow", "arithmetic-overflow", "failed-conversion", "rolled-up", "missing-for-action", "no-branch-matched", "null-literal", "out-of-range", "read-twice", "nulled-when-equal", "json-null-or-absent", "empty-frame", "window-edge", "domain-error", "too-few-values", "unknown", "declared"],
         Names<IrNullRule>(IrWireNames.Of));
 
     [Fact]

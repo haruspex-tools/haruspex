@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -154,7 +154,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/list_tickets.sql:38:11"
             }
           ]
@@ -188,7 +188,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "outer-join",
+              "rule": "unmatched-row",
               "at": "procedures/list_tickets.sql:38:11"
             }
           ]

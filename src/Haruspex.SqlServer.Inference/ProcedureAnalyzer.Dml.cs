@@ -108,7 +108,7 @@ internal sealed partial class ProcedureAnalyzer
         }).ToList();
 
         // Observed: Merge_output_has_null_deleted_columns_for_inserted_rows_null_inserted_columns_for_deleted_rows_and_null_source_columns_when_not_matched_by_source.
-        var because = new IrNullReason(IrNullRule.MergeAction, at.ToString());
+        var because = new IrNullReason(IrNullRule.MissingForAction, at.ToString());
         var inserted = spec is DeleteSpecification ? null : Pseudo(spec, target, after, actions?.Contains("DELETE") == true ? because : null, at);
         var deleted = spec is InsertSpecification ? null : Pseudo(spec, target, before, actions?.Contains("INSERT") == true ? because : null, at);
 

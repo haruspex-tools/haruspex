@@ -308,7 +308,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = At(reference);
         var name = reference.Alias?.Value ?? "OPENJSON";
-        static IrNullReason JsonValue(SourceLocation where) => new(IrNullRule.JsonValue, where.ToString());
+        static IrNullReason JsonValue(SourceLocation where) => new(IrNullRule.JsonNullOrAbsent, where.ToString());
 
         // Over JSON built here its shape says more (ProcedureAnalyzer.JsonReads.cs).
         if (TracedOpenJson(reference, outer ?? NoFrom(), at) is { } traced)

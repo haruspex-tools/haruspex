@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.15",
+  "irVersion": "0.16",
   "source": {
     "dialect": "tsql"
   },
@@ -87,7 +87,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "merge-action",
+              "rule": "missing-for-action",
               "at": "procedures/sync_prices.sql:8:1"
             }
           ]
@@ -117,7 +117,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "merge-action",
+              "rule": "missing-for-action",
               "at": "procedures/sync_prices.sql:8:1"
             }
           ]
@@ -154,7 +154,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "merge-action",
+              "rule": "missing-for-action",
               "at": "procedures/sync_prices.sql:8:1"
             }
           ]
@@ -191,7 +191,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "merge-action",
+              "rule": "missing-for-action",
               "at": "procedures/sync_prices.sql:8:1"
             }
           ]
