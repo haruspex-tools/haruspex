@@ -40,6 +40,12 @@ internal static class ResultsComparison
 
     private static string Encoding(IrEncoding encoding) => encoding == IrEncoding.Rowset ? "a rowset" : "JSON";
 
+    /// <summary>
+    /// Two types compared side by side, a pair of nodes at a time, which the type tree's walks (<see cref="IrTypeTree"/>) can't
+    /// do for it. It follows references with no guard against a cycle because it moves through both types together, and a
+    /// declaration is never recursive (the config file refuses a recursive <c>$ref</c>), so the walk ends with the
+    /// declaration's depth even where the inferred type is a tree.
+    /// </summary>
     private sealed class Comparer(IReadOnlyDictionary<string, IrObjectType> inferred, IReadOnlyDictionary<string, IrObjectType> declared)
     {
         public string? Type(IrType a, IrType b, string path)

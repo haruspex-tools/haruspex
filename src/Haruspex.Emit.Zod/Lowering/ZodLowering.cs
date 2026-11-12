@@ -98,7 +98,7 @@ internal static class ZodLowering
 
     /// <summary>A named type of the same shape as one declared earlier: its name, kept for importers, for that schema.</summary>
     private static ZodDeclaration Alias(string name, string declaredAs) =>
-        new(name, $"The same shape as {declaredAs}.", new Name(declaredAs + "Schema"));
+        new(name, $"The same shape as {declaredAs}.", new Name(ZodModule.SchemaOf(declaredAs)));
 
     /// <summary>
     /// A named object type: an object schema with a property per field. Strip by default: unknown keys are dropped at parse

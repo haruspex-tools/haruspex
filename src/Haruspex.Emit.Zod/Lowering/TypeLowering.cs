@@ -44,7 +44,7 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     }
 
     /// <summary>The schema a named type is declared under.</summary>
-    public Name Reference(IrRef reference) => new(declaredAs(reference.Name) + "Schema");
+    public Name Reference(IrRef reference) => new(ZodModule.SchemaOf(declaredAs(reference.Name)));
 
     /// <summary>
     /// An array, with its items' nullability and its length when the IR knows them (<c>json_array</c> and the aggregates; an
@@ -164,5 +164,5 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     }
 
     /// <summary>One of Zod's ISO 8601 string formats: <c>z.iso.date()</c>.</summary>
-    private static Call Iso(string format, params ZodExpression[] arguments) => new(new Name("z.iso"), format, [.. arguments]);
+    private static Call Iso(string format, params ZodExpression[] arguments) => new(new Name(ZodModule.ZodName + ".iso"), format, [.. arguments]);
 }

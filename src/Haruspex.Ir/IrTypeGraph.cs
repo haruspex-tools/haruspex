@@ -157,7 +157,9 @@ public sealed class IrTypeGraph
             if (index.ContainsKey(name))
                 return;
 
-            index[name] = lowLink[name] = index.Count;
+            var order = index.Count;
+            index[name] = order;
+            lowLink[name] = order;
             stack.Push(name);
             onStack.Add(name);
             foreach (var next in references[name])

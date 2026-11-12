@@ -112,10 +112,18 @@ The same depth-first search gives the order: a type finishes only after every ty
 finish puts each after the types it refers to, except inside a cycle, where no order can. Starting the search from the results,
 in the order the IR file lists the objects, makes the module's order follow the document rather than the alphabet.
 
-A few walks remain their own, each for a reason. The IR's writer and reader write and read each node's own properties, which
-only a match on its kind can do. Converting a declared result into the inference's shapes builds a different structure per
-kind. The differential tests' validator and coverage check walk types beside real values on purpose, apart from the code
-whose claims they test.
+A few walks match on node kinds themselves, each for a reason:
+
+- **The IR's writer and reader** write and read each node's own properties, which only a match on its kind can do.
+- **Building the IR** (`IrBuilder`) and **converting a declared result back into the inference's shapes** (`IrShapes`) turn
+  one structure into another, a different result per kind.
+- **Comparing a declaration with what was inferred** (`ResultsComparison`) walks two types side by side, a pair of nodes at
+  a time, and **applying an override** (`OverrideApplier`) follows one path down a type, a segment at a time.
+- **The lowering** gives each kind its own Zod expression, which is its job.
+- **The corpus figures** decide whether a field is JSON text of unknown content by looking through arrays, records and JSON
+  text only, as the figures' definition says.
+- **The differential tests' validator and coverage check** walk types beside real values, on purpose apart from the code
+  whose claims they test.
 
 ## Reading further
 

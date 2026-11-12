@@ -19,6 +19,13 @@ internal static class IrShapes
     public static Shape ToShape(IrType type, IReadOnlyDictionary<string, IrObjectType> types, ObjectName procedure, SourceLocation at) =>
         Convert(type, types, procedure, at, []);
 
+    /// <remarks>
+    /// A conversion builds a shape per kind of node, so it matches on kinds itself rather than walking with
+    /// <see cref="IrTypeTree"/>; and it expands references inline, so it guards against a cycle with the names it is
+    /// expanding rather than asking a graph of a document it doesn't have. A kind of node it doesn't know becomes an unknown
+    /// with a reason, where the IR's own walks throw: the declaration is the user's, and the inference reports what it can't
+    /// model as an unknown, never as a failure.
+    /// </remarks>
     private static Shape Convert(IrType type, IReadOnlyDictionary<string, IrObjectType> types, ObjectName procedure, SourceLocation at, HashSet<string> expanding)
     {
         Shape Of(IrType inner) => Convert(inner, types, procedure, at, expanding);
