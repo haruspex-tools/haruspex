@@ -2,11 +2,12 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace Haruspex.Tests.Config;
+namespace Haruspex.Tests.Schemas;
 
 /// <summary>
-/// A validator for the part of JSON Schema 2020-12 that <c>schemas/haruspex.schema.json</c> uses, so the published schema
-/// can be checked against examples without a dependency (CONTRIBUTING.md: none without a written reason). It refuses a
+/// A validator for the part of JSON Schema 2020-12 that the published schemas use (<c>schemas/haruspex.schema.json</c>, the
+/// config file's, and <c>schemas/haruspex.ir.schema.json</c>, the IR's), so each can be checked against examples without a
+/// dependency (CONTRIBUTING.md: none without a written reason). It refuses a
 /// keyword it doesn't implement, so the schema can't start relying on one that nothing here checks.
 /// </summary>
 internal sealed class SchemaSubset(JsonElement root)
@@ -15,7 +16,7 @@ internal sealed class SchemaSubset(JsonElement root)
 
     private static readonly HashSet<string> Implemented = new(StringComparer.Ordinal)
     {
-        "type", "enum", "const", "properties", "additionalProperties", "required", "items", "minItems", "minLength", "pattern",
+        "type", "enum", "const", "properties", "additionalProperties", "required", "items", "minItems", "maxProperties", "minLength", "pattern",
         "$ref", "dependentRequired", "dependentSchemas", "anyOf", "not", "propertyNames",
     };
 
@@ -88,6 +89,10 @@ internal sealed class SchemaSubset(JsonElement root)
                 case "minItems" when value.ValueKind == JsonValueKind.Array:
                     if (value.GetArrayLength() < k.GetInt32())
                         errors.Add($"{at}: has fewer than {k.GetInt32()} items");
+                    break;
+                case "maxProperties" when value.ValueKind == JsonValueKind.Object:
+                    if (value.EnumerateObject().Count() > k.GetInt32())
+                        errors.Add($"{at}: has more than {k.GetInt32()} properties");
                     break;
                 case "minLength" when value.ValueKind == JsonValueKind.String:
                     // JSON Schema counts code points; every limit here is about emptiness, where the two agree.

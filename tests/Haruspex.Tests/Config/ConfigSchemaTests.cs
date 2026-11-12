@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Haruspex.Tests.Schemas;
 
 namespace Haruspex.Tests.Config;
 

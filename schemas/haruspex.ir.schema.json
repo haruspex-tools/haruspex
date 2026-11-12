@@ -1,0 +1,1040 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json",
+  "title": "haruspex.ir.json",
+  "description": "An IR file of version 0.15: the shapes haruspex inferred for a set of database objects. The format is described in src/Haruspex.Ir/README.md.",
+  "type": "object",
+  "properties": {
+    "irVersion": {
+      "description": "The IR's version, which a reader checks before anything else.",
+      "const": "0.15"
+    },
+    "source": {
+      "description": "Where the shapes were inferred from.",
+      "type": "object",
+      "properties": {
+        "dialect": {
+          "description": "The SQL dialect, such as tsql.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dialect"
+      ],
+      "additionalProperties": false
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/object"
+      }
+    },
+    "types": {
+      "description": "The named object types, by name.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/objectType"
+      }
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/unknown"
+      }
+    },
+    "overrides": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/override"
+      }
+    }
+  },
+  "required": [
+    "irVersion",
+    "source",
+    "objects",
+    "types",
+    "unknowns",
+    "overrides"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "object": {
+      "description": "A typed database object.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Its name in the database: its identity.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The name settled for generated code.",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "procedure"
+          ]
+        },
+        "at": {
+          "description": "Where it is defined, as path:line:column.",
+          "type": "string"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/parameter"
+          }
+        },
+        "results": {
+          "description": "Its result sets in order, or null when they cannot be listed.",
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/result"
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "at",
+        "parameters",
+        "results"
+      ],
+      "additionalProperties": false
+    },
+    "parameter": {
+      "description": "A declared parameter.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Its name as declared, with its sigil.",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/type"
+        },
+        "hasDefault": {
+          "description": "Whether the caller may omit it.",
+          "type": "boolean"
+        },
+        "output": {
+          "description": "Whether it is an output parameter.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "hasDefault",
+        "output"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "description": "One result set.",
+      "type": "object",
+      "properties": {
+        "encoding": {
+          "enum": [
+            "rowset",
+            "json"
+          ]
+        },
+        "type": {
+          "$ref": "#/$defs/type"
+        },
+        "mayBeAbsent": {
+          "description": "Whether the result can arrive with no value at all.",
+          "type": "boolean"
+        },
+        "absentBecause": {
+          "$ref": "#/$defs/reasons"
+        },
+        "cardinality": {
+          "enum": [
+            "many",
+            "atMostOne",
+            "one"
+          ]
+        }
+      },
+      "required": [
+        "encoding",
+        "type",
+        "mayBeAbsent",
+        "cardinality"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "mayBeAbsent": {
+              "const": true
+            }
+          },
+          "required": [
+            "mayBeAbsent",
+            "absentBecause"
+          ]
+        },
+        {
+          "properties": {
+            "mayBeAbsent": {
+              "const": false
+            }
+          },
+          "not": {
+            "required": [
+              "absentBecause"
+            ]
+          },
+          "required": [
+            "mayBeAbsent"
+          ]
+        }
+      ]
+    },
+    "objectType": {
+      "description": "A named object type.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "object"
+        },
+        "recursive": {
+          "description": "Whether the type refers to itself; left out when it doesn't.",
+          "type": "boolean"
+        },
+        "identity": {
+          "$ref": "#/$defs/identity"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/field"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "identity": {
+      "description": "Where a type comes from: the database object it belongs to, keyed by the object's kind, and the path to it there.",
+      "type": "object",
+      "properties": {
+        "procedure": {
+          "description": "The procedure the type belongs to.",
+          "type": "string"
+        },
+        "function": {
+          "description": "The function the type belongs to.",
+          "type": "string"
+        },
+        "path": {
+          "description": "The path to the type, in the IR's path syntax.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false,
+      "maxProperties": 2,
+      "anyOf": [
+        {
+          "required": [
+            "procedure"
+          ]
+        },
+        {
+          "required": [
+            "function"
+          ]
+        }
+      ]
+    },
+    "field": {
+      "description": "A field of an object type.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "The key or column name.",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/type"
+        },
+        "presence": {
+          "enum": [
+            "always",
+            "omittedWhenNull"
+          ]
+        },
+        "nullable": {
+          "description": "Whether the value can be null.",
+          "type": "boolean"
+        },
+        "nullableBecause": {
+          "$ref": "#/$defs/reasons"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "presence",
+        "nullable"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "nullable": {
+              "const": true
+            }
+          },
+          "required": [
+            "nullable",
+            "nullableBecause"
+          ]
+        },
+        {
+          "properties": {
+            "nullable": {
+              "const": false
+            }
+          },
+          "not": {
+            "required": [
+              "nullableBecause"
+            ]
+          },
+          "required": [
+            "nullable"
+          ]
+        }
+      ]
+    },
+    "reasons": {
+      "description": "Why a value can be null, or a result absent: at least one reason.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reason"
+      },
+      "minItems": 1
+    },
+    "reason": {
+      "description": "One reason a value can be null.",
+      "type": "object",
+      "properties": {
+        "rule": {
+          "enum": [
+            "nullable-column",
+            "outer-join",
+            "outer-apply",
+            "empty-subquery",
+            "all-fields-null",
+            "empty-aggregate",
+            "function-result",
+            "parameter",
+            "null-input",
+            "no-rows",
+            "not-run",
+            "variable",
+            "count-overflow",
+            "arithmetic-overflow",
+            "failed-conversion",
+            "grouping-set",
+            "merge-action",
+            "no-else",
+            "null-literal",
+            "out-of-range",
+            "read-twice",
+            "nullif",
+            "json-value",
+            "empty-frame",
+            "window-edge",
+            "domain-error",
+            "too-few-values",
+            "unknown",
+            "declared"
+          ]
+        },
+        "at": {
+          "description": "What the rule applies to: a column or a source location.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule",
+        "at"
+      ],
+      "additionalProperties": false
+    },
+    "type": {
+      "description": "A type node: a reference to a named type, or a kind.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ref"
+        },
+        {
+          "$ref": "#/$defs/scalar"
+        },
+        {
+          "$ref": "#/$defs/array"
+        },
+        {
+          "$ref": "#/$defs/tuple"
+        },
+        {
+          "$ref": "#/$defs/record"
+        },
+        {
+          "$ref": "#/$defs/union"
+        },
+        {
+          "$ref": "#/$defs/jsonText"
+        },
+        {
+          "$ref": "#/$defs/import"
+        },
+        {
+          "$ref": "#/$defs/unknownType"
+        }
+      ]
+    },
+    "ref": {
+      "description": "A reference to a named object type.",
+      "type": "object",
+      "properties": {
+        "ref": {
+          "description": "The type's name in types.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref"
+      ],
+      "additionalProperties": false
+    },
+    "scalar": {
+      "description": "A scalar with its logical kind, the SQL type it came from, and its facets.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "date",
+            "time",
+            "datetime",
+            "uuid"
+          ]
+        },
+        "format": {
+          "enum": [
+            "uint8",
+            "int16",
+            "int32",
+            "int64",
+            "decimal",
+            "float",
+            "local",
+            "offset"
+          ]
+        },
+        "sql": {
+          "description": "The source's own type, as written.",
+          "type": "string"
+        },
+        "length": {
+          "$ref": "#/$defs/length"
+        },
+        "maxLength": {
+          "$ref": "#/$defs/length"
+        },
+        "minLength": {
+          "$ref": "#/$defs/minLength"
+        },
+        "digits": {
+          "$ref": "#/$defs/digits"
+        },
+        "min": {
+          "$ref": "#/$defs/bound"
+        },
+        "max": {
+          "$ref": "#/$defs/bound"
+        },
+        "values": {
+          "$ref": "#/$defs/values"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "not": {
+        "required": [
+          "length",
+          "maxLength"
+        ]
+      }
+    },
+    "length": {
+      "description": "A string's length: a maximum (maxLength) or a fixed length (length).",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "integer"
+        },
+        "unit": {
+          "enum": [
+            "utf16",
+            "bytes"
+          ]
+        },
+        "encoding": {
+          "enum": [
+            "single-byte",
+            "utf-8",
+            "double-byte"
+          ]
+        },
+        "from": {
+          "$ref": "#/$defs/factSource"
+        }
+      },
+      "required": [
+        "value",
+        "unit",
+        "from"
+      ],
+      "additionalProperties": false
+    },
+    "minLength": {
+      "description": "A string's minimum length in UTF-16 code units.",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "integer"
+        },
+        "from": {
+          "$ref": "#/$defs/factSource"
+        }
+      },
+      "required": [
+        "value",
+        "from"
+      ],
+      "additionalProperties": false
+    },
+    "digits": {
+      "description": "A decimal's precision and scale.",
+      "type": "object",
+      "properties": {
+        "precision": {
+          "type": "integer"
+        },
+        "scale": {
+          "type": "integer"
+        },
+        "from": {
+          "$ref": "#/$defs/factSource"
+        }
+      },
+      "required": [
+        "precision",
+        "scale",
+        "from"
+      ],
+      "additionalProperties": false
+    },
+    "bound": {
+      "description": "A bound on a number, as exact decimal text written as a JSON number.",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "inclusive": {
+          "description": "Whether the bound itself is allowed.",
+          "type": "boolean"
+        },
+        "from": {
+          "$ref": "#/$defs/factSource"
+        }
+      },
+      "required": [
+        "value",
+        "inclusive",
+        "from"
+      ],
+      "additionalProperties": false
+    },
+    "values": {
+      "description": "A set the value is drawn from.",
+      "type": "object",
+      "properties": {
+        "match": {
+          "enum": [
+            "exact",
+            "collation",
+            "padded"
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          }
+        },
+        "from": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/factSource"
+          }
+        }
+      },
+      "required": [
+        "match",
+        "items",
+        "from"
+      ],
+      "additionalProperties": false
+    },
+    "factSource": {
+      "description": "Where a fact came from: one property, named for the kind of source, whose value is the type's or constraint's name or a location.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The type the fact came from.",
+          "type": "string"
+        },
+        "check": {
+          "description": "The check the fact came from.",
+          "type": "string"
+        },
+        "engine": {
+          "description": "The engine the fact came from.",
+          "type": "string"
+        },
+        "expression": {
+          "description": "The expression the fact came from.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "maxProperties": 1,
+      "anyOf": [
+        {
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "required": [
+            "check"
+          ]
+        },
+        {
+          "required": [
+            "engine"
+          ]
+        },
+        {
+          "required": [
+            "expression"
+          ]
+        }
+      ]
+    },
+    "array": {
+      "description": "An array of items.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "array"
+        },
+        "items": {
+          "$ref": "#/$defs/type"
+        },
+        "itemsNullable": {
+          "description": "Whether an item can be null; left out when none can.",
+          "type": "boolean"
+        },
+        "itemsNullableBecause": {
+          "$ref": "#/$defs/reasons"
+        },
+        "minItems": {
+          "type": "integer"
+        },
+        "maxItems": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "items"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "itemsNullable": {
+              "const": true
+            }
+          },
+          "required": [
+            "itemsNullable",
+            "itemsNullableBecause"
+          ]
+        },
+        {
+          "properties": {
+            "itemsNullable": {
+              "const": false
+            }
+          },
+          "not": {
+            "required": [
+              "itemsNullableBecause"
+            ]
+          }
+        }
+      ]
+    },
+    "tuple": {
+      "description": "An array of a fixed length whose every position has its own type.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "tuple"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/element"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "element": {
+      "description": "One position of a tuple.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/type"
+        },
+        "nullable": {
+          "description": "Whether the element can be null.",
+          "type": "boolean"
+        },
+        "nullableBecause": {
+          "$ref": "#/$defs/reasons"
+        }
+      },
+      "required": [
+        "type",
+        "nullable"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "nullable": {
+              "const": true
+            }
+          },
+          "required": [
+            "nullable",
+            "nullableBecause"
+          ]
+        },
+        {
+          "properties": {
+            "nullable": {
+              "const": false
+            }
+          },
+          "not": {
+            "required": [
+              "nullableBecause"
+            ]
+          },
+          "required": [
+            "nullable"
+          ]
+        }
+      ]
+    },
+    "record": {
+      "description": "An object whose keys are data, every value of one type.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "record"
+        },
+        "values": {
+          "$ref": "#/$defs/type"
+        },
+        "valuesNullable": {
+          "description": "Whether a value can be null.",
+          "type": "boolean"
+        },
+        "valuesNullableBecause": {
+          "$ref": "#/$defs/reasons"
+        }
+      },
+      "required": [
+        "kind",
+        "values",
+        "valuesNullable"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "valuesNullable": {
+              "const": true
+            }
+          },
+          "required": [
+            "valuesNullable",
+            "valuesNullableBecause"
+          ]
+        },
+        {
+          "properties": {
+            "valuesNullable": {
+              "const": false
+            }
+          },
+          "not": {
+            "required": [
+              "valuesNullableBecause"
+            ]
+          },
+          "required": [
+            "valuesNullable"
+          ]
+        }
+      ]
+    },
+    "union": {
+      "description": "A value that has one of several types.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "union"
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/type"
+          },
+          "minItems": 2
+        }
+      },
+      "required": [
+        "kind",
+        "variants"
+      ],
+      "additionalProperties": false
+    },
+    "jsonText": {
+      "description": "A string that holds JSON, with what it parses to when that is known.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "json-text"
+        },
+        "content": {
+          "$ref": "#/$defs/type"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "import": {
+      "description": "A schema the application already has, which the config file declared.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "import"
+        },
+        "name": {
+          "description": "The exported name.",
+          "type": "string"
+        },
+        "from": {
+          "description": "The module it is exported by.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "from"
+      ],
+      "additionalProperties": false
+    },
+    "unknownType": {
+      "description": "A value whose type is not known.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "unknown"
+        },
+        "reason": {
+          "enum": [
+            "unsupported-statement",
+            "external-code",
+            "redefined",
+            "unsupported-query",
+            "unsupported-expression",
+            "unsupported-source",
+            "unsupported-sql-type",
+            "unresolved-table",
+            "unresolved-column",
+            "unnamed-column",
+            "duplicate-column",
+            "unresolved-recursion",
+            "json-shape-unknown",
+            "caller-temp-table",
+            "varying-results",
+            "dynamic-sql",
+            "procedure-variable",
+            "system-procedure",
+            "missing-procedure",
+            "ambiguous-procedure",
+            "trigger-results",
+            "hidden-column"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "unknown": {
+      "description": "Something that could not be typed.",
+      "type": "object",
+      "properties": {
+        "object": {
+          "description": "The id of the object it belongs to.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Where in the object, in the IR's path syntax.",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "unsupported-statement",
+            "external-code",
+            "redefined",
+            "unsupported-query",
+            "unsupported-expression",
+            "unsupported-source",
+            "unsupported-sql-type",
+            "unresolved-table",
+            "unresolved-column",
+            "unnamed-column",
+            "duplicate-column",
+            "unresolved-recursion",
+            "json-shape-unknown",
+            "caller-temp-table",
+            "varying-results",
+            "dynamic-sql",
+            "procedure-variable",
+            "system-procedure",
+            "missing-procedure",
+            "ambiguous-procedure",
+            "trigger-results",
+            "hidden-column"
+          ]
+        },
+        "detail": {
+          "description": "A human-readable explanation.",
+          "type": "string"
+        },
+        "at": {
+          "description": "The source location of the construct.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "object",
+        "path",
+        "reason",
+        "detail",
+        "at"
+      ],
+      "additionalProperties": false
+    },
+    "override": {
+      "description": "A claim the config file made rather than inference.",
+      "type": "object",
+      "properties": {
+        "object": {
+          "description": "The id of the object it applies to.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Where in the object, in the IR's path syntax.",
+          "type": "string"
+        },
+        "setting": {
+          "enum": [
+            "not-null",
+            "type",
+            "exact-values",
+            "results"
+          ]
+        },
+        "via": {
+          "description": "The procedure whose declaration the claim rests on, when not the object itself.",
+          "type": "string"
+        },
+        "why": {
+          "description": "The reason given in the config file.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "object",
+        "path",
+        "setting"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
