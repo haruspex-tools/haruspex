@@ -48,6 +48,13 @@ internal sealed record JsonSlot(Shape? Content, UnknownShape? NotJson)
         && (a.NotJson is not null || (a.Content is null ? b.Content is null : b.Content is not null && JsonShapes.Same(a.Content, b.Content)));
 
     /// <summary>
+    /// Whether every write <paramref name="a"/> allows, <paramref name="b"/> allows: anything is below a slot that may not
+    /// hold JSON, nothing written is below anything, and JSON content is ordered by <see cref="JsonShapes.Below"/>.
+    /// </summary>
+    public static bool Below(JsonSlot a, JsonSlot b) =>
+        b.NotJson is not null || (a.NotJson is null && (a.Content is null || (b.Content is not null && JsonShapes.Below(a.Content, b.Content))));
+
+    /// <summary>
     /// What a read of the place gives, its declared value being <paramref name="declared"/>: JSON text of the content, null as
     /// the declared value is; or the declared value, carrying why its JSON is not known for <c>json_query</c> to report.
     /// </summary>

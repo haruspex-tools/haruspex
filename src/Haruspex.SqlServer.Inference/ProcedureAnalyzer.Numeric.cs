@@ -49,7 +49,7 @@ internal sealed partial class ProcedureAnalyzer
         var argument = InAggregate(() => Expression(call.Parameters[0], scope));
         if (argument.Shape is UnknownShape)
             return argument;
-        if (argument.IsLiveJson || TypeOf(argument, call.Parameters[0]) is not { } of || Statistic(name, of) is not var (type, overflows))
+        if (argument.IsLiveJson || TypeOf(argument) is not { } of || Statistic(name, of) is not var (type, overflows))
             return NotModelled(call, $"{name.ToUpperInvariant()} of a value of this type is not modelled.");
         if (ProvedAggregate(call))
             return Typed(type, [], call);
@@ -96,7 +96,7 @@ internal sealed partial class ProcedureAnalyzer
     private (Value Value, ScalarType? Type) NumberArgument(ScalarExpression expression, BindingScope scope)
     {
         var value = Expression(expression, scope);
-        return (value, value.Shape is UnknownShape || value.IsLiveJson ? null : TypeOf(value, expression) is { } t && (t.IsNumber || t.Name == "bit") ? t : null);
+        return (value, value.Shape is UnknownShape || value.IsLiveJson ? null : TypeOf(value) is { } t && (t.IsNumber || t.Name == "bit") ? t : null);
     }
 
     private Value Numeric(FunctionCall call, BindingScope scope)
@@ -113,7 +113,7 @@ internal sealed partial class ProcedureAnalyzer
         var (others, unknown) = Arguments(p.Skip(1), scope);
         if (unknown is not null)
             return unknown;
-        if (others.Select((o, i) => o.IsLiveJson ? null : TypeOf(o, p[i + 1])).Any(t => t is not ({ IsNumber: true } or { Name: "bit" })))
+        if (others.Select((o, i) => o.IsLiveJson ? null : TypeOf(o)).Any(t => t is not ({ IsNumber: true } or { Name: "bit" })))
             return NotModelled(call, "an argument of this type is not modelled.");
         var counted = call.FunctionName.Value.Equals("round", StringComparison.OrdinalIgnoreCase) ? others.Take(1) : others;
         var because = NullReasons.Join(value.NullableBecause, Reasons(counted));

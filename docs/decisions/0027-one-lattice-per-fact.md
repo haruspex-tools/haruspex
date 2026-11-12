@@ -8,8 +8,10 @@ it may be null (`NullReasons`), the digits an `int` counts beside a decimal (`In
 built here (`JsonShapes`) and how many rows a result has (`Cardinalities`). `Value.Join` is their product, joined fact
 by fact, and every place where two values meet calls it. The digits are dropped by default: a `with` copies every other
 fact and leaves the digits unknown, the top of their lattice, unless it sets them, and a value built new has them unknown
-unless its rule states them. The server's rule for the type of a `CASE`, `COALESCE` or set operation is `ScalarType.Chain`,
-a fold from the left, and is never used as a join.
+unless its rule states them. The server's type rules read an operand's count from an `Operand`, built with the count
+named, beside its `ScalarType`; a type itself carries none, so a rule's result can't keep one by accident. The server's
+rule for the type of a `CASE`, `COALESCE` or set operation is `ScalarType.Chain`, a fold from the left, and is never used as
+a join. Each fact's order is written apart from its join, so that the law that a join is an upper bound can fail.
 
 Witnesses (the order of reasons, which unknown is named, a fact's source, the order of a value set's items and of a
 union's variants, why a string's JSON is not known) are kept from the left side and not made canonical, because their

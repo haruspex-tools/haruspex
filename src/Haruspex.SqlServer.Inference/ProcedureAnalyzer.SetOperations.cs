@@ -200,7 +200,7 @@ internal sealed partial class ProcedureAnalyzer
             value = Typed(type, reasons, at);
             if (output.Count > 0 && value.Shape is ScalarShape typed)
             {
-                var each = output.Select(c => c.Value.Shape is ScalarShape { Type: var own } && ScalarType.Parse(own.Sql) is { } from && ScalarType.Preserves(from, type)
+                var each = output.Select(c => c.Value.Shape is ScalarShape { Type: var own } && ScalarType.Parse(own.Sql) is { } from && ScalarType.Preserves(Operand.OfType(from), type)
                     ? own.Facets
                     : typed.Type.Facets).ToList();
                 value = value with { Shape = typed with { Type = typed.Type with { Facets = ScalarFacets.Widened(each, typed.Type.Facets) } } };
@@ -290,7 +290,7 @@ internal sealed partial class ProcedureAnalyzer
             return false;
         if (set.Items.Any(i => i.IsString))
             return from.IsString && type.IsString && (type.IsMax || set.Items.All(i => i.Text.Length <= type.Length));
-        return ScalarType.Preserves(from, type);
+        return ScalarType.Preserves(Operand.OfType(from), type);
     }
 
     // ---- OPENJSON ---------------------------------------------------------------------------------------------------------

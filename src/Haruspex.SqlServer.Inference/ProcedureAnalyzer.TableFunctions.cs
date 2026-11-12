@@ -92,7 +92,7 @@ internal sealed partial class ProcedureAnalyzer
 
         if (value.Shape is UnknownShape || value.IsLiveJson)
             return any;
-        if (TypeOf(value, argument) is { } from && declared is ScalarShape { Type.Sql: var sql } && from.Text == sql)
+        if (TypeOf(value) is { } from && declared is ScalarShape { Type.Sql: var sql } && from.Text == sql)
             return value;
         var fits = LiteralOf(argument) is ({ } literal, var negative) && ScalarType.Parse((declared as ScalarShape)?.Type.Sql) is { } to
             ? ScalarType.Fits(literal, to, negative)

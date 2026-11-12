@@ -1125,12 +1125,13 @@ internal sealed partial class ProcedureAnalyzer
             }
 
             var encoding = produced[0].Result.Encoding;
-            var absent = produced.SelectMany(p => p.Result.AbsentBecause).ToList();
+            // Absent if any statement here is, and, past the positions every path reaches, because a statement may not run.
+            var absent = produced.Select(p => p.Result.AbsentBecause).Aggregate(NullReasons.None, NullReasons.Join);
             if (i >= always)
-                absent.AddRange(produced.Select(p => new IrNullReason(IrNullRule.NotRun, p.At.ToString())));
+                absent = produced.Aggregate(absent, (all, p) => NullReasons.Join(all, [new IrNullReason(IrNullRule.NotRun, p.At.ToString())]));
             // The fewest rows any statement here proves at most: a statement that may return many makes the position many.
             var cardinality = produced.Select(p => p.Result.Cardinality).Aggregate(Cardinalities.Join);
-            results.Add(new ResultShape(encoding, Union(shapes), [.. absent.Distinct()], cardinality));
+            results.Add(new ResultShape(encoding, Union(shapes), absent, cardinality));
         }
 
         return (results, null);

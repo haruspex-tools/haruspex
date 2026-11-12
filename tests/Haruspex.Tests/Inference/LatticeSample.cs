@@ -53,7 +53,7 @@ internal sealed class LatticeSample(int seed)
         return facets.IsEmpty ? null : facets;
     }
 
-    /// <summary>Facets of an <c>nvarchar(10)</c>: a maximum length of 5 or 10, a minimum of 1, a fixed length, a set of strings.</summary>
+    /// <summary>Facets of an <c>nvarchar(10)</c>: a maximum length of 5 or 10, a minimum of 1 or 3, a fixed length, a set of strings.</summary>
     public IrFacets? StringFacets()
     {
         var length = random.Next(4) switch
@@ -63,7 +63,7 @@ internal sealed class LatticeSample(int seed)
             2 => new IrLength(10, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, Source()),
             _ => new IrLength(10, true, IrLengthUnit.Utf16, IrByteEncoding.Unknown, Source()),
         };
-        var minLength = random.Next(2) == 0 ? null : new IrMinLength(1, Source());
+        var minLength = random.Next(3) switch { 0 => null, 1 => new IrMinLength(1, Source()), _ => new IrMinLength(3, Source()) };
         var values = random.Next(3) == 0 ? new IrValueSet([new IrValue(random.Next(2) == 0 ? "a" : "b", true)], IrValueMatch.Exact, [Source()]) : null;
         var facets = new IrFacets(Length: length, MinLength: minLength, Values: values);
         return facets.IsEmpty ? null : facets;

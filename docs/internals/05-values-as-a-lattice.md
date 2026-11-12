@@ -238,7 +238,16 @@ types. JSON built here can always be joined exactly, as a union, so it has a lat
 | Commutative | a ⊔ b = b ⊔ a | the result would depend on which path of an `IF` is written first |
 | Associative | (a ⊔ b) ⊔ c = a ⊔ (b ⊔ c) | the result would depend on how many paths met at once, and in what grouping |
 | An upper bound | a ⊑ a ⊔ b and b ⊑ a ⊔ b | a join could claim something one side doesn't guarantee: unsound |
-| The order agrees | a ⊑ b exactly when a ⊔ b = b | "nothing new" (the test a fixed point stops on) would mean something other than "already allowed" |
+| The order agrees | a ⊔ b = b only when a ⊑ b; both ways where the join is least | "nothing new" (the test a fixed point stops on) would mean something other than "already allowed" |
+
+The upper-bound law is only as good as the order it is checked in. An order defined as "joining adds nothing" would make it
+true of any join, however much the join claims. So each fact's order is written apart from its join, from what the fact
+means: `NullReasons.Below` (a subset), `IntDigits.Below` (a count within the other's range), `Cardinalities.Below`,
+`ScalarFacets.Below` (facet by facet, each as tight or tighter: a maximum length no longer, a minimum length no shorter, a
+lower bound no lower, a value set a subset), `JsonShapes.Below` (by structure: anything below an unknown, a union below
+what covers each of its variants) and `Value.Below`, the product of the facts'. A join that keeps the tighter of two bounds
+then fails the upper-bound law. Where the join is not least, in facets, JSON and values, the laws ask only that joining adds
+nothing to what is above.
 
 `LatticeLawTests` checks each of them for every fact and for values, over elements drawn from small alphabets with fixed
 seeds (`LatticeSample`), so that equal and comparable elements built apart turn up by chance. It also checks that bottom is
@@ -300,8 +309,12 @@ The default is enforced by the language rather than by care. A C# `with` copies 
 digits unless the same `with` sets them, and a `Value` built new has unknown digits unless its rule states them:
 `Value.Computed` for a column, a variable or a computed result, which the server never folds (`IntDigits.OfType`), a
 literal's own count where one is read (`IntDigits.Literal`), and `Value.WithNullableBecause` where only whether it may be null
-changes and every other fact passes on. `ScalarType`, the server's type of one operand, does the same with the count a
-rule is being worked out at.
+changes and every other fact passes on.
+
+The server's type rules read the same count, one end of that range at a time. There it is not on the type at all: an
+`Operand` carries it beside its `ScalarType`, every operand is built with its count named (`Operand.OfType`, or a number
+for a literal), and a rule's result is a plain `ScalarType`, which has nowhere to keep one. So the count can't survive into
+a result by accident, nor be dropped from an operand without the rule writing so.
 
 The other facts survive a `with`. The shape, the reasons and whether a value is live JSON are what a `with` is written to
 change, and the JSON's why is a witness. A fact earns the default when a rule that forgets it can make a claim false.
@@ -361,8 +374,9 @@ caller's options, and the column may be null; `amount_first` is `decimal(23,4)`,
 
 The two operations answer different questions. The type rule says what SQL Server *makes* of the values: a type, and the
 conversion of each value to it. The knowledge join says what haruspex *knows* of a value that comes from one side or the
-other. A `CASE` uses both, in turn: the type rule for its type, then the knowledge of its results (their reasons, the facets
-they all prove, the digits it may fold to) joined. So they are named apart, `ScalarType.Chain` and `ProcedureAnalyzer.Chained`
+other. A `CASE` uses each where it applies: the type rule for its type, the server's folding rule for
+its digits (`IntDigits.Foldable`, which is not the join either: one `1` folds to 1 or stays 10), and the knowledge join
+for why it may be null. Its facets are its type's, with the set of its literals where every result is one. So they are named apart, `ScalarType.Chain` and `ProcedureAnalyzer.Chained`
 for the rule and `Value.Join` and the facts' joins for knowledge, and nothing that wants one calls the other. Using the
 type rule as a join would make a value's type depend on the order of paths, and regroup the server's fold, which the
 server does not. `LatticeLawTests` holds the rule to its fold: grouping its first two types first gives its result, and

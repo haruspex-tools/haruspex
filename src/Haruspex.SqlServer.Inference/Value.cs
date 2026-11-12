@@ -182,6 +182,29 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
         && JsonShapes.Same(a.Shape, b.Shape);
 
     /// <summary>
+    /// Whether every value <paramref name="a"/> allows, <paramref name="b"/> allows: the product of the facts' orders. Anything
+    /// is below a value of unknown shape (but for its reasons, which still say why it may be null); otherwise the same
+    /// liveness, the reasons a subset (<see cref="NullReasons.Below"/>), the digits within the other's (<see cref="IntDigits.Below"/>)
+    /// and the shape below the other's: JSON text below a string of <c>nvarchar(max)</c> that proves only what its type does,
+    /// and anything else by <see cref="JsonShapes.Below"/>. Written apart from <see cref="Join"/>, so that the law tests can
+    /// check the join against it.
+    /// </summary>
+    public static bool Below(Value a, Value b)
+    {
+        if (!NullReasons.Below(Explained(a), Explained(b)) || !IntDigits.Below(a.Digits, b.Digits))
+            return false;
+        if (b.Shape is UnknownShape)
+            return true;
+        if (a.IsLiveJson != b.IsLiveJson)
+            return false;
+        return (a.Shape, b.Shape) switch
+        {
+            (JsonTextShape, ScalarShape { Type: { Sql: "nvarchar(max)" } text }) => !a.IsLiveJson && ScalarFacets.Same(text.Facets, ScalarFacets.TypeOnly(text.Facets)),
+            _ => JsonShapes.Below(a.Shape, b.Shape),
+        };
+    }
+
+    /// <summary>
     /// The reasons a value may be null that say something of it: of a value of unknown shape, those that do not merely name
     /// the unknown, which is a witness (any unknown allows null).
     /// </summary>

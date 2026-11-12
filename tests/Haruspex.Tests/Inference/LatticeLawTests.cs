@@ -30,7 +30,12 @@ public class LatticeLawTests
     /// <see cref="Exactness.Witnesses"/> when it may name another unknown or list a union's variants in another order, which
     /// depend on what was met first.
     /// </param>
-    private sealed record Lattice<T>(string Name, Func<LatticeSample, T> Draw, Func<T, T, T> Join, Func<T, T, bool> Same, Func<T, T, bool> Below, Exactness Grouped = Exactness.Record)
+    /// <param name="Least">
+    /// Whether the join is the least upper bound in <c>Below</c>, so that the order and the join agree both ways. Where it is
+    /// not (facets, JSON and values: two objects merged key by key allow a little more than their union), joining adds nothing
+    /// only to what is below, and not always the other way.
+    /// </param>
+    private sealed record Lattice<T>(string Name, Func<LatticeSample, T> Draw, Func<T, T, T> Join, Func<T, T, bool> Same, Func<T, T, bool> Below, Exactness Grouped = Exactness.Record, bool Least = false)
         where T : notnull;
 
     private enum Exactness
@@ -43,13 +48,13 @@ public class LatticeLawTests
     }
 
     private static readonly Lattice<EquatableArray<IrNullReason>> Reasons =
-        new("reasons", s => s.Reasons(), NullReasons.Join, NullReasons.Same, NullReasons.Below);
+        new("reasons", s => s.Reasons(), NullReasons.Join, NullReasons.Same, NullReasons.Below, Least: true);
 
     private static readonly Lattice<IntDigits> Digits =
-        new("digits", s => s.Digits(), IntDigits.Join, (a, b) => a == b, IntDigits.Below);
+        new("digits", s => s.Digits(), IntDigits.Join, (a, b) => a == b, IntDigits.Below, Least: true);
 
     private static readonly Lattice<IrCardinality> Rows =
-        new("rows", s => s.Rows(), Cardinalities.Join, (a, b) => a == b, Cardinalities.Below);
+        new("rows", s => s.Rows(), Cardinalities.Join, (a, b) => a == b, Cardinalities.Below, Least: true);
 
     private static readonly Lattice<Box<IrFacets>> NumberFacets =
         new("facets of a number", s => new(s.NumberFacets()), (a, b) => new(ScalarFacets.Join(a.Of, b.Of)), (a, b) => ScalarFacets.Same(a.Of, b.Of), (a, b) => ScalarFacets.Below(a.Of, b.Of));
@@ -58,13 +63,13 @@ public class LatticeLawTests
         new("facets of a string", s => new(s.StringFacets()), (a, b) => new(ScalarFacets.Join(a.Of, b.Of)), (a, b) => ScalarFacets.Same(a.Of, b.Of), (a, b) => ScalarFacets.Below(a.Of, b.Of));
 
     private static readonly Lattice<Shape> Content =
-        new("JSON content", s => s.Content(3), JsonShapes.Join, JsonShapes.Same, (a, b) => JsonShapes.Same(JsonShapes.Join(a, b), b), Exactness.Witnesses);
+        new("JSON content", s => s.Content(3), JsonShapes.Join, JsonShapes.Same, JsonShapes.Below, Exactness.Witnesses);
 
     private static readonly Lattice<JsonSlot> Slots =
-        new("JSON slots", s => s.Slot(), JsonSlot.Join, JsonSlot.Same, (a, b) => JsonSlot.Same(JsonSlot.Join(a, b), b), Exactness.Witnesses);
+        new("JSON slots", s => s.Slot(), JsonSlot.Join, JsonSlot.Same, JsonSlot.Below, Exactness.Witnesses);
 
     private static readonly Lattice<Value> Values =
-        new("values", s => s.Value(), (a, b) => Value.Join(a, b, At, "@v"), Value.Same, (a, b) => Value.Same(Value.Join(a, b, At, "@v"), b), Exactness.Witnesses);
+        new("values", s => s.Value(), (a, b) => Value.Join(a, b, At, "@v"), Value.Same, Value.Below, Exactness.Witnesses);
 
     /// <summary>A nullable reference as a non-null element, so that "no facets", the top, is an element like any other.</summary>
     private sealed record Box<T>(T? Of) where T : class;
@@ -222,6 +227,19 @@ public class LatticeLawTests
         Assert.Equal(Least(type), ScalarFacets.Join(Least(type), Least(check)));
     }
 
+    [Fact]
+    public void A_minimum_length_joins_to_the_shorter_and_a_maximum_to_the_longer()
+    {
+        // The looser of each: a value of either side may be as short as the shorter minimum and as long as the longer maximum.
+        IrFactSource type = new(IrFactSourceKind.Type, "nvarchar(10)");
+        IrFacets Lengths(int least, int most) => new(Length: new IrLength(most, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, type), MinLength: new IrMinLength(least, type));
+
+        Assert.Equal(Lengths(1, 10), ScalarFacets.Join(Lengths(5, 10), Lengths(1, 6)));
+        Assert.Equal(Lengths(1, 10), ScalarFacets.Join(Lengths(1, 6), Lengths(5, 10)));
+        Assert.True(ScalarFacets.Below(Lengths(5, 6), Lengths(1, 10)));
+        Assert.False(ScalarFacets.Below(Lengths(1, 10), Lengths(5, 6)));
+    }
+
     private static readonly ScalarShape Number = new(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int"));
     private static readonly ScalarShape Text = new(new IrScalar(IrScalarKind.String, null, "nvarchar(max)"));
     private static readonly IrNullReason Null = new(IrNullRule.NullableColumn, "dbo.t.a");
@@ -234,11 +252,11 @@ public class LatticeLawTests
         // A_chain_is_typed_left_to_right_so_money_absorbs_an_integer_before_a_decimal: bigint, money, decimal(5,2) is
         // decimal(19,4), money having taken the bigint in; grouped the other way, decimal(5,2) and money first, it is
         // decimal(23,4). So the rule is folded from the left over the values as written, and never regrouped as a join may be.
-        ScalarType bigint = ScalarType.Parse("bigint")!, money = ScalarType.Parse("money")!, small = ScalarType.Parse("decimal(5,2)")!;
+        var (bigint, money, small) = (Operand.OfType(ScalarType.Parse("bigint")!), Operand.OfType(ScalarType.Parse("money")!), Operand.OfType(ScalarType.Parse("decimal(5,2)")!));
 
         Assert.Equal("decimal(19,4)", ScalarType.Chain([bigint, money, small])!.Text);
-        Assert.Equal(ScalarType.Chain([bigint, money, small]), ScalarType.Chain([ScalarType.Chain([bigint, money])!, small]));
-        Assert.Equal("decimal(23,4)", ScalarType.Chain([bigint, ScalarType.Chain([money, small])!])!.Text);
+        Assert.Equal(ScalarType.Chain([bigint, money, small]), ScalarType.Chain([Operand.OfType(ScalarType.Chain([bigint, money])!), small]));
+        Assert.Equal("decimal(23,4)", ScalarType.Chain([bigint, Operand.OfType(ScalarType.Chain([money, small])!)])!.Text);
         Assert.Equal("decimal(23,4)", ScalarType.Chain([bigint, small, money])!.Text);
     }
 
@@ -398,14 +416,17 @@ public class LatticeLawTests
     {
         public void Check<T>(Lattice<T> l, int seed) where T : notnull
         {
-            // a ⊑ b exactly when joining a adds nothing to b; and a ⊑ b ⊑ a exactly when the two are the same.
+            // Joining a adds nothing to b only when a ⊑ b (both ways where the join is least); elements that say the same are
+            // below each other (and only those, where it is least); and the order is transitive.
             var sample = Sample(l, seed);
             foreach (var a in sample)
             {
                 foreach (var b in sample)
                 {
-                    Assert.True(l.Below(a, b) == l.Same(l.Join(a, b), b), Where(l, seed, a, b));
-                    Assert.True((l.Below(a, b) && l.Below(b, a)) == l.Same(a, b), Where(l, seed, a, b));
+                    var addsNothing = l.Same(l.Join(a, b), b);
+                    Assert.True(l.Least ? addsNothing == l.Below(a, b) : !addsNothing || l.Below(a, b), Where(l, seed, a, b));
+                    var both = l.Below(a, b) && l.Below(b, a);
+                    Assert.True(l.Least ? both == l.Same(a, b) : !l.Same(a, b) || both, Where(l, seed, a, b));
                     foreach (var c in sample.Take(Triples))
                         Assert.True(!(l.Below(a, b) && l.Below(b, c)) || l.Below(a, c), Where(l, seed, a, b, c));
                 }
@@ -445,7 +466,7 @@ public class LatticeLawTests
             {
                 // Exactly the left side, except that a value of unknown shape takes in the reason naming the other side's
                 // unknown, a witness, once: joining again then gives the same record, so an iteration settles a pass later.
-                foreach (var b in sample.Where(b => l.Below(b, a)))
+                foreach (var b in sample.Where(b => l.Same(l.Join(a, b), a)))
                 {
                     var joined = l.Join(a, b);
                     Assert.True(Equals(joined, a) || (a is Value { Shape: UnknownShape } && l.Same(joined, a) && Equals(l.Join(joined, b), joined)), Where(l, seed, a, b, joined));

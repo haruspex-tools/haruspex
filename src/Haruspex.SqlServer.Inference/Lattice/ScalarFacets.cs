@@ -49,8 +49,38 @@ internal static class ScalarFacets
         return joined.IsEmpty ? null : joined;
     }
 
-    /// <summary>Whether <paramref name="a"/> proves at least what <paramref name="b"/> does: joining them gives <paramref name="b"/>, up to <see cref="Same"/>.</summary>
-    public static bool Below(IrFacets? a, IrFacets? b) => Same(Join(a, b), b);
+    /// <summary>
+    /// Whether <paramref name="a"/> proves at least what <paramref name="b"/> does, facet by facet, so that every value it
+    /// allows <paramref name="b"/> allows: each facet <paramref name="b"/> has, <paramref name="a"/> has too, as tight or
+    /// tighter. A length no longer (a fixed length is below a maximum as long), a minimum length no shorter, digits the
+    /// same, a lower bound no lower and an upper bound no higher (at the same value, closed only where the other is), a value
+    /// set a subset of the other's, of the same match. Sources are not compared. Written apart from <see cref="Join"/>, so
+    /// that the law tests can check the join against it; the join is not always least in it (a fixed length beside a maximum
+    /// is dropped, where the maximum would do).
+    /// </summary>
+    public static bool Below(IrFacets? a, IrFacets? b)
+    {
+        if (b is null)
+            return true;
+        if (a is null)
+            return false;
+        return Holds(a.Length, b.Length, (x, y) => x.Unit == y.Unit && x.Encoding == y.Encoding && (y.IsFixed ? x.IsFixed && x.Value == y.Value : x.Value <= y.Value))
+            && Holds(a.MinLength, b.MinLength, (x, y) => x.Value >= y.Value)
+            && Holds(a.Digits, b.Digits, (x, y) => x.Precision == y.Precision && x.Scale == y.Scale)
+            && Holds(a.Min, b.Min, (x, y) => Bound(x, y, lower: true))
+            && Holds(a.Max, b.Max, (x, y) => Bound(x, y, lower: false))
+            && Holds(a.Values, b.Values, (x, y) => x.Match == y.Match && x.Items.All(y.Items.Contains));
+
+        static bool Holds<T>(T? x, T? y, Func<T, T, bool> tighter) where T : class => y is null || (x is not null && tighter(x, y));
+
+        static bool Bound(IrBound x, IrBound y, bool lower)
+        {
+            if (!ExactDecimal.TryParse(x.Value, out var p) || !ExactDecimal.TryParse(y.Value, out var q))
+                return false;
+            var order = p.CompareTo(q);
+            return order == 0 ? y.Inclusive || !x.Inclusive : (order > 0) == lower;
+        }
+    }
 
     /// <summary>
     /// Whether two facets say the same of a value: the same facts with the same values, each fact's source being a witness

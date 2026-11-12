@@ -13,37 +13,11 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="Precision">An exact number's precision, or a date or time type's fractional digits.</param>
 /// <param name="Scale">An exact number's scale.</param>
 /// <remarks>
-/// <para>
-/// <b>An operand's digits.</b> A type an operand of a rule has may carry the integer digits the server counts for it
-/// (<see cref="Digits"/>), which the rules read and pass on where the server does. A <c>with</c> drops them, as
-/// <see cref="Value"/>'s does: the copy constructor leaves them out, so a result built from an operand counts its type's
-/// digits unless the rule says otherwise. They live here as well as on <see cref="Value.Digits"/> for a reason: there they are
-/// a fact about an expression, possibly a range; here they are one count, the end of that range a rule is being worked out at
-/// (<c>TypeOf</c>, its fewest or its most), and they never outlive the rule, since a result becomes a value through
-/// its SQL text, which has no digits.
-/// </para>
+/// A type has no integer digits of its own beyond its name's: the digits an integer literal counts are an operand's, so they
+/// travel beside the type, in an <see cref="Operand"/>, into the rules that read them.
 /// </remarks>
 internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0, int Scale = 0)
 {
-    /// <summary>The copy <c>with</c> starts from: every part but <see cref="Digits"/>, which a rule passes on only by saying so.</summary>
-    private ScalarType(ScalarType original)
-    {
-        Name = original.Name;
-        Length = original.Length;
-        Precision = original.Precision;
-        Scale = original.Scale;
-    }
-
-    /// <summary>
-    /// For an integer literal, or an int the server folds to one (<see cref="Value.Digits"/>), the digits it counts: beside a
-    /// decimal it counts as decimal(digits, 0), where an int column or variable counts as decimal(10, 0) (observed:
-    /// <c>Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments</c>). Null for its type's own.
-    /// </summary>
-    public int? Digits { get; init; }
-
-    /// <summary>This type as a rule's result, which is not a literal: a copy, so it counts its type's digits.</summary>
-    private ScalarType AsResult => this with { };
-
     /// <summary>The longest a varchar can be without max, in bytes; nvarchar's is half, in characters.</summary>
     public const int MostBytes = 8000;
 
@@ -125,7 +99,7 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     };
 
     /// <summary>The integer digits a type's values can have: <c>int</c> 10, <c>smallint</c> 5.</summary>
-    private static int IntegerDigits(string integer) => integer switch
+    internal static int IntegerDigits(string integer) => integer switch
     {
         "bit" => 1,
         "tinyint" => 3,
@@ -133,17 +107,6 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
         "int" => 10,
         "bigint" => 19,
         _ => throw new ArgumentOutOfRangeException(nameof(integer), integer, "Not an integer type."),
-    };
-
-    /// <summary>
-    /// The decimal an exact number is converted to beside a decimal: its own precision and scale; an integer column's
-    /// digits, or an integer literal's own (observed); money as decimal(19, 4).
-    /// </summary>
-    private (int Precision, int Scale) AsDecimal() => this switch
-    {
-        { IsDecimal: true } or { Name: "money" or "smallmoney" } => (Precision, Scale),
-        { Digits: { } digits } => (digits, 0),
-        _ => (IntegerDigits(Name), 0),
     };
 
     /// <summary>Whether it is named numeric rather than decimal: a numeric column or a decimal literal.</summary>
@@ -196,12 +159,13 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// regroups or reorders a chain's types before folding them.
     /// </para>
     /// </summary>
-    public static ScalarType? Chain(IReadOnlyList<ScalarType> types) => Clash(types) is null ? Fold(types) : null;
+    public static ScalarType? Chain(IReadOnlyList<Operand> types) => Clash(types) is null ? Fold(types) : null;
 
-    private static ScalarType? Fold(IReadOnlyList<ScalarType> types)
+    private static ScalarType? Fold(IReadOnlyList<Operand> operands)
     {
-        if (types.Count == 0)
+        if (operands.Count == 0)
             return null;
+        var types = operands.Select(o => o.Type).ToList();
         static int Fraction(ScalarType t) => t.Name switch
         {
             "datetimeoffset" or "datetime2" or "time" => t.Precision,
@@ -209,12 +173,13 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
             _ => 0,
         };
 
-        var folded = types.Skip(1).Aggregate(types[0], Pair);
+        // The chain's result is a type: the digits its operands counted were the operands', and stay with them.
+        var folded = operands.Skip(1).Aggregate(operands[0], Pair).Type;
         return folded.Name switch
         {
             "datetimeoffset" or "datetime2" => folded with { Precision = types.Max(Fraction) },
             "time" => folded with { Precision = types.Where(t => t.Name == "time").Max(t => t.Precision) },
-            _ => folded.AsResult,
+            _ => folded,
         };
     }
 
@@ -231,34 +196,39 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// A pair SQL Server would refuse still gives the higher one: a chain is refused only when a value cannot become the
     /// final type (<see cref="Clash"/>; observed: A_chain_is_refused_only_when_a_value_cannot_become_its_type).
     /// </summary>
-    private static ScalarType Pair(ScalarType a, ScalarType b)
+    /// <remarks>
+    /// Each case names the digits its result counts as the next step's operand: two integers the more of both's, an integer
+    /// beside a bit its own, anything else its type's (<see cref="Operand.OfType"/>).
+    /// </remarks>
+    private static Operand Pair(Operand x, Operand y)
     {
+        var (a, b) = (x.Type, y.Type);
         static bool Exact(ScalarType t) => t.IsInteger || t.IsDecimal || t.IsMoney;
         if ((a.IsDecimal || b.IsDecimal) && Exact(a) && Exact(b))
         {
-            var (pa, sa) = a.AsDecimal();
-            var (pb, sb) = b.AsDecimal();
+            var (pa, sa) = x.AsDecimal();
+            var (pb, sb) = y.AsDecimal();
             var integer = Math.Max(pa - sa, pb - sb);
             var scale = Math.Min(Math.Max(sa, sb), 38 - integer);
-            return new ScalarType(a.IsDecimal ? a.Name : b.Name, Precision: integer + scale, Scale: scale);
+            return Operand.OfType(new ScalarType(a.IsDecimal ? a.Name : b.Name, Precision: integer + scale, Scale: scale));
         }
 
         if (a.IsInteger && b.IsInteger)
         {
             var wider = PrecedenceRank(a.Name) >= PrecedenceRank(b.Name) ? a : b;
-            var digits = Math.Max(a.AsDecimal().Precision, b.AsDecimal().Precision);
-            return wider with { Digits = digits == IntegerDigits(wider.Name) ? null : digits };
+            var digits = Math.Max(x.AsDecimal().Precision, y.AsDecimal().Precision);
+            return new Operand(wider, digits == IntegerDigits(wider.Name) ? null : digits);
         }
 
         if (a.IsString && b.IsString)
         {
             var varying = a.Name.EndsWith("varchar", StringComparison.Ordinal) || b.Name.EndsWith("varchar", StringComparison.Ordinal);
-            return String(a.IsNational || b.IsNational, varying, a.IsMax || b.IsMax ? -1 : Math.Max(a.Length, b.Length));
+            return Operand.OfType(String(a.IsNational || b.IsNational, varying, a.IsMax || b.IsMax ? -1 : Math.Max(a.Length, b.Length)));
         }
 
         // bit beside an integer adds nothing: an integer literal keeps its digits (observed over the grid's triples).
-        var top = PrecedenceRank(a.Name) >= PrecedenceRank(b.Name) ? a : b;
-        return top.IsDecimal || top.IsInteger ? top : top.AsResult;
+        var top = PrecedenceRank(a.Name) >= PrecedenceRank(b.Name) ? x : y;
+        return top.Type.IsDecimal || top.Type.IsInteger ? top : Operand.OfType(top.Type);
     }
 
     /// <summary>
@@ -269,17 +239,18 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// date alone are refused). Refused: uniqueidentifier with anything but a string; date, time, datetime2 and datetimeoffset
     /// with a number or bit; date with time.
     /// </summary>
-    public static (ScalarType First, ScalarType Second)? Clash(IReadOnlyList<ScalarType> types)
+    public static (ScalarType First, ScalarType Second)? Clash(IReadOnlyList<Operand> operands)
     {
+        var types = operands.Select(o => o.Type).ToList();
         static bool Numeric(ScalarType t) => t.IsNumber || t.Name == "bit";
         static bool Refused(ScalarType a, ScalarType b) =>
             (a.Name == "uniqueidentifier" && b.Name != "uniqueidentifier" && !b.IsString)
             || (a.Name is "date" or "time" or "datetime2" or "datetimeoffset" && Numeric(b))
             || (a.Name == "date" && b.Name == "time");
 
-        if (Fold(types) is not { } final)
+        if (Fold(operands) is not { } final)
             return null;
-        var own = types.ToList().FindIndex(t => t.Name == final.Name);
+        var own = types.FindIndex(t => t.Name == final.Name);
         for (var i = 0; i < types.Count; i++)
         {
             if (!Refused(types[i], final) && !Refused(final, types[i]))
@@ -293,24 +264,25 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     }
 
     /// <summary>
-    /// Whether every value of <paramref name="from"/> is the same value in <paramref name="to"/>, so the facts proved of it
+    /// Whether every value of <paramref name="operand"/> is the same value in <paramref name="to"/>, so the facts proved of it
     /// (bounds, lengths, a closed set) still hold once converted: an exact number into one holding all its integer digits and
     /// places, a string into a varying string as long, of the same kind. Not a float (whose digits are approximate), not a
     /// rounded decimal, not a string padded or cut short.
     /// </summary>
-    public static bool Preserves(ScalarType from, ScalarType to)
+    public static bool Preserves(Operand operand, ScalarType to)
     {
+        var from = operand.Type;
         if (from.Text == to.Text)
             return true;
         if (from.IsString && to.IsString)
             return from.IsNational == to.IsNational && to.Name.EndsWith("varchar", StringComparison.Ordinal) && (to.IsMax || (!from.IsMax && to.Length >= from.Length));
-        if (!(from.IsInteger || from.IsDecimal || from.IsMoney) || !Converts(from, to))
+        if (!(from.IsInteger || from.IsDecimal || from.IsMoney) || !Converts(operand, to))
             return false;
         if (to.IsInteger || to.IsMoney)
             return from.IsInteger || (from.Name == "smallmoney" && to.Name == "money");
         if (!to.IsDecimal)
             return false;
-        var (p, s) = from.AsDecimal();
+        var (p, s) = operand.AsDecimal();
         return to.Precision - to.Scale >= p - s && to.Scale >= s;
     }
 
@@ -334,27 +306,29 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// <item>with a decimal, by <see cref="DecimalResult"/>; numeric when either is.</item>
     /// </list>
     /// </summary>
-    public static ScalarType? Arithmetic(char op, ScalarType left, ScalarType right)
+    public static ScalarType? Arithmetic(char op, Operand leftOperand, Operand rightOperand)
     {
+        var (left, right) = (leftOperand.Type, rightOperand.Type);
         if (left.Name is "datetime" or "smalldatetime" || right.Name is "datetime" or "smalldatetime")
         {
-            static bool Operand(ScalarType t) => t.Name is "datetime" or "smalldatetime" or "bit" || t.IsNumber;
-            return op is '+' or '-' && Operand(left) && Operand(right)
+            static bool Dated(ScalarType t) => t.Name is "datetime" or "smalldatetime" or "bit" || t.IsNumber;
+            return op is '+' or '-' && Dated(left) && Dated(right)
                 ? new ScalarType(left.Name == "datetime" || right.Name == "datetime" ? "datetime" : "smalldatetime")
                 : null;
         }
 
-        if (Operands(left, right) is not var (l, r))
+        if (Operands(leftOperand, rightOperand) is not var (lo, ro))
             return null;
+        var (l, r) = (lo.Type, ro.Type);
         if (l.IsApproximate || r.IsApproximate)
             return op == '%' ? null : new ScalarType(l.Name == "float" || r.Name == "float" ? "float" : "real");
         if ((l.IsMoney || r.IsMoney) && !l.IsDecimal && !r.IsDecimal)
             return Parse(l.Name == "money" || r.Name == "money" ? "money" : "smallmoney");
         if (l.IsInteger && r.IsInteger)
-            return (Rank(l.Name) >= Rank(r.Name) ? l : r).AsResult;
+            return Rank(l.Name) >= Rank(r.Name) ? l : r;
 
         var name = l.IsNumericNamed || r.IsNumericNamed ? "numeric" : "decimal";
-        return DecimalResult(op, l, r) is var (precision, scale, _, _) ? new ScalarType(name, Precision: precision, Scale: scale) : null;
+        return DecimalResult(op, lo, ro) is var (precision, scale, _, _) ? new ScalarType(name, Precision: precision, Scale: scale) : null;
     }
 
     /// <summary>
@@ -362,12 +336,12 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// <c>A_bit_beside_a_number_takes_the_numbers_type_and_two_bits_are_an_error</c>, bit * decimal(10,2) is decimal(21,4)); null
     /// unless both are numbers, and for two bits.
     /// </summary>
-    private static (ScalarType Left, ScalarType Right)? Operands(ScalarType left, ScalarType right)
+    private static (Operand Left, Operand Right)? Operands(Operand left, Operand right)
     {
         static bool Numeric(ScalarType t) => t.IsNumber || t.Name == "bit";
-        if (!Numeric(left) || !Numeric(right) || (left.Name == "bit" && right.Name == "bit"))
+        if (!Numeric(left.Type) || !Numeric(right.Type) || (left.Type.Name == "bit" && right.Type.Name == "bit"))
             return null;
-        return (left.Name == "bit" ? right : left, right.Name == "bit" ? left : right);
+        return (left.Type.Name == "bit" ? right : left, right.Type.Name == "bit" ? left : right);
     }
 
     /// <summary>
@@ -383,9 +357,10 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// 38 - max(p1 - s1, p2 - s2), with no floor; for * and /, to min(s, max(6, 38 - (p - s))), so never below 6 unless it was
     /// already (observed over 144,500 operand pairs when the rule was written; ArithmeticGridTests keeps a grid of them).
     /// </summary>
-    private static (int Precision, int Scale, int UncappedPrecision, int UncappedScale)? DecimalResult(char op, ScalarType left, ScalarType right)
+    private static (int Precision, int Scale, int UncappedPrecision, int UncappedScale)? DecimalResult(char op, Operand left, Operand right)
     {
-        if (!(left.IsInteger || left.IsDecimal || left.IsMoney) || !(right.IsInteger || right.IsDecimal || right.IsMoney))
+        static bool Exact(ScalarType t) => t.IsInteger || t.IsDecimal || t.IsMoney;
+        if (!Exact(left.Type) || !Exact(right.Type))
             return null;
         var (p1, s1) = left.AsDecimal();
         var (p2, s2) = right.AsDecimal();
@@ -439,10 +414,11 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// </list>
     /// </summary>
     /// <param name="divisor">The right operand's value, when it is a number literal.</param>
-    public static bool MayOverflow(char op, ScalarType left, ScalarType right, decimal? divisor)
+    public static bool MayOverflow(char op, Operand leftOperand, Operand rightOperand, decimal? divisor)
     {
-        if (Operands(left, right) is not var (l, r))
+        if (Operands(leftOperand, rightOperand) is not var (lo, ro))
             return true;
+        var (left, right, l, r) = (leftOperand.Type, rightOperand.Type, lo.Type, ro.Type);
         var byPositive = op is '/' or '%' && divisor >= 1;
         if (l.IsApproximate || r.IsApproximate || (!l.IsDecimal && !r.IsDecimal))
             return !byPositive;
@@ -454,8 +430,8 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
         if ((left.Name == "bit" || right.Name == "bit") && l.IsDecimal && l.Precision == l.Scale)
             return true;
 
-        var (p1, s1) = l.AsDecimal();
-        var (p2, s2) = r.AsDecimal();
+        var (p1, s1) = lo.AsDecimal();
+        var (p2, s2) = ro.AsDecimal();
 
         // % first brings each operand to its scale, keeping its integer digits, which past 38 digits overflows (observed:
         // Modulo_brings_both_operands_to_its_scale_first_which_can_overflow); its result, smaller than either, cannot.
@@ -463,7 +439,7 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
             return Math.Max(p1 - s1, p2 - s2) + Math.Max(s1, s2) > 38;
 
         // Within 38 digits the precision holds every result, so only a capped one can overflow.
-        if (DecimalResult(op, l, r) is not var (_, scale, uncappedPrecision, uncappedScale) || uncappedPrecision <= 38)
+        if (DecimalResult(op, lo, ro) is not var (_, scale, uncappedPrecision, uncappedScale) || uncappedPrecision <= 38)
             return false;
 
         var needed = op switch
@@ -479,7 +455,7 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     // ---- conversion -------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// Whether every value of <paramref name="from"/> converts to <paramref name="to"/> without an overflow, which is an error by
+    /// Whether every value of <paramref name="operand"/> converts to <paramref name="to"/> without an overflow, which is an error by
     /// default and NULL under a caller's ANSI_WARNINGS and ARITHABORT off (observed:
     /// <c>An_overflow_is_an_error_by_default_and_null_under_the_callers_ansi_warnings_and_arithabort_off</c>). A conversion that
     /// fails for a value (a string that is not a number) is an error even then
@@ -487,8 +463,9 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// when not proved: each case below was observed at its edge (<c>A_conversion_that_cannot_overflow_keeps_every_value</c>).
     /// </summary>
     /// <param name="styled">Whether CONVERT gives a style, which changes a number's characters, so a number's length is not known.</param>
-    public static bool Converts(ScalarType from, ScalarType to, bool styled = false)
+    public static bool Converts(Operand operand, ScalarType to, bool styled = false)
     {
+        var from = operand.Type;
         if (from.Text == to.Text && !styled)
             return true;
 
@@ -530,7 +507,7 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
                 return false;
 
             // Rounding to fewer places can carry into one more integer digit: 99.999 as decimal(4,2) is 100.00.
-            var (p, s) = from.AsDecimal();
+            var (p, s) = operand.AsDecimal();
             return to.Precision - to.Scale > p - s || (to.Precision - to.Scale == p - s && to.Scale >= s);
         }
 
@@ -574,7 +551,7 @@ internal sealed record ScalarType(string Name, int Length = 0, int Precision = 0
     /// under any options (observed: A_string_that_is_not_a_value_of_the_type_is_an_error_even_under_the_callers_options). Not
     /// in <see cref="Converts"/>, which also says TRY_CAST cannot fail.
     /// </summary>
-    public static bool NeverNull(ScalarType from, ScalarType to) => Converts(from, to) || (from.IsString && to.Name == "uniqueidentifier");
+    public static bool NeverNull(Operand from, ScalarType to) => Converts(from, to) || (from.Type.IsString && to.Name == "uniqueidentifier");
 
     /// <summary>
     /// Whether a literal's value converts to <paramref name="to"/> without an overflow: an integer within its range, or within

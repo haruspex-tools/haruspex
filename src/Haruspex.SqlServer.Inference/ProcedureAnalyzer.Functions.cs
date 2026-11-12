@@ -84,7 +84,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private static ScalarType? DateOperand(Value value, ScalarExpression expression) =>
         value.IsLiveJson || Strip(expression) is NullLiteral ? null
-            : TypeOf(value, expression) is { } type && (type.IsDateOrTime || type.IsString || type.IsInteger) ? type : null;
+            : TypeOf(value) is { } type && (type.IsDateOrTime || type.IsString || type.IsInteger) ? type : null;
 
     /// <summary>
     /// <c>DATEDIFF(part, a, b)</c> (int) and <c>DATEDIFF_BIG</c> (bigint): NULL when a or b is. Its overflow is an error, under
@@ -111,7 +111,7 @@ internal sealed partial class ProcedureAnalyzer
         if (unknown is not null)
             return unknown;
         // The NULL literal as the number does not compile (error 8116), where a NULL variable gives NULL.
-        if (Strip(call.Parameters[1]) is NullLiteral || TypeOf(values[0], call.Parameters[1]) is not { IsNumber: true })
+        if (Strip(call.Parameters[1]) is NullLiteral || TypeOf(values[0]) is not { IsNumber: true })
             return NotModelled(call, "a number of this type is not modelled.");
         var date = DateOperand(values[1], call.Parameters[2]);
         if (date is null)
@@ -164,7 +164,7 @@ internal sealed partial class ProcedureAnalyzer
         var (values, unknown) = Arguments(parts, scope);
         if (unknown is not null)
             return unknown;
-        if (values.Select((v, i) => Strip(parts[i]) is NullLiteral || TypeOf(v, parts[i]) is { Name: "tinyint" or "smallint" or "int" }).Any(ok => !ok))
+        if (values.Select((v, i) => Strip(parts[i]) is NullLiteral || TypeOf(v) is { Name: "tinyint" or "smallint" or "int" }).Any(ok => !ok))
             return NotModelled(call, "a part that is not an int is not modelled.");
         return Typed(type, Reasons(values), call);
     }
@@ -172,8 +172,8 @@ internal sealed partial class ProcedureAnalyzer
     // ---- strings ------------------------------------------------------------------------------------------------------
 
     /// <summary>A value's string type, when it is a string.</summary>
-    private static ScalarType? StringOf(Value value, ScalarExpression expression) =>
-        TypeOf(value, expression) is { IsString: true } type ? type : null;
+    private static ScalarType? StringOf(Value value) =>
+        TypeOf(value) is { IsString: true } type ? type : null;
 
     /// <summary>
     /// <c>LTRIM</c>, <c>RTRIM</c>, <c>TRIM</c>, <c>UPPER</c> and <c>LOWER</c>: the string's length, varying (char becomes
@@ -185,9 +185,9 @@ internal sealed partial class ProcedureAnalyzer
         var (values, unknown) = Arguments(characters is null ? [text] : [text, characters], scope);
         if (unknown is not null)
             return unknown;
-        if (StringOf(values[0], text) is not { } type || (characters is not null && StringOf(values[1], characters) is null))
+        if (StringOf(values[0]) is not { } type || (characters is not null && StringOf(values[1]) is null))
             return NotModelled(call, "an argument that is not a string is not modelled.");
-        var national = type.IsNational || (characters is not null && StringOf(values[1], characters)!.IsNational);
+        var national = type.IsNational || (characters is not null && StringOf(values[1])!.IsNational);
         return Typed(ScalarType.String(national, varying: true, type.Length), Reasons(values), call);
     }
 
@@ -202,7 +202,7 @@ internal sealed partial class ProcedureAnalyzer
         var (values, unknown) = Arguments([text, .. others], scope);
         if (unknown is not null)
             return unknown;
-        if (StringOf(values[0], text) is not { } type)
+        if (StringOf(values[0]) is not { } type)
             return NotModelled(call, "a string function of a value that is not a string is not modelled.");
 
         var n = type.Length;
@@ -252,7 +252,7 @@ internal sealed partial class ProcedureAnalyzer
         var value = Expression(argument, scope);
         if (value.Shape is UnknownShape)
             return value;
-        var type = value.IsLiveJson ? null : TypeOf(value, argument);
+        var type = value.IsLiveJson ? null : TypeOf(value);
         if (type is null || (!bytes && !type.IsString))
             return NotModelled(call, "a length of a value of this type is not modelled.");
         return Typed(new ScalarType(type.IsMax ? "bigint" : "int"), value.NullableBecause, call);
@@ -267,7 +267,7 @@ internal sealed partial class ProcedureAnalyzer
         var (values, unknown) = Arguments(call.Parameters, scope);
         if (unknown is not null)
             return unknown;
-        var types = values.Select((v, i) => StringOf(v, call.Parameters[i])).ToList();
+        var types = values.Select(StringOf).ToList();
         if (types.Any(t => t is null))
             return NotModelled(call, "REPLACE of a value that is not a string is not modelled.");
         return Typed(ScalarType.String(types.Any(t => t!.IsNational), varying: true, types[0]!.IsMax ? -1 : ScalarType.MostBytes), Reasons(values), call);
@@ -279,7 +279,7 @@ internal sealed partial class ProcedureAnalyzer
         var value = Expression(call.Parameters[0], scope);
         if (value.Shape is UnknownShape)
             return value;
-        if (StringOf(value, call.Parameters[0]) is null)
+        if (StringOf(value) is null)
             return NotModelled(call, "STRING_ESCAPE of a value that is not a string is not modelled.");
         return Typed(new ScalarType("nvarchar", -1), value.NullableBecause, call);
     }
@@ -295,7 +295,7 @@ internal sealed partial class ProcedureAnalyzer
         var format = Expression(call.Parameters[0], scope);
         if (format.Shape is UnknownShape)
             return format;
-        if (StringOf(format, call.Parameters[0]) is null)
+        if (StringOf(format) is null)
             return NotModelled(call, "FORMATMESSAGE of a message number is not modelled.");
         return Typed(new ScalarType("nvarchar", 4000), format.NullableBecause, call);
     }
@@ -323,7 +323,7 @@ internal sealed partial class ProcedureAnalyzer
         var argument = InAggregate(() => Expression(call.Parameters[0], scope));
         if (argument.Shape is UnknownShape)
             return argument;
-        if (argument.IsLiveJson || TypeOf(argument, call.Parameters[0]) is not { } from)
+        if (argument.IsLiveJson || TypeOf(argument) is not { } from)
             return NotModelled(call, "STRING_AGG of a value of this type is not modelled.");
         var type = from.IsString
             ? ScalarType.String(from.IsNational, varying: true, from.IsMax ? -1 : ScalarType.MostBytes)
@@ -350,12 +350,13 @@ internal sealed partial class ProcedureAnalyzer
         var (values, unknown) = Arguments(arguments, scope);
         if (unknown is not null)
             return LocalRelationValues.Unknown((UnknownShape)unknown.Shape);
-        var types = values.Select((v, i) => v.IsLiveJson ? null : TypeOf(v, arguments[i])).ToList();
+        var types = values.Select((v, i) => v.IsLiveJson ? null : TypeOf(v)).ToList();
         ScalarType? type = null;
         if (types.Count > 0 && types.All(t => t is { IsInteger: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
             type = types[0];
         else if (types.Count > 0 && types.All(t => t is { IsDecimal: true }) && types.Select(t => t!.Name).Distinct().Count() == 1)
-            type = ScalarType.Chain(types!) is { } common && types.All(t => ScalarType.Converts(t!, common)) ? common : null;
+            // Decimals: each counts its own precision and scale, so every operand counts its type's.
+            type = ScalarType.Chain([.. types.Select(t => Operand.OfType(t!))]) is { } common && types.All(t => ScalarType.Converts(Operand.OfType(t!), common)) ? common : null;
         if (type is null)
             return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(reference)}: its arguments must be of one integer type, or decimals.", at));
         return new LocalRelationValues(["value"], [Typed(type, [], reference)], null);

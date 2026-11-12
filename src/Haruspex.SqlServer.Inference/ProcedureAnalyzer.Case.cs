@@ -415,7 +415,7 @@ internal sealed partial class ProcedureAnalyzer
         var (json, content) = JsonContent(arguments.Zip(values));
         if (json)
             return new Value(new JsonTextShape(content), because);
-        return values.Where((v, i) => !IsJson(v) && TypeOf(v, arguments[i]) is not { IsString: true }).Any()
+        return values.Where((v, i) => !IsJson(v) && TypeOf(v) is not { IsString: true }).Any()
             ? NotModelled(coalesce, "COALESCE of JSON and a value that is not a string is not modelled.")
             : Typed(new ScalarType("nvarchar", -1), because, coalesce);
     }

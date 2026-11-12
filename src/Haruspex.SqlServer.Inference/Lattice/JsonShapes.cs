@@ -91,6 +91,37 @@ internal static class JsonShapes
         _ => a == b,
     };
 
+    /// <summary>
+    /// Whether every JSON value <paramref name="a"/> allows, <paramref name="b"/> allows too, read from the shapes' structure:
+    /// anything is below an unknown; a union is below what covers each of its variants, and a shape below a union when it is
+    /// below one variant; scalars of one type by their facets (<see cref="ScalarFacets.Below"/>); arrays by their items, null
+    /// reasons and counts, a tuple below an array whose items cover each of its own; tuples position by position; objects of the
+    /// same keys key by key, a key present the same way (or never null, so present either way); records by their values; JSON
+    /// text by its content, none (unknown content) being the top. Reasons are compared as sets. Written apart from
+    /// <see cref="Join"/>, so that the law tests can check the join against it.
+    /// </summary>
+    public static bool Below(Shape a, Shape b) => (a, b) switch
+    {
+        (_, UnknownShape) => true,
+        (UnknownShape, _) => false,
+        (UnionShape x, _) => x.Variants.All(v => Below(v, b)),
+        (_, UnionShape y) => y.Variants.Any(v => Below(a, v)),
+        (ScalarShape x, ScalarShape y) => x.Type with { Facets = null } == y.Type with { Facets = null } && ScalarFacets.Below(x.Type.Facets, y.Type.Facets),
+        (ArrayShape x, ArrayShape y) => Below(x.Items, y.Items) && NullReasons.Below(x.ItemsNullableBecause, y.ItemsNullableBecause)
+            && (x.MinItems ?? 0) >= (y.MinItems ?? 0) && (y.MaxItems is null || (x.MaxItems is { } most && most <= y.MaxItems)),
+        (TupleShape x, ArrayShape y) => x.Items.All(e => Below(e.Type, y.Items) && NullReasons.Below(e.NullableBecause, y.ItemsNullableBecause))
+            && x.Items.Count >= (y.MinItems ?? 0) && (y.MaxItems is null || x.Items.Count <= y.MaxItems),
+        (TupleShape x, TupleShape y) => x.Items.Count == y.Items.Count
+            && x.Items.Zip(y.Items).All(p => Below(p.First.Type, p.Second.Type) && NullReasons.Below(p.First.NullableBecause, p.Second.NullableBecause)),
+        (ObjectShape x, ObjectShape y) => x.Fields.Count == y.Fields.Count
+            && x.Fields.Zip(y.Fields).All(p => p.First.Name == p.Second.Name
+                && (p.First.Presence == p.Second.Presence || p.First.NullableBecause.Count == 0)
+                && Below(p.First.Type, p.Second.Type) && NullReasons.Below(p.First.NullableBecause, p.Second.NullableBecause)),
+        (RecordShape x, RecordShape y) => Below(x.Values, y.Values) && NullReasons.Below(x.ValuesNullableBecause, y.ValuesNullableBecause),
+        (JsonTextShape x, JsonTextShape y) => y.Content is null || (x.Content is not null && Below(x.Content, y.Content)),
+        _ => a == b,
+    };
+
     /// <summary>Whether two unions' variants match one to one, each pair the same (<see cref="Same"/>, an equivalence, so a first match will do).</summary>
     private static bool SameVariants(EquatableArray<Shape> x, EquatableArray<Shape> y)
     {

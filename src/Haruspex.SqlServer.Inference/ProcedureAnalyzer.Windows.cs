@@ -54,7 +54,7 @@ internal sealed partial class ProcedureAnalyzer
                 var argument = Expression(call.Parameters[0], scope);
                 if (argument.Shape is UnknownShape)
                     return argument;
-                if (argument.IsLiveJson || TypeOf(argument, call.Parameters[0]) is not { } from || SumType(from) is not { } type)
+                if (argument.IsLiveJson || TypeOf(argument) is not { } from || SumType(from) is not { } type)
                     return NotModelled(call, "SUM of a value of this type is not modelled yet.");
                 EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. from is { IsDecimal: true, Precision: <= 19 } ? [] : (EquatableArray<IrNullReason>)[Overflow(call)], .. Framed()];
                 return Typed(type, because, call);
@@ -67,7 +67,7 @@ internal sealed partial class ProcedureAnalyzer
                 var argument = Expression(call.Parameters[0], scope);
                 if (argument.Shape is UnknownShape)
                     return argument;
-                if (argument.IsLiveJson || TypeOf(argument, call.Parameters[0]) is not { } from || Statistic(name, from) is not var (type, overflows))
+                if (argument.IsLiveJson || TypeOf(argument) is not { } from || Statistic(name, from) is not var (type, overflows))
                     return NotModelled(call, $"{name.ToUpperInvariant()} of a value of this type is not modelled.");
                 EquatableArray<IrNullReason> because =
                 [
@@ -102,7 +102,7 @@ internal sealed partial class ProcedureAnalyzer
                     return NotModelled(call, "a percentile of a value that is not a scalar is not modelled.");
                 if (name == "percentile_disc")
                     return argument;
-                return TypeOf(argument, element.Expression) is { IsNumber: true } or { Name: "bit" }
+                return TypeOf(argument) is { IsNumber: true } or { Name: "bit" }
                     ? Typed(new ScalarType("float"), argument.NullableBecause, call)
                     : NotModelled(call, "PERCENTILE_CONT of a value of this type is not modelled.");
             }
@@ -169,10 +169,10 @@ internal sealed partial class ProcedureAnalyzer
         var fallback = Expression(parameters[2], scope);
         if (fallback.Shape is UnknownShape)
             return fallback;
-        if (TypeOf(value, parameters[0]) is not { } type)
+        if (TypeOf(value) is not { } type)
             return NotModelled(call, "LAG or LEAD of a value of this type is not modelled.");
         var fits = (LiteralOf(parameters[2]) is ({ } literal, var negative) ? ScalarType.Fits(literal, type, negative) : null)
-            ?? (!fallback.IsLiveJson && TypeOf(fallback, parameters[2]) is { } from && ScalarType.Converts(from, type));
+            ?? (!fallback.IsLiveJson && OperandOf(fallback, parameters[2]) is { } from && ScalarType.Converts(from, type));
         EquatableArray<IrNullReason> because = [.. value.NullableBecause, .. offsetBecause, .. itself ? [] : fallback.NullableBecause];
         return Typed(type, fits || itself ? because : NullReasons.Join(because, [Overflow(call)]), call);
     }
