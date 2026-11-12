@@ -2,8 +2,8 @@
 // Rowset results follow the default type mapping of the mssql (tedious) driver.
 //
 // The notes on properties below rest on these facts:
-// - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 and every
-//   decimal of up to 15 significant digits exactly.
+// - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 exactly,
+//   and keeps the digits of any decimal of up to 15 significant digits.
 import { z } from 'zod'
 
 // JSON text: a string that must parse to a value of its content's schema. Its type stays string.

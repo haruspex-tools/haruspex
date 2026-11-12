@@ -177,18 +177,23 @@ internal static class Facets
     /// </summary>
     private static ZodNote? WideBounds(ZodExpression code, string? sql)
     {
-        var bounds = new List<string>();
+        var bounds = new List<(string Method, string Value)>();
         for (var link = code; link is Call call; link = call.Target)
         {
             if (call is { Method: "min" or "max", Arguments: [Number bound] })
-                bounds.Insert(0, bound.Value);
+                bounds.Insert(0, (call.Method, bound.Value));
         }
 
-        return bounds.All(Doubles.KeepsItsDigits)
-            ? null
-            : new ZodNote(
-                $"{sql ?? "The decimal"} {(bounds.Count == 2 ? $"runs from {bounds[0]} to {bounds[1]}" : $"is bounded by {bounds[0]}")}, which JavaScript reads as the nearest doubles.",
-                ZodCaveat.Doubles);
+        if (bounds.All(b => Doubles.KeepsItsDigits(b.Value)))
+            return null;
+        var range = bounds switch
+        {
+            [(_, var low), (_, var high)] => $"runs from {low} to {high}, which JavaScript reads as the nearest doubles",
+            [("min", var low)] => $"is at least {low}, which JavaScript reads as the nearest double",
+            [(_, var high)] => $"is at most {high}, which JavaScript reads as the nearest double",
+            _ => throw new InvalidOperationException("A decimal's bounds are at most a minimum and a maximum."),
+        };
+        return new ZodNote($"{sql ?? "The decimal"} {range}.", ZodCaveat.Doubles);
     }
 
     private static bool FromChecks(IrFacets? facets) =>

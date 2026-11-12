@@ -6,8 +6,8 @@
 //   elsewhere n bounds the length from above.
 // - A value set from a CHECK constraint holds as the database compares strings, where case, accents and trailing spaces
 //   may differ, so it is a note rather than z.enum.
-// - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 and every
-//   decimal of up to 15 significant digits exactly.
+// - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 exactly,
+//   and keeps the digits of any decimal of up to 15 significant digits.
 import { z } from 'zod'
 
 export const ListTicketsOwnerSchema = z.object({

@@ -173,6 +173,20 @@ public class ZodFacetsTests
         Assert.Equal(zod, Json(Number(IrFormat.Decimal, "decimal", Decimal(precision, scale, Exclusive(min), Exclusive(max)))));
 
     [Fact]
+    public void A_single_wide_bound_says_which_side_it_is_on()
+    {
+        var digits = new IrDigits(19, 2, Type);
+        Assert.EndsWith(
+            "// decimal is at most 99999999999999999.99, which JavaScript reads as the nearest double.",
+            Json(Number(IrFormat.Decimal, "decimal", new IrFacets(Digits: digits, Max: Inclusive("99999999999999999.99")))),
+            StringComparison.Ordinal);
+        Assert.EndsWith(
+            "// decimal is at least -99999999999999999.99, which JavaScript reads as the nearest double.",
+            Json(Number(IrFormat.Decimal, "decimal", new IrFacets(Digits: digits, Min: Inclusive("-99999999999999999.99")))),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_set_of_decimals_is_a_literal() =>
         Assert.Equal("z.literal([1.5, 2.25])", Json(Number(IrFormat.Decimal, "decimal(5,2)", Decimal(5, 2, Inclusive("-999.99"), Inclusive("999.99"), Numbers("1.5", "2.25")))));
 

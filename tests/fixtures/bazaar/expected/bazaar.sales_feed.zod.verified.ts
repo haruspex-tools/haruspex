@@ -4,8 +4,8 @@
 // The notes on properties below rest on these facts:
 // - The mssql driver builds a decimal or money of more than 15 digits as a double, which may land just past the type's
 //   bounds.
-// - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 and every
-//   decimal of up to 15 significant digits exactly.
+// - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 exactly,
+//   and keeps the digits of any decimal of up to 15 significant digits.
 import { z } from 'zod'
 
 // JSON text: a string that must parse to a value of its content's schema. Its type stays string.

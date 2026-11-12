@@ -62,8 +62,8 @@ internal static class ZodLowering
         ZodCaveat.DriverDecimals =>
             "The mssql driver builds a decimal or money of more than 15 digits as a double, which may land just past the type's bounds.",
         ZodCaveat.Doubles =>
-            "JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 and every " +
-            "decimal of up to 15 significant digits exactly.",
+            "JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 exactly, " +
+            "and keeps the digits of any decimal of up to 15 significant digits.",
         _ => throw new ArgumentOutOfRangeException(nameof(caveat), caveat, "A caveat outside the closed set."),
     };
 
