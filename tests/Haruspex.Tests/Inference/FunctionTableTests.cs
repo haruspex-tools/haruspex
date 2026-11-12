@@ -79,15 +79,15 @@ public partial class FunctionTableTests
     [Fact]
     public void A_functions_name_is_read_only_through_the_catalogue()
     {
-        // Two reads that name nothing to type by: a message's text, and a user's function, called with its schema.
-        string[] allowed = ["var name = call.FunctionName.Value;", "new ObjectName(schema.Value, call.FunctionName.Value)"];
+        // One read that names nothing to type by: a user's function, called with its schema.
+        const string allowed = "new ObjectName(schema.Value, call.FunctionName.Value)";
         var problems = SqlLayers
             .SelectMany(p => Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "src", p), "*.cs", SearchOption.AllDirectories))
             .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .SelectMany(f => File.ReadAllLines(f).Select((l, i) => (File: Path.GetFileName(f), Line: i + 1, Text: l.Trim())))
             .Where(l => l.Text.Contains("FunctionName.Value", StringComparison.Ordinal)
                 && !l.Text.Contains("BuiltInFunctions.Named(", StringComparison.Ordinal) && !l.Text.Contains("F.Named(", StringComparison.Ordinal)
-                && !allowed.Any(a => l.Text.Contains(a, StringComparison.Ordinal)))
+                && !l.Text.Contains(allowed, StringComparison.Ordinal))
             .Select(l => $"{l.File}:{l.Line}: {l.Text}")
             .ToList();
         Assert.True(problems.Count == 0, "A function's name read outside the catalogue:\n" + string.Join("\n", problems));

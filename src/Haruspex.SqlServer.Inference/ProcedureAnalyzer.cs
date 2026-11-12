@@ -555,7 +555,7 @@ internal sealed partial class ProcedureAnalyzer
     private Value Constructor(FunctionCall call, BindingScope scope, BuiltInFunction function)
     {
         var at = At(call);
-        var name = call.FunctionName.Value;
+        var name = function.Name;
 
         // Forms the server rejects or that would change what an aggregate sees (a window, DISTINCT) are not modelled.
         if (call.OverClause is not null || call.WithinGroupClause is not null || call.UniqueRowFilter != UniqueRowFilter.NotSpecified
