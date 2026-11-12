@@ -30,3 +30,10 @@ VALUES (1, '2026-05-02 11:30', '10:00', 6, 40.5, 1.50, N'Six eggs for a loaf'),
        (3, '2079-06-06 23:59', '23:59:59.9999999', -9223372036854775808, -2.5, -214748.3648, NULL),
        (4, '2026-05-03 12:00', '12:00', 3000000000, 2.5, 0, NULL),
        (5, '2026-05-03 12:30', '12:30', 3, 7.25, 0.75, N'Three jars for a chair');
+
+-- The swap tally's columns at their defaults' ends: 18 nines, a char and a varchar of one character, the last instant a
+-- time(7), datetimeoffset(7) and datetime2(7) hold, and a real's greatest; and an ordinary row.
+INSERT INTO bazaar.swap_tally (tally_id, worth, share, grade, mark, opened, logged, counted, weight)
+VALUES (1, 999999999999999999, -999999999999999999, 'A', 'z', '23:59:59.9999999', '9999-12-31 23:59:59.9999999 +14:00', '9999-12-31 23:59:59.9999999', 3.4e38);
+INSERT INTO bazaar.swap_tally (tally_id, worth, share, grade, mark, opened, logged, counted, weight)
+VALUES (2, 12, 7, 'B', 'q', '08:30', '2026-05-02 09:00 +01:00', '2026-05-02 09:00:00.1234567', 1.5);

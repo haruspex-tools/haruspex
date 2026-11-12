@@ -195,6 +195,11 @@ internal sealed partial class ProcedureAnalyzer
             value = output.Skip(1).Aggregate(output[0].Value, (a, b) => Value.Join(a, b.Value, at, "this set operation's column")) with { NullableBecause = reasons };
             if (value.Shape is UnknownShape)
                 value = Typed(type, reasons, at);
+
+            // The column's type is the one the server computes and describes (datetime2(7)), whatever its queries' columns
+            // were declared as (datetime2, which reads the same type).
+            else if (value.Shape is ScalarShape joined)
+                value = value with { Shape = joined with { Type = joined.Type with { Sql = type.Text } } };
         }
         else
         {

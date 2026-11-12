@@ -3,7 +3,8 @@
 {
   "setups": {
     "no sales": "DELETE FROM bazaar.stall_sale; DELETE FROM bazaar.web_order; DELETE FROM bazaar.auction_lot; DELETE FROM bazaar.barter;",
-    "lenient": "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;"
+    "lenient": "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;",
+    "no tallies": "DELETE FROM bazaar.swap_tally;"
   },
 
   "runs": [
@@ -11,6 +12,8 @@
     { "name": "sales_feed, no sales", "procedure": "bazaar.sales_feed", "setup": "no sales" },
     { "name": "mixed", "procedure": "bazaar.mixed" },
     { "name": "mixed, under ANSI_WARNINGS and ARITHABORT off", "procedure": "bazaar.mixed", "setup": "lenient" },
-    { "name": "lenient, under ANSI_WARNINGS and ARITHABORT off", "procedure": "bazaar.lenient", "setup": "lenient" }
+    { "name": "lenient, under ANSI_WARNINGS and ARITHABORT off", "procedure": "bazaar.lenient", "setup": "lenient" },
+    { "name": "swap_tally_types", "procedure": "bazaar.swap_tally_types" },
+    { "name": "swap_tally_types, no tallies", "procedure": "bazaar.swap_tally_types", "setup": "no tallies" }
   ]
 }
