@@ -163,16 +163,14 @@ internal sealed partial class ProcedureAnalyzer
         SourceLocation? star = null;
         var outer = current;
         current = query;
-        var found = Facts(query, scope);
-        if (unfiltered)
-        {
-            // A cursor's row is read again when it is fetched, so its query's filters prove nothing of it (FetchRow).
-            found.Values.Clear();
-            found.Rows.Clear();
-            found.Aggregates.Clear();
-        }
+        var found = Filters(query, scope);
 
-        facts.Add(found);
+        // A cursor's row is read again when it is fetched, so its query's filters prove nothing of it (FetchRow).
+        if (unfiltered)
+            found.Forget();
+
+        var outside = facts;
+        facts = facts.With(found);
         try
         {
             foreach (var element in query.SelectElements)
@@ -197,7 +195,7 @@ internal sealed partial class ProcedureAnalyzer
         }
         finally
         {
-            facts.RemoveAt(facts.Count - 1);
+            facts = outside;
             current = outer;
         }
 
@@ -409,12 +407,12 @@ internal sealed partial class ProcedureAnalyzer
     {
         var (source, table, column) = bound;
         var because = new List<IrNullReason>();
-        if (!SchemaRules.IsNeverNull(model, table, column) && !Proved(source, Key(bound)))
+        if (!SchemaRules.IsNeverNull(model, table, column) && facts.Proved(source, Key(bound)) == Facts.Proof.None)
             because.Add(new IrNullReason(IrNullRule.NullableColumn, $"{table.Name}.{column.Name}"));
 
         // The optional side of an outer join, or of an OUTER APPLY, has no row when nothing matches, so every column read
         // from it can be null, whatever its declaration says; unless a filter proves the row matched.
-        if (source.OptionalSideOf is { } optional && !Matched(source))
+        if (source.OptionalSideOf is { } optional && !facts.Matched(source))
             because.Add(new IrNullReason(source.OuterApply ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.ToString()));
         if (Rolled(source) is { } rolled)
             because.Add(rolled);
@@ -422,7 +420,7 @@ internal sealed partial class ProcedureAnalyzer
             because.Add(unmatched);
 
         // A CASE branch that tested this very value proves it, whatever made it nullable (ProcedureAnalyzer.Case.cs).
-        if (BranchProved(source, Key(bound)))
+        if (facts.Proved(source, Key(bound)) == Facts.Proof.OfTheValue)
             because.Clear();
 
         // A json column nests as JSON inside FOR JSON and the constructors (observed), but what it holds is data.

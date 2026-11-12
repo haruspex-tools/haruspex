@@ -17,67 +17,19 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>Whether the body was created with ANSI_NULLS off, under which <c>c = @x</c> is TRUE when both are null.</summary>
     private readonly bool ansiNullsOff;
 
-    /// <summary>The facts of each query whose select list is being read, outermost first; a subquery's are above its query's.</summary>
-    private readonly List<QueryFacts> facts = [];
-
-    /// <summary>
-    /// What a query's filters prove, for reading its select list. A fact about a column holds only while that query's row is
-    /// read: in its select list and in the subqueries there, which see the outer row as it was filtered.
-    /// </summary>
-    private sealed class QueryFacts(QuerySpecification query, BindingScope scope)
-    {
-        public QuerySpecification Query { get; } = query;
-
-        /// <summary>The query's own sources: those of its FROM, not an enclosing query's.</summary>
-        public HashSet<BoundSource> Own { get; } = new(scope.Sources, ReferenceEqualityComparer.Instance);
-
-        /// <summary>
-        /// Where the query groups by ROLLUP, CUBE or GROUPING SETS, whose super-aggregate rows hold NULL in its grouped
-        /// columns (observed: Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null); null otherwise.
-        /// </summary>
-        public IrNullReason? Rolled { get; init; }
-
-        /// <summary>
-        /// Columns proved non-null whenever their source's row is there: by source (compared by reference, since two
-        /// sources of one table in two scopes are equal as records), the columns' keys.
-        /// </summary>
-        public Dictionary<BoundSource, HashSet<string>> Values { get; } = new(ReferenceEqualityComparer.Instance);
-
-        /// <summary>Sources whose row is proved there: not null-extended by an outer join.</summary>
-        public HashSet<BoundSource> Rows { get; } = new(ReferenceEqualityComparer.Instance);
-
-        /// <summary>Aggregates of this query proved non-null by HAVING, by their text.</summary>
-        public HashSet<string> Aggregates { get; } = new(StringComparer.Ordinal);
-
-        public void Value(BoundSource source, string key)
-        {
-            if (!Values.TryGetValue(source, out var keys))
-                Values[source] = keys = new HashSet<string>(StringComparer.Ordinal);
-            keys.Add(key);
-        }
-    }
+    /// <summary>What the filters and branches being read prove (<see cref="Facts"/>): extended on entering one, restored on leaving.</summary>
+    private Facts facts = Facts.None;
 
     /// <summary>A bound column's key among its source's columns: a table's column by name as declared, a relation's by position.</summary>
     private static string Key(BoundColumn bound) => "c:" + bound.Column.Name;
 
     private static string Key(BoundLocalColumn bound) => "#" + bound.Ordinal.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-    /// <summary>Whether a filter of a query being read proves this column non-null whenever its source's row is there.</summary>
-    private bool Proved(BoundSource source, string key) =>
-        facts.Any(f => f.Values.TryGetValue(source, out var keys) && keys.Contains(key));
-
-    /// <summary>Whether a filter of a query being read proves the source's row is there, not null-extended by an outer join.</summary>
-    private bool Matched(BoundSource source) => facts.Any(f => f.Rows.Contains(source)) || BranchMatched(source);
-
     /// <summary>The queries whose aggregate's arguments are being read: a column read there is a row's, not a group's.</summary>
     private readonly List<QuerySpecification?> aggregating = [];
 
-    /// <summary>
-    /// Why a column read now may be NULL in a super-aggregate row: when it is a source of a query grouped by ROLLUP, CUBE or
-    /// GROUPING SETS and is read outside that query's aggregates. No filter removes it.
-    /// </summary>
-    private IrNullReason? Rolled(BoundSource source) =>
-        facts.FirstOrDefault(f => f.Rolled is not null && f.Own.Contains(source) && !aggregating.Any(q => ReferenceEquals(q, f.Query)))?.Rolled;
+    /// <summary>Why a column read now may be NULL in a super-aggregate row (<see cref="Facts.Rolled"/>).</summary>
+    private IrNullReason? Rolled(BoundSource source) => facts.Rolled(source, aggregating);
 
     /// <summary>Reads an aggregate's arguments of the query whose select list is being read.</summary>
     private T InAggregate<T>(Func<T> read)
@@ -93,15 +45,15 @@ internal sealed partial class ProcedureAnalyzer
         }
     }
 
-    /// <summary>Whether HAVING proves this aggregate of the query whose select list is being read non-null.</summary>
-    private bool ProvedAggregate(FunctionCall call) =>
-        (facts.Count > 0 && ReferenceEquals(facts[^1].Query, current) && facts[^1].Aggregates.Contains(Text(call))) || BranchProvedAggregate(call);
+    /// <summary>Whether HAVING, or a branch read in its row, proves this aggregate of the query whose select list is being read non-null.</summary>
+    private bool ProvedAggregate(FunctionCall call) => facts.Proved(current, Text(call));
 
     // ---- what a query's filters prove ---------------------------------------------------------------------------------
 
-    private QueryFacts Facts(QuerySpecification query, BindingScope scope)
+    /// <summary>What a query's filters prove of the rows it keeps, for reading its select list.</summary>
+    private Facts.Found Filters(QuerySpecification query, BindingScope scope)
     {
-        var found = new QueryFacts(query, scope)
+        var found = new Facts.Found(Facts.Proof.WhereTheRowIsThere, query, scope.Sources)
         {
             Rolled = SuperAggregate(query) ? new IrNullReason(IrNullRule.SubtotalRow, At(query.GroupByClause).ToString()) : null,
         };
@@ -110,7 +62,7 @@ internal sealed partial class ProcedureAnalyzer
         // An_aggregate_subquery_returns_its_row_even_when_its_where_rejects_the_outer_column). Its own columns are read only
         // inside its aggregates, over the rows kept, so what WHERE proves of them holds there; an enclosing query's column
         // is read as it is, so nothing WHERE or ON proves of it holds. HAVING filters the one row, so its facts hold.
-        var own = MayAggregateWithoutGrouping(query) ? found.Own : null;
+        var own = MayAggregateWithoutGrouping(query) ? new HashSet<BoundSource>(found.Own, ReferenceEqualityComparer.Instance) : null;
         if (query.WhereClause?.SearchCondition is { } where)
             Refine(where, scope, found, rows: true, only: own);
         foreach (var reference in query.FromClause?.TableReferences ?? [])
@@ -124,7 +76,7 @@ internal sealed partial class ProcedureAnalyzer
             foreach (var aggregate in Operands(having).OfType<FunctionCall>().Where(IsAggregate).Select(Text).Distinct(StringComparer.Ordinal))
             {
                 if (!Possible(having, e => e is FunctionCall call && IsAggregate(call) && Text(call) == aggregate).HasFlag(Truth.True))
-                    found.Aggregates.Add(aggregate);
+                    found.Aggregate(aggregate);
             }
         }
 
@@ -138,8 +90,8 @@ internal sealed partial class ProcedureAnalyzer
     /// A_condition_in_the_on_of_an_outer_join_never_drops_a_row_of_the_kept_side), so it proves only what holds of its
     /// optional side's row when it matched.
     /// </summary>
-    /// <param name="own">When set, only these sources' columns are refined (see <see cref="Facts"/>).</param>
-    private void Joins(TableReference reference, BindingScope scope, QueryFacts found, bool insideOptional, HashSet<BoundSource>? own)
+    /// <param name="own">When set, only these sources' columns are refined (see <see cref="Filters"/>).</param>
+    private void Joins(TableReference reference, BindingScope scope, Facts.Found found, bool insideOptional, HashSet<BoundSource>? own)
     {
         switch (reference)
         {
@@ -243,7 +195,7 @@ internal sealed partial class ProcedureAnalyzer
     /// outer join's null-extended row has every column NULL, so it is never kept. With <paramref name="only"/>, only
     /// columns of those sources are recorded.
     /// </summary>
-    private void Refine(BooleanExpression condition, BindingScope scope, QueryFacts found, bool rows, HashSet<BoundSource>? only)
+    private void Refine(BooleanExpression condition, BindingScope scope, Facts.Found found, bool rows, HashSet<BoundSource>? only)
     {
         var bindings = new Dictionary<ColumnReferenceExpression, (BoundSource Source, string Key)?>(ReferenceEqualityComparer.Instance);
         (BoundSource Source, string Key)? Bind(ColumnReferenceExpression column)
@@ -273,7 +225,7 @@ internal sealed partial class ProcedureAnalyzer
                 continue;
             found.Value(source, key);
             if (rows)
-                found.Rows.Add(source);
+                found.Row(source);
         }
     }
 

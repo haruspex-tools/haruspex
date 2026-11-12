@@ -758,14 +758,15 @@ of every client library and of SSDT. A `SET` in another file that runs first in 
 
 ### Where a fact holds
 
-A fact is recorded per query (`QueryFacts`) and holds while that query's select list is read, including the subqueries in
-it, which see the outer row as it was filtered. A subquery's own filter never refines the outer query's columns. Sources are
+A fact is recorded per query, in one immutable environment (`Facts`, extended with what the query's filters prove,
+`Facts.Proof.WhereTheRowIsThere`; a `CASE` branch adds `Facts.Proof.OfTheValue`) and holds while that query's select list is
+read, including the subqueries in it, which see the outer row as it was filtered. A subquery's own filter never refines the outer query's columns. Sources are
 compared by reference, since one table read twice is two sources.
 
-- **A column fact** (`QueryFacts.Values`): the column is non-null whenever its source's row is there. It removes `nullable-column`, or
+- **A column fact** (`Facts.Proved`): the column is non-null whenever its source's row is there. It removes `nullable-column`, or
   every reason of a CTE's, derived table's or temporary table's column (whatever made it nullable inside, the filter
   proves it is not), but not `unmatched-row`.
-- **A row fact** (`QueryFacts.Rows`): the source's row is there, not null-extended by an outer join. A null-extended row has every
+- **A row fact** (`Facts.Matched`): the source's row is there, not null-extended by an outer join. A null-extended row has every
   column NULL, so a filter that proves any of the source's columns non-null removes it; the source's columns lose
   `unmatched-row` and keep `nullable-column` (`A_where_condition_on_the_optional_side_of_an_outer_join_drops_the_rows_that_did_not_match`).
   It is the soundest model of "the outer join became an inner join for that side": only the source whose column is

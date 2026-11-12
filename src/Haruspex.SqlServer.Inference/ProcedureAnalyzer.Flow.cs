@@ -1060,9 +1060,9 @@ internal sealed partial class ProcedureAnalyzer
     private Value FromLocal(BoundLocalColumn bound, SourceLocation at)
     {
         var value = locals!.Column(bound.Relation, bound.Ordinal, at);
-        if (value.Shape is not UnknownShape && bound.Ordinal >= 0 && Proved(bound.Source, Key(bound)))
+        if (value.Shape is not UnknownShape && bound.Ordinal >= 0 && facts.Proved(bound.Source, Key(bound)) != Facts.Proof.None)
             value = value.WithNullableBecause([]);
-        if (bound.Source.OptionalSideOf is { } optional && !Matched(bound.Source) && !AlwaysApplied(bound))
+        if (bound.Source.OptionalSideOf is { } optional && !facts.Matched(bound.Source) && !AlwaysApplied(bound))
             value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [new IrNullReason(bound.Source.OuterApply ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.ToString())]));
         if (Unmatched(bound.Source) is { } unmatched && value.Shape is not UnknownShape)
             value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [unmatched]));
@@ -1070,7 +1070,7 @@ internal sealed partial class ProcedureAnalyzer
             value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [rolled]));
 
         // A CASE branch that tested this very value proves it, whatever made it nullable (ProcedureAnalyzer.Case.cs).
-        return value.Shape is not UnknownShape && bound.Ordinal >= 0 && BranchProved(bound.Source, Key(bound))
+        return value.Shape is not UnknownShape && bound.Ordinal >= 0 && facts.Proved(bound.Source, Key(bound)) == Facts.Proof.OfTheValue
             ? value.WithNullableBecause([])
             : value;
     }

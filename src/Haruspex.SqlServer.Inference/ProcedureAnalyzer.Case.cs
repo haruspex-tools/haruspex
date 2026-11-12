@@ -13,44 +13,9 @@ internal sealed partial class ProcedureAnalyzer
 {
     // ---- what a branch knows --------------------------------------------------------------------------------------------
 
-    /// <summary>
-    /// What holds while a branch of a CASE or IIF is read: its WHEN was TRUE, and every earlier WHEN was FALSE or UNKNOWN.
-    /// Unlike a WHERE's facts these are about the value itself, read in the same row after any grouping, so a column proved
-    /// here is never null whatever else made it nullable (an outer join, a ROLLUP's super-aggregate row): the branch tested
-    /// that very value (observed: A_case_branch_runs_only_when_its_condition_is_true_and_later_ones_only_when_earlier_were_not).
-    /// </summary>
-    /// <param name="query">The query whose row is read, whose aggregates the branch may prove; null outside a query.</param>
-    private sealed class BranchFacts(QuerySpecification? query)
-    {
-        public QuerySpecification? Query { get; } = query;
-
-        /// <summary>Columns proved non-null: by source (by reference, as in QueryFacts), the columns' keys.</summary>
-        public Dictionary<BoundSource, HashSet<string>> Values { get; } = new(ReferenceEqualityComparer.Instance);
-
-        /// <summary>Sources whose row is proved there: a null-extended row has every column NULL.</summary>
-        public HashSet<BoundSource> Rows { get; } = new(ReferenceEqualityComparer.Instance);
-
-        /// <summary>Variables and parameters proved non-null: one has one value throughout an expression.</summary>
-        public HashSet<string> Variables { get; } = new(StringComparer.OrdinalIgnoreCase);
-
-        /// <summary>Aggregates of <see cref="Query"/> proved non-null, by their text: each is computed once per group.</summary>
-        public HashSet<string> Aggregates { get; } = new(StringComparer.Ordinal);
-    }
-
-    /// <summary>The branches being read, outermost first.</summary>
-    private readonly List<BranchFacts> branches = [];
-
-    private bool BranchProved(BoundSource source, string key) =>
-        branches.Any(b => b.Values.TryGetValue(source, out var keys) && keys.Contains(key));
-
-    private bool BranchMatched(BoundSource source) => branches.Any(b => b.Rows.Contains(source));
-
-    private bool BranchProvedAggregate(FunctionCall call) =>
-        branches.Any(b => b.Query is not null && ReferenceEquals(b.Query, current) && b.Aggregates.Contains(Text(call)));
-
     /// <summary>A variable or parameter, never null in a branch that proved it so.</summary>
     private Value Branched(VariableReference variable, Value value) =>
-        value.Shape is not UnknownShape && branches.Any(b => b.Variables.Contains(variable.Name)) ? value.WithNullableBecause([]) : value;
+        value.Shape is not UnknownShape && facts.Proved(variable.Name) ? value.WithNullableBecause([]) : value;
 
     /// <summary>
     /// What a branch knows: <paramref name="held"/> was TRUE (none for an ELSE) and each of <paramref name="failed"/> was FALSE
@@ -59,9 +24,9 @@ internal sealed partial class ProcedureAnalyzer
     /// proved: each is the same value wherever it is read in the row. A subquery or a call may give another value when read
     /// again (Coalesce_reads_a_subquery_twice…), so testing one proves nothing about it.
     /// </summary>
-    private BranchFacts Branch(IReadOnlyList<BooleanExpression> failed, BooleanExpression? held, BindingScope scope)
+    private Facts.Found Branch(IReadOnlyList<BooleanExpression> failed, BooleanExpression? held, BindingScope scope)
     {
-        var found = new BranchFacts(current);
+        var found = new Facts.Found(Facts.Proof.OfTheValue, current, []);
         if (held is not null)
             Prove(held, Truth.True, scope, found);
         foreach (var condition in failed)
@@ -69,7 +34,7 @@ internal sealed partial class ProcedureAnalyzer
         return found;
     }
 
-    private void Prove(BooleanExpression condition, Truth took, BindingScope scope, BranchFacts found)
+    private void Prove(BooleanExpression condition, Truth took, BindingScope scope, Facts.Found found)
     {
         bool Impossible(Func<ScalarExpression, bool> target) => (Possible(condition, target) & took) == Truth.None;
 
@@ -80,21 +45,19 @@ internal sealed partial class ProcedureAnalyzer
                 case ColumnReferenceExpression { ColumnType: ColumnType.Regular } column when Bound(column, scope) is var (source, key):
                     if (Impossible(e => e is ColumnReferenceExpression c && Bound(c, scope) is var (s, k) && ReferenceEquals(s, source) && k == key))
                     {
-                        if (!found.Values.TryGetValue(source, out var keys))
-                            found.Values[source] = keys = new HashSet<string>(StringComparer.Ordinal);
-                        keys.Add(key);
-                        found.Rows.Add(source);
+                        found.Value(source, key);
+                        found.Row(source);
                     }
 
                     break;
                 case VariableReference variable:
                     if (Impossible(e => e is VariableReference v && v.Name.Equals(variable.Name, StringComparison.OrdinalIgnoreCase)))
-                        found.Variables.Add(variable.Name);
+                        found.Variable(variable.Name);
                     break;
                 case FunctionCall call when IsAggregate(call) && current is not null:
                     var text = Text(call);
                     if (Impossible(e => e is FunctionCall c && IsAggregate(c) && Text(c) == text))
-                        found.Aggregates.Add(text);
+                        found.Aggregate(text);
                     break;
             }
         }
@@ -107,16 +70,23 @@ internal sealed partial class ProcedureAnalyzer
         _ => null,
     };
 
-    private T InBranch<T>(BranchFacts found, Func<T> read)
+    /// <summary>
+    /// Reads a branch knowing what held there (<see cref="Facts.Proof.OfTheValue"/>): what a branch tested is the value
+    /// itself, read in the same row after any grouping, so a column proved here is never null whatever else made it
+    /// nullable (an outer join, a ROLLUP's super-aggregate row; observed:
+    /// A_case_branch_runs_only_when_its_condition_is_true_and_later_ones_only_when_earlier_were_not).
+    /// </summary>
+    private T InBranch<T>(Facts.Found found, Func<T> read)
     {
-        branches.Add(found);
+        var outside = facts;
+        facts = facts.With(found);
         try
         {
             return read();
         }
         finally
         {
-            branches.RemoveAt(branches.Count - 1);
+            facts = outside;
         }
     }
 
