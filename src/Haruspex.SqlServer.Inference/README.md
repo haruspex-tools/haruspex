@@ -463,7 +463,9 @@ its types' edges. In words:
 | `time`, `tinyint`, `bit`; `smallint` | `datetime`; `smalldatetime` | a time is that time on 1 January 1900 (rounding into the 2nd at most); a `tinyint` or `bit` that many days from 1900; a `smallint` only into `datetime` (1810 to 1989), not `smalldatetime`, which starts in 1900 |
 | anything else | | not proved: `arithmetic-overflow` |
 
-A literal is checked by its value instead (`ISNULL(@d, 0)` into `decimal(10,2)` fits). An assignment to a variable converts
+A conversion the server refuses (`CAST` of a `date` to `int`, error 529; `ConversionChart`, Microsoft's chart as the server
+has it, observed in `The_conversion_chart_is_what_the_server_allows_implicitly_explicitly_or_not_at_all`) is unknown: a
+procedure with it can't be created. A literal is checked by its value instead (`ISNULL(@d, 0)` into `decimal(10,2)` fits). An assignment to a variable converts
 the same way, so a value assigned to a narrower variable has `arithmetic-overflow` too; so does a table-valued function's
 argument ("Table-valued functions" below). A conversion of JSON, or to a type that is not modelled (binary, `xml`), is not
 modelled.
@@ -496,6 +498,8 @@ modelled.
   (`Isnull_converts_its_second_argument_to_the_firsts_type_cutting_a_string_short`). It reads `a` once: never null when `a` is
   never null (then it is `a`, with its facets), or when `b` is never null and converts to `a`'s type without overflow
   (`ISNULL(@tinyint, 1000)` is NULL under the caller's options, observed). A value that may be `b` has only the type's facets.
+  When `b`'s type doesn't convert implicitly to `a`'s (`ConversionChart`: a `date` beside an `int`, error 206), the server
+  refuses it, so it is unknown, never null or not.
 
 ### Strings
 
@@ -811,7 +815,8 @@ themselves: what a query proved is what its row holds.
   removes it.
 - `MIN` and `MAX` return one of their argument's values: its type and facets, null when the argument can be, and
   `empty-aggregate` without `GROUP BY` (`An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows`,
-  `An_aggregate_with_group_by_returns_no_row_over_no_rows`). `SUM`, `AVG` and the statistical aggregates are typed
+  `An_aggregate_with_group_by_returns_no_row_over_no_rows`); of a `bit`, with a window or without, the server refuses them
+  (8117, `Min_and_max_of_a_bit_are_refused_with_or_without_a_window`), so they are unknown. `SUM`, `AVG` and the statistical aggregates are typed
   ("Expressions" above).
 - A scalar subquery is its one column's value, with its type and facets, and `empty-subquery` unless its query returns
   exactly one row (`A_scalar_subquery_of_an_aggregate_without_group_by_always_has_a_value_for_count`). A `FOR JSON` subquery

@@ -243,7 +243,7 @@ internal sealed partial class ProcedureAnalyzer
     /// identity conversion (<see cref="Converted"/>).
     /// </summary>
     internal static Shape Unpadded(Shape declared) =>
-        declared is ScalarShape { Type: { Sql: { } sql, Facets: { Length: { IsFixed: true } length } facets } type } && sql.StartsWith("nchar(", StringComparison.Ordinal)
+        declared is ScalarShape { Type: { Sql: { } sql, Facets: { Length: { IsFixed: true } length } facets } type } && SqlTypes.Parse(sql)?.Type == BuiltInType.NChar
             ? new ScalarShape(type with { Facets = facets with { Length = length with { IsFixed = false } } })
             : declared;
 

@@ -9,8 +9,9 @@ namespace Haruspex.TestSupport;
 /// Every built-in type through the operators that type a value: arithmetic, a sign, <c>CAST</c>, <c>ISNULL</c> and the
 /// aggregates, over a column of each type and a literal of each kind. Fixtures reach only the entries their procedures use,
 /// and a rule broken for another entry reached no fixture (<c>COUNT</c>'s digits, found only in a private corpus); this
-/// reaches them all. <c>CatalogueSweepTests</c> holds what haruspex infers for each expression as a snapshot, so a change to
-/// any entry shows.
+/// reaches them all. Two tests share it: <c>CatalogueSweepTests</c> holds what haruspex infers for each expression as a
+/// snapshot, so a change to any entry shows, and <c>CatalogueSweepGridTests</c> checks each typed expression against the type
+/// SQL Server describes for it, so the snapshot holds only what the server does.
 /// </summary>
 internal static class CatalogueSweep
 {

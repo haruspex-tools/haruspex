@@ -17,13 +17,13 @@ ISNULL(bt, vx) -> bit boolean
 ISNULL(bt, nc3) -> bit boolean
 ISNULL(bt, nv10) -> bit boolean
 ISNULL(bt, nvx) -> bit boolean
-ISNULL(bt, dt) -> bit boolean
-ISNULL(bt, tm3) -> bit boolean
-ISNULL(bt, dtm) -> bit boolean
-ISNULL(bt, dt23) -> bit boolean
-ISNULL(bt, sdt) -> bit boolean
-ISNULL(bt, dto3) -> bit boolean
-ISNULL(bt, u) -> bit boolean
+ISNULL(bt, dt) -> unknown unsupported-expression: ISNULL(bt, dt): SQL Server refuses it: date doesn't convert implicitly to bit.
+ISNULL(bt, tm3) -> unknown unsupported-expression: ISNULL(bt, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to bit.
+ISNULL(bt, dtm) -> unknown unsupported-expression: ISNULL(bt, dtm): SQL Server refuses it: datetime doesn't convert implicitly to bit.
+ISNULL(bt, dt23) -> unknown unsupported-expression: ISNULL(bt, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to bit.
+ISNULL(bt, sdt) -> unknown unsupported-expression: ISNULL(bt, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to bit.
+ISNULL(bt, dto3) -> unknown unsupported-expression: ISNULL(bt, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to bit.
+ISNULL(bt, u) -> unknown unsupported-expression: ISNULL(bt, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to bit.
 ISNULL(bt, bin4) -> bit boolean
 ISNULL(bt, vb10) -> bit boolean
 ISNULL(bt, x) -> bit boolean
@@ -55,13 +55,13 @@ ISNULL(ti, vx) -> tinyint number/uint8 {[0 255]}
 ISNULL(ti, nc3) -> tinyint number/uint8 {[0 255]}
 ISNULL(ti, nv10) -> tinyint number/uint8 {[0 255]}
 ISNULL(ti, nvx) -> tinyint number/uint8 {[0 255]}
-ISNULL(ti, dt) -> tinyint number/uint8 {[0 255]}
-ISNULL(ti, tm3) -> tinyint number/uint8 {[0 255]}
-ISNULL(ti, dtm) -> tinyint number/uint8 {[0 255]}
-ISNULL(ti, dt23) -> tinyint number/uint8 {[0 255]}
-ISNULL(ti, sdt) -> tinyint number/uint8 {[0 255]}
-ISNULL(ti, dto3) -> tinyint number/uint8 {[0 255]}
-ISNULL(ti, u) -> tinyint number/uint8 {[0 255]}
+ISNULL(ti, dt) -> unknown unsupported-expression: ISNULL(ti, dt): SQL Server refuses it: date doesn't convert implicitly to tinyint.
+ISNULL(ti, tm3) -> unknown unsupported-expression: ISNULL(ti, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to tinyint.
+ISNULL(ti, dtm) -> unknown unsupported-expression: ISNULL(ti, dtm): SQL Server refuses it: datetime doesn't convert implicitly to tinyint.
+ISNULL(ti, dt23) -> unknown unsupported-expression: ISNULL(ti, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to tinyint.
+ISNULL(ti, sdt) -> unknown unsupported-expression: ISNULL(ti, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to tinyint.
+ISNULL(ti, dto3) -> unknown unsupported-expression: ISNULL(ti, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to tinyint.
+ISNULL(ti, u) -> unknown unsupported-expression: ISNULL(ti, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to tinyint.
 ISNULL(ti, bin4) -> tinyint number/uint8 {[0 255]}
 ISNULL(ti, vb10) -> tinyint number/uint8 {[0 255]}
 ISNULL(ti, x) -> tinyint number/uint8 {[0 255]}
@@ -93,13 +93,13 @@ ISNULL(si, vx) -> smallint number/int16 {[-32768 32767]}
 ISNULL(si, nc3) -> smallint number/int16 {[-32768 32767]}
 ISNULL(si, nv10) -> smallint number/int16 {[-32768 32767]}
 ISNULL(si, nvx) -> smallint number/int16 {[-32768 32767]}
-ISNULL(si, dt) -> smallint number/int16 {[-32768 32767]}
-ISNULL(si, tm3) -> smallint number/int16 {[-32768 32767]}
-ISNULL(si, dtm) -> smallint number/int16 {[-32768 32767]}
-ISNULL(si, dt23) -> smallint number/int16 {[-32768 32767]}
-ISNULL(si, sdt) -> smallint number/int16 {[-32768 32767]}
-ISNULL(si, dto3) -> smallint number/int16 {[-32768 32767]}
-ISNULL(si, u) -> smallint number/int16 {[-32768 32767]}
+ISNULL(si, dt) -> unknown unsupported-expression: ISNULL(si, dt): SQL Server refuses it: date doesn't convert implicitly to smallint.
+ISNULL(si, tm3) -> unknown unsupported-expression: ISNULL(si, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to smallint.
+ISNULL(si, dtm) -> unknown unsupported-expression: ISNULL(si, dtm): SQL Server refuses it: datetime doesn't convert implicitly to smallint.
+ISNULL(si, dt23) -> unknown unsupported-expression: ISNULL(si, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to smallint.
+ISNULL(si, sdt) -> unknown unsupported-expression: ISNULL(si, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to smallint.
+ISNULL(si, dto3) -> unknown unsupported-expression: ISNULL(si, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to smallint.
+ISNULL(si, u) -> unknown unsupported-expression: ISNULL(si, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to smallint.
 ISNULL(si, bin4) -> smallint number/int16 {[-32768 32767]}
 ISNULL(si, vb10) -> smallint number/int16 {[-32768 32767]}
 ISNULL(si, x) -> smallint number/int16 {[-32768 32767]}
@@ -131,13 +131,13 @@ ISNULL(i, vx) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(i, nc3) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(i, nv10) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(i, nvx) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(i, dt) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(i, tm3) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(i, dtm) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(i, dt23) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(i, sdt) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(i, dto3) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(i, u) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(i, dt) -> unknown unsupported-expression: ISNULL(i, dt): SQL Server refuses it: date doesn't convert implicitly to int.
+ISNULL(i, tm3) -> unknown unsupported-expression: ISNULL(i, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to int.
+ISNULL(i, dtm) -> unknown unsupported-expression: ISNULL(i, dtm): SQL Server refuses it: datetime doesn't convert implicitly to int.
+ISNULL(i, dt23) -> unknown unsupported-expression: ISNULL(i, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to int.
+ISNULL(i, sdt) -> unknown unsupported-expression: ISNULL(i, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to int.
+ISNULL(i, dto3) -> unknown unsupported-expression: ISNULL(i, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to int.
+ISNULL(i, u) -> unknown unsupported-expression: ISNULL(i, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to int.
 ISNULL(i, bin4) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(i, vb10) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(i, x) -> int number/int32 {[-2147483648 2147483647]}
@@ -169,13 +169,13 @@ ISNULL(bi, vx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807
 ISNULL(bi, nc3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 ISNULL(bi, nv10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 ISNULL(bi, nvx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-ISNULL(bi, dt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-ISNULL(bi, tm3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-ISNULL(bi, dtm) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-ISNULL(bi, dt23) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-ISNULL(bi, sdt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-ISNULL(bi, dto3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-ISNULL(bi, u) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+ISNULL(bi, dt) -> unknown unsupported-expression: ISNULL(bi, dt): SQL Server refuses it: date doesn't convert implicitly to bigint.
+ISNULL(bi, tm3) -> unknown unsupported-expression: ISNULL(bi, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to bigint.
+ISNULL(bi, dtm) -> unknown unsupported-expression: ISNULL(bi, dtm): SQL Server refuses it: datetime doesn't convert implicitly to bigint.
+ISNULL(bi, dt23) -> unknown unsupported-expression: ISNULL(bi, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to bigint.
+ISNULL(bi, sdt) -> unknown unsupported-expression: ISNULL(bi, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to bigint.
+ISNULL(bi, dto3) -> unknown unsupported-expression: ISNULL(bi, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to bigint.
+ISNULL(bi, u) -> unknown unsupported-expression: ISNULL(bi, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to bigint.
 ISNULL(bi, bin4) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 ISNULL(bi, vb10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 ISNULL(bi, x) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
@@ -207,13 +207,13 @@ ISNULL(d52, vx) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
 ISNULL(d52, nc3) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
 ISNULL(d52, nv10) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
 ISNULL(d52, nvx) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
-ISNULL(d52, dt) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
-ISNULL(d52, tm3) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
-ISNULL(d52, dtm) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
-ISNULL(d52, dt23) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
-ISNULL(d52, sdt) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
-ISNULL(d52, dto3) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
-ISNULL(d52, u) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+ISNULL(d52, dt) -> unknown unsupported-expression: ISNULL(d52, dt): SQL Server refuses it: date doesn't convert implicitly to decimal(5,2).
+ISNULL(d52, tm3) -> unknown unsupported-expression: ISNULL(d52, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to decimal(5,2).
+ISNULL(d52, dtm) -> unknown unsupported-expression: ISNULL(d52, dtm): SQL Server refuses it: datetime doesn't convert implicitly to decimal(5,2).
+ISNULL(d52, dt23) -> unknown unsupported-expression: ISNULL(d52, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to decimal(5,2).
+ISNULL(d52, sdt) -> unknown unsupported-expression: ISNULL(d52, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to decimal(5,2).
+ISNULL(d52, dto3) -> unknown unsupported-expression: ISNULL(d52, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to decimal(5,2).
+ISNULL(d52, u) -> unknown unsupported-expression: ISNULL(d52, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to decimal(5,2).
 ISNULL(d52, bin4) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
 ISNULL(d52, vb10) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
 ISNULL(d52, x) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
@@ -245,13 +245,13 @@ ISNULL(d380, vx) -> decimal(38,0) number/decimal {digits=38,0 [-9999999999999999
 ISNULL(d380, nc3) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 ISNULL(d380, nv10) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 ISNULL(d380, nvx) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-ISNULL(d380, dt) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-ISNULL(d380, tm3) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-ISNULL(d380, dtm) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-ISNULL(d380, dt23) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-ISNULL(d380, sdt) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-ISNULL(d380, dto3) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-ISNULL(d380, u) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ISNULL(d380, dt) -> unknown unsupported-expression: ISNULL(d380, dt): SQL Server refuses it: date doesn't convert implicitly to decimal(38,0).
+ISNULL(d380, tm3) -> unknown unsupported-expression: ISNULL(d380, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to decimal(38,0).
+ISNULL(d380, dtm) -> unknown unsupported-expression: ISNULL(d380, dtm): SQL Server refuses it: datetime doesn't convert implicitly to decimal(38,0).
+ISNULL(d380, dt23) -> unknown unsupported-expression: ISNULL(d380, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to decimal(38,0).
+ISNULL(d380, sdt) -> unknown unsupported-expression: ISNULL(d380, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to decimal(38,0).
+ISNULL(d380, dto3) -> unknown unsupported-expression: ISNULL(d380, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to decimal(38,0).
+ISNULL(d380, u) -> unknown unsupported-expression: ISNULL(d380, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to decimal(38,0).
 ISNULL(d380, bin4) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 ISNULL(d380, vb10) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 ISNULL(d380, x) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
@@ -283,13 +283,13 @@ ISNULL(d3838, vx) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999
 ISNULL(d3838, nc3) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 ISNULL(d3838, nv10) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 ISNULL(d3838, nvx) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-ISNULL(d3838, dt) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-ISNULL(d3838, tm3) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-ISNULL(d3838, dtm) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-ISNULL(d3838, dt23) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-ISNULL(d3838, sdt) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-ISNULL(d3838, dto3) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-ISNULL(d3838, u) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+ISNULL(d3838, dt) -> unknown unsupported-expression: ISNULL(d3838, dt): SQL Server refuses it: date doesn't convert implicitly to decimal(38,38).
+ISNULL(d3838, tm3) -> unknown unsupported-expression: ISNULL(d3838, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to decimal(38,38).
+ISNULL(d3838, dtm) -> unknown unsupported-expression: ISNULL(d3838, dtm): SQL Server refuses it: datetime doesn't convert implicitly to decimal(38,38).
+ISNULL(d3838, dt23) -> unknown unsupported-expression: ISNULL(d3838, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to decimal(38,38).
+ISNULL(d3838, sdt) -> unknown unsupported-expression: ISNULL(d3838, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to decimal(38,38).
+ISNULL(d3838, dto3) -> unknown unsupported-expression: ISNULL(d3838, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to decimal(38,38).
+ISNULL(d3838, u) -> unknown unsupported-expression: ISNULL(d3838, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to decimal(38,38).
 ISNULL(d3838, bin4) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 ISNULL(d3838, vb10) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 ISNULL(d3838, x) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
@@ -321,13 +321,13 @@ ISNULL(n102, vx) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 9999
 ISNULL(n102, nc3) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
 ISNULL(n102, nv10) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
 ISNULL(n102, nvx) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
-ISNULL(n102, dt) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
-ISNULL(n102, tm3) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
-ISNULL(n102, dtm) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
-ISNULL(n102, dt23) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
-ISNULL(n102, sdt) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
-ISNULL(n102, dto3) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
-ISNULL(n102, u) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+ISNULL(n102, dt) -> unknown unsupported-expression: ISNULL(n102, dt): SQL Server refuses it: date doesn't convert implicitly to numeric(10,2).
+ISNULL(n102, tm3) -> unknown unsupported-expression: ISNULL(n102, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to numeric(10,2).
+ISNULL(n102, dtm) -> unknown unsupported-expression: ISNULL(n102, dtm): SQL Server refuses it: datetime doesn't convert implicitly to numeric(10,2).
+ISNULL(n102, dt23) -> unknown unsupported-expression: ISNULL(n102, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to numeric(10,2).
+ISNULL(n102, sdt) -> unknown unsupported-expression: ISNULL(n102, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to numeric(10,2).
+ISNULL(n102, dto3) -> unknown unsupported-expression: ISNULL(n102, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to numeric(10,2).
+ISNULL(n102, u) -> unknown unsupported-expression: ISNULL(n102, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to numeric(10,2).
 ISNULL(n102, bin4) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
 ISNULL(n102, vb10) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
 ISNULL(n102, x) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
@@ -359,13 +359,13 @@ ISNULL(m, vx) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337
 ISNULL(m, nc3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL(m, nv10) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL(m, nvx) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL(m, dt) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL(m, tm3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL(m, dtm) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL(m, dt23) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL(m, sdt) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL(m, dto3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL(m, u) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL(m, dt) -> unknown unsupported-expression: ISNULL(m, dt): SQL Server refuses it: date doesn't convert implicitly to money.
+ISNULL(m, tm3) -> unknown unsupported-expression: ISNULL(m, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to money.
+ISNULL(m, dtm) -> unknown unsupported-expression: ISNULL(m, dtm): SQL Server refuses it: datetime doesn't convert implicitly to money.
+ISNULL(m, dt23) -> unknown unsupported-expression: ISNULL(m, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to money.
+ISNULL(m, sdt) -> unknown unsupported-expression: ISNULL(m, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to money.
+ISNULL(m, dto3) -> unknown unsupported-expression: ISNULL(m, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to money.
+ISNULL(m, u) -> unknown unsupported-expression: ISNULL(m, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to money.
 ISNULL(m, bin4) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL(m, vb10) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL(m, x) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -397,13 +397,13 @@ ISNULL(sm, vx) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.36
 ISNULL(sm, nc3) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 ISNULL(sm, nv10) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 ISNULL(sm, nvx) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
-ISNULL(sm, dt) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
-ISNULL(sm, tm3) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
-ISNULL(sm, dtm) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
-ISNULL(sm, dt23) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
-ISNULL(sm, sdt) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
-ISNULL(sm, dto3) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
-ISNULL(sm, u) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+ISNULL(sm, dt) -> unknown unsupported-expression: ISNULL(sm, dt): SQL Server refuses it: date doesn't convert implicitly to smallmoney.
+ISNULL(sm, tm3) -> unknown unsupported-expression: ISNULL(sm, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to smallmoney.
+ISNULL(sm, dtm) -> unknown unsupported-expression: ISNULL(sm, dtm): SQL Server refuses it: datetime doesn't convert implicitly to smallmoney.
+ISNULL(sm, dt23) -> unknown unsupported-expression: ISNULL(sm, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to smallmoney.
+ISNULL(sm, sdt) -> unknown unsupported-expression: ISNULL(sm, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to smallmoney.
+ISNULL(sm, dto3) -> unknown unsupported-expression: ISNULL(sm, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to smallmoney.
+ISNULL(sm, u) -> unknown unsupported-expression: ISNULL(sm, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to smallmoney.
 ISNULL(sm, bin4) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 ISNULL(sm, vb10) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 ISNULL(sm, x) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
@@ -435,13 +435,13 @@ ISNULL(f, vx) -> float number/float
 ISNULL(f, nc3) -> float number/float
 ISNULL(f, nv10) -> float number/float
 ISNULL(f, nvx) -> float number/float
-ISNULL(f, dt) -> float number/float
-ISNULL(f, tm3) -> float number/float
-ISNULL(f, dtm) -> float number/float
-ISNULL(f, dt23) -> float number/float
-ISNULL(f, sdt) -> float number/float
-ISNULL(f, dto3) -> float number/float
-ISNULL(f, u) -> float number/float
+ISNULL(f, dt) -> unknown unsupported-expression: ISNULL(f, dt): SQL Server refuses it: date doesn't convert implicitly to float.
+ISNULL(f, tm3) -> unknown unsupported-expression: ISNULL(f, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to float.
+ISNULL(f, dtm) -> unknown unsupported-expression: ISNULL(f, dtm): SQL Server refuses it: datetime doesn't convert implicitly to float.
+ISNULL(f, dt23) -> unknown unsupported-expression: ISNULL(f, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to float.
+ISNULL(f, sdt) -> unknown unsupported-expression: ISNULL(f, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to float.
+ISNULL(f, dto3) -> unknown unsupported-expression: ISNULL(f, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to float.
+ISNULL(f, u) -> unknown unsupported-expression: ISNULL(f, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to float.
 ISNULL(f, bin4) -> float number/float
 ISNULL(f, vb10) -> float number/float
 ISNULL(f, x) -> float number/float
@@ -473,13 +473,13 @@ ISNULL(r, vx) -> real number/float
 ISNULL(r, nc3) -> real number/float
 ISNULL(r, nv10) -> real number/float
 ISNULL(r, nvx) -> real number/float
-ISNULL(r, dt) -> real number/float
-ISNULL(r, tm3) -> real number/float
-ISNULL(r, dtm) -> real number/float
-ISNULL(r, dt23) -> real number/float
-ISNULL(r, sdt) -> real number/float
-ISNULL(r, dto3) -> real number/float
-ISNULL(r, u) -> real number/float
+ISNULL(r, dt) -> unknown unsupported-expression: ISNULL(r, dt): SQL Server refuses it: date doesn't convert implicitly to real.
+ISNULL(r, tm3) -> unknown unsupported-expression: ISNULL(r, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to real.
+ISNULL(r, dtm) -> unknown unsupported-expression: ISNULL(r, dtm): SQL Server refuses it: datetime doesn't convert implicitly to real.
+ISNULL(r, dt23) -> unknown unsupported-expression: ISNULL(r, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to real.
+ISNULL(r, sdt) -> unknown unsupported-expression: ISNULL(r, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to real.
+ISNULL(r, dto3) -> unknown unsupported-expression: ISNULL(r, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to real.
+ISNULL(r, u) -> unknown unsupported-expression: ISNULL(r, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to real.
 ISNULL(r, bin4) -> real number/float
 ISNULL(r, vb10) -> real number/float
 ISNULL(r, x) -> real number/float
@@ -720,19 +720,19 @@ ISNULL(nvx, 'ab') -> nvarchar(max) string
 ISNULL(nvx, N'ab') -> nvarchar(max) string
 ISNULL(nvx, 1e0) -> nvarchar(max) string
 ISNULL(nvx, $1) -> nvarchar(max) string
-ISNULL(dt, bt) -> date date
-ISNULL(dt, ti) -> date date
-ISNULL(dt, si) -> date date
-ISNULL(dt, i) -> date date
-ISNULL(dt, bi) -> date date
-ISNULL(dt, d52) -> date date
-ISNULL(dt, d380) -> date date
-ISNULL(dt, d3838) -> date date
-ISNULL(dt, n102) -> date date
-ISNULL(dt, m) -> date date
-ISNULL(dt, sm) -> date date
-ISNULL(dt, f) -> date date
-ISNULL(dt, r) -> date date
+ISNULL(dt, bt) -> unknown unsupported-expression: ISNULL(dt, bt): SQL Server refuses it: bit doesn't convert implicitly to date.
+ISNULL(dt, ti) -> unknown unsupported-expression: ISNULL(dt, ti): SQL Server refuses it: tinyint doesn't convert implicitly to date.
+ISNULL(dt, si) -> unknown unsupported-expression: ISNULL(dt, si): SQL Server refuses it: smallint doesn't convert implicitly to date.
+ISNULL(dt, i) -> unknown unsupported-expression: ISNULL(dt, i): SQL Server refuses it: int doesn't convert implicitly to date.
+ISNULL(dt, bi) -> unknown unsupported-expression: ISNULL(dt, bi): SQL Server refuses it: bigint doesn't convert implicitly to date.
+ISNULL(dt, d52) -> unknown unsupported-expression: ISNULL(dt, d52): SQL Server refuses it: decimal(5,2) doesn't convert implicitly to date.
+ISNULL(dt, d380) -> unknown unsupported-expression: ISNULL(dt, d380): SQL Server refuses it: decimal(38,0) doesn't convert implicitly to date.
+ISNULL(dt, d3838) -> unknown unsupported-expression: ISNULL(dt, d3838): SQL Server refuses it: decimal(38,38) doesn't convert implicitly to date.
+ISNULL(dt, n102) -> unknown unsupported-expression: ISNULL(dt, n102): SQL Server refuses it: numeric(10,2) doesn't convert implicitly to date.
+ISNULL(dt, m) -> unknown unsupported-expression: ISNULL(dt, m): SQL Server refuses it: money doesn't convert implicitly to date.
+ISNULL(dt, sm) -> unknown unsupported-expression: ISNULL(dt, sm): SQL Server refuses it: smallmoney doesn't convert implicitly to date.
+ISNULL(dt, f) -> unknown unsupported-expression: ISNULL(dt, f): SQL Server refuses it: float doesn't convert implicitly to date.
+ISNULL(dt, r) -> unknown unsupported-expression: ISNULL(dt, r): SQL Server refuses it: real doesn't convert implicitly to date.
 ISNULL(dt, c3) -> date date
 ISNULL(dt, v10) -> date date
 ISNULL(dt, vx) -> date date
@@ -740,62 +740,62 @@ ISNULL(dt, nc3) -> date date
 ISNULL(dt, nv10) -> date date
 ISNULL(dt, nvx) -> date date
 ISNULL(dt, dt) -> date date
-ISNULL(dt, tm3) -> date date
+ISNULL(dt, tm3) -> unknown unsupported-expression: ISNULL(dt, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to date.
 ISNULL(dt, dtm) -> date date
 ISNULL(dt, dt23) -> date date
 ISNULL(dt, sdt) -> date date
 ISNULL(dt, dto3) -> date date
-ISNULL(dt, u) -> date date
+ISNULL(dt, u) -> unknown unsupported-expression: ISNULL(dt, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to date.
 ISNULL(dt, bin4) -> date date
 ISNULL(dt, vb10) -> date date
 ISNULL(dt, x) -> date date
 ISNULL(dt, sv) -> date date
 ISNULL(dt, j) -> date date
-ISNULL(dt, 1) -> date date
-ISNULL(dt, 12345) -> date date
-ISNULL(dt, 2.50) -> date date
+ISNULL(dt, 1) -> unknown unsupported-expression: ISNULL(dt, 1): SQL Server refuses it: int doesn't convert implicitly to date.
+ISNULL(dt, 12345) -> unknown unsupported-expression: ISNULL(dt, 12345): SQL Server refuses it: int doesn't convert implicitly to date.
+ISNULL(dt, 2.50) -> unknown unsupported-expression: ISNULL(dt, 2.50): SQL Server refuses it: numeric(3,2) doesn't convert implicitly to date.
 ISNULL(dt, 'ab') -> date date
 ISNULL(dt, N'ab') -> date date
-ISNULL(dt, 1e0) -> date date
-ISNULL(dt, $1) -> date date
-ISNULL(tm3, bt) -> time(3) time
-ISNULL(tm3, ti) -> time(3) time
-ISNULL(tm3, si) -> time(3) time
-ISNULL(tm3, i) -> time(3) time
-ISNULL(tm3, bi) -> time(3) time
-ISNULL(tm3, d52) -> time(3) time
-ISNULL(tm3, d380) -> time(3) time
-ISNULL(tm3, d3838) -> time(3) time
-ISNULL(tm3, n102) -> time(3) time
-ISNULL(tm3, m) -> time(3) time
-ISNULL(tm3, sm) -> time(3) time
-ISNULL(tm3, f) -> time(3) time
-ISNULL(tm3, r) -> time(3) time
+ISNULL(dt, 1e0) -> unknown unsupported-expression: ISNULL(dt, 1e0): SQL Server refuses it: float doesn't convert implicitly to date.
+ISNULL(dt, $1) -> unknown unsupported-expression: ISNULL(dt, $1): SQL Server refuses it: money doesn't convert implicitly to date.
+ISNULL(tm3, bt) -> unknown unsupported-expression: ISNULL(tm3, bt): SQL Server refuses it: bit doesn't convert implicitly to time(3).
+ISNULL(tm3, ti) -> unknown unsupported-expression: ISNULL(tm3, ti): SQL Server refuses it: tinyint doesn't convert implicitly to time(3).
+ISNULL(tm3, si) -> unknown unsupported-expression: ISNULL(tm3, si): SQL Server refuses it: smallint doesn't convert implicitly to time(3).
+ISNULL(tm3, i) -> unknown unsupported-expression: ISNULL(tm3, i): SQL Server refuses it: int doesn't convert implicitly to time(3).
+ISNULL(tm3, bi) -> unknown unsupported-expression: ISNULL(tm3, bi): SQL Server refuses it: bigint doesn't convert implicitly to time(3).
+ISNULL(tm3, d52) -> unknown unsupported-expression: ISNULL(tm3, d52): SQL Server refuses it: decimal(5,2) doesn't convert implicitly to time(3).
+ISNULL(tm3, d380) -> unknown unsupported-expression: ISNULL(tm3, d380): SQL Server refuses it: decimal(38,0) doesn't convert implicitly to time(3).
+ISNULL(tm3, d3838) -> unknown unsupported-expression: ISNULL(tm3, d3838): SQL Server refuses it: decimal(38,38) doesn't convert implicitly to time(3).
+ISNULL(tm3, n102) -> unknown unsupported-expression: ISNULL(tm3, n102): SQL Server refuses it: numeric(10,2) doesn't convert implicitly to time(3).
+ISNULL(tm3, m) -> unknown unsupported-expression: ISNULL(tm3, m): SQL Server refuses it: money doesn't convert implicitly to time(3).
+ISNULL(tm3, sm) -> unknown unsupported-expression: ISNULL(tm3, sm): SQL Server refuses it: smallmoney doesn't convert implicitly to time(3).
+ISNULL(tm3, f) -> unknown unsupported-expression: ISNULL(tm3, f): SQL Server refuses it: float doesn't convert implicitly to time(3).
+ISNULL(tm3, r) -> unknown unsupported-expression: ISNULL(tm3, r): SQL Server refuses it: real doesn't convert implicitly to time(3).
 ISNULL(tm3, c3) -> time(3) time
 ISNULL(tm3, v10) -> time(3) time
 ISNULL(tm3, vx) -> time(3) time
 ISNULL(tm3, nc3) -> time(3) time
 ISNULL(tm3, nv10) -> time(3) time
 ISNULL(tm3, nvx) -> time(3) time
-ISNULL(tm3, dt) -> time(3) time
+ISNULL(tm3, dt) -> unknown unsupported-expression: ISNULL(tm3, dt): SQL Server refuses it: date doesn't convert implicitly to time(3).
 ISNULL(tm3, tm3) -> time(3) time
 ISNULL(tm3, dtm) -> time(3) time
 ISNULL(tm3, dt23) -> time(3) time
 ISNULL(tm3, sdt) -> time(3) time
 ISNULL(tm3, dto3) -> time(3) time
-ISNULL(tm3, u) -> time(3) time
+ISNULL(tm3, u) -> unknown unsupported-expression: ISNULL(tm3, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to time(3).
 ISNULL(tm3, bin4) -> time(3) time
 ISNULL(tm3, vb10) -> time(3) time
 ISNULL(tm3, x) -> time(3) time
 ISNULL(tm3, sv) -> time(3) time
 ISNULL(tm3, j) -> time(3) time
-ISNULL(tm3, 1) -> time(3) time
-ISNULL(tm3, 12345) -> time(3) time
-ISNULL(tm3, 2.50) -> time(3) time
+ISNULL(tm3, 1) -> unknown unsupported-expression: ISNULL(tm3, 1): SQL Server refuses it: int doesn't convert implicitly to time(3).
+ISNULL(tm3, 12345) -> unknown unsupported-expression: ISNULL(tm3, 12345): SQL Server refuses it: int doesn't convert implicitly to time(3).
+ISNULL(tm3, 2.50) -> unknown unsupported-expression: ISNULL(tm3, 2.50): SQL Server refuses it: numeric(3,2) doesn't convert implicitly to time(3).
 ISNULL(tm3, 'ab') -> time(3) time
 ISNULL(tm3, N'ab') -> time(3) time
-ISNULL(tm3, 1e0) -> time(3) time
-ISNULL(tm3, $1) -> time(3) time
+ISNULL(tm3, 1e0) -> unknown unsupported-expression: ISNULL(tm3, 1e0): SQL Server refuses it: float doesn't convert implicitly to time(3).
+ISNULL(tm3, $1) -> unknown unsupported-expression: ISNULL(tm3, $1): SQL Server refuses it: money doesn't convert implicitly to time(3).
 ISNULL(dtm, bt) -> datetime datetime/local
 ISNULL(dtm, ti) -> datetime datetime/local
 ISNULL(dtm, si) -> datetime datetime/local
@@ -821,7 +821,7 @@ ISNULL(dtm, dtm) -> datetime datetime/local
 ISNULL(dtm, dt23) -> datetime datetime/local
 ISNULL(dtm, sdt) -> datetime datetime/local
 ISNULL(dtm, dto3) -> datetime datetime/local
-ISNULL(dtm, u) -> datetime datetime/local
+ISNULL(dtm, u) -> unknown unsupported-expression: ISNULL(dtm, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to datetime.
 ISNULL(dtm, bin4) -> datetime datetime/local
 ISNULL(dtm, vb10) -> datetime datetime/local
 ISNULL(dtm, x) -> datetime datetime/local
@@ -834,19 +834,19 @@ ISNULL(dtm, 'ab') -> datetime datetime/local
 ISNULL(dtm, N'ab') -> datetime datetime/local
 ISNULL(dtm, 1e0) -> datetime datetime/local
 ISNULL(dtm, $1) -> datetime datetime/local
-ISNULL(dt23, bt) -> datetime2(3) datetime/local
-ISNULL(dt23, ti) -> datetime2(3) datetime/local
-ISNULL(dt23, si) -> datetime2(3) datetime/local
-ISNULL(dt23, i) -> datetime2(3) datetime/local
-ISNULL(dt23, bi) -> datetime2(3) datetime/local
-ISNULL(dt23, d52) -> datetime2(3) datetime/local
-ISNULL(dt23, d380) -> datetime2(3) datetime/local
-ISNULL(dt23, d3838) -> datetime2(3) datetime/local
-ISNULL(dt23, n102) -> datetime2(3) datetime/local
-ISNULL(dt23, m) -> datetime2(3) datetime/local
-ISNULL(dt23, sm) -> datetime2(3) datetime/local
-ISNULL(dt23, f) -> datetime2(3) datetime/local
-ISNULL(dt23, r) -> datetime2(3) datetime/local
+ISNULL(dt23, bt) -> unknown unsupported-expression: ISNULL(dt23, bt): SQL Server refuses it: bit doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, ti) -> unknown unsupported-expression: ISNULL(dt23, ti): SQL Server refuses it: tinyint doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, si) -> unknown unsupported-expression: ISNULL(dt23, si): SQL Server refuses it: smallint doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, i) -> unknown unsupported-expression: ISNULL(dt23, i): SQL Server refuses it: int doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, bi) -> unknown unsupported-expression: ISNULL(dt23, bi): SQL Server refuses it: bigint doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, d52) -> unknown unsupported-expression: ISNULL(dt23, d52): SQL Server refuses it: decimal(5,2) doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, d380) -> unknown unsupported-expression: ISNULL(dt23, d380): SQL Server refuses it: decimal(38,0) doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, d3838) -> unknown unsupported-expression: ISNULL(dt23, d3838): SQL Server refuses it: decimal(38,38) doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, n102) -> unknown unsupported-expression: ISNULL(dt23, n102): SQL Server refuses it: numeric(10,2) doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, m) -> unknown unsupported-expression: ISNULL(dt23, m): SQL Server refuses it: money doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, sm) -> unknown unsupported-expression: ISNULL(dt23, sm): SQL Server refuses it: smallmoney doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, f) -> unknown unsupported-expression: ISNULL(dt23, f): SQL Server refuses it: float doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, r) -> unknown unsupported-expression: ISNULL(dt23, r): SQL Server refuses it: real doesn't convert implicitly to datetime2(3).
 ISNULL(dt23, c3) -> datetime2(3) datetime/local
 ISNULL(dt23, v10) -> datetime2(3) datetime/local
 ISNULL(dt23, vx) -> datetime2(3) datetime/local
@@ -859,19 +859,19 @@ ISNULL(dt23, dtm) -> datetime2(3) datetime/local
 ISNULL(dt23, dt23) -> datetime2(3) datetime/local
 ISNULL(dt23, sdt) -> datetime2(3) datetime/local
 ISNULL(dt23, dto3) -> datetime2(3) datetime/local
-ISNULL(dt23, u) -> datetime2(3) datetime/local
+ISNULL(dt23, u) -> unknown unsupported-expression: ISNULL(dt23, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to datetime2(3).
 ISNULL(dt23, bin4) -> datetime2(3) datetime/local
 ISNULL(dt23, vb10) -> datetime2(3) datetime/local
 ISNULL(dt23, x) -> datetime2(3) datetime/local
 ISNULL(dt23, sv) -> datetime2(3) datetime/local
 ISNULL(dt23, j) -> datetime2(3) datetime/local
-ISNULL(dt23, 1) -> datetime2(3) datetime/local
-ISNULL(dt23, 12345) -> datetime2(3) datetime/local
-ISNULL(dt23, 2.50) -> datetime2(3) datetime/local
+ISNULL(dt23, 1) -> unknown unsupported-expression: ISNULL(dt23, 1): SQL Server refuses it: int doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, 12345) -> unknown unsupported-expression: ISNULL(dt23, 12345): SQL Server refuses it: int doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, 2.50) -> unknown unsupported-expression: ISNULL(dt23, 2.50): SQL Server refuses it: numeric(3,2) doesn't convert implicitly to datetime2(3).
 ISNULL(dt23, 'ab') -> datetime2(3) datetime/local
 ISNULL(dt23, N'ab') -> datetime2(3) datetime/local
-ISNULL(dt23, 1e0) -> datetime2(3) datetime/local
-ISNULL(dt23, $1) -> datetime2(3) datetime/local
+ISNULL(dt23, 1e0) -> unknown unsupported-expression: ISNULL(dt23, 1e0): SQL Server refuses it: float doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, $1) -> unknown unsupported-expression: ISNULL(dt23, $1): SQL Server refuses it: money doesn't convert implicitly to datetime2(3).
 ISNULL(sdt, bt) -> smalldatetime datetime/local
 ISNULL(sdt, ti) -> smalldatetime datetime/local
 ISNULL(sdt, si) -> smalldatetime datetime/local
@@ -897,7 +897,7 @@ ISNULL(sdt, dtm) -> smalldatetime datetime/local
 ISNULL(sdt, dt23) -> smalldatetime datetime/local
 ISNULL(sdt, sdt) -> smalldatetime datetime/local
 ISNULL(sdt, dto3) -> smalldatetime datetime/local
-ISNULL(sdt, u) -> smalldatetime datetime/local
+ISNULL(sdt, u) -> unknown unsupported-expression: ISNULL(sdt, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to smalldatetime.
 ISNULL(sdt, bin4) -> smalldatetime datetime/local
 ISNULL(sdt, vb10) -> smalldatetime datetime/local
 ISNULL(sdt, x) -> smalldatetime datetime/local
@@ -910,19 +910,19 @@ ISNULL(sdt, 'ab') -> smalldatetime datetime/local
 ISNULL(sdt, N'ab') -> smalldatetime datetime/local
 ISNULL(sdt, 1e0) -> smalldatetime datetime/local
 ISNULL(sdt, $1) -> smalldatetime datetime/local
-ISNULL(dto3, bt) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, ti) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, si) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, i) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, bi) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, d52) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, d380) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, d3838) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, n102) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, m) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, sm) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, f) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, r) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, bt) -> unknown unsupported-expression: ISNULL(dto3, bt): SQL Server refuses it: bit doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, ti) -> unknown unsupported-expression: ISNULL(dto3, ti): SQL Server refuses it: tinyint doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, si) -> unknown unsupported-expression: ISNULL(dto3, si): SQL Server refuses it: smallint doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, i) -> unknown unsupported-expression: ISNULL(dto3, i): SQL Server refuses it: int doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, bi) -> unknown unsupported-expression: ISNULL(dto3, bi): SQL Server refuses it: bigint doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, d52) -> unknown unsupported-expression: ISNULL(dto3, d52): SQL Server refuses it: decimal(5,2) doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, d380) -> unknown unsupported-expression: ISNULL(dto3, d380): SQL Server refuses it: decimal(38,0) doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, d3838) -> unknown unsupported-expression: ISNULL(dto3, d3838): SQL Server refuses it: decimal(38,38) doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, n102) -> unknown unsupported-expression: ISNULL(dto3, n102): SQL Server refuses it: numeric(10,2) doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, m) -> unknown unsupported-expression: ISNULL(dto3, m): SQL Server refuses it: money doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, sm) -> unknown unsupported-expression: ISNULL(dto3, sm): SQL Server refuses it: smallmoney doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, f) -> unknown unsupported-expression: ISNULL(dto3, f): SQL Server refuses it: float doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, r) -> unknown unsupported-expression: ISNULL(dto3, r): SQL Server refuses it: real doesn't convert implicitly to datetimeoffset(3).
 ISNULL(dto3, c3) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, v10) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, vx) -> datetimeoffset(3) datetime/offset
@@ -935,57 +935,57 @@ ISNULL(dto3, dtm) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, dt23) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, sdt) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, dto3) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, u) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, u) -> unknown unsupported-expression: ISNULL(dto3, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to datetimeoffset(3).
 ISNULL(dto3, bin4) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, vb10) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, x) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, sv) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, j) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, 1) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, 12345) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, 2.50) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, 1) -> unknown unsupported-expression: ISNULL(dto3, 1): SQL Server refuses it: int doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, 12345) -> unknown unsupported-expression: ISNULL(dto3, 12345): SQL Server refuses it: int doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, 2.50) -> unknown unsupported-expression: ISNULL(dto3, 2.50): SQL Server refuses it: numeric(3,2) doesn't convert implicitly to datetimeoffset(3).
 ISNULL(dto3, 'ab') -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, N'ab') -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, 1e0) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, $1) -> datetimeoffset(3) datetime/offset
-ISNULL(u, bt) -> uniqueidentifier uuid
-ISNULL(u, ti) -> uniqueidentifier uuid
-ISNULL(u, si) -> uniqueidentifier uuid
-ISNULL(u, i) -> uniqueidentifier uuid
-ISNULL(u, bi) -> uniqueidentifier uuid
-ISNULL(u, d52) -> uniqueidentifier uuid
-ISNULL(u, d380) -> uniqueidentifier uuid
-ISNULL(u, d3838) -> uniqueidentifier uuid
-ISNULL(u, n102) -> uniqueidentifier uuid
-ISNULL(u, m) -> uniqueidentifier uuid
-ISNULL(u, sm) -> uniqueidentifier uuid
-ISNULL(u, f) -> uniqueidentifier uuid
-ISNULL(u, r) -> uniqueidentifier uuid
+ISNULL(dto3, 1e0) -> unknown unsupported-expression: ISNULL(dto3, 1e0): SQL Server refuses it: float doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, $1) -> unknown unsupported-expression: ISNULL(dto3, $1): SQL Server refuses it: money doesn't convert implicitly to datetimeoffset(3).
+ISNULL(u, bt) -> unknown unsupported-expression: ISNULL(u, bt): SQL Server refuses it: bit doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, ti) -> unknown unsupported-expression: ISNULL(u, ti): SQL Server refuses it: tinyint doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, si) -> unknown unsupported-expression: ISNULL(u, si): SQL Server refuses it: smallint doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, i) -> unknown unsupported-expression: ISNULL(u, i): SQL Server refuses it: int doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, bi) -> unknown unsupported-expression: ISNULL(u, bi): SQL Server refuses it: bigint doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, d52) -> unknown unsupported-expression: ISNULL(u, d52): SQL Server refuses it: decimal(5,2) doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, d380) -> unknown unsupported-expression: ISNULL(u, d380): SQL Server refuses it: decimal(38,0) doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, d3838) -> unknown unsupported-expression: ISNULL(u, d3838): SQL Server refuses it: decimal(38,38) doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, n102) -> unknown unsupported-expression: ISNULL(u, n102): SQL Server refuses it: numeric(10,2) doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, m) -> unknown unsupported-expression: ISNULL(u, m): SQL Server refuses it: money doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, sm) -> unknown unsupported-expression: ISNULL(u, sm): SQL Server refuses it: smallmoney doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, f) -> unknown unsupported-expression: ISNULL(u, f): SQL Server refuses it: float doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, r) -> unknown unsupported-expression: ISNULL(u, r): SQL Server refuses it: real doesn't convert implicitly to uniqueidentifier.
 ISNULL(u, c3) -> uniqueidentifier uuid
 ISNULL(u, v10) -> uniqueidentifier uuid
 ISNULL(u, vx) -> uniqueidentifier uuid
 ISNULL(u, nc3) -> uniqueidentifier uuid
 ISNULL(u, nv10) -> uniqueidentifier uuid
 ISNULL(u, nvx) -> uniqueidentifier uuid
-ISNULL(u, dt) -> uniqueidentifier uuid
-ISNULL(u, tm3) -> uniqueidentifier uuid
-ISNULL(u, dtm) -> uniqueidentifier uuid
-ISNULL(u, dt23) -> uniqueidentifier uuid
-ISNULL(u, sdt) -> uniqueidentifier uuid
-ISNULL(u, dto3) -> uniqueidentifier uuid
+ISNULL(u, dt) -> unknown unsupported-expression: ISNULL(u, dt): SQL Server refuses it: date doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, tm3) -> unknown unsupported-expression: ISNULL(u, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, dtm) -> unknown unsupported-expression: ISNULL(u, dtm): SQL Server refuses it: datetime doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, dt23) -> unknown unsupported-expression: ISNULL(u, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, sdt) -> unknown unsupported-expression: ISNULL(u, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, dto3) -> unknown unsupported-expression: ISNULL(u, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to uniqueidentifier.
 ISNULL(u, u) -> uniqueidentifier uuid
 ISNULL(u, bin4) -> uniqueidentifier uuid
 ISNULL(u, vb10) -> uniqueidentifier uuid
 ISNULL(u, x) -> uniqueidentifier uuid
 ISNULL(u, sv) -> uniqueidentifier uuid
 ISNULL(u, j) -> uniqueidentifier uuid
-ISNULL(u, 1) -> uniqueidentifier uuid
-ISNULL(u, 12345) -> uniqueidentifier uuid
-ISNULL(u, 2.50) -> uniqueidentifier uuid
+ISNULL(u, 1) -> unknown unsupported-expression: ISNULL(u, 1): SQL Server refuses it: int doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, 12345) -> unknown unsupported-expression: ISNULL(u, 12345): SQL Server refuses it: int doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, 2.50) -> unknown unsupported-expression: ISNULL(u, 2.50): SQL Server refuses it: numeric(3,2) doesn't convert implicitly to uniqueidentifier.
 ISNULL(u, 'ab') -> uniqueidentifier uuid
 ISNULL(u, N'ab') -> uniqueidentifier uuid
-ISNULL(u, 1e0) -> uniqueidentifier uuid
-ISNULL(u, $1) -> uniqueidentifier uuid
+ISNULL(u, 1e0) -> unknown unsupported-expression: ISNULL(u, 1e0): SQL Server refuses it: float doesn't convert implicitly to uniqueidentifier.
+ISNULL(u, $1) -> unknown unsupported-expression: ISNULL(u, $1): SQL Server refuses it: money doesn't convert implicitly to uniqueidentifier.
 ISNULL(bin4, bt) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 ISNULL(bin4, ti) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 ISNULL(bin4, si) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
@@ -1195,13 +1195,13 @@ ISNULL(1, vx) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(1, nc3) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(1, nv10) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(1, nvx) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(1, dt) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(1, tm3) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(1, dtm) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(1, dt23) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(1, sdt) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(1, dto3) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(1, u) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(1, dt) -> unknown unsupported-expression: ISNULL(1, dt): SQL Server refuses it: date doesn't convert implicitly to int.
+ISNULL(1, tm3) -> unknown unsupported-expression: ISNULL(1, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to int.
+ISNULL(1, dtm) -> unknown unsupported-expression: ISNULL(1, dtm): SQL Server refuses it: datetime doesn't convert implicitly to int.
+ISNULL(1, dt23) -> unknown unsupported-expression: ISNULL(1, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to int.
+ISNULL(1, sdt) -> unknown unsupported-expression: ISNULL(1, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to int.
+ISNULL(1, dto3) -> unknown unsupported-expression: ISNULL(1, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to int.
+ISNULL(1, u) -> unknown unsupported-expression: ISNULL(1, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to int.
 ISNULL(1, bin4) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(1, vb10) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(1, x) -> int number/int32 {[-2147483648 2147483647]}
@@ -1233,13 +1233,13 @@ ISNULL(12345, vx) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(12345, nc3) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(12345, nv10) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(12345, nvx) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(12345, dt) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(12345, tm3) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(12345, dtm) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(12345, dt23) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(12345, sdt) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(12345, dto3) -> int number/int32 {[-2147483648 2147483647]}
-ISNULL(12345, u) -> int number/int32 {[-2147483648 2147483647]}
+ISNULL(12345, dt) -> unknown unsupported-expression: ISNULL(12345, dt): SQL Server refuses it: date doesn't convert implicitly to int.
+ISNULL(12345, tm3) -> unknown unsupported-expression: ISNULL(12345, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to int.
+ISNULL(12345, dtm) -> unknown unsupported-expression: ISNULL(12345, dtm): SQL Server refuses it: datetime doesn't convert implicitly to int.
+ISNULL(12345, dt23) -> unknown unsupported-expression: ISNULL(12345, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to int.
+ISNULL(12345, sdt) -> unknown unsupported-expression: ISNULL(12345, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to int.
+ISNULL(12345, dto3) -> unknown unsupported-expression: ISNULL(12345, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to int.
+ISNULL(12345, u) -> unknown unsupported-expression: ISNULL(12345, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to int.
 ISNULL(12345, bin4) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(12345, vb10) -> int number/int32 {[-2147483648 2147483647]}
 ISNULL(12345, x) -> int number/int32 {[-2147483648 2147483647]}
@@ -1271,13 +1271,13 @@ ISNULL(2.50, vx) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
 ISNULL(2.50, nc3) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
 ISNULL(2.50, nv10) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
 ISNULL(2.50, nvx) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
-ISNULL(2.50, dt) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
-ISNULL(2.50, tm3) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
-ISNULL(2.50, dtm) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
-ISNULL(2.50, dt23) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
-ISNULL(2.50, sdt) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
-ISNULL(2.50, dto3) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
-ISNULL(2.50, u) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+ISNULL(2.50, dt) -> unknown unsupported-expression: ISNULL(2.50, dt): SQL Server refuses it: date doesn't convert implicitly to numeric(3,2).
+ISNULL(2.50, tm3) -> unknown unsupported-expression: ISNULL(2.50, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to numeric(3,2).
+ISNULL(2.50, dtm) -> unknown unsupported-expression: ISNULL(2.50, dtm): SQL Server refuses it: datetime doesn't convert implicitly to numeric(3,2).
+ISNULL(2.50, dt23) -> unknown unsupported-expression: ISNULL(2.50, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to numeric(3,2).
+ISNULL(2.50, sdt) -> unknown unsupported-expression: ISNULL(2.50, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to numeric(3,2).
+ISNULL(2.50, dto3) -> unknown unsupported-expression: ISNULL(2.50, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to numeric(3,2).
+ISNULL(2.50, u) -> unknown unsupported-expression: ISNULL(2.50, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to numeric(3,2).
 ISNULL(2.50, bin4) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
 ISNULL(2.50, vb10) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
 ISNULL(2.50, x) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
@@ -1385,13 +1385,13 @@ ISNULL(1e0, vx) -> float number/float
 ISNULL(1e0, nc3) -> float number/float
 ISNULL(1e0, nv10) -> float number/float
 ISNULL(1e0, nvx) -> float number/float
-ISNULL(1e0, dt) -> float number/float
-ISNULL(1e0, tm3) -> float number/float
-ISNULL(1e0, dtm) -> float number/float
-ISNULL(1e0, dt23) -> float number/float
-ISNULL(1e0, sdt) -> float number/float
-ISNULL(1e0, dto3) -> float number/float
-ISNULL(1e0, u) -> float number/float
+ISNULL(1e0, dt) -> unknown unsupported-expression: ISNULL(1e0, dt): SQL Server refuses it: date doesn't convert implicitly to float.
+ISNULL(1e0, tm3) -> unknown unsupported-expression: ISNULL(1e0, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to float.
+ISNULL(1e0, dtm) -> unknown unsupported-expression: ISNULL(1e0, dtm): SQL Server refuses it: datetime doesn't convert implicitly to float.
+ISNULL(1e0, dt23) -> unknown unsupported-expression: ISNULL(1e0, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to float.
+ISNULL(1e0, sdt) -> unknown unsupported-expression: ISNULL(1e0, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to float.
+ISNULL(1e0, dto3) -> unknown unsupported-expression: ISNULL(1e0, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to float.
+ISNULL(1e0, u) -> unknown unsupported-expression: ISNULL(1e0, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to float.
 ISNULL(1e0, bin4) -> float number/float
 ISNULL(1e0, vb10) -> float number/float
 ISNULL(1e0, x) -> float number/float
@@ -1423,13 +1423,13 @@ ISNULL($1, vx) -> money number/decimal {digits=19,4 [-922337203685477.5808 92233
 ISNULL($1, nc3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL($1, nv10) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL($1, nvx) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL($1, dt) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL($1, tm3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL($1, dtm) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL($1, dt23) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL($1, sdt) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL($1, dto3) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-ISNULL($1, u) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+ISNULL($1, dt) -> unknown unsupported-expression: ISNULL($1, dt): SQL Server refuses it: date doesn't convert implicitly to money.
+ISNULL($1, tm3) -> unknown unsupported-expression: ISNULL($1, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to money.
+ISNULL($1, dtm) -> unknown unsupported-expression: ISNULL($1, dtm): SQL Server refuses it: datetime doesn't convert implicitly to money.
+ISNULL($1, dt23) -> unknown unsupported-expression: ISNULL($1, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to money.
+ISNULL($1, sdt) -> unknown unsupported-expression: ISNULL($1, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to money.
+ISNULL($1, dto3) -> unknown unsupported-expression: ISNULL($1, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to money.
+ISNULL($1, u) -> unknown unsupported-expression: ISNULL($1, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to money.
 ISNULL($1, bin4) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL($1, vb10) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 ISNULL($1, x) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}

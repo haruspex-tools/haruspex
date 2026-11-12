@@ -55,13 +55,16 @@ public partial class JsonTracingTests
         // Observed: Openjson_with_does_not_pad_nchar_but_pads_char.
         var doc = Infer("""
             DECLARE @x nvarchar(max) = (SELECT CAST(l.sku AS nchar(8)) AS fixed, l.colour FROM sales.order_line AS l FOR JSON PATH);
-            SELECT j.fixed, j.colour, d.v FROM OPENJSON(@x) WITH (fixed nchar(8), colour nchar(10)) AS j
-            CROSS APPLY OPENJSON(N'[{"v":"ab"}]') WITH (v nchar(4)) AS d;
+            SELECT j.fixed, j.colour, d.v, d.w FROM OPENJSON(@x) WITH (fixed nchar(8), colour nchar(10)) AS j
+            CROSS APPLY OPENJSON(N'[{"v":"ab","w":""}]') WITH (v nchar(4), w nchar) AS d;
             """);
 
         Assert.True(Assert.IsType<IrScalar>(Field(doc, "fixed").Type).Facets!.Length!.IsFixed);
         Assert.False(Assert.IsType<IrScalar>(Field(doc, "colour").Type).Facets!.Length!.IsFixed);
         Assert.False(Assert.IsType<IrScalar>(Field(doc, "v").Type).Facets!.Length!.IsFixed);
+
+        // nchar alone is nchar(1), no more padded.
+        Assert.False(Assert.IsType<IrScalar>(Field(doc, "w").Type).Facets!.Length!.IsFixed);
     }
 
     [Fact]

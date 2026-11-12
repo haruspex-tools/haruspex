@@ -194,6 +194,11 @@ public class JsonTracingObservationTests(SqlServerFixture server)
             "n,nb,c,cb: ab,4,ab  ,4",
             await Select("""SELECT j.n, datalength(j.n) AS nb, j.c, datalength(j.c) AS cb FROM OPENJSON(N'[{"v":"ab"}]') WITH (n nchar(4) '$.v', c char(4) '$.v') AS j;"""));
 
+        // nchar without a length is nchar(1), and no more padded: "" into it is empty.
+        Assert.Equal(
+            "nb: 0",
+            await Select("""SELECT datalength(j.n) AS nb FROM OPENJSON(N'[{"v":""}]') WITH (n nchar '$.v') AS j;"""));
+
         // In a procedure's rowset the value may arrive padded to n with U+0000 (seen in the kits fixture's part_rows, reading a
         // variable) or not (this literal); in JSON it is its own length. So "at most n" is what holds.
         var call = await ObservedCall.Run(server, ["""CREATE PROCEDURE dbo.obs_nchar AS SELECT j.n FROM OPENJSON(N'[{"v":"ab"}]') WITH (n nchar(4) '$.v') AS j FOR JSON PATH;"""], "EXEC dbo.obs_nchar;");

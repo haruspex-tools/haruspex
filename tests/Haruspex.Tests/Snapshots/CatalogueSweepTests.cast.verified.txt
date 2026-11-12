@@ -17,13 +17,13 @@ CAST(bt AS varchar(max)) -> varchar(max) string
 CAST(bt AS nchar(3)) -> nchar(3) string {length=3}
 CAST(bt AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(bt AS nvarchar(max)) -> nvarchar(max) string
-CAST(bt AS date) -> date date null:arithmetic-overflow
-CAST(bt AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(bt AS date) -> unknown unsupported-expression: CAST(bt AS date): SQL Server refuses to convert bit to date.
+CAST(bt AS time(3)) -> unknown unsupported-expression: CAST(bt AS time(3)): SQL Server refuses to convert bit to time(3).
 CAST(bt AS datetime) -> datetime datetime/local
-CAST(bt AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(bt AS datetime2(3)) -> unknown unsupported-expression: CAST(bt AS datetime2(3)): SQL Server refuses to convert bit to datetime2(3).
 CAST(bt AS smalldatetime) -> smalldatetime datetime/local
-CAST(bt AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(bt AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(bt AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(bt AS datetimeoffset(3)): SQL Server refuses to convert bit to datetimeoffset(3).
+CAST(bt AS uniqueidentifier) -> unknown unsupported-expression: CAST(bt AS uniqueidentifier): SQL Server refuses to convert bit to uniqueidentifier.
 CAST(bt AS binary(4)) -> unknown unsupported-expression: CAST(bt AS binary(4)): a conversion to this type is not modelled yet.
 CAST(bt AS varbinary(10)) -> unknown unsupported-expression: CAST(bt AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(bt AS xml) -> unknown unsupported-expression: CAST(bt AS xml): a conversion to this type is not modelled yet.
@@ -50,13 +50,13 @@ CAST(ti AS varchar(max)) -> varchar(max) string
 CAST(ti AS nchar(3)) -> nchar(3) string {length=3}
 CAST(ti AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(ti AS nvarchar(max)) -> nvarchar(max) string
-CAST(ti AS date) -> date date null:arithmetic-overflow
-CAST(ti AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(ti AS date) -> unknown unsupported-expression: CAST(ti AS date): SQL Server refuses to convert tinyint to date.
+CAST(ti AS time(3)) -> unknown unsupported-expression: CAST(ti AS time(3)): SQL Server refuses to convert tinyint to time(3).
 CAST(ti AS datetime) -> datetime datetime/local
-CAST(ti AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(ti AS datetime2(3)) -> unknown unsupported-expression: CAST(ti AS datetime2(3)): SQL Server refuses to convert tinyint to datetime2(3).
 CAST(ti AS smalldatetime) -> smalldatetime datetime/local
-CAST(ti AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(ti AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(ti AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(ti AS datetimeoffset(3)): SQL Server refuses to convert tinyint to datetimeoffset(3).
+CAST(ti AS uniqueidentifier) -> unknown unsupported-expression: CAST(ti AS uniqueidentifier): SQL Server refuses to convert tinyint to uniqueidentifier.
 CAST(ti AS binary(4)) -> unknown unsupported-expression: CAST(ti AS binary(4)): a conversion to this type is not modelled yet.
 CAST(ti AS varbinary(10)) -> unknown unsupported-expression: CAST(ti AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(ti AS xml) -> unknown unsupported-expression: CAST(ti AS xml): a conversion to this type is not modelled yet.
@@ -83,13 +83,13 @@ CAST(si AS varchar(max)) -> varchar(max) string
 CAST(si AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(si AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(si AS nvarchar(max)) -> nvarchar(max) string
-CAST(si AS date) -> date date null:arithmetic-overflow
-CAST(si AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(si AS date) -> unknown unsupported-expression: CAST(si AS date): SQL Server refuses to convert smallint to date.
+CAST(si AS time(3)) -> unknown unsupported-expression: CAST(si AS time(3)): SQL Server refuses to convert smallint to time(3).
 CAST(si AS datetime) -> datetime datetime/local
-CAST(si AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(si AS datetime2(3)) -> unknown unsupported-expression: CAST(si AS datetime2(3)): SQL Server refuses to convert smallint to datetime2(3).
 CAST(si AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(si AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(si AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(si AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(si AS datetimeoffset(3)): SQL Server refuses to convert smallint to datetimeoffset(3).
+CAST(si AS uniqueidentifier) -> unknown unsupported-expression: CAST(si AS uniqueidentifier): SQL Server refuses to convert smallint to uniqueidentifier.
 CAST(si AS binary(4)) -> unknown unsupported-expression: CAST(si AS binary(4)): a conversion to this type is not modelled yet.
 CAST(si AS varbinary(10)) -> unknown unsupported-expression: CAST(si AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(si AS xml) -> unknown unsupported-expression: CAST(si AS xml): a conversion to this type is not modelled yet.
@@ -116,13 +116,13 @@ CAST(i AS varchar(max)) -> varchar(max) string
 CAST(i AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(i AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(i AS nvarchar(max)) -> nvarchar(max) string
-CAST(i AS date) -> date date null:arithmetic-overflow
-CAST(i AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(i AS date) -> unknown unsupported-expression: CAST(i AS date): SQL Server refuses to convert int to date.
+CAST(i AS time(3)) -> unknown unsupported-expression: CAST(i AS time(3)): SQL Server refuses to convert int to time(3).
 CAST(i AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(i AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(i AS datetime2(3)) -> unknown unsupported-expression: CAST(i AS datetime2(3)): SQL Server refuses to convert int to datetime2(3).
 CAST(i AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(i AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(i AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(i AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(i AS datetimeoffset(3)): SQL Server refuses to convert int to datetimeoffset(3).
+CAST(i AS uniqueidentifier) -> unknown unsupported-expression: CAST(i AS uniqueidentifier): SQL Server refuses to convert int to uniqueidentifier.
 CAST(i AS binary(4)) -> unknown unsupported-expression: CAST(i AS binary(4)): a conversion to this type is not modelled yet.
 CAST(i AS varbinary(10)) -> unknown unsupported-expression: CAST(i AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(i AS xml) -> unknown unsupported-expression: CAST(i AS xml): a conversion to this type is not modelled yet.
@@ -149,13 +149,13 @@ CAST(bi AS varchar(max)) -> varchar(max) string
 CAST(bi AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(bi AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(bi AS nvarchar(max)) -> nvarchar(max) string
-CAST(bi AS date) -> date date null:arithmetic-overflow
-CAST(bi AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(bi AS date) -> unknown unsupported-expression: CAST(bi AS date): SQL Server refuses to convert bigint to date.
+CAST(bi AS time(3)) -> unknown unsupported-expression: CAST(bi AS time(3)): SQL Server refuses to convert bigint to time(3).
 CAST(bi AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(bi AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(bi AS datetime2(3)) -> unknown unsupported-expression: CAST(bi AS datetime2(3)): SQL Server refuses to convert bigint to datetime2(3).
 CAST(bi AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(bi AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(bi AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(bi AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(bi AS datetimeoffset(3)): SQL Server refuses to convert bigint to datetimeoffset(3).
+CAST(bi AS uniqueidentifier) -> unknown unsupported-expression: CAST(bi AS uniqueidentifier): SQL Server refuses to convert bigint to uniqueidentifier.
 CAST(bi AS binary(4)) -> unknown unsupported-expression: CAST(bi AS binary(4)): a conversion to this type is not modelled yet.
 CAST(bi AS varbinary(10)) -> unknown unsupported-expression: CAST(bi AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(bi AS xml) -> unknown unsupported-expression: CAST(bi AS xml): a conversion to this type is not modelled yet.
@@ -182,13 +182,13 @@ CAST(d52 AS varchar(max)) -> varchar(max) string
 CAST(d52 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(d52 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(d52 AS nvarchar(max)) -> nvarchar(max) string
-CAST(d52 AS date) -> date date null:arithmetic-overflow
-CAST(d52 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(d52 AS date) -> unknown unsupported-expression: CAST(d52 AS date): SQL Server refuses to convert decimal(5,2) to date.
+CAST(d52 AS time(3)) -> unknown unsupported-expression: CAST(d52 AS time(3)): SQL Server refuses to convert decimal(5,2) to time(3).
 CAST(d52 AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(d52 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(d52 AS datetime2(3)) -> unknown unsupported-expression: CAST(d52 AS datetime2(3)): SQL Server refuses to convert decimal(5,2) to datetime2(3).
 CAST(d52 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(d52 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(d52 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(d52 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(d52 AS datetimeoffset(3)): SQL Server refuses to convert decimal(5,2) to datetimeoffset(3).
+CAST(d52 AS uniqueidentifier) -> unknown unsupported-expression: CAST(d52 AS uniqueidentifier): SQL Server refuses to convert decimal(5,2) to uniqueidentifier.
 CAST(d52 AS binary(4)) -> unknown unsupported-expression: CAST(d52 AS binary(4)): a conversion to this type is not modelled yet.
 CAST(d52 AS varbinary(10)) -> unknown unsupported-expression: CAST(d52 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(d52 AS xml) -> unknown unsupported-expression: CAST(d52 AS xml): a conversion to this type is not modelled yet.
@@ -215,13 +215,13 @@ CAST(d380 AS varchar(max)) -> varchar(max) string
 CAST(d380 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(d380 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(d380 AS nvarchar(max)) -> nvarchar(max) string
-CAST(d380 AS date) -> date date null:arithmetic-overflow
-CAST(d380 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(d380 AS date) -> unknown unsupported-expression: CAST(d380 AS date): SQL Server refuses to convert decimal(38,0) to date.
+CAST(d380 AS time(3)) -> unknown unsupported-expression: CAST(d380 AS time(3)): SQL Server refuses to convert decimal(38,0) to time(3).
 CAST(d380 AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(d380 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(d380 AS datetime2(3)) -> unknown unsupported-expression: CAST(d380 AS datetime2(3)): SQL Server refuses to convert decimal(38,0) to datetime2(3).
 CAST(d380 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(d380 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(d380 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(d380 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(d380 AS datetimeoffset(3)): SQL Server refuses to convert decimal(38,0) to datetimeoffset(3).
+CAST(d380 AS uniqueidentifier) -> unknown unsupported-expression: CAST(d380 AS uniqueidentifier): SQL Server refuses to convert decimal(38,0) to uniqueidentifier.
 CAST(d380 AS binary(4)) -> unknown unsupported-expression: CAST(d380 AS binary(4)): a conversion to this type is not modelled yet.
 CAST(d380 AS varbinary(10)) -> unknown unsupported-expression: CAST(d380 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(d380 AS xml) -> unknown unsupported-expression: CAST(d380 AS xml): a conversion to this type is not modelled yet.
@@ -248,13 +248,13 @@ CAST(d3838 AS varchar(max)) -> varchar(max) string
 CAST(d3838 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(d3838 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(d3838 AS nvarchar(max)) -> nvarchar(max) string
-CAST(d3838 AS date) -> date date null:arithmetic-overflow
-CAST(d3838 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(d3838 AS date) -> unknown unsupported-expression: CAST(d3838 AS date): SQL Server refuses to convert decimal(38,38) to date.
+CAST(d3838 AS time(3)) -> unknown unsupported-expression: CAST(d3838 AS time(3)): SQL Server refuses to convert decimal(38,38) to time(3).
 CAST(d3838 AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(d3838 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(d3838 AS datetime2(3)) -> unknown unsupported-expression: CAST(d3838 AS datetime2(3)): SQL Server refuses to convert decimal(38,38) to datetime2(3).
 CAST(d3838 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(d3838 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(d3838 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(d3838 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(d3838 AS datetimeoffset(3)): SQL Server refuses to convert decimal(38,38) to datetimeoffset(3).
+CAST(d3838 AS uniqueidentifier) -> unknown unsupported-expression: CAST(d3838 AS uniqueidentifier): SQL Server refuses to convert decimal(38,38) to uniqueidentifier.
 CAST(d3838 AS binary(4)) -> unknown unsupported-expression: CAST(d3838 AS binary(4)): a conversion to this type is not modelled yet.
 CAST(d3838 AS varbinary(10)) -> unknown unsupported-expression: CAST(d3838 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(d3838 AS xml) -> unknown unsupported-expression: CAST(d3838 AS xml): a conversion to this type is not modelled yet.
@@ -281,13 +281,13 @@ CAST(n102 AS varchar(max)) -> varchar(max) string
 CAST(n102 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(n102 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(n102 AS nvarchar(max)) -> nvarchar(max) string
-CAST(n102 AS date) -> date date null:arithmetic-overflow
-CAST(n102 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(n102 AS date) -> unknown unsupported-expression: CAST(n102 AS date): SQL Server refuses to convert numeric(10,2) to date.
+CAST(n102 AS time(3)) -> unknown unsupported-expression: CAST(n102 AS time(3)): SQL Server refuses to convert numeric(10,2) to time(3).
 CAST(n102 AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(n102 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(n102 AS datetime2(3)) -> unknown unsupported-expression: CAST(n102 AS datetime2(3)): SQL Server refuses to convert numeric(10,2) to datetime2(3).
 CAST(n102 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(n102 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(n102 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(n102 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(n102 AS datetimeoffset(3)): SQL Server refuses to convert numeric(10,2) to datetimeoffset(3).
+CAST(n102 AS uniqueidentifier) -> unknown unsupported-expression: CAST(n102 AS uniqueidentifier): SQL Server refuses to convert numeric(10,2) to uniqueidentifier.
 CAST(n102 AS binary(4)) -> unknown unsupported-expression: CAST(n102 AS binary(4)): a conversion to this type is not modelled yet.
 CAST(n102 AS varbinary(10)) -> unknown unsupported-expression: CAST(n102 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(n102 AS xml) -> unknown unsupported-expression: CAST(n102 AS xml): a conversion to this type is not modelled yet.
@@ -314,13 +314,13 @@ CAST(m AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
 CAST(m AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(m AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(m AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
-CAST(m AS date) -> date date null:arithmetic-overflow
-CAST(m AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(m AS date) -> unknown unsupported-expression: CAST(m AS date): SQL Server refuses to convert money to date.
+CAST(m AS time(3)) -> unknown unsupported-expression: CAST(m AS time(3)): SQL Server refuses to convert money to time(3).
 CAST(m AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(m AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(m AS datetime2(3)) -> unknown unsupported-expression: CAST(m AS datetime2(3)): SQL Server refuses to convert money to datetime2(3).
 CAST(m AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(m AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(m AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(m AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(m AS datetimeoffset(3)): SQL Server refuses to convert money to datetimeoffset(3).
+CAST(m AS uniqueidentifier) -> unknown unsupported-expression: CAST(m AS uniqueidentifier): SQL Server refuses to convert money to uniqueidentifier.
 CAST(m AS binary(4)) -> unknown unsupported-expression: CAST(m AS binary(4)): a conversion to this type is not modelled yet.
 CAST(m AS varbinary(10)) -> unknown unsupported-expression: CAST(m AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(m AS xml) -> unknown unsupported-expression: CAST(m AS xml): a conversion to this type is not modelled yet.
@@ -347,13 +347,13 @@ CAST(sm AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
 CAST(sm AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(sm AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(sm AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
-CAST(sm AS date) -> date date null:arithmetic-overflow
-CAST(sm AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(sm AS date) -> unknown unsupported-expression: CAST(sm AS date): SQL Server refuses to convert smallmoney to date.
+CAST(sm AS time(3)) -> unknown unsupported-expression: CAST(sm AS time(3)): SQL Server refuses to convert smallmoney to time(3).
 CAST(sm AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(sm AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(sm AS datetime2(3)) -> unknown unsupported-expression: CAST(sm AS datetime2(3)): SQL Server refuses to convert smallmoney to datetime2(3).
 CAST(sm AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(sm AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(sm AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(sm AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(sm AS datetimeoffset(3)): SQL Server refuses to convert smallmoney to datetimeoffset(3).
+CAST(sm AS uniqueidentifier) -> unknown unsupported-expression: CAST(sm AS uniqueidentifier): SQL Server refuses to convert smallmoney to uniqueidentifier.
 CAST(sm AS binary(4)) -> unknown unsupported-expression: CAST(sm AS binary(4)): a conversion to this type is not modelled yet.
 CAST(sm AS varbinary(10)) -> unknown unsupported-expression: CAST(sm AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(sm AS xml) -> unknown unsupported-expression: CAST(sm AS xml): a conversion to this type is not modelled yet.
@@ -380,13 +380,13 @@ CAST(f AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
 CAST(f AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(f AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(f AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
-CAST(f AS date) -> date date null:arithmetic-overflow
-CAST(f AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(f AS date) -> unknown unsupported-expression: CAST(f AS date): SQL Server refuses to convert float to date.
+CAST(f AS time(3)) -> unknown unsupported-expression: CAST(f AS time(3)): SQL Server refuses to convert float to time(3).
 CAST(f AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(f AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(f AS datetime2(3)) -> unknown unsupported-expression: CAST(f AS datetime2(3)): SQL Server refuses to convert float to datetime2(3).
 CAST(f AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(f AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(f AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(f AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(f AS datetimeoffset(3)): SQL Server refuses to convert float to datetimeoffset(3).
+CAST(f AS uniqueidentifier) -> unknown unsupported-expression: CAST(f AS uniqueidentifier): SQL Server refuses to convert float to uniqueidentifier.
 CAST(f AS binary(4)) -> unknown unsupported-expression: CAST(f AS binary(4)): a conversion to this type is not modelled yet.
 CAST(f AS varbinary(10)) -> unknown unsupported-expression: CAST(f AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(f AS xml) -> unknown unsupported-expression: CAST(f AS xml): a conversion to this type is not modelled yet.
@@ -413,13 +413,13 @@ CAST(r AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
 CAST(r AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(r AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(r AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
-CAST(r AS date) -> date date null:arithmetic-overflow
-CAST(r AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(r AS date) -> unknown unsupported-expression: CAST(r AS date): SQL Server refuses to convert real to date.
+CAST(r AS time(3)) -> unknown unsupported-expression: CAST(r AS time(3)): SQL Server refuses to convert real to time(3).
 CAST(r AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(r AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(r AS datetime2(3)) -> unknown unsupported-expression: CAST(r AS datetime2(3)): SQL Server refuses to convert real to datetime2(3).
 CAST(r AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(r AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(r AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(r AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(r AS datetimeoffset(3)): SQL Server refuses to convert real to datetimeoffset(3).
+CAST(r AS uniqueidentifier) -> unknown unsupported-expression: CAST(r AS uniqueidentifier): SQL Server refuses to convert real to uniqueidentifier.
 CAST(r AS binary(4)) -> unknown unsupported-expression: CAST(r AS binary(4)): a conversion to this type is not modelled yet.
 CAST(r AS varbinary(10)) -> unknown unsupported-expression: CAST(r AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(r AS xml) -> unknown unsupported-expression: CAST(r AS xml): a conversion to this type is not modelled yet.
@@ -625,19 +625,19 @@ CAST(nvx AS sql_variant) -> unknown unsupported-expression: CAST(nvx AS sql_vari
 CAST(nvx AS json) -> unknown unsupported-expression: CAST(nvx AS json): a conversion to this type is not modelled yet.
 CAST(nvx AS varchar) -> varchar(30) string {length<=30}
 CAST(nvx AS nvarchar) -> nvarchar(30) string {length<=30}
-CAST(dt AS bit) -> bit boolean null:arithmetic-overflow
-CAST(dt AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
-CAST(dt AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
-CAST(dt AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
-CAST(dt AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-CAST(dt AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(dt AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-CAST(dt AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST(dt AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
-CAST(dt AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-CAST(dt AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
-CAST(dt AS float) -> float number/float null:arithmetic-overflow
-CAST(dt AS real) -> real number/float null:arithmetic-overflow
+CAST(dt AS bit) -> unknown unsupported-expression: CAST(dt AS bit): SQL Server refuses to convert date to bit.
+CAST(dt AS tinyint) -> unknown unsupported-expression: CAST(dt AS tinyint): SQL Server refuses to convert date to tinyint.
+CAST(dt AS smallint) -> unknown unsupported-expression: CAST(dt AS smallint): SQL Server refuses to convert date to smallint.
+CAST(dt AS int) -> unknown unsupported-expression: CAST(dt AS int): SQL Server refuses to convert date to int.
+CAST(dt AS bigint) -> unknown unsupported-expression: CAST(dt AS bigint): SQL Server refuses to convert date to bigint.
+CAST(dt AS decimal(5,2)) -> unknown unsupported-expression: CAST(dt AS decimal(5,2)): SQL Server refuses to convert date to decimal(5,2).
+CAST(dt AS decimal(38,0)) -> unknown unsupported-expression: CAST(dt AS decimal(38,0)): SQL Server refuses to convert date to decimal(38,0).
+CAST(dt AS decimal(38,38)) -> unknown unsupported-expression: CAST(dt AS decimal(38,38)): SQL Server refuses to convert date to decimal(38,38).
+CAST(dt AS numeric(10,2)) -> unknown unsupported-expression: CAST(dt AS numeric(10,2)): SQL Server refuses to convert date to numeric(10,2).
+CAST(dt AS money) -> unknown unsupported-expression: CAST(dt AS money): SQL Server refuses to convert date to money.
+CAST(dt AS smallmoney) -> unknown unsupported-expression: CAST(dt AS smallmoney): SQL Server refuses to convert date to smallmoney.
+CAST(dt AS float) -> unknown unsupported-expression: CAST(dt AS float): SQL Server refuses to convert date to float.
+CAST(dt AS real) -> unknown unsupported-expression: CAST(dt AS real): SQL Server refuses to convert date to real.
 CAST(dt AS char(3)) -> char(3) string {length=3}
 CAST(dt AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(dt AS varchar(max)) -> varchar(max) string
@@ -645,12 +645,12 @@ CAST(dt AS nchar(3)) -> nchar(3) string {length=3}
 CAST(dt AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(dt AS nvarchar(max)) -> nvarchar(max) string
 CAST(dt AS date) -> date date
-CAST(dt AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(dt AS time(3)) -> unknown unsupported-expression: CAST(dt AS time(3)): SQL Server refuses to convert date to time(3).
 CAST(dt AS datetime) -> datetime datetime/local null:arithmetic-overflow
 CAST(dt AS datetime2(3)) -> datetime2(3) datetime/local
 CAST(dt AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
 CAST(dt AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
-CAST(dt AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(dt AS uniqueidentifier) -> unknown unsupported-expression: CAST(dt AS uniqueidentifier): SQL Server refuses to convert date to uniqueidentifier.
 CAST(dt AS binary(4)) -> unknown unsupported-expression: CAST(dt AS binary(4)): a conversion to this type is not modelled yet.
 CAST(dt AS varbinary(10)) -> unknown unsupported-expression: CAST(dt AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(dt AS xml) -> unknown unsupported-expression: CAST(dt AS xml): a conversion to this type is not modelled yet.
@@ -658,32 +658,32 @@ CAST(dt AS sql_variant) -> unknown unsupported-expression: CAST(dt AS sql_varian
 CAST(dt AS json) -> unknown unsupported-expression: CAST(dt AS json): a conversion to this type is not modelled yet.
 CAST(dt AS varchar) -> varchar(30) string {length<=30}
 CAST(dt AS nvarchar) -> nvarchar(30) string {length<=30}
-CAST(tm3 AS bit) -> bit boolean null:arithmetic-overflow
-CAST(tm3 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
-CAST(tm3 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
-CAST(tm3 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
-CAST(tm3 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-CAST(tm3 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(tm3 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-CAST(tm3 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST(tm3 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
-CAST(tm3 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-CAST(tm3 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
-CAST(tm3 AS float) -> float number/float null:arithmetic-overflow
-CAST(tm3 AS real) -> real number/float null:arithmetic-overflow
+CAST(tm3 AS bit) -> unknown unsupported-expression: CAST(tm3 AS bit): SQL Server refuses to convert time(3) to bit.
+CAST(tm3 AS tinyint) -> unknown unsupported-expression: CAST(tm3 AS tinyint): SQL Server refuses to convert time(3) to tinyint.
+CAST(tm3 AS smallint) -> unknown unsupported-expression: CAST(tm3 AS smallint): SQL Server refuses to convert time(3) to smallint.
+CAST(tm3 AS int) -> unknown unsupported-expression: CAST(tm3 AS int): SQL Server refuses to convert time(3) to int.
+CAST(tm3 AS bigint) -> unknown unsupported-expression: CAST(tm3 AS bigint): SQL Server refuses to convert time(3) to bigint.
+CAST(tm3 AS decimal(5,2)) -> unknown unsupported-expression: CAST(tm3 AS decimal(5,2)): SQL Server refuses to convert time(3) to decimal(5,2).
+CAST(tm3 AS decimal(38,0)) -> unknown unsupported-expression: CAST(tm3 AS decimal(38,0)): SQL Server refuses to convert time(3) to decimal(38,0).
+CAST(tm3 AS decimal(38,38)) -> unknown unsupported-expression: CAST(tm3 AS decimal(38,38)): SQL Server refuses to convert time(3) to decimal(38,38).
+CAST(tm3 AS numeric(10,2)) -> unknown unsupported-expression: CAST(tm3 AS numeric(10,2)): SQL Server refuses to convert time(3) to numeric(10,2).
+CAST(tm3 AS money) -> unknown unsupported-expression: CAST(tm3 AS money): SQL Server refuses to convert time(3) to money.
+CAST(tm3 AS smallmoney) -> unknown unsupported-expression: CAST(tm3 AS smallmoney): SQL Server refuses to convert time(3) to smallmoney.
+CAST(tm3 AS float) -> unknown unsupported-expression: CAST(tm3 AS float): SQL Server refuses to convert time(3) to float.
+CAST(tm3 AS real) -> unknown unsupported-expression: CAST(tm3 AS real): SQL Server refuses to convert time(3) to real.
 CAST(tm3 AS char(3)) -> char(3) string {length=3}
 CAST(tm3 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(tm3 AS varchar(max)) -> varchar(max) string
 CAST(tm3 AS nchar(3)) -> nchar(3) string {length=3}
 CAST(tm3 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(tm3 AS nvarchar(max)) -> nvarchar(max) string
-CAST(tm3 AS date) -> date date null:arithmetic-overflow
+CAST(tm3 AS date) -> unknown unsupported-expression: CAST(tm3 AS date): SQL Server refuses to convert time(3) to date.
 CAST(tm3 AS time(3)) -> time(3) time
 CAST(tm3 AS datetime) -> datetime datetime/local
 CAST(tm3 AS datetime2(3)) -> datetime2(3) datetime/local
 CAST(tm3 AS smalldatetime) -> smalldatetime datetime/local
 CAST(tm3 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
-CAST(tm3 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(tm3 AS uniqueidentifier) -> unknown unsupported-expression: CAST(tm3 AS uniqueidentifier): SQL Server refuses to convert time(3) to uniqueidentifier.
 CAST(tm3 AS binary(4)) -> unknown unsupported-expression: CAST(tm3 AS binary(4)): a conversion to this type is not modelled yet.
 CAST(tm3 AS varbinary(10)) -> unknown unsupported-expression: CAST(tm3 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(tm3 AS xml) -> unknown unsupported-expression: CAST(tm3 AS xml): a conversion to this type is not modelled yet.
@@ -716,7 +716,7 @@ CAST(dtm AS datetime) -> datetime datetime/local
 CAST(dtm AS datetime2(3)) -> datetime2(3) datetime/local
 CAST(dtm AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
 CAST(dtm AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
-CAST(dtm AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(dtm AS uniqueidentifier) -> unknown unsupported-expression: CAST(dtm AS uniqueidentifier): SQL Server refuses to convert datetime to uniqueidentifier.
 CAST(dtm AS binary(4)) -> unknown unsupported-expression: CAST(dtm AS binary(4)): a conversion to this type is not modelled yet.
 CAST(dtm AS varbinary(10)) -> unknown unsupported-expression: CAST(dtm AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(dtm AS xml) -> unknown unsupported-expression: CAST(dtm AS xml): a conversion to this type is not modelled yet.
@@ -724,19 +724,19 @@ CAST(dtm AS sql_variant) -> unknown unsupported-expression: CAST(dtm AS sql_vari
 CAST(dtm AS json) -> unknown unsupported-expression: CAST(dtm AS json): a conversion to this type is not modelled yet.
 CAST(dtm AS varchar) -> varchar(30) string {length<=30}
 CAST(dtm AS nvarchar) -> nvarchar(30) string {length<=30}
-CAST(dt23 AS bit) -> bit boolean null:arithmetic-overflow
-CAST(dt23 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
-CAST(dt23 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
-CAST(dt23 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
-CAST(dt23 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-CAST(dt23 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(dt23 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-CAST(dt23 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST(dt23 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
-CAST(dt23 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-CAST(dt23 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
-CAST(dt23 AS float) -> float number/float null:arithmetic-overflow
-CAST(dt23 AS real) -> real number/float null:arithmetic-overflow
+CAST(dt23 AS bit) -> unknown unsupported-expression: CAST(dt23 AS bit): SQL Server refuses to convert datetime2(3) to bit.
+CAST(dt23 AS tinyint) -> unknown unsupported-expression: CAST(dt23 AS tinyint): SQL Server refuses to convert datetime2(3) to tinyint.
+CAST(dt23 AS smallint) -> unknown unsupported-expression: CAST(dt23 AS smallint): SQL Server refuses to convert datetime2(3) to smallint.
+CAST(dt23 AS int) -> unknown unsupported-expression: CAST(dt23 AS int): SQL Server refuses to convert datetime2(3) to int.
+CAST(dt23 AS bigint) -> unknown unsupported-expression: CAST(dt23 AS bigint): SQL Server refuses to convert datetime2(3) to bigint.
+CAST(dt23 AS decimal(5,2)) -> unknown unsupported-expression: CAST(dt23 AS decimal(5,2)): SQL Server refuses to convert datetime2(3) to decimal(5,2).
+CAST(dt23 AS decimal(38,0)) -> unknown unsupported-expression: CAST(dt23 AS decimal(38,0)): SQL Server refuses to convert datetime2(3) to decimal(38,0).
+CAST(dt23 AS decimal(38,38)) -> unknown unsupported-expression: CAST(dt23 AS decimal(38,38)): SQL Server refuses to convert datetime2(3) to decimal(38,38).
+CAST(dt23 AS numeric(10,2)) -> unknown unsupported-expression: CAST(dt23 AS numeric(10,2)): SQL Server refuses to convert datetime2(3) to numeric(10,2).
+CAST(dt23 AS money) -> unknown unsupported-expression: CAST(dt23 AS money): SQL Server refuses to convert datetime2(3) to money.
+CAST(dt23 AS smallmoney) -> unknown unsupported-expression: CAST(dt23 AS smallmoney): SQL Server refuses to convert datetime2(3) to smallmoney.
+CAST(dt23 AS float) -> unknown unsupported-expression: CAST(dt23 AS float): SQL Server refuses to convert datetime2(3) to float.
+CAST(dt23 AS real) -> unknown unsupported-expression: CAST(dt23 AS real): SQL Server refuses to convert datetime2(3) to real.
 CAST(dt23 AS char(3)) -> char(3) string {length=3}
 CAST(dt23 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(dt23 AS varchar(max)) -> varchar(max) string
@@ -749,7 +749,7 @@ CAST(dt23 AS datetime) -> datetime datetime/local null:arithmetic-overflow
 CAST(dt23 AS datetime2(3)) -> datetime2(3) datetime/local
 CAST(dt23 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
 CAST(dt23 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
-CAST(dt23 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(dt23 AS uniqueidentifier) -> unknown unsupported-expression: CAST(dt23 AS uniqueidentifier): SQL Server refuses to convert datetime2(3) to uniqueidentifier.
 CAST(dt23 AS binary(4)) -> unknown unsupported-expression: CAST(dt23 AS binary(4)): a conversion to this type is not modelled yet.
 CAST(dt23 AS varbinary(10)) -> unknown unsupported-expression: CAST(dt23 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(dt23 AS xml) -> unknown unsupported-expression: CAST(dt23 AS xml): a conversion to this type is not modelled yet.
@@ -782,7 +782,7 @@ CAST(sdt AS datetime) -> datetime datetime/local
 CAST(sdt AS datetime2(3)) -> datetime2(3) datetime/local
 CAST(sdt AS smalldatetime) -> smalldatetime datetime/local
 CAST(sdt AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
-CAST(sdt AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(sdt AS uniqueidentifier) -> unknown unsupported-expression: CAST(sdt AS uniqueidentifier): SQL Server refuses to convert smalldatetime to uniqueidentifier.
 CAST(sdt AS binary(4)) -> unknown unsupported-expression: CAST(sdt AS binary(4)): a conversion to this type is not modelled yet.
 CAST(sdt AS varbinary(10)) -> unknown unsupported-expression: CAST(sdt AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(sdt AS xml) -> unknown unsupported-expression: CAST(sdt AS xml): a conversion to this type is not modelled yet.
@@ -790,19 +790,19 @@ CAST(sdt AS sql_variant) -> unknown unsupported-expression: CAST(sdt AS sql_vari
 CAST(sdt AS json) -> unknown unsupported-expression: CAST(sdt AS json): a conversion to this type is not modelled yet.
 CAST(sdt AS varchar) -> varchar(30) string {length<=30}
 CAST(sdt AS nvarchar) -> nvarchar(30) string {length<=30}
-CAST(dto3 AS bit) -> bit boolean null:arithmetic-overflow
-CAST(dto3 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
-CAST(dto3 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
-CAST(dto3 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
-CAST(dto3 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-CAST(dto3 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(dto3 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-CAST(dto3 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST(dto3 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
-CAST(dto3 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-CAST(dto3 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
-CAST(dto3 AS float) -> float number/float null:arithmetic-overflow
-CAST(dto3 AS real) -> real number/float null:arithmetic-overflow
+CAST(dto3 AS bit) -> unknown unsupported-expression: CAST(dto3 AS bit): SQL Server refuses to convert datetimeoffset(3) to bit.
+CAST(dto3 AS tinyint) -> unknown unsupported-expression: CAST(dto3 AS tinyint): SQL Server refuses to convert datetimeoffset(3) to tinyint.
+CAST(dto3 AS smallint) -> unknown unsupported-expression: CAST(dto3 AS smallint): SQL Server refuses to convert datetimeoffset(3) to smallint.
+CAST(dto3 AS int) -> unknown unsupported-expression: CAST(dto3 AS int): SQL Server refuses to convert datetimeoffset(3) to int.
+CAST(dto3 AS bigint) -> unknown unsupported-expression: CAST(dto3 AS bigint): SQL Server refuses to convert datetimeoffset(3) to bigint.
+CAST(dto3 AS decimal(5,2)) -> unknown unsupported-expression: CAST(dto3 AS decimal(5,2)): SQL Server refuses to convert datetimeoffset(3) to decimal(5,2).
+CAST(dto3 AS decimal(38,0)) -> unknown unsupported-expression: CAST(dto3 AS decimal(38,0)): SQL Server refuses to convert datetimeoffset(3) to decimal(38,0).
+CAST(dto3 AS decimal(38,38)) -> unknown unsupported-expression: CAST(dto3 AS decimal(38,38)): SQL Server refuses to convert datetimeoffset(3) to decimal(38,38).
+CAST(dto3 AS numeric(10,2)) -> unknown unsupported-expression: CAST(dto3 AS numeric(10,2)): SQL Server refuses to convert datetimeoffset(3) to numeric(10,2).
+CAST(dto3 AS money) -> unknown unsupported-expression: CAST(dto3 AS money): SQL Server refuses to convert datetimeoffset(3) to money.
+CAST(dto3 AS smallmoney) -> unknown unsupported-expression: CAST(dto3 AS smallmoney): SQL Server refuses to convert datetimeoffset(3) to smallmoney.
+CAST(dto3 AS float) -> unknown unsupported-expression: CAST(dto3 AS float): SQL Server refuses to convert datetimeoffset(3) to float.
+CAST(dto3 AS real) -> unknown unsupported-expression: CAST(dto3 AS real): SQL Server refuses to convert datetimeoffset(3) to real.
 CAST(dto3 AS char(3)) -> char(3) string {length=3}
 CAST(dto3 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(dto3 AS varchar(max)) -> varchar(max) string
@@ -815,7 +815,7 @@ CAST(dto3 AS datetime) -> datetime datetime/local null:arithmetic-overflow
 CAST(dto3 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
 CAST(dto3 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
 CAST(dto3 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
-CAST(dto3 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(dto3 AS uniqueidentifier) -> unknown unsupported-expression: CAST(dto3 AS uniqueidentifier): SQL Server refuses to convert datetimeoffset(3) to uniqueidentifier.
 CAST(dto3 AS binary(4)) -> unknown unsupported-expression: CAST(dto3 AS binary(4)): a conversion to this type is not modelled yet.
 CAST(dto3 AS varbinary(10)) -> unknown unsupported-expression: CAST(dto3 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(dto3 AS xml) -> unknown unsupported-expression: CAST(dto3 AS xml): a conversion to this type is not modelled yet.
@@ -823,31 +823,31 @@ CAST(dto3 AS sql_variant) -> unknown unsupported-expression: CAST(dto3 AS sql_va
 CAST(dto3 AS json) -> unknown unsupported-expression: CAST(dto3 AS json): a conversion to this type is not modelled yet.
 CAST(dto3 AS varchar) -> varchar(30) string {length<=30}
 CAST(dto3 AS nvarchar) -> nvarchar(30) string {length<=30}
-CAST(u AS bit) -> bit boolean null:arithmetic-overflow
-CAST(u AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
-CAST(u AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
-CAST(u AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
-CAST(u AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-CAST(u AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(u AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-CAST(u AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST(u AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
-CAST(u AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-CAST(u AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
-CAST(u AS float) -> float number/float null:arithmetic-overflow
-CAST(u AS real) -> real number/float null:arithmetic-overflow
+CAST(u AS bit) -> unknown unsupported-expression: CAST(u AS bit): SQL Server refuses to convert uniqueidentifier to bit.
+CAST(u AS tinyint) -> unknown unsupported-expression: CAST(u AS tinyint): SQL Server refuses to convert uniqueidentifier to tinyint.
+CAST(u AS smallint) -> unknown unsupported-expression: CAST(u AS smallint): SQL Server refuses to convert uniqueidentifier to smallint.
+CAST(u AS int) -> unknown unsupported-expression: CAST(u AS int): SQL Server refuses to convert uniqueidentifier to int.
+CAST(u AS bigint) -> unknown unsupported-expression: CAST(u AS bigint): SQL Server refuses to convert uniqueidentifier to bigint.
+CAST(u AS decimal(5,2)) -> unknown unsupported-expression: CAST(u AS decimal(5,2)): SQL Server refuses to convert uniqueidentifier to decimal(5,2).
+CAST(u AS decimal(38,0)) -> unknown unsupported-expression: CAST(u AS decimal(38,0)): SQL Server refuses to convert uniqueidentifier to decimal(38,0).
+CAST(u AS decimal(38,38)) -> unknown unsupported-expression: CAST(u AS decimal(38,38)): SQL Server refuses to convert uniqueidentifier to decimal(38,38).
+CAST(u AS numeric(10,2)) -> unknown unsupported-expression: CAST(u AS numeric(10,2)): SQL Server refuses to convert uniqueidentifier to numeric(10,2).
+CAST(u AS money) -> unknown unsupported-expression: CAST(u AS money): SQL Server refuses to convert uniqueidentifier to money.
+CAST(u AS smallmoney) -> unknown unsupported-expression: CAST(u AS smallmoney): SQL Server refuses to convert uniqueidentifier to smallmoney.
+CAST(u AS float) -> unknown unsupported-expression: CAST(u AS float): SQL Server refuses to convert uniqueidentifier to float.
+CAST(u AS real) -> unknown unsupported-expression: CAST(u AS real): SQL Server refuses to convert uniqueidentifier to real.
 CAST(u AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(u AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(u AS varchar(max)) -> varchar(max) string
 CAST(u AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(u AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(u AS nvarchar(max)) -> nvarchar(max) string
-CAST(u AS date) -> date date null:arithmetic-overflow
-CAST(u AS time(3)) -> time(3) time null:arithmetic-overflow
-CAST(u AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(u AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
-CAST(u AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(u AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+CAST(u AS date) -> unknown unsupported-expression: CAST(u AS date): SQL Server refuses to convert uniqueidentifier to date.
+CAST(u AS time(3)) -> unknown unsupported-expression: CAST(u AS time(3)): SQL Server refuses to convert uniqueidentifier to time(3).
+CAST(u AS datetime) -> unknown unsupported-expression: CAST(u AS datetime): SQL Server refuses to convert uniqueidentifier to datetime.
+CAST(u AS datetime2(3)) -> unknown unsupported-expression: CAST(u AS datetime2(3)): SQL Server refuses to convert uniqueidentifier to datetime2(3).
+CAST(u AS smalldatetime) -> unknown unsupported-expression: CAST(u AS smalldatetime): SQL Server refuses to convert uniqueidentifier to smalldatetime.
+CAST(u AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(u AS datetimeoffset(3)): SQL Server refuses to convert uniqueidentifier to datetimeoffset(3).
 CAST(u AS uniqueidentifier) -> uniqueidentifier uuid
 CAST(u AS binary(4)) -> unknown unsupported-expression: CAST(u AS binary(4)): a conversion to this type is not modelled yet.
 CAST(u AS varbinary(10)) -> unknown unsupported-expression: CAST(u AS varbinary(10)): a conversion to this type is not modelled yet.
@@ -1040,13 +1040,13 @@ CAST(1 AS varchar(max)) -> varchar(max) string
 CAST(1 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(1 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(1 AS nvarchar(max)) -> nvarchar(max) string
-CAST(1 AS date) -> date date null:arithmetic-overflow
-CAST(1 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(1 AS date) -> unknown unsupported-expression: CAST(1 AS date): SQL Server refuses to convert int to date.
+CAST(1 AS time(3)) -> unknown unsupported-expression: CAST(1 AS time(3)): SQL Server refuses to convert int to time(3).
 CAST(1 AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(1 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(1 AS datetime2(3)) -> unknown unsupported-expression: CAST(1 AS datetime2(3)): SQL Server refuses to convert int to datetime2(3).
 CAST(1 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(1 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(1 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(1 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(1 AS datetimeoffset(3)): SQL Server refuses to convert int to datetimeoffset(3).
+CAST(1 AS uniqueidentifier) -> unknown unsupported-expression: CAST(1 AS uniqueidentifier): SQL Server refuses to convert int to uniqueidentifier.
 CAST(1 AS binary(4)) -> unknown unsupported-expression: CAST(1 AS binary(4)): a conversion to this type is not modelled yet.
 CAST(1 AS varbinary(10)) -> unknown unsupported-expression: CAST(1 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(1 AS xml) -> unknown unsupported-expression: CAST(1 AS xml): a conversion to this type is not modelled yet.
@@ -1073,13 +1073,13 @@ CAST(12345 AS varchar(max)) -> varchar(max) string
 CAST(12345 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(12345 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(12345 AS nvarchar(max)) -> nvarchar(max) string
-CAST(12345 AS date) -> date date null:arithmetic-overflow
-CAST(12345 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(12345 AS date) -> unknown unsupported-expression: CAST(12345 AS date): SQL Server refuses to convert int to date.
+CAST(12345 AS time(3)) -> unknown unsupported-expression: CAST(12345 AS time(3)): SQL Server refuses to convert int to time(3).
 CAST(12345 AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(12345 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(12345 AS datetime2(3)) -> unknown unsupported-expression: CAST(12345 AS datetime2(3)): SQL Server refuses to convert int to datetime2(3).
 CAST(12345 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(12345 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(12345 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(12345 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(12345 AS datetimeoffset(3)): SQL Server refuses to convert int to datetimeoffset(3).
+CAST(12345 AS uniqueidentifier) -> unknown unsupported-expression: CAST(12345 AS uniqueidentifier): SQL Server refuses to convert int to uniqueidentifier.
 CAST(12345 AS binary(4)) -> unknown unsupported-expression: CAST(12345 AS binary(4)): a conversion to this type is not modelled yet.
 CAST(12345 AS varbinary(10)) -> unknown unsupported-expression: CAST(12345 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(12345 AS xml) -> unknown unsupported-expression: CAST(12345 AS xml): a conversion to this type is not modelled yet.
@@ -1106,13 +1106,13 @@ CAST(2.50 AS varchar(max)) -> varchar(max) string
 CAST(2.50 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(2.50 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(2.50 AS nvarchar(max)) -> nvarchar(max) string
-CAST(2.50 AS date) -> date date null:arithmetic-overflow
-CAST(2.50 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(2.50 AS date) -> unknown unsupported-expression: CAST(2.50 AS date): SQL Server refuses to convert numeric(3,2) to date.
+CAST(2.50 AS time(3)) -> unknown unsupported-expression: CAST(2.50 AS time(3)): SQL Server refuses to convert numeric(3,2) to time(3).
 CAST(2.50 AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(2.50 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(2.50 AS datetime2(3)) -> unknown unsupported-expression: CAST(2.50 AS datetime2(3)): SQL Server refuses to convert numeric(3,2) to datetime2(3).
 CAST(2.50 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(2.50 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(2.50 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(2.50 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(2.50 AS datetimeoffset(3)): SQL Server refuses to convert numeric(3,2) to datetimeoffset(3).
+CAST(2.50 AS uniqueidentifier) -> unknown unsupported-expression: CAST(2.50 AS uniqueidentifier): SQL Server refuses to convert numeric(3,2) to uniqueidentifier.
 CAST(2.50 AS binary(4)) -> unknown unsupported-expression: CAST(2.50 AS binary(4)): a conversion to this type is not modelled yet.
 CAST(2.50 AS varbinary(10)) -> unknown unsupported-expression: CAST(2.50 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(2.50 AS xml) -> unknown unsupported-expression: CAST(2.50 AS xml): a conversion to this type is not modelled yet.
@@ -1205,13 +1205,13 @@ CAST(1e0 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
 CAST(1e0 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST(1e0 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(1e0 AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
-CAST(1e0 AS date) -> date date null:arithmetic-overflow
-CAST(1e0 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST(1e0 AS date) -> unknown unsupported-expression: CAST(1e0 AS date): SQL Server refuses to convert float to date.
+CAST(1e0 AS time(3)) -> unknown unsupported-expression: CAST(1e0 AS time(3)): SQL Server refuses to convert float to time(3).
 CAST(1e0 AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST(1e0 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST(1e0 AS datetime2(3)) -> unknown unsupported-expression: CAST(1e0 AS datetime2(3)): SQL Server refuses to convert float to datetime2(3).
 CAST(1e0 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST(1e0 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST(1e0 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST(1e0 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(1e0 AS datetimeoffset(3)): SQL Server refuses to convert float to datetimeoffset(3).
+CAST(1e0 AS uniqueidentifier) -> unknown unsupported-expression: CAST(1e0 AS uniqueidentifier): SQL Server refuses to convert float to uniqueidentifier.
 CAST(1e0 AS binary(4)) -> unknown unsupported-expression: CAST(1e0 AS binary(4)): a conversion to this type is not modelled yet.
 CAST(1e0 AS varbinary(10)) -> unknown unsupported-expression: CAST(1e0 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(1e0 AS xml) -> unknown unsupported-expression: CAST(1e0 AS xml): a conversion to this type is not modelled yet.
@@ -1238,13 +1238,13 @@ CAST($1 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
 CAST($1 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
 CAST($1 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST($1 AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
-CAST($1 AS date) -> date date null:arithmetic-overflow
-CAST($1 AS time(3)) -> time(3) time null:arithmetic-overflow
+CAST($1 AS date) -> unknown unsupported-expression: CAST($1 AS date): SQL Server refuses to convert money to date.
+CAST($1 AS time(3)) -> unknown unsupported-expression: CAST($1 AS time(3)): SQL Server refuses to convert money to time(3).
 CAST($1 AS datetime) -> datetime datetime/local null:arithmetic-overflow
-CAST($1 AS datetime2(3)) -> datetime2(3) datetime/local null:arithmetic-overflow
+CAST($1 AS datetime2(3)) -> unknown unsupported-expression: CAST($1 AS datetime2(3)): SQL Server refuses to convert money to datetime2(3).
 CAST($1 AS smalldatetime) -> smalldatetime datetime/local null:arithmetic-overflow
-CAST($1 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
-CAST($1 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
+CAST($1 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST($1 AS datetimeoffset(3)): SQL Server refuses to convert money to datetimeoffset(3).
+CAST($1 AS uniqueidentifier) -> unknown unsupported-expression: CAST($1 AS uniqueidentifier): SQL Server refuses to convert money to uniqueidentifier.
 CAST($1 AS binary(4)) -> unknown unsupported-expression: CAST($1 AS binary(4)): a conversion to this type is not modelled yet.
 CAST($1 AS varbinary(10)) -> unknown unsupported-expression: CAST($1 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST($1 AS xml) -> unknown unsupported-expression: CAST($1 AS xml): a conversion to this type is not modelled yet.

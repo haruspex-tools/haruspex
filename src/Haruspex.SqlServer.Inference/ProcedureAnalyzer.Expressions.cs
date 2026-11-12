@@ -258,16 +258,26 @@ internal sealed partial class ProcedureAnalyzer
         if (Strip(a) is NullLiteral)
             return Strip(b) is NullLiteral ? NotModelled(call, "ISNULL of NULL and NULL is not typed.") : Expression(b, scope) with { Digits = IntDigits.OfType };
         var first = Expression(a, scope);
-        if (first.Shape is UnknownShape || first.NullableBecause.Count == 0)
+        if (first.Shape is UnknownShape)
+            return first;
+
+        // b is converted to a's type implicitly, which the server refuses for some pairs (257, 206) whether or not a can be NULL
+        // (observed in CatalogueSweepGridTests; the chart is ConversionChart).
+        var second = Strip(b) is NullLiteral || IsJson(first) ? null : Expression(b, scope);
+        if (TypeOf(first) is { } firstType && second is not null && TypeOf(second) is { } secondType
+            && ConversionChart.Of(secondType.Type, firstType.Type) != ConversionKind.Implicit)
+        {
+            return NotModelled(call, $"SQL Server refuses it: {secondType.Text} doesn't convert implicitly to {firstType.Text}.");
+        }
+
+        if (first.NullableBecause.Count == 0)
             return first;
         if (IsJson(first))
             return Strip(b) is NullLiteral ? first : IsNullJson(call, a, first, b, scope);
         if (TypeOf(first) is not { } type)
             return NotModelled(call, "ISNULL of a value of this type is not modelled yet.");
-        if (Strip(b) is NullLiteral)
+        if (second is null)
             return Typed(type, first.NullableBecause, call);
-
-        var second = Expression(b, scope);
         if (second.Shape is UnknownShape)
             return second;
         var fits = (LiteralOf(b) is ({ } literal, var negative) ? Conversions.Fits(literal, type, negative) : null)
@@ -310,6 +320,11 @@ internal sealed partial class ProcedureAnalyzer
             return value.Shape is UnknownShape ? value : NotModelled(call, "a conversion of JSON is not modelled yet.");
 
         var from = OperandOf(value, operand);
+
+        // A conversion the chart refuses is an error when the procedure is created (529), so it describes nothing that runs
+        // (observed in CatalogueSweepGridTests; the chart is ConversionChart).
+        if (from is not null && ConversionChart.Of(from.Type.Type, to.Type) == ConversionKind.Refused)
+            return NotModelled(call, $"SQL Server refuses to convert {from.Type.Text} to {to.Text}.");
         var fits = (!styled && LiteralOf(operand) is ({ } literal, var negative) ? Conversions.Fits(literal, to, negative) : null)
             ?? (from is not null && Conversions.Converts(from, to, styled));
         // A NULL cast to int and cast again stays that constant; CAST(1 AS int) counts an int's 10 digits (same observation).

@@ -88,6 +88,10 @@ internal sealed partial class ProcedureAnalyzer
                     return argument;
                 if (argument.IsLiveJson || argument.Shape is not ScalarShape)
                     return NotModelled(call, "a window over a value that is not a scalar is not modelled.");
+
+                // Refused when the procedure is created (8117; observed: Min_and_max_of_a_bit_are_refused_with_or_without_a_window).
+                if (name is "min" or "max" && TypeOf(argument) is { IsBit: true })
+                    return NotModelled(call, $"SQL Server refuses {name.ToUpperInvariant()} of bit.");
                 return argument.WithNullableBecause([.. argument.NullableBecause, .. Framed()]);
             }
 

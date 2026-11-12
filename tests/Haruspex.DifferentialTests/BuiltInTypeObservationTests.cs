@@ -178,6 +178,29 @@ public class BuiltInTypeObservationTests(SqlServerFixture server)
             && t.IsNational == (a.IsNational || b.IsNational) && t.IsVarying == (a.IsVarying || b.IsVarying))];
     }
 
+    [Fact]
+    public async Task The_conversion_chart_is_what_the_server_allows_implicitly_explicitly_or_not_at_all()
+    {
+        // Explicitly: CAST, refused with 529. Implicitly: ISNULL converts its second argument to the first's type, refused with
+        // 257 (explicit only) or 206 (an operand type clash).
+        var types = BuiltInType.All;
+        var pairs = types.SelectMany(from => types.Select(to => (From: from, To: to))).ToList();
+        var described = await Describe([.. pairs.SelectMany(p => new[] { $"SELECT CAST({Column(p.From)} AS {Declared(p.To)}) AS e FROM dbo.t", $"SELECT ISNULL({Column(p.To)}, {Column(p.From)}) AS e FROM dbo.t" })]);
+
+        var differences = new List<string>();
+        for (var i = 0; i < pairs.Count; i++)
+        {
+            var (cast, isnull) = (described[2 * i], described[(2 * i) + 1]);
+            var observed = cast.StartsWith('!') ? ConversionKind.Refused : isnull.StartsWith('!') ? ConversionKind.Explicit : ConversionKind.Implicit;
+            if (observed != ConversionChart.Of(pairs[i].From, pairs[i].To))
+                differences.Add($"{pairs[i].From.Name} to {pairs[i].To.Name}: the chart says {ConversionChart.Of(pairs[i].From, pairs[i].To)}; CAST gives {cast}, ISNULL {isnull}");
+        }
+
+        Assert.True(differences.Count == 0, string.Join("\n", differences));
+    }
+
+    private static string Declared(BuiltInType type) => type == BuiltInType.Vector ? "vector(3)" : type.Name;
+
     /// <summary>The rows of a query's one column <c>c</c>, each split at <c>|</c>.</summary>
     private async Task<List<string[]>> Rows(string query, string[] setup)
     {

@@ -246,6 +246,21 @@ public class ExpressionTests
         Assert.Equal("date failed-conversion", Typed(doc, "d"));
     }
 
+    [Fact]
+    public void A_conversion_sql_server_refuses_is_unknown_even_where_the_first_value_is_never_null()
+    {
+        // The conversion chart (ConversionChart; observed: The_conversion_chart_is_what_the_server_allows_implicitly_explicitly_or_not_at_all):
+        // CAST and TRY_CAST refuse a date into int (529), and ISNULL a date as int's second argument (206), whether or not the
+        // first can be NULL. A procedure with either can't be created, so it describes nothing that runs.
+        var doc = Procedure("SELECT CAST(born AS int) AS a, TRY_CAST(born AS int) AS b, ISNULL(id, born) AS c, ISNULL(n, born) AS d, CAST(born AS varchar(10)) AS e, ISNULL(id, small) AS f FROM dbo.t;");
+        Assert.StartsWith("unknown: unsupported-expression", Typed(doc, "a"), StringComparison.Ordinal);
+        Assert.StartsWith("unknown: unsupported-expression", Typed(doc, "b"), StringComparison.Ordinal);
+        Assert.StartsWith("unknown: unsupported-expression", Typed(doc, "c"), StringComparison.Ordinal);
+        Assert.StartsWith("unknown: unsupported-expression", Typed(doc, "d"), StringComparison.Ordinal);
+        Assert.Equal("varchar(10)", Typed(doc, "e"));
+        Assert.Equal("int", Typed(doc, "f"));
+    }
+
     // ---- strings ----------------------------------------------------------------------------------------------------
 
     [Fact]

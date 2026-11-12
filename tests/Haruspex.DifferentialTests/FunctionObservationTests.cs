@@ -25,6 +25,17 @@ public class FunctionObservationTests(SqlServerFixture server)
 
     private async Task<string> Select(string query) => (await Run([Rows], query)).ToString();
 
+    [Fact]
+    public async Task Min_and_max_of_a_bit_are_refused_with_or_without_a_window()
+    {
+        // 8117: the operand type bit is invalid for MIN and MAX, as an aggregate and over a window alike.
+        string[] setup = ["CREATE TABLE dbo.obs_bit (id int NOT NULL PRIMARY KEY, b bit NOT NULL);"];
+        Assert.Equal(8117, (await Run(setup, "SELECT MIN(b) AS x FROM dbo.obs_bit;")).Error);
+        Assert.Equal(8117, (await Run(setup, "SELECT MAX(b) AS x FROM dbo.obs_bit;")).Error);
+        Assert.Equal(8117, (await Run(setup, "SELECT MIN(b) OVER () AS x FROM dbo.obs_bit;")).Error);
+        Assert.Equal(8117, (await Run(setup, "SELECT MAX(b) OVER (PARTITION BY id) AS x FROM dbo.obs_bit;")).Error);
+    }
+
     /// <summary>A row of one value of each type the expressions below read, so that a column's type is its own.</summary>
     private const string Row = """
         (SELECT CAST(1 AS float) AS f, CAST(1 AS real) AS r, CAST(1 AS int) AS i, CAST(1 AS bigint) AS bi, CAST(1 AS tinyint) AS ti,

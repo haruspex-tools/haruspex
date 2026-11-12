@@ -190,7 +190,8 @@ in general, with `FOR JSON`'s rules in `ForJsonObservationTests` and `tests/fixt
 value carries through expressions), `ValueEqualityTests` (the laws equality of values and shapes keeps, over a generated
 sample), `LatticeLawTests` (the laws of each fact's lattice and of the join of values, over a generated sample), `FixedPointTests`
 (the one iteration every solver uses), `FactsTests` (the one environment of what filters and branches prove),
-`CatalogueSweepTests` (every built-in type through every operator), `ConversionsTests` (the table of conversions as
+`CatalogueSweepTests` (every built-in type through every operator, with `CatalogueSweepGridTests` checking each type against
+the server), `ConversionsTests` (the table of conversions as
 data, each row observed in `ConversionObservationTests`) and, in Semantics, `BuiltInTypeObservationTests` (the
 catalogue of built-in types, row by row, against the server) and `SchemaFactsTests` (what types, alias types and CHECK constraints
 guarantee, observed in `CheckConstraintObservationTests` on `tests/fixtures/checks`). `OPENJSON` belongs to two families: as

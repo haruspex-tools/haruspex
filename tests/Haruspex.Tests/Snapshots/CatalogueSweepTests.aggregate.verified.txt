@@ -2,8 +2,8 @@ COUNT(bt) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(bt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(bt) -> unknown unsupported-expression: SUM(bt): SUM of a value of this type is not modelled yet.
 AVG(bt) -> unknown unsupported-expression: AVG(bt): AVG of a value of this type is not modelled.
-MIN(bt) -> bit boolean null:empty-aggregate
-MAX(bt) -> bit boolean null:empty-aggregate
+MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
+MAX(bt) -> unknown unsupported-expression: MAX(bt): SQL Server refuses MAX of bit.
 STDEV(bt) -> unknown unsupported-expression: STDEV(bt): STDEV of a value of this type is not modelled.
 VAR(bt) -> unknown unsupported-expression: VAR(bt): VAR of a value of this type is not modelled.
 COUNT(ti) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
@@ -246,8 +246,8 @@ MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in 
 MAX(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
 STDEV(j) -> unknown (no unknown recorded)
 VAR(j) -> unknown (no unknown recorded)
-COUNT(*) + MIN(bt) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
-MIN(bt) + COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) + MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
+MIN(bt) + COUNT(*) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 COUNT(*) + MIN(ti) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
 MIN(ti) + COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
 COUNT(*) + MIN(si) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
@@ -322,8 +322,8 @@ COUNT(*) + 1e0 -> float number/float null:count-overflow,arithmetic-overflow
 1e0 + COUNT(*) -> float number/float null:count-overflow,arithmetic-overflow
 COUNT(*) + $1 -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 $1 + COUNT(*) -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-COUNT(*) - MIN(bt) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
-MIN(bt) - COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) - MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
+MIN(bt) - COUNT(*) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 COUNT(*) - MIN(ti) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
 MIN(ti) - COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
 COUNT(*) - MIN(si) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
@@ -398,8 +398,8 @@ COUNT(*) - 1e0 -> float number/float null:count-overflow,arithmetic-overflow
 1e0 - COUNT(*) -> float number/float null:count-overflow,arithmetic-overflow
 COUNT(*) - $1 -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 $1 - COUNT(*) -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-COUNT(*) * MIN(bt) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
-MIN(bt) * COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) * MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
+MIN(bt) * COUNT(*) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 COUNT(*) * MIN(ti) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
 MIN(ti) * COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
 COUNT(*) * MIN(si) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
@@ -474,8 +474,8 @@ COUNT(*) * 1e0 -> float number/float null:count-overflow,arithmetic-overflow
 1e0 * COUNT(*) -> float number/float null:count-overflow,arithmetic-overflow
 COUNT(*) * $1 -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 $1 * COUNT(*) -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-COUNT(*) / MIN(bt) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
-MIN(bt) / COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) / MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
+MIN(bt) / COUNT(*) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 COUNT(*) / MIN(ti) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
 MIN(ti) / COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
 COUNT(*) / MIN(si) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
@@ -550,8 +550,8 @@ COUNT(*) / 1e0 -> float number/float null:count-overflow,arithmetic-overflow
 1e0 / COUNT(*) -> float number/float null:count-overflow,arithmetic-overflow
 COUNT(*) / $1 -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 $1 / COUNT(*) -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-COUNT(*) % MIN(bt) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
-MIN(bt) % COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
+COUNT(*) % MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
+MIN(bt) % COUNT(*) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 COUNT(*) % MIN(ti) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
 MIN(ti) % COUNT(*) -> int number/int32 null:empty-aggregate,count-overflow,arithmetic-overflow {[-2147483648 2147483647]}
 COUNT(*) % MIN(si) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
@@ -626,8 +626,8 @@ COUNT(*) % 1e0 -> unknown unsupported-expression: COUNT(*) % 1e0: arithmetic on 
 1e0 % COUNT(*) -> unknown unsupported-expression: 1e0 % COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) % $1 -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 $1 % COUNT(*) -> money number/decimal null:count-overflow,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-COUNT_BIG(*) + MIN(bt) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-MIN(bt) + COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) + MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
+MIN(bt) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 COUNT_BIG(*) + MIN(ti) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 MIN(ti) + COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 COUNT_BIG(*) + MIN(si) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
@@ -702,8 +702,8 @@ COUNT_BIG(*) + 1e0 -> float number/float null:arithmetic-overflow
 1e0 + COUNT_BIG(*) -> float number/float null:arithmetic-overflow
 COUNT_BIG(*) + $1 -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 $1 + COUNT_BIG(*) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-COUNT_BIG(*) - MIN(bt) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-MIN(bt) - COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) - MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
+MIN(bt) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 COUNT_BIG(*) - MIN(ti) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 MIN(ti) - COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 COUNT_BIG(*) - MIN(si) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
@@ -778,8 +778,8 @@ COUNT_BIG(*) - 1e0 -> float number/float null:arithmetic-overflow
 1e0 - COUNT_BIG(*) -> float number/float null:arithmetic-overflow
 COUNT_BIG(*) - $1 -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 $1 - COUNT_BIG(*) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-COUNT_BIG(*) * MIN(bt) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-MIN(bt) * COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) * MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
+MIN(bt) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 COUNT_BIG(*) * MIN(ti) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 MIN(ti) * COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 COUNT_BIG(*) * MIN(si) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
@@ -854,8 +854,8 @@ COUNT_BIG(*) * 1e0 -> float number/float null:arithmetic-overflow
 1e0 * COUNT_BIG(*) -> float number/float null:arithmetic-overflow
 COUNT_BIG(*) * $1 -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 $1 * COUNT_BIG(*) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-COUNT_BIG(*) / MIN(bt) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-MIN(bt) / COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) / MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
+MIN(bt) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 COUNT_BIG(*) / MIN(ti) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 MIN(ti) / COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 COUNT_BIG(*) / MIN(si) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
@@ -930,8 +930,8 @@ COUNT_BIG(*) / 1e0 -> float number/float null:arithmetic-overflow
 1e0 / COUNT_BIG(*) -> float number/float null:arithmetic-overflow
 COUNT_BIG(*) / $1 -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 $1 / COUNT_BIG(*) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
-COUNT_BIG(*) % MIN(bt) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-MIN(bt) % COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(*) % MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
+MIN(bt) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 COUNT_BIG(*) % MIN(ti) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 MIN(ti) % COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 COUNT_BIG(*) % MIN(si) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}

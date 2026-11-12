@@ -5,6 +5,16 @@ namespace Haruspex.Tests.Inference;
 public partial class FunctionTests
 {
     [Fact]
+    public void Min_and_max_of_a_bit_are_unknown_with_or_without_a_window()
+    {
+        // Observed: Min_and_max_of_a_bit_are_refused_with_or_without_a_window (8117).
+        var doc = Procedure("SELECT MIN(CAST(n AS bit)) AS a, MAX(CAST(n AS bit)) OVER () AS b, MAX(CAST(n AS bit)) AS c FROM dbo.t GROUP BY n;");
+        Unknown(doc, "a");
+        Unknown(doc, "b");
+        Unknown(doc, "c");
+    }
+
+    [Fact]
     public void Ranking_is_bigint_and_never_null()
     {
         // Ranking_is_never_null_and_percentiles_are_null_only_over_all_null_input.

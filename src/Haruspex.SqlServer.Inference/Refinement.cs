@@ -416,6 +416,10 @@ internal sealed partial class ProcedureAnalyzer
                     return Value.Unknown(unknown);
                 if (argument.IsLiveJson || argument.Shape is not ScalarShape)
                     return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{name.ToUpperInvariant()} of a value that is not a scalar is not modelled: {Text(call)}", at));
+
+                // Refused when the procedure is created (8117; observed: Min_and_max_of_a_bit_are_refused_with_or_without_a_window).
+                if (TypeOf(argument) is { IsBit: true })
+                    return NotModelled(call, $"SQL Server refuses {name.ToUpperInvariant()} of bit.");
                 return ProvedAggregate(call)
                     ? argument.WithNullableBecause([])
                     : argument.WithNullableBecause([.. argument.NullableBecause, .. Aggregate(call)]);
