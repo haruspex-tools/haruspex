@@ -11,13 +11,11 @@ namespace Haruspex.Tests.Corpus;
 /// </summary>
 public class CorpusFiguresTests
 {
-    private static readonly Lazy<IReadOnlyList<CorpusRun>> Runs = new(() => [.. Corpus.All.Select(c => c.Run())]);
-
     [Fact]
     public void The_committed_figures_are_what_haruspex_gives_today()
     {
         var path = Path.Combine(RepositoryPaths.Root, CorpusFiguresPage.Path);
-        var actual = CorpusFiguresPage.Render(CorpusManifest.Current, Runs.Value);
+        var actual = CorpusFiguresPage.Render(CorpusManifest.Current, Corpus.Runs);
         var committed = File.Exists(path) ? File.ReadAllText(path).ReplaceLineEndings("\n") : null;
         if (committed == actual)
             return;
@@ -40,7 +38,7 @@ public class CorpusFiguresTests
     public void The_style_guide_quotes_the_adventure_works_figure()
     {
         // GitHub's Markdown has no include, so the style guide's example is the page's figure, copied, and held to it here.
-        var run = Runs.Value.Single(r => r.Corpus.Name == "AdventureWorks");
+        var run = Corpus.Runs.Single(r => r.Corpus.Name == "AdventureWorks");
         var headline = CorpusFiguresPage.Headline("AdventureWorks", CorpusFigures.Count(run.Document));
 
         Assert.Contains($"\"{headline}\"", File.ReadAllText(Path.Combine(RepositoryPaths.Root, "docs", "style.md")), StringComparison.Ordinal);
@@ -77,7 +75,7 @@ public class CorpusFiguresTests
     [MemberData(nameof(CorpusNames))]
     public void The_procedure_rows_add_up_to_every_procedure(string name)
     {
-        var f = CorpusFigures.Count(Runs.Value.Single(r => r.Corpus.Name == name).Document);
+        var f = CorpusFigures.Count(Corpus.Runs.Single(r => r.Corpus.Name == name).Document);
 
         Assert.Equal(
             f.Procedures,

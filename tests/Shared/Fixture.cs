@@ -19,6 +19,9 @@ internal sealed class Fixture
     private readonly Lazy<SqlProject> project;
     private readonly Lazy<IrDocument> ir;
 
+    /// <summary>The suffix of a committed IR snapshot, beside which is the Zod snapshot generated from it.</summary>
+    private const string IrSnapshot = ".ir.verified.json";
+
     /// <summary>The fixture's config file as read, or null when it has none.</summary>
     private readonly ConfigReadResult? configRead;
 
@@ -46,6 +49,15 @@ internal sealed class Fixture
 
     /// <summary>What haruspex must produce from <see cref="Database"/>: the reviewed snapshots.</summary>
     public string Expected => Path.Combine(Folder, "expected");
+
+    /// <summary>
+    /// The committed IR files in <see cref="Expected"/>, each with the Zod snapshot generated from it: one pair per procedure,
+    /// or for a project the pair the CLI writes.
+    /// </summary>
+    public IEnumerable<(string Ir, string Zod)> Snapshots =>
+        Directory.EnumerateFiles(Expected, "*" + IrSnapshot)
+            .Order(StringComparer.Ordinal)
+            .Select(ir => (ir, ir[..^IrSnapshot.Length] + ".zod.verified.ts"));
 
     /// <summary>The fixture's <c>haruspex.json</c>, or null when it has none.</summary>
     public string? Config => File.Exists(Path.Combine(Folder, HaruspexConfig.FileName)) ? Path.Combine(Folder, HaruspexConfig.FileName) : null;

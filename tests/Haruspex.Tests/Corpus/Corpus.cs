@@ -18,6 +18,14 @@ internal sealed record Corpus(string Name, string Folder, IReadOnlyList<string> 
     /// <summary>The corpora, in the order the figures page shows them.</summary>
     public static IReadOnlyList<Corpus> All { get; } = [AdventureWorks(), WideWorldImporters()];
 
+    /// <summary>
+    /// What haruspex gives on each corpus, in <see cref="All"/>'s order: run once, when first asked for, and shared by every
+    /// test that reads it, because a run takes seconds.
+    /// </summary>
+    public static IReadOnlyList<CorpusRun> Runs => SharedRuns.Value;
+
+    private static readonly Lazy<IReadOnlyList<CorpusRun>> SharedRuns = new(() => [.. All.Select(c => c.Run())]);
+
     /// <summary>The project's folder on disk.</summary>
     public string ProjectFolder => CorpusManifest.Current.PathOf(Folder);
 

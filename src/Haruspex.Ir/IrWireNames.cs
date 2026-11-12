@@ -1,8 +1,10 @@
+using System.Collections.Frozen;
+
 namespace Haruspex.Ir;
 
 /// <summary>
-/// The name each value of each closed vocabulary has in the IR's JSON: one table per vocabulary, which the writer uses, so that
-/// each name is written in one place. The names are the format's, and never change within a version.
+/// The name each value of each closed vocabulary has in the IR's JSON: one table per vocabulary, which the writer uses and the reader
+/// reads backwards (<c>TryParse</c>), so that each name is written in one place. The names are the format's, and never change within a version.
 /// </summary>
 /// <remarks>
 /// Each table is a switch with a case for every member and no default, so a member added without a name fails the build
@@ -173,4 +175,82 @@ public static class IrWireNames
         IrValueMatch.Collation => "collation",
         IrValueMatch.Padded => "padded",
     };
+
+    /// <summary>The member of a scalar's kind that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrScalarKind value) => ScalarKinds.TryGetValue(name, out value);
+
+    /// <summary>The member of a scalar's format that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrFormat value) => Formats.TryGetValue(name, out value);
+
+    /// <summary>The member of an object's kind that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrObjectKind value) => ObjectKinds.TryGetValue(name, out value);
+
+    /// <summary>The member of the kind of object a named type belongs to that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrTypeOwner value) => TypeOwners.TryGetValue(name, out value);
+
+    /// <summary>The member of how a result set arrives that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrEncoding value) => Encodings.TryGetValue(name, out value);
+
+    /// <summary>The member of how many rows a result set has that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrCardinality value) => Cardinalities.TryGetValue(name, out value);
+
+    /// <summary>The member of whether a field is always there that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrPresence value) => Presences.TryGetValue(name, out value);
+
+    /// <summary>The member of why a value can be null that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrNullRule value) => NullRules.TryGetValue(name, out value);
+
+    /// <summary>The member of why a value or a result is unknown that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrUnknownReason value) => UnknownReasons.TryGetValue(name, out value);
+
+    /// <summary>The member of what an override sets that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrOverrideSetting value) => OverrideSettings.TryGetValue(name, out value);
+
+    /// <summary>The member of where a fact came from that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrFactSourceKind value) => FactSourceKinds.TryGetValue(name, out value);
+
+    /// <summary>The member of what a length counts that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrLengthUnit value) => LengthUnits.TryGetValue(name, out value);
+
+    /// <summary>The member of how a length in bytes encodes its text that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrByteEncoding value) => ByteEncodings.TryGetValue(name, out value);
+
+    /// <summary>The member of how a value set's items are compared that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrValueMatch value) => ValueMatches.TryGetValue(name, out value);
+
+    private static readonly FrozenDictionary<string, IrScalarKind> ScalarKinds = Inverse<IrScalarKind>(Of);
+
+    private static readonly FrozenDictionary<string, IrFormat> Formats = Inverse<IrFormat>(Of);
+
+    private static readonly FrozenDictionary<string, IrObjectKind> ObjectKinds = Inverse<IrObjectKind>(Of);
+
+    private static readonly FrozenDictionary<string, IrTypeOwner> TypeOwners = Inverse<IrTypeOwner>(Of);
+
+    private static readonly FrozenDictionary<string, IrEncoding> Encodings = Inverse<IrEncoding>(Of);
+
+    private static readonly FrozenDictionary<string, IrCardinality> Cardinalities = Inverse<IrCardinality>(Of);
+
+    private static readonly FrozenDictionary<string, IrPresence> Presences = Inverse<IrPresence>(Of);
+
+    private static readonly FrozenDictionary<string, IrNullRule> NullRules = Inverse<IrNullRule>(Of);
+
+    private static readonly FrozenDictionary<string, IrUnknownReason> UnknownReasons = Inverse<IrUnknownReason>(Of);
+
+    private static readonly FrozenDictionary<string, IrOverrideSetting> OverrideSettings = Inverse<IrOverrideSetting>(Of);
+
+    private static readonly FrozenDictionary<string, IrFactSourceKind> FactSourceKinds = Inverse<IrFactSourceKind>(Of);
+
+    private static readonly FrozenDictionary<string, IrLengthUnit> LengthUnits = Inverse<IrLengthUnit>(Of);
+
+    private static readonly FrozenDictionary<string, IrByteEncoding> ByteEncodings = Inverse(Of, IrByteEncoding.Unknown);
+
+    private static readonly FrozenDictionary<string, IrValueMatch> ValueMatches = Inverse<IrValueMatch>(Of);
+
+    /// <summary>
+    /// A vocabulary's table read backwards, built from <c>Of</c> so that the two directions can't disagree. A member left out
+    /// of the JSON (<paramref name="unnamed"/>) has no name to read.
+    /// </summary>
+    private static FrozenDictionary<string, T> Inverse<T>(Func<T, string> of, params T[] unnamed)
+        where T : struct, Enum =>
+        Enum.GetValues<T>().Where(v => !unnamed.Contains(v)).ToFrozenDictionary(of, StringComparer.Ordinal);
 }

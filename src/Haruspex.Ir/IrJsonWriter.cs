@@ -39,12 +39,12 @@ public static class IrJsonWriter
             json.WriteEndObject();
 
             json.WriteStartArray("objects");
-            foreach (var obj in document.Objects.OrderBy(o => o.Id, StringComparer.Ordinal))
+            foreach (var obj in IrDocumentOrder.Objects(document))
                 WriteObject(json, obj);
             json.WriteEndArray();
 
             json.WriteStartObject("types");
-            foreach (var (name, type) in document.Types.OrderBy(t => t.Key, StringComparer.Ordinal))
+            foreach (var (name, type) in IrDocumentOrder.Types(document))
             {
                 json.WritePropertyName(name);
                 WriteObjectType(json, type);
@@ -53,11 +53,7 @@ public static class IrJsonWriter
             json.WriteEndObject();
 
             json.WriteStartArray("unknowns");
-            foreach (var unknown in document.Unknowns
-                         .OrderBy(u => u.Object, StringComparer.Ordinal)
-                         .ThenBy(u => u.Path, StringComparer.Ordinal)
-                         .ThenBy(u => u.At, StringComparer.Ordinal)
-                         .ThenBy(u => IrWireNames.Of(u.Reason), StringComparer.Ordinal))
+            foreach (var unknown in IrDocumentOrder.Unknowns(document))
             {
                 json.WriteStartObject();
                 json.WriteString("object", unknown.Object);
@@ -71,11 +67,7 @@ public static class IrJsonWriter
             json.WriteEndArray();
 
             json.WriteStartArray("overrides");
-            foreach (var claim in document.Overrides
-                         .OrderBy(o => o.Object, StringComparer.Ordinal)
-                         .ThenBy(o => o.Path, StringComparer.Ordinal)
-                         .ThenBy(o => IrWireNames.Of(o.Setting), StringComparer.Ordinal)
-                         .ThenBy(o => o.Via, StringComparer.Ordinal))
+            foreach (var claim in IrDocumentOrder.Overrides(document))
             {
                 json.WriteStartObject();
                 json.WriteString("object", claim.Object);
@@ -372,12 +364,18 @@ public static class IrJsonWriter
     }
 
     /// <summary>Plain decimal text, checked, because it is written raw.</summary>
-    private static string Number(string text)
+    private static string Number(string text) =>
+        IsPlainDecimal(text) ? text : throw new ArgumentException($"'{text}' is not a plain decimal number.", nameof(text));
+
+    /// <summary>
+    /// Whether <paramref name="text"/> is how the IR writes a number: an optional minus, digits without a leading zero, and
+    /// optionally a point and more digits, with no exponent. The reader holds a file to the same form.
+    /// </summary>
+    internal static bool IsPlainDecimal(string text)
     {
         var body = text.StartsWith('-') ? text[1..] : text;
         var parts = body.Split('.');
-        var valid = parts.Length <= 2 && parts.All(p => p.Length > 0 && p.All(char.IsAsciiDigit))
+        return parts.Length <= 2 && parts.All(p => p.Length > 0 && p.All(char.IsAsciiDigit))
             && (parts[0] == "0" || parts[0][0] != '0');
-        return valid ? text : throw new ArgumentException($"'{text}' is not a plain decimal number.", nameof(text));
     }
 }

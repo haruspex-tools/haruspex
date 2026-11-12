@@ -1,0 +1,358 @@
+using System.Text.Json;
+
+namespace Haruspex.Ir;
+
+/// <summary>
+/// Reads an IR file into an <see cref="IrDocument"/>: the inverse of <see cref="IrJsonWriter"/>, so that what a consumer of
+/// the file gets is what haruspex inferred. Reading what the writer wrote and writing it again gives the same bytes, and the
+/// document read equals the one written; the tests hold every fixture and both public corpora to that round trip.
+/// </summary>
+/// <remarks>
+/// <para>
+/// The reader is as strict as the format is closed. It refuses, with an <see cref="IrFormatException"/> that names the path
+/// in the document: text that is not JSON; a version other than <see cref="IrDocument.CurrentVersion"/>; a property missing,
+/// of the wrong type, unknown or given twice; a name outside its vocabulary; and a flag that disagrees with its reasons
+/// (<c>nullable</c> without <c>nullableBecause</c>). It supplies no default: a property is either in the file or, where the
+/// format lets the writer leave it out, absent with the meaning the format gives that.
+/// </para>
+/// <para>
+/// A version it doesn't read is refused before anything else, rather than read with its differences guessed at: the IR has
+/// no stable version yet (0.x), so a file from another version is regenerated, not migrated. <c>docs/internals/10-the-ir-as-a-contract.md</c>
+/// argues the choice.
+/// </para>
+/// </remarks>
+public static class IrJsonReader
+{
+    /// <summary>The deepest nesting read, as deep as the writer's own limit, so that every file the writer writes is read.</summary>
+    private const int MaxDepth = 1000;
+
+    /// <summary>The document an IR file holds.</summary>
+    /// <param name="json">The file's text.</param>
+    /// <exception cref="IrFormatException">The text is not an IR document of this version; the message says where and why.</exception>
+    public static IrDocument Read(string json)
+    {
+        ArgumentNullException.ThrowIfNull(json);
+
+        JsonDocument parsed;
+        try
+        {
+            parsed = JsonDocument.Parse(json, new JsonDocumentOptions { MaxDepth = MaxDepth });
+        }
+        catch (JsonException e)
+        {
+            throw new IrFormatException(e.Path ?? "$", $"is not JSON: {e.Message}", e);
+        }
+
+        using (parsed)
+            return Document(IrJsonObject.At(parsed.RootElement, "$"));
+    }
+
+    private static IrDocument Document(IrJsonObject json)
+    {
+        // The version first: a file of another version may differ anywhere, so nothing else in it is read.
+        var version = json.Optional("irVersion") is { } found
+            ? IrJsonObject.AsString(found, json.PathOf("irVersion"))
+            : throw new IrFormatException(json.PathOf("irVersion"), "is missing, so this is not a haruspex IR file.");
+        if (version != IrDocument.CurrentVersion)
+        {
+            throw new IrFormatException(
+                json.PathOf("irVersion"),
+                $"is \"{version}\", and this reader reads IR {IrDocument.CurrentVersion} only. Run haruspex generate again to write the file in this version.");
+        }
+
+        var source = json.Object("source");
+        var document = new IrDocument(
+            new IrSource(source.String("dialect")),
+            [.. json.Array("objects").Select(o => Object(IrJsonObject.At(o.Item, o.Path)))],
+            Types(json.Object("types")),
+            [.. json.Array("unknowns").Select(u => Unknown(IrJsonObject.At(u.Item, u.Path)))])
+        {
+            Overrides = [.. json.Array("overrides").Select(o => Override(IrJsonObject.At(o.Item, o.Path)))],
+        };
+        source.End();
+        json.End();
+        return document;
+    }
+
+    private static IrObject Object(IrJsonObject json)
+    {
+        var results = json.Required("results");
+        var obj = new IrObject(
+            json.String("id"),
+            json.String("name"),
+            json.Name<IrObjectKind>("kind", IrWireNames.TryParse, "an object's kind"),
+            json.String("at"),
+            [.. json.Array("parameters").Select(p => Parameter(IrJsonObject.At(p.Item, p.Path)))],
+
+            // Null, not empty, when the results can't be listed: the writer's distinction, kept.
+            results.ValueKind == JsonValueKind.Null
+                ? null
+                : [.. IrJsonObject.Items(results, json.PathOf("results")).Select(r => Result(IrJsonObject.At(r.Item, r.Path)))]);
+        json.End();
+        return obj;
+    }
+
+    private static IrParameter Parameter(IrJsonObject json)
+    {
+        var parameter = new IrParameter(json.String("name"), Type(json.Object("type")), json.Boolean("hasDefault"), json.Boolean("output"));
+        json.End();
+        return parameter;
+    }
+
+    private static IrResult Result(IrJsonObject json)
+    {
+        var result = new IrResult(
+            json.Name<IrEncoding>("encoding", IrWireNames.TryParse, "a result's encoding"),
+            Type(json.Object("type")),
+            Reasons(json, "mayBeAbsent", "absentBecause"))
+        {
+            Cardinality = json.Name<IrCardinality>("cardinality", IrWireNames.TryParse, "a cardinality"),
+        };
+        json.End();
+        return result;
+    }
+
+    private static Dictionary<string, IrObjectType> Types(IrJsonObject json)
+    {
+        // A name given twice is refused when the object is read (IrJsonObject), so each name here is one type.
+        var types = new Dictionary<string, IrObjectType>(StringComparer.Ordinal);
+        foreach (var name in json.Names.ToList())
+            types.Add(name, ObjectType(json.Object(name)));
+        json.End();
+        return types;
+    }
+
+    private static IrObjectType ObjectType(IrJsonObject json)
+    {
+        var kind = json.String("kind");
+        if (kind != "object")
+            throw new IrFormatException(json.PathOf("kind"), $"is \"{kind}\", but a named type is always \"object\".");
+
+        var type = new IrObjectType([.. json.Array("fields").Select(f => Field(IrJsonObject.At(f.Item, f.Path)))])
+        {
+            // Left out when false: a type that is not recursive says nothing.
+            Recursive = json.OptionalBoolean("recursive") ?? false,
+            Identity = json.OptionalObject("identity") is { } identity ? Identity(identity) : null,
+        };
+        json.End();
+        return type;
+    }
+
+    private static IrTypeIdentity Identity(IrJsonObject json)
+    {
+        // The owner's kind is the key, and its value the owner: { "procedure": "sales.get_order", "path": "results[0][]" }.
+        var owners = json.Names.Where(n => n != "path").ToList();
+        if (owners.Count != 1)
+            throw new IrFormatException(json.Path, "must name one owner, keyed by its kind, beside its path.");
+        if (!IrWireNames.TryParse(owners[0], out IrTypeOwner owner))
+            throw new IrFormatException(json.PathOf(owners[0]), $"is not a kind of object a type belongs to in IR {IrDocument.CurrentVersion}.");
+
+        var identity = new IrTypeIdentity(owner, json.String(owners[0]), json.String("path"));
+        json.End();
+        return identity;
+    }
+
+    private static IrField Field(IrJsonObject json)
+    {
+        var field = new IrField(
+            json.String("name"),
+            Type(json.Object("type")),
+            json.Name<IrPresence>("presence", IrWireNames.TryParse, "a presence"),
+            Reasons(json, "nullable", "nullableBecause"));
+        json.End();
+        return field;
+    }
+
+    /// <summary>
+    /// The reasons a flag gives: the flag and its list agree, true with at least one reason, false with none and the list
+    /// left out. A flag the writer leaves out when false (<paramref name="flagOptional"/>) reads as false.
+    /// </summary>
+    private static EquatableArray<IrNullReason> Reasons(IrJsonObject json, string flag, string list, bool flagOptional = false)
+    {
+        var set = flagOptional ? json.OptionalBoolean(flag) ?? false : json.Boolean(flag);
+        if (!set)
+        {
+            return json.Has(list)
+                ? throw new IrFormatException(json.PathOf(list), $"is given, but {flag} is false: a value that is never null has no reasons.")
+                : [];
+        }
+
+        if (!json.Has(list))
+            throw new IrFormatException(json.PathOf(list), $"is missing, but {flag} is true: every null needs a reason.");
+        EquatableArray<IrNullReason> reasons = [.. json.Array(list).Select(r => Reason(IrJsonObject.At(r.Item, r.Path)))];
+        return reasons.Count > 0 ? reasons : throw new IrFormatException(json.PathOf(list), $"is empty, but {flag} is true: every null needs a reason.");
+    }
+
+    private static IrNullReason Reason(IrJsonObject json)
+    {
+        var reason = new IrNullReason(json.Name<IrNullRule>("rule", IrWireNames.TryParse, "a null rule"), json.String("at"));
+        json.End();
+        return reason;
+    }
+
+    private static IrType Type(IrJsonObject json)
+    {
+        // A reference is the one node without a kind.
+        if (json.Has("ref"))
+        {
+            var reference = new IrRef(json.String("ref"));
+            json.End();
+            return reference;
+        }
+
+        var kind = json.String("kind");
+        IrType type = kind switch
+        {
+            _ when IrWireNames.TryParse(kind, out IrScalarKind scalar) => Scalar(json, scalar),
+            "array" => Array(json),
+            "tuple" => new IrTuple([.. json.Array("items").Select(e => Element(IrJsonObject.At(e.Item, e.Path)))]),
+            "record" => new IrRecord(Type(json.Object("values")), Reasons(json, "valuesNullable", "valuesNullableBecause")),
+            "union" => Union(json),
+            "json-text" => new IrJsonText(json.OptionalObject("content") is { } content ? Type(content) : null),
+            "import" => new IrImport(json.String("name"), json.String("from")),
+            "unknown" => new IrUnknownType(json.Name<IrUnknownReason>("reason", IrWireNames.TryParse, "an unknown's reason")),
+            _ => throw new IrFormatException(json.PathOf("kind"), $"is \"{kind}\", which is not a type in IR {IrDocument.CurrentVersion}."),
+        };
+        json.End();
+        return type;
+    }
+
+    private static IrUnion Union(IrJsonObject json)
+    {
+        EquatableArray<IrType> variants = [.. json.Array("variants").Select(v => Type(IrJsonObject.At(v.Item, v.Path)))];
+        return variants.Count >= 2
+            ? new IrUnion(variants)
+            : throw new IrFormatException(json.PathOf("variants"), "must have at least two variants: a value of one type is that type, not a union.");
+    }
+
+    private static IrArray Array(IrJsonObject json) => new(Type(json.Object("items")))
+    {
+        // Left out when no item is ever null, as FOR JSON's arrays are.
+        ItemsNullableBecause = Reasons(json, "itemsNullable", "itemsNullableBecause", flagOptional: true),
+        MinItems = json.OptionalInteger("minItems"),
+        MaxItems = json.OptionalInteger("maxItems"),
+    };
+
+    private static IrElement Element(IrJsonObject json)
+    {
+        var element = new IrElement(Type(json.Object("type")), Reasons(json, "nullable", "nullableBecause"));
+        json.End();
+        return element;
+    }
+
+    private static IrScalar Scalar(IrJsonObject json, IrScalarKind kind) => new(
+        kind,
+        json.OptionalName<IrFormat>("format", IrWireNames.TryParse, "a scalar's format"),
+        json.OptionalString("sql"),
+        Facets(json));
+
+    /// <summary>The facets, which the writer puts beside the scalar's kind rather than in an object of their own.</summary>
+    private static IrFacets Facets(IrJsonObject json)
+    {
+        if (json.Has("length") && json.Has("maxLength"))
+            throw new IrFormatException(json.Path, "has both length and maxLength: a string's length is fixed or a maximum, not both.");
+        var length = json.OptionalObject("length") is { } fixedLength
+            ? Length(fixedLength, isFixed: true)
+            : json.OptionalObject("maxLength") is { } maxLength ? Length(maxLength, isFixed: false) : null;
+        return new IrFacets(
+            length,
+            json.OptionalObject("minLength") is { } minLength ? MinLength(minLength) : null,
+            json.OptionalObject("digits") is { } digits ? Digits(digits) : null,
+            json.OptionalObject("min") is { } min ? Bound(min) : null,
+            json.OptionalObject("max") is { } max ? Bound(max) : null,
+            json.OptionalObject("values") is { } values ? ValueSet(values) : null);
+    }
+
+    private static IrLength Length(IrJsonObject json, bool isFixed)
+    {
+        var length = new IrLength(
+            json.Integer("value"),
+            isFixed,
+            json.Name<IrLengthUnit>("unit", IrWireNames.TryParse, "a length's unit"),
+
+            // Left out when not known.
+            json.OptionalName<IrByteEncoding>("encoding", IrWireNames.TryParse, "a byte encoding") ?? IrByteEncoding.Unknown,
+            Source(json.Object("from")));
+        json.End();
+        return length;
+    }
+
+    private static IrMinLength MinLength(IrJsonObject json)
+    {
+        var minLength = new IrMinLength(json.Integer("value"), Source(json.Object("from")));
+        json.End();
+        return minLength;
+    }
+
+    private static IrDigits Digits(IrJsonObject json)
+    {
+        var digits = new IrDigits(json.Integer("precision"), json.Integer("scale"), Source(json.Object("from")));
+        json.End();
+        return digits;
+    }
+
+    private static IrBound Bound(IrJsonObject json)
+    {
+        var bound = new IrBound(Number(json.Required("value"), json.PathOf("value")), json.Boolean("inclusive"), Source(json.Object("from")));
+        json.End();
+        return bound;
+    }
+
+    private static IrValueSet ValueSet(IrJsonObject json)
+    {
+        var set = new IrValueSet(
+            [.. json.Array("items").Select(i => i.Item.ValueKind == JsonValueKind.String ? new IrValue(i.Item.GetString()!, IsString: true) : new IrValue(Number(i.Item, i.Path), IsString: false))],
+            json.Name<IrValueMatch>("match", IrWireNames.TryParse, "a value set's match"),
+            [.. json.Array("from").Select(f => Source(IrJsonObject.At(f.Item, f.Path)))]);
+        json.End();
+        return set;
+    }
+
+    /// <summary>A number as its exact decimal text, never through a double, in the plain form the writer writes.</summary>
+    private static string Number(JsonElement element, string path)
+    {
+        if (element.ValueKind != JsonValueKind.Number)
+            throw new IrFormatException(path, "must be a number.");
+        var text = element.GetRawText();
+        return IrJsonWriter.IsPlainDecimal(text) ? text : throw new IrFormatException(path, $"is {text}, which is not a plain decimal number such as -12.5.");
+    }
+
+    /// <summary>Where a fact came from: one property, whose name is the kind of source and whose value is its ref.</summary>
+    private static IrFactSource Source(IrJsonObject json)
+    {
+        var names = json.Names.ToList();
+        if (names.Count != 1)
+            throw new IrFormatException(json.Path, "must have one property, whose name says where the fact came from.");
+        if (!IrWireNames.TryParse(names[0], out IrFactSourceKind kind))
+            throw new IrFormatException(json.PathOf(names[0]), $"is not where a fact can come from in IR {IrDocument.CurrentVersion}.");
+        var source = new IrFactSource(kind, json.String(names[0]));
+        json.End();
+        return source;
+    }
+
+    private static IrUnknown Unknown(IrJsonObject json)
+    {
+        var unknown = new IrUnknown(
+            json.String("object"),
+            json.String("path"),
+            json.Name<IrUnknownReason>("reason", IrWireNames.TryParse, "an unknown's reason"),
+            json.String("detail"),
+            json.String("at"));
+        json.End();
+        return unknown;
+    }
+
+    private static IrOverride Override(IrJsonObject json)
+    {
+        var claim = new IrOverride(
+            json.String("object"),
+            json.String("path"),
+            json.Name<IrOverrideSetting>("setting", IrWireNames.TryParse, "an override's setting"),
+            json.OptionalString("why"))
+        {
+            Via = json.OptionalString("via"),
+        };
+        json.End();
+        return claim;
+    }
+}

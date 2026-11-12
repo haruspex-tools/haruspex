@@ -8,8 +8,11 @@ entry by entry. Every fixed point, cache and merge in the inference uses that eq
 them out as text. Where two representations of "nothing known" mean the same, one is chosen: empty facets are stored as
 none, and an array whose items are never null has an empty list of reasons.
 
-**Exceptions, each compared by nothing.** A document's and a declaration's map of named types (`IrDocument.Types`,
-`DeclaredResults.Types`), the set of declarations a walk used (`Walked.Declared`) and the inference's private working
+**A whole document** compares as its file reads: its map of named types entry by entry, and its objects, unknowns and
+overrides in the order the file sorts them, since their order in the records means nothing (`IrDocument`, added 12 Nov 2026
+for the IR's round trip, in which a document read back from its file must equal the one written).
+
+**Exceptions, each compared by nothing.** A declaration's map of named types (`DeclaredResults.Types`), the set of declarations a walk used (`Walked.Declared`) and the inference's private working
 records, which hold syntax or live within one statement (`Row`, `SetNode`, `JsonPath`, `CombinedType`), keep .NET's
 collections and so compare by reference. Nothing compares them; whatever first does must give them value equality. A value
 set's items and sources keep the order they were found in, so two sets with the same items in another order are different

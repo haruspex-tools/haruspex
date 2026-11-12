@@ -1,6 +1,11 @@
 namespace Haruspex.Ir;
 
 /// <summary>The inferred shapes of a set of database objects.</summary>
+/// <remarks>
+/// Two documents are equal when the IR's JSON says the same of them: the same source, objects, named types, unknowns and
+/// overrides, in any order where the file's order is a sort (<see cref="IrDocumentOrder"/>), with each record compared by
+/// value. So a document read back from its file equals the one written, and that is the round trip the format promises.
+/// </remarks>
 /// <param name="Source">Where the shapes were inferred from.</param>
 /// <param name="Objects">The objects typed: procedures, in this version.</param>
 /// <param name="Types">The named object types, referenced from <see cref="IrRef"/>.</param>
@@ -23,4 +28,18 @@ public sealed record IrDocument(
     /// distinguishable in the file, though an emitter needs neither: the types already carry the result.
     /// </summary>
     public EquatableArray<IrOverride> Overrides { get; init; } = [];
+
+    /// <summary>Whether <paramref name="other"/> says the same, as the remarks above define it.</summary>
+    public bool Equals(IrDocument? other) =>
+        other is not null
+        && Source == other.Source
+        && IrDocumentOrder.Objects(this).SequenceEqual(IrDocumentOrder.Objects(other))
+        && Types.Count == other.Types.Count
+        && Types.All(t => other.Types.TryGetValue(t.Key, out var type) && t.Value == type)
+        && IrDocumentOrder.Unknowns(this).SequenceEqual(IrDocumentOrder.Unknowns(other))
+        && IrDocumentOrder.Overrides(this).SequenceEqual(IrDocumentOrder.Overrides(other));
+
+    /// <summary>A hash that ignores order, as equality does: from what the document holds, not where.</summary>
+    public override int GetHashCode() =>
+        HashCode.Combine(Source, Objects.Count, Types.Count, Unknowns.Count, Overrides.Count);
 }
