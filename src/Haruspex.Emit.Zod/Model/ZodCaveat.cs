@@ -15,6 +15,6 @@ internal enum ZodCaveat
     /// <summary>The mssql driver reads a wide decimal or money as a double, which may round it past its bounds.</summary>
     DriverDecimals,
 
-    /// <summary><c>JSON.parse</c> reads every number as a double, exact for integers only up to 2^53.</summary>
-    JsonIntegers,
+    /// <summary>JavaScript reads every number, in JSON or in source, as a double, which holds only so many digits.</summary>
+    Doubles,
 }

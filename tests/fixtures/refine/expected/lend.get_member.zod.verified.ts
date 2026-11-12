@@ -4,7 +4,8 @@
 // The notes on properties below rest on these facts:
 // - varchar(n) and char(n) count bytes, not characters. A character is one byte only in a single-byte collation, so
 //   elsewhere n bounds the length from above.
-// - JSON.parse reads every number as a double, which holds every integer only up to 2^53.
+// - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 and every
+//   decimal of up to 15 significant digits exactly.
 import { z } from 'zod'
 
 export const GetMemberHomeSchema = z.object({

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Numerics;
+using Haruspex.Emit.Zod.Model;
 
 namespace Haruspex.Emit.Zod.Printing;
 
@@ -18,36 +19,7 @@ namespace Haruspex.Emit.Zod.Printing;
 internal static class JavaScriptNumbers
 {
     /// <summary>The literal for <paramref name="value"/>, a decimal number as the IR or the lowering writes it (<c>-12.5</c>, <c>1e-2</c>).</summary>
-    public static string Literal(string value)
-    {
-        var exact = Rational(value);
-        var nearest = double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture);
-        var shortest = nearest.ToString("R", CultureInfo.InvariantCulture);
-        return Rational(shortest) == exact ? value : Format(shortest);
-    }
-
-    /// <summary>A decimal number as an exact fraction, unscaled digits and a power of ten, with trailing zeros removed.</summary>
-    private static (BigInteger Digits, int Exponent) Rational(string text)
-    {
-        var e = text.IndexOfAny(['e', 'E']);
-        var exponent = e < 0 ? 0 : int.Parse(text[(e + 1)..], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
-        var mantissa = e < 0 ? text : text[..e];
-        var point = mantissa.IndexOf('.', StringComparison.Ordinal);
-        if (point >= 0)
-        {
-            exponent -= mantissa.Length - point - 1;
-            mantissa = mantissa.Remove(point, 1);
-        }
-
-        var digits = BigInteger.Parse(mantissa, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
-        while (!digits.IsZero && digits % 10 == 0)
-        {
-            digits /= 10;
-            exponent++;
-        }
-
-        return digits.IsZero ? (BigInteger.Zero, 0) : (digits, exponent);
-    }
+    public static string Literal(string value) => Doubles.KeepsItsDigits(value) ? value : Format(Doubles.Shortest(value));
 
     /// <summary>
     /// A double's shortest round-trip digits (from .NET's <c>R</c> format) as JavaScript's <c>Number.prototype.toString</c>
@@ -56,7 +28,7 @@ internal static class JavaScriptNumbers
     /// </summary>
     private static string Format(string shortest)
     {
-        var (digits, exponent) = Rational(shortest);
+        var (digits, exponent) = Doubles.Rational(shortest);
         var negative = digits.Sign < 0;
         var s = BigInteger.Abs(digits).ToString(CultureInfo.InvariantCulture);
         var k = s.Length;

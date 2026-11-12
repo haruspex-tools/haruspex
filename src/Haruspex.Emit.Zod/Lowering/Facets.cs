@@ -130,7 +130,7 @@ internal static class Facets
 
             case IrFormat.Int64:
             {
-                var precision = new ZodNote("A bigint, exact only up to 2^53 once parsed.", ZodCaveat.JsonIntegers);
+                var precision = new ZodNote("A bigint, exact only up to 2^53 once parsed.", ZodCaveat.Doubles);
                 if (ExactNumbers(facets) is { } values)
                     return new Noted(values, precision);
 
@@ -151,7 +151,12 @@ internal static class Facets
                 var integers = digits is { Scale: 0, Precision: <= 15 };
                 var code = integers ? Z("int") : Z("number");
                 if (exactInDriver)
+                {
                     code = Upper(Lower(code, facets?.Min, digits?.Scale, exclusiveAllowed: false), facets?.Max, digits?.Scale, exclusiveAllowed: false);
+                    if (WideBounds(code, scalar.Sql) is { } wide)
+                        code = new Noted(code, wide);
+                }
+
                 if (digits is not null && !integers)
                     code = code.Then("multipleOf", new PowerOfTen(-digits.Scale));
                 return exactInDriver || (facets?.Min is null && facets?.Max is null && facets?.Values is null)
@@ -164,6 +169,26 @@ internal static class Facets
                 // survive rounding (see the remarks).
                 return Upper(Lower(Z("number"), facets?.Min, null, exclusiveAllowed: false), facets?.Max, null, exclusiveAllowed: false);
         }
+    }
+
+    /// <summary>
+    /// A note keeping the exact bounds, when a double can't hold them: JavaScript reads the bound as the nearest double (the
+    /// printer writes it so), which is the check, but the reader of the module should still see what the database states.
+    /// </summary>
+    private static ZodNote? WideBounds(ZodExpression code, string? sql)
+    {
+        var bounds = new List<string>();
+        for (var link = code; link is Call call; link = call.Target)
+        {
+            if (call is { Method: "min" or "max", Arguments: [Number bound] })
+                bounds.Insert(0, bound.Value);
+        }
+
+        return bounds.All(Doubles.KeepsItsDigits)
+            ? null
+            : new ZodNote(
+                $"{sql ?? "The decimal"} {(bounds.Count == 2 ? $"runs from {bounds[0]} to {bounds[1]}" : $"is bounded by {bounds[0]}")}, which JavaScript reads as the nearest doubles.",
+                ZodCaveat.Doubles);
     }
 
     private static bool FromChecks(IrFacets? facets) =>

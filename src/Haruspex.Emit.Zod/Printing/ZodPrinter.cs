@@ -52,8 +52,8 @@ internal static class ZodPrinter
         foreach (var declaration in module.Declarations)
         {
             output.Append('\n');
-            if (declaration.Summary is { } summary)
-                output.Append("/** ").Append(Comment(summary)).Append(" */\n");
+            // A declaration's own schema may carry notes too (a result that is unknown, or JSON text): they follow its summary.
+            output.Append(Documentation([.. declaration.Summary is { } summary ? [summary] : Array.Empty<string>(), .. ZodNotes.Of(declaration.Schema).Select(n => n.Text)], ""));
             var schema = ZodModule.SchemaOf(declaration.Name);
             output.Append("export const ").Append(schema).Append(" = ").Append(Expression(declaration.Schema)).Append('\n')
                 .Append("export type ").Append(declaration.Name).Append(" = " + ZodModule.ZodName + ".infer<typeof ").Append(schema).Append(">\n");
@@ -94,20 +94,7 @@ internal static class ZodPrinter
         var text = new StringBuilder(ZodModule.ZodName).Append(obj.Strict ? ".strictObject({\n" : ".object({\n");
         foreach (var property in obj.Properties)
         {
-            switch (ZodNotes.Of(property.Value))
-            {
-                case []:
-                    break;
-                case [var note]:
-                    text.Append("  /** ").Append(Comment(note.Text)).Append(" */\n");
-                    break;
-                case var notes:
-                    text.Append("  /**\n");
-                    foreach (var note in notes)
-                        text.Append("   * ").Append(Comment(note.Text)).Append('\n');
-                    text.Append("   */\n");
-                    break;
-            }
+            text.Append(Documentation([.. ZodNotes.Of(property.Value).Select(n => n.Text)], "  "));
 
             if (property.Getter)
                 text.Append("  get ").Append(Key(property.Key)).Append("() { return ").Append(Expression(property.Value)).Append(" },\n");
@@ -117,6 +104,14 @@ internal static class ZodPrinter
 
         return text.Append("})").ToString();
     }
+
+    /// <summary>A documentation comment of <paramref name="lines"/>: one line for one, a line each for more, none for none.</summary>
+    private static string Documentation(IReadOnlyList<string> lines, string indent) => lines switch
+    {
+        [] => "",
+        [var line] => indent + "/** " + Comment(line) + " */\n",
+        _ => indent + "/**\n" + string.Concat(lines.Select(line => indent + " * " + Comment(line) + "\n")) + indent + " */\n",
+    };
 
     /// <summary>
     /// A header line broken between words to fit 120 columns with its <c>// </c>; a list item's continuation lines are

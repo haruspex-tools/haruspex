@@ -70,7 +70,7 @@ internal static class Unions
             expression = call.Target;
         }
 
-        return expression is Call { Target: Name { Path: "z" } } root ? (root, checks) : (null, checks);
+        return expression is Call { Target: Name { Path: ZodModule.ZodName } } root ? (root, checks) : (null, checks);
     }
 
     private static int Length(Call check) =>

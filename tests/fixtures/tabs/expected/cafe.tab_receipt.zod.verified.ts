@@ -4,6 +4,8 @@
 // The notes on properties below rest on these facts:
 // - varchar(n) and char(n) count bytes, not characters. A character is one byte only in a single-byte collation, so
 //   elsewhere n bounds the length from above.
+// - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 and every
+//   decimal of up to 15 significant digits exactly.
 import { z } from 'zod'
 
 export const TabReceiptTabSchema = z.object({
@@ -17,6 +19,7 @@ export const TabReceiptItemSchema = z.object({
   line: z.string().max(38),
   /** varchar(16) counts bytes and its collation isn't declared, so the length is at most 16. */
   ref: z.string().max(16).optional(),
+  /** decimal(19,2) runs from -99999999999999999.99 to 99999999999999999.99, which JavaScript reads as the nearest doubles. */
   amount: z.number().min(-100000000000000000).max(100000000000000000).multipleOf(1e-2),
   discount: z.number().min(-999.99).max(999.99).multipleOf(1e-2).optional(),
 })

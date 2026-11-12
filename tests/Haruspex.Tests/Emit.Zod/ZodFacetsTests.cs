@@ -153,14 +153,15 @@ public class ZodFacetsTests
     private static IrFacets Decimal(int precision, int scale, IrBound min, IrBound max, IrValueSet? values = null) =>
         new(Digits: new IrDigits(precision, scale, Type), Min: min, Max: max, Values: values);
 
-    // A bound a double can't hold is written as the double JavaScript reads it as, which is the check it always was.
+    // A bound a double can't hold is written as the double JavaScript reads it as, which is the check it always was, and
+    // the note keeps the exact bounds for the reader.
     [Theory]
-    [InlineData(19, 2, "-99999999999999999.99", "99999999999999999.99", "z.number().min(-100000000000000000).max(100000000000000000).multipleOf(1e-2)")]
+    [InlineData(19, 2, "-99999999999999999.99", "99999999999999999.99", "z.number().min(-100000000000000000).max(100000000000000000).multipleOf(1e-2) // decimal runs from -99999999999999999.99 to 99999999999999999.99, which JavaScript reads as the nearest doubles.")]
     [InlineData(5, 5, "-0.99999", "0.99999", "z.number().min(-0.99999).max(0.99999).multipleOf(1e-5)")]
-    [InlineData(19, 4, "-922337203685477.5808", "922337203685477.5807", "z.number().min(-922337203685477.6).max(922337203685477.6).multipleOf(1e-4)")]
+    [InlineData(19, 4, "-922337203685477.5808", "922337203685477.5807", "z.number().min(-922337203685477.6).max(922337203685477.6).multipleOf(1e-4) // decimal runs from -922337203685477.5808 to 922337203685477.5807, which JavaScript reads as the nearest doubles.")]
     // An integer decimal within 2^53 is an integer; a wider one can't be z.int(), which wants safe integers.
     [InlineData(10, 0, "-9999999999", "9999999999", "z.int().min(-9999999999).max(9999999999)")]
-    [InlineData(38, 0, "-99999999999999999999999999999999999999", "99999999999999999999999999999999999999", "z.number().min(-1e+38).max(1e+38).multipleOf(1)")]
+    [InlineData(38, 0, "-99999999999999999999999999999999999999", "99999999999999999999999999999999999999", "z.number().min(-1e+38).max(1e+38).multipleOf(1) // decimal runs from -99999999999999999999999999999999999999 to 99999999999999999999999999999999999999, which JavaScript reads as the nearest doubles.")]
     public void A_decimal_in_json_has_its_range_and_its_step(int precision, int scale, string min, string max, string zod) =>
         Assert.Equal(zod, Json(Number(IrFormat.Decimal, "decimal", Decimal(precision, scale, Inclusive(min), Inclusive(max)))));
 

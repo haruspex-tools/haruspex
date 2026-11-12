@@ -57,6 +57,9 @@ public class ZodPrinterTests
     [InlineData("-922337203685477.5808", "-922337203685477.6")]
     [InlineData("12345678901234567890123", "1.2345678901234568e+22")]
     [InlineData("0.00000012345678901234567", "1.2345678901234566e-7")]
+    // JavaScript writes plain digits below 10^21 and an exponent from there on.
+    [InlineData("123456789012345678901.5", "123456789012345680000")]
+    [InlineData("1000000000000000000000.5", "1e+21")]
     public void A_number_a_double_cannot_hold_is_written_as_the_double_javascript_reads(string value, string written) =>
         Assert.Equal(written, ZodPrinter.Expression(Z("number").Then("max", new Number(value))).Replace("z.number().max(", "", StringComparison.Ordinal).TrimEnd(')'));
 
@@ -90,6 +93,13 @@ public class ZodPrinterTests
         Assert.StartsWith("// First line.\n// Second line.\nimport { z } from 'zod'\nimport { A, B } from './it\\'s'\n\n// JSON text:", text, StringComparison.Ordinal);
         Assert.EndsWith("\n/** s.get: returns rows *\\/ evil. */\nexport const GetSchema = z.unknown()\nexport type Get = z.infer<typeof GetSchema>\n", text, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void A_declarations_own_notes_follow_its_summary_in_its_documentation_comment() =>
+        Assert.EndsWith(
+            "\n/**\n * s.p: returns JSON.\n * Not known.\n */\nexport const PSchema = z.unknown()\nexport type P = z.infer<typeof PSchema>\n",
+            ZodPrinter.Print(new ZodModule(["H"], [], JsonTextHelper: false, [new ZodDeclaration("P", "s.p: returns JSON.", new Noted(Z("unknown"), new ZodNote("Not known.")))])),
+            StringComparison.Ordinal);
 
     [Fact]
     public void A_module_without_the_helper_goes_from_its_imports_to_its_declarations() =>

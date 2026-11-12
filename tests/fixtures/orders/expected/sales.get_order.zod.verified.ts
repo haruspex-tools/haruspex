@@ -4,6 +4,8 @@
 // The notes on properties below rest on these facts:
 // - varchar(n) and char(n) count bytes, not characters. A character is one byte only in a single-byte collation, so
 //   elsewhere n bounds the length from above.
+// - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 and every
+//   decimal of up to 15 significant digits exactly.
 import { z } from 'zod'
 
 export const GetOrderCustomerSchema = z.object({
@@ -31,6 +33,7 @@ export type GetOrderLineProduct = z.infer<typeof GetOrderLineProductSchema>
 export const GetOrderLineSchema = z.object({
   id: z.int32(),
   quantity: z.int().min(-32768).max(32767),
+  /** decimal(19,2) runs from -99999999999999999.99 to 99999999999999999.99, which JavaScript reads as the nearest doubles. */
   unitPrice: z.number().min(-100000000000000000).max(100000000000000000).multipleOf(1e-2),
   note: z.string().max(200).optional(),
   product: GetOrderLineProductSchema,
@@ -45,6 +48,7 @@ export const GetOrderRowSchema = z.object({
   deliveryTime: z.iso.time().optional(),
   /** varchar(20) counts bytes and its collation isn't declared, so the length is at most 20. */
   status: z.string().max(20),
+  /** decimal(19,2) runs from -99999999999999999.99 to 99999999999999999.99, which JavaScript reads as the nearest doubles. */
   total: z.number().min(-100000000000000000).max(100000000000000000).multipleOf(1e-2),
   isPriority: z.boolean(),
   customer: GetOrderCustomerSchema,

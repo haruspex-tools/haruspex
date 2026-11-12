@@ -4,7 +4,8 @@
 // The notes on properties below rest on these facts:
 // - The mssql driver builds a decimal or money of more than 15 digits as a double, which may land just past the type's
 //   bounds.
-// - JSON.parse reads every number as a double, which holds every integer only up to 2^53.
+// - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 and every
+//   decimal of up to 15 significant digits exactly.
 import { z } from 'zod'
 
 // JSON text: a string that must parse to a value of its content's schema. Its type stays string.
@@ -35,6 +36,7 @@ export const SalesFeedResult2FeedSchema = z.object({
   sold_at: z.iso.datetime({ offset: true }),
   /** A bigint, exact only up to 2^53 once parsed. */
   units: z.number(),
+  /** decimal(38,10) runs from -9999999999999999999999999999.9999999999 to 9999999999999999999999999999.9999999999, which JavaScript reads as the nearest doubles. */
   amount: z.number().min(-1e+28).max(1e+28).multipleOf(1e-10).nullable(),
   method: z.string().max(20).nullable(),
   memo: z.string().nullable(),

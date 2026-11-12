@@ -4,7 +4,8 @@
 // The notes on properties below rest on these facts:
 // - varchar(n) and char(n) count bytes, not characters. A character is one byte only in a single-byte collation, so
 //   elsewhere n bounds the length from above.
-// - JSON.parse reads every number as a double, which holds every integer only up to 2^53.
+// - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 and every
+//   decimal of up to 15 significant digits exactly.
 import { z } from 'zod'
 
 export const ListSamplesWithNullsRowSchema = z.object({
@@ -15,10 +16,13 @@ export const ListSamplesWithNullsRowSchema = z.object({
   whole: z.int32().nullable(),
   /** A bigint, exact only up to 2^53 once parsed. */
   big: z.number().nullable(),
+  /** decimal(19,2) runs from -99999999999999999.99 to 99999999999999999.99, which JavaScript reads as the nearest doubles. */
   dec19_2: z.number().min(-100000000000000000).max(100000000000000000).multipleOf(1e-2).nullable(),
+  /** decimal(38,0) runs from -99999999999999999999999999999999999999 to 99999999999999999999999999999999999999, which JavaScript reads as the nearest doubles. */
   dec38_0: z.number().min(-1e+38).max(1e+38).multipleOf(1).nullable(),
   num9_3: z.number().min(-999999.999).max(999999.999).multipleOf(1e-3).nullable(),
   dec5_5: z.number().min(-0.99999).max(0.99999).multipleOf(1e-5).nullable(),
+  /** money runs from -922337203685477.5808 to 922337203685477.5807, which JavaScript reads as the nearest doubles. */
   cash: z.number().min(-922337203685477.6).max(922337203685477.6).multipleOf(1e-4).nullable(),
   smallCash: z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4).nullable(),
   approx: z.number().nullable(),
