@@ -44,26 +44,27 @@ internal sealed partial class ProcedureAnalyzer
     /// float, and overflow only over a float, whose squares can pass float's range; an exact type's or a real's cannot
     /// (observed: The_statistical_aggregates_overflow_only_over_float).
     /// </summary>
-    private Value Average(FunctionCall call, BindingScope scope, string name)
+    private Value Average(FunctionCall call, BindingScope scope, BuiltInFunction function)
     {
+        var name = function.Name;
         var argument = InAggregate(() => Expression(call.Parameters[0], scope));
         if (argument.Shape is UnknownShape)
             return argument;
-        if (argument.IsLiveJson || TypeOf(argument) is not { } of || Statistic(name, of) is not var (type, overflows))
+        if (argument.IsLiveJson || TypeOf(argument) is not { } of || Statistic(function == AggregateFunctions.Avg, of) is not var (type, overflows))
             return NotModelled(call, $"{name.ToUpperInvariant()} of a value of this type is not modelled.");
         if (ProvedAggregate(call))
             return Typed(type, [], call);
 
         EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call)];
-        if (name is "stdev" or "var")
+        if (function == AggregateFunctions.Stdev || function == AggregateFunctions.Var)
             because = NullReasons.Join(because, [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())]);
         return Typed(type, overflows ? NullReasons.Join(because, [Overflow(call)]) : because, call);
     }
 
     /// <summary>The type of AVG or a statistic of a value of this type, and whether it may overflow; null when not a number.</summary>
-    private static (ScalarType Type, bool Overflows)? Statistic(string name, ScalarType of)
+    private static (ScalarType Type, bool Overflows)? Statistic(bool average, ScalarType of)
     {
-        if (name == "avg")
+        if (average)
             return AvgType(of) is { } type ? (type, SumMayOverflow(of)) : null;
         return of.IsNumber ? (ScalarType.Of(BuiltInType.Float), of.Type == BuiltInType.Float) : null;
     }
@@ -99,7 +100,19 @@ internal sealed partial class ProcedureAnalyzer
         return (value, value.Shape is UnknownShape || value.IsLiveJson ? null : TypeOf(value) is { } t && (t.IsNumber || t.IsBit) ? t : null);
     }
 
-    private Value Numeric(FunctionCall call, BindingScope scope)
+    /// <summary>
+    /// A numeric function's call once its arguments are read: its first argument's type, the type the function gives a value of
+    /// it, and the reasons it may be NULL so far.
+    /// </summary>
+    private sealed record NumberCall(FunctionCall Call, ScalarType Type, ScalarType Result, EquatableArray<IrNullReason> Because);
+
+    /// <summary>
+    /// <c>ROUND</c>, <c>FLOOR</c>, <c>CEILING</c>, <c>ABS</c>, <c>SIGN</c>, <c>POWER</c>, <c>SQUARE</c>, <c>EXP</c>, <c>SQRT</c>,
+    /// <c>LOG</c> and <c>LOG10</c>: their arguments read alike, then typed by <paramref name="typing"/>. Each argument after the
+    /// first makes the result NULL when it is, except ROUND's third (observed: a NULL third argument rounds), so
+    /// <paramref name="onlyTheSecondCounts"/>.
+    /// </summary>
+    private Value Numeric(FunctionCall call, BindingScope scope, Func<NumberCall, Value> typing, bool onlyTheSecondCounts = false)
     {
         var p = call.Parameters;
         var (value, type) = NumberArgument(p[0], scope);
@@ -108,50 +121,43 @@ internal sealed partial class ProcedureAnalyzer
         if (type is null || FunctionType(type) is not { } result)
             return NotModelled(call, "an argument of this type is not modelled.");
 
-        // Arguments after the first: each NULL makes the result NULL, except ROUND's third (observed: a NULL third argument
-        // rounds).
         var (others, unknown) = Arguments(p.Skip(1), scope);
         if (unknown is not null)
             return unknown;
         if (others.Select((o, i) => o.IsLiveJson ? null : TypeOf(o)).Any(t => t is not ({ IsNumber: true } or { IsBit: true })))
             return NotModelled(call, "an argument of this type is not modelled.");
-        var counted = call.FunctionName.Value.Equals("round", StringComparison.OrdinalIgnoreCase) ? others.Take(1) : others;
-        var because = NullReasons.Join(value.NullableBecause, Reasons(counted));
-        EquatableArray<IrNullReason> With(bool overflows, bool domain = false) =>
-            NullReasons.Join(because, [.. overflows ? [Overflow(call)] : (EquatableArray<IrNullReason>)[], .. domain ? [Domain(call)] : (EquatableArray<IrNullReason>)[]]);
-        var flt = ScalarType.Of(BuiltInType.Float);
-
-#pragma warning disable CA1308 // Built-in function names are ASCII, so lower case matches them exactly, and the cases are written as T-SQL usually is.
-        return (call.FunctionName.Value.ToLowerInvariant(), p.Count) switch
-#pragma warning restore CA1308
-        {
-            ("round", 2 or 3) => Typed(result, With(RoundMayOverflow(type, p)), call),
-
-            // FLOOR and CEILING keep a decimal's precision with no places, which always holds the result (CEILING of
-            // decimal(2,2) is 1); money at its extremes does not.
-            ("floor" or "ceiling", 1) => Typed(result.IsDecimal ? result with { Scale = 0 } : result, With(type.Type == BuiltInType.Money), call),
-
-            // ABS of the least int, bigint or money overflows; tinyint and smallint become int, and a decimal is symmetric.
-            ("abs", 1) => Typed(result, With(type.Type.IsAnyOf(BuiltInType.Int, BuiltInType.BigInt, BuiltInType.Money)), call),
-
-            // SIGN gives -1, 0 or 1: a decimal of places only gains an integer digit to hold 1, within 38.
-            ("sign", 1) => Typed(result.IsDecimal && result.Precision == result.Scale ? result with { Precision = Math.Min(result.Precision + 1, 38), Scale = Math.Min(result.Scale, 37) } : result, because, call),
-
-            ("power", 2) => Power(call, type, result, because),
-
-            // SQUARE of an exact type or a real is far within float's range (10^76 at most); of a float it can pass it.
-            ("square", 1) => Typed(flt, With(type.IsApproximate && type.Type == BuiltInType.Float), call),
-
-            // EXP passes float's range past e^709: an argument below 709 cannot, a tinyint, a bit or a decimal of at most two
-            // integer digits.
-            ("exp", 1) => Typed(flt, With(!(type.Type.IsAnyOf(BuiltInType.TinyInt, BuiltInType.Bit) || (type.IsDecimal && type.Precision - type.Scale <= 2))), call),
-
-            // SQRT of a negative is outside its domain, which a tinyint or a bit cannot be; LOG and LOG10 of 0 can be.
-            ("sqrt", 1) => Typed(flt, With(false, !type.Type.IsAnyOf(BuiltInType.TinyInt, BuiltInType.Bit)), call),
-            ("log", 1 or 2) or ("log10", 1) => Typed(flt, With(false, domain: true), call),
-            _ => NotModelled(call, "this form of the function is not modelled."),
-        };
+        var counted = onlyTheSecondCounts ? others.Take(1) : others;
+        return typing(new NumberCall(call, type, result, NullReasons.Join(value.NullableBecause, Reasons(counted))));
     }
+
+    private EquatableArray<IrNullReason> With(NumberCall n, bool overflows, bool domain = false) =>
+        NullReasons.Join(n.Because, [.. overflows ? [Overflow(n.Call)] : (EquatableArray<IrNullReason>)[], .. domain ? [Domain(n.Call)] : (EquatableArray<IrNullReason>)[]]);
+
+    private Value Round(NumberCall n) => Typed(n.Result, With(n, RoundMayOverflow(n.Type, n.Call.Parameters)), n.Call);
+
+    // FLOOR and CEILING keep a decimal's precision with no places, which always holds the result (CEILING of decimal(2,2) is 1);
+    // money at its extremes does not.
+    private Value FloorOrCeiling(NumberCall n) =>
+        Typed(n.Result.IsDecimal ? n.Result with { Scale = 0 } : n.Result, With(n, n.Type.Type == BuiltInType.Money), n.Call);
+
+    // ABS of the least int, bigint or money overflows; tinyint and smallint become int, and a decimal is symmetric.
+    private Value Abs(NumberCall n) => Typed(n.Result, With(n, n.Type.Type.IsAnyOf(BuiltInType.Int, BuiltInType.BigInt, BuiltInType.Money)), n.Call);
+
+    // SIGN gives -1, 0 or 1: a decimal of places only gains an integer digit to hold 1, within 38.
+    private Value Sign(NumberCall n) =>
+        Typed(n.Result.IsDecimal && n.Result.Precision == n.Result.Scale ? n.Result with { Precision = Math.Min(n.Result.Precision + 1, 38), Scale = Math.Min(n.Result.Scale, 37) } : n.Result, n.Because, n.Call);
+
+    // SQUARE of an exact type or a real is far within float's range (10^76 at most); of a float it can pass it.
+    private Value Square(NumberCall n) => Typed(ScalarType.Of(BuiltInType.Float), With(n, n.Type.IsApproximate && n.Type.Type == BuiltInType.Float), n.Call);
+
+    // EXP passes float's range past e^709: an argument below 709 cannot, a tinyint, a bit or a decimal of at most two integer digits.
+    private Value Exp(NumberCall n) =>
+        Typed(ScalarType.Of(BuiltInType.Float), With(n, !(n.Type.Type.IsAnyOf(BuiltInType.TinyInt, BuiltInType.Bit) || (n.Type.IsDecimal && n.Type.Precision - n.Type.Scale <= 2))), n.Call);
+
+    // SQRT of a negative is outside its domain, which a tinyint or a bit cannot be; LOG and LOG10 of 0 can be.
+    private Value Sqrt(NumberCall n) => Typed(ScalarType.Of(BuiltInType.Float), With(n, false, !n.Type.Type.IsAnyOf(BuiltInType.TinyInt, BuiltInType.Bit)), n.Call);
+
+    private Value Log(NumberCall n) => Typed(ScalarType.Of(BuiltInType.Float), With(n, false, domain: true), n.Call);
 
     /// <summary>
     /// Whether <c>ROUND(x, n [, f])</c> may overflow: it truncates when f is a literal other than 0, which cannot; otherwise it
@@ -184,8 +190,9 @@ internal sealed partial class ProcedureAnalyzer
     /// 38 less the scale for a decimal, 10 digits for int, 19 for bigint (strictly, since float rounds the value); a bit's 0 or 1
     /// never does.
     /// </summary>
-    private Value Power(FunctionCall call, ScalarType type, ScalarType result, EquatableArray<IrNullReason> because)
+    private Value Power(NumberCall power)
     {
+        var (call, type, result, because) = power;
         var typed = result.IsDecimal ? result with { Precision = 38 } : result;
         if (WholeOf(call.Parameters[1]) is not { } n)
             return Typed(typed, NullReasons.Join(because, [Overflow(call), Domain(call)]), call);

@@ -29,28 +29,19 @@ internal sealed partial class ProcedureAnalyzer
     /// A_frame_that_may_leave_out_the_current_row_can_be_empty_and_give_null_over_a_never_null_column,
     /// Ranking_is_never_null_and_percentiles_are_null_only_over_all_null_input.
     /// </summary>
-    private Value Window(FunctionCall call, BindingScope scope)
+    private Value Window(FunctionCall call, BindingScope scope, BuiltInFunction function, WindowRule rule)
     {
-#pragma warning disable CA1308 // Built-in function names are ASCII, so lower case matches them exactly, and the cases are written as T-SQL usually is.
-        var name = call.FunctionName.Value.ToLowerInvariant();
-#pragma warning restore CA1308
-        var over = call.OverClause;
-        EquatableArray<IrNullReason> Framed() => MayBeEmpty(over) ? [new IrNullReason(IrNullRule.EmptyFrame, At(call).ToString())] : [];
+        var name = function.Name;
+        var over = call.OverClause!;
+        EquatableArray<IrNullReason> Framed() => rule.EmptyFrame && MayBeEmpty(over) ? [new IrNullReason(IrNullRule.EmptyFrame, At(call).ToString())] : [];
+        EquatableArray<IrNullReason> Sample() => rule.TooFewValues ? [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())] : [];
 
-        switch (name, call.Parameters.Count)
+        switch (rule.Result)
         {
-            case ("row_number" or "rank" or "dense_rank", 0):
-            case ("ntile", 1):
-                return Typed(ScalarType.Of(BuiltInType.BigInt), [], call);
+            case WindowResult.Fixed:
+                return Typed(ScalarType.Of(rule.Type!), rule.CountOverflow ? [new IrNullReason(IrNullRule.CountOverflow, At(call).ToString())] : [], call);
 
-            // COUNT is an int over a frame as without one: past 2,147,483,647 rows it would overflow, which is NULL under a
-            // caller's options (count-overflow, as for COUNT: no partition that large can be read to observe it).
-            case ("count", 1):
-                return Typed(ScalarType.Of(BuiltInType.Int), [new IrNullReason(IrNullRule.CountOverflow, At(call).ToString())], call);
-            case ("count_big", 1):
-                return Typed(ScalarType.Of(BuiltInType.BigInt), [], call);
-
-            case ("sum", 1):
+            case WindowResult.Sum:
             {
                 var argument = Expression(call.Parameters[0], scope);
                 if (argument.Shape is UnknownShape)
@@ -63,25 +54,24 @@ internal sealed partial class ProcedureAnalyzer
 
             // AVG and the statistics as without a window (Average): a partition is never empty, but a frame may be, and a
             // sample statistic over a frame of one value is NULL.
-            case ("avg" or "stdev" or "stdevp" or "var" or "varp", 1):
+            case WindowResult.Statistic:
             {
                 var argument = Expression(call.Parameters[0], scope);
                 if (argument.Shape is UnknownShape)
                     return argument;
-                if (argument.IsLiveJson || TypeOf(argument) is not { } from || Statistic(name, from) is not var (type, overflows))
+                if (argument.IsLiveJson || TypeOf(argument) is not { } from || Statistic(rule.Average, from) is not var (type, overflows))
                     return NotModelled(call, $"{name.ToUpperInvariant()} of a value of this type is not modelled.");
                 EquatableArray<IrNullReason> because =
                 [
                     .. argument.NullableBecause,
-                    .. name is "stdev" or "var" ? [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())] : (EquatableArray<IrNullReason>)[],
+                    .. Sample(),
                     .. overflows ? [Overflow(call)] : (EquatableArray<IrNullReason>)[],
                     .. Framed(),
                 ];
                 return Typed(type, because, call);
             }
 
-            case ("min" or "max", 1):
-            case ("first_value" or "last_value", 1):
+            case WindowResult.Argument:
             {
                 var argument = Expression(call.Parameters[0], scope);
                 if (argument.Shape is UnknownShape)
@@ -90,32 +80,34 @@ internal sealed partial class ProcedureAnalyzer
                     return NotModelled(call, "a window over a value that is not a scalar is not modelled.");
 
                 // Refused when the procedure is created (8117; observed: Min_and_max_of_a_bit_are_refused_with_or_without_a_window).
-                if (name is "min" or "max" && TypeOf(argument) is { IsBit: true })
+                if (rule.RefusesBit && TypeOf(argument) is { IsBit: true })
                     return NotModelled(call, $"SQL Server refuses {name.ToUpperInvariant()} of bit.");
                 return argument.WithNullableBecause([.. argument.NullableBecause, .. Framed()]);
             }
 
-            case ("lag" or "lead", >= 1 and <= 3):
+            case WindowResult.Offset:
                 return Offset(call, scope);
 
-            case ("percentile_cont" or "percentile_disc", 1) when call.WithinGroupClause?.OrderByClause.OrderByElements is [var element]:
+            default:
             {
+                if (call.WithinGroupClause?.OrderByClause.OrderByElements is not [var element])
+                    return NotModelled(call, "this window function is not modelled yet.");
                 var argument = Expression(element.Expression, scope);
                 if (argument.Shape is UnknownShape)
                     return argument;
                 if (argument.IsLiveJson || argument.Shape is not ScalarShape)
                     return NotModelled(call, "a percentile of a value that is not a scalar is not modelled.");
-                if (name == "percentile_disc")
+                if (rule.Result == WindowResult.PercentileOfValues)
                     return argument;
                 return TypeOf(argument) is { IsNumber: true } or { IsBit: true }
                     ? Typed(ScalarType.Of(BuiltInType.Float), argument.NullableBecause, call)
                     : NotModelled(call, "PERCENTILE_CONT of a value of this type is not modelled.");
             }
-
-            default:
-                return NotModelled(call, "this window function is not modelled yet.");
         }
     }
+
+    /// <summary>A call with OVER of a function that is no window function inference reads.</summary>
+    private Value WindowNotModelled(FunctionCall call) => NotModelled(call, "this window function is not modelled yet.");
 
     /// <summary>
     /// Whether a window's frame may hold no row: only an explicit frame can, and only one that may leave out the current row,

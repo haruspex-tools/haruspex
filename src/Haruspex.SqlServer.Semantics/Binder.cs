@@ -178,7 +178,8 @@ public sealed class Binder(DatabaseModel model, string file)
                 scope.Add(Sided(new BoundSource(openJson.Alias?.Value, null, null, optionalSideOf, openJsonRelation)));
                 break;
             case GlobalFunctionTableReference { Name.Value: var function } series
-                when function.Equals("generate_series", StringComparison.OrdinalIgnoreCase) && scope.Locals?.GenerateSeries(series, lateral ?? scope.Parent) is { } seriesRelation:
+                when BuiltInFunctions.Named(function, FunctionForm.Rowset) == RowsetFunctions.GenerateSeries
+                && scope.Locals?.GenerateSeries(series, lateral ?? scope.Parent) is { } seriesRelation:
                 scope.Add(Sided(new BoundSource(series.Alias?.Value, null, null, optionalSideOf, seriesRelation)));
                 break;
             case VariableTableReference variable:

@@ -273,7 +273,7 @@ public static class CheckReader
 
         private bool IsLen(ScalarExpression expression) =>
             Unwrap(expression) is FunctionCall { CallTarget: null, Parameters.Count: 1 } call
-            && call.FunctionName.Value.Equals("len", StringComparison.OrdinalIgnoreCase)
+            && BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) == ScalarFunctions.Len
             && IsColumn(call.Parameters[0]);
 
         private bool IsColumn(ScalarExpression expression) =>

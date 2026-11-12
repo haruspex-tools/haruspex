@@ -1,0 +1,230 @@
+using Haruspex.Ir;
+using Haruspex.SqlServer.Semantics;
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+using static Haruspex.Ir.IrNullRule;
+using F = Haruspex.SqlServer.Semantics.BuiltInFunctions;
+
+namespace Haruspex.SqlServer.Inference;
+
+// The function table: a row for each built-in function of the catalogue (BuiltInFunctions), saying how inference types a call
+// of it, and the one path a call is typed by (Function, below). A function the catalogue lacks is not modelled. The typing methods are
+// the analyser's own methods, which is why the table is a part of it; README.md in this folder ("Built-in functions", "Window
+// functions") and the guide's chapter docs/internals/08-the-sql-server-type-system-as-data.md explain the rules.
+internal sealed partial class ProcedureAnalyzer
+{
+    private const string DateKinds = "Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type";
+    private const string DateNulls = "A_date_function_is_null_when_an_argument_is_but_eomonth_ignores_a_null_offset";
+    private const string Now = "The_current_date_and_time_functions_are_never_null";
+    private const string Trims = "Trimming_and_case_keep_the_strings_length_and_make_a_fixed_length_string_varying";
+    private const string Parts = "Left_right_and_substring_are_as_long_as_a_literal_length_allows";
+    private const string Lengths = "Len_and_datalength_are_int_or_bigint_over_max_and_len_ignores_trailing_spaces";
+    private const string Escapes = "String_escape_is_nvarchar_max_and_formatmessage_nvarchar_4000_writing_a_null_argument_as_null_in_brackets";
+    private const string Rounding = "Round_floor_ceiling_abs_and_sign_are_typed_by_their_argument";
+    private const string RoundingOverflow = "Floor_ceiling_abs_and_sign_overflow_only_where_the_type_cannot_hold_the_result";
+    private const string Floats = "Power_is_typed_by_its_first_argument_and_the_others_are_float";
+    private const string Domains = "A_math_function_outside_its_domain_is_an_error_by_default_and_null_under_the_callers_options";
+    private const string Choices = "Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results";
+    private const string Coalescing = "Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments";
+    private const string Windowed = "Window_functions_are_typed_by_their_kind_or_their_argument";
+    private const string Ranking = "Ranking_is_never_null_and_percentiles_are_null_only_over_all_null_input";
+    private const string Frames = "A_frame_that_may_leave_out_the_current_row_can_be_empty_and_give_null_over_a_never_null_column";
+    private const string Statistics = "The_statistical_aggregates_are_float_and_the_sample_forms_null_over_fewer_than_two_values";
+    private const string OneRow = "An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows";
+    private const string OtherAggregates = "Checksum_agg_grouping_id_and_approx_count_distinct_are_aggregates_that_make_one_row";
+
+    private static FunctionTyping Typing(
+        BuiltInFunction function, (int, int?)? arity, string rule, IrNullRule[] nulls, string[] observedIn,
+        Func<ProcedureAnalyzer, ScalarExpression, BindingScope, Value>? type, bool readsOnlyItsArguments = true, OtherForms otherForms = OtherForms.FormNotModelled) =>
+        new(function, arity, otherForms, rule, nulls, observedIn, readsOnlyItsArguments, type);
+
+    private static FunctionCall Call(ScalarExpression call) => (FunctionCall)call;
+
+    private static FunctionTyping WindowRow(BuiltInFunction function, (int, int?) arity, string rule, IrNullRule[] nulls, string[] observedIn, WindowRule window) =>
+        Typing(function, arity, rule, nulls, observedIn, (a, e, s) => a.Window(Call(e), s, function, window), readsOnlyItsArguments: false, OtherForms.WindowNotModelled);
+
+    private static FunctionTyping AggregateRow(BuiltInFunction function, (int, int?)? arity, string rule, IrNullRule[] nulls, string[] observedIn, Func<ProcedureAnalyzer, ScalarExpression, BindingScope, Value> type) =>
+        Typing(function, arity, rule, nulls, observedIn, type, readsOnlyItsArguments: true, OtherForms.AggregateNotModelled);
+
+    /// <summary>Every row, one for each function of the catalogue.</summary>
+    internal static IReadOnlyList<FunctionTyping> FunctionTable { get; } =
+    [
+        // ---- dates ----
+        Typing(ScalarFunctions.DateDiff, (3, 3), "int", [], [DateKinds, DateNulls], (a, e, s) => a.DateDiff(Call(e), ScalarType.Of(BuiltInType.Int), s)),
+        Typing(ScalarFunctions.DateDiffBig, (3, 3), "bigint", [], [DateKinds, DateNulls], (a, e, s) => a.DateDiff(Call(e), ScalarType.Of(BuiltInType.BigInt), s)),
+        Typing(ScalarFunctions.DateAdd, (3, 3), "the date's type, datetime for a string or an integer", [], [DateKinds, DateNulls], (a, e, s) => a.DateAdd(Call(e), s)),
+        Typing(ScalarFunctions.DatePart, (2, 2), "int", [], [DateKinds, DateNulls], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[1], ScalarType.Of(BuiltInType.Int), s)),
+        Typing(ScalarFunctions.Year, (1, 1), "int", [], [DateKinds, DateNulls], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[0], ScalarType.Of(BuiltInType.Int), s)),
+        Typing(ScalarFunctions.Month, (1, 1), "int", [], [DateKinds], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[0], ScalarType.Of(BuiltInType.Int), s)),
+        Typing(ScalarFunctions.Day, (1, 1), "int", [], [DateKinds], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[0], ScalarType.Of(BuiltInType.Int), s)),
+        Typing(ScalarFunctions.DateName, (2, 2), "nvarchar(30)", [], [DateKinds, DateNulls], (a, e, s) => a.DatePart(Call(e), Call(e).Parameters[1], new ScalarType(BuiltInType.NVarChar, 30), s)),
+        Typing(ScalarFunctions.EndOfMonth, (1, 2), "date", [], [DateKinds, DateNulls], (a, e, s) => a.EndOfMonth(Call(e), s)),
+        Typing(ScalarFunctions.DateFromParts, (3, 3), "date", [], [DateKinds, DateNulls], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.Date), s)),
+        Typing(ScalarFunctions.DateTimeFromParts, (7, 7), "datetime", [], [DateKinds, DateNulls], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.DateTime), s)),
+        Typing(ScalarFunctions.SmallDateTimeFromParts, (5, 5), "smalldatetime", [], [DateKinds], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.SmallDateTime), s)),
+        Typing(ScalarFunctions.DateTime2FromParts, (8, 8), "datetime2 of the precision given", [], [DateKinds, DateNulls], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.DateTime2), s, precision: true)),
+        Typing(ScalarFunctions.TimeFromParts, (5, 5), "time of the precision given", [], [DateKinds, DateNulls], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.Time), s, precision: true)),
+        Typing(ScalarFunctions.DateTimeOffsetFromParts, (10, 10), "datetimeoffset of the precision given", [], [DateKinds], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.DateTimeOffset), s, precision: true)),
+        Typing(ScalarFunctions.GetDate, (0, 0), "datetime, never null", [], [Now], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.DateTime), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.GetUtcDate, (0, 0), "datetime, never null", [], [Now], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.DateTime), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.SysDateTime, (0, 0), "datetime2(7), never null", [], [Now], (a, e, s) => a.Typed(new ScalarType(BuiltInType.DateTime2, Precision: 7), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.SysUtcDateTime, (0, 0), "datetime2(7), never null", [], [Now], (a, e, s) => a.Typed(new ScalarType(BuiltInType.DateTime2, Precision: 7), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.SysDateTimeOffset, (0, 0), "datetimeoffset(7), never null", [], [Now], (a, e, s) => a.Typed(new ScalarType(BuiltInType.DateTimeOffset, Precision: 7), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.CurrentTimestamp, null, "datetime, never null", [], [Now], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.DateTime), [], e), readsOnlyItsArguments: false),
+
+        // ---- strings ----
+        Typing(ScalarFunctions.LTrim, (1, 2), "the string's length, varying", [], [Trims], (a, e, s) => a.Trim(Call(e), Call(e).Parameters[0], Call(e).Parameters.Count == 2 ? Call(e).Parameters[1] : null, s)),
+        Typing(ScalarFunctions.RTrim, (1, 2), "the string's length, varying", [], [Trims], (a, e, s) => a.Trim(Call(e), Call(e).Parameters[0], Call(e).Parameters.Count == 2 ? Call(e).Parameters[1] : null, s)),
+
+        // TRIM(chars FROM s) is given as (chars, s).
+        Typing(ScalarFunctions.Trim, (1, 2), "the string's length, varying", [], [Trims], (a, e, s) => Call(e).Parameters.Count == 2 ? a.Trim(Call(e), Call(e).Parameters[1], Call(e).Parameters[0], s) : a.Trim(Call(e), Call(e).Parameters[0], null, s)),
+        Typing(ScalarFunctions.Upper, (1, 1), "the string's length, varying", [], [Trims], (a, e, s) => a.Trim(Call(e), Call(e).Parameters[0], null, s)),
+        Typing(ScalarFunctions.Lower, (1, 1), "the string's length, varying", [], [Trims], (a, e, s) => a.Trim(Call(e), Call(e).Parameters[0], null, s)),
+        Typing(ScalarFunctions.Substring, (3, 3), "the string varying, as long as a literal length allows", [], [Parts], (a, e, s) => a.Part(e, Call(e).Parameters[0], [Call(e).Parameters[1], Call(e).Parameters[2]], Call(e).Parameters[2], s)),
+        Typing(ScalarFunctions.Left, (2, 2), "the string varying, as long as a literal length allows", [], [Parts], (a, e, s) => a.Part(e, ((LeftFunctionCall)e).Parameters[0], [((LeftFunctionCall)e).Parameters[1]], ((LeftFunctionCall)e).Parameters[1], s), otherForms: OtherForms.ExpressionNotModelled),
+        Typing(ScalarFunctions.Right, (2, 2), "the string varying, as long as a literal length allows", [], [Parts], (a, e, s) => a.Part(e, ((RightFunctionCall)e).Parameters[0], [((RightFunctionCall)e).Parameters[1]], ((RightFunctionCall)e).Parameters[1], s), otherForms: OtherForms.ExpressionNotModelled),
+        Typing(ScalarFunctions.Len, (1, 1), "int, bigint over max", [], [Lengths], (a, e, s) => a.Length(Call(e), Call(e).Parameters[0], s, bytes: false)),
+        Typing(ScalarFunctions.DataLength, (1, 1), "int, bigint over max", [], [Lengths], (a, e, s) => a.Length(Call(e), Call(e).Parameters[0], s, bytes: true)),
+        Typing(ScalarFunctions.Replace, (3, 3), "varchar(8000) or nvarchar(4000), max when the string is", [], ["Replace_widens_to_8000_bytes_unless_its_string_is_max"], (a, e, s) => a.Replace(Call(e), s)),
+        Typing(ScalarFunctions.StringEscape, (2, 2), "nvarchar(max)", [], [Escapes], (a, e, s) => a.StringEscape(Call(e), s)),
+        Typing(ScalarFunctions.FormatMessage, (1, null), "nvarchar(4000)", [], [Escapes], (a, e, s) => a.FormatMessage(Call(e), s)),
+        Typing(ScalarFunctions.Concat, null, "as long as its arguments together, never null", [], ["Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null"], (a, e, s) => a.Concat(Call(e), s, separated: false)),
+        Typing(ScalarFunctions.ConcatWithSeparator, null, "as long as its arguments and separators together, never null", [], ["Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null"], (a, e, s) => a.Concat(Call(e), s, separated: true)),
+
+        // ---- numbers ----
+        Typing(ScalarFunctions.Round, (2, 3), "the argument's type, widened", [ArithmeticOverflow], [Rounding, "Round_overflows_when_it_carries_into_a_digit_its_type_lacks_unless_it_truncates"], (a, e, s) => a.Numeric(Call(e), s, a.Round, onlyTheSecondCounts: true)),
+        Typing(ScalarFunctions.Floor, (1, 1), "the argument's type, widened, a decimal of no places", [ArithmeticOverflow], [Rounding, RoundingOverflow], (a, e, s) => a.Numeric(Call(e), s, a.FloorOrCeiling)),
+        Typing(ScalarFunctions.Ceiling, (1, 1), "the argument's type, widened, a decimal of no places", [ArithmeticOverflow], [Rounding, RoundingOverflow], (a, e, s) => a.Numeric(Call(e), s, a.FloorOrCeiling)),
+        Typing(ScalarFunctions.Abs, (1, 1), "the argument's type, widened", [ArithmeticOverflow], [Rounding, RoundingOverflow], (a, e, s) => a.Numeric(Call(e), s, a.Abs)),
+        Typing(ScalarFunctions.Sign, (1, 1), "the argument's type, widened", [], [Rounding, RoundingOverflow], (a, e, s) => a.Numeric(Call(e), s, a.Sign)),
+        Typing(ScalarFunctions.Power, (2, 2), "the first argument's type, a decimal of 38 digits", [ArithmeticOverflow, DomainError], [Floats, "Power_computes_in_float_and_overflows_or_divides_by_zero_as_its_type_allows"], (a, e, s) => a.Numeric(Call(e), s, a.Power)),
+        Typing(ScalarFunctions.Square, (1, 1), "float", [ArithmeticOverflow], [Floats, Domains], (a, e, s) => a.Numeric(Call(e), s, a.Square)),
+        Typing(ScalarFunctions.Exp, (1, 1), "float", [ArithmeticOverflow], [Floats, Domains], (a, e, s) => a.Numeric(Call(e), s, a.Exp)),
+        Typing(ScalarFunctions.Sqrt, (1, 1), "float", [DomainError], [Floats, Domains], (a, e, s) => a.Numeric(Call(e), s, a.Sqrt)),
+        Typing(ScalarFunctions.Log, (1, 2), "float", [DomainError], [Floats, Domains], (a, e, s) => a.Numeric(Call(e), s, a.Log)),
+        Typing(ScalarFunctions.Log10, (1, 1), "float", [DomainError], [Floats, Domains], (a, e, s) => a.Numeric(Call(e), s, a.Log)),
+
+        // ---- conversions and choices ----
+        Typing(ScalarFunctions.Cast, null, "the target type", [ArithmeticOverflow, IrNullRule.NullLiteral], ["Cast_and_convert_are_of_the_target_type_whatever_the_style", "The_conversion_chart_is_what_the_server_allows_implicitly_explicitly_or_not_at_all"], (a, e, s) => a.Cast(((CastCall)e).DataType, ((CastCall)e).Parameter, e, s)),
+        Typing(ScalarFunctions.Convert, null, "the target type, whatever the style", [ArithmeticOverflow, IrNullRule.NullLiteral], ["Cast_and_convert_are_of_the_target_type_whatever_the_style"], (a, e, s) => a.Cast(((ConvertCall)e).DataType, ((ConvertCall)e).Parameter, e, s, styled: ((ConvertCall)e).Style is not null)),
+        Typing(ScalarFunctions.TryCast, null, "the target type", [FailedConversion, IrNullRule.NullLiteral], ["Try_cast_and_try_convert_are_null_when_the_conversion_fails"], (a, e, s) => a.Cast(((TryCastCall)e).DataType, ((TryCastCall)e).Parameter, e, s, attempt: true)),
+        Typing(ScalarFunctions.TryConvert, null, "the target type, whatever the style", [FailedConversion, IrNullRule.NullLiteral], ["Try_cast_and_try_convert_are_null_when_the_conversion_fails"], (a, e, s) => a.Cast(((TryConvertCall)e).DataType, ((TryConvertCall)e).Parameter, e, s, styled: ((TryConvertCall)e).Style is not null, attempt: true)),
+        Typing(ScalarFunctions.IsNull, (2, 2), "the first argument's type", [ArithmeticOverflow], ["Isnull_converts_its_second_argument_to_the_firsts_type_cutting_a_string_short", Coalescing], (a, e, s) => a.IsNull(Call(e), s), otherForms: OtherForms.ExpressionNotModelled),
+        Typing(ScalarFunctions.Coalesce, null, "the type of highest precedence over its arguments", [ArithmeticOverflow, IrNullRule.ReadTwice, IrNullRule.NullLiteral], [Coalescing, "Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot"], (a, e, s) => a.Coalesce((CoalesceExpression)e, s)),
+        Typing(ScalarFunctions.NullIf, null, "the first argument's type", [NullWhenEqual], ["Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it"], (a, e, s) => a.NullIf((NullIfExpression)e, s)),
+        Typing(ScalarFunctions.Iif, null, "the type of highest precedence over its results", [ArithmeticOverflow], [Choices], (a, e, s) => a.Iif((IIfCall)e, s)),
+        Typing(ScalarFunctions.Choose, (2, null), "the type of highest precedence over its results", [OutOfRange, ArithmeticOverflow], [Choices, "Case_without_else_choose_out_of_range_and_nullif_of_equal_values_are_null"], (a, e, s) => a.Choose(Call(e), s), otherForms: OtherForms.ExpressionNotModelled),
+
+        // ---- JSON ----
+        Typing(ScalarFunctions.JsonValue, (2, 2), "nvarchar(4000), or what JSON built here holds", [JsonNullOrAbsent], ["Json_value_is_nvarchar_4000_and_null_for_a_json_null_a_missing_path_an_object_or_a_long_string", "Json_value_over_json_built_here_gives_its_scalars_as_text"], (a, e, s) => a.TracedJsonValue(Call(e), s) ?? a.JsonValue(Call(e))),
+        Typing(ScalarFunctions.JsonQuery, (1, 1), "the JSON it is given, as JSON", [JsonNullOrAbsent], ["Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken"], (a, e, s) => a.JsonQuery(Call(e), s), readsOnlyItsArguments: false, otherForms: OtherForms.ExpressionNotModelled),
+        Typing(ScalarFunctions.JsonObject, null, "an object of its keys, never null", [], ["Json_object_writes_a_repeated_literal_key_twice"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonObject), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.JsonArray, null, "an array or tuple of its values, never null", [], ["An_aggregate_over_no_rows_is_null_not_empty"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonArray), readsOnlyItsArguments: false),
+
+        // ---- aggregates ----
+        AggregateRow(AggregateFunctions.Count, (1, 1), "int", [CountOverflow], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off", OneRow], (a, e, s) => a.Count(Call(e), big: false)),
+        AggregateRow(AggregateFunctions.CountBig, (1, 1), "bigint, never null", [], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off"], (a, e, s) => a.Count(Call(e), big: true)),
+        AggregateRow(AggregateFunctions.Sum, (1, 1), "the argument's type, widened", [EmptyAggregate, ArithmeticOverflow], ["Sum_widens_its_argument"], (a, e, s) => a.Sum(Call(e), s)),
+        AggregateRow(AggregateFunctions.Avg, (1, 1), "the argument's type, widened", [EmptyAggregate, ArithmeticOverflow], ["Avg_is_typed_by_its_argument_with_or_without_a_window", "Avg_is_null_over_no_rows_and_overflows_as_sum_does"], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Avg)),
+        AggregateRow(AggregateFunctions.Min, (1, 1), "the argument, with its facets", [EmptyAggregate], [OneRow, "Min_and_max_of_a_bit_are_refused_with_or_without_a_window"], (a, e, s) => a.MinOrMax(Call(e), s, AggregateFunctions.Min)),
+        AggregateRow(AggregateFunctions.Max, (1, 1), "the argument, with its facets", [EmptyAggregate], [OneRow, "Min_and_max_of_a_bit_are_refused_with_or_without_a_window"], (a, e, s) => a.MinOrMax(Call(e), s, AggregateFunctions.Max)),
+        AggregateRow(AggregateFunctions.Stdev, (1, 1), "float", [EmptyAggregate, TooFewValues, ArithmeticOverflow], [Statistics, "The_statistical_aggregates_overflow_only_over_float"], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Stdev)),
+        AggregateRow(AggregateFunctions.StdevP, (1, 1), "float", [EmptyAggregate, ArithmeticOverflow], [Statistics], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.StdevP)),
+        AggregateRow(AggregateFunctions.Var, (1, 1), "float", [EmptyAggregate, TooFewValues, ArithmeticOverflow], [Statistics], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Var)),
+        AggregateRow(AggregateFunctions.VarP, (1, 1), "float", [EmptyAggregate, ArithmeticOverflow], [Statistics], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.VarP)),
+        AggregateRow(AggregateFunctions.StringAgg, (2, 2), "varchar(8000) or nvarchar(4000), max over max", [EmptyAggregate], ["String_agg_is_8000_bytes_unless_max_and_null_over_no_rows_or_only_nulls", "String_agg_past_its_limit_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off"], (a, e, s) => a.StringAggregate(Call(e), s)),
+        AggregateRow(AggregateFunctions.ChecksumAgg, null, "not modelled: an aggregate, so one row without GROUP BY", [], [OtherAggregates], (a, e, s) => a.AggregateNotModelled(Call(e))),
+        AggregateRow(AggregateFunctions.Grouping, null, "not modelled: an aggregate", [], ["Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null"], (a, e, s) => a.AggregateNotModelled(Call(e))),
+        AggregateRow(AggregateFunctions.GroupingId, null, "not modelled: an aggregate", [], [OtherAggregates], (a, e, s) => a.AggregateNotModelled(Call(e))),
+        AggregateRow(AggregateFunctions.ApproxCountDistinct, null, "not modelled: an aggregate, so one row without GROUP BY", [], [OtherAggregates], (a, e, s) => a.AggregateNotModelled(Call(e))),
+        AggregateRow(AggregateFunctions.JsonArrayAgg, null, "an array of its values, null over no rows", [EmptyAggregate], ["Json_arrayagg_follows_its_order_by"], (a, e, s) => a.Constructor(Call(e), s, AggregateFunctions.JsonArrayAgg)),
+        AggregateRow(AggregateFunctions.JsonObjectAgg, null, "an object of its keys, null over no rows", [EmptyAggregate], ["Json_objectagg_keeps_every_duplicate_key"], (a, e, s) => a.Constructor(Call(e), s, AggregateFunctions.JsonObjectAgg)),
+
+        // ---- window functions ----
+        WindowRow(WindowFunctions.RowNumber, (0, 0), "bigint, never null", [], [Windowed, Ranking], new WindowRule(WindowResult.Fixed, BuiltInType.BigInt)),
+        WindowRow(WindowFunctions.Rank, (0, 0), "bigint, never null", [], [Windowed, Ranking], new WindowRule(WindowResult.Fixed, BuiltInType.BigInt)),
+        WindowRow(WindowFunctions.DenseRank, (0, 0), "bigint, never null", [], [Windowed, Ranking], new WindowRule(WindowResult.Fixed, BuiltInType.BigInt)),
+        WindowRow(WindowFunctions.NTile, (1, 1), "bigint, never null", [], [Windowed, Ranking], new WindowRule(WindowResult.Fixed, BuiltInType.BigInt)),
+        WindowRow(WindowFunctions.Count, (1, 1), "int", [CountOverflow], [Windowed], new WindowRule(WindowResult.Fixed, BuiltInType.Int, CountOverflow: true)),
+        WindowRow(WindowFunctions.CountBig, (1, 1), "bigint, never null", [], [Windowed], new WindowRule(WindowResult.Fixed, BuiltInType.BigInt)),
+        WindowRow(WindowFunctions.Sum, (1, 1), "as the aggregate", [ArithmeticOverflow, EmptyFrame], [Windowed, Frames], new WindowRule(WindowResult.Sum, EmptyFrame: true)),
+        WindowRow(WindowFunctions.Avg, (1, 1), "as the aggregate", [ArithmeticOverflow, EmptyFrame], ["Avg_is_typed_by_its_argument_with_or_without_a_window"], new WindowRule(WindowResult.Statistic, EmptyFrame: true, Average: true)),
+        WindowRow(WindowFunctions.Stdev, (1, 1), "float", [TooFewValues, ArithmeticOverflow, EmptyFrame], [Statistics], new WindowRule(WindowResult.Statistic, EmptyFrame: true, TooFewValues: true)),
+        WindowRow(WindowFunctions.StdevP, (1, 1), "float", [ArithmeticOverflow, EmptyFrame], [Statistics], new WindowRule(WindowResult.Statistic, EmptyFrame: true)),
+        WindowRow(WindowFunctions.Var, (1, 1), "float", [TooFewValues, ArithmeticOverflow, EmptyFrame], [Statistics], new WindowRule(WindowResult.Statistic, EmptyFrame: true, TooFewValues: true)),
+        WindowRow(WindowFunctions.VarP, (1, 1), "float", [ArithmeticOverflow, EmptyFrame], [Statistics], new WindowRule(WindowResult.Statistic, EmptyFrame: true)),
+        WindowRow(WindowFunctions.Min, (1, 1), "the argument, with its facets", [EmptyFrame], [Windowed, "Min_and_max_of_a_bit_are_refused_with_or_without_a_window"], new WindowRule(WindowResult.Argument, EmptyFrame: true, RefusesBit: true)),
+        WindowRow(WindowFunctions.Max, (1, 1), "the argument, with its facets", [EmptyFrame], [Windowed, "Min_and_max_of_a_bit_are_refused_with_or_without_a_window"], new WindowRule(WindowResult.Argument, EmptyFrame: true, RefusesBit: true)),
+        WindowRow(WindowFunctions.FirstValue, (1, 1), "the argument, with its facets", [EmptyFrame], [Windowed, Frames], new WindowRule(WindowResult.Argument, EmptyFrame: true)),
+        WindowRow(WindowFunctions.LastValue, (1, 1), "the argument, with its facets", [EmptyFrame], [Windowed, Frames], new WindowRule(WindowResult.Argument, EmptyFrame: true)),
+        WindowRow(WindowFunctions.Lag, (1, 3), "the argument's type, its facets without a default", [WindowEdge, ArithmeticOverflow], ["Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type"], new WindowRule(WindowResult.Offset)),
+        WindowRow(WindowFunctions.Lead, (1, 3), "the argument's type, its facets without a default", [WindowEdge, ArithmeticOverflow], [Windowed], new WindowRule(WindowResult.Offset)),
+        WindowRow(WindowFunctions.PercentileCont, (1, 1), "float", [], [Ranking], new WindowRule(WindowResult.PercentileBetweenValues)),
+        WindowRow(WindowFunctions.PercentileDisc, (1, 1), "the argument, with its facets", [], [Ranking], new WindowRule(WindowResult.PercentileOfValues)),
+
+        // ---- rowsets, typed by the relation readers ----
+        Typing(RowsetFunctions.GenerateSeries, (2, 3), "one column, value, of its arguments' type, never null", [], ["Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument"], null, readsOnlyItsArguments: false),
+        Typing(RowsetFunctions.OpenJson, null, "its WITH columns as declared, or key, value and type", [], ["Openjson_with_over_json_built_here_converts_its_own_types_exactly_and_cuts_strings_short", "Openjson_without_with_over_json_built_here_gives_its_keys_and_their_types"], null, readsOnlyItsArguments: false),
+    ];
+
+    private static readonly Dictionary<BuiltInFunction, FunctionTyping> TypingByFunction = FunctionTable.ToDictionary(t => t.Function);
+
+    /// <summary>
+    /// The row of the built-in function an expression calls: a call without a schema by its name and form (with OVER a window
+    /// function, else an aggregate or a scalar function), or the syntax ScriptDom gives a function of its own. Null for anything
+    /// else, and for a function the catalogue lacks.
+    /// </summary>
+    private static FunctionTyping? TypingOf(ScalarExpression expression)
+    {
+        var function = expression switch
+        {
+            FunctionCall { CallTarget: null, OverClause: not null } call => F.Named(call.FunctionName.Value, FunctionForm.Window),
+            FunctionCall { CallTarget: null } call =>
+                F.Named(call.FunctionName.Value, FunctionForm.Aggregate) ?? F.Named(call.FunctionName.Value, FunctionForm.Scalar),
+            LeftFunctionCall => ScalarFunctions.Left,
+            RightFunctionCall => ScalarFunctions.Right,
+            ParameterlessCall { ParameterlessCallType: ParameterlessCallType.CurrentTimestamp } => ScalarFunctions.CurrentTimestamp,
+            CastCall => ScalarFunctions.Cast,
+            ConvertCall => ScalarFunctions.Convert,
+            TryCastCall => ScalarFunctions.TryCast,
+            TryConvertCall => ScalarFunctions.TryConvert,
+            CoalesceExpression => ScalarFunctions.Coalesce,
+            NullIfExpression => ScalarFunctions.NullIf,
+            IIfCall => ScalarFunctions.Iif,
+            _ => null,
+        };
+        return function is null ? null : TypingByFunction[function];
+    }
+
+    /// <summary>
+    /// A call of a built-in function, typed by its row (<see cref="TypingOf"/>): a number of arguments the row doesn't read gives
+    /// what the row says of other forms. Null when the expression calls no function the table holds; a call with OVER of one it
+    /// lacks is a window function not modelled.
+    /// </summary>
+    private Value? Function(ScalarExpression expression, BindingScope scope)
+    {
+        if (TypingOf(expression) is not { Type: { } type } typing)
+        {
+            return expression is FunctionCall { CallTarget: null, OverClause: not null } window ? WindowNotModelled(window) : null;
+        }
+
+        int? count = expression switch
+        {
+            FunctionCall call => call.Parameters.Count,
+            LeftFunctionCall left => left.Parameters.Count,
+            RightFunctionCall right => right.Parameters.Count,
+            _ => null,
+        };
+        if (typing.Arity is var (least, most) && count is { } n && (n < least || n > most))
+        {
+            return typing.OtherForms switch
+            {
+                OtherForms.FormNotModelled => NotModelled(expression, "this form of the function is not modelled."),
+                OtherForms.AggregateNotModelled => AggregateNotModelled((FunctionCall)expression),
+                OtherForms.WindowNotModelled => WindowNotModelled((FunctionCall)expression),
+                _ => Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
+            };
+        }
+
+        return type(this, expression, scope);
+    }
+}

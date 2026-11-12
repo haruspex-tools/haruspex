@@ -5,7 +5,9 @@ AVG(bt) -> unknown unsupported-expression: AVG(bt): AVG of a value of this type 
 MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 MAX(bt) -> unknown unsupported-expression: MAX(bt): SQL Server refuses MAX of bit.
 STDEV(bt) -> unknown unsupported-expression: STDEV(bt): STDEV of a value of this type is not modelled.
+STDEVP(bt) -> unknown unsupported-expression: STDEVP(bt): STDEVP of a value of this type is not modelled.
 VAR(bt) -> unknown unsupported-expression: VAR(bt): VAR of a value of this type is not modelled.
+VARP(bt) -> unknown unsupported-expression: VARP(bt): VARP of a value of this type is not modelled.
 COUNT(ti) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(ti) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(ti) -> int number/int32 null:empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
@@ -13,7 +15,9 @@ AVG(ti) -> int number/int32 null:empty-aggregate,arithmetic-overflow {[-21474836
 MIN(ti) -> tinyint number/uint8 null:empty-aggregate {[0 255]}
 MAX(ti) -> tinyint number/uint8 null:empty-aggregate {[0 255]}
 STDEV(ti) -> float number/float null:empty-aggregate,too-few-values
+STDEVP(ti) -> float number/float null:empty-aggregate
 VAR(ti) -> float number/float null:empty-aggregate,too-few-values
+VARP(ti) -> float number/float null:empty-aggregate
 COUNT(si) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(si) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(si) -> int number/int32 null:empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
@@ -21,7 +25,9 @@ AVG(si) -> int number/int32 null:empty-aggregate,arithmetic-overflow {[-21474836
 MIN(si) -> smallint number/int16 null:empty-aggregate {[-32768 32767]}
 MAX(si) -> smallint number/int16 null:empty-aggregate {[-32768 32767]}
 STDEV(si) -> float number/float null:empty-aggregate,too-few-values
+STDEVP(si) -> float number/float null:empty-aggregate
 VAR(si) -> float number/float null:empty-aggregate,too-few-values
+VARP(si) -> float number/float null:empty-aggregate
 COUNT(i) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(i) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(i) -> int number/int32 null:empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}
@@ -29,7 +35,9 @@ AVG(i) -> int number/int32 null:empty-aggregate,arithmetic-overflow {[-214748364
 MIN(i) -> int number/int32 null:empty-aggregate {[-2147483648 2147483647]}
 MAX(i) -> int number/int32 null:empty-aggregate {[-2147483648 2147483647]}
 STDEV(i) -> float number/float null:empty-aggregate,too-few-values
+STDEVP(i) -> float number/float null:empty-aggregate
 VAR(i) -> float number/float null:empty-aggregate,too-few-values
+VARP(i) -> float number/float null:empty-aggregate
 COUNT(bi) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(bi) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(bi) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
@@ -37,7 +45,9 @@ AVG(bi) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-92233
 MIN(bi) -> bigint number/int64 null:empty-aggregate {[-9223372036854775808 9223372036854775807]}
 MAX(bi) -> bigint number/int64 null:empty-aggregate {[-9223372036854775808 9223372036854775807]}
 STDEV(bi) -> float number/float null:empty-aggregate,too-few-values
+STDEVP(bi) -> float number/float null:empty-aggregate
 VAR(bi) -> float number/float null:empty-aggregate,too-few-values
+VARP(bi) -> float number/float null:empty-aggregate
 COUNT(d52) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(d52) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(d52) -> decimal(38,2) number/decimal null:empty-aggregate {digits=38,2 [-999999999999999999999999999999999999.99 999999999999999999999999999999999999.99]}
@@ -45,7 +55,9 @@ AVG(d52) -> decimal(38,6) number/decimal null:empty-aggregate {digits=38,6 [-999
 MIN(d52) -> decimal(5,2) number/decimal null:empty-aggregate {digits=5,2 [-999.99 999.99]}
 MAX(d52) -> decimal(5,2) number/decimal null:empty-aggregate {digits=5,2 [-999.99 999.99]}
 STDEV(d52) -> float number/float null:empty-aggregate,too-few-values
+STDEVP(d52) -> float number/float null:empty-aggregate
 VAR(d52) -> float number/float null:empty-aggregate,too-few-values
+VARP(d52) -> float number/float null:empty-aggregate
 COUNT(d380) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(d380) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(d380) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
@@ -53,7 +65,9 @@ AVG(d380) -> decimal(38,6) number/decimal null:empty-aggregate,arithmetic-overfl
 MIN(d380) -> decimal(38,0) number/decimal null:empty-aggregate {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 MAX(d380) -> decimal(38,0) number/decimal null:empty-aggregate {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 STDEV(d380) -> float number/float null:empty-aggregate,too-few-values
+STDEVP(d380) -> float number/float null:empty-aggregate
 VAR(d380) -> float number/float null:empty-aggregate,too-few-values
+VARP(d380) -> float number/float null:empty-aggregate
 COUNT(d3838) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(d3838) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(d3838) -> decimal(38,38) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
@@ -61,7 +75,9 @@ AVG(d3838) -> decimal(38,38) number/decimal null:empty-aggregate,arithmetic-over
 MIN(d3838) -> decimal(38,38) number/decimal null:empty-aggregate {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 MAX(d3838) -> decimal(38,38) number/decimal null:empty-aggregate {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 STDEV(d3838) -> float number/float null:empty-aggregate,too-few-values
+STDEVP(d3838) -> float number/float null:empty-aggregate
 VAR(d3838) -> float number/float null:empty-aggregate,too-few-values
+VARP(d3838) -> float number/float null:empty-aggregate
 COUNT(n102) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(n102) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(n102) -> numeric(38,2) number/decimal null:empty-aggregate {digits=38,2 [-999999999999999999999999999999999999.99 999999999999999999999999999999999999.99]}
@@ -69,7 +85,9 @@ AVG(n102) -> numeric(38,6) number/decimal null:empty-aggregate {digits=38,6 [-99
 MIN(n102) -> numeric(10,2) number/decimal null:empty-aggregate {digits=10,2 [-99999999.99 99999999.99]}
 MAX(n102) -> numeric(10,2) number/decimal null:empty-aggregate {digits=10,2 [-99999999.99 99999999.99]}
 STDEV(n102) -> float number/float null:empty-aggregate,too-few-values
+STDEVP(n102) -> float number/float null:empty-aggregate
 VAR(n102) -> float number/float null:empty-aggregate,too-few-values
+VARP(n102) -> float number/float null:empty-aggregate
 COUNT(m) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(m) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -77,7 +95,9 @@ AVG(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=
 MIN(m) -> money number/decimal null:empty-aggregate {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 MAX(m) -> money number/decimal null:empty-aggregate {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 STDEV(m) -> float number/float null:empty-aggregate,too-few-values
+STDEVP(m) -> float number/float null:empty-aggregate
 VAR(m) -> float number/float null:empty-aggregate,too-few-values
+VARP(m) -> float number/float null:empty-aggregate
 COUNT(sm) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(sm) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(sm) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -85,7 +105,9 @@ AVG(sm) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits
 MIN(sm) -> smallmoney number/decimal null:empty-aggregate {digits=10,4 [-214748.3648 214748.3647]}
 MAX(sm) -> smallmoney number/decimal null:empty-aggregate {digits=10,4 [-214748.3648 214748.3647]}
 STDEV(sm) -> float number/float null:empty-aggregate,too-few-values
+STDEVP(sm) -> float number/float null:empty-aggregate
 VAR(sm) -> float number/float null:empty-aggregate,too-few-values
+VARP(sm) -> float number/float null:empty-aggregate
 COUNT(f) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(f) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(f) -> float number/float null:empty-aggregate,arithmetic-overflow
@@ -93,7 +115,9 @@ AVG(f) -> float number/float null:empty-aggregate,arithmetic-overflow
 MIN(f) -> float number/float null:empty-aggregate
 MAX(f) -> float number/float null:empty-aggregate
 STDEV(f) -> float number/float null:empty-aggregate,too-few-values,arithmetic-overflow
+STDEVP(f) -> float number/float null:empty-aggregate,arithmetic-overflow
 VAR(f) -> float number/float null:empty-aggregate,too-few-values,arithmetic-overflow
+VARP(f) -> float number/float null:empty-aggregate,arithmetic-overflow
 COUNT(r) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(r) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(r) -> float number/float null:empty-aggregate,arithmetic-overflow
@@ -101,7 +125,9 @@ AVG(r) -> float number/float null:empty-aggregate,arithmetic-overflow
 MIN(r) -> real number/float null:empty-aggregate
 MAX(r) -> real number/float null:empty-aggregate
 STDEV(r) -> float number/float null:empty-aggregate,too-few-values
+STDEVP(r) -> float number/float null:empty-aggregate
 VAR(r) -> float number/float null:empty-aggregate,too-few-values
+VARP(r) -> float number/float null:empty-aggregate
 COUNT(f24) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(f24) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(f24) -> float number/float null:empty-aggregate,arithmetic-overflow
@@ -109,7 +135,9 @@ AVG(f24) -> float number/float null:empty-aggregate,arithmetic-overflow
 MIN(f24) -> float(24) number/float null:empty-aggregate
 MAX(f24) -> float(24) number/float null:empty-aggregate
 STDEV(f24) -> float number/float null:empty-aggregate,too-few-values
+STDEVP(f24) -> float number/float null:empty-aggregate
 VAR(f24) -> float number/float null:empty-aggregate,too-few-values
+VARP(f24) -> float number/float null:empty-aggregate
 COUNT(f25) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(f25) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
@@ -117,7 +145,9 @@ AVG(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
 MIN(f25) -> float(25) number/float null:empty-aggregate
 MAX(f25) -> float(25) number/float null:empty-aggregate
 STDEV(f25) -> float number/float null:empty-aggregate,too-few-values,arithmetic-overflow
+STDEVP(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
 VAR(f25) -> float number/float null:empty-aggregate,too-few-values,arithmetic-overflow
+VARP(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
 COUNT(c3) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(c3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(c3) -> unknown unsupported-expression: SUM(c3): SUM of a value of this type is not modelled yet.
@@ -125,7 +155,9 @@ AVG(c3) -> unknown unsupported-expression: AVG(c3): AVG of a value of this type 
 MIN(c3) -> char(3) string null:empty-aggregate {length=3}
 MAX(c3) -> char(3) string null:empty-aggregate {length=3}
 STDEV(c3) -> unknown unsupported-expression: STDEV(c3): STDEV of a value of this type is not modelled.
+STDEVP(c3) -> unknown unsupported-expression: STDEVP(c3): STDEVP of a value of this type is not modelled.
 VAR(c3) -> unknown unsupported-expression: VAR(c3): VAR of a value of this type is not modelled.
+VARP(c3) -> unknown unsupported-expression: VARP(c3): VARP of a value of this type is not modelled.
 COUNT(v10) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(v10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(v10) -> unknown unsupported-expression: SUM(v10): SUM of a value of this type is not modelled yet.
@@ -133,7 +165,9 @@ AVG(v10) -> unknown unsupported-expression: AVG(v10): AVG of a value of this typ
 MIN(v10) -> varchar(10) string null:empty-aggregate {length<=10}
 MAX(v10) -> varchar(10) string null:empty-aggregate {length<=10}
 STDEV(v10) -> unknown unsupported-expression: STDEV(v10): STDEV of a value of this type is not modelled.
+STDEVP(v10) -> unknown unsupported-expression: STDEVP(v10): STDEVP of a value of this type is not modelled.
 VAR(v10) -> unknown unsupported-expression: VAR(v10): VAR of a value of this type is not modelled.
+VARP(v10) -> unknown unsupported-expression: VARP(v10): VARP of a value of this type is not modelled.
 COUNT(vx) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(vx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(vx) -> unknown unsupported-expression: SUM(vx): SUM of a value of this type is not modelled yet.
@@ -141,7 +175,9 @@ AVG(vx) -> unknown unsupported-expression: AVG(vx): AVG of a value of this type 
 MIN(vx) -> varchar(max) string null:empty-aggregate
 MAX(vx) -> varchar(max) string null:empty-aggregate
 STDEV(vx) -> unknown unsupported-expression: STDEV(vx): STDEV of a value of this type is not modelled.
+STDEVP(vx) -> unknown unsupported-expression: STDEVP(vx): STDEVP of a value of this type is not modelled.
 VAR(vx) -> unknown unsupported-expression: VAR(vx): VAR of a value of this type is not modelled.
+VARP(vx) -> unknown unsupported-expression: VARP(vx): VARP of a value of this type is not modelled.
 COUNT(nc3) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(nc3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(nc3) -> unknown unsupported-expression: SUM(nc3): SUM of a value of this type is not modelled yet.
@@ -149,7 +185,9 @@ AVG(nc3) -> unknown unsupported-expression: AVG(nc3): AVG of a value of this typ
 MIN(nc3) -> nchar(3) string null:empty-aggregate {length=3}
 MAX(nc3) -> nchar(3) string null:empty-aggregate {length=3}
 STDEV(nc3) -> unknown unsupported-expression: STDEV(nc3): STDEV of a value of this type is not modelled.
+STDEVP(nc3) -> unknown unsupported-expression: STDEVP(nc3): STDEVP of a value of this type is not modelled.
 VAR(nc3) -> unknown unsupported-expression: VAR(nc3): VAR of a value of this type is not modelled.
+VARP(nc3) -> unknown unsupported-expression: VARP(nc3): VARP of a value of this type is not modelled.
 COUNT(nv10) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(nv10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(nv10) -> unknown unsupported-expression: SUM(nv10): SUM of a value of this type is not modelled yet.
@@ -157,7 +195,9 @@ AVG(nv10) -> unknown unsupported-expression: AVG(nv10): AVG of a value of this t
 MIN(nv10) -> nvarchar(10) string null:empty-aggregate {length<=10}
 MAX(nv10) -> nvarchar(10) string null:empty-aggregate {length<=10}
 STDEV(nv10) -> unknown unsupported-expression: STDEV(nv10): STDEV of a value of this type is not modelled.
+STDEVP(nv10) -> unknown unsupported-expression: STDEVP(nv10): STDEVP of a value of this type is not modelled.
 VAR(nv10) -> unknown unsupported-expression: VAR(nv10): VAR of a value of this type is not modelled.
+VARP(nv10) -> unknown unsupported-expression: VARP(nv10): VARP of a value of this type is not modelled.
 COUNT(nvx) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(nvx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(nvx) -> unknown unsupported-expression: SUM(nvx): SUM of a value of this type is not modelled yet.
@@ -165,7 +205,9 @@ AVG(nvx) -> unknown unsupported-expression: AVG(nvx): AVG of a value of this typ
 MIN(nvx) -> nvarchar(max) string null:empty-aggregate
 MAX(nvx) -> nvarchar(max) string null:empty-aggregate
 STDEV(nvx) -> unknown unsupported-expression: STDEV(nvx): STDEV of a value of this type is not modelled.
+STDEVP(nvx) -> unknown unsupported-expression: STDEVP(nvx): STDEVP of a value of this type is not modelled.
 VAR(nvx) -> unknown unsupported-expression: VAR(nvx): VAR of a value of this type is not modelled.
+VARP(nvx) -> unknown unsupported-expression: VARP(nvx): VARP of a value of this type is not modelled.
 COUNT(dt) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(dt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(dt) -> unknown unsupported-expression: SUM(dt): SUM of a value of this type is not modelled yet.
@@ -173,7 +215,9 @@ AVG(dt) -> unknown unsupported-expression: AVG(dt): AVG of a value of this type 
 MIN(dt) -> date date null:empty-aggregate
 MAX(dt) -> date date null:empty-aggregate
 STDEV(dt) -> unknown unsupported-expression: STDEV(dt): STDEV of a value of this type is not modelled.
+STDEVP(dt) -> unknown unsupported-expression: STDEVP(dt): STDEVP of a value of this type is not modelled.
 VAR(dt) -> unknown unsupported-expression: VAR(dt): VAR of a value of this type is not modelled.
+VARP(dt) -> unknown unsupported-expression: VARP(dt): VARP of a value of this type is not modelled.
 COUNT(tm3) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(tm3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(tm3) -> unknown unsupported-expression: SUM(tm3): SUM of a value of this type is not modelled yet.
@@ -181,7 +225,9 @@ AVG(tm3) -> unknown unsupported-expression: AVG(tm3): AVG of a value of this typ
 MIN(tm3) -> time(3) time null:empty-aggregate
 MAX(tm3) -> time(3) time null:empty-aggregate
 STDEV(tm3) -> unknown unsupported-expression: STDEV(tm3): STDEV of a value of this type is not modelled.
+STDEVP(tm3) -> unknown unsupported-expression: STDEVP(tm3): STDEVP of a value of this type is not modelled.
 VAR(tm3) -> unknown unsupported-expression: VAR(tm3): VAR of a value of this type is not modelled.
+VARP(tm3) -> unknown unsupported-expression: VARP(tm3): VARP of a value of this type is not modelled.
 COUNT(dtm) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(dtm) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(dtm) -> unknown unsupported-expression: SUM(dtm): SUM of a value of this type is not modelled yet.
@@ -189,7 +235,9 @@ AVG(dtm) -> unknown unsupported-expression: AVG(dtm): AVG of a value of this typ
 MIN(dtm) -> datetime datetime/local null:empty-aggregate
 MAX(dtm) -> datetime datetime/local null:empty-aggregate
 STDEV(dtm) -> unknown unsupported-expression: STDEV(dtm): STDEV of a value of this type is not modelled.
+STDEVP(dtm) -> unknown unsupported-expression: STDEVP(dtm): STDEVP of a value of this type is not modelled.
 VAR(dtm) -> unknown unsupported-expression: VAR(dtm): VAR of a value of this type is not modelled.
+VARP(dtm) -> unknown unsupported-expression: VARP(dtm): VARP of a value of this type is not modelled.
 COUNT(dt23) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(dt23) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(dt23) -> unknown unsupported-expression: SUM(dt23): SUM of a value of this type is not modelled yet.
@@ -197,7 +245,9 @@ AVG(dt23) -> unknown unsupported-expression: AVG(dt23): AVG of a value of this t
 MIN(dt23) -> datetime2(3) datetime/local null:empty-aggregate
 MAX(dt23) -> datetime2(3) datetime/local null:empty-aggregate
 STDEV(dt23) -> unknown unsupported-expression: STDEV(dt23): STDEV of a value of this type is not modelled.
+STDEVP(dt23) -> unknown unsupported-expression: STDEVP(dt23): STDEVP of a value of this type is not modelled.
 VAR(dt23) -> unknown unsupported-expression: VAR(dt23): VAR of a value of this type is not modelled.
+VARP(dt23) -> unknown unsupported-expression: VARP(dt23): VARP of a value of this type is not modelled.
 COUNT(sdt) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(sdt) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(sdt) -> unknown unsupported-expression: SUM(sdt): SUM of a value of this type is not modelled yet.
@@ -205,7 +255,9 @@ AVG(sdt) -> unknown unsupported-expression: AVG(sdt): AVG of a value of this typ
 MIN(sdt) -> smalldatetime datetime/local null:empty-aggregate
 MAX(sdt) -> smalldatetime datetime/local null:empty-aggregate
 STDEV(sdt) -> unknown unsupported-expression: STDEV(sdt): STDEV of a value of this type is not modelled.
+STDEVP(sdt) -> unknown unsupported-expression: STDEVP(sdt): STDEVP of a value of this type is not modelled.
 VAR(sdt) -> unknown unsupported-expression: VAR(sdt): VAR of a value of this type is not modelled.
+VARP(sdt) -> unknown unsupported-expression: VARP(sdt): VARP of a value of this type is not modelled.
 COUNT(dto3) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(dto3) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(dto3) -> unknown unsupported-expression: SUM(dto3): SUM of a value of this type is not modelled yet.
@@ -213,7 +265,9 @@ AVG(dto3) -> unknown unsupported-expression: AVG(dto3): AVG of a value of this t
 MIN(dto3) -> datetimeoffset(3) datetime/offset null:empty-aggregate
 MAX(dto3) -> datetimeoffset(3) datetime/offset null:empty-aggregate
 STDEV(dto3) -> unknown unsupported-expression: STDEV(dto3): STDEV of a value of this type is not modelled.
+STDEVP(dto3) -> unknown unsupported-expression: STDEVP(dto3): STDEVP of a value of this type is not modelled.
 VAR(dto3) -> unknown unsupported-expression: VAR(dto3): VAR of a value of this type is not modelled.
+VARP(dto3) -> unknown unsupported-expression: VARP(dto3): VARP of a value of this type is not modelled.
 COUNT(u) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(u) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(u) -> unknown unsupported-expression: SUM(u): SUM of a value of this type is not modelled yet.
@@ -221,7 +275,9 @@ AVG(u) -> unknown unsupported-expression: AVG(u): AVG of a value of this type is
 MIN(u) -> uniqueidentifier uuid null:empty-aggregate
 MAX(u) -> uniqueidentifier uuid null:empty-aggregate
 STDEV(u) -> unknown unsupported-expression: STDEV(u): STDEV of a value of this type is not modelled.
+STDEVP(u) -> unknown unsupported-expression: STDEVP(u): STDEVP of a value of this type is not modelled.
 VAR(u) -> unknown unsupported-expression: VAR(u): VAR of a value of this type is not modelled.
+VARP(u) -> unknown unsupported-expression: VARP(u): VARP of a value of this type is not modelled.
 COUNT(bin4) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(bin4) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
@@ -229,7 +285,9 @@ AVG(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled ye
 MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 MAX(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 STDEV(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+STDEVP(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 VAR(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+VARP(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 COUNT(vb10) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(vb10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
@@ -237,7 +295,9 @@ AVG(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelle
 MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 MAX(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 STDEV(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+STDEVP(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 VAR(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+VARP(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 COUNT(x) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(x) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
@@ -245,7 +305,9 @@ AVG(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 MAX(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 STDEV(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STDEVP(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 VAR(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+VARP(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 COUNT(sv) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(sv) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -253,7 +315,9 @@ AVG(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled ye
 MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MAX(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 STDEV(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+STDEVP(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 VAR(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+VARP(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COUNT(j) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(j) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(j) -> unknown (no unknown recorded)
@@ -261,7 +325,9 @@ AVG(j) -> unknown (no unknown recorded)
 MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
 MAX(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
 STDEV(j) -> unknown (no unknown recorded)
+STDEVP(j) -> unknown (no unknown recorded)
 VAR(j) -> unknown (no unknown recorded)
+VARP(j) -> unknown (no unknown recorded)
 COUNT(*) + MIN(bt) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 MIN(bt) + COUNT(*) -> unknown unsupported-expression: MIN(bt): SQL Server refuses MIN of bit.
 COUNT(*) + MIN(ti) -> int number/int32 null:count-overflow,empty-aggregate,arithmetic-overflow {[-2147483648 2147483647]}

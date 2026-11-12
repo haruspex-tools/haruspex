@@ -226,23 +226,15 @@ internal sealed partial class ProcedureAnalyzer
 
     private sealed class VolatileFinder : TSqlFragmentVisitor
     {
-        // The date, string and numeric functions read only their arguments too; the current date and time do not, but are never
-        // NULL, so a COALESCE never reads them twice. LEFT and RIGHT are not FunctionCalls, so never counted.
-        private static readonly HashSet<string> Pure = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "isnull", "concat", "concat_ws", "choose",
-            "datediff", "datediff_big", "dateadd", "datepart", "year", "month", "day", "datename", "eomonth",
-            "datefromparts", "datetime2fromparts", "datetimefromparts", "smalldatetimefromparts", "timefromparts", "datetimeoffsetfromparts",
-            "ltrim", "rtrim", "trim", "upper", "lower", "substring", "len", "datalength", "replace", "string_escape", "formatmessage", "json_value",
-            "round", "floor", "ceiling", "abs", "sign", "power", "square", "sqrt", "exp", "log", "log10",
-        };
-
+        // A built-in function the table says reads only its arguments: the date, string and numeric functions, ISNULL, CONCAT
+        // and CHOOSE; the current date and time do not, but are never NULL, so a COALESCE never reads them twice. LEFT and
+        // RIGHT are not FunctionCalls, so never counted.
         public bool Found { get; private set; }
 
         public override void Visit(ScalarSubquery node) => Found = true;
 
         public override void Visit(FunctionCall node) =>
-            Found |= !(node.CallTarget is null && node.OverClause is null && (Pure.Contains(node.FunctionName.Value) || IsAggregate(node)));
+            Found |= !(node.CallTarget is null && node.OverClause is null && (IsAggregate(node) || TypingOf(node) is { ReadsOnlyItsArguments: true }));
     }
 
     /// <summary>

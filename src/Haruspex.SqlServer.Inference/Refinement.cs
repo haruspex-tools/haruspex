@@ -367,75 +367,50 @@ internal sealed partial class ProcedureAnalyzer
     // ---- built-in aggregates ----------------------------------------------------------------------------------------
 
     /// <summary>
-    /// Built-in aggregates, which make a query without GROUP BY return exactly one row. A user's function is always called
-    /// with its schema, so a name without one is the built-in. The JSON aggregates are among them.
+    /// A call of a built-in aggregate as an aggregate, which makes a query without GROUP BY return exactly one row: with a
+    /// window (OVER) it is computed per row instead. A user's function is always called with its schema, so a name without
+    /// one is the built-in. The JSON aggregates are among them.
     /// </summary>
-    private static readonly HashSet<string> Aggregates = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "count", "count_big", "sum", "avg", "min", "max", "stdev", "stdevp", "var", "varp", "string_agg", "checksum_agg",
-        "grouping", "grouping_id", "approx_count_distinct", "json_arrayagg", "json_objectagg",
-    };
-
-    /// <summary>A call of a built-in aggregate as an aggregate: with a window (OVER) it is computed per row instead.</summary>
     private static bool IsAggregate(FunctionCall call) =>
-        call is { CallTarget: null, OverClause: null } && Aggregates.Contains(call.FunctionName.Value);
+        call is { CallTarget: null, OverClause: null } && BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Aggregate) is not null;
 
     /// <summary>
-    /// COUNT, COUNT_BIG, MIN and MAX. COUNT and COUNT_BIG are 0 over no rows and never NULL, except that COUNT overflows
-    /// int to NULL under a caller's ANSI_WARNINGS and ARITHABORT off (observed:
-    /// Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off). MIN and MAX return
-    /// one of their argument's values, so its type and facets, and are NULL over no rows (without GROUP BY) and when every
-    /// value is (observed: An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows,
-    /// An_aggregate_with_group_by_returns_no_row_over_no_rows). SUM, AVG and the statistics change the type; the others are not
-    /// modelled yet.
+    /// COUNT and COUNT_BIG: 0 over no rows and never NULL, except that COUNT overflows int to NULL under a caller's
+    /// ANSI_WARNINGS and ARITHABORT off (observed:
+    /// Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off), which a procedure can't
+    /// prevent (docs/decisions/0014-count-is-nullable.md); COUNT_BIG can't overflow.
     /// </summary>
-    private Value BuiltInAggregate(FunctionCall call, BindingScope scope)
+    private Value Count(FunctionCall call, bool big)
     {
         var at = At(call);
-#pragma warning disable CA1308 // Built-in function names are ASCII, so lower case matches them exactly, and the cases are written as T-SQL usually is.
-        var name = call.FunctionName.Value.ToLowerInvariant();
-#pragma warning restore CA1308
-        if (name is "json_arrayagg" or "json_objectagg")
-            return Constructor(call, scope);
-
-        switch (name)
-        {
-            case "count" or "count_big" when call.Parameters.Count == 1:
-            {
-                // COUNT is NULL past int's range under a caller's options, which a procedure can't prevent
-                // (docs/decisions/0014-count-is-nullable.md); COUNT_BIG can't overflow.
-                var type = ScalarType.Of(name == "count" ? BuiltInType.Int : BuiltInType.BigInt);
-                EquatableArray<IrNullReason> because = name == "count" && !ProvedAggregate(call) ? [new IrNullReason(IrNullRule.CountOverflow, at.ToString())] : [];
-                return Value.Computed(SqlTypes.ToConvertedShape(type, at), because);
-            }
-
-            case "min" or "max" when call.Parameters.Count == 1:
-            {
-                var argument = InAggregate(() => Expression(call.Parameters[0], scope));
-                if (argument.Shape is UnknownShape unknown)
-                    return Value.Unknown(unknown);
-                if (argument.IsLiveJson || argument.Shape is not ScalarShape)
-                    return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{name.ToUpperInvariant()} of a value that is not a scalar is not modelled: {Text(call)}", at));
-
-                // Refused when the procedure is created (8117; observed: Min_and_max_of_a_bit_are_refused_with_or_without_a_window).
-                if (TypeOf(argument) is { IsBit: true })
-                    return NotModelled(call, $"SQL Server refuses {name.ToUpperInvariant()} of bit.");
-                return ProvedAggregate(call)
-                    ? argument.WithNullableBecause([])
-                    : argument.WithNullableBecause([.. argument.NullableBecause, .. Aggregate(call)]);
-            }
-
-            case "sum" when call.Parameters.Count == 1:
-                return Sum(call, scope);
-
-            case "avg" or "stdev" or "stdevp" or "var" or "varp" when call.Parameters.Count == 1:
-                return Average(call, scope, name);
-
-            case "string_agg" when call.Parameters.Count == 2:
-                return StringAggregate(call, scope);
-
-            default:
-                return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The aggregate {Text(call)} is not modelled yet.", at));
-        }
+        EquatableArray<IrNullReason> because = !big && !ProvedAggregate(call) ? [new IrNullReason(IrNullRule.CountOverflow, at.ToString())] : [];
+        return Value.Computed(SqlTypes.ToConvertedShape(ScalarType.Of(big ? BuiltInType.BigInt : BuiltInType.Int), at), because);
     }
+
+    /// <summary>
+    /// MIN and MAX return one of their argument's values, so its type and facets, and are NULL over no rows (without GROUP BY)
+    /// and when every value is (observed: An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows,
+    /// An_aggregate_with_group_by_returns_no_row_over_no_rows).
+    /// </summary>
+    private Value MinOrMax(FunctionCall call, BindingScope scope, BuiltInFunction function)
+    {
+        var at = At(call);
+        var name = function.Name.ToUpperInvariant();
+        var argument = InAggregate(() => Expression(call.Parameters[0], scope));
+        if (argument.Shape is UnknownShape unknown)
+            return Value.Unknown(unknown);
+        if (argument.IsLiveJson || argument.Shape is not ScalarShape)
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{name} of a value that is not a scalar is not modelled: {Text(call)}", at));
+
+        // Refused when the procedure is created (8117; observed: Min_and_max_of_a_bit_are_refused_with_or_without_a_window).
+        if (TypeOf(argument) is { IsBit: true })
+            return NotModelled(call, $"SQL Server refuses {name} of bit.");
+        return ProvedAggregate(call)
+            ? argument.WithNullableBecause([])
+            : argument.WithNullableBecause([.. argument.NullableBecause, .. Aggregate(call)]);
+    }
+
+    /// <summary>An aggregate, or a form of one, that is not modelled.</summary>
+    private Value AggregateNotModelled(FunctionCall call) =>
+        Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The aggregate {Text(call)} is not modelled yet.", At(call)));
 }

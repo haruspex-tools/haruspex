@@ -346,15 +346,9 @@ internal sealed partial class ProcedureAnalyzer
         ColumnReferenceExpression column => Column(column, scope),
         ParenthesisExpression parenthesis => Expression(parenthesis.Expression, scope),
         ScalarSubquery subquery => Subquery(subquery, scope),
-        FunctionCall { CallTarget: null } call when IsConstructor(call) => Constructor(call, scope),
-        FunctionCall { CallTarget: null, Parameters.Count: 1 } call
-            when call.FunctionName.Value.Equals("json_query", StringComparison.OrdinalIgnoreCase) => JsonQuery(call, scope),
-        FunctionCall { CallTarget: null, OverClause: not null } call => Window(call, scope),
-        FunctionCall { CallTarget: null } call when IsAggregate(call) => BuiltInAggregate(call, scope),
-        FunctionCall call when IsBuiltIn(call) => BuiltIn(call, scope),
-        LeftFunctionCall { Parameters.Count: 2 } left => Part(left, left.Parameters[0], [left.Parameters[1]], left.Parameters[1], scope),
-        RightFunctionCall { Parameters.Count: 2 } right => Part(right, right.Parameters[0], [right.Parameters[1]], right.Parameters[1], scope),
-        ParameterlessCall { ParameterlessCallType: ParameterlessCallType.CurrentTimestamp } now => Typed(ScalarType.Of(BuiltInType.DateTime), [], now),
+
+        // Every built-in function, by the function table (ProcedureAnalyzer.FunctionTable.cs): the one path a call is typed by.
+        _ when Function(expression, scope) is { } called => called,
         FunctionCall call when FunctionSummaries.Callee(call) is { } callee => CallFunction(call, callee, scope),
         VariableReference variable when parameters.TryGetValue(variable.Name, out var parameter) => Branched(variable, parameter),
         VariableReference variable when locals is not null => Branched(variable, Variable(variable)),
@@ -364,23 +358,8 @@ internal sealed partial class ProcedureAnalyzer
         RealLiteral literal => Typed(ScalarType.Of(BuiltInType.Float), [], literal),
         MoneyLiteral literal => Typed(ScalarType.Of(BuiltInType.Money), [], literal),
         NullLiteral literal => Typed(ScalarType.Of(BuiltInType.Int), [new IrNullReason(IrNullRule.NullLiteral, At(literal).ToString())], literal),
-        CoalesceExpression coalesce => Coalesce(coalesce, scope),
         SearchedCaseExpression searched => Case(searched, scope),
         SimpleCaseExpression simple => Case(simple, scope),
-        IIfCall iif => Iif(iif, scope),
-        NullIfExpression nullIf => NullIf(nullIf, scope),
-        FunctionCall { CallTarget: null, OverClause: null, Parameters.Count: >= 2 } call
-            when call.FunctionName.Value.Equals("choose", StringComparison.OrdinalIgnoreCase) => Choose(call, scope),
-        FunctionCall { CallTarget: null, Parameters.Count: 2 } call
-            when call.FunctionName.Value.Equals("isnull", StringComparison.OrdinalIgnoreCase) => IsNull(call, scope),
-        FunctionCall { CallTarget: null, OverClause: null } call
-            when call.FunctionName.Value.Equals("concat", StringComparison.OrdinalIgnoreCase) => Concat(call, scope, separated: false),
-        FunctionCall { CallTarget: null, OverClause: null } call
-            when call.FunctionName.Value.Equals("concat_ws", StringComparison.OrdinalIgnoreCase) => Concat(call, scope, separated: true),
-        CastCall cast => Cast(cast.DataType, cast.Parameter, cast, scope),
-        ConvertCall convert => Cast(convert.DataType, convert.Parameter, convert, scope, styled: convert.Style is not null),
-        TryCastCall cast => Cast(cast.DataType, cast.Parameter, cast, scope, attempt: true),
-        TryConvertCall convert => Cast(convert.DataType, convert.Parameter, convert, scope, styled: convert.Style is not null, attempt: true),
         BinaryExpression binary => Binary(binary, scope),
         UnaryExpression unary => Unary(unary, scope),
         _ => Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
@@ -567,14 +546,13 @@ internal sealed partial class ProcedureAnalyzer
     // json_object and json_array exist from SQL Server 2022, the aggregates from 2025 (and Azure SQL). The target's
     // version is not known yet, so a constructor it lacks fails when the procedure is created, not here.
 
-    private static readonly HashSet<string> Constructors = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "json_object", "json_array", "json_arrayagg", "json_objectagg",
-    };
+    /// <summary>A call of a JSON constructor: <c>json_object</c>, <c>json_array</c> and their aggregates.</summary>
+    private static bool IsConstructor(FunctionCall call) =>
+        call.CallTarget is null
+        && ((BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) is { } scalar && (scalar == ScalarFunctions.JsonObject || scalar == ScalarFunctions.JsonArray))
+            || (BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Aggregate) is { } aggregate && (aggregate == AggregateFunctions.JsonArrayAgg || aggregate == AggregateFunctions.JsonObjectAgg)));
 
-    private static bool IsConstructor(FunctionCall call) => Constructors.Contains(call.FunctionName.Value);
-
-    private Value Constructor(FunctionCall call, BindingScope scope)
+    private Value Constructor(FunctionCall call, BindingScope scope, BuiltInFunction function)
     {
         var at = At(call);
         var name = call.FunctionName.Value;
@@ -598,11 +576,11 @@ internal sealed partial class ProcedureAnalyzer
             _ => throw new InvalidOperationException($"Unexpected null option in {Text(call)}."),
         };
 
-        if (name.Equals("json_object", StringComparison.OrdinalIgnoreCase))
+        if (function == ScalarFunctions.JsonObject)
             return JsonObjectConstructor(call, scope, nullOnNull ?? true);
-        if (name.Equals("json_array", StringComparison.OrdinalIgnoreCase))
+        if (function == ScalarFunctions.JsonArray)
             return JsonArrayConstructor(call, scope, nullOnNull ?? false);
-        if (name.Equals("json_arrayagg", StringComparison.OrdinalIgnoreCase))
+        if (function == AggregateFunctions.JsonArrayAgg)
             return ArrayAggregate(call, scope, nullOnNull ?? false);
         return ObjectAggregate(call, scope, nullOnNull ?? true);
     }

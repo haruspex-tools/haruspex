@@ -45,13 +45,13 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
     public Func<OpenJsonTableReference, BindingScope?, LocalRelationValues>? ReadOpenJson { get; init; }
 
     public LocalRelation? OpenJson(OpenJsonTableReference reference, BindingScope? outer) =>
-        ReadOpenJson is null ? null : Register(reference.Alias?.Value ?? "openjson", ReadOpenJson(reference, outer));
+        ReadOpenJson is null ? null : Register(reference.Alias?.Value ?? RowsetFunctions.OpenJson.Name, ReadOpenJson(reference, outer));
 
     /// <summary>Reads a GENERATE_SERIES call's column; null leaves GENERATE_SERIES unmodelled.</summary>
     public Func<GlobalFunctionTableReference, BindingScope?, LocalRelationValues>? ReadGenerateSeries { get; init; }
 
     public LocalRelation? GenerateSeries(GlobalFunctionTableReference reference, BindingScope? outer) =>
-        ReadGenerateSeries is null ? null : Register(reference.Alias?.Value ?? "generate_series", ReadGenerateSeries(reference, outer));
+        ReadGenerateSeries is null ? null : Register(reference.Alias?.Value ?? RowsetFunctions.GenerateSeries.Name, ReadGenerateSeries(reference, outer));
 
     /// <summary>Whether a relation handed out is a temporary table (#t), rather than a CTE, derived table or table variable.</summary>
     public bool IsTemporary(LocalRelation relation) => temporary.Contains(relation);

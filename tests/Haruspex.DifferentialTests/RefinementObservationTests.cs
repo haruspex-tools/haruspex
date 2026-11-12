@@ -225,6 +225,19 @@ public class RefinementObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task Checksum_agg_grouping_id_and_approx_count_distinct_are_aggregates_that_make_one_row()
+    {
+        // Without GROUP BY each makes a query of no rows return one row, as every aggregate does; GROUPING_ID needs GROUP BY.
+        string[] empty = ["CREATE TABLE dbo.obs_none (id int NOT NULL PRIMARY KEY, n int NOT NULL);"];
+        var outcome = await Run(empty, "SELECT CHECKSUM_AGG(n) AS a, APPROX_COUNT_DISTINCT(n) AS b FROM dbo.obs_none;");
+        Assert.Null(outcome.Error);
+        Assert.Equal(["a,b: null,0"], outcome.Sets);
+        outcome = await Run(empty, "INSERT INTO dbo.obs_none VALUES (1, 5), (2, 5); SELECT n, GROUPING_ID(n) AS g FROM dbo.obs_none GROUP BY ROLLUP (n);");
+        Assert.Null(outcome.Error);
+        Assert.Equal(["n,g: 5,0;null,1"], outcome.Sets);
+    }
+
+    [Fact]
     public async Task Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null()
     {
         // The super-aggregate rows hold NULL in the columns they roll up, whatever WHERE proved of them, and they are rows

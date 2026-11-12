@@ -11,61 +11,6 @@ namespace Haruspex.SqlServer.Inference;
 // differential tests). Window functions are in ProcedureAnalyzer.Windows.cs.
 internal sealed partial class ProcedureAnalyzer
 {
-    /// <summary>The built-in scalar functions read here, by name (a call without a schema).</summary>
-    private static readonly HashSet<string> BuiltIns = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "datediff", "datediff_big", "dateadd", "datepart", "year", "month", "day", "datename", "eomonth",
-        "datefromparts", "datetime2fromparts", "datetimefromparts", "smalldatetimefromparts", "timefromparts", "datetimeoffsetfromparts",
-        "sysdatetime", "getdate", "getutcdate", "sysutcdatetime", "sysdatetimeoffset",
-        "ltrim", "rtrim", "trim", "upper", "lower", "substring", "len", "datalength", "replace", "string_escape", "formatmessage", "json_value",
-        "round", "floor", "ceiling", "abs", "sign", "power", "square", "sqrt", "exp", "log", "log10",
-    };
-
-    private static bool IsBuiltIn(FunctionCall call) => call is { CallTarget: null, OverClause: null } && BuiltIns.Contains(call.FunctionName.Value);
-
-    private Value BuiltIn(FunctionCall call, BindingScope scope)
-    {
-        var p = call.Parameters;
-#pragma warning disable CA1308 // Built-in function names are ASCII, so lower case matches them exactly, and the cases are written as T-SQL usually is.
-        return (call.FunctionName.Value.ToLowerInvariant(), p.Count) switch
-#pragma warning restore CA1308
-        {
-            ("datediff", 3) => DateDiff(call, ScalarType.Of(BuiltInType.Int), scope),
-            ("datediff_big", 3) => DateDiff(call, ScalarType.Of(BuiltInType.BigInt), scope),
-            ("dateadd", 3) => DateAdd(call, scope),
-            ("datepart", 2) => DatePart(call, p[1], ScalarType.Of(BuiltInType.Int), scope),
-            ("year" or "month" or "day", 1) => DatePart(call, p[0], ScalarType.Of(BuiltInType.Int), scope),
-            ("datename", 2) => DatePart(call, p[1], new ScalarType(BuiltInType.NVarChar, 30), scope),
-            ("eomonth", 1 or 2) => EndOfMonth(call, scope),
-            ("datefromparts", 3) => FromParts(call, ScalarType.Of(BuiltInType.Date), scope),
-            ("datetimefromparts", 7) => FromParts(call, ScalarType.Of(BuiltInType.DateTime), scope),
-            ("smalldatetimefromparts", 5) => FromParts(call, ScalarType.Of(BuiltInType.SmallDateTime), scope),
-            ("datetime2fromparts", 8) => FromParts(call, ScalarType.Of(BuiltInType.DateTime2), scope, precision: true),
-            ("timefromparts", 5) => FromParts(call, ScalarType.Of(BuiltInType.Time), scope, precision: true),
-            ("datetimeoffsetfromparts", 10) => FromParts(call, ScalarType.Of(BuiltInType.DateTimeOffset), scope, precision: true),
-
-            // The current date and time are never NULL (observed: The_current_date_and_time_functions_are_never_null).
-            ("sysdatetime" or "sysutcdatetime", 0) => Typed(new ScalarType(BuiltInType.DateTime2, Precision: 7), [], call),
-            ("getdate" or "getutcdate", 0) => Typed(ScalarType.Of(BuiltInType.DateTime), [], call),
-            ("sysdatetimeoffset", 0) => Typed(new ScalarType(BuiltInType.DateTimeOffset, Precision: 7), [], call),
-
-            ("ltrim" or "rtrim", 1) or ("upper" or "lower", 1) or ("trim", 1) => Trim(call, p[0], null, scope),
-            ("ltrim" or "rtrim", 2) => Trim(call, p[0], p[1], scope),
-
-            // TRIM(chars FROM s) is given as (chars, s).
-            ("trim", 2) => Trim(call, p[1], p[0], scope),
-            ("substring", 3) => Part(call, p[0], [p[1], p[2]], p[2], scope),
-            ("len", 1) => Length(call, p[0], scope, bytes: false),
-            ("datalength", 1) => Length(call, p[0], scope, bytes: true),
-            ("replace", 3) => Replace(call, scope),
-            ("string_escape", 2) => StringEscape(call, scope),
-            ("formatmessage", >= 1) => FormatMessage(call, scope),
-            ("json_value", 2) => TracedJsonValue(call, scope) ?? JsonValue(call),
-            ("round" or "floor" or "ceiling" or "abs" or "sign" or "power" or "square" or "sqrt" or "exp" or "log" or "log10", _) => Numeric(call, scope),
-            _ => NotModelled(call, "this form of the function is not modelled."),
-        };
-    }
-
     /// <summary>Reads arguments, giving the first that is unknown, if any.</summary>
     private (List<Value> Values, Value? Unknown) Arguments(IEnumerable<ScalarExpression> arguments, BindingScope scope)
     {

@@ -105,7 +105,7 @@ internal static class CatalogueSweep
     /// </summary>
     private static List<string> Aggregates()
     {
-        string[] functions = ["COUNT", "COUNT_BIG", "SUM", "AVG", "MIN", "MAX", "STDEV", "VAR"];
+        string[] functions = ["COUNT", "COUNT_BIG", "SUM", "AVG", "MIN", "MAX", "STDEV", "STDEVP", "VAR", "VARP"];
         var all = Columns.SelectMany(c => functions.Select(f => $"{f}({c.Name})")).ToList();
         var beside = Columns.Select(c => $"MIN({c.Name})").Concat(Literals).ToList();
         foreach (var count in new[] { "COUNT(*)", "COUNT_BIG(*)" })

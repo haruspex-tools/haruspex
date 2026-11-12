@@ -368,7 +368,8 @@ internal sealed partial class ProcedureAnalyzer
     private static bool Unfoldable(ScalarExpression expression) => Strip(expression) switch
     {
         ScalarSubquery subquery when ForOf(subquery.QueryExpression) is JsonForClause => true,
-        FunctionCall { CallTarget: null, Parameters: [var inner] } call when call.FunctionName.Value.Equals("json_query", StringComparison.OrdinalIgnoreCase) => Unfoldable(inner),
+        FunctionCall { CallTarget: null, Parameters: [var inner] } call
+            when BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) == ScalarFunctions.JsonQuery => Unfoldable(inner),
         _ => false,
     };
 
