@@ -75,10 +75,12 @@ public class FixtureSnapshotTests
     public void Each_procedure_infers_the_reviewed_ir(string procedure) =>
         Snapshot.Match(IrJsonWriter.Write(Infer(procedure)), FixtureOf[procedure].Expected, $"{procedure}.ir", "json");
 
+    // The Zod is emitted from the IR as its file gives it back, written and read again, so it is what a consumer of the file
+    // would generate; ZodThroughTheFileTests does the same from the committed IR files themselves.
     [Theory]
     [MemberData(nameof(Procedures))]
     public void Each_procedure_emits_the_reviewed_zod(string procedure) =>
-        Snapshot.Match(ZodEmitter.Emit(Infer(procedure)), FixtureOf[procedure].Expected, $"{procedure}.zod", "ts");
+        Snapshot.Match(ZodEmitter.Emit(IrJsonReader.Read(IrJsonWriter.Write(Infer(procedure)))), FixtureOf[procedure].Expected, $"{procedure}.zod", "ts");
 
     /// <summary>The names of the files in a fixture's <c>expected/</c>, leaving out any received file a failing run wrote.</summary>
     private static List<string> Reviewed(string folder) =>
