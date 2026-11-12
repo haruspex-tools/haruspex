@@ -34,7 +34,40 @@ internal static class CatalogueSweep
     public static readonly string[] Targets = [.. Columns.Select(c => c.Type), "varchar", "nvarchar"];
 
     /// <summary>The operators the sweep runs, each a snapshot and a theory case of its own.</summary>
-    public static readonly string[] Forms = ["add", "subtract", "multiply", "divide", "modulo", "negate", "cast", "isnull", "aggregate"];
+    public static readonly string[] Forms = ["add", "subtract", "multiply", "divide", "modulo", "negate", "cast", "isnull", "aggregate", "function", "window"];
+
+    /// <summary>
+    /// A call of each built-in function inference reads, with <c>{0}</c> where each operand goes in turn; a call without it is
+    /// read once. Each function's other arguments are ordinary ones, so the operand's type is what varies.
+    /// </summary>
+    public static readonly string[] Functions =
+    [
+        "DATEDIFF(day, {0}, dt)", "DATEDIFF_BIG(day, {0}, dt)", "DATEADD(day, 1, {0})", "DATEADD(day, {0}, dt)", "DATEPART(year, {0})",
+        "YEAR({0})", "MONTH({0})", "DAY({0})", "DATENAME(month, {0})", "EOMONTH({0})", "EOMONTH(dt, {0})",
+        "DATEFROMPARTS({0}, 1, 1)", "DATETIMEFROMPARTS({0}, 1, 1, 0, 0, 0, 0)", "SMALLDATETIMEFROMPARTS({0}, 1, 1, 0, 0)",
+        "DATETIME2FROMPARTS({0}, 1, 1, 0, 0, 0, 0, 3)", "TIMEFROMPARTS({0}, 0, 0, 0, 3)", "DATETIMEOFFSETFROMPARTS({0}, 1, 1, 0, 0, 0, 0, 0, 0, 3)",
+        "GETDATE()", "GETUTCDATE()", "SYSDATETIME()", "SYSUTCDATETIME()", "SYSDATETIMEOFFSET()", "CURRENT_TIMESTAMP",
+        "LTRIM({0})", "RTRIM({0})", "TRIM({0})", "LTRIM({0}, 'x')", "RTRIM({0}, N'x')", "TRIM('x' FROM {0})", "UPPER({0})", "LOWER({0})",
+        "SUBSTRING({0}, 1, 2)", "LEFT({0}, 2)", "RIGHT({0}, 2)", "LEN({0})", "DATALENGTH({0})", "REPLACE({0}, 'a', 'b')",
+        "STRING_ESCAPE({0}, 'json')", "FORMATMESSAGE({0}, 1)", "JSON_VALUE({0}, '$.a')", "JSON_QUERY({0})",
+        "ROUND({0}, 1)", "ROUND({0}, 0, 1)", "FLOOR({0})", "CEILING({0})", "ABS({0})", "SIGN({0})", "POWER({0}, 2)", "SQUARE({0})",
+        "SQRT({0})", "EXP({0})", "LOG({0})", "LOG({0}, 2)", "LOG10({0})",
+        "CONCAT({0}, 'x')", "CONCAT_WS(',', {0}, 'x')", "CHOOSE(id, {0}, {0})", "IIF(id > 1, {0}, {0})", "NULLIF({0}, {0})",
+        "COALESCE({0}, NULL)", "TRY_CAST({0} AS int)", "CONVERT(varchar(30), {0}, 1)", "TRY_CONVERT(int, {0})",
+        "JSON_OBJECT('k': {0})", "JSON_ARRAY({0})",
+        "STRING_AGG({0}, ',')", "JSON_ARRAYAGG({0})", "JSON_OBJECTAGG('k': {0})", "CHECKSUM_AGG({0})", "APPROX_COUNT_DISTINCT({0})",
+    ];
+
+    /// <summary>A call of each window function inference reads, with <c>{0}</c> where each operand goes in turn.</summary>
+    public static readonly string[] Windows =
+    [
+        "ROW_NUMBER() OVER (ORDER BY id)", "RANK() OVER (ORDER BY id)", "DENSE_RANK() OVER (ORDER BY id)", "NTILE(2) OVER (ORDER BY id)",
+        "COUNT({0}) OVER ()", "COUNT_BIG({0}) OVER ()", "SUM({0}) OVER ()", "AVG({0}) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING)",
+        "STDEV({0}) OVER ()", "STDEVP({0}) OVER ()", "VAR({0}) OVER ()", "VARP({0}) OVER ()", "MIN({0}) OVER ()",
+        "MAX({0}) OVER (PARTITION BY id)", "FIRST_VALUE({0}) OVER (ORDER BY id)", "LAST_VALUE({0}) OVER (ORDER BY id)",
+        "LAG({0}) OVER (ORDER BY id)", "LEAD({0}, 1, {0}) OVER (ORDER BY id)",
+        "PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY {0}) OVER ()", "PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY {0}) OVER ()",
+    ];
 
     /// <summary>Columns and literals, as operands.</summary>
     public static IEnumerable<string> Operands => [.. Columns.Select(c => c.Name), .. Literals];
@@ -55,8 +88,13 @@ internal static class CatalogueSweep
         "cast" => [.. Operands.SelectMany(o => Targets.Select(t => $"CAST({o} AS {t})"))],
         "isnull" => [.. Operands.SelectMany(a => Operands.Select(b => $"ISNULL({a}, {b})"))],
         "aggregate" => Aggregates(),
+        "function" => Calls(Functions),
+        "window" => Calls(Windows),
         _ => throw new ArgumentOutOfRangeException(nameof(form), form, "Not a form of the sweep."),
     };
+
+    private static List<string> Calls(string[] templates) =>
+        [.. templates.SelectMany(t => t.Contains("{0}", StringComparison.Ordinal) ? Operands.Select(o => t.Replace("{0}", o, StringComparison.Ordinal)) : [t])];
 
     private static List<string> Pairs(string op) => [.. Operands.SelectMany(a => Operands.Select(b => $"{a} {op} {b}"))];
 

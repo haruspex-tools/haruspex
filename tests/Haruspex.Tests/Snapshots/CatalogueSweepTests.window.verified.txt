@@ -1,0 +1,644 @@
+ROW_NUMBER() OVER (ORDER BY id) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+RANK() OVER (ORDER BY id) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+DENSE_RANK() OVER (ORDER BY id) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+NTILE(2) OVER (ORDER BY id) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT(bt) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(ti) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(si) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(i) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(bi) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(d52) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(d380) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(d3838) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(n102) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(m) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(sm) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(f) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(r) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(f24) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(f25) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(c3) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(v10) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(vx) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(nc3) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(nv10) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(nvx) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(dt) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(tm3) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(dtm) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(dt23) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(sdt) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(dto3) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(u) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(bin4) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(vb10) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(x) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(sv) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(j) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(1) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(12345) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(2.50) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT('ab') OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(N'ab') OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT(1e0) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT($1) OVER () -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
+COUNT_BIG(bt) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(ti) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(si) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(i) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(bi) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(d52) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(d380) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(d3838) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(n102) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(m) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(sm) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(f) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(r) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(f24) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(f25) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(c3) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(v10) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(vx) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(nc3) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(nv10) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(nvx) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(dt) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(tm3) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(dtm) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(dt23) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(sdt) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(dto3) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(u) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(bin4) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(vb10) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(x) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(sv) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(j) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(1) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(12345) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(2.50) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG('ab') OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(N'ab') OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG(1e0) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+COUNT_BIG($1) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+SUM(bt) OVER () -> unknown unsupported-expression: SUM(bt) OVER (): SUM of a value of this type is not modelled yet.
+SUM(ti) OVER () -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+SUM(si) OVER () -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+SUM(i) OVER () -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+SUM(bi) OVER () -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+SUM(d52) OVER () -> decimal(38,2) number/decimal {digits=38,2 [-999999999999999999999999999999999999.99 999999999999999999999999999999999999.99]}
+SUM(d380) OVER () -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+SUM(d3838) OVER () -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+SUM(n102) OVER () -> numeric(38,2) number/decimal {digits=38,2 [-999999999999999999999999999999999999.99 999999999999999999999999999999999999.99]}
+SUM(m) OVER () -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+SUM(sm) OVER () -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+SUM(f) OVER () -> float number/float null:arithmetic-overflow
+SUM(r) OVER () -> float number/float null:arithmetic-overflow
+SUM(f24) OVER () -> float number/float null:arithmetic-overflow
+SUM(f25) OVER () -> float number/float null:arithmetic-overflow
+SUM(c3) OVER () -> unknown unsupported-expression: SUM(c3) OVER (): SUM of a value of this type is not modelled yet.
+SUM(v10) OVER () -> unknown unsupported-expression: SUM(v10) OVER (): SUM of a value of this type is not modelled yet.
+SUM(vx) OVER () -> unknown unsupported-expression: SUM(vx) OVER (): SUM of a value of this type is not modelled yet.
+SUM(nc3) OVER () -> unknown unsupported-expression: SUM(nc3) OVER (): SUM of a value of this type is not modelled yet.
+SUM(nv10) OVER () -> unknown unsupported-expression: SUM(nv10) OVER (): SUM of a value of this type is not modelled yet.
+SUM(nvx) OVER () -> unknown unsupported-expression: SUM(nvx) OVER (): SUM of a value of this type is not modelled yet.
+SUM(dt) OVER () -> unknown unsupported-expression: SUM(dt) OVER (): SUM of a value of this type is not modelled yet.
+SUM(tm3) OVER () -> unknown unsupported-expression: SUM(tm3) OVER (): SUM of a value of this type is not modelled yet.
+SUM(dtm) OVER () -> unknown unsupported-expression: SUM(dtm) OVER (): SUM of a value of this type is not modelled yet.
+SUM(dt23) OVER () -> unknown unsupported-expression: SUM(dt23) OVER (): SUM of a value of this type is not modelled yet.
+SUM(sdt) OVER () -> unknown unsupported-expression: SUM(sdt) OVER (): SUM of a value of this type is not modelled yet.
+SUM(dto3) OVER () -> unknown unsupported-expression: SUM(dto3) OVER (): SUM of a value of this type is not modelled yet.
+SUM(u) OVER () -> unknown unsupported-expression: SUM(u) OVER (): SUM of a value of this type is not modelled yet.
+SUM(bin4) OVER () -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+SUM(vb10) OVER () -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+SUM(x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SUM(sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+SUM(j) OVER () -> unknown (no unknown recorded)
+SUM(1) OVER () -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+SUM(12345) OVER () -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+SUM(2.50) OVER () -> numeric(38,2) number/decimal {digits=38,2 [-999999999999999999999999999999999999.99 999999999999999999999999999999999999.99]}
+SUM('ab') OVER () -> unknown unsupported-expression: SUM('ab') OVER (): SUM of a value of this type is not modelled yet.
+SUM(N'ab') OVER () -> unknown unsupported-expression: SUM(N'ab') OVER (): SUM of a value of this type is not modelled yet.
+SUM(1e0) OVER () -> float number/float null:arithmetic-overflow
+SUM($1) OVER () -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+AVG(bt) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(bt) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(ti) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> int number/int32 null:arithmetic-overflow,empty-frame {[-2147483648 2147483647]}
+AVG(si) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> int number/int32 null:arithmetic-overflow,empty-frame {[-2147483648 2147483647]}
+AVG(i) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> int number/int32 null:arithmetic-overflow,empty-frame {[-2147483648 2147483647]}
+AVG(bi) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> bigint number/int64 null:arithmetic-overflow,empty-frame {[-9223372036854775808 9223372036854775807]}
+AVG(d52) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> decimal(38,6) number/decimal null:empty-frame {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+AVG(d380) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> decimal(38,6) number/decimal null:arithmetic-overflow,empty-frame {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+AVG(d3838) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> decimal(38,38) number/decimal null:arithmetic-overflow,empty-frame {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+AVG(n102) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> numeric(38,6) number/decimal null:empty-frame {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+AVG(m) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> money number/decimal null:arithmetic-overflow,empty-frame {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+AVG(sm) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> money number/decimal null:arithmetic-overflow,empty-frame {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+AVG(f) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> float number/float null:arithmetic-overflow,empty-frame
+AVG(r) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> float number/float null:arithmetic-overflow,empty-frame
+AVG(f24) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> float number/float null:arithmetic-overflow,empty-frame
+AVG(f25) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> float number/float null:arithmetic-overflow,empty-frame
+AVG(c3) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(c3) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(v10) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(v10) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(vx) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(vx) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(nc3) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(nc3) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(nv10) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(nv10) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(nvx) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(nvx) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(dt) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(dt) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(tm3) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(tm3) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(dtm) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(dtm) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(dt23) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(dt23) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(sdt) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(sdt) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(dto3) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(dto3) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(u) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(u) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(bin4) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+AVG(vb10) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+AVG(x) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+AVG(sv) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+AVG(j) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown (no unknown recorded)
+AVG(1) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> int number/int32 null:arithmetic-overflow,empty-frame {[-2147483648 2147483647]}
+AVG(12345) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> int number/int32 null:arithmetic-overflow,empty-frame {[-2147483648 2147483647]}
+AVG(2.50) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> numeric(38,6) number/decimal null:empty-frame {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+AVG('ab') OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG('ab') OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(N'ab') OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(N'ab') OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
+AVG(1e0) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> float number/float null:arithmetic-overflow,empty-frame
+AVG($1) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> money number/decimal null:arithmetic-overflow,empty-frame {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+STDEV(bt) OVER () -> unknown unsupported-expression: STDEV(bt) OVER (): STDEV of a value of this type is not modelled.
+STDEV(ti) OVER () -> float number/float null:too-few-values
+STDEV(si) OVER () -> float number/float null:too-few-values
+STDEV(i) OVER () -> float number/float null:too-few-values
+STDEV(bi) OVER () -> float number/float null:too-few-values
+STDEV(d52) OVER () -> float number/float null:too-few-values
+STDEV(d380) OVER () -> float number/float null:too-few-values
+STDEV(d3838) OVER () -> float number/float null:too-few-values
+STDEV(n102) OVER () -> float number/float null:too-few-values
+STDEV(m) OVER () -> float number/float null:too-few-values
+STDEV(sm) OVER () -> float number/float null:too-few-values
+STDEV(f) OVER () -> float number/float null:too-few-values,arithmetic-overflow
+STDEV(r) OVER () -> float number/float null:too-few-values
+STDEV(f24) OVER () -> float number/float null:too-few-values
+STDEV(f25) OVER () -> float number/float null:too-few-values,arithmetic-overflow
+STDEV(c3) OVER () -> unknown unsupported-expression: STDEV(c3) OVER (): STDEV of a value of this type is not modelled.
+STDEV(v10) OVER () -> unknown unsupported-expression: STDEV(v10) OVER (): STDEV of a value of this type is not modelled.
+STDEV(vx) OVER () -> unknown unsupported-expression: STDEV(vx) OVER (): STDEV of a value of this type is not modelled.
+STDEV(nc3) OVER () -> unknown unsupported-expression: STDEV(nc3) OVER (): STDEV of a value of this type is not modelled.
+STDEV(nv10) OVER () -> unknown unsupported-expression: STDEV(nv10) OVER (): STDEV of a value of this type is not modelled.
+STDEV(nvx) OVER () -> unknown unsupported-expression: STDEV(nvx) OVER (): STDEV of a value of this type is not modelled.
+STDEV(dt) OVER () -> unknown unsupported-expression: STDEV(dt) OVER (): STDEV of a value of this type is not modelled.
+STDEV(tm3) OVER () -> unknown unsupported-expression: STDEV(tm3) OVER (): STDEV of a value of this type is not modelled.
+STDEV(dtm) OVER () -> unknown unsupported-expression: STDEV(dtm) OVER (): STDEV of a value of this type is not modelled.
+STDEV(dt23) OVER () -> unknown unsupported-expression: STDEV(dt23) OVER (): STDEV of a value of this type is not modelled.
+STDEV(sdt) OVER () -> unknown unsupported-expression: STDEV(sdt) OVER (): STDEV of a value of this type is not modelled.
+STDEV(dto3) OVER () -> unknown unsupported-expression: STDEV(dto3) OVER (): STDEV of a value of this type is not modelled.
+STDEV(u) OVER () -> unknown unsupported-expression: STDEV(u) OVER (): STDEV of a value of this type is not modelled.
+STDEV(bin4) OVER () -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+STDEV(vb10) OVER () -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+STDEV(x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STDEV(sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+STDEV(j) OVER () -> unknown (no unknown recorded)
+STDEV(1) OVER () -> float number/float null:too-few-values
+STDEV(12345) OVER () -> float number/float null:too-few-values
+STDEV(2.50) OVER () -> float number/float null:too-few-values
+STDEV('ab') OVER () -> unknown unsupported-expression: STDEV('ab') OVER (): STDEV of a value of this type is not modelled.
+STDEV(N'ab') OVER () -> unknown unsupported-expression: STDEV(N'ab') OVER (): STDEV of a value of this type is not modelled.
+STDEV(1e0) OVER () -> float number/float null:too-few-values,arithmetic-overflow
+STDEV($1) OVER () -> float number/float null:too-few-values
+STDEVP(bt) OVER () -> unknown unsupported-expression: STDEVP(bt) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(ti) OVER () -> float number/float
+STDEVP(si) OVER () -> float number/float
+STDEVP(i) OVER () -> float number/float
+STDEVP(bi) OVER () -> float number/float
+STDEVP(d52) OVER () -> float number/float
+STDEVP(d380) OVER () -> float number/float
+STDEVP(d3838) OVER () -> float number/float
+STDEVP(n102) OVER () -> float number/float
+STDEVP(m) OVER () -> float number/float
+STDEVP(sm) OVER () -> float number/float
+STDEVP(f) OVER () -> float number/float null:arithmetic-overflow
+STDEVP(r) OVER () -> float number/float
+STDEVP(f24) OVER () -> float number/float
+STDEVP(f25) OVER () -> float number/float null:arithmetic-overflow
+STDEVP(c3) OVER () -> unknown unsupported-expression: STDEVP(c3) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(v10) OVER () -> unknown unsupported-expression: STDEVP(v10) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(vx) OVER () -> unknown unsupported-expression: STDEVP(vx) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(nc3) OVER () -> unknown unsupported-expression: STDEVP(nc3) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(nv10) OVER () -> unknown unsupported-expression: STDEVP(nv10) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(nvx) OVER () -> unknown unsupported-expression: STDEVP(nvx) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(dt) OVER () -> unknown unsupported-expression: STDEVP(dt) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(tm3) OVER () -> unknown unsupported-expression: STDEVP(tm3) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(dtm) OVER () -> unknown unsupported-expression: STDEVP(dtm) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(dt23) OVER () -> unknown unsupported-expression: STDEVP(dt23) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(sdt) OVER () -> unknown unsupported-expression: STDEVP(sdt) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(dto3) OVER () -> unknown unsupported-expression: STDEVP(dto3) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(u) OVER () -> unknown unsupported-expression: STDEVP(u) OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(bin4) OVER () -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+STDEVP(vb10) OVER () -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+STDEVP(x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STDEVP(sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+STDEVP(j) OVER () -> unknown (no unknown recorded)
+STDEVP(1) OVER () -> float number/float
+STDEVP(12345) OVER () -> float number/float
+STDEVP(2.50) OVER () -> float number/float
+STDEVP('ab') OVER () -> unknown unsupported-expression: STDEVP('ab') OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(N'ab') OVER () -> unknown unsupported-expression: STDEVP(N'ab') OVER (): STDEVP of a value of this type is not modelled.
+STDEVP(1e0) OVER () -> float number/float null:arithmetic-overflow
+STDEVP($1) OVER () -> float number/float
+VAR(bt) OVER () -> unknown unsupported-expression: VAR(bt) OVER (): VAR of a value of this type is not modelled.
+VAR(ti) OVER () -> float number/float null:too-few-values
+VAR(si) OVER () -> float number/float null:too-few-values
+VAR(i) OVER () -> float number/float null:too-few-values
+VAR(bi) OVER () -> float number/float null:too-few-values
+VAR(d52) OVER () -> float number/float null:too-few-values
+VAR(d380) OVER () -> float number/float null:too-few-values
+VAR(d3838) OVER () -> float number/float null:too-few-values
+VAR(n102) OVER () -> float number/float null:too-few-values
+VAR(m) OVER () -> float number/float null:too-few-values
+VAR(sm) OVER () -> float number/float null:too-few-values
+VAR(f) OVER () -> float number/float null:too-few-values,arithmetic-overflow
+VAR(r) OVER () -> float number/float null:too-few-values
+VAR(f24) OVER () -> float number/float null:too-few-values
+VAR(f25) OVER () -> float number/float null:too-few-values,arithmetic-overflow
+VAR(c3) OVER () -> unknown unsupported-expression: VAR(c3) OVER (): VAR of a value of this type is not modelled.
+VAR(v10) OVER () -> unknown unsupported-expression: VAR(v10) OVER (): VAR of a value of this type is not modelled.
+VAR(vx) OVER () -> unknown unsupported-expression: VAR(vx) OVER (): VAR of a value of this type is not modelled.
+VAR(nc3) OVER () -> unknown unsupported-expression: VAR(nc3) OVER (): VAR of a value of this type is not modelled.
+VAR(nv10) OVER () -> unknown unsupported-expression: VAR(nv10) OVER (): VAR of a value of this type is not modelled.
+VAR(nvx) OVER () -> unknown unsupported-expression: VAR(nvx) OVER (): VAR of a value of this type is not modelled.
+VAR(dt) OVER () -> unknown unsupported-expression: VAR(dt) OVER (): VAR of a value of this type is not modelled.
+VAR(tm3) OVER () -> unknown unsupported-expression: VAR(tm3) OVER (): VAR of a value of this type is not modelled.
+VAR(dtm) OVER () -> unknown unsupported-expression: VAR(dtm) OVER (): VAR of a value of this type is not modelled.
+VAR(dt23) OVER () -> unknown unsupported-expression: VAR(dt23) OVER (): VAR of a value of this type is not modelled.
+VAR(sdt) OVER () -> unknown unsupported-expression: VAR(sdt) OVER (): VAR of a value of this type is not modelled.
+VAR(dto3) OVER () -> unknown unsupported-expression: VAR(dto3) OVER (): VAR of a value of this type is not modelled.
+VAR(u) OVER () -> unknown unsupported-expression: VAR(u) OVER (): VAR of a value of this type is not modelled.
+VAR(bin4) OVER () -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+VAR(vb10) OVER () -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+VAR(x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+VAR(sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+VAR(j) OVER () -> unknown (no unknown recorded)
+VAR(1) OVER () -> float number/float null:too-few-values
+VAR(12345) OVER () -> float number/float null:too-few-values
+VAR(2.50) OVER () -> float number/float null:too-few-values
+VAR('ab') OVER () -> unknown unsupported-expression: VAR('ab') OVER (): VAR of a value of this type is not modelled.
+VAR(N'ab') OVER () -> unknown unsupported-expression: VAR(N'ab') OVER (): VAR of a value of this type is not modelled.
+VAR(1e0) OVER () -> float number/float null:too-few-values,arithmetic-overflow
+VAR($1) OVER () -> float number/float null:too-few-values
+VARP(bt) OVER () -> unknown unsupported-expression: VARP(bt) OVER (): VARP of a value of this type is not modelled.
+VARP(ti) OVER () -> float number/float
+VARP(si) OVER () -> float number/float
+VARP(i) OVER () -> float number/float
+VARP(bi) OVER () -> float number/float
+VARP(d52) OVER () -> float number/float
+VARP(d380) OVER () -> float number/float
+VARP(d3838) OVER () -> float number/float
+VARP(n102) OVER () -> float number/float
+VARP(m) OVER () -> float number/float
+VARP(sm) OVER () -> float number/float
+VARP(f) OVER () -> float number/float null:arithmetic-overflow
+VARP(r) OVER () -> float number/float
+VARP(f24) OVER () -> float number/float
+VARP(f25) OVER () -> float number/float null:arithmetic-overflow
+VARP(c3) OVER () -> unknown unsupported-expression: VARP(c3) OVER (): VARP of a value of this type is not modelled.
+VARP(v10) OVER () -> unknown unsupported-expression: VARP(v10) OVER (): VARP of a value of this type is not modelled.
+VARP(vx) OVER () -> unknown unsupported-expression: VARP(vx) OVER (): VARP of a value of this type is not modelled.
+VARP(nc3) OVER () -> unknown unsupported-expression: VARP(nc3) OVER (): VARP of a value of this type is not modelled.
+VARP(nv10) OVER () -> unknown unsupported-expression: VARP(nv10) OVER (): VARP of a value of this type is not modelled.
+VARP(nvx) OVER () -> unknown unsupported-expression: VARP(nvx) OVER (): VARP of a value of this type is not modelled.
+VARP(dt) OVER () -> unknown unsupported-expression: VARP(dt) OVER (): VARP of a value of this type is not modelled.
+VARP(tm3) OVER () -> unknown unsupported-expression: VARP(tm3) OVER (): VARP of a value of this type is not modelled.
+VARP(dtm) OVER () -> unknown unsupported-expression: VARP(dtm) OVER (): VARP of a value of this type is not modelled.
+VARP(dt23) OVER () -> unknown unsupported-expression: VARP(dt23) OVER (): VARP of a value of this type is not modelled.
+VARP(sdt) OVER () -> unknown unsupported-expression: VARP(sdt) OVER (): VARP of a value of this type is not modelled.
+VARP(dto3) OVER () -> unknown unsupported-expression: VARP(dto3) OVER (): VARP of a value of this type is not modelled.
+VARP(u) OVER () -> unknown unsupported-expression: VARP(u) OVER (): VARP of a value of this type is not modelled.
+VARP(bin4) OVER () -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+VARP(vb10) OVER () -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+VARP(x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+VARP(sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+VARP(j) OVER () -> unknown (no unknown recorded)
+VARP(1) OVER () -> float number/float
+VARP(12345) OVER () -> float number/float
+VARP(2.50) OVER () -> float number/float
+VARP('ab') OVER () -> unknown unsupported-expression: VARP('ab') OVER (): VARP of a value of this type is not modelled.
+VARP(N'ab') OVER () -> unknown unsupported-expression: VARP(N'ab') OVER (): VARP of a value of this type is not modelled.
+VARP(1e0) OVER () -> float number/float null:arithmetic-overflow
+VARP($1) OVER () -> float number/float
+MIN(bt) OVER () -> unknown unsupported-expression: MIN(bt) OVER (): SQL Server refuses MIN of bit.
+MIN(ti) OVER () -> tinyint number/uint8 {[0 255]}
+MIN(si) OVER () -> smallint number/int16 {[-32768 32767]}
+MIN(i) OVER () -> int number/int32 {[-2147483648 2147483647]}
+MIN(bi) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+MIN(d52) OVER () -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+MIN(d380) OVER () -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+MIN(d3838) OVER () -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+MIN(n102) OVER () -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+MIN(m) OVER () -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MIN(sm) OVER () -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+MIN(f) OVER () -> float number/float
+MIN(r) OVER () -> real number/float
+MIN(f24) OVER () -> float(24) number/float
+MIN(f25) OVER () -> float(25) number/float
+MIN(c3) OVER () -> char(3) string {length=3}
+MIN(v10) OVER () -> varchar(10) string {length<=10}
+MIN(vx) OVER () -> varchar(max) string
+MIN(nc3) OVER () -> nchar(3) string {length=3}
+MIN(nv10) OVER () -> nvarchar(10) string {length<=10}
+MIN(nvx) OVER () -> nvarchar(max) string
+MIN(dt) OVER () -> date date
+MIN(tm3) OVER () -> time(3) time
+MIN(dtm) OVER () -> datetime datetime/local
+MIN(dt23) OVER () -> datetime2(3) datetime/local
+MIN(sdt) OVER () -> smalldatetime datetime/local
+MIN(dto3) OVER () -> datetimeoffset(3) datetime/offset
+MIN(u) OVER () -> uniqueidentifier uuid
+MIN(bin4) OVER () -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MIN(vb10) OVER () -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MIN(x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MIN(j) OVER () -> unknown (no unknown recorded)
+MIN(1) OVER () -> int number/int32 {[-2147483648 2147483647]}
+MIN(12345) OVER () -> int number/int32 {[-2147483648 2147483647]}
+MIN(2.50) OVER () -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+MIN('ab') OVER () -> varchar(2) string {length<=2}
+MIN(N'ab') OVER () -> nvarchar(2) string {length<=2}
+MIN(1e0) OVER () -> float number/float
+MIN($1) OVER () -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MAX(bt) OVER (PARTITION BY id) -> unknown unsupported-expression: MAX(bt) OVER (PARTITION BY id): SQL Server refuses MAX of bit.
+MAX(ti) OVER (PARTITION BY id) -> tinyint number/uint8 {[0 255]}
+MAX(si) OVER (PARTITION BY id) -> smallint number/int16 {[-32768 32767]}
+MAX(i) OVER (PARTITION BY id) -> int number/int32 {[-2147483648 2147483647]}
+MAX(bi) OVER (PARTITION BY id) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+MAX(d52) OVER (PARTITION BY id) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+MAX(d380) OVER (PARTITION BY id) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+MAX(d3838) OVER (PARTITION BY id) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+MAX(n102) OVER (PARTITION BY id) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+MAX(m) OVER (PARTITION BY id) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+MAX(sm) OVER (PARTITION BY id) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+MAX(f) OVER (PARTITION BY id) -> float number/float
+MAX(r) OVER (PARTITION BY id) -> real number/float
+MAX(f24) OVER (PARTITION BY id) -> float(24) number/float
+MAX(f25) OVER (PARTITION BY id) -> float(25) number/float
+MAX(c3) OVER (PARTITION BY id) -> char(3) string {length=3}
+MAX(v10) OVER (PARTITION BY id) -> varchar(10) string {length<=10}
+MAX(vx) OVER (PARTITION BY id) -> varchar(max) string
+MAX(nc3) OVER (PARTITION BY id) -> nchar(3) string {length=3}
+MAX(nv10) OVER (PARTITION BY id) -> nvarchar(10) string {length<=10}
+MAX(nvx) OVER (PARTITION BY id) -> nvarchar(max) string
+MAX(dt) OVER (PARTITION BY id) -> date date
+MAX(tm3) OVER (PARTITION BY id) -> time(3) time
+MAX(dtm) OVER (PARTITION BY id) -> datetime datetime/local
+MAX(dt23) OVER (PARTITION BY id) -> datetime2(3) datetime/local
+MAX(sdt) OVER (PARTITION BY id) -> smalldatetime datetime/local
+MAX(dto3) OVER (PARTITION BY id) -> datetimeoffset(3) datetime/offset
+MAX(u) OVER (PARTITION BY id) -> uniqueidentifier uuid
+MAX(bin4) OVER (PARTITION BY id) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+MAX(vb10) OVER (PARTITION BY id) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+MAX(x) OVER (PARTITION BY id) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MAX(sv) OVER (PARTITION BY id) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+MAX(j) OVER (PARTITION BY id) -> unknown (no unknown recorded)
+MAX(1) OVER (PARTITION BY id) -> int number/int32 {[-2147483648 2147483647]}
+MAX(12345) OVER (PARTITION BY id) -> int number/int32 {[-2147483648 2147483647]}
+MAX(2.50) OVER (PARTITION BY id) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+MAX('ab') OVER (PARTITION BY id) -> varchar(2) string {length<=2}
+MAX(N'ab') OVER (PARTITION BY id) -> nvarchar(2) string {length<=2}
+MAX(1e0) OVER (PARTITION BY id) -> float number/float
+MAX($1) OVER (PARTITION BY id) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+FIRST_VALUE(bt) OVER (ORDER BY id) -> bit boolean
+FIRST_VALUE(ti) OVER (ORDER BY id) -> tinyint number/uint8 {[0 255]}
+FIRST_VALUE(si) OVER (ORDER BY id) -> smallint number/int16 {[-32768 32767]}
+FIRST_VALUE(i) OVER (ORDER BY id) -> int number/int32 {[-2147483648 2147483647]}
+FIRST_VALUE(bi) OVER (ORDER BY id) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+FIRST_VALUE(d52) OVER (ORDER BY id) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+FIRST_VALUE(d380) OVER (ORDER BY id) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+FIRST_VALUE(d3838) OVER (ORDER BY id) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+FIRST_VALUE(n102) OVER (ORDER BY id) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+FIRST_VALUE(m) OVER (ORDER BY id) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+FIRST_VALUE(sm) OVER (ORDER BY id) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+FIRST_VALUE(f) OVER (ORDER BY id) -> float number/float
+FIRST_VALUE(r) OVER (ORDER BY id) -> real number/float
+FIRST_VALUE(f24) OVER (ORDER BY id) -> float(24) number/float
+FIRST_VALUE(f25) OVER (ORDER BY id) -> float(25) number/float
+FIRST_VALUE(c3) OVER (ORDER BY id) -> char(3) string {length=3}
+FIRST_VALUE(v10) OVER (ORDER BY id) -> varchar(10) string {length<=10}
+FIRST_VALUE(vx) OVER (ORDER BY id) -> varchar(max) string
+FIRST_VALUE(nc3) OVER (ORDER BY id) -> nchar(3) string {length=3}
+FIRST_VALUE(nv10) OVER (ORDER BY id) -> nvarchar(10) string {length<=10}
+FIRST_VALUE(nvx) OVER (ORDER BY id) -> nvarchar(max) string
+FIRST_VALUE(dt) OVER (ORDER BY id) -> date date
+FIRST_VALUE(tm3) OVER (ORDER BY id) -> time(3) time
+FIRST_VALUE(dtm) OVER (ORDER BY id) -> datetime datetime/local
+FIRST_VALUE(dt23) OVER (ORDER BY id) -> datetime2(3) datetime/local
+FIRST_VALUE(sdt) OVER (ORDER BY id) -> smalldatetime datetime/local
+FIRST_VALUE(dto3) OVER (ORDER BY id) -> datetimeoffset(3) datetime/offset
+FIRST_VALUE(u) OVER (ORDER BY id) -> uniqueidentifier uuid
+FIRST_VALUE(bin4) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+FIRST_VALUE(vb10) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+FIRST_VALUE(x) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+FIRST_VALUE(sv) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+FIRST_VALUE(j) OVER (ORDER BY id) -> unknown (no unknown recorded)
+FIRST_VALUE(1) OVER (ORDER BY id) -> int number/int32 {[-2147483648 2147483647]}
+FIRST_VALUE(12345) OVER (ORDER BY id) -> int number/int32 {[-2147483648 2147483647]}
+FIRST_VALUE(2.50) OVER (ORDER BY id) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+FIRST_VALUE('ab') OVER (ORDER BY id) -> varchar(2) string {length<=2}
+FIRST_VALUE(N'ab') OVER (ORDER BY id) -> nvarchar(2) string {length<=2}
+FIRST_VALUE(1e0) OVER (ORDER BY id) -> float number/float
+FIRST_VALUE($1) OVER (ORDER BY id) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+LAST_VALUE(bt) OVER (ORDER BY id) -> bit boolean
+LAST_VALUE(ti) OVER (ORDER BY id) -> tinyint number/uint8 {[0 255]}
+LAST_VALUE(si) OVER (ORDER BY id) -> smallint number/int16 {[-32768 32767]}
+LAST_VALUE(i) OVER (ORDER BY id) -> int number/int32 {[-2147483648 2147483647]}
+LAST_VALUE(bi) OVER (ORDER BY id) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+LAST_VALUE(d52) OVER (ORDER BY id) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+LAST_VALUE(d380) OVER (ORDER BY id) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+LAST_VALUE(d3838) OVER (ORDER BY id) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+LAST_VALUE(n102) OVER (ORDER BY id) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+LAST_VALUE(m) OVER (ORDER BY id) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+LAST_VALUE(sm) OVER (ORDER BY id) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+LAST_VALUE(f) OVER (ORDER BY id) -> float number/float
+LAST_VALUE(r) OVER (ORDER BY id) -> real number/float
+LAST_VALUE(f24) OVER (ORDER BY id) -> float(24) number/float
+LAST_VALUE(f25) OVER (ORDER BY id) -> float(25) number/float
+LAST_VALUE(c3) OVER (ORDER BY id) -> char(3) string {length=3}
+LAST_VALUE(v10) OVER (ORDER BY id) -> varchar(10) string {length<=10}
+LAST_VALUE(vx) OVER (ORDER BY id) -> varchar(max) string
+LAST_VALUE(nc3) OVER (ORDER BY id) -> nchar(3) string {length=3}
+LAST_VALUE(nv10) OVER (ORDER BY id) -> nvarchar(10) string {length<=10}
+LAST_VALUE(nvx) OVER (ORDER BY id) -> nvarchar(max) string
+LAST_VALUE(dt) OVER (ORDER BY id) -> date date
+LAST_VALUE(tm3) OVER (ORDER BY id) -> time(3) time
+LAST_VALUE(dtm) OVER (ORDER BY id) -> datetime datetime/local
+LAST_VALUE(dt23) OVER (ORDER BY id) -> datetime2(3) datetime/local
+LAST_VALUE(sdt) OVER (ORDER BY id) -> smalldatetime datetime/local
+LAST_VALUE(dto3) OVER (ORDER BY id) -> datetimeoffset(3) datetime/offset
+LAST_VALUE(u) OVER (ORDER BY id) -> uniqueidentifier uuid
+LAST_VALUE(bin4) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+LAST_VALUE(vb10) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+LAST_VALUE(x) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LAST_VALUE(sv) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+LAST_VALUE(j) OVER (ORDER BY id) -> unknown (no unknown recorded)
+LAST_VALUE(1) OVER (ORDER BY id) -> int number/int32 {[-2147483648 2147483647]}
+LAST_VALUE(12345) OVER (ORDER BY id) -> int number/int32 {[-2147483648 2147483647]}
+LAST_VALUE(2.50) OVER (ORDER BY id) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+LAST_VALUE('ab') OVER (ORDER BY id) -> varchar(2) string {length<=2}
+LAST_VALUE(N'ab') OVER (ORDER BY id) -> nvarchar(2) string {length<=2}
+LAST_VALUE(1e0) OVER (ORDER BY id) -> float number/float
+LAST_VALUE($1) OVER (ORDER BY id) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+LAG(bt) OVER (ORDER BY id) -> bit boolean null:window-edge
+LAG(ti) OVER (ORDER BY id) -> tinyint number/uint8 null:window-edge {[0 255]}
+LAG(si) OVER (ORDER BY id) -> smallint number/int16 null:window-edge {[-32768 32767]}
+LAG(i) OVER (ORDER BY id) -> int number/int32 null:window-edge {[-2147483648 2147483647]}
+LAG(bi) OVER (ORDER BY id) -> bigint number/int64 null:window-edge {[-9223372036854775808 9223372036854775807]}
+LAG(d52) OVER (ORDER BY id) -> decimal(5,2) number/decimal null:window-edge {digits=5,2 [-999.99 999.99]}
+LAG(d380) OVER (ORDER BY id) -> decimal(38,0) number/decimal null:window-edge {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+LAG(d3838) OVER (ORDER BY id) -> decimal(38,38) number/decimal null:window-edge {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+LAG(n102) OVER (ORDER BY id) -> numeric(10,2) number/decimal null:window-edge {digits=10,2 [-99999999.99 99999999.99]}
+LAG(m) OVER (ORDER BY id) -> money number/decimal null:window-edge {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+LAG(sm) OVER (ORDER BY id) -> smallmoney number/decimal null:window-edge {digits=10,4 [-214748.3648 214748.3647]}
+LAG(f) OVER (ORDER BY id) -> float number/float null:window-edge
+LAG(r) OVER (ORDER BY id) -> real number/float null:window-edge
+LAG(f24) OVER (ORDER BY id) -> float(24) number/float null:window-edge
+LAG(f25) OVER (ORDER BY id) -> float(25) number/float null:window-edge
+LAG(c3) OVER (ORDER BY id) -> char(3) string null:window-edge {length=3}
+LAG(v10) OVER (ORDER BY id) -> varchar(10) string null:window-edge {length<=10}
+LAG(vx) OVER (ORDER BY id) -> varchar(max) string null:window-edge
+LAG(nc3) OVER (ORDER BY id) -> nchar(3) string null:window-edge {length=3}
+LAG(nv10) OVER (ORDER BY id) -> nvarchar(10) string null:window-edge {length<=10}
+LAG(nvx) OVER (ORDER BY id) -> nvarchar(max) string null:window-edge
+LAG(dt) OVER (ORDER BY id) -> date date null:window-edge
+LAG(tm3) OVER (ORDER BY id) -> time(3) time null:window-edge
+LAG(dtm) OVER (ORDER BY id) -> datetime datetime/local null:window-edge
+LAG(dt23) OVER (ORDER BY id) -> datetime2(3) datetime/local null:window-edge
+LAG(sdt) OVER (ORDER BY id) -> smalldatetime datetime/local null:window-edge
+LAG(dto3) OVER (ORDER BY id) -> datetimeoffset(3) datetime/offset null:window-edge
+LAG(u) OVER (ORDER BY id) -> uniqueidentifier uuid null:window-edge
+LAG(bin4) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+LAG(vb10) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+LAG(x) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LAG(sv) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+LAG(j) OVER (ORDER BY id) -> unknown (no unknown recorded)
+LAG(1) OVER (ORDER BY id) -> int number/int32 null:window-edge {[-2147483648 2147483647]}
+LAG(12345) OVER (ORDER BY id) -> int number/int32 null:window-edge {[-2147483648 2147483647]}
+LAG(2.50) OVER (ORDER BY id) -> numeric(3,2) number/decimal null:window-edge {digits=3,2 [-9.99 9.99]}
+LAG('ab') OVER (ORDER BY id) -> varchar(2) string null:window-edge {length<=2}
+LAG(N'ab') OVER (ORDER BY id) -> nvarchar(2) string null:window-edge {length<=2}
+LAG(1e0) OVER (ORDER BY id) -> float number/float null:window-edge
+LAG($1) OVER (ORDER BY id) -> money number/decimal null:window-edge {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+LEAD(bt, 1, bt) OVER (ORDER BY id) -> bit boolean
+LEAD(ti, 1, ti) OVER (ORDER BY id) -> tinyint number/uint8 {[0 255]}
+LEAD(si, 1, si) OVER (ORDER BY id) -> smallint number/int16 {[-32768 32767]}
+LEAD(i, 1, i) OVER (ORDER BY id) -> int number/int32 {[-2147483648 2147483647]}
+LEAD(bi, 1, bi) OVER (ORDER BY id) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+LEAD(d52, 1, d52) OVER (ORDER BY id) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+LEAD(d380, 1, d380) OVER (ORDER BY id) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+LEAD(d3838, 1, d3838) OVER (ORDER BY id) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+LEAD(n102, 1, n102) OVER (ORDER BY id) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+LEAD(m, 1, m) OVER (ORDER BY id) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+LEAD(sm, 1, sm) OVER (ORDER BY id) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+LEAD(f, 1, f) OVER (ORDER BY id) -> float number/float
+LEAD(r, 1, r) OVER (ORDER BY id) -> real number/float
+LEAD(f24, 1, f24) OVER (ORDER BY id) -> real number/float
+LEAD(f25, 1, f25) OVER (ORDER BY id) -> float number/float
+LEAD(c3, 1, c3) OVER (ORDER BY id) -> char(3) string {length=3}
+LEAD(v10, 1, v10) OVER (ORDER BY id) -> varchar(10) string {length<=10}
+LEAD(vx, 1, vx) OVER (ORDER BY id) -> varchar(max) string
+LEAD(nc3, 1, nc3) OVER (ORDER BY id) -> nchar(3) string {length=3}
+LEAD(nv10, 1, nv10) OVER (ORDER BY id) -> nvarchar(10) string {length<=10}
+LEAD(nvx, 1, nvx) OVER (ORDER BY id) -> nvarchar(max) string
+LEAD(dt, 1, dt) OVER (ORDER BY id) -> date date
+LEAD(tm3, 1, tm3) OVER (ORDER BY id) -> time(3) time
+LEAD(dtm, 1, dtm) OVER (ORDER BY id) -> datetime datetime/local
+LEAD(dt23, 1, dt23) OVER (ORDER BY id) -> datetime2(3) datetime/local
+LEAD(sdt, 1, sdt) OVER (ORDER BY id) -> smalldatetime datetime/local
+LEAD(dto3, 1, dto3) OVER (ORDER BY id) -> datetimeoffset(3) datetime/offset
+LEAD(u, 1, u) OVER (ORDER BY id) -> uniqueidentifier uuid
+LEAD(bin4, 1, bin4) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+LEAD(vb10, 1, vb10) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+LEAD(x, 1, x) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LEAD(sv, 1, sv) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+LEAD(j, 1, j) OVER (ORDER BY id) -> unknown (no unknown recorded)
+LEAD(1, 1, 1) OVER (ORDER BY id) -> int number/int32 {[-2147483648 2147483647]}
+LEAD(12345, 1, 12345) OVER (ORDER BY id) -> int number/int32 {[-2147483648 2147483647]}
+LEAD(2.50, 1, 2.50) OVER (ORDER BY id) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+LEAD('ab', 1, 'ab') OVER (ORDER BY id) -> varchar(2) string {length<=2}
+LEAD(N'ab', 1, N'ab') OVER (ORDER BY id) -> nvarchar(2) string {length<=2}
+LEAD(1e0, 1, 1e0) OVER (ORDER BY id) -> float number/float
+LEAD($1, 1, $1) OVER (ORDER BY id) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY bt) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ti) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY si) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY i) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY bi) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY d52) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY d380) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY d3838) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY n102) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY m) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sm) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY f) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY r) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY f24) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY f25) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY c3) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY c3) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY v10) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY v10) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY vx) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY vx) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY nc3) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY nc3) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY nv10) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY nv10) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY nvx) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY nvx) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY dt) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY dt) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY tm3) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY tm3) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY dtm) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY dtm) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY dt23) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY dt23) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sdt) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sdt) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY dto3) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY dto3) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY u) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY u) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY bin4) OVER () -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY vb10) OVER () -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY j) OVER () -> unknown (no unknown recorded)
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 1) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 12345) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 2.50) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 'ab') OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 'ab') OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY N'ab') OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY N'ab') OVER (): PERCENTILE_CONT of a value of this type is not modelled.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 1e0) OVER () -> float number/float
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY $1) OVER () -> float number/float
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY bt) OVER () -> bit boolean
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY ti) OVER () -> tinyint number/uint8 {[0 255]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY si) OVER () -> smallint number/int16 {[-32768 32767]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY i) OVER () -> int number/int32 {[-2147483648 2147483647]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY bi) OVER () -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY d52) OVER () -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY d380) OVER () -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY d3838) OVER () -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY n102) OVER () -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY m) OVER () -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY sm) OVER () -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY f) OVER () -> float number/float
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY r) OVER () -> real number/float
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY f24) OVER () -> float(24) number/float
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY f25) OVER () -> float(25) number/float
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY c3) OVER () -> char(3) string {length=3}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY v10) OVER () -> varchar(10) string {length<=10}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY vx) OVER () -> varchar(max) string
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY nc3) OVER () -> nchar(3) string {length=3}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY nv10) OVER () -> nvarchar(10) string {length<=10}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY nvx) OVER () -> nvarchar(max) string
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY dt) OVER () -> date date
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY tm3) OVER () -> time(3) time
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY dtm) OVER () -> datetime datetime/local
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY dt23) OVER () -> datetime2(3) datetime/local
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY sdt) OVER () -> smalldatetime datetime/local
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY dto3) OVER () -> datetimeoffset(3) datetime/offset
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY u) OVER () -> uniqueidentifier uuid
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY bin4) OVER () -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY vb10) OVER () -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY j) OVER () -> unknown (no unknown recorded)
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 1) OVER () -> int number/int32 {[-2147483648 2147483647]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 12345) OVER () -> int number/int32 {[-2147483648 2147483647]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 2.50) OVER () -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 'ab') OVER () -> varchar(2) string {length<=2}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY N'ab') OVER () -> nvarchar(2) string {length<=2}
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 1e0) OVER () -> float number/float
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY $1) OVER () -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
