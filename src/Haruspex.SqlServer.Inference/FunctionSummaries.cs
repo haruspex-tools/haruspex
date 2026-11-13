@@ -91,16 +91,16 @@ internal sealed class FunctionSummaries
         if (function is null)
             return new OneOf(null, new UnknownShape(IrUnknownReason.UnsupportedExpression, $"{name} is not a function of the project.", at));
         if (function.Redefinition is { } redefinition)
-            return new OneOf(null, new UnknownShape(IrUnknownReason.Redefined, redefinition.Message, redefinition.At));
-        if (function.Body.ReturnType is not ScalarFunctionReturnType)
+            return new OneOf(null, new UnknownShape(IrUnknownReason.Redefined, Redefinitions.Why(redefinition), redefinition.At));
+        if (function is not ScalarFunction scalar)
             return new OneOf(null, new UnknownShape(IrUnknownReason.UnsupportedExpression, $"{name} is not a scalar function.", at));
-        return new OneOf(Return(function), null);
+        return new OneOf(Return(scalar), null);
     }
 
     /// <summary>A function's return, or the reason it has none.</summary>
     internal readonly record struct OneOf(FunctionReturn? Return, UnknownShape? Unknown);
 
-    private FunctionReturn Return(UserFunction function)
+    private FunctionReturn Return(ScalarFunction function)
     {
         if (assumed is not null && assumed.TryGetValue(function.Name, out var current))
             return current;
@@ -118,21 +118,21 @@ internal sealed class FunctionSummaries
         var members = components[index];
         if (!recursiveComponents.Contains(index))
         {
-            var only = model.FindFunction(members[0])!;
+            var only = Scalar(members[0]);
             done[only.Name] = Read(only);
             return;
         }
 
         if (uncommitted)
         {
-            foreach (var member in members.Select(m => model.FindFunction(m)!))
+            foreach (var member in members.Select(Scalar))
                 done[member.Name] = Read(member, header: true) with { Content = null, NullableBecause = [new IrNullReason(IrNullRule.FunctionResult, member.Span.ToString())] };
             return;
         }
 
         // The least fixed point, from no information, of reading every body with the results assumed so far.
         var outer = assumed;
-        var functions = members.Select(m => model.FindFunction(m)!).ToList();
+        var functions = members.Select(Scalar).ToList();
         Iteration<EquatableArray<FunctionReturn>> iteration;
         try
         {
@@ -229,8 +229,11 @@ internal sealed class FunctionSummaries
         return finite;
     }
 
+    /// <summary>A scalar function of a component: the components are found among the scalar functions only.</summary>
+    private ScalarFunction Scalar(ObjectName name) => (ScalarFunction)model.FindFunction(name)!;
+
     /// <summary>No information: the result before any step.</summary>
-    private FunctionReturn Start(UserFunction function)
+    private FunctionReturn Start(ScalarFunction function)
     {
         var start = Read(function, header: true);
         return start.Content is null ? start : start with { Content = new NeverShape(function.Span.Start), NullableBecause = [] };
@@ -261,15 +264,14 @@ internal sealed class FunctionSummaries
 
     /// <summary>Reads a body. Inside a recursive component, the calls it makes see the previous step's results.</summary>
     /// <param name="header">Read only the header: whether the body is a form that can return JSON at all.</param>
-    private FunctionReturn Read(UserFunction function, bool header = false)
+    private FunctionReturn Read(ScalarFunction function, bool header = false)
     {
-        var body = function.Body;
         var at = function.Span.Start;
-        var returnType = SyntaxReader.Type(((ScalarFunctionReturnType)body.ReturnType).DataType);
+        var returnType = function.Returns;
         var resolvedType = SchemaRules.ResolveType(model, returnType);
         var resolved = resolvedType?.BuiltIn;
         var returnsJson = resolvedType?.Type == BuiltInType.Json;
-        var nullOnNull = body.Options?.Any(o => o.OptionKind == FunctionOptionKind.ReturnsNullOnNullInput) == true;
+        var nullOnNull = function.ReturnsNullOnNullInput;
 
         // The declared type: a json return is live JSON whose shape is in the data; anything else as a variable is typed.
         var declared = returnsJson
@@ -277,18 +279,18 @@ internal sealed class FunctionSummaries
             : SqlTypes.ToShape(model, returnType, at);
         var declaredOnly = new FunctionReturn(declared, returnsJson, null, [new IrNullReason(IrNullRule.FunctionResult, at.ToString())], nullOnNull);
 
-        if (body.MethodSpecifier is not null || body.StatementList is null || !HoldsAnyJson(resolved))
+        if (function.Body is not SqlBody { Statements: var statements } || !HoldsAnyJson(resolved))
             return declaredOnly;
-        if (Returned(body) is not { } expression)
+        if (Returned(statements, function.Parameters) is not { } expression)
             return declaredOnly;
         if (header)
             return declaredOnly with { Content = new NeverShape(at) };
 
-        var parameters = body.Parameters.ToDictionary(
-            p => p.VariableName.Value,
-            p => Parameter(p, nullOnNull, function.Span),
+        var parameters = function.Parameters.ToDictionary(
+            p => p.Name,
+            p => Parameter(p, nullOnNull),
             StringComparer.OrdinalIgnoreCase);
-        var value = new ProcedureAnalyzer(model, function.Span, this, parameters, ansiNullsOff: function.AnsiNullsOff, views: Views, uncommittedReads: uncommitted).Return(expression, body.Parameters);
+        var value = new ProcedureAnalyzer(model, function.Span, this, parameters, ansiNullsOff: function.AnsiNullsOff, views: Views, uncommittedReads: uncommitted).Return(expression, function.Parameters);
 
         var content = value switch
         {
@@ -303,15 +305,15 @@ internal sealed class FunctionSummaries
     /// A parameter inside the body: its declared type, with the type's facts (the argument has been converted to it: a
     /// string cut short, a decimal rounded, observed), nullable unless the body never runs with a null argument.
     /// </summary>
-    private Value Parameter(ProcedureParameter parameter, bool nullOnNull, SourceSpan function)
+    private Value Parameter(Parameter parameter, bool nullOnNull)
     {
-        var at = function.At(parameter);
-        EquatableArray<IrNullReason> because = nullOnNull ? [] : [new IrNullReason(IrNullRule.Parameter, parameter.VariableName.Value)];
-        var type = SyntaxReader.Type(parameter.DataType);
+        var at = parameter.At;
+        EquatableArray<IrNullReason> because = nullOnNull ? [] : [new IrNullReason(IrNullRule.Parameter, parameter.Name)];
+        var type = parameter.Type;
 
         // A json value nests as JSON (observed for variables and columns), and its shape is in the data.
         return SchemaRules.ResolveType(model, type)?.Type == BuiltInType.Json
-            ? new Value(new UnknownShape(IrUnknownReason.JsonShapeUnknown, $"{parameter.VariableName.Value} is a json parameter: its shape is in the data.", at), because, IsLiveJson: true)
+            ? new Value(new UnknownShape(IrUnknownReason.JsonShapeUnknown, $"{parameter.Name} is a json parameter: its shape is in the data.", at), because, IsLiveJson: true)
             : Value.Computed(SqlTypes.ToConvertedShape(model, type, at), because);
     }
 
@@ -323,15 +325,15 @@ internal sealed class FunctionSummaries
     /// The expression the body returns, when the body is <c>RETURN expression</c> or a straight run of declarations and
     /// assignments ending in <c>RETURN @v</c>; null for any other body.
     /// </summary>
-    private ScalarExpression? Returned(FunctionStatementBody body)
+    private ScalarExpression? Returned(StatementList body, IReadOnlyList<Parameter> declared)
     {
-        var statements = body.StatementList.Statements.ToList();
+        var statements = body.Statements.ToList();
         while (statements is [BeginEndBlockStatement block])
             statements = [.. block.StatementList.Statements];
         if (statements is not [.. var before, ReturnStatement { Expression: { } returned }])
             return null;
 
-        var parameters = body.Parameters.Select(p => p.VariableName.Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var parameters = declared.Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var variables = new Dictionary<string, (bool HoldsJson, ScalarExpression? Value)>(StringComparer.OrdinalIgnoreCase);
 
         bool Assign(string name, ScalarExpression value)
@@ -393,10 +395,12 @@ internal sealed class FunctionSummaries
     /// <summary>Tarjan's algorithm over the scalar functions' calls, so each component is solved once, those it calls first.</summary>
     private void FindComponents()
     {
-        var scalar = model.Functions.Where(f => f.Body.ReturnType is ScalarFunctionReturnType).ToList();
+        // In name order, as the call graph has always been walked: the model's source order would change which component
+        // Tarjan's algorithm numbers first.
+        var scalar = model.Functions.OfType<ScalarFunction>().OrderBy(f => f.Name.ToString(), StringComparer.Ordinal).ToList();
         var calls = scalar.ToDictionary(
             f => f.Name,
-            f => Calls(f.Body).Where(c => model.FindFunction(c)?.Body.ReturnType is ScalarFunctionReturnType).Distinct().ToList());
+            f => (f.Body is SqlBody body ? Calls(body.Statements) : []).Where(c => model.FindFunction(c) is ScalarFunction).Distinct().ToList());
 
         var index = 0;
         var indexes = new Dictionary<ObjectName, int>();

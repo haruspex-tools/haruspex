@@ -80,10 +80,10 @@ internal sealed partial class ProcedureAnalyzer
     /// The function's parameters, which are the same for every row its queries read, so a key compared with one is fixed, as
     /// in an inline function.
     /// </param>
-    public Value Return(ScalarExpression expression, IEnumerable<ProcedureParameter> parameters)
+    public Value Return(ScalarExpression expression, IEnumerable<Parameter> parameters)
     {
         foreach (var parameter in parameters)
-            variableTypes[parameter.VariableName.Value] = SyntaxReader.Type(parameter.DataType);
+            variableTypes[parameter.Name] = parameter.Type;
         locals = Locals(new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase));
         return Expression(expression, binder.BindFrom(new QuerySpecification(), null, locals));
     }
@@ -91,11 +91,11 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>A procedure's declared parameters and their types.</summary>
     public static IReadOnlyList<ParameterShape> Parameters(DatabaseModel model, Procedure procedure) =>
     [
-        .. procedure.Body.Parameters.Select(p => new ParameterShape(
-            p.VariableName.Value,
-            SqlTypes.ToShape(model, SyntaxReader.Type(p.DataType), procedure.Span.At(p)),
-            HasDefault: p.Value is not null,
-            IsOutput: p.Modifier == ParameterModifier.Output)),
+        .. procedure.Parameters.Select(p => new ParameterShape(
+            p.Name,
+            SqlTypes.ToShape(model, p.Type, p.At),
+            HasDefault: p.Default is not null,
+            IsOutput: p.IsOutput)),
     ];
 
     /// <summary>

@@ -50,26 +50,28 @@ internal sealed partial class ProcedureAnalyzer
     /// Walks a procedure's body from <see cref="context"/>: the state at its end, joined over the paths that return
     /// successfully, and what stopped the walk, if anything did.
     /// </summary>
+    /// <param name="parameters">The procedure's or function's parameters.</param>
+    /// <param name="statements">Its body.</param>
     /// <param name="returnTable">
     /// A multi-statement function's return table, a table variable its body fills; null for a procedure.
     /// </param>
-    public Walked Walk(ProcedureStatementBodyBase procedure, DeclareTableVariableBody? returnTable = null)
+    public Walked Walk(IReadOnlyList<Parameter> parameters, StatementList statements, Table? returnTable = null)
     {
         // Declarations are compiled, not run (observed: a variable or table variable declared in a branch not taken still
         // exists), so they are collected from the whole body first. A name can be declared once in a batch.
         var tableVariables = new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase);
         var start = new List<KeyValuePair<string, Value>>();
-        foreach (var parameter in procedure.Parameters)
+        foreach (var parameter in parameters)
         {
-            var name = parameter.VariableName.Value;
-            variableTypes[name] = SyntaxReader.Type(parameter.DataType);
-            variableShapes[name] = DeclaredShape(SyntaxReader.Type(parameter.DataType), At(parameter), name, out var live);
+            var name = parameter.Name;
+            variableTypes[name] = parameter.Type;
+            variableShapes[name] = DeclaredShape(parameter.Type, parameter.At, name, out var live);
             start.Add(new(name, Value.Computed(variableShapes[name], Because(IrNullRule.Parameter, name, variableShapes[name]), live)));
         }
 
-        body = procedure.StatementList;
+        body = statements;
         var declarations = new DeclarationCollector();
-        procedure.StatementList.Accept(declarations);
+        statements.Accept(declarations);
         foreach (var cursor in declarations.Cursors)
         {
             if (!cursors.TryGetValue(cursor.Name.Value, out var same))
@@ -89,12 +91,12 @@ internal sealed partial class ProcedureAnalyzer
             start.Add(new(name, Value.Computed(variableShapes[name], Because(IrNullRule.Variable, name, variableShapes[name]), live)));
         }
 
-        foreach (var table in returnTable is null ? declarations.Tables : declarations.Tables.Prepend(returnTable))
+        var declared = declarations.Tables.Select(t => SyntaxReader.Table(new ObjectName("", t.VariableName.Value), t.Definition, source.Within(t)));
+        foreach (var definition in returnTable is null ? declared : declared.Prepend(returnTable))
         {
-            var name = table.VariableName.Value;
+            var name = definition.Name.Name;
             if (tableVariables.ContainsKey(name))
                 continue;
-            var definition = SyntaxReader.Table(new ObjectName("", name), table.Definition, source.Within(table));
             tableVariableDefinitions[name] = definition;
             tableVariables[name] = new LocalRelationValues(
                 [.. definition.Columns.Select(c => c.Name)],
@@ -110,7 +112,7 @@ internal sealed partial class ProcedureAnalyzer
         foreach (var element in declarations.Variables)
         {
             if (Traced(variableShapes[element.VariableName.Value]) && !initial.Json.ContainsKey(element.VariableName.Value)
-                && !procedure.Parameters.Any(p => p.VariableName.Value.Equals(element.VariableName.Value, StringComparison.OrdinalIgnoreCase)))
+                && !parameters.Any(p => p.Name.Equals(element.VariableName.Value, StringComparison.OrdinalIgnoreCase)))
             {
                 initial = initial.WithJson(element.VariableName.Value, JsonSlot.Empty);
             }
@@ -125,12 +127,12 @@ internal sealed partial class ProcedureAnalyzer
             }
         }
 
-        var walked = Walk(procedure.StatementList.Statements, initial);
+        var walked = Walk(statements.Statements, initial);
         if (blocker is not null)
             return new Walked(null, [], blocker, declaredUsed);
 
         // Paths that throw end in an error, which the IR does not describe: it describes calls that succeed.
-        var end = FlowState.Join(returns.Prepend(walked.Next), At(procedure));
+        var end = FlowState.Join(returns.Prepend(walked.Next), source.Start);
 
         // An error after the last statement's results were sent leaves with all of them.
         if (end is not null)
@@ -839,11 +841,11 @@ internal sealed partial class ProcedureAnalyzer
                     table.Columns[i].Name,
                     SyntaxReader.Type(change.DataType),
                     change.AlterTableAlterColumnOption == AlterTableAlterColumnOption.NotNull ? DeclaredNullability.NotNull : DeclaredNullability.Null,
-                    isIdentity: false,
-                    computedExpression: null,
+                    IsIdentity: false,
+                    ComputedExpression: null,
                     at,
                     change.Collation?.Value);
-                var definition = new Table(new ObjectName("", name), [column], [], source.Within(alter));
+                var definition = new Table(new ObjectName("", name), source.Within(alter), [column], [], [], []);
                 var columns = table.Columns.ToList();
                 columns[i] = Fresh(definition, column, name, table.Columns[i].Identity, at);
                 return state.WithTemp(name, table with { Columns = [.. columns] });
@@ -904,7 +906,7 @@ internal sealed partial class ProcedureAnalyzer
             if (c.Declaration is not { } declaration)
                 return c;
             var changed = drop
-                ? new Table(declaration.Name, declaration.Columns, declaration.PrimaryKey, declaration.Span, [.. declaration.Checks.Where(k => !Matches(k))], declaration.UniqueKeys)
+                ? declaration with { Checks = [.. declaration.Checks.Where(k => !Matches(k))] }
                 : Disabled(declaration, k => Matches(k), at);
             return c with { Value = Declared(changed, changed.Column(c.Name)!, name, temporary: true), Declaration = changed };
         })];
@@ -912,8 +914,12 @@ internal sealed partial class ProcedureAnalyzer
         bool Matches(CheckConstraint check) => !named || constraint!.Equals(check.Name, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// The table with the checks a statement may have disabled marked so. The copy keeps no unique keys: a key is not followed
+    /// past a change to its table's constraints, which only claims less.
+    /// </summary>
     private static Table Disabled(Table table, Func<CheckConstraint, bool>? which, SourceLocation at) =>
-        new(table.Name, table.Columns, table.PrimaryKey, table.Span, [.. table.Checks.Select(k => which is null || which(k) ? k.WithDisabledAt(at) : k)]);
+        table with { Checks = [.. table.Checks.Select(k => which is null || which(k) ? k with { DisabledAt = at } : k)], UniqueKeys = [] };
 
     // ---- CTEs -----------------------------------------------------------------------------------------------------
 
@@ -1008,14 +1014,14 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>A CTE's columns from its query's row, named by its column list when it has one; null when they cannot be listed.</summary>
-    private static LocalRelationValues? Relation(CommonTableExpression cte, Row row) => Relation(cte.Columns, row);
+    private static LocalRelationValues? Relation(CommonTableExpression cte, Row row) => Relation([.. cte.Columns.Select(c => c.Value)], row);
 
     /// <summary>A CTE's or derived table's columns from its query's row, named by its column list when it has one.</summary>
-    private static LocalRelationValues? Relation(IList<Identifier> columns, Row row)
+    private static LocalRelationValues? Relation(IReadOnlyList<string> columns, Row row)
     {
         if (row.Star is not null)
             return null;
-        List<string?> names = columns.Count > 0 ? [.. columns.Select(c => c.Value)] : [.. row.Columns.Select(c => c.Name)];
+        List<string?> names = columns.Count > 0 ? [.. columns] : [.. row.Columns.Select(c => c.Name)];
         if (names.Count != row.Columns.Count || names.Any(string.IsNullOrEmpty) || names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Count)
             return null;
         return new LocalRelationValues([.. names.Select(n => n!)], [.. row.Columns.Select(c => c.Value)], null);
@@ -1087,7 +1093,7 @@ internal sealed partial class ProcedureAnalyzer
         var at = At(derived);
         var name = derived.Alias?.Value ?? "(derived table)";
         var row = Query(derived.QueryExpression, outer);
-        return Relation(derived.Columns, row) is { } relation
+        return Relation([.. derived.Columns.Select(c => c.Value)], row) is { } relation
             ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One }
             : LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{name}: its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.", at));
     }

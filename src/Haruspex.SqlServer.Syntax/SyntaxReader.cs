@@ -139,7 +139,7 @@ public static class SyntaxReader
                 column.ColumnIdentifier.Value,
                 Type(column.DataType),
                 nullability,
-                isIdentity: column.IdentityOptions is not null,
+                IsIdentity: column.IdentityOptions is not null,
                 column.ComputedColumnExpression,
                 span.At(column),
                 column.Collation?.Value)
@@ -173,7 +173,7 @@ public static class SyntaxReader
                 span.At(i))))
             .ToList();
 
-        return new Table(name, columns, primaryKey, span, checks, keys) { IsGraph = isGraph };
+        return new Table(name, span, columns, primaryKey, checks, keys) { IsGraph = isGraph };
     }
 
     private static CheckConstraint Check(CheckConstraintDefinition check, string? column, SourceSpan span) =>

@@ -36,6 +36,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0028](0028-one-fixed-point-and-one-environment-of-facts.md) | 12 Nov 2026 | One fixed-point iteration with one cap, and one immutable environment of what conditions prove |
 | [0029](0029-built-in-types-are-one-catalogue-observed-row-by-row.md) | 12 Nov 2026 | Built-in types and conversions are one catalogue of data, observed row by row |
 | [0030](0030-built-in-functions-are-entries-with-stable-codes-typed-through-one-table.md) | 13 Nov 2026 | Built-in functions are entries with stable codes, typed through one table |
+| [0031](0031-the-model-is-closed-hierarchies-of-records.md) | 13 Nov 2026 | The model is closed hierarchies of records, read from ScriptDom in one place, in source order |
 
 ## Writing a record
 

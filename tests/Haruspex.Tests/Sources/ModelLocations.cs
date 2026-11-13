@@ -18,8 +18,15 @@ namespace Haruspex.Tests.Sources;
 internal static class ModelLocations
 {
     /// <summary>The read's objects and diagnostics, one sorted line each.</summary>
-    public static string Render(SchemaReadResult read)
+    public static string Render(SchemaReadResult read) => Render(read, sorted: true);
+
+    /// <summary>
+    /// The read's objects and diagnostics, one line each: sorted, or in the model's own order, kind by kind, so that two reads
+    /// can be compared for their order too.
+    /// </summary>
+    public static string Render(SchemaReadResult read, bool sorted)
     {
+        ArgumentNullException.ThrowIfNull(read);
         var lines = new List<string>();
         var model = read.Model;
         foreach (var table in model.Tables)
@@ -34,42 +41,43 @@ internal static class ModelLocations
         }
 
         foreach (var type in model.UserTypes)
-            lines.Add($"type {type.Name} {type.BaseType?.ToString() ?? "CLR"} at {type.Span}");
+            lines.Add($"type {type.Name} {(type is AliasType alias ? alias.BaseType.ToString() : "CLR")} at {type.Span}");
         foreach (var procedure in model.Procedures)
         {
             lines.Add($"procedure {procedure.Name} at {procedure.Span}{AnsiNullsOff(procedure.AnsiNullsOff)}{Changed(procedure.Redefinition)}");
-            foreach (var parameter in procedure.Body.Parameters)
-                lines.Add($"parameter {procedure.Name} {parameter.VariableName.Value} at {procedure.Span.At(parameter.StartLine, parameter.StartColumn)}");
+            foreach (var parameter in procedure.Parameters)
+                lines.Add($"parameter {procedure.Name} {parameter.Name} at {parameter.At}");
         }
 
         foreach (var function in model.Functions)
         {
             lines.Add($"function {function.Name} at {function.Span}{AnsiNullsOff(function.AnsiNullsOff)}{Changed(function.Redefinition)}");
-            foreach (var parameter in function.Body.Parameters)
-                lines.Add($"parameter {function.Name} {parameter.VariableName.Value} at {function.Span.At(parameter.StartLine, parameter.StartColumn)}");
+            foreach (var parameter in function.Parameters)
+                lines.Add($"parameter {function.Name} {parameter.Name} at {parameter.At}");
         }
 
-        foreach (var named in model.NamedObjects)
+        // One for each name a FROM clause may mean besides a table: the first view, synonym or function of that name.
+        foreach (var named in model.Readable)
         {
-            switch (named.Kind)
+            switch (named)
             {
-                case NamedObjectKind.View when named.View is not null:
-                    lines.Add($"view {named.Name} at {named.Span}{AnsiNullsOff(named.AnsiNullsOff)}");
+                case View { Redefinition: null } view:
+                    lines.Add($"view {view.Name} at {view.Span}{AnsiNullsOff(view.AnsiNullsOff)}");
                     break;
-                case NamedObjectKind.View:
-                    lines.Add($"view {named.Name}, defined more than once");
+                case View view:
+                    lines.Add($"view {view.Name}, defined more than once");
                     break;
-                case NamedObjectKind.Synonym:
-                    lines.Add($"synonym {named.Name} for {string.Join(".", named.SynonymFor!.Identifiers.Select(i => i.Value))}");
+                case Synonym synonym:
+                    lines.Add($"synonym {synonym.Name} for {string.Join(".", new[] { synonym.For.Server, synonym.For.Database, synonym.For.Schema, synonym.For.Name }.OfType<string>())}");
                     break;
-                case NamedObjectKind.Function:
+                case Function:
                     lines.Add($"named function {named.Name}");
                     break;
             }
         }
 
         foreach (var trigger in model.Triggers)
-            lines.Add($"trigger {trigger.Name} on {trigger.Parent} at {trigger.Span}{(trigger.Body is null ? ", CLR" : "")}");
+            lines.Add($"trigger {trigger.Name} on {trigger.Parent} at {trigger.Span}{(trigger.Body is SqlBody ? "" : ", CLR")}");
         foreach (var key in model.CascadingKeys)
             lines.Add($"cascading key {key.Referencing} to {key.Referenced} at {key.At}");
         foreach (var change in model.TableRedefinitions)
@@ -77,7 +85,8 @@ internal static class ModelLocations
         foreach (var diagnostic in read.Diagnostics)
             lines.Add($"diagnostic {diagnostic}");
 
-        lines.Sort(StringComparer.Ordinal);
+        if (sorted)
+            lines.Sort(StringComparer.Ordinal);
         return string.Join("\n", lines) + "\n";
     }
 

@@ -24,7 +24,9 @@ internal sealed class SqlProject
     {
         this.model = model;
         Diagnostics = diagnostics;
-        Procedures = [.. model.Procedures.Select(p => p.Name)];
+        // In name order, as a listing is: the model's own order is where each was read, which would make the order the
+        // procedures are inferred in, and so of the warnings they give, depend on the files' names.
+        Procedures = [.. model.Procedures.Select(p => p.Name).OrderBy(n => n.ToString(), StringComparer.Ordinal)];
     }
 
     /// <summary>Errors found while reading the project. Results inferred despite them are not trustworthy.</summary>

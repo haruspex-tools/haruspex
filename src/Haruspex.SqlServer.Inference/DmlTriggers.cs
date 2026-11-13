@@ -74,13 +74,13 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
     private string? Reaches(ObjectName name, DmlEvents events, Binder binder, SourceLocation at, HashSet<string> visited)
     {
         // A write through a synonym writes its object (observed: A_write_through_a_synonym_fires_the_triggers_of_its_table).
-        if (model.FindNamedObject(name) is { Kind: NamedObjectKind.Synonym } synonym)
+        if (model.FindReadable(name) is Synonym synonym)
         {
             if (!visited.Add($"synonym {name}"))
                 return null;
-            var objects = synonym.SynonymFor is { } written ? binder.ResolveWritten(written) : [];
+            var objects = binder.ResolveWritten(synonym.For);
             if (objects.Count == 0)
-                Warn($"{name} (a synonym for {(synonym.SynonymFor is { } far ? FragmentText.OneLine(far) : "an object not known")})", at);
+                Warn($"{name} (a synonym for {synonym.For})", at);
             foreach (var target in objects)
             {
                 if (Reaches(target, events, binder, at, visited) is { } why)
@@ -90,7 +90,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
             return null;
         }
 
-        var view = model.FindNamedObject(name) is { Kind: NamedObjectKind.View } named ? named : null;
+        var view = model.FindReadable(name) as View;
         var table = model.FindTable(name) is not null || model.FindTableRedefinition(name) is not null;
         if (view is null && !table)
         {
@@ -115,11 +115,11 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
         if (view is not null && remaining != DmlEvents.None)
         {
             // Observed: Dml_through_a_view_or_a_cte_fires_the_triggers_of_the_table_underneath.
-            if (view.View is not { } definition)
+            if (view.Redefinition is not null)
                 return $"writes the view {name}, which is defined more than once, so the tables it writes underneath are not known";
             var underneath = new DmlTarget.NamedTables();
-            definition.SelectStatement.Accept(underneath);
-            var own = definition.SelectStatement.WithCtesAndXmlNamespaces?.CommonTableExpressions.Select(c => c.ExpressionName.Value).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+            view.Query.Accept(underneath);
+            var own = view.Query.WithCtesAndXmlNamespaces?.CommonTableExpressions.Select(c => c.ExpressionName.Value).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
             foreach (var read in underneath.Found.Where(n => n.SchemaIdentifier is not null || !own.Contains(n.BaseIdentifier.Value)))
             {
                 if (binder.ResolveWritten(read).Count == 0)
@@ -147,8 +147,8 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
     }
 
     /// <summary>Why a trigger may return result sets, as words; null when every statement in it is known to return none.</summary>
-    private string? Returns(Trigger trigger, HashSet<string> visited) => trigger.Body is { } body
-        ? Statements(body, new Binder(model, trigger.Span), trigger.Span, visited)
+    private string? Returns(Trigger trigger, HashSet<string> visited) => trigger.Body is SqlBody body
+        ? Statements(body.Statements, new Binder(model, trigger.Span), trigger.Span, visited)
         : "is a CLR trigger, whose code is not in the project";
 
     private string? Statements(TSqlFragment body, Binder binder, SourceSpan where, HashSet<string> visited)
@@ -220,9 +220,9 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
             case ProcedureCall { Procedure: var callee }:
                 if (!visited.Add($"procedure {callee.Name}"))
                     return null;
-                if (callee.Body.StatementList is not { } body || callee.Body.MethodSpecifier is not null)
+                if (callee.Body is not SqlBody body)
                     return $"calls {callee.Name} at {at}, a CLR procedure";
-                return Statements(body, new Binder(model, callee.Span), callee.Span, visited) is { } why ? $"calls {callee.Name} at {at}, which {why}" : null;
+                return Statements(body.Statements, new Binder(model, callee.Span), callee.Span, visited) is { } why ? $"calls {callee.Name} at {at}, which {why}" : null;
             case UnknowableCall unknowable:
                 return $"calls what is not followed at {at}: {unknowable.Detail}";
             default:

@@ -30,9 +30,9 @@ internal sealed class FlowLocals(IReadOnlyDictionary<string, LocalRelationValues
         ReadValues is null ? null : Register(table.Alias?.Value ?? "", ReadValues(table, outer));
 
     /// <summary>Reads a view's definition; null leaves views unmodelled.</summary>
-    public Func<NamedObject, bool, LocalRelationValues>? ReadView { get; init; }
+    public Func<View, bool, LocalRelationValues>? ReadView { get; init; }
 
-    public LocalRelation? View(NamedObject view, bool uncommitted) =>
+    public LocalRelation? View(View view, bool uncommitted) =>
         ReadView is null ? null : Register(view.Name.ToString(), ReadView(view, uncommitted));
 
     /// <summary>Reads a call of a table-valued function; null leaves functions in FROM unmodelled.</summary>

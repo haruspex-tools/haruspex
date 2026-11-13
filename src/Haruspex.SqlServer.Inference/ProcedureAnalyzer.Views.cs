@@ -131,16 +131,17 @@ internal sealed partial class ProcedureAnalyzer
     /// is what a deployment tool that recreates or refreshes dependent views gives. A view left bound to an older form of a
     /// table is not described.
     /// </remarks>
-    public LocalRelationValues ReadView(NamedObject named)
+    public LocalRelationValues ReadView(View view)
     {
-        ArgumentNullException.ThrowIfNull(named);
-        var view = named.View ?? throw new ArgumentException("The view has no single definition.", nameof(named));
+        ArgumentNullException.ThrowIfNull(view);
+        if (view.Redefinition is not null)
+            throw new ArgumentException("The view has no single definition.", nameof(view));
         expandStars = true;
         locals = Locals(new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase));
-        var at = At(view);
-        LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{named.Name}: {detail}", at));
+        var at = view.Span.Start;
+        LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{view.Name}: {detail}", at));
 
-        var select = view.SelectStatement;
+        var select = view.Query;
         return WithCtes(
             select.WithCtesAndXmlNamespaces,
             () =>

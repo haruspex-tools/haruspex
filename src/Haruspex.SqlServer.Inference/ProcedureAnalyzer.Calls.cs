@@ -233,7 +233,7 @@ internal sealed partial class ProcedureAnalyzer
     private static ImmutableHashSet<string> Created(Procedure procedure)
     {
         var finder = new CreateFinder();
-        procedure.Body.StatementList?.Accept(finder);
+        (procedure.Body as SqlBody)?.Statements.Accept(finder);
         return finder.Names.ToImmutable();
     }
 

@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Text.Json;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
-using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.DifferentialTests;
 
@@ -78,37 +77,38 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
     }
 
     /// <summary>The declared type of each of the procedure's parameters, by name.</summary>
-    private static Dictionary<string, DataTypeReference> Declared(DatabaseModel model, string procedure, string path)
+    private static Dictionary<string, SqlType?> Declared(DatabaseModel model, string procedure, string path)
     {
         var parts = procedure.Split('.');
         var found = (parts.Length == 2 ? model.FindProcedure(new ObjectName(parts[0], parts[1])) : null)
             ?? throw new InvalidOperationException($"{path}: the fixture has no procedure {procedure}.");
-        return found.Body.Parameters.ToDictionary(p => p.VariableName.Value, p => p.DataType, StringComparer.OrdinalIgnoreCase);
+        return found.Parameters.ToDictionary(p => p.Name, p => p.Type, StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
     /// The argument as the CLR type that SqlClient sends as the parameter's declared type, so a run file says
     /// <c>"@mode": 1</c> and the call passes a <c>tinyint</c> because the procedure declares one, as an <c>EXEC</c> would.
     /// </summary>
-    private static object? Value(JsonElement value, DataTypeReference type, string where)
+    private static object? Value(JsonElement value, SqlType? type, string where)
     {
         if (value.ValueKind == JsonValueKind.Null)
             return null;
 
-        // sysname is the built-in alias of nvarchar(128), which ScriptDom reads as a user type's name.
-        if (type is UserDataTypeReference { Name.BaseIdentifier.Value: var alias } && alias.Equals("sysname", StringComparison.OrdinalIgnoreCase))
+        // sysname is the built-in alias of nvarchar(128), which is read as a type referred to by name.
+        if (type is { Kind: SqlTypeKind.Named, Name: var alias } && alias.Equals("sysname", StringComparison.OrdinalIgnoreCase))
             return value.GetString();
-        return (type as SqlDataTypeReference)?.SqlDataTypeOption switch
+        return type is { Kind: SqlTypeKind.BuiltIn } ? type.Name switch
         {
-            SqlDataTypeOption.TinyInt => value.GetByte(),
-            SqlDataTypeOption.SmallInt => value.GetInt16(),
-            SqlDataTypeOption.Int => value.GetInt32(),
-            SqlDataTypeOption.BigInt => value.GetInt64(),
-            SqlDataTypeOption.Bit => value.GetBoolean(),
-            SqlDataTypeOption.Date or SqlDataTypeOption.DateTime or SqlDataTypeOption.DateTime2 or SqlDataTypeOption.SmallDateTime =>
-                DateTime.ParseExact(value.GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture),
-            SqlDataTypeOption.Char or SqlDataTypeOption.VarChar or SqlDataTypeOption.NChar or SqlDataTypeOption.NVarChar => value.GetString(),
-            _ => throw new InvalidOperationException($"{where}: no argument of the declared type is supported yet; add the type here."),
-        };
+            "tinyint" => value.GetByte(),
+            "smallint" => value.GetInt16(),
+            "int" => value.GetInt32(),
+            "bigint" => value.GetInt64(),
+            "bit" => value.GetBoolean(),
+            "date" or "datetime" or "datetime2" or "smalldatetime" => DateTime.ParseExact(value.GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture),
+            "char" or "varchar" or "nchar" or "nvarchar" => value.GetString(),
+            _ => Unsupported(),
+        } : Unsupported();
+
+        object Unsupported() => throw new InvalidOperationException($"{where}: no argument of the declared type is supported yet; add the type here.");
     }
 }

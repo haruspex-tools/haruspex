@@ -27,8 +27,8 @@ namespace Haruspex.SqlServer.Sources;
 /// </para>
 /// <para>
 /// Functions are read from <c>CREATE FUNCTION</c>, with the same rule as procedures for <c>ALTER FUNCTION</c> and
-/// <c>DROP FUNCTION</c>, and are also recorded by name, as views and synonyms are, as <see cref="NamedObject"/>s.
-/// Every other statement
+/// <c>DROP FUNCTION</c>. Views are read from their definitions (a view defined twice records a <see cref="Redefinition"/>),
+/// synonyms from <c>CREATE SYNONYM</c>, and DML triggers from every definition of each. Every other statement
 /// is ignored. Most cannot change a table's columns or a procedure's body (indexes, permissions, data). Those
 /// that can only do so through code that is not run here, such as <c>EXEC sp_rename</c> or dynamic SQL, are a
 /// known limit: a database project defines its objects declaratively, and such scripts belong in deployment,
@@ -73,14 +73,14 @@ public static class SqlScriptFolder
         var tables = new Dictionary<ObjectName, Table>();
         var procedures = new Dictionary<ObjectName, Procedure>();
         var tableChanges = new Dictionary<ObjectName, Redefinition>();
-        var others = new Dictionary<ObjectName, NamedObject>();
         var procedureChanges = new Dictionary<ObjectName, (Redefinition Why, Procedure? Alter)>();
         var userTypes = new Dictionary<ObjectName, UserType>();
-        var functions = new Dictionary<ObjectName, UserFunction>();
-        var functionChanges = new Dictionary<ObjectName, (Redefinition Why, UserFunction? Alter)>();
+        var functions = new Dictionary<ObjectName, Function>();
+        var functionChanges = new Dictionary<ObjectName, (Redefinition Why, Function? Alter)>();
+        var synonyms = new Dictionary<ObjectName, Synonym>();
         var triggers = new List<Trigger>();
         var cascadingKeys = new List<CascadingKey>();
-        var views = new Dictionary<ObjectName, List<(ViewStatementBody Body, SourceSpan Span, bool AnsiNullsOff)>>();
+        var views = new Dictionary<ObjectName, List<(View View, ViewStatementBody Statement)>>();
 
         // ALTER TABLE … NOCHECK CONSTRAINT and … WITH CHECK CHECK CONSTRAINT, wherever they are, in the order read.
         var enforcement = new List<Enforcement>();
@@ -123,43 +123,40 @@ public static class SqlScriptFolder
                         Add(tables, SyntaxReader.Name(table.SchemaObjectName), ReadTable(table, relative), table, relative, diagnostics);
                         CascadingKeys(SyntaxReader.Name(table.SchemaObjectName), table.Definition, relative, cascadingKeys);
                         break;
-                    case TriggerStatementBody trigger when ReadTrigger(trigger, relative) is { } read:
-                        triggers.Add(read);
+                    case TriggerStatementBody trigger when ModuleReader.Trigger(trigger, relative) is { } dml:
+                        triggers.Add(dml);
                         break;
                     case CreateProcedureStatement or CreateOrAlterProcedureStatement:
-                        var body = (ProcedureStatementBody)statement;
-                        var name = SyntaxReader.Name(body.ProcedureReference.Name);
-                        Add(procedures, name, new Procedure(name, body, SyntaxReader.Span(relative, body)) { AnsiNullsOff = ansiNullsOff }, body, relative, diagnostics);
+                        var procedure = ModuleReader.Procedure((ProcedureStatementBody)statement, relative) with { AnsiNullsOff = ansiNullsOff };
+                        Add(procedures, procedure.Name, procedure, statement, relative, diagnostics);
                         break;
                     case AlterProcedureStatement alter:
-                        var altered = SyntaxReader.Name(alter.ProcedureReference.Name);
-                        procedureChanges.TryAdd(altered, (Changed(altered, "ALTER PROCEDURE", alter, relative), new Procedure(altered, alter, SyntaxReader.Span(relative, alter)) { AnsiNullsOff = ansiNullsOff }));
+                        var altered = ModuleReader.Procedure(alter, relative) with { AnsiNullsOff = ansiNullsOff };
+                        procedureChanges.TryAdd(altered.Name, (Changed(altered.Name, "ALTER PROCEDURE", alter, relative), altered));
                         break;
                     case DropProcedureStatement drop:
                         foreach (var dropped in drop.Objects.Select(SyntaxReader.Name))
                             procedureChanges.TryAdd(dropped, (Changed(dropped, "DROP PROCEDURE", drop, relative), null));
                         break;
-                    // Objects a FROM clause can read besides tables. They are not modelled, but they must be known,
-                    // because an unqualified name may resolve to one of them instead of to a table.
+                    // Objects a FROM clause can read besides tables: an unqualified name may resolve to one of them instead
+                    // of to a table.
                     case ViewStatementBody view:
-                        TryAddNamed(others, SyntaxReader.Name(view.SchemaObjectName), NamedObjectKind.View);
-                        if (!views.TryGetValue(SyntaxReader.Name(view.SchemaObjectName), out var definitions))
-                            views[SyntaxReader.Name(view.SchemaObjectName)] = definitions = [];
-                        definitions.Add((view, SyntaxReader.Span(relative, view), ansiNullsOff));
+                        var read = ModuleReader.View(view, relative) with { AnsiNullsOff = ansiNullsOff };
+                        if (!views.TryGetValue(read.Name, out var definitions))
+                            views[read.Name] = definitions = [];
+                        definitions.Add((read, view));
                         break;
                     case CreateSynonymStatement synonym:
-                        others.TryAdd(SyntaxReader.Name(synonym.Name), new NamedObject(SyntaxReader.Name(synonym.Name), NamedObjectKind.Synonym) { SynonymFor = synonym.ForName });
+                        var standsFor = ModuleReader.Synonym(synonym, relative);
+                        synonyms.TryAdd(standsFor.Name, standsFor);
                         break;
                     case CreateFunctionStatement or CreateOrAlterFunctionStatement:
-                        var function = (FunctionStatementBody)statement;
-                        var functionName = SyntaxReader.Name(function.Name);
-                        TryAddNamed(others, functionName, NamedObjectKind.Function);
-                        Add(functions, functionName, new UserFunction(functionName, function, SyntaxReader.Span(relative, function)) { AnsiNullsOff = ansiNullsOff }, function, relative, diagnostics);
+                        var function = ModuleReader.Function((FunctionStatementBody)statement, relative) with { AnsiNullsOff = ansiNullsOff };
+                        Add(functions, function.Name, function, statement, relative, diagnostics);
                         break;
                     case AlterFunctionStatement alterFunction:
-                        var alteredFunction = SyntaxReader.Name(alterFunction.Name);
-                        TryAddNamed(others, alteredFunction, NamedObjectKind.Function);
-                        functionChanges.TryAdd(alteredFunction, (Changed(alteredFunction, "ALTER FUNCTION", alterFunction, relative), new UserFunction(alteredFunction, alterFunction, SyntaxReader.Span(relative, alterFunction)) { AnsiNullsOff = ansiNullsOff }));
+                        var alteredFunction = ModuleReader.Function(alterFunction, relative) with { AnsiNullsOff = ansiNullsOff };
+                        functionChanges.TryAdd(alteredFunction.Name, (Changed(alteredFunction.Name, "ALTER FUNCTION", alterFunction, relative), alteredFunction));
                         break;
                     case DropFunctionStatement dropFunction:
                         foreach (var dropped in dropFunction.Objects.Select(SyntaxReader.Name))
@@ -169,13 +166,13 @@ public static class SqlScriptFolder
                         var aliasName = SyntaxReader.Name(alias.Name);
                         var aliasNullability = alias.NullableConstraint is null ? DeclaredNullability.NotDeclared
                             : alias.NullableConstraint.Nullable ? DeclaredNullability.Null : DeclaredNullability.NotNull;
-                        Add(userTypes, aliasName, new UserType(aliasName, baseType, aliasNullability, SyntaxReader.Span(relative, alias)), alias, relative, diagnostics);
+                        Add(userTypes, aliasName, new AliasType(aliasName, SyntaxReader.Span(relative, alias), baseType, aliasNullability), alias, relative, diagnostics);
                         break;
                     // Recorded so that an unqualified type name that could mean it is not resolved to an alias type
                     // of the same name in another schema.
                     case CreateTypeUdtStatement clr:
                         var clrName = SyntaxReader.Name(clr.Name);
-                        Add(userTypes, clrName, new UserType(clrName, null, DeclaredNullability.NotDeclared, SyntaxReader.Span(relative, clr)), clr, relative, diagnostics);
+                        Add(userTypes, clrName, new ClrType(clrName, SyntaxReader.Span(relative, clr)), clr, relative, diagnostics);
                         break;
                     case AlterTableAddTableElementStatement addKey when OnlyTightens(addKey):
                         CascadingKeys(SyntaxReader.Name(addKey.SchemaObjectName), addKey.Definition, relative, cascadingKeys);
@@ -200,60 +197,31 @@ public static class SqlScriptFolder
         foreach (var (name, (why, alter)) in procedureChanges)
         {
             if (procedures.TryGetValue(name, out var created))
-                procedures[name] = new Procedure(created.Name, created.Body, created.Span, why) { AnsiNullsOff = created.AnsiNullsOff };
+                procedures[name] = created with { Redefinition = why };
             else if (alter is not null)
-                procedures[name] = new Procedure(alter.Name, alter.Body, alter.Span, why) { AnsiNullsOff = alter.AnsiNullsOff };
+                procedures[name] = alter with { Redefinition = why };
         }
 
         // Functions follow the same rule as procedures.
         foreach (var (name, (why, alter)) in functionChanges)
         {
             if (functions.TryGetValue(name, out var created))
-                functions[name] = new UserFunction(created.Name, created.Body, created.Span, why) { AnsiNullsOff = created.AnsiNullsOff };
+                functions[name] = created with { Redefinition = why };
             else if (alter is not null)
-                functions[name] = new UserFunction(alter.Name, alter.Body, alter.Span, why) { AnsiNullsOff = alter.AnsiNullsOff };
+                functions[name] = alter with { Redefinition = why };
         }
 
         foreach (var name in tables.Keys.ToList())
             tables[name] = Untrusted(tables[name], enforcement, disables);
 
-        // A view defined once keeps its definition; one created and altered depends on the order the scripts run.
-        foreach (var (name, definitions) in views)
-        {
-            if (definitions.Count == 1 && others.TryGetValue(name, out var view) && view.Kind == NamedObjectKind.View)
-                others[name] = view with { View = definitions[0].Body, Span = definitions[0].Span, AnsiNullsOff = definitions[0].AnsiNullsOff };
-        }
+        // A view defined once keeps its definition; one created and altered, or created twice, depends on the order the scripts
+        // run, which its second definition records.
+        var viewsRead = views.Values.Select(definitions => definitions.Count == 1
+            ? definitions[0].View
+            : definitions[0].View with { Redefinition = Changed(definitions[0].View.Name, ViewStatement(definitions[1].Statement), definitions[1].Statement, definitions[1].View.Span.File) });
 
-        var model = new DatabaseModel(tables.Values, procedures.Values, others.Values, tableChanges.Values, userTypes.Values, functions.Values, triggers, cascadingKeys);
+        var model = new DatabaseModel(tables.Values, userTypes.Values, procedures.Values, functions.Values, viewsRead, synonyms.Values, triggers, cascadingKeys, tableChanges.Values);
         return new SchemaReadResult(model, diagnostics);
-    }
-
-    /// <summary>
-    /// A DML trigger (<c>CREATE</c>, <c>CREATE OR ALTER</c> or <c>ALTER TRIGGER</c>); null for a DDL or logon trigger, which no
-    /// DML fires. Every definition is kept, an <c>ALTER</c> included, since which applies depends on the order the scripts run
-    /// and a reader asking what triggers may do needs them all.
-    /// </summary>
-    private static Trigger? ReadTrigger(TriggerStatementBody trigger, string file)
-    {
-        if (trigger.TriggerObject is not { TriggerScope: TriggerScope.Normal, Name: { } on })
-            return null;
-        var events = DmlEvents.None;
-        foreach (var action in trigger.TriggerActions)
-        {
-            events |= action.TriggerActionType switch
-            {
-                TriggerActionType.Insert => DmlEvents.Insert,
-                TriggerActionType.Update => DmlEvents.Update,
-                TriggerActionType.Delete => DmlEvents.Delete,
-                _ => DmlEvents.None,
-            };
-        }
-
-        var parent = SyntaxReader.Name(on);
-
-        // A trigger is in its table's schema, whatever its own name says.
-        var name = new ObjectName(parent.Schema, trigger.Name.BaseIdentifier.Value);
-        return new Trigger(name, parent, trigger.TriggerType == TriggerType.InsteadOf, events, trigger.MethodSpecifier is null ? trigger.StatementList : null, SyntaxReader.Span(file, trigger));
     }
 
     /// <summary>
@@ -365,16 +333,16 @@ public static class SqlScriptFolder
         var keys = Disabled(table, disables);
         var relevant = changes.Where(c => c.May(table)).ToList();
         if (relevant.Count == 0)
-            return keys == table.UniqueKeys ? table : new Table(table.Name, table.Columns, table.PrimaryKey, table.Span, table.Checks, keys) { IsGraph = table.IsGraph };
+            return keys == table.UniqueKeys ? table : table with { UniqueKeys = keys };
 
         var checks = table.Checks.Select(check =>
         {
             var disabled = relevant.FirstOrDefault(d => !d.Validates && d.MayName(check, table)
                 && !(d.TopLevel && relevant.Any(v => v.Validates && v.TopLevel && v.Qualified && v.Names(check)
                     && v.At.File == d.At.File && v.Order > d.Order)));
-            return disabled is null ? check : check.WithDisabledAt(disabled.At);
+            return disabled is null ? check : check with { DisabledAt = disabled.At };
         }).ToList();
-        return new Table(table.Name, table.Columns, table.PrimaryKey, table.Span, checks, keys) { IsGraph = table.IsGraph };
+        return table with { Checks = checks, UniqueKeys = keys };
     }
 
     /// <summary><c>ALTER INDEX name ON t DISABLE</c> or <c>ALTER INDEX ALL ON t DISABLE</c>.</summary>
@@ -469,8 +437,13 @@ public static class SqlScriptFolder
         return errors.Count == 0 ? fragment as TSqlScript : null;
     }
 
-    private static void TryAddNamed(Dictionary<ObjectName, NamedObject> into, ObjectName name, NamedObjectKind kind) =>
-        into.TryAdd(name, new NamedObject(name, kind));
+    /// <summary>The statement a view's definition is, in capitals, as a <see cref="Redefinition"/> names it.</summary>
+    private static string ViewStatement(ViewStatementBody view) => view switch
+    {
+        AlterViewStatement => "ALTER VIEW",
+        CreateOrAlterViewStatement => "CREATE OR ALTER VIEW",
+        _ => "CREATE VIEW",
+    };
 
     private static void Add<T>(Dictionary<ObjectName, T> into, ObjectName name, T value, TSqlFragment at, string file, List<Diagnostic> diagnostics)
     {

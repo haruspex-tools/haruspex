@@ -67,7 +67,7 @@ public static class SchemaRules
                 var candidates = type.Schema is { } schema
                     ? model.FindUserType(new ObjectName(schema, type.Name)) is { } found ? [found] : []
                     : model.UserTypes.Where(t => t.Name.Name.Equals(type.Name, StringComparison.OrdinalIgnoreCase)).ToList();
-                if (candidates is not [{ BaseType: { Kind: SqlTypeKind.BuiltIn } builtIn } alias])
+                if (candidates is not [AliasType { BaseType: { Kind: SqlTypeKind.BuiltIn } builtIn } alias])
                     return null;
                 return new ResolvedType(builtIn, alias.Name.ToString(), alias.Nullability);
             default:

@@ -255,13 +255,13 @@ public sealed class Binder(DatabaseModel model, SourceSpan source)
         }
 
         if (model.FindTableRedefinition(objectName) is { } change)
-            return new BoundSource(alias, null, Problem(BindingProblemKind.TableRedefined, change.Message, change.At), optionalSideOf);
+            return new BoundSource(alias, null, Problem(BindingProblemKind.TableRedefined, Redefinitions.Why(change), change.At), optionalSideOf);
 
         // A view is read from its definition, by whoever supplies the body's relations (it may say why it cannot be).
-        if (model.FindNamedObject(objectName) is { Kind: NamedObjectKind.View } view && locals?.View(view, Uncommitted(named)) is { } viewRelation)
+        if (model.FindReadable(objectName) is View view && locals?.View(view, Uncommitted(named)) is { } viewRelation)
             return new BoundSource(alias, null, null, optionalSideOf, viewRelation);
-        if (model.FindNamedObject(objectName) is { } other)
-            return Unresolved(BindingProblemKind.UnresolvedTable, $"{objectName} is a {KindName(other.Kind)}, which is not modelled yet.");
+        if (model.FindReadable(objectName) is { } other)
+            return Unresolved(BindingProblemKind.UnresolvedTable, $"{objectName} is a {KindName(other)}, which is not modelled yet.");
 
         var table = model.FindTable(objectName);
         return table is not null
@@ -279,12 +279,25 @@ public sealed class Binder(DatabaseModel model, SourceSpan source)
     public IReadOnlyList<ObjectName> ResolveWritten(SchemaObjectName name)
     {
         ArgumentNullException.ThrowIfNull(name);
-        if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
+        return ResolveWritten(name.ServerIdentifier is not null || name.DatabaseIdentifier is not null, name.SchemaIdentifier?.Value, name.BaseIdentifier.Value);
+    }
+
+    /// <summary>The objects a synonym's name may mean, by the rule <see cref="ResolveWritten(SchemaObjectName)"/> gives.</summary>
+    /// <param name="target">The name the synonym stands for.</param>
+    public IReadOnlyList<ObjectName> ResolveWritten(SynonymTarget target)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        return ResolveWritten(target.Server is not null || target.Database is not null, target.Schema, target.Name);
+    }
+
+    private List<ObjectName> ResolveWritten(bool elsewhere, string? schema, string name)
+    {
+        if (elsewhere)
             return [];
-        if (name.SchemaIdentifier is not null)
-            return [SyntaxReader.Name(name)];
-        var candidates = ReadableNamed(name.BaseIdentifier.Value).Where(c => c.Kind != "function").Select(c => c.Name).Distinct().ToList();
-        return candidates.Count > 0 ? candidates : [SyntaxReader.Name(name)];
+        if (schema is not null)
+            return [new ObjectName(schema, name)];
+        var candidates = ReadableNamed(name).Where(c => c.Kind != "function").Select(c => c.Name).Distinct().ToList();
+        return candidates.Count > 0 ? candidates : [new ObjectName("dbo", name)];
     }
 
     /// <summary>
@@ -294,17 +307,19 @@ public sealed class Binder(DatabaseModel model, SourceSpan source)
     private List<(ObjectName Name, string Kind)> ReadableNamed(string name) =>
     [
         .. model.Tables.Select(t => (t.Name, Kind: "table"))
-            .Concat(model.NamedObjects.Select(o => (o.Name, Kind: KindName(o.Kind))))
+            .Concat(model.Readable.Select(o => (o.Name, Kind: KindName(o))))
             .Where(c => c.Name.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
             .OrderBy(c => c.Name.ToString(), StringComparer.Ordinal)
             .ThenBy(c => c.Kind, StringComparer.Ordinal),
     ];
 
-    private static string KindName(NamedObjectKind kind) => kind switch
+    /// <summary>What a view, synonym or function is, in a word for messages.</summary>
+    private static string KindName(SchemaObject readable) => readable switch
     {
-        NamedObjectKind.View => "view",
-        NamedObjectKind.Synonym => "synonym",
-        NamedObjectKind.Function => "function",
+        View => "view",
+        Synonym => "synonym",
+        Function => "function",
+        _ => throw new ArgumentException($"{readable.Name} is not an object a FROM clause reads besides a table.", nameof(readable)),
     };
 
     /// <summary>
@@ -394,7 +409,7 @@ public sealed class Binder(DatabaseModel model, SourceSpan source)
                 : new UnknowableCall(UnknowableCallKind.MissingProcedure, objectName, Missing(objectName, text), at);
         }
 
-        var candidates = model.Procedures.Where(p => p.Name.Name.Equals(own, StringComparison.OrdinalIgnoreCase)).ToList();
+        var candidates = model.Procedures.Where(p => p.Name.Name.Equals(own, StringComparison.OrdinalIgnoreCase)).OrderBy(p => p.Name.ToString(), StringComparer.Ordinal).ToList();
         if (candidates.Count > 1)
         {
             return new UnknowableCall(UnknowableCallKind.AmbiguousProcedure, null,
@@ -405,7 +420,7 @@ public sealed class Binder(DatabaseModel model, SourceSpan source)
         return candidates.Count == 1 ? new ProcedureCall(candidates[0], at) : new UnknowableCall(UnknowableCallKind.MissingProcedure, dbo, Missing(dbo, text), at);
     }
 
-    private string Missing(ObjectName name, string text) => model.FindNamedObject(name) is { Kind: NamedObjectKind.Synonym }
+    private string Missing(ObjectName name, string text) => model.FindReadable(name) is Synonym
         ? $"{text} runs the synonym {name}, which is not modelled yet."
         : $"{text} runs {name}, which is not a procedure of the project.";
 

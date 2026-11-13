@@ -29,14 +29,14 @@ internal sealed partial class ProcedureAnalyzer
 
         // An unqualified name resolves in the caller's default schema and then in dbo, as a table's does (Binder): the one
         // function of that name when exactly one schema has it.
-        UserFunction? function;
+        Function? function;
         if (name.SchemaIdentifier is not null)
         {
             function = model.FindFunction(SyntaxReader.Name(name));
         }
         else
         {
-            var candidates = model.Functions.Where(f => f.Name.Name.Equals(name.BaseIdentifier.Value, StringComparison.OrdinalIgnoreCase)).ToList();
+            var candidates = model.Functions.Where(f => f.Name.Name.Equals(name.BaseIdentifier.Value, StringComparison.OrdinalIgnoreCase)).OrderBy(f => f.Name.ToString(), StringComparer.Ordinal).ToList();
             if (candidates.Count > 1)
                 return Fails(IrUnknownReason.UnresolvedTable, $"{name.BaseIdentifier.Value} is not schema-qualified, and {string.Join(" and ", candidates.Select(c => c.Name))} have that name.");
             function = candidates.FirstOrDefault();
@@ -45,20 +45,20 @@ internal sealed partial class ProcedureAnalyzer
         if (function is null)
             return Fails(IrUnknownReason.UnresolvedTable, "there is no such function in the project.");
         if (function.Redefinition is { } redefinition)
-            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.Redefined, redefinition.Message, redefinition.At));
-        if (function.Body.MethodSpecifier is not null)
+            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.Redefined, Redefinitions.Why(redefinition), redefinition.At));
+        if (function is ScalarFunction { Body: ClrBody } or TableFunction { Body: ClrBody })
             return Fails(IrUnknownReason.ExternalCode, $"{function.Name} is a CLR function: its rows come from .NET code.");
-        if (function.Body.ReturnType is not (SelectFunctionReturnType or TableValuedFunctionReturnType))
+        if (function is ScalarFunction)
             return Fails(IrUnknownReason.UnresolvedTable, $"{function.Name} is a scalar function, not a table.");
 
-        var parameters = function.Body.Parameters;
+        var parameters = function.Parameters;
         if (call.Parameters.Count != parameters.Count)
             return Fails(IrUnknownReason.UnsupportedSource, $"{function.Name} takes {parameters.Count} arguments.");
 
         var scope = binder.BindFrom(new QuerySpecification(), outer, outer is null ? locals : null);
         var arguments = new Dictionary<string, Value>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < parameters.Count; i++)
-            arguments[parameters[i].VariableName.Value] = Argument(function, parameters[i], call.Parameters[i], scope);
+            arguments[parameters[i].Name] = Argument(parameters[i], call.Parameters[i], scope);
         return views!.Function(function, arguments, ReadUncommitted);
     }
 
@@ -70,11 +70,10 @@ internal sealed partial class ProcedureAnalyzer
     /// An argument of the parameter's own type keeps its facts. One not modelled is any value of the type, or null
     /// (<c>parameter</c>), as a scalar function's parameter is.
     /// </summary>
-    private Value Argument(UserFunction function, ProcedureParameter parameter, ScalarExpression argument, BindingScope scope)
+    private Value Argument(Parameter parameter, ScalarExpression argument, BindingScope scope)
     {
-        var at = function.Span.At(parameter);
-        var declared = SqlTypes.ToConvertedShape(model, SyntaxReader.Type(parameter.DataType), at);
-        var any = Value.Computed(declared, [new IrNullReason(IrNullRule.Parameter, parameter.VariableName.Value)]);
+        var declared = SqlTypes.ToConvertedShape(model, parameter.Type, parameter.At);
+        var any = Value.Computed(declared, [new IrNullReason(IrNullRule.Parameter, parameter.Name)]);
         if (declared is UnknownShape unknown)
             return Value.Unknown(unknown);
 
@@ -82,7 +81,7 @@ internal sealed partial class ProcedureAnalyzer
         if (Strip(argument) is DefaultLiteral)
         {
             // The default is read where the function is defined; a constant reads nothing there.
-            if (parameter.Value is not { } fallback)
+            if (parameter.Default is not { } fallback)
                 return any;
             value = Expression(fallback, binder.BindFrom(new QuerySpecification(), null));
         }
@@ -107,12 +106,12 @@ internal sealed partial class ProcedureAnalyzer
     /// its parameters holding the call's values, which the query reads as constants: a key compared with one is fixed. Its
     /// keys pass through as a view's do (<see cref="ViewKeys"/>).
     /// </summary>
-    public LocalRelationValues ReadInline(UserFunction function, SelectStatement select)
+    public LocalRelationValues ReadInline(InlineFunction function)
     {
         ArgumentNullException.ThrowIfNull(function);
-        ArgumentNullException.ThrowIfNull(select);
-        foreach (var parameter in function.Body.Parameters)
-            variableTypes[parameter.VariableName.Value] = SyntaxReader.Type(parameter.DataType);
+        var select = function.Query;
+        foreach (var parameter in function.Parameters)
+            variableTypes[parameter.Name] = parameter.Type;
         locals = Locals(new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase));
         var at = At(select);
         LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{function.Name}: {detail}", at));
@@ -138,12 +137,11 @@ internal sealed partial class ProcedureAnalyzer
     /// constraint or a CHECK. So its columns are the declared ones, with their CHECK facets, and its keys are its declared
     /// keys. How many rows it returns is not read.
     /// </summary>
-    public LocalRelationValues ReadReturnTable(UserFunction function, TableValuedFunctionReturnType returns)
+    public LocalRelationValues ReadReturnTable(TableFunction function)
     {
         ArgumentNullException.ThrowIfNull(function);
-        ArgumentNullException.ThrowIfNull(returns);
         var name = function.Name.ToString();
-        var table = SyntaxReader.Table(new ObjectName("", returns.DeclareTableVariableBody.VariableName.Value), returns.DeclareTableVariableBody.Definition, source.Within(returns));
+        var table = function.Returns;
         var values = table.Columns.Select(c => Declared(table, c, name, temporary: false)).ToList();
         var keys = new List<RelationKey>();
         foreach (var key in SchemaRules.EnforcedKeys(table))
@@ -157,10 +155,10 @@ internal sealed partial class ProcedureAnalyzer
         // What its nvarchar(max) columns hold as JSON is what its body writes to them: the body is walked as a
         // procedure's is, the return table a table variable, and its traced columns read as they stand where it returns. A body
         // the walk cannot follow leaves them as declared.
-        var walked = Walk(function.Body, returns.DeclareTableVariableBody);
-        if (walked.Blocker is null && walked.End is { } end)
+        var walked = function.Body is SqlBody body ? Walk(function.Parameters, body.Statements, table) : null;
+        if (walked is { Blocker: null, End: { } end })
         {
-            var variable = returns.DeclareTableVariableBody.VariableName.Value;
+            var variable = table.Name.Name;
             values = [.. values.Select((v, i) => end.Json.TryGetValue($"{variable}.{table.Columns[i].Name}", out var slot) ? slot.Read(v) : v)];
         }
 

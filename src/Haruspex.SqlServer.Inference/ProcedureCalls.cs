@@ -135,18 +135,21 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     /// <summary>Why a procedure cannot be walked at all: a CLR procedure, or one changed after its definition.</summary>
     private static UnknownShape? Unwalkable(Procedure procedure)
     {
-        if (procedure.Body.MethodSpecifier is not null || procedure.Body.StatementList is null)
+        if (procedure.Body is not SqlBody)
             return new UnknownShape(IrUnknownReason.ExternalCode, $"{procedure.Name} is a CLR procedure: its results come from .NET code, which is not in the project.", procedure.Span.Start);
 
         // The parameters are still read from the definition the model kept, but which body runs depends on the order the
         // scripts run, so the results are withdrawn.
-        return procedure.Redefinition is { } redefinition ? new UnknownShape(IrUnknownReason.Redefined, redefinition.Message, redefinition.At) : null;
+        return procedure.Redefinition is { } redefinition ? new UnknownShape(IrUnknownReason.Redefined, Redefinitions.Why(redefinition), redefinition.At) : null;
     }
 
     private Walked Run(Procedure procedure, CallContext context)
     {
         if (cache.TryGetValue((procedure.Name, context), out var cached))
             return cached;
+
+        // Only a procedure Unwalkable passes is run.
+        var statements = procedure.Body is SqlBody body ? body.Statements : throw new ArgumentException($"{procedure.Name} has no T-SQL body to walk.", nameof(procedure));
 
         var frame = new Frame(procedure.Name, context);
         stack.Add(frame);
@@ -166,7 +169,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
                     frame.Context = assumption.Context;
                     frame.Recursive = false;
                     frame.Widened = false;
-                    walked = new ProcedureAnalyzer(model, procedure.Span, functions, calls: this, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff, views: views).Walk(procedure.Body);
+                    walked = new ProcedureAnalyzer(model, procedure.Span, functions, calls: this, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff, views: views).Walk(procedure.Parameters, statements);
                     if (!frame.Recursive || walked.Blocker is not null)
                         return Pass<Assumption>.Stop();
 
@@ -230,7 +233,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
             return known;
         writes[name] = [];
         var all = ImmutableSortedSet.Create<string>(StringComparer.OrdinalIgnoreCase);
-        if (model.FindProcedure(name) is { Body.StatementList: { } body } procedure)
+        if (model.FindProcedure(name) is { Body: SqlBody { Statements: var body } } procedure)
         {
             var finder = new WriteFinder();
             body.Accept(finder);

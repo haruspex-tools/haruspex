@@ -1,4 +1,5 @@
 using Haruspex.Ir;
+using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -150,7 +151,7 @@ internal sealed partial class ProcedureAnalyzer
         if (query.HavingClause is not null)
             return true;
         var finder = new AggregateFinder(call => FunctionSummaries.Callee(call) is { } callee
-            && model.FindFunction(callee)?.Body.ReturnType is not ScalarFunctionReturnType);
+            && model.FindFunction(callee) is not ScalarFunction);
         foreach (var element in query.SelectElements)
             element.Accept(finder);
         query.OrderByClause?.Accept(finder);

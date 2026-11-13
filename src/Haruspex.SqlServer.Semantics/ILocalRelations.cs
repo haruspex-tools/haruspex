@@ -35,12 +35,12 @@ public interface ILocalRelations
     /// The relation a view of the project is, read from its definition, or null when views are not modelled here. A view
     /// is bound where it is defined, so it is not given a scope.
     /// </summary>
-    /// <param name="view">The view; its <see cref="NamedObject.View"/> is its definition.</param>
+    /// <param name="view">The view.</param>
     /// <param name="uncommitted">
     /// Whether it is read with a <c>NOLOCK</c> or <c>READUNCOMMITTED</c> hint, which applies to every table under it, so its
     /// definition is read uncommitted too.
     /// </param>
-    LocalRelation? View(NamedObject view, bool uncommitted) => null;
+    LocalRelation? View(View view, bool uncommitted) => null;
 
     /// <summary>
     /// The relation a call of a table-valued function in FROM (<c>FROM s.f(@a) AS x</c>) is, or null when functions are not

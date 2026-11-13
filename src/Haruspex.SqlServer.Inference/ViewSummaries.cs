@@ -1,6 +1,5 @@
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
-using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -33,7 +32,7 @@ internal sealed class ViewSummaries
     /// table (<see cref="ProcedureAnalyzer.ReadReturnTable"/>).
     /// </summary>
     /// <param name="uncommitted">Whether it is read uncommitted (Cardinality.cs), so that no key of what it reads holds.</param>
-    public LocalRelationValues Function(UserFunction function, IReadOnlyDictionary<string, Value> arguments, bool uncommitted)
+    public LocalRelationValues Function(Function function, IReadOnlyDictionary<string, Value> arguments, bool uncommitted)
     {
         var key = new Reading(function.Name, uncommitted, [.. arguments.OrderBy(a => a.Key, StringComparer.OrdinalIgnoreCase).Select(a => new Argument(a.Key, a.Value))]);
         if (calls.TryGetValue(key, out var found))
@@ -44,10 +43,10 @@ internal sealed class ViewSummaries
         try
         {
             var analyser = new ProcedureAnalyzer(model, function.Span, Functions(uncommitted), arguments, ansiNullsOff: function.AnsiNullsOff, views: this, uncommittedReads: uncommitted);
-            found = function.Body.ReturnType switch
+            found = function switch
             {
-                SelectFunctionReturnType inline => analyser.ReadInline(function, inline.SelectStatement),
-                TableValuedFunctionReturnType declared => analyser.ReadReturnTable(function, declared),
+                InlineFunction inline => analyser.ReadInline(inline),
+                TableFunction declared => analyser.ReadReturnTable(declared),
                 _ => throw new ArgumentException("Not a table-valued function.", nameof(function)),
             };
         }
@@ -71,13 +70,13 @@ internal sealed class ViewSummaries
     /// Whether it is read uncommitted: under a NOLOCK or READUNCOMMITTED hint on it, which applies to every table under it, or
     /// in a statement that reads uncommitted. Then no key of the tables inside holds.
     /// </param>
-    public LocalRelationValues Read(NamedObject view, bool uncommitted)
+    public LocalRelationValues Read(View view, bool uncommitted)
     {
         if (done.TryGetValue((view.Name, uncommitted), out var found))
             return found;
 
         // A view created and altered, or defined twice, depends on the order the scripts run (Sources).
-        if (view.View is null || view.Span is null)
+        if (view.Redefinition is not null)
             return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{view.Name} is defined more than once, and which definition applies depends on the order the scripts run.", Nowhere));
         if (!reading.Add(view.Name))
             return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{view.Name} reads itself through the views it reads, which SQL Server refuses.", Nowhere));

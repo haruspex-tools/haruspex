@@ -1,3 +1,5 @@
+using Haruspex.Diagnostics;
+
 namespace Haruspex.SqlServer.Model;
 
 /// <summary>
@@ -7,121 +9,150 @@ namespace Haruspex.SqlServer.Model;
 /// <remarks>
 /// <para>Each name is unique within its collection; the constructor refuses duplicates. A reader that meets a
 /// duplicate in its source reports it and keeps one.</para>
+/// <para>
+/// <b>One order.</b> Every collection of schema objects is in source order: by file, in ordinal order of the files' relative
+/// paths, then by where the object starts (<see cref="SourceSpan.InSourceOrder"/>). The constructor sorts them, so the order
+/// is the model's, whatever order a reader adds them in, and the same folder gives the same model however its files are
+/// listed. Order is never a name's order: a reader that lists names in a message, or wants them sorted, sorts them itself.
+/// The parts of an object (columns, constraints, keys, parameters) are in the order they are declared, and the foreign keys
+/// and table redefinitions are in the order their reader read them.
+/// </para>
 /// <para>Read-only, and only a description: nothing here builds, compares or deploys a database.</para>
 /// </remarks>
 public sealed class DatabaseModel
 {
     private readonly Dictionary<ObjectName, Table> tables = [];
-    private readonly Dictionary<ObjectName, Procedure> procedures = [];
-    private readonly Dictionary<ObjectName, NamedObject> namedObjects = [];
-    private readonly Dictionary<ObjectName, Redefinition> tableRedefinitions = [];
     private readonly Dictionary<ObjectName, UserType> userTypes = [];
-    private readonly Dictionary<ObjectName, UserFunction> functions = [];
+    private readonly Dictionary<ObjectName, Procedure> procedures = [];
+    private readonly Dictionary<ObjectName, Function> functions = [];
+    private readonly Dictionary<ObjectName, View> views = [];
+    private readonly Dictionary<ObjectName, Synonym> synonyms = [];
+    private readonly Dictionary<ObjectName, SchemaObject> readable = [];
+    private readonly Dictionary<ObjectName, Redefinition> tableRedefinitions = [];
     private readonly ILookup<ObjectName, Trigger> triggersOn;
     private readonly ILookup<ObjectName, CascadingKey> keysTo;
 
     /// <summary>Creates a model.</summary>
     /// <param name="tables">The tables.</param>
-    /// <param name="procedures">The procedures.</param>
-    /// <param name="namedObjects">The views, synonyms and functions, known by name only.</param>
-    /// <param name="tableRedefinitions">
-    /// Statements that change a table after its definition in a way the model does not apply, at most one per
-    /// table name. A name may have no table: a table dropped and never created is still worth knowing about.
-    /// </param>
     /// <param name="userTypes">The alias and CLR types (<c>CREATE TYPE</c>).</param>
-    /// <param name="functions">The user-defined functions with their definitions. Each is also among the named objects.</param>
+    /// <param name="procedures">The procedures.</param>
+    /// <param name="functions">The user-defined functions.</param>
+    /// <param name="views">The views.</param>
+    /// <param name="synonyms">The synonyms.</param>
     /// <param name="triggers">
     /// The DML triggers. A name may appear more than once: a source that creates and alters one has two definitions, and
     /// which applies depends on the order the scripts run, so a reader should take every one.
     /// </param>
-    /// <param name="cascadingKeys">The foreign keys whose actions change their table's rows.</param>
+    /// <param name="cascadingKeys">The foreign keys whose actions change their table's rows, in the order they were read.</param>
+    /// <param name="tableRedefinitions">
+    /// Statements that change a table after its definition in a way the model does not apply, at most one per table name, in
+    /// the order they were read. A name may have no table: a table dropped and never created is still worth knowing about.
+    /// </param>
     /// <exception cref="ArgumentException">A name appears twice in one collection.</exception>
     public DatabaseModel(
         IEnumerable<Table> tables,
+        IEnumerable<UserType> userTypes,
         IEnumerable<Procedure> procedures,
-        IEnumerable<NamedObject> namedObjects,
-        IEnumerable<Redefinition> tableRedefinitions,
-        IEnumerable<UserType>? userTypes = null,
-        IEnumerable<UserFunction>? functions = null,
-        IEnumerable<Trigger>? triggers = null,
-        IEnumerable<CascadingKey>? cascadingKeys = null)
+        IEnumerable<Function> functions,
+        IEnumerable<View> views,
+        IEnumerable<Synonym> synonyms,
+        IEnumerable<Trigger> triggers,
+        IEnumerable<CascadingKey> cascadingKeys,
+        IEnumerable<Redefinition> tableRedefinitions)
     {
-        ArgumentNullException.ThrowIfNull(tables);
-        ArgumentNullException.ThrowIfNull(procedures);
-        ArgumentNullException.ThrowIfNull(namedObjects);
-        ArgumentNullException.ThrowIfNull(tableRedefinitions);
-
-        foreach (var table in tables)
-            this.tables.Add(table.Name, table);
-        foreach (var procedure in procedures)
-            this.procedures.Add(procedure.Name, procedure);
-        foreach (var named in namedObjects)
-            this.namedObjects.Add(named.Name, named);
-        foreach (var redefinition in tableRedefinitions)
+        Tables = Keyed(tables, this.tables);
+        UserTypes = Keyed(userTypes, this.userTypes);
+        Procedures = Keyed(procedures, this.procedures);
+        Functions = Keyed(functions, this.functions);
+        Views = Keyed(views, this.views);
+        Synonyms = Keyed(synonyms, this.synonyms);
+        Triggers = InSourceOrder(triggers ?? throw new ArgumentNullException(nameof(triggers)));
+        CascadingKeys = [.. cascadingKeys ?? throw new ArgumentNullException(nameof(cascadingKeys))];
+        foreach (var redefinition in tableRedefinitions ?? throw new ArgumentNullException(nameof(tableRedefinitions)))
             this.tableRedefinitions.Add(redefinition.Name, redefinition);
-
-        foreach (var type in userTypes ?? [])
-            this.userTypes.Add(type.Name, type);
-        foreach (var function in functions ?? [])
-            this.functions.Add(function.Name, function);
-
-        Tables = [.. this.tables.Values];
-        UserTypes = [.. this.userTypes.Values];
-        Procedures = [.. this.procedures.Values.OrderBy(p => p.Name.ToString(), StringComparer.Ordinal)];
-        NamedObjects = [.. this.namedObjects.Values];
         TableRedefinitions = [.. this.tableRedefinitions.Values];
-        Functions = [.. this.functions.Values.OrderBy(f => f.Name.ToString(), StringComparer.Ordinal)];
-        Triggers = [.. triggers ?? []];
-        CascadingKeys = [.. cascadingKeys ?? []];
+
+        // SQL Server gives a schema one namespace for its tables, views, synonyms, functions and procedures, so a script that
+        // deploys has one object of a name. One that doesn't may have two; the first read is the one a name in FROM means.
+        foreach (var named in InSourceOrder<SchemaObject>([.. Views, .. Synonyms, .. Functions]))
+            readable.TryAdd(named.Name, named);
+
         triggersOn = Triggers.ToLookup(t => t.Parent);
         keysTo = CascadingKeys.ToLookup(k => k.Referenced);
     }
 
-    /// <summary>The DML triggers, in the order given; a name may appear more than once (see the constructor).</summary>
-    public IReadOnlyList<Trigger> Triggers { get; }
-
-    /// <summary>The DML triggers on this table or view, in the order given.</summary>
-    public IEnumerable<Trigger> TriggersOn(ObjectName parent) => triggersOn[parent];
-
-    /// <summary>The foreign keys whose actions change their table's rows, in the order given.</summary>
-    public IReadOnlyList<CascadingKey> CascadingKeys { get; }
-
-    /// <summary>The foreign keys with actions that reference this table: deleting or updating its rows changes theirs.</summary>
-    public IEnumerable<CascadingKey> CascadingKeysTo(ObjectName referenced) => keysTo[referenced];
-
-    /// <summary>The user-defined functions, in a stable order: by name, ordinally.</summary>
-    public IReadOnlyList<UserFunction> Functions { get; }
-
-    /// <summary>The function with this name, or null.</summary>
-    public UserFunction? FindFunction(ObjectName name) => functions.GetValueOrDefault(name);
-
-    /// <summary>The tables, in the order given.</summary>
+    /// <summary>The tables, in source order.</summary>
     public IReadOnlyList<Table> Tables { get; }
 
-    /// <summary>The procedures, in a stable order: by name, ordinally.</summary>
-    public IReadOnlyList<Procedure> Procedures { get; }
-
-    /// <summary>The views, synonyms and functions, known by name only, in the order given.</summary>
-    public IReadOnlyList<NamedObject> NamedObjects { get; }
-
-    /// <summary>The statements that change a table in a way the model does not apply, in the order given.</summary>
-    public IReadOnlyList<Redefinition> TableRedefinitions { get; }
-
-    /// <summary>The alias and CLR types, in the order given.</summary>
+    /// <summary>The alias and CLR types, in source order.</summary>
     public IReadOnlyList<UserType> UserTypes { get; }
 
-    /// <summary>The alias or CLR type with this name, or null.</summary>
-    public UserType? FindUserType(ObjectName name) => userTypes.GetValueOrDefault(name);
+    /// <summary>The procedures, in source order.</summary>
+    public IReadOnlyList<Procedure> Procedures { get; }
+
+    /// <summary>The user-defined functions, in source order.</summary>
+    public IReadOnlyList<Function> Functions { get; }
+
+    /// <summary>The views, in source order.</summary>
+    public IReadOnlyList<View> Views { get; }
+
+    /// <summary>The synonyms, in source order.</summary>
+    public IReadOnlyList<Synonym> Synonyms { get; }
+
+    /// <summary>The DML triggers, in source order; a name may appear more than once (see the constructor).</summary>
+    public IReadOnlyList<Trigger> Triggers { get; }
+
+    /// <summary>The foreign keys whose actions change their table's rows, in the order they were read.</summary>
+    public IReadOnlyList<CascadingKey> CascadingKeys { get; }
+
+    /// <summary>The statements that change a table in a way the model does not apply, in the order they were read.</summary>
+    public IReadOnlyList<Redefinition> TableRedefinitions { get; }
 
     /// <summary>The table with this name, or null.</summary>
     public Table? FindTable(ObjectName name) => tables.GetValueOrDefault(name);
 
+    /// <summary>The alias or CLR type with this name, or null.</summary>
+    public UserType? FindUserType(ObjectName name) => userTypes.GetValueOrDefault(name);
+
     /// <summary>The procedure with this name, or null.</summary>
     public Procedure? FindProcedure(ObjectName name) => procedures.GetValueOrDefault(name);
 
-    /// <summary>The view, synonym or function with this name, or null.</summary>
-    public NamedObject? FindNamedObject(ObjectName name) => namedObjects.GetValueOrDefault(name);
+    /// <summary>The function with this name, or null.</summary>
+    public Function? FindFunction(ObjectName name) => functions.GetValueOrDefault(name);
+
+    /// <summary>
+    /// The view, synonym or function this name means in a FROM clause, besides a table: a <see cref="View"/>, a
+    /// <see cref="Synonym"/> or a <see cref="Function"/>, or null when it is none of them. Of two with one name, which only a
+    /// script that doesn't deploy can have, the first in source order.
+    /// </summary>
+    public SchemaObject? FindReadable(ObjectName name) => readable.GetValueOrDefault(name);
+
+    /// <summary>
+    /// Every view, synonym and function a name in a FROM clause may mean besides a table, one for each name (see
+    /// <see cref="FindReadable"/>), in source order.
+    /// </summary>
+    public IEnumerable<SchemaObject> Readable => readable.Values;
 
     /// <summary>The statement that changes the table with this name after its definition, or null.</summary>
     public Redefinition? FindTableRedefinition(ObjectName name) => tableRedefinitions.GetValueOrDefault(name);
+
+    /// <summary>The DML triggers on this table or view, in source order.</summary>
+    public IEnumerable<Trigger> TriggersOn(ObjectName parent) => triggersOn[parent];
+
+    /// <summary>The foreign keys with actions that reference this table: deleting or updating its rows changes theirs.</summary>
+    public IEnumerable<CascadingKey> CascadingKeysTo(ObjectName referenced) => keysTo[referenced];
+
+    private static T[] Keyed<T>(IEnumerable<T> objects, Dictionary<ObjectName, T> into)
+        where T : SchemaObject
+    {
+        ArgumentNullException.ThrowIfNull(objects);
+        var ordered = InSourceOrder(objects);
+        foreach (var named in ordered)
+            into.Add(named.Name, named);
+        return ordered;
+    }
+
+    /// <summary>The objects in source order; a sort that keeps the order of two that start at the same place.</summary>
+    private static T[] InSourceOrder<T>(IEnumerable<T> objects)
+        where T : SchemaObject => [.. objects.OrderBy(o => o.Span, SourceSpan.InSourceOrder)];
 }

@@ -20,7 +20,7 @@ public class SqlcmdVariableTests
     /// <summary>The text of a procedure's definition, as ScriptDom read it.</summary>
     private static string Text(Procedure procedure)
     {
-        var body = procedure.Body;
+        var body = Assert.IsType<SqlBody>(procedure.Body).Statements;
         return string.Concat(body.ScriptTokenStream
             .Skip(body.FirstTokenIndex)
             .Take(body.LastTokenIndex - body.FirstTokenIndex + 1)

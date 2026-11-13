@@ -3,18 +3,17 @@ using Haruspex.Diagnostics;
 namespace Haruspex.SqlServer.Model;
 
 /// <summary>
-/// A user-defined type a column can be declared with: an alias type (<c>CREATE TYPE … FROM</c>), a built-in type
-/// under a name of its own; or a CLR type (<c>CREATE TYPE … EXTERNAL NAME</c>), whose values come from .NET code.
+/// A user-defined type a column can be declared with: an <see cref="AliasType"/>, a built-in type under a name of its own
+/// (<c>CREATE TYPE … FROM</c>); or a <see cref="ClrType"/>, whose values come from .NET code
+/// (<c>CREATE TYPE … EXTERNAL NAME</c>). The two kinds are all there are (decision 0031).
 /// </summary>
-/// <param name="Name">Its name.</param>
-/// <param name="BaseType">For an alias type, the type it stands for as written, such as <c>nvarchar(20)</c>; null for a CLR type.</param>
-/// <param name="Nullability">
-/// What an alias type's declaration says about null. A column of the type that says neither NULL nor NOT NULL
-/// takes it. <see cref="DeclaredNullability.NotDeclared"/> for a CLR type.
-/// </param>
-/// <param name="Span">Where its declaration is.</param>
-public sealed record UserType(ObjectName Name, SqlType? BaseType, DeclaredNullability Nullability, SourceSpan Span)
+public abstract record UserType : SchemaObject
 {
-    /// <summary>Whether it is an alias type, rather than a CLR type.</summary>
-    public bool IsAlias => BaseType is not null;
+    /// <summary>Creates a type; only the kinds in this assembly can.</summary>
+    /// <param name="name">Its name.</param>
+    /// <param name="span">Where its declaration is.</param>
+    private protected UserType(ObjectName name, SourceSpan span)
+        : base(name, span)
+    {
+    }
 }
