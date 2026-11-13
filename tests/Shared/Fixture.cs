@@ -139,7 +139,7 @@ internal sealed class Fixture
             throw new InvalidOperationException($"The fixture {Name} has diagnostics: {string.Join("; ", Project.Diagnostics)}");
 
         if (configRead is null)
-            return Project.Infer(Project.Procedures);
+            return Project.Infer(Project.Procedures).Expected();
         var applied = Project.Infer(Project.Procedures, configRead.Expected());
         return applied.Expected();
     }

@@ -232,7 +232,7 @@ internal static class CatalogueSweep
         var project = SqlProject.Load(dir.Path);
         if (project.Diagnostics.Count > 0)
             throw new InvalidOperationException(string.Join("\n", project.Diagnostics));
-        var document = project.Infer(project.Procedures);
+        var document = project.Infer(project.Procedures).Expected();
         // Procedures are named p0, p1, … after their expression's position, and the IR's name ends with the number.
         var byNumber = document.Objects.ToDictionary(o => int.Parse(string.Concat(o.Name.Reverse().TakeWhile(char.IsAsciiDigit).Reverse()), CultureInfo.InvariantCulture));
         if (byNumber.Count != expressions.Count)

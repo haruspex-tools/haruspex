@@ -56,39 +56,25 @@ internal sealed class SqlProject
     /// Infers the IR for the given procedures and settles their names with the default naming rules, as when there is no
     /// config file.
     /// </summary>
-    /// <exception cref="InvalidOperationException">The default rules cannot name them (two names clash).</exception>
-    public IrDocument Infer(IReadOnlyList<ObjectName> selected) => Infer(selected, warnings: null);
-
-    /// <summary>
-    /// Infers the IR for the given procedures and settles their names with the default naming rules, as when there is no
-    /// config file, adding to <paramref name="warnings"/> what inference could not check.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">The default rules cannot name them (two names clash).</exception>
-    public IrDocument Infer(IReadOnlyList<ObjectName> selected, ICollection<Diagnostic>? warnings)
-    {
-        return Infer(selected, HaruspexConfig.None("."), warnings: warnings) switch
-        {
-            Succeeded<IrDocument> applied => applied.Value,
-            Failed<IrDocument> failed => throw new InvalidOperationException(string.Join(Environment.NewLine, failed.Diagnostics)),
-        };
-    }
+    /// <returns>The document, with what inference could not check; or, when the default rules can't name them all (two names clash), why.</returns>
+    public Outcome<IrDocument> Infer(IReadOnlyList<ObjectName> selected) => Infer(selected, HaruspexConfig.None("."));
 
     /// <summary>Infers the IR for the given procedures, and applies the config file's overrides and naming to it.</summary>
     /// <param name="selected">The procedures to infer.</param>
     /// <param name="config">The config.</param>
     /// <param name="selectedByFile">See <see cref="ConfigApplication.Apply"/>.</param>
     /// <param name="outputDirectory">See <see cref="ConfigApplication.Apply"/>.</param>
-    /// <param name="warnings">
-    /// Where to add what inference could not check, such as a write to a table the project does not define, whose triggers
-    /// it cannot see. They do not stop generation.
-    /// </param>
+    /// <returns>
+    /// The document with the config applied, after what inference could not check (such as a write to a table the project
+    /// does not define, whose triggers it cannot see), which doesn't stop generation; or every problem.
+    /// </returns>
     /// <remarks>
     /// The config file's declared results (<c>procedures["s.p"].results</c>) are handed to inference, in the IR's terms, so that
     /// a call of a declared procedure contributes them to its caller; a procedure's own declaration is applied by the config
     /// layer, which checks it against what is inferred. The declared procedures of the project that are not selected are
     /// inferred too, for that check alone.
     /// </remarks>
-    public Outcome<IrDocument> Infer(IReadOnlyList<ObjectName> selected, HaruspexConfig config, IReadOnlyCollection<ObjectName>? selectedByFile = null, string? outputDirectory = null, ICollection<Diagnostic>? warnings = null)
+    public Outcome<IrDocument> Infer(IReadOnlyList<ObjectName> selected, HaruspexConfig config, IReadOnlyCollection<ObjectName>? selectedByFile = null, string? outputDirectory = null)
     {
         ArgumentNullException.ThrowIfNull(selected);
         ArgumentNullException.ThrowIfNull(config);
@@ -99,14 +85,16 @@ internal sealed class SqlProject
                 declarations.TryAdd(name, new DeclaredResults(declared.Results, declared.Types, declared.Why));
         }
 
-        var document = IrInference.Infer(model, selected, declarations, warnings);
+        var inferred = IrInference.Infer(model, selected, declarations);
         var others = declarations.Keys
             .Select(name => model.FindProcedure(name)?.Name)
             .OfType<ObjectName>()
             .Where(name => !selected.Contains(name))
             .Distinct()
             .ToList();
-        var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations);
-        return ConfigApplication.Apply(document, config, Procedures, selectedByFile, outputDirectory, declaredDocument);
+
+        // Inferred only to check their declarations against: what inference couldn't check of them is not this run's to report.
+        var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations).Value;
+        return inferred.Then(document => ConfigApplication.Apply(document, config, Procedures, selectedByFile, outputDirectory, declaredDocument));
     }
 }

@@ -209,13 +209,9 @@ internal static class HaruspexCli
         // left for a run without --include, which this one-off isn't about.
         IReadOnlyCollection<ObjectName>? selectedByFile = fromCommandLine ? ProcedureSelection.SelectedByFile(project.Procedures, config).ToHashSet() : null;
 
-        var warnings = new List<Diagnostic>();
-        var applied = project.Infer(selected, config, selectedByFile, outDirectory, warnings);
-        foreach (var warning in warnings)
-            error.WriteLine(DiagnosticFormatter.Format(warning, directory));
-
+        var applied = project.Infer(selected, config, selectedByFile, outDirectory);
         foreach (var problem in applied.Diagnostics)
-            error.WriteLine(problem);
+            error.WriteLine(DiagnosticFormatter.Format(problem, directory));
         if (applied is not Succeeded<IrDocument> { Value: var document })
             return ExitCodes.Usage;
 

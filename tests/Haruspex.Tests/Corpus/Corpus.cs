@@ -37,7 +37,7 @@ internal sealed record Corpus(string Name, string Folder, IReadOnlyList<string> 
     public CorpusRun Run()
     {
         var read = SqlScriptFolder.Read(ProjectFolder, Scripts);
-        var document = IrInference.Infer(read.Model, [.. read.Model.Procedures.Select(p => p.Name)]);
+        var document = IrInference.Infer(read.Model, [.. read.Model.Procedures.Select(p => p.Name)]).Value;
         return new CorpusRun(this, read.Diagnostics, document);
     }
 

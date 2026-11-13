@@ -28,7 +28,7 @@ namespace Haruspex.SqlServer.Inference;
 /// anything but a procedure of the project (which is read the same way), and any statement not on the list count.
 /// </para>
 /// </remarks>
-internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? warnings)
+internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings)
 {
     private readonly HashSet<string> warned = new(StringComparer.OrdinalIgnoreCase);
 
@@ -60,7 +60,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
 
     private void Warn(string name, SourceLocation at)
     {
-        if (warnings is not null && warned.Add(name))
+        if (warned.Add(name))
         {
             warnings.Add(new Diagnostic(
                 InferenceCodes.UndefinedWriteTarget,

@@ -99,7 +99,7 @@ public class FixtureSnapshotTests
         // A fixture's haruspex.json declares results inference can't see; a declaration a procedure doesn't use is only a
         // warning, which a snapshot of one procedure ignores.
         if (fixture.Config is null)
-            return project.Infer(selection.Procedures);
+            return project.Infer(selection.Procedures).Expected();
         var read = ConfigReader.Read(fixture.Config);
         var applied = project.Infer(selection.Procedures, read.Expected());
         return applied.Expected();

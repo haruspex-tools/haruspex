@@ -150,7 +150,7 @@ public class ArithmeticGridTests(SqlServerFixture server)
 
             var project = SqlProject.Load(dir.FullName);
             Assert.Empty(project.Diagnostics);
-            var document = project.Infer(project.Procedures);
+            var document = project.Infer(project.Procedures).Expected();
             var types = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var procedure in document.Objects)
             {

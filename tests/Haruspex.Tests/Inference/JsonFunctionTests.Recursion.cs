@@ -158,7 +158,7 @@ public partial class JsonFunctionTests
         dir.File("p.sql", "CREATE PROCEDURE dbo.p AS\nSELECT json_query(dbo.tree(t.id)) AS v FROM dbo.t AS t FOR JSON PATH;");
         dir.File("q.sql", "CREATE PROCEDURE dbo.q AS\nSELECT json_query(dbo.tree(t.id)) AS w FROM dbo.t AS t FOR JSON PATH;");
         var project = SqlProject.Load(dir.Path);
-        var doc = project.Infer(project.Select([ObjectPattern.Parse("*.*")]).Procedures);
+        var doc = project.Infer(project.Select([ObjectPattern.Parse("*.*")]).Procedures).Expected();
 
         // The path starts at the type, which every procedure shares.
         Assert.Equal(["dbo.p <dbo.tree>.up", "dbo.q <dbo.tree>.up"], doc.Unknowns.Select(u => $"{u.Object} {u.Path}").Order(StringComparer.Ordinal));

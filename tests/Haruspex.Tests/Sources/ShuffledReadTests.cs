@@ -39,7 +39,7 @@ public class ShuffledReadTests
     private static string Output(string folder, IEnumerable<string> files)
     {
         var read = SqlScriptFolder.Read(folder, files);
-        var document = IrInference.Infer(read.Model, [.. read.Model.Procedures.Select(p => p.Name)]);
+        var document = IrInference.Infer(read.Model, [.. read.Model.Procedures.Select(p => p.Name)]).Value;
         return ModelLocations.Render(read, sorted: false) + IrJsonWriter.Write(document);
     }
 

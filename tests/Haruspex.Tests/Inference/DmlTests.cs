@@ -25,9 +25,8 @@ public partial class DmlTests
     /// <summary>Infers every procedure of the files, over the standard tables.</summary>
     private static Inferred Infer(params (string Name, string Sql)[] files)
     {
-        var warnings = new List<Diagnostic>();
-        var doc = InferProcedure.Infer("*.*", warnings, [("tables.sql", Tables), .. files.Select(f => ($"{f.Name}.sql", f.Sql))]);
-        return new Inferred(doc, warnings);
+        var inferred = InferProcedure.Inferred("*.*", [("tables.sql", Tables), .. files.Select(f => ($"{f.Name}.sql", f.Sql))]);
+        return new Inferred(inferred.Expected(), inferred.Diagnostics);
     }
 
     private static IrDocument Doc(params (string Name, string Sql)[] files) => Infer(files).Doc;

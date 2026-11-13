@@ -14,10 +14,10 @@ internal static class InferProcedure
     /// Writes each file into a temporary folder, reads the folder as haruspex reads a database project (failing the test on
     /// any diagnostic, and listing them), and infers the procedures <paramref name="include"/> selects, such as <c>dbo.p</c> or <c>*.*</c>.
     /// </summary>
-    public static IrDocument Infer(string include, params (string File, string Sql)[] files) => Infer(include, warnings: null, files);
+    public static IrDocument Infer(string include, params (string File, string Sql)[] files) => Inferred(include, files).Expected();
 
-    /// <summary>As the other overload, collecting the inference's warnings in <paramref name="warnings"/>.</summary>
-    public static IrDocument Infer(string include, ICollection<Diagnostic>? warnings, params (string File, string Sql)[] files)
+    /// <summary>As <see cref="Infer"/>, with what inference found: the document and its warnings, or why there is none.</summary>
+    public static Outcome<IrDocument> Inferred(string include, params (string File, string Sql)[] files)
     {
         using var dir = new TempDirectory();
         foreach (var (file, sql) in files)
@@ -25,6 +25,6 @@ internal static class InferProcedure
 
         var project = SqlProject.Load(dir.Path);
         Assert.True(project.Diagnostics.Count == 0, string.Join("\n", project.Diagnostics));
-        return project.Infer(project.Select([ObjectPattern.Parse(include)]).Procedures, warnings);
+        return project.Infer(project.Select([ObjectPattern.Parse(include)]).Procedures);
     }
 }
