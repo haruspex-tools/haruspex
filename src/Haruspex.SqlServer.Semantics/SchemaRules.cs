@@ -64,10 +64,10 @@ public static class SchemaRules
                 // An unqualified name resolves in the caller's default schema and then in dbo, and the source does not
                 // say whose. With exactly one type of that name in the project, a script that deployed used that one.
                 // CLR types count, so that one can't be mistaken for an alias of the same name.
-                var candidates = type.Schema is { } schema
-                    ? model.FindUserType(new ObjectName(schema, type.Name)) is { } found ? [found] : []
-                    : SchemaNames.Unqualified(model.UserTypes, type.Name);
-                if (candidates is not [AliasType { BaseType: { Kind: SqlTypeKind.BuiltIn } builtIn } alias])
+                var named = type.Schema is { } schema
+                    ? model.FindUserType(new ObjectName(schema, type.Name))
+                    : SchemaNames.Resolve(model.UserTypes, type.Name) is OneObject { Named: UserType one } ? one : null;
+                if (named is not AliasType { BaseType: { Kind: SqlTypeKind.BuiltIn } builtIn } alias)
                     return null;
                 return new ResolvedType(builtIn, alias.Name.ToString(), alias.Nullability);
             default:

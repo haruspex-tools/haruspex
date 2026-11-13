@@ -51,16 +51,17 @@ public sealed partial class Binder
             return [];
         if (schema is not null)
             return [new ObjectName(schema, name)];
-        var candidates = ReadableNamed(name).Where(c => c is not Function).Select(c => c.Name).Distinct().ToList();
-        return candidates.Count > 0 ? candidates : [new ObjectName("dbo", name)];
+        // A function is read, never written: every table, view or synonym of the name may be what is written.
+        return SchemaNames.Resolve(Readable().Where(o => o is not Function), name) switch
+        {
+            OneObject one => [one.Named.Name],
+            SeveralObjects several => [.. several.Candidates.Select(c => c.Name)],
+            NoObject none => [none.InDbo],
+        };
     }
 
-    /// <summary>
-    /// Every object a FROM clause could read that a name without a schema may mean (<see cref="SchemaNames.Unqualified"/>):
-    /// tables, and the views, synonyms and functions.
-    /// </summary>
-    private IReadOnlyList<SchemaObject> ReadableNamed(string name) =>
-        SchemaNames.Unqualified(Model.Tables.Cast<SchemaObject>().Concat(Model.Readable), name);
+    /// <summary>Every object a FROM clause could read: the tables, and the views, synonyms and functions.</summary>
+    private IEnumerable<SchemaObject> Readable() => Model.Tables.Cast<SchemaObject>().Concat(Model.Readable);
 
     // ---- EXEC ---------------------------------------------------------------------------------------------------------
 
@@ -117,15 +118,13 @@ public sealed partial class Binder
                 : new UnknowableCall(UnknowableCallKind.MissingProcedure, objectName, Missing(objectName, text), at);
         }
 
-        var candidates = SchemaNames.Unqualified(Model.Procedures, own);
-        if (candidates.Count > 1)
+        return SchemaNames.Resolve(Model.Procedures, own) switch
         {
-            return new UnknowableCall(UnknowableCallKind.AmbiguousProcedure, null,
-                $"{text} names {own} without a schema, and {string.Join(" and ", candidates.Select(c => c.Name))} have that name: which runs depends on the caller's default schema.", at);
-        }
-
-        var dbo = SyntaxReader.Name(name);
-        return candidates.Count == 1 ? new ProcedureCall(candidates[0], at) : new UnknowableCall(UnknowableCallKind.MissingProcedure, dbo, Missing(dbo, text), at);
+            OneObject one => new ProcedureCall((Procedure)one.Named, at),
+            SeveralObjects several => new UnknowableCall(UnknowableCallKind.AmbiguousProcedure, null,
+                $"{text} names {own} without a schema, and {string.Join(" and ", several.Candidates.Select(c => c.Name))} have that name: which runs depends on the caller's default schema.", at),
+            NoObject none => new UnknowableCall(UnknowableCallKind.MissingProcedure, none.InDbo, Missing(none.InDbo, text), at),
+        };
     }
 
     private string Missing(ObjectName name, string text) => Model.FindReadable(name) is Synonym

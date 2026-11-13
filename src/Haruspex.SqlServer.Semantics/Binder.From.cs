@@ -200,27 +200,26 @@ public sealed partial class Binder
         if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
             return Unresolved(BindingProblemKind.UnsupportedSource, $"The reference {FragmentText.OneLine(name)} to another database is not modelled yet.");
 
-        ObjectName objectName;
         if (name.SchemaIdentifier is not null)
-        {
-            objectName = SyntaxReader.Name(name);
-        }
-        else
-        {
-            // SQL Server resolves an unqualified name in the caller's default schema, then in dbo, and the
-            // source cannot tell which caller. When exactly one object in the model could be read by that
-            // name, a query that runs at all has read that one; with more, which is read depends on the caller.
-            // Views, synonyms and functions count too: a caller may read one of them instead.
-            var candidates = ReadableNamed(name.BaseIdentifier.Value);
-            if (candidates.Count > 1)
-            {
-                return Unresolved(
-                    BindingProblemKind.UnresolvedTable,
-                    $"{name.BaseIdentifier.Value} is not schema-qualified, and {string.Join(" and ", candidates.Select(c => $"the {SchemaNames.Kind(c)} {c.Name}"))} have that name: which is read depends on the caller's default schema.");
-            }
+            return InSchema(SyntaxReader.Name(name), at);
 
-            objectName = candidates.Count == 1 ? candidates[0].Name : SyntaxReader.Name(name);
-        }
+        // Views, synonyms and functions count too: a caller may read one of them instead of a table.
+        return SchemaNames.Resolve(Readable(), name.BaseIdentifier.Value) switch
+        {
+            OneObject one => InSchema(one.Named.Name, at),
+            NoObject none => InSchema(none.InDbo, at),
+            SeveralObjects several => Unresolved(
+                BindingProblemKind.UnresolvedTable,
+                $"{name.BaseIdentifier.Value} is not schema-qualified, and {string.Join(" and ", several.Candidates.Select(c => $"the {SchemaNames.Kind(c)} {c.Name}"))} have that name: which is read depends on the caller's default schema."),
+        };
+    }
+
+    /// <summary>What a name of the schema reads: a table, a view (read from its definition), or why neither.</summary>
+    /// <param name="objectName">The name, resolved to its schema.</param>
+    /// <param name="at">Where the reference is.</param>
+    private SourceTarget InSchema(ObjectName objectName, SourceLocation at)
+    {
+        UnresolvedTarget Unresolved(BindingProblemKind kind, string detail) => new(Problem(kind, detail, at));
 
         if (Model.FindTableRedefinition(objectName) is { } change)
             return new UnresolvedTarget(Problem(BindingProblemKind.TableRedefined, Redefinitions.Why(change), change.At));
@@ -260,12 +259,11 @@ public sealed partial class Binder
             return new ForeignCallee();
         if (name.SchemaIdentifier is not null)
             return Model.FindFunction(SyntaxReader.Name(name)) is { } function ? new KnownCallee(function) : new MissingCallee();
-        var candidates = SchemaNames.Unqualified(Model.Functions, name.BaseIdentifier.Value);
-        return candidates switch
+        return SchemaNames.Resolve(Model.Functions, name.BaseIdentifier.Value) switch
         {
-            [] => new MissingCallee(),
-            [var function] => new KnownCallee(function),
-            _ => new AmbiguousCallee(name.BaseIdentifier.Value, candidates),
+            OneObject one => new KnownCallee((Function)one.Named),
+            SeveralObjects several => new AmbiguousCallee(name.BaseIdentifier.Value, [.. several.Candidates.Cast<Function>()]),
+            NoObject => new MissingCallee(),
         };
     }
 

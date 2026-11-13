@@ -11,23 +11,29 @@ namespace Haruspex.SqlServer.Semantics;
 public static class SchemaNames
 {
     /// <summary>
-    /// Every object among <paramref name="objects"/> that a name without a schema may mean: those of that name in any schema,
-    /// ignoring case, in the order of their full names and then their kinds, so a message that lists them is stable.
+    /// What a name without a schema means among <paramref name="objects"/>: the one of that name in any schema, ignoring case;
+    /// several, in the order of their full names and then their kinds, so a message that lists them is stable; or none, when it
+    /// means <c>dbo</c>'s.
     /// </summary>
     /// <param name="objects">The objects of the kinds the name may be.</param>
     /// <param name="name">The name as written, without a schema.</param>
-    public static IReadOnlyList<T> Unqualified<T>(IEnumerable<T> objects, string name)
-        where T : SchemaObject
+    public static SchemaNameResolution Resolve(IEnumerable<SchemaObject> objects, string name)
     {
         ArgumentNullException.ThrowIfNull(objects);
         ArgumentNullException.ThrowIfNull(name);
-        return
+        List<SchemaObject> candidates =
         [
             .. objects
                 .Where(o => o.Name.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(o => o.Name.ToString(), StringComparer.Ordinal)
                 .ThenBy(Kind, StringComparer.Ordinal),
         ];
+        return candidates switch
+        {
+            [] => new NoObject(new ObjectName("dbo", name)),
+            [var one] => new OneObject(one),
+            _ => new SeveralObjects(candidates),
+        };
     }
 
     /// <summary>What an object of the schema is, in a word for messages: <c>table</c>, <c>view</c>, <c>function</c> and the rest.</summary>

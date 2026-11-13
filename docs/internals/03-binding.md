@@ -116,8 +116,9 @@ A one-part name is looked for in the names the body has defined first, and in th
 5. **The schema**: a table, a view (read from its definition), a synonym or a function. A schema-qualified name means
    itself. A name without a schema is resolved in the caller's default schema and then in `dbo`, which the source can't
    tell, so it means the one object of that name if exactly one schema has it, and is ambiguous if more do
-   (`SchemaNames.Unqualified`, the one rule for every kind of name: a FROM, a write's target, an `EXEC`, a function, an
-   alias type).
+   (`SchemaNames.Resolve`, the one rule for every kind of name: a FROM, a write's target, an `EXEC`, a function, an alias
+   type). It gives the decision itself, `OneObject`, `SeveralObjects` or `NoObject` (which then means `dbo`'s), and each user
+   says only what it makes of each.
 
 Each thing a FROM can read that is not a table of the schema is a `RelationSymbol`: a `CommonTable`, a `DerivedTable` (with its
 query, bound), a `ValuesTable`, a `ViewRelation`, a `TableFunctionCall`, an `OpenJsonCall`, a `SeriesCall`, a

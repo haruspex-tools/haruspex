@@ -31,7 +31,7 @@ flowchart LR
   defines (`NameEnvironment`) are an argument, and each query is bound once for each set of them (`Bindings`).
   `Binder.Resolve` is the one rule a column reference is resolved by, and gives a `Resolution`; a variable reference
   resolves to a parameter, a variable the body declares or neither (`VariableResolution`), from what the whole body declares
-  (`BodyDeclarations`). A name written without a schema means the objects `SchemaNames.Unqualified` gives, for every kind of
+  (`BodyDeclarations`). A name written without a schema means what `SchemaNames.Resolve` decides (one object, several or none), for every kind of
   name.
 - **Schema rules.** `SchemaRules` and `CheckReader` turn declarations into facts about values: whether a column is never
   null (declared `NOT NULL`, in the primary key, or `IDENTITY`), which keys every row satisfies, what an alias type stands
