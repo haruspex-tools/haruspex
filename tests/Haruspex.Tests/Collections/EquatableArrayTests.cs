@@ -25,6 +25,26 @@ public class EquatableArrayTests
     }
 
     [Fact]
+    public void Equality_is_reflexive_symmetric_and_transitive_and_equal_sequences_hash_equal()
+    {
+        // Every sequence of up to three of two items, each built twice, apart.
+        IrNullReason[][] items = [[], [Column], [Join], [Column, Join], [Join, Column], [Column, Column], [Column, Join, Column]];
+        List<EquatableArray<IrNullReason>> sample = [.. items.Select(i => (EquatableArray<IrNullReason>)[.. i]), .. items.Select(i => (EquatableArray<IrNullReason>)[.. i.Select(r => r with { })])];
+        foreach (var a in sample)
+        {
+            Assert.Equal(a, a);
+            foreach (var b in sample)
+            {
+                Assert.Equal(a.Equals(b), b.Equals(a));
+                if (a.Equals(b))
+                    Assert.Equal(a.GetHashCode(), b.GetHashCode());
+                foreach (var c in sample.Where(c => a.Equals(b) && b.Equals(c)))
+                    Assert.Equal(a, c);
+            }
+        }
+    }
+
+    [Fact]
     public void Every_item_counts_in_the_hash_first_middle_and_last()
     {
         // A hash that left an item out would still be lawful (equal sequences would hash equal), but every sequence differing

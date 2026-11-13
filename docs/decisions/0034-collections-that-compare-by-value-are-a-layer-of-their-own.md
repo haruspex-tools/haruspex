@@ -2,7 +2,7 @@
 
 **Date:** 13 Nov 2026
 
-**Decision.** The collections that compare by value (`EquatableArray`, and any other a record needs) live in one project,
+**Decision.** The collections that compare by value (`EquatableArray`, and `EquatableMap`, whose keys compare by their own equality) live in one project,
 `Haruspex.Collections`, at the bottom of the layers beside `Haruspex.Diagnostics`: it refers to nothing of haruspex's, and
 every layer that holds a list or a map in a record refers to it. It is packable, as Diagnostics is, because
 `Haruspex.SqlServer.Model` holds its types in its public API, so a package of the model depends on a package of these.
