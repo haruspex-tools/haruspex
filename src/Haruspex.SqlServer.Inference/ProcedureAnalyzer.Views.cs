@@ -56,15 +56,15 @@ internal sealed partial class ProcedureAnalyzer
             : TableFunction(call, scope.In(call.Arguments)),
         OpenJsonCall openJson => OpenJsonRelation(openJson, scope.In(openJson.Arguments)),
         SeriesCall series => GenerateSeries(series, scope.In(series.Arguments)),
-        TemporaryTable temporary => Temporary(temporary.Name, scope.State),
-        TableVariable variable => AsWritten(variable.Name, tableVariables[variable.Name], scope.State),
+        TemporaryTable temporary => Temporary(temporary.Local, scope.State),
+        TableVariable variable => AsWritten(variable.Local, tableVariables[variable.Local], scope.State),
     };
 
     /// <summary>What a temporary table holds in <paramref name="state"/>, or why it is not known there.</summary>
-    private static LocalRelationValues Temporary(string name, FlowState state)
+    private static LocalRelationValues Temporary(LocalName name, FlowState state)
     {
         // A global temporary table (##t) is shared with every session, which may change it at any time.
-        if (name.StartsWith("##", StringComparison.Ordinal))
+        if (name.Text.StartsWith("##", StringComparison.Ordinal))
             return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnsupportedSource, $"{name} is a global temporary table, which any session may change.", Nowhere));
 
         return state.Temp(name) switch
@@ -82,10 +82,10 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>A table variable's columns as they stand in <paramref name="state"/>: each declared, holding the JSON written to it.</summary>
-    private static LocalRelationValues AsWritten(string name, LocalRelationValues declared, FlowState state) =>
+    private static LocalRelationValues AsWritten(LocalName name, LocalRelationValues declared, FlowState state) =>
         declared.Names is null ? declared : declared with
         {
-            Values = [.. declared.Names.Select((c, i) => state.Json.TryGetValue($"{name}.{c}", out var slot) ? slot.Read(declared.Values![i]) : declared.Values![i])],
+            Values = [.. declared.Names.Select((c, i) => state.Json.TryGetValue(new ColumnSlot(name, c), out var slot) ? slot.Read(declared.Values![i]) : declared.Values![i])],
         };
 
     /// <summary>A placeholder location for an unknown that has none of its own; each read reports its own location instead.</summary>

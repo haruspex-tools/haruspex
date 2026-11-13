@@ -1,10 +1,10 @@
-using System.Collections.Immutable;
 using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.Tests.Inference;
 
@@ -151,12 +151,12 @@ public class ValueEqualityTests
         var number = new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []);
         var text = new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.String, null, "nvarchar(10)")), [new IrNullReason(IrNullRule.Variable, "@name")]);
 
-        var a = FlowState.Start([new("@id", number), new("@name", text)]);
-        var b = FlowState.Start([new("@NAME", text with { NullableBecause = [new IrNullReason(IrNullRule.Variable, "@name")] }), new("@Id", number)]);
+        var a = FlowState.Start([new(new LocalName("@id"), number), new(new LocalName("@name"), text)]);
+        var b = FlowState.Start([new(new LocalName("@NAME"), text with { NullableBecause = [new IrNullReason(IrNullRule.Variable, "@name")] }), new(new LocalName("@Id"), number)]);
 
         Assert.Equal(a, b);
         Assert.Equal(a.GetHashCode(), b.GetHashCode());
-        Assert.NotEqual(a, a.WithVariable("@id", text));
+        Assert.NotEqual(a, a.WithVariable(new LocalName("@id"), text));
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public class ValueEqualityTests
     {
         // The call cache is keyed by context: a context built again from equal tables must find the walk already made.
         var column = new TempColumn("qty", new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []), null);
-        CallContext Context(string name) => CallContext.Top with { Temps = ImmutableDictionary.Create<string, TempTable>(StringComparer.OrdinalIgnoreCase).Add(name, new KnownTable("#lines", [column with { }])) };
+        CallContext Context(string name) => CallContext.Top with { Temps = [KeyValuePair.Create(new LocalName(name), (TempTable)new KnownTable(new LocalName("#lines"), [column with { }]))] };
 
         Assert.Equal(Context("#lines"), Context("#LINES"));
         Assert.Equal(Context("#lines").GetHashCode(), Context("#LINES").GetHashCode());
@@ -177,11 +177,11 @@ public class ValueEqualityTests
     {
         var number = new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []);
         var text = new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.String, null, "nvarchar(10)")), []);
-        static FlowState State(string name, Value value) => FlowState.Start([new(name, value with { })]);
+        static FlowState State(string name, Value value) => FlowState.Start([new(new LocalName(name), value with { })]);
 
         EqualityLaws.Hold([
             State("@id", number), State("@ID", number), State("@id", number), State("@id", text), State("@name", number),
-            State("@id", number).WithReadUncommitted(true), State("@id", number).WithTemp("#t", new AbsentTable(Generator.Places[0])),
+            State("@id", number).WithReadUncommitted(true), State("@id", number).WithTemp(new LocalName("#t"), new AbsentTable(Generator.Places[0])),
         ]);
     }
 
@@ -189,9 +189,22 @@ public class ValueEqualityTests
     public void The_equality_of_call_contexts_keeps_the_laws()
     {
         var column = new TempColumn("qty", new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []), null);
-        CallContext Context(string name) => CallContext.Top with { Temps = ImmutableDictionary.Create<string, TempTable>(StringComparer.OrdinalIgnoreCase).Add(name, new KnownTable("#lines", [column with { }])) };
+        CallContext Context(string name) => CallContext.Top with { Temps = [KeyValuePair.Create(new LocalName(name), (TempTable)new KnownTable(new LocalName("#lines"), [column with { }]))] };
 
         EqualityLaws.Hold([Context("#lines"), Context("#LINES"), Context("#lines") with { Escapes = true }, Context("#other"), CallContext.Top, CallContext.Top with { }]);
+    }
+
+    [Fact]
+    public void A_table_variables_column_is_one_place_whatever_the_case_of_its_names()
+    {
+        // A write names a column as it likes (UPDATE @T SET Body = …); the state traces it under the table's declaration.
+        Assert.Equal(new ColumnSlot(new LocalName("@orders"), "body"), new ColumnSlot(new LocalName("@ORDERS"), "Body"));
+        Assert.Equal(new ColumnSlot(new LocalName("@orders"), "body").GetHashCode(), new ColumnSlot(new LocalName("@ORDERS"), "Body").GetHashCode());
+        Assert.NotEqual<JsonSlotKey>(new ColumnSlot(new LocalName("@orders"), "body"), new VariableSlot(new LocalName("@orders")));
+        EqualityLaws.Hold([
+            new ColumnSlot(new LocalName("@orders"), "body"), new ColumnSlot(new LocalName("@Orders"), "BODY"), new ColumnSlot(new LocalName("@orders"), "notes"),
+            new ColumnSlot(new LocalName("@lines"), "body"), new ColumnSlot(new LocalName("@orders"), "body"),
+        ]);
     }
 
     [Fact]

@@ -11,4 +11,8 @@ namespace Haruspex.SqlServer.Semantics;
 /// </summary>
 /// <param name="Name">Its name, with its sigil.</param>
 /// <param name="Columns">Its columns where it is read, as the walk knows them; null when it doesn't.</param>
-public sealed record TemporaryTable(string Name, EquatableArray<string>? Columns) : RelationSymbol(Name, Columns);
+public sealed record TemporaryTable(string Name, EquatableArray<string>? Columns) : RelationSymbol(Name, Columns)
+{
+    /// <summary>The table's name as the walk keys what it holds: <see cref="Binder.Temporary"/>'s.</summary>
+    public LocalName Local => new(Name);
+}

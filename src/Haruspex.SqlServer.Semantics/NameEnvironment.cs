@@ -20,15 +20,15 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
 
     private readonly ImmutableDictionary<string, PseudoTable> pseudo;
     private readonly ImmutableDictionary<string, CommonTable> ctes;
-    private readonly ImmutableDictionary<string, TableVariable> tableVariables;
-    private readonly ImmutableDictionary<string, EquatableArray<string>> temporaryColumns;
+    private readonly ImmutableDictionary<LocalName, TableVariable> tableVariables;
+    private readonly ImmutableDictionary<LocalName, EquatableArray<string>> temporaryColumns;
 
     private NameEnvironment(
         bool expandsStars,
         ImmutableDictionary<string, PseudoTable> pseudo,
         ImmutableDictionary<string, CommonTable> ctes,
-        ImmutableDictionary<string, TableVariable> tableVariables,
-        ImmutableDictionary<string, EquatableArray<string>> temporaryColumns)
+        ImmutableDictionary<LocalName, TableVariable> tableVariables,
+        ImmutableDictionary<LocalName, EquatableArray<string>> temporaryColumns)
     {
         ExpandsStars = expandsStars;
         this.pseudo = pseudo;
@@ -42,8 +42,8 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
         expandsStars: false,
         ImmutableDictionary.Create<string, PseudoTable>(Names),
         ImmutableDictionary.Create<string, CommonTable>(Names),
-        ImmutableDictionary.Create<string, TableVariable>(Names),
-        ImmutableDictionary.Create<string, EquatableArray<string>>(Names));
+        [],
+        []);
 
     /// <summary>
     /// No relations of the body's own, in a view's body, whose <c>SELECT *</c> SQL Server binds when it creates the view (observed:
@@ -62,9 +62,9 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     public NameEnvironment WithDeclarations(BodyDeclarations declarations)
     {
         ArgumentNullException.ThrowIfNull(declarations);
-        var table = ImmutableDictionary.Create<string, TableVariable>(Names);
+        var table = ImmutableDictionary<LocalName, TableVariable>.Empty;
         foreach (var declaration in declarations.TableVariables)
-            table = table.SetItem(declaration.Name, new TableVariable(declaration));
+            table = table.SetItem(new LocalName(declaration.Name), new TableVariable(declaration));
         return new(ExpandsStars, pseudo, ctes, table, temporaryColumns) { Declarations = declarations };
     }
 
@@ -73,10 +73,10 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     /// temporary table not listed has columns not known (the caller's, or one whose columns a path made unknown).
     /// </summary>
     /// <param name="columns">Each temporary table whose columns are known, by name, with its columns in order.</param>
-    public NameEnvironment WithTemporaryColumns(IEnumerable<KeyValuePair<string, IReadOnlyList<string>>> columns)
+    public NameEnvironment WithTemporaryColumns(IEnumerable<KeyValuePair<LocalName, IReadOnlyList<string>>> columns)
     {
         ArgumentNullException.ThrowIfNull(columns);
-        return new(ExpandsStars, pseudo, ctes, tableVariables, ImmutableDictionary.CreateRange(Names, columns.Select(c => KeyValuePair.Create(c.Key, (EquatableArray<string>)[.. c.Value])))) { Declarations = Declarations };
+        return new(ExpandsStars, pseudo, ctes, tableVariables, ImmutableDictionary.CreateRange(columns.Select(c => KeyValuePair.Create(c.Key, (EquatableArray<string>)[.. c.Value])))) { Declarations = Declarations };
     }
 
     /// <summary>These names with a CTE added, hiding any table of its name.</summary>
@@ -107,16 +107,17 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
             return table;
         if (ctes.TryGetValue(name, out var cte))
             return cte;
-        if (name.StartsWith('@'))
-            return tableVariables.TryGetValue(name, out var variable) ? variable : null;
-        if (name.StartsWith('#'))
-            return new TemporaryTable(name, temporaryColumns.TryGetValue(name, out var columns) ? columns : null);
+        var local = new LocalName(name);
+        if (local.IsVariable)
+            return tableVariables.TryGetValue(local, out var variable) ? variable : null;
+        if (local.IsTemporary)
+            return new TemporaryTable(name, temporaryColumns.TryGetValue(local, out var columns) ? columns : null);
         return null;
     }
 
     /// <summary>The table variable of this name, as declared; null when the body declares none.</summary>
     /// <param name="name">The name, with its <c>@</c>.</param>
-    public TableVariable? TableVariable(string name) => tableVariables.TryGetValue(name, out var variable) ? variable : null;
+    public TableVariable? TableVariable(LocalName name) => tableVariables.TryGetValue(name, out var variable) ? variable : null;
 
     /// <inheritdoc/>
     public bool Equals(NameEnvironment? other) =>
@@ -140,12 +141,15 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
         hash.Add(pseudo.Count);
         hash.Add(ctes.Count);
         hash.Add(tableVariables.Count);
-        foreach (var name in temporaryColumns.Keys.Order(StringComparer.OrdinalIgnoreCase))
-            hash.Add(name, Names);
+        var temporary = 0;
+        foreach (var name in temporaryColumns.Keys)
+            temporary = unchecked(temporary + name.GetHashCode());
+        hash.Add(temporary);
         return hash.ToHashCode();
     }
 
-    private static bool Same<T>(ImmutableDictionary<string, T> a, ImmutableDictionary<string, T> b, Func<T, T, bool> same) =>
+    private static bool Same<TKey, T>(ImmutableDictionary<TKey, T> a, ImmutableDictionary<TKey, T> b, Func<T, T, bool> same)
+        where TKey : notnull =>
         a.Count == b.Count && a.All(entry => b.TryGetValue(entry.Key, out var other) && same(entry.Value, other));
 
     private static bool Same(IReadOnlyList<string>? a, IReadOnlyList<string>? b) =>

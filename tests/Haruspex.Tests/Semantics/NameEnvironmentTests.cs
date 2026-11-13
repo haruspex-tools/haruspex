@@ -10,7 +10,7 @@ namespace Haruspex.Tests.Semantics;
 public class NameEnvironmentTests
 {
     private static NameEnvironment With(string table, params string[] columns) =>
-        NameEnvironment.Empty.WithTemporaryColumns([KeyValuePair.Create(table, (IReadOnlyList<string>)[.. columns])]);
+        NameEnvironment.Empty.WithTemporaryColumns([KeyValuePair.Create(new LocalName(table), (IReadOnlyList<string>)[.. columns])]);
 
     [Fact]
     public void Environments_built_apart_with_the_same_columns_are_equal()

@@ -7,5 +7,5 @@ namespace Haruspex.SqlServer.Semantics;
 public sealed record ParameterVariable(Parameter Parameter) : VariableResolution
 {
     /// <inheritdoc/>
-    public override string Name => Parameter.Name;
+    public override LocalName Name => new(Parameter.Name);
 }

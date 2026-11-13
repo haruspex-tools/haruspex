@@ -98,10 +98,10 @@ structural equality the laws ask for, and `a.Equals(b)` above is true. It is a c
 may be missing (an object's results, when they are unknown) stays a nullable reference with no third state between empty
 and missing.
 
-The states that are classes rather than records (`FlowState`, `ResultTrack`) and the record that holds a dictionary
-(`CallContext`) compare their parts the same way, their maps entry by entry (`ImmutableMaps`). Their keys are SQL names,
-which SQL Server compares ignoring case, so `#Lines` and `#lines` are one key. A map a record holds is an `EquatableMap`,
-equal to another with the same keys holding equal values, in whatever order they were added.
+A map a record holds is an `EquatableMap`, equal to another with the same keys holding equal values, in whatever order they
+were added: the state (`FlowState`) and a call's context (`CallContext`) hold their tables, variables and traced JSON so.
+The keys are names that compare as SQL Server compares them, ignoring case (`LocalName`, `ObjectName`), so `#Lines` and
+`#lines` are one key, and the comparison is the key's own rather than a comparer each map must be given.
 
 Every record of every layer is held to this by a test, `RecordEqualityTests`, which reads each record's fields and fails on
 one that compares by reference. Where equality is not generated field by field, the test lists the type with why: a syntax

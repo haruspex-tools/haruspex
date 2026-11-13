@@ -14,7 +14,7 @@ namespace Haruspex.SqlServer.Semantics;
 /// </summary>
 public sealed class BodyDeclarations
 {
-    private readonly Dictionary<string, VariableResolution> variables = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<LocalName, VariableResolution> variables = [];
     private readonly Dictionary<string, List<DeclareCursorStatement>> cursors = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<DeclareVariableElement, VariableResolution> elements = new(ReferenceEqualityComparer.Instance);
 
@@ -24,7 +24,7 @@ public sealed class BodyDeclarations
         Variables = locals;
         TableVariables = tableVariables;
         foreach (var parameter in parameters)
-            variables.TryAdd(parameter.Name, new ParameterVariable(parameter));
+            variables.TryAdd(new LocalName(parameter.Name), new ParameterVariable(parameter));
         foreach (var local in locals)
             variables.TryAdd(local.Name, local);
     }
@@ -61,8 +61,8 @@ public sealed class BodyDeclarations
         var locals = new List<LocalVariable>();
         foreach (var element in found.Variables)
         {
-            var name = element.VariableName.Value;
-            if (!parameters.Any(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) && !locals.Any(v => v.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            var name = new LocalName(element.VariableName.Value);
+            if (!parameters.Any(p => new LocalName(p.Name) == name) && !locals.Any(v => v.Name == name))
                 locals.Add(new LocalVariable(name, SyntaxReader.Type(element.DataType), source.At(element)));
         }
 
@@ -70,13 +70,13 @@ public sealed class BodyDeclarations
         var declared = found.Tables.Select(t => SyntaxReader.Declared(t.VariableName.Value, t.Definition, source.Within(t)));
         foreach (var table in returnTable is null ? declared : declared.Prepend(returnTable))
         {
-            if (!tables.Any(t => t.Name.Equals(table.Name, StringComparison.OrdinalIgnoreCase)))
+            if (!tables.Any(t => new LocalName(t.Name) == new LocalName(table.Name)))
                 tables.Add(table);
         }
 
         var result = new BodyDeclarations(parameters, locals, tables);
         foreach (var element in found.Variables)
-            result.elements[element] = result.Variable(element.VariableName.Value);
+            result.elements[element] = result.Variable(new LocalName(element.VariableName.Value));
         foreach (var cursor in found.Cursors)
         {
             if (!result.cursors.TryGetValue(cursor.Name.Value, out var same))
@@ -89,8 +89,8 @@ public sealed class BodyDeclarations
 
     /// <summary>What a variable of this name is here.</summary>
     /// <param name="name">The name, with its <c>@</c>.</param>
-    public VariableResolution Variable(string name) =>
-        variables.TryGetValue(name ?? throw new ArgumentNullException(nameof(name)), out var found) ? found : new UndeclaredVariable(name);
+    public VariableResolution Variable(LocalName name) =>
+        variables.TryGetValue(name, out var found) ? found : new UndeclaredVariable(name);
 
     /// <summary>
     /// What a <c>DECLARE</c> element declares: the variable it names, which may be one declared before it of the same name (a
@@ -98,7 +98,7 @@ public sealed class BodyDeclarations
     /// </summary>
     /// <param name="element">The element, <c>@v int = 1</c>.</param>
     public VariableResolution Declared(DeclareVariableElement element) =>
-        elements.TryGetValue(element ?? throw new ArgumentNullException(nameof(element)), out var found) ? found : new UndeclaredVariable(element.VariableName.Value);
+        elements.TryGetValue(element ?? throw new ArgumentNullException(nameof(element)), out var found) ? found : new UndeclaredVariable(new LocalName(element.VariableName.Value));
 
     /// <summary>Every declaration of the cursor a <c>FETCH</c>, <c>OPEN</c> or the like names, in the order written; empty for none.</summary>
     /// <param name="cursor">The cursor as the statement names it.</param>
@@ -112,7 +112,7 @@ public sealed class BodyDeclarations
         ArgumentNullException.ThrowIfNull(fragment);
         var found = new TableVariableFinder();
         fragment.Accept(found);
-        return [.. found.Names.Select(n => TableVariables.FirstOrDefault(t => t.Name.Equals(n, StringComparison.OrdinalIgnoreCase))).OfType<DeclaredTable>().Distinct()];
+        return [.. found.Names.Select(n => TableVariables.FirstOrDefault(t => new LocalName(t.Name) == new LocalName(n))).OfType<DeclaredTable>().Distinct()];
     }
 
     private sealed class TableVariableFinder : TSqlFragmentVisitor

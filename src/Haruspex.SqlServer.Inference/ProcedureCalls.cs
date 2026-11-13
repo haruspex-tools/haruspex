@@ -71,7 +71,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     /// procedure from an equal context, its temporary tables compared by value, is the same walk.
     /// </summary>
     private readonly Dictionary<(ObjectName Procedure, CallContext Context), Walked> cache = [];
-    private readonly Dictionary<ObjectName, ImmutableSortedSet<string>> writes = [];
+    private readonly Dictionary<ObjectName, ImmutableHashSet<LocalName>> writes = [];
 
     public DatabaseModel Model => model;
 
@@ -224,15 +224,15 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     /// The temporary tables a procedure writes, creates, alters or drops, or any procedure it calls does, at any depth: what
     /// a call of it may change, read from the bodies alone.
     /// </summary>
-    public ImmutableSortedSet<string> TempWrites(ObjectName name) => Writes(name);
+    public ImmutableHashSet<LocalName> TempWrites(ObjectName name) => Writes(name);
 
     /// <inheritdoc cref="TempWrites"/>
-    private ImmutableSortedSet<string> Writes(ObjectName name)
+    private ImmutableHashSet<LocalName> Writes(ObjectName name)
     {
         if (writes.TryGetValue(name, out var known))
             return known;
         writes[name] = [];
-        var all = ImmutableSortedSet.Create<string>(StringComparer.OrdinalIgnoreCase);
+        var all = ImmutableHashSet<LocalName>.Empty;
         if (model.FindProcedure(name) is { Body: SqlBody { Statements: var body } } procedure)
         {
             var finder = new WriteFinder();
@@ -252,7 +252,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
 
     private sealed class WriteFinder : TSqlFragmentVisitor
     {
-        public HashSet<string> Tables { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public HashSet<LocalName> Tables { get; } = [];
 
         public List<ExecuteSpecification> Calls { get; } = [];
 
@@ -287,7 +287,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
         {
             foreach (var name in target.Temps)
                 Tables.Add(name);
-            if (target.Direct is { } direct && direct.StartsWith('#'))
+            if (target.Direct is { IsTemporary: true } direct)
                 Tables.Add(direct);
         }
 

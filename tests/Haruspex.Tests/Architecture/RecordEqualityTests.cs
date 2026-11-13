@@ -51,10 +51,10 @@ public class RecordEqualityTests
         ["Haruspex.Config.ObjectPattern"] = "ObjectPatternTests.Its_equality_keeps_the_laws",
         ["Haruspex.Collections.EquatableMap`2"] = "EquatableMapTests.Equality_is_reflexive_symmetric_and_transitive_and_equal_maps_hash_equal",
         ["Haruspex.Ir.IrDocument"] = "IrJsonReaderTests.A_document_read_equals_one_whose_sorted_lists_were_in_another_order",
-        ["Haruspex.SqlServer.Inference.CallContext"] = "ValueEqualityTests.The_equality_of_call_contexts_keeps_the_laws",
-        ["Haruspex.SqlServer.Inference.FlowState"] = "ValueEqualityTests.The_equality_of_states_keeps_the_laws",
+        ["Haruspex.SqlServer.Inference.ColumnSlot"] = "ValueEqualityTests.A_table_variables_column_is_one_place_whatever_the_case_of_its_names",
         ["Haruspex.SqlServer.Inference.ResultTrack"] = "ValueEqualityTests.The_equality_of_result_tracks_keeps_the_laws",
         ["Haruspex.SqlServer.Model.ObjectName"] = "ObjectNameTests.Its_equality_keeps_the_laws",
+        ["Haruspex.SqlServer.Semantics.LocalName"] = "LocalNameTests.Its_equality_keeps_the_laws",
         ["Haruspex.SqlServer.Semantics.NameEnvironment"] = "NameEnvironmentTests.Its_equality_keeps_the_laws",
     };
 

@@ -86,7 +86,7 @@ public sealed partial class Binder
     {
         ArgumentNullException.ThrowIfNull(variable);
         ArgumentNullException.ThrowIfNull(names);
-        return names.Declarations.Variable(variable.Name);
+        return names.Declarations.Variable(new LocalName(variable.Name));
     }
 
     /// <summary>

@@ -84,12 +84,11 @@ internal sealed partial class ProcedureAnalyzer
         if (called.After is not { } after)
             return Outcome.Ends;
         after = Assigned(execute, after);
-        if (written.Direct is null)
+        if (written.Direct is not { } target)
             return Continue(Output(insert, spec, null, null, insert.WithCtesAndXmlNamespaces, written, state, after));
-        if (written.Direct.StartsWith('@'))
-            return Continue(TableVariableWritten(after, written.Direct, null, null, null, at));
-        var target = written.Direct.StartsWith('#') ? written.Direct : null;
-        if (target is null || after.Temp(target) is not KnownTable table)
+        if (target.IsVariable)
+            return Continue(TableVariableWritten(after, target, null, null, null, at));
+        if (!target.IsTemporary || after.Temp(target) is not KnownTable table)
             return Continue(after);
 
         // Without a column list the rows go into every column but an identity column (observed, also of one SELECT … INTO
@@ -196,7 +195,7 @@ internal sealed partial class ProcedureAnalyzer
     /// reaches the caller; but a callee that creates a table of a name its caller has may have written the caller's before,
     /// which is not followed, so the caller's is unknown.
     /// </summary>
-    private static FlowState Returned(FlowState caller, FlowState callee, ImmutableHashSet<string> own, SourceLocation at)
+    private static FlowState Returned(FlowState caller, FlowState callee, ImmutableHashSet<LocalName> own, SourceLocation at)
     {
         var temps = caller.Temps;
         foreach (var (name, table) in callee.Temps)
@@ -221,7 +220,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>The temporary tables a procedure creates anywhere in its body: its own, gone when it returns.</summary>
-    private static ImmutableHashSet<string> Created(Procedure procedure)
+    private static ImmutableHashSet<LocalName> Created(Procedure procedure)
     {
         var finder = new CreateFinder();
         (procedure.Body as SqlBody)?.Statements.Accept(finder);
@@ -230,7 +229,7 @@ internal sealed partial class ProcedureAnalyzer
 
     private sealed class CreateFinder : TSqlFragmentVisitor
     {
-        public ImmutableHashSet<string>.Builder Names { get; } = ImmutableHashSet.CreateBuilder<string>(StringComparer.OrdinalIgnoreCase);
+        public ImmutableHashSet<LocalName>.Builder Names { get; } = ImmutableHashSet.CreateBuilder<LocalName>();
 
         public override void Visit(CreateTableStatement node) => Add(node.SchemaObjectName);
 
@@ -283,7 +282,7 @@ internal sealed partial class ProcedureAnalyzer
         return state;
 
         // Assign keeps the variable's declared type, which the value is converted to; only why it may be null is taken.
-        Value Nulls(string name, EquatableArray<IrNullReason> because) =>
+        Value Nulls(LocalName name, EquatableArray<IrNullReason> because) =>
             Value.Computed(variableShapes.TryGetValue(name, out var shape) ? shape : new NeverShape(at), because);
     }
 

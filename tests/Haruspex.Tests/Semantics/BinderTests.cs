@@ -325,7 +325,7 @@ public class BinderTests
     public void A_temporary_table_has_the_columns_the_walk_gives_it_and_otherwise_any()
     {
         var body = new Sample("SELECT x.a FROM #x AS x;");
-        var known = NameEnvironment.Empty.WithTemporaryColumns([KeyValuePair.Create("#x", (IReadOnlyList<string>)["a", "b"])]);
+        var known = NameEnvironment.Empty.WithTemporaryColumns([KeyValuePair.Create(new LocalName("#x"), (IReadOnlyList<string>)["a", "b"])]);
 
         Assert.Equal(0, Assert.IsType<RelationColumn>(body.Resolve("x.a", known)).Ordinal);
         Assert.IsType<TemporaryTable>(Assert.IsType<UnlistedColumn>(body.Resolve("x.a")).Relation);
@@ -338,7 +338,7 @@ public class BinderTests
     {
         var body = new Sample("SELECT x.a FROM #x AS x;");
         static NameEnvironment With(params string[] columns) =>
-            NameEnvironment.Empty.WithTemporaryColumns([KeyValuePair.Create("#x", (IReadOnlyList<string>)columns)]);
+            NameEnvironment.Empty.WithTemporaryColumns([KeyValuePair.Create(new LocalName("#x"), (IReadOnlyList<string>)columns)]);
 
         Assert.Same(body.Query(With("a")), body.Query(With("a")));
         Assert.NotSame(body.Query(With("a")), body.Query(With("a", "b")));
@@ -377,8 +377,8 @@ public class BinderTests
         var elements = ((DeclareVariableStatement)body.Statements[0]).Declarations;
 
         Assert.IsType<ParameterVariable>(declarations.Declared(elements[0]));
-        Assert.Equal("@n", Assert.IsType<LocalVariable>(declarations.Declared(elements[1])).Name);
-        Assert.Equal(["@n"], declarations.Variables.Select(v => v.Name));
+        Assert.Equal(new LocalName("@n"), Assert.IsType<LocalVariable>(declarations.Declared(elements[1])).Name);
+        Assert.Equal([new LocalName("@n")], declarations.Variables.Select(v => v.Name));
     }
 
     [Fact]
@@ -401,6 +401,6 @@ public class BinderTests
         foreach (var part in written.Split('.'))
             name.Identifiers.Add(new Identifier { Value = part });
 
-        Assert.Equal(temporary, Binder.Temporary(name));
+        Assert.Equal(temporary, Binder.Temporary(name)?.Text);
     }
 }

@@ -41,14 +41,14 @@ public class FactsTests
         filter.Value(Lines, "c:qty");
         var branch = new Facts.Found(Facts.Proof.OfTheValue, null, []);
         branch.Value(Lines, "c:qty");
-        branch.Variable("@limit");
+        branch.Variable(new LocalName("@limit"));
 
         var facts = Facts.None.With(filter).With(branch);
 
         Assert.Equal(Facts.Proof.OfTheValue, facts.Proved(Lines, "c:qty"));
         Assert.Equal(Facts.Proof.OfTheValue, Facts.None.With(branch).With(filter).Proved(Lines, "c:qty"));
-        Assert.True(facts.Proved("@LIMIT"));
-        Assert.False(Facts.None.With(filter).Proved("@limit"));
+        Assert.True(facts.Proved(new LocalName("@LIMIT")));
+        Assert.False(Facts.None.With(filter).Proved(new LocalName("@limit")));
     }
 
     [Fact]

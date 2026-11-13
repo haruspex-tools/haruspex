@@ -68,7 +68,7 @@ internal sealed class Facts
     public bool Matched(BoundSource source) => frames.Any(f => f.Rows.Contains(source));
 
     /// <summary>Whether a variable or parameter is proved non-null: a branch tested it, and it has one value throughout an expression.</summary>
-    public bool Proved(string variable) => frames.Any(f => f.Variables.Contains(variable));
+    public bool Proved(LocalName variable) => frames.Any(f => f.Variables.Contains(variable));
 
     /// <summary>Whether an aggregate of <paramref name="query"/>, by its text, is proved non-null: by HAVING, or by a branch read in that query's row.</summary>
     public bool Proved(QuerySpecification? query, string aggregate) =>
@@ -92,7 +92,7 @@ internal sealed class Facts
         IrNullReason? rolled,
         ImmutableDictionary<BoundSource, ImmutableHashSet<string>> values,
         ImmutableHashSet<BoundSource> rows,
-        ImmutableHashSet<string> variables,
+        ImmutableHashSet<LocalName> variables,
         ImmutableHashSet<string> aggregates)
     {
         public Proof Strength { get; } = strength;
@@ -107,7 +107,7 @@ internal sealed class Facts
 
         public ImmutableHashSet<BoundSource> Rows { get; } = rows;
 
-        public ImmutableHashSet<string> Variables { get; } = variables;
+        public ImmutableHashSet<LocalName> Variables { get; } = variables;
 
         public ImmutableHashSet<string> Aggregates { get; } = aggregates;
     }
@@ -123,7 +123,7 @@ internal sealed class Facts
     {
         private readonly Dictionary<BoundSource, HashSet<string>> values = new(ReferenceEqualityComparer.Instance);
         private readonly HashSet<BoundSource> rows = new(ReferenceEqualityComparer.Instance);
-        private readonly HashSet<string> variables = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<LocalName> variables = [];
         private readonly HashSet<string> aggregates = new(StringComparer.Ordinal);
 
         /// <summary>The query's own sources, those of its FROM, not an enclosing query's.</summary>
@@ -147,7 +147,7 @@ internal sealed class Facts
         public void Row(BoundSource source) => rows.Add(source);
 
         /// <summary>A variable or parameter proved non-null.</summary>
-        public void Variable(string name) => variables.Add(name);
+        public void Variable(LocalName name) => variables.Add(name);
 
         /// <summary>An aggregate of the query proved non-null, by its text: each is computed once per group.</summary>
         public void Aggregate(string text) => aggregates.Add(text);
@@ -168,7 +168,7 @@ internal sealed class Facts
             Rolled,
             values.ToImmutableDictionary<KeyValuePair<BoundSource, HashSet<string>>, BoundSource, ImmutableHashSet<string>>(p => p.Key, p => p.Value.ToImmutableHashSet(StringComparer.Ordinal), ReferenceEqualityComparer.Instance),
             ImmutableHashSet.CreateRange<BoundSource>(ReferenceEqualityComparer.Instance, rows),
-            ImmutableHashSet.CreateRange(StringComparer.OrdinalIgnoreCase, variables),
+            [.. variables],
             ImmutableHashSet.CreateRange(StringComparer.Ordinal, aggregates))));
     }
 }

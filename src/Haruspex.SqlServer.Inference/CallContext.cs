@@ -1,4 +1,5 @@
-using System.Collections.Immutable;
+using Haruspex.Collections;
+using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -9,13 +10,7 @@ namespace Haruspex.SqlServer.Inference;
 /// Whether the procedure runs under <c>INSERT … EXEC</c>, its result sets going into a table: FOR JSON fails there (13602)
 /// and so does another <c>INSERT … EXEC</c> (8164), both observed.
 /// </param>
-internal sealed record CallContext(ImmutableDictionary<string, TempTable> Temps, bool Escapes, bool Inserting, bool ReadUncommitted = false)
+internal sealed record CallContext(EquatableMap<LocalName, TempTable> Temps, bool Escapes, bool Inserting, bool ReadUncommitted = false)
 {
-    public static CallContext Top { get; } = new(ImmutableDictionary.Create<string, TempTable>(StringComparer.OrdinalIgnoreCase), false, false);
-
-    /// <summary>Whether a walk from <paramref name="other"/> is the same walk: the same tables, by value, and the same flags.</summary>
-    public bool Equals(CallContext? other) =>
-        other is not null && Escapes == other.Escapes && Inserting == other.Inserting && ReadUncommitted == other.ReadUncommitted && ImmutableMaps.Equal(Temps, other.Temps);
-
-    public override int GetHashCode() => HashCode.Combine(Escapes, Inserting, ReadUncommitted, ImmutableMaps.Hash(Temps));
+    public static CallContext Top { get; } = new([], false, false);
 }

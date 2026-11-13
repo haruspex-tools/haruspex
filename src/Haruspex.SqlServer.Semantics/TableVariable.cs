@@ -9,4 +9,8 @@ namespace Haruspex.SqlServer.Semantics;
 /// </summary>
 /// <param name="Declaration">Its declaration.</param>
 public sealed record TableVariable(DeclaredTable Declaration)
-    : RelationSymbol(Declaration?.Name ?? throw new ArgumentNullException(nameof(Declaration)), [.. Declaration.Columns.Select(c => c.Name)]);
+    : RelationSymbol(Declaration?.Name ?? throw new ArgumentNullException(nameof(Declaration)), [.. Declaration.Columns.Select(c => c.Name)])
+{
+    /// <summary>The table variable's name as the walk keys what it holds.</summary>
+    public LocalName Local => new(Name);
+}

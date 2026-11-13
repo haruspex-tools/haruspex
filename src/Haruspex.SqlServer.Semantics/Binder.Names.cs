@@ -15,12 +15,12 @@ public sealed partial class Binder
     /// <c>#t</c> once (observed: A_procedure_cannot_create_a_temporary_table_twice_even_after_dropping_it).
     /// </summary>
     /// <param name="name">The name as a statement writes it: <c>CREATE TABLE</c>, <c>DROP TABLE</c>, <c>SELECT … INTO</c>, a FROM.</param>
-    public static string? Temporary(SchemaObjectName name)
+    public static LocalName? Temporary(SchemaObjectName name)
     {
         ArgumentNullException.ThrowIfNull(name);
         return name is { ServerIdentifier: null, DatabaseIdentifier: null, SchemaIdentifier: null, BaseIdentifier.Value: var own }
             && own.StartsWith('#') && !own.StartsWith("##", StringComparison.Ordinal)
-            ? own
+            ? new LocalName(own)
             : null;
     }
 

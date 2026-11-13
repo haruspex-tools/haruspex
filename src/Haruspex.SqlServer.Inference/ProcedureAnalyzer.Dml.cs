@@ -146,7 +146,7 @@ internal sealed partial class ProcedureAnalyzer
         LocalRelationValues values;
         if (target.Direct is { } direct)
         {
-            values = Reading(state).Names.Find(direct) is { } relation ? Holding(relation, hinted: false, Reading(state)) : LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnresolvedTable, $"{direct} is not declared.", at));
+            values = Reading(state).Names.Find(direct.Text) is { } relation ? Holding(relation, hinted: false, Reading(state)) : LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnresolvedTable, $"{direct} is not declared.", at));
         }
         else if (target.Named is { } only
             && binder.ResolveWritten(only) is [var name] && model.FindTable(name) is { } table && model.FindTableRedefinition(name) is null)
@@ -223,7 +223,7 @@ internal sealed partial class ProcedureAnalyzer
     private FlowState OutputInto(OutputIntoClause into, Row row, FlowState state, SourceLocation at)
     {
         var local = DmlTarget.Local(into.IntoTable);
-        if (local is { } variable && variable.StartsWith('@'))
+        if (local is { IsVariable: true } variable)
         {
             var columns = TableVariableTargets(variable, into.IntoTableColumns);
             return row.Star is null && columns is not null && columns.Count == row.Columns.Count
@@ -334,7 +334,7 @@ internal sealed partial class ProcedureAnalyzer
         if (candidates is not [var declaration] || declaration.CursorDefinition.Select is not { QueryExpression: QuerySpecification query } select)
             return null;
 
-        var temps = DmlTarget.NamesRead(query).Select(Binder.Temporary).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var temps = DmlTarget.NamesRead(query).Select(Binder.Temporary).OfType<LocalName>().ToHashSet();
         if (temps.Count > 0 && Restructured(temps, declaration))
             return null;
 
@@ -355,7 +355,7 @@ internal sealed partial class ProcedureAnalyzer
     /// procedure's ALTER or DROP anywhere, its CREATE or SELECT … INTO after the DECLARE, or anything a procedure it calls
     /// does to the table.
     /// </summary>
-    private bool Restructured(HashSet<string> temps, DeclareCursorStatement declaration)
+    private bool Restructured(HashSet<LocalName> temps, DeclareCursorStatement declaration)
     {
         var changes = new Restructures();
         body!.Accept(changes);
@@ -372,9 +372,9 @@ internal sealed partial class ProcedureAnalyzer
 
     private sealed class Restructures : TSqlFragmentVisitor
     {
-        public HashSet<string> Altered { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public HashSet<LocalName> Altered { get; } = [];
 
-        public List<(string Name, int After)> Created { get; } = [];
+        public List<(LocalName Name, int After)> Created { get; } = [];
 
         public List<ExecuteSpecification> Calls { get; } = [];
 
@@ -397,7 +397,7 @@ internal sealed partial class ProcedureAnalyzer
         public override void Visit(ExecuteSpecification node) => Calls.Add(node);
 
         // Only a local temporary table can be one a cursor reads that the walk follows, so only those are listed.
-        private static void Add(HashSet<string> names, SchemaObjectName name)
+        private static void Add(HashSet<LocalName> names, SchemaObjectName name)
         {
             if (Binder.Temporary(name) is { } temporary)
                 names.Add(temporary);

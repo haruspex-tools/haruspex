@@ -10,8 +10,8 @@ namespace Haruspex.SqlServer.Semantics;
 /// <param name="Name">Its name, with its <c>@</c>, as its declaration writes it.</param>
 /// <param name="Type">Its declared type; null for a cursor variable, which has none.</param>
 /// <param name="At">Where it is declared.</param>
-public sealed record LocalVariable(string Name, SqlType? Type, SourceLocation At) : VariableResolution
+public sealed record LocalVariable(LocalName Name, SqlType? Type, SourceLocation At) : VariableResolution
 {
     /// <inheritdoc/>
-    public override string Name { get; } = Name;
+    public override LocalName Name { get; } = Name;
 }

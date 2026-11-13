@@ -13,7 +13,7 @@ namespace Haruspex.SqlServer.Semantics;
 /// <param name="Temps">Temporary tables it may change through a CTE or derived table, which then hold what is not followed.</param>
 /// <param name="Direct">The temporary table (<c>#t</c>) or table variable (<c>@t</c>) it writes directly, if it does.</param>
 /// <param name="Unmodelled">Why the target is of a form not modelled (<c>OPENROWSET</c>, <c>OPENQUERY</c>, …), if it is.</param>
-public sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, EquatableArray<string> Temps, string? Direct, string? Unmodelled)
+public sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, EquatableArray<LocalName> Temps, LocalName? Direct, string? Unmodelled)
 {
     /// <summary>
     /// The permanent object the write changes when it names one, directly or through an alias in FROM, rather than through a
@@ -29,8 +29,8 @@ public sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, Equatab
     {
         ArgumentNullException.ThrowIfNull(target);
         var objects = new List<SchemaObjectName>();
-        var temps = new List<string>();
-        string? direct = null;
+        var temps = new List<LocalName>();
+        LocalName? direct = null;
         string? unmodelled = null;
         SchemaObjectName? namedObject = null;
         var ctes = with?.CommonTableExpressions.ToDictionary(c => c.ExpressionName.Value, StringComparer.OrdinalIgnoreCase)
@@ -43,7 +43,7 @@ public sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, Equatab
             switch (reference)
             {
                 case VariableTableReference variable:
-                    direct ??= variable.Variable.Name;
+                    direct ??= new LocalName(variable.Variable.Name);
                     break;
                 case NamedTableReference { SchemaObject: { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null } name } named:
                     var one = name.BaseIdentifier.Value;
@@ -115,11 +115,11 @@ public sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, Equatab
     /// <c>@t</c>, a name of one part; null for any other. <c>OUTPUT … INTO</c> names its table so.
     /// </summary>
     /// <param name="target">The reference.</param>
-    public static string? Local(TableReference target) => target switch
+    public static LocalName? Local(TableReference target) => target switch
     {
         NamedTableReference { SchemaObject: var name } when Binder.Temporary(name) is { } temporary => temporary,
         NamedTableReference { SchemaObject: { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null, BaseIdentifier.Value: var variable } }
-            when variable.StartsWith('@') => variable,
+            when variable.StartsWith('@') => new LocalName(variable),
         _ => null,
     };
 

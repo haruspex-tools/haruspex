@@ -64,16 +64,16 @@ internal sealed partial class ProcedureAnalyzer
     // ---- table variables ----------------------------------------------------------------------------------------------
     //
     // A table variable is its declaration, but what its nvarchar(max) columns hold as JSON is what the body writes to
-    // them, kept in FlowState.Json under "@t.column". Only this body can write one; every statement that does is read here:
+    // them, kept in FlowState.Json under a ColumnSlot. Only this body can write one; every statement that does is read here:
     // INSERT (VALUES or a query), UPDATE's SET, OUTPUT … INTO; INSERT … EXEC and MERGE write values not read, so the columns
     // they may write are not JSON known here.
 
     /// <summary>The traced columns of a table variable, by position in its declaration; empty when none is.</summary>
-    private static IEnumerable<(int Position, string Key)> TracedColumns(FlowState state, string name, IReadOnlyList<string> columns) =>
-        columns.Select((c, i) => (i, $"{name}.{c}")).Where(c => state.Json.ContainsKey(c.Item2));
+    private static IEnumerable<(int Position, ColumnSlot Key)> TracedColumns(FlowState state, LocalName name, IReadOnlyList<string> columns) =>
+        columns.Select((c, i) => (i, new ColumnSlot(name, c))).Where(c => state.Json.ContainsKey(c.Item2));
 
     /// <summary>The positions an insert's values go to: its column list's, or every column but an identity column.</summary>
-    private List<int>? TableVariableTargets(string name, IList<ColumnReferenceExpression> listed)
+    private List<int>? TableVariableTargets(LocalName name, IList<ColumnReferenceExpression> listed)
     {
         if (this.names.TableVariable(name)?.Declaration is not { } table)
             return null;
@@ -86,7 +86,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>Rows written to a table variable: each traced column joins with what they put in it.</summary>
     /// <param name="how">How the statement writes it, when its values are not read.</param>
-    private FlowState TableVariableWritten(FlowState state, string name, List<int>? targets, IReadOnlyList<IReadOnlyList<Value>>? rows, IReadOnlyList<IReadOnlyList<ScalarExpression?>>? expressions, SourceLocation at, string how = "by a statement whose values are not read")
+    private FlowState TableVariableWritten(FlowState state, LocalName name, List<int>? targets, IReadOnlyList<IReadOnlyList<Value>>? rows, IReadOnlyList<IReadOnlyList<ScalarExpression?>>? expressions, SourceLocation at, string how = "by a statement whose values are not read")
     {
         if (names.TableVariable(name)?.Columns is not { } columns)
             return state;
@@ -94,14 +94,14 @@ internal sealed partial class ProcedureAnalyzer
         {
             var written = targets is null || rows is null
                 ? JsonSlot.Text(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{key} is written {Text(at)} {how}.", at))
-                : JsonRows(rows, expressions, targets.IndexOf(position), at, key);
+                : JsonRows(rows, expressions, targets.IndexOf(position), at, key.ToString());
             state = state.WithJson(key, JsonSlot.Join(state.Json[key], written));
         }
 
         return state;
     }
 
-    private FlowState TableVariableInsert(InsertStatement insert, string name, FlowState state)
+    private FlowState TableVariableInsert(InsertStatement insert, LocalName name, FlowState state)
     {
         var spec = insert.InsertSpecification;
         var at = At(insert);
@@ -122,7 +122,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         TSqlFragment?[] written = [target, with];
         foreach (var table in written.OfType<TSqlFragment>().SelectMany(names.Declarations.TableVariablesIn).Distinct())
-            state = TableVariableWritten(state, table.Name, null, null, null, at, "through a CTE or derived table, which is not followed");
+            state = TableVariableWritten(state, new LocalName(table.Name), null, null, null, at, "through a CTE or derived table, which is not followed");
         return state;
     }
 
@@ -184,10 +184,10 @@ internal sealed partial class ProcedureAnalyzer
         UnknownShape Why(string where) =>
             new(IrUnknownReason.JsonShapeUnknown, $"{where} holds JSON that changes at every pass of the loop {Text(at)}, so its shape is not followed.", at);
 
-        foreach (var (name, slot) in next.Json)
+        foreach (var (place, slot) in next.Json)
         {
-            if (!head.Json.TryGetValue(name, out var before) || before != slot)
-                next = next.WithJson(name, JsonSlot.Text(Why(name)));
+            if (!head.Json.TryGetValue(place, out var before) || before != slot)
+                next = next.WithJson(place, JsonSlot.Text(Why(place.ToString())));
         }
 
         foreach (var (name, table) in next.Temps)

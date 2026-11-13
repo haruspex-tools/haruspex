@@ -12,5 +12,5 @@ public abstract record VariableResolution
     }
 
     /// <summary>The variable's name, with its <c>@</c>: as declared, or as written when it is undeclared.</summary>
-    public abstract string Name { get; }
+    public abstract LocalName Name { get; }
 }

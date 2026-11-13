@@ -1,6 +1,7 @@
-using System.Collections.Immutable;
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -8,24 +9,22 @@ namespace Haruspex.SqlServer.Inference;
 /// The state of a procedure at a point on its paths: each temporary table, each variable's value, and the result sets
 /// returned so far. Immutable, so a branch can start from the state before it and both branches' states can be joined.
 /// </summary>
-internal sealed class FlowState : IEquatable<FlowState>
+internal sealed record FlowState
 {
-    private static readonly StringComparer Names = StringComparer.OrdinalIgnoreCase;
-
-    private FlowState(ImmutableDictionary<string, TempTable> temps, ImmutableDictionary<string, Value> variables, ResultTrack results, bool readUncommitted = false, ImmutableDictionary<string, JsonSlot>? json = null)
+    private FlowState(EquatableMap<LocalName, TempTable> temps, EquatableMap<LocalName, Value> variables, ResultTrack results, bool readUncommitted, EquatableMap<JsonSlotKey, JsonSlot> json)
     {
         Temps = temps;
         Variables = variables;
         Results = results;
         ReadUncommitted = readUncommitted;
-        Json = json ?? ImmutableDictionary.Create<string, JsonSlot>(Names);
+        Json = json;
     }
 
     /// <summary>
-    /// What each variable of type <c>nvarchar(max)</c>, and each such column of a table variable (<c>@t.c</c>), holds as
-    /// JSON: see <see cref="JsonSlot"/>. A name not here is not traced, and reads as its declared type.
+    /// What each variable of type <c>nvarchar(max)</c>, and each such column of a table variable, holds as JSON: see
+    /// <see cref="JsonSlot"/>. A place not here is not traced, and reads as its declared type.
     /// </summary>
-    public ImmutableDictionary<string, JsonSlot> Json { get; }
+    public EquatableMap<JsonSlotKey, JsonSlot> Json { get; }
 
     /// <summary>
     /// Whether the procedure may read uncommitted here: <c>SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED</c> came first on some
@@ -36,30 +35,32 @@ internal sealed class FlowState : IEquatable<FlowState>
     public bool ReadUncommitted { get; }
 
     /// <summary>The temporary tables the procedure has touched. One it has not is the caller's, if there is one.</summary>
-    public ImmutableDictionary<string, TempTable> Temps { get; }
+    public EquatableMap<LocalName, TempTable> Temps { get; }
 
     /// <summary>Each variable's and parameter's current value.</summary>
-    public ImmutableDictionary<string, Value> Variables { get; }
+    public EquatableMap<LocalName, Value> Variables { get; }
 
+    /// <summary>The result sets returned so far, by position.</summary>
     public ResultTrack Results { get; }
 
-    public static FlowState Start(IEnumerable<KeyValuePair<string, Value>> variables) =>
-        new(ImmutableDictionary.Create<string, TempTable>(Names), ImmutableDictionary.CreateRange(Names, variables), ResultTrack.None);
+    /// <summary>The state a body starts in: its variables and parameters, no temporary tables, no results.</summary>
+    public static FlowState Start(IEnumerable<KeyValuePair<LocalName, Value>> variables) =>
+        new([], [.. variables], ResultTrack.None, false, []);
 
     /// <summary>The table's state; null when the procedure has not touched it, which makes it the caller's.</summary>
-    public TempTable? Temp(string name) => Temps.GetValueOrDefault(name);
+    public TempTable? Temp(LocalName name) => Temps.GetValueOrDefault(name);
 
-    public FlowState WithTemp(string name, TempTable table) => new(Temps.SetItem(name, table), Variables, Results, ReadUncommitted, Json);
+    public FlowState WithTemp(LocalName name, TempTable table) => new(Temps.SetItem(name, table), Variables, Results, ReadUncommitted, Json);
 
-    public FlowState WithTemps(ImmutableDictionary<string, TempTable> temps) => new(temps, Variables, Results, ReadUncommitted, Json);
+    public FlowState WithTemps(EquatableMap<LocalName, TempTable> temps) => new(temps, Variables, Results, ReadUncommitted, Json);
 
-    public FlowState WithVariable(string name, Value value) => new(Temps, Variables.SetItem(name, value), Results, ReadUncommitted, Json);
+    public FlowState WithVariable(LocalName name, Value value) => new(Temps, Variables.SetItem(name, value), Results, ReadUncommitted, Json);
 
     public FlowState WithResults(ResultTrack results) => new(Temps, Variables, results, ReadUncommitted, Json);
 
     public FlowState WithReadUncommitted(bool readUncommitted) => new(Temps, Variables, Results, readUncommitted, Json);
 
-    public FlowState WithJson(string name, JsonSlot slot) => new(Temps, Variables, Results, ReadUncommitted, Json.SetItem(name, slot));
+    public FlowState WithJson(JsonSlotKey place, JsonSlot slot) => new(Temps, Variables, Results, ReadUncommitted, Json.SetItem(place, slot));
 
     /// <summary>The state after either of two groups of paths; null stands for no path (every one ended before here).</summary>
     public static FlowState? Join(FlowState? a, FlowState? b, SourceLocation at)
@@ -70,23 +71,23 @@ internal sealed class FlowState : IEquatable<FlowState>
             return a;
 
         var temps = a.Temps;
-        foreach (var name in a.Temps.Keys.Union(b.Temps.Keys, Names).Order(StringComparer.Ordinal))
+        foreach (var name in a.Temps.Keys.Union(b.Temps.Keys).OrderBy(n => n.Text, StringComparer.Ordinal))
             temps = temps.SetItem(name, JoinTable(name, a.Temp(name), b.Temp(name), at));
 
         var variables = a.Variables;
         foreach (var (name, value) in b.Variables)
         {
             variables = a.Variables.TryGetValue(name, out var mine)
-                ? variables.SetItem(name, Value.Join(mine, value, at, name))
+                ? variables.SetItem(name, Value.Join(mine, value, at, name.Text))
                 : variables.SetItem(name, value);
         }
 
-        // A name traced on one path only is not traced on the other (it cannot happen: declarations are the whole body's).
+        // A place traced on one path only is not traced on the other (it cannot happen: declarations are the whole body's).
         var json = a.Json;
-        foreach (var (name, slot) in b.Json)
-            json = a.Json.TryGetValue(name, out var mine) ? json.SetItem(name, JsonSlot.Join(mine, slot)) : json.Remove(name);
-        foreach (var name in a.Json.Keys.Where(k => !b.Json.ContainsKey(k)))
-            json = json.Remove(name);
+        foreach (var (place, slot) in b.Json)
+            json = a.Json.TryGetValue(place, out var mine) ? json.SetItem(place, JsonSlot.Join(mine, slot)) : json.Remove(place);
+        foreach (var place in a.Json.Keys.Where(k => !b.Json.ContainsKey(k)))
+            json = json.Remove(place);
 
         // Uncommitted on either path may be uncommitted here.
         return new FlowState(temps, variables, a.Results.Join(b.Results), a.ReadUncommitted || b.ReadUncommitted, json);
@@ -100,7 +101,7 @@ internal sealed class FlowState : IEquatable<FlowState>
     /// it could be of either: a table created on one path only is the caller's on the other, and one dropped on one path
     /// only may be missing.
     /// </summary>
-    private static TempTable JoinTable(string name, TempTable? a, TempTable? b, SourceLocation at)
+    private static TempTable JoinTable(LocalName name, TempTable? a, TempTable? b, SourceLocation at)
     {
         if (a is null || b is null)
         {
@@ -116,28 +117,10 @@ internal sealed class FlowState : IEquatable<FlowState>
             (UnknownTable, _) => a,
             (_, UnknownTable) => b,
             (AbsentTable, AbsentTable) => a,
-            (KnownTable x, KnownTable y) when x.Columns.Select(c => c.Name).SequenceEqual(y.Columns.Select(c => c.Name), Names)
+            (KnownTable x, KnownTable y) when x.Columns.Select(c => c.Name).SequenceEqual(y.Columns.Select(c => c.Name), StringComparer.OrdinalIgnoreCase)
                 => new KnownTable(x.Name, [.. x.Columns.Zip(y.Columns, (c, d) => TempColumn.Join(c, d, at, $"{name}.{c.Name}"))]),
             (KnownTable, KnownTable) => new UnknownTable(new UnknownShape(IrUnknownReason.UnsupportedStatement, $"{name} has different columns on different paths before {at}.", at)),
             _ => new UnknownTable(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{name} is dropped on some paths before {at}, so it may not exist there.", at)),
         };
     }
-
-    /// <summary>
-    /// Whether two states are the same: the same tables, variables, traced JSON and results, by value. A loop stops when a
-    /// pass gives the state it started from.
-    /// </summary>
-    public bool Equals(FlowState? other) =>
-        other is not null
-        && (ReferenceEquals(this, other)
-            || (ReadUncommitted == other.ReadUncommitted
-                && ImmutableMaps.Equal(Temps, other.Temps)
-                && ImmutableMaps.Equal(Variables, other.Variables)
-                && ImmutableMaps.Equal(Json, other.Json)
-                && Results.Equals(other.Results)));
-
-    public override bool Equals(object? obj) => Equals(obj as FlowState);
-
-    public override int GetHashCode() =>
-        HashCode.Combine(ReadUncommitted, ImmutableMaps.Hash(Temps), ImmutableMaps.Hash(Variables), ImmutableMaps.Hash(Json), Results);
 }
