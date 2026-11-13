@@ -23,8 +23,9 @@ never with DacFx, whose licence no free tool should have to take on
 What a script defines is read: `CREATE TABLE` with its columns, keys and CHECK constraints; `CREATE TYPE`; procedures,
 functions, views and DML triggers with their parameters and bodies; synonyms; and foreign keys with an `ON DELETE` or
 `ON UPDATE` action, since those fire the referencing table's triggers. So is anything that changes a definition later (an
-`ALTER` or a `DROP`), and anything that may disable a constraint. Everything else, data and permissions and indexes, is
-passed over: it can't change what a table's columns are or what a procedure returns.
+`ALTER` or a `DROP`), and anything that may disable a constraint (`ALTER TABLE … NOCHECK CONSTRAINT`,
+`ALTER INDEX … DISABLE`). Everything else, data and permissions and the rest of what indexes do, is passed over: it can't
+change what a table's columns are or what a procedure returns.
 
 ## A script becomes the model, in three steps
 
@@ -86,8 +87,11 @@ doubt, since ignoring it can only leave a column more nullable than it is (`Scri
 A CHECK constraint and a unique key are only claims while SQL Server trusts them. `ALTER TABLE … NOCHECK CONSTRAINT` and
 `ALTER INDEX … DISABLE` stop the server checking rows, and rows written meanwhile stay after a plain re-enable. So
 `ConstraintTrust` marks each check or key that such a statement may name, wherever it is (inside a procedure, under `IF`),
-since whether it runs isn't knowable; only a `WITH CHECK CHECK CONSTRAINT` later in the same script, which validates every
-row, undoes it. The model records where (`CheckConstraint.DisabledAt`), and the schema's rules claim nothing from it.
+since whether it runs isn't knowable. A key, once marked, stays so: re-enabling an index (a rebuild) isn't followed, which
+only claims less. A check is trusted again only when a `WITH CHECK CHECK CONSTRAINT`, which validates every row, certainly
+runs after the `NOCHECK` on it: both are statements of batches (not inside a body, a block or an `IF`) in the same script,
+the re-enable comes later, names the table with its schema, and names the check, or `ALL`. The model records where a check or
+key may be disabled (`CheckConstraint.DisabledAt`, `UniqueKey.DisabledAt`), and the schema's rules claim nothing from it.
 
 One setting is read in order within a file: `ANSI_NULLS`. SQL Server keeps the setting in force when a procedure, function
 or view is created, and it changes what `= NULL` means in its body, so a `SET ANSI_NULLS OFF` before a definition in the
