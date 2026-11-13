@@ -1,0 +1,81 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "lib.alias_reused_inside",
+      "name": "AliasReusedInside",
+      "kind": "procedure",
+      "at": "procedures/alias_reused_inside.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "AliasReusedInsideRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "AliasReusedInsideRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "lib.alias_reused_inside",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "title",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(80)",
+            "maxLength": {
+              "value": 80,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(80)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "pages",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

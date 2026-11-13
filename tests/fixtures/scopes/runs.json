@@ -1,0 +1,46 @@
+// The runs of the scopes fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what
+// each key means. The procedures that write run in a session that is rolled back.
+{
+  "setups": {
+    "writes": "SET NOCOUNT ON;",
+    "no loans": "DELETE FROM lib.loan;"
+  },
+
+  "runs": [
+    { "name": "cte_hides_a_table", "procedure": "lib.cte_hides_a_table" },
+    { "name": "cte_ends_with_its_statement", "procedure": "lib.cte_ends_with_its_statement" },
+    { "name": "alias_reused_inside", "procedure": "lib.alias_reused_inside" },
+    { "name": "correlated_two_levels", "procedure": "lib.correlated_two_levels" },
+    { "name": "unqualified_reaches_out", "procedure": "lib.unqualified_reaches_out" },
+    { "name": "unqualified_two_levels_out", "procedure": "lib.unqualified_two_levels_out" },
+    { "name": "apply_reads_its_left_side", "procedure": "lib.apply_reads_its_left_side" },
+    { "name": "apply_values", "procedure": "lib.apply_values" },
+    { "name": "temp_table_from_a_branch", "procedure": "lib.temp_table_from_a_branch", "parameters": { "@pages": 100 } },
+    { "name": "variable_and_temp_of_one_name", "procedure": "lib.variable_and_temp_of_one_name" },
+    { "name": "cte_column_list", "procedure": "lib.cte_column_list" },
+    { "name": "nested_ctes", "procedure": "lib.nested_ctes" },
+    { "name": "nested_ctes, no loans", "procedure": "lib.nested_ctes", "setup": "no loans" },
+    { "name": "order_by_an_alias", "procedure": "lib.order_by_an_alias" },
+    { "name": "set_named_by_its_first_query", "procedure": "lib.set_named_by_its_first_query" },
+    { "name": "referral_chain", "procedure": "lib.referral_chain" },
+    { "name": "loans_through_a_view", "procedure": "lib.loans_through_a_view" },
+    { "name": "derived_alias_names_a_table", "procedure": "lib.derived_alias_names_a_table" },
+    { "name": "sibling_subqueries", "procedure": "lib.sibling_subqueries" },
+    { "name": "exists_and_in", "procedure": "lib.exists_and_in" },
+    { "name": "lend, open", "procedure": "lib.lend", "parameters": { "@member_id": 4, "@book_id": 11, "@returned_on": null }, "setup": "writes" },
+    { "name": "lend, returned", "procedure": "lib.lend", "parameters": { "@member_id": 4, "@book_id": 11, "@returned_on": "2026-11-05" }, "setup": "writes" },
+    { "name": "merge_returns, matched and not", "procedure": "lib.merge_returns", "parameters": { "@member_id": 1 }, "setup": "writes" },
+    { "name": "merge_returns, matched a returned loan", "procedure": "lib.merge_returns", "parameters": { "@member_id": 3 }, "setup": "writes" },
+    { "name": "update_returns", "procedure": "lib.update_returns", "parameters": { "@member_id": 1 }, "setup": "writes" },
+    { "name": "delete_returns", "procedure": "lib.delete_returns", "parameters": { "@member_id": 1 }, "setup": "writes" },
+    { "name": "delete_returns, a book of no page count", "procedure": "lib.delete_returns", "parameters": { "@member_id": 3 }, "setup": "writes" },
+    { "name": "update_through_a_cte", "procedure": "lib.update_through_a_cte", "parameters": { "@member_id": 1 }, "setup": "writes" },
+    { "name": "shortlist_by_callee", "procedure": "lib.shortlist_by_callee", "setup": "writes" },
+    { "name": "picks_from_a_call", "procedure": "lib.picks_from_a_call", "setup": "writes" },
+    { "name": "make_picks", "procedure": "lib.make_picks", "setup": "writes" }
+  ],
+
+  "notRun": {
+    "lib.fill_shortlist": "It writes the caller's #shortlist, which only lib.shortlist_by_callee creates; that run calls it."
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "lib.unqualified_two_levels_out",
+      "name": "UnqualifiedTwoLevelsOut",
+      "kind": "procedure",
+      "at": "procedures/unqualified_two_levels_out.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "UnqualifiedTwoLevelsOutRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "UnqualifiedTwoLevelsOutRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "lib.unqualified_two_levels_out",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "member_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "borrower_email",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(80)",
+            "maxLength": {
+              "value": 80,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(80)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "lib.member.email"
+            },
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/unqualified_two_levels_out.sql:9:27"
+            },
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/unqualified_two_levels_out.sql:8:8"
+            }
+          ]
+        },
+        {
+          "name": "donated",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(80)",
+            "maxLength": {
+              "value": 80,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(80)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/unqualified_two_levels_out.sql:14:8"
+            }
+          ]
+        },
+        {
+          "name": "any_title",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(80)",
+            "maxLength": {
+              "value": 80,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(80)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

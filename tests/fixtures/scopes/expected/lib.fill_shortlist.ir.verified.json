@@ -1,0 +1,19 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "lib.fill_shortlist",
+      "name": "FillShortlist",
+      "kind": "procedure",
+      "at": "procedures/fill_shortlist.sql:2:1",
+      "parameters": [],
+      "results": []
+    }
+  ],
+  "types": {},
+  "unknowns": [],
+  "overrides": []
+}

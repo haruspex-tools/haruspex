@@ -1,0 +1,88 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "lib.set_named_by_its_first_query",
+      "name": "SetNamedByItsFirstQuery",
+      "kind": "procedure",
+      "at": "procedures/set_named_by_its_first_query.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SetNamedByItsFirstQueryRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "SetNamedByItsFirstQueryRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "lib.set_named_by_its_first_query",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "who",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(80)",
+            "maxLength": {
+              "value": 80,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(80)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "kind",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(6)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "book",
+                "member"
+              ],
+              "from": [
+                {
+                  "expression": "procedures/set_named_by_its_first_query.sql:6:23"
+                },
+                {
+                  "expression": "procedures/set_named_by_its_first_query.sql:9:28"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

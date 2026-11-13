@@ -1,0 +1,97 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "lib.temp_table_from_a_branch",
+      "name": "TempTableFromABranch",
+      "kind": "procedure",
+      "at": "procedures/temp_table_from_a_branch.sql:3:1",
+      "parameters": [
+        {
+          "name": "@pages",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "TempTableFromABranchRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "TempTableFromABranchRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "lib.temp_table_from_a_branch",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "book_id",
+          "type": {
+            "kind": "unknown",
+            "reason": "caller-temp-table"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/temp_table_from_a_branch.sql:14:8"
+            }
+          ]
+        },
+        {
+          "name": "title",
+          "type": {
+            "kind": "unknown",
+            "reason": "caller-temp-table"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/temp_table_from_a_branch.sql:14:19"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "lib.temp_table_from_a_branch",
+      "path": "results[0][].book_id",
+      "reason": "caller-temp-table",
+      "detail": "#picked is created on some paths only before procedures/temp_table_from_a_branch.sql:7:1; on the others it is the caller's table of that name, if there is one.",
+      "at": "procedures/temp_table_from_a_branch.sql:14:8"
+    },
+    {
+      "object": "lib.temp_table_from_a_branch",
+      "path": "results[0][].title",
+      "reason": "caller-temp-table",
+      "detail": "#picked is created on some paths only before procedures/temp_table_from_a_branch.sql:7:1; on the others it is the caller's table of that name, if there is one.",
+      "at": "procedures/temp_table_from_a_branch.sql:14:19"
+    }
+  ],
+  "overrides": []
+}

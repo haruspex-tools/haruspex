@@ -1,0 +1,60 @@
+column dbo.shelf.label varchar(10) at tables/shelf.sql:5:5
+column dbo.shelf.shelf_id int at tables/shelf.sql:4:5
+column lib.book.book_id int at tables/book.sql:3:5
+column lib.book.donor_id int at tables/book.sql:6:5
+column lib.book.pages smallint at tables/book.sql:5:5
+column lib.book.title nvarchar(80) at tables/book.sql:4:5
+column lib.loan.book_id int at tables/loan.sql:5:5
+column lib.loan.loan_id int at tables/loan.sql:3:5
+column lib.loan.loaned_on date at tables/loan.sql:6:5
+column lib.loan.member_id int at tables/loan.sql:4:5
+column lib.loan.returned_on date at tables/loan.sql:7:5
+column lib.member.email varchar(80) at tables/member.sql:6:5
+column lib.member.member_id int at tables/member.sql:4:5
+column lib.member.name nvarchar(40) at tables/member.sql:5:5
+column lib.member.referred_by int at tables/member.sql:7:5
+key dbo.shelf unnamed (shelf_id) at tables/shelf.sql:4:35
+key lib.book unnamed (book_id) at tables/book.sql:3:36
+key lib.loan unnamed (loan_id) at tables/loan.sql:3:40
+key lib.member unnamed (member_id) at tables/member.sql:4:39
+parameter lib.delete_returns @member_id at procedures/delete_returns.sql:2:37
+parameter lib.lend @book_id at procedures/lend.sql:2:43
+parameter lib.lend @member_id at procedures/lend.sql:2:27
+parameter lib.lend @returned_on at procedures/lend.sql:2:57
+parameter lib.merge_returns @member_id at procedures/merge_returns.sql:2:36
+parameter lib.temp_table_from_a_branch @pages at procedures/temp_table_from_a_branch.sql:3:47
+parameter lib.update_returns @member_id at procedures/update_returns.sql:2:37
+parameter lib.update_through_a_cte @member_id at procedures/update_through_a_cte.sql:2:43
+procedure lib.alias_reused_inside at procedures/alias_reused_inside.sql:3:1
+procedure lib.apply_reads_its_left_side at procedures/apply_reads_its_left_side.sql:2:1
+procedure lib.apply_values at procedures/apply_values.sql:2:1
+procedure lib.correlated_two_levels at procedures/correlated_two_levels.sql:2:1
+procedure lib.cte_column_list at procedures/cte_column_list.sql:2:1
+procedure lib.cte_ends_with_its_statement at procedures/cte_ends_with_its_statement.sql:2:1
+procedure lib.cte_hides_a_table at procedures/cte_hides_a_table.sql:3:1
+procedure lib.delete_returns at procedures/delete_returns.sql:2:1
+procedure lib.derived_alias_names_a_table at procedures/derived_alias_names_a_table.sql:3:1
+procedure lib.exists_and_in at procedures/exists_and_in.sql:2:1
+procedure lib.fill_shortlist at procedures/fill_shortlist.sql:2:1
+procedure lib.lend at procedures/lend.sql:2:1
+procedure lib.loans_through_a_view at procedures/loans_through_a_view.sql:2:1
+procedure lib.make_picks at procedures/make_picks.sql:2:1
+procedure lib.merge_returns at procedures/merge_returns.sql:2:1
+procedure lib.nested_ctes at procedures/nested_ctes.sql:3:1
+procedure lib.order_by_an_alias at procedures/order_by_an_alias.sql:2:1
+procedure lib.picks_from_a_call at procedures/picks_from_a_call.sql:3:1
+procedure lib.referral_chain at procedures/referral_chain.sql:3:1
+procedure lib.set_named_by_its_first_query at procedures/set_named_by_its_first_query.sql:2:1
+procedure lib.shortlist_by_callee at procedures/shortlist_by_callee.sql:2:1
+procedure lib.sibling_subqueries at procedures/sibling_subqueries.sql:2:1
+procedure lib.temp_table_from_a_branch at procedures/temp_table_from_a_branch.sql:3:1
+procedure lib.unqualified_reaches_out at procedures/unqualified_reaches_out.sql:3:1
+procedure lib.unqualified_two_levels_out at procedures/unqualified_two_levels_out.sql:3:1
+procedure lib.update_returns at procedures/update_returns.sql:2:1
+procedure lib.update_through_a_cte at procedures/update_through_a_cte.sql:2:1
+procedure lib.variable_and_temp_of_one_name at procedures/variable_and_temp_of_one_name.sql:3:1
+table dbo.shelf at tables/shelf.sql:2:1
+table lib.book at tables/book.sql:1:1
+table lib.loan at tables/loan.sql:1:1
+table lib.member at tables/member.sql:2:1
+view lib.member_loans at views/member_loans.sql:2:1
