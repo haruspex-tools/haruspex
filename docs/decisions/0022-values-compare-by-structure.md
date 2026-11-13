@@ -17,7 +17,7 @@ for the IR's round trip, in which a document read back from its file must equal 
 field of any record that compares by reference: a tuple or a nullable value is checked through what it holds, and `object` or
 a type from outside haruspex fails unless it is listed. Four kinds of type are listed there, each with its reason: a type
 compared by identity because identity is its meaning (a syntax node, a catalogue entry, the model, a bound scope); a type
-from outside haruspex that compares by value (`BigInteger`); a type whose
+from outside haruspex that compares by value (`System.Numerics.BigInteger`); a type whose
 equality is written by hand, with the test that holds its laws; and a working type that keys what it holds by identity
 (`ReadScope`, the frames of `Facts`), which is a class, not a record, since nothing compares it. A value set's items and
 sources keep the order they were found in, so two sets with the same items in another order are different records:
