@@ -136,7 +136,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     private static UnknownShape? Unwalkable(Procedure procedure)
     {
         if (procedure.Body.MethodSpecifier is not null || procedure.Body.StatementList is null)
-            return new UnknownShape(IrUnknownReason.ExternalCode, $"{procedure.Name} is a CLR procedure: its results come from .NET code, which is not in the project.", procedure.At);
+            return new UnknownShape(IrUnknownReason.ExternalCode, $"{procedure.Name} is a CLR procedure: its results come from .NET code, which is not in the project.", procedure.Span.Start);
 
         // The parameters are still read from the definition the model kept, but which body runs depends on the order the
         // scripts run, so the results are withdrawn.
@@ -166,7 +166,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
                     frame.Context = assumption.Context;
                     frame.Recursive = false;
                     frame.Widened = false;
-                    walked = new ProcedureAnalyzer(model, procedure.File, functions, calls: this, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff, views: views).Walk(procedure.Body);
+                    walked = new ProcedureAnalyzer(model, procedure.Span, functions, calls: this, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff, views: views).Walk(procedure.Body);
                     if (!frame.Recursive || walked.Blocker is not null)
                         return Pass<Assumption>.Stop();
 
@@ -186,7 +186,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
             return new Walked(null, [], new UnknownShape(
                 IrUnknownReason.UnresolvedRecursion,
                 $"{procedure.Name} calls itself, directly or through other procedures, and the result sets it returns reached no fixed point in {FixedPoint.MostPasses} walks: it may return more at each depth.",
-                procedure.At), []);
+                procedure.Span.Start), []);
         }
         finally
         {
@@ -235,7 +235,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
             var finder = new WriteFinder();
             body.Accept(finder);
             all = all.Union(finder.Tables);
-            var binder = new Binder(model, procedure.File);
+            var binder = new Binder(model, procedure.Span);
             foreach (var call in finder.Calls)
             {
                 if (binder.BindCall(call) is ProcedureCall { Procedure: var callee })

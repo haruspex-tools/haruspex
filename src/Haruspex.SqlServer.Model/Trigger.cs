@@ -12,8 +12,8 @@ namespace Haruspex.SqlServer.Model;
 /// <param name="insteadOf">Whether it is an <c>INSTEAD OF</c> trigger; otherwise <c>AFTER</c> (or <c>FOR</c>).</param>
 /// <param name="events">The statements it fires for.</param>
 /// <param name="body">Its statements, or null for a CLR trigger, whose code is not in the project.</param>
-/// <param name="at">Where it is defined.</param>
-public sealed class Trigger(ObjectName name, ObjectName parent, bool insteadOf, DmlEvents events, StatementList? body, SourceLocation at)
+/// <param name="span">Where its definition is.</param>
+public sealed class Trigger(ObjectName name, ObjectName parent, bool insteadOf, DmlEvents events, StatementList? body, SourceSpan span)
 {
     /// <summary>The trigger's name, in its table's schema.</summary>
     public ObjectName Name { get; } = name;
@@ -30,8 +30,8 @@ public sealed class Trigger(ObjectName name, ObjectName parent, bool insteadOf, 
     /// <summary>Its statements, as ScriptDom parsed them; null for a CLR trigger.</summary>
     public StatementList? Body { get; } = body;
 
-    /// <summary>Where it is defined; the file its body's positions are in.</summary>
-    public SourceLocation At { get; } = at ?? throw new ArgumentNullException(nameof(at));
+    /// <summary>Where its definition is; its body's positions are in its file.</summary>
+    public SourceSpan Span { get; } = span ?? throw new ArgumentNullException(nameof(span));
 
     /// <summary>The trigger's name.</summary>
     public override string ToString() => Name.ToString();

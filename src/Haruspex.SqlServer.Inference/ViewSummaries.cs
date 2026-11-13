@@ -39,11 +39,11 @@ internal sealed class ViewSummaries
         if (calls.TryGetValue(key, out var found))
             return found;
         if (!reading.Add(function.Name))
-            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{function.Name} reads itself through the functions and views it reads.", function.At));
+            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{function.Name} reads itself through the functions and views it reads.", function.Span.Start));
 
         try
         {
-            var analyser = new ProcedureAnalyzer(model, function.File, Functions(uncommitted), arguments, ansiNullsOff: function.AnsiNullsOff, views: this, uncommittedReads: uncommitted);
+            var analyser = new ProcedureAnalyzer(model, function.Span, Functions(uncommitted), arguments, ansiNullsOff: function.AnsiNullsOff, views: this, uncommittedReads: uncommitted);
             found = function.Body.ReturnType switch
             {
                 SelectFunctionReturnType inline => analyser.ReadInline(function, inline.SelectStatement),
@@ -77,14 +77,14 @@ internal sealed class ViewSummaries
             return found;
 
         // A view created and altered, or defined twice, depends on the order the scripts run (Sources).
-        if (view.View is null || view.File is null)
+        if (view.View is null || view.Span is null)
             return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{view.Name} is defined more than once, and which definition applies depends on the order the scripts run.", Nowhere));
         if (!reading.Add(view.Name))
             return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{view.Name} reads itself through the views it reads, which SQL Server refuses.", Nowhere));
 
         try
         {
-            found = new ProcedureAnalyzer(model, view.File, Functions(uncommitted), ansiNullsOff: view.AnsiNullsOff, views: this, uncommittedReads: uncommitted).ReadView(view);
+            found = new ProcedureAnalyzer(model, view.Span, Functions(uncommitted), ansiNullsOff: view.AnsiNullsOff, views: this, uncommittedReads: uncommitted).ReadView(view);
         }
         finally
         {

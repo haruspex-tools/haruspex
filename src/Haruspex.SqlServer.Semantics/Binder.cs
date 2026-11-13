@@ -11,8 +11,8 @@ namespace Haruspex.SqlServer.Semantics;
 /// <see cref="BindingProblem"/>, never a guess.
 /// </summary>
 /// <param name="model">The schema the body runs against.</param>
-/// <param name="file">The file the body is in, for locations.</param>
-public sealed class Binder(DatabaseModel model, string file)
+/// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
+public sealed class Binder(DatabaseModel model, SourceSpan source)
 {
     /// <summary>Binds a query's FROM clause into a new scope inside <paramref name="parent"/>.</summary>
     /// <param name="query">The query.</param>
@@ -413,5 +413,5 @@ public sealed class Binder(DatabaseModel model, string file)
 
     private static UnboundColumn Unbound(BindingProblemKind kind, string detail, SourceLocation at) => new(Problem(kind, detail, at));
 
-    private SourceLocation At(TSqlFragment fragment) => new(file, fragment.StartLine, fragment.StartColumn);
+    private SourceLocation At(TSqlFragment fragment) => source.At(fragment);
 }

@@ -11,10 +11,10 @@ namespace Haruspex.SqlServer.Model;
 /// <param name="name">Its name.</param>
 /// <param name="columns">Its columns, in declaration order.</param>
 /// <param name="primaryKey">The names of its primary key's columns, or none.</param>
-/// <param name="at">Where it is defined.</param>
+/// <param name="span">Where its definition is.</param>
 /// <param name="checks">Its CHECK constraints, on the table or on a column, in declaration order.</param>
 /// <param name="uniqueKeys">Its primary key and unique constraints, and unique indexes without a filter declared with it.</param>
-public sealed class Table(ObjectName name, IReadOnlyList<Column> columns, IReadOnlyList<string> primaryKey, SourceLocation at, IReadOnlyList<CheckConstraint>? checks = null, IReadOnlyList<UniqueKey>? uniqueKeys = null)
+public sealed class Table(ObjectName name, IReadOnlyList<Column> columns, IReadOnlyList<string> primaryKey, SourceSpan span, IReadOnlyList<CheckConstraint>? checks = null, IReadOnlyList<UniqueKey>? uniqueKeys = null)
 {
     /// <summary>The CHECK constraints, whether declared on the table or on a column, in declaration order.</summary>
     public IReadOnlyList<CheckConstraint> Checks { get; } = checks ?? [];
@@ -31,8 +31,8 @@ public sealed class Table(ObjectName name, IReadOnlyList<Column> columns, IReadO
     /// </summary>
     public IReadOnlyList<string> PrimaryKey { get; } = primaryKey ?? throw new ArgumentNullException(nameof(primaryKey));
 
-    /// <summary>Where the table is defined.</summary>
-    public SourceLocation At { get; } = at ?? throw new ArgumentNullException(nameof(at));
+    /// <summary>Where the table's definition is; its columns and constraints are positions in its file.</summary>
+    public SourceSpan Span { get; } = span ?? throw new ArgumentNullException(nameof(span));
 
     /// <summary>
     /// Its primary key, unique constraints and unique indexes, each a set of columns no two rows share (SQL Server counts

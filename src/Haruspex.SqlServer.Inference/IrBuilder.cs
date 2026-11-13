@@ -62,7 +62,7 @@ internal sealed class IrBuilder(FunctionSummaries functions)
                 unknowns.Add(new IrUnknown(id, "results", why.Reason, why.Detail, why.At.ToString()));
             }
 
-            var at = source.At;
+            var at = source.Span;
             objects.Add(new IrObject(id, id, IrObjectKind.Procedure, at.ToString(), [.. parameters], results is null ? null : [.. results]));
         }
 

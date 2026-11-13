@@ -16,7 +16,7 @@ public class SqlScriptFolderTests
         var read = SqlScriptFolder.Read(dir.Path, ["Tables\\orders.sql"]);
 
         Assert.Empty(read.Diagnostics);
-        Assert.Equal("Tables/orders.sql", read.Model.FindTable(new ObjectName("dbo", "orders"))?.At.File);
+        Assert.Equal("Tables/orders.sql", read.Model.FindTable(new ObjectName("dbo", "orders"))?.Span.File);
     }
 
     [Fact]

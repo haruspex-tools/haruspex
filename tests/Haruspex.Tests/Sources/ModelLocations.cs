@@ -1,4 +1,3 @@
-using System.Globalization;
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
@@ -25,7 +24,7 @@ internal static class ModelLocations
         var model = read.Model;
         foreach (var table in model.Tables)
         {
-            lines.Add($"table {table.Name} at {table.At}{(table.IsGraph ? ", a graph table" : "")}");
+            lines.Add($"table {table.Name} at {table.Span}{(table.IsGraph ? ", a graph table" : "")}");
             foreach (var column in table.Columns)
                 lines.Add($"column {table.Name}.{column.Name} {column.Type?.ToString() ?? "computed"} at {column.At}");
             foreach (var check in table.Checks)
@@ -35,27 +34,27 @@ internal static class ModelLocations
         }
 
         foreach (var type in model.UserTypes)
-            lines.Add($"type {type.Name} {type.BaseType?.ToString() ?? "CLR"} at {type.At}");
+            lines.Add($"type {type.Name} {type.BaseType?.ToString() ?? "CLR"} at {type.Span}");
         foreach (var procedure in model.Procedures)
         {
-            lines.Add($"procedure {procedure.Name} at {procedure.At}{AnsiNullsOff(procedure.AnsiNullsOff)}{Changed(procedure.Redefinition)}");
+            lines.Add($"procedure {procedure.Name} at {procedure.Span}{AnsiNullsOff(procedure.AnsiNullsOff)}{Changed(procedure.Redefinition)}");
             foreach (var parameter in procedure.Body.Parameters)
-                lines.Add($"parameter {procedure.Name} {parameter.VariableName.Value} at {procedure.File}:{N(parameter.StartLine)}:{N(parameter.StartColumn)}");
+                lines.Add($"parameter {procedure.Name} {parameter.VariableName.Value} at {procedure.Span.At(parameter.StartLine, parameter.StartColumn)}");
         }
 
         foreach (var function in model.Functions)
         {
-            lines.Add($"function {function.Name} at {function.At}{AnsiNullsOff(function.AnsiNullsOff)}{Changed(function.Redefinition)}");
+            lines.Add($"function {function.Name} at {function.Span}{AnsiNullsOff(function.AnsiNullsOff)}{Changed(function.Redefinition)}");
             foreach (var parameter in function.Body.Parameters)
-                lines.Add($"parameter {function.Name} {parameter.VariableName.Value} at {function.File}:{N(parameter.StartLine)}:{N(parameter.StartColumn)}");
+                lines.Add($"parameter {function.Name} {parameter.VariableName.Value} at {function.Span.At(parameter.StartLine, parameter.StartColumn)}");
         }
 
         foreach (var named in model.NamedObjects)
         {
             switch (named.Kind)
             {
-                case NamedObjectKind.View when named.View is { } view:
-                    lines.Add($"view {named.Name} at {named.File}:{N(view.StartLine)}:{N(view.StartColumn)}{AnsiNullsOff(named.AnsiNullsOff)}");
+                case NamedObjectKind.View when named.View is not null:
+                    lines.Add($"view {named.Name} at {named.Span}{AnsiNullsOff(named.AnsiNullsOff)}");
                     break;
                 case NamedObjectKind.View:
                     lines.Add($"view {named.Name}, defined more than once");
@@ -70,7 +69,7 @@ internal static class ModelLocations
         }
 
         foreach (var trigger in model.Triggers)
-            lines.Add($"trigger {trigger.Name} on {trigger.Parent} at {trigger.At}{(trigger.Body is null ? ", CLR" : "")}");
+            lines.Add($"trigger {trigger.Name} on {trigger.Parent} at {trigger.Span}{(trigger.Body is null ? ", CLR" : "")}");
         foreach (var key in model.CascadingKeys)
             lines.Add($"cascading key {key.Referencing} to {key.Referenced} at {key.At}");
         foreach (var change in model.TableRedefinitions)
@@ -81,8 +80,6 @@ internal static class ModelLocations
         lines.Sort(StringComparer.Ordinal);
         return string.Join("\n", lines) + "\n";
     }
-
-    private static string N(int number) => number.ToString(CultureInfo.InvariantCulture);
 
     private static string Disabled(SourceLocation? at) => at is null ? "" : $", disabled at {at}";
 

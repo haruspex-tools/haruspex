@@ -1,4 +1,3 @@
-using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Typing;
 using Haruspex.SqlServer.Model;
@@ -73,7 +72,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private Value Argument(UserFunction function, ProcedureParameter parameter, ScalarExpression argument, BindingScope scope)
     {
-        var at = new SourceLocation(function.File, parameter.StartLine, parameter.StartColumn);
+        var at = function.Span.At(parameter);
         var declared = SqlTypes.ToConvertedShape(model, SyntaxReader.Type(parameter.DataType), at);
         var any = Value.Computed(declared, [new IrNullReason(IrNullRule.Parameter, parameter.VariableName.Value)]);
         if (declared is UnknownShape unknown)
@@ -144,7 +143,7 @@ internal sealed partial class ProcedureAnalyzer
         ArgumentNullException.ThrowIfNull(function);
         ArgumentNullException.ThrowIfNull(returns);
         var name = function.Name.ToString();
-        var table = SyntaxReader.Table(new ObjectName("", returns.DeclareTableVariableBody.VariableName.Value), returns.DeclareTableVariableBody.Definition, file, At(returns));
+        var table = SyntaxReader.Table(new ObjectName("", returns.DeclareTableVariableBody.VariableName.Value), returns.DeclareTableVariableBody.Definition, source.Within(returns));
         var values = table.Columns.Select(c => Declared(table, c, name, temporary: false)).ToList();
         var keys = new List<RelationKey>();
         foreach (var key in SchemaRules.EnforcedKeys(table))

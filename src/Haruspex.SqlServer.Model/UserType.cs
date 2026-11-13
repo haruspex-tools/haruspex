@@ -12,8 +12,8 @@ namespace Haruspex.SqlServer.Model;
 /// What an alias type's declaration says about null. A column of the type that says neither NULL nor NOT NULL
 /// takes it. <see cref="DeclaredNullability.NotDeclared"/> for a CLR type.
 /// </param>
-/// <param name="At">Where it is declared.</param>
-public sealed record UserType(ObjectName Name, SqlType? BaseType, DeclaredNullability Nullability, SourceLocation At)
+/// <param name="Span">Where its declaration is.</param>
+public sealed record UserType(ObjectName Name, SqlType? BaseType, DeclaredNullability Nullability, SourceSpan Span)
 {
     /// <summary>Whether it is an alias type, rather than a CLR type.</summary>
     public bool IsAlias => BaseType is not null;

@@ -94,7 +94,7 @@ internal sealed partial class ProcedureAnalyzer
             var name = table.VariableName.Value;
             if (tableVariables.ContainsKey(name))
                 continue;
-            var definition = SyntaxReader.Table(new ObjectName("", name), table.Definition, file, At(table));
+            var definition = SyntaxReader.Table(new ObjectName("", name), table.Definition, source.Within(table));
             tableVariableDefinitions[name] = definition;
             tableVariables[name] = new LocalRelationValues(
                 [.. definition.Columns.Select(c => c.Name)],
@@ -762,7 +762,7 @@ internal sealed partial class ProcedureAnalyzer
     private KnownTable Created(CreateTableStatement create)
     {
         var name = create.SchemaObjectName.BaseIdentifier.Value;
-        var definition = SyntaxReader.Table(new ObjectName("", name), create.Definition, file, At(create));
+        var definition = SyntaxReader.Table(new ObjectName("", name), create.Definition, source.Within(create));
         return new KnownTable(name, [.. definition.Columns.Select(c => Fresh(definition, c, name, c.IsIdentity, null))]);
     }
 
@@ -818,7 +818,7 @@ internal sealed partial class ProcedureAnalyzer
             {
                 // A new column's declaration is read like CREATE TABLE's. Constraints added on existing columns are not
                 // read, which only claims less. WITH NOCHECK leaves the new columns' own checks unproved for the rows there.
-                var definition = SyntaxReader.Table(new ObjectName("", name), add.Definition, file, at);
+                var definition = SyntaxReader.Table(new ObjectName("", name), add.Definition, source.Within(alter));
                 if (add.ExistingRowsCheckEnforcement == ConstraintEnforcement.NoCheck)
                     definition = Disabled(definition, null, at);
                 return state.WithTemp(name, table with
@@ -843,7 +843,7 @@ internal sealed partial class ProcedureAnalyzer
                     computedExpression: null,
                     at,
                     change.Collation?.Value);
-                var definition = new Table(new ObjectName("", name), [column], [], at);
+                var definition = new Table(new ObjectName("", name), [column], [], source.Within(alter));
                 var columns = table.Columns.ToList();
                 columns[i] = Fresh(definition, column, name, table.Columns[i].Identity, at);
                 return state.WithTemp(name, table with { Columns = [.. columns] });
@@ -904,7 +904,7 @@ internal sealed partial class ProcedureAnalyzer
             if (c.Declaration is not { } declaration)
                 return c;
             var changed = drop
-                ? new Table(declaration.Name, declaration.Columns, declaration.PrimaryKey, declaration.At, [.. declaration.Checks.Where(k => !Matches(k))], declaration.UniqueKeys)
+                ? new Table(declaration.Name, declaration.Columns, declaration.PrimaryKey, declaration.Span, [.. declaration.Checks.Where(k => !Matches(k))], declaration.UniqueKeys)
                 : Disabled(declaration, k => Matches(k), at);
             return c with { Value = Declared(changed, changed.Column(c.Name)!, name, temporary: true), Declaration = changed };
         })];
@@ -913,7 +913,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     private static Table Disabled(Table table, Func<CheckConstraint, bool>? which, SourceLocation at) =>
-        new(table.Name, table.Columns, table.PrimaryKey, table.At, [.. table.Checks.Select(k => which is null || which(k) ? k.WithDisabledAt(at) : k)]);
+        new(table.Name, table.Columns, table.PrimaryKey, table.Span, [.. table.Checks.Select(k => which is null || which(k) ? k.WithDisabledAt(at) : k)]);
 
     // ---- CTEs -----------------------------------------------------------------------------------------------------
 

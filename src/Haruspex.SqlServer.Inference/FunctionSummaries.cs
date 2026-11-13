@@ -126,7 +126,7 @@ internal sealed class FunctionSummaries
         if (uncommitted)
         {
             foreach (var member in members.Select(m => model.FindFunction(m)!))
-                done[member.Name] = Read(member, header: true) with { Content = null, NullableBecause = [new IrNullReason(IrNullRule.FunctionResult, member.At.ToString())] };
+                done[member.Name] = Read(member, header: true) with { Content = null, NullableBecause = [new IrNullReason(IrNullRule.FunctionResult, member.Span.ToString())] };
             return;
         }
 
@@ -161,7 +161,7 @@ internal sealed class FunctionSummaries
         foreach (var function in functions)
         {
             var result = current[function.Name];
-            var at = function.At;
+            var at = function.Span.Start;
             if (endless && result.Content is not null)
             {
                 result = Unresolved(result, new UnknownShape(
@@ -233,7 +233,7 @@ internal sealed class FunctionSummaries
     private FunctionReturn Start(UserFunction function)
     {
         var start = Read(function, header: true);
-        return start.Content is null ? start : start with { Content = new NeverShape(function.At), NullableBecause = [] };
+        return start.Content is null ? start : start with { Content = new NeverShape(function.Span.Start), NullableBecause = [] };
     }
 
     private static FunctionReturn Unresolved(FunctionReturn result, UnknownShape why) =>
@@ -264,7 +264,7 @@ internal sealed class FunctionSummaries
     private FunctionReturn Read(UserFunction function, bool header = false)
     {
         var body = function.Body;
-        var at = function.At;
+        var at = function.Span.Start;
         var returnType = SyntaxReader.Type(((ScalarFunctionReturnType)body.ReturnType).DataType);
         var resolvedType = SchemaRules.ResolveType(model, returnType);
         var resolved = resolvedType?.BuiltIn;
@@ -286,9 +286,9 @@ internal sealed class FunctionSummaries
 
         var parameters = body.Parameters.ToDictionary(
             p => p.VariableName.Value,
-            p => Parameter(p, nullOnNull, function.File),
+            p => Parameter(p, nullOnNull, function.Span),
             StringComparer.OrdinalIgnoreCase);
-        var value = new ProcedureAnalyzer(model, function.File, this, parameters, ansiNullsOff: function.AnsiNullsOff, views: Views, uncommittedReads: uncommitted).Return(expression, body.Parameters);
+        var value = new ProcedureAnalyzer(model, function.Span, this, parameters, ansiNullsOff: function.AnsiNullsOff, views: Views, uncommittedReads: uncommitted).Return(expression, body.Parameters);
 
         var content = value switch
         {
@@ -303,9 +303,9 @@ internal sealed class FunctionSummaries
     /// A parameter inside the body: its declared type, with the type's facts (the argument has been converted to it: a
     /// string cut short, a decimal rounded, observed), nullable unless the body never runs with a null argument.
     /// </summary>
-    private Value Parameter(ProcedureParameter parameter, bool nullOnNull, string file)
+    private Value Parameter(ProcedureParameter parameter, bool nullOnNull, SourceSpan function)
     {
-        var at = new SourceLocation(file, parameter.StartLine, parameter.StartColumn);
+        var at = function.At(parameter);
         EquatableArray<IrNullReason> because = nullOnNull ? [] : [new IrNullReason(IrNullRule.Parameter, parameter.VariableName.Value)];
         var type = SyntaxReader.Type(parameter.DataType);
 

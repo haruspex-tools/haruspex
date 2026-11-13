@@ -11,16 +11,16 @@ namespace Haruspex.SqlServer.Model;
 /// </remarks>
 /// <param name="name">Its name.</param>
 /// <param name="body">Its definition: parameters, return type, options, and statements or a CLR method.</param>
-/// <param name="file">The file the definition is in, as in <see cref="SourceLocation.File"/>.</param>
+/// <param name="span">Where the definition is.</param>
 /// <param name="redefinition">Set when the source also changes the function elsewhere.</param>
-public sealed class UserFunction(ObjectName name, FunctionStatementBody body, string file, Redefinition? redefinition = null)
+public sealed class UserFunction(ObjectName name, FunctionStatementBody body, SourceSpan span, Redefinition? redefinition = null)
 {
     /// <summary>The function's name.</summary>
     public ObjectName Name { get; } = name;
 
     /// <summary>
     /// The definition: a <c>CREATE FUNCTION</c>, <c>CREATE OR ALTER FUNCTION</c> or, when the source only alters the
-    /// function, its <c>ALTER FUNCTION</c>. Lines and columns in it are positions in <see cref="File"/>.
+    /// function, its <c>ALTER FUNCTION</c>. Lines and columns in it are positions in <see cref="Span"/>'s file.
     /// </summary>
     public FunctionStatementBody Body { get; } = body ?? throw new ArgumentNullException(nameof(body));
 
@@ -32,11 +32,8 @@ public sealed class UserFunction(ObjectName name, FunctionStatementBody body, st
     /// </summary>
     public bool AnsiNullsOff { get; init; }
 
-    /// <summary>The file the definition is in, relative to the source root.</summary>
-    public string File { get; } = file ?? throw new ArgumentNullException(nameof(file));
-
-    /// <summary>Where the definition starts.</summary>
-    public SourceLocation At => new(File, Body.StartLine, Body.StartColumn);
+    /// <summary>Where the definition is; its body's positions are in its file.</summary>
+    public SourceSpan Span { get; } = span ?? throw new ArgumentNullException(nameof(span));
 
     /// <summary>
     /// Set when the source also alters or drops the function, so <see cref="Body"/> may not be the definition in effect.

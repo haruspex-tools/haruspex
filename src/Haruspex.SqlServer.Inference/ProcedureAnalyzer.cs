@@ -21,7 +21,7 @@ internal sealed partial class ProcedureAnalyzer
 {
     private readonly DatabaseModel model;
     private readonly Binder binder;
-    private readonly string file;
+    private readonly SourceSpan source;
     private readonly FunctionSummaries functions;
 
     /// <summary>Whether the whole body is read uncommitted where it is used (see <see cref="ReadUncommitted"/>).</summary>
@@ -37,7 +37,7 @@ internal sealed partial class ProcedureAnalyzer
     private QuerySpecification? current;
 
     /// <param name="model">The model the body's references resolve in.</param>
-    /// <param name="file">The file the body is in, for locations.</param>
+    /// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
     /// <param name="functions">What each scalar function returns.</param>
     /// <param name="parameters">Inside a function, its parameters' values.</param>
     /// <param name="calls">The calls being followed, inside a procedure; null inside a function, which cannot call one.</param>
@@ -49,7 +49,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </param>
     public ProcedureAnalyzer(
         DatabaseModel model,
-        string file,
+        SourceSpan source,
         FunctionSummaries functions,
         IReadOnlyDictionary<string, Value>? parameters = null,
         ProcedureCalls? calls = null,
@@ -62,8 +62,8 @@ internal sealed partial class ProcedureAnalyzer
         this.views = views;
         this.ansiNullsOff = ansiNullsOff;
         this.model = model;
-        binder = new Binder(model, file);
-        this.file = file;
+        binder = new Binder(model, source);
+        this.source = source;
         this.functions = functions;
         this.parameters = parameters ?? new Dictionary<string, Value>();
         this.calls = calls;
@@ -93,7 +93,7 @@ internal sealed partial class ProcedureAnalyzer
     [
         .. procedure.Body.Parameters.Select(p => new ParameterShape(
             p.VariableName.Value,
-            SqlTypes.ToShape(model, SyntaxReader.Type(p.DataType), new SourceLocation(procedure.File, p.StartLine, p.StartColumn)),
+            SqlTypes.ToShape(model, SyntaxReader.Type(p.DataType), procedure.Span.At(p)),
             HasDefault: p.Value is not null,
             IsOutput: p.Modifier == ParameterModifier.Output)),
     ];
@@ -686,7 +686,7 @@ internal sealed partial class ProcedureAnalyzer
 
     private static UnknownShape Unsupported(IrUnknownReason reason, string detail, SourceLocation at) => new(reason, detail, at);
 
-    private SourceLocation At(TSqlFragment fragment) => new(file, fragment.StartLine, fragment.StartColumn);
+    private SourceLocation At(TSqlFragment fragment) => source.At(fragment);
 
     private static string Text(SourceLocation at) => $"at {at}";
 

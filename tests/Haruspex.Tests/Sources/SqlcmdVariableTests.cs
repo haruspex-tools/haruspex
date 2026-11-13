@@ -107,7 +107,7 @@ public class SqlcmdVariableTests
         var read = Read(":setvar Schema \"sales\"\nGO\n\nCREATE PROCEDURE $(Schema).list AS SELECT 1 AS one;\n");
 
         var procedure = read.Model.FindProcedure(new ObjectName("sales", "list"))!;
-        Assert.Equal(4, procedure.At.Line);
+        Assert.Equal(4, procedure.Span.Line);
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Model;
@@ -17,8 +18,8 @@ public sealed record NamedObject(ObjectName Name, NamedObjectKind Kind)
     /// </summary>
     public ViewStatementBody? View { get; init; }
 
-    /// <summary>The file a view's <see cref="View"/> is in, for locations; null for other objects.</summary>
-    public string? File { get; init; }
+    /// <summary>Where a view's <see cref="View"/> is; null for other objects, and for a view defined more than once.</summary>
+    public SourceSpan? Span { get; init; }
 
     /// <summary>
     /// Whether a view was created with ANSI_NULLS off, which it keeps (as a procedure does): set by <c>SET ANSI_NULLS OFF</c>

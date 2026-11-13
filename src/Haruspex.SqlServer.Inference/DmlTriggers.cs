@@ -50,7 +50,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
                 Warn(FragmentText.OneLine(written), at);
             foreach (var name in resolved)
             {
-                if (Reaches(name, events, at, visited) is { } why)
+                if (Reaches(name, events, binder, at, visited) is { } why)
                     return new UnknownShape(IrUnknownReason.TriggerResults, $"The write at {at} {why}", at);
             }
         }
@@ -70,19 +70,20 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
     }
 
     /// <summary>How writing <paramref name="name"/> fires a trigger that may return results, as words; null when it fires none.</summary>
-    private string? Reaches(ObjectName name, DmlEvents events, SourceLocation at, HashSet<string> visited)
+    /// <param name="binder">The binder of the body the write is in, which resolves the names written underneath too.</param>
+    private string? Reaches(ObjectName name, DmlEvents events, Binder binder, SourceLocation at, HashSet<string> visited)
     {
         // A write through a synonym writes its object (observed: A_write_through_a_synonym_fires_the_triggers_of_its_table).
         if (model.FindNamedObject(name) is { Kind: NamedObjectKind.Synonym } synonym)
         {
             if (!visited.Add($"synonym {name}"))
                 return null;
-            var objects = synonym.SynonymFor is { } written ? new Binder(model, at.File).ResolveWritten(written) : [];
+            var objects = synonym.SynonymFor is { } written ? binder.ResolveWritten(written) : [];
             if (objects.Count == 0)
                 Warn($"{name} (a synonym for {(synonym.SynonymFor is { } far ? FragmentText.OneLine(far) : "an object not known")})", at);
             foreach (var target in objects)
             {
-                if (Reaches(target, events, at, visited) is { } why)
+                if (Reaches(target, events, binder, at, visited) is { } why)
                     return $"writes {target} through the synonym {name}, and {why}";
             }
 
@@ -104,7 +105,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
         foreach (var trigger in model.TriggersOn(name).Where(t => (t.Events & events) != 0))
         {
             if (Returns(trigger, visited) is { } why)
-                return $"fires the trigger {trigger.Name} on {name} ({trigger.At}), which {why}";
+                return $"fires the trigger {trigger.Name} on {name} ({trigger.Span}), which {why}";
 
             // On a view, INSTEAD OF runs in place of the statement, so the tables underneath are written only by what it does.
             if (view is not null && trigger.InsteadOf)
@@ -118,7 +119,6 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
                 return $"writes the view {name}, which is defined more than once, so the tables it writes underneath are not known";
             var underneath = new DmlTarget.NamedTables();
             definition.SelectStatement.Accept(underneath);
-            var binder = new Binder(model, at.File);
             var own = definition.SelectStatement.WithCtesAndXmlNamespaces?.CommonTableExpressions.Select(c => c.ExpressionName.Value).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
             foreach (var read in underneath.Found.Where(n => n.SchemaIdentifier is not null || !own.Contains(n.BaseIdentifier.Value)))
             {
@@ -126,7 +126,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
                     Warn(FragmentText.OneLine(read), at);
                 foreach (var below in binder.ResolveWritten(read))
                 {
-                    if (Reaches(below, remaining, at, visited) is { } why)
+                    if (Reaches(below, remaining, binder, at, visited) is { } why)
                         return $"writes the view {name}, over {below}, and {why}";
                 }
             }
@@ -138,7 +138,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
         {
             foreach (var key in model.CascadingKeysTo(name))
             {
-                if (Reaches(key.Referencing, DmlEvents.Delete | DmlEvents.Update, at, visited) is { } why)
+                if (Reaches(key.Referencing, DmlEvents.Delete | DmlEvents.Update, binder, at, visited) is { } why)
                     return $"changes {key.Referencing} through the foreign key at {key.At}, and {why}";
             }
         }
@@ -148,16 +148,16 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
 
     /// <summary>Why a trigger may return result sets, as words; null when every statement in it is known to return none.</summary>
     private string? Returns(Trigger trigger, HashSet<string> visited) => trigger.Body is { } body
-        ? Statements(body, new Binder(model, trigger.At.File), trigger.At, visited)
+        ? Statements(body, new Binder(model, trigger.Span), trigger.Span, visited)
         : "is a CLR trigger, whose code is not in the project";
 
-    private string? Statements(TSqlFragment body, Binder binder, SourceLocation where, HashSet<string> visited)
+    private string? Statements(TSqlFragment body, Binder binder, SourceSpan where, HashSet<string> visited)
     {
         var found = new StatementFinder();
         body.Accept(found);
         foreach (var statement in found.Statements)
         {
-            var at = new SourceLocation(where.File, statement.StartLine, statement.StartColumn);
+            var at = where.At(statement);
             if (Statement(statement, found.CursorQueries, binder, at, visited) is { } why)
                 return why;
         }
@@ -205,7 +205,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
                 Warn(FragmentText.OneLine(written), at);
             foreach (var name in resolved)
             {
-                if (Reaches(name, events, at, visited) is { } why)
+                if (Reaches(name, events, binder, at, visited) is { } why)
                     return $"writes at {at}, which {why}";
             }
         }
@@ -222,7 +222,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
                     return null;
                 if (callee.Body.StatementList is not { } body || callee.Body.MethodSpecifier is not null)
                     return $"calls {callee.Name} at {at}, a CLR procedure";
-                return Statements(body, new Binder(model, callee.File), callee.At, visited) is { } why ? $"calls {callee.Name} at {at}, which {why}" : null;
+                return Statements(body, new Binder(model, callee.Span), callee.Span, visited) is { } why ? $"calls {callee.Name} at {at}, which {why}" : null;
             case UnknowableCall unknowable:
                 return $"calls what is not followed at {at}: {unknowable.Detail}";
             default:

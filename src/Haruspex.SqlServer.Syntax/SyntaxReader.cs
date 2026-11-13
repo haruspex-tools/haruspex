@@ -44,18 +44,72 @@ public static class SyntaxReader
         }
     }
 
+    /// <summary>Where a fragment is in <paramref name="file"/>: from its first token to the column after its last.</summary>
+    /// <param name="file">The file, relative to the source root, with <c>/</c> separators.</param>
+    /// <param name="fragment">What ScriptDom parsed.</param>
+    public static SourceSpan Span(string file, TSqlFragment fragment)
+    {
+        ArgumentNullException.ThrowIfNull(fragment);
+        var last = fragment.ScriptTokenStream[fragment.LastTokenIndex];
+        var (endLine, endColumn) = After(last.Line, last.Column, last.Text);
+        return new SourceSpan(file, fragment.StartLine, fragment.StartColumn, endLine, endColumn);
+    }
+
+    /// <summary>Where a fragment inside an object is, in the object's file.</summary>
+    /// <param name="within">The object's span.</param>
+    /// <param name="fragment">A fragment of the object, such as a statement of its body.</param>
+    public static SourceSpan Within(this SourceSpan within, TSqlFragment fragment)
+    {
+        ArgumentNullException.ThrowIfNull(within);
+        return Span(within.File, fragment);
+    }
+
+    /// <summary>Where a fragment inside an object starts, in the object's file: the point a diagnostic reports.</summary>
+    /// <param name="within">The object's span.</param>
+    /// <param name="fragment">A fragment of the object, such as a statement of its body.</param>
+    public static SourceLocation At(this SourceSpan within, TSqlFragment fragment)
+    {
+        ArgumentNullException.ThrowIfNull(within);
+        ArgumentNullException.ThrowIfNull(fragment);
+        return within.At(fragment.StartLine, fragment.StartColumn);
+    }
+
+    /// <summary>
+    /// The position after a token's text, counting lines as ScriptDom does: CRLF, LF and a lone CR each end one. A
+    /// token that spans lines is a string or a comment.
+    /// </summary>
+    private static (int Line, int Column) After(int line, int column, string text)
+    {
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (text[i] is '\r' or '\n')
+            {
+                if (text[i] == '\r' && i + 1 < text.Length && text[i + 1] == '\n')
+                    i++;
+                line++;
+                column = 1;
+            }
+            else
+            {
+                column++;
+            }
+        }
+
+        return (line, column);
+    }
+
     /// <summary>
     /// Reads a table definition as written: in a <c>CREATE TABLE</c>, and equally in a body's <c>CREATE TABLE #t</c>,
     /// <c>DECLARE @t TABLE</c> or <c>ALTER TABLE … ADD</c>, which share ScriptDom's <see cref="TableDefinition"/>.
     /// </summary>
     /// <param name="name">The name the table is known by.</param>
     /// <param name="definition">Its columns and constraints.</param>
-    /// <param name="file">The file it is in, for locations.</param>
-    /// <param name="at">Where the table is defined.</param>
+    /// <param name="span">Where the statement that defines it is; its columns and constraints are positions in its file.</param>
     /// <param name="isGraph">Whether it is declared <c>AS NODE</c> or <c>AS EDGE</c> (see <see cref="Table.IsGraph"/>).</param>
-    public static Table Table(ObjectName name, TableDefinition definition, string file, SourceLocation at, bool isGraph = false)
+    public static Table Table(ObjectName name, TableDefinition definition, SourceSpan span, bool isGraph = false)
     {
         ArgumentNullException.ThrowIfNull(definition);
+        ArgumentNullException.ThrowIfNull(span);
 
         // Declared on the table, or on a column. SQL Server refuses a table with two primary keys, so collecting
         // every one only matters for a script that would not deploy.
@@ -87,7 +141,7 @@ public static class SyntaxReader
                 nullability,
                 isIdentity: column.IdentityOptions is not null,
                 column.ComputedColumnExpression,
-                new SourceLocation(file, column.StartLine, column.StartColumn),
+                span.At(column),
                 column.Collation?.Value)
             {
                 IsHidden = column.IsHidden,
@@ -97,8 +151,8 @@ public static class SyntaxReader
         // Column constraints first, then table constraints, each in declaration order. ALTER TABLE … ADD CONSTRAINT
         // is not read (see OnlyTightens in Sources): a check added later is left out, which only claims less.
         var checks = definition.ColumnDefinitions
-            .SelectMany(c => c.Constraints.OfType<CheckConstraintDefinition>().Select(k => Check(k, c.ColumnIdentifier.Value, file)))
-            .Concat(definition.TableConstraints.OfType<CheckConstraintDefinition>().Select(k => Check(k, null, file)))
+            .SelectMany(c => c.Constraints.OfType<CheckConstraintDefinition>().Select(k => Check(k, c.ColumnIdentifier.Value, span)))
+            .Concat(definition.TableConstraints.OfType<CheckConstraintDefinition>().Select(k => Check(k, null, span)))
             .ToList();
 
         // Unique constraints and the primary key, on the table or on a column, and unique indexes declared in the table
@@ -106,22 +160,22 @@ public static class SyntaxReader
         // CREATE UNIQUE INDEX and ALTER TABLE … ADD CONSTRAINT are not read here, which only claims less.
         var keys = definition.ColumnDefinitions
             .SelectMany(c => c.Constraints.OfType<UniqueConstraintDefinition>().Select(u => new UniqueKey(
-                u.ConstraintIdentifier?.Value, [c.ColumnIdentifier.Value], u.IsPrimaryKey, new SourceLocation(file, u.StartLine, u.StartColumn))))
+                u.ConstraintIdentifier?.Value, [c.ColumnIdentifier.Value], u.IsPrimaryKey, span.At(u))))
             .Concat(definition.TableConstraints.OfType<UniqueConstraintDefinition>().Select(u => new UniqueKey(
                 u.ConstraintIdentifier?.Value,
                 [.. u.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)],
                 u.IsPrimaryKey,
-                new SourceLocation(file, u.StartLine, u.StartColumn))))
+                span.At(u))))
             .Concat(definition.Indexes.Where(i => i.Unique && i.FilterPredicate is null).Select(i => new UniqueKey(
                 i.Name?.Value,
                 [.. i.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)],
                 false,
-                new SourceLocation(file, i.StartLine, i.StartColumn))))
+                span.At(i))))
             .ToList();
 
-        return new Table(name, columns, primaryKey, at, checks, keys) { IsGraph = isGraph };
+        return new Table(name, columns, primaryKey, span, checks, keys) { IsGraph = isGraph };
     }
 
-    private static CheckConstraint Check(CheckConstraintDefinition check, string? column, string file) =>
-        new(check.ConstraintIdentifier?.Value, check.CheckCondition, column, check.NotForReplication, new SourceLocation(file, check.StartLine, check.StartColumn));
+    private static CheckConstraint Check(CheckConstraintDefinition check, string? column, SourceSpan span) =>
+        new(check.ConstraintIdentifier?.Value, check.CheckCondition, column, check.NotForReplication, span.At(check));
 }
