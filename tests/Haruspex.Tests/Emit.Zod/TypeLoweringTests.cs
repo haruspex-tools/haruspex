@@ -135,11 +135,4 @@ public class TypeLoweringTests
         Assert.Equal(
             new Noted(Z("unknown"), new ZodNote("Not known (unsupported-expression); the IR's unknowns say why.")),
             Lowering.Field(new IrField("v", new IrUnknownType(IrUnknownReason.UnsupportedExpression), IrPresence.Always, [Because]), IrEncoding.Json));
-
-    [Fact]
-    public void A_node_outside_the_closed_set_fails() =>
-        Assert.Throws<ArgumentOutOfRangeException>(() => Lowering.Type(new Stranger(), IrEncoding.Json));
-
-    /// <summary>A type node the IR doesn't define.</summary>
-    private sealed record Stranger : IrType;
 }

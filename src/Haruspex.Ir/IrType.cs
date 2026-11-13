@@ -7,4 +7,10 @@ namespace Haruspex.Ir;
 /// <see cref="IrUnknownType"/>, so an emitter can handle all of them. README.md in this folder describes the format and the
 /// reasons behind it.
 /// </remarks>
-public abstract record IrType;
+public abstract record IrType
+{
+    /// <summary>Only this assembly derives a case, so the set is closed (docs/decisions/0031-the-model-is-closed-hierarchies-of-records.md).</summary>
+    private protected IrType()
+    {
+    }
+}

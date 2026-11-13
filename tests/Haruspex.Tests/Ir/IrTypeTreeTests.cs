@@ -30,13 +30,6 @@ public class IrTypeTreeTests
         Assert.Equal([new IrTypeChild(Text, null), new IrTypeChild(new IrRef("A"), null)], IrTypeTree.Children(new IrUnion([Text, new IrRef("A")])));
 
     [Fact]
-    public void A_node_outside_the_closed_set_fails_rather_than_being_skipped()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => IrTypeTree.Children(new Stranger()).ToList());
-        Assert.Throws<ArgumentOutOfRangeException>(() => IrTypeTree.RenameReferences(new IrArray(new Stranger()), n => n));
-    }
-
-    [Fact]
     public void Within_lists_parents_before_children_in_the_ir_order()
     {
         var a = new IrRef("A");
@@ -82,7 +75,4 @@ public class IrTypeTreeTests
         Assert.Equal(
             new IrUnion([new IrRef("X"), new IrJsonText(new IrRef("X"))]),
             IrTypeTree.RenameReferences(new IrUnion([new IrRef("a"), new IrJsonText(new IrRef("b"))]), _ => "X"));
-
-    /// <summary>A type node the IR doesn't define, as a later version's might be to a reader built before it.</summary>
-    private sealed record Stranger : IrType;
 }
