@@ -46,7 +46,8 @@ var orders = read.Model.FindTable(new ObjectName("sales", "orders"));
   `CREATE TYPE`. DML triggers are read from `CREATE`, `CREATE OR ALTER` and `ALTER TRIGGER`, every definition kept, since
   which applies depends on the order the scripts run. Foreign keys with an `ON DELETE` or `ON UPDATE` action are read from
   `CREATE TABLE` and `ALTER TABLE … ADD`, as their actions fire the referencing table's triggers. A view defined once keeps
-  its definition and its file, and a synonym the name it stands for.
+  its definition (one defined twice records its second as a `Redefinition`), and a synonym the name it stands for. Every
+  object keeps where it was read (`SourceSpan`).
 - **Settings a definition keeps are kept.** A procedure, function or view records whether `SET ANSI_NULLS OFF` came before
   it in its file, since SQL Server keeps the setting it was created with.
 - **Problems have a place.** Parse errors and objects defined twice are reported as diagnostics, with their file, line and
