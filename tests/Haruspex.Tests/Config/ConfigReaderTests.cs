@@ -73,14 +73,14 @@ public class ConfigReaderTests
         Assert.Equal(["Row", ""], rdf.Replace.Select(r => r.With));
         Assert.Equal("Rdf", rdf.Prefix);
         Assert.Equal(config.Naming, config.NamingFor("hr"));
-        var procedure = Assert.Single(config.Procedures);
+        var procedure = Assert.IsType<InferredResultsOverride>(Assert.Single(config.Procedures));
         Assert.Equal("OrderDetail", procedure.Name);
         Assert.Equal(["lines[]", "note", "status", "settings"], procedure.Paths.Select(p => p.Path));
         Assert.Equal("OrderLine", procedure.Paths[0].Name);
         Assert.True(procedure.Paths[1].NotNull);
         Assert.Equal("always written", procedure.Paths[1].Why);
         Assert.True(procedure.Paths[2].ExactValues);
-        Assert.Equal(("SettingsSchema[]", "./settings"), (procedure.Paths[3].Type, procedure.Paths[3].Import));
+        Assert.Equal(new ImportedType("SettingsSchema[]", "./settings"), procedure.Paths[3].Imported);
     }
 
     [Fact]

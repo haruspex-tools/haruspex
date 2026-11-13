@@ -29,7 +29,7 @@ internal static class ResultsComparison
                 return $"{path}: the inference says {Encoding(a.Encoding)}, the declaration {Encoding(b.Encoding)}.";
             if (a.MayBeAbsent != b.MayBeAbsent)
                 return $"{path}: the inference says it {(a.MayBeAbsent ? "may be absent" : "is always there")}, the declaration that it {(b.MayBeAbsent ? "may be absent" : "is always there")}.";
-            if (new Comparer(inferredTypes, declared.Types).Type(a.Type, b.Type, path) is { } difference)
+            if (new Comparer(inferredTypes, declared.IrTypes).Type(a.Type, b.Type, path) is { } difference)
                 return difference;
         }
 

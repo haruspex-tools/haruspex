@@ -14,7 +14,7 @@ namespace Haruspex.Tests.Architecture;
 public class NullForgivingTests
 {
     /// <summary>How many are kept in <c>src/</c>, each with its reason.</summary>
-    private const int Kept = 33;
+    private const int Kept = 28;
 
     /// <summary>The comment that says why one is kept.</summary>
     private const string Reason = "// Never null:";

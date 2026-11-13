@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Config;
 
@@ -323,13 +324,13 @@ public static class ConfigReader
             {
                 var procedurePath = Child(path, member.Name);
                 var at = new JsonLocation(file, procedurePath, member.Line, member.Column);
-                ObjectPattern? procedure = null;
+                ObjectName? procedure = null;
                 if (!ObjectPattern.TryParse(member.Name, out var pattern, out var problem))
                     Problems.Add(ConfigCodes.BadPattern.At(at, problem));
-                else if (Wildcard(member.Name))
+                else if (Wildcard(member.Name) || pattern.Name is not { } literal)
                     Problems.Add(ConfigCodes.WildcardProcedure.At(at, "names one procedure, so it cannot use * or ?; write a part that holds them in brackets, as [a*b]."));
                 else
-                    procedure = pattern;
+                    procedure = literal;
 
                 if (Object(member.Value, procedurePath) is not { } body)
                     continue;
@@ -379,12 +380,13 @@ public static class ConfigReader
                 if (has.Contains("results") && has.Contains("paths"))
                     Report(ConfigCodes.PathsWithResults, body, procedurePath, "\"paths\" can't be used with \"results\": the declared schema says it all, so put the detail there.");
 
-                ResultsDeclaration? declared = null;
-                if (results is not null && procedure?.Name is { } declaredName)
-                    declared = Declared(results, Child(procedurePath, "results"), declaredName.ToString(), why ?? "");
-
-                if (procedure is not null)
-                    procedures.Add(new ProcedureOverride(procedure, name, [.. paths], at, nameAt) { Results = declared });
+                // A declaration with paths is refused above; one that has problems of its own leaves none to add.
+                if (procedure is not { } named)
+                    continue;
+                if (results is null)
+                    procedures.Add(new InferredResultsOverride(named, member.Name, name, [.. paths], at, nameAt));
+                else if (Declared(results, Child(procedurePath, "results"), named.ToString(), why ?? "") is { } declared)
+                    procedures.Add(new DeclaredResultsOverride(named, member.Name, name, declared, at, nameAt));
             }
 
             return procedures;
@@ -398,7 +400,7 @@ public static class ConfigReader
         {
             var at = new JsonLocation(file, path, member.Line, member.Column);
             var errors = Problems.Count(p => p.IsError);
-            var types = new Dictionary<string, IrObjectType>(StringComparer.Ordinal);
+            var types = new Dictionary<string, DeclaredType>(StringComparer.Ordinal);
             var results = new List<IrResult>();
             switch (member.Value)
             {
@@ -427,7 +429,7 @@ public static class ConfigReader
             return Problems.Count(p => p.IsError) == errors ? new ResultsDeclaration([.. results], [.. types], why, at) : null;
         }
 
-        private IrResult? Result(JsonObjectValue result, string path, int index, string procedure, Dictionary<string, IrObjectType> types)
+        private IrResult? Result(JsonObjectValue result, string path, int index, string procedure, Dictionary<string, DeclaredType> types)
         {
             JsonMember? schema = null;
             var json = false;
@@ -516,6 +518,8 @@ public static class ConfigReader
 
             var result = new PathOverride(entry.Name, at);
             var errors = Problems.Count;
+            string? importedName = null;
+            string? importedFrom = null;
             foreach (var member in body.Members)
             {
                 var memberPath = Child(path, member.Name);
@@ -541,7 +545,7 @@ public static class ConfigReader
                             if (Regex.IsMatch(type, @"^[A-Za-z_$][A-Za-z0-9_$]*(\[\])*$", RegexOptions.CultureInvariant)
                                 && !reserved.Contains(type.TrimEnd('[', ']')))
                             {
-                                result = result with { Type = type };
+                                importedName = type;
                             }
                             else
                             {
@@ -551,7 +555,7 @@ public static class ConfigReader
 
                         break;
                     case "import":
-                        result = result with { Import = NonEmpty(member.Value, memberPath) };
+                        importedFrom = NonEmpty(member.Value, memberPath);
                         break;
                     case "values":
                         if (Choice(member.Value, memberPath, "exact") is not null)
@@ -562,6 +566,9 @@ public static class ConfigReader
                         break;
                 }
             }
+
+            if (importedName is not null && importedFrom is not null)
+                result = result with { Imported = new ImportedType(importedName, importedFrom) };
 
             var has = body.Members.Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
             if (!has.Overlaps(["name", "nullable", "type", "values"]) && has.IsSubsetOf(["why", "import"]))

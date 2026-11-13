@@ -146,15 +146,15 @@ internal sealed class NameSettler(
     {
         switch (type)
         {
-            case IrRef reference when !IsNode(reference):
+            case IrRef reference when NodeOf(reference) is null:
                 Object(reference.Name, stem + "Row", stem, path, owner);
                 break;
-            case IrArray { Items: IrRef reference } when !IsNode(reference):
+            case IrArray { Items: IrRef reference } when NodeOf(reference) is null:
                 Object(reference.Name, stem + "Row", stem, path + "[]", owner);
                 break;
 
             // A result several statements may return (IR 0.6): each variant's object is a row of it, numbered after the first.
-            case IrUnion union when union.Variants.All(v => (v is IrRef r && !IsNode(r)) || (v is IrArray { Items: IrRef i } && !IsNode(i))):
+            case IrUnion union when union.Variants.All(v => (v is IrRef r && NodeOf(r) is null) || (v is IrArray { Items: IrRef i } && NodeOf(i) is null)):
                 foreach (var variant in union.Variants)
                 {
                     if (variant is IrRef reference)
@@ -174,8 +174,8 @@ internal sealed class NameSettler(
     {
         switch (type)
         {
-            case IrRef reference when IsNode(reference):
-                Node(reference.Name);
+            case IrRef reference when NodeOf(reference) is { } node:
+                Node(reference.Name, node);
                 break;
             case IrRef reference:
                 Object(reference.Name, name, null, path, owner);
@@ -212,14 +212,13 @@ internal sealed class NameSettler(
     }
 
     /// <summary>A recursive function's node, named after the function, once for the whole document.</summary>
-    private void Node(string key)
+    private void Node(string key, IrTypeIdentity identity)
     {
         if (named.ContainsKey(key))
             return;
 
         var type = types[key];
-        // Never null: a recursive function's node is made with its identity (IrBuilder).
-        var function = type.Identity!.Object;
+        var function = identity.Object;
         var generated = Generated(function, out var why);
         if (generated is null)
         {
@@ -232,7 +231,7 @@ internal sealed class NameSettler(
         var name = generated + "Node";
         Claim(name, new Holder(function, $"the type of the recursive function {function}", true, SettingFor(function)));
         named[key] = name;
-        Fields(type, name, type.Identity.Path, function);
+        Fields(type, name, identity.Path, function);
     }
 
     private void Fields(IrObjectType type, string stem, string path, string owner)
@@ -245,9 +244,12 @@ internal sealed class NameSettler(
         }
     }
 
-    /// <summary>A recursive function's node: its own type, as opposed to an object type nested inside it.</summary>
-    private bool IsNode(IrRef reference) =>
-        types[reference.Name].Identity is { Owner: IrTypeOwner.Function } identity && identity.Path == $"<{identity.Object}>";
+    /// <summary>
+    /// The identity of a recursive function's node (its own type, as opposed to an object type nested inside it), or null
+    /// when <paramref name="reference"/> is not one.
+    /// </summary>
+    private IrTypeIdentity? NodeOf(IrRef reference) =>
+        types[reference.Name].Identity is { Owner: IrTypeOwner.Function } identity && identity.Path == $"<{identity.Object}>" ? identity : null;
 
     /// <summary>The name, or the first free one with a number when the same object already holds it.</summary>
     private string Unique(string name, Holder claimant)

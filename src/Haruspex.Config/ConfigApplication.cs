@@ -52,14 +52,14 @@ public static class ConfigApplication
         {
             // Results alone may be declared for any procedure: one a selected procedure calls need not be selected, nor in
             // the project (a system procedure, another database's).
-            var onlyDeclared = entry.Results is not null && entry.Name is null && entry.Paths.Count == 0;
-            var target = procedures.Where(entry.Procedure.Matches).ToList();
+            var onlyDeclared = entry is DeclaredResultsOverride { Name: null };
+            var target = procedures.Where(p => p.Equals(entry.Procedure)).ToList();
             if (target.Count == 0)
             {
                 if (onlyDeclared)
-                    Unused(entry, entry.Procedure.Name is { } literal ? literal.ToString() : entry.Procedure.Text);
+                    Unused(entry, entry.Procedure.ToString());
                 else
-                    problems.Add(ConfigCodes.NoSuchProcedure.At(entry.At, $"there is no procedure {entry.Procedure.Text} in the project."));
+                    problems.Add(ConfigCodes.NoSuchProcedure.At(entry.At, $"there is no procedure {entry.Key} in the project."));
                 continue;
             }
 
@@ -67,7 +67,7 @@ public static class ConfigApplication
             if (index < 0 && onlyDeclared)
             {
                 // Not selected: checked against what is inferred of it, and otherwise there for its callers.
-                if (entry.Results is { } declared && declaredDocument?.Objects.FirstOrDefault(o => target.Any(t => t.ToString() == o.Id)) is { Results: { } inferred } checkedObject)
+                if (entry is DeclaredResultsOverride { Results: var declared } && declaredDocument?.Objects.FirstOrDefault(o => target.Any(t => t.ToString() == o.Id)) is { Results: { } inferred } checkedObject)
                     Check(entry, declared, checkedObject.Id, inferred, declaredDocument.Types);
                 else
                     Unused(entry, target[0].ToString());
@@ -96,25 +96,24 @@ public static class ConfigApplication
             seen[obj.Id] = entry.At;
             if (entry.Name is { } name)
                 procedureNames[obj.Id] = (name, entry.NameAt);
-            if (entry.Results is { } declaration)
+            switch (entry)
             {
-                if (results[index] is { } inferred)
-                {
+                case DeclaredResultsOverride { Results: var declaration } when results[index] is { } inferred:
                     Check(entry, declaration, obj.Id, inferred, types);
-                }
-                else
-                {
+                    break;
+                case DeclaredResultsOverride { Results: var declaration }:
                     // The results the project can't show are the declared ones: a claim, listed as one, and still checked at
                     // runtime by the generated validator.
                     results[index] = Declared(declaration, obj.Id, types);
                     unknowns.RemoveAll(u => u.Object == obj.Id && u.Path == "results");
                     claims.Add(new IrOverride(obj.Id, "results", IrOverrideSetting.Results, declaration.Why));
                     declaredHere.Add(obj.Id);
-                }
+                    break;
+                case InferredResultsOverride { Paths: var paths }:
+                    foreach (var path in paths)
+                        results[index] = applier.Apply(obj, results[index], path);
+                    break;
             }
-
-            foreach (var path in entry.Paths)
-                results[index] = applier.Apply(obj, results[index], path);
         }
 
         // A selected procedure whose results are unknowable and not declared: generation goes ahead (a `check`
@@ -195,8 +194,7 @@ public static class ConfigApplication
         var keys = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (key, type) in declaration.Types)
         {
-            // Never null: every type a declaration holds is made with its identity (DeclaredSchema).
-            var path = type.Identity!.Path;
+            var path = type.Identity.Path;
             var candidate = $"{id}:{path}";
             for (var n = 2; types.ContainsKey(candidate) || keys.ContainsValue(candidate); n++)
                 candidate = $"{id}:{path}~{n.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
@@ -207,12 +205,7 @@ public static class ConfigApplication
 
         foreach (var (key, type) in declaration.Types)
         {
-            types[keys[key]] = type with
-            {
-                Fields = [.. type.Fields.Select(f => f with { Type = Rekey(f.Type) })],
-                // Never null: as above.
-                Identity = type.Identity! with { Object = id },
-            };
+            types[keys[key]] = new IrObjectType([.. type.Fields.Select(f => f with { Type = Rekey(f.Type) })]) { Identity = type.Identity with { Object = id } };
         }
 
         return [.. declaration.Results.Select(r => r with { Type = Rekey(r.Type) })];

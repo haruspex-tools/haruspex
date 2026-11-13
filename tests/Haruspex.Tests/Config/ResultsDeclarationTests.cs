@@ -57,10 +57,10 @@ public class ResultsDeclarationTests
     private static Outcome<HaruspexConfig> Read(string config, TempDirectory? dir = null) =>
         ConfigReader.Read(Encoding.UTF8.GetBytes(config), "haruspex.json", dir?.Path ?? Path.GetTempPath());
 
-    private static ProcedureOverride Only(Outcome<HaruspexConfig> read)
+    private static ResultsDeclaration Only(Outcome<HaruspexConfig> read)
     {
         Assert.Empty(read.Diagnostics);
-        return Assert.Single(read.Expected().Procedures);
+        return Assert.IsType<DeclaredResultsOverride>(Assert.Single(read.Expected().Procedures)).Results;
     }
 
     private static string[] Problems(Outcome<HaruspexConfig> read) => [.. read.Diagnostics.Select(p => p.ToString())];
@@ -91,7 +91,7 @@ public class ResultsDeclarationTests
     [Fact]
     public void Results_none_declares_no_result_sets()
     {
-        var declared = Only(Read("""{ "procedures": { "audit.write_log": { "results": "none", "why": "it only writes the log" } } }""")).Results!;
+        var declared = Only(Read("""{ "procedures": { "audit.write_log": { "results": "none", "why": "it only writes the log" } } }"""));
 
         Assert.Empty(declared.Results);
         Assert.Equal("it only writes the log", declared.Why);
@@ -100,7 +100,7 @@ public class ResultsDeclarationTests
     [Fact]
     public void A_rowset_is_declared_by_the_schema_of_one_row()
     {
-        var declared = Only(Read($$"""{ "procedures": { "rpt.search": { {{SearchRows}} } } }""")).Results!;
+        var declared = Only(Read($$"""{ "procedures": { "rpt.search": { {{SearchRows}} } } }"""));
 
         var result = Assert.Single(declared.Results);
         Assert.Equal(IrEncoding.Rowset, result.Encoding);
@@ -143,7 +143,7 @@ public class ResultsDeclarationTests
               ],
               "why": "built from a template table"
             } } }
-            """)).Results!;
+            """));
 
         Assert.Equal(2, declared.Results.Count);
         var json = declared.Results[0];
@@ -183,7 +183,7 @@ public class ResultsDeclarationTests
             }
             """);
 
-        var declared = Only(Read("""{ "procedures": { "rpt.search": { "results": { "rowset": "schemas/row.schema.json" }, "why": "dynamic" } } }""", dir)).Results!;
+        var declared = Only(Read("""{ "procedures": { "rpt.search": { "results": { "rowset": "schemas/row.schema.json" }, "why": "dynamic" } } }""", dir));
 
         Assert.Equal(["item_id"], declared.Types.Values.Single().Fields.Select(f => f.Name));
     }

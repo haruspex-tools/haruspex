@@ -81,8 +81,8 @@ internal sealed class SqlProject
         var declarations = new Dictionary<ObjectName, DeclaredResults>();
         foreach (var entry in config.Procedures)
         {
-            if (entry is { Results: { } declared, Procedure.Name: { } name })
-                declarations.TryAdd(name, new DeclaredResults(declared.Results, declared.Types, declared.Why));
+            if (entry is DeclaredResultsOverride { Results: var declared, Procedure: var name })
+                declarations.TryAdd(name, new DeclaredResults(declared.Results, declared.IrTypes, declared.Why));
         }
 
         var inferred = IrInference.Infer(model, selected, declarations);

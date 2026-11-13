@@ -16,11 +16,8 @@ public sealed record PathOverride(string Path, JsonLocation At)
     /// <summary>Why the claim holds: required for a nullability or a value set.</summary>
     public string? Why { get; init; }
 
-    /// <summary>The type to use, an exported schema's name with <c>[]</c> for each level of array.</summary>
-    public string? Type { get; init; }
-
-    /// <summary>The module that exports <see cref="Type"/>.</summary>
-    public string? Import { get; init; }
+    /// <summary>The type to use in place of the inferred one, and the module that exports it; null when it keeps its own.</summary>
+    public ImportedType? Imported { get; init; }
 
     /// <summary>Whether the value set at the path is declared exact (<c>"values": "exact"</c>).</summary>
     public bool ExactValues { get; init; }

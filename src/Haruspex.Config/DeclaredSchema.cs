@@ -19,7 +19,7 @@ namespace Haruspex.Config;
 /// A declaration is a claim, and is checked at runtime like the inferred types: the generated validator refuses output that
 /// does not fit it. So a wrong declaration fails loudly, on real data.
 /// </remarks>
-internal sealed class DeclaredSchema(string file, JsonValue root, string rootPath, List<Diagnostic> problems, string procedure, Dictionary<string, IrObjectType> types)
+internal sealed class DeclaredSchema(string file, JsonValue root, string rootPath, List<Diagnostic> problems, string procedure, Dictionary<string, DeclaredType> types)
 {
     private static readonly HashSet<string> Annotations = new(StringComparer.Ordinal)
     {
@@ -310,7 +310,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
         var candidate = key;
         for (var n = 2; types.ContainsKey(candidate); n++)
             candidate = key + "~" + n.ToString(CultureInfo.InvariantCulture);
-        types[candidate] = new IrObjectType([.. fields]) { Identity = new IrTypeIdentity(IrTypeOwner.Procedure, procedure, irPath) };
+        types[candidate] = new DeclaredType(new IrTypeIdentity(IrTypeOwner.Procedure, procedure, irPath), [.. fields]);
         return new IrRef(candidate);
     }
 

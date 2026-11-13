@@ -122,10 +122,9 @@ internal sealed class OverrideApplier(
             }
         }
 
-        if (entry.Type is { } type)
+        if (entry.Imported is { Name: var type, From: var from })
         {
-            // Never null: the reader refuses a "type" without its "import" (ConfigReader).
-            IrType imported = new IrImport(type.TrimEnd('[', ']'), importFrom(entry.Import!));
+            IrType imported = new IrImport(type.TrimEnd('[', ']'), importFrom(from));
             for (var depth = (type.Length - type.TrimEnd('[', ']').Length) / 2; depth > 0; depth--)
                 imported = new IrArray(imported);
             slot = slot with { Type = imported };
@@ -143,8 +142,8 @@ internal sealed class OverrideApplier(
                 return Refused<Slot>(ConfigCodes.NameNotObject, entry, $"only an object type can be named, and the value at {path} is {Describe(slot.Type)}.{hint}", found);
             }
 
-            if (types[reference.Name].Identity?.Owner == IrTypeOwner.Function)
-                return Refused<Slot>(ConfigCodes.SharedType, entry, Shared(path, types[reference.Name]), found);
+            if (types[reference.Name].Identity is { Owner: IrTypeOwner.Function } shared)
+                return Refused<Slot>(ConfigCodes.SharedType, entry, Shared(path, shared), found);
             Names[(objectId, path)] = (name, at);
         }
 
@@ -163,8 +162,8 @@ internal sealed class OverrideApplier(
         {
             case (IrPathKey key, IrRef reference):
                 var obj = types[reference.Name];
-                if (obj.Identity?.Owner == IrTypeOwner.Function)
-                    return Refused<Slot>(ConfigCodes.SharedType, entry, Shared(whole, obj));
+                if (obj.Identity is { Owner: IrTypeOwner.Function } shared)
+                    return Refused<Slot>(ConfigCodes.SharedType, entry, Shared(whole, shared));
                 var position = obj.Fields.ToList().FindIndex(f => f.Name == key.Key);
                 if (position < 0)
                 {
@@ -216,9 +215,8 @@ internal sealed class OverrideApplier(
         return prefix + (rendered.Length > 0 && rendered[0] is not ('[' or '<' or '{') ? "." : "") + rendered;
     }
 
-    private static string Shared(string path, IrObjectType type) =>
-        // Never null: a recursive type is a function's node, made with its identity (IrBuilder).
-        $"the value at {path} is the recursive type of {type.Identity!.Object}, which every procedure that reaches it shares, so it can't be overridden for one of them.";
+    private static string Shared(string path, IrTypeIdentity function) =>
+        $"the value at {path} is the recursive type of {function.Object}, which every procedure that reaches it shares, so it can't be overridden for one of them.";
 
     private static string Describe(IrPathSegment segment) => segment switch
     {
