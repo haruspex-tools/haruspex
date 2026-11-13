@@ -120,8 +120,10 @@ statement depend on the path to it, which only the walk knows, so the walk passe
 nothing. What a relation's columns hold is not binding: Inference attaches values to the bound sources as it reads them
 (`ReadScope`), and carries the state of each temporary table from statement to statement (`FlowState`). So Semantics
 still never sees a value, and Inference never resolves a name, which `NameResolutionTests` holds by reading Inference's IL: no
-method reads a source's alias, a column reference's parts or a table reference's name, and the few that read a schema object
-name's parts (the walk keys a temporary table's state by its name) are listed there with why. A temporary table's or table variable's definition is
+method reads a source's alias, a column reference's parts, a table reference's name, a schema object name's parts or the
+name of what a body declares, and the few exceptions are listed there with why. What a body declares (its parameters,
+variables, table variables and cursors) is read by Semantics too (`BodyDeclarations`), and a variable reference resolves to
+a parameter, a local or neither (`VariableResolution`). A temporary table's or table variable's definition is
 read into a `Table` by `SyntaxReader.Table` in Syntax, the same reading `CREATE TABLE` gets in Sources, so the
 schema rules (`SchemaRules.IsNeverNull`, `ColumnFacts`) apply to it unchanged.
 

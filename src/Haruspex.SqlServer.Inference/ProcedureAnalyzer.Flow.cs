@@ -38,9 +38,6 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>How many result sets have been added to any state, so that a loop can tell whether its body returns any.</summary>
     private int appended;
 
-    /// <summary>Each table variable's declaration, from every DECLARE in the body.</summary>
-    private readonly Dictionary<string, DeclaredTable> tableVariableDefinitions = new(StringComparer.OrdinalIgnoreCase);
-
     /// <summary>Each scalar variable's declared type, from every DECLARE in the body.</summary>
     private readonly Dictionary<string, Shape> variableShapes = new(StringComparer.OrdinalIgnoreCase);
 
@@ -63,11 +60,10 @@ internal sealed partial class ProcedureAnalyzer
     /// </param>
     public Walked Walk(IReadOnlyList<Parameter> parameters, StatementList statements, DeclaredTable? returnTable = null)
     {
-        // Declarations are compiled, not run (observed: a variable or table variable declared in a branch not taken still
-        // exists), so they are collected from the whole body first. A name can be declared once in a batch.
-        var tableVariables = new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase);
+        // Declarations are compiled, not run, so binding reads them from the whole body first (BodyDeclarations).
+        var declarations = binder.Declarations(parameters, statements, returnTable);
         var start = new List<KeyValuePair<string, Value>>();
-        foreach (var parameter in parameters)
+        foreach (var parameter in declarations.Parameters)
         {
             var name = parameter.Name;
             variableTypes[name] = parameter.Type;
@@ -76,53 +72,35 @@ internal sealed partial class ProcedureAnalyzer
         }
 
         body = statements;
-        var declarations = new DeclarationCollector();
-        statements.Accept(declarations);
-        foreach (var cursor in declarations.Cursors)
+        foreach (var variable in declarations.Variables)
         {
-            if (!cursors.TryGetValue(cursor.Name.Value, out var same))
-                cursors[cursor.Name.Value] = same = [];
-            same.Add(cursor);
-        }
-
-        foreach (var element in declarations.Variables)
-        {
-            var name = element.VariableName.Value;
-            if (variableShapes.ContainsKey(name))
-                continue;
-            variableTypes[name] = SyntaxReader.Type(element.DataType);
-            variableShapes[name] = DeclaredShape(SyntaxReader.Type(element.DataType), At(element), name, out var live);
+            var name = variable.Name;
+            variableTypes[name] = variable.Type;
+            variableShapes[name] = DeclaredShape(variable.Type, variable.At, name, out var live);
 
             // A variable holds NULL until it is assigned.
             start.Add(new(name, Value.Computed(variableShapes[name], Because(IrNullRule.Variable, name, variableShapes[name]), live)));
         }
 
-        var declared = declarations.Tables.Select(t => SyntaxReader.Declared(t.VariableName.Value, t.Definition, source.Within(t)));
-        foreach (var definition in returnTable is null ? declared : declared.Prepend(returnTable))
+        var tableVariables = new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase);
+        foreach (var definition in declarations.TableVariables)
         {
-            var name = definition.Name;
-            if (tableVariables.ContainsKey(name))
-                continue;
-            tableVariableDefinitions[name] = definition;
-            tableVariables[name] = new LocalRelationValues(
+            tableVariables[definition.Name] = new LocalRelationValues(
                 [.. definition.Columns.Select(c => c.Name)],
-                [.. definition.Columns.Select(c => Declared(definition, c, name, temporary: false))],
+                [.. definition.Columns.Select(c => Declared(definition, c, definition.Name, temporary: false))],
                 null);
         }
 
         this.tableVariables = tableVariables;
-        names = NameEnvironment.Empty.WithTableVariables(tableVariableDefinitions.Values);
+        names = NameEnvironment.Empty.WithDeclarations(declarations);
         var initial = FlowState.Start(start).WithTemps(context.Temps).WithReadUncommitted(context.ReadUncommitted);
 
         // What each variable and table variable column of nvarchar(max) holds as JSON: nothing yet. A parameter is
         // the caller's, so it is not traced.
-        foreach (var element in declarations.Variables)
+        foreach (var variable in declarations.Variables)
         {
-            if (Traced(variableShapes[element.VariableName.Value]) && !initial.Json.ContainsKey(element.VariableName.Value)
-                && !parameters.Any(p => p.Name.Equals(element.VariableName.Value, StringComparison.OrdinalIgnoreCase)))
-            {
-                initial = initial.WithJson(element.VariableName.Value, JsonSlot.Empty);
-            }
+            if (Traced(variableShapes[variable.Name]) && !initial.Json.ContainsKey(variable.Name))
+                initial = initial.WithJson(variable.Name, JsonSlot.Empty);
         }
 
         foreach (var (name, table) in tableVariables)
@@ -158,22 +136,6 @@ internal sealed partial class ProcedureAnalyzer
         return live
             ? Unsupported(IrUnknownReason.JsonShapeUnknown, $"{name} is a json variable: its shape is in the data.", at)
             : SqlTypes.ToConvertedShape(model, type, at);
-    }
-
-    /// <summary>Every DECLARE in a body, at any depth.</summary>
-    private sealed class DeclarationCollector : TSqlFragmentVisitor
-    {
-        public List<DeclareVariableElement> Variables { get; } = [];
-
-        public List<DeclareTableVariableBody> Tables { get; } = [];
-
-        public List<DeclareCursorStatement> Cursors { get; } = [];
-
-        public override void Visit(DeclareVariableElement node) => Variables.Add(node);
-
-        public override void Visit(DeclareCursorStatement node) => Cursors.Add(node);
-
-        public override void Visit(DeclareTableVariableBody node) => Tables.Add(node);
     }
 
     // ---- statements ---------------------------------------------------------------------------------------------
@@ -227,7 +189,7 @@ internal sealed partial class ProcedureAnalyzer
                 return Continue(RolledBack(state, at));
             case DeclareVariableStatement declare:
                 foreach (var element in declare.Declarations.Where(d => d.Value is not null))
-                    state = Assign(state, element.VariableName.Value, Expression(element.Value, Reading(state)), definitely: true, at, element.Value);
+                    state = Assign(state, names.Declarations.Declared(element).Name, Expression(element.Value, Reading(state)), definitely: true, at, element.Value);
                 return Continue(state);
             case SetVariableStatement set when set.CursorDefinition is null && set.Identifier is null && set.Expression is not null:
                 return Continue(Assign(state, set.Variable.Name, Assigned(set.AssignmentKind, set.Expression, Reading(state), set), definitely: true, at, set.Expression));
@@ -292,15 +254,15 @@ internal sealed partial class ProcedureAnalyzer
                 return Continue(state);
             case FetchCursorStatement fetch:
                 return Fetch(fetch, state);
-            case CreateTableStatement create when IsTemporary(create.SchemaObjectName):
-                return Continue(state.WithTemp(create.SchemaObjectName.BaseIdentifier.Value, Created(create)));
-            case DropTableStatement drop when drop.Objects.All(IsTemporary):
-                foreach (var name in drop.Objects)
-                    state = state.WithTemp(name.BaseIdentifier.Value, new AbsentTable(at));
+            case CreateTableStatement create when Binder.Temporary(create.SchemaObjectName) is { } created:
+                return Continue(state.WithTemp(created, Created(create, created)));
+            case DropTableStatement drop when drop.Objects.Select(Binder.Temporary).ToList() is var dropped && dropped.All(n => n is not null):
+                foreach (var name in dropped)
+                    state = state.WithTemp(name!, new AbsentTable(at));
                 return Continue(state);
-            case AlterTableStatement alter when IsTemporary(alter.SchemaObjectName):
-                return Continue(Alter(alter, state));
-            case CreateIndexStatement index when IsTemporary(index.OnName):
+            case AlterTableStatement alter when Binder.Temporary(alter.SchemaObjectName) is { } altered:
+                return Continue(Alter(alter, altered, state));
+            case CreateIndexStatement index when Binder.Temporary(index.OnName) is not null:
                 return Continue(state);
             default:
                 return Blocked(statement);
@@ -420,7 +382,11 @@ internal sealed partial class ProcedureAnalyzer
 
     private Value Variable(VariableReference variable, ReadScope scope)
     {
-        if (!scope.State.Variables.TryGetValue(variable.Name, out var value))
+        // A function's parameter holds its argument for this call; a procedure's, and a variable, what the walk says.
+        var resolved = Binder.Resolve(variable, scope.Names);
+        if (resolved is ParameterVariable { Parameter.Name: var parameter } && parameters.TryGetValue(parameter, out var argument))
+            return argument;
+        if (resolved is UndeclaredVariable || !scope.State.Variables.TryGetValue(variable.Name, out var value))
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The variable {variable.Name} is not declared.", At(variable)));
 
         // A cursor's query takes its variables as they were when its DECLARE ran (observed:
@@ -515,13 +481,12 @@ internal sealed partial class ProcedureAnalyzer
     private FlowState SelectInto(SelectStatement select, FlowState state)
     {
         var at = At(select);
-        if (!IsTemporary(select.Into))
+        if (Binder.Temporary(select.Into) is not { } name)
         {
             Blocked(select);
             return state;
         }
 
-        var name = select.Into.BaseIdentifier.Value;
         var table = WithCtes<TempTable>(select.WithCtesAndXmlNamespaces, Reading(state), scope =>
         {
             var row = Outermost(select.QueryExpression, scope);
@@ -772,21 +737,14 @@ internal sealed partial class ProcedureAnalyzer
     // ---- creating and altering temporary tables -----------------------------------------------------------------
 
     /// <summary>
-    /// Whether a name is a local temporary table's: one part, starting with one <c>#</c>. A global one (<c>##t</c>) is shared
-    /// with every session, which may change it at any time, so it is treated as a permanent table.
-    /// </summary>
-    private static bool IsTemporary(SchemaObjectName name) =>
-        name is { ServerIdentifier: null, DatabaseIdentifier: null, SchemaIdentifier: null }
-        && name.BaseIdentifier.Value.StartsWith('#') && !name.BaseIdentifier.Value.StartsWith("##", StringComparison.Ordinal);
-
-    /// <summary>
     /// <c>CREATE TABLE #t</c>. It always makes a new table: one of the caller's of the same name is hidden (observed). A
     /// procedure cannot create one name twice, even after dropping it (error 2714 when the procedure is created, observed),
     /// so re-creation never reaches a procedure that runs; it is modelled as the new table all the same.
     /// </summary>
-    private KnownTable Created(CreateTableStatement create)
+    /// <param name="create">The statement.</param>
+    /// <param name="name">The temporary table it creates (<see cref="Binder.Temporary"/>).</param>
+    private KnownTable Created(CreateTableStatement create, string name)
     {
-        var name = create.SchemaObjectName.BaseIdentifier.Value;
         var definition = SyntaxReader.Declared(name, create.Definition, source.Within(create));
         return new KnownTable(name, [.. definition.Columns.Select(c => Fresh(definition, c, name, c.IsIdentity, null))]);
     }
@@ -830,9 +788,8 @@ internal sealed partial class ProcedureAnalyzer
         return shape is UnknownShape unknown ? Value.Unknown(unknown) : Value.Computed(shape, because);
     }
 
-    private FlowState Alter(AlterTableStatement alter, FlowState state)
+    private FlowState Alter(AlterTableStatement alter, string name, FlowState state)
     {
-        var name = alter.SchemaObjectName.BaseIdentifier.Value;
         var at = At(alter);
         if (state.Temp(name) is not KnownTable table)
             return state;

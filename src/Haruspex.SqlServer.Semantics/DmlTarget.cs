@@ -62,9 +62,9 @@ public sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadOnl
                         break;
                     }
 
-                    if (one.StartsWith('#') && !one.StartsWith("##", StringComparison.Ordinal))
+                    if (Binder.Temporary(name) is { } temporary)
                     {
-                        direct ??= one;
+                        direct ??= temporary;
                     }
                     else
                     {
@@ -97,9 +97,9 @@ public sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadOnl
                     if (seen.Add(one))
                         Read(cte.QueryExpression, seen);
                 }
-                else if (name is { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null } && one.StartsWith('#') && !one.StartsWith("##", StringComparison.Ordinal))
+                else if (Binder.Temporary(name) is { } temporary)
                 {
-                    temps.Add(one);
+                    temps.Add(temporary);
                 }
                 else
                 {
@@ -114,11 +114,13 @@ public sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadOnl
     /// <c>@t</c>, a name of one part; null for any other. <c>OUTPUT … INTO</c> names its table so.
     /// </summary>
     /// <param name="target">The reference.</param>
-    public static string? Local(TableReference target) =>
-        target is NamedTableReference { SchemaObject: { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null, BaseIdentifier.Value: var name } }
-            && (name.StartsWith('@') || (name.StartsWith('#') && !name.StartsWith("##", StringComparison.Ordinal)))
-            ? name
-            : null;
+    public static string? Local(TableReference target) => target switch
+    {
+        NamedTableReference { SchemaObject: var name } when Binder.Temporary(name) is { } temporary => temporary,
+        NamedTableReference { SchemaObject: { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null, BaseIdentifier.Value: var variable } }
+            when variable.StartsWith('@') => variable,
+        _ => null,
+    };
 
     /// <summary>The name a source's columns are qualified by: its alias, or its own name without one.</summary>
     public static string? Alias(TableReferenceWithAlias source) =>

@@ -241,8 +241,8 @@ internal sealed partial class ProcedureAnalyzer
 
         private void Add(SchemaObjectName name)
         {
-            if (IsTemporary(name))
-                Names.Add(name.BaseIdentifier.Value);
+            if (Binder.Temporary(name) is { } created)
+                Names.Add(created);
         }
     }
 

@@ -343,4 +343,64 @@ public class BinderTests
         Assert.Same(body.Query(With("a")), body.Query(With("a")));
         Assert.NotSame(body.Query(With("a")), body.Query(With("a", "b")));
     }
+
+    // ---- variables and declarations -----------------------------------------------------------------------------------
+
+    /// <summary>A procedure's declarations, as binding reads them.</summary>
+    private static (BodyDeclarations Declarations, StatementList Body) Declarations(string parameters, string body)
+    {
+        using var dir = new TempDirectory();
+        dir.File("p.sql", $"CREATE PROCEDURE dbo.p {parameters}\nAS\n{body}");
+        var read = SqlScriptFolder.Read(dir.Path);
+        Assert.Empty(read.Diagnostics);
+        var procedure = read.Model.FindProcedure(new ObjectName("dbo", "p"))!;
+        var statements = ((SqlBody)procedure.Body).Statements;
+        return (new Bindings(read.Model).For(procedure.Span).Declarations(procedure.Parameters, statements), statements);
+    }
+
+    [Fact]
+    public void A_variable_is_a_parameter_a_declared_variable_or_undeclared()
+    {
+        // Declared in a branch not taken, @late still exists: declarations are compiled, not run.
+        var (declarations, _) = Declarations("@id int", "IF 1 = 0 DECLARE @late nvarchar(10);\nSELECT @id AS a, @late AS b, @none AS c;");
+        var names = NameEnvironment.Empty.WithDeclarations(declarations);
+
+        Assert.IsType<ParameterVariable>(Binder.Resolve(new VariableReference { Name = "@ID" }, names));
+        Assert.Equal("nvarchar(10)", Assert.IsType<LocalVariable>(Binder.Resolve(new VariableReference { Name = "@late" }, names)).Type!.ToString());
+        Assert.IsType<UndeclaredVariable>(Binder.Resolve(new VariableReference { Name = "@none" }, names));
+    }
+
+    [Fact]
+    public void A_declare_of_a_parameters_name_declares_nothing_new()
+    {
+        var (declarations, body) = Declarations("@id int", "DECLARE @id int = 1, @n int = 2;");
+        var elements = ((DeclareVariableStatement)body.Statements[0]).Declarations;
+
+        Assert.IsType<ParameterVariable>(declarations.Declared(elements[0]));
+        Assert.Equal("@n", Assert.IsType<LocalVariable>(declarations.Declared(elements[1])).Name);
+        Assert.Equal(["@n"], declarations.Variables.Select(v => v.Name));
+    }
+
+    [Fact]
+    public void A_table_variable_and_a_cursor_are_declared_for_the_whole_body()
+    {
+        var (declarations, _) = Declarations("", "DECLARE @t TABLE (a int NOT NULL);\nDECLARE c CURSOR FOR SELECT 1 AS x;\nFETCH NEXT FROM c;");
+
+        Assert.Equal("@t", Assert.Single(declarations.TableVariables).Name);
+        Assert.Single(declarations.Cursors(new CursorId { Name = new IdentifierOrValueExpression { Identifier = new Identifier { Value = "C" } } }));
+    }
+
+    [Theory]
+    [InlineData("#t", "#t")]
+    [InlineData("##t", null)]
+    [InlineData("dbo.#t", null)]
+    [InlineData("t", null)]
+    public void A_local_temporary_table_is_a_one_part_name_of_one_hash(string written, string? temporary)
+    {
+        var name = new SchemaObjectName();
+        foreach (var part in written.Split('.'))
+            name.Identifiers.Add(new Identifier { Value = part });
+
+        Assert.Equal(temporary, Binder.Temporary(name));
+    }
 }

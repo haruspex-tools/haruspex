@@ -77,6 +77,19 @@ public sealed partial class Binder
     };
 
     /// <summary>
+    /// What a variable reference means where <paramref name="names"/> are in force: a parameter of the body, a variable it
+    /// declares, or neither, which SQL Server refuses.
+    /// </summary>
+    /// <param name="variable">The reference.</param>
+    /// <param name="names">The names in force, whose declarations are the body's.</param>
+    public static VariableResolution Resolve(VariableReference variable, NameEnvironment names)
+    {
+        ArgumentNullException.ThrowIfNull(variable);
+        ArgumentNullException.ThrowIfNull(names);
+        return names.Declarations.Variable(variable.Name);
+    }
+
+    /// <summary>
     /// The position, among a write's target's columns, of each column its column list names (<c>INSERT … (a, b)</c>,
     /// <c>OUTPUT … INTO t (a, b)</c>), by its last part, ignoring case as SQL Server does; -1 for one the target doesn't have.
     /// </summary>

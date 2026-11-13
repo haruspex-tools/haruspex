@@ -1,12 +1,11 @@
 using System.Collections.Immutable;
-using Haruspex.SqlServer.Model;
 
 namespace Haruspex.SqlServer.Semantics;
 
 /// <summary>
-/// The relations a body has defined that a one-part name in FROM may mean at one statement: <c>inserted</c> and
-/// <c>deleted</c> in an <c>OUTPUT</c>, the CTEs of the statement's <c>WITH</c>, the table variables as declared, and the
-/// temporary tables with the columns the walk knows them to have there. Immutable, and compared by value, so that a statement
+/// The names a body has defined at one statement: <c>inserted</c> and <c>deleted</c> in an <c>OUTPUT</c>, the CTEs of the
+/// statement's <c>WITH</c>, what the body declares (its parameters, variables and table variables), and the temporary tables
+/// with the columns the walk knows them to have there. Immutable, and compared by value, so that a statement
 /// read again with the same names (on a loop's next pass, on another branch) is bound once (<see cref="Binder"/>).
 /// </summary>
 /// <remarks>
@@ -54,19 +53,18 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     /// <summary>Whether <c>SELECT *</c> is expanded to its sources' columns: only in a view.</summary>
     public bool ExpandsStars { get; }
 
-    /// <summary>These names with the body's table variables, each as declared.</summary>
-    /// <param name="declarations">Each table variable's declaration.</param>
-    public NameEnvironment WithTableVariables(IEnumerable<DeclaredTable> declarations)
+    /// <summary>What the body declares for the whole of it: its parameters, variables, table variables and cursors.</summary>
+    public BodyDeclarations Declarations { get; private init; } = BodyDeclarations.None;
+
+    /// <summary>These names with what the body declares; its table variables are names in FROM.</summary>
+    /// <param name="declarations">The body's declarations.</param>
+    public NameEnvironment WithDeclarations(BodyDeclarations declarations)
     {
         ArgumentNullException.ThrowIfNull(declarations);
-        var table = tableVariables;
-        foreach (var declaration in declarations)
-        {
-            if (!table.ContainsKey(declaration.Name))
-                table = table.Add(declaration.Name, new TableVariable(declaration));
-        }
-
-        return new(ExpandsStars, pseudo, ctes, table, temporaryColumns);
+        var table = ImmutableDictionary.Create<string, TableVariable>(Names);
+        foreach (var declaration in declarations.TableVariables)
+            table = table.SetItem(declaration.Name, new TableVariable(declaration));
+        return new(ExpandsStars, pseudo, ctes, table, temporaryColumns) { Declarations = declarations };
     }
 
     /// <summary>
@@ -77,7 +75,7 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     public NameEnvironment WithTemporaryColumns(IEnumerable<KeyValuePair<string, IReadOnlyList<string>>> columns)
     {
         ArgumentNullException.ThrowIfNull(columns);
-        return new(ExpandsStars, pseudo, ctes, tableVariables, ImmutableDictionary.CreateRange(Names, columns));
+        return new(ExpandsStars, pseudo, ctes, tableVariables, ImmutableDictionary.CreateRange(Names, columns)) { Declarations = Declarations };
     }
 
     /// <summary>These names with a CTE added, hiding any table of its name.</summary>
@@ -85,7 +83,7 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     public NameEnvironment WithCte(CommonTable cte)
     {
         ArgumentNullException.ThrowIfNull(cte);
-        return new(ExpandsStars, pseudo, ctes.SetItem(cte.Name, cte), tableVariables, temporaryColumns);
+        return new(ExpandsStars, pseudo, ctes.SetItem(cte.Name, cte), tableVariables, temporaryColumns) { Declarations = Declarations };
     }
 
     /// <summary>These names with <c>inserted</c> or <c>deleted</c> added, for a write's <c>OUTPUT</c>.</summary>
@@ -93,7 +91,7 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     public NameEnvironment WithPseudo(PseudoTable table)
     {
         ArgumentNullException.ThrowIfNull(table);
-        return new(ExpandsStars, pseudo.SetItem(table.Name, table), ctes, tableVariables, temporaryColumns);
+        return new(ExpandsStars, pseudo.SetItem(table.Name, table), ctes, tableVariables, temporaryColumns) { Declarations = Declarations };
     }
 
     /// <summary>
@@ -124,6 +122,7 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
         other is not null
         && (ReferenceEquals(this, other)
             || (ExpandsStars == other.ExpandsStars
+                && ReferenceEquals(Declarations, other.Declarations)
                 && Same(pseudo, other.pseudo, (a, b) => a.Name == b.Name && Same(a.Columns, b.Columns))
                 && Same(ctes, other.ctes, ReferenceEquals)
                 && Same(tableVariables, other.tableVariables, ReferenceEquals)

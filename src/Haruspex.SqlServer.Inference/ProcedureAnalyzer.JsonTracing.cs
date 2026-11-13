@@ -74,7 +74,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>The positions an insert's values go to: its column list's, or every column but an identity column.</summary>
     private List<int>? TableVariableTargets(string name, IList<ColumnReferenceExpression> listed)
     {
-        if (!tableVariableDefinitions.TryGetValue(name, out var table))
+        if (this.names.TableVariable(name)?.Declaration is not { } table)
             return null;
         var names = table.Columns.Select(c => c.Name).ToList();
         var targets = listed.Count == 0

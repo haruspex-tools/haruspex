@@ -1,7 +1,7 @@
 namespace Haruspex.SqlServer.Semantics;
 
 /// <summary>
-/// What a column reference means, as the one resolver (<see cref="Binder.Resolve"/>) finds it: a column of a table, a column
+/// What a column reference means, as the one resolver (<see cref="Binder.Resolve(Microsoft.SqlServer.TransactSql.ScriptDom.ColumnReferenceExpression, QueryScope)"/>) finds it: a column of a table, a column
 /// of a relation (listed or not), or why it can't be bound for certain, which is never a guess.
 /// </summary>
 /// <remarks>

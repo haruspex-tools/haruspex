@@ -103,12 +103,13 @@ internal sealed partial class ProcedureAnalyzer
         var select = function.Query;
         foreach (var parameter in function.Parameters)
             variableTypes[parameter.Name] = parameter.Type;
+        names = NameEnvironment.Empty.WithDeclarations(binder.Declarations(function.Parameters));
         var at = At(select);
         LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{function.Name}: {detail}", at));
 
         return WithCtes(
             select.WithCtesAndXmlNamespaces,
-            ReadScope.Statement(NameEnvironment.Empty, FlowState.Start([])),
+            ReadScope.Statement(names, FlowState.Start([])),
             scope =>
             {
                 if (select.QueryExpression is not { } query || ForOf(query) is not null)

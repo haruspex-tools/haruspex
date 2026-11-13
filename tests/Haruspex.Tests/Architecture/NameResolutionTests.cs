@@ -6,12 +6,15 @@ namespace Haruspex.Tests.Architecture;
 
 /// <summary>
 /// Names are resolved in Semantics only: which source a column reference or a qualifier means, and which relation a name in
-/// FROM reads, is the binder's to say (<see cref="Binder.Resolve"/>, <see cref="Binder.Bind"/>), and Inference attaches
+/// FROM reads, is the binder's to say (<see cref="Binder.Resolve(ColumnReferenceExpression, QueryScope)"/>, <see cref="Binder.Bind"/>), and Inference attaches
 /// values to what it bound. So no method of Inference reads the parts a resolver reads, as read from its IL.
 /// </summary>
 public class NameResolutionTests
 {
-    /// <summary>The members a resolver reads: a source's alias, a column reference's parts, a table reference's name or alias, a schema object name's parts.</summary>
+    /// <summary>
+    /// The members a resolver reads: a source's alias, a column reference's parts, a table reference's name or alias, a schema
+    /// object name's parts, and the names a body declares (a variable, a table variable, a cursor) or a statement gives a cursor.
+    /// </summary>
     private static readonly string[] ResolverReads =
     [
         $"{typeof(BoundSource).FullName}.get_{nameof(BoundSource.Alias)}",
@@ -22,26 +25,20 @@ public class NameResolutionTests
         $"{typeof(SchemaObjectName).FullName}.get_{nameof(SchemaObjectName.SchemaIdentifier)}",
         $"{typeof(SchemaObjectName).FullName}.get_{nameof(SchemaObjectName.DatabaseIdentifier)}",
         $"{typeof(SchemaObjectName).FullName}.get_{nameof(SchemaObjectName.ServerIdentifier)}",
+        $"{typeof(DeclareVariableElement).FullName}.get_{nameof(DeclareVariableElement.VariableName)}",
+        $"{typeof(DeclareTableVariableBody).FullName}.get_{nameof(DeclareTableVariableBody.VariableName)}",
+        $"{typeof(DeclareCursorStatement).FullName}.get_{nameof(DeclareCursorStatement.Name)}",
+        $"{typeof(CursorId).FullName}.get_{nameof(CursorId.Name)}",
     ];
 
-    /// <summary>The temporary table's name, which keys its state in the walk (<c>FlowState.Temps</c>) until it has a declaration of its own.</summary>
-    private const string TemporaryState = "A temporary table's state in the walk is keyed by its name, which this statement declares or names.";
-
     /// <summary>
-    /// The methods of Inference that read a schema object name's parts, and why: none finds a source or a column. Each says what
+    /// The methods of Inference that read a schema object name's parts or a declared variable's name, and why: none finds a
+    /// source, a column or a variable. Each says what
     /// it reads the name for; the test fails on a read not listed, and on a listing that reads nothing any more.
     /// </summary>
     private static readonly Dictionary<string, string> NameParts = new(StringComparer.Ordinal)
     {
-        ["ProcedureAnalyzer.Statement"] = TemporaryState + " (DROP TABLE)",
-        ["ProcedureAnalyzer.Created"] = TemporaryState + " (CREATE TABLE)",
-        ["ProcedureAnalyzer.Alter"] = TemporaryState + " (ALTER TABLE)",
-        ["ProcedureAnalyzer.SelectInto"] = TemporaryState + " (SELECT … INTO)",
-        ["ProcedureAnalyzer.IsTemporary"] = "Whether a name a statement declares or writes is a local temporary table's: one part and one #.",
-        ["ProcedureAnalyzer.FetchRow"] = "Which temporary tables a cursor's query reads, to ask whether any is restructured after its DECLARE.",
-        ["Restructures.Visit"] = "Which temporary tables the body alters, drops or creates, by the names those statements declare.",
-        ["CreateFinder.Add"] = "Which temporary tables a procedure creates, by the names its statements declare, for its callers' state.",
-        ["WriteFinder.Add"] = "Which temporary tables a procedure writes, for its callers' state.",
+        ["FunctionSummaries.Returned"] = "A scalar function's straight-line body read as one expression: each variable's last value substituted in the order the body declares and assigns them, not a name resolved.",
         ["DmlTriggers.Reaches"] = "The tables a view's definition names, whose triggers a write through the view fires; schema names get one rule of their own next.",
     };
 
@@ -51,7 +48,7 @@ public class NameResolutionTests
         var reads = MemberReads.Of(typeof(IrInference).Assembly.Location, _ => true)
             .Where(r => ResolverReads.Any(m => r.EndsWith(": " + m, StringComparison.Ordinal)))
             .ToList();
-        var unlisted = reads.Where(r => !(NameParts.ContainsKey(r[..r.IndexOf(':', StringComparison.Ordinal)]) && r.Contains(".SchemaObjectName.", StringComparison.Ordinal)));
+        var unlisted = reads.Where(r => !NameParts.ContainsKey(r[..r.IndexOf(':', StringComparison.Ordinal)]) || !(r.Contains(".SchemaObjectName.", StringComparison.Ordinal) || r.Contains(".DeclareVariableElement.", StringComparison.Ordinal)));
         var stale = NameParts.Keys.Where(m => !reads.Any(r => r.StartsWith(m + ":", StringComparison.Ordinal)));
 
         Assert.True(!unlisted.Any(), "Inference reads what only binding should:\n" + string.Join("\n", unlisted));

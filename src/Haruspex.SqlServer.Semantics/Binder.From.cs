@@ -286,7 +286,7 @@ public sealed partial class Binder
                 if (inline.Query.QueryExpression is not { } query || ForOf(query) is not null)
                     return null;
                 var binder = bindings.For(inline.Span);
-                var names = binder.BindWith(inline.Query.WithCtesAndXmlNamespaces, NameEnvironment.Empty).Names;
+                var names = binder.BindWith(inline.Query.WithCtesAndXmlNamespaces, NameEnvironment.Empty.WithDeclarations(bindings.Declarations(inline.Parameters, null, null, inline.Span))).Names;
                 return binder.Bind(query, null, names).Listed([]);
             }),
             TableFunction table => [.. table.Returns.Columns.Select(c => c.Name)],

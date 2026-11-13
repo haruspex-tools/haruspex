@@ -9,6 +9,22 @@ namespace Haruspex.SqlServer.Semantics;
 public sealed partial class Binder
 {
     /// <summary>
+    /// The local temporary table a name written as a table means: its name, when it is of one part and starts with one
+    /// <c>#</c>; null for any other. A global one (<c>##t</c>) is shared with every session, which may change it at any time,
+    /// so it is read as a permanent table is. The walk keeps what each holds by this name, and a body can create a given
+    /// <c>#t</c> once (observed: A_procedure_cannot_create_a_temporary_table_twice_even_after_dropping_it).
+    /// </summary>
+    /// <param name="name">The name as a statement writes it: <c>CREATE TABLE</c>, <c>DROP TABLE</c>, <c>SELECT … INTO</c>, a FROM.</param>
+    public static string? Temporary(SchemaObjectName name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        return name is { ServerIdentifier: null, DatabaseIdentifier: null, SchemaIdentifier: null, BaseIdentifier.Value: var own }
+            && own.StartsWith('#') && !own.StartsWith("##", StringComparison.Ordinal)
+            ? own
+            : null;
+    }
+
+    /// <summary>
     /// The objects a name written as the target of a write may mean, by the rule <see cref="Bind"/> resolves table names
     /// with: a schema-qualified name means itself; an unqualified one, the one table, view or synonym of that name if exactly
     /// one schema has it, every one of them if more do (which is written depends on the caller's default schema), and

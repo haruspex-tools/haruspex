@@ -21,6 +21,7 @@ public sealed class Bindings(DatabaseModel model)
     private readonly Dictionary<Key, object> bound = [];
     private readonly Dictionary<Module, IReadOnlyList<string>?> columns = new(ReferenceEqualityComparer.Instance);
     private readonly HashSet<Module> listing = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<object, BodyDeclarations> declarations = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>The model.</summary>
     public DatabaseModel Model { get; } = model ?? throw new ArgumentNullException(nameof(model));
@@ -28,6 +29,27 @@ public sealed class Bindings(DatabaseModel model)
     /// <summary>The binder of one body.</summary>
     /// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
     public Binder For(SourceSpan source) => new(this, source);
+
+    /// <summary>
+    /// What a body declares (<see cref="BodyDeclarations"/>), read once for each body, so that the names in force there, which
+    /// hold them, compare equal wherever they are made.
+    /// </summary>
+    /// <param name="parameters">The procedure's or function's parameters.</param>
+    /// <param name="body">Its statements; null for a body of one expression or query, which declares nothing.</param>
+    /// <param name="returnTable">A multi-statement function's return table, or null.</param>
+    /// <param name="source">Where the object whose body it is was read.</param>
+    public BodyDeclarations Declarations(IReadOnlyList<Parameter> parameters, StatementList? body, DeclaredTable? returnTable, SourceSpan source)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+        var key = body ?? (object)parameters;
+        if (!declarations.TryGetValue(key, out var found))
+        {
+            found = body is null ? BodyDeclarations.Of(parameters) : BodyDeclarations.Read(parameters, body, returnTable, source);
+            declarations[key] = found;
+        }
+
+        return found;
+    }
 
     /// <summary>What was bound for a fragment read inside <paramref name="outer"/> with <paramref name="names"/>, binding it the first time.</summary>
     internal T Once<T>(TSqlFragment fragment, QueryScope? outer, NameEnvironment names, Func<T> bind)

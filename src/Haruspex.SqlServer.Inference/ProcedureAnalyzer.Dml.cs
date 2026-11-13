@@ -277,9 +277,6 @@ internal sealed partial class ProcedureAnalyzer
 
     // ---- cursors --------------------------------------------------------------------------------------------------
 
-    /// <summary>Every cursor the body declares by name (<c>DECLARE c CURSOR</c>), with each of its declarations.</summary>
-    private readonly Dictionary<string, List<DeclareCursorStatement>> cursors = new(StringComparer.OrdinalIgnoreCase);
-
     /// <summary>
     /// <c>FETCH</c>. Without <c>INTO</c> it returns the row as a result set, with a column the server marks hidden
     /// (<c>ROWSTAT</c>), which SqlClient lists and a driver that honours the flag leaves out (observed:
@@ -325,7 +322,8 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private List<Value>? FetchRow(FetchCursorStatement fetch, FlowState state)
     {
-        if (fetch.Cursor?.Name?.Identifier is not { } name || !cursors.TryGetValue(name.Value, out var declared))
+        var declared = names.Declarations.Cursors(fetch.Cursor);
+        if (declared.Count == 0)
             return null;
 
         // FETCH … GLOBAL c names the global cursor; a declaration says GLOBAL, or takes the database's default, which may be
@@ -336,7 +334,7 @@ internal sealed partial class ProcedureAnalyzer
         if (candidates is not [var declaration] || declaration.CursorDefinition.Select is not { QueryExpression: QuerySpecification query } select)
             return null;
 
-        var temps = DmlTarget.NamesRead(query).Where(IsTemporary).Select(n => n.BaseIdentifier.Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var temps = DmlTarget.NamesRead(query).Select(Binder.Temporary).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (temps.Count > 0 && Restructured(temps, declaration))
             return null;
 
@@ -380,22 +378,35 @@ internal sealed partial class ProcedureAnalyzer
 
         public List<ExecuteSpecification> Calls { get; } = [];
 
-        public override void Visit(AlterTableStatement node) => Altered.Add(node.SchemaObjectName.BaseIdentifier.Value);
+        public override void Visit(AlterTableStatement node) => Add(Altered, node.SchemaObjectName);
 
         public override void Visit(DropTableStatement node)
         {
             foreach (var name in node.Objects)
-                Altered.Add(name.BaseIdentifier.Value);
+                Add(Altered, name);
         }
 
-        public override void Visit(CreateTableStatement node) => Created.Add((node.SchemaObjectName.BaseIdentifier.Value, node.FirstTokenIndex));
+        public override void Visit(CreateTableStatement node) => Create(node.SchemaObjectName, node);
 
         public override void Visit(SelectStatement node)
         {
             if (node.Into is not null)
-                Created.Add((node.Into.BaseIdentifier.Value, node.FirstTokenIndex));
+                Create(node.Into, node);
         }
 
         public override void Visit(ExecuteSpecification node) => Calls.Add(node);
+
+        // Only a local temporary table can be one a cursor reads that the walk follows, so only those are listed.
+        private static void Add(HashSet<string> names, SchemaObjectName name)
+        {
+            if (Binder.Temporary(name) is { } temporary)
+                names.Add(temporary);
+        }
+
+        private void Create(SchemaObjectName name, TSqlFragment statement)
+        {
+            if (Binder.Temporary(name) is { } temporary)
+                Created.Add((temporary, statement.FirstTokenIndex));
+        }
     }
 }

@@ -80,10 +80,12 @@ internal sealed partial class ProcedureAnalyzer
     /// The function's parameters, which are the same for every row its queries read, so a key compared with one is fixed, as
     /// in an inline function.
     /// </param>
-    public Value Return(ScalarExpression expression, IEnumerable<Parameter> parameters)
+    public Value Return(ScalarExpression expression, IReadOnlyList<Parameter> parameters)
     {
-        foreach (var parameter in parameters)
+        var declared = binder.Declarations(parameters);
+        foreach (var parameter in declared.Parameters)
             variableTypes[parameter.Name] = parameter.Type;
+        names = NameEnvironment.Empty.WithDeclarations(declared);
         return Expression(expression, ReadScope.Statement(names, FlowState.Start([])));
     }
 
@@ -352,7 +354,6 @@ internal sealed partial class ProcedureAnalyzer
         // Every built-in function, by the function table (ProcedureAnalyzer.FunctionTable.cs): the one path a call is typed by.
         _ when Function(expression, scope) is { } called => called,
         FunctionCall call when FunctionSummaries.Callee(call) is { } callee => CallFunction(call, callee, scope),
-        VariableReference variable when parameters.TryGetValue(variable.Name, out var parameter) => Branched(variable, parameter),
         VariableReference variable => Branched(variable, Variable(variable, scope)),
         IntegerLiteral literal => Integer(literal),
         StringLiteral literal => FromString(literal),

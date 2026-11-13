@@ -9,7 +9,7 @@ namespace Haruspex.SqlServer.Semantics;
 /// Binds the names in one body to what they mean: each query's FROM into a scope of sources (tables of the schema, the
 /// body's own relations, views and calls, each a <see cref="RelationSymbol"/>), with derived tables, <c>APPLY</c> sides and
 /// CTEs bound recursively into a tree (<see cref="BoundQuery"/>); each column reference to the column it reads
-/// (<see cref="Resolve"/>); each <c>EXEC</c> to the procedure it runs. Every reference it cannot bind for certain becomes a
+/// (<see cref="Resolve(ColumnReferenceExpression, QueryScope)"/>); each <c>EXEC</c> to the procedure it runs. Every reference it cannot bind for certain becomes a
 /// <see cref="BindingProblem"/>, never a guess.
 /// </summary>
 /// <remarks>
@@ -40,6 +40,13 @@ public sealed partial class Binder
     }
 
     private DatabaseModel Model => bindings.Model;
+
+    /// <summary>What a body declares, read once for each body (<see cref="Bindings.Declarations"/>).</summary>
+    /// <param name="parameters">The procedure's or function's parameters.</param>
+    /// <param name="body">Its statements; null for a body of one expression or query.</param>
+    /// <param name="returnTable">A multi-statement function's return table, or null.</param>
+    public BodyDeclarations Declarations(IReadOnlyList<Parameter> parameters, StatementList? body = null, DeclaredTable? returnTable = null) =>
+        bindings.Declarations(parameters, body, returnTable, source);
 
     // ---- queries ------------------------------------------------------------------------------------------------------
 

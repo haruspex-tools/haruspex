@@ -299,8 +299,9 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
 
         private void Add(SchemaObjectName name)
         {
-            if (name.BaseIdentifier.Value.StartsWith('#'))
-                Tables.Add(name.BaseIdentifier.Value);
+            // A caller's state keys only local temporary tables, so only those can be written there.
+            if (Binder.Temporary(name) is { } temporary)
+                Tables.Add(temporary);
         }
     }
 }
