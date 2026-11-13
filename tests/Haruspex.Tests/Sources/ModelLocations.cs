@@ -1,5 +1,6 @@
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Semantics;
 using Haruspex.SqlServer.Sources;
 
 namespace Haruspex.Tests.Sources;
@@ -81,7 +82,7 @@ internal static class ModelLocations
         foreach (var key in model.CascadingKeys)
             lines.Add($"cascading key {key.Referencing} to {key.Referenced} at {key.At}");
         foreach (var change in model.TableRedefinitions)
-            lines.Add($"table {change.Name} changed by {change.Statement} at {change.At}");
+            lines.Add($"table {change.Name} changed by {Redefinitions.Statement(change.Statement)} at {change.At}");
         foreach (var diagnostic in read.Diagnostics)
             lines.Add($"diagnostic {diagnostic}");
 
@@ -94,5 +95,5 @@ internal static class ModelLocations
 
     private static string AnsiNullsOff(bool off) => off ? ", ANSI_NULLS off" : "";
 
-    private static string Changed(Redefinition? redefinition) => redefinition is null ? "" : $", changed by {redefinition.Statement} at {redefinition.At}";
+    private static string Changed(Redefinition? redefinition) => redefinition is null ? "" : $", changed by {Redefinitions.Statement(redefinition.Statement)} at {redefinition.At}";
 }

@@ -10,6 +10,20 @@ public static class Redefinitions
     public static string Why(Redefinition redefinition)
     {
         ArgumentNullException.ThrowIfNull(redefinition);
-        return $"{redefinition.Name} is changed by {redefinition.Statement} at {redefinition.At}, and which definition applies depends on the order the scripts run.";
+        return $"{redefinition.Name} is changed by {Statement(redefinition.Statement)} at {redefinition.At}, and which definition applies depends on the order the scripts run.";
     }
+
+    /// <summary>The statement as T-SQL writes it, in capitals: <c>ALTER TABLE</c>, <c>DROP PROCEDURE</c>.</summary>
+    public static string Statement(RedefiningStatement statement) => statement switch
+    {
+        RedefiningStatement.AlterTable => "ALTER TABLE",
+        RedefiningStatement.DropTable => "DROP TABLE",
+        RedefiningStatement.AlterProcedure => "ALTER PROCEDURE",
+        RedefiningStatement.DropProcedure => "DROP PROCEDURE",
+        RedefiningStatement.AlterFunction => "ALTER FUNCTION",
+        RedefiningStatement.DropFunction => "DROP FUNCTION",
+        RedefiningStatement.CreateView => "CREATE VIEW",
+        RedefiningStatement.AlterView => "ALTER VIEW",
+        RedefiningStatement.CreateOrAlterView => "CREATE OR ALTER VIEW",
+    };
 }

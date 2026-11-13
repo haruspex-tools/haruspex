@@ -12,6 +12,6 @@ namespace Haruspex.SqlServer.Model;
 /// is a reader's job (<c>Redefinitions.Why</c> in Haruspex.SqlServer.Semantics).
 /// </remarks>
 /// <param name="Name">The object changed.</param>
-/// <param name="Statement">The statement, in capitals: <c>ALTER TABLE</c>, <c>DROP PROCEDURE</c>.</param>
+/// <param name="Statement">The kind of statement.</param>
 /// <param name="At">Where the statement is.</param>
-public sealed record Redefinition(ObjectName Name, string Statement, SourceLocation At);
+public sealed record Redefinition(ObjectName Name, RedefiningStatement Statement, SourceLocation At);

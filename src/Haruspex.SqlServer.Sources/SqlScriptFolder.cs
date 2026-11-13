@@ -132,11 +132,11 @@ public static class SqlScriptFolder
                         break;
                     case AlterProcedureStatement alter:
                         var altered = ModuleReader.Procedure(alter, relative) with { AnsiNullsOff = ansiNullsOff };
-                        procedureChanges.TryAdd(altered.Name, (Changed(altered.Name, "ALTER PROCEDURE", alter, relative), altered));
+                        procedureChanges.TryAdd(altered.Name, (Changed(altered.Name, RedefiningStatement.AlterProcedure, alter, relative), altered));
                         break;
                     case DropProcedureStatement drop:
                         foreach (var dropped in drop.Objects.Select(SyntaxReader.Name))
-                            procedureChanges.TryAdd(dropped, (Changed(dropped, "DROP PROCEDURE", drop, relative), null));
+                            procedureChanges.TryAdd(dropped, (Changed(dropped, RedefiningStatement.DropProcedure, drop, relative), null));
                         break;
                     // Objects a FROM clause can read besides tables: an unqualified name may resolve to one of them instead
                     // of to a table.
@@ -156,11 +156,11 @@ public static class SqlScriptFolder
                         break;
                     case AlterFunctionStatement alterFunction:
                         var alteredFunction = ModuleReader.Function(alterFunction, relative) with { AnsiNullsOff = ansiNullsOff };
-                        functionChanges.TryAdd(alteredFunction.Name, (Changed(alteredFunction.Name, "ALTER FUNCTION", alterFunction, relative), alteredFunction));
+                        functionChanges.TryAdd(alteredFunction.Name, (Changed(alteredFunction.Name, RedefiningStatement.AlterFunction, alterFunction, relative), alteredFunction));
                         break;
                     case DropFunctionStatement dropFunction:
                         foreach (var dropped in dropFunction.Objects.Select(SyntaxReader.Name))
-                            functionChanges.TryAdd(dropped, (Changed(dropped, "DROP FUNCTION", dropFunction, relative), null));
+                            functionChanges.TryAdd(dropped, (Changed(dropped, RedefiningStatement.DropFunction, dropFunction, relative), null));
                         break;
                     case CreateTypeUddtStatement alias when SyntaxReader.Type(alias.DataType) is { } baseType:
                         var aliasName = SyntaxReader.Name(alias.Name);
@@ -179,13 +179,13 @@ public static class SqlScriptFolder
                         break;
                     case AlterTableStatement alterTable when !OnlyTightens(alterTable):
                         var changedTable = SyntaxReader.Name(alterTable.SchemaObjectName);
-                        tableChanges.TryAdd(changedTable, Changed(changedTable, "ALTER TABLE", alterTable, relative));
+                        tableChanges.TryAdd(changedTable, Changed(changedTable, RedefiningStatement.AlterTable, alterTable, relative));
                         if (alterTable is AlterTableAddTableElementStatement addColumn)
                             CascadingKeys(changedTable, addColumn.Definition, relative, cascadingKeys);
                         break;
                     case DropTableStatement dropTable:
                         foreach (var dropped in dropTable.Objects.Select(SyntaxReader.Name))
-                            tableChanges.TryAdd(dropped, Changed(dropped, "DROP TABLE", dropTable, relative));
+                            tableChanges.TryAdd(dropped, Changed(dropped, RedefiningStatement.DropTable, dropTable, relative));
                         break;
                 }
             }
@@ -416,7 +416,7 @@ public static class SqlScriptFolder
         _ => false,
     };
 
-    private static Redefinition Changed(ObjectName name, string statement, TSqlFragment at, string file) =>
+    private static Redefinition Changed(ObjectName name, RedefiningStatement statement, TSqlFragment at, string file) =>
         new(name, statement, new SourceLocation(file, at.StartLine, at.StartColumn));
 
     private static TSqlScript? Parse(string path, string relative, List<Diagnostic> diagnostics)
@@ -437,12 +437,12 @@ public static class SqlScriptFolder
         return errors.Count == 0 ? fragment as TSqlScript : null;
     }
 
-    /// <summary>The statement a view's definition is, in capitals, as a <see cref="Redefinition"/> names it.</summary>
-    private static string ViewStatement(ViewStatementBody view) => view switch
+    /// <summary>The statement a view's definition is, as a <see cref="Redefinition"/> names it.</summary>
+    private static RedefiningStatement ViewStatement(ViewStatementBody view) => view switch
     {
-        AlterViewStatement => "ALTER VIEW",
-        CreateOrAlterViewStatement => "CREATE OR ALTER VIEW",
-        _ => "CREATE VIEW",
+        AlterViewStatement => RedefiningStatement.AlterView,
+        CreateOrAlterViewStatement => RedefiningStatement.CreateOrAlterView,
+        _ => RedefiningStatement.CreateView,
     };
 
     private static void Add<T>(Dictionary<ObjectName, T> into, ObjectName name, T value, TSqlFragment at, string file, List<Diagnostic> diagnostics)
