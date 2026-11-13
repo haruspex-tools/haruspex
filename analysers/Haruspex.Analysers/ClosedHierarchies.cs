@@ -39,11 +39,43 @@ internal static class ClosedHierarchies
         var cases = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
         foreach (var candidate in Types(root.ContainingAssembly.GlobalNamespace))
         {
-            if (!candidate.IsAbstract && Derives(candidate, root))
-                cases.Add(candidate);
+            if (!candidate.IsAbstract && Case(candidate, root) is { } found)
+                cases.Add(found);
         }
 
         return cases.ToImmutable();
+    }
+
+    /// <summary>
+    /// <paramref name="candidate"/> as a case of <paramref name="root"/>, or null when it is not one. A case of a generic
+    /// hierarchy is declared with type parameters of its own (<c>Done&lt;T&gt; : Ending&lt;T&gt;</c>), and a switch is over the
+    /// hierarchy with arguments (<c>Ending&lt;int&gt;</c>), whose cases are the declared ones with the same arguments
+    /// (<c>Done&lt;int&gt;</c>), which is what a pattern names. So the case is constructed with the arguments the root's base
+    /// gives each of its parameters; a case whose parameters the root doesn't fix is left out, as no pattern names it.
+    /// </summary>
+    private static INamedTypeSymbol? Case(INamedTypeSymbol candidate, INamedTypeSymbol root)
+    {
+        if (!root.IsGenericType || candidate.TypeParameters.IsEmpty)
+            return Derives(candidate, root) ? candidate : null;
+
+        for (var t = candidate.BaseType; t is not null; t = t.BaseType)
+        {
+            if (!SymbolEqualityComparer.Default.Equals(t.OriginalDefinition, root.OriginalDefinition))
+                continue;
+            var arguments = new ITypeSymbol?[candidate.TypeParameters.Length];
+            for (var i = 0; i < t.TypeArguments.Length; i++)
+            {
+                if (t.TypeArguments[i] is ITypeParameterSymbol parameter && SymbolEqualityComparer.Default.Equals(parameter.ContainingSymbol, candidate))
+                    arguments[parameter.Ordinal] = root.TypeArguments[i];
+            }
+
+            if (arguments.Any(a => a is null))
+                return null;
+            var constructed = candidate.Construct([.. arguments.OfType<ITypeSymbol>()]);
+            return Derives(constructed, root) ? constructed : null;
+        }
+
+        return null;
     }
 
     /// <summary>

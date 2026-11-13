@@ -160,4 +160,61 @@ public class ExhaustiveSwitchTests
             internal abstract record Inner { private protected Inner() { } }
             internal sealed record InnerCase : Inner;
             """));
+
+    /// <summary>A generic closed hierarchy, as an outcome of a step is: one case per way it ends, each with the hierarchy's argument.</summary>
+    private const string Generic = """
+        public abstract record Ending<T> { private protected Ending() { } }
+        public sealed record Done<T>(T Value) : Ending<T>;
+        public sealed record Stopped<T>(string Why) : Ending<T>;
+        """;
+
+    [Fact]
+    public async Task A_switch_over_a_generic_hierarchy_that_handles_every_case_needs_no_discard_arm() =>
+        Assert.Empty(await Errors(Generic + """
+            public static class Use
+            {
+                public static int Of(Ending<int> e) => e switch { Done<int> d => d.Value, Stopped<int> => 0 };
+                public static string Text<T>(Ending<T> e) => e switch { Done<T> => "done", Stopped<T> s => s.Why };
+                public static int Statement(Ending<string> e)
+                {
+                    switch (e)
+                    {
+                        case Done<string>:
+                            return 1;
+                        case Stopped<string>:
+                            return 2;
+                    }
+
+                    return 0;
+                }
+            }
+            """));
+
+    [Fact]
+    public async Task A_switch_over_a_generic_hierarchy_that_forgets_a_case_fails_the_build() =>
+        Assert.Equal(["CS8509", "HX0001"], await Errors(Generic + """
+            public static class Use
+            {
+                public static int Of(Ending<int> e) => e switch { Done<int> d => d.Value };
+                public static int Statement(Ending<string> e)
+                {
+                    switch (e)
+                    {
+                        case Done<string>:
+                            return 1;
+                    }
+
+                    return 0;
+                }
+            }
+            """));
+
+    [Fact]
+    public async Task A_discard_beside_every_case_of_a_generic_hierarchy_fails_the_build() =>
+        Assert.Equal(["HX0002"], await Errors(Generic + """
+            public static class Use
+            {
+                public static int Of(Ending<int> e) => e switch { Done<int> d => d.Value, Stopped<int> => 0, _ => throw new System.InvalidOperationException() };
+            }
+            """));
 }

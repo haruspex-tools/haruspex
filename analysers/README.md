@@ -9,7 +9,8 @@ A closed hierarchy is an abstract class of haruspex whose constructors no other 
 [decision 0031](../docs/decisions/0031-the-model-is-closed-hierarchies-of-records.md) writes them), so its cases are the
 types its own assembly derives from it. C# checks a switch over an enum for completeness but not one over such a class, so
 these do ([decision 0032](../docs/decisions/0032-a-switch-over-a-closed-hierarchy-is-exhaustive.md) argues why, and why not a
-package):
+package). A generic hierarchy is closed in the same way, and a switch over it with type arguments has as its cases the cases
+with the same arguments, which are what its patterns name:
 
 | Rule | What it says |
 |---|---|
