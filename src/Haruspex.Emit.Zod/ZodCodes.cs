@@ -19,4 +19,7 @@ public static class ZodCodes
 
     /// <summary>An imported name that the module also declares or uses.</summary>
     public static DiagnosticCode ImportClashes { get; } = new(5004, DiagnosticSeverity.Error, "An imported name the module also declares");
+
+    /// <summary>A named type that one result reads as rows and another as JSON, whose scalars arrive differently in each.</summary>
+    public static DiagnosticCode TwoEncodings { get; } = new(5005, DiagnosticSeverity.Error, "A type read both as rows and as JSON");
 }

@@ -12,8 +12,10 @@ namespace Haruspex.Emit.Zod.Planning;
 internal static class ZodPlanner
 {
     /// <summary>The plan for <paramref name="document"/>.</summary>
-    /// <returns>The plan; or, when a name is not an identifier or an import clashes, every such refusal.</returns>
-    /// <exception cref="InvalidOperationException">A named type that one result reads as rows and another as JSON, which the front end never makes: a fault.</exception>
+    /// <returns>
+    /// The plan; or, when a name is not an identifier, an import clashes or a type is read both as rows and as JSON, every
+    /// such refusal.
+    /// </returns>
     public static Outcome<ZodPlan> Plan(IrDocument document, ZodOptions options)
     {
         ArgumentNullException.ThrowIfNull(document);
@@ -48,9 +50,15 @@ internal static class ZodPlanner
                 RequireIdentifier(name, refusals);
 
                 // Scalars map differently by encoding (a date is a string in JSON, a Date in a row), so a type shared between
-                // encodings would need two schemas. The front end never shares one so.
+                // encodings would need two schemas. haruspex's front end never shares one so, but an IR is a file anything can
+                // write, so it is refused, as a name that isn't an identifier is.
                 if (graph.EncodingsOf(name) is not { Count: 1 } encodings)
-                    throw new InvalidOperationException($"The type {name} is used in both a rowset and a JSON result.");
+                {
+                    refusals.Add(ZodCodes.TwoEncodings.At(null, $"The type {name} is read both as rows and as JSON, so one schema can't check it."));
+                    declared.Add(name);
+                    continue;
+                }
+
                 entries.Add(new ZodPlanEntry.NamedType(name, document.Types[name], encodings.Single()));
                 declared.Add(name);
             }

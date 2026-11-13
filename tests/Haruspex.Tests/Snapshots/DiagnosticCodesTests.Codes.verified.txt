@@ -90,6 +90,7 @@ HAR5001 E An IR name isn't a TypeScript identifier [Haruspex.Emit.Zod.ZodCodes.B
 HAR5002 E An imported name isn't a TypeScript identifier [Haruspex.Emit.Zod.ZodCodes.BadImportName]
 HAR5003 E A name is imported from two modules [Haruspex.Emit.Zod.ZodCodes.ImportedTwice]
 HAR5004 E An imported name the module also declares [Haruspex.Emit.Zod.ZodCodes.ImportClashes]
+HAR5005 E A type read both as rows and as JSON [Haruspex.Emit.Zod.ZodCodes.TwoEncodings]
 HAR6001 E The command line doesn't parse [Haruspex.Cli.CliCodes.BadCommandLine]
 HAR6002 E The config file isn't there [Haruspex.Cli.CliCodes.ConfigNotFound]
 HAR6003 E No folder of SQL files is given [Haruspex.Cli.CliCodes.NoSource]

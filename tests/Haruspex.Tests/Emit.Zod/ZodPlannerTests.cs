@@ -138,7 +138,8 @@ public class ZodPlannerTests
     {
         var document = Document(new() { ["Shared"] = Type(Number) }, Procedure("s.rows", Rows("Shared")), Procedure("s.json", Json(new IrRef("Shared"))));
 
-        Assert.Equal("The type Shared is used in both a rowset and a JSON result.", Assert.Throws<InvalidOperationException>(() => Plan(document)).Message);
+        // haruspex's front end never makes one, but an IR is a file anything can write.
+        Assert.Equal("haruspex: error HAR5005: The type Shared is read both as rows and as JSON, so one schema can't check it.", Refused(document));
     }
 
     [Fact]

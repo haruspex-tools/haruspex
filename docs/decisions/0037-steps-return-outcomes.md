@@ -42,7 +42,6 @@ applicative validation, which the guide's chapter on the command line explains.
 | `ConfigReader`, a naming replacement | catches the regular expression constructor's `System.ArgumentException`, `System.NotSupportedException` | .NET reports a pattern it can't compile by throwing; it becomes a diagnostic (HAR3010) |
 | `NamingRules.Name` | catches `System.Text.RegularExpressions.RegexMatchTimeoutException` | .NET stops a match that runs too long by throwing; it becomes a naming problem (HAR4301, HAR4302) |
 | `ObjectPattern.Parse` | throws `System.FormatException` | for code that holds a pattern it knows is well formed, such as a test's; input from a user goes through `ObjectPattern.TryParse` |
-| `ZodPlanner.Plan` | throws `System.InvalidOperationException` for a type read both as rows and as JSON | the front end never makes one, so it is a fault |
 | the emitter's lowering and printing | throw `System.ArgumentOutOfRangeException` and `System.InvalidOperationException` for a value outside a closed set | a fault: each set is closed, and the plan refused what it can't write |
 | `Succeeded<T>`, `Failed<T>`, `DiagnosticCode` | throw `System.ArgumentException` | a step that builds an outcome that breaks its invariant, or a code outside its range, is a fault of that step |
 | `HaruspexCli`, writing the output | catches `System.IO.IOException`, `System.UnauthorizedAccessException` | a failed write becomes a diagnostic (HAR6008) and exit code 1 |
