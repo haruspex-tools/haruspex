@@ -5,10 +5,11 @@ type, whether it may be null or absent, its facets, and how many rows it has. It
 interpretation: each body is walked as SQL Server would run it, over descriptions of values rather than values, and
 anything not modelled is unknown, with a reason. The guide explains the ideas:
 [the shape of the problem](../../docs/internals/01-the-shape-of-the-problem.md),
+[abstract interpretation (the typer and the walker)](../../docs/internals/04-abstract-interpretation.md),
 [values as a lattice](../../docs/internals/05-values-as-a-lattice.md),
-[flow, joins and fixed points](../../docs/internals/06-flow-joins-and-fixed-points.md) and
-[summaries and recursion](../../docs/internals/07-summaries-and-recursion.md); its chapters on abstract interpretation and the
-type system are planned.
+[flow, joins and fixed points](../../docs/internals/06-flow-joins-and-fixed-points.md),
+[summaries and recursion](../../docs/internals/07-summaries-and-recursion.md) and
+[the SQL Server type system, as data](../../docs/internals/08-the-sql-server-type-system-as-data.md).
 
 ## How data flows through it
 
@@ -65,7 +66,9 @@ them gives: calls ("Calls" below), what filters and single-row queries prove ("R
 `VALUES` lists and views ("APPLY", "Views"), expressions ("Expressions", "CASE, IIF, CHOOSE and NULLIF", "Built-in
 functions", "Window functions"), table-valued functions, set operations and the other joins, `OPENJSON`, and JSON built in
 the project and traced to where it is read. The walk is `Walker.cs`, with `FlowState.cs` (the state and
-its join), `ReadScope.cs` (what each source a query binds holds, and the state it is read in) and `Lattice/` (the knowledge join of values, one lattice per fact, composed in `Value.Join`). Every engine rule it leans on is
+its join); what an expression or a query gives is `Typer.cs` and its parts, read in a `ReadScope.cs` (what each source a
+query binds holds, the state it is read in, what the conditions around it prove and the construct it is inside), and never
+in anything the walk holds (the guide's [chapter 4](../../docs/internals/04-abstract-interpretation.md)) and `Lattice/` (the knowledge join of values, one lattice per fact, composed in `Value.Join`). Every engine rule it leans on is
 observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`; the test names are given below. Each later section
 names its own code and its own test class. A construct's unit tests are in the class of the same family, in

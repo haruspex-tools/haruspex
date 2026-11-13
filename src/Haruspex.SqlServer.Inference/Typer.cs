@@ -14,7 +14,8 @@ namespace Haruspex.SqlServer.Inference;
 /// them, from the expression and the <see cref="ReadScope"/> it is read in, and nothing else. It holds no state of its own:
 /// its fields are what the body is read against (the model, its binding, the summaries of what it calls, a function's
 /// arguments), the same for every read, so reading an expression twice in one scope gives one value. The statement walk is
-/// the <see cref="Walker"/>'s.
+/// the <see cref="Walker"/>'s. The guide's chapter <c>docs/internals/04-abstract-interpretation.md</c> explains the split, and
+/// <c>docs/decisions/0035-the-typer-apart-from-the-walker.md</c> argues it.
 /// </summary>
 /// <remarks>
 /// Which table and column a reference reads is the <see cref="Binder"/>'s job (Haruspex.SqlServer.Semantics);

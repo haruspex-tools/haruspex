@@ -88,7 +88,7 @@ itself is not recursive, and is read once.
 
 A summary is a description of values, not a value: "an `int32`, never null", "an array of these objects, or absent". The
 guide calls such a description an **abstract value**, and the idea of computing with them **abstract interpretation**
-(chapters 4 and 5, planned, cover both properly). Four ideas about them are enough for this chapter.
+([chapter 4](04-abstract-interpretation.md) and [chapter 5](05-values-as-a-lattice.md) cover both properly). Four ideas about them are enough for this chapter.
 
 - **Descriptions are ordered by how much they allow.** "`int32`, never null" allows less than "`int32`, may be null", which
   allows less than "unknown". Allowing less is being more precise; it is never less sound, as long as every real value is

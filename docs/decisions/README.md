@@ -40,6 +40,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0032](0032-a-switch-over-a-closed-hierarchy-is-exhaustive.md) | 13 Nov 2026 | A switch over a closed hierarchy is exhaustive, and the build checks it |
 | [0033](0033-binding-is-on-demand-and-kept-for-each-set-of-names.md) | 13 Nov 2026 | Binding is on demand, and kept for each set of names |
 | [0034](0034-collections-that-compare-by-value-are-a-layer-of-their-own.md) | 13 Nov 2026 | Collections that compare by value are a layer of their own |
+| [0035](0035-the-typer-apart-from-the-walker.md) | 13 Nov 2026 | The typer apart from the walker: expressions as a function of their scope, statements as the flow |
 
 ## Writing a record
 

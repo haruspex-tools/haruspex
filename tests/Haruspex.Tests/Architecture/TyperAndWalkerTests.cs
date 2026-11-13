@@ -5,7 +5,8 @@ namespace Haruspex.Tests.Architecture;
 
 /// <summary>
 /// The typer holds no state and reads none of the walker's: an expression's value is a function of the expression, the scope
-/// it is read in (<see cref="ReadScope"/>) and what the typer was built with, the same for every read. So, read from the assembly, every field of the typer and of
+/// it is read in (<see cref="ReadScope"/>) and what the typer was built with, the same for every read
+/// (<c>docs/decisions/0035-the-typer-apart-from-the-walker.md</c>). So, read from the assembly, every field of the typer and of
 /// its collaborator <see cref="Cardinality"/> is readonly and none holds a walker, and no method of theirs (a lambda's, a local
 /// function's and a nested type's included) uses a member of the <see cref="Walker"/> or of a type nested in it: a field, a
 /// property, a method or a constructor.

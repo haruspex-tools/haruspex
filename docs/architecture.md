@@ -51,6 +51,12 @@ Why these lines:
   while inference is haruspex's own concern. Interpreting the schema belongs with binding, so other tools get
   "this column is never null" and "this column takes `open`, `held` or `closed`" without running inference
   (`SchemaRules.ColumnFacts`, `CheckReader`). Inference maps those facts into the IR; Semantics never sees it.
+- **Inside Inference, the typer is apart from the walker.** What an expression or a query gives is a compositional
+  semantics (`Typer`), a function of the expression, its `ReadScope` and readonly inputs; the state from statement to
+  statement, its joins and fixed points are a flow-sensitive one (`Walker`). The typer holds no state and reads none of the
+  walker's, which `TyperAndWalkerTests` reads the compiled code for; summaries are reached through one root (`Summaries`)
+  passed to each body read ([the guide](internals/04-abstract-interpretation.md),
+  [decision 0035](decisions/0035-the-typer-apart-from-the-walker.md)).
 - **Emitters see only the IR.** If an emitter needs something, the IR must carry it.
 - **Config transforms the IR; it never reaches into inference.** Overrides and naming apply to the document inference
   produced, so they work the same however it was produced, and an emitter never needs to know they existed. Inference

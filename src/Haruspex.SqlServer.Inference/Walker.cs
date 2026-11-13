@@ -15,7 +15,7 @@ namespace Haruspex.SqlServer.Inference;
 /// next, joining the states where paths meet, iterating a loop to a fixed point, and placing result sets where they are
 /// returned. What an expression or query gives is the <see cref="Typer"/>'s, asked with the state the statement starts from;
 /// what a call does is <see cref="ProcedureCalls"/>'. The guide's chapter <c>docs/internals/06-flow-joins-and-fixed-points.md</c>
-/// explains the walk.
+/// explains the walk, and <c>docs/internals/04-abstract-interpretation.md</c> its division from the typer.
 /// </summary>
 /// <remarks>
 /// The walk's own state is the paths it is following: the first statement that blocks it, the states at each RETURN, those
