@@ -21,7 +21,7 @@ public static class SchemaRules
     /// overrides it (observed on SQL Server 2025; kept as a differential test). A CHECK constraint never proves a
     /// column non-null, because a CHECK passes when its condition is UNKNOWN, as it is for null.</para>
     /// </remarks>
-    public static bool IsNeverNull(DatabaseModel model, Table table, Column column)
+    public static bool IsNeverNull(DatabaseModel model, ITable table, Column column)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(table);
@@ -39,7 +39,7 @@ public static class SchemaRules
     /// set of columns that no two rows share; SQL Server counts NULLs as equal in them, so at most one row has NULL in all
     /// of a key's nullable columns (observed).
     /// </summary>
-    public static IEnumerable<UniqueKey> EnforcedKeys(Table table)
+    public static IEnumerable<UniqueKey> EnforcedKeys(ITable table)
     {
         ArgumentNullException.ThrowIfNull(table);
         return table.UniqueKeys.Where(k => k.DisabledAt is null);
@@ -105,7 +105,7 @@ public static class SchemaRules
     /// Everything the schema guarantees about a column's non-null values: its type's facets narrowed by its CHECK
     /// constraints (see <see cref="CheckReader"/>). Null type when the column's type cannot be resolved.
     /// </summary>
-    public static ColumnFacts ColumnFacts(DatabaseModel model, Table table, Column column)
+    public static ColumnFacts ColumnFacts(DatabaseModel model, ITable table, Column column)
     {
         ArgumentNullException.ThrowIfNull(table);
         ArgumentNullException.ThrowIfNull(column);

@@ -55,15 +55,15 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     public bool ExpandsStars { get; }
 
     /// <summary>These names with the body's table variables, each as declared.</summary>
-    /// <param name="declarations">Each table variable's declaration (a table named by the variable, with no schema).</param>
-    public NameEnvironment WithTableVariables(IEnumerable<Table> declarations)
+    /// <param name="declarations">Each table variable's declaration.</param>
+    public NameEnvironment WithTableVariables(IEnumerable<DeclaredTable> declarations)
     {
         ArgumentNullException.ThrowIfNull(declarations);
         var table = tableVariables;
         foreach (var declaration in declarations)
         {
-            if (!table.ContainsKey(declaration.Name.Name))
-                table = table.Add(declaration.Name.Name, new TableVariable(declaration));
+            if (!table.ContainsKey(declaration.Name))
+                table = table.Add(declaration.Name, new TableVariable(declaration));
         }
 
         return new(ExpandsStars, pseudo, ctes, table, temporaryColumns);

@@ -6,7 +6,7 @@ namespace Haruspex.SqlServer.Semantics;
 /// What the schema guarantees about a column's non-null values: its type's facets (length, digits, range) and what
 /// its CHECK constraints prove (a value set, bounds, a minimum length). Every fact is something SQL Server enforces;
 /// anything not proved is left out, which only leaves the type wider. None says anything about null: a CHECK passes
-/// when its condition is UNKNOWN, so a constraint never rules null out (nullability is <see cref="SchemaRules.IsNeverNull(DatabaseModel, Table, Column)"/>'s).
+/// when its condition is UNKNOWN, so a constraint never rules null out (nullability is <see cref="SchemaRules.IsNeverNull(DatabaseModel, ITable, Column)"/>'s).
 /// </summary>
 /// <param name="Type">The column's type with any alias resolved, or null when it cannot be resolved.</param>
 /// <param name="Length">A string's length, from its type.</param>

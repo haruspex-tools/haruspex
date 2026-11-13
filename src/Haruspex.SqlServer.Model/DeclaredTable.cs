@@ -1,0 +1,35 @@
+using Haruspex.Diagnostics;
+
+namespace Haruspex.SqlServer.Model;
+
+/// <summary>
+/// A table a body declares for itself, which is not an object of the schema: a temporary table (<c>CREATE TABLE #t</c>), a
+/// table variable (<c>DECLARE @t TABLE</c>), or the table a multi-statement or CLR table-valued function returns. It is read
+/// as the schema's tables are, so the schema's rules apply to it (<see cref="ITable"/>), but it belongs to no schema: its name
+/// is the body's, with its sigil, and a fact its CHECK constraints prove is named by it (<c>#totals.ck_amount</c>).
+/// </summary>
+/// <param name="Name">Its name as the body writes it: <c>#t</c>, <c>@t</c>; a CLR function's table, which has no variable, the function's.</param>
+/// <param name="Span">Where its declaration is.</param>
+/// <param name="Columns">Its columns, in declaration order.</param>
+/// <param name="PrimaryKey">The names of its primary key's columns, in key order; empty when it has none.</param>
+/// <param name="Checks">Its CHECK constraints, in declaration order.</param>
+/// <param name="UniqueKeys">Its primary key, unique constraints and unique indexes.</param>
+public sealed record DeclaredTable(
+    string Name,
+    SourceSpan Span,
+    IReadOnlyList<Column> Columns,
+    IReadOnlyList<string> PrimaryKey,
+    IReadOnlyList<CheckConstraint> Checks,
+    IReadOnlyList<UniqueKey> UniqueKeys) : ITable
+{
+    /// <summary>Never: a body's tables can't be graph tables.</summary>
+    public bool IsGraph => false;
+
+    /// <summary>The column with this name, ignoring case as SQL Server does, or null.</summary>
+    /// <param name="name">The column's name.</param>
+    public Column? Column(string name) =>
+        Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>The table's name.</summary>
+    public override string ToString() => Name;
+}

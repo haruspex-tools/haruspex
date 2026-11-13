@@ -8,11 +8,8 @@ namespace Haruspex.SqlServer.Model;
 /// </summary>
 /// <remarks>
 /// <para>
-/// One kind is read for more than the schema: a table a body declares (<c>CREATE TABLE #t</c>, <c>DECLARE @t TABLE</c>) or a
-/// multi-statement function returns is read as a <see cref="Table"/> too, named by itself with no schema
-/// (<c>ObjectName("", "#t")</c>), so that the schema's rules (which columns are never null, what a CHECK constraint allows,
-/// which keys hold) apply to it unchanged. It is never in <see cref="DatabaseModel"/>, and it is not a schema object; why it
-/// isn't a type of its own yet is in decision 0031.
+/// A table a body declares for itself (<c>CREATE TABLE #t</c>, <c>DECLARE @t TABLE</c>) or a function returns is not one: it is
+/// a <see cref="DeclaredTable"/>, which the schema's rules read as they read a <see cref="Table"/> (<see cref="ITable"/>).
 /// </para>
 /// <para>
 /// A closed hierarchy: its constructor is not visible outside this assembly, so the kinds below are all there are, and a

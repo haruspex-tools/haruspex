@@ -176,6 +176,20 @@ public static class SyntaxReader
         return new Table(name, span, columns, primaryKey, checks, keys) { IsGraph = isGraph };
     }
 
+    /// <summary>
+    /// Reads the table a body declares for itself (<c>CREATE TABLE #t</c>, <c>DECLARE @t TABLE</c>, <c>ALTER TABLE #t ADD</c>, a
+    /// function's return table) as <see cref="Table(ObjectName, TableDefinition, SourceSpan, bool)"/> reads the schema's.
+    /// </summary>
+    /// <param name="name">The name the body gives it, with its sigil.</param>
+    /// <param name="definition">Its columns and constraints.</param>
+    /// <param name="span">Where the statement that declares it is.</param>
+    public static DeclaredTable Declared(string name, TableDefinition definition, SourceSpan span)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        var table = Table(new ObjectName("", name), definition, span);
+        return new DeclaredTable(name, table.Span, table.Columns, table.PrimaryKey, table.Checks, table.UniqueKeys);
+    }
+
     private static CheckConstraint Check(CheckConstraintDefinition check, string? column, SourceSpan span) =>
         new(check.ConstraintIdentifier?.Value, check.CheckCondition, column, check.NotForReplication, span.At(check));
 }

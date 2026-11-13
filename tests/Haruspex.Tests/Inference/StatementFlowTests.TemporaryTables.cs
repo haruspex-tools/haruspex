@@ -6,6 +6,16 @@ namespace Haruspex.Tests.Inference;
 public partial class StatementFlowTests
 {
     [Fact]
+    public void A_temporary_tables_computed_column_is_unknown_and_named_by_its_table()
+    {
+        // A body's table is in no schema, so its column is named as the body writes it: #t.b, not with an empty schema.
+        var unknown = Unknown(Procedure("CREATE TABLE #t (a int NOT NULL, b AS a * 2);\nSELECT t.b FROM #t AS t;"), "results[0][].b");
+
+        Assert.Equal(IrUnknownReason.UnsupportedSqlType, unknown.Reason);
+        Assert.Equal("#t.b is a computed column, which is not modelled yet.", unknown.Detail);
+    }
+
+    [Fact]
     public void A_temporary_table_is_read_as_it_was_created()
     {
         var doc = Procedure("""

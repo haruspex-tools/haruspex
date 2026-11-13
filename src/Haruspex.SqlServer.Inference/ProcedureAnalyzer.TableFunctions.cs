@@ -150,7 +150,7 @@ internal sealed partial class ProcedureAnalyzer
         var walked = function.Body is SqlBody body ? Walk(function.Parameters, body.Statements, table) : null;
         if (walked is { Blocker: null, End: { } end })
         {
-            var variable = table.Name.Name;
+            var variable = table.Name;
             values = [.. values.Select((v, i) => end.Json.TryGetValue($"{variable}.{table.Columns[i].Name}", out var slot) ? slot.Read(v) : v)];
         }
 

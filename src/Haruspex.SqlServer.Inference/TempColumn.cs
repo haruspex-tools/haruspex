@@ -21,7 +21,7 @@ namespace Haruspex.SqlServer.Inference;
 /// What a declared <c>nvarchar(max)</c> column holds as JSON, from every write to it; null when it is not traced,
 /// and it reads as its declaration.
 /// </param>
-internal sealed record TempColumn(string Name, Value Value, Table? Declaration, bool? Identity = false, JsonSlot? Json = null)
+internal sealed record TempColumn(string Name, Value Value, DeclaredTable? Declaration, bool? Identity = false, JsonSlot? Json = null)
 {
     /// <summary>What a read of the column gives: its value, holding the JSON its writes put in it.</summary>
     public Value Read => Json is { } slot ? slot.Read(Value) : Value;

@@ -54,7 +54,7 @@ public static class CheckReader
 {
     /// <summary>What <paramref name="check"/> proves about <paramref name="column"/>, or null when it proves nothing this reads.</summary>
     /// <returns>Facts with only <see cref="ColumnFacts.Min"/>, <see cref="ColumnFacts.Max"/>, <see cref="ColumnFacts.MinLength"/> and <see cref="ColumnFacts.Values"/> set.</returns>
-    public static ColumnFacts? Read(Table table, Column column, ResolvedType type, CheckConstraint check)
+    public static ColumnFacts? Read(ITable table, Column column, ResolvedType type, CheckConstraint check)
     {
         ArgumentNullException.ThrowIfNull(table);
         ArgumentNullException.ThrowIfNull(column);

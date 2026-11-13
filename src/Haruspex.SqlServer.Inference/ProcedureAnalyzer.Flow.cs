@@ -39,7 +39,7 @@ internal sealed partial class ProcedureAnalyzer
     private int appended;
 
     /// <summary>Each table variable's declaration, from every DECLARE in the body.</summary>
-    private readonly Dictionary<string, Table> tableVariableDefinitions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, DeclaredTable> tableVariableDefinitions = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Each scalar variable's declared type, from every DECLARE in the body.</summary>
     private readonly Dictionary<string, Shape> variableShapes = new(StringComparer.OrdinalIgnoreCase);
@@ -61,7 +61,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <param name="returnTable">
     /// A multi-statement function's return table, a table variable its body fills; null for a procedure.
     /// </param>
-    public Walked Walk(IReadOnlyList<Parameter> parameters, StatementList statements, Table? returnTable = null)
+    public Walked Walk(IReadOnlyList<Parameter> parameters, StatementList statements, DeclaredTable? returnTable = null)
     {
         // Declarations are compiled, not run (observed: a variable or table variable declared in a branch not taken still
         // exists), so they are collected from the whole body first. A name can be declared once in a batch.
@@ -97,10 +97,10 @@ internal sealed partial class ProcedureAnalyzer
             start.Add(new(name, Value.Computed(variableShapes[name], Because(IrNullRule.Variable, name, variableShapes[name]), live)));
         }
 
-        var declared = declarations.Tables.Select(t => SyntaxReader.Table(new ObjectName("", t.VariableName.Value), t.Definition, source.Within(t)));
+        var declared = declarations.Tables.Select(t => SyntaxReader.Declared(t.VariableName.Value, t.Definition, source.Within(t)));
         foreach (var definition in returnTable is null ? declared : declared.Prepend(returnTable))
         {
-            var name = definition.Name.Name;
+            var name = definition.Name;
             if (tableVariables.ContainsKey(name))
                 continue;
             tableVariableDefinitions[name] = definition;
@@ -787,7 +787,7 @@ internal sealed partial class ProcedureAnalyzer
     private KnownTable Created(CreateTableStatement create)
     {
         var name = create.SchemaObjectName.BaseIdentifier.Value;
-        var definition = SyntaxReader.Table(new ObjectName("", name), create.Definition, source.Within(create));
+        var definition = SyntaxReader.Declared(name, create.Definition, source.Within(create));
         return new KnownTable(name, [.. definition.Columns.Select(c => Fresh(definition, c, name, c.IsIdentity, null))]);
     }
 
@@ -796,7 +796,7 @@ internal sealed partial class ProcedureAnalyzer
     /// yet, unless its rows were given values at <paramref name="filled"/> (a column added with a default, or one whose type
     /// changed), which are not read.
     /// </summary>
-    private TempColumn Fresh(Table definition, Column column, string name, bool? identity, SourceLocation? filled)
+    private TempColumn Fresh(DeclaredTable definition, Column column, string name, bool? identity, SourceLocation? filled)
     {
         var value = Declared(definition, column, name, temporary: true);
         var json = !Traced(value) || column.IsComputed ? null
@@ -809,7 +809,7 @@ internal sealed partial class ProcedureAnalyzer
     /// What a declared column of a temporary table or table variable holds: its type, with the facts its CHECK constraints
     /// prove, and null unless its declaration (NOT NULL, the primary key, IDENTITY) rules it out.
     /// </summary>
-    private Value Declared(Table table, Column column, string name, bool temporary)
+    private Value Declared(DeclaredTable table, Column column, string name, bool temporary)
     {
         var where = $"{name}.{column.Name}";
         EquatableArray<IrNullReason> because = SchemaRules.IsNeverNull(model, table, column) ? [] : [new IrNullReason(IrNullRule.NullableColumn, where)];
@@ -826,7 +826,7 @@ internal sealed partial class ProcedureAnalyzer
         if (!column.IsComputed && SchemaRules.ResolveType(model, column.Type)?.Type == BuiltInType.Json)
             return new Value(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{where} is a json column: its shape is in the data.", column.At), because, IsLiveJson: true);
 
-        var shape = ColumnShape(table, column);
+        var shape = ColumnShape(table, table.Name, column);
         return shape is UnknownShape unknown ? Value.Unknown(unknown) : Value.Computed(shape, because);
     }
 
@@ -843,7 +843,7 @@ internal sealed partial class ProcedureAnalyzer
             {
                 // A new column's declaration is read like CREATE TABLE's. Constraints added on existing columns are not
                 // read, which only claims less. WITH NOCHECK leaves the new columns' own checks unproved for the rows there.
-                var definition = SyntaxReader.Table(new ObjectName("", name), add.Definition, source.Within(alter));
+                var definition = SyntaxReader.Declared(name, add.Definition, source.Within(alter));
                 if (add.ExistingRowsCheckEnforcement == ConstraintEnforcement.NoCheck)
                     definition = Disabled(definition, null, at);
                 return state.WithTemp(name, table with
@@ -868,7 +868,7 @@ internal sealed partial class ProcedureAnalyzer
                     ComputedExpression: null,
                     at,
                     change.Collation?.Value);
-                var definition = new Table(new ObjectName("", name), source.Within(alter), [column], [], [], []);
+                var definition = new DeclaredTable(name, source.Within(alter), [column], [], [], []);
                 var columns = table.Columns.ToList();
                 columns[i] = Fresh(definition, column, name, table.Columns[i].Identity, at);
                 return state.WithTemp(name, table with { Columns = [.. columns] });
@@ -941,7 +941,7 @@ internal sealed partial class ProcedureAnalyzer
     /// The table with the checks a statement may have disabled marked so. The copy keeps no unique keys: a key is not followed
     /// past a change to its table's constraints, which only claims less.
     /// </summary>
-    private static Table Disabled(Table table, Func<CheckConstraint, bool>? which, SourceLocation at) =>
+    private static DeclaredTable Disabled(DeclaredTable table, Func<CheckConstraint, bool>? which, SourceLocation at) =>
         table with { Checks = [.. table.Checks.Select(k => which is null || which(k) ? k with { DisabledAt = at } : k)], UniqueKeys = [] };
 
     // ---- CTEs -----------------------------------------------------------------------------------------------------

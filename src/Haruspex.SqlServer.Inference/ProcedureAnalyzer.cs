@@ -414,12 +414,15 @@ internal sealed partial class ProcedureAnalyzer
                 IsLiveJson: true);
         }
 
-        return Value.Computed(ColumnShape(table, column), [.. because]);
+        return Value.Computed(ColumnShape(table, table.Name.ToString(), column), [.. because]);
     }
 
     /// <summary>A column's shape when it is not null.</summary>
-    private Shape ColumnShape(Table table, Column column) => column.IsComputed
-        ? new UnknownShape(IrUnknownReason.UnsupportedSqlType, $"{table.Name}.{column.Name} is a computed column, which is not modelled yet.", column.At)
+    /// <param name="table">The column's table, of the schema or the body's own.</param>
+    /// <param name="named">The table's name, as a message gives it: <c>sales.orders</c>, <c>#totals</c>.</param>
+    /// <param name="column">The column.</param>
+    private Shape ColumnShape(ITable table, string named, Column column) => column.IsComputed
+        ? new UnknownShape(IrUnknownReason.UnsupportedSqlType, $"{named}.{column.Name} is a computed column, which is not modelled yet.", column.At)
         : SqlTypes.ToShape(SchemaRules.ColumnFacts(model, table, column), column.Type, column.At);
 
     /// <summary>

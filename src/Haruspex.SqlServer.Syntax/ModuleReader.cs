@@ -128,9 +128,6 @@ public static class ModuleReader
     /// The table a multi-statement function returns: its variable's declaration, read as any table variable's is. A CLR
     /// function declares its table with no variable, so its table is named as the function is.
     /// </summary>
-    private static Table ReturnTable(ObjectName function, DeclareTableVariableBody declaration, SourceSpan within) =>
-        SyntaxReader.Table(
-            declaration.VariableName is { } variable ? new ObjectName("", variable.Value) : function,
-            declaration.Definition,
-            within.Within(declaration));
+    private static DeclaredTable ReturnTable(ObjectName function, DeclareTableVariableBody declaration, SourceSpan within) =>
+        SyntaxReader.Declared(declaration.VariableName?.Value ?? function.ToString(), declaration.Definition, within.Within(declaration));
 }

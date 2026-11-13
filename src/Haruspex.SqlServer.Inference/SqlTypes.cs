@@ -144,9 +144,8 @@ internal static class SqlTypes
     private static IrFactSource Source(FactSource from) => from switch
     {
         TypeSource type => new IrFactSource(IrFactSourceKind.Type, type.Type),
-        CheckSource { Check.Name: { } name } check when check.Table.Name.Name.StartsWith('#') || check.Table.Name.Name.StartsWith('@')
-            => new IrFactSource(IrFactSourceKind.Check, $"{check.Table.Name.Name}.{name}"),
-        CheckSource { Check.Name: { } name } check => new IrFactSource(IrFactSourceKind.Check, $"{check.Table.Name.Schema}.{name}"),
+        CheckSource { Check.Name: { } name, Table: DeclaredTable table } => new IrFactSource(IrFactSourceKind.Check, $"{table.Name}.{name}"),
+        CheckSource { Check.Name: { } name, Table: Table table } => new IrFactSource(IrFactSourceKind.Check, $"{table.Name.Schema}.{name}"),
         CheckSource check => new IrFactSource(IrFactSourceKind.Check, check.Check.At.ToString()),
     };
 

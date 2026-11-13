@@ -26,7 +26,7 @@ public sealed record Table(
     IReadOnlyList<Column> Columns,
     IReadOnlyList<string> PrimaryKey,
     IReadOnlyList<CheckConstraint> Checks,
-    IReadOnlyList<UniqueKey> UniqueKeys) : SchemaObject(Name, Span)
+    IReadOnlyList<UniqueKey> UniqueKeys) : SchemaObject(Name, Span), ITable
 {
     /// <summary>
     /// Whether it is a graph table (<c>AS NODE</c> or <c>AS EDGE</c>), whose <c>SELECT *</c> includes pseudo-columns the

@@ -49,6 +49,11 @@ files are listed. Records give the model immutability and `with`; their equality
 list or a ScriptDom fragment compares it by reference, and an object's identity is its name (`SqlType`, a value, compares its
 arguments item by item).
 
+**Amended 13 Nov 2026, again.** The alternative of a table's declaration apart from the table was taken when binding came to
+bind a body's own tables: a `#t`, an `@t` and a function's return table are each a `DeclaredTable`, named by the body with its
+sigil and in no schema, and the schema's rules read a `Table` or a `DeclaredTable` alike through `ITable`. The IR names a
+check's fact by which it is, and a message about a body's column names its table as the body writes it.
+
 **Amended 13 Nov 2026.** "The compiler checks the rest" overstated it. The compiler checks a reader's fields, but not that a
 `switch` over the kinds handles each: it can't know a hierarchy is closed, so every such switch needed a discard arm, and a
 kind added later failed only at run time. Decision [0032](0032-a-switch-over-a-closed-hierarchy-is-exhaustive.md) closes the
