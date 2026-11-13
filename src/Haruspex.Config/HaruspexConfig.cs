@@ -1,3 +1,5 @@
+using Haruspex.Collections;
+
 namespace Haruspex.Config;
 
 /// <summary>A config file, read and checked: what <c>haruspex.json</c> says, with where each part was written.</summary>
@@ -19,7 +21,7 @@ public sealed record HaruspexConfig
     public string? Out { get; init; }
 
     /// <summary>The settings of each schema (<c>schemas</c>), in the order written: selection, prefix and naming.</summary>
-    public IReadOnlyList<SchemaSettings> Schemas { get; init; } = [];
+    public EquatableArray<SchemaSettings> Schemas { get; init; } = [];
 
     /// <summary>How result objects treat keys their type does not list.</summary>
     public ObjectsPolicy Objects { get; init; } = ObjectsPolicy.Strip;
@@ -49,7 +51,7 @@ public sealed record HaruspexConfig
     public NamingRules NamingFor(string schema) => Schema(schema) is { } settings ? Naming.For(settings.Naming, settings.Prefix) : Naming;
 
     /// <summary>The per-procedure overrides, in the order written.</summary>
-    public IReadOnlyList<ProcedureOverride> Procedures { get; init; } = [];
+    public EquatableArray<ProcedureOverride> Procedures { get; init; } = [];
 
     /// <summary>The settings that apply when there is no config file: nothing selected, every default.</summary>
     public static HaruspexConfig None(string directory, ReservedWords? reserved = null) =>

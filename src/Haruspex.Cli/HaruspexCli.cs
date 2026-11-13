@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Haruspex.Collections;
 using Haruspex.Config;
 using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod;
@@ -97,7 +98,7 @@ internal static class HaruspexCli
             new Request(
                 parsed.GetValue(directory),
                 parsed.GetValue(config),
-                parsed.GetValue(include) ?? [],
+                [.. parsed.GetValue(include) ?? []],
                 parsed.GetValue(outDirectory),
                 workingDirectory),
             output,
@@ -109,7 +110,7 @@ internal static class HaruspexCli
         };
     }
 
-    private sealed record Request(string? Directory, string? Config, string[] Include, string? Out, string WorkingDirectory)
+    private sealed record Request(string? Directory, string? Config, EquatableArray<string> Include, string? Out, string WorkingDirectory)
     {
         public string Resolve(string path) => Path.GetFullPath(Path.Combine(WorkingDirectory, path));
     }

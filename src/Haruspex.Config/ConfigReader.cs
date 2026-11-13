@@ -76,7 +76,7 @@ public static class ConfigReader
         var config = reader.Root(root, directory);
 
         // A warning (a JSON Schema keyword in a declaration that is not checked) leaves the config usable.
-        return new(reader.Problems.Any(p => p.Severity == ConfigSeverity.Error) ? null : config, reader.Problems);
+        return new(reader.Problems.Any(p => p.Severity == ConfigSeverity.Error) ? null : config, [.. reader.Problems]);
     }
 
     private sealed class Checker(string file, string directory, ReservedWords reserved)
@@ -106,7 +106,7 @@ public static class ConfigReader
                             config = config with { Out = Path.GetFullPath(Path.Combine(directory, output)) };
                         break;
                     case "schemas":
-                        config = config with { Schemas = Schemas(member.Value, path) };
+                        config = config with { Schemas = [.. Schemas(member.Value, path)] };
                         break;
                     case "objects":
                         if (Choice(member.Value, path, "strip", "strict") is { } objects)
@@ -117,7 +117,7 @@ public static class ConfigReader
                         config = config with { Naming = new NamingRules(naming.Replace, naming.Case ?? NamingCase.Pascal), NamingAt = naming.At };
                         break;
                     case "procedures":
-                        config = config with { Procedures = Procedures(member.Value, path) };
+                        config = config with { Procedures = [.. Procedures(member.Value, path)] };
                         break;
                     default:
                         Unknown(member, path, "$schema, source, out, schemas, objects, naming, procedures");
@@ -162,11 +162,11 @@ public static class ConfigReader
                     switch (setting.Name)
                     {
                         case "include":
-                            schema = schema with { Include = Patterns(setting.Value, settingPath, requireOne: true) };
+                            schema = schema with { Include = [.. Patterns(setting.Value, settingPath, requireOne: true)] };
                             break;
                         case "exclude":
                             exclude = setting;
-                            schema = schema with { Exclude = Patterns(setting.Value, settingPath, requireOne: false) };
+                            schema = schema with { Exclude = [.. Patterns(setting.Value, settingPath, requireOne: false)] };
                             break;
                         case "prefix":
                             schema = schema with { Prefix = String(setting.Value, settingPath) ?? "" };
@@ -232,7 +232,7 @@ public static class ConfigReader
                 switch (member.Name)
                 {
                     case "replace":
-                        naming = naming with { Replace = Replacements(member.Value, memberPath) };
+                        naming = naming with { Replace = [.. Replacements(member.Value, memberPath)] };
                         break;
                     case "case":
                         if (Choice(member.Value, memberPath, "pascal", "camel", "preserve") is { } style)
@@ -387,7 +387,7 @@ public static class ConfigReader
                     declared = Declared(results, Child(procedurePath, "results"), declaredName.ToString(), why ?? "");
 
                 if (procedure is not null)
-                    procedures.Add(new ProcedureOverride(procedure, name, paths, at, nameAt) { Results = declared });
+                    procedures.Add(new ProcedureOverride(procedure, name, [.. paths], at, nameAt) { Results = declared });
             }
 
             return procedures;
@@ -427,7 +427,7 @@ public static class ConfigReader
                     break;
             }
 
-            return Problems.Count(p => p.Severity == ConfigSeverity.Error) == errors ? new ResultsDeclaration([.. results], types, why, at) : null;
+            return Problems.Count(p => p.Severity == ConfigSeverity.Error) == errors ? new ResultsDeclaration([.. results], [.. types], why, at) : null;
         }
 
         private IrResult? Result(JsonObjectValue result, string path, int index, string procedure, Dictionary<string, IrObjectType> types)

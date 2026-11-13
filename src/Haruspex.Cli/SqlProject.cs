@@ -50,7 +50,7 @@ internal sealed class SqlProject
     {
         ArgumentNullException.ThrowIfNull(include);
         var (procedures, _) = ProcedureSelection.Select(Procedures, include, HaruspexConfig.None("."));
-        return new Selection(procedures, [.. include.Where(i => !Procedures.Any(i.Matches))]);
+        return new Selection([.. procedures], [.. include.Where(i => !Procedures.Any(i.Matches))]);
     }
 
     /// <summary>

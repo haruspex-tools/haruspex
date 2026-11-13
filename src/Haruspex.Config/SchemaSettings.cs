@@ -1,3 +1,5 @@
+using Haruspex.Collections;
+
 namespace Haruspex.Config;
 
 /// <summary>
@@ -9,10 +11,10 @@ namespace Haruspex.Config;
 public sealed record SchemaSettings(string Name, ConfigLocation At)
 {
     /// <summary>Which of its procedures to type, by their own names; null when the block has no include, so it selects nothing.</summary>
-    public IReadOnlyList<NamePatternEntry>? Include { get; init; }
+    public EquatableArray<NamePatternEntry>? Include { get; init; }
 
     /// <summary>Which of the included procedures to leave out.</summary>
-    public IReadOnlyList<NamePatternEntry> Exclude { get; init; } = [];
+    public EquatableArray<NamePatternEntry> Exclude { get; init; } = [];
 
     /// <summary>Put in front of the names of its objects, before the case rules; empty by default.</summary>
     public string Prefix { get; init; } = "";

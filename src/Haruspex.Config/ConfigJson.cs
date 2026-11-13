@@ -64,12 +64,12 @@ internal static class ConfigJson
                     members.Add(new JsonMember(name, Read(ref reader, positions, memberPath), keyLine, keyColumn));
                 }
 
-                return new JsonObjectValue(members, line, column);
+                return new JsonObjectValue([.. members], line, column);
             case JsonTokenType.StartArray:
                 var items = new List<JsonValue>();
                 while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
                     items.Add(Read(ref reader, positions, ConfigPath.Index(path, items.Count)));
-                return new JsonArrayValue(items, line, column);
+                return new JsonArrayValue([.. items], line, column);
             case JsonTokenType.String:
                 return new JsonStringValue(reader.GetString()!, line, column);
             default:

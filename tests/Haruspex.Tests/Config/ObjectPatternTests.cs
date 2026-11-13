@@ -32,4 +32,10 @@ public class ObjectPatternTests
         Assert.False(ObjectPattern.TryParse(pattern, out _, out var error));
         Assert.False(string.IsNullOrEmpty(error));
     }
+
+    [Fact]
+    public void Its_equality_keeps_the_laws() =>
+        // A pattern is its text: the same text parsed twice is one pattern, and another spelling is another, though it may
+        // match the same names.
+        EqualityLaws.Hold([ObjectPattern.Parse("sales.*"), ObjectPattern.Parse("sales.*"), ObjectPattern.Parse("SALES.*"), ObjectPattern.Parse("*.list_*"), ObjectPattern.Parse("*.list_*")]);
 }

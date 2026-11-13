@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using Haruspex.Collections;
 using Haruspex.Ir;
 
 namespace Haruspex.Config;
@@ -25,7 +26,7 @@ namespace Haruspex.Config;
 /// <c>prefix</c> on one schema or a <c>name</c> override, so a name never depends on which other objects exist
 /// (docs/decisions/0011-generated-names-leave-the-schema-out.md).</para>
 /// </remarks>
-public sealed record NamingRules(IReadOnlyList<NamingReplacement> Replace, NamingCase Case, string Prefix = "")
+public sealed record NamingRules(EquatableArray<NamingReplacement> Replace, NamingCase Case, string Prefix = "")
 {
     /// <summary>No replacements, no prefix, Pascal case.</summary>
     public static NamingRules Default { get; } = new([], NamingCase.Pascal);

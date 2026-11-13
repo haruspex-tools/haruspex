@@ -135,4 +135,15 @@ public class NamingRulesTests
     [InlineData("#", "Unnamed")]
     public void A_key_becomes_a_pascal_part(string key, string expected) =>
         Assert.Equal(expected, NamingRules.Part(key));
+
+    [Fact]
+    public void A_rules_equality_keeps_the_laws()
+    {
+        // A compiled expression compares by reference, so a rule compares its expression's text and options.
+        EqualityLaws.Hold([
+            Rule("^tbl", ""), Rule("^tbl", ""), Rule("^tbl", "x"), Rule("^TBL", ""),
+            new NamingReplacement(new Regex("^tbl", RegexOptions.NonBacktracking | RegexOptions.IgnoreCase), "", null),
+        ]);
+        EqualityLaws.Hold([Rules(replace: [("^tbl", "")]), Rules(replace: [("^tbl", "")]), Rules(replace: [("^tbl", "x")])]);
+    }
 }

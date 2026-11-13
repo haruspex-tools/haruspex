@@ -149,7 +149,7 @@ public static class ConfigApplication
 
         var settler = new NameSettler(config, types, procedureNames, applier.Names, problems);
         var named = problems.Any(p => p.Severity == ConfigSeverity.Error) ? null : settler.Settle(document with { Unknowns = [.. unknowns] }, results);
-        return new ConfigApplied(named is null ? null : named with { Overrides = [.. document.Overrides, .. claims] }, problems);
+        return new ConfigApplied(named is null ? null : named with { Overrides = [.. document.Overrides, .. claims] }, [.. problems]);
 
         // A declaration of results haruspex infers: an error if they differ, a warning if not (it can go).
         void Check(ProcedureOverride entry, string id, IReadOnlyList<IrResult> inferred, IReadOnlyDictionary<string, IrObjectType> inferredTypes)

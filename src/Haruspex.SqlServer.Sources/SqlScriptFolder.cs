@@ -77,6 +77,6 @@ public static class SqlScriptFolder
                 new ScriptReader(script.Relative, declarations).Read(parsed);
         }
 
-        return new SchemaReadResult(declarations.ToModel(), declarations.Diagnostics);
+        return new SchemaReadResult(declarations.ToModel(), [.. declarations.Diagnostics]);
     }
 }

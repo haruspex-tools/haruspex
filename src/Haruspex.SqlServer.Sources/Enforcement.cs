@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 
@@ -11,7 +12,7 @@ namespace Haruspex.SqlServer.Sources;
 /// <param name="At">Where it is.</param>
 /// <param name="Order">Its position among all such statements, in reading order.</param>
 /// <param name="TopLevel">Whether it is a statement of a batch, rather than inside IF, a block, or a body.</param>
-internal sealed record Enforcement(ObjectName Table, bool Qualified, bool Validates, IReadOnlyList<string>? Constraints, SourceLocation At, int Order, bool TopLevel)
+internal sealed record Enforcement(ObjectName Table, bool Qualified, bool Validates, EquatableArray<string>? Constraints, SourceLocation At, int Order, bool TopLevel)
 {
     /// <summary>
     /// Whether it may be about this table: the one it names, or, when its name has no schema, any table of that

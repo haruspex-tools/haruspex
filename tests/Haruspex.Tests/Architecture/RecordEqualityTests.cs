@@ -46,6 +46,9 @@ public class RecordEqualityTests
     private static readonly Dictionary<string, string> OwnEquality = new(StringComparer.Ordinal)
     {
         ["Haruspex.Collections.EquatableArray`1"] = "EquatableArrayTests.Equality_is_reflexive_symmetric_and_transitive_and_equal_sequences_hash_equal",
+        ["Haruspex.Config.NamePattern"] = "NamePatternTests.Its_equality_keeps_the_laws",
+        ["Haruspex.Config.NamingReplacement"] = "NamingRulesTests.A_rules_equality_keeps_the_laws",
+        ["Haruspex.Config.ObjectPattern"] = "ObjectPatternTests.Its_equality_keeps_the_laws",
         ["Haruspex.Collections.EquatableMap`2"] = "EquatableMapTests.Equality_is_reflexive_symmetric_and_transitive_and_equal_maps_hash_equal",
         ["Haruspex.Ir.IrDocument"] = "IrJsonReaderTests.A_document_read_equals_one_whose_sorted_lists_were_in_another_order",
         ["Haruspex.SqlServer.Inference.CallContext"] = "ValueEqualityTests.The_equality_of_call_contexts_keeps_the_laws",
@@ -61,29 +64,13 @@ public class RecordEqualityTests
     /// </summary>
     private static readonly Dictionary<string, string> NotCompared = new(StringComparer.Ordinal)
     {
+        ["Haruspex.Emit.Zod.Planning.ZodPlan"] = "A stage's output, handed to the next once: nothing compares two plans.",
         ["Haruspex.SqlServer.Semantics.Binder+Adding"] = "A builder of one query's sources: each copy adds to the one list, and nothing compares two.",
     };
 
     /// <summary>Records still holding a collection that compares by reference, by full name, until each is swept.</summary>
     private static readonly HashSet<string> NotYetSwept = new(StringComparer.Ordinal)
     {
-        "Haruspex.Cli.HaruspexCli+Request",
-        "Haruspex.Cli.Selection",
-        "Haruspex.Config.ConfigApplied",
-        "Haruspex.Config.ConfigReadResult",
-        "Haruspex.Config.HaruspexConfig",
-        "Haruspex.Config.JsonArrayValue",
-        "Haruspex.Config.JsonObjectValue",
-        "Haruspex.Config.NamePatternEntry",
-        "Haruspex.Config.NamingReplacement",
-        "Haruspex.Config.NamingRules",
-        "Haruspex.Config.ProcedureOverride",
-        "Haruspex.Config.ResultsDeclaration",
-        "Haruspex.Config.SchemaNaming",
-        "Haruspex.Config.SchemaSettings",
-        "Haruspex.Config.SelectionResult",
-        "Haruspex.Emit.Zod.Planning.ZodPlan",
-        "Haruspex.SqlServer.Inference.DeclaredResults",
         "Haruspex.SqlServer.Inference.Facts+Frame",
         "Haruspex.SqlServer.Inference.FunctionTyping",
         "Haruspex.SqlServer.Inference.ProcedureAnalysis",
@@ -95,8 +82,6 @@ public class RecordEqualityTests
         "Haruspex.SqlServer.Inference.ReadScope",
         "Haruspex.SqlServer.Inference.Typing.ConversionRow",
         "Haruspex.SqlServer.Inference.Walked",
-        "Haruspex.SqlServer.Sources.Enforcement",
-        "Haruspex.SqlServer.Sources.SchemaReadResult",
     };
 
     [Fact]

@@ -58,7 +58,7 @@ public static class ProcedureSelection
             selected.AddRange(kept);
         }
 
-        return new SelectionResult([.. procedures.Where(selected.Contains)], problems);
+        return new SelectionResult([.. procedures.Where(selected.Contains)], [.. problems]);
     }
 
     /// <summary>

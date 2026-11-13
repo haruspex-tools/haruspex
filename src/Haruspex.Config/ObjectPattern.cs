@@ -14,7 +14,7 @@ namespace Haruspex.Config;
 /// <remarks>
 /// Selection is the config file's concern, not the schema's, so this is not in the publishable Model.
 /// </remarks>
-public sealed class ObjectPattern
+public sealed class ObjectPattern : IEquatable<ObjectPattern>
 {
     private readonly Regex schema;
     private readonly Regex name;
@@ -126,6 +126,18 @@ public sealed class ObjectPattern
 
     /// <summary>The pattern as given.</summary>
     public override string ToString() => Text;
+
+    /// <summary>
+    /// Whether <paramref name="other"/> is written the same: a pattern is a function of its text, so two patterns of one text
+    /// match the same names. Two texts that match the same names are still two patterns, which only makes equality stricter.
+    /// </summary>
+    public bool Equals(ObjectPattern? other) => other is not null && string.Equals(Text, other.Text, StringComparison.Ordinal);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as ObjectPattern);
+
+    /// <summary>A hash of the text, consistent with <see cref="Equals(ObjectPattern)"/>.</summary>
+    public override int GetHashCode() => StringComparer.Ordinal.GetHashCode(Text);
 
     // NonBacktracking: patterns come from users, so matching must stay linear whatever they write.
     private static Regex Anchored(StringBuilder body) =>

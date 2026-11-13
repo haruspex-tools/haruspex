@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Haruspex.Collections;
 using Haruspex.Tests.Schemas;
 
 namespace Haruspex.Tests.Config;
@@ -34,7 +35,7 @@ public class ConfigSchemaTests
         return Schema().Validate(instance.RootElement);
     }
 
-    private static IReadOnlyList<ConfigProblem> ReaderProblems(string file) => ConfigReader.Read(file).Problems;
+    private static EquatableArray<ConfigProblem> ReaderProblems(string file) => ConfigReader.Read(file).Problems;
 
     public static TheoryData<string> Valid { get; } = [.. Directory.GetFiles(Path.Combine(Examples, "valid")).Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal)];
 

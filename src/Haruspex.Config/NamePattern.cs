@@ -10,7 +10,7 @@ namespace Haruspex.Config;
 /// <c>]</c>), as in T-SQL. Everything else is literal, dots included, since the schema is the block's key and not part
 /// of the pattern. Matching ignores case, as SQL Server's identifiers almost always do.
 /// </summary>
-public sealed class NamePattern
+public sealed class NamePattern : IEquatable<NamePattern>
 {
     private readonly Regex regex;
 
@@ -96,4 +96,16 @@ public sealed class NamePattern
 
     /// <summary>The pattern as written.</summary>
     public override string ToString() => Text;
+
+    /// <summary>
+    /// Whether <paramref name="other"/> is written the same: a pattern is a function of its text, so two patterns of one text
+    /// match the same names. Two texts that match the same names are still two patterns, which only makes equality stricter.
+    /// </summary>
+    public bool Equals(NamePattern? other) => other is not null && string.Equals(Text, other.Text, StringComparison.Ordinal);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as NamePattern);
+
+    /// <summary>A hash of the text, consistent with <see cref="Equals(NamePattern)"/>.</summary>
+    public override int GetHashCode() => StringComparer.Ordinal.GetHashCode(Text);
 }
