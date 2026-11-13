@@ -39,6 +39,9 @@ internal sealed partial class Typer(
 {
     private readonly DatabaseModel model = model;
     private readonly Binder binder = summaries.Bindings.For(source);
+
+    /// <summary>How many rows a query returns (<see cref="Cardinality"/>), asked with the scope it is read in.</summary>
+    private readonly Cardinality cardinality = new(model, summaries.Bindings.For(source));
     private readonly SourceSpan source = source;
 
     /// <summary>What each scalar function returns, and what each view and table-valued function holds (<c>Typer.Views.cs</c>).</summary>
@@ -52,6 +55,12 @@ internal sealed partial class Typer(
 
     /// <summary>Whether the whole body is read uncommitted where it is used (see <see cref="ReadUncommitted"/>).</summary>
     private bool BodyReadUncommitted { get; } = uncommittedReads;
+
+    /// <summary>
+    /// Whether the statement being read may read uncommitted rows: the whole body is read so where it is used, or the
+    /// isolation level was set to READ UNCOMMITTED on the path to it.
+    /// </summary>
+    private bool ReadUncommitted(ReadScope scope) => BodyReadUncommitted || scope.State.ReadUncommitted;
 
     /// <summary>
     /// The value a function's <c>RETURN</c> expression gives, read with no FROM in scope; its subqueries may read views and
@@ -154,7 +163,7 @@ internal sealed partial class Typer(
             }
         }
 
-        return new Row([.. columns], star, Cardinality(query, scope), [.. scope.Bound.Sources]);
+        return new Row([.. columns], star, cardinality.Of(query, scope, ReadUncommitted(scope)), [.. scope.Bound.Sources]);
     }
 
     /// <summary>The table column a select-list expression is, unchanged: a bare column reference without COLLATE.</summary>

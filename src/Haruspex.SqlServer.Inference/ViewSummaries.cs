@@ -23,7 +23,7 @@ internal sealed class ViewSummaries(DatabaseModel model)
     /// function's query read with them (<see cref="Typer.ReadInline"/>), a multi-statement one's declared return
     /// table (<see cref="Walker.ReadReturnTable"/>).
     /// </summary>
-    /// <param name="uncommitted">Whether it is read uncommitted (Typer.Cardinality.cs), so that no key of what it reads holds.</param>
+    /// <param name="uncommitted">Whether it is read uncommitted (Cardinality.cs), so that no key of what it reads holds.</param>
     /// <param name="summaries">What the function's body may ask of the document's other objects.</param>
     public LocalRelationValues Function(Function function, EquatableMap<LocalName, Value> arguments, bool uncommitted, Summaries summaries)
     {

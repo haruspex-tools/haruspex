@@ -106,7 +106,7 @@ internal sealed partial class Typer
     /// Whether the query groups by ROLLUP, CUBE or GROUPING SETS (or WITH ROLLUP, WITH CUBE): anything but a list of
     /// expressions, or GROUP BY () alone. A composite grouping is counted too, which only claims less.
     /// </summary>
-    private static bool SuperAggregate(QuerySpecification query) =>
+    internal static bool SuperAggregate(QuerySpecification query) =>
         query.GroupByClause is { } group
         && (group.GroupByOption != GroupByOption.None
             || group.GroupingSpecifications.Any(s => s is not ExpressionGroupingSpecification
@@ -123,7 +123,7 @@ internal sealed partial class Typer
             return false;
         if (query.HavingClause is not null)
             return true;
-        var finder = new AggregateFinder(call => FunctionSummaries.Callee(call) is { } callee
+        var finder = new Cardinality.AggregateFinder(call => FunctionSummaries.Callee(call) is { } callee
             && model.FindFunction(callee) is not ScalarFunction);
         foreach (var element in query.SelectElements)
             element.Accept(finder);
@@ -136,7 +136,7 @@ internal sealed partial class Typer
     /// an <c>OPENJSON</c> without one is filtered by an outer join's ON as an aliased one is (observed:
     /// An_openjson_without_an_alias_on_an_outer_joins_optional_side_is_filtered_by_the_on_as_one_with_an_alias_is).
     /// </summary>
-    private static HashSet<BoundSource> Sources(TableReference reference, ReadScope scope) =>
+    internal static HashSet<BoundSource> Sources(TableReference reference, ReadScope scope) =>
         new(scope.Bound.SourcesUnder(reference), ReferenceEqualityComparer.Instance);
 
     /// <summary>
@@ -322,7 +322,7 @@ internal sealed partial class Typer
     /// window (OVER) it is computed per row instead. A user's function is always called with its schema, so a name without
     /// one is the built-in. The JSON aggregates are among them.
     /// </summary>
-    private static bool IsAggregate(FunctionCall call) =>
+    internal static bool IsAggregate(FunctionCall call) =>
         call is { CallTarget: null, OverClause: null } && BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Aggregate) is not null;
 
     /// <summary>

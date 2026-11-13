@@ -101,7 +101,7 @@ internal sealed partial class Walker
     /// <summary>Each scalar variable's declared type, from every DECLARE in the body.</summary>
     private readonly Dictionary<LocalName, Shape> variableShapes = [];
 
-    /// <summary>Each parameter's and variable's declared type, for comparing it with a key (Typer.Cardinality.cs).</summary>
+    /// <summary>Each parameter's and variable's declared type, for comparing it with a key (Cardinality.cs).</summary>
 
     private sealed record Outcome(FlowState? Next, FlowState? Breaks, FlowState? Continues)
     {
@@ -211,7 +211,7 @@ internal sealed partial class Walker
             case PredicateSetStatement harmless when IsHarmless(harmless):
                 return Continue(state);
 
-            // The isolation level changes no result's shape, only whether a key holds (Typer.Cardinality.cs); it lasts until the
+            // The isolation level changes no result's shape, only whether a key holds (Cardinality.cs); it lasts until the
             // procedure returns (observed: A_procedures_isolation_level_holds_in_the_procedures_it_calls_and_ends_when_it_returns).
             case SetTransactionIsolationLevelStatement isolation:
                 return Continue(state.WithReadUncommitted(isolation.Level == IsolationLevel.ReadUncommitted));

@@ -4,7 +4,7 @@ namespace Haruspex.DifferentialTests;
 
 /// <summary>
 /// What SQL Server does with predicates, aggregates and single-row queries, observed and kept as tests: the rules
-/// refinement in Haruspex.SqlServer.Inference (<c>Refinement.cs</c>, <c>Cardinality.cs</c>) rests on. Which rows a filter
+/// refinement in Haruspex.SqlServer.Inference (<c>Typer.Refinement.cs</c>, <c>Cardinality.cs</c>) rests on. Which rows a filter
 /// keeps when a column is NULL, under three-valued logic; what aggregates give over no rows, grouped and not; how many rows
 /// TOP, OFFSET … FETCH and a unique key allow. Each test creates what it needs in a write session, rolled back, alone in
 /// the test database while it lasts. Observed on SQL Server 2025 RTM-CU10.

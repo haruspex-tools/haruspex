@@ -254,7 +254,7 @@ internal sealed partial class Typer
     /// A derived table, <c>FROM (SELECT …) AS d (columns)</c>: read like a CTE of its own, so its values pass through
     /// unchanged and keep what its query proves of them. It may read the enclosing queries' columns, and an APPLY's left
     /// input's when it is (or is inside) the APPLY's right side, as its query was bound. Its row count is its query's
-    /// (Typer.Cardinality.cs), where it is read: for an APPLY's right side, for each outer row.
+    /// (Cardinality.cs), where it is read: for an APPLY's right side, for each outer row.
     /// </summary>
     private LocalRelationValues Derived(DerivedTable derived, ReadScope scope)
     {

@@ -8,7 +8,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 namespace Haruspex.SqlServer.Inference;
 
 // VALUES lists, views, and the SELECT * a view binds when it is created. APPLY itself is binding's (Binder.cs) and
-// refinement's (Typer.Refinement.cs, Typer.Cardinality.cs); README.md in this folder ("APPLY", "Views") gives the rules and the
+// refinement's (Typer.Refinement.cs, Cardinality.cs); README.md in this folder ("APPLY", "Views") gives the rules and the
 // observations they rest on (ApplyViewObservationTests in the differential tests).
 internal sealed partial class Typer
 {

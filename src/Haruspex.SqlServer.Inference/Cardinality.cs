@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -11,19 +12,20 @@ namespace Haruspex.SqlServer.Inference;
 /// <c>RefinementObservationTests</c>, and the README beside this file says why each is sound. Anything not recognised is
 /// <see cref="IrCardinality.Many"/>, which claims nothing.
 /// </summary>
-internal sealed partial class Typer
+/// <remarks>
+/// A collaborator of the <see cref="Typer"/>, with its inputs passed in: what each source holds and the names in force come
+/// in the <see cref="ReadScope"/>, and whether the statement reads uncommitted as an argument. It holds the model and the
+/// binder only, and keeps nothing between questions.
+/// </remarks>
+/// <param name="model">The model whose tables' keys and column types are read.</param>
+/// <param name="binder">The binder of the body being read, which says which source a column reads.</param>
+internal sealed class Cardinality(DatabaseModel model, Binder binder)
 {
-    /// <summary>
-    /// Whether the statement being read may read uncommitted: by the procedure's isolation level (FlowState), or because the
-    /// view or function body being read is read so where it is used.
-    /// </summary>
-    /// <summary>
-    /// Whether the statement being read may read uncommitted rows: the whole body is read so where it is used, or the
-    /// isolation level was set to READ UNCOMMITTED on the path to it.
-    /// </summary>
-    private bool ReadUncommitted(ReadScope scope) => BodyReadUncommitted || scope.State.ReadUncommitted;
-
-    private IrCardinality Cardinality(QuerySpecification query, ReadScope scope)
+    /// <summary>How many rows <paramref name="query"/> returns, read in <paramref name="scope"/>.</summary>
+    /// <param name="query">The query.</param>
+    /// <param name="scope">Its scope, with what each of its sources holds attached.</param>
+    /// <param name="readUncommitted">Whether the statement may read uncommitted rows, so that no key holds (<see cref="Keyed"/>).</param>
+    public IrCardinality Of(QuerySpecification query, ReadScope scope, bool readUncommitted)
     {
         IrCardinality rows;
         if (query.GroupByClause is null && (query.HavingClause is not null || HasAggregate(query, scope)))
@@ -48,7 +50,7 @@ internal sealed partial class Typer
             // Grouping never makes more rows than it reads, so a filter that fixes every source's key bounds it too; but
             // ROLLUP, CUBE and GROUPING SETS add super-aggregate rows (observed:
             // Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null).
-            rows = !SuperAggregate(query) && Keyed(query, scope) ? IrCardinality.AtMostOne : IrCardinality.Many;
+            rows = !Typer.SuperAggregate(query) && Keyed(query, scope, readUncommitted) ? IrCardinality.AtMostOne : IrCardinality.Many;
         }
 
         return Limited(Limited(rows, query.TopRowFilter), query.OffsetClause);
@@ -59,7 +61,7 @@ internal sealed partial class Typer
     /// none, unless it is a literal of one or more, which keeps a row that is always there (observed:
     /// Top_1_and_fetch_1_give_at_most_one_row_but_with_ties_gives_more).
     /// </summary>
-    private static IrCardinality Limited(IrCardinality rows, TopRowFilter? top)
+    public static IrCardinality Limited(IrCardinality rows, TopRowFilter? top)
     {
         if (top is null)
             return rows;
@@ -70,7 +72,7 @@ internal sealed partial class Typer
     }
 
     /// <summary>OFFSET skips rows, so only <c>OFFSET 0</c> keeps one that is always there; FETCH of 0 or 1 keeps at most one.</summary>
-    private static IrCardinality Limited(IrCardinality rows, OffsetClause? offset)
+    public static IrCardinality Limited(IrCardinality rows, OffsetClause? offset)
     {
         if (offset is null)
             return rows;
@@ -82,7 +84,7 @@ internal sealed partial class Typer
     }
 
     private static long? Literal(ScalarExpression? expression) =>
-        Strip(expression ?? new NullLiteral()) is IntegerLiteral literal
+        Typer.Strip(expression ?? new NullLiteral()) is IntegerLiteral literal
         && long.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : null;
 
     /// <summary>
@@ -113,7 +115,7 @@ internal sealed partial class Typer
     }
 
     /// <summary>The aggregates in an expression, not inside a subquery, and the calls <paramref name="also"/> counts as ones.</summary>
-    private sealed class AggregateFinder(Func<FunctionCall, bool>? also = null) : TSqlFragmentVisitor
+    internal sealed class AggregateFinder(Func<FunctionCall, bool>? also = null) : TSqlFragmentVisitor
     {
         public List<FunctionCall> Found { get; } = [];
 
@@ -123,7 +125,7 @@ internal sealed partial class Typer
 
         public override void Visit(FunctionCall node)
         {
-            if (IsAggregate(node) || also?.Invoke(node) == true)
+            if (Typer.IsAggregate(node) || also?.Invoke(node) == true)
                 Found.Add(node);
         }
     }
@@ -168,7 +170,7 @@ internal sealed partial class Typer
     /// keyed here, and a relation of at most one row is fixed already; a CTE, temporary table or table variable source, or a
     /// derived table of more rows, makes the answer many.</para>
     /// </summary>
-    private bool Keyed(QuerySpecification query, ReadScope scope)
+    private bool Keyed(QuerySpecification query, ReadScope scope, bool readUncommitted)
     {
         if (scope.Bound.Sources.Count == 0)
             return false;
@@ -188,7 +190,7 @@ internal sealed partial class Typer
         var keys = new Dictionary<BoundSource, List<List<KeyColumn>>>(ReferenceEqualityComparer.Instance);
         foreach (var source in scope.Bound.Sources)
         {
-            if (source.History || source.Uncommitted || ReadUncommitted(scope))
+            if (source.History || source.Uncommitted || readUncommitted)
             {
                 // Read uncommitted (a NOLOCK or READUNCOMMITTED hint, or the procedure's isolation level), a scan can return a
                 // row twice, so no key holds either; the same rule as history.
@@ -278,12 +280,12 @@ internal sealed partial class Typer
             case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.Inner } join:
                 JoinConditions(join.FirstTableReference, scope, into);
                 JoinConditions(join.SecondTableReference, scope, into);
-                into.AddRange(Conjuncts(join.SearchCondition).Select(c => new Fixing(c, Sources(join, scope))));
+                into.AddRange(Conjuncts(join.SearchCondition).Select(c => new Fixing(c, Typer.Sources(join, scope))));
                 break;
             case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.LeftOuter } join:
                 JoinConditions(join.FirstTableReference, scope, into);
                 JoinConditions(join.SecondTableReference, scope, into);
-                into.AddRange(Conjuncts(join.SearchCondition).Select(c => new Fixing(c, Sources(join.SecondTableReference, scope))));
+                into.AddRange(Conjuncts(join.SearchCondition).Select(c => new Fixing(c, Typer.Sources(join.SecondTableReference, scope))));
                 break;
             case UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossJoin } cross:
                 JoinConditions(cross.FirstTableReference, scope, into);
@@ -320,7 +322,7 @@ internal sealed partial class Typer
 
         // A view's key column is its table's, unchanged (ViewKeys), so it compares in that column's type and collation.
         bool IsKeyColumn(ScalarExpression e) =>
-            Strip(e) is ColumnReferenceExpression { Collation: null } reference
+            Typer.Strip(e) is ColumnReferenceExpression { Collation: null } reference
             && binder.Resolve(reference, scope.Bound) switch
             {
                 TableColumn bound => ReferenceEquals(bound.Source, source) && column.Name is { } name && bound.Column.Name.Equals(name, StringComparison.OrdinalIgnoreCase),
@@ -343,7 +345,7 @@ internal sealed partial class Typer
                     return false;
 
                 return column.Type is { } keyType
-                    && ValueType(Strip(other), source, scope, fixedSources) is { } valueType
+                    && ValueType(Typer.Strip(other), source, scope, fixedSources) is { } valueType
                     && InKeysType(keyType, valueType);
             }
 

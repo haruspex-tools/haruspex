@@ -66,7 +66,7 @@ internal sealed partial class Typer
     private Row Parenthesised(BoundParenthesis parenthesis, ReadScope outer) =>
         Limited(Query(parenthesis.Inner, outer), parenthesis.Parenthesis.OffsetClause);
 
-    private static Row Limited(Row row, OffsetClause? offset) => offset is null ? row : row with { Rows = Limited(row.Rows, offset) };
+    private static Row Limited(Row row, OffsetClause? offset) => offset is null ? row : row with { Rows = Cardinality.Limited(row.Rows, offset) };
 
     /// <summary>
     /// A set operation's row from its queries' rows (<paramref name="rows"/>) and the operators

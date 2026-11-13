@@ -729,7 +729,7 @@ observed in each position before it was typed (`CaseObservationTests`):
 ## Refinement
 
 What a query's filters prove about the rows they keep: `Typer.Refinement.cs` (facts and three-valued logic) and
-`Typer.Cardinality.cs` (how many rows). Every engine rule is observed on SQL Server 2025 RTM-CU10 and kept as a test in
+`Cardinality.cs` (how many rows). Every engine rule is observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/RefinementObservationTests.cs`; the test names are given below.
 
 ### Which conditions prove a column non-null
@@ -825,7 +825,7 @@ themselves: what a query proved is what its row holds.
   exactly one row (`A_scalar_subquery_of_an_aggregate_without_group_by_always_has_a_value_for_count`). A `FOR JSON` subquery
   is NULL over no rows, so an array it builds has at least one item, and at most one where its query returns at most one.
 
-### How many rows (`Typer.Cardinality.cs`)
+### How many rows (`Cardinality.cs`)
 
 | Query | Rows |
 |---|---|
@@ -879,7 +879,7 @@ match. `'5'` and `'05'` both equal 5 (`A_comparison_that_converts_the_key_can_ma
 under a SQL collation compared with an `nvarchar` value is compared by Unicode rules, under which `'ss'` and `'ß'` are equal
 (`A_varchar_key_under_a_sql_collation_compared_with_nvarchar_can_match_several_rows`). So the value must be of the key's
 type, a narrower integer or decimal, a `varchar` for an `nvarchar` key, or a string for a key that is not a string, and
-carry no `COLLATE` of its own (`Typer.InKeysType` lists them).
+carry no `COLLATE` of its own (`Cardinality.InKeysType` lists them).
 
 Not modelled yet: keys of temporary tables, table variables, CTEs and derived tables (a derived table's at-most-one
 bound is); `CREATE UNIQUE INDEX` (a separate
@@ -904,7 +904,7 @@ side is evaluated once for each row of its left input. Each rule is observed in 
   rows (`An_ungrouped_aggregate_applied_gives_one_row_for_every_outer_row`), a query without `FROM` one row
   (`A_for_json_subquery_applied_without_from_is_one_row_whose_json_is_null_when_there_are_no_rows`), and a `VALUES` list its
   rows; so under either APPLY their columns keep their own nullability, and `CROSS APPLY` removes no outer row. Which queries
-  are one row is the cardinality of "How many rows" above (`Typer.Cardinality.cs`): a relation records its query's `LocalRelationValues.Rows` and `LocalRelationValues.AtLeastOne`
+  are one row is the cardinality of "How many rows" above (`Cardinality.cs`): a relation records its query's `LocalRelationValues.Rows` and `LocalRelationValues.AtLeastOne`
   (`LocalRelationValues`), and the null-extension is skipped only for a source that *is* the whole right side
   (`OptionalSideKind.WholeApplied`): one joined inside it may have a row while the side as a whole has none. With `GROUP BY` (even
   `GROUP BY ()`) or `HAVING` the right side may have no row (`A_grouped_aggregate_applied_gives_no_row_for_an_outer_row_without_rows`).
@@ -914,7 +914,7 @@ side is evaluated once for each row of its left input. Each rule is observed in 
   An outer `WHERE` on a right-side column proves the row matched, as for a left join, and drops `unmatched-lateral-row`. Joins inside an
   `OUTER APPLY`'s right side refine as an outer join's optional side does.
 - **Cardinality.** A right side of at most one row per outer row (`TOP (1)`, an aggregate, a key fixed by the outer row,
-  a one-row `VALUES`) counts as fixed in `Typer.Keyed`, so the query keeps the outer side's bound: at most one stays at most one,
+  a one-row `VALUES`) counts as fixed in `Cardinality.Keyed`, so the query keeps the outer side's bound: at most one stays at most one,
   for `OUTER APPLY` (one null-extended row at most) and `CROSS APPLY` alike (`Top_1_applied_gives_at_most_one_row_for_every_outer_row`).
   Otherwise many.
 - **Claims less, written down.** The outer query's own `WHERE` facts are not yet pushed while the right side is read
@@ -960,7 +960,7 @@ whose `*` differs from its declared columns (a `HIDDEN` period column, or a grap
 `GROUP BY`, and does not read it `FOR SYSTEM_TIME` other than `AS OF`, returns some of the table's rows, each once
 (`A_view_over_one_table_returns_each_of_its_rows_at_most_once`);
 `WHERE`, `TOP` and `DISTINCT` only drop rows. So each enforced key of the table whose columns the view selects whole, as
-bare columns without `COLLATE`, is a key of the view, compared in the base column's type (`Typer.InKeysType`). Left out, each
+bare columns without `COLLATE`, is a key of the view, compared in the base column's type (`Cardinality.InKeysType`). Left out, each
 only claiming less: a view grouped by a whole key (`ROLLUP` and its kind would repeat it, and telling them apart is not
 worth it yet), and a view with a join that matches at most one row (proving that needs the joined side's key fixed by its
 `ON`). A view's relation also carries its query's cardinality, so a view of at most one row counts as fixed.
