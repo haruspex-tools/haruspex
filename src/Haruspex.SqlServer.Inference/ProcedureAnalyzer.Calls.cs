@@ -142,21 +142,11 @@ internal sealed partial class ProcedureAnalyzer
         var temps = state.Temps;
         var needEscapes = catchEntries.Count > 0 || escapes is not null;
 
-        Walked walked;
-        ObjectName? name;
-        switch (target)
+        var (walked, name) = target switch
         {
-            case ProcedureCall { Procedure: var callee }:
-                walked = calls!.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted), at);
-                name = callee.Name;
-                break;
-            case UnknowableCall unknowable:
-                walked = new Walked(null, [], new UnknownShape(Reason(unknowable.Kind), unknowable.Detail, at), []);
-                name = unknowable.Name;
-                break;
-            default:
-                throw new InvalidOperationException($"Unknown call target {target}.");
-        }
+            ProcedureCall { Procedure: var callee } => (calls!.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted), at), (ObjectName?)callee.Name),
+            UnknowableCall unknowable => (new Walked(null, [], new UnknownShape(Reason(unknowable.Kind), unknowable.Detail, at), []), unknowable.Name),
+        };
 
         if (walked.Blocker is { } why)
         {

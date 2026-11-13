@@ -148,7 +148,6 @@ internal static class SqlTypes
             => new IrFactSource(IrFactSourceKind.Check, $"{check.Table.Name.Name}.{name}"),
         CheckSource { Check.Name: { } name } check => new IrFactSource(IrFactSourceKind.Check, $"{check.Table.Name.Schema}.{name}"),
         CheckSource check => new IrFactSource(IrFactSourceKind.Check, check.Check.At.ToString()),
-        _ => throw new ArgumentOutOfRangeException(nameof(from), from, "Unknown fact source."),
     };
 
     /// <summary>The type as written, normalised: <c>decimal(19,2)</c>, <c>nvarchar(max)</c>.</summary>

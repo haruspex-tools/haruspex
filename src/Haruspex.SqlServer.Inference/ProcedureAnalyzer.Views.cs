@@ -57,7 +57,6 @@ internal sealed partial class ProcedureAnalyzer
         SeriesCall series => GenerateSeries(series, scope.In(series.Arguments)),
         TemporaryTable temporary => Temporary(temporary.Name, scope.State),
         TableVariable variable => AsWritten(variable.Name, tableVariables[variable.Name], scope.State),
-        _ => throw new InvalidOperationException($"{relation.GetType().Name} is a relation this switch does not list."),
     };
 
     /// <summary>What a temporary table holds in <paramref name="state"/>, or why it is not known there.</summary>
@@ -72,7 +71,9 @@ internal sealed partial class ProcedureAnalyzer
             KnownTable known => new LocalRelationValues([.. known.Columns.Select(c => c.Name)], [.. known.Columns.Select(c => c.Read)], null),
             UnknownTable unknown => LocalRelationValues.Unknown(unknown.Why),
             AbsentTable absent => LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{name} was dropped at {absent.At}, so it is not there to read.", absent.At)),
-            _ => LocalRelationValues.Unknown(new UnknownShape(
+
+            // Not in the state at all: the procedure has not created it on this path.
+            null => LocalRelationValues.Unknown(new UnknownShape(
                 IrUnknownReason.CallerTempTable,
                 $"{name} is not created by the procedure before this, so it is the caller's, whose shape depends on who calls.",
                 Nowhere)),

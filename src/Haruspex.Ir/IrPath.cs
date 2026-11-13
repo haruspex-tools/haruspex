@@ -36,7 +36,6 @@ public static class IrPath
                 IrPathIndex index => "[" + index.Index.ToString(CultureInfo.InvariantCulture) + "]",
                 IrPathJson => "<json>",
                 IrPathShared shared => "<" + shared.Owner + ">",
-                _ => throw new ArgumentOutOfRangeException(nameof(segments), segment, "Unknown path segment."),
             });
         }
 

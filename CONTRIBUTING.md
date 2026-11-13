@@ -247,6 +247,7 @@ the maintainer's agreement.
 |---|---|---|---|
 | `Microsoft.SqlServer.TransactSql.ScriptDom` | MIT | Model, Sources, Semantics, Inference | Microsoft's own T-SQL parser: the only way to read T-SQL as SQL Server does. |
 | `System.CommandLine` | MIT | CLI | Argument parsing, help and usage errors, maintained by the .NET team. |
+| `Microsoft.CodeAnalysis.CSharp` | MIT | the analysers in `analysers/`, their tests | The compiler's API, which haruspex's own build-time check of switches over closed hierarchies is written against ([decision 0032](docs/decisions/0032-a-switch-over-a-closed-hierarchy-is-exhaustive.md)). Build time only: nothing ships it. |
 | `xunit.v3` | Apache-2.0 | tests | The test framework; runs on Microsoft.Testing.Platform (opted into in `global.json`). |
 | `typescript` (npm) | Apache-2.0 | emit-check, examples | Compiles the generated Zod, to prove it type-checks. |
 | `zod` (npm) | MIT | emit-check, examples | The library the generated code targets, pinned so the check is repeatable. |

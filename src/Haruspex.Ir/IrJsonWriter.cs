@@ -268,8 +268,6 @@ public static class IrJsonWriter
                 json.WriteString("kind", "unknown");
                 json.WriteString("reason", IrWireNames.Of(unknown.Reason));
                 break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown IR type node.");
         }
 
         json.WriteEndObject();

@@ -72,41 +72,34 @@ internal sealed class IrBuilder(FunctionSummaries functions)
     /// <summary>The object, procedure or recursive function, that the types being written belong to.</summary>
     private sealed record Owner(IrTypeOwner Kind, string Object);
 
-    private IrType Convert(Shape shape, Owner owner, string id, string path)
+    private IrType Convert(Shape shape, Owner owner, string id, string path) => shape switch
     {
-        switch (shape)
-        {
-            case ScalarShape scalar:
-                return scalar.Type;
-            case JsonTextShape text:
-                // An unknown content claims nothing more than "JSON", which the node already says; the unknown is
-                // reported where json_query makes the text live, if it does.
-                return new IrJsonText(text.Content is null or UnknownShape ? null : Convert(text.Content, owner, id, path + "<json>"));
-            case RecursiveShape recursive:
-                return Node(recursive.Function, id);
-            case NeverShape never:
-                Report(id, path, IrUnknownReason.UnresolvedRecursion, "The function called here never returns a value: every return calls itself again.", never.At.ToString());
-                return new IrUnknownType(IrUnknownReason.UnresolvedRecursion);
-            case ArrayShape array:
-                return Array(array, Convert(array.Items, owner, id, path + "[]"));
-            case TupleShape tuple:
-                // Each position is its own path, so an unknown element is reported where it is.
-                return new IrTuple([.. tuple.Items.Select((e, i) => new IrElement(
-                    Convert(e.Type, owner, id, path + "[" + i.ToString(System.Globalization.CultureInfo.InvariantCulture) + "]"),
-                    e.NullableBecause))]);
-            case RecordShape record:
-                // A record's values have no key to name them by; {} stands for any key.
-                return new IrRecord(Convert(record.Values, owner, id, path + "{}"), record.ValuesNullableBecause);
-            case UnionShape union:
-                return new IrUnion([.. union.Variants.Select(v => Convert(v, owner, id, path))]);
-            case ObjectShape obj:
-                return Object(obj, owner, id, path);
-            case UnknownShape unknown:
-                Report(id, path, unknown.Reason, unknown.Detail, unknown.At.ToString());
-                return new IrUnknownType(unknown.Reason);
-            default:
-                throw new ArgumentOutOfRangeException(nameof(shape), shape, "Unknown shape.");
-        }
+        ScalarShape scalar => scalar.Type,
+
+        // An unknown content claims nothing more than "JSON", which the node already says; the unknown is reported where
+        // json_query makes the text live, if it does.
+        JsonTextShape text => new IrJsonText(text.Content is null or UnknownShape ? null : Convert(text.Content, owner, id, path + "<json>")),
+        RecursiveShape recursive => Node(recursive.Function, id),
+        NeverShape never => Reported(id, path, IrUnknownReason.UnresolvedRecursion, "The function called here never returns a value: every return calls itself again.", never.At.ToString()),
+        ArrayShape array => Array(array, Convert(array.Items, owner, id, path + "[]")),
+
+        // Each position is its own path, so an unknown element is reported where it is.
+        TupleShape tuple => new IrTuple([.. tuple.Items.Select((e, i) => new IrElement(
+            Convert(e.Type, owner, id, path + "[" + i.ToString(System.Globalization.CultureInfo.InvariantCulture) + "]"),
+            e.NullableBecause))]),
+
+        // A record's values have no key to name them by; {} stands for any key.
+        RecordShape record => new IrRecord(Convert(record.Values, owner, id, path + "{}"), record.ValuesNullableBecause),
+        UnionShape union => new IrUnion([.. union.Variants.Select(v => Convert(v, owner, id, path))]),
+        ObjectShape obj => Object(obj, owner, id, path),
+        UnknownShape unknown => Reported(id, path, unknown.Reason, unknown.Detail, unknown.At.ToString()),
+    };
+
+    /// <summary>An unknown in the IR, reported with why and where.</summary>
+    private IrUnknownType Reported(string id, string path, IrUnknownReason reason, string detail, string at)
+    {
+        Report(id, path, reason, detail, at);
+        return new IrUnknownType(reason);
     }
 
     /// <summary>

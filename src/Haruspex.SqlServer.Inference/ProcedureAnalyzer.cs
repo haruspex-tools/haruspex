@@ -377,7 +377,6 @@ internal sealed partial class ProcedureAnalyzer
         RelationColumn local => FromLocal(local.Source, local.Ordinal, scope, At(column)),
         UnlistedColumn unlisted => FromLocal(unlisted.Source, -1, scope, At(column)),
         Unresolved unbound => Value.Unknown(Unknown(unbound.Problem)),
-        _ => throw new InvalidOperationException("Unknown binding."),
     };
 
     /// <remarks>

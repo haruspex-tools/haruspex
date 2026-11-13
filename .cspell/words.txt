@@ -86,6 +86,9 @@ wansung
 ctes
 uddt
 
+# The compiler's API names a pattern inside another pattern a subpattern (PropertySubpatterns, in the analysers)
+subpatterns
+
 # Products, tools and their names
 dacfx
 dacpac

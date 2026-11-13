@@ -208,7 +208,6 @@ internal sealed class OverrideApplier(
         IrPathValues => "record values ({})",
         IrPathJson => "JSON content (<json>)",
         IrPathShared shared => $"<{shared.Owner}>",
-        _ => "such part",
     };
 
     private static string Describe(IrType type) => type switch
@@ -226,7 +225,6 @@ internal sealed class OverrideApplier(
         IrScalar { Sql: { } sql } scalar => $"a {scalar.Kind.ToString().ToLowerInvariant()} ({sql})",
         IrScalar scalar => $"a {scalar.Kind.ToString().ToLowerInvariant()}",
 #pragma warning restore CA1308
-        _ => "a value",
     };
 
     private static string Count(int n, string noun) => n == 1 ? $"1 {noun}" : $"{n} {noun}s";

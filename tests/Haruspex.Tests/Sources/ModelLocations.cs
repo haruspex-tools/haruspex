@@ -74,6 +74,10 @@ internal static class ModelLocations
                 case Function:
                     lines.Add($"named function {named.Name}");
                     break;
+
+                // Readable is typed as any schema object, but holds only these three.
+                default:
+                    throw new InvalidOperationException($"{named.Name} is a {named.GetType().Name}, which Readable doesn't hold.");
             }
         }
 

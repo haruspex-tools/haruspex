@@ -13,19 +13,17 @@ namespace Haruspex.Ir;
 public static class IrTypeTree
 {
     /// <summary>The types directly inside <paramref name="type"/>, in the order the IR lists them, each with its path segment.</summary>
-    /// <exception cref="ArgumentOutOfRangeException">A type node outside the IR's closed set (<see cref="IrType"/>).</exception>
     public static IEnumerable<IrTypeChild> Children(IrType type)
     {
         ArgumentNullException.ThrowIfNull(type);
         return type switch
         {
-            IrScalar or IrRef or IrImport or IrUnknownType or IrJsonText { Content: null } => [],
+            IrScalar or IrRef or IrImport or IrUnknownType => [],
             IrArray array => [new IrTypeChild(array.Items, new IrPathItems())],
             IrTuple tuple => tuple.Items.Select((element, i) => new IrTypeChild(element.Type, new IrPathIndex(i))),
             IrRecord record => [new IrTypeChild(record.Values, new IrPathValues())],
             IrUnion union => union.Variants.Select(variant => new IrTypeChild(variant, null)),
-            IrJsonText { Content: { } content } => [new IrTypeChild(content, new IrPathJson())],
-            _ => throw new ArgumentOutOfRangeException(nameof(type), type, "A type node outside the IR's closed set."),
+            IrJsonText text => text.Content is { } content ? [new IrTypeChild(content, new IrPathJson())] : [],
         };
     }
 
@@ -53,7 +51,6 @@ public static class IrTypeTree
     /// A copy of <paramref name="type"/> whose every reference names <paramref name="rename"/>'s name for it, and which is
     /// otherwise the same: each node keeps its nullability, lengths and facets.
     /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">A type node outside the IR's closed set (<see cref="IrType"/>).</exception>
     public static IrType RenameReferences(IrType type, Func<string, string> rename)
     {
         ArgumentNullException.ThrowIfNull(type);
@@ -62,13 +59,12 @@ public static class IrTypeTree
         return type switch
         {
             IrRef reference => new IrRef(rename(reference.Name)),
-            IrScalar or IrImport or IrUnknownType or IrJsonText { Content: null } => type,
+            IrScalar or IrImport or IrUnknownType => type,
             IrArray array => array with { Items = Renamed(array.Items) },
             IrTuple tuple => new IrTuple([.. tuple.Items.Select(e => e with { Type = Renamed(e.Type) })]),
             IrRecord record => record with { Values = Renamed(record.Values) },
             IrUnion union => new IrUnion([.. union.Variants.Select(Renamed)]),
-            IrJsonText { Content: { } content } => new IrJsonText(Renamed(content)),
-            _ => throw new ArgumentOutOfRangeException(nameof(type), type, "A type node outside the IR's closed set."),
+            IrJsonText text => text.Content is { } content ? new IrJsonText(Renamed(content)) : type,
         };
     }
 }

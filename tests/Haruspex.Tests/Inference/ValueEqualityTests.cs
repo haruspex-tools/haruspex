@@ -225,7 +225,6 @@ public class ValueEqualityTests
             RecordShape record => record with { Values = Changed(record.Values) },
             JsonTextShape { Content: null } => new JsonTextShape(new NeverShape(Places[0])),
             JsonTextShape text => new JsonTextShape(Changed(text.Content)),
-            _ => throw new ArgumentOutOfRangeException(nameof(shape), shape, "A shape the generator does not make."),
         };
 
         private IrScalar Scalar() => random.Next(4) switch

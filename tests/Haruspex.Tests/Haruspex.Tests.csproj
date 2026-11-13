@@ -13,6 +13,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
+    <!-- To compile code with haruspex's own analysers in ExhaustiveSwitchTests. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Haruspex.Ir\Haruspex.Ir.csproj" />

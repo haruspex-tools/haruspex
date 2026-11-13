@@ -93,6 +93,10 @@ public static class Coverage
                 }
 
                 break;
+
+            // Nothing inside them to see: a scalar is seen as its field is, and the rest claim no values.
+            case IrScalar or IrImport or IrJsonText or IrUnknownType:
+                break;
         }
     }
 
@@ -218,6 +222,10 @@ public static class Coverage
                 break;
             case IrScalar scalar:
                 visit(path, scalar);
+                break;
+
+            // No scalar inside them.
+            case IrImport or IrJsonText or IrUnknownType:
                 break;
         }
     }

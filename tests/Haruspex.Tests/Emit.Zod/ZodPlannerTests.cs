@@ -29,7 +29,6 @@ public class ZodPlannerTests
         {
             ZodPlanEntry.NamedType named => named.Name,
             ZodPlanEntry.Procedure procedure => procedure.Object.Id,
-            _ => throw new InvalidOperationException(),
         })];
 
     [Fact]

@@ -33,4 +33,11 @@
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
   </PropertyGroup>
+
+  <!-- Haruspex's own build-time checks (analysers/README.md), run on every project but themselves; a build-time reference,
+       so no package depends on them. -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Haruspex.Analysers'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)analysers/Haruspex.Analysers/Haruspex.Analysers.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

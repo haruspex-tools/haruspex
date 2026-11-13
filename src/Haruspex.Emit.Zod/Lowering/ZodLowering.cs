@@ -25,7 +25,6 @@ internal static class ZodLowering
                 ZodPlanEntry.NamedType named when declaredAs[named.Name] != named.Name => Alias(named.Name, declaredAs[named.Name]),
                 ZodPlanEntry.NamedType named => ObjectType(named, plan, types),
                 ZodPlanEntry.Procedure procedure => Procedure(procedure.Object, types),
-                _ => throw new ArgumentOutOfRangeException(nameof(plan), entry, "A plan entry outside the plan's closed set."),
             }),
         ];
         return new ZodModule([.. Header(declarations)], plan.Imports, plan.UsesJsonText, [.. declarations]);

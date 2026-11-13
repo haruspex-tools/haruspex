@@ -28,7 +28,6 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
         IrJsonText { Content: { } content } => new Noted(new JsonText(Type(content, IrEncoding.Json)), new ZodNote("A string holding JSON, checked against the schema inside.")),
         IrJsonText => new Noted(Z("string"), new ZodNote("A string holding JSON.")),
         IrUnknownType unknown => new Noted(Z("unknown"), new ZodNote($"Not known ({IrWireNames.Of(unknown.Reason)}); the IR's unknowns say why.")),
-        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "A type node outside the IR's closed set."),
     };
 
     /// <summary>

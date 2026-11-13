@@ -7,6 +7,11 @@
     <PackageVersion Include="Microsoft.SqlServer.TransactSql.ScriptDom" Version="180.140.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.14" />
   </ItemGroup>
+  <ItemGroup Label="Build">
+    <!-- The compiler's API (MIT), for the analyser in analysers/ that checks switches over closed hierarchies; build time
+         only, so nothing of it ships. Not newer than the compiler of the SDK in global.json, which loads the analyser. -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+  </ItemGroup>
   <ItemGroup Label="Tests">
     <!-- xunit v3 runs on Microsoft.Testing.Platform (opted into in global.json), so neither
          Microsoft.NET.Test.Sdk nor the VSTest adapter is needed. -->

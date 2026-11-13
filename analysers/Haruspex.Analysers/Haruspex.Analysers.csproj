@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Loaded by the compiler, which runs analysers built for .NET Standard 2.0. -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <!-- Release tracking is for analysers published in a package, whose users see rules come and go; these never are. -->
+    <NoWarn>$(NoWarn);RS2008</NoWarn>
+    <Description>Build-time checks of haruspex's own code: a switch over a closed hierarchy must cover every case.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The compiler's API, which the analyser is written against; the compiler itself provides it at build time, so
+         nothing of it is copied anywhere. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

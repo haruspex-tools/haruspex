@@ -582,7 +582,7 @@ public sealed class Binder
         {
             [] => new MissingCallee(),
             [var function] => new KnownCallee(function),
-            _ => new AmbiguousCallee(candidates),
+            _ => new AmbiguousCallee(name.BaseIdentifier.Value, candidates),
         };
     }
 
@@ -607,7 +607,6 @@ public sealed class Binder
             }),
             TableFunction table => [.. table.Returns.Columns.Select(c => c.Name)],
             ScalarFunction => null,
-            _ => throw Unlisted(function),
         };
     }
 
@@ -713,7 +712,6 @@ public sealed class Binder
         TableTarget { Table: var table } => table.Column(name) is not null,
         RelationTarget { Relation: var relation } => relation.IndexOf(name) >= 0,
         UnresolvedTarget => false,
-        _ => throw Unlisted(source.Target),
     };
 
     private static Resolution FromSource(BoundSource source, string name, SourceLocation at) => source.Target switch
@@ -728,11 +726,7 @@ public sealed class Binder
         TableTarget { Table: var table } => table.Column(name) is { } column
             ? new TableColumn(source, table, column)
             : new MissingColumn(Problem(BindingProblemKind.UnresolvedColumn, $"The table {table.Name} has no column {name}.", at)),
-        _ => throw Unlisted(source.Target),
     };
-
-    /// <summary>The failure of a switch over a closed hierarchy that met a case it doesn't list, which the build should have refused.</summary>
-    private static InvalidOperationException Unlisted(object value) => new($"{value.GetType().Name} is a case this switch does not list.");
 
     /// <summary>
     /// The position, among a write's target's columns, of each column its column list names (<c>INSERT … (a, b)</c>,

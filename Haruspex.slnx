@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/analysers/">
+    <Project Path="analysers/Haruspex.Analysers/Haruspex.Analysers.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Haruspex.Diagnostics/Haruspex.Diagnostics.csproj" />
     <Project Path="src/Haruspex.SqlServer.Model/Haruspex.SqlServer.Model.csproj" />

@@ -87,6 +87,7 @@ internal sealed partial class CodeReferences
         typeof(ZodEmitter).Assembly,
         typeof(SqlProject).Assembly,
         typeof(CodeReferences).Assembly,
+        Architecture.AnalyserBuild.Assembly,
     ];
 
     private static readonly string[] CodeFolders = ["src", "tests"];
