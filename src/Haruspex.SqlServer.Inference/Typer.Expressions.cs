@@ -12,7 +12,7 @@ namespace Haruspex.SqlServer.Inference;
 
 // The common expressions. Types come from ScalarType.cs; README.md in this folder ("Expressions") gives the rules
 // and the observations they rest on (ExpressionObservationTests in the differential tests).
-internal sealed partial class ProcedureAnalyzer
+internal sealed partial class Typer
 {
     // ---- literals -----------------------------------------------------------------------------------------------------
 
@@ -89,7 +89,7 @@ internal sealed partial class ProcedureAnalyzer
     };
 
     /// <summary>A literal, through parentheses, with whether it is negated.</summary>
-    private static (Literal Literal, bool Negative)? LiteralOf(ScalarExpression expression)
+    internal static (Literal Literal, bool Negative)? LiteralOf(ScalarExpression expression)
     {
         var negative = false;
         var e = Strip(expression);
@@ -537,7 +537,7 @@ internal sealed partial class ProcedureAnalyzer
     /// A value converted to a declared type, as an assignment to a variable converts it: NULL too under a caller's
     /// ANSI_WARNINGS and ARITHABORT off when it may overflow (observed for CAST, which is the same conversion).
     /// </summary>
-    private static EquatableArray<IrNullReason> Converting(Value value, Shape declared, SourceLocation at)
+    internal static EquatableArray<IrNullReason> Converting(Value value, Shape declared, SourceLocation at)
     {
         if (value.Shape is UnknownShape || value.IsLiveJson || declared is not ScalarShape { BuiltIn: { } to })
             return value.NullableBecause;

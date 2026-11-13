@@ -8,9 +8,9 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 namespace Haruspex.SqlServer.Inference;
 
 // VALUES lists, views, and the SELECT * a view binds when it is created. APPLY itself is binding's (Binder.cs) and
-// refinement's (Refinement.cs, Cardinality.cs); README.md in this folder ("APPLY", "Views") gives the rules and the
+// refinement's (Typer.Refinement.cs, Typer.Cardinality.cs); README.md in this folder ("APPLY", "Views") gives the rules and the
 // observations they rest on (ApplyViewObservationTests in the differential tests).
-internal sealed partial class ProcedureAnalyzer
+internal sealed partial class Typer
 {
     // ---- what the relations a query reads hold ------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@ internal sealed partial class ProcedureAnalyzer
     /// an APPLY's right side reads its left input's as they are attached. Binding said which relation each source reads; this
     /// reads it.
     /// </summary>
-    private ReadScope Attach(ReadScope scope)
+    internal ReadScope Attach(ReadScope scope)
     {
         foreach (var source in scope.Bound.Sources)
         {
@@ -34,14 +34,14 @@ internal sealed partial class ProcedureAnalyzer
     /// The scope of a statement's query, a specification read as the statement's own (not as a subquery), with what its
     /// relations hold attached.
     /// </summary>
-    private ReadScope Enter(QuerySpecification query, ReadScope at) =>
+    internal ReadScope Enter(QuerySpecification query, ReadScope at) =>
         Attach(at.In(((BoundSpecification)binder.Bind(query, null, at.Names)).Scope));
 
     /// <summary>What a relation holds where it is read in <paramref name="scope"/>.</summary>
     /// <param name="relation">The relation.</param>
     /// <param name="hinted">Whether it is read with a NOLOCK or READUNCOMMITTED hint, which a view passes to every table under it.</param>
     /// <param name="scope">The scope it is read in.</param>
-    private LocalRelationValues Holding(RelationSymbol relation, bool hinted, ReadScope scope) => relation switch
+    internal LocalRelationValues Holding(RelationSymbol relation, bool hinted, ReadScope scope) => relation switch
     {
         CommonTable or PseudoTable => scope.Named.TryGetValue(relation, out var named)
             ? named

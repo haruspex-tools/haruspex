@@ -295,7 +295,7 @@ internal sealed class FunctionSummaries
             return declaredOnly with { Content = new NeverShape(at) };
 
         var parameters = function.Parameters.ToEquatableMap(p => new LocalName(p.Name), p => Parameter(p, nullOnNull));
-        var value = new ProcedureAnalyzer(model, function.Span, this, parameters, ansiNullsOff: function.AnsiNullsOff, views: Views, uncommittedReads: uncommitted).Return(expression, function.Parameters);
+        var value = new Typer(model, function.Span, this, parameters, ansiNullsOff: function.AnsiNullsOff, views: Views, uncommittedReads: uncommitted).Return(expression, function.Parameters);
 
         var content = value switch
         {

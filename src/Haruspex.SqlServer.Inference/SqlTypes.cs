@@ -96,7 +96,7 @@ internal static class SqlTypes
         var type = resolved.Type;
 
         // A json parameter is text the caller sends, and a driver returns a json column as text. A json column inside FOR
-        // JSON or a constructor is live JSON instead, which ProcedureAnalyzer decides before this.
+        // JSON or a constructor is live JSON instead, which the Typer decides before this.
         if (type == BuiltInType.Json)
             return new JsonTextShape();
         if (type is null || !Scalars.TryGetValue(type, out var scalar))

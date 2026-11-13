@@ -6,7 +6,7 @@ using Haruspex.SqlServer.Semantics;
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
-/// What each view of the project holds, read once per document from its definition (<see cref="ProcedureAnalyzer.ReadView"/>),
+/// What each view of the project holds, read once per document from its definition (<see cref="Typer.ReadView"/>),
 /// and what each call of a table-valued function returns, read once per function and set of argument values. A
 /// view or function reads others; one that reads itself through them cannot be created, and is unknown here.
 /// The idea, and the alternatives, are in docs/internals/07-summaries-and-recursion.md.
@@ -30,10 +30,10 @@ internal sealed class ViewSummaries
 
     /// <summary>
     /// What a call of a table-valued function returns, with its parameters holding <paramref name="arguments"/>: an inline
-    /// function's query read with them (<see cref="ProcedureAnalyzer.ReadInline"/>), a multi-statement one's declared return
-    /// table (<see cref="ProcedureAnalyzer.ReadReturnTable"/>).
+    /// function's query read with them (<see cref="Typer.ReadInline"/>), a multi-statement one's declared return
+    /// table (<see cref="Walker.ReadReturnTable"/>).
     /// </summary>
-    /// <param name="uncommitted">Whether it is read uncommitted (Cardinality.cs), so that no key of what it reads holds.</param>
+    /// <param name="uncommitted">Whether it is read uncommitted (Typer.Cardinality.cs), so that no key of what it reads holds.</param>
     public LocalRelationValues Function(Function function, EquatableMap<LocalName, Value> arguments, bool uncommitted)
     {
         var key = new Reading(function.Name, uncommitted, arguments);
@@ -44,11 +44,10 @@ internal sealed class ViewSummaries
 
         try
         {
-            var analyser = new ProcedureAnalyzer(model, function.Span, Functions(uncommitted), arguments, ansiNullsOff: function.AnsiNullsOff, views: this, uncommittedReads: uncommitted);
             found = function switch
             {
-                InlineFunction inline => analyser.ReadInline(inline),
-                TableFunction declared => analyser.ReadReturnTable(declared),
+                InlineFunction inline => new Typer(model, function.Span, Functions(uncommitted), arguments, function.AnsiNullsOff, this, uncommitted).ReadInline(inline),
+                TableFunction declared => new Walker(model, function.Span, Functions(uncommitted), arguments, ansiNullsOff: function.AnsiNullsOff, views: this, uncommittedReads: uncommitted).ReadReturnTable(declared),
                 _ => throw new ArgumentException("Not a table-valued function.", nameof(function)),
             };
         }
@@ -85,7 +84,7 @@ internal sealed class ViewSummaries
 
         try
         {
-            found = new ProcedureAnalyzer(model, view.Span, Functions(uncommitted), ansiNullsOff: view.AnsiNullsOff, views: this, uncommittedReads: uncommitted).ReadView(view);
+            found = new Typer(model, view.Span, Functions(uncommitted), ansiNullsOff: view.AnsiNullsOff, views: this, uncommittedReads: uncommitted).ReadView(view);
         }
         finally
         {

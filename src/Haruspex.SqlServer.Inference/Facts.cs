@@ -7,8 +7,8 @@ namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
 /// What the conditions being read prove: the filters of each query whose select list is being read (<c>WHERE</c>, an inner
-/// join's <c>ON</c>, <c>HAVING</c>; Refinement.cs) and the conditions of each <c>CASE</c> or <c>IIF</c> branch being read
-/// (ProcedureAnalyzer.Case.cs). One immutable environment, with one set of lookups: entering a query or a branch extends it
+/// join's <c>ON</c>, <c>HAVING</c>; Typer.Refinement.cs) and the conditions of each <c>CASE</c> or <c>IIF</c> branch being read
+/// (Typer.Case.cs). One immutable environment, with one set of lookups: entering a query or a branch extends it
 /// (<see cref="With"/>), leaving gives back the one before. The guide's chapter <c>docs/internals/06-flow-joins-and-fixed-points.md</c>,
 /// "What conditions prove", explains it.
 /// </summary>

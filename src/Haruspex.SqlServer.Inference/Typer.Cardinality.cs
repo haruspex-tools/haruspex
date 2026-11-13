@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Semantics;
@@ -10,7 +11,7 @@ namespace Haruspex.SqlServer.Inference;
 /// <c>RefinementObservationTests</c>, and the README beside this file says why each is sound. Anything not recognised is
 /// <see cref="IrCardinality.Many"/>, which claims nothing.
 /// </summary>
-internal sealed partial class ProcedureAnalyzer
+internal sealed partial class Typer
 {
     /// <summary>
     /// Whether the statement being read may read uncommitted: by the procedure's isolation level (FlowState), or because the

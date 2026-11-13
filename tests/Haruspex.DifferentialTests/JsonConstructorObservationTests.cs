@@ -6,7 +6,7 @@ namespace Haruspex.DifferentialTests;
 /// <summary>
 /// What SQL Server's JSON constructors (<c>json_object</c>, <c>json_array</c>, <c>json_arrayagg</c>,
 /// <c>json_objectagg</c>) actually write, observed and kept as tests, as <see cref="ForJsonObservationTests"/> does for
-/// FOR JSON. The inferencer's claims about the constructors (ProcedureAnalyzer, "JSON constructors") and the IR's
+/// FOR JSON. The inferencer's claims about the constructors (the Inference README, "JSON constructors") and the IR's
 /// README rest on these; none was taken from the documentation alone. Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
 /// <remarks>

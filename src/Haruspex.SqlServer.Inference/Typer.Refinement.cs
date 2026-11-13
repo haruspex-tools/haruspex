@@ -13,11 +13,8 @@ namespace Haruspex.SqlServer.Inference;
 /// each engine rule it uses is observed in <c>RefinementObservationTests</c>. The README beside this file says why each
 /// step is sound.
 /// </summary>
-internal sealed partial class ProcedureAnalyzer
+internal sealed partial class Typer
 {
-    /// <summary>Whether the body was created with ANSI_NULLS off, under which <c>c = @x</c> is TRUE when both are null.</summary>
-    private readonly bool ansiNullsOff;
-
     /// <summary>Why a column read in <paramref name="scope"/> may be NULL in a super-aggregate row (<see cref="Facts.Rolled"/>).</summary>
     private static IrNullReason? Rolled(BoundSource source, ReadScope scope) => scope.Facts.Rolled(source, scope.Aggregating);
 
@@ -290,7 +287,7 @@ internal sealed partial class ProcedureAnalyzer
         return result;
     }
 
-    private static ScalarExpression Strip(ScalarExpression e)
+    internal static ScalarExpression Strip(ScalarExpression e)
     {
         while (e is ParenthesisExpression p)
             e = p.Expression;

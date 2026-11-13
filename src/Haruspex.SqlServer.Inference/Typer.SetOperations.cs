@@ -12,7 +12,7 @@ namespace Haruspex.SqlServer.Inference;
 // Set operations (UNION, UNION ALL, INTERSECT, EXCEPT and parenthesised queries) and OPENJSON. README.md in this
 // folder ("Set operations", "OPENJSON") gives the rules and the observations they rest on (SetJoinObservationTests in the
 // differential tests). CROSS JOIN and FULL OUTER JOIN are binding's (Binder.cs), refinement's and cardinality's.
-internal sealed partial class ProcedureAnalyzer
+internal sealed partial class Typer
 {
     /// <summary>
     /// The row any query expression gives: a query specification's, or a set operation's over the queries it combines. Each
@@ -34,7 +34,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>A statement's own query, bound with the names in force at <paramref name="at"/>, outside any other query.</summary>
-    private Row Outermost(QueryExpression query, ReadScope at) => Query(binder.Bind(query, null, at.Names), at);
+    internal Row Outermost(QueryExpression query, ReadScope at) => Query(binder.Bind(query, null, at.Names), at);
 
     /// <summary>A subquery of the query whose scope is <paramref name="scope"/>, which it reads beyond its own sources.</summary>
     private Row Nested(QueryExpression query, ReadScope scope) => Query(binder.Bind(query, scope.Bound, scope.Names), scope);
@@ -46,7 +46,7 @@ internal sealed partial class ProcedureAnalyzer
     /// FOR on a set operation anywhere but a statement, 1086, observed: A_for_json_subquery_over_a_set_operation_needs_a_derived_table;
     /// so in a subquery this only stops the last query being read as a plain one.)
     /// </summary>
-    private static ForClause? ForOf(QueryExpression query) => query.ForClause ?? (query is BinaryQueryExpression ? Last(query)?.ForClause : null);
+    internal static ForClause? ForOf(QueryExpression query) => query.ForClause ?? (query is BinaryQueryExpression ? Last(query)?.ForClause : null);
 
     /// <summary>The OFFSET clause of a query expression; see <see cref="ForOf"/>.</summary>
     /// <remarks>
@@ -329,7 +329,7 @@ internal sealed partial class ProcedureAnalyzer
         var name = symbol.Name;
         static IrNullReason JsonValue(SourceLocation where) => new(IrNullRule.JsonNullOrAbsent, where.ToString());
 
-        // Over JSON built here its shape says more (ProcedureAnalyzer.JsonReads.cs).
+        // Over JSON built here its shape says more (Typer.JsonReads.cs).
         if (TracedOpenJson(reference, scope, at) is { } traced)
         {
             List<string> columns = reference.SchemaDeclarationItems.Count == 0 ? ["key", "value", "type"] : [.. reference.SchemaDeclarationItems.Select(i => i.ColumnDefinition.ColumnIdentifier.Value)];

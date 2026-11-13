@@ -13,7 +13,7 @@ internal sealed record LocalRelationValues(EquatableArray<string>? Names, Equata
 
     /// <summary>
     /// How many rows it has where it is read (for an APPLY's right side, for each outer row): set for derived tables,
-    /// VALUES lists and views from their query (Cardinality.cs); any number for the others, which claims nothing.
+    /// VALUES lists and views from their query (Typer.Cardinality.cs); any number for the others, which claims nothing.
     /// </summary>
     public IrCardinality Rows { get; init; } = IrCardinality.Many;
 
@@ -23,6 +23,6 @@ internal sealed record LocalRelationValues(EquatableArray<string>? Names, Equata
     /// </summary>
     public bool AtLeastOne { get; init; }
 
-    /// <summary>Its unique keys, which only a view has here (see <see cref="ProcedureAnalyzer"/>'s <c>ViewKeys</c>).</summary>
+    /// <summary>Its unique keys, which only a view has here (see <see cref="Typer"/>'s <c>ViewKeys</c>).</summary>
     public EquatableArray<RelationKey> Keys { get; init; } = [];
 }

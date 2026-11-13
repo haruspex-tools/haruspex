@@ -8,35 +8,55 @@ namespace Haruspex.SqlServer.Inference;
 
 // The function table: a row for each built-in function of the catalogue (BuiltInFunctions), saying how inference types a call
 // of it, and the one path a call is typed by (Function, below). A function the catalogue lacks is not modelled. The typing methods are
-// the analyser's own methods, which is why the table is a part of it; README.md in this folder ("Built-in functions", "Window
+// the typer's own methods, which is why the table is a part of it; README.md in this folder ("Built-in functions", "Window
 // functions") and the guide's chapter docs/internals/08-the-sql-server-type-system-as-data.md explain the rules.
-internal sealed partial class ProcedureAnalyzer
+internal sealed partial class Typer
 {
     private const string DateKinds = "Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type";
+
     private const string DateIntegers = "A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow";
+
     private const string DateNulls = "A_date_function_is_null_when_an_argument_is_but_eomonth_ignores_a_null_offset";
+
     private const string Now = "The_current_date_and_time_functions_are_never_null";
+
     private const string Trims = "Trimming_and_case_keep_the_strings_length_and_make_a_fixed_length_string_varying";
+
     private const string Parts = "Left_right_and_substring_are_as_long_as_a_literal_length_allows";
+
     private const string Lengths = "Len_and_datalength_are_int_or_bigint_over_max_and_len_ignores_trailing_spaces";
+
     private const string Escapes = "String_escape_is_nvarchar_max_and_formatmessage_nvarchar_4000_writing_a_null_argument_as_null_in_brackets";
+
     private const string Rounding = "Round_floor_ceiling_abs_and_sign_are_typed_by_their_argument";
+
     private const string RoundingOverflow = "Floor_ceiling_abs_and_sign_overflow_only_where_the_type_cannot_hold_the_result";
+
     private const string Floats = "Power_is_typed_by_its_first_argument_and_the_others_are_float";
+
     private const string Domains = "A_math_function_outside_its_domain_is_an_error_by_default_and_null_under_the_callers_options";
+
     private const string Choices = "Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results";
+
     private const string Coalescing = "Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments";
+
     private const string Windowed = "Window_functions_are_typed_by_their_kind_or_their_argument";
+
     private const string Ranking = "Ranking_is_never_null_and_percentiles_are_null_only_over_all_null_input";
+
     private const string Frames = "A_frame_that_may_leave_out_the_current_row_can_be_empty_and_give_null_over_a_never_null_column";
+
     private const string Statistics = "The_statistical_aggregates_are_float_and_the_sample_forms_null_over_fewer_than_two_values";
+
     private const string OneRow = "An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows";
+
     private const string Refusals = "Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read";
+
     private const string OtherAggregates = "Checksum_agg_grouping_id_and_approx_count_distinct_are_aggregates_that_make_one_row";
 
     private static FunctionTyping Typing(
         BuiltInFunction function, (int, int?)? arity, string rule, IrNullRule[] nulls, string[] observedIn,
-        Func<ProcedureAnalyzer, ScalarExpression, ReadScope, Value>? type, bool readsOnlyItsArguments = true, OtherForms otherForms = OtherForms.FormNotModelled) =>
+        Func<Typer, ScalarExpression, ReadScope, Value>? type, bool readsOnlyItsArguments = true, OtherForms otherForms = OtherForms.FormNotModelled) =>
         new(function, arity, otherForms, rule, [.. nulls], [.. observedIn], readsOnlyItsArguments, type);
 
     private static FunctionCall Call(ScalarExpression call) => (FunctionCall)call;
@@ -44,7 +64,7 @@ internal sealed partial class ProcedureAnalyzer
     private static FunctionTyping WindowRow(BuiltInFunction function, (int, int?) arity, string rule, IrNullRule[] nulls, string[] observedIn, WindowRule window) =>
         Typing(function, arity, rule, nulls, observedIn, (a, e, s) => a.Window(Call(e), s, function, window), readsOnlyItsArguments: false, OtherForms.WindowNotModelled);
 
-    private static FunctionTyping AggregateRow(BuiltInFunction function, (int, int?)? arity, string rule, IrNullRule[] nulls, string[] observedIn, Func<ProcedureAnalyzer, ScalarExpression, ReadScope, Value> type) =>
+    private static FunctionTyping AggregateRow(BuiltInFunction function, (int, int?)? arity, string rule, IrNullRule[] nulls, string[] observedIn, Func<Typer, ScalarExpression, ReadScope, Value> type) =>
         Typing(function, arity, rule, nulls, observedIn, type, readsOnlyItsArguments: true, OtherForms.AggregateNotModelled);
 
     /// <summary>Every row, one for each function of the catalogue.</summary>

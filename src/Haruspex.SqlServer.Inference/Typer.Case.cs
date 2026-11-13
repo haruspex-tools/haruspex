@@ -11,7 +11,7 @@ namespace Haruspex.SqlServer.Inference;
 // CASE, IIF, CHOOSE and NULLIF, and COALESCE and ISNULL over JSON. README.md in this folder ("CASE, IIF, CHOOSE and
 // NULLIF", "COALESCE and ISNULL over JSON") gives the rules and the observations they rest on (CaseObservationTests in the
 // differential tests).
-internal sealed partial class ProcedureAnalyzer
+internal sealed partial class Typer
 {
     // ---- what a branch knows --------------------------------------------------------------------------------------------
 

@@ -8,7 +8,7 @@ namespace Haruspex.SqlServer.Inference;
 
 // Table-valued functions as table sources. README.md in this folder ("Table-valued functions") gives the rules and
 // the observations they rest on (TableFunctionObservationTests in the differential tests).
-internal sealed partial class ProcedureAnalyzer
+internal sealed partial class Typer
 {
     /// <summary>
     /// A call of a table-valued function in FROM or APPLY: its arguments read where the call is (an APPLY's left input's
@@ -100,7 +100,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         ArgumentNullException.ThrowIfNull(function);
         var select = function.Query;
-        names = NameEnvironment.Empty.WithDeclarations(binder.Declarations(function.Parameters));
+        var names = NameEnvironment.Empty.WithDeclarations(binder.Declarations(function.Parameters));
         var at = At(select);
         LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{function.Name}: {detail}", at));
 
@@ -118,40 +118,5 @@ internal sealed partial class ProcedureAnalyzer
                     : Fails("its columns cannot be listed: SELECT * is not expanded in a function, and every column needs one name of its own.");
             },
             LocalRelationValues.Unknown);
-    }
-
-    /// <summary>
-    /// A multi-statement function's rows: its declared return table, whatever its body inserts. The table enforces its
-    /// declaration (observed: A_multi_statement_functions_return_table_enforces_its_constraints): every value is converted to
-    /// its column's type, a NULL into a NOT NULL column fails the call, and so does a row that breaks a PRIMARY KEY, a UNIQUE
-    /// constraint or a CHECK. So its columns are the declared ones, with their CHECK facets, and its keys are its declared
-    /// keys. How many rows it returns is not read.
-    /// </summary>
-    public LocalRelationValues ReadReturnTable(TableFunction function)
-    {
-        ArgumentNullException.ThrowIfNull(function);
-        var name = function.Name.ToString();
-        var table = function.Returns;
-        var values = table.Columns.Select(c => Declared(table, c, name, temporary: false)).ToList();
-        var keys = new List<RelationKey>();
-        foreach (var key in SchemaRules.EnforcedKeys(table))
-        {
-            var ordinals = key.Columns.Select(c => table.Columns.ToList().FindIndex(x => x.Name.Equals(c, StringComparison.OrdinalIgnoreCase))).ToList();
-            var types = key.Columns.Select(c => SchemaRules.ResolveType(model, table.Column(c)?.Type)?.Type).ToList();
-            if (ordinals.All(o => o >= 0) && types.All(t => t is not null))
-                keys.Add(new RelationKey([.. ordinals], [.. types.OfType<BuiltInType>()]));
-        }
-
-        // What its nvarchar(max) columns hold as JSON is what its body writes to them: the body is walked as a
-        // procedure's is, the return table a table variable, and its traced columns read as they stand where it returns. A body
-        // the walk cannot follow leaves them as declared.
-        var walked = function.Body is SqlBody body ? Walk(function.Parameters, body.Statements, table) : null;
-        if (walked is { Blocker: null, End: { } end })
-        {
-            var variable = new LocalName(table.Name);
-            values = [.. values.Select((v, i) => end.Json.TryGetValue(new ColumnSlot(variable, table.Columns[i].Name), out var slot) ? slot.Read(v) : v)];
-        }
-
-        return new LocalRelationValues([.. table.Columns.Select(c => c.Name)], [.. values], null) { Keys = [.. keys] };
     }
 }

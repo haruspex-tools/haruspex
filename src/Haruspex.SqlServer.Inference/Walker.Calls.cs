@@ -6,12 +6,13 @@ using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
+using static Haruspex.SqlServer.Inference.Typer;
 
 namespace Haruspex.SqlServer.Inference;
 
 // EXEC and INSERT … EXEC. README.md in this folder ("Calls") gives the model, and the observations it rests on
 // are ExecObservationTests in the differential tests.
-internal sealed partial class ProcedureAnalyzer
+internal sealed partial class Walker
 {
     private readonly ProcedureCalls? calls;
 

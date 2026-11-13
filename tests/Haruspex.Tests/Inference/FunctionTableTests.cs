@@ -6,7 +6,7 @@ using Haruspex.SqlServer.Semantics;
 namespace Haruspex.Tests.Inference;
 
 /// <summary>
-/// The function table (<c>ProcedureAnalyzer.FunctionTable</c>) as data: a row for each function of the catalogue and no other;
+/// The function table (<c>Typer.FunctionTable</c>) as data: a row for each function of the catalogue and no other;
 /// each row's observation tests exist and call its function in its form; the reasons to be NULL the sweep finds for a call are
 /// among those its row declares; and a function's name is read only through the catalogue, so the table is the one path a call
 /// is typed by.
@@ -22,7 +22,7 @@ public partial class FunctionTableTests
 
     private static readonly string[] SqlLayers = ["Haruspex.SqlServer.Inference", "Haruspex.SqlServer.Semantics"];
 
-    private static IReadOnlyList<FunctionTyping> Table => ProcedureAnalyzer.FunctionTable;
+    private static IReadOnlyList<FunctionTyping> Table => Typer.FunctionTable;
 
     [Fact]
     public void Every_function_of_the_catalogue_has_one_row_and_every_row_a_function_of_it()

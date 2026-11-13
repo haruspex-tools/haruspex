@@ -385,7 +385,7 @@ The two operations answer different questions. The type rule says what SQL Serve
 conversion of each value to it. The knowledge join says what haruspex *knows* of a value that comes from one side or the
 other. A `CASE` uses each where it applies: the type rule for its type, the server's folding rule for
 its digits (`IntDigits.Foldable`, which is not the join either: one `1` folds to 1 or stays 10), and the knowledge join
-for why it may be null. Its facets are its type's, with the set of its literals where every result is one. So they are named apart, `TypeChain.Of` and `ProcedureAnalyzer.Chained`
+for why it may be null. Its facets are its type's, with the set of its literals where every result is one. So they are named apart, `TypeChain.Of` and `Typer.Chained`
 for the rule and `Value.Join` and the facts' joins for knowledge, and nothing that wants one calls the other. Using the
 type rule as a join would make a value's type depend on the order of paths, and regroup the server's fold, which the
 server does not. `LatticeLawTests` holds the rule to its fold: grouping its first two types first gives its result, and

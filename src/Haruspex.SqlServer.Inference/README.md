@@ -17,10 +17,11 @@ flowchart LR
     model["DatabaseModel"] --> infer["IrInference.Infer"]
     declared["DeclaredResults, from the config file"] --> infer
     infer --> calls["ProcedureCalls: one walk per procedure and call context"]
-    calls --> walk["ProcedureAnalyzer: the statement walk"]
-    walk -->|binds names with| binder["Binder (Semantics)"]
+    calls --> walk["Walker: the statement walk"]
     walk -->|carries| state["FlowState: a Value per variable and column, ResultTrack"]
-    walk -->|asks| summaries["FunctionSummaries, ViewSummaries, DmlTriggers"]
+    walk -->|"each expression and query, in a ReadScope"| typer["Typer: what an expression gives"]
+    typer -->|binds names with| binder["Binder (Semantics)"]
+    typer -->|asks| summaries["FunctionSummaries, ViewSummaries"]
     walk -->|EXEC| calls
     calls --> analysis["ProcedureAnalysis"]
     analysis --> builder["IrBuilder"]
@@ -62,7 +63,7 @@ The rest of this page is the reference: how a procedure's statements are read in
 them gives: calls ("Calls" below), what filters and single-row queries prove ("Refinement"), writes, triggers and cursors ("DML", "Triggers", "Cursors"), `APPLY`,
 `VALUES` lists and views ("APPLY", "Views"), expressions ("Expressions", "CASE, IIF, CHOOSE and NULLIF", "Built-in
 functions", "Window functions"), table-valued functions, set operations and the other joins, `OPENJSON`, and JSON built in
-the project and traced to where it is read. The walk is `ProcedureAnalyzer.Flow.cs`, with `FlowState.cs` (the state and
+the project and traced to where it is read. The walk is `Walker.cs`, with `FlowState.cs` (the state and
 its join), `ReadScope.cs` (what each source a query binds holds, and the state it is read in) and `Lattice/` (the knowledge join of values, one lattice per fact, composed in `Value.Join`). Every engine rule it leans on is
 observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`; the test names are given below. Each later section
@@ -182,7 +183,7 @@ yet: a recursive CTE with several anchor members, `SELECT *` inside one, and `WI
 
 ## Calls
 
-`EXEC` of a procedure of the project is followed: `ProcedureAnalyzer.Calls.cs` does a call, `ProcedureCalls.cs`
+`EXEC` of a procedure of the project is followed: `Walker.Calls.cs` does a call, `ProcedureCalls.cs`
 walks the callee and solves recursion. Every engine rule here is observed and kept as a test in
 `tests/Haruspex.DifferentialTests/ExecObservationTests.cs`; the test names are given below.
 
@@ -286,7 +287,7 @@ it on the stack of calls.
 
 ## DML
 
-`ProcedureAnalyzer.Dml.cs` reads writes. Every engine rule here is observed and kept as a test in
+`Walker.Writes.cs` reads writes. Every engine rule here is observed and kept as a test in
 `tests/Haruspex.DifferentialTests/DmlObservationTests.cs`; the test names are given below.
 
 - **A write returns no result set**, on any table: `INSERT` (`VALUES`, `SELECT`, `EXEC`, `DEFAULT VALUES`), `UPDATE` (with
@@ -409,7 +410,7 @@ write fires them. A trigger disabled by `DISABLE TRIGGER` is still counted, whic
 
 ## Expressions
 
-`ProcedureAnalyzer.Expressions.cs` reads them, `ScalarType.cs` computes their types. Every rule is observed in
+`Typer.Expressions.cs` reads them, `ScalarType.cs` computes their types. Every rule is observed in
 `ExpressionObservationTests`, mostly as SQL Server describes a query's columns (`sys.dm_exec_describe_first_result_set`), and
 `DescribedTypeTests` compares the type of every rowset column of every fixture with the server's description. A value
 computed by an expression is any value of its type: it has the type's facets, not the CHECK set or bounds of a column it
@@ -513,7 +514,7 @@ modelled.
   always NULL under the default setting and is not modelled. With
   `CONCAT_NULL_YIELDS_NULL` off, `NULL + 'x'` is `'x'` (`With_concat_null_yields_null_off_a_string_plus_null_is_the_string`):
   less often null, so the claim holds under either setting, and nothing needs assuming about it. On is SQL Server's default,
-  and off is deprecated; a procedure that sets it off is unknown, as before (`ProcedureAnalyzer.IsHarmless`). `+` of a string and a number is
+  and off is deprecated; a procedure that sets it off is unknown, as before (`Walker.IsHarmless`). `+` of a string and a number is
   arithmetic, which may fail, and is not modelled.
 
 ### Decimal arithmetic
@@ -608,7 +609,7 @@ operators, with no difference; that took 14 minutes, so the grid kept as a test 
 
 ### Numeric functions
 
-`ProcedureAnalyzer.Numeric.cs` reads them. Each is NULL when its first argument is, and when any other is, except `ROUND`'s
+`Typer.Numeric.cs` reads them. Each is NULL when its first argument is, and when any other is, except `ROUND`'s
 third (a NULL third argument rounds); each reads only its arguments, so a `COALESCE` reads it once. Observed in
 `NumericObservationTests`; the types also over the grid (`ArithmeticGridTests`).
 
@@ -643,7 +644,7 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
 
 ## CASE, IIF, CHOOSE and NULLIF
 
-`ProcedureAnalyzer.Case.cs` reads them. Every rule is observed in `CaseObservationTests`.
+`Typer.Case.cs` reads them. Every rule is observed in `CaseObservationTests`.
 
 - **Type.** A `CASE` (searched or simple), `IIF` or `CHOOSE` is of the type of highest precedence over its *results*, by the
   same rule as `COALESCE` and set operations ("Combining types" below): `CASE … THEN 'a' ELSE 'longer' END` is `varchar(6)`, a `char(4)`
@@ -662,7 +663,7 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
 - **Branches refine** (`A_case_branch_runs_only_when_its_condition_is_true_and_later_ones_only_when_earlier_were_not`). A
   `THEN` is read knowing its `WHEN` was TRUE, and every branch after it, `ELSE` included, knowing each earlier `WHEN` was FALSE
   or UNKNOWN. A value is proved non-null where, were it NULL, the condition could not have taken that truth value, decided by
-  refinement's three-valued logic (`ProcedureAnalyzer.Possible` in `Refinement.cs`, the same as for WHERE). So `CASE WHEN x IS NULL THEN 0
+  refinement's three-valued logic (`Typer.Possible` in `Typer.Refinement.cs`, the same as for WHERE). So `CASE WHEN x IS NULL THEN 0
   ELSE x END` is never NULL, but `CASE WHEN x = 1 THEN 0 ELSE x END` may be: `x = 1` is UNKNOWN for a NULL `x`, which is not
   TRUE either. A simple CASE's `WHEN v` is read as `input = v`; `WHEN NULL` never matches. What is proved is the value itself
   in the row being read, after grouping, so it removes every reason the value had, not only `nullable-column`: an outer
@@ -726,14 +727,14 @@ observed in each position before it was typed (`CaseObservationTests`):
 
 ## Refinement
 
-What a query's filters prove about the rows they keep: `Refinement.cs` (facts and three-valued logic) and
-`Cardinality.cs` (how many rows). Every engine rule is observed on SQL Server 2025 RTM-CU10 and kept as a test in
+What a query's filters prove about the rows they keep: `Typer.Refinement.cs` (facts and three-valued logic) and
+`Typer.Cardinality.cs` (how many rows). Every engine rule is observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/RefinementObservationTests.cs`; the test names are given below.
 
 ### Which conditions prove a column non-null
 
 `WHERE`, an inner join's `ON` and `HAVING` keep only rows for which their condition is TRUE. So a condition that cannot be
-TRUE when a column is NULL proves it non-null in every row kept. `ProcedureAnalyzer.Possible` computes, for a column, the set of truth values
+TRUE when a column is NULL proves it non-null in every row kept. `Typer.Possible` computes, for a column, the set of truth values
 the condition can take when that column is NULL and everything else is anything:
 
 | Form | When the column is NULL |
@@ -823,7 +824,7 @@ themselves: what a query proved is what its row holds.
   exactly one row (`A_scalar_subquery_of_an_aggregate_without_group_by_always_has_a_value_for_count`). A `FOR JSON` subquery
   is NULL over no rows, so an array it builds has at least one item, and at most one where its query returns at most one.
 
-### How many rows (`Cardinality.cs`)
+### How many rows (`Typer.Cardinality.cs`)
 
 | Query | Rows |
 |---|---|
@@ -877,7 +878,7 @@ match. `'5'` and `'05'` both equal 5 (`A_comparison_that_converts_the_key_can_ma
 under a SQL collation compared with an `nvarchar` value is compared by Unicode rules, under which `'ss'` and `'ß'` are equal
 (`A_varchar_key_under_a_sql_collation_compared_with_nvarchar_can_match_several_rows`). So the value must be of the key's
 type, a narrower integer or decimal, a `varchar` for an `nvarchar` key, or a string for a key that is not a string, and
-carry no `COLLATE` of its own (`ProcedureAnalyzer.InKeysType` lists them).
+carry no `COLLATE` of its own (`Typer.InKeysType` lists them).
 
 Not modelled yet: keys of temporary tables, table variables, CTEs and derived tables (a derived table's at-most-one
 bound is); `CREATE UNIQUE INDEX` (a separate
@@ -902,7 +903,7 @@ side is evaluated once for each row of its left input. Each rule is observed in 
   rows (`An_ungrouped_aggregate_applied_gives_one_row_for_every_outer_row`), a query without `FROM` one row
   (`A_for_json_subquery_applied_without_from_is_one_row_whose_json_is_null_when_there_are_no_rows`), and a `VALUES` list its
   rows; so under either APPLY their columns keep their own nullability, and `CROSS APPLY` removes no outer row. Which queries
-  are one row is the cardinality of "How many rows" above (`Cardinality.cs`): a relation records its query's `LocalRelationValues.Rows` and `LocalRelationValues.AtLeastOne`
+  are one row is the cardinality of "How many rows" above (`Typer.Cardinality.cs`): a relation records its query's `LocalRelationValues.Rows` and `LocalRelationValues.AtLeastOne`
   (`LocalRelationValues`), and the null-extension is skipped only for a source that *is* the whole right side
   (`OptionalSideKind.WholeApplied`): one joined inside it may have a row while the side as a whole has none. With `GROUP BY` (even
   `GROUP BY ()`) or `HAVING` the right side may have no row (`A_grouped_aggregate_applied_gives_no_row_for_an_outer_row_without_rows`).
@@ -912,7 +913,7 @@ side is evaluated once for each row of its left input. Each rule is observed in 
   An outer `WHERE` on a right-side column proves the row matched, as for a left join, and drops `unmatched-lateral-row`. Joins inside an
   `OUTER APPLY`'s right side refine as an outer join's optional side does.
 - **Cardinality.** A right side of at most one row per outer row (`TOP (1)`, an aggregate, a key fixed by the outer row,
-  a one-row `VALUES`) counts as fixed in `ProcedureAnalyzer.Keyed`, so the query keeps the outer side's bound: at most one stays at most one,
+  a one-row `VALUES`) counts as fixed in `Typer.Keyed`, so the query keeps the outer side's bound: at most one stays at most one,
   for `OUTER APPLY` (one null-extended row at most) and `CROSS APPLY` alike (`Top_1_applied_gives_at_most_one_row_for_every_outer_row`).
   Otherwise many.
 - **Claims less, written down.** The outer query's own `WHERE` facts are not yet pushed while the right side is read
@@ -921,7 +922,7 @@ side is evaluated once for each row of its left input. Each rule is observed in 
 
 ### `VALUES`
 
-A `VALUES` list (`ProcedureAnalyzer.ValuesList`) is a relation wherever it is a table source, under `APPLY` (the unpivot and
+A `VALUES` list (`Typer.ValuesList`) is a relation wherever it is a table source, under `APPLY` (the unpivot and
 name-an-expression idioms) or in `FROM`. It has as many rows as it lists, every time it is read, so it always has one.
 A column's type is the one of highest precedence among its rows', to which each value is converted
 (`A_values_column_takes_the_type_of_highest_precedence_among_its_rows`: `int` and `2.5` give `numeric(2,1)`), which is not
@@ -934,7 +935,7 @@ length in bytes depends on the database's code page. String literals are not rea
 
 ## Views
 
-A view of the project (`ViewSummaries`, `ProcedureAnalyzer.ReadView`) is read from its definition once per document, as a
+A view of the project (`ViewSummaries`, `Typer.ReadView`) is read from its definition once per document, as a
 derived table would be, in its own file and with its own `ANSI_NULLS` (kept from its creation, as a procedure's:
 `A_view_keeps_ansi_nulls_as_it_was_when_it_was_created`). Its column list names its columns
 (`A_view_column_list_names_every_column_and_no_more`); views over views, joins, `APPLY` and CTEs inside it follow the
@@ -946,7 +947,7 @@ view whose query has `FOR XML`/`FOR JSON` is `unsupported-query`; one whose quer
 key. Views are read in procedures and in functions' bodies too (a table-valued function's, and a scalar function's
 subqueries).
 
-**`SELECT *` in a view** is expanded (`ProcedureAnalyzer.Expand`): each source's columns in order, a table's as declared and a relation's as
+**`SELECT *` in a view** is expanded (`Typer.Expand`): each source's columns in order, a table's as declared and a relation's as
 named, and `alias.*` for one source. SQL Server binds it when the view is created and keeps that list until the view is
 refreshed (`A_view_binds_select_star_when_it_is_created`: a column added later is not in it). The project shows each table
 as it is after deployment, so **haruspex assumes each view is bound against that**: created after its tables reached their
@@ -954,18 +955,18 @@ final form, or refreshed since, which is what a deployment that recreates or ref
 whose `*` differs from its declared columns (a `HIDDEN` period column, or a graph table's pseudo-columns) is not expanded.
 `SELECT *` in a procedure is still not expanded: the brief asked for views only.
 
-**Keys pass through a view only when proved** (`ProcedureAnalyzer.ViewKeys`). A view that reads one table, with no join, `APPLY` or
+**Keys pass through a view only when proved** (`Typer.ViewKeys`). A view that reads one table, with no join, `APPLY` or
 `GROUP BY`, and does not read it `FOR SYSTEM_TIME` other than `AS OF`, returns some of the table's rows, each once
 (`A_view_over_one_table_returns_each_of_its_rows_at_most_once`);
 `WHERE`, `TOP` and `DISTINCT` only drop rows. So each enforced key of the table whose columns the view selects whole, as
-bare columns without `COLLATE`, is a key of the view, compared in the base column's type (`ProcedureAnalyzer.InKeysType`). Left out, each
+bare columns without `COLLATE`, is a key of the view, compared in the base column's type (`Typer.InKeysType`). Left out, each
 only claiming less: a view grouped by a whole key (`ROLLUP` and its kind would repeat it, and telling them apart is not
 worth it yet), and a view with a join that matches at most one row (proving that needs the joined side's key fixed by its
 `ON`). A view's relation also carries its query's cardinality, so a view of at most one row counts as fixed.
 
 ## Table-valued functions
 
-A call of a table-valued function in `FROM`, a join or `APPLY` (`ProcedureAnalyzer.TableFunctions.cs`) is a relation,
+A call of a table-valued function in `FROM`, a join or `APPLY` (`Typer.TableFunctions.cs`) is a relation,
 bound like a derived table: its arguments read the enclosing queries' columns, and an `APPLY`'s left input's
 (`CROSS APPLY shop.order_totals(o.order_id) AS t`). Each rule is observed in `TableFunctionObservationTests`.
 
@@ -975,14 +976,14 @@ bound like a derived table: its arguments read the enclosing queries' columns, a
   argument of the parameter's own type keeps its facets. `DEFAULT` passes the parameter's default
   (`Default_passes_the_parameters_default`). An argument not modelled is any value of the parameter's type, or null
   (`parameter`).
-- **An inline function** is read from its query with those values, as a view is (`ProcedureAnalyzer.ReadInline`): in its own file and with its
+- **An inline function** is read from its query with those values, as a view is (`Typer.ReadInline`): in its own file and with its
   own `ANSI_NULLS`, its parameters read as constants, so a key compared with one is fixed, and an argument never null stays
   never null where the body passes it through. It is read once per function and set of argument values
   (`ViewSummaries.Function`). Its keys pass through as a view's do, and its rows are its query's, for each call: an
   ungrouped aggregate is one row for every outer row under either APPLY
   (`An_aggregate_function_applied_gives_one_row_for_every_outer_row`), so it keeps the outer bound and is never null-extended;
   `TOP (1)` is at most one.
-- **A multi-statement function** is its declared return table (`ProcedureAnalyzer.ReadReturnTable`), and its `nvarchar(max)` columns hold the JSON
+- **A multi-statement function** is its declared return table (`Walker.ReadReturnTable`), and its `nvarchar(max)` columns hold the JSON
   its body writes to them: the body is walked as a procedure's is, the return table a table variable ("JSON built
   here, traced"); a body the walk cannot follow leaves them as declared. A body that calls a procedure is one: SQL Server
   creates the function and refuses the call when it runs (557, `A_function_that_calls_a_procedure_is_created_and_every_call_of_it_fails`),
@@ -1000,7 +1001,7 @@ bound like a derived table: its arguments read the enclosing queries' columns, a
 
 ## Set operations
 
-`UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT` and parenthesised queries (`ProcedureAnalyzer.SetOperations.cs`) are read
+`UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT` and parenthesised queries (`Typer.SetOperations.cs`) are read
 wherever a query stands: a result, a derived table, a CTE, a view, an inline function, a scalar subquery, `INSERT … SELECT`
 and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
 
@@ -1008,7 +1009,7 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
   columns only. A recursive CTE is still read as before ("CTEs").
 - **Grouping.** `INTERSECT` binds tighter than `UNION` and `EXCEPT`, which apply left to right
   (`Intersect_binds_tighter_than_union_and_except_whatever_the_parser_shows`). ScriptDom gives the chain left to right
-  whatever the operators, so `ProcedureAnalyzer.Combine` flattens it (never through parentheses) and regroups it before reading nulls.
+  whatever the operators, so `Typer.Combine` flattens it (never through parentheses) and regroups it before reading nulls.
 - **Names** are the first query's. **Types** are by precedence over every query's, as `COALESCE`'s ("Combining types"
   below): a fold over the chain left to right (the test below is named for typing every query at once, which the fold
   agrees with except where an integer meets `money` before a decimal), so an integer literal keeps its own digits
@@ -1047,7 +1048,7 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
   refused anywhere but a statement (1086, `A_for_json_subquery_over_a_set_operation_needs_a_derived_table`); over a derived
   table that is one it is the usual `FOR JSON`.
 - **Where the parser puts ORDER BY, OFFSET and FOR.** On the set operation in a statement, but on its last query in a subquery
-  or derived table (`ProcedureAnalyzer.ForOf`, `ProcedureAnalyzer.OffsetOf`); they belong to the whole either way
+  or derived table (`Typer.ForOf`, `Typer.OffsetOf`); they belong to the whole either way
   (`Order_by_and_offset_apply_to_the_whole_set_operation_and_top_to_its_first_query`). `TOP` belongs to its own query.
 - **Rows.** `UNION` and `UNION ALL` are many (two queries of at most one row each give two). `INTERSECT` is at most one when
   either side is, `EXCEPT` when its left side is; one row is never claimed, since either may give none. `OFFSET … FETCH` on
@@ -1059,7 +1060,7 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
 
 A set operation's column, `COALESCE`, and a `CASE`, `IIF` or `CHOOSE` all take one type over values of different
 types, by one rule, the server's type rule for a chain: `TypeChain.Of` for the type, `TypeChain.Clash` for pairs SQL
-Server refuses, and `ProcedureAnalyzer.Chained` for what converting each value adds. The rule is a fold from left to
+Server refuses, and `Typer.Chained` for what converting each value adds. The rule is a fold from left to
 right, not a join: it is neither associative nor commutative, so it is never used where paths meet (`Value.Join`). Observed in `SetTypeObservationTests`, and over every
 ordered pair of a grid of 33 types and 5 literals, in all three forms, in `SetTypeGridTests` (the server describes a set
 operation and `COALESCE` alike over all 1,806 ordered pairs of a wider grid, binary and `xml` included, checked once
@@ -1154,7 +1155,7 @@ Bound by the binder; observed in `SetJoinObservationTests`.
 
 ## OPENJSON
 
-`OPENJSON(doc [, path]) [WITH (…)]` in `FROM`, a join or `APPLY` is a relation (`ProcedureAnalyzer.OpenJsonRelation`), bound like a
+`OPENJSON(doc [, path]) [WITH (…)]` in `FROM`, a join or `APPLY` is a relation (`Typer.OpenJsonRelation`), bound like a
 table-valued function's call; its arguments are not read. How many rows it gives is the data's (none for a NULL document or a
 lax path that finds nothing), so it is many and never sure to have a row. Without an alias it is a source all the same, so an
 outer join's ON proves its columns as it proves an aliased one's
@@ -1180,7 +1181,7 @@ outer join's ON proves its columns as it proves an aliased one's
 
 ## JSON built here, traced
 
-The code is `ProcedureAnalyzer.JsonTracing.cs`, `ProcedureAnalyzer.JsonReads.cs`, `JsonSlot.cs` and `JsonLiterals.cs`. JSON built
+The code is `Typer.Json.cs and Walker.Json.cs`, `Typer.JsonReads.cs`, `JsonSlot.cs` and `JsonLiterals.cs`. JSON built
 in the project (`FOR JSON`, the constructors, a function returning JSON, a JSON literal) keeps its shape on every route inside
 the project to where it is read, and `json_query`, `OPENJSON` and `JSON_VALUE` there use it. JSON stored in a permanent table's
 column is never traced: someone else may write it. Every rule is observed in `JsonTracingObservationTests`.
@@ -1225,10 +1226,10 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   Elsewhere a `CASE` whose results are all JSON text is JSON text of the join; one with a live result is unknown, as before.
   `ISNULL` over live JSON writes any literal fallback that is a JSON document as JSON (one that is not, `'[1]x'`, makes text
   that is not JSON, so it is not modelled).
-- **`OPENJSON`** over JSON built here (`ProcedureAnalyzer.TracedOpenJson`): its rows are an array's items or an object itself. With `WITH`, a
+- **`OPENJSON`** over JSON built here (`Typer.TracedOpenJson`): its rows are an array's items or an object itself. With `WITH`, a
   column is never null where its path finds a value in every row that is never JSON null (a key `FOR JSON` leaves out when
   null may be missing; under `strict` a missing key is an error, so only a JSON null makes it NULL) and converts without
-  failing (`ProcedureAnalyzer.Converted`). Observed (`Openjson_with_over_json_built_here_converts_its_own_types_exactly_and_cuts_strings_short`):
+  failing (`Typer.Converted`). Observed (`Openjson_with_over_json_built_here_converts_its_own_types_exactly_and_cuts_strings_short`):
   each type back into itself is unchanged, so its facts and `values` hold (integers, decimals, strings, `bit`, `date`,
   `datetime2`, `datetimeoffset`, `uniqueidentifier`, `money`; not `float`, whose text `FOR JSON` writes may round); a string
   into any string type is never NULL, cut short past its length, so only that type's facts hold unless every value fits; an
@@ -1240,13 +1241,13 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   padded (`Openjson_with_does_not_pad_nchar_but_pads_char`; this holds of `OPENJSON` over any document). `AS JSON` holds the object or array there, live. Without `WITH`, `key` is one of an object's keys or a tuple's positions, and `type` one of the JSON types its values
   can be (`Openjson_without_with_over_json_built_here_gives_its_keys_and_their_types`): a key `FOR JSON` leaves out when null
   is never 0; `value` is never null when no value can be JSON null.
-- **`JSON_VALUE`** over JSON built here (`ProcedureAnalyzer.TracedJsonValue`): never null where the path finds a scalar that is never JSON null,
+- **`JSON_VALUE`** over JSON built here (`Typer.TracedJsonValue`): never null where the path finds a scalar that is never JSON null,
   and at most 4,000 characters (or a `strict` path, which makes anything else an error), and the document is never NULL; a
   string keeps its length bound and `values`, and `true` or `false` is `'true'` or `'false'`
   (`Json_value_over_json_built_here_gives_its_scalars_as_text`).
 - **Loops.** JSON built from itself in a loop (`SET @x = (SELECT json_query(@x) AS c FOR JSON PATH)`, a table variable fed
   from itself) grows at every pass. After two passes, a place whose JSON still changes is widened to unknown content naming the
-  loop (`ProcedureAnalyzer.Widened`), which joins to itself, so the loop reaches its fixed point and only that JSON is unknown, not the whole
+  loop (`Walker.Widened`), which joins to itself, so the loop reaches its fixed point and only that JSON is unknown, not the whole
   procedure's results.
 - **Paths** read: `lax` or `strict`, `$`, keys (quoted or not) and indexes into a tuple. A wildcard, an index into an array of
   unknown length, a record's key or a recursive node is not read, and the general rule holds.
@@ -1257,9 +1258,9 @@ column is never traced: someone else may write it. Every rule is observed in `Js
 
 ## Built-in functions
 
-Each is a row of the function table, `ProcedureAnalyzer.FunctionTable.cs`, the one path a call is typed by, keyed by the
+Each is a row of the function table, `Typer.FunctionTable.cs`, the one path a call is typed by, keyed by the
 catalogue of functions in Semantics (`BuiltInFunctions`); [the guide](../../docs/internals/08-the-sql-server-type-system-as-data.md#functions)
-says how. `ProcedureAnalyzer.Functions.cs` holds their typing methods. Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
+says how. `Typer.Functions.cs` holds their typing methods. Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
 runs and `DescribedTypeTests` check them on data. Each is null when an argument it reads is (its reasons), unless said
 otherwise; a value it computes has its type's facets only (`LOWER` of a `CHECK`ed column has no set). An argument of a type
 not listed is not modelled.
@@ -1316,7 +1317,7 @@ NULLs are skipped, so it is NULL when every value is (the argument's reasons), a
 
 ### `GENERATE_SERIES`
 
-In `FROM`, a join or `APPLY` it is a relation of one column, `value` (`ProcedureAnalyzer.GenerateSeries`, bound as `OPENJSON` is), never null, of
+In `FROM`, a join or `APPLY` it is a relation of one column, `value` (`Typer.GenerateSeries`, bound as `OPENJSON` is), never null, of
 its arguments' one integer type, or of the type `COALESCE` gives decimals all named `decimal` or all `numeric`
 (`GENERATE_SERIES(@n numeric(5,1), 3.25)` is `numeric(6,2)`); any other mix, a `decimal` column beside a decimal literal (a
 `numeric`) included, is an error (5373), and is not modelled. A NULL argument, or a step the wrong way, gives no rows
@@ -1324,7 +1325,7 @@ its arguments' one integer type, or of the type `COALESCE` gives decimals all na
 
 ## Window functions
 
-`ProcedureAnalyzer.Windows.cs` reads them. A window is computed for each row the query returns, after grouping, so its
+`Typer.Windows.cs` reads them. A window is computed for each row the query returns, after grouping, so its
 arguments are read as the select list's are, with their own reasons (a `ROLLUP`'s NULL among them), and a partition always
 holds the current row. Observed in `FunctionObservationTests`.
 

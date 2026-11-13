@@ -27,7 +27,7 @@ a branch starts from the state before it and the walk keeps both arms' states un
 (a `RETURN`, a `THROW`, a statement not modelled) has no state at all: `null`, the bottom, which joins to the other side
 unchanged.
 
-The transfer functions are the walk itself, `ProcedureAnalyzer.Flow.cs`: an assignment converts the value to the variable's
+The transfer functions are the walk itself, `Walker.cs`: an assignment converts the value to the variable's
 type and replaces it (or joins it, when the assignment may not happen); an `INSERT` joins what it writes into a column; a
 `SELECT` appends a result set. Each statement's outcome is three states, not one (`Outcome`): where control goes next, and
 what reaches a `BREAK` or a `CONTINUE`, which a loop joins in at its exit and its head.

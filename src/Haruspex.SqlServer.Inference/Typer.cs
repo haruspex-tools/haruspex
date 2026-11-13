@@ -10,64 +10,53 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
-/// Infers the result sets of one procedure. Every construct it does not model becomes an
-/// <see cref="UnknownShape"/> with a reason, so what it does claim can be trusted.
+/// The expression semantics of a body: what an expression, a query or a relation gives, as a <see cref="Value"/> or a row of
+/// them, from the expression and the <see cref="ReadScope"/> it is read in, and nothing else. It holds no state of its own:
+/// its fields are what the body is read against (the model, its binding, the summaries of what it calls, a function's
+/// arguments), the same for every read, so reading an expression twice in one scope gives one value. The statement walk is
+/// the <see cref="Walker"/>'s.
 /// </summary>
 /// <remarks>
 /// Which table and column a reference reads is the <see cref="Binder"/>'s job (Haruspex.SqlServer.Semantics);
 /// what that means for a value's shape and nullability is decided here. They are apart so
 /// that lint, lineage and diff can bind without inferring.
 /// </remarks>
-internal sealed partial class ProcedureAnalyzer
+/// <param name="model">The model the body's references resolve in.</param>
+/// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
+/// <param name="functions">What each scalar function returns.</param>
+/// <param name="parameters">Inside a function, its parameters' values.</param>
+/// <param name="ansiNullsOff">Whether the body was created with ANSI_NULLS off.</param>
+/// <param name="views">What each view of the project holds, read from its definition; null leaves views unmodelled.</param>
+/// <param name="uncommittedReads">
+/// Whether the body (a view's, a function's) is read uncommitted where it is used, so that no key of what it reads holds.
+/// </param>
+internal sealed partial class Typer(
+    DatabaseModel model,
+    SourceSpan source,
+    FunctionSummaries functions,
+    EquatableMap<LocalName, Value>? parameters = null,
+    bool ansiNullsOff = false,
+    ViewSummaries? views = null,
+    bool uncommittedReads = false)
 {
-    private readonly DatabaseModel model;
-    private readonly Binder binder;
-    private readonly SourceSpan source;
-    private readonly FunctionSummaries functions;
+    private readonly DatabaseModel model = model;
+    private readonly Binder binder = functions.Bindings.For(source);
+    private readonly SourceSpan source = source;
 
-    /// <summary>Whether the whole body is read uncommitted where it is used (see <see cref="ReadUncommitted"/>).</summary>
-    private bool BodyReadUncommitted { get; }
+    /// <summary>What each scalar function returns.</summary>
+    private readonly FunctionSummaries functions = functions;
 
-    /// <summary>What each view holds (ProcedureAnalyzer.Views.cs); null leaves views unmodelled.</summary>
-    private readonly ViewSummaries? views;
+    /// <summary>What each view holds (<c>Typer.Views.cs</c>); null leaves views unmodelled.</summary>
+    private readonly ViewSummaries? views = views;
 
     /// <summary>Inside a function's body, its parameters by name; empty in a procedure, whose parameters are not followed yet.</summary>
-    private readonly EquatableMap<LocalName, Value> parameters;
+    private readonly EquatableMap<LocalName, Value> parameters = parameters ?? [];
 
-    /// <param name="model">The model the body's references resolve in.</param>
-    /// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
-    /// <param name="functions">What each scalar function returns.</param>
-    /// <param name="parameters">Inside a function, its parameters' values.</param>
-    /// <param name="calls">The calls being followed, inside a procedure; null inside a function, which cannot call one.</param>
-    /// <param name="context">What a procedure's walk starts from: its caller's temporary tables, and how it is called.</param>
-    /// <param name="ansiNullsOff">Whether the body was created with ANSI_NULLS off (see <see cref="ansiNullsOff"/>).</param>
-    /// <param name="views">What each view of the project holds, read from its definition; null leaves views unmodelled.</param>
-    /// <param name="uncommittedReads">
-    /// Whether the body (a view's, a function's) is read uncommitted where it is used, so that no key of what it reads holds.
-    /// </param>
-    public ProcedureAnalyzer(
-        DatabaseModel model,
-        SourceSpan source,
-        FunctionSummaries functions,
-        EquatableMap<LocalName, Value>? parameters = null,
-        ProcedureCalls? calls = null,
-        CallContext? context = null,
-        bool ansiNullsOff = false,
-        ViewSummaries? views = null,
-        bool uncommittedReads = false)
-    {
-        BodyReadUncommitted = uncommittedReads;
-        this.views = views;
-        this.ansiNullsOff = ansiNullsOff;
-        this.model = model;
-        binder = functions.Bindings.For(source);
-        this.source = source;
-        this.functions = functions;
-        this.parameters = parameters ?? [];
-        this.calls = calls;
-        this.context = context ?? CallContext.Top;
-        escapes = this.context.Escapes ? [] : null;
-    }
+    /// <summary>Whether the body was created with ANSI_NULLS off, under which <c>c = @x</c> is TRUE when both are null.</summary>
+    private readonly bool ansiNullsOff = ansiNullsOff;
+
+    /// <summary>Whether the whole body is read uncommitted where it is used (see <see cref="ReadUncommitted"/>).</summary>
+    private bool BodyReadUncommitted { get; } = uncommittedReads;
 
     /// <summary>
     /// The value a function's <c>RETURN</c> expression gives, read with no FROM in scope; its subqueries may read views and
@@ -80,7 +69,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </param>
     public Value Return(ScalarExpression expression, IReadOnlyList<Parameter> parameters)
     {
-        names = NameEnvironment.Empty.WithDeclarations(binder.Declarations(parameters));
+        var names = NameEnvironment.Empty.WithDeclarations(binder.Declarations(parameters));
         return Expression(expression, ReadScope.Statement(names, FlowState.Start([])));
     }
 
@@ -94,23 +83,10 @@ internal sealed partial class ProcedureAnalyzer
             IsOutput: p.IsOutput)),
     ];
 
-    /// <summary>
-    /// Session options known not to change which result sets run or their shape. Anything else is not modelled:
-    /// NOEXEC, FMTONLY and PARSEONLY stop the rows from being returned at all, and turning off ANSI_WARNINGS
-    /// or CONCAT_NULL_YIELDS_NULL changes where expressions produce null.
-    /// </summary>
-    private const SetOptions AnyValue = SetOptions.NoCount | SetOptions.XactAbort;
-
-    private const SetOptions OnlyOn =
-        SetOptions.AnsiNulls | SetOptions.AnsiPadding | SetOptions.AnsiWarnings | SetOptions.QuotedIdentifier | SetOptions.ArithAbort;
-
-    private static bool IsHarmless(PredicateSetStatement set) =>
-        (set.Options & ~(set.IsOn ? AnyValue | OnlyOn : AnyValue)) == SetOptions.None;
-
     /// <summary>The result set a SELECT returns, or null if it returns none.</summary>
     /// <param name="select">The statement.</param>
     /// <param name="statement">The scope of the statement: the names in force and the state it starts from.</param>
-    private ResultShape? Select(SelectStatement select, ReadScope statement)
+    internal ResultShape? Result(SelectStatement select, ReadScope statement)
     {
         // SELECT ... INTO writes a table and SELECT @v = ... assigns variables; neither returns a result set.
         if (select.Into is not null)
@@ -148,10 +124,6 @@ internal sealed partial class ProcedureAnalyzer
 
     // ---- queries ------------------------------------------------------------------------------------
 
-    /// <param name="Rows">How many rows the query returns.</param>
-    /// <param name="Sources">The sources of its FROM, for a view's keys.</param>
-    private sealed record Row(EquatableArray<RowColumn> Columns, SourceLocation? Star, IrCardinality Rows = IrCardinality.Many, EquatableArray<BoundSource>? Sources = null);
-
     /// <summary>A query specification's row, read in its bound scope, with what its relations hold attached first.</summary>
     /// <param name="bound">The query, bound.</param>
     /// <param name="enclosing">The scope it is read inside: the enclosing query's, or a statement's.</param>
@@ -160,7 +132,7 @@ internal sealed partial class ProcedureAnalyzer
         var query = bound.Query;
         var scope = Attach(enclosing.In(bound.Scope));
 
-        // WHERE, the joins' ON and HAVING prove columns and aggregates non-null in the rows they keep (Refinement.cs), for
+        // WHERE, the joins' ON and HAVING prove columns and aggregates non-null in the rows they keep (Typer.Refinement.cs), for
         // the select list and every subquery in it; GROUP BY is not read beyond what cardinality needs.
         var columns = new List<RowColumn>();
         SourceLocation? star = null;
@@ -196,7 +168,7 @@ internal sealed partial class ProcedureAnalyzer
             ? bound
             : null;
 
-    private static Shape Rowset(Row row)
+    internal static Shape Rowset(Row row)
     {
         if (row.Star is { } star)
             return Unsupported(IrUnknownReason.UnsupportedQuery, "SELECT * is not expanded yet.", star);
@@ -328,19 +300,14 @@ internal sealed partial class ProcedureAnalyzer
         return new ObjectShape([.. fields]);
     }
 
-    // ---- expressions --------------------------------------------------------------------------------
-
-    /// <summary>What a variable reference means in this body: a parameter, a variable it declares, or neither (<see cref="Binder.Resolve(VariableReference, NameEnvironment)"/>).</summary>
-    private VariableResolution Resolved(VariableReference variable) => Binder.Resolve(variable, names);
-
-    private Value Expression(ScalarExpression expression, ReadScope scope) => expression switch
+    internal Value Expression(ScalarExpression expression, ReadScope scope) => expression switch
     {
         ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnAction } action => MergeAction(action, scope),
         ColumnReferenceExpression column => Column(column, scope),
         ParenthesisExpression parenthesis => Expression(parenthesis.Expression, scope),
         ScalarSubquery subquery => Subquery(subquery, scope),
 
-        // Every built-in function, by the function table (ProcedureAnalyzer.FunctionTable.cs): the one path a call is typed by.
+        // Every built-in function, by the function table (Typer.FunctionTable.cs): the one path a call is typed by.
         _ when Function(expression, scope) is { } called => called,
         FunctionCall call when FunctionSummaries.Callee(call) is { } callee => CallFunction(call, callee, scope),
         VariableReference variable => Branched(variable, Variable(variable, scope), scope),
@@ -374,7 +341,7 @@ internal sealed partial class ProcedureAnalyzer
     /// unchanged: a column reference, through aliases, joins and FOR JSON nesting. Any expression makes the value
     /// something else, and none is modelled yet, so it becomes unknown and the facts go with it.
     /// </remarks>
-    private Value FromColumn(TableColumn bound, ReadScope scope)
+    internal Value FromColumn(TableColumn bound, ReadScope scope)
     {
         var (source, table, column) = bound;
         var because = new List<IrNullReason>();
@@ -390,7 +357,7 @@ internal sealed partial class ProcedureAnalyzer
         if (Unmatched(source, scope) is { } unmatched)
             because.Add(unmatched);
 
-        // A CASE branch that tested this very value proves it, whatever made it nullable (ProcedureAnalyzer.Case.cs).
+        // A CASE branch that tested this very value proves it, whatever made it nullable (Typer.Case.cs).
         if (scope.Facts.Proved(source, ColumnKey.Of(bound)) == Facts.Proof.OfTheValue)
             because.Clear();
 
@@ -475,7 +442,7 @@ internal sealed partial class ProcedureAnalyzer
 
     private Value JsonQuery(FunctionCall call, ReadScope scope)
     {
-        // A literal, or CASE, IIF, CHOOSE or COALESCE over JSON, is read for what it holds (ProcedureAnalyzer.JsonTracing.cs).
+        // A literal, or CASE, IIF, CHOOSE or COALESCE over JSON, is read for what it holds (Typer.Json.cs and Walker.Json.cs).
         var argument = JsonQueryArgument(call.Parameters[0], scope);
         if (argument.IsLiveJson || argument.Shape is UnknownShape)
             return argument;
@@ -678,11 +645,11 @@ internal sealed partial class ProcedureAnalyzer
 
     // ---- helpers ------------------------------------------------------------------------------------
 
-    private static UnknownShape Unsupported(IrUnknownReason reason, string detail, SourceLocation at) => new(reason, detail, at);
+    internal static UnknownShape Unsupported(IrUnknownReason reason, string detail, SourceLocation at) => new(reason, detail, at);
 
     private SourceLocation At(TSqlFragment fragment) => source.At(fragment);
 
-    private static string Text(SourceLocation at) => $"at {at}";
+    internal static string Text(SourceLocation at) => $"at {at}";
 
-    private static string Text(TSqlFragment fragment) => FragmentText.OneLine(fragment);
+    internal static string Text(TSqlFragment fragment) => FragmentText.OneLine(fragment);
 }

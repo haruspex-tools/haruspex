@@ -215,7 +215,7 @@ reference through; move the code to the layer that may know it.
 
 **Each file holds one type and is named after it** (`Table.cs` holds `Table`), so a type's name says where it is.
 Nested types stay in the type they belong to, and a partial type's parts are named after the type and the part
-(`ProcedureAnalyzer.Flow.cs`).
+(`Typer.Case.cs`).
 `tests/Haruspex.Tests/Architecture/SourceLayoutTests.cs` enforces it.
 
 | Path | What it holds |

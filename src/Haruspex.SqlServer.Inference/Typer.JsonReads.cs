@@ -13,7 +13,7 @@ namespace Haruspex.SqlServer.Inference;
 // OPENJSON and JSON_VALUE over JSON built here: they read a document whose shape is known, so what they give is
 // known too. Each rule was observed on SQL Server 2025 RTM-CU10 (JsonTracingObservationTests). See README.md, "JSON built
 // here, traced".
-internal sealed partial class ProcedureAnalyzer
+internal sealed partial class Typer
 {
     /// <summary>
     /// The JSON a document argument holds when it was built here: live JSON its shape, JSON text its content, a literal that is a

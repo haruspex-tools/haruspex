@@ -76,7 +76,7 @@ public class RecordEqualityTests
     {
         ["Haruspex.Emit.Zod.Planning.ZodPlan"] = "A stage's output, handed to the next once: nothing compares two plans.",
         ["Haruspex.SqlServer.Inference.Facts+Frame"] = "What one query or branch proved, its sources a set by identity: the environment is read, never compared.",
-        ["Haruspex.SqlServer.Inference.ProcedureAnalyzer+Fixing"] = "A condition and the sources it may fix, a set by identity, within one query's reading.",
+        ["Haruspex.SqlServer.Inference.Typer+Fixing"] = "A condition and the sources it may fix, a set by identity, within one query's reading.",
         ["Haruspex.SqlServer.Inference.ReadScope"] = "What a source holds, keyed by the source by identity: two sources of one table in two scopes are equal as records.",
         ["Haruspex.SqlServer.Semantics.Binder+Adding"] = "A builder of one query's sources: each copy adds to the one list, and nothing compares two.",
     };

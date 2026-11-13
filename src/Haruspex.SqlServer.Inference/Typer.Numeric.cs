@@ -9,7 +9,7 @@ namespace Haruspex.SqlServer.Inference;
 // AVG, the statistical aggregates and the numeric functions. Decimal arithmetic itself is in ScalarType.cs. README.md
 // in this folder ("Decimal arithmetic", "Numeric functions") gives the rules and the observations they rest on
 // (NumericObservationTests in the differential tests).
-internal sealed partial class ProcedureAnalyzer
+internal sealed partial class Typer
 {
     private IrNullReason Domain(TSqlFragment at) => new(IrNullRule.DomainError, At(at).ToString());
 

@@ -82,7 +82,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     /// <summary>Infers one procedure's results, as the outermost call.</summary>
     public ProcedureAnalysis Analyse(Procedure procedure)
     {
-        var parameters = ProcedureAnalyzer.Parameters(model, procedure);
+        var parameters = Typer.Parameters(model, procedure);
         if (Unwalkable(procedure) is { } why)
             return new ProcedureAnalysis([.. parameters], null, why, []);
 
@@ -91,7 +91,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
             return new ProcedureAnalysis([.. parameters], null, blocker, walked.Declared);
         if (walked.End is null)
             return new ProcedureAnalysis([.. parameters], [], null, walked.Declared);
-        var (results, varying) = ProcedureAnalyzer.Results(walked.End.Results);
+        var (results, varying) = Walker.Results(walked.End.Results);
         return new ProcedureAnalysis([.. parameters], results is null ? null : [.. results], varying, walked.Declared);
     }
 
@@ -170,7 +170,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
                     frame.Context = assumption.Context;
                     frame.Recursive = false;
                     frame.Widened = false;
-                    walked = new ProcedureAnalyzer(model, procedure.Span, functions, calls: this, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff, views: views).Walk(procedure.Parameters, statements);
+                    walked = new Walker(model, procedure.Span, functions, calls: this, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff, views: views).Walk(procedure.Parameters, statements);
                     if (!frame.Recursive || walked.Blocker is not null)
                         return Pass<Assumption>.Stop();
 

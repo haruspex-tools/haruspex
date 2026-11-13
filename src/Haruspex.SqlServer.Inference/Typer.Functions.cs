@@ -9,8 +9,8 @@ namespace Haruspex.SqlServer.Inference;
 
 // The date and string functions, JSON_VALUE, STRING_AGG and GENERATE_SERIES. Types come from ScalarType.cs; README.md
 // in this folder ("Built-in functions") gives the rules and the observations they rest on (FunctionObservationTests in the
-// differential tests). Window functions are in ProcedureAnalyzer.Windows.cs.
-internal sealed partial class ProcedureAnalyzer
+// differential tests). Window functions are in Typer.Windows.cs.
+internal sealed partial class Typer
 {
     /// <summary>
     /// <c>JSON_VALUE</c> of a document the server refuses when the procedure is created: a value that isn't text (8116), or a

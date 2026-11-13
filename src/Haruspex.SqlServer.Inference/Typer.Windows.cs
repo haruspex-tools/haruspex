@@ -9,7 +9,7 @@ namespace Haruspex.SqlServer.Inference;
 
 // Window functions, a call with OVER. README.md in this folder ("Window functions") gives the rules and the
 // observations they rest on (FunctionObservationTests in the differential tests).
-internal sealed partial class ProcedureAnalyzer
+internal sealed partial class Typer
 {
     /// <summary>
     /// A window function. Its arguments are read as the select list's are, after grouping: a window is computed for each row

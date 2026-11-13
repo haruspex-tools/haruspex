@@ -7,7 +7,7 @@ namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
 /// How inference types one built-in function (an entry of <see cref="BuiltInFunctions"/>): a row of the function table,
-/// <c>ProcedureAnalyzer.FunctionTable.cs</c>, which is the one path a call is typed by. The guide's chapter
+/// <c>Typer.FunctionTable.cs</c>, which is the one path a call is typed by. The guide's chapter
 /// <c>docs/internals/08-the-sql-server-type-system-as-data.md</c>, "Functions", explains it.
 /// </summary>
 /// <param name="Function">The function, whose code (<see cref="BuiltInFunction.Code"/>) an explanation of a value cites.</param>
@@ -26,4 +26,4 @@ internal sealed record FunctionTyping(
     EquatableArray<IrNullRule> MayBeNullBecause,
     EquatableArray<string> ObservedIn,
     bool ReadsOnlyItsArguments,
-    Func<ProcedureAnalyzer, ScalarExpression, ReadScope, Value>? Type);
+    Func<Typer, ScalarExpression, ReadScope, Value>? Type);

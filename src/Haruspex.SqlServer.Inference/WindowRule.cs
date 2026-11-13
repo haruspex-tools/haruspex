@@ -4,7 +4,7 @@ namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
 /// How a window function is typed, as data: what it gives, and the reasons beyond its argument's that it may be NULL. A row of
-/// the function table (<c>ProcedureAnalyzer.FunctionTable.cs</c>) holds one for each window function; README.md in the project
+/// the function table (<c>Typer.FunctionTable.cs</c>) holds one for each window function; README.md in the project
 /// ("Window functions") gives the observations.
 /// </summary>
 /// <param name="Result">What it gives.</param>

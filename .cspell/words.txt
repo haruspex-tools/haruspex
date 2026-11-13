@@ -133,6 +133,7 @@ serialiser
 soundiness
 soundy
 tarjan
+typer
 unioned
 uniqueidentifiers
 unmodelled
