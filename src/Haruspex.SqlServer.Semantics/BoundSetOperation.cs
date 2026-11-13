@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Semantics;
@@ -12,5 +13,5 @@ public sealed record BoundSetOperation(BinaryQueryExpression Operation, BoundQue
     public override QueryExpression Syntax => Operation;
 
     /// <summary>Its first query's names (observed: A_set_operations_columns_are_named_by_its_first_query_and_typed_by_precedence_over_every_query); null if any query's star is not expanded.</summary>
-    public override IReadOnlyList<string?>? Names => First.Names is { } names && Second.Names is not null ? names : null;
+    public override EquatableArray<string?>? Names => First.Names is { } names && Second.Names is not null ? names : null;
 }

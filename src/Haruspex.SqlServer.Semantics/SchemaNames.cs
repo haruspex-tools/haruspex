@@ -32,7 +32,7 @@ public static class SchemaNames
         {
             [] => new NoObject(new ObjectName("dbo", name)),
             [var one] => new OneObject(one),
-            _ => new SeveralObjects(candidates),
+            _ => new SeveralObjects([.. candidates]),
         };
     }
 

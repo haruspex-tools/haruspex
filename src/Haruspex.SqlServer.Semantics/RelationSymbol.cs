@@ -1,3 +1,5 @@
+using Haruspex.Collections;
+
 namespace Haruspex.SqlServer.Semantics;
 
 /// <summary>
@@ -14,7 +16,7 @@ namespace Haruspex.SqlServer.Semantics;
 /// </remarks>
 public abstract record RelationSymbol
 {
-    private protected RelationSymbol(string name, IReadOnlyList<string>? columns)
+    private protected RelationSymbol(string name, EquatableArray<string>? columns)
     {
         Name = name;
         Columns = columns;
@@ -28,7 +30,7 @@ public abstract record RelationSymbol
     /// without a name, two of one name, a temporary table whose columns the walk doesn't know); then any column may be one
     /// of its.
     /// </summary>
-    public IReadOnlyList<string>? Columns { get; }
+    public EquatableArray<string>? Columns { get; }
 
     /// <summary>The position of the column with this name, ignoring case as SQL Server does; -1 when there is none or the columns are not known.</summary>
     /// <param name="column">The column's name.</param>

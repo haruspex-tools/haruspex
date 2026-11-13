@@ -1,3 +1,5 @@
+using Haruspex.Collections;
+
 namespace Haruspex.SqlServer.Semantics;
 
 /// <summary>A set the value is drawn from: numbers or strings.</summary>
@@ -9,7 +11,7 @@ namespace Haruspex.SqlServer.Semantics;
 /// <param name="Comparison">How a value compares with them.</param>
 /// <param name="From">The constraints that narrowed the set.</param>
 public sealed record ValueSetFact(
-    IReadOnlyList<ExactDecimal>? Numbers,
-    IReadOnlyList<string>? Strings,
+    EquatableArray<ExactDecimal>? Numbers,
+    EquatableArray<string>? Strings,
     ValueComparison Comparison,
-    IReadOnlyList<FactSource> From);
+    EquatableArray<FactSource> From);

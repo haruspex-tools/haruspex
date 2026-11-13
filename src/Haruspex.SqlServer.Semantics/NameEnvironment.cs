@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Haruspex.Collections;
 
 namespace Haruspex.SqlServer.Semantics;
 
@@ -20,14 +21,14 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     private readonly ImmutableDictionary<string, PseudoTable> pseudo;
     private readonly ImmutableDictionary<string, CommonTable> ctes;
     private readonly ImmutableDictionary<string, TableVariable> tableVariables;
-    private readonly ImmutableDictionary<string, IReadOnlyList<string>> temporaryColumns;
+    private readonly ImmutableDictionary<string, EquatableArray<string>> temporaryColumns;
 
     private NameEnvironment(
         bool expandsStars,
         ImmutableDictionary<string, PseudoTable> pseudo,
         ImmutableDictionary<string, CommonTable> ctes,
         ImmutableDictionary<string, TableVariable> tableVariables,
-        ImmutableDictionary<string, IReadOnlyList<string>> temporaryColumns)
+        ImmutableDictionary<string, EquatableArray<string>> temporaryColumns)
     {
         ExpandsStars = expandsStars;
         this.pseudo = pseudo;
@@ -42,7 +43,7 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
         ImmutableDictionary.Create<string, PseudoTable>(Names),
         ImmutableDictionary.Create<string, CommonTable>(Names),
         ImmutableDictionary.Create<string, TableVariable>(Names),
-        ImmutableDictionary.Create<string, IReadOnlyList<string>>(Names));
+        ImmutableDictionary.Create<string, EquatableArray<string>>(Names));
 
     /// <summary>
     /// No relations of the body's own, in a view's body, whose <c>SELECT *</c> SQL Server binds when it creates the view (observed:
@@ -75,7 +76,7 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     public NameEnvironment WithTemporaryColumns(IEnumerable<KeyValuePair<string, IReadOnlyList<string>>> columns)
     {
         ArgumentNullException.ThrowIfNull(columns);
-        return new(ExpandsStars, pseudo, ctes, tableVariables, ImmutableDictionary.CreateRange(Names, columns)) { Declarations = Declarations };
+        return new(ExpandsStars, pseudo, ctes, tableVariables, ImmutableDictionary.CreateRange(Names, columns.Select(c => KeyValuePair.Create(c.Key, (EquatableArray<string>)[.. c.Value])))) { Declarations = Declarations };
     }
 
     /// <summary>These names with a CTE added, hiding any table of its name.</summary>

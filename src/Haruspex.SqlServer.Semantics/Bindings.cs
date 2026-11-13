@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -19,7 +20,7 @@ namespace Haruspex.SqlServer.Semantics;
 public sealed class Bindings(DatabaseModel model)
 {
     private readonly Dictionary<Key, object> bound = [];
-    private readonly Dictionary<Module, IReadOnlyList<string>?> columns = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<Module, EquatableArray<string>?> columns = new(ReferenceEqualityComparer.Instance);
     private readonly HashSet<Module> listing = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<object, BodyDeclarations> declarations = new(ReferenceEqualityComparer.Instance);
 
@@ -67,7 +68,7 @@ public sealed class Bindings(DatabaseModel model)
     /// A view's or inline function's columns, listed once; null when they can't be listed, and for one whose definition reads
     /// itself, which SQL Server refuses.
     /// </summary>
-    internal IReadOnlyList<string>? Columns(Module module, Func<IReadOnlyList<string>?> list)
+    internal EquatableArray<string>? Columns(Module module, Func<EquatableArray<string>?> list)
     {
         if (columns.TryGetValue(module, out var found))
             return found;
@@ -85,15 +86,9 @@ public sealed class Bindings(DatabaseModel model)
         }
     }
 
-    /// <summary>A fragment by reference, the scope it is read inside by reference, and the names in force by value.</summary>
-    private readonly record struct Key(TSqlFragment Fragment, QueryScope? Outer, NameEnvironment Names)
-    {
-        public bool Equals(Key other) =>
-            ReferenceEquals(Fragment, other.Fragment) && ReferenceEquals(Outer, other.Outer) && Names.Equals(other.Names);
-
-        public override int GetHashCode() => HashCode.Combine(
-            System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Fragment),
-            Outer is null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Outer),
-            Names);
-    }
+    /// <summary>
+    /// A fragment and the scope it is read inside, each by identity (a place in a body, and a scope made for one), and the
+    /// names in force by value.
+    /// </summary>
+    private readonly record struct Key(TSqlFragment Fragment, QueryScope? Outer, NameEnvironment Names);
 }

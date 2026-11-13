@@ -52,7 +52,6 @@ public class RecordEqualityTests
         ["Haruspex.SqlServer.Inference.FlowState"] = "ValueEqualityTests.The_equality_of_states_keeps_the_laws",
         ["Haruspex.SqlServer.Inference.ResultTrack"] = "ValueEqualityTests.The_equality_of_result_tracks_keeps_the_laws",
         ["Haruspex.SqlServer.Model.ObjectName"] = "ObjectNameTests.Its_equality_keeps_the_laws",
-        ["Haruspex.SqlServer.Semantics.Bindings+Key"] = "BinderTests.A_query_read_again_with_the_same_names_is_bound_once",
         ["Haruspex.SqlServer.Semantics.NameEnvironment"] = "NameEnvironmentTests.Its_equality_keeps_the_laws",
     };
 
@@ -62,6 +61,7 @@ public class RecordEqualityTests
     /// </summary>
     private static readonly Dictionary<string, string> NotCompared = new(StringComparer.Ordinal)
     {
+        ["Haruspex.SqlServer.Semantics.Binder+Adding"] = "A builder of one query's sources: each copy adds to the one list, and nothing compares two.",
     };
 
     /// <summary>Records still holding a collection that compares by reference, by full name, until each is swept.</summary>
@@ -95,17 +95,6 @@ public class RecordEqualityTests
         "Haruspex.SqlServer.Inference.ReadScope",
         "Haruspex.SqlServer.Inference.Typing.ConversionRow",
         "Haruspex.SqlServer.Inference.Walked",
-        "Haruspex.SqlServer.Semantics.AmbiguousCallee",
-        "Haruspex.SqlServer.Semantics.Binder+Adding",
-        "Haruspex.SqlServer.Semantics.BoundOutput",
-        "Haruspex.SqlServer.Semantics.BoundSpecification",
-        "Haruspex.SqlServer.Semantics.BoundWith",
-        "Haruspex.SqlServer.Semantics.CheckReader+Proved",
-        "Haruspex.SqlServer.Semantics.ConversionChart+Row",
-        "Haruspex.SqlServer.Semantics.DmlTarget",
-        "Haruspex.SqlServer.Semantics.RelationSymbol",
-        "Haruspex.SqlServer.Semantics.SeveralObjects",
-        "Haruspex.SqlServer.Semantics.ValueSetFact",
         "Haruspex.SqlServer.Sources.Enforcement",
         "Haruspex.SqlServer.Sources.SchemaReadResult",
     };

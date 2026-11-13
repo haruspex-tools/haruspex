@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Syntax;
@@ -8,20 +9,38 @@ namespace Haruspex.SqlServer.Semantics;
 // What a FROM clause's table references read: joins and APPLY, names, derived tables and rowsets, each a source of the query's scope.
 public sealed partial class Binder
 {
-    /// <summary>The sources being added to one query's scope, the scope beyond it, and the names in force.</summary>
-    private sealed record Adding(List<BoundSource> Sources, QueryScope? Parent, NameEnvironment Names)
+    /// <summary>
+    /// The sources being added to one query's scope, the scope beyond it, and the names in force. A builder, not a value: each
+    /// copy made for a part of the FROM adds to the one list of sources, and nothing compares two.
+    /// </summary>
+    private sealed class Adding(List<BoundSource> sources, QueryScope? parent, NameEnvironment names, QueryScope? lateral = null, OptionalSideKind side = OptionalSideKind.OuterJoin)
     {
+        /// <summary>The query's sources so far, shared by every copy.</summary>
+        public List<BoundSource> Sources { get; } = sources;
+
+        /// <summary>The scope beyond the query: the enclosing query's, or none.</summary>
+        public QueryScope? Parent { get; } = parent;
+
+        /// <summary>The names in force.</summary>
+        public NameEnvironment Names { get; } = names;
+
         /// <summary>
         /// Inside an APPLY's right side, the scope it reads outer columns from (its left input's sources, then the enclosing
         /// query's); null elsewhere, where a derived table reads only the enclosing query's.
         /// </summary>
-        public QueryScope? Lateral { get; init; }
+        public QueryScope? Lateral { get; } = lateral;
 
         /// <summary>How the optional side being added to came about: an outer join's, or an OUTER APPLY's right side, whole or inside.</summary>
-        public OptionalSideKind Side { get; init; } = OptionalSideKind.OuterJoin;
+        public OptionalSideKind Side { get; } = side;
 
         /// <summary>The scope a derived table, <c>VALUES</c> list or call here reads beyond itself.</summary>
         public QueryScope? Outer => Lateral ?? Parent;
+
+        /// <summary>The same sources, for an optional side that came about as <paramref name="kind"/> says.</summary>
+        public Adding On(OptionalSideKind kind) => new(Sources, Parent, Names, Lateral, kind);
+
+        /// <summary>The same sources, inside an APPLY's right side that reads <paramref name="left"/>'s columns.</summary>
+        public Adding Reading(QueryScope left) => new(Sources, Parent, Names, left, Side);
     }
 
     /// <param name="adding">The scope being built, and where in its FROM the reference is.</param>
@@ -73,8 +92,8 @@ public sealed partial class Binder
     private void AddJoined(Adding adding, TableReference reference, SourceLocation? optionalSideOf)
     {
         // A source joined inside an OUTER APPLY's right side is on that side, but is not the whole of it.
-        var inside = adding with { Side = adding.Side == OptionalSideKind.WholeApplied ? OptionalSideKind.InsideApplied : adding.Side };
-        var asJoin = inside with { Side = OptionalSideKind.OuterJoin };
+        var inside = adding.On(adding.Side == OptionalSideKind.WholeApplied ? OptionalSideKind.InsideApplied : adding.Side);
+        var asJoin = inside.On(OptionalSideKind.OuterJoin);
 
         switch (reference)
         {
@@ -98,9 +117,9 @@ public sealed partial class Binder
                 AddSources(inside, apply.FirstTableReference, optionalSideOf);
                 var left = new QueryScope(adding.Outer, [.. adding.Sources.Skip(first)], adding.Names);
                 if (apply.UnqualifiedJoinType == UnqualifiedJoinType.OuterApply && optionalSideOf is null)
-                    AddSources(adding with { Lateral = left, Side = OptionalSideKind.WholeApplied }, apply.SecondTableReference, At(apply.SecondTableReference));
+                    AddSources(adding.Reading(left).On(OptionalSideKind.WholeApplied), apply.SecondTableReference, At(apply.SecondTableReference));
                 else
-                    AddSources(inside with { Lateral = left }, apply.SecondTableReference, optionalSideOf);
+                    AddSources(inside.Reading(left), apply.SecondTableReference, optionalSideOf);
                 break;
             }
 
@@ -158,7 +177,7 @@ public sealed partial class Binder
                 var names = values.Columns.Select(c => c.Value).ToList();
                 var listed = names.Count > 0 && values.RowValues.All(r => r.ColumnValues.Count == names.Count)
                     && names.Distinct(StringComparer.OrdinalIgnoreCase).Count() == names.Count;
-                return (values.Alias?.Value, new ValuesTable(values, QueryScope.Empty(adding.Outer, adding.Names), listed ? names : null));
+                return (values.Alias?.Value, new ValuesTable(values, QueryScope.Empty(adding.Outer, adding.Names), listed ? [.. names] : null));
             }
 
             case OpenJsonTableReference openJson:
@@ -166,7 +185,7 @@ public sealed partial class Binder
                 List<string> names = openJson.SchemaDeclarationItems.Count == 0
                     ? ["key", "value", "type"]
                     : [.. openJson.SchemaDeclarationItems.Select(i => i.ColumnDefinition.ColumnIdentifier.Value)];
-                return (openJson.Alias?.Value, new OpenJsonCall(openJson, QueryScope.Empty(adding.Outer, adding.Names), names.Distinct(StringComparer.OrdinalIgnoreCase).Count() == names.Count ? names : null));
+                return (openJson.Alias?.Value, new OpenJsonCall(openJson, QueryScope.Empty(adding.Outer, adding.Names), names.Distinct(StringComparer.OrdinalIgnoreCase).Count() == names.Count ? [.. names] : null));
             }
 
             case GlobalFunctionTableReference { Name.Value: var function } series
@@ -240,7 +259,7 @@ public sealed partial class Binder
     /// its stars expanded as SQL Server binds them when it creates the view; null for a view defined more than once, one of
     /// FOR XML or FOR JSON, or one whose columns can't be listed.
     /// </summary>
-    private IReadOnlyList<string>? ViewColumns(View view) => bindings.Columns(view, () =>
+    private EquatableArray<string>? ViewColumns(View view) => bindings.Columns(view, () =>
     {
         if (view.Redefinition is not null || view.Query.QueryExpression is not { } query || ForOf(query) is not null)
             return null;
@@ -272,7 +291,7 @@ public sealed partial class Binder
     /// or CLR function's declared table's; null for a call with a column list, which SQL Server refuses (317), and for a
     /// function that is not table-valued, is defined more than once, or isn't the project's.
     /// </summary>
-    private IReadOnlyList<string>? FunctionColumns(SchemaObjectFunctionTableReference call, Callee callee)
+    private EquatableArray<string>? FunctionColumns(SchemaObjectFunctionTableReference call, Callee callee)
     {
         if (call.Columns.Count > 0 || callee is not KnownCallee { Function: { Redefinition: null } function })
             return null;

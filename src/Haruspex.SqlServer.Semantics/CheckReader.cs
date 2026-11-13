@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.SqlServer.Model;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -119,8 +120,8 @@ public static class CheckReader
 
     /// <summary>What a condition proves; every part optional.</summary>
     private sealed record Proved(
-        IReadOnlyList<ExactDecimal>? Numbers = null,
-        IReadOnlyList<string>? Strings = null,
+        EquatableArray<ExactDecimal>? Numbers = null,
+        EquatableArray<string>? Strings = null,
         Bound? Min = null,
         Bound? Max = null,
         int? MinLength = null)

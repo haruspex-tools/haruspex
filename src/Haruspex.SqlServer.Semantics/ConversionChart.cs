@@ -1,3 +1,5 @@
+using Haruspex.Collections;
+
 namespace Haruspex.SqlServer.Semantics;
 
 /// <summary>
@@ -37,9 +39,9 @@ public static class ConversionChart
     /// <summary>A row of the chart: from one type, the targets of each kind it lists, and the kind of every other target.</summary>
     private sealed record Row(
         BuiltInType From,
-        BuiltInType[]? Implicit = null,
-        BuiltInType[]? Explicit = null,
-        BuiltInType[]? Refused = null,
+        EquatableArray<BuiltInType>? Implicit = null,
+        EquatableArray<BuiltInType>? Explicit = null,
+        EquatableArray<BuiltInType>? Refused = null,
         ConversionKind Otherwise = ConversionKind.Refused);
 
     private static readonly Row[] Rows =

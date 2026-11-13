@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Syntax;
@@ -106,7 +107,7 @@ public sealed partial class Binder
                 inForce = inForce.WithCte(symbol);
             }
 
-            return new BoundWith(inForce, ctes);
+            return new BoundWith(inForce, [.. ctes]);
         });
     }
 
@@ -145,7 +146,7 @@ public sealed partial class Binder
     /// <summary>
     /// A query's columns' names (<see cref="ColumnName"/>); a star's columns when stars are expanded; null when a star is not.
     /// </summary>
-    private static List<string?>? Names(QuerySpecification query, QueryScope scope)
+    private static EquatableArray<string?>? Names(QuerySpecification query, QueryScope scope)
     {
         var names = new List<string?>();
         foreach (var element in query.SelectElements)
@@ -163,7 +164,7 @@ public sealed partial class Binder
             }
         }
 
-        return names;
+        return [.. names];
     }
 
     // ---- SELECT * -----------------------------------------------------------------------------------------------------

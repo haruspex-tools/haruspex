@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -12,7 +13,7 @@ namespace Haruspex.SqlServer.Semantics;
 /// <param name="Temps">Temporary tables it may change through a CTE or derived table, which then hold what is not followed.</param>
 /// <param name="Direct">The temporary table (<c>#t</c>) or table variable (<c>@t</c>) it writes directly, if it does.</param>
 /// <param name="Unmodelled">Why the target is of a form not modelled (<c>OPENROWSET</c>, <c>OPENQUERY</c>, …), if it is.</param>
-public sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadOnlyList<string> Temps, string? Direct, string? Unmodelled)
+public sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, EquatableArray<string> Temps, string? Direct, string? Unmodelled)
 {
     /// <summary>
     /// The permanent object the write changes when it names one, directly or through an alias in FROM, rather than through a

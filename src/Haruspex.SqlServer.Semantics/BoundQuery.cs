@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Semantics;
@@ -22,7 +23,7 @@ public abstract record BoundQuery
     /// or a column reference's last part; a set operation's are its first query's. Null when a <c>SELECT *</c> is not expanded
     /// (stars are expanded only in a view, whose stars SQL Server binds when it creates it).
     /// </summary>
-    public abstract IReadOnlyList<string?>? Names { get; }
+    public abstract EquatableArray<string?>? Names { get; }
 
     /// <summary>
     /// Whether this query reads <paramref name="relation"/> in a FROM: a source of one of its scopes, its derived tables' and
@@ -44,12 +45,12 @@ public abstract record BoundQuery
     /// column list of another length (8158).
     /// </summary>
     /// <param name="columnList">The relation's own column list, empty when it has none.</param>
-    public IReadOnlyList<string>? Listed(IReadOnlyList<string> columnList)
+    public EquatableArray<string>? Listed(IReadOnlyList<string> columnList)
     {
         ArgumentNullException.ThrowIfNull(columnList);
         if (Names is not { } names)
             return null;
-        var listed = columnList.Count > 0 ? columnList : names;
+        var listed = columnList.Count > 0 ? [.. columnList] : names;
         if (listed.Count != names.Count || listed.Any(string.IsNullOrEmpty) || listed.Distinct(StringComparer.OrdinalIgnoreCase).Count() != listed.Count)
             return null;
         return [.. listed.Select(n => n!)];

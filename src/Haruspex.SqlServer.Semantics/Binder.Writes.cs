@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Semantics;
@@ -42,8 +43,8 @@ public sealed partial class Binder
         FromClause? from,
         BooleanExpression? where,
         NameEnvironment names,
-        IReadOnlyList<string>? inserted,
-        IReadOnlyList<string>? deleted)
+        EquatableArray<string>? inserted,
+        EquatableArray<string>? deleted)
     {
         ArgumentNullException.ThrowIfNull(spec);
         ArgumentNullException.ThrowIfNull(clause);
@@ -102,7 +103,7 @@ public sealed partial class Binder
                 bound,
                 [.. bound.Scope.Sources.Where(s => target is not null && target.Equals(s.Alias, StringComparison.OrdinalIgnoreCase))],
                 [.. bound.Scope.Sources.Where(s => s.Alias is { } alias && unmatched.Contains(alias) && s.Target is not RelationTarget { Relation: PseudoTable })],
-                pseudo);
+                [.. pseudo]);
         });
     }
 

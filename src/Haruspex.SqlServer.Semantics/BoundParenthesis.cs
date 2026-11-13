@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Semantics;
@@ -11,5 +12,5 @@ public sealed record BoundParenthesis(QueryParenthesisExpression Parenthesis, Bo
     public override QueryExpression Syntax => Parenthesis;
 
     /// <inheritdoc/>
-    public override IReadOnlyList<string?>? Names => Inner.Names;
+    public override EquatableArray<string?>? Names => Inner.Names;
 }

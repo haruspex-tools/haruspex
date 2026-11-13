@@ -999,7 +999,7 @@ internal sealed partial class ProcedureAnalyzer
     private static LocalRelationValues? Holds(RelationSymbol relation, Row row) => Holds(relation.Columns, row);
 
     /// <summary>What a relation over a query holds, under the names binding listed for it; null when it listed none.</summary>
-    private static LocalRelationValues? Holds(IReadOnlyList<string>? names, Row row)
+    private static LocalRelationValues? Holds(EquatableArray<string>? names, Row row)
     {
         if (names is null)
             return null;
