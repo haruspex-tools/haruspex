@@ -19,18 +19,24 @@ public class FactsTests
         new OptionalSide(new SourceLocation("p.sql", 4, 1), OptionalSideKind.OuterJoin),
         new NamedTableReference());
 
+    /// <summary>A column of the source, by its position.</summary>
+    private static readonly ColumnKey Qty = new RelationColumnKey(0);
+
+    /// <summary>An aggregate of a query, as written.</summary>
+    private static readonly AggregateKey Sum = new("SUM(l.qty)");
+
     [Fact]
     public void Extending_the_facts_leaves_the_ones_before_as_they_were()
     {
         var filter = new Facts.Found(Facts.Proof.WhereTheRowIsThere, null, [Lines]);
-        filter.Value(Lines, "c:qty");
+        filter.Value(Lines, Qty);
         filter.Row(Lines);
 
         var inside = Facts.None.With(filter);
 
-        Assert.Equal(Facts.Proof.WhereTheRowIsThere, inside.Proved(Lines, "c:qty"));
+        Assert.Equal(Facts.Proof.WhereTheRowIsThere, inside.Proved(Lines, Qty));
         Assert.True(inside.Matched(Lines));
-        Assert.Equal(Facts.Proof.None, Facts.None.Proved(Lines, "c:qty"));
+        Assert.Equal(Facts.Proof.None, Facts.None.Proved(Lines, Qty));
         Assert.False(Facts.None.Matched(Lines));
     }
 
@@ -38,15 +44,15 @@ public class FactsTests
     public void A_branch_proves_the_value_itself_which_outranks_a_filter()
     {
         var filter = new Facts.Found(Facts.Proof.WhereTheRowIsThere, null, [Lines]);
-        filter.Value(Lines, "c:qty");
+        filter.Value(Lines, Qty);
         var branch = new Facts.Found(Facts.Proof.OfTheValue, null, []);
-        branch.Value(Lines, "c:qty");
+        branch.Value(Lines, Qty);
         branch.Variable(new LocalName("@limit"));
 
         var facts = Facts.None.With(filter).With(branch);
 
-        Assert.Equal(Facts.Proof.OfTheValue, facts.Proved(Lines, "c:qty"));
-        Assert.Equal(Facts.Proof.OfTheValue, Facts.None.With(branch).With(filter).Proved(Lines, "c:qty"));
+        Assert.Equal(Facts.Proof.OfTheValue, facts.Proved(Lines, Qty));
+        Assert.Equal(Facts.Proof.OfTheValue, Facts.None.With(branch).With(filter).Proved(Lines, Qty));
         Assert.True(facts.Proved(new LocalName("@LIMIT")));
         Assert.False(Facts.None.With(filter).Proved(new LocalName("@limit")));
     }
@@ -56,21 +62,21 @@ public class FactsTests
     {
         var query = new QuerySpecification();
         var found = new Facts.Found(Facts.Proof.WhereTheRowIsThere, query, [Lines]) { Rolled = new IrNullReason(IrNullRule.SubtotalRow, "p.sql:9:1") };
-        found.Aggregate("SUM(l.qty)");
+        found.Aggregate(Sum);
         var facts = Facts.None.With(found);
 
-        Assert.True(facts.Proved(query, "SUM(l.qty)"));
-        Assert.False(facts.Proved(new QuerySpecification(), "SUM(l.qty)"));
+        Assert.True(facts.Proved(query, Sum));
+        Assert.False(facts.Proved(new QuerySpecification(), Sum));
         Assert.Equal(IrNullRule.SubtotalRow, facts.Rolled(Lines, [])?.Rule);
         Assert.Null(facts.Rolled(Lines, [query]));
 
         // Equal as a record, but another source: one table read twice is two sources.
-        Assert.Equal(Facts.Proof.None, Facts.None.With(Copy()).Proved(Lines with { }, "c:qty"));
+        Assert.Equal(Facts.Proof.None, Facts.None.With(Copy()).Proved(Lines with { }, Qty));
 
         static Facts.Found Copy()
         {
             var copy = new Facts.Found(Facts.Proof.WhereTheRowIsThere, null, [Lines]);
-            copy.Value(Lines, "c:qty");
+            copy.Value(Lines, Qty);
             return copy;
         }
     }

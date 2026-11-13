@@ -65,6 +65,22 @@ public partial class RefinementTests
     }
 
     [Fact]
+    public void Having_proves_an_aggregate_written_alike_and_no_other()
+    {
+        // An aggregate is matched by its text within its query (AggregateKey): the same text binds the same columns there, so
+        // it is the same value. Written in another case, or with its column unqualified, it is the same aggregate to SQL
+        // Server but another here, which loses the fact and claims less, never more.
+        var doc = Procedure("""
+            SELECT t.n, MAX(t.name) AS same, max(t.name) AS cased, MAX(name) AS bare FROM dbo.t AS t
+            GROUP BY t.n HAVING MAX(t.name) > N'';
+            """);
+
+        Assert.False(Field(doc, "same").Nullable);
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "cased"));
+        Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "bare"));
+    }
+
+    [Fact]
     public void A_windowed_aggregate_not_modelled_is_unknown()
     {
         // MIN, MAX, SUM and COUNT over a window are read (FunctionTests), AVG and the statistics too

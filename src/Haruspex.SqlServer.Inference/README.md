@@ -802,7 +802,8 @@ compared by reference, since one table read twice is two sources.
   This also corrects a claim older than refinement: a `NOT NULL` grouped column was non-null there.
 
 `HAVING` also proves aggregates non-null: one compared there (`MAX(c) > 0`) is non-null in every group kept, matched in the
-select list by its text. Refinement passes through CTEs, derived tables and `SELECT … INTO` tables with the values
+select list by its text as written (`AggregateKey`, which says why that is sound: a call written otherwise is kept apart,
+which loses the fact and claims less). Refinement passes through CTEs, derived tables and `SELECT … INTO` tables with the values
 themselves: what a query proved is what its row holds.
 
 ### Aggregates and scalar subqueries

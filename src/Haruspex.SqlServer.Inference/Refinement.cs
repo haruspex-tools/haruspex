@@ -21,14 +21,6 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>What the filters and branches being read prove (<see cref="Facts"/>): extended on entering one, restored on leaving.</summary>
     private Facts facts = Facts.None;
 
-    /// <summary>A bound column's key among its source's columns: a table's column by name as declared, a relation's by position.</summary>
-    private static string Key(TableColumn bound) => "c:" + bound.Column.Name;
-
-    private static string Key(RelationColumn bound) => Key(bound.Ordinal);
-
-    /// <summary>The key of a relation's column by its position, as <see cref="Key(RelationColumn)"/> gives it.</summary>
-    private static string Key(int ordinal) => "#" + ordinal.ToString(System.Globalization.CultureInfo.InvariantCulture);
-
     /// <summary>The queries whose aggregate's arguments are being read: a column read there is a row's, not a group's.</summary>
     private readonly List<QuerySpecification?> aggregating = [];
 
@@ -50,7 +42,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>Whether HAVING, or a branch read in its row, proves this aggregate of the query whose select list is being read non-null.</summary>
-    private bool ProvedAggregate(FunctionCall call) => facts.Proved(current, Text(call));
+    private bool ProvedAggregate(FunctionCall call) => facts.Proved(current, AggregateKey.Of(call));
 
     // ---- what a query's filters prove ---------------------------------------------------------------------------------
 
@@ -77,9 +69,9 @@ internal sealed partial class ProcedureAnalyzer
         if (query.HavingClause?.SearchCondition is { } having)
         {
             Refine(having, scope, found, rows: true, only: null);
-            foreach (var aggregate in Operands(having).OfType<FunctionCall>().Where(IsAggregate).Select(Text).Distinct(StringComparer.Ordinal))
+            foreach (var aggregate in Operands(having).OfType<FunctionCall>().Where(IsAggregate).Select(AggregateKey.Of).Distinct())
             {
-                if (!Possible(having, e => e is FunctionCall call && IsAggregate(call) && Text(call) == aggregate).HasFlag(Truth.True))
+                if (!Possible(having, e => e is FunctionCall call && IsAggregate(call) && AggregateKey.Of(call) == aggregate).HasFlag(Truth.True))
                     found.Aggregate(aggregate);
             }
         }
@@ -178,15 +170,15 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private void Refine(BooleanExpression condition, ReadScope scope, Facts.Found found, bool rows, HashSet<BoundSource>? only)
     {
-        var bindings = new Dictionary<ColumnReferenceExpression, (BoundSource Source, string Key)?>(ReferenceEqualityComparer.Instance);
-        (BoundSource Source, string Key)? Bind(ColumnReferenceExpression column)
+        var bindings = new Dictionary<ColumnReferenceExpression, (BoundSource Source, ColumnKey Key)?>(ReferenceEqualityComparer.Instance);
+        (BoundSource Source, ColumnKey Key)? Bind(ColumnReferenceExpression column)
         {
             if (!bindings.TryGetValue(column, out var bound))
             {
                 bound = binder.Resolve(column, scope.Bound) switch
                 {
-                    TableColumn c => (c.Source, Key(c)),
-                    RelationColumn { Ordinal: >= 0 } l => (l.Source, Key(l)),
+                    TableColumn c => (c.Source, ColumnKey.Of(c)),
+                    RelationColumn { Ordinal: >= 0 } l => (l.Source, ColumnKey.Of(l)),
                     _ => null,
                 };
                 bindings[column] = bound;
@@ -195,7 +187,7 @@ internal sealed partial class ProcedureAnalyzer
             return bound;
         }
 
-        var candidates = Operands(condition).OfType<ColumnReferenceExpression>().Select(Bind).OfType<(BoundSource Source, string Key)>()
+        var candidates = Operands(condition).OfType<ColumnReferenceExpression>().Select(Bind).OfType<(BoundSource Source, ColumnKey Key)>()
             .Distinct().ToList();
         foreach (var (source, key) in candidates)
         {

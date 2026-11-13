@@ -1043,7 +1043,7 @@ internal sealed partial class ProcedureAnalyzer
             ? Value.Unknown(why with { At = at })
             : ordinal >= 0 && values.Values is { } all ? all[ordinal]
             : throw new InvalidOperationException($"Binding could not list the columns of {Text(source.Syntax)}, whose values are known.");
-        if (value.Shape is not UnknownShape && ordinal >= 0 && facts.Proved(source, Key(ordinal)) != Facts.Proof.None)
+        if (value.Shape is not UnknownShape && ordinal >= 0 && facts.Proved(source, new RelationColumnKey(ordinal)) != Facts.Proof.None)
             value = value.WithNullableBecause([]);
         if (source.Optional is { } optional && !facts.Matched(source) && !AlwaysApplied(source, scope))
             value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [new IrNullReason(optional.IsApplied ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.At.ToString())]));
@@ -1053,7 +1053,7 @@ internal sealed partial class ProcedureAnalyzer
             value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [rolled]));
 
         // A CASE branch that tested this very value proves it, whatever made it nullable (ProcedureAnalyzer.Case.cs).
-        return value.Shape is not UnknownShape && ordinal >= 0 && facts.Proved(source, Key(ordinal)) == Facts.Proof.OfTheValue
+        return value.Shape is not UnknownShape && ordinal >= 0 && facts.Proved(source, new RelationColumnKey(ordinal)) == Facts.Proof.OfTheValue
             ? value.WithNullableBecause([])
             : value;
     }

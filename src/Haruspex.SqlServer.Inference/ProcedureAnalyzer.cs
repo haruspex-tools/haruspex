@@ -390,7 +390,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var (source, table, column) = bound;
         var because = new List<IrNullReason>();
-        if (!SchemaRules.IsNeverNull(model, table, column) && facts.Proved(source, Key(bound)) == Facts.Proof.None)
+        if (!SchemaRules.IsNeverNull(model, table, column) && facts.Proved(source, ColumnKey.Of(bound)) == Facts.Proof.None)
             because.Add(new IrNullReason(IrNullRule.NullableColumn, $"{table.Name}.{column.Name}"));
 
         // The optional side of an outer join, or of an OUTER APPLY, has no row when nothing matches, so every column read
@@ -403,7 +403,7 @@ internal sealed partial class ProcedureAnalyzer
             because.Add(unmatched);
 
         // A CASE branch that tested this very value proves it, whatever made it nullable (ProcedureAnalyzer.Case.cs).
-        if (facts.Proved(source, Key(bound)) == Facts.Proof.OfTheValue)
+        if (facts.Proved(source, ColumnKey.Of(bound)) == Facts.Proof.OfTheValue)
             because.Clear();
 
         // A json column nests as JSON inside FOR JSON and the constructors (observed), but what it holds is data.

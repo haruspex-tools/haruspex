@@ -57,18 +57,18 @@ internal sealed partial class ProcedureAnalyzer
                         found.Variable(proved.Name);
                     break;
                 case FunctionCall call when IsAggregate(call) && current is not null:
-                    var text = Text(call);
-                    if (Impossible(e => e is FunctionCall c && IsAggregate(c) && Text(c) == text))
-                        found.Aggregate(text);
+                    var aggregate = AggregateKey.Of(call);
+                    if (Impossible(e => e is FunctionCall c && IsAggregate(c) && AggregateKey.Of(c) == aggregate))
+                        found.Aggregate(aggregate);
                     break;
             }
         }
     }
 
-    private (BoundSource Source, string Key)? Bound(ColumnReferenceExpression column, ReadScope scope) => binder.Resolve(column, scope.Bound) switch
+    private (BoundSource Source, ColumnKey Key)? Bound(ColumnReferenceExpression column, ReadScope scope) => binder.Resolve(column, scope.Bound) switch
     {
-        TableColumn c => (c.Source, Key(c)),
-        RelationColumn { Ordinal: >= 0 } l => (l.Source, Key(l)),
+        TableColumn c => (c.Source, ColumnKey.Of(c)),
+        RelationColumn { Ordinal: >= 0 } l => (l.Source, ColumnKey.Of(l)),
         _ => null,
     };
 
