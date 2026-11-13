@@ -80,7 +80,7 @@ public class FixtureSnapshotTests
     [Theory]
     [MemberData(nameof(Procedures))]
     public void Each_procedure_emits_the_reviewed_zod(string procedure) =>
-        Snapshot.Match(ZodEmitter.Emit(IrJsonReader.Read(IrJsonWriter.Write(Infer(procedure)))), FixtureOf[procedure].Expected, $"{procedure}.zod", "ts");
+        Snapshot.Match(ZodEmitter.Emit(IrJsonReader.Read(IrJsonWriter.Write(Infer(procedure)))).Expected(), FixtureOf[procedure].Expected, $"{procedure}.zod", "ts");
 
     /// <summary>The names of the files in a fixture's <c>expected/</c>, leaving out any received file a failing run wrote.</summary>
     private static List<string> Reviewed(string folder) =>

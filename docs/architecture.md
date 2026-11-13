@@ -26,7 +26,7 @@ others, published alone as a NuGet package from this repository. Each project un
 | `Haruspex.SqlServer.Inference` | shapes, nullability, presence and JSON structure, from bound bodies into the IR | files, zips, XML; the emitters; the config file | Collections, Diagnostics, Model, Syntax, Semantics, Ir; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
 | `Haruspex.Ir` | the IR model and its deterministic JSON | SQL of any dialect | Collections | may |
 | `Haruspex.Config` | the config file: selection patterns, overrides as transformations of the IR, naming rules, emitter settings | SQL syntax | Collections, Diagnostics, Model, Ir | may |
-| `Haruspex.Emit.Zod` | the IR and its own target | SQL, the model, the config file | Collections, Ir | may |
+| `Haruspex.Emit.Zod` | the IR and its own target | SQL, the model, the config file | Collections, Diagnostics, Ir | may |
 | `Haruspex.Emit.JsonSchema` (planned) | the IR and its own target | SQL, the model, the config file | Collections, Ir | may |
 | `Haruspex.Cli` | composing all of the above | inference or emission logic of its own | every layer; `System.CommandLine` | may |
 

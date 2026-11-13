@@ -19,7 +19,7 @@ public class ZodJsonNodeTests
             new IrSource("tsql"),
             [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, new IrArray(new IrRef("PRow")), [])])],
             types,
-            []));
+            [])).Expected();
     }
 
     [Theory]

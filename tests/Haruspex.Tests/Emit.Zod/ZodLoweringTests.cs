@@ -15,7 +15,7 @@ public class ZodLoweringTests
 
     private static IrField Field(string name, IrType type) => new(name, type, IrPresence.Always, []);
 
-    private static ZodModule Lower(IrDocument document, ZodOptions? options = null) => ZodLowering.Lower(ZodPlanner.Plan(document, options ?? new ZodOptions()));
+    private static ZodModule Lower(IrDocument document, ZodOptions? options = null) => ZodLowering.Lower(ZodPlanner.Plan(document, options ?? new ZodOptions()).Expected());
 
     private static IrDocument Document(Dictionary<string, IrObjectType> types, params IrResult[]? results) => new(
         new IrSource("tsql"),

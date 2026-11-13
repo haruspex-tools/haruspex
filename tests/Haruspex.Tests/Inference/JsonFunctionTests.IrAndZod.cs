@@ -18,7 +18,7 @@ public partial class JsonFunctionTests
     [Fact]
     public void Zod_writes_a_recursive_reference_as_a_getter()
     {
-        var zod = ZodEmitter.Emit(Infer(Tree, "SELECT json_query(dbo.tree(t.id)) AS children FROM dbo.t AS t FOR JSON PATH;"));
+        var zod = ZodEmitter.Emit(Infer(Tree, "SELECT json_query(dbo.tree(t.id)) AS children FROM dbo.t AS t FOR JSON PATH;")).Expected();
 
         Assert.Contains("export const TreeNodeSchema = z.object({\n", zod, StringComparison.Ordinal);
         Assert.Contains("  get children() { return z.array(TreeNodeSchema).min(1).optional() },\n", zod, StringComparison.Ordinal);
@@ -28,7 +28,7 @@ public partial class JsonFunctionTests
     [Fact]
     public void Zod_checks_json_text_against_its_content_and_keeps_it_a_string()
     {
-        var zod = ZodEmitter.Emit(Infer(Children, "SELECT dbo.children(t.id) AS kids FROM dbo.t AS t FOR JSON PATH;"));
+        var zod = ZodEmitter.Emit(Infer(Children, "SELECT dbo.children(t.id) AS kids FROM dbo.t AS t FOR JSON PATH;")).Expected();
 
         Assert.Contains("const jsonText = (content: () => z.ZodType) =>", zod, StringComparison.Ordinal);
         Assert.Contains("  /** A string holding JSON, checked against the schema inside. */\n  kids: jsonText(() => z.array(PKidsSchema).min(1)).optional(),\n", zod, StringComparison.Ordinal);
@@ -36,12 +36,12 @@ public partial class JsonFunctionTests
 
     [Fact]
     public void Zod_writes_no_helper_when_no_json_text_has_content() =>
-        Assert.DoesNotContain("jsonText", ZodEmitter.Emit(Infer(Children, "SELECT json_query(dbo.children(t.id)) AS kids FROM dbo.t AS t FOR JSON PATH;")), StringComparison.Ordinal);
+        Assert.DoesNotContain("jsonText", ZodEmitter.Emit(Infer(Children, "SELECT json_query(dbo.children(t.id)) AS kids FROM dbo.t AS t FOR JSON PATH;")).Expected(), StringComparison.Ordinal);
 
     [Fact]
     public void Zod_writes_every_reference_within_a_cycle_as_a_getter()
     {
-        var zod = ZodEmitter.Emit(Infer(Categories, "SELECT json_query(dbo.categories(t.id)) AS tree FROM dbo.t AS t FOR JSON PATH;"));
+        var zod = ZodEmitter.Emit(Infer(Categories, "SELECT json_query(dbo.categories(t.id)) AS tree FROM dbo.t AS t FOR JSON PATH;")).Expected();
 
         // Whichever is written first, each refers to the other inside the cycle, so both are getters; the row, outside
         // the cycle, refers to it plainly.

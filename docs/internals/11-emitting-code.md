@@ -87,8 +87,9 @@ reference back into the type's own cycle, whichever type of the cycle the plan d
 
 The plan also refuses, before anything is built, what the module can't say. The IR's names are identifiers by the format's
 own rule, but a name TypeScript reserves (`string`, `class`) can't name a binding, and an imported schema must come from one
-module and not take a name the module declares. These are refused with `ZodEmitException`, which the CLI reports as a
-mistake in the config file.
+module and not take a name the module declares. These are refused as diagnostics (`ZodCodes`), every one the plan finds, and
+the emitter returns them in place of a module ([decision 0037](../decisions/0037-steps-return-outcomes.md)); the CLI reports
+them as mistakes in the config file.
 
 ## One graph of the types
 

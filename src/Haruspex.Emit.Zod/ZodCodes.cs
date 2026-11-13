@@ -1,0 +1,22 @@
+using Haruspex.Diagnostics;
+
+namespace Haruspex.Emit.Zod;
+
+/// <summary>
+/// The codes of what the Zod emitter refuses (HAR5xxx), each explained on its page in <c>docs/diagnostics</c>: a document it
+/// can't write as TypeScript, refused before anything is built.
+/// </summary>
+public static class ZodCodes
+{
+    /// <summary>A name in the IR that isn't a TypeScript identifier, or is a reserved word.</summary>
+    public static DiagnosticCode BadName { get; } = new(5001, DiagnosticSeverity.Error, "An IR name isn't a TypeScript identifier");
+
+    /// <summary>An imported name that isn't a TypeScript identifier, or is a reserved word.</summary>
+    public static DiagnosticCode BadImportName { get; } = new(5002, DiagnosticSeverity.Error, "An imported name isn't a TypeScript identifier");
+
+    /// <summary>One name imported from two modules, which one module can't bind twice.</summary>
+    public static DiagnosticCode ImportedTwice { get; } = new(5003, DiagnosticSeverity.Error, "A name is imported from two modules");
+
+    /// <summary>An imported name that the module also declares or uses.</summary>
+    public static DiagnosticCode ImportClashes { get; } = new(5004, DiagnosticSeverity.Error, "An imported name the module also declares");
+}

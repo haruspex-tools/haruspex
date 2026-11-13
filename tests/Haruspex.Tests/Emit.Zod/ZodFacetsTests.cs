@@ -21,7 +21,7 @@ public class ZodFacetsTests
             [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(encoding, new IrArray(new IrRef("PRow")), [])])],
             new Dictionary<string, IrObjectType> { ["PRow"] = new([new IrField("v", scalar, IrPresence.Always, [])]) },
             []);
-        var ts = ZodEmitter.Emit(doc);
+        var ts = ZodEmitter.Emit(doc).Expected();
         var line = Regex.Match(ts, @"\n(?:  /\*\* (?<note>.*) \*/\n|  /\*\*\n(?:   \* (?<note>.*)\n)+   \*/\n)?  v: (?<code>.*),\n");
         Assert.True(line.Success, ts);
 

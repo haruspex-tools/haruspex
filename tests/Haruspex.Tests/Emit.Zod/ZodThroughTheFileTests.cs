@@ -25,7 +25,7 @@ public class ZodThroughTheFileTests
         var fixture = Fixture.Named(snapshot.Split(Path.DirectorySeparatorChar)[0]);
         var (ir, zod) = fixture.Snapshots.Single(s => Path.GetRelativePath(RepositoryPaths.Fixtures, s.Ir) == snapshot);
 
-        var emitted = ZodEmitter.Emit(IrJsonReader.Read(File.ReadAllText(ir)), Options(fixture));
+        var emitted = ZodEmitter.Emit(IrJsonReader.Read(File.ReadAllText(ir)), Options(fixture)).Expected();
 
         Assert.Equal(File.ReadAllText(zod), emitted);
     }

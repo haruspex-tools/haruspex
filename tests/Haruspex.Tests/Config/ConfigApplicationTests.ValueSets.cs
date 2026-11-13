@@ -8,13 +8,13 @@ public partial class ConfigApplicationTests
     [Fact]
     public void Values_exact_makes_a_collation_set_an_enum()
     {
-        var before = ZodEmitter.Emit(Apply(GetCustomer, "{}").Document);
+        var before = ZodEmitter.Emit(Apply(GetCustomer, "{}").Document).Expected();
         Assert.Contains("One of \"open\", \"closed\", as the database compares strings.", before, StringComparison.Ordinal);
         Assert.Contains("  status: z.string().max(8),\n", before, StringComparison.Ordinal);
 
         var doc = Apply(GetCustomer, """{ "procedures": { "sales.get_customer": { "paths": { "[].status": { "values": "exact", "why": "written in lower case only" } } } } }""").Document;
 
-        Assert.Contains("  status: z.enum([\"open\", \"closed\"]),\n", ZodEmitter.Emit(doc), StringComparison.Ordinal);
+        Assert.Contains("  status: z.enum([\"open\", \"closed\"]),\n", ZodEmitter.Emit(doc).Expected(), StringComparison.Ordinal);
         Assert.Equal(new IrOverride("sales.get_customer", "results[0][].status", IrOverrideSetting.ExactValues, "written in lower case only"), Assert.Single(doc.Overrides));
     }
 

@@ -2,10 +2,11 @@
   <PropertyGroup>
     <Description>Emits Zod schemas and TypeScript types from the haruspex IR.</Description>
   </PropertyGroup>
-  <!-- An emitter reads only the IR. It must never reference a front end. -->
+  <!-- An emitter reads only the IR, and reports what it refuses as diagnostics. It must never reference a front end. -->
   <ItemGroup>
     <!-- The stages (plan, lower, print) are internal; their unit tests reach them. -->
     <InternalsVisibleTo Include="Haruspex.Tests" />
+    <ProjectReference Include="..\Haruspex.Diagnostics\Haruspex.Diagnostics.csproj" />
     <ProjectReference Include="..\Haruspex.Ir\Haruspex.Ir.csproj" />
   </ItemGroup>
 </Project>

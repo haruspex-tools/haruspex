@@ -42,7 +42,7 @@ public class WorkedExampleTests
         foreach (var output in example.Outputs)
         {
             var (expected, actual) = output.Kind == WorkedExample.OutputKind.Zod
-                ? (Text(output.Text), Text(ZodShown(ZodEmitter.Emit(document), output.Text)))
+                ? (Text(output.Text), Text(ZodShown(ZodEmitter.Emit(document).Expected(), output.Text)))
                 : (Json(JsonNode.Parse(output.Text)), Json(IrShown(document, output.Property)));
             if (expected != actual)
                 problems.Add($"{file}:{output.Line.ToString(CultureInfo.InvariantCulture)}: haruspex gives\n{actual}");

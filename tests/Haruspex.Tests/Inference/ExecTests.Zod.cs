@@ -11,7 +11,7 @@ public partial class ExecTests
             ("q", "CREATE PROCEDURE dbo.q AS SELECT t.id FROM dbo.t AS t;"),
             ("p", "CREATE PROCEDURE dbo.p AS EXEC dbo.q;"));
 
-        var zod = ZodEmitter.Emit(doc);
+        var zod = ZodEmitter.Emit(doc).Expected();
         Assert.Contains("export const PRowSchema = z.object({", zod, StringComparison.Ordinal);
         Assert.Contains("export const PSchema = z.array(PRowSchema)", zod, StringComparison.Ordinal);
     }

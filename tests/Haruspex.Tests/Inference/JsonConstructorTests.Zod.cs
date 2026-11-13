@@ -13,7 +13,7 @@ public partial class JsonConstructorTests
                    json_array(t.id, t.name NULL ON NULL) AS slots,
                    (SELECT json_objectagg(u.id: u.qty) FROM dbo.u AS u WHERE u.t_id = t.id) AS qtys
             FROM dbo.t AS t FOR JSON PATH;
-            """));
+            """)).Expected();
 
         Assert.Contains("  pair: z.tuple([z.int32(), z.string().max(20)]),\n", ts, StringComparison.Ordinal);
         Assert.Contains("  mixed: z.array(z.union([z.int32(), z.string().max(10)])).min(1).max(2),\n", ts, StringComparison.Ordinal);

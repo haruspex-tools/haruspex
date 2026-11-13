@@ -86,3 +86,7 @@ HAR4301 E A procedure that can't be named [Haruspex.Config.ConfigCodes.Procedure
 HAR4302 E A type that can't be named [Haruspex.Config.ConfigCodes.TypeUnnamed]
 HAR4303 E Generated names clash [Haruspex.Config.ConfigCodes.NamesClash]
 HAR4304 W A name the naming rules already give [Haruspex.Config.ConfigCodes.NameAgrees]
+HAR5001 E An IR name isn't a TypeScript identifier [Haruspex.Emit.Zod.ZodCodes.BadName]
+HAR5002 E An imported name isn't a TypeScript identifier [Haruspex.Emit.Zod.ZodCodes.BadImportName]
+HAR5003 E A name is imported from two modules [Haruspex.Emit.Zod.ZodCodes.ImportedTwice]
+HAR5004 E An imported name the module also declares [Haruspex.Emit.Zod.ZodCodes.ImportClashes]

@@ -54,7 +54,7 @@ public class EmitCheckTests
 
         // Every fixture's procedures, as the snapshot tests and the differential tests infer them, in <name>.zod.ts.
         foreach (var fixture in Fixture.All.Where(f => !f.IsProject))
-            File.WriteAllText(Path.Combine(generated, $"{fixture.Name}.zod.ts"), ZodEmitter.Emit(fixture.Ir));
+            File.WriteAllText(Path.Combine(generated, $"{fixture.Name}.zod.ts"), ZodEmitter.Emit(fixture.Ir).Expected());
 
         // A project fixture through the CLI, with its config file: the shop's strict objects, overrides and an import
         // that tsconfig.json maps to src/shop-types.ts.

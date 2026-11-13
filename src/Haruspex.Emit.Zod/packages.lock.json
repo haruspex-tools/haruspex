@@ -5,6 +5,12 @@
       "haruspex.collections": {
         "type": "Project"
       },
+      "haruspex.diagnostics": {
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Collections": "[0.1.0-dev, )"
+        }
+      },
       "haruspex.ir": {
         "type": "Project",
         "dependencies": {

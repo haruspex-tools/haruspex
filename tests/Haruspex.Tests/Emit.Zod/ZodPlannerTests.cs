@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod;
 using Haruspex.Emit.Zod.Model;
 using Haruspex.Emit.Zod.Planning;
@@ -22,7 +23,11 @@ public class ZodPlannerTests
 
     private static IrResult Rows(string row) => new(IrEncoding.Rowset, new IrArray(new IrRef(row)), []);
 
-    private static ZodPlan Plan(IrDocument document) => ZodPlanner.Plan(document, new ZodOptions());
+    private static ZodPlan Plan(IrDocument document) => ZodPlanner.Plan(document, new ZodOptions()).Expected();
+
+    /// <summary>What the plan refused, written as the CLI writes it.</summary>
+    private static string Refused(IrDocument document) =>
+        Assert.Single(Assert.IsType<Failed<ZodPlan>>(ZodPlanner.Plan(document, new ZodOptions())).Diagnostics).ToString();
 
     private static List<string> Order(ZodPlan plan) =>
         [.. plan.Entries.Select(e => e switch
@@ -93,7 +98,7 @@ public class ZodPlannerTests
     {
         var document = Document(new() { ["Row"] = Type(new IrImport("S", "./a"), new IrImport("S", "./b")) }, Procedure("s.p", Rows("Row")));
 
-        Assert.Equal("'S' is imported from both './a' and './b'.", Assert.Throws<ZodEmitException>(() => Plan(document)).Message);
+        Assert.Equal("haruspex: error HAR5003: 'S' is imported from both './a' and './b'.", Refused(document));
     }
 
     [Theory]
@@ -104,7 +109,20 @@ public class ZodPlannerTests
     {
         var document = Document(new() { ["Row"] = Type(new IrImport(name, "./a")) }, Procedure("s.p", Rows("Row")));
 
-        Assert.Equal($"The imported name '{name}' is also a name this module defines or uses.", Assert.Throws<ZodEmitException>(() => Plan(document)).Message);
+        Assert.Equal($"haruspex: error HAR5004: The imported name '{name}' is also a name this module defines or uses.", Refused(document));
+    }
+
+    [Fact]
+    public void Every_refusal_is_reported_not_only_the_first()
+    {
+        var document = Document(new() { ["string"] = Type(new IrImport("S", "./a"), new IrImport("S", "./b")) }, Procedure("s.p", Rows("string")));
+
+        Assert.Equal(
+            [
+                "haruspex: error HAR5003: 'S' is imported from both './a' and './b'.",
+                "haruspex: error HAR5001: The IR name 'string' is not a valid TypeScript identifier.",
+            ],
+            Assert.IsType<Failed<ZodPlan>>(ZodPlanner.Plan(document, new ZodOptions())).Diagnostics.Select(d => d.ToString()));
     }
 
     [Fact]
@@ -112,7 +130,7 @@ public class ZodPlannerTests
     {
         var document = Document(new() { ["string"] = Type(Number) }, Procedure("s.p", Rows("string")));
 
-        Assert.Equal("The IR name 'string' is not a valid TypeScript identifier.", Assert.Throws<ZodEmitException>(() => Plan(document)).Message);
+        Assert.Equal("haruspex: error HAR5001: The IR name 'string' is not a valid TypeScript identifier.", Refused(document));
     }
 
     [Fact]

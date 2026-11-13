@@ -215,19 +215,17 @@ internal static class HaruspexCli
         if (applied is not Succeeded<IrDocument> { Value: var document })
             return ExitCodes.Usage;
 
-        string zod;
-        try
+        var emitted = ZodEmitter.Emit(document, new ZodOptions
         {
-            zod = ZodEmitter.Emit(document, new ZodOptions
-            {
-                Objects = config.Objects == ObjectsPolicy.Strict ? ZodObjects.Strict : ZodObjects.Strip,
-            });
-        }
-        catch (ZodEmitException e)
-        {
-            error.WriteLine(configPath is null ? $"haruspex: error: {e.Message}" : $"{configPath}: error: {e.Message}");
+            Objects = config.Objects == ObjectsPolicy.Strict ? ZodObjects.Strict : ZodObjects.Strip,
+        });
+
+        // The emitter knows no config file; what it refuses is a name or an import the file's settings made, so it is
+        // reported against the file.
+        foreach (var problem in emitted.Diagnostics)
+            error.WriteLine(problem with { At = problem.At ?? config.Location });
+        if (emitted is not Succeeded<string> { Value: var zod })
             return ExitCodes.Usage;
-        }
 
         var irPath = Path.Join(outDirectory, IrFileName);
         var zodPath = Path.Join(outDirectory, ZodFileName);

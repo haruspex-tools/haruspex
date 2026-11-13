@@ -61,7 +61,7 @@ public class IrPathTests
             [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, new IrRef("PRow"), [])])],
             new Dictionary<string, IrObjectType> { ["PRow"] = new([new IrField(key, new IrScalar(IrScalarKind.Boolean, null, "bit"), IrPresence.Always, [])]) },
             []);
-        var zod = ZodEmitter.Emit(doc);
+        var zod = ZodEmitter.Emit(doc).Expected();
         Assert.Equal(identifier, zod.Contains($"  {key}: z.boolean(),", StringComparison.Ordinal));
     }
 

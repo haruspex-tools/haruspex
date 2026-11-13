@@ -136,7 +136,7 @@ public class ConstructTests
     [Fact]
     public void An_absent_single_object_result_is_nullable_in_zod()
     {
-        var ts = ZodEmitter.Emit(Procedure("SELECT t.id FROM dbo.t AS t FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;"));
+        var ts = ZodEmitter.Emit(Procedure("SELECT t.id FROM dbo.t AS t FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;")).Expected();
 
         Assert.Contains("export const PSchema = PRowSchema.nullable()\n", ts, StringComparison.Ordinal);
     }
@@ -149,7 +149,7 @@ public class ConstructTests
         Assert.Equal(["PResult1Row", "PResult2Row"], doc.Types.Keys.Order(StringComparer.Ordinal));
         Assert.Contains(
             "export const PSchema = z.tuple([z.array(PResult1RowSchema), z.array(PResult2RowSchema)])\n",
-            ZodEmitter.Emit(doc),
+            ZodEmitter.Emit(doc).Expected(),
             StringComparison.Ordinal);
     }
 
@@ -378,7 +378,7 @@ public class ConstructTests
     {
         var ts = ZodEmitter.Emit(Infer(
             ("tables.sql", Tables),
-            ("p.sql", "CREATE PROCEDURE dbo.[x*/ export const injected = 1; /*] AS SELECT t.id FROM dbo.t AS t;")));
+            ("p.sql", "CREATE PROCEDURE dbo.[x*/ export const injected = 1; /*] AS SELECT t.id FROM dbo.t AS t;"))).Expected();
 
         Assert.DoesNotContain("*/ export const injected", ts, StringComparison.Ordinal);
     }

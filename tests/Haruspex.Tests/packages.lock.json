@@ -184,6 +184,7 @@
       "haruspex.emit.zod": {
         "type": "Project",
         "dependencies": {
+          "Haruspex.Diagnostics": "[0.1.0-dev, )",
           "Haruspex.Ir": "[0.1.0-dev, )"
         }
       },

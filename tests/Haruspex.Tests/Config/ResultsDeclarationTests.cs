@@ -264,7 +264,7 @@ public class ResultsDeclarationTests
         Assert.DoesNotContain(doc.Unknowns, u => u.Object == "rpt.search");
         Assert.Equal([new IrOverride("rpt.search", "results", IrOverrideSetting.Results, "the filter is SQL the caller builds")], doc.Overrides);
 
-        var zod = ZodEmitter.Emit(doc);
+        var zod = ZodEmitter.Emit(doc).Expected();
         Assert.Contains("export const SearchRowSchema = z.object({", zod, StringComparison.Ordinal);
         Assert.Contains("item_id: z.int32(),", zod, StringComparison.Ordinal);
     }

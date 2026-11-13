@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 
@@ -18,7 +19,7 @@ public class ZodEmitterTests
     [Fact]
     public void Quotes_field_names_that_are_not_identifiers()
     {
-        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("first name", new IrScalar(IrScalarKind.String, null, "nvarchar(10)"))));
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("first name", new IrScalar(IrScalarKind.String, null, "nvarchar(10)")))).Expected();
 
         Assert.Contains("  \"first name\": z.string(),\n", ts, StringComparison.Ordinal);
     }
@@ -48,7 +49,7 @@ public class ZodEmitterTests
     [InlineData(IrEncoding.Rowset, IrScalarKind.Boolean, null, "bit", "z.boolean()")]
     public void Maps_each_scalar_as_its_encoding_delivers_it(IrEncoding encoding, IrScalarKind kind, IrFormat? format, string sql, string zod)
     {
-        var ts = ZodEmitter.Emit(OneResult(encoding, Field("v", new IrScalar(kind, format, sql))));
+        var ts = ZodEmitter.Emit(OneResult(encoding, Field("v", new IrScalar(kind, format, sql)))).Expected();
 
         // An optional trailing comment may explain the mapping (int64 precision, say).
         Assert.Matches($@"\n  v: {Regex.Escape(zod)}( /\*[^\n]*\*/)?,\n", ts);
@@ -62,7 +63,7 @@ public class ZodEmitterTests
         var ts = ZodEmitter.Emit(OneResult(
             IrEncoding.Json,
             new IrField("omitted", text, IrPresence.OmittedWhenNull, [.. because]),
-            new IrField("kept", text, IrPresence.Always, [.. because])));
+            new IrField("kept", text, IrPresence.Always, [.. because]))).Expected();
 
         Assert.Contains("  omitted: z.string().optional(),\n", ts, StringComparison.Ordinal);
         Assert.Contains("  kept: z.string().nullable(),\n", ts, StringComparison.Ordinal);
@@ -71,7 +72,7 @@ public class ZodEmitterTests
     [Fact]
     public void Json_text_stays_a_plain_string_even_in_a_json_result()
     {
-        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("v", new IrJsonText())));
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("v", new IrJsonText()))).Expected();
 
         Assert.Contains("  /** A string holding JSON. */\n  v: z.string(),\n", ts, StringComparison.Ordinal);
     }
@@ -79,7 +80,7 @@ public class ZodEmitterTests
     [Fact]
     public void Emits_an_unknown_with_its_reason_and_never_a_guess()
     {
-        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Rowset, Field("v", new IrUnknownType(IrUnknownReason.UnsupportedExpression))));
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Rowset, Field("v", new IrUnknownType(IrUnknownReason.UnsupportedExpression)))).Expected();
 
         Assert.Contains("  /** Not known (unsupported-expression); the IR's unknowns say why. */\n  v: z.unknown(),\n", ts, StringComparison.Ordinal);
     }
@@ -93,7 +94,7 @@ public class ZodEmitterTests
             new Dictionary<string, IrObjectType>(),
             [new IrUnknown("s.p", "results", IrUnknownReason.UnsupportedStatement, "IF", "p.sql:3:1")]);
 
-        var ts = ZodEmitter.Emit(doc);
+        var ts = ZodEmitter.Emit(doc).Expected();
 
         Assert.Contains("export const PSchema = z.unknown()", ts, StringComparison.Ordinal);
         Assert.Contains("export type P = z.infer<typeof PSchema>", ts, StringComparison.Ordinal);
@@ -108,7 +109,7 @@ public class ZodEmitterTests
     [Fact]
     public void An_absent_object_result_reads_as_null()
     {
-        var ts = ZodEmitter.Emit(Absent(new IrRef("PRow")));
+        var ts = ZodEmitter.Emit(Absent(new IrRef("PRow"))).Expected();
 
         Assert.Contains("export const PSchema = PRowSchema.nullable()\n", ts, StringComparison.Ordinal);
         Assert.Contains("null when no rows match", ts, StringComparison.Ordinal);
@@ -117,7 +118,7 @@ public class ZodEmitterTests
     [Fact]
     public void An_absent_array_result_reads_as_an_empty_array()
     {
-        var ts = ZodEmitter.Emit(Absent(new IrArray(new IrRef("PRow"))));
+        var ts = ZodEmitter.Emit(Absent(new IrArray(new IrRef("PRow")))).Expected();
 
         Assert.Contains("export const PSchema = z.array(PRowSchema)\n", ts, StringComparison.Ordinal);
         Assert.Contains("[] when no rows match", ts, StringComparison.Ordinal);
@@ -135,7 +136,7 @@ public class ZodEmitterTests
             new Dictionary<string, IrObjectType>(),
             [new IrUnknown(id, "results", IrUnknownReason.UnsupportedStatement, "d", "p.sql:1:1")]);
 
-        var ts = ZodEmitter.Emit(doc);
+        var ts = ZodEmitter.Emit(doc).Expected();
 
         Assert.DoesNotContain("*/ export const injected", ts, StringComparison.Ordinal);
         Assert.DoesNotContain("\nexport const injected", ts, StringComparison.Ordinal);
@@ -155,7 +156,7 @@ public class ZodEmitterTests
             new Dictionary<string, IrObjectType>(),
             []);
 
-        Assert.Throws<ZodEmitException>(() => ZodEmitter.Emit(doc));
+        Assert.IsType<Failed<string>>(ZodEmitter.Emit(doc));
     }
 
     [Theory]
@@ -165,7 +166,7 @@ public class ZodEmitterTests
     {
         var doc = new IrDocument(new IrSource("tsql"), [new IrObject("s.p", name, IrObjectKind.Procedure, "p.sql:1:1", [], null)], new Dictionary<string, IrObjectType>(), []);
 
-        Assert.Contains($"export const {name}Schema = z.unknown()\n", ZodEmitter.Emit(doc), StringComparison.Ordinal);
+        Assert.Contains($"export const {name}Schema = z.unknown()\n", ZodEmitter.Emit(doc).Expected(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -173,13 +174,13 @@ public class ZodEmitterTests
     {
         var doc = new IrDocument(new IrSource("tsql"), [new IrObject("s.p", "string", IrObjectKind.Procedure, "p.sql:1:1", [], null)], new Dictionary<string, IrObjectType>(), []);
 
-        Assert.Equal("The IR name 'string' is not a valid TypeScript identifier.", Assert.Throws<ZodEmitException>(() => ZodEmitter.Emit(doc)).Message);
+        Assert.Equal("haruspex: error HAR5001: The IR name 'string' is not a valid TypeScript identifier.", Refused(doc));
     }
 
     [Fact]
     public void Objects_strip_unknown_keys_by_default()
     {
-        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("v", new IrScalar(IrScalarKind.Boolean, null, "bit"))));
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("v", new IrScalar(IrScalarKind.Boolean, null, "bit")))).Expected();
 
         Assert.Contains("export const PRowSchema = z.object({\n", ts, StringComparison.Ordinal);
         Assert.DoesNotContain("strictObject", ts, StringComparison.Ordinal);
@@ -190,7 +191,7 @@ public class ZodEmitterTests
     [InlineData(IrEncoding.Rowset)]
     public void Strict_objects_reject_unknown_keys_in_every_result(IrEncoding encoding)
     {
-        var ts = ZodEmitter.Emit(OneResult(encoding, Field("v", new IrScalar(IrScalarKind.Boolean, null, "bit"))), new ZodOptions { Objects = ZodObjects.Strict });
+        var ts = ZodEmitter.Emit(OneResult(encoding, Field("v", new IrScalar(IrScalarKind.Boolean, null, "bit"))), new ZodOptions { Objects = ZodObjects.Strict }).Expected();
 
         Assert.Contains("export const PRowSchema = z.strictObject({\n", ts, StringComparison.Ordinal);
         Assert.DoesNotContain("z.object(", ts, StringComparison.Ordinal);
@@ -204,7 +205,7 @@ public class ZodEmitterTests
             Field("b", new IrImport("BSchema", "@app/types")),
             Field("a", new IrArray(new IrImport("ASchema", "@app/types"))),
             Field("c", new IrImport("CSchema", "./c")),
-            Field("again", new IrImport("BSchema", "@app/types"))));
+            Field("again", new IrImport("BSchema", "@app/types")))).Expected();
 
         Assert.Contains("import { z } from 'zod'\nimport { CSchema } from './c'\nimport { ASchema, BSchema } from '@app/types'\n", ts, StringComparison.Ordinal);
         Assert.Contains("  b: BSchema,\n  a: z.array(ASchema),\n  c: CSchema,\n", ts, StringComparison.Ordinal);
@@ -215,7 +216,7 @@ public class ZodEmitterTests
     {
         var doc = OneResult(IrEncoding.Json, Field("a", new IrImport("TagSchema", "./a")), Field("b", new IrImport("TagSchema", "./b")));
 
-        Assert.Equal("'TagSchema' is imported from both './a' and './b'.", Assert.Throws<ZodEmitException>(() => ZodEmitter.Emit(doc)).Message);
+        Assert.Equal("haruspex: error HAR5003: 'TagSchema' is imported from both './a' and './b'.", Refused(doc));
     }
 
     [Theory]
@@ -227,14 +228,17 @@ public class ZodEmitterTests
     {
         var doc = OneResult(IrEncoding.Json, Field("a", new IrImport(name, "./a")));
 
-        Assert.Equal($"The imported name '{name}' is also a name this module defines or uses.", Assert.Throws<ZodEmitException>(() => ZodEmitter.Emit(doc)).Message);
+        Assert.Equal($"haruspex: error HAR5004: The imported name '{name}' is also a name this module defines or uses.", Refused(doc));
     }
 
     [Fact]
     public void An_import_specifier_is_quoted_safely()
     {
-        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("a", new IrImport("ASchema", "./it's"))));
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("a", new IrImport("ASchema", "./it's")))).Expected();
 
         Assert.Contains("import { ASchema } from './it\\'s'\n", ts, StringComparison.Ordinal);
     }
+
+    /// <summary>What the emitter refused, written as the CLI writes it.</summary>
+    private static string Refused(IrDocument document) => Assert.Single(Assert.IsType<Failed<string>>(ZodEmitter.Emit(document)).Diagnostics).ToString();
 }

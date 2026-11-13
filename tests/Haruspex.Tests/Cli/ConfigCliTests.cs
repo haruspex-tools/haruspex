@@ -379,6 +379,6 @@ public class ConfigCliTests
         var (exitCode, _, error) = Run(copy.Path, "generate", "--out", Path.Combine(copy.Path, "out"));
 
         Assert.Equal(2, exitCode);
-        Assert.Equal($"{Path.Combine(copy.Path, "haruspex.json")}: error: The imported name 'ListProductsRowSchema' is also a name this module defines or uses.\n", error);
+        Assert.Equal($"{Path.Combine(copy.Path, "haruspex.json")}: error HAR5004: The imported name 'ListProductsRowSchema' is also a name this module defines or uses.\n", error);
     }
 }

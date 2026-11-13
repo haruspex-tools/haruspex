@@ -14,7 +14,7 @@ public partial class ConfigApplicationTests
         Assert.Equal(new IrOverride("sales.get_customer", "results[0][].name", IrOverrideSetting.NotNull, "every customer has a name"), Assert.Single(doc.Overrides));
 
         // Never null, so never left out: the key is required.
-        Assert.Contains("  name: z.string().max(40),\n", ZodEmitter.Emit(doc), StringComparison.Ordinal);
+        Assert.Contains("  name: z.string().max(40),\n", ZodEmitter.Emit(doc).Expected(), StringComparison.Ordinal);
         Assert.Contains("\"setting\": \"not-null\"", IrJsonWriter.Write(doc), StringComparison.Ordinal);
     }
 

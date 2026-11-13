@@ -28,8 +28,9 @@ flowchart LR
 
 ```csharp
 var document = IrJsonReader.Read(File.ReadAllText("haruspex.ir.json"));
-var module = ZodEmitter.Emit(document, new ZodOptions { Objects = ZodObjects.Strip });
-File.WriteAllText("haruspex.zod.ts", module);
+var emitted = ZodEmitter.Emit(document, new ZodOptions { Objects = ZodObjects.Strip });
+if (emitted is Succeeded<string> { Value: var module })
+    File.WriteAllText("haruspex.zod.ts", module);
 ```
 
 What a module looks like is shown, procedure by procedure, in
@@ -74,7 +75,7 @@ a CI check can compare it byte for byte.
 - **No config file.** It takes `ZodOptions`. The CLI reads `haruspex.json` and maps its settings across, so the emitter
   works the same wherever it is composed.
 - **No naming.** Names come from the IR, where the config's naming rules have already been applied. An IR name that isn't
-  a TypeScript identifier is an error (`ZodEmitException`), not something the emitter quietly rewrites.
+  a TypeScript identifier is refused with a diagnostic (`ZodCodes`), not something the emitter quietly rewrites.
 - **No SQL.** It can't look at a procedure, only at what the IR says about it. Every claim it makes is one the inference
   layer already proved.
 

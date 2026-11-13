@@ -17,10 +17,10 @@ public partial class RefinementTests
     [Fact]
     public void The_zod_bounds_a_rowset_by_its_cardinality()
     {
-        var one = ZodEmitter.Emit(Procedure("SELECT COUNT_BIG(*) AS n FROM dbo.t AS t;"));
-        var atMostOne = ZodEmitter.Emit(Procedure("SELECT t.name FROM dbo.t AS t WHERE t.id = @x;", "@x int"));
-        var mayNotRun = ZodEmitter.Emit(Procedure("IF @x = 1 SELECT COUNT_BIG(*) AS n FROM dbo.t AS t;", "@x int"));
-        var json = ZodEmitter.Emit(Procedure("SELECT t.name FROM dbo.t AS t WHERE t.id = @x FOR JSON PATH;", "@x int"));
+        var one = ZodEmitter.Emit(Procedure("SELECT COUNT_BIG(*) AS n FROM dbo.t AS t;")).Expected();
+        var atMostOne = ZodEmitter.Emit(Procedure("SELECT t.name FROM dbo.t AS t WHERE t.id = @x;", "@x int")).Expected();
+        var mayNotRun = ZodEmitter.Emit(Procedure("IF @x = 1 SELECT COUNT_BIG(*) AS n FROM dbo.t AS t;", "@x int")).Expected();
+        var json = ZodEmitter.Emit(Procedure("SELECT t.name FROM dbo.t AS t WHERE t.id = @x FOR JSON PATH;", "@x int")).Expected();
 
         Assert.Contains("export const PSchema = z.array(PRowSchema).length(1)\n", one, StringComparison.Ordinal);
         Assert.Contains("export const PSchema = z.array(PRowSchema).max(1)\n", atMostOne, StringComparison.Ordinal);

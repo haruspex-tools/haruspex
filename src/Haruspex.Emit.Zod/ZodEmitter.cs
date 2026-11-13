@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod.Lowering;
 using Haruspex.Emit.Zod.Planning;
 using Haruspex.Emit.Zod.Printing;
@@ -24,15 +25,18 @@ namespace Haruspex.Emit.Zod;
 public static class ZodEmitter
 {
     /// <summary>Emits the module with the default options.</summary>
-    /// <exception cref="ZodEmitException">The document cannot be emitted: a name that is not an identifier, or an import that clashes.</exception>
-    public static string Emit(IrDocument document) => Emit(document, new ZodOptions());
+    /// <returns>The module's text; or, when the document can't be written as TypeScript, every refusal (<see cref="ZodCodes"/>).</returns>
+    public static Outcome<string> Emit(IrDocument document) => Emit(document, new ZodOptions());
 
     /// <summary>Emits the module.</summary>
-    /// <exception cref="ZodEmitException">The document cannot be emitted: a name that is not an identifier, or an import that clashes.</exception>
-    public static string Emit(IrDocument document, ZodOptions options)
+    /// <returns>
+    /// The module's text; or, when the document can't be written as TypeScript (a name that is not an identifier, an import
+    /// that clashes), every refusal (<see cref="ZodCodes"/>). The plan refuses before anything is built.
+    /// </returns>
+    public static Outcome<string> Emit(IrDocument document, ZodOptions options)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(options);
-        return ZodPrinter.Print(ZodLowering.Lower(ZodPlanner.Plan(document, options)));
+        return ZodPlanner.Plan(document, options).Select(plan => ZodPrinter.Print(ZodLowering.Lower(plan)));
     }
 }

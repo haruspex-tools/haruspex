@@ -7,7 +7,7 @@ public partial class StatementFlowTests
     [Fact]
     public void A_single_object_result_that_may_not_run_is_nullable_in_zod()
     {
-        var ts = ZodEmitter.Emit(Procedure("IF @x IS NULL RETURN;\nSELECT t.id FROM dbo.t AS t FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;", "@x int"));
+        var ts = ZodEmitter.Emit(Procedure("IF @x IS NULL RETURN;\nSELECT t.id FROM dbo.t AS t FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;", "@x int")).Expected();
 
         Assert.Contains("export const PSchema = PRowSchema.nullable()\n", ts, StringComparison.Ordinal);
     }
@@ -18,7 +18,7 @@ public partial class StatementFlowTests
         // z.union takes the first variant that accepts a row, and z.object strips keys it does not know.
         var doc = Procedure("IF @x = 1 SELECT u.id FROM dbo.u AS u;\nELSE SELECT t.id, t.code FROM dbo.t AS t;", "@x int");
 
-        Assert.Contains("export const PSchema = z.union([z.array(PRow2Schema), z.array(PRowSchema.extend({ code: z.never().optional() }))])\n", ZodEmitter.Emit(doc), StringComparison.Ordinal);
+        Assert.Contains("export const PSchema = z.union([z.array(PRow2Schema), z.array(PRowSchema.extend({ code: z.never().optional() }))])\n", ZodEmitter.Emit(doc).Expected(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public partial class StatementFlowTests
 
         Assert.Contains(
             "z.union([z.array(PRowSchema.extend({ t_id: z.never().optional() })), z.array(PRow2Schema.extend({ name: z.never().optional() }))]).nullable()",
-            ZodEmitter.Emit(doc),
+            ZodEmitter.Emit(doc).Expected(),
             StringComparison.Ordinal);
     }
 
@@ -38,7 +38,7 @@ public partial class StatementFlowTests
     {
         var doc = Procedure("IF @x IS NULL RETURN;\nSELECT t.id FROM dbo.t AS t;", "@x int");
 
-        Assert.Contains("export const PSchema = z.array(PRowSchema)\n", ZodEmitter.Emit(doc), StringComparison.Ordinal);
-        Assert.Contains("[] when it does not run", ZodEmitter.Emit(doc), StringComparison.Ordinal);
+        Assert.Contains("export const PSchema = z.array(PRowSchema)\n", ZodEmitter.Emit(doc).Expected(), StringComparison.Ordinal);
+        Assert.Contains("[] when it does not run", ZodEmitter.Emit(doc).Expected(), StringComparison.Ordinal);
     }
 }
