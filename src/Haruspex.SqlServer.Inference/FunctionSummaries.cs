@@ -395,8 +395,9 @@ internal sealed class FunctionSummaries
     /// <summary>Tarjan's algorithm over the scalar functions' calls, so each component is solved once, those it calls first.</summary>
     private void FindComponents()
     {
-        // In name order, as the call graph has always been walked: the model's source order would change which component
-        // Tarjan's algorithm numbers first.
+        // In name order, as the call graph has always been walked. The order isn't seen in what is inferred: each component is
+        // solved once, after the components it calls, whichever Tarjan's algorithm numbers first, so no test can hold it; it
+        // keeps the walk the same from one model to the next, so that a fault found in one run is found again.
         var scalar = model.Functions.OfType<ScalarFunction>().OrderBy(f => f.Name.ToString(), StringComparer.Ordinal).ToList();
         var calls = scalar.ToDictionary(
             f => f.Name,

@@ -6,9 +6,12 @@ namespace Haruspex.Tests.Sources;
 
 /// <summary>
 /// A folder's model doesn't depend on the order its files are listed in: read with them in any order, every object is in
-/// the same place in the model, every diagnostic is the same, and so is the IR of every procedure. The order is the model's
-/// own, source order (<c>DatabaseModel</c>).
+/// the same place in the model, every diagnostic is the same, and so is the IR of every procedure.
 /// </summary>
+/// <remarks>
+/// This holds the reader to reading files in one order of its own. What that order makes of the model, source order, is
+/// held by <c>DatabaseModelOrderTests</c>, and the order of the names a message lists by <c>ExecTests</c> and <c>TableFunctionTests</c>.
+/// </remarks>
 public class ShuffledReadTests
 {
     public static TheoryData<string> Fixtures { get; } = [.. Fixture.All.Select(f => f.Name)];

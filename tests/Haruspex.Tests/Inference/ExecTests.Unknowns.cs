@@ -114,4 +114,17 @@ public partial class ExecTests
 
         Assert.Equal(IrUnknownReason.Redefined, why.Reason);
     }
+
+    [Fact]
+    public void An_exec_of_a_name_two_schemas_have_names_both_in_name_order_whatever_order_they_are_defined_in()
+    {
+        // b.p is defined first in source order and a.p second; the caller's default schema decides which runs.
+        var json = IrJsonWriter.Write(InferProcedure.Infer(
+            "dbo.caller",
+            ("a.sql", "CREATE PROCEDURE b.p AS SELECT 1 AS x;"),
+            ("z.sql", "CREATE PROCEDURE a.p AS SELECT 2 AS x;"),
+            ("caller.sql", "CREATE PROCEDURE dbo.caller AS EXEC p;")));
+
+        Assert.Contains("names p without a schema, and a.p and b.p have that name", json, StringComparison.Ordinal);
+    }
 }

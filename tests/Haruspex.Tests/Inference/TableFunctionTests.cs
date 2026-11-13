@@ -181,4 +181,17 @@ public class TableFunctionTests
         Assert.Equal(IrCardinality.AtMostOne, Result(Procedure("SELECT m.id FROM dbo.ms(1) AS m WHERE m.code = 'abc';")).Cardinality);
         Assert.Equal(IrCardinality.Many, Result(Procedure("SELECT m.id FROM dbo.ms(1) AS m;")).Cardinality);
     }
+
+    [Fact]
+    public void A_function_of_a_name_two_schemas_have_names_both_in_name_order_whatever_order_they_are_defined_in()
+    {
+        // b.f is defined first in source order and a.f second; the caller's default schema decides which is read.
+        var json = IrJsonWriter.Write(InferProcedure.Infer(
+            "dbo.caller",
+            ("a.sql", "CREATE FUNCTION b.f() RETURNS TABLE AS RETURN SELECT 1 AS x;"),
+            ("z.sql", "CREATE FUNCTION a.f() RETURNS TABLE AS RETURN SELECT 2 AS x;"),
+            ("caller.sql", "CREATE PROCEDURE dbo.caller AS SELECT r.x FROM f() AS r;")));
+
+        Assert.Contains("f is not schema-qualified, and a.f and b.f have that name.", json, StringComparison.Ordinal);
+    }
 }
