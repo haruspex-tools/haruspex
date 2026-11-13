@@ -40,7 +40,7 @@ Then, in about ten minutes:
 | | Chapter | |
 |---|---|---|
 | 1 | [The shape of the problem](01-the-shape-of-the-problem.md) | What haruspex is for; why it infers from the source rather than asking the server; why it is sound by default, and what *unknown* means. |
-| 2 | The inputs and the model | *Planned.* How a folder of scripts, in no particular order, becomes a model of the schema with ScriptDom, and why an object changed after its definition is recorded rather than applied. |
+| 2 | [The inputs and the model](02-the-inputs-and-the-model.md) | What is read from a folder of scripts in no particular order, and how it becomes a model of the schema in three steps; why an object changed after its definition is recorded rather than applied; why the model hides the parser, with closed hierarchies for what is one of several; where each object is; and the one order the model keeps. |
 | 3 | Binding | *Planned.* How each name in a body is resolved to the table, column, CTE or temporary table it means, and why binding is a layer of its own, apart from inference. |
 | 4 | Abstract interpretation | *Planned.* Running a program over abstract values instead of real ones; why *unknown* is the top of every domain, and what makes the analysis sound. |
 | 5 | [Values as a lattice](05-values-as-a-lattice.md) | What haruspex knows about a value (its shape, why it may be null, its facets): when two such descriptions are equal, and why comparing them as text was a trap; how they are ordered and joined, one lattice per fact, and the laws the joins keep; witnesses; facts dropped by default; and why SQL Server's type rule for `CASE` is not a join. |

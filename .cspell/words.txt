@@ -102,6 +102,7 @@ sqlproj
 ssdt
 ssms
 xunit
+Yaron
 zizmor
 zizmorcore
 nologo

@@ -68,6 +68,5 @@ foreach (var table in model.Tables)
   [Haruspex.SqlServer.Semantics](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Semantics/README.md)'s
   questions, not the model's.
 
-It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API will change. Its chapter of
-[the guide](https://github.com/sharpblue/haruspex/blob/main/docs/internals/README.md), *The inputs and the model*, is
-planned.
+It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API will change. Its chapter of the guide is
+[*The inputs and the model*](https://github.com/sharpblue/haruspex/blob/main/docs/internals/02-the-inputs-and-the-model.md).

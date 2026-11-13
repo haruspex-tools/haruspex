@@ -10,12 +10,18 @@ parser (MIT), and needs neither DacFx nor a database.
 
 ```mermaid
 flowchart LR
-    folder["a folder of .sql files"] --> read["SqlScriptFolder.Read"]
-    read -->|each file parsed by ScriptDom| statements["CREATE, ALTER and DROP statements"]
-    statements --> result["SchemaReadResult"]
+    folder["a folder of .sql files"] --> files["ScriptFile: in order, each parsed by ScriptDom"]
+    files --> reader["ScriptReader: CREATE, ALTER and DROP statements"]
+    reader --> declarations["SchemaDeclarations"]
+    declarations --> passes["DefinitionsInEffect, ConstraintTrust"]
+    passes --> result["SchemaReadResult"]
     result --> model["DatabaseModel"]
     result --> diagnostics["Diagnostic: parse errors, objects defined twice"]
 ```
+
+`SqlScriptFolder.Read` is three steps: which scripts there are and in which order, each parsed (`ScriptFile`); what each
+declares, applying nothing (`ScriptReader`); and the passes that settle what is in effect once every script is read
+(`DefinitionsInEffect`, `ConstraintTrust`).
 
 Files are read in order of their relative path, so the result doesn't depend on the file system. Each file is UTF-8 unless
 a byte order mark says otherwise (SSMS writes UTF-16), and is parsed with the SQL Server 2025 grammar. A script written for
@@ -66,6 +72,5 @@ var orders = read.Model.FindTable(new ObjectName("sales", "orders"));
 - **No name resolution or typing.** What a reference in a body points to, and what type an expression has, are questions
   for a semantic layer over the model.
 
-It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API will change. Its chapter of
-[the guide](https://github.com/sharpblue/haruspex/blob/main/docs/internals/README.md), *The inputs and the model*, is
-planned.
+It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API will change. Its chapter of the guide is
+[*The inputs and the model*](https://github.com/sharpblue/haruspex/blob/main/docs/internals/02-the-inputs-and-the-model.md).

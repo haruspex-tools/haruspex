@@ -44,6 +44,5 @@ var procedure = ModuleReader.Procedure(definition, "procedures/get_order.sql");
 - **No name resolution.** A name is read as the definition writes it (an unqualified one in `dbo`); what a reference in a
   body means is Semantics' question.
 
-It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API will change. Its chapter of
-[the guide](https://github.com/sharpblue/haruspex/blob/main/docs/internals/README.md), *The inputs and the model*, is
-planned.
+It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API will change. Its chapter of the guide is
+[*The inputs and the model*](https://github.com/sharpblue/haruspex/blob/main/docs/internals/02-the-inputs-and-the-model.md).

@@ -31,7 +31,8 @@ namespace Haruspex.SqlServer.Sources;
 /// A read is three steps, each in a type of its own: which scripts there are and in which order, each parsed
 /// (<c>ScriptFile</c>); what each script declares, applying nothing (<c>ScriptReader</c>, into <c>SchemaDeclarations</c>);
 /// and the passes that settle what is in effect once every script is read (<c>DefinitionsInEffect</c>,
-/// <c>ConstraintTrust</c>).
+/// <c>ConstraintTrust</c>). The guide's chapter <i>The inputs and the model</i> explains them
+/// (<c>docs/internals/02-the-inputs-and-the-model.md</c>).
 /// </para>
 /// </remarks>
 public static class SqlScriptFolder
