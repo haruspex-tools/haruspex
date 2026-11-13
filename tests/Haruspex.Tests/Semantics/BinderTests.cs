@@ -181,6 +181,24 @@ public class BinderTests
         Assert.Equal("u", column.Source.Alias);
     }
 
+    [Theory]
+    [InlineData("SELECT (SELECT TOP (1) name FROM #callers AS c) AS n FROM dbo.t AS t;", "c")]
+    [InlineData("SELECT (SELECT TOP (1) name FROM (SELECT * FROM dbo.u AS u) AS d) AS n FROM dbo.t AS t;", "d")]
+    [InlineData("SELECT (SELECT TOP (1) name FROM dbo.nope AS x) AS n FROM dbo.t AS t;", "x")]
+    public void A_column_a_source_of_unknown_columns_may_have_is_not_looked_for_outside(string statement, string inner)
+    {
+        // The outer t has name, but the inner source may have it too (a caller's #t, a SELECT * not expanded, a table not in
+        // the project), and SQL Server would read the inner one: so it is the inner source's, whatever that holds.
+        var source = new Sample(statement).Resolve("name") switch
+        {
+            UnlistedColumn unlisted => unlisted.Source,
+            UnboundSource unbound => unbound.Source,
+            var other => throw new InvalidOperationException($"name resolved to {other}."),
+        };
+
+        Assert.Equal(inner, source.Alias);
+    }
+
     [Fact]
     public void A_column_two_sources_of_one_scope_have_is_ambiguous()
     {
