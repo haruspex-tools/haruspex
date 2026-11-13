@@ -25,7 +25,8 @@ public static class ConfigApplication
     /// The inferred IR of the procedures of the project whose results are declared but which are not in
     /// <paramref name="document"/>, so that each declaration can be checked against what is inferred. Null when there are none.
     /// </param>
-    public static ConfigApplied Apply(
+    /// <returns>The document with the config applied and every name settled, with any warnings; or every problem found.</returns>
+    public static Outcome<IrDocument> Apply(
         IrDocument document,
         HaruspexConfig config,
         IReadOnlyList<ObjectName> procedures,
@@ -149,8 +150,9 @@ public static class ConfigApplication
         }
 
         var settler = new NameSettler(config, types, procedureNames, applier.Names, problems);
-        var named = problems.Any(p => p.IsError) ? null : settler.Settle(document with { Unknowns = [.. unknowns] }, results);
-        return new ConfigApplied(named is null ? null : named with { Overrides = [.. document.Overrides, .. claims] }, [.. problems]);
+        if (problems.Any(p => p.IsError) || settler.Settle(document with { Unknowns = [.. unknowns] }, results) is not { } named)
+            return new Failed<IrDocument>([.. problems]);
+        return new Succeeded<IrDocument>(named with { Overrides = [.. document.Overrides, .. claims] }, [.. problems]);
 
         // A declaration of results haruspex infers: an error if they differ, a warning if not (it can go).
         void Check(ProcedureOverride entry, ResultsDeclaration declared, string id, IReadOnlyList<IrResult> inferred, IReadOnlyDictionary<string, IrObjectType> inferredTypes)

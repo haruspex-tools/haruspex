@@ -36,7 +36,7 @@ public class ConfigSchemaTests
         return Schema().Validate(instance.RootElement);
     }
 
-    private static EquatableArray<Diagnostic> ReaderProblems(string file) => ConfigReader.Read(file).Problems;
+    private static EquatableArray<Diagnostic> ReaderProblems(string file) => ConfigReader.Read(file).Diagnostics;
 
     public static TheoryData<string> Valid { get; } = [.. Directory.GetFiles(Path.Combine(Examples, "valid")).Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal)];
 

@@ -1,4 +1,5 @@
 using System.Text;
+using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod;
 
 namespace Haruspex.Tests.Config;
@@ -9,14 +10,14 @@ namespace Haruspex.Tests.Config;
 /// </summary>
 public class ConfigReaderTests
 {
-    private static ConfigReadResult Read(string text) =>
+    private static Outcome<HaruspexConfig> Read(string text) =>
         ConfigReader.Read(Encoding.UTF8.GetBytes(text), "haruspex.json", Path.Combine(Path.GetTempPath(), "project"), new ReservedWords(TypeScriptNames.Language, TypeScriptNames.IsReserved));
 
     private static string Single(string text)
     {
         var result = Read(text);
-        Assert.Null(result.Config);
-        return Assert.Single(result.Problems).ToString();
+        Assert.IsType<Failed<HaruspexConfig>>(result);
+        return Assert.Single(result.Diagnostics).ToString();
     }
 
     [Fact]
@@ -50,8 +51,8 @@ public class ConfigReaderTests
             }
             """);
 
-        Assert.Empty(result.Problems);
-        var config = Assert.IsType<HaruspexConfig>(result.Config);
+        Assert.Empty(result.Diagnostics);
+        var config = result.Expected();
         Assert.Equal(Path.Combine(directory, "db"), config.Source);
         Assert.Equal(Path.GetFullPath(Path.Combine(directory, "..", "generated")), config.Out);
         Assert.Equal(["sales", "RDF.", "reference"], config.Schemas.Select(s => s.Name));
@@ -85,7 +86,7 @@ public class ConfigReaderTests
     [Fact]
     public void An_empty_object_is_a_valid_config_with_every_default()
     {
-        var config = Assert.IsType<HaruspexConfig>(Read("{}").Config);
+        var config = Read("{}").Expected();
 
         Assert.Empty(config.Schemas);
         Assert.False(config.SelectsAnything);
@@ -102,7 +103,7 @@ public class ConfigReaderTests
 
         var result = ConfigReader.Read(bytes, "haruspex.json", Path.GetTempPath());
 
-        Assert.Equal(ObjectsPolicy.Strict, result.Config!.Objects);
+        Assert.Equal(ObjectsPolicy.Strict, result.Expected().Objects);
     }
 
     [Fact]
@@ -110,7 +111,7 @@ public class ConfigReaderTests
     {
         var result = Read("""{ "objects": "loose", "colour": 1, "schemas": { "sales": { "include": [] } } }""");
 
-        Assert.Equal(3, result.Problems.Count);
+        Assert.Equal(3, result.Diagnostics.Count);
     }
 
     /// <summary>Text that is not JSON with comments: the reader's message, at the line and column it stopped.</summary>
@@ -242,7 +243,7 @@ public class ConfigReaderTests
 
         var result = ConfigReader.Read(missing);
 
-        Assert.Null(result.Config);
-        Assert.StartsWith($"{missing}: error HAR3001: cannot read the config file: ", Assert.Single(result.Problems).ToString(), StringComparison.Ordinal);
+        Assert.IsType<Failed<HaruspexConfig>>(result);
+        Assert.StartsWith($"{missing}: error HAR3001: cannot read the config file: ", Assert.Single(result.Diagnostics).ToString(), StringComparison.Ordinal);
     }
 }

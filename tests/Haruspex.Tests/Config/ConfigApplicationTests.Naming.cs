@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
 
 namespace Haruspex.Tests.Config;
@@ -68,7 +69,7 @@ public partial class ConfigApplicationTests
                 "haruspex.json:2:14: warning HAR4304: procedures[\"sales.get_customer\"].paths[\"[].lines[]\"]: the name \"GetCustomerLine\" is what the naming rules give the type at results[0][].lines[] already. Remove it.",
             ],
             run.Problems);
-        Assert.NotNull(run.Applied.Document);
+        Assert.IsType<Succeeded<IrDocument>>(run.Applied);
     }
 
     [Fact]
@@ -76,7 +77,7 @@ public partial class ConfigApplicationTests
     {
         var run = Apply("CREATE PROCEDURE dbo.person AS SELECT 1 AS a;\nGO\nCREATE PROCEDURE [dbo].[person#] AS SELECT 2 AS a;\nGO\n", "{}");
 
-        Assert.Null(run.Applied.Document);
+        Assert.IsType<Failed<IrDocument>>(run.Applied);
         Assert.Equal(
             "haruspex.json: error HAR4303: \"Person\" would name both the procedure dbo.person and the procedure dbo.person#. Generated names must not clash: add a naming \"replace\" rule that tells their names apart (such as { \"pattern\": \"#$\", \"with\": \"Row\" }), or give one of them its own name with a \"name\" override in \"procedures\".",
             run.Error);

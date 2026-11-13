@@ -19,7 +19,7 @@ flowchart LR
     config --> apply
     apply --> overrides["OverrideApplier, ResultsComparison"]
     overrides --> names["NameSettler, with NamingRules"]
-    names --> applied["ConfigApplied: the document, or the problems"]
+    names --> applied["Outcome: the document with any warnings, or every problem"]
 ```
 
 | File | What it does, and why it is so |
@@ -37,11 +37,12 @@ flowchart LR
 ## Example
 
 ```csharp
-var read = ConfigReader.Read("haruspex.json");
-var config = read.Config ?? throw new InvalidOperationException(string.Join("\n", read.Problems));
-var applied = ConfigApplication.Apply(document, config, procedures);
-foreach (var problem in applied.Problems)
-    Console.Error.WriteLine(problem);
+var applied = ConfigReader.Read("haruspex.json")
+    .Then(config => ConfigApplication.Apply(document, config, procedures));
+foreach (var problem in applied.Diagnostics)
+    Console.Error.WriteLine(problem);       // haruspex.json:4:14: error HAR3005: objects: must be "strip" or "strict", not "loose".
+if (applied is Succeeded<IrDocument> { Value: var named })
+    Console.WriteLine(IrJsonWriter.Write(named));
 ```
 
 ## What it guarantees

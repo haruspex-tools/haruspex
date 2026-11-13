@@ -54,22 +54,22 @@ public class ResultsDeclarationTests
         "why": "the filter is SQL the caller builds"
         """;
 
-    private static ConfigReadResult Read(string config, TempDirectory? dir = null) =>
+    private static Outcome<HaruspexConfig> Read(string config, TempDirectory? dir = null) =>
         ConfigReader.Read(Encoding.UTF8.GetBytes(config), "haruspex.json", dir?.Path ?? Path.GetTempPath());
 
-    private static ProcedureOverride Only(ConfigReadResult read)
+    private static ProcedureOverride Only(Outcome<HaruspexConfig> read)
     {
-        Assert.Empty(read.Problems);
-        return Assert.Single(read.Config!.Procedures);
+        Assert.Empty(read.Diagnostics);
+        return Assert.Single(read.Expected().Procedures);
     }
 
-    private static string[] Problems(ConfigReadResult read) => [.. read.Problems.Select(p => p.ToString())];
+    private static string[] Problems(Outcome<HaruspexConfig> read) => [.. read.Diagnostics.Select(p => p.ToString())];
 
-    private sealed record Run(ConfigApplied Applied)
+    private sealed record Run(Outcome<IrDocument> Applied)
     {
-        public IrDocument Document => Applied.Document ?? throw new InvalidOperationException(string.Join("\n", Applied.Problems));
+        public IrDocument Document => Applied.Expected();
 
-        public string[] Problems => [.. Applied.Problems.Select(p => p.ToString())];
+        public string[] Problems => [.. Applied.Diagnostics.Select(p => p.ToString())];
     }
 
     private static Run Apply(string config, string include)
@@ -81,9 +81,9 @@ public class ResultsDeclarationTests
         Assert.Empty(project.Diagnostics);
 
         var read = ConfigReader.Read(Encoding.UTF8.GetBytes(config), "haruspex.json", dir.Path);
-        Assert.Empty(read.Problems);
-        var (selected, _) = ProcedureSelection.Select(project.Procedures, [ObjectPattern.Parse(include)], read.Config!);
-        return new Run(project.Infer(selected, read.Config!));
+        Assert.Empty(read.Diagnostics);
+        var selected = ProcedureSelection.Select(project.Procedures, [ObjectPattern.Parse(include)], read.Expected()).Expected();
+        return new Run(project.Infer(selected, read.Expected()));
     }
 
     // ---- reading -----------------------------------------------------------------------------------------
@@ -196,7 +196,7 @@ public class ResultsDeclarationTests
 
         var read = Read("""{ "procedures": { "rpt.search": { "results": { "rowset": "schemas/row.schema.json" }, "why": "dynamic" } } }""", dir);
 
-        var problem = Assert.Single(read.Problems);
+        var problem = Assert.Single(read.Diagnostics);
         var at = Assert.IsType<JsonLocation>(problem.At);
         Assert.Equal(Path.Combine(dir.Path, "schemas/row.schema.json"), at.File);
         Assert.Equal(3, at.Line);
@@ -210,7 +210,7 @@ public class ResultsDeclarationTests
 
         var read = Read("""{ "procedures": { "rpt.search": { "results": { "rowset": "schemas/none.json" }, "why": "dynamic" } } }""", dir);
 
-        Assert.Contains("cannot read the schema", Assert.Single(read.Problems).Message, StringComparison.Ordinal);
+        Assert.Contains("cannot read the schema", Assert.Single(read.Diagnostics).Message, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -235,8 +235,8 @@ public class ResultsDeclarationTests
     {
         var read = Read($$"""{ "procedures": { "rpt.search": {{block}} } }""");
 
-        Assert.Null(read.Config);
-        Assert.Contains(read.Problems, p => p.IsError && p.Message.Contains(expected, StringComparison.Ordinal));
+        Assert.IsType<Failed<HaruspexConfig>>(read);
+        Assert.Contains(read.Diagnostics, p => p.IsError && p.Message.Contains(expected, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -244,7 +244,7 @@ public class ResultsDeclarationTests
     {
         var read = Read("""{ "procedures": { "rpt.search": { "results": { "rowset": { "type": "object", "properties": { "a": { "type": "string", "maxLength": 5 } } } }, "why": "x" } } }""");
 
-        Assert.NotNull(read.Config);
+        Assert.IsType<Succeeded<HaruspexConfig>>(read);
         Assert.Equal(
             ["haruspex.json:1:119: warning HAR3151: procedures[\"rpt.search\"].results.rowset.properties.a.maxLength: is not supported yet, so the generated schema does not check it."],
             Problems(read));
@@ -311,7 +311,7 @@ public class ResultsDeclarationTests
             { "procedures": { "rpt.list_items": { "results": { "rowset": { "type": "object", "properties": { "item_id": { "type": "integer" }, "label": { "type": "string" } } } }, "why": "x" } } }
             """, "rpt.list_items");
 
-        Assert.Null(run.Applied.Document);
+        Assert.IsType<Failed<IrDocument>>(run.Applied);
         Assert.Equal(
             ["haruspex.json:1:19: error HAR4201: procedures[\"rpt.list_items\"]: haruspex infers the results of rpt.list_items, and the declaration disagrees at results[0][].label: the inference says it may be null, the declaration that it is never null. A declaration is for results that can't be inferred; to correct inferred results, override a path under \"paths\"."],
             run.Problems);
@@ -358,7 +358,7 @@ public class ResultsDeclarationTests
     {
         var run = Apply("{}", procedure);
 
-        Assert.NotNull(run.Applied.Document);
+        Assert.IsType<Succeeded<IrDocument>>(run.Applied);
         var warning = Assert.Single(run.Problems);
         Assert.StartsWith($"haruspex.json: warning HAR4205: {procedure}: results[0][].item_id is unknown: #s may be changed by ", warning, StringComparison.Ordinal);
         Assert.Contains(statement, warning, StringComparison.Ordinal);
@@ -370,7 +370,7 @@ public class ResultsDeclarationTests
     {
         var run = Apply("{}", "rpt.search");
 
-        Assert.NotNull(run.Applied.Document);
+        Assert.IsType<Succeeded<IrDocument>>(run.Applied);
         Assert.Equal(
             ["haruspex.json: warning HAR4204: rpt.search: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:3:1) Declare them in haruspex.json under procedures[\"rpt.search\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it."],
             run.Problems);

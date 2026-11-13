@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 
@@ -18,7 +19,21 @@ namespace Haruspex.Config;
 public static class ProcedureSelection
 {
     /// <summary>Selects by the config file's schema blocks.</summary>
-    public static SelectionResult Select(IReadOnlyList<ObjectName> procedures, HaruspexConfig config)
+    /// <returns>The selected procedures, in the order given; or, when a pattern or a schema matches nothing, every such problem.</returns>
+    public static Outcome<EquatableArray<ObjectName>> Select(IReadOnlyList<ObjectName> procedures, HaruspexConfig config)
+    {
+        var (selected, problems) = Selected(procedures, config);
+        return Outcome.Of(selected, problems);
+    }
+
+    /// <summary>
+    /// What the config file's schema blocks select, whatever is wrong with their patterns: the procedures whose overrides apply
+    /// in a run whose <c>--include</c> selects fewer, which isn't about the file's patterns.
+    /// </summary>
+    public static EquatableArray<ObjectName> SelectedByFile(IReadOnlyList<ObjectName> procedures, HaruspexConfig config) =>
+        Selected(procedures, config).Procedures;
+
+    private static (EquatableArray<ObjectName> Procedures, List<Diagnostic> Problems) Selected(IReadOnlyList<ObjectName> procedures, HaruspexConfig config)
     {
         ArgumentNullException.ThrowIfNull(procedures);
         ArgumentNullException.ThrowIfNull(config);
@@ -59,7 +74,7 @@ public static class ProcedureSelection
             selected.AddRange(kept);
         }
 
-        return new SelectionResult([.. procedures.Where(selected.Contains)], [.. problems]);
+        return ([.. procedures.Where(selected.Contains)], problems);
     }
 
     /// <summary>
@@ -68,7 +83,8 @@ public static class ProcedureSelection
     /// is a message for the command line: a pattern that matches no procedure, or one whose every match the file's
     /// excludes leave out (which would otherwise type nothing, silently).
     /// </summary>
-    public static (IReadOnlyList<ObjectName> Procedures, IReadOnlyList<Diagnostic> Problems) Select(
+    /// <returns>The selected procedures, in the order given; or every pattern that selects nothing.</returns>
+    public static Outcome<EquatableArray<ObjectName>> Select(
         IReadOnlyList<ObjectName> procedures, IReadOnlyList<ObjectPattern> include, HaruspexConfig config)
     {
         ArgumentNullException.ThrowIfNull(procedures);
@@ -91,6 +107,6 @@ public static class ProcedureSelection
             }
         }
 
-        return ([.. procedures.Where(p => include.Any(i => i.Matches(p)) && !Excluded(p))], problems);
+        return Outcome.Of<EquatableArray<ObjectName>>([.. procedures.Where(p => include.Any(i => i.Matches(p)) && !Excluded(p))], problems);
     }
 }

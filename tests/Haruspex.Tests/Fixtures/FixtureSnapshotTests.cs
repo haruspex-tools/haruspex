@@ -101,7 +101,7 @@ public class FixtureSnapshotTests
         if (fixture.Config is null)
             return project.Infer(selection.Procedures);
         var read = ConfigReader.Read(fixture.Config);
-        var applied = project.Infer(selection.Procedures, read.Config!);
-        return applied.Document ?? throw new InvalidOperationException(string.Join("; ", applied.Problems));
+        var applied = project.Infer(selection.Procedures, read.Expected());
+        return applied.Expected();
     }
 }

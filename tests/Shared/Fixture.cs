@@ -1,4 +1,5 @@
 using Haruspex.Cli;
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
 
 namespace Haruspex.TestSupport;
@@ -23,7 +24,7 @@ internal sealed class Fixture
     private const string IrSnapshot = ".ir.verified.json";
 
     /// <summary>The fixture's config file as read, or null when it has none.</summary>
-    private readonly ConfigReadResult? configRead;
+    private readonly Outcome<HaruspexConfig>? configRead;
 
     private Fixture(string folder)
     {
@@ -32,7 +33,7 @@ internal sealed class Fixture
         project = new(() => SqlProject.Load(Database));
         ir = new(InferEveryProcedure);
         configRead = Config is { } config ? ConfigReader.Read(config) : null;
-        IsProject = configRead?.Config?.Source is not null;
+        IsProject = configRead?.OrDefault()?.Source is not null;
     }
 
     /// <summary>Every fixture, in ordinal order of name.</summary>
@@ -108,8 +109,8 @@ internal sealed class Fixture
     private void Check()
     {
         // A config file that doesn't read leaves the fixture's kind unknown, so it is reported before any missing part.
-        if (configRead is { Config: null } broken)
-            throw new InvalidOperationException($"The fixture {Name}'s {HaruspexConfig.FileName} can't be read: {string.Join("; ", broken.Problems)}");
+        if (configRead is Failed<HaruspexConfig> broken)
+            throw new InvalidOperationException($"The fixture {Name}'s {HaruspexConfig.FileName} can't be read: {string.Join("; ", broken.Diagnostics)}");
 
         var missing = new List<string>();
         if (!Directory.Exists(Database))
@@ -139,7 +140,7 @@ internal sealed class Fixture
 
         if (configRead is null)
             return Project.Infer(Project.Procedures);
-        var applied = Project.Infer(Project.Procedures, configRead.Config ?? throw new InvalidOperationException(string.Join("; ", configRead.Problems)));
-        return applied.Document ?? throw new InvalidOperationException(string.Join("; ", applied.Problems));
+        var applied = Project.Infer(Project.Procedures, configRead.Expected());
+        return applied.Expected();
     }
 }

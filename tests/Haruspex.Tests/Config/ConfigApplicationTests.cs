@@ -1,5 +1,6 @@
 using System.Text;
 using Haruspex.Cli;
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
 
 namespace Haruspex.Tests.Config;
@@ -36,13 +37,13 @@ public partial class ConfigApplicationTests
         GO
         """ + "\n";
 
-    private sealed record Run(ConfigApplied Applied)
+    private sealed record Run(Outcome<IrDocument> Applied)
     {
-        public IrDocument Document => Applied.Document ?? throw new InvalidOperationException(string.Join("\n", Applied.Problems));
+        public IrDocument Document => Applied.Expected();
 
-        public IReadOnlyList<string> Problems => [.. Applied.Problems.Select(p => p.ToString())];
+        public IReadOnlyList<string> Problems => [.. Applied.Diagnostics.Select(p => p.ToString())];
 
-        public string Error => Assert.Single(Applied.Problems, p => p.IsError).ToString();
+        public string Error => Assert.Single(Applied.Diagnostics, p => p.IsError).ToString();
     }
 
     private static Run Apply(string procedures, string config, string include = "*.*", string? output = null, IReadOnlyCollection<string>? selectedByFile = null)
@@ -54,10 +55,10 @@ public partial class ConfigApplicationTests
         Assert.Empty(project.Diagnostics);
 
         var read = ConfigReader.Read(Encoding.UTF8.GetBytes(config), "haruspex.json", dir.Path);
-        Assert.Empty(read.Problems);
-        var (selected, _) = ProcedureSelection.Select(project.Procedures, [ObjectPattern.Parse(include)], read.Config!);
+        Assert.Empty(read.Diagnostics);
+        var selected = ProcedureSelection.Select(project.Procedures, [ObjectPattern.Parse(include)], read.Expected()).Expected();
         var byFile = selectedByFile?.Select(t => project.Procedures.Single(p => p.ToString() == t)).ToList();
-        return new Run(project.Infer(selected, read.Config!, byFile, output is null ? null : Path.Combine(dir.Path, output)));
+        return new Run(project.Infer(selected, read.Expected(), byFile, output is null ? null : Path.Combine(dir.Path, output)));
     }
 
     private static IrObjectType Type(IrDocument doc, string name) => doc.Types[name];

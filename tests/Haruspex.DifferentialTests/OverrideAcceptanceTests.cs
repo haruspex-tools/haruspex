@@ -31,10 +31,10 @@ public class OverrideAcceptanceTests(SqlServerFixture server)
 
         var project = SqlProject.Load(Fixture.Named("checks").Database);
         var read = ConfigReader.Read(Encoding.UTF8.GetBytes(config), "haruspex.json", Fixture.Named("checks").Folder);
-        Assert.Empty(read.Problems);
+        Assert.Empty(read.Diagnostics);
         var selected = project.Procedures.Where(p => p.ToString() == "chk.list_tickets").ToList();
-        var applied = project.Infer(selected, read.Config!);
-        var document = applied.Document ?? throw new InvalidOperationException(string.Join("; ", applied.Problems));
+        var applied = project.Infer(selected, read.Expected());
+        var document = applied.Expected();
         var procedure = Assert.Single(document.Objects);
         var run = Runs.All.First(r => r.Procedure == "chk.list_tickets" && r.Setup is null);
         var observed = await server.ObserveAsync(run);

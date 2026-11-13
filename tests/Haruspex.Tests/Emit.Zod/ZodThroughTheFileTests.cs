@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 
@@ -35,7 +36,7 @@ public class ZodThroughTheFileTests
 
     /// <summary>The emitter's settings as the CLI takes them from a project's config file; the defaults otherwise.</summary>
     private static ZodOptions Options(Fixture fixture) =>
-        fixture.IsProject && ConfigReader.Read(fixture.Config!).Config is { Objects: ObjectsPolicy.Strict }
+        fixture.IsProject && ConfigReader.Read(fixture.Config!) is Succeeded<HaruspexConfig> { Value.Objects: ObjectsPolicy.Strict }
             ? new ZodOptions { Objects = ZodObjects.Strict }
             : new ZodOptions();
 }

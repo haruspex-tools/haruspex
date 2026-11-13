@@ -131,11 +131,11 @@ internal static class HaruspexCli
             }
 
             var read = ConfigReader.Read(configPath, reserved);
-            foreach (var problem in read.Problems)
+            foreach (var problem in read.Diagnostics)
                 error.WriteLine(problem);
-            if (read.Config is null)
+            if (read is not Succeeded<HaruspexConfig> { Value: var fromFile })
                 return ExitCodes.Usage;
-            config = read.Config;
+            config = fromFile;
         }
 
         var directory = request.Directory is { } given ? request.Resolve(given) : config.Source;
@@ -197,39 +197,26 @@ internal static class HaruspexCli
 
         // A pattern or a schema that matches nothing is an error, not silence: a typo would otherwise drop an interface
         // from the generated code without anyone noticing.
-        var fromFile = ProcedureSelection.Select(project.Procedures, config);
-        IReadOnlyList<ObjectName> selected;
-        IReadOnlyCollection<ObjectName>? selectedByFile = null;
-        if (fromCommandLine)
-        {
-            var (oneOff, problems) = ProcedureSelection.Select(project.Procedures, include, config);
-            foreach (var problem in problems)
-                error.WriteLine(problem);
-            if (problems.Count > 0)
-                return ExitCodes.Usage;
-            selected = oneOff;
+        var selection = fromCommandLine
+            ? ProcedureSelection.Select(project.Procedures, include, config)
+            : ProcedureSelection.Select(project.Procedures, config);
+        foreach (var problem in selection.Diagnostics)
+            error.WriteLine(problem);
+        if (selection is not Succeeded<EquatableArray<ObjectName>> { Value: var selected })
+            return ExitCodes.Usage;
 
-            // The file's own selection still decides which overrides are of selected procedures; problems with its
-            // patterns are left for a run without --include, which this one-off isn't about.
-            selectedByFile = fromFile.Procedures.ToHashSet();
-        }
-        else
-        {
-            foreach (var problem in fromFile.Problems)
-                error.WriteLine(problem);
-            if (fromFile.Problems.Count > 0)
-                return ExitCodes.Usage;
-            selected = fromFile.Procedures;
-        }
+        // The file's own selection still decides which overrides are of selected procedures; problems with its patterns are
+        // left for a run without --include, which this one-off isn't about.
+        IReadOnlyCollection<ObjectName>? selectedByFile = fromCommandLine ? ProcedureSelection.SelectedByFile(project.Procedures, config).ToHashSet() : null;
 
         var warnings = new List<Diagnostic>();
         var applied = project.Infer(selected, config, selectedByFile, outDirectory, warnings);
         foreach (var warning in warnings)
             error.WriteLine(DiagnosticFormatter.Format(warning, directory));
 
-        foreach (var problem in applied.Problems)
+        foreach (var problem in applied.Diagnostics)
             error.WriteLine(problem);
-        if (applied.Document is not { } document)
+        if (applied is not Succeeded<IrDocument> { Value: var document })
             return ExitCodes.Usage;
 
         string zod;

@@ -37,7 +37,8 @@ public static class ConfigReader
     /// <summary>Reads and checks the file at <paramref name="path"/>.</summary>
     /// <param name="path">The file.</param>
     /// <param name="reserved">The words the generated code's language keeps, which no name in the file may be; none if null.</param>
-    public static ConfigReadResult Read(string path, ReservedWords? reserved = null)
+    /// <returns>The config, with any warnings; or, when it has an error, every problem found.</returns>
+    public static Outcome<HaruspexConfig> Read(string path, ReservedWords? reserved = null)
     {
         ArgumentNullException.ThrowIfNull(path);
         byte[] bytes;
@@ -47,7 +48,7 @@ public static class ConfigReader
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            return new(null, [ConfigCodes.Unreadable.At(new FileLocation(path), $"cannot read the config file: {e.Message}")]);
+            return new Failed<HaruspexConfig>([ConfigCodes.Unreadable.At(new FileLocation(path), $"cannot read the config file: {e.Message}")]);
         }
 
         // Never null: the full path of the file read above, which is never a root.
@@ -59,7 +60,8 @@ public static class ConfigReader
     /// <param name="file">The file's name, for problems.</param>
     /// <param name="directory">The folder its relative paths are relative to.</param>
     /// <param name="reserved">The words the generated code's language keeps, which no name in the file may be; none if null.</param>
-    public static ConfigReadResult Read(byte[] utf8, string file, string directory, ReservedWords? reserved = null)
+    /// <returns>The config, with any warnings; or, when it has an error, every problem found.</returns>
+    public static Outcome<HaruspexConfig> Read(byte[] utf8, string file, string directory, ReservedWords? reserved = null)
     {
         ArgumentNullException.ThrowIfNull(utf8);
         ArgumentNullException.ThrowIfNull(file);
@@ -71,14 +73,14 @@ public static class ConfigReader
         }
         catch (ConfigJsonException e)
         {
-            return new(null, [e.Code.At(new JsonLocation(file, e.Path, e.Line, e.Column), e.Message)]);
+            return new Failed<HaruspexConfig>([e.Code.At(new JsonLocation(file, e.Path, e.Line, e.Column), e.Message)]);
         }
 
         var reader = new Checker(file, directory, reserved ?? ReservedWords.None);
         var config = reader.Root(root, directory);
 
         // A warning (a JSON Schema keyword in a declaration that is not checked) leaves the config usable.
-        return new(reader.Problems.Any(p => p.IsError) ? null : config, [.. reader.Problems]);
+        return Outcome.Of(config, reader.Problems);
     }
 
     private sealed class Checker(string file, string directory, ReservedWords reserved)

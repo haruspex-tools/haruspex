@@ -42,10 +42,10 @@ public class DeclarationAcceptanceTests(SqlServerFixture server)
             """;
         var project = SqlProject.Load(Fixture.Named("calls").Database);
         var read = ConfigReader.Read(Encoding.UTF8.GetBytes(config), "haruspex.json", Fixture.Named("calls").Folder);
-        Assert.Empty(read.Problems);
+        Assert.Empty(read.Diagnostics);
         var selected = project.Procedures.Where(p => p.ToString() == "calls.search_batches").ToList();
-        var applied = project.Infer(selected, read.Config!);
-        var document = applied.Document ?? throw new InvalidOperationException(string.Join("; ", applied.Problems));
+        var applied = project.Infer(selected, read.Expected());
+        var document = applied.Expected();
         var procedure = Assert.Single(document.Objects);
         var run = Runs.Named("calls: search_batches");
         var observed = await server.ObserveAsync(run);

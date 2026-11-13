@@ -1,4 +1,6 @@
 using System.Text;
+using Haruspex.Collections;
+using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Tests.Config;
@@ -19,17 +21,17 @@ public class ProcedureSelectionTests
         new("RDF.", "Get.Dotted"),
     ];
 
-    private static SelectionResult Select(string schemas)
+    private static Outcome<EquatableArray<ObjectName>> Select(string schemas)
     {
         var read = ConfigReader.Read(Encoding.UTF8.GetBytes($$"""{ "schemas": {{schemas}} }"""), "haruspex.json", Path.GetTempPath());
-        Assert.Empty(read.Problems);
-        return ProcedureSelection.Select(Procedures, read.Config!);
+        Assert.Empty(read.Diagnostics);
+        return ProcedureSelection.Select(Procedures, read.Expected());
     }
 
-    private static string[] Names(SelectionResult result)
+    private static string[] Names(Outcome<EquatableArray<ObjectName>> result)
     {
-        Assert.Empty(result.Problems);
-        return [.. result.Procedures.Select(p => p.ToString())];
+        Assert.Empty(result.Diagnostics);
+        return [.. result.Expected().Select(p => p.ToString())];
     }
 
     [Fact]
@@ -73,7 +75,7 @@ public class ProcedureSelectionTests
     {
         var result = Select("""{ "sales": { "include": ["*", "get_ordr"] } }""");
 
-        Assert.Equal("haruspex.json:1:44: error HAR4002: schemas.sales.include[1]: 'get_ordr' matches no procedure in the schema \"sales\". Correct it, or remove it.", Assert.Single(result.Problems).ToString());
+        Assert.Equal("haruspex.json:1:44: error HAR4002: schemas.sales.include[1]: 'get_ordr' matches no procedure in the schema \"sales\". Correct it, or remove it.", Assert.Single(result.Diagnostics).ToString());
     }
 
     [Fact]
@@ -83,7 +85,7 @@ public class ProcedureSelectionTests
 
         Assert.Equal(
             "haruspex.json:1:61: error HAR4003: schemas.sales.exclude[0]: '*_internal' excludes nothing: it matches no procedure that \"include\" selects in the schema \"sales\". Remove it.",
-            Assert.Single(result.Problems).ToString());
+            Assert.Single(result.Diagnostics).ToString());
     }
 
     [Fact]
@@ -91,10 +93,10 @@ public class ProcedureSelectionTests
     {
         var result = Select("""{ "sales": { "include": ["list_*"], "exclude": ["list_*"] } }""");
 
-        Assert.Empty(result.Procedures);
+        Assert.IsType<Failed<EquatableArray<ObjectName>>>(result);
         Assert.Equal(
             "haruspex.json:1:16: error HAR4004: schemas.sales: the schema \"sales\" selects nothing: its \"exclude\" removes every procedure its \"include\" selects. Narrow the exclude, or remove the block.",
-            Assert.Single(result.Problems).ToString());
+            Assert.Single(result.Diagnostics).ToString());
     }
 
     [Fact]
@@ -104,7 +106,7 @@ public class ProcedureSelectionTests
 
         Assert.Equal(
             "haruspex.json:1:16: error HAR4001: schemas[\"[RDF.]\"]: the project has no procedure in a schema named \"[RDF.]\". A schema key is the schema's name as it is, without brackets.",
-            Assert.Single(result.Problems).ToString());
+            Assert.Single(result.Diagnostics).ToString());
     }
 
     [Fact]
@@ -112,15 +114,25 @@ public class ProcedureSelectionTests
     {
         var read = ConfigReader.Read(Encoding.UTF8.GetBytes("""{ "schemas": { "sales": { "include": ["get_*"], "exclude": ["*_internal"] } } }"""), "haruspex.json", Path.GetTempPath());
 
-        var (procedures, problems) = ProcedureSelection.Select(
-            Procedures, [ObjectPattern.Parse("sales.list_*"), ObjectPattern.Parse("hr.nobody"), ObjectPattern.Parse("sales.*_internal")], read.Config!);
+        var selection = ProcedureSelection.Select(Procedures, [ObjectPattern.Parse("sales.list_*")], read.Expected());
 
-        Assert.Equal(["sales.list_orders"], procedures.Select(p => p.ToString()));
+        Assert.Equal(["sales.list_orders"], selection.Expected().Select(p => p.ToString()));
+    }
+
+    [Fact]
+    public void A_command_line_pattern_that_selects_nothing_is_an_error_and_every_such_pattern_is_reported()
+    {
+        var read = ConfigReader.Read(Encoding.UTF8.GetBytes("""{ "schemas": { "sales": { "include": ["get_*"], "exclude": ["*_internal"] } } }"""), "haruspex.json", Path.GetTempPath());
+
+        var selection = ProcedureSelection.Select(
+            Procedures, [ObjectPattern.Parse("sales.list_*"), ObjectPattern.Parse("hr.nobody"), ObjectPattern.Parse("sales.*_internal")], read.Expected());
+
+        Assert.IsType<Failed<EquatableArray<ObjectName>>>(selection);
         Assert.Equal(
             [
                 "haruspex: error HAR4005: --include 'hr.nobody' matches no procedure. Correct it, or remove it.",
                 "haruspex: error HAR4006: --include 'sales.*_internal' matches only procedures that schemas.sales.exclude leaves out, so it selects nothing.",
             ],
-            problems.Select(p => p.ToString()));
+            selection.Diagnostics.Select(p => p.ToString()));
     }
 }
