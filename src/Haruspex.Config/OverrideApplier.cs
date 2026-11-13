@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
@@ -28,64 +27,74 @@ internal sealed class OverrideApplier(
     /// <summary>The names given by path overrides, by object and canonical path, for the namer.</summary>
     public Dictionary<(string Object, string Path), (string Name, JsonLocation At)> Names { get; } = [];
 
-    /// <summary>Applies one override to an object's results, returning them changed.</summary>
+    /// <summary>
+    /// Applies one override to an object's results, returning them changed; when its path leads nowhere, or says what can't
+    /// be said of the value there, the results unchanged and the problem reported.
+    /// </summary>
     public EquatableArray<IrResult>? Apply(IrObject obj, EquatableArray<IrResult>? results, PathOverride entry)
     {
         // The reader has checked the path's syntax already.
         if (!IrPath.TryParse(entry.Path, out var written, out _))
             return results;
-        try
+        var applied = Applied(obj, results, written, entry);
+        problems.AddRange(applied.Diagnostics);
+        return applied switch
         {
-            if (results is null)
-                throw new PathException(ConfigCodes.NoSuchPath, $"the results of {obj.Id} are unknown (see the unknowns in the IR), so no path in them exists.");
+            Succeeded<EquatableArray<IrResult>> changed => changed.Value,
+            Failed<EquatableArray<IrResult>> => results,
+        };
+    }
 
-            // A path is relative to the only result, or names one: results[1][].id.
-            int index;
-            IReadOnlyList<IrPathSegment> rest;
-            if (written is [IrPathKey { Key: "results" }, IrPathIndex given, ..])
-            {
-                if (given.Index >= results.Count)
-                    throw new PathException(ConfigCodes.NoSuchPath, $"{obj.Id} returns {Count(results.Count, "result set")}, so there is no results[{given.Index}].");
-                (index, rest) = (given.Index, written.Skip(2).ToList());
-            }
-            else if (results.Count == 1)
-            {
-                (index, rest) = (0, written);
-            }
-            else
-            {
-                throw new PathException(ConfigCodes.NoSuchPath, $"{obj.Id} returns {Count(results.Count, "result set")}, so the path must start with the one it means, as results[0].");
-            }
+    /// <summary>The results with the override applied at its path, or why it can't be.</summary>
+    private Outcome<EquatableArray<IrResult>> Applied(IrObject obj, EquatableArray<IrResult>? results, IReadOnlyList<IrPathSegment> written, PathOverride entry)
+    {
+        if (results is null)
+            return Refused<EquatableArray<IrResult>>(ConfigCodes.NoSuchPath, entry, $"the results of {obj.Id} are unknown (see the unknowns in the IR), so no path in them exists.");
 
-            var canonical = IrPath.Render([new IrPathKey("results"), new IrPathIndex(index), .. rest]);
-            var result = results[index];
-            var slot = new Slot(result.Type, result.AbsentBecause, CanBeNull: true);
-            var changed = Edit(slot, rest, 0, canonical, s => Settle(obj.Id, canonical, s, entry));
+        // A path is relative to the only result, or names one: results[1][].id.
+        int index;
+        IReadOnlyList<IrPathSegment> rest;
+        if (written is [IrPathKey { Key: "results" }, IrPathIndex given, ..])
+        {
+            if (given.Index >= results.Count)
+                return Refused<EquatableArray<IrResult>>(ConfigCodes.NoSuchPath, entry, $"{obj.Id} returns {Count(results.Count, "result set")}, so there is no results[{given.Index}].");
+            (index, rest) = (given.Index, written.Skip(2).ToList());
+        }
+        else if (results.Count == 1)
+        {
+            (index, rest) = (0, written);
+        }
+        else
+        {
+            return Refused<EquatableArray<IrResult>>(ConfigCodes.NoSuchPath, entry, $"{obj.Id} returns {Count(results.Count, "result set")}, so the path must start with the one it means, as results[0].");
+        }
+
+        var canonical = IrPath.Render([new IrPathKey("results"), new IrPathIndex(index), .. rest]);
+        var result = results[index];
+        var slot = new Slot(result.Type, result.AbsentBecause, CanBeNull: true);
+        return Edit(slot, rest, 0, canonical, s => Settle(obj.Id, canonical, s, entry), entry).Select(changed =>
+        {
             var list = results.ToList();
             list[index] = result with { Type = changed.Type, AbsentBecause = changed.Reasons };
-            return [.. list];
-        }
-        catch (PathException e)
-        {
-            problems.Add(e.Code.At(entry.At, e.Message));
-            return results;
-        }
+            return (EquatableArray<IrResult>)[.. list];
+        });
     }
 
     /// <summary>A place a value is: its type, why it can be null, and whether it can be null at all.</summary>
     private sealed record Slot(IrType Type, EquatableArray<IrNullReason> Reasons, bool CanBeNull);
 
-    /// <summary>What the override says about the value at its path.</summary>
-    private Slot Settle(string objectId, string path, Slot slot, PathOverride entry)
+    /// <summary>What the override says about the value at its path, with what it found; or why it can't say it.</summary>
+    private Outcome<Slot> Settle(string objectId, string path, Slot slot, PathOverride entry)
     {
         var at = entry.At;
+        var found = new List<Diagnostic>();
         if (entry.NotNull)
         {
             if (!slot.CanBeNull)
-                throw new PathException(ConfigCodes.NullableJsonContent, $"the value at {path} is what JSON text holds, which is never null itself; nothing can be declared about its nullability.");
+                return Refused<Slot>(ConfigCodes.NullableJsonContent, entry, $"the value at {path} is what JSON text holds, which is never null itself; nothing can be declared about its nullability.");
             if (slot.Reasons.Count == 0)
             {
-                problems.Add(ConfigCodes.NullableAgrees.At(at, $"\"nullable\": false agrees with the inference, which already proves the value at {path} is never null. Remove it."));
+                found.Add(ConfigCodes.NullableAgrees.At(at, $"\"nullable\": false agrees with the inference, which already proves the value at {path} is never null. Remove it."));
             }
             else
             {
@@ -98,13 +107,13 @@ internal sealed class OverrideApplier(
         {
             if (slot.Type is not IrScalar { Facets: { Values: { } set } facets } scalar)
             {
-                throw new PathException(ConfigCodes.NoValueSet, $"the value at {path} has no value set to declare exact. A value set is inferred from a CHECK constraint on a column the value passes through unchanged; "
-                    + "canonical value sets for other cases are planned, not done.");
+                return Refused<Slot>(ConfigCodes.NoValueSet, entry, $"the value at {path} has no value set to declare exact. A value set is inferred from a CHECK constraint on a column the value passes through unchanged; "
+                    + "canonical value sets for other cases are planned, not done.", found);
             }
 
             if (set.Match == IrValueMatch.Exact)
             {
-                problems.Add(ConfigCodes.ExactAgrees.At(at, $"\"values\": \"exact\" agrees with the inference, which already proves the set at {path} exact. Remove it."));
+                found.Add(ConfigCodes.ExactAgrees.At(at, $"\"values\": \"exact\" agrees with the inference, which already proves the set at {path} exact. Remove it."));
             }
             else
             {
@@ -131,19 +140,19 @@ internal sealed class OverrideApplier(
             if (slot.Type is not IrRef reference)
             {
                 var hint = slot.Type is IrArray { Items: IrRef } ? $" To name its items, use the path \"{entry.Path}[]\"." : "";
-                throw new PathException(ConfigCodes.NameNotObject, $"only an object type can be named, and the value at {path} is {Describe(slot.Type)}.{hint}");
+                return Refused<Slot>(ConfigCodes.NameNotObject, entry, $"only an object type can be named, and the value at {path} is {Describe(slot.Type)}.{hint}", found);
             }
 
             if (types[reference.Name].Identity?.Owner == IrTypeOwner.Function)
-                throw new PathException(ConfigCodes.SharedType, Shared(path, types[reference.Name]));
+                return Refused<Slot>(ConfigCodes.SharedType, entry, Shared(path, types[reference.Name]), found);
             Names[(objectId, path)] = (name, at);
         }
 
-        return slot;
+        return new Succeeded<Slot>(slot, [.. found]);
     }
 
-    /// <summary>Follows the path from <paramref name="slot"/>, editing the value at its end.</summary>
-    private Slot Edit(Slot slot, IReadOnlyList<IrPathSegment> path, int i, string whole, Func<Slot, Slot> settle)
+    /// <summary>Follows the path from <paramref name="slot"/>, editing the value at its end; or why the path leads nowhere.</summary>
+    private Outcome<Slot> Edit(Slot slot, IReadOnlyList<IrPathSegment> path, int i, string whole, Func<Slot, Outcome<Slot>> settle, PathOverride entry)
     {
         if (i == path.Count)
             return settle(slot);
@@ -155,41 +164,49 @@ internal sealed class OverrideApplier(
             case (IrPathKey key, IrRef reference):
                 var obj = types[reference.Name];
                 if (obj.Identity?.Owner == IrTypeOwner.Function)
-                    throw new PathException(ConfigCodes.SharedType, Shared(whole, obj));
+                    return Refused<Slot>(ConfigCodes.SharedType, entry, Shared(whole, obj));
                 var position = obj.Fields.ToList().FindIndex(f => f.Name == key.Key);
                 if (position < 0)
                 {
-                    throw new PathException(ConfigCodes.NoSuchPath, $"the path {whole} does not exist: the object at {here} has no key \"{key.Key}\". Its keys are "
+                    return Refused<Slot>(ConfigCodes.NoSuchPath, entry, $"the path {whole} does not exist: the object at {here} has no key \"{key.Key}\". Its keys are "
                         + string.Join(", ", obj.Fields.Select(f => $"\"{f.Name}\"")) + ".");
                 }
 
                 var field = obj.Fields[position];
-                var edited = Edit(new Slot(field.Type, field.NullableBecause, CanBeNull: true), path, i + 1, whole, settle);
-                var fields = obj.Fields.ToList();
-                fields[position] = field with { Type = edited.Type, NullableBecause = edited.Reasons };
-                types[reference.Name] = obj with { Fields = [.. fields] };
-                return slot;
+                return Edit(new Slot(field.Type, field.NullableBecause, CanBeNull: true), path, i + 1, whole, settle, entry).Select(edited =>
+                {
+                    var fields = obj.Fields.ToList();
+                    fields[position] = field with { Type = edited.Type, NullableBecause = edited.Reasons };
+                    types[reference.Name] = obj with { Fields = [.. fields] };
+                    return slot;
+                });
             case (IrPathItems, IrArray array):
-                var items = Edit(new Slot(array.Items, array.ItemsNullableBecause, CanBeNull: true), path, i + 1, whole, settle);
-                return slot with { Type = array with { Items = items.Type, ItemsNullableBecause = items.Reasons } };
+                return Edit(new Slot(array.Items, array.ItemsNullableBecause, CanBeNull: true), path, i + 1, whole, settle, entry)
+                    .Select(items => slot with { Type = array with { Items = items.Type, ItemsNullableBecause = items.Reasons } });
             case (IrPathIndex index, IrTuple tuple) when index.Index < tuple.Items.Count:
                 var element = tuple.Items[index.Index];
-                var changed = Edit(new Slot(element.Type, element.NullableBecause, CanBeNull: true), path, i + 1, whole, settle);
-                var elements = tuple.Items.ToList();
-                elements[index.Index] = new IrElement(changed.Type, changed.Reasons);
-                return slot with { Type = new IrTuple([.. elements]) };
+                return Edit(new Slot(element.Type, element.NullableBecause, CanBeNull: true), path, i + 1, whole, settle, entry).Select(changed =>
+                {
+                    var elements = tuple.Items.ToList();
+                    elements[index.Index] = new IrElement(changed.Type, changed.Reasons);
+                    return slot with { Type = new IrTuple([.. elements]) };
+                });
             case (IrPathValues, IrRecord record):
-                var values = Edit(new Slot(record.Values, record.ValuesNullableBecause, CanBeNull: true), path, i + 1, whole, settle);
-                return slot with { Type = new IrRecord(values.Type, values.Reasons) };
+                return Edit(new Slot(record.Values, record.ValuesNullableBecause, CanBeNull: true), path, i + 1, whole, settle, entry)
+                    .Select(values => slot with { Type = new IrRecord(values.Type, values.Reasons) });
             case (IrPathJson, IrJsonText { Content: { } content }):
-                var parsed = Edit(new Slot(content, [], CanBeNull: false), path, i + 1, whole, settle);
-                return slot with { Type = new IrJsonText(parsed.Type) };
+                return Edit(new Slot(content, [], CanBeNull: false), path, i + 1, whole, settle, entry)
+                    .Select(parsed => slot with { Type = new IrJsonText(parsed.Type) });
             case (_, IrUnion):
-                throw new PathException(ConfigCodes.PathThroughUnion, $"the path {whole} passes through a value of several types at {here}, and a path can't choose between them.");
+                return Refused<Slot>(ConfigCodes.PathThroughUnion, entry, $"the path {whole} passes through a value of several types at {here}, and a path can't choose between them.");
             default:
-                throw new PathException(ConfigCodes.NoSuchPath, $"the path {whole} does not exist: the value at {here} is {Describe(slot.Type)}, so it has no {Describe(segment)}.");
+                return Refused<Slot>(ConfigCodes.NoSuchPath, entry, $"the path {whole} does not exist: the value at {here} is {Describe(slot.Type)}, so it has no {Describe(segment)}.");
         }
     }
+
+    /// <summary>The override refused, at where it is written, after what was <paramref name="found"/> before.</summary>
+    private static Failed<T> Refused<T>(DiagnosticCode code, PathOverride entry, string message, IEnumerable<Diagnostic>? found = null) =>
+        new([.. found ?? [], code.At(entry.At, message)]);
 
     private static string Here(string whole, IReadOnlyList<IrPathSegment> path, int i)
     {
@@ -231,11 +248,4 @@ internal sealed class OverrideApplier(
     };
 
     private static string Count(int n, string noun) => n == 1 ? $"1 {noun}" : $"{n} {noun}s";
-
-    [SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "Thrown and caught inside this class, always with a message.")]
-    [SuppressMessage("Design", "CA1064:Exceptions should be public", Justification = "Thrown and caught inside this class; never part of an API.")]
-    private sealed class PathException(DiagnosticCode code, string message) : Exception(message)
-    {
-        public DiagnosticCode Code { get; } = code;
-    }
 }

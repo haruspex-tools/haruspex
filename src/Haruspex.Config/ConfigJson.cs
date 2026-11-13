@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Haruspex.Diagnostics;
 
 namespace Haruspex.Config;
 
@@ -13,8 +14,10 @@ internal static class ConfigJson
     };
 
     /// <summary>Reads UTF-8 text, with or without a byte order mark.</summary>
-    /// <exception cref="ConfigJsonException">The text is not JSON with comments, or an object repeats a key.</exception>
-    public static JsonValue Parse(byte[] utf8)
+    /// <param name="utf8">The text.</param>
+    /// <param name="file">The file it was read from, for problems.</param>
+    /// <returns>The value; or, when the text is not JSON with comments or an object repeats a key, where and why.</returns>
+    public static Outcome<JsonValue> Parse(byte[] utf8, string file)
     {
         ArgumentNullException.ThrowIfNull(utf8);
         var start = utf8.AsSpan().StartsWith((ReadOnlySpan<byte>)[0xEF, 0xBB, 0xBF]) ? 3 : 0;
@@ -24,28 +27,32 @@ internal static class ConfigJson
         try
         {
             if (!reader.Read())
-                throw new ConfigJsonException(ConfigCodes.NotJson, "The file is empty; it must hold a JSON object.", 1, 1);
-            var value = Read(ref reader, positions, "");
+                return NotJson(file, "The file is empty; it must hold a JSON object.", 1, 1);
+            var value = Read(ref reader, positions, "", file);
 
             // The reader itself refuses anything after the value, with its position; this only guards that it does.
-            if (reader.Read())
+            if (value is Succeeded<JsonValue> && reader.Read())
             {
                 var (line, column) = positions.Of(reader.TokenStartIndex);
-                throw new ConfigJsonException(ConfigCodes.NotJson, "Unexpected text after the end of the JSON value.", line, column);
+                return NotJson(file, "Unexpected text after the end of the JSON value.", line, column);
             }
 
             return value;
         }
         catch (JsonException e)
         {
-            // The reader counts lines from 0 and positions in bytes; a message here counts both from 1, in characters.
+            // System.Text.Json reports text that isn't JSON by throwing; here, at the edge, it becomes a diagnostic. The reader
+            // counts lines from 0 and positions in bytes; a message here counts both from 1, in characters.
             var line = (int)(e.LineNumber ?? 0);
             var column = positions.Column(line, (int)(e.BytePositionInLine ?? 0));
-            throw new ConfigJsonException(ConfigCodes.NotJson, Plain(e.Message), line + 1, column);
+            return NotJson(file, Plain(e.Message), line + 1, column);
         }
     }
 
-    private static JsonValue Read(ref Utf8JsonReader reader, Positions positions, string path)
+    private static Failed<JsonValue> NotJson(string file, string message, int line, int column) =>
+        new([ConfigCodes.NotJson.At(new JsonLocation(file, "", line, column), message)]);
+
+    private static Outcome<JsonValue> Read(ref Utf8JsonReader reader, Positions positions, string path, string file)
     {
         var (line, column) = positions.Of(reader.TokenStartIndex);
         switch (reader.TokenType)
@@ -59,21 +66,30 @@ internal static class ConfigJson
                     var name = reader.GetString()!; // Never null: a property name always has its text; GetString is null only for a JSON null.
                     var memberPath = ConfigPath.Child(path, name);
                     if (!seen.Add(name))
-                        throw new ConfigJsonException(ConfigCodes.KeyTwice, $"The key \"{name}\" is written twice in one object.", keyLine, keyColumn, memberPath);
+                        return new Failed<JsonValue>([ConfigCodes.KeyTwice.At(new JsonLocation(file, memberPath, keyLine, keyColumn), $"The key \"{name}\" is written twice in one object.")]);
                     reader.Read();
-                    members.Add(new JsonMember(name, Read(ref reader, positions, memberPath), keyLine, keyColumn));
+                    var member = Read(ref reader, positions, memberPath, file);
+                    if (member is not Succeeded<JsonValue> { Value: var value })
+                        return member;
+                    members.Add(new JsonMember(name, value, keyLine, keyColumn));
                 }
 
-                return new JsonObjectValue([.. members], line, column);
+                return new Succeeded<JsonValue>(new JsonObjectValue([.. members], line, column));
             case JsonTokenType.StartArray:
                 var items = new List<JsonValue>();
                 while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
-                    items.Add(Read(ref reader, positions, ConfigPath.Index(path, items.Count)));
-                return new JsonArrayValue([.. items], line, column);
+                {
+                    var item = Read(ref reader, positions, ConfigPath.Index(path, items.Count), file);
+                    if (item is not Succeeded<JsonValue> { Value: var value })
+                        return item;
+                    items.Add(value);
+                }
+
+                return new Succeeded<JsonValue>(new JsonArrayValue([.. items], line, column));
             case JsonTokenType.String:
-                return new JsonStringValue(reader.GetString()!, line, column); // Never null: the token is a string, not a JSON null.
+                return new Succeeded<JsonValue>(new JsonStringValue(reader.GetString()!, line, column)); // Never null: the token is a string, not a JSON null.
             default:
-                return new JsonOtherValue(reader.TokenType, Encoding.UTF8.GetString(reader.ValueSpan), line, column);
+                return new Succeeded<JsonValue>(new JsonOtherValue(reader.TokenType, Encoding.UTF8.GetString(reader.ValueSpan), line, column));
         }
     }
 

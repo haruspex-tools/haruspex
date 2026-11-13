@@ -66,21 +66,14 @@ public static class ConfigReader
         ArgumentNullException.ThrowIfNull(utf8);
         ArgumentNullException.ThrowIfNull(file);
         ArgumentNullException.ThrowIfNull(directory);
-        JsonValue root;
-        try
+        return ConfigJson.Parse(utf8, file).Then(root =>
         {
-            root = ConfigJson.Parse(utf8);
-        }
-        catch (ConfigJsonException e)
-        {
-            return new Failed<HaruspexConfig>([e.Code.At(new JsonLocation(file, e.Path, e.Line, e.Column), e.Message)]);
-        }
+            var reader = new Checker(file, directory, reserved ?? ReservedWords.None);
+            var config = reader.Root(root, directory);
 
-        var reader = new Checker(file, directory, reserved ?? ReservedWords.None);
-        var config = reader.Root(root, directory);
-
-        // A warning (a JSON Schema keyword in a declaration that is not checked) leaves the config usable.
-        return Outcome.Of(config, reader.Problems);
+            // A warning (a JSON Schema keyword in a declaration that is not checked) leaves the config usable.
+            return Outcome.Of(config, reader.Problems);
+        });
     }
 
     private sealed class Checker(string file, string directory, ReservedWords reserved)
@@ -487,22 +480,22 @@ public static class ConfigReader
                 case JsonStringValue { Value.Length: > 0 } reference:
                     // A schema in a file of its own, relative to this one like every path here. Its problems are reported in it.
                     schemaFile = Path.GetFullPath(Path.Combine(directory, reference.Value));
+                    byte[] bytes;
                     try
                     {
-                        root = ConfigJson.Parse(File.ReadAllBytes(schemaFile));
-                        rootPath = "";
+                        bytes = File.ReadAllBytes(schemaFile);
                     }
                     catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                     {
                         Report(ConfigCodes.Unreadable, reference, schemaPath, $"cannot read the schema {reference.Value}: {e.Message}");
                         return null;
                     }
-                    catch (ConfigJsonException e)
-                    {
-                        Problems.Add(e.Code.At(new JsonLocation(schemaFile, e.Path, e.Line, e.Column), e.Message));
-                        return null;
-                    }
 
+                    var parsed = ConfigJson.Parse(bytes, schemaFile);
+                    Problems.AddRange(parsed.Diagnostics);
+                    if (parsed is not Succeeded<JsonValue> { Value: var read })
+                        return null;
+                    (root, rootPath) = (read, "");
                     break;
                 default:
                     Report(ConfigCodes.WrongKind, schema.Value, schemaPath, "must be a JSON Schema, or the path of a file holding one, relative to this file.");

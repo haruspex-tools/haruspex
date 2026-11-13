@@ -13,8 +13,8 @@ exception at its edge and exits with 3.
 
 **Context.** A user's mistake travelled in several ways: a record of "a value or null, and problems" for each step
 (reading the config file, selecting, applying it), problems added to a list passed in (`ICollection<Diagnostic>`), and
-exceptions thrown for a mistake and caught by the caller (`PathException` inside the override walk, `ZodEmitException` caught
-by the CLI as a usage error, `ConfigJsonException` inside the config reader). An exception for a mistake hides the path
+exceptions thrown for a mistake and caught by the caller (one inside the override walk, one inside the config reader's
+JSON parser, and the Zod emitter's, which the CLI caught as a usage error). An exception for a mistake hides the path
 from the step's signature, stops at the first problem, and makes a reader of the code look for the `catch` to know what
 happens.
 
