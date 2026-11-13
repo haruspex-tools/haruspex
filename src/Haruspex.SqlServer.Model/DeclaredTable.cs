@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 
 namespace Haruspex.SqlServer.Model;
@@ -17,10 +18,10 @@ namespace Haruspex.SqlServer.Model;
 public sealed record DeclaredTable(
     string Name,
     SourceSpan Span,
-    IReadOnlyList<Column> Columns,
-    IReadOnlyList<string> PrimaryKey,
-    IReadOnlyList<CheckConstraint> Checks,
-    IReadOnlyList<UniqueKey> UniqueKeys) : ITable
+    EquatableArray<Column> Columns,
+    EquatableArray<string> PrimaryKey,
+    EquatableArray<CheckConstraint> Checks,
+    EquatableArray<UniqueKey> UniqueKeys) : ITable
 {
     /// <summary>Never: a body's tables can't be graph tables.</summary>
     public bool IsGraph => false;

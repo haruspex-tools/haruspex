@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 
 namespace Haruspex.SqlServer.Model;
@@ -23,10 +24,10 @@ namespace Haruspex.SqlServer.Model;
 public sealed record Table(
     ObjectName Name,
     SourceSpan Span,
-    IReadOnlyList<Column> Columns,
-    IReadOnlyList<string> PrimaryKey,
-    IReadOnlyList<CheckConstraint> Checks,
-    IReadOnlyList<UniqueKey> UniqueKeys) : SchemaObject(Name, Span), ITable
+    EquatableArray<Column> Columns,
+    EquatableArray<string> PrimaryKey,
+    EquatableArray<CheckConstraint> Checks,
+    EquatableArray<UniqueKey> UniqueKeys) : SchemaObject(Name, Span), ITable
 {
     /// <summary>
     /// Whether it is a graph table (<c>AS NODE</c> or <c>AS EDGE</c>), whose <c>SELECT *</c> includes pseudo-columns the

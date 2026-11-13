@@ -10,6 +10,7 @@
     <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Haruspex.Collections\Haruspex.Collections.csproj" />
     <ProjectReference Include="..\Haruspex.Diagnostics\Haruspex.Diagnostics.csproj" />
   </ItemGroup>
   <ItemGroup>

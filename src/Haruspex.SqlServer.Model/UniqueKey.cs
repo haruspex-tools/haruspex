@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 
 namespace Haruspex.SqlServer.Model;
@@ -11,4 +12,4 @@ namespace Haruspex.SqlServer.Model;
 /// Where a statement may disable its index (<c>ALTER INDEX … DISABLE</c>), so that rows written meanwhile need not be
 /// unique; null when none does. Which runs last depends on the order of the scripts, which the source does not say.
 /// </param>
-public sealed record UniqueKey(string? Name, IReadOnlyList<string> Columns, bool IsPrimaryKey, SourceLocation At, SourceLocation? DisabledAt = null);
+public sealed record UniqueKey(string? Name, EquatableArray<string> Columns, bool IsPrimaryKey, SourceLocation At, SourceLocation? DisabledAt = null);

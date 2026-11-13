@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 
 namespace Haruspex.SqlServer.Model;
@@ -15,5 +16,5 @@ namespace Haruspex.SqlServer.Model;
 /// named as the function is.
 /// </param>
 /// <param name="Body">What it runs.</param>
-public sealed record TableFunction(ObjectName Name, SourceSpan Span, IReadOnlyList<Parameter> Parameters, DeclaredTable Returns, ModuleBody Body)
+public sealed record TableFunction(ObjectName Name, SourceSpan Span, EquatableArray<Parameter> Parameters, DeclaredTable Returns, ModuleBody Body)
     : Function(Name, Span, Parameters);

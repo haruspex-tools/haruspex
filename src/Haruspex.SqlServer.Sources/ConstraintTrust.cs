@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.SqlServer.Model;
 
 namespace Haruspex.SqlServer.Sources;
@@ -29,8 +30,8 @@ internal static class ConstraintTrust
         {
             var disabled = relevant.FirstOrDefault(d => !d.Validates && d.MayName(check, table) && !ValidatedLater(d, check, relevant));
             return disabled is null ? check : check with { DisabledAt = disabled.At };
-        }).ToList();
-        return table with { Checks = checks, UniqueKeys = keys };
+        });
+        return table with { Checks = [.. checks], UniqueKeys = keys };
     }
 
     /// <summary>Whether a <c>WITH CHECK CHECK CONSTRAINT</c> certainly runs after <paramref name="disable"/> on the check (see the remarks).</summary>
@@ -43,7 +44,7 @@ internal static class ConstraintTrust
     /// constraint's name), or, for a key declared without a name, any name the table doesn't declare, since SQL Server
     /// generates one. Re-enabling (a rebuild) is not followed, which only claims less.
     /// </summary>
-    private static IReadOnlyList<UniqueKey> Keys(Table table, IReadOnlyList<IndexDisable> disables)
+    private static EquatableArray<UniqueKey> Keys(Table table, IReadOnlyList<IndexDisable> disables)
     {
         var relevant = disables.Where(d => d.May(table)).ToList();
         if (relevant.Count == 0)

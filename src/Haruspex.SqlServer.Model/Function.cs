@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 
 namespace Haruspex.SqlServer.Model;
@@ -19,14 +20,14 @@ public abstract record Function : Module
     /// <param name="name">Its name.</param>
     /// <param name="span">Where its definition is.</param>
     /// <param name="parameters">Its parameters, in declaration order.</param>
-    private protected Function(ObjectName name, SourceSpan span, IReadOnlyList<Parameter> parameters)
+    private protected Function(ObjectName name, SourceSpan span, EquatableArray<Parameter> parameters)
         : base(name, span)
     {
         Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
     }
 
     /// <summary>Its parameters, in declaration order.</summary>
-    public IReadOnlyList<Parameter> Parameters { get; }
+    public EquatableArray<Parameter> Parameters { get; }
 
     /// <summary>
     /// Whether <c>ANSI_NULLS</c> was off when the function was created: SQL Server keeps the setting in force then, and with it

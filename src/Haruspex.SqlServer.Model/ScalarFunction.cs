@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 
 namespace Haruspex.SqlServer.Model;
@@ -8,7 +9,7 @@ namespace Haruspex.SqlServer.Model;
 /// <param name="Parameters">Its parameters, in declaration order.</param>
 /// <param name="Returns">Its declared return type; null when the declaration names a type ScriptDom gives no name.</param>
 /// <param name="Body">What it runs.</param>
-public sealed record ScalarFunction(ObjectName Name, SourceSpan Span, IReadOnlyList<Parameter> Parameters, SqlType? Returns, ModuleBody Body)
+public sealed record ScalarFunction(ObjectName Name, SourceSpan Span, EquatableArray<Parameter> Parameters, SqlType? Returns, ModuleBody Body)
     : Function(Name, Span, Parameters)
 {
     /// <summary>

@@ -17,6 +17,7 @@
       "haruspex.sqlserver.model": {
         "type": "Project",
         "dependencies": {
+          "Haruspex.Collections": "[0.1.0-dev, )",
           "Haruspex.Diagnostics": "[0.1.0-dev, )",
           "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
         }

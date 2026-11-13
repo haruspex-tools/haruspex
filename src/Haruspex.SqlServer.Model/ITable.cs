@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 
 namespace Haruspex.SqlServer.Model;
@@ -13,16 +14,16 @@ public interface ITable
     SourceSpan Span { get; }
 
     /// <summary>Its columns, in declaration order.</summary>
-    IReadOnlyList<Column> Columns { get; }
+    EquatableArray<Column> Columns { get; }
 
     /// <summary>The names of its primary key's columns, in key order; empty when it has none.</summary>
-    IReadOnlyList<string> PrimaryKey { get; }
+    EquatableArray<string> PrimaryKey { get; }
 
     /// <summary>Its CHECK constraints, in declaration order.</summary>
-    IReadOnlyList<CheckConstraint> Checks { get; }
+    EquatableArray<CheckConstraint> Checks { get; }
 
     /// <summary>Its primary key, unique constraints and unique indexes (see <see cref="UniqueKey.DisabledAt"/>).</summary>
-    IReadOnlyList<UniqueKey> UniqueKeys { get; }
+    EquatableArray<UniqueKey> UniqueKeys { get; }
 
     /// <summary>Whether it is a graph table, whose <c>SELECT *</c> includes pseudo-columns the declaration does not list.</summary>
     bool IsGraph { get; }

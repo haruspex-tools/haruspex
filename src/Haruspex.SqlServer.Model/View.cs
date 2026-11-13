@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -8,7 +9,7 @@ namespace Haruspex.SqlServer.Model;
 /// <param name="Span">Where its definition is.</param>
 /// <param name="Columns">The names its column list gives (<c>CREATE VIEW v (a, b)</c>); empty when it has none.</param>
 /// <param name="Query">Its query, as ScriptDom parsed it. What it reads matters to DML through it, which changes the tables underneath.</param>
-public sealed record View(ObjectName Name, SourceSpan Span, IReadOnlyList<string> Columns, SelectStatement Query) : Module(Name, Span)
+public sealed record View(ObjectName Name, SourceSpan Span, EquatableArray<string> Columns, SelectStatement Query) : Module(Name, Span)
 {
     /// <summary>
     /// Whether it was created with ANSI_NULLS off, which it keeps (as a procedure does): set by <c>SET ANSI_NULLS OFF</c> before

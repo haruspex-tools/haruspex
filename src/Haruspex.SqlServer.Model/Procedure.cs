@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 
 namespace Haruspex.SqlServer.Model;
@@ -11,7 +12,7 @@ namespace Haruspex.SqlServer.Model;
 /// <param name="Span">Where its definition is.</param>
 /// <param name="Parameters">Its parameters, in declaration order.</param>
 /// <param name="Body">What it runs.</param>
-public sealed record Procedure(ObjectName Name, SourceSpan Span, IReadOnlyList<Parameter> Parameters, ModuleBody Body) : Module(Name, Span)
+public sealed record Procedure(ObjectName Name, SourceSpan Span, EquatableArray<Parameter> Parameters, ModuleBody Body) : Module(Name, Span)
 {
     /// <summary>
     /// Whether <c>ANSI_NULLS</c> was off when the procedure was created: SQL Server keeps the setting in force then, and with it

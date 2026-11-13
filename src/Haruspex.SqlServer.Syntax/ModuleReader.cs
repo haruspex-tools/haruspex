@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -110,7 +111,7 @@ public static class ModuleReader
     /// <summary>A procedure's or function's parameters, in declaration order.</summary>
     /// <param name="parameters">The parameters as ScriptDom parsed them.</param>
     /// <param name="within">The span of the definition they are in.</param>
-    public static IReadOnlyList<Parameter> Parameters(IEnumerable<ProcedureParameter> parameters, SourceSpan within)
+    public static EquatableArray<Parameter> Parameters(IEnumerable<ProcedureParameter> parameters, SourceSpan within)
     {
         ArgumentNullException.ThrowIfNull(parameters);
         return [.. parameters.Select(p => new Parameter(p.VariableName.Value, SyntaxReader.Type(p.DataType), p.Modifier == ParameterModifier.Output, p.Value, within.At(p)))];

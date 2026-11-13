@@ -173,7 +173,7 @@ public static class SyntaxReader
                 span.At(i))))
             .ToList();
 
-        return new Table(name, span, columns, primaryKey, checks, keys) { IsGraph = isGraph };
+        return new Table(name, span, [.. columns], [.. primaryKey], [.. checks], [.. keys]) { IsGraph = isGraph };
     }
 
     /// <summary>
