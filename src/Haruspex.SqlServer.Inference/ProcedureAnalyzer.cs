@@ -32,7 +32,7 @@ internal sealed partial class ProcedureAnalyzer
     private readonly ViewSummaries? views;
 
     /// <summary>Inside a function's body, its parameters by name; empty in a procedure, whose parameters are not followed yet.</summary>
-    private readonly IReadOnlyDictionary<string, Value> parameters;
+    private readonly EquatableMap<LocalName, Value> parameters;
 
     /// <summary>The query whose select list is being read, for an aggregate to know whether it has GROUP BY.</summary>
     private QuerySpecification? current;
@@ -52,7 +52,7 @@ internal sealed partial class ProcedureAnalyzer
         DatabaseModel model,
         SourceSpan source,
         FunctionSummaries functions,
-        IReadOnlyDictionary<string, Value>? parameters = null,
+        EquatableMap<LocalName, Value>? parameters = null,
         ProcedureCalls? calls = null,
         CallContext? context = null,
         bool ansiNullsOff = false,
@@ -66,7 +66,7 @@ internal sealed partial class ProcedureAnalyzer
         binder = functions.Bindings.For(source);
         this.source = source;
         this.functions = functions;
-        this.parameters = parameters ?? new Dictionary<string, Value>();
+        this.parameters = parameters ?? [];
         this.calls = calls;
         this.context = context ?? CallContext.Top;
         escapes = this.context.Escapes ? [] : null;

@@ -294,10 +294,7 @@ internal sealed class FunctionSummaries
         if (header)
             return declaredOnly with { Content = new NeverShape(at) };
 
-        var parameters = function.Parameters.ToDictionary(
-            p => p.Name,
-            p => Parameter(p, nullOnNull),
-            StringComparer.OrdinalIgnoreCase);
+        var parameters = function.Parameters.ToEquatableMap(p => new LocalName(p.Name), p => Parameter(p, nullOnNull));
         var value = new ProcedureAnalyzer(model, function.Span, this, parameters, ansiNullsOff: function.AnsiNullsOff, views: Views, uncommittedReads: uncommitted).Return(expression, function.Parameters);
 
         var content = value switch
@@ -341,11 +338,12 @@ internal sealed class FunctionSummaries
         if (statements is not [.. var before, ReturnStatement { Expression: { } returned }])
             return null;
 
-        var parameters = declared.Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var variables = new Dictionary<string, (bool HoldsJson, ScalarExpression? Value)>(StringComparer.OrdinalIgnoreCase);
+        var parameters = declared.Select(p => new LocalName(p.Name)).ToHashSet();
+        var variables = new Dictionary<LocalName, (bool HoldsJson, ScalarExpression? Value)>();
 
-        bool Assign(string name, ScalarExpression value)
+        bool Assign(string written, ScalarExpression value)
         {
+            var name = new LocalName(written);
             if (parameters.Contains(name) || !variables.TryGetValue(name, out var variable))
                 return false;
             variables[name] = variable with { Value = value };
@@ -360,9 +358,9 @@ internal sealed class FunctionSummaries
                     foreach (var variable in declare.Declarations)
                     {
                         // A table variable or a cursor is not a value; a variable declared twice fails to compile.
-                        if (variable.DataType is null || variables.ContainsKey(variable.VariableName.Value))
+                        if (variable.DataType is null || variables.ContainsKey(new LocalName(variable.VariableName.Value)))
                             return null;
-                        variables[variable.VariableName.Value] = (HoldsAnyJson(SchemaRules.ResolveType(model, SyntaxReader.Type(variable.DataType))?.BuiltIn), variable.Value);
+                        variables[new LocalName(variable.VariableName.Value)] = (HoldsAnyJson(SchemaRules.ResolveType(model, SyntaxReader.Type(variable.DataType))?.BuiltIn), variable.Value);
                     }
 
                     break;
@@ -393,7 +391,7 @@ internal sealed class FunctionSummaries
             return returned;
 
         // RETURN @v of a variable never assigned returns NULL, which is not JSON; one too short has been cut.
-        return variables.TryGetValue(reference.Name, out var returnedVariable) && returnedVariable is { HoldsJson: true, Value: { } last }
+        return variables.TryGetValue(new LocalName(reference.Name), out var returnedVariable) && returnedVariable is { HoldsJson: true, Value: { } last }
             ? last
             : null;
     }

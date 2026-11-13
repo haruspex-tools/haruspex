@@ -385,7 +385,7 @@ internal sealed partial class ProcedureAnalyzer
         // A function's parameter holds its argument for this call; a procedure's, and a variable, what the walk says, which it
         // keeps under the declared name (the state is joined, and passed to a callee, by name).
         var resolved = Binder.Resolve(variable, scope.Names);
-        if (resolved is ParameterVariable { Parameter.Name: var parameter } && parameters.TryGetValue(parameter, out var argument))
+        if (resolved is ParameterVariable && parameters.TryGetValue(resolved.Name, out var argument))
             return argument;
         var name = resolved.Name;
         if (resolved is UndeclaredVariable || !scope.State.Variables.TryGetValue(name, out var value))

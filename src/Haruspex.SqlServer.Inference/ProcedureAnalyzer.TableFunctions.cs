@@ -47,10 +47,8 @@ internal sealed partial class ProcedureAnalyzer
             if (call.Parameters.Count != parameters.Count)
                 return Fails(IrUnknownReason.UnsupportedSource, $"{function.Name} takes {parameters.Count} arguments.");
 
-            var arguments = new Dictionary<string, Value>(StringComparer.OrdinalIgnoreCase);
-            for (var i = 0; i < parameters.Count; i++)
-                arguments[parameters[i].Name] = Argument(parameters[i], call.Parameters[i], scope);
-            return views.Function(function, arguments, ReadUncommitted(scope));
+            var arguments = parameters.Select((p, i) => KeyValuePair.Create(new LocalName(p.Name), Argument(p, call.Parameters[i], scope)));
+            return views.Function(function, [.. arguments], ReadUncommitted(scope));
         }
     }
 
