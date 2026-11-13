@@ -252,6 +252,22 @@ public class SetJoinObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task An_openjson_without_an_alias_on_an_outer_joins_optional_side_is_filtered_by_the_on_as_one_with_an_alias_is()
+    {
+        // Its columns are read without a qualifier; the ON keeps only elements whose value is not null, so value is null only
+        // in the row an outer row that matches no element is null-extended to (id 2), never for the JSON null (which the ON
+        // drops for id 1). A join's right side can't read the left (4104), so the document is a constant.
+        Assert.Equal(
+            "id,value: 1,1;2,null",
+            await Select("""
+                SELECT d.id, value
+                FROM (VALUES (1), (2)) AS d (id)
+                LEFT JOIN OPENJSON(N'[1, null]') ON value IS NOT NULL AND d.id = 1
+                ORDER BY d.id;
+                """));
+    }
+
+    [Fact]
     public async Task Openjson_with_columns_are_of_their_declared_types_and_null_for_a_missing_path_or_a_json_null()
     {
         Assert.Equal(

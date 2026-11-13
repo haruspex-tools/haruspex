@@ -1153,7 +1153,10 @@ Bound by the binder; observed in `SetJoinObservationTests`.
 
 `OPENJSON(doc [, path]) [WITH (…)]` in `FROM`, a join or `APPLY` is a relation (`ProcedureAnalyzer.OpenJsonRelation`), bound like a
 table-valued function's call; its arguments are not read. How many rows it gives is the data's (none for a NULL document or a
-lax path that finds nothing), so it is many and never sure to have a row. Observed in `SetJoinObservationTests`.
+lax path that finds nothing), so it is many and never sure to have a row. Without an alias it is a source all the same, so an
+outer join's ON proves its columns as it proves an aliased one's
+(`An_openjson_without_an_alias_on_an_outer_joins_optional_side_is_filtered_by_the_on_as_one_with_an_alias_is`). Observed in
+`SetJoinObservationTests`.
 
 - **Without `WITH`**: `key` `nvarchar(4000)` and `type` `tinyint`, never null, and `value` `nvarchar(max)`, NULL for a JSON
   `null` (`json-null-or-absent`); `type` is 0 to 5 (null, string, number, true/false, array, object), an exact set from the engine

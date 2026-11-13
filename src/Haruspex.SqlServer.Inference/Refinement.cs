@@ -162,11 +162,12 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>
-    /// The sources of this scope that a table reference binds (<see cref="QueryScope.SourcesUnder"/>), those with an alias: an
-    /// <c>OPENJSON</c> or <c>GENERATE_SERIES</c> without one is left out, as when sources were found by alias.
+    /// The sources of this scope that a table reference binds (<see cref="QueryScope.SourcesUnder"/>), with an alias or without:
+    /// an <c>OPENJSON</c> without one is filtered by an outer join's ON as an aliased one is (observed:
+    /// An_openjson_without_an_alias_on_an_outer_joins_optional_side_is_filtered_by_the_on_as_one_with_an_alias_is).
     /// </summary>
     private static HashSet<BoundSource> Sources(TableReference reference, ReadScope scope) =>
-        new(scope.Bound.SourcesUnder(reference).Where(s => s.Alias is not null), ReferenceEqualityComparer.Instance);
+        new(scope.Bound.SourcesUnder(reference), ReferenceEqualityComparer.Instance);
 
     /// <summary>
     /// Records every column that <paramref name="condition"/> proves non-null in the rows it keeps: those for which it is

@@ -51,4 +51,16 @@ public partial class SetJoinTests
         Assert.Equal("int json-null-or-absent unmatched-lateral-row", Typed(doc, "a"));
         Assert.Equal(IrCardinality.Many, Rows(doc));
     }
+
+    [Fact]
+    public void An_openjson_without_an_alias_on_an_outer_joins_optional_side_is_proved_by_the_on()
+    {
+        // As an aliased one is: matched, value is not a JSON null, so only the null-extended row is null (observed:
+        // An_openjson_without_an_alias_on_an_outer_joins_optional_side_is_filtered_by_the_on_as_one_with_an_alias_is).
+        var bare = Procedure("SELECT t.id, value AS v FROM dbo.t AS t LEFT JOIN OPENJSON(N'[1, null]') ON value IS NOT NULL AND t.id = 1;");
+        var named = Procedure("SELECT t.id, j.value AS v FROM dbo.t AS t LEFT JOIN OPENJSON(N'[1, null]') AS j ON j.value IS NOT NULL AND t.id = 1;");
+
+        Assert.Equal("nvarchar(max) unmatched-row", Typed(bare, "v"));
+        Assert.Equal(Typed(named, "v"), Typed(bare, "v"));
+    }
 }
