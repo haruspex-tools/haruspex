@@ -21,6 +21,9 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="binder">The binder of the body being read, which says which source a column reads.</param>
 internal sealed class Cardinality(DatabaseModel model, Binder binder)
 {
+    private readonly DatabaseModel model = model;
+    private readonly Binder binder = binder;
+
     /// <summary>How many rows <paramref name="query"/> returns, read in <paramref name="scope"/>.</summary>
     /// <param name="query">The query.</param>
     /// <param name="scope">Its scope, with what each of its sources holds attached.</param>
