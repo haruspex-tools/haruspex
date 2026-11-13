@@ -1,4 +1,5 @@
 using Haruspex.Collections;
+using Haruspex.Diagnostics;
 
 namespace Haruspex.Config;
 
@@ -6,5 +7,5 @@ namespace Haruspex.Config;
 public sealed record SchemaNaming(EquatableArray<NamingReplacement> Replace, NamingCase? Case)
 {
     /// <summary>Where it is written.</summary>
-    public ConfigLocation? At { get; init; }
+    public JsonLocation? At { get; init; }
 }

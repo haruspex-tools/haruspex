@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
 
 namespace Haruspex.Config;
@@ -70,7 +71,7 @@ public static class ConfigReader
         }
         catch (ConfigJsonException e)
         {
-            return new(null, [new ConfigProblem(ConfigSeverity.Error, file, new ConfigLocation(e.Path, e.Line, e.Column), e.Message)]);
+            return new(null, [new ConfigProblem(ConfigSeverity.Error, file, new JsonLocation(file, e.Path, e.Line, e.Column), e.Message)]);
         }
 
         var reader = new Checker(file, directory, reserved ?? ReservedWords.None);
@@ -138,7 +139,7 @@ public static class ConfigReader
             foreach (var member in members.Members)
             {
                 var schemaPath = Child(path, member.Name);
-                var at = new ConfigLocation(schemaPath, member.Line, member.Column);
+                var at = new JsonLocation(file, schemaPath, member.Line, member.Column);
                 if (member.Name.Length == 0)
                 {
                     Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, at, "a schema's name must not be empty."));
@@ -184,7 +185,7 @@ public static class ConfigReader
                 // Without an include nothing in the schema is selected, so an exclude there could only ever be stale.
                 if (exclude is not null && schema.Include is null)
                 {
-                    Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, new ConfigLocation(Child(schemaPath, "exclude"), exclude.Line, exclude.Column),
+                    Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, new JsonLocation(file, Child(schemaPath, "exclude"), exclude.Line, exclude.Column),
                         "does nothing without an \"include\" in the same block, since nothing in the schema is selected. Add the include, or remove the exclude."));
                 }
 
@@ -326,7 +327,7 @@ public static class ConfigReader
             foreach (var member in members.Members)
             {
                 var procedurePath = Child(path, member.Name);
-                var at = new ConfigLocation(procedurePath, member.Line, member.Column);
+                var at = new JsonLocation(file, procedurePath, member.Line, member.Column);
                 ObjectPattern? procedure = null;
                 if (!ObjectPattern.TryParse(member.Name, out var pattern, out var problem))
                     Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, at, problem));
@@ -339,7 +340,7 @@ public static class ConfigReader
                     continue;
 
                 string? name = null;
-                ConfigLocation? nameAt = null;
+                JsonLocation? nameAt = null;
                 var paths = new List<PathOverride>();
                 JsonMember? results = null;
                 string? why = null;
@@ -400,7 +401,7 @@ public static class ConfigReader
         /// </summary>
         private ResultsDeclaration? Declared(JsonMember member, string path, string procedure, string why)
         {
-            var at = new ConfigLocation(path, member.Line, member.Column);
+            var at = new JsonLocation(file, path, member.Line, member.Column);
             var errors = Problems.Count(p => p.Severity == ConfigSeverity.Error);
             var types = new Dictionary<string, IrObjectType>(StringComparer.Ordinal);
             var results = new List<IrResult>();
@@ -496,7 +497,7 @@ public static class ConfigReader
                     }
                     catch (ConfigJsonException e)
                     {
-                        Problems.Add(new ConfigProblem(ConfigSeverity.Error, schemaFile, new ConfigLocation(e.Path, e.Line, e.Column), e.Message));
+                        Problems.Add(new ConfigProblem(ConfigSeverity.Error, schemaFile, new JsonLocation(schemaFile, e.Path, e.Line, e.Column), e.Message));
                         return null;
                     }
 
@@ -512,7 +513,7 @@ public static class ConfigReader
 
         private PathOverride? PathOverride(JsonMember entry, string path)
         {
-            var at = new ConfigLocation(path, entry.Line, entry.Column);
+            var at = new JsonLocation(file, path, entry.Line, entry.Column);
             if (!IrPath.TryParse(entry.Name, out _, out var problem))
                 Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, at, problem));
             if (Object(entry.Value, path) is not { } body)
@@ -649,12 +650,12 @@ public static class ConfigReader
         }
 
         private void Unknown(JsonMember member, string path, string known) =>
-            Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, new ConfigLocation(path, member.Line, member.Column), $"unknown setting \"{member.Name}\". The settings here are {known}."));
+            Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, new JsonLocation(file, path, member.Line, member.Column), $"unknown setting \"{member.Name}\". The settings here are {known}."));
 
         private void Error(JsonValue value, string path, string message) =>
             Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, At(value, path), message));
 
-        private static ConfigLocation At(JsonValue value, string path) => new(path, value.Line, value.Column);
+        private JsonLocation At(JsonValue value, string path) => new(file, path, value.Line, value.Column);
 
         private static string Child(string path, string key) => ConfigPath.Child(path, key);
 

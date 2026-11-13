@@ -1,4 +1,5 @@
 using Haruspex.Collections;
+using Haruspex.Diagnostics;
 
 namespace Haruspex.Config;
 
@@ -8,7 +9,7 @@ namespace Haruspex.Config;
 /// </summary>
 /// <param name="Name">The schema's name exactly as in the database: no brackets, dots allowed.</param>
 /// <param name="At">Where its key is written.</param>
-public sealed record SchemaSettings(string Name, ConfigLocation At)
+public sealed record SchemaSettings(string Name, JsonLocation At)
 {
     /// <summary>Which of its procedures to type, by their own names; null when the block has no include, so it selects nothing.</summary>
     public EquatableArray<NamePatternEntry>? Include { get; init; }

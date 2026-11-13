@@ -1,4 +1,5 @@
 using System.Globalization;
+using Haruspex.Diagnostics;
 
 namespace Haruspex.Config;
 
@@ -7,7 +8,7 @@ namespace Haruspex.Config;
 /// <param name="File">The config file, as it was found or named.</param>
 /// <param name="At">Where in it, when the problem has a place; null for one about the file as a whole, such as a clash between generated names.</param>
 /// <param name="Message">What is wrong, in a sentence or two.</param>
-public sealed record ConfigProblem(ConfigSeverity Severity, string File, ConfigLocation? At, string Message)
+public sealed record ConfigProblem(ConfigSeverity Severity, string File, JsonLocation? At, string Message)
 {
     /// <summary>
     /// The problem as a compiler writes one, <c>file:line:column: error: path: message</c>, so editors and CI annotations

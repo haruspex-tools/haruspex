@@ -1,4 +1,5 @@
 using Haruspex.Collections;
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 
@@ -42,8 +43,8 @@ public static class ConfigApplication
         var claims = new List<IrOverride>();
         var applier = new OverrideApplier(config.File, types, unknowns, claims, problems, from => Import(from, config.Directory, outputDirectory));
         var results = document.Objects.Select(o => o.Results).ToArray();
-        var procedureNames = new Dictionary<string, (string, ConfigLocation?)>(StringComparer.Ordinal);
-        var seen = new Dictionary<string, ConfigLocation>(StringComparer.Ordinal);
+        var procedureNames = new Dictionary<string, (string, JsonLocation?)>(StringComparer.Ordinal);
+        var seen = new Dictionary<string, JsonLocation>(StringComparer.Ordinal);
 
         var declaredHere = new HashSet<string>(StringComparer.Ordinal);
         foreach (var entry in config.Procedures)

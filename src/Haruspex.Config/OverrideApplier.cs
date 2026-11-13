@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Haruspex.Collections;
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
 
 namespace Haruspex.Config;
@@ -26,7 +27,7 @@ internal sealed class OverrideApplier(
     Func<string, string> importFrom)
 {
     /// <summary>The names given by path overrides, by object and canonical path, for the namer.</summary>
-    public Dictionary<(string Object, string Path), (string Name, ConfigLocation At)> Names { get; } = [];
+    public Dictionary<(string Object, string Path), (string Name, JsonLocation At)> Names { get; } = [];
 
     /// <summary>Applies one override to an object's results, returning them changed.</summary>
     public EquatableArray<IrResult>? Apply(IrObject obj, EquatableArray<IrResult>? results, PathOverride entry)

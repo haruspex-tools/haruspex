@@ -1,9 +1,11 @@
+using Haruspex.Diagnostics;
+
 namespace Haruspex.Config;
 
 /// <summary>An override of one place inside a procedure's results (<c>paths["lines[].sku"]</c>).</summary>
 /// <param name="Path">The path as written.</param>
 /// <param name="At">Where the path is written.</param>
-public sealed record PathOverride(string Path, ConfigLocation At)
+public sealed record PathOverride(string Path, JsonLocation At)
 {
     /// <summary>The name for the object type at the path.</summary>
     public string? Name { get; init; }

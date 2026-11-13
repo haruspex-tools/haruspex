@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Haruspex.Diagnostics;
 
 namespace Haruspex.Config;
 
@@ -10,7 +11,7 @@ namespace Haruspex.Config;
 /// A compiled expression compares by reference, so the rule's equality is written here: two rules are the same when their
 /// expressions are written alike with the same options, and they replace with the same text from the same place.
 /// </remarks>
-public sealed record NamingReplacement(Regex Pattern, string With, ConfigLocation? At)
+public sealed record NamingReplacement(Regex Pattern, string With, JsonLocation? At)
 {
     /// <summary>Whether <paramref name="other"/> has an expression written alike, with the same options, replacement and place.</summary>
     public bool Equals(NamingReplacement? other) =>

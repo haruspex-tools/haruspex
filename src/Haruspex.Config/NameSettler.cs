@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
 
 namespace Haruspex.Config;
@@ -26,8 +27,8 @@ namespace Haruspex.Config;
 internal sealed class NameSettler(
     HaruspexConfig config,
     IReadOnlyDictionary<string, IrObjectType> types,
-    IReadOnlyDictionary<string, (string Name, ConfigLocation? At)> procedureNames,
-    IReadOnlyDictionary<(string Object, string Path), (string Name, ConfigLocation At)> pathNames,
+    IReadOnlyDictionary<string, (string Name, JsonLocation? At)> procedureNames,
+    IReadOnlyDictionary<(string Object, string Path), (string Name, JsonLocation At)> pathNames,
     List<ConfigProblem> problems)
 {
     /// <summary>Provisional key to settled name.</summary>
@@ -39,13 +40,13 @@ internal sealed class NameSettler(
     private string ConfigFile => config.File;
 
     /// <summary>What holds a name: the object it belongs to, a description for errors, whether it is a type, and the setting to change.</summary>
-    private sealed record Holder(string Owner, string Description, bool IsType, ConfigLocation? At);
+    private sealed record Holder(string Owner, string Description, bool IsType, JsonLocation? At);
 
     /// <summary>
     /// The setting a clash or a naming problem of <paramref name="id"/> points at: its name override, or else its schema's
     /// block (where a prefix or a replacement would go), or else the top-level naming.
     /// </summary>
-    private ConfigLocation? SettingFor(string id) =>
+    private JsonLocation? SettingFor(string id) =>
         procedureNames.TryGetValue(id, out var given) && given.At is not null
             ? given.At
             : TrySplit(id, out var schema, out _) ? config.Schema(schema)?.At ?? config.NamingAt : null;

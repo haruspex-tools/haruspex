@@ -1,4 +1,5 @@
 using Haruspex.Collections;
+using Haruspex.Diagnostics;
 
 namespace Haruspex.Config;
 
@@ -33,13 +34,13 @@ public sealed record HaruspexConfig
     public ReservedWords Reserved { get; init; } = ReservedWords.None;
 
     /// <summary>Where the top-level <c>naming</c> is written, or null.</summary>
-    public ConfigLocation? NamingAt { get; init; }
+    public JsonLocation? NamingAt { get; init; }
 
     /// <summary>
     /// The setting that decides how objects of <paramref name="schema"/> are named, for a problem with a name: the schema's
     /// own <c>naming</c>, else the top-level one, else the schema's block. Null when the file says nothing about it.
     /// </summary>
-    public ConfigLocation? NamingLocation(string schema) => Schema(schema) is { } settings ? settings.Naming?.At ?? NamingAt ?? settings.At : NamingAt;
+    public JsonLocation? NamingLocation(string schema) => Schema(schema) is { } settings ? settings.Naming?.At ?? NamingAt ?? settings.At : NamingAt;
 
     /// <summary>Whether any schema has an include, without which nothing is selected.</summary>
     public bool SelectsAnything => Schemas.Any(s => s.Include is not null);
