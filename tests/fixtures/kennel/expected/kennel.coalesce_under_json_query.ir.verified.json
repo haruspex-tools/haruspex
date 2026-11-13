@@ -8,7 +8,7 @@
       "id": "kennel.coalesce_under_json_query",
       "name": "CoalesceUnderJsonQuery",
       "kind": "procedure",
-      "at": "procedures/coalesce_under_json_query.sql:2:1",
+      "at": "procedures/coalesce_under_json_query.sql:3:1",
       "parameters": [
         {
           "name": "@owner_id",
@@ -83,6 +83,55 @@
         }
       ]
     },
+    "CoalesceUnderJsonQueryDogsByCaseItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kennel.coalesce_under_json_query",
+        "path": "results[0].dogs_by_case[]"
+      },
+      "fields": [
+        {
+          "name": "dog_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
     "CoalesceUnderJsonQueryRow": {
       "kind": "object",
       "identity": {
@@ -100,6 +149,23 @@
           },
           "presence": "always",
           "nullable": false
+        },
+        {
+          "name": "dogs_by_case",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CoalesceUnderJsonQueryDogsByCaseItem"
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/coalesce_under_json_query.sql:10:29"
+            }
+          ]
         }
       ]
     }

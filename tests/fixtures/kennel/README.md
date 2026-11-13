@@ -16,7 +16,7 @@ claim against what SQL Server returns. No part of it comes from a real system.
 | `kennel.cursor_row` | a keyset cursor's row changed after `OPEN`, which its `WHERE` no longer proves, and a variable its query reads as it was at `DECLARE` |
 | `kennel.where_reaches_inside` | `WHERE` proving a column inside a `CASE` and inside a subquery of the outer row |
 | `kennel.rollup_and_having` | a grouped column null in `ROLLUP`'s subtotal rows outside the aggregates, not inside them; `HAVING` proving an aggregate |
-| `kennel.coalesce_under_json_query` | `COALESCE` of JSON built here, under `json_query` |
+| `kennel.coalesce_under_json_query` | `COALESCE` of JSON built here, and a `CASE` over a `FOR JSON` subquery, which is JSON only under `json_query` (without it, whether it nests depends on whether the server folds the `CASE`), under `json_query` |
 
 An `OUTPUT` reading the write's target through its alias in `FROM` is not here: SQL Server creates the procedure and refuses
 the statement when it runs (4104), so no run could check it.

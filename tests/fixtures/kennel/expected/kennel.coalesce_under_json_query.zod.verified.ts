@@ -8,8 +8,13 @@ export const CoalesceUnderJsonQueryDogSchema = z.object({
 })
 export type CoalesceUnderJsonQueryDog = z.infer<typeof CoalesceUnderJsonQueryDogSchema>
 
+/** The same shape as CoalesceUnderJsonQueryDog. */
+export const CoalesceUnderJsonQueryDogsByCaseItemSchema = CoalesceUnderJsonQueryDogSchema
+export type CoalesceUnderJsonQueryDogsByCaseItem = z.infer<typeof CoalesceUnderJsonQueryDogsByCaseItemSchema>
+
 export const CoalesceUnderJsonQueryRowSchema = z.object({
   dogs: z.array(CoalesceUnderJsonQueryDogSchema),
+  dogs_by_case: z.array(CoalesceUnderJsonQueryDogSchema).optional(),
 })
 export type CoalesceUnderJsonQueryRow = z.infer<typeof CoalesceUnderJsonQueryRowSchema>
 

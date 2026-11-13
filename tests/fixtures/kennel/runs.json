@@ -18,6 +18,7 @@
     { "name": "where_reaches_inside", "procedure": "kennel.where_reaches_inside" },
     { "name": "rollup_and_having", "procedure": "kennel.rollup_and_having" },
     { "name": "coalesce_under_json_query, an owner of dogs", "procedure": "kennel.coalesce_under_json_query", "parameters": { "@owner_id": 1 } },
-    { "name": "coalesce_under_json_query, an owner of none", "procedure": "kennel.coalesce_under_json_query", "parameters": { "@owner_id": 3 } }
+    { "name": "coalesce_under_json_query, an owner of none", "procedure": "kennel.coalesce_under_json_query", "parameters": { "@owner_id": 3 } },
+    { "name": "coalesce_under_json_query, no owner", "procedure": "kennel.coalesce_under_json_query", "parameters": { "@owner_id": 0 } }
   ]
 }
