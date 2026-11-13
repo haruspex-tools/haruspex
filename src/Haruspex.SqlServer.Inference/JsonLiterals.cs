@@ -56,6 +56,7 @@ internal static class JsonLiterals
             if (document.RootElement.ValueKind is not (JsonValueKind.Object or JsonValueKind.Array))
                 return NotJson(text, at, "is a bare JSON scalar, which json_query, OPENJSON and JSON_VALUE refuse (13609)");
             var why = new string?[1];
+            // Never null: Of gives null only after writing why.
             return Of(document.RootElement, national, at, why) ?? NotJson(text, at, why[0]!);
         }
     }
@@ -125,7 +126,7 @@ internal static class JsonLiterals
 
                 return new TupleShape([.. items]);
             case JsonValueKind.String:
-                var text = element.GetString()!;
+                var text = element.GetString()!; // Never null: the element is a string, not a JSON null.
                 if (!national && !Ascii(text))
                 {
                     why[0] = "is not an N'' literal and has a string that is not ASCII, which the database's code page may change";

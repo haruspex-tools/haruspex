@@ -49,6 +49,7 @@ public static class ConfigReader
             return new(null, [new ConfigProblem(ConfigSeverity.Error, path, null, $"cannot read the config file: {e.Message}")]);
         }
 
+        // Never null: the full path of the file read above, which is never a root.
         return Read(bytes, path, Path.GetDirectoryName(Path.GetFullPath(path))!, reserved);
     }
 
@@ -513,7 +514,7 @@ public static class ConfigReader
         {
             var at = new ConfigLocation(path, entry.Line, entry.Column);
             if (!IrPath.TryParse(entry.Name, out _, out var problem))
-                Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, at, problem!));
+                Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, at, problem));
             if (Object(entry.Value, path) is not { } body)
                 return null;
 

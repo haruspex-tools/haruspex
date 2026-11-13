@@ -152,7 +152,13 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private Value Results(TSqlFragment at, List<(ScalarExpression Expression, Value? Value)> results, EquatableArray<IrNullReason> also)
     {
-        var given = results.Where(r => r.Value is not null).Select(r => (r.Expression, Value: r.Value!)).ToList();
+        var given = new List<(ScalarExpression Expression, Value Value)>();
+        foreach (var (expression, result) in results)
+        {
+            if (result is not null)
+                given.Add((expression, result));
+        }
+
         if (given.Count == 0)
             return NotModelled(at, "every result is NULL.");
         if (given.FirstOrDefault(r => r.Value.Shape is UnknownShape) is { Value: { } unknown })
@@ -179,7 +185,7 @@ internal sealed partial class ProcedureAnalyzer
         var where = At(at);
         var combined = Chained([.. given.Select(r => (r.Value, r.Expression, where))]);
         if (combined.Type is not { } type)
-            return NotModelled(at, combined.Why!);
+            return NotModelled(at, combined.Why!); // Never null: a chain without a type says why (Chained).
 
         var because = given.Select(r => r.Value.NullableBecause)
             .Concat(combined.Overflows)
@@ -201,21 +207,22 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private IrValueSet? LiteralSet(IEnumerable<ScalarExpression> results, ScalarType type, TSqlFragment at)
     {
-        var literals = results.Select(LiteralOf).ToList();
-        if (literals.Any(l => l is null))
+        var all = results.Select(LiteralOf).ToList();
+        if (all.Any(l => l is null))
             return null;
+        var literals = all.OfType<(Literal Literal, bool Negative)>().ToList();
         IReadOnlyList<IrValue> items;
-        if (type.IsString && literals.All(l => l!.Value.Literal is StringLiteral))
+        if (type.IsString && literals.All(l => l.Literal is StringLiteral))
         {
             // A string longer than the type is cut short (a national type stops at 4000 characters).
-            if (!type.IsMax && literals.Any(l => l!.Value.Literal.Value.Length > type.Length))
+            if (!type.IsMax && literals.Any(l => l.Literal.Value.Length > type.Length))
                 return null;
-            items = [.. literals.Select(l => l!.Value.Literal.Value).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).Select(s => new IrValue(s, IsString: true))];
+            items = [.. literals.Select(l => l.Literal.Value).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).Select(s => new IrValue(s, IsString: true))];
         }
-        else if ((type.IsInteger || type.IsDecimal) && literals.All(l => l!.Value.Literal is IntegerLiteral or NumericLiteral))
+        else if ((type.IsInteger || type.IsDecimal) && literals.All(l => l.Literal is IntegerLiteral or NumericLiteral))
         {
             var numbers = new List<ExactDecimal>();
-            foreach (var (literal, negative) in literals.Select(l => l!.Value))
+            foreach (var (literal, negative) in literals)
             {
                 if (!ExactDecimal.TryParse(literal.Value, out var number))
                     return null;

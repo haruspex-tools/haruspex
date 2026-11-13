@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
@@ -63,6 +64,7 @@ internal sealed record FlowState
     public FlowState WithJson(JsonSlotKey place, JsonSlot slot) => new(Temps, Variables, Results, ReadUncommitted, Json.SetItem(place, slot));
 
     /// <summary>The state after either of two groups of paths; null stands for no path (every one ended before here).</summary>
+    [return: NotNullIfNotNull(nameof(a))]
     public static FlowState? Join(FlowState? a, FlowState? b, SourceLocation at)
     {
         if (a is null || b is null)

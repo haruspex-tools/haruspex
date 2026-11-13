@@ -96,7 +96,7 @@ internal sealed class OverrideApplier(
 
         if (entry.ExactValues)
         {
-            if (slot.Type is not IrScalar { Facets.Values: { } set } scalar)
+            if (slot.Type is not IrScalar { Facets: { Values: { } set } facets } scalar)
             {
                 throw new PathException($"the value at {path} has no value set to declare exact. A value set is inferred from a CHECK constraint on a column the value passes through unchanged; "
                     + "canonical value sets for other cases are planned, not done.");
@@ -108,13 +108,14 @@ internal sealed class OverrideApplier(
             }
             else
             {
-                slot = slot with { Type = scalar with { Facets = scalar.Facets! with { Values = set with { Match = IrValueMatch.Exact } } } };
+                slot = slot with { Type = scalar with { Facets = facets with { Values = set with { Match = IrValueMatch.Exact } } } };
                 claims.Add(new IrOverride(objectId, path, IrOverrideSetting.ExactValues, entry.Why));
             }
         }
 
         if (entry.Type is { } type)
         {
+            // Never null: the reader refuses a "type" without its "import" (ConfigReader).
             IrType imported = new IrImport(type.TrimEnd('[', ']'), importFrom(entry.Import!));
             for (var depth = (type.Length - type.TrimEnd('[', ']').Length) / 2; depth > 0; depth--)
                 imported = new IrArray(imported);
@@ -199,6 +200,7 @@ internal sealed class OverrideApplier(
     }
 
     private static string Shared(string path, IrObjectType type) =>
+        // Never null: a recursive type is a function's node, made with its identity (IrBuilder).
         $"the value at {path} is the recursive type of {type.Identity!.Object}, which every procedure that reaches it shares, so it can't be overridden for one of them.";
 
     private static string Describe(IrPathSegment segment) => segment switch

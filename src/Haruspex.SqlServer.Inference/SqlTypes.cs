@@ -20,7 +20,7 @@ internal static class SqlTypes
     /// </remarks>
     public static Shape ToShape(DatabaseModel model, SqlType? type, SourceLocation at) =>
         SchemaRules.ResolveType(model, type) is { } resolved
-            ? ToShape(new ColumnFacts(resolved), at, withFacets: false)
+            ? ToShape(new ColumnFacts(resolved), resolved, at, withFacets: false)
             : Unsupported(type, at);
 
     /// <summary>
@@ -30,16 +30,19 @@ internal static class SqlTypes
     /// </summary>
     public static Shape ToConvertedShape(DatabaseModel model, SqlType? type, SourceLocation at) =>
         SchemaRules.ResolveType(model, type) is { } resolved
-            ? ToShape(SchemaRules.TypeFacts(resolved, collation: null), at, withFacets: true)
+            ? ToShape(SchemaRules.TypeFacts(resolved, collation: null), resolved, at, withFacets: true)
             : Unsupported(type, at);
 
     /// <summary>A column's type, with every fact Semantics proved about its values.</summary>
     public static Shape ToShape(ColumnFacts facts, SqlType? declared, SourceLocation at) =>
-        facts.Type is null ? Unsupported(declared, at) : ToShape(facts, at, withFacets: true);
+        facts.Type is { } resolved ? ToShape(facts, resolved, at, withFacets: true) : Unsupported(declared, at);
 
     /// <summary>A value of a type the server's rules computed: the type's facts, with no collation known.</summary>
-    public static Shape ToConvertedShape(ScalarType type, SourceLocation at) =>
-        ToShape(SchemaRules.TypeFacts(ResolvedType.Of(type), collation: null), at, withFacets: true);
+    public static Shape ToConvertedShape(ScalarType type, SourceLocation at)
+    {
+        var resolved = ResolvedType.Of(type);
+        return ToShape(SchemaRules.TypeFacts(resolved, collation: null), resolved, at, withFacets: true);
+    }
 
     /// <summary>
     /// The built-in types inference gives a value of, and what each is in the IR. A type not listed reaches the IR as unknown
@@ -83,10 +86,14 @@ internal static class SqlTypes
     /// <summary>The type an IR scalar's SQL text names, when inference models it: <c>decimal(19,2)</c>.</summary>
     public static ScalarType? Parse(string? sql) => Modelled(ScalarType.Parse(sql));
 
-    private static Shape ToShape(ColumnFacts facts, SourceLocation at, bool withFacets)
+    /// <param name="facts">What is known of the values.</param>
+    /// <param name="resolved">Their type, which <paramref name="facts"/> holds too.</param>
+    /// <param name="at">Where the value is read.</param>
+    /// <param name="withFacets">Whether the type's and the column's facts are kept.</param>
+    private static Shape ToShape(ColumnFacts facts, ResolvedType resolved, SourceLocation at, bool withFacets)
     {
-        var text = Text(facts.Type!.BuiltIn);
-        var type = facts.Type.Type;
+        var text = Text(resolved.BuiltIn);
+        var type = resolved.Type;
 
         // A json parameter is text the caller sends, and a driver returns a json column as text. A json column inside FOR
         // JSON or a constructor is live JSON instead, which ProcedureAnalyzer decides before this.
@@ -94,7 +101,7 @@ internal static class SqlTypes
             return new JsonTextShape();
         if (type is null || !Scalars.TryGetValue(type, out var scalar))
             return new UnknownShape(IrUnknownReason.UnsupportedSqlType, $"The type {text} is not modelled yet.", at);
-        return new ScalarShape(new IrScalar(scalar.Kind, scalar.Format, text, withFacets ? Facets(facts) : null), facts.Type.Scalar);
+        return new ScalarShape(new IrScalar(scalar.Kind, scalar.Format, text, withFacets ? Facets(facts) : null), resolved.Scalar);
     }
 
     private static UnknownShape Unsupported(SqlType? type, SourceLocation at) =>
@@ -115,6 +122,7 @@ internal static class SqlTypes
                 ? new IrValueSet(
                     values.Numbers is { } numbers
                         ? [.. numbers.Select(n => new IrValue(n.ToString(), IsString: false))]
+                        // Never null: a value set holds numbers or strings (ValueSetFact).
                         : [.. values.Strings!.Select(s => new IrValue(s, IsString: true))],
                     values.Comparison switch
                     {

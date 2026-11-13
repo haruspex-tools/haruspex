@@ -53,6 +53,6 @@ public abstract record BoundQuery
         var listed = columnList.Count > 0 ? [.. columnList] : names;
         if (listed.Count != names.Count || listed.Any(string.IsNullOrEmpty) || listed.Distinct(StringComparer.OrdinalIgnoreCase).Count() != listed.Count)
             return null;
-        return [.. listed.Select(n => n!)];
+        return [.. listed.OfType<string>()];
     }
 }

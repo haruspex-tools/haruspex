@@ -56,7 +56,7 @@ internal static class ConfigJson
                 while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
                 {
                     var (keyLine, keyColumn) = positions.Of(reader.TokenStartIndex);
-                    var name = reader.GetString()!;
+                    var name = reader.GetString()!; // Never null: a property name always has its text; GetString is null only for a JSON null.
                     var memberPath = ConfigPath.Child(path, name);
                     if (!seen.Add(name))
                         throw new ConfigJsonException($"The key \"{name}\" is written twice in one object.", keyLine, keyColumn, memberPath);
@@ -71,7 +71,7 @@ internal static class ConfigJson
                     items.Add(Read(ref reader, positions, ConfigPath.Index(path, items.Count)));
                 return new JsonArrayValue([.. items], line, column);
             case JsonTokenType.String:
-                return new JsonStringValue(reader.GetString()!, line, column);
+                return new JsonStringValue(reader.GetString()!, line, column); // Never null: the token is a string, not a JSON null.
             default:
                 return new JsonOtherValue(reader.TokenType, Encoding.UTF8.GetString(reader.ValueSpan), line, column);
         }

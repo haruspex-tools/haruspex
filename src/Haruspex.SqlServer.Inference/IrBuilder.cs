@@ -58,6 +58,7 @@ internal sealed class IrBuilder(FunctionSummaries functions)
             }
             else
             {
+                // Never null: an analysis without results says why (ProcedureCalls.Analyse).
                 var why = analysis.ResultsUnknown!;
                 unknowns.Add(new IrUnknown(id, "results", why.Reason, why.Detail, why.At.ToString()));
             }

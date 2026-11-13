@@ -182,13 +182,14 @@ internal static class JsonShapes
         };
 
         var (x, y) = (Of(a), Of(b));
+        // Never empty: two tuples of one length, the two empty ones among them, are joined item by item before (Join), and an
+        // array always has its items' shape.
         var all = x.Items.Concat(y.Items).ToList();
-        var items = all.Count == 0 ? null : all.Skip(1).Aggregate(all[0], Join);
+        var items = all.Skip(1).Aggregate(all[0], Join);
         var nulls = NullReasons.Join([.. x.Nulls.Distinct()], [.. y.Nulls.Distinct()]);
         var min = Math.Min(x.Min, y.Min);
         int? max = x.Max is { } p && y.Max is { } q ? Math.Max(p, q) : null;
 
-        // Two empty tuples are the same shape, handled before; an empty one beside another empty has no items to type.
-        return new ArrayShape(items!, nulls, min == 0 ? null : min, max);
+        return new ArrayShape(items, nulls, min == 0 ? null : min, max);
     }
 }

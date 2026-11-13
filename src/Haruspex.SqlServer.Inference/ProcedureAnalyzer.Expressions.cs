@@ -146,7 +146,7 @@ internal sealed partial class ProcedureAnalyzer
 
         if (types.Any(t => t is null))
             return new ChainType(null, [], $"combining {Names(values.Select((v, i) => Name(v.Value, types[i])))} is not modelled yet.");
-        var known = operands.Select(o => o!).ToList();
+        var known = operands.OfType<Operand>().ToList();
         if (TypeChain.Clash(known) is var (first, second))
             return new ChainType(null, [], $"SQL Server refuses to combine {first.Text} and {second.Text}: there is no implicit conversion between them (206, an operand type clash).");
         if (TypeChain.Of(known) is not { } type)
@@ -155,6 +155,7 @@ internal sealed partial class ProcedureAnalyzer
         // An int the server may or may not fold to a literal counts between that literal's digits and 10; when that changes the
         // scale, which values come back is not known (observed: An_int_constant_counts_its_own_digits_beside_a_decimal). When it
         // changes only the precision, the most digits hold every value.
+        // Never null: each value's operand was found above, and one by its fewest digits is found with it (OperandOf).
         if (values.Any(v => Uncertain(v.Value)) && TypeChain.Of([.. values.Select(v => OperandOf(v.Value, v.Expression, least: true)!)]) is var fewest
             && (fewest is null || fewest.Type != type.Type || fewest.Scale != type.Scale))
         {
@@ -206,7 +207,7 @@ internal sealed partial class ProcedureAnalyzer
         var at = At(coalesce);
         var combined = Chained([.. values.Select((v, i) => (v, arguments[i], at))]);
         if (combined.Type is not { } type)
-            return NotModelled(coalesce, combined.Why!);
+            return NotModelled(coalesce, combined.Why!); // Never null: a chain without a type says why (Chained).
 
         // COALESCE(NULL, 1) is folded to 1 and counts its digits (observed: An_int_constant_counts_its_own_digits_beside_a_decimal).
         return Typed(type, combined.Overflows.Aggregate(because, NullReasons.Join), coalesce) with
@@ -376,11 +377,12 @@ internal sealed partial class ProcedureAnalyzer
         if (pieces.Any(p => p is null))
             return NotModelled(call, "an argument whose length as a string is not modelled yet.");
 
-        var parts = separated ? [.. pieces.Skip(1)] : pieces;
-        var separator = separated ? pieces[0]!.Value.Length * (parts.Count - 1) : 0;
-        var max = pieces.Any(p => p!.Value.Type.IsMax);
-        var national = pieces.Any(p => p!.Value.Type.IsNational);
-        return Typed(ScalarType.CharacterString(national, varying: true, max ? -1 : parts.Sum(p => p!.Value.Length) + separator), [], call);
+        var known = pieces.OfType<(ScalarType Type, int Length)>().ToList();
+        var parts = separated ? [.. known.Skip(1)] : known;
+        var separator = separated ? known[0].Length * (parts.Count - 1) : 0;
+        var max = known.Any(p => p.Type.IsMax);
+        var national = known.Any(p => p.Type.IsNational);
+        return Typed(ScalarType.CharacterString(national, varying: true, max ? -1 : parts.Sum(p => p.Length) + separator), [], call);
     }
 
     /// <summary>
@@ -435,6 +437,7 @@ internal sealed partial class ProcedureAnalyzer
         var mayOverflow = Arithmetic.MayOverflow(op, l, r, NumberOf(binary.SecondExpression));
         if (Uncertain(left) || Uncertain(right))
         {
+            // Never null: both operands were found above, and one by its fewest digits is found with it (OperandOf).
             var (lf, rf) = (OperandOf(left, binary.FirstExpression, least: true)!, OperandOf(right, binary.SecondExpression, least: true)!);
             if (Arithmetic.TypeOf(op, lf, rf) is not { } fewest || fewest.Scale != type.Scale || fewest.Type != type.Type)
                 return NotModelled(binary, "its type depends on whether SQL Server folds an operand to a constant, whose digits it would count.");

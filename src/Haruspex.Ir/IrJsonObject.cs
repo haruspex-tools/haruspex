@@ -113,6 +113,7 @@ internal sealed class IrJsonObject
 
     /// <summary>A string, or an error naming <paramref name="path"/>.</summary>
     public static string AsString(JsonElement element, string path) =>
+        // Never null: GetString is null only for a JSON null, and the element is a string.
         element.ValueKind == JsonValueKind.String ? element.GetString()! : throw new IrFormatException(path, "must be a string.");
 
     private static bool AsBoolean(JsonElement element, string path) => element.ValueKind switch

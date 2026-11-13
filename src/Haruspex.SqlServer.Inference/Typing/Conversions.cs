@@ -156,7 +156,7 @@ internal static class Conversions
         if (to.IsInteger)
         {
             var whole = ExactDecimal.Parse(decimal.Truncate(value).ToString(CultureInfo.InvariantCulture));
-            return whole >= to.Type.Least!.Value && whole <= to.Type.Greatest!.Value;
+            return to.Type.Least is { } least && to.Type.Greatest is { } greatest && whole >= least && whole <= greatest;
         }
 
         if (to.IsDecimal)

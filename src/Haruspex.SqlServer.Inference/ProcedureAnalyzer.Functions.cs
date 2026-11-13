@@ -62,7 +62,7 @@ internal sealed partial class ProcedureAnalyzer
         var dates = values.Select((v, i) => DateOperand(v, call.Parameters[i + 1])).ToList();
         if (dates.Any(t => t is null))
             return NotModelled(call, "an argument of this type is not modelled as a date.");
-        return Typed(type, NullReasons.Join(Reasons(values), DatetimeOverflow([.. dates.Select((t, i) => (t!, call.Parameters[i + 1]))], call)), call);
+        return Typed(type, NullReasons.Join(Reasons(values), DatetimeOverflow([.. dates.OfType<ScalarType>().Select((t, i) => (t, call.Parameters[i + 1]))], call)), call);
     }
 
     /// <summary>
@@ -180,7 +180,7 @@ internal sealed partial class ProcedureAnalyzer
             return unknown;
         if (StringOf(values[0]) is not { } type || (characters is not null && StringOf(values[1]) is null))
             return NotModelled(call, "an argument that is not a string is not modelled.");
-        var national = type.IsNational || (characters is not null && StringOf(values[1])!.IsNational);
+        var national = type.IsNational || (characters is not null && StringOf(values[1]) is { IsNational: true });
         return Typed(ScalarType.CharacterString(national, varying: true, type.Length), Reasons(values), call);
     }
 
@@ -263,7 +263,8 @@ internal sealed partial class ProcedureAnalyzer
         var types = values.Select(StringOf).ToList();
         if (types.Any(t => t is null))
             return NotModelled(call, "REPLACE of a value that is not a string is not modelled.");
-        return Typed(ScalarType.CharacterString(types.Any(t => t!.IsNational), varying: true, types[0]!.IsMax ? -1 : BuiltInType.MostBytes), Reasons(values), call);
+        var strings = types.OfType<ScalarType>().ToList();
+        return Typed(ScalarType.CharacterString(strings.Any(t => t.IsNational), varying: true, strings[0].IsMax ? -1 : BuiltInType.MostBytes), Reasons(values), call);
     }
 
     /// <summary><c>STRING_ESCAPE(s, 'json')</c>: nvarchar(max), NULL when s is.</summary>
@@ -351,11 +352,11 @@ internal sealed partial class ProcedureAnalyzer
             return LocalRelationValues.Unknown((UnknownShape)unknown.Shape);
         var types = values.Select((v, i) => v.IsLiveJson ? null : TypeOf(v)).ToList();
         ScalarType? type = null;
-        if (types.Count > 0 && types.All(t => t is { IsInteger: true }) && types.Select(t => t!.Type).Distinct().Count() == 1)
+        if (types.Count > 0 && types.All(t => t is { IsInteger: true }) && types.OfType<ScalarType>().Select(t => t.Type).Distinct().Count() == 1)
             type = types[0];
-        else if (types.Count > 0 && types.All(t => t is { IsDecimal: true }) && types.Select(t => t!.Type).Distinct().Count() == 1)
+        else if (types.Count > 0 && types.All(t => t is { IsDecimal: true }) && types.OfType<ScalarType>().Select(t => t.Type).Distinct().Count() == 1)
             // Decimals: each counts its own precision and scale, so every operand counts its type's.
-            type = TypeChain.Of([.. types.Select(t => Operand.OfType(t!))]) is { } common && types.All(t => Conversions.Converts(Operand.OfType(t!), common)) ? common : null;
+            type = TypeChain.Of([.. types.OfType<ScalarType>().Select(Operand.OfType)]) is { } common && types.OfType<ScalarType>().All(t => Conversions.Converts(Operand.OfType(t), common)) ? common : null;
         if (type is null)
             return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(reference)}: its arguments must be of one integer type, or decimals.", at));
         return new LocalRelationValues(["value"], [Typed(type, [], reference)], null);

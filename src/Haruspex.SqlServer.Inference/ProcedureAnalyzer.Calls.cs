@@ -149,7 +149,7 @@ internal sealed partial class ProcedureAnalyzer
 
         var (walked, name) = target switch
         {
-            ProcedureCall { Procedure: var callee } => (calls!.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted), at), (ObjectName?)callee.Name),
+            ProcedureCall { Procedure: var callee } => (calls.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted), at), (ObjectName?)callee.Name),
             UnknowableCall unknowable => (new Walked(null, [], new UnknownShape(Reason(unknowable.Kind), unknowable.Detail, at), []), unknowable.Name),
         };
 
@@ -157,7 +157,7 @@ internal sealed partial class ProcedureAnalyzer
         {
             // Its results cannot be known; a declaration of them stands in for them. What it did to the caller's tables is not
             // known either way: the declaration says nothing of them.
-            if (name is { } calledName && calls!.Declared(calledName) is var (declaredName, declaration))
+            if (name is { } calledName && calls.Declared(calledName) is var (declaredName, declaration))
             {
                 declaredUsed = Walked.Union(declaredUsed, [declaredName]);
                 var forgotten = Forgotten(state, new UnknownShape(why.Reason, $"{declaredName}'s results are declared, but what it does to temporary tables is not known: {why.Detail}", why.At), at);

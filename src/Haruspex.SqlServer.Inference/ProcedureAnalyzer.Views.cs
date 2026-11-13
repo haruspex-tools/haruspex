@@ -53,7 +53,7 @@ internal sealed partial class ProcedureAnalyzer
             : views.Read(view, hinted || ReadUncommitted(scope)),
         TableFunctionCall call => views is null
             ? LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(call.Syntax)}: a table-valued function is not modelled here.", At(call.Syntax)))
-            : TableFunction(call, scope.In(call.Arguments)),
+            : TableFunction(call, scope.In(call.Arguments), views),
         OpenJsonCall openJson => OpenJsonRelation(openJson, scope.In(openJson.Arguments)),
         SeriesCall series => GenerateSeries(series, scope.In(series.Arguments)),
         TemporaryTable temporary => Temporary(temporary.Local, scope.State),
@@ -83,9 +83,9 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>A table variable's columns as they stand in <paramref name="state"/>: each declared, holding the JSON written to it.</summary>
     private static LocalRelationValues AsWritten(LocalName name, LocalRelationValues declared, FlowState state) =>
-        declared.Names is null ? declared : declared with
+        declared is not { Names: { } columns, Values: { } values } ? declared : declared with
         {
-            Values = [.. declared.Names.Select((c, i) => state.Json.TryGetValue(new ColumnSlot(name, c), out var slot) ? slot.Read(declared.Values![i]) : declared.Values![i])],
+            Values = [.. columns.Select((c, i) => state.Json.TryGetValue(new ColumnSlot(name, c), out var slot) ? slot.Read(values[i]) : values[i])],
         };
 
     /// <summary>A placeholder location for an unknown that has none of its own; each read reports its own location instead.</summary>

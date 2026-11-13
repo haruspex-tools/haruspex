@@ -16,7 +16,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     /// <param name="symbol">The call, bound: which function it names was resolved by binding.</param>
     /// <param name="scope">The scope its arguments are read in.</param>
-    private LocalRelationValues TableFunction(TableFunctionCall symbol, ReadScope scope)
+    private LocalRelationValues TableFunction(TableFunctionCall symbol, ReadScope scope, ViewSummaries views)
     {
         var call = symbol.Syntax;
         var at = At(call);
@@ -26,31 +26,32 @@ internal sealed partial class ProcedureAnalyzer
         if (call.Columns.Count > 0)
             return Fails(IrUnknownReason.UnsupportedSource, "a table-valued function cannot have a column alias (317).");
         // Which function the call names, binding resolved; why none, it says, and the words for it are said here.
-        var (function, unnamed) = symbol.Callee switch
+        return symbol.Callee switch
         {
-            KnownCallee known => (known.Function, null),
-            ForeignCallee => (null, Fails(IrUnknownReason.UnsupportedSource, "a function of another database is not modelled yet.")),
-            AmbiguousCallee ambiguous => (null, Fails(IrUnknownReason.UnresolvedTable, $"{ambiguous.Name} is not schema-qualified, and {string.Join(" and ", ambiguous.Candidates.Select(c => c.Name))} have that name.")),
-            MissingCallee => ((Function?)null, Fails(IrUnknownReason.UnresolvedTable, "there is no such function in the project.")),
+            KnownCallee known => Rows(known.Function),
+            ForeignCallee => Fails(IrUnknownReason.UnsupportedSource, "a function of another database is not modelled yet."),
+            AmbiguousCallee ambiguous => Fails(IrUnknownReason.UnresolvedTable, $"{ambiguous.Name} is not schema-qualified, and {string.Join(" and ", ambiguous.Candidates.Select(c => c.Name))} have that name."),
+            MissingCallee => Fails(IrUnknownReason.UnresolvedTable, "there is no such function in the project."),
         };
-        if (function is null)
-            return unnamed!;
 
-        if (function.Redefinition is { } redefinition)
-            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.Redefined, Redefinitions.Why(redefinition), redefinition.At));
-        if (function is ScalarFunction { Body: ClrBody } or TableFunction { Body: ClrBody })
-            return Fails(IrUnknownReason.ExternalCode, $"{function.Name} is a CLR function: its rows come from .NET code.");
-        if (function is ScalarFunction)
-            return Fails(IrUnknownReason.UnresolvedTable, $"{function.Name} is a scalar function, not a table.");
+        LocalRelationValues Rows(Function function)
+        {
+            if (function.Redefinition is { } redefinition)
+                return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.Redefined, Redefinitions.Why(redefinition), redefinition.At));
+            if (function is ScalarFunction { Body: ClrBody } or TableFunction { Body: ClrBody })
+                return Fails(IrUnknownReason.ExternalCode, $"{function.Name} is a CLR function: its rows come from .NET code.");
+            if (function is ScalarFunction)
+                return Fails(IrUnknownReason.UnresolvedTable, $"{function.Name} is a scalar function, not a table.");
 
-        var parameters = function.Parameters;
-        if (call.Parameters.Count != parameters.Count)
-            return Fails(IrUnknownReason.UnsupportedSource, $"{function.Name} takes {parameters.Count} arguments.");
+            var parameters = function.Parameters;
+            if (call.Parameters.Count != parameters.Count)
+                return Fails(IrUnknownReason.UnsupportedSource, $"{function.Name} takes {parameters.Count} arguments.");
 
-        var arguments = new Dictionary<string, Value>(StringComparer.OrdinalIgnoreCase);
-        for (var i = 0; i < parameters.Count; i++)
-            arguments[parameters[i].Name] = Argument(parameters[i], call.Parameters[i], scope);
-        return views!.Function(function, arguments, ReadUncommitted(scope));
+            var arguments = new Dictionary<string, Value>(StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < parameters.Count; i++)
+                arguments[parameters[i].Name] = Argument(parameters[i], call.Parameters[i], scope);
+            return views.Function(function, arguments, ReadUncommitted(scope));
+        }
     }
 
     /// <summary>
@@ -140,7 +141,7 @@ internal sealed partial class ProcedureAnalyzer
             var ordinals = key.Columns.Select(c => table.Columns.ToList().FindIndex(x => x.Name.Equals(c, StringComparison.OrdinalIgnoreCase))).ToList();
             var types = key.Columns.Select(c => SchemaRules.ResolveType(model, table.Column(c)?.Type)?.Type).ToList();
             if (ordinals.All(o => o >= 0) && types.All(t => t is not null))
-                keys.Add(new RelationKey([.. ordinals], [.. types!]));
+                keys.Add(new RelationKey([.. ordinals], [.. types.OfType<BuiltInType>()]));
         }
 
         // What its nvarchar(max) columns hold as JSON is what its body writes to them: the body is walked as a

@@ -33,6 +33,7 @@ internal sealed partial class ProcedureAnalyzer
     private Value Window(FunctionCall call, ReadScope scope, BuiltInFunction function, WindowRule rule)
     {
         var name = function.Name;
+        // Never null: the function table reads a call as a window only when it has OVER (FunctionTable).
         var over = call.OverClause!;
         EquatableArray<IrNullReason> Framed() => rule.EmptyFrame && MayBeEmpty(over) ? [new IrNullReason(IrNullRule.EmptyFrame, At(call).ToString())] : [];
         EquatableArray<IrNullReason> Sample() => rule.TooFewValues ? [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())] : [];
@@ -40,6 +41,7 @@ internal sealed partial class ProcedureAnalyzer
         switch (rule.Result)
         {
             case WindowResult.Fixed:
+                // Never null: a fixed result's rule names its type (the window rules of the function table).
                 return Typed(ScalarType.Of(rule.Type!), rule.CountOverflow ? [new IrNullReason(IrNullRule.CountOverflow, At(call).ToString())] : [], call);
 
             case WindowResult.Sum:

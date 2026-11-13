@@ -85,7 +85,7 @@ public static class ProcedureSelection
             }
             else if (matches.All(Excluded))
             {
-                var schemas = string.Join(", ", matches.Select(m => config.Schema(m.Schema)!.Name).Distinct(StringComparer.Ordinal).Select(s => $"schemas.{s}.exclude"));
+                var schemas = string.Join(", ", matches.Select(m => config.Schema(m.Schema)?.Name).OfType<string>().Distinct(StringComparer.Ordinal).Select(s => $"schemas.{s}.exclude"));
                 problems.Add($"--include '{pattern.Text}' matches only procedures that {schemas} leaves out, so it selects nothing.");
             }
         }

@@ -103,7 +103,9 @@ internal sealed partial class ProcedureAnalyzer
 
         foreach (var (name, table) in tableVariables)
         {
-            foreach (var (column, value) in table.Names!.Zip(table.Values!))
+            if (table is not { Names: { } columns, Values: { } values })
+                continue;
+            foreach (var (column, value) in columns.Zip(values))
             {
                 if (Traced(value))
                     initial = initial.WithJson(new ColumnSlot(name, column), JsonSlot.Empty);
@@ -308,7 +310,7 @@ internal sealed partial class ProcedureAnalyzer
                     return Pass<FlowState>.Stop();
                 }
 
-                return Pass<FlowState>.To(FlowState.Join([state, body.Next, body.Continues], at)!);
+                return Pass<FlowState>.To(FlowState.Join(FlowState.Join(state, body.Next, at), body.Continues, at));
             },
 
             // JSON built from itself grows at every pass (SET @x = (SELECT json_query(@x) AS c FOR JSON PATH)), so after a few its
@@ -436,7 +438,7 @@ internal sealed partial class ProcedureAnalyzer
         if (select.QueryExpression is QuerySpecification { SelectElements: var elements } query && elements.All(e => e is SelectSetVariable))
             return WithCtes(select.WithCtesAndXmlNamespaces, Reading(state), scope => SetVariables(query, state, scope), _ => SetVariables(query, state, Reading(state), unknown: true));
 
-        var result = Select(select, Reading(state))!;
+        var result = Select(select, Reading(state))!; // Never null: a SELECT that returns none (INTO, assignments) is read above.
         appended++;
         return state.WithResults(state.Results.Append(result, At(select)));
     }
@@ -496,6 +498,7 @@ internal sealed partial class ProcedureAnalyzer
                 return Unknown(name, Unsupported(IrUnknownReason.UnnamedColumn, $"SELECT … INTO {name} has a column without a name, or two of one name, which SQL Server refuses.", at));
             // Through a set operation SQL Server does not copy IDENTITY (observed: Select_into_from_a_union_does_not_copy_an_identity).
             var identity = select.QueryExpression is QuerySpecification query ? Identities(query, scope) : new bool?[row.Columns.Count];
+            // Never null: a column without a name was refused above.
             return new KnownTable(name, [.. row.Columns.Select((c, i) => new TempColumn(c.Name!, Stored(c.Value, $"{name}.{c.Name}", c.At, c.Expression), null, identity[i]))]);
         }, why => Unknown(name, why));
         return state.WithTemp(name, table);
@@ -888,10 +891,11 @@ internal sealed partial class ProcedureAnalyzer
             var changed = drop
                 ? declaration with { Checks = [.. declaration.Checks.Where(k => !Matches(k))] }
                 : Disabled(declaration, k => Matches(k), at);
+            // Never null: the column is its own declaration's.
             return c with { Value = Declared(changed, changed.Column(c.Name)!, name.Text, temporary: true), Declaration = changed };
         })];
 
-        bool Matches(CheckConstraint check) => !named || constraint!.Equals(check.Name, StringComparison.OrdinalIgnoreCase);
+        bool Matches(CheckConstraint check) => !named || (constraint is not null && constraint.Equals(check.Name, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -959,11 +963,11 @@ internal sealed partial class ProcedureAnalyzer
         // (observed: A_recursive_ctes_column_is_not_a_constant_even_when_every_member_is_one_literal), and the join drops
         // the anchor's digits (Value.Digits), so even a member that gives the anchor's literal again takes one more pass.
         // The members are bound once (Binder.BindWith); each pass attaches the CTE's values as they stand.
-        if (Holds(symbol, Query((BoundSpecification)members[0], scope)) is not { } current)
+        if (Holds(symbol, Query((BoundSpecification)members[0], scope)) is not { Names: { } columns, Values: { } anchor } current)
             return Fails(IrUnknownReason.UnsupportedQuery, "its anchor's columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
         LocalRelationValues? failed = null;
         var iteration = FixedPoint.Iterate(
-            current.Values!,
+            anchor,
             values =>
             {
                 var pass = scope.Naming(symbol, current with { Values = values });
@@ -978,7 +982,7 @@ internal sealed partial class ProcedureAnalyzer
                     }
 
                     for (var i = 0; i < next.Count; i++)
-                        next[i] = Value.JoinConverted(next[i], row.Columns[i].Value, row.Columns[i].At, $"{name}.{current.Names![i]}");
+                        next[i] = Value.JoinConverted(next[i], row.Columns[i].Value, row.Columns[i].At, $"{name}.{columns[i]}");
                 }
 
                 return Pass<EquatableArray<Value>>.To([.. next]);
@@ -987,7 +991,7 @@ internal sealed partial class ProcedureAnalyzer
         return iteration.End switch
         {
             IterationEnd.Settled => current with { Values = iteration.Last },
-            IterationEnd.Stopped => failed!,
+            IterationEnd.Stopped => failed!, // Never null: the step stops only after setting it.
             _ => Fails(IrUnknownReason.UnresolvedRecursion, $"its columns reached no fixed point in {FixedPoint.MostPasses} passes."),
         };
     }

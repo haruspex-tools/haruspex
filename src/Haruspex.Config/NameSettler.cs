@@ -210,6 +210,7 @@ internal sealed class NameSettler(
             return;
 
         var type = types[key];
+        // Never null: a recursive function's node is made with its identity (IrBuilder).
         var function = type.Identity!.Object;
         var generated = Generated(function, out var why);
         if (generated is null)

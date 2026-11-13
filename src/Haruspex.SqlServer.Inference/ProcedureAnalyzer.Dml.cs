@@ -196,7 +196,7 @@ internal sealed partial class ProcedureAnalyzer
         return WithCtes(with, at, statement =>
         {
             var output = binder.BindOutput(spec, clause, columns, from, where, statement.Names, inserted?.Names, deleted?.Names);
-            var scope = output.Pseudo.Aggregate(statement, (s, p) => s.Naming(p, p.Name == "inserted" ? inserted! : deleted!));
+            var scope = output.Pseudo.Aggregate(statement, (s, p) => (p.Name == "inserted" ? inserted : deleted) is { } values ? s.Naming(p, values) : s);
             var outerTarget = outputTarget;
             var outerUnmatched = unmatchedSource;
             outputTarget = output.Written;
@@ -358,7 +358,7 @@ internal sealed partial class ProcedureAnalyzer
     private bool Restructured(HashSet<LocalName> temps, DeclareCursorStatement declaration)
     {
         var changes = new Restructures();
-        body!.Accept(changes);
+        body!.Accept(changes); // Never null: a FETCH is read while the body is walked, which sets it.
         if (changes.Altered.Overlaps(temps) || changes.Created.Any(c => temps.Contains(c.Name) && c.After > declaration.LastTokenIndex))
             return true;
         foreach (var call in changes.Calls)

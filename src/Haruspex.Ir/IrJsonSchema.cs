@@ -299,7 +299,7 @@ public static class IrJsonSchema
     private static JsonObject Agreeing(JsonObject schema, string flag, string reasons, bool flagOptional = false)
     {
         var given = Having(flag, reasons);
-        given["properties"]![flag] = Node(("const", true));
+        given["properties"]![flag] = Node(("const", true)); // Never null: Having always writes properties.
         var without = flagOptional ? Node(("type", "object")) : Having(flag);
         without["properties"] = Node((flag, Node(("const", false))));
         without.Add("not", Having(reasons));

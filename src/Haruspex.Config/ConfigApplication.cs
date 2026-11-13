@@ -55,7 +55,7 @@ public static class ConfigApplication
             if (target.Count == 0)
             {
                 if (onlyDeclared)
-                    Unused(entry, entry.Procedure.Name!.Value.ToString());
+                    Unused(entry, entry.Procedure.Name is { } literal ? literal.ToString() : entry.Procedure.Text);
                 else
                     problems.Add(new ConfigProblem(ConfigSeverity.Error, config.File, entry.At, $"there is no procedure {entry.Procedure.Text} in the project."));
                 continue;
@@ -65,8 +65,8 @@ public static class ConfigApplication
             if (index < 0 && onlyDeclared)
             {
                 // Not selected: checked against what is inferred of it, and otherwise there for its callers.
-                if (declaredDocument?.Objects.FirstOrDefault(o => target.Any(t => t.ToString() == o.Id)) is { Results: { } inferred } checkedObject)
-                    Check(entry, checkedObject.Id, inferred, declaredDocument.Types);
+                if (entry.Results is { } declared && declaredDocument?.Objects.FirstOrDefault(o => target.Any(t => t.ToString() == o.Id)) is { Results: { } inferred } checkedObject)
+                    Check(entry, declared, checkedObject.Id, inferred, declaredDocument.Types);
                 else
                     Unused(entry, target[0].ToString());
                 continue;
@@ -98,7 +98,7 @@ public static class ConfigApplication
             {
                 if (results[index] is { } inferred)
                 {
-                    Check(entry, obj.Id, inferred, types);
+                    Check(entry, declaration, obj.Id, inferred, types);
                 }
                 else
                 {
@@ -152,9 +152,9 @@ public static class ConfigApplication
         return new ConfigApplied(named is null ? null : named with { Overrides = [.. document.Overrides, .. claims] }, [.. problems]);
 
         // A declaration of results haruspex infers: an error if they differ, a warning if not (it can go).
-        void Check(ProcedureOverride entry, string id, IReadOnlyList<IrResult> inferred, IReadOnlyDictionary<string, IrObjectType> inferredTypes)
+        void Check(ProcedureOverride entry, ResultsDeclaration declared, string id, IReadOnlyList<IrResult> inferred, IReadOnlyDictionary<string, IrObjectType> inferredTypes)
         {
-            problems.Add(ResultsComparison.Difference(inferred, inferredTypes, entry.Results!) is { } difference
+            problems.Add(ResultsComparison.Difference(inferred, inferredTypes, declared) is { } difference
                 ? new ConfigProblem(ConfigSeverity.Error, config.File, entry.At,
                     $"haruspex infers the results of {id}, and the declaration disagrees at {difference} A declaration is for results that can't be inferred; to correct inferred results, override a path under \"paths\".")
                 : new ConfigProblem(ConfigSeverity.Warning, config.File, entry.At,
@@ -192,6 +192,7 @@ public static class ConfigApplication
         var keys = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (key, type) in declaration.Types)
         {
+            // Never null: every type a declaration holds is made with its identity (DeclaredSchema).
             var path = type.Identity!.Path;
             var candidate = $"{id}:{path}";
             for (var n = 2; types.ContainsKey(candidate) || keys.ContainsValue(candidate); n++)
@@ -206,6 +207,7 @@ public static class ConfigApplication
             types[keys[key]] = type with
             {
                 Fields = [.. type.Fields.Select(f => f with { Type = Rekey(f.Type) })],
+                // Never null: as above.
                 Identity = type.Identity! with { Object = id },
             };
         }

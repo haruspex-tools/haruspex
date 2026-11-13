@@ -5,5 +5,6 @@ internal readonly record struct Pass<T>(T Next, bool Stopped)
 {
     public static Pass<T> To(T next) => new(next, false);
 
+    // Never null: as read, since FixedPoint.Iterate reads Next only of a pass that is not stopped, which has no next state.
     public static Pass<T> Stop() => new(default!, true);
 }

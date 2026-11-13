@@ -224,6 +224,7 @@ internal sealed partial class ProcedureAnalyzer
             return Unsupported(IrUnknownReason.DuplicateColumn, $"The column name '{duplicate.Key}' is used more than once.", duplicate.Skip(1).First().At);
 
         var fields = row.Columns.Select(c => new FieldShape(
+            // Never null: a column without a name was reported above.
             c.Name!,
             // A rowset column delivers JSON as text: the driver sees an nvarchar. Its content is what it parses to.
             c.Value.IsLiveJson ? new JsonTextShape(c.Value.Shape) : c.Value.Shape,
@@ -326,6 +327,7 @@ internal sealed partial class ProcedureAnalyzer
                 continue;
             }
 
+            // Never null: an entry holds a leaf, read above, or a nested object.
             var nested = JsonObject(child!, includeNulls);
 
             // A nested object whose every value is null is left out of the output. With INCLUDE_NULL_VALUES it is
@@ -517,7 +519,7 @@ internal sealed partial class ProcedureAnalyzer
         // A function's body read in a statement that reads uncommitted reads its tables so too.
         var (result, why) = (ReadUncommitted(scope) ? functions.Uncommitted : functions).Find(callee, at);
         if (result is null)
-            return Value.Unknown(why!);
+            return Value.Unknown(why!); // Never null: Find gives a return or why there is none.
 
         var because = new List<IrNullReason>(result.Content is null ? [new IrNullReason(IrNullRule.FunctionResult, at.ToString())] : result.NullableBecause);
 

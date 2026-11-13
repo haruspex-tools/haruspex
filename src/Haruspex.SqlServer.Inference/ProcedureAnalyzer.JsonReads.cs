@@ -215,7 +215,7 @@ internal sealed partial class ProcedureAnalyzer
             // (observed: Openjson_with_converts_a_varchar_to_the_databases_code_page), so its set holds only when every value is
             // ASCII. Which code page the source column has is not followed.
             var codePage = from.Type.IsAnyOf(BuiltInType.VarChar, BuiltInType.Char) && sourceType.Facets?.Values is { } items && items.Items.Any(v => v.Text.Any(c => c > '\u007f'));
-            return Value.Computed(codePage ? source.WithFacets(sourceType.Facets! with { Values = null }) : source, []);
+            return Value.Computed(codePage && sourceType.Facets is { } facets ? source.WithFacets(facets with { Values = null }) : source, []);
         }
 
         // A string into a string: never NULL, cut short past the target's length (observed). Its facts hold when every value fits.
@@ -241,7 +241,7 @@ internal sealed partial class ProcedureAnalyzer
 
         return null;
 
-        static bool Within(ExactDecimal d, ScalarType type) => d >= type.Type.Least!.Value && d <= type.Type.Greatest!.Value;
+        static bool Within(ExactDecimal d, ScalarType type) => type.Type.Least is { } least && type.Type.Greatest is { } greatest && d >= least && d <= greatest;
 
         // A string's facts that hold of the same values in the target type: its length bound and its set.
         static IrFacets? Keep(IrFacets? type, IrFacets? source) =>
@@ -322,10 +322,10 @@ internal sealed partial class ProcedureAnalyzer
             }
 
             // Every row has it, not null, or a strict path fails where it is missing.
-            var present = found is { Shape: not null, MayBeNull: false } && (!found.MayBeMissing || path!.Strict);
+            var present = found is { Shape: not null, MayBeNull: false } && (!found.MayBeMissing || path is { Strict: true });
             if (item.AsJson)
             {
-                values.Add(present && found!.Shape is ObjectShape or TupleShape or ArrayShape or RecordShape
+                values.Add(present && found is { Shape: ObjectShape or TupleShape or ArrayShape or RecordShape }
                     ? new Value(found.Shape, [], IsLiveJson: true)
                     : found?.Shape is { } some && Openable(some)
                         ? new Value(some, [JsonValue(where)], IsLiveJson: true)
@@ -354,7 +354,7 @@ internal sealed partial class ProcedureAnalyzer
         TupleShape tuple => [.. Enumerable.Range(0, tuple.Items.Count).Select(i => i.ToString(CultureInfo.InvariantCulture))],
         ArrayShape { MaxItems: { } most } when most <= 100 => [.. Enumerable.Range(0, most).Select(i => i.ToString(CultureInfo.InvariantCulture))],
         UnionShape union when union.Variants.Select(Keys).ToList() is var all && all.All(k => k is not null) =>
-            [.. all.SelectMany(k => k!).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
+            [.. all.OfType<IReadOnlyList<string>>().SelectMany(k => k).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
         _ => null,
     };
 
@@ -416,7 +416,7 @@ internal sealed partial class ProcedureAnalyzer
             ScalarShape or JsonTextShape => [1],
             ArrayShape or TupleShape => [4],
             ObjectShape or RecordShape => [5],
-            UnionShape u when u.Variants.Select(TypeOf).ToList() is var each && each.All(t => t is not null) => [.. each.SelectMany(t => t!)],
+            UnionShape u when u.Variants.Select(TypeOf).ToList() is var each && each.All(t => t is not null) => [.. each.OfType<HashSet<int>>().SelectMany(t => t)],
             _ => null,
         };
     }

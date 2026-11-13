@@ -158,7 +158,8 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
 
         Keywords(schema, at);
         var members = Members(schema);
-        var format = members.TryGetValue("format", out var f) && f.Value is JsonStringValue fs ? fs.Value : null;
+        var formatted = members.TryGetValue("format", out var f) && f.Value is JsonStringValue fs ? fs : null;
+        var format = formatted?.Value;
         var type = nonNull[0] switch
         {
             "object" => ObjectNode(schema, at, irPath),
@@ -188,7 +189,8 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
 
         IrScalar Unchecked(IrScalar scalar)
         {
-            Warning(f!.Value, Child(at, "format"), $"\"{format}\" is not a format haruspex checks, so the generated schema does not check it.");
+            if (formatted is not null)
+                Warning(formatted, Child(at, "format"), $"\"{format}\" is not a format haruspex checks, so the generated schema does not check it.");
             return scalar;
         }
 

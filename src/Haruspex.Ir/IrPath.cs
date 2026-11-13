@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -46,7 +47,7 @@ public static class IrPath
     /// Reads a path written by <see cref="Render"/>, or says why the text is not one. The first key may be written with
     /// or without its dot. The empty text is the empty path.
     /// </summary>
-    public static bool TryParse(string text, out IReadOnlyList<IrPathSegment> segments, out string? error)
+    public static bool TryParse(string text, out IReadOnlyList<IrPathSegment> segments, [NotNullWhen(false)] out string? error)
     {
         ArgumentNullException.ThrowIfNull(text);
         var result = new List<IrPathSegment>();

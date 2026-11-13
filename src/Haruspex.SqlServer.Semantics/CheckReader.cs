@@ -187,11 +187,11 @@ public static class CheckReader
                 // SQL Server pads the shorter string with spaces before comparing, so a literal's own trailing spaces
                 // mean nothing: 'a' passes IN ('a '). They are removed, which makes 'b' and 'b  ' one item.
                 var strings = values.Select(String).ToList();
-                return strings.Any(s => s is null) ? null : new Proved(Strings: [.. strings.Select(s => s!.TrimEnd(' ')).Distinct(StringComparer.Ordinal)]);
+                return strings.Any(s => s is null) ? null : new Proved(Strings: [.. strings.OfType<string>().Select(s => s.TrimEnd(' ')).Distinct(StringComparer.Ordinal)]);
             }
 
             var numbers = values.Select(Number).ToList();
-            return numbers.Any(n => n is null) ? null : new Proved(Numbers: [.. numbers.Select(n => n!.Value).Distinct()]);
+            return numbers.Any(n => n is null) ? null : new Proved(Numbers: [.. numbers.OfType<ExactDecimal>().Distinct()]);
         }
 
         private Proved? Comparison(BooleanComparisonExpression comparison)

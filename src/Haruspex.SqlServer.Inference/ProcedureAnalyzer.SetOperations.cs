@@ -258,7 +258,7 @@ internal sealed partial class ProcedureAnalyzer
         {
             var own = column.Value.Shape as ScalarShape;
             var set = own?.Type.Facets?.Values;
-            if (set is not null && !Keeps(set, own!.BuiltIn, type))
+            if (own is { Type.Facets.Values: { } kept } && !Keeps(kept, own.BuiltIn, type))
                 return null;
             set ??= column.Expression is { } expression ? LiteralSet([expression], type, expression) : null;
             if (set is null)

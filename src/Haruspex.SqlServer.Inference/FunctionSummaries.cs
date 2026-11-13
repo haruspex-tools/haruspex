@@ -56,6 +56,9 @@ internal sealed class FunctionSummaries
     private readonly Dictionary<ObjectName, ObjectShape> nodes = [];
     private readonly Dictionary<ObjectName, int> component = [];
     private readonly List<List<ObjectName>> components = [];
+
+    /// <summary>The model's scalar functions by name, among which the components are found.</summary>
+    private readonly Dictionary<ObjectName, ScalarFunction> scalars = [];
     private readonly HashSet<int> recursiveComponents = [];
 
     /// <summary>The results assumed for the component being solved, at the current step.</summary>
@@ -235,7 +238,7 @@ internal sealed class FunctionSummaries
     }
 
     /// <summary>A scalar function of a component: the components are found among the scalar functions only.</summary>
-    private ScalarFunction Scalar(ObjectName name) => (ScalarFunction)model.FindFunction(name)!;
+    private ScalarFunction Scalar(ObjectName name) => scalars[name];
 
     /// <summary>No information: the result before any step.</summary>
     private FunctionReturn Start(ScalarFunction function)
@@ -404,6 +407,8 @@ internal sealed class FunctionSummaries
         // solved once, after the components it calls, whichever Tarjan's algorithm numbers first, so no test can hold it; it
         // keeps the walk the same from one model to the next, so that a fault found in one run is found again.
         var scalar = model.Functions.OfType<ScalarFunction>().OrderBy(f => f.Name.ToString(), StringComparer.Ordinal).ToList();
+        foreach (var function in scalar)
+            scalars.TryAdd(function.Name, function);
         var calls = scalar.ToDictionary(
             f => f.Name,
             f => (f.Body is SqlBody body ? Calls(body.Statements) : []).Where(c => model.FindFunction(c) is ScalarFunction).Distinct().ToList());

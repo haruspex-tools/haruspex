@@ -121,7 +121,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
                 at), []);
         }
 
-        var joined = FlowState.Join(FlowState.Start([]).WithTemps(frame.Context.Temps), FlowState.Start([]).WithTemps(context.Temps), at)!.Temps;
+        var joined = FlowState.Join(FlowState.Start([]).WithTemps(frame.Context.Temps), FlowState.Start([]).WithTemps(context.Temps), at).Temps;
         var wider = frame.Context with { Temps = joined, ReadUncommitted = frame.Context.ReadUncommitted || context.ReadUncommitted };
         if (!wider.Equals(frame.Context))
         {
@@ -157,6 +157,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
         {
             // The least fixed point of a walk, over what the recursive calls are assumed to return and the tables they start
             // from. A walk that meets no call of itself, or can't be listed, is the answer at once.
+            // Never null: as read, since FixedPoint.Iterate takes at least one pass, and each sets it first.
             Walked walked = null!;
             var iteration = FixedPoint.Iterate(
                 new Assumption(null, context),

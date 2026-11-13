@@ -71,6 +71,7 @@ public static class IrJsonReader
                 foreach (var property in element.EnumerateObject())
                 {
                     var at = path + IrPath.Key(property.Name);
+                    // Never null: GetString is null only for a JSON null, and the value is a string.
                     if (property.Name == "ref" && property.Value.ValueKind == JsonValueKind.String && !types.ContainsKey(property.Value.GetString()!))
                         throw new IrFormatException(at, $"is \"{property.Value.GetString()}\", which names no type in $.types.");
                     RequireReferencesResolve(property.Value, at, types);
@@ -339,6 +340,7 @@ public static class IrJsonReader
     private static IrValueSet ValueSet(IrJsonObject json)
     {
         var set = new IrValueSet(
+            // Never null: GetString is null only for a JSON null, and the item is a string.
             [.. json.Array("items").Select(i => i.Item.ValueKind == JsonValueKind.String ? new IrValue(i.Item.GetString()!, IsString: true) : new IrValue(Number(i.Item, i.Path), IsString: false))],
             json.Name<IrValueMatch>("match", IrWireNames.TryParse, "a value set's match"),
             [.. json.Array("from").Select(f => Source(IrJsonObject.At(f.Item, f.Path)))]);
