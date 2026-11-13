@@ -1,0 +1,50 @@
+column hr.salesperson.display_name nvarchar(100) at tables/salesperson.sql:4:5
+column hr.salesperson.hired_on date at tables/salesperson.sql:5:5
+column hr.salesperson.salesperson_id int at tables/salesperson.sql:3:5
+column sales.customer.created_at datetime2(0) at tables/customer.sql:8:5
+column sales.customer.customer_id int at tables/customer.sql:3:5
+column sales.customer.email nvarchar(256) at tables/customer.sql:5:5
+column sales.customer.name nvarchar(100) at tables/customer.sql:4:5
+column sales.customer.region_code char(2) at tables/customer.sql:7:5
+column sales.order.customer_id int at tables/order.sql:4:5
+column sales.order.delivery_time time(0) at tables/order.sql:9:5
+column sales.order.is_priority bit at tables/order.sql:12:5
+column sales.order.notes nvarchar(max) at tables/order.sql:13:5
+column sales.order.order_id int at tables/order.sql:3:5
+column sales.order.placed_at datetime2(0) at tables/order.sql:7:5
+column sales.order.reference uniqueidentifier at tables/order.sql:6:5
+column sales.order.salesperson_id int at tables/order.sql:5:5
+column sales.order.shipped_at datetimeoffset(0) at tables/order.sql:8:5
+column sales.order.status varchar(20) at tables/order.sql:10:5
+column sales.order.total decimal(19,2) at tables/order.sql:11:5
+column sales.order_line.note nvarchar(200) at tables/order_line.sql:9:5
+column sales.order_line.order_id int at tables/order_line.sql:5:5
+column sales.order_line.order_line_id int at tables/order_line.sql:4:5
+column sales.order_line.product_id int at tables/order_line.sql:6:5
+column sales.order_line.quantity smallint at tables/order_line.sql:7:5
+column sales.order_line.unit_price decimal(19,2) at tables/order_line.sql:8:5
+column sales.product.legacy_code bigint at tables/product.sql:7:5
+column sales.product.name nvarchar(100) at tables/product.sql:5:5
+column sales.product.picture varbinary(max) at tables/product.sql:8:5
+column sales.product.product_id int at tables/product.sql:3:5
+column sales.product.sku varchar(20) at tables/product.sql:4:5
+column sales.product.weight_kg decimal(9,3) at tables/product.sql:6:5
+key hr.salesperson unnamed (salesperson_id) at tables/salesperson.sql:3:45
+key sales.customer pk_customer (customer_id) at tables/customer.sql:3:58
+key sales.order pk_order (order_id) at tables/order.sql:14:5
+key sales.order_line pk_order_line (order_line_id) at tables/order_line.sql:10:5
+key sales.product unnamed (product_id) at tables/product.sql:3:43
+parameter sales.archive_orders @before at procedures/archive_orders.sql:2:5
+parameter sales.get_order @order_id at procedures/get_order.sql:2:5
+parameter sales.list_orders @customer_id at procedures/list_orders.sql:2:5
+procedure sales.archive_orders at procedures/archive_orders.sql:1:1
+procedure sales.get_order at procedures/get_order.sql:1:1
+procedure sales.list_customer_orders at procedures/list_customer_orders.sql:1:1
+procedure sales.list_customers at procedures/list_customers.sql:1:1
+procedure sales.list_orders at procedures/list_orders.sql:1:1
+procedure sales.order_report at procedures/order_report.sql:1:1
+table hr.salesperson at tables/salesperson.sql:1:1
+table sales.customer at tables/customer.sql:1:1
+table sales.order at tables/order.sql:1:1
+table sales.order_line at tables/order_line.sql:1:1
+table sales.product at tables/product.sql:1:1

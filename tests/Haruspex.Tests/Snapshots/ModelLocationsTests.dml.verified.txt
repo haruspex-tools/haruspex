@@ -1,0 +1,84 @@
+cascading key depot.pick_line to depot.pick_order at tables/pick_line.sql:10:33
+cascading key depot.stock to depot.part at tables/stock.sql:4:38
+check depot.pick_line unnamed at tables/pick_line.sql:5:22
+check depot.pick_order unnamed at tables/pick_order.sql:5:33
+check depot.stock unnamed at tables/stock.sql:5:22
+column depot.error_log.error_id int at tables/error_log.sql:3:5
+column depot.error_log.logged_at datetime2(0) at tables/error_log.sql:6:5
+column depot.error_log.message nvarchar(4000) at tables/error_log.sql:5:5
+column depot.error_log.procedure_name sysname at tables/error_log.sql:4:5
+column depot.legacy_note.note_id int at tables/legacy_note.sql:4:5
+column depot.legacy_note.text nvarchar(100) at tables/legacy_note.sql:5:5
+column depot.part.code varchar(20) at tables/part.sql:4:5
+column depot.part.name nvarchar(60) at tables/part.sql:5:5
+column depot.part.note nvarchar(200) at tables/part.sql:6:5
+column depot.part.part_id int at tables/part.sql:3:5
+column depot.pick_line.order_id int at tables/pick_line.sql:3:5
+column depot.pick_line.part_id int at tables/pick_line.sql:4:5
+column depot.pick_line.qty int at tables/pick_line.sql:5:5
+column depot.pick_order.note nvarchar(200) at tables/pick_order.sql:6:5
+column depot.pick_order.order_id int at tables/pick_order.sql:3:5
+column depot.pick_order.placed_at datetime2(0) at tables/pick_order.sql:4:5
+column depot.pick_order.status varchar(10) at tables/pick_order.sql:5:5
+column depot.price.amount decimal(9,2) at tables/price.sql:5:5
+column depot.price.part_id int at tables/price.sql:4:5
+column depot.price_list.amount decimal(9,2) at tables/price.sql:11:5
+column depot.price_list.part_id int at tables/price.sql:10:5
+column depot.stock.part_id int at tables/stock.sql:4:5
+column depot.stock.qty int at tables/stock.sql:5:5
+column depot.stock.shelf nvarchar(10) at tables/stock.sql:6:5
+column depot.stock_move.delta int at tables/stock_move.sql:5:5
+column depot.stock_move.move_id int at tables/stock_move.sql:3:5
+column depot.stock_move.moved_at datetime2(0) at tables/stock_move.sql:6:5
+column depot.stock_move.part_id int at tables/stock_move.sql:4:5
+key depot.error_log unnamed (error_id) at tables/error_log.sql:3:42
+key depot.legacy_note unnamed (note_id) at tables/legacy_note.sql:4:26
+key depot.part unnamed (code) at tables/part.sql:4:31
+key depot.part unnamed (part_id) at tables/part.sql:3:26
+key depot.pick_line unnamed (order_id, part_id) at tables/pick_line.sql:6:5
+key depot.pick_order unnamed (order_id) at tables/pick_order.sql:3:42
+key depot.price unnamed (part_id) at tables/price.sql:4:26
+key depot.price_list unnamed (part_id) at tables/price.sql:10:26
+key depot.stock unnamed (part_id) at tables/stock.sql:4:26
+key depot.stock_move unnamed (move_id) at tables/stock_move.sql:3:41
+parameter depot.add_note @note_id at procedures/add_note.sql:3:5
+parameter depot.add_note @text at procedures/add_note.sql:4:5
+parameter depot.add_note_by_synonym @note_id at procedures/add_note_by_synonym.sql:3:5
+parameter depot.add_note_by_synonym @text at procedures/add_note_by_synonym.sql:4:5
+parameter depot.cancel_order @order_id at procedures/cancel_order.sql:4:5
+parameter depot.get_order @order_id at procedures/get_order.sql:3:5
+parameter depot.list_parts @code at procedures/list_parts.sql:3:5
+parameter depot.log_error @message at procedures/log_error.sql:4:5
+parameter depot.log_error @procedure at procedures/log_error.sql:3:5
+parameter depot.low_floor @start at procedures/low_floor.sql:4:5
+parameter depot.pick_order_lines @order_id at procedures/pick_order.sql:3:5
+parameter depot.place_order @note at procedures/place_order.sql:6:5
+parameter depot.place_order @part_id at procedures/place_order.sql:4:5
+parameter depot.place_order @qty at procedures/place_order.sql:5:5
+procedure depot.add_note at procedures/add_note.sql:2:1
+procedure depot.add_note_by_synonym at procedures/add_note_by_synonym.sql:2:1
+procedure depot.cancel_order at procedures/cancel_order.sql:3:1
+procedure depot.get_order at procedures/get_order.sql:2:1
+procedure depot.list_parts at procedures/list_parts.sql:2:1
+procedure depot.log_error at procedures/log_error.sql:2:1
+procedure depot.low_floor at procedures/low_floor.sql:3:1
+procedure depot.peek_parts at procedures/peek_parts.sql:2:1
+procedure depot.pick_order_lines at procedures/pick_order.sql:2:1
+procedure depot.place_order at procedures/place_order.sql:3:1
+procedure depot.prune_prices at procedures/prune_prices.sql:3:1
+procedure depot.purge at procedures/purge.sql:3:1
+procedure depot.recent_note at procedures/recent_note.sql:1:1
+procedure depot.restock at procedures/restock.sql:3:1
+procedure depot.sync_prices at procedures/sync_prices.sql:4:1
+synonym depot.legacy_note_alias for depot.legacy_note
+table depot.error_log at tables/error_log.sql:1:1
+table depot.legacy_note at tables/legacy_note.sql:2:1
+table depot.part at tables/part.sql:1:1
+table depot.pick_line at tables/pick_line.sql:1:1
+table depot.pick_order at tables/pick_order.sql:1:1
+table depot.price at tables/price.sql:2:1
+table depot.price_list at tables/price.sql:8:1
+table depot.stock at tables/stock.sql:2:1
+table depot.stock_move at tables/stock_move.sql:1:1
+trigger depot.legacy_note_echo on depot.legacy_note at triggers/legacy_note_echo.sql:2:1
+trigger depot.stock_audit on depot.stock at triggers/stock_audit.sql:2:1

@@ -1,0 +1,167 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "plot.bed_json",
+      "name": "BedJson",
+      "kind": "procedure",
+      "at": "later.sql:11:9",
+      "parameters": [
+        {
+          "name": "@bed_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "BedJsonRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "later.sql:13:9"
+            }
+          ],
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "BedJsonRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "plot.bed_json",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "soil",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(5)",
+            "maxLength": {
+              "value": 5,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(5)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "clay",
+                "loam",
+                "sand"
+              ],
+              "from": [
+                {
+                  "check": "plot.ck_bed_soil"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "sowings",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "BedJsonSowing"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "later.sql:14:16"
+            }
+          ]
+        }
+      ]
+    },
+    "BedJsonSowing": {
+      "kind": "object",
+      "identity": {
+        "procedure": "plot.bed_json",
+        "path": "results[0].sowings[]"
+      },
+      "fields": [
+        {
+          "name": "crop",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "sown",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "harvested",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "plot.sowing.harvested"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

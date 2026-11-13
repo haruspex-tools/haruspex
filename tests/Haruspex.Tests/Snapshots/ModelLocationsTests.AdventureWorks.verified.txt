@@ -1,0 +1,758 @@
+cascading key Sales.SalesOrderDetail to Sales.SalesOrderHeader at instawdb.sql:3961:5
+cascading key Sales.SalesOrderHeaderSalesReason to Sales.SalesOrderHeader at instawdb.sql:4035:5
+check HumanResources.Employee CK_Employee_BirthDate at instawdb.sql:1163:5
+check HumanResources.Employee CK_Employee_Gender at instawdb.sql:1166:5
+check HumanResources.Employee CK_Employee_HireDate at instawdb.sql:1165:5
+check HumanResources.Employee CK_Employee_MaritalStatus at instawdb.sql:1164:5
+check HumanResources.Employee CK_Employee_SickLeaveHours at instawdb.sql:1168:5
+check HumanResources.Employee CK_Employee_VacationHours at instawdb.sql:1167:5
+check HumanResources.EmployeeDepartmentHistory CK_EmployeeDepartmentHistory_EndDate at instawdb.sql:1179:5
+check HumanResources.EmployeePayHistory CK_EmployeePayHistory_PayFrequency at instawdb.sql:1189:5
+check HumanResources.EmployeePayHistory CK_EmployeePayHistory_Rate at instawdb.sql:1190:5
+check Person.Person CK_Person_EmailPromotion at instawdb.sql:1244:5
+check Person.Person CK_Person_PersonType at instawdb.sql:1245:5
+check Production.BillOfMaterials CK_BillOfMaterials_BOMLevel at instawdb.sql:1012:5
+check Production.BillOfMaterials CK_BillOfMaterials_EndDate at instawdb.sql:1010:5
+check Production.BillOfMaterials CK_BillOfMaterials_PerAssemblyQty at instawdb.sql:1015:5
+check Production.BillOfMaterials CK_BillOfMaterials_ProductAssemblyID at instawdb.sql:1011:5
+check Production.Document CK_Document_Status at instawdb.sql:1134:5
+check Production.Location CK_Location_Availability at instawdb.sql:1216:5
+check Production.Location CK_Location_CostRate at instawdb.sql:1215:5
+check Production.Product CK_Product_Class at instawdb.sql:1304:5
+check Production.Product CK_Product_DaysToManufacture at instawdb.sql:1302:5
+check Production.Product CK_Product_ListPrice at instawdb.sql:1300:5
+check Production.Product CK_Product_ProductLine at instawdb.sql:1303:5
+check Production.Product CK_Product_ReorderPoint at instawdb.sql:1298:5
+check Production.Product CK_Product_SafetyStockLevel at instawdb.sql:1297:5
+check Production.Product CK_Product_SellEndDate at instawdb.sql:1306:5
+check Production.Product CK_Product_StandardCost at instawdb.sql:1299:5
+check Production.Product CK_Product_Style at instawdb.sql:1305:5
+check Production.Product CK_Product_Weight at instawdb.sql:1301:5
+check Production.ProductCostHistory CK_ProductCostHistory_EndDate at instawdb.sql:1324:5
+check Production.ProductCostHistory CK_ProductCostHistory_StandardCost at instawdb.sql:1325:5
+check Production.ProductInventory CK_ProductInventory_Bin at instawdb.sql:1353:5
+check Production.ProductInventory CK_ProductInventory_Shelf at instawdb.sql:1352:5
+check Production.ProductListPriceHistory CK_ProductListPriceHistory_EndDate at instawdb.sql:1363:5
+check Production.ProductListPriceHistory CK_ProductListPriceHistory_ListPrice at instawdb.sql:1364:5
+check Production.ProductReview CK_ProductReview_Rating at instawdb.sql:1420:5
+check Production.TransactionHistory CK_TransactionHistory_TransactionType at instawdb.sql:1731:5
+check Production.TransactionHistoryArchive CK_TransactionHistoryArchive_TransactionType at instawdb.sql:1745:5
+check Production.WorkOrder CK_WorkOrder_EndDate at instawdb.sql:1782:5
+check Production.WorkOrder CK_WorkOrder_OrderQty at instawdb.sql:1780:5
+check Production.WorkOrder CK_WorkOrder_ScrappedQty at instawdb.sql:1781:5
+check Production.WorkOrderRouting CK_WorkOrderRouting_ActualCost at instawdb.sql:1804:5
+check Production.WorkOrderRouting CK_WorkOrderRouting_ActualEndDate at instawdb.sql:1800:5
+check Production.WorkOrderRouting CK_WorkOrderRouting_ActualResourceHrs at instawdb.sql:1802:5
+check Production.WorkOrderRouting CK_WorkOrderRouting_PlannedCost at instawdb.sql:1803:5
+check Production.WorkOrderRouting CK_WorkOrderRouting_ScheduledEndDate at instawdb.sql:1799:5
+check Purchasing.ProductVendor CK_ProductVendor_AverageLeadTime at instawdb.sql:1445:5
+check Purchasing.ProductVendor CK_ProductVendor_LastReceiptCost at instawdb.sql:1447:5
+check Purchasing.ProductVendor CK_ProductVendor_MaxOrderQty at instawdb.sql:1449:5
+check Purchasing.ProductVendor CK_ProductVendor_MinOrderQty at instawdb.sql:1448:5
+check Purchasing.ProductVendor CK_ProductVendor_OnOrderQty at instawdb.sql:1450:5
+check Purchasing.ProductVendor CK_ProductVendor_StandardPrice at instawdb.sql:1446:5
+check Purchasing.PurchaseOrderDetail CK_PurchaseOrderDetail_OrderQty at instawdb.sql:1466:5
+check Purchasing.PurchaseOrderDetail CK_PurchaseOrderDetail_ReceivedQty at instawdb.sql:1468:5
+check Purchasing.PurchaseOrderDetail CK_PurchaseOrderDetail_RejectedQty at instawdb.sql:1469:5
+check Purchasing.PurchaseOrderDetail CK_PurchaseOrderDetail_UnitPrice at instawdb.sql:1467:5
+check Purchasing.PurchaseOrderHeader CK_PurchaseOrderHeader_Freight at instawdb.sql:1491:5
+check Purchasing.PurchaseOrderHeader CK_PurchaseOrderHeader_ShipDate at instawdb.sql:1488:5
+check Purchasing.PurchaseOrderHeader CK_PurchaseOrderHeader_Status at instawdb.sql:1487:5
+check Purchasing.PurchaseOrderHeader CK_PurchaseOrderHeader_SubTotal at instawdb.sql:1489:5
+check Purchasing.PurchaseOrderHeader CK_PurchaseOrderHeader_TaxAmt at instawdb.sql:1490:5
+check Purchasing.ShipMethod CK_ShipMethod_ShipBase at instawdb.sql:1656:5
+check Purchasing.ShipMethod CK_ShipMethod_ShipRate at instawdb.sql:1657:5
+check Purchasing.Vendor CK_Vendor_CreditRating at instawdb.sql:1765:5
+check Sales.SalesOrderDetail CK_SalesOrderDetail_OrderQty at instawdb.sql:1507:5
+check Sales.SalesOrderDetail CK_SalesOrderDetail_UnitPrice at instawdb.sql:1508:5
+check Sales.SalesOrderDetail CK_SalesOrderDetail_UnitPriceDiscount at instawdb.sql:1509:5
+check Sales.SalesOrderHeader CK_SalesOrderHeader_DueDate at instawdb.sql:1541:5
+check Sales.SalesOrderHeader CK_SalesOrderHeader_Freight at instawdb.sql:1545:5
+check Sales.SalesOrderHeader CK_SalesOrderHeader_ShipDate at instawdb.sql:1542:5
+check Sales.SalesOrderHeader CK_SalesOrderHeader_Status at instawdb.sql:1540:5
+check Sales.SalesOrderHeader CK_SalesOrderHeader_SubTotal at instawdb.sql:1543:5
+check Sales.SalesOrderHeader CK_SalesOrderHeader_TaxAmt at instawdb.sql:1544:5
+check Sales.SalesPerson CK_SalesPerson_Bonus at instawdb.sql:1567:5
+check Sales.SalesPerson CK_SalesPerson_CommissionPct at instawdb.sql:1568:5
+check Sales.SalesPerson CK_SalesPerson_SalesLastYear at instawdb.sql:1570:5
+check Sales.SalesPerson CK_SalesPerson_SalesQuota at instawdb.sql:1566:5
+check Sales.SalesPerson CK_SalesPerson_SalesYTD at instawdb.sql:1569:5
+check Sales.SalesPersonQuotaHistory CK_SalesPersonQuotaHistory_SalesQuota at instawdb.sql:1580:5
+check Sales.SalesTaxRate CK_SalesTaxRate_TaxType at instawdb.sql:1600:5
+check Sales.SalesTerritory CK_SalesTerritory_CostLastYear at instawdb.sql:1618:5
+check Sales.SalesTerritory CK_SalesTerritory_CostYTD at instawdb.sql:1617:5
+check Sales.SalesTerritory CK_SalesTerritory_SalesLastYear at instawdb.sql:1616:5
+check Sales.SalesTerritory CK_SalesTerritory_SalesYTD at instawdb.sql:1615:5
+check Sales.SalesTerritoryHistory CK_SalesTerritoryHistory_EndDate at instawdb.sql:1629:5
+check Sales.ShoppingCartItem CK_ShoppingCartItem_Quantity at instawdb.sql:1668:5
+check Sales.SpecialOffer CK_SpecialOffer_DiscountPct at instawdb.sql:1685:5
+check Sales.SpecialOffer CK_SpecialOffer_EndDate at instawdb.sql:1684:5
+check Sales.SpecialOffer CK_SpecialOffer_MaxQty at instawdb.sql:1687:5
+check Sales.SpecialOffer CK_SpecialOffer_MinQty at instawdb.sql:1686:5
+column HumanResources.Department.DepartmentID smallint at instawdb.sql:1112:5
+column HumanResources.Department.GroupName Name at instawdb.sql:1114:5
+column HumanResources.Department.ModifiedDate datetime at instawdb.sql:1115:5
+column HumanResources.Department.Name Name at instawdb.sql:1113:5
+column HumanResources.Employee.BirthDate date at instawdb.sql:1153:5
+column HumanResources.Employee.BusinessEntityID int at instawdb.sql:1147:5
+column HumanResources.Employee.CurrentFlag Flag at instawdb.sql:1160:5
+column HumanResources.Employee.Gender nchar(1) at instawdb.sql:1155:5
+column HumanResources.Employee.HireDate date at instawdb.sql:1156:5
+column HumanResources.Employee.JobTitle nvarchar(50) at instawdb.sql:1152:5
+column HumanResources.Employee.LoginID nvarchar(256) at instawdb.sql:1149:5
+column HumanResources.Employee.MaritalStatus nchar(1) at instawdb.sql:1154:5
+column HumanResources.Employee.ModifiedDate datetime at instawdb.sql:1162:5
+column HumanResources.Employee.NationalIDNumber nvarchar(15) at instawdb.sql:1148:5
+column HumanResources.Employee.OrganizationLevel computed at instawdb.sql:1151:2
+column HumanResources.Employee.OrganizationNode hierarchyid at instawdb.sql:1150:5
+column HumanResources.Employee.SalariedFlag Flag at instawdb.sql:1157:5
+column HumanResources.Employee.SickLeaveHours smallint at instawdb.sql:1159:5
+column HumanResources.Employee.VacationHours smallint at instawdb.sql:1158:5
+column HumanResources.Employee.rowguid uniqueidentifier at instawdb.sql:1161:5
+column HumanResources.EmployeeDepartmentHistory.BusinessEntityID int at instawdb.sql:1173:5
+column HumanResources.EmployeeDepartmentHistory.DepartmentID smallint at instawdb.sql:1174:5
+column HumanResources.EmployeeDepartmentHistory.EndDate date at instawdb.sql:1177:5
+column HumanResources.EmployeeDepartmentHistory.ModifiedDate datetime at instawdb.sql:1178:5
+column HumanResources.EmployeeDepartmentHistory.ShiftID tinyint at instawdb.sql:1175:5
+column HumanResources.EmployeeDepartmentHistory.StartDate date at instawdb.sql:1176:5
+column HumanResources.EmployeePayHistory.BusinessEntityID int at instawdb.sql:1184:5
+column HumanResources.EmployeePayHistory.ModifiedDate datetime at instawdb.sql:1188:5
+column HumanResources.EmployeePayHistory.PayFrequency tinyint at instawdb.sql:1187:5
+column HumanResources.EmployeePayHistory.Rate money at instawdb.sql:1186:5
+column HumanResources.EmployeePayHistory.RateChangeDate datetime at instawdb.sql:1185:5
+column HumanResources.JobCandidate.BusinessEntityID int at instawdb.sql:1203:5
+column HumanResources.JobCandidate.JobCandidateID int at instawdb.sql:1202:5
+column HumanResources.JobCandidate.ModifiedDate datetime at instawdb.sql:1205:5
+column HumanResources.JobCandidate.Resume XML at instawdb.sql:1204:5
+column HumanResources.Shift.EndTime time at instawdb.sql:1644:5
+column HumanResources.Shift.ModifiedDate datetime at instawdb.sql:1645:5
+column HumanResources.Shift.Name Name at instawdb.sql:1642:5
+column HumanResources.Shift.ShiftID tinyint at instawdb.sql:1641:5
+column HumanResources.Shift.StartTime time at instawdb.sql:1643:5
+column Person.Address.AddressID int at instawdb.sql:972:5
+column Person.Address.AddressLine1 nvarchar(60) at instawdb.sql:973:5
+column Person.Address.AddressLine2 nvarchar(60) at instawdb.sql:974:5
+column Person.Address.City nvarchar(30) at instawdb.sql:975:5
+column Person.Address.ModifiedDate datetime at instawdb.sql:980:5
+column Person.Address.PostalCode nvarchar(15) at instawdb.sql:977:5
+column Person.Address.SpatialLocation geography at instawdb.sql:978:2
+column Person.Address.StateProvinceID int at instawdb.sql:976:5
+column Person.Address.rowguid uniqueidentifier at instawdb.sql:979:5
+column Person.AddressType.AddressTypeID int at instawdb.sql:985:5
+column Person.AddressType.ModifiedDate datetime at instawdb.sql:988:5
+column Person.AddressType.Name Name at instawdb.sql:986:5
+column Person.AddressType.rowguid uniqueidentifier at instawdb.sql:987:5
+column Person.BusinessEntity.BusinessEntityID int at instawdb.sql:1020:2
+column Person.BusinessEntity.ModifiedDate datetime at instawdb.sql:1022:5
+column Person.BusinessEntity.rowguid uniqueidentifier at instawdb.sql:1021:5
+column Person.BusinessEntityAddress.AddressID int at instawdb.sql:1028:5
+column Person.BusinessEntityAddress.AddressTypeID int at instawdb.sql:1029:5
+column Person.BusinessEntityAddress.BusinessEntityID int at instawdb.sql:1027:2
+column Person.BusinessEntityAddress.ModifiedDate datetime at instawdb.sql:1031:5
+column Person.BusinessEntityAddress.rowguid uniqueidentifier at instawdb.sql:1030:5
+column Person.BusinessEntityContact.BusinessEntityID int at instawdb.sql:1035:2
+column Person.BusinessEntityContact.ContactTypeID int at instawdb.sql:1037:5
+column Person.BusinessEntityContact.ModifiedDate datetime at instawdb.sql:1039:5
+column Person.BusinessEntityContact.PersonID int at instawdb.sql:1036:5
+column Person.BusinessEntityContact.rowguid uniqueidentifier at instawdb.sql:1038:5
+column Person.ContactType.ContactTypeID int at instawdb.sql:1044:5
+column Person.ContactType.ModifiedDate datetime at instawdb.sql:1046:5
+column Person.ContactType.Name Name at instawdb.sql:1045:5
+column Person.CountryRegion.CountryRegionCode nvarchar(3) at instawdb.sql:1058:5
+column Person.CountryRegion.ModifiedDate datetime at instawdb.sql:1060:5
+column Person.CountryRegion.Name Name at instawdb.sql:1059:5
+column Person.EmailAddress.BusinessEntityID int at instawdb.sql:1139:2
+column Person.EmailAddress.EmailAddress nvarchar(50) at instawdb.sql:1141:5
+column Person.EmailAddress.EmailAddressID int at instawdb.sql:1140:2
+column Person.EmailAddress.ModifiedDate datetime at instawdb.sql:1143:5
+column Person.EmailAddress.rowguid uniqueidentifier at instawdb.sql:1142:5
+column Person.Password.BusinessEntityID int at instawdb.sql:1221:2
+column Person.Password.ModifiedDate datetime at instawdb.sql:1225:5
+column Person.Password.PasswordHash varchar(128) at instawdb.sql:1222:5
+column Person.Password.PasswordSalt varchar(10) at instawdb.sql:1223:5
+column Person.Password.rowguid uniqueidentifier at instawdb.sql:1224:5
+column Person.Person.AdditionalContactInfo XML at instawdb.sql:1240:5
+column Person.Person.BusinessEntityID int at instawdb.sql:1231:5
+column Person.Person.Demographics XML at instawdb.sql:1241:5
+column Person.Person.EmailPromotion int at instawdb.sql:1239:5
+column Person.Person.FirstName Name at instawdb.sql:1235:5
+column Person.Person.LastName Name at instawdb.sql:1237:5
+column Person.Person.MiddleName Name at instawdb.sql:1236:5
+column Person.Person.ModifiedDate datetime at instawdb.sql:1243:5
+column Person.Person.NameStyle NameStyle at instawdb.sql:1233:5
+column Person.Person.PersonType nchar(2) at instawdb.sql:1232:2
+column Person.Person.Suffix nvarchar(10) at instawdb.sql:1238:5
+column Person.Person.Title nvarchar(8) at instawdb.sql:1234:5
+column Person.Person.rowguid uniqueidentifier at instawdb.sql:1242:5
+column Person.PersonPhone.BusinessEntityID int at instawdb.sql:1257:5
+column Person.PersonPhone.ModifiedDate datetime at instawdb.sql:1260:5
+column Person.PersonPhone.PhoneNumber Phone at instawdb.sql:1258:2
+column Person.PersonPhone.PhoneNumberTypeID int at instawdb.sql:1259:2
+column Person.PhoneNumberType.ModifiedDate datetime at instawdb.sql:1267:5
+column Person.PhoneNumberType.Name Name at instawdb.sql:1266:2
+column Person.PhoneNumberType.PhoneNumberTypeID int at instawdb.sql:1265:2
+column Person.StateProvince.CountryRegionCode nvarchar(3) at instawdb.sql:1702:5
+column Person.StateProvince.IsOnlyStateProvinceFlag Flag at instawdb.sql:1703:5
+column Person.StateProvince.ModifiedDate datetime at instawdb.sql:1707:5
+column Person.StateProvince.Name Name at instawdb.sql:1704:5
+column Person.StateProvince.StateProvinceCode nchar(3) at instawdb.sql:1701:5
+column Person.StateProvince.StateProvinceID int at instawdb.sql:1700:5
+column Person.StateProvince.TerritoryID int at instawdb.sql:1705:5
+column Person.StateProvince.rowguid uniqueidentifier at instawdb.sql:1706:5
+column Production.BillOfMaterials.BOMLevel smallint at instawdb.sql:1007:5
+column Production.BillOfMaterials.BillOfMaterialsID int at instawdb.sql:1001:5
+column Production.BillOfMaterials.ComponentID int at instawdb.sql:1003:5
+column Production.BillOfMaterials.EndDate datetime at instawdb.sql:1005:5
+column Production.BillOfMaterials.ModifiedDate datetime at instawdb.sql:1009:5
+column Production.BillOfMaterials.PerAssemblyQty decimal(8,2) at instawdb.sql:1008:5
+column Production.BillOfMaterials.ProductAssemblyID int at instawdb.sql:1002:5
+column Production.BillOfMaterials.StartDate datetime at instawdb.sql:1004:5
+column Production.BillOfMaterials.UnitMeasureCode nchar(3) at instawdb.sql:1006:5
+column Production.Culture.CultureID nchar(6) at instawdb.sql:1075:5
+column Production.Culture.ModifiedDate datetime at instawdb.sql:1077:5
+column Production.Culture.Name Name at instawdb.sql:1076:5
+column Production.Document.ChangeNumber int at instawdb.sql:1128:5
+column Production.Document.Document varbinary(max) at instawdb.sql:1131:5
+column Production.Document.DocumentLevel computed at instawdb.sql:1121:2
+column Production.Document.DocumentNode hierarchyid at instawdb.sql:1120:5
+column Production.Document.DocumentSummary nvarchar(max) at instawdb.sql:1130:5
+column Production.Document.FileExtension nvarchar(8) at instawdb.sql:1126:5
+column Production.Document.FileName nvarchar(400) at instawdb.sql:1125:5
+column Production.Document.FolderFlag bit at instawdb.sql:1124:2
+column Production.Document.ModifiedDate datetime at instawdb.sql:1133:5
+column Production.Document.Owner int at instawdb.sql:1123:2
+column Production.Document.Revision nchar(5) at instawdb.sql:1127:5
+column Production.Document.Status tinyint at instawdb.sql:1129:5
+column Production.Document.Title nvarchar(50) at instawdb.sql:1122:5
+column Production.Document.rowguid uniqueidentifier at instawdb.sql:1132:5
+column Production.Illustration.Diagram XML at instawdb.sql:1196:5
+column Production.Illustration.IllustrationID int at instawdb.sql:1195:5
+column Production.Illustration.ModifiedDate datetime at instawdb.sql:1197:5
+column Production.Location.Availability decimal(8,2) at instawdb.sql:1213:5
+column Production.Location.CostRate smallmoney at instawdb.sql:1212:5
+column Production.Location.LocationID smallint at instawdb.sql:1210:5
+column Production.Location.ModifiedDate datetime at instawdb.sql:1214:5
+column Production.Location.Name Name at instawdb.sql:1211:5
+column Production.Product.Class nchar(2) at instawdb.sql:1288:5
+column Production.Product.Color nvarchar(15) at instawdb.sql:1277:5
+column Production.Product.DaysToManufacture int at instawdb.sql:1286:5
+column Production.Product.DiscontinuedDate datetime at instawdb.sql:1294:5
+column Production.Product.FinishedGoodsFlag Flag at instawdb.sql:1276:5
+column Production.Product.ListPrice money at instawdb.sql:1281:5
+column Production.Product.MakeFlag Flag at instawdb.sql:1275:5
+column Production.Product.ModifiedDate datetime at instawdb.sql:1296:5
+column Production.Product.Name Name at instawdb.sql:1273:5
+column Production.Product.ProductID int at instawdb.sql:1272:5
+column Production.Product.ProductLine nchar(2) at instawdb.sql:1287:5
+column Production.Product.ProductModelID int at instawdb.sql:1291:5
+column Production.Product.ProductNumber nvarchar(25) at instawdb.sql:1274:5
+column Production.Product.ProductSubcategoryID int at instawdb.sql:1290:5
+column Production.Product.ReorderPoint smallint at instawdb.sql:1279:5
+column Production.Product.SafetyStockLevel smallint at instawdb.sql:1278:5
+column Production.Product.SellEndDate datetime at instawdb.sql:1293:5
+column Production.Product.SellStartDate datetime at instawdb.sql:1292:5
+column Production.Product.Size nvarchar(5) at instawdb.sql:1282:5
+column Production.Product.SizeUnitMeasureCode nchar(3) at instawdb.sql:1283:5
+column Production.Product.StandardCost money at instawdb.sql:1280:5
+column Production.Product.Style nchar(2) at instawdb.sql:1289:5
+column Production.Product.Weight decimal(8,2) at instawdb.sql:1285:5
+column Production.Product.WeightUnitMeasureCode nchar(3) at instawdb.sql:1284:5
+column Production.Product.rowguid uniqueidentifier at instawdb.sql:1295:5
+column Production.ProductCategory.ModifiedDate datetime at instawdb.sql:1314:5
+column Production.ProductCategory.Name Name at instawdb.sql:1312:5
+column Production.ProductCategory.ProductCategoryID int at instawdb.sql:1311:5
+column Production.ProductCategory.rowguid uniqueidentifier at instawdb.sql:1313:5
+column Production.ProductCostHistory.EndDate datetime at instawdb.sql:1321:5
+column Production.ProductCostHistory.ModifiedDate datetime at instawdb.sql:1323:5
+column Production.ProductCostHistory.ProductID int at instawdb.sql:1319:5
+column Production.ProductCostHistory.StandardCost money at instawdb.sql:1322:5
+column Production.ProductCostHistory.StartDate datetime at instawdb.sql:1320:5
+column Production.ProductDescription.Description nvarchar(400) at instawdb.sql:1331:5
+column Production.ProductDescription.ModifiedDate datetime at instawdb.sql:1333:5
+column Production.ProductDescription.ProductDescriptionID int at instawdb.sql:1330:5
+column Production.ProductDescription.rowguid uniqueidentifier at instawdb.sql:1332:5
+column Production.ProductDocument.DocumentNode hierarchyid at instawdb.sql:1339:5
+column Production.ProductDocument.ModifiedDate datetime at instawdb.sql:1340:5
+column Production.ProductDocument.ProductID int at instawdb.sql:1338:5
+column Production.ProductInventory.Bin tinyint at instawdb.sql:1348:5
+column Production.ProductInventory.LocationID smallint at instawdb.sql:1346:5
+column Production.ProductInventory.ModifiedDate datetime at instawdb.sql:1351:5
+column Production.ProductInventory.ProductID int at instawdb.sql:1345:5
+column Production.ProductInventory.Quantity smallint at instawdb.sql:1349:5
+column Production.ProductInventory.Shelf nvarchar(10) at instawdb.sql:1347:5
+column Production.ProductInventory.rowguid uniqueidentifier at instawdb.sql:1350:5
+column Production.ProductListPriceHistory.EndDate datetime at instawdb.sql:1360:5
+column Production.ProductListPriceHistory.ListPrice money at instawdb.sql:1361:5
+column Production.ProductListPriceHistory.ModifiedDate datetime at instawdb.sql:1362:5
+column Production.ProductListPriceHistory.ProductID int at instawdb.sql:1358:5
+column Production.ProductListPriceHistory.StartDate datetime at instawdb.sql:1359:5
+column Production.ProductModel.CatalogDescription XML at instawdb.sql:1371:5
+column Production.ProductModel.Instructions XML at instawdb.sql:1372:5
+column Production.ProductModel.ModifiedDate datetime at instawdb.sql:1374:5
+column Production.ProductModel.Name Name at instawdb.sql:1370:5
+column Production.ProductModel.ProductModelID int at instawdb.sql:1369:5
+column Production.ProductModel.rowguid uniqueidentifier at instawdb.sql:1373:5
+column Production.ProductModelIllustration.IllustrationID int at instawdb.sql:1380:5
+column Production.ProductModelIllustration.ModifiedDate datetime at instawdb.sql:1381:5
+column Production.ProductModelIllustration.ProductModelID int at instawdb.sql:1379:5
+column Production.ProductModelProductDescriptionCulture.CultureID nchar(6) at instawdb.sql:1388:5
+column Production.ProductModelProductDescriptionCulture.ModifiedDate datetime at instawdb.sql:1389:5
+column Production.ProductModelProductDescriptionCulture.ProductDescriptionID int at instawdb.sql:1387:5
+column Production.ProductModelProductDescriptionCulture.ProductModelID int at instawdb.sql:1386:5
+column Production.ProductPhoto.LargePhoto varbinary(max) at instawdb.sql:1397:5
+column Production.ProductPhoto.LargePhotoFileName nvarchar(50) at instawdb.sql:1398:5
+column Production.ProductPhoto.ModifiedDate datetime at instawdb.sql:1399:5
+column Production.ProductPhoto.ProductPhotoID int at instawdb.sql:1394:5
+column Production.ProductPhoto.ThumbNailPhoto varbinary(max) at instawdb.sql:1395:5
+column Production.ProductPhoto.ThumbnailPhotoFileName nvarchar(50) at instawdb.sql:1396:5
+column Production.ProductProductPhoto.ModifiedDate datetime at instawdb.sql:1407:5
+column Production.ProductProductPhoto.Primary Flag at instawdb.sql:1406:5
+column Production.ProductProductPhoto.ProductID int at instawdb.sql:1404:5
+column Production.ProductProductPhoto.ProductPhotoID int at instawdb.sql:1405:5
+column Production.ProductReview.Comments nvarchar(3850) at instawdb.sql:1418:5
+column Production.ProductReview.EmailAddress nvarchar(50) at instawdb.sql:1416:5
+column Production.ProductReview.ModifiedDate datetime at instawdb.sql:1419:5
+column Production.ProductReview.ProductID int at instawdb.sql:1413:5
+column Production.ProductReview.ProductReviewID int at instawdb.sql:1412:5
+column Production.ProductReview.Rating int at instawdb.sql:1417:5
+column Production.ProductReview.ReviewDate datetime at instawdb.sql:1415:5
+column Production.ProductReview.ReviewerName Name at instawdb.sql:1414:5
+column Production.ProductSubcategory.ModifiedDate datetime at instawdb.sql:1429:5
+column Production.ProductSubcategory.Name Name at instawdb.sql:1427:5
+column Production.ProductSubcategory.ProductCategoryID int at instawdb.sql:1426:5
+column Production.ProductSubcategory.ProductSubcategoryID int at instawdb.sql:1425:5
+column Production.ProductSubcategory.rowguid uniqueidentifier at instawdb.sql:1428:5
+column Production.ScrapReason.ModifiedDate datetime at instawdb.sql:1636:5
+column Production.ScrapReason.Name Name at instawdb.sql:1635:5
+column Production.ScrapReason.ScrapReasonID smallint at instawdb.sql:1634:5
+column Production.TransactionHistory.ActualCost money at instawdb.sql:1729:5
+column Production.TransactionHistory.ModifiedDate datetime at instawdb.sql:1730:5
+column Production.TransactionHistory.ProductID int at instawdb.sql:1723:5
+column Production.TransactionHistory.Quantity int at instawdb.sql:1728:5
+column Production.TransactionHistory.ReferenceOrderID int at instawdb.sql:1724:5
+column Production.TransactionHistory.ReferenceOrderLineID int at instawdb.sql:1725:5
+column Production.TransactionHistory.TransactionDate datetime at instawdb.sql:1726:5
+column Production.TransactionHistory.TransactionID int at instawdb.sql:1722:5
+column Production.TransactionHistory.TransactionType nchar(1) at instawdb.sql:1727:5
+column Production.TransactionHistoryArchive.ActualCost money at instawdb.sql:1743:5
+column Production.TransactionHistoryArchive.ModifiedDate datetime at instawdb.sql:1744:5
+column Production.TransactionHistoryArchive.ProductID int at instawdb.sql:1737:5
+column Production.TransactionHistoryArchive.Quantity int at instawdb.sql:1742:5
+column Production.TransactionHistoryArchive.ReferenceOrderID int at instawdb.sql:1738:5
+column Production.TransactionHistoryArchive.ReferenceOrderLineID int at instawdb.sql:1739:5
+column Production.TransactionHistoryArchive.TransactionDate datetime at instawdb.sql:1740:5
+column Production.TransactionHistoryArchive.TransactionID int at instawdb.sql:1736:5
+column Production.TransactionHistoryArchive.TransactionType nchar(1) at instawdb.sql:1741:5
+column Production.UnitMeasure.ModifiedDate datetime at instawdb.sql:1752:5
+column Production.UnitMeasure.Name Name at instawdb.sql:1751:5
+column Production.UnitMeasure.UnitMeasureCode nchar(3) at instawdb.sql:1750:5
+column Production.WorkOrder.DueDate datetime at instawdb.sql:1777:5
+column Production.WorkOrder.EndDate datetime at instawdb.sql:1776:5
+column Production.WorkOrder.ModifiedDate datetime at instawdb.sql:1779:5
+column Production.WorkOrder.OrderQty int at instawdb.sql:1772:5
+column Production.WorkOrder.ProductID int at instawdb.sql:1771:5
+column Production.WorkOrder.ScrapReasonID smallint at instawdb.sql:1778:5
+column Production.WorkOrder.ScrappedQty smallint at instawdb.sql:1774:5
+column Production.WorkOrder.StartDate datetime at instawdb.sql:1775:5
+column Production.WorkOrder.StockedQty computed at instawdb.sql:1773:5
+column Production.WorkOrder.WorkOrderID int at instawdb.sql:1770:5
+column Production.WorkOrderRouting.ActualCost money at instawdb.sql:1797:5
+column Production.WorkOrderRouting.ActualEndDate datetime at instawdb.sql:1794:5
+column Production.WorkOrderRouting.ActualResourceHrs decimal(9,4) at instawdb.sql:1795:5
+column Production.WorkOrderRouting.ActualStartDate datetime at instawdb.sql:1793:5
+column Production.WorkOrderRouting.LocationID smallint at instawdb.sql:1790:5
+column Production.WorkOrderRouting.ModifiedDate datetime at instawdb.sql:1798:5
+column Production.WorkOrderRouting.OperationSequence smallint at instawdb.sql:1789:5
+column Production.WorkOrderRouting.PlannedCost money at instawdb.sql:1796:5
+column Production.WorkOrderRouting.ProductID int at instawdb.sql:1788:5
+column Production.WorkOrderRouting.ScheduledEndDate datetime at instawdb.sql:1792:5
+column Production.WorkOrderRouting.ScheduledStartDate datetime at instawdb.sql:1791:5
+column Production.WorkOrderRouting.WorkOrderID int at instawdb.sql:1787:5
+column Purchasing.ProductVendor.AverageLeadTime int at instawdb.sql:1436:5
+column Purchasing.ProductVendor.BusinessEntityID int at instawdb.sql:1435:5
+column Purchasing.ProductVendor.LastReceiptCost money at instawdb.sql:1438:5
+column Purchasing.ProductVendor.LastReceiptDate datetime at instawdb.sql:1439:5
+column Purchasing.ProductVendor.MaxOrderQty int at instawdb.sql:1441:5
+column Purchasing.ProductVendor.MinOrderQty int at instawdb.sql:1440:5
+column Purchasing.ProductVendor.ModifiedDate datetime at instawdb.sql:1444:5
+column Purchasing.ProductVendor.OnOrderQty int at instawdb.sql:1442:5
+column Purchasing.ProductVendor.ProductID int at instawdb.sql:1434:5
+column Purchasing.ProductVendor.StandardPrice money at instawdb.sql:1437:5
+column Purchasing.ProductVendor.UnitMeasureCode nchar(3) at instawdb.sql:1443:5
+column Purchasing.PurchaseOrderDetail.DueDate datetime at instawdb.sql:1457:5
+column Purchasing.PurchaseOrderDetail.LineTotal computed at instawdb.sql:1461:5
+column Purchasing.PurchaseOrderDetail.ModifiedDate datetime at instawdb.sql:1465:5
+column Purchasing.PurchaseOrderDetail.OrderQty smallint at instawdb.sql:1458:5
+column Purchasing.PurchaseOrderDetail.ProductID int at instawdb.sql:1459:5
+column Purchasing.PurchaseOrderDetail.PurchaseOrderDetailID int at instawdb.sql:1456:5
+column Purchasing.PurchaseOrderDetail.PurchaseOrderID int at instawdb.sql:1455:5
+column Purchasing.PurchaseOrderDetail.ReceivedQty decimal(8,2) at instawdb.sql:1462:5
+column Purchasing.PurchaseOrderDetail.RejectedQty decimal(8,2) at instawdb.sql:1463:5
+column Purchasing.PurchaseOrderDetail.StockedQty computed at instawdb.sql:1464:5
+column Purchasing.PurchaseOrderDetail.UnitPrice money at instawdb.sql:1460:5
+column Purchasing.PurchaseOrderHeader.EmployeeID int at instawdb.sql:1477:5
+column Purchasing.PurchaseOrderHeader.Freight money at instawdb.sql:1484:5
+column Purchasing.PurchaseOrderHeader.ModifiedDate datetime at instawdb.sql:1486:5
+column Purchasing.PurchaseOrderHeader.OrderDate datetime at instawdb.sql:1480:5
+column Purchasing.PurchaseOrderHeader.PurchaseOrderID int at instawdb.sql:1474:5
+column Purchasing.PurchaseOrderHeader.RevisionNumber tinyint at instawdb.sql:1475:5
+column Purchasing.PurchaseOrderHeader.ShipDate datetime at instawdb.sql:1481:5
+column Purchasing.PurchaseOrderHeader.ShipMethodID int at instawdb.sql:1479:5
+column Purchasing.PurchaseOrderHeader.Status tinyint at instawdb.sql:1476:5
+column Purchasing.PurchaseOrderHeader.SubTotal money at instawdb.sql:1482:5
+column Purchasing.PurchaseOrderHeader.TaxAmt money at instawdb.sql:1483:5
+column Purchasing.PurchaseOrderHeader.TotalDue computed at instawdb.sql:1485:5
+column Purchasing.PurchaseOrderHeader.VendorID int at instawdb.sql:1478:5
+column Purchasing.ShipMethod.ModifiedDate datetime at instawdb.sql:1655:5
+column Purchasing.ShipMethod.Name Name at instawdb.sql:1651:5
+column Purchasing.ShipMethod.ShipBase money at instawdb.sql:1652:5
+column Purchasing.ShipMethod.ShipMethodID int at instawdb.sql:1650:5
+column Purchasing.ShipMethod.ShipRate money at instawdb.sql:1653:5
+column Purchasing.ShipMethod.rowguid uniqueidentifier at instawdb.sql:1654:5
+column Purchasing.Vendor.AccountNumber AccountNumber at instawdb.sql:1758:5
+column Purchasing.Vendor.ActiveFlag Flag at instawdb.sql:1762:5
+column Purchasing.Vendor.BusinessEntityID int at instawdb.sql:1757:5
+column Purchasing.Vendor.CreditRating tinyint at instawdb.sql:1760:5
+column Purchasing.Vendor.ModifiedDate datetime at instawdb.sql:1764:5
+column Purchasing.Vendor.Name Name at instawdb.sql:1759:5
+column Purchasing.Vendor.PreferredVendorStatus Flag at instawdb.sql:1761:5
+column Purchasing.Vendor.PurchasingWebServiceURL nvarchar(1024) at instawdb.sql:1763:5
+column Sales.CountryRegionCurrency.CountryRegionCode nvarchar(3) at instawdb.sql:1051:5
+column Sales.CountryRegionCurrency.CurrencyCode nchar(3) at instawdb.sql:1052:5
+column Sales.CountryRegionCurrency.ModifiedDate datetime at instawdb.sql:1053:5
+column Sales.CreditCard.CardNumber nvarchar(25) at instawdb.sql:1067:5
+column Sales.CreditCard.CardType nvarchar(50) at instawdb.sql:1066:5
+column Sales.CreditCard.CreditCardID int at instawdb.sql:1065:5
+column Sales.CreditCard.ExpMonth tinyint at instawdb.sql:1068:5
+column Sales.CreditCard.ExpYear smallint at instawdb.sql:1069:5
+column Sales.CreditCard.ModifiedDate datetime at instawdb.sql:1070:5
+column Sales.Currency.CurrencyCode nchar(3) at instawdb.sql:1082:5
+column Sales.Currency.ModifiedDate datetime at instawdb.sql:1084:5
+column Sales.Currency.Name Name at instawdb.sql:1083:5
+column Sales.CurrencyRate.AverageRate money at instawdb.sql:1093:5
+column Sales.CurrencyRate.CurrencyRateDate datetime at instawdb.sql:1090:5
+column Sales.CurrencyRate.CurrencyRateID int at instawdb.sql:1089:5
+column Sales.CurrencyRate.EndOfDayRate money at instawdb.sql:1094:5
+column Sales.CurrencyRate.FromCurrencyCode nchar(3) at instawdb.sql:1091:5
+column Sales.CurrencyRate.ModifiedDate datetime at instawdb.sql:1095:5
+column Sales.CurrencyRate.ToCurrencyCode nchar(3) at instawdb.sql:1092:5
+column Sales.Customer.AccountNumber computed at instawdb.sql:1105:5
+column Sales.Customer.CustomerID int at instawdb.sql:1100:2
+column Sales.Customer.ModifiedDate datetime at instawdb.sql:1107:5
+column Sales.Customer.PersonID int at instawdb.sql:1102:2
+column Sales.Customer.StoreID int at instawdb.sql:1103:5
+column Sales.Customer.TerritoryID int at instawdb.sql:1104:5
+column Sales.Customer.rowguid uniqueidentifier at instawdb.sql:1106:5
+column Sales.PersonCreditCard.BusinessEntityID int at instawdb.sql:1250:5
+column Sales.PersonCreditCard.CreditCardID int at instawdb.sql:1251:5
+column Sales.PersonCreditCard.ModifiedDate datetime at instawdb.sql:1252:5
+column Sales.SalesOrderDetail.CarrierTrackingNumber nvarchar(25) at instawdb.sql:1498:5
+column Sales.SalesOrderDetail.LineTotal computed at instawdb.sql:1504:5
+column Sales.SalesOrderDetail.ModifiedDate datetime at instawdb.sql:1506:5
+column Sales.SalesOrderDetail.OrderQty smallint at instawdb.sql:1499:5
+column Sales.SalesOrderDetail.ProductID int at instawdb.sql:1500:5
+column Sales.SalesOrderDetail.SalesOrderDetailID int at instawdb.sql:1497:5
+column Sales.SalesOrderDetail.SalesOrderID int at instawdb.sql:1496:5
+column Sales.SalesOrderDetail.SpecialOfferID int at instawdb.sql:1501:5
+column Sales.SalesOrderDetail.UnitPrice money at instawdb.sql:1502:5
+column Sales.SalesOrderDetail.UnitPriceDiscount money at instawdb.sql:1503:5
+column Sales.SalesOrderDetail.rowguid uniqueidentifier at instawdb.sql:1505:5
+column Sales.SalesOrderHeader.AccountNumber AccountNumber at instawdb.sql:1523:5
+column Sales.SalesOrderHeader.BillToAddressID int at instawdb.sql:1527:5
+column Sales.SalesOrderHeader.Comment nvarchar(128) at instawdb.sql:1537:5
+column Sales.SalesOrderHeader.CreditCardApprovalCode varchar(15) at instawdb.sql:1531:5
+column Sales.SalesOrderHeader.CreditCardID int at instawdb.sql:1530:5
+column Sales.SalesOrderHeader.CurrencyRateID int at instawdb.sql:1532:5
+column Sales.SalesOrderHeader.CustomerID int at instawdb.sql:1524:5
+column Sales.SalesOrderHeader.DueDate datetime at instawdb.sql:1517:5
+column Sales.SalesOrderHeader.Freight money at instawdb.sql:1535:5
+column Sales.SalesOrderHeader.ModifiedDate datetime at instawdb.sql:1539:5
+column Sales.SalesOrderHeader.OnlineOrderFlag Flag at instawdb.sql:1520:5
+column Sales.SalesOrderHeader.OrderDate datetime at instawdb.sql:1516:5
+column Sales.SalesOrderHeader.PurchaseOrderNumber OrderNumber at instawdb.sql:1522:5
+column Sales.SalesOrderHeader.RevisionNumber tinyint at instawdb.sql:1515:5
+column Sales.SalesOrderHeader.SalesOrderID int at instawdb.sql:1514:5
+column Sales.SalesOrderHeader.SalesOrderNumber computed at instawdb.sql:1521:5
+column Sales.SalesOrderHeader.SalesPersonID int at instawdb.sql:1525:5
+column Sales.SalesOrderHeader.ShipDate datetime at instawdb.sql:1518:5
+column Sales.SalesOrderHeader.ShipMethodID int at instawdb.sql:1529:5
+column Sales.SalesOrderHeader.ShipToAddressID int at instawdb.sql:1528:5
+column Sales.SalesOrderHeader.Status tinyint at instawdb.sql:1519:5
+column Sales.SalesOrderHeader.SubTotal money at instawdb.sql:1533:5
+column Sales.SalesOrderHeader.TaxAmt money at instawdb.sql:1534:5
+column Sales.SalesOrderHeader.TerritoryID int at instawdb.sql:1526:5
+column Sales.SalesOrderHeader.TotalDue computed at instawdb.sql:1536:5
+column Sales.SalesOrderHeader.rowguid uniqueidentifier at instawdb.sql:1538:5
+column Sales.SalesOrderHeaderSalesReason.ModifiedDate datetime at instawdb.sql:1552:5
+column Sales.SalesOrderHeaderSalesReason.SalesOrderID int at instawdb.sql:1550:5
+column Sales.SalesOrderHeaderSalesReason.SalesReasonID int at instawdb.sql:1551:5
+column Sales.SalesPerson.Bonus money at instawdb.sql:1560:5
+column Sales.SalesPerson.BusinessEntityID int at instawdb.sql:1557:5
+column Sales.SalesPerson.CommissionPct smallmoney at instawdb.sql:1561:5
+column Sales.SalesPerson.ModifiedDate datetime at instawdb.sql:1565:5
+column Sales.SalesPerson.SalesLastYear money at instawdb.sql:1563:5
+column Sales.SalesPerson.SalesQuota money at instawdb.sql:1559:5
+column Sales.SalesPerson.SalesYTD money at instawdb.sql:1562:5
+column Sales.SalesPerson.TerritoryID int at instawdb.sql:1558:5
+column Sales.SalesPerson.rowguid uniqueidentifier at instawdb.sql:1564:5
+column Sales.SalesPersonQuotaHistory.BusinessEntityID int at instawdb.sql:1575:5
+column Sales.SalesPersonQuotaHistory.ModifiedDate datetime at instawdb.sql:1579:5
+column Sales.SalesPersonQuotaHistory.QuotaDate datetime at instawdb.sql:1576:5
+column Sales.SalesPersonQuotaHistory.SalesQuota money at instawdb.sql:1577:5
+column Sales.SalesPersonQuotaHistory.rowguid uniqueidentifier at instawdb.sql:1578:5
+column Sales.SalesReason.ModifiedDate datetime at instawdb.sql:1588:5
+column Sales.SalesReason.Name Name at instawdb.sql:1586:5
+column Sales.SalesReason.ReasonType Name at instawdb.sql:1587:5
+column Sales.SalesReason.SalesReasonID int at instawdb.sql:1585:5
+column Sales.SalesTaxRate.ModifiedDate datetime at instawdb.sql:1599:5
+column Sales.SalesTaxRate.Name Name at instawdb.sql:1597:5
+column Sales.SalesTaxRate.SalesTaxRateID int at instawdb.sql:1593:5
+column Sales.SalesTaxRate.StateProvinceID int at instawdb.sql:1594:5
+column Sales.SalesTaxRate.TaxRate smallmoney at instawdb.sql:1596:5
+column Sales.SalesTaxRate.TaxType tinyint at instawdb.sql:1595:5
+column Sales.SalesTaxRate.rowguid uniqueidentifier at instawdb.sql:1598:5
+column Sales.SalesTerritory.CostLastYear money at instawdb.sql:1612:5
+column Sales.SalesTerritory.CostYTD money at instawdb.sql:1611:5
+column Sales.SalesTerritory.CountryRegionCode nvarchar(3) at instawdb.sql:1607:5
+column Sales.SalesTerritory.Group nvarchar(50) at instawdb.sql:1608:5
+column Sales.SalesTerritory.ModifiedDate datetime at instawdb.sql:1614:5
+column Sales.SalesTerritory.Name Name at instawdb.sql:1606:5
+column Sales.SalesTerritory.SalesLastYear money at instawdb.sql:1610:5
+column Sales.SalesTerritory.SalesYTD money at instawdb.sql:1609:5
+column Sales.SalesTerritory.TerritoryID int at instawdb.sql:1605:5
+column Sales.SalesTerritory.rowguid uniqueidentifier at instawdb.sql:1613:5
+column Sales.SalesTerritoryHistory.BusinessEntityID int at instawdb.sql:1623:5
+column Sales.SalesTerritoryHistory.EndDate datetime at instawdb.sql:1626:5
+column Sales.SalesTerritoryHistory.ModifiedDate datetime at instawdb.sql:1628:5
+column Sales.SalesTerritoryHistory.StartDate datetime at instawdb.sql:1625:5
+column Sales.SalesTerritoryHistory.TerritoryID int at instawdb.sql:1624:5
+column Sales.SalesTerritoryHistory.rowguid uniqueidentifier at instawdb.sql:1627:5
+column Sales.ShoppingCartItem.DateCreated datetime at instawdb.sql:1666:5
+column Sales.ShoppingCartItem.ModifiedDate datetime at instawdb.sql:1667:5
+column Sales.ShoppingCartItem.ProductID int at instawdb.sql:1665:5
+column Sales.ShoppingCartItem.Quantity int at instawdb.sql:1664:5
+column Sales.ShoppingCartItem.ShoppingCartID nvarchar(50) at instawdb.sql:1663:5
+column Sales.ShoppingCartItem.ShoppingCartItemID int at instawdb.sql:1662:5
+column Sales.SpecialOffer.Category nvarchar(50) at instawdb.sql:1677:5
+column Sales.SpecialOffer.Description nvarchar(255) at instawdb.sql:1674:5
+column Sales.SpecialOffer.DiscountPct smallmoney at instawdb.sql:1675:5
+column Sales.SpecialOffer.EndDate datetime at instawdb.sql:1679:5
+column Sales.SpecialOffer.MaxQty int at instawdb.sql:1681:5
+column Sales.SpecialOffer.MinQty int at instawdb.sql:1680:5
+column Sales.SpecialOffer.ModifiedDate datetime at instawdb.sql:1683:5
+column Sales.SpecialOffer.SpecialOfferID int at instawdb.sql:1673:5
+column Sales.SpecialOffer.StartDate datetime at instawdb.sql:1678:5
+column Sales.SpecialOffer.Type nvarchar(50) at instawdb.sql:1676:5
+column Sales.SpecialOffer.rowguid uniqueidentifier at instawdb.sql:1682:5
+column Sales.SpecialOfferProduct.ModifiedDate datetime at instawdb.sql:1695:5
+column Sales.SpecialOfferProduct.ProductID int at instawdb.sql:1693:5
+column Sales.SpecialOfferProduct.SpecialOfferID int at instawdb.sql:1692:5
+column Sales.SpecialOfferProduct.rowguid uniqueidentifier at instawdb.sql:1694:5
+column Sales.Store.BusinessEntityID int at instawdb.sql:1712:5
+column Sales.Store.Demographics XML at instawdb.sql:1715:5
+column Sales.Store.ModifiedDate datetime at instawdb.sql:1717:5
+column Sales.Store.Name Name at instawdb.sql:1713:5
+column Sales.Store.SalesPersonID int at instawdb.sql:1714:5
+column Sales.Store.rowguid uniqueidentifier at instawdb.sql:1716:5
+column dbo.AWBuildVersion.Database Version nvarchar(25) at instawdb.sql:994:5
+column dbo.AWBuildVersion.ModifiedDate datetime at instawdb.sql:996:5
+column dbo.AWBuildVersion.SystemInformationID tinyint at instawdb.sql:993:5
+column dbo.AWBuildVersion.VersionDate datetime at instawdb.sql:995:5
+column dbo.DatabaseLog.DatabaseLogID int at instawdb.sql:158:5
+column dbo.DatabaseLog.DatabaseUser sysname at instawdb.sql:160:5
+column dbo.DatabaseLog.Event sysname at instawdb.sql:161:5
+column dbo.DatabaseLog.Object sysname at instawdb.sql:163:5
+column dbo.DatabaseLog.PostTime datetime at instawdb.sql:159:5
+column dbo.DatabaseLog.Schema sysname at instawdb.sql:162:5
+column dbo.DatabaseLog.TSQL nvarchar(max) at instawdb.sql:164:5
+column dbo.DatabaseLog.XmlEvent xml at instawdb.sql:165:5
+column dbo.ErrorLog.ErrorLine int at instawdb.sql:231:5
+column dbo.ErrorLog.ErrorLogID int at instawdb.sql:224:5
+column dbo.ErrorLog.ErrorMessage nvarchar(4000) at instawdb.sql:232:5
+column dbo.ErrorLog.ErrorNumber int at instawdb.sql:227:5
+column dbo.ErrorLog.ErrorProcedure nvarchar(126) at instawdb.sql:230:5
+column dbo.ErrorLog.ErrorSeverity int at instawdb.sql:228:5
+column dbo.ErrorLog.ErrorState int at instawdb.sql:229:5
+column dbo.ErrorLog.ErrorTime datetime at instawdb.sql:225:5
+column dbo.ErrorLog.UserName sysname at instawdb.sql:226:5
+function dbo.ufnGetAccountingEndDate at instawdb.sql:5397:1
+function dbo.ufnGetAccountingStartDate at instawdb.sql:5389:1
+function dbo.ufnGetContactInformation at instawdb.sql:5405:1
+function dbo.ufnGetDocumentStatusText at instawdb.sql:5551:1
+function dbo.ufnGetProductDealerPrice at instawdb.sql:5476:1
+function dbo.ufnGetProductListPrice at instawdb.sql:5497:1
+function dbo.ufnGetProductStandardCost at instawdb.sql:5514:1
+function dbo.ufnGetPurchaseOrderStatusText at instawdb.sql:5570:1
+function dbo.ufnGetSalesOrderStatusText at instawdb.sql:5590:1
+function dbo.ufnGetStock at instawdb.sql:5532:1
+function dbo.ufnLeadingZeros at instawdb.sql:346:1
+key Production.Document unnamed (rowguid) at instawdb.sql:1132:52
+named function dbo.ufnGetAccountingEndDate
+named function dbo.ufnGetAccountingStartDate
+named function dbo.ufnGetContactInformation
+named function dbo.ufnGetDocumentStatusText
+named function dbo.ufnGetProductDealerPrice
+named function dbo.ufnGetProductListPrice
+named function dbo.ufnGetProductStandardCost
+named function dbo.ufnGetPurchaseOrderStatusText
+named function dbo.ufnGetSalesOrderStatusText
+named function dbo.ufnGetStock
+named function dbo.ufnLeadingZeros
+parameter HumanResources.uspUpdateEmployeeHireInfo @BusinessEntityID at instawdb.sql:5764:5
+parameter HumanResources.uspUpdateEmployeeHireInfo @CurrentFlag at instawdb.sql:5770:5
+parameter HumanResources.uspUpdateEmployeeHireInfo @HireDate at instawdb.sql:5766:5
+parameter HumanResources.uspUpdateEmployeeHireInfo @JobTitle at instawdb.sql:5765:5
+parameter HumanResources.uspUpdateEmployeeHireInfo @PayFrequency at instawdb.sql:5769:5
+parameter HumanResources.uspUpdateEmployeeHireInfo @Rate at instawdb.sql:5768:5
+parameter HumanResources.uspUpdateEmployeeHireInfo @RateChangeDate at instawdb.sql:5767:5
+parameter HumanResources.uspUpdateEmployeeLogin @BusinessEntityID at instawdb.sql:5808:5
+parameter HumanResources.uspUpdateEmployeeLogin @CurrentFlag at instawdb.sql:5813:5
+parameter HumanResources.uspUpdateEmployeeLogin @HireDate at instawdb.sql:5812:5
+parameter HumanResources.uspUpdateEmployeeLogin @JobTitle at instawdb.sql:5811:5
+parameter HumanResources.uspUpdateEmployeeLogin @LoginID at instawdb.sql:5810:5
+parameter HumanResources.uspUpdateEmployeeLogin @OrganizationNode at instawdb.sql:5809:5
+parameter HumanResources.uspUpdateEmployeePersonalInfo @BirthDate at instawdb.sql:5837:5
+parameter HumanResources.uspUpdateEmployeePersonalInfo @BusinessEntityID at instawdb.sql:5835:5
+parameter HumanResources.uspUpdateEmployeePersonalInfo @Gender at instawdb.sql:5839:5
+parameter HumanResources.uspUpdateEmployeePersonalInfo @MaritalStatus at instawdb.sql:5838:5
+parameter HumanResources.uspUpdateEmployeePersonalInfo @NationalIDNumber at instawdb.sql:5836:5
+parameter dbo.ufnGetContactInformation @PersonID at instawdb.sql:5405:50
+parameter dbo.ufnGetDocumentStatusText @Status at instawdb.sql:5551:50
+parameter dbo.ufnGetProductDealerPrice @OrderDate at instawdb.sql:5476:68
+parameter dbo.ufnGetProductDealerPrice @ProductID at instawdb.sql:5476:50
+parameter dbo.ufnGetProductListPrice @OrderDate at instawdb.sql:5497:66
+parameter dbo.ufnGetProductListPrice @ProductID at instawdb.sql:5497:48
+parameter dbo.ufnGetProductStandardCost @OrderDate at instawdb.sql:5514:69
+parameter dbo.ufnGetProductStandardCost @ProductID at instawdb.sql:5514:51
+parameter dbo.ufnGetPurchaseOrderStatusText @Status at instawdb.sql:5570:55
+parameter dbo.ufnGetSalesOrderStatusText @Status at instawdb.sql:5590:52
+parameter dbo.ufnGetStock @ProductID at instawdb.sql:5532:37
+parameter dbo.ufnLeadingZeros @Value at instawdb.sql:347:5
+parameter dbo.uspGetBillOfMaterials @CheckDate at instawdb.sql:5621:5
+parameter dbo.uspGetBillOfMaterials @StartProductID at instawdb.sql:5620:5
+parameter dbo.uspGetEmployeeManagers @BusinessEntityID at instawdb.sql:5658:5
+parameter dbo.uspGetManagerEmployees @BusinessEntityID at instawdb.sql:5693:5
+parameter dbo.uspGetWhereUsedProductID @CheckDate at instawdb.sql:5729:5
+parameter dbo.uspGetWhereUsedProductID @StartProductID at instawdb.sql:5728:5
+parameter dbo.uspLogError @ErrorLogID at instawdb.sql:268:5
+parameter dbo.uspSearchCandidateResumes @language at instawdb.sql:5865:5
+parameter dbo.uspSearchCandidateResumes @searchString at instawdb.sql:5862:5
+parameter dbo.uspSearchCandidateResumes @useInflectional at instawdb.sql:5863:5
+parameter dbo.uspSearchCandidateResumes @useThesaurus at instawdb.sql:5864:5
+procedure HumanResources.uspUpdateEmployeeHireInfo at instawdb.sql:5763:1
+procedure HumanResources.uspUpdateEmployeeLogin at instawdb.sql:5807:1
+procedure HumanResources.uspUpdateEmployeePersonalInfo at instawdb.sql:5834:1
+procedure dbo.uspGetBillOfMaterials at instawdb.sql:5619:1
+procedure dbo.uspGetEmployeeManagers at instawdb.sql:5657:1
+procedure dbo.uspGetManagerEmployees at instawdb.sql:5692:1
+procedure dbo.uspGetWhereUsedProductID at instawdb.sql:5727:1
+procedure dbo.uspLogError at instawdb.sql:267:1
+procedure dbo.uspPrintError at instawdb.sql:247:1
+procedure dbo.uspSearchCandidateResumes at instawdb.sql:5861:1
+table HumanResources.Department at instawdb.sql:1111:1
+table HumanResources.Employee at instawdb.sql:1146:1
+table HumanResources.EmployeeDepartmentHistory at instawdb.sql:1172:1
+table HumanResources.EmployeePayHistory at instawdb.sql:1183:1
+table HumanResources.JobCandidate at instawdb.sql:1201:1
+table HumanResources.Shift at instawdb.sql:1640:1
+table Person.Address at instawdb.sql:971:1
+table Person.AddressType at instawdb.sql:984:1
+table Person.BusinessEntity at instawdb.sql:1019:1
+table Person.BusinessEntityAddress at instawdb.sql:1026:1
+table Person.BusinessEntityContact at instawdb.sql:1034:1
+table Person.ContactType at instawdb.sql:1043:1
+table Person.CountryRegion at instawdb.sql:1057:1
+table Person.EmailAddress at instawdb.sql:1138:1
+table Person.Password at instawdb.sql:1220:1
+table Person.Person at instawdb.sql:1230:1
+table Person.PersonPhone at instawdb.sql:1256:1
+table Person.PhoneNumberType at instawdb.sql:1264:1
+table Person.StateProvince at instawdb.sql:1699:1
+table Production.BillOfMaterials at instawdb.sql:1000:1
+table Production.Culture at instawdb.sql:1074:1
+table Production.Document at instawdb.sql:1119:1
+table Production.Illustration at instawdb.sql:1194:1
+table Production.Location at instawdb.sql:1209:1
+table Production.Product at instawdb.sql:1271:1
+table Production.ProductCategory at instawdb.sql:1310:1
+table Production.ProductCostHistory at instawdb.sql:1318:1
+table Production.ProductDescription at instawdb.sql:1329:1
+table Production.ProductDocument at instawdb.sql:1337:1
+table Production.ProductInventory at instawdb.sql:1344:1
+table Production.ProductListPriceHistory at instawdb.sql:1357:1
+table Production.ProductModel at instawdb.sql:1368:1
+table Production.ProductModelIllustration at instawdb.sql:1378:1
+table Production.ProductModelProductDescriptionCulture at instawdb.sql:1385:1
+table Production.ProductPhoto at instawdb.sql:1393:1
+table Production.ProductProductPhoto at instawdb.sql:1403:1
+table Production.ProductReview at instawdb.sql:1411:1
+table Production.ProductSubcategory at instawdb.sql:1424:1
+table Production.ScrapReason at instawdb.sql:1633:1
+table Production.TransactionHistory at instawdb.sql:1721:1
+table Production.TransactionHistoryArchive at instawdb.sql:1735:1
+table Production.UnitMeasure at instawdb.sql:1749:1
+table Production.WorkOrder at instawdb.sql:1769:1
+table Production.WorkOrderRouting at instawdb.sql:1786:1
+table Purchasing.ProductVendor at instawdb.sql:1433:1
+table Purchasing.PurchaseOrderDetail at instawdb.sql:1454:1
+table Purchasing.PurchaseOrderHeader at instawdb.sql:1473:1
+table Purchasing.ShipMethod at instawdb.sql:1649:1
+table Purchasing.Vendor at instawdb.sql:1756:1
+table Sales.CountryRegionCurrency at instawdb.sql:1050:1
+table Sales.CreditCard at instawdb.sql:1064:1
+table Sales.Currency at instawdb.sql:1081:1
+table Sales.CurrencyRate at instawdb.sql:1088:1
+table Sales.Customer at instawdb.sql:1099:1
+table Sales.PersonCreditCard at instawdb.sql:1249:1
+table Sales.SalesOrderDetail at instawdb.sql:1495:1
+table Sales.SalesOrderHeader at instawdb.sql:1513:1
+table Sales.SalesOrderHeaderSalesReason at instawdb.sql:1549:1
+table Sales.SalesPerson at instawdb.sql:1556:1
+table Sales.SalesPersonQuotaHistory at instawdb.sql:1574:1
+table Sales.SalesReason at instawdb.sql:1584:1
+table Sales.SalesTaxRate at instawdb.sql:1592:1
+table Sales.SalesTerritory at instawdb.sql:1604:1
+table Sales.SalesTerritoryHistory at instawdb.sql:1622:1
+table Sales.ShoppingCartItem at instawdb.sql:1661:1
+table Sales.SpecialOffer at instawdb.sql:1672:1
+table Sales.SpecialOfferProduct at instawdb.sql:1691:1
+table Sales.Store at instawdb.sql:1711:1
+table dbo.AWBuildVersion at instawdb.sql:992:1
+table dbo.DatabaseLog at instawdb.sql:157:1
+table dbo.ErrorLog at instawdb.sql:223:1
+trigger HumanResources.dEmployee on HumanResources.Employee at instawdb.sql:4209:1
+trigger Person.iuPerson on Person.Person at instawdb.sql:4235:1
+trigger Production.iWorkOrder on Production.WorkOrder at instawdb.sql:4631:1
+trigger Production.uWorkOrder on Production.WorkOrder at instawdb.sql:4674:1
+trigger Purchasing.dVendor on Purchasing.Vendor at instawdb.sql:4587:1
+trigger Purchasing.iPurchaseOrderDetail on Purchasing.PurchaseOrderDetail at instawdb.sql:4271:1
+trigger Purchasing.uPurchaseOrderDetail on Purchasing.PurchaseOrderDetail at instawdb.sql:4327:1
+trigger Purchasing.uPurchaseOrderHeader on Purchasing.PurchaseOrderHeader at instawdb.sql:4395:1
+trigger Sales.iduSalesOrderDetail on Sales.SalesOrderDetail at instawdb.sql:4432:1
+trigger Sales.uSalesOrderHeader on Sales.SalesOrderHeader at instawdb.sql:4517:1
+type dbo.AccountNumber nvarchar(15) at instawdb.sql:331:1
+type dbo.Flag bit at instawdb.sql:332:1
+type dbo.Name nvarchar(50) at instawdb.sql:334:1
+type dbo.NameStyle bit at instawdb.sql:333:1
+type dbo.OrderNumber nvarchar(25) at instawdb.sql:335:1
+type dbo.Phone nvarchar(25) at instawdb.sql:336:1
+view HumanResources.vEmployee at instawdb.sql:4774:1
+view HumanResources.vEmployeeDepartment at instawdb.sql:4814:1
+view HumanResources.vEmployeeDepartmentHistory at instawdb.sql:4837:1
+view HumanResources.vJobCandidate at instawdb.sql:4939:1
+view HumanResources.vJobCandidateEducation at instawdb.sql:5005:1
+view HumanResources.vJobCandidateEmployment at instawdb.sql:4976:1
+view Person.vAdditionalContactInfo at instawdb.sql:4725:1
+view Person.vStateProvinceCountryRegion at instawdb.sql:5229:1
+view Production.vProductAndDescription at instawdb.sql:5038:1
+view Production.vProductModelCatalogDescription at instawdb.sql:5061:1
+view Production.vProductModelInstructions at instawdb.sql:5124:1
+view Purchasing.vVendorWithAddresses at instawdb.sql:5358:1
+view Purchasing.vVendorWithContacts at instawdb.sql:5329:1
+view Sales.vIndividualCustomer at instawdb.sql:4862:1
+view Sales.vPersonDemographics at instawdb.sql:4905:1
+view Sales.vSalesPerson at instawdb.sql:5146:1
+view Sales.vSalesPersonSalesByFiscalYears at instawdb.sql:5194:1
+view Sales.vStoreWithAddresses at instawdb.sql:5305:1
+view Sales.vStoreWithContacts at instawdb.sql:5276:1
+view Sales.vStoreWithDemographics at instawdb.sql:5249:1

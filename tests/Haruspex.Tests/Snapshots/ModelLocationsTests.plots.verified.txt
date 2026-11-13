@@ -1,0 +1,30 @@
+cascading key plot.sowing to plot.bed at plots.sql:18:39
+check plot.bed ck_bed_soil at plots.sql:12:37
+column plot.bed.area_m2 decimal(6,2) at plots.sql:11:5
+column plot.bed.bed_id int at plots.sql:9:5
+column plot.bed.name nvarchar(40) at plots.sql:10:5
+column plot.bed.soil varchar(5) at plots.sql:12:5
+column plot.sowing.bed_id int at plots.sql:18:5
+column plot.sowing.crop nvarchar(30) at plots.sql:19:5
+column plot.sowing.harvested date at plots.sql:21:5
+column plot.sowing.sowing_id int at plots.sql:17:5
+column plot.sowing.sown date at plots.sql:20:5
+function plot.sowings_in at plots.sql:33:1
+key plot.bed pk_bed (bed_id) at plots.sql:9:37
+key plot.sowing pk_sowing (sowing_id) at plots.sql:17:39
+named function plot.sowings_in
+parameter plot.bed_json @bed_id at later.sql:11:40
+parameter plot.bed_with_crops @bed_id at plots.sql:49:38
+parameter plot.crops_of @bed_id at later.sql:5:32
+parameter plot.harvest_dates @bed_id at harvest.sql:4:37
+parameter plot.sowings_in @bed_id at plots.sql:33:34
+procedure plot.bed_json at later.sql:11:9
+procedure plot.bed_with_crops at plots.sql:49:1
+procedure plot.crops_of at later.sql:5:1
+procedure plot.harvest_dates at harvest.sql:4:1
+procedure plot.harvested_area at harvest.sql:16:2
+procedure plot.list_beds at plots.sql:42:1
+procedure plot.unharvested at harvest.sql:12:3
+table plot.bed at plots.sql:7:1
+table plot.sowing at plots.sql:15:1
+view plot.bed_crop at plots.sql:26:1

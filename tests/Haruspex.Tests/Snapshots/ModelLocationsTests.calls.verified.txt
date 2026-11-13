@@ -1,0 +1,49 @@
+column calls.batch.baked_on date at tables/batch.sql:6:5
+column calls.batch.batch_id int at tables/batch.sql:3:5
+column calls.batch.note nvarchar(40) at tables/batch.sql:8:5
+column calls.batch.oven_id int at tables/batch.sql:4:5
+column calls.batch.product nvarchar(30) at tables/batch.sql:5:5
+column calls.batch.weight_g int at tables/batch.sql:7:5
+column calls.delivery.batch_id int at tables/delivery.sql:4:5
+column calls.delivery.delivery_id int at tables/delivery.sql:3:5
+column calls.oven.label nvarchar(20) at tables/oven.sql:4:5
+column calls.oven.oven_id int at tables/oven.sql:3:5
+column calls.oven.rack_count tinyint at tables/oven.sql:5:5
+key calls.batch unnamed (batch_id) at tables/batch.sql:3:27
+key calls.delivery unnamed (delivery_id) at tables/delivery.sql:3:45
+key calls.oven unnamed (oven_id) at tables/oven.sql:3:26
+parameter calls.batch_feed @oven at procedures/batch_feed.sql:3:35
+parameter calls.batch_rows @oven at procedures/batch_rows.sql:2:35
+parameter calls.daily_report @day at procedures/daily_report.sql:2:37
+parameter calls.daily_report @placeholder at procedures/daily_report.sql:2:55
+parameter calls.maybe_ovens @show at procedures/maybe_ovens.sql:2:36
+parameter calls.maybe_then_batches @show at procedures/maybe_then_batches.sql:2:43
+parameter calls.ovens_or_batches @oven at procedures/ovens_or_batches.sql:2:53
+parameter calls.ovens_or_batches @ovens at procedures/ovens_or_batches.sql:2:41
+parameter calls.recount @n at procedures/recount.sql:3:32
+parameter calls.recount_from @n at procedures/recount_from.sql:2:37
+parameter calls.search_batches @product at procedures/search_batches.sql:2:39
+parameter calls.search_with_ovens @product at procedures/search_with_ovens.sql:2:42
+parameter calls.walk_even @n at procedures/walk_even.sql:2:34
+parameter calls.walk_odd @n at procedures/walk_odd.sql:2:33
+procedure calls.add_placeholder at procedures/add_placeholder.sql:2:1
+procedure calls.batch_feed at procedures/batch_feed.sql:3:1
+procedure calls.batch_rows at procedures/batch_rows.sql:2:1
+procedure calls.daily_report at procedures/daily_report.sql:2:1
+procedure calls.delivery_stage at procedures/delivery_stage.sql:3:1
+procedure calls.maybe_ovens at procedures/maybe_ovens.sql:2:1
+procedure calls.maybe_then_batches at procedures/maybe_then_batches.sql:2:1
+procedure calls.oven_list at procedures/oven_list.sql:2:1
+procedure calls.ovens_or_batches at procedures/ovens_or_batches.sql:2:1
+procedure calls.picked_batches at procedures/picked_batches.sql:2:1
+procedure calls.rack_counts at procedures/rack_counts.sql:2:1
+procedure calls.rack_sizes at procedures/rack_sizes.sql:2:1
+procedure calls.recount at procedures/recount.sql:3:1
+procedure calls.recount_from at procedures/recount_from.sql:2:1
+procedure calls.search_batches at procedures/search_batches.sql:2:1
+procedure calls.search_with_ovens at procedures/search_with_ovens.sql:2:1
+procedure calls.walk_even at procedures/walk_even.sql:2:1
+procedure calls.walk_odd at procedures/walk_odd.sql:2:1
+table calls.batch at tables/batch.sql:1:1
+table calls.delivery at tables/delivery.sql:1:1
+table calls.oven at tables/oven.sql:1:1

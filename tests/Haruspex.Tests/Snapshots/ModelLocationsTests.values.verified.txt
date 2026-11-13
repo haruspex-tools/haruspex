@@ -1,0 +1,48 @@
+column vals.sample.approx float at tables/sample.sql:17:5
+column vals.sample.approx_real real at tables/sample.sql:18:5
+column vals.sample.big bigint at tables/sample.sql:10:5
+column vals.sample.body nvarchar(max) at tables/sample.sql:36:5
+column vals.sample.cash money at tables/sample.sql:15:5
+column vals.sample.code char(5) at tables/sample.sql:33:5
+column vals.sample.day date at tables/sample.sql:20:5
+column vals.sample.dec_19_2 decimal(19,2) at tables/sample.sql:11:5
+column vals.sample.dec_38_0 decimal(38,0) at tables/sample.sql:12:5
+column vals.sample.dec_5_5 decimal(5,5) at tables/sample.sql:14:5
+column vals.sample.dt2_0 datetime2(0) at tables/sample.sql:24:5
+column vals.sample.dt2_3 datetime2(3) at tables/sample.sql:25:5
+column vals.sample.dt2_7 datetime2(7) at tables/sample.sql:26:5
+column vals.sample.dto_0 datetimeoffset(0) at tables/sample.sql:27:5
+column vals.sample.dto_3 datetimeoffset(3) at tables/sample.sql:28:5
+column vals.sample.dto_7 datetimeoffset(7) at tables/sample.sql:29:5
+column vals.sample.flag bit at tables/sample.sql:19:5
+column vals.sample.guid uniqueidentifier at tables/sample.sql:32:5
+column vals.sample.label nvarchar(40) at tables/sample.sql:6:5
+column vals.sample.legacy_dt datetime at tables/sample.sql:31:5
+column vals.sample.ncode nchar(5) at tables/sample.sql:34:5
+column vals.sample.num_9_3 numeric(9,3) at tables/sample.sql:13:5
+column vals.sample.sample_id int at tables/sample.sql:5:5
+column vals.sample.small smallint at tables/sample.sql:8:5
+column vals.sample.small_cash smallmoney at tables/sample.sql:16:5
+column vals.sample.small_dt smalldatetime at tables/sample.sql:30:5
+column vals.sample.t0 time(0) at tables/sample.sql:21:5
+column vals.sample.t3 time(3) at tables/sample.sql:22:5
+column vals.sample.t7 time(7) at tables/sample.sql:23:5
+column vals.sample.tiny tinyint at tables/sample.sql:7:5
+column vals.sample.vcode varchar(5) at tables/sample.sql:35:5
+column vals.sample.whole int at tables/sample.sql:9:5
+column vals.sample_tag.name nvarchar(20) at tables/sample_tag.sql:6:5
+column vals.sample_tag.note nvarchar(40) at tables/sample_tag.sql:7:5
+column vals.sample_tag.sample_id int at tables/sample_tag.sql:5:5
+column vals.sample_tag.sample_tag_id int at tables/sample_tag.sql:4:5
+key vals.sample pk_sample (sample_id) at tables/sample.sql:5:48
+key vals.sample_tag pk_sample_tag (sample_tag_id) at tables/sample_tag.sql:4:43
+parameter vals.get_sample @sample_id at procedures/get_sample.sql:3:5
+parameter vals.list_samples @sample_id at procedures/list_samples.sql:3:5
+procedure vals.get_sample at procedures/get_sample.sql:2:1
+procedure vals.list_nested at procedures/list_nested.sql:4:1
+procedure vals.list_nested_with_nulls at procedures/list_nested_with_nulls.sql:3:1
+procedure vals.list_samples at procedures/list_samples.sql:2:1
+procedure vals.list_samples_with_nulls at procedures/list_samples_with_nulls.sql:2:1
+procedure vals.sample_rows at procedures/sample_rows.sql:2:1
+table vals.sample at tables/sample.sql:3:1
+table vals.sample_tag at tables/sample_tag.sql:2:1

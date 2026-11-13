@@ -21,6 +21,14 @@ end_of_line = lf
 insert_final_newline = unset
 trim_trailing_whitespace = false
 
+# The plots fixture's scripts are laid out on purpose with byte order marks, UTF-16 and CRLF and lone CR line endings
+# (tests/fixtures/plots/README.md): no editor or formatter may change them.
+[tests/fixtures/plots/database/**]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+
 # The vendored corpus is Microsoft's, kept byte for byte as fetched and checked against its manifest's hashes
 # (tests/corpus/README.md): no editor or formatter may change its encoding, line endings or whitespace.
 [tests/corpus/sql-server-samples/**]

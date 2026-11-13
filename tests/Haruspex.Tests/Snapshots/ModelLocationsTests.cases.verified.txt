@@ -1,0 +1,34 @@
+check desk.customer ck_customer_tier at tables/customer.sql:5:27
+check desk.job ck_job_status at tables/job.sql:4:29
+column desk.customer.customer_id int at tables/customer.sql:2:5
+column desk.customer.name nvarchar(40) at tables/customer.sql:3:5
+column desk.customer.phone varchar(20) at tables/customer.sql:4:5
+column desk.customer.tier tinyint at tables/customer.sql:5:5
+column desk.job.customer_id int at tables/job.sql:3:5
+column desk.job.done_on date at tables/job.sql:8:5
+column desk.job.job_id int at tables/job.sql:2:5
+column desk.job.priority tinyint at tables/job.sql:5:5
+column desk.job.promised_on date at tables/job.sql:7:5
+column desk.job.quoted decimal(9,2) at tables/job.sql:6:5
+column desk.job.status char(1) at tables/job.sql:4:5
+column desk.job_note.job_id int at tables/job_note.sql:2:5
+column desk.job_note.note nvarchar(100) at tables/job_note.sql:3:5
+column desk.part_line.job_id int at tables/part_line.sql:3:5
+column desk.part_line.line_id int at tables/part_line.sql:2:5
+column desk.part_line.part nvarchar(30) at tables/part_line.sql:4:5
+column desk.part_line.price decimal(9,2) at tables/part_line.sql:6:5
+column desk.part_line.qty smallint at tables/part_line.sql:5:5
+key desk.customer pk_customer (customer_id) at tables/customer.sql:2:30
+key desk.job pk_job (job_id) at tables/job.sql:2:25
+key desk.job_note pk_job_note (job_id) at tables/job_note.sql:2:25
+key desk.part_line pk_part_line (line_id) at tables/part_line.sql:2:26
+parameter desk.job_card @job_id at procedures/job_card.sql:5:5
+parameter desk.status_totals @status at procedures/status_totals.sql:4:5
+procedure desk.customer_jobs at procedures/customer_jobs.sql:2:1
+procedure desk.job_board at procedures/job_board.sql:3:1
+procedure desk.job_card at procedures/job_card.sql:4:1
+procedure desk.status_totals at procedures/status_totals.sql:3:1
+table desk.customer at tables/customer.sql:1:1
+table desk.job at tables/job.sql:1:1
+table desk.job_note at tables/job_note.sql:1:1
+table desk.part_line at tables/part_line.sql:1:1

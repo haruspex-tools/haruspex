@@ -1,0 +1,25 @@
+// The runs of the plots fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what
+// each key means.
+{
+  // The fixture is about where things are in a script, not about scalar facts, so its seed isn't held to every edge.
+  "seedReachesEveryEdge": false,
+
+  "setups": {
+    "no sowings": "DELETE FROM plot.sowing;"
+  },
+
+  "runs": [
+    { "name": "list_beds", "procedure": "plot.list_beds" },
+    { "name": "bed_with_crops, a bed with sowings", "procedure": "plot.bed_with_crops", "parameters": { "@bed_id": 1 } },
+    { "name": "bed_with_crops, a bed with none", "procedure": "plot.bed_with_crops", "parameters": { "@bed_id": 2 } },
+    { "name": "crops_of", "procedure": "plot.crops_of", "parameters": { "@bed_id": 1 } },
+    { "name": "bed_json, a bed with sowings", "procedure": "plot.bed_json", "parameters": { "@bed_id": 1 } },
+    { "name": "bed_json, a bed with none", "procedure": "plot.bed_json", "parameters": { "@bed_id": 2 } },
+    { "name": "bed_json, no such bed", "procedure": "plot.bed_json", "parameters": { "@bed_id": 999 } },
+    { "name": "harvest_dates", "procedure": "plot.harvest_dates", "parameters": { "@bed_id": 1 } },
+    { "name": "harvest_dates, a bed with none", "procedure": "plot.harvest_dates", "parameters": { "@bed_id": 2 } },
+    { "name": "unharvested", "procedure": "plot.unharvested" },
+    { "name": "harvested_area", "procedure": "plot.harvested_area" },
+    { "name": "harvested_area, no sowings", "procedure": "plot.harvested_area", "setup": "no sowings" }
+  ]
+}

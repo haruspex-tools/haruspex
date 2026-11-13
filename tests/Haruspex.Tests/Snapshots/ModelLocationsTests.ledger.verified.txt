@@ -1,0 +1,28 @@
+column ledger.account.account_id int at tables/account.sql:2:5
+column ledger.account.name nvarchar(40) at tables/account.sql:3:5
+column ledger.line.account_id int at tables/line.sql:5:5
+column ledger.line.big decimal(38,0) at tables/line.sql:10:5
+column ledger.line.delta smallint at tables/line.sql:18:5
+column ledger.line.discount numeric(5,4) at tables/line.sql:9:5
+column ledger.line.fee money at tables/line.sql:12:5
+column ledger.line.flag bit at tables/line.sql:17:5
+column ledger.line.frac decimal(38,38) at tables/line.sql:11:5
+column ledger.line.line_id int at tables/line.sql:4:5
+column ledger.line.qty int at tables/line.sql:6:5
+column ledger.line.rate decimal(19,6) at tables/line.sql:8:5
+column ledger.line.ref_no bigint at tables/line.sql:19:5
+column ledger.line.score real at tables/line.sql:15:5
+column ledger.line.small_fee smallmoney at tables/line.sql:13:5
+column ledger.line.unit_price decimal(19,2) at tables/line.sql:7:5
+column ledger.line.units tinyint at tables/line.sql:16:5
+column ledger.line.weight float at tables/line.sql:14:5
+key ledger.account pk_account (account_id) at tables/account.sql:2:29
+key ledger.line pk_line (line_id) at tables/line.sql:4:26
+parameter ledger.account_stats @account_id at procedures/account_stats.sql:2:5
+procedure ledger.account_stats at procedures/account_stats.sql:1:1
+procedure ledger.lenient at procedures/lenient.sql:1:1
+procedure ledger.line_functions at procedures/line_functions.sql:1:1
+procedure ledger.line_values at procedures/line_values.sql:1:1
+procedure ledger.line_windows at procedures/line_windows.sql:1:1
+table ledger.account at tables/account.sql:1:1
+table ledger.line at tables/line.sql:3:1

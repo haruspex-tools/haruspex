@@ -1,0 +1,36 @@
+check pay.book ck_book_price at tables/book.sql:7:38
+check pay.book_tag ck_book_tag_weight at tables/book_tag.sql:5:30
+check pay.review ck_review_stars at tables/review.sql:5:42
+column pay.author.author_id int at tables/author.sql:4:5
+column pay.author.bio nvarchar(200) at tables/author.sql:6:5
+column pay.author.name nvarchar(40) at tables/author.sql:5:5
+column pay.author.profile json at tables/author.sql:7:5
+column pay.book.author_id int at tables/book.sql:4:5
+column pay.book.book_id int at tables/book.sql:3:5
+column pay.book.isbn char(13) at tables/book.sql:6:5
+column pay.book.price decimal(9,2) at tables/book.sql:7:5
+column pay.book.published date at tables/book.sql:8:5
+column pay.book.title nvarchar(60) at tables/book.sql:5:5
+column pay.book_tag.book_id int at tables/book_tag.sql:3:5
+column pay.book_tag.tag varchar(20) at tables/book_tag.sql:4:5
+column pay.book_tag.weight smallint at tables/book_tag.sql:5:5
+column pay.review.book_id int at tables/review.sql:4:5
+column pay.review.comment nvarchar(100) at tables/review.sql:6:5
+column pay.review.posted datetimeoffset(0) at tables/review.sql:7:5
+column pay.review.review_id int at tables/review.sql:3:5
+column pay.review.stars tinyint at tables/review.sql:5:5
+key pay.author unnamed (author_id) at tables/author.sql:4:37
+key pay.book unnamed (book_id) at tables/book.sql:3:38
+key pay.book_tag unnamed (book_id, tag) at tables/book_tag.sql:6:5
+key pay.review unnamed (review_id) at tables/review.sql:3:42
+parameter pay.get_author @author_id at procedures/get_author.sql:4:5
+procedure pay.author_documents at procedures/author_documents.sql:2:1
+procedure pay.author_stats at procedures/author_stats.sql:2:1
+procedure pay.get_author at procedures/get_author.sql:3:1
+procedure pay.list_books at procedures/list_books.sql:3:1
+procedure pay.review_digest at procedures/review_digest.sql:3:1
+procedure pay.reviews_by_book at procedures/reviews_by_book.sql:2:1
+table pay.author at tables/author.sql:2:1
+table pay.book at tables/book.sql:1:1
+table pay.book_tag at tables/book_tag.sql:1:1
+table pay.review at tables/review.sql:1:1

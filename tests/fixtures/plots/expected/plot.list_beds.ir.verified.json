@@ -1,0 +1,177 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "plot.list_beds",
+      "name": "ListBeds",
+      "kind": "procedure",
+      "at": "plots.sql:42:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListBedsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListBedsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "plot.list_beds",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "bed_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "area_m2",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(6,2)",
+            "digits": {
+              "precision": 6,
+              "scale": 2,
+              "from": {
+                "type": "decimal(6,2)"
+              }
+            },
+            "min": {
+              "value": -9999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(6,2)"
+              }
+            },
+            "max": {
+              "value": 9999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(6,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "plot.bed.area_m2"
+            }
+          ]
+        },
+        {
+          "name": "soil",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(5)",
+            "maxLength": {
+              "value": 5,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(5)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "clay",
+                "loam",
+                "sand"
+              ],
+              "from": [
+                {
+                  "check": "plot.ck_bed_soil"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "sowings",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "count-overflow",
+              "at": "plots.sql:45:16"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

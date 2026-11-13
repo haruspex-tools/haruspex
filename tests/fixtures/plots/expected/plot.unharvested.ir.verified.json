@@ -1,0 +1,79 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "plot.unharvested",
+      "name": "Unharvested",
+      "kind": "procedure",
+      "at": "harvest.sql:12:3",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "UnharvestedRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "UnharvestedRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "plot.unharvested",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "crop",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unmatched-row",
+              "at": "harvest.sql:14:59"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

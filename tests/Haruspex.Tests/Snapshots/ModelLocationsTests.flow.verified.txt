@@ -1,0 +1,52 @@
+check flow.component ck_component_quantity at tables/part.sql:11:32
+check flow.part ck_part_unit at tables/part.sql:4:26
+check flow.region ck_region_code at tables/region.sql:3:27
+check flow.sale ck_sale_amount at tables/sale.sql:5:35
+check flow.sale ck_sale_channel at tables/sale.sql:6:33
+column flow.component.assembly_id int at tables/part.sql:9:5
+column flow.component.part_id int at tables/part.sql:10:5
+column flow.component.quantity smallint at tables/part.sql:11:5
+column flow.employee.employee_id int at tables/employee.sql:2:5
+column flow.employee.manager_id int at tables/employee.sql:3:5
+column flow.employee.name nvarchar(30) at tables/employee.sql:4:5
+column flow.employee.title nvarchar(30) at tables/employee.sql:5:5
+column flow.part.name nvarchar(30) at tables/part.sql:3:5
+column flow.part.part_id int at tables/part.sql:2:5
+column flow.part.unit varchar(4) at tables/part.sql:4:5
+column flow.region.code char(3) at tables/region.sql:3:5
+column flow.region.name nvarchar(30) at tables/region.sql:4:5
+column flow.region.region_id int at tables/region.sql:2:5
+column flow.sale.amount decimal(9,2) at tables/sale.sql:5:5
+column flow.sale.channel varchar(6) at tables/sale.sql:6:5
+column flow.sale.note nvarchar(40) at tables/sale.sql:7:5
+column flow.sale.region_id int at tables/sale.sql:4:5
+column flow.sale.sale_id int at tables/sale.sql:3:5
+key flow.component unnamed (assembly_id, part_id) at tables/part.sql:12:5
+key flow.employee unnamed (employee_id) at tables/employee.sql:2:30
+key flow.part unnamed (part_id) at tables/part.sql:2:26
+key flow.region unnamed (region_id) at tables/region.sql:2:28
+key flow.sale unnamed (sale_id) at tables/sale.sql:3:26
+parameter flow.bill_of_materials @assembly at procedures/bill_of_materials.sql:4:5
+parameter flow.caught_report @fail_at at procedures/caught_report.sql:4:5
+parameter flow.chain_up @employee at procedures/chain_up.sql:4:5
+parameter flow.notes_or_names @notes at procedures/notes_or_names.sql:5:5
+parameter flow.part_list @with_units at procedures/part_list.sql:4:5
+parameter flow.region_report @channel at procedures/region_report.sql:5:5
+parameter flow.sales_by_mode @mode at procedures/sales_by_mode.sql:5:5
+parameter flow.sales_by_mode @region at procedures/sales_by_mode.sql:6:5
+parameter flow.staff_moves @assign at procedures/staff_moves.sql:5:5
+procedure flow.bill_of_materials at procedures/bill_of_materials.sql:3:1
+procedure flow.caught_report at procedures/caught_report.sql:3:1
+procedure flow.chain_up at procedures/chain_up.sql:3:1
+procedure flow.notes_or_names at procedures/notes_or_names.sql:4:1
+procedure flow.org_chart at procedures/org_chart.sql:3:1
+procedure flow.part_list at procedures/part_list.sql:3:1
+procedure flow.region_report at procedures/region_report.sql:4:1
+procedure flow.region_sales at procedures/region_sales.sql:3:1
+procedure flow.sales_by_mode at procedures/sales_by_mode.sql:4:1
+procedure flow.staff_moves at procedures/staff_moves.sql:4:1
+table flow.component at tables/part.sql:8:1
+table flow.employee at tables/employee.sql:1:1
+table flow.part at tables/part.sql:1:1
+table flow.region at tables/region.sql:1:1
+table flow.sale at tables/sale.sql:2:1

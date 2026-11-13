@@ -1,0 +1,62 @@
+check lend.title ck_title_genre at tables/title.sql:7:28
+column lend.branch.branch_id int at tables/branch.sql:2:5
+column lend.branch.city nvarchar(40) at tables/branch.sql:4:5
+column lend.branch.name nvarchar(40) at tables/branch.sql:3:5
+column lend.copy.branch_id int at tables/copy.sql:3:5
+column lend.copy.copy_no int at tables/copy.sql:4:5
+column lend.copy.shelf varchar(8) at tables/copy.sql:6:5
+column lend.copy.title_id int at tables/copy.sql:5:5
+column lend.loan.branch_id int at tables/loan.sql:4:5
+column lend.loan.copy_no int at tables/loan.sql:5:5
+column lend.loan.due_on date at tables/loan.sql:8:5
+column lend.loan.fine decimal(6,2) at tables/loan.sql:10:5
+column lend.loan.lent_on date at tables/loan.sql:7:5
+column lend.loan.loan_id int at tables/loan.sql:3:5
+column lend.loan.member_id int at tables/loan.sql:6:5
+column lend.loan.returned_on date at tables/loan.sql:9:5
+column lend.member.email varchar(80) at tables/member.sql:3:5
+column lend.member.home_branch_id int at tables/member.sql:6:5
+column lend.member.member_id int at tables/member.sql:2:5
+column lend.member.name nvarchar(60) at tables/member.sql:4:5
+column lend.member.nickname nvarchar(20) at tables/member.sql:5:5
+column lend.title.author nvarchar(60) at tables/title.sql:6:5
+column lend.title.genre varchar(10) at tables/title.sql:7:5
+column lend.title.isbn varchar(13) at tables/title.sql:4:5
+column lend.title.name nvarchar(60) at tables/title.sql:5:5
+column lend.title.title_id int at tables/title.sql:3:5
+key lend.branch pk_branch (branch_id) at tables/branch.sql:2:28
+key lend.copy pk_copy (branch_id, copy_no) at tables/copy.sql:7:5
+key lend.loan pk_loan (loan_id) at tables/loan.sql:3:26
+key lend.member pk_member (member_id) at tables/member.sql:2:28
+key lend.member uq_member_email (email) at tables/member.sql:3:28
+key lend.title pk_title (title_id) at tables/title.sql:3:27
+key lend.title uq_title_isbn (isbn) at tables/title.sql:4:27
+parameter lend.copies_at @branch_id at procedures/copies_at.sql:3:5
+parameter lend.copy_at @branch_id at procedures/copy_at.sql:3:5
+parameter lend.copy_at @copy_no at procedures/copy_at.sql:4:5
+parameter lend.get_member @member_id at procedures/get_member.sql:4:5
+parameter lend.latest_loan @member_id at procedures/latest_loan.sql:3:5
+parameter lend.loan_totals @member_id at procedures/loan_totals.sql:4:5
+parameter lend.member_by_email @email at procedures/member_by_email.sql:3:5
+parameter lend.overdue_members @today at procedures/overdue_members.sql:3:5
+parameter lend.search_titles @author at procedures/search_titles.sql:4:5
+parameter lend.search_titles @genre at procedures/search_titles.sql:5:5
+parameter lend.search_titles @name at procedures/search_titles.sql:3:5
+procedure lend.authors_report at procedures/authors_report.sql:2:1
+procedure lend.branch_stats at procedures/branch_stats.sql:3:1
+procedure lend.catalogue_summary at procedures/catalogue_summary.sql:2:1
+procedure lend.copies_at at procedures/copies_at.sql:2:1
+procedure lend.copy_at at procedures/copy_at.sql:2:1
+procedure lend.get_member at procedures/get_member.sql:3:1
+procedure lend.latest_loan at procedures/latest_loan.sql:2:1
+procedure lend.loan_totals at procedures/loan_totals.sql:3:1
+procedure lend.member_by_email at procedures/member_by_email.sql:2:1
+procedure lend.member_digests at procedures/member_digests.sql:3:1
+procedure lend.open_loans at procedures/open_loans.sql:3:1
+procedure lend.overdue_members at procedures/overdue_members.sql:2:1
+procedure lend.search_titles at procedures/search_titles.sql:2:1
+table lend.branch at tables/branch.sql:1:1
+table lend.copy at tables/copy.sql:2:1
+table lend.loan at tables/loan.sql:2:1
+table lend.member at tables/member.sql:1:1
+table lend.title at tables/title.sql:2:1

@@ -1,0 +1,57 @@
+check chk.owner ck_owner_name at tables/owner.sql:4:38
+check chk.owner unnamed at tables/owner.sql:6:38
+check chk.ticket ck_ticket_big at tables/ticket.sql:19:37
+check chk.ticket ck_ticket_discount at tables/ticket.sql:17:28
+check chk.ticket ck_ticket_level at tables/ticket.sql:16:37
+check chk.ticket ck_ticket_muted at tables/ticket.sql:28:37, disabled at tables/ticket_nocheck.sql:3:1
+check chk.ticket ck_ticket_note at tables/ticket.sql:21:70
+check chk.ticket ck_ticket_pair at tables/ticket.sql:35:5
+check chk.ticket ck_ticket_priority at tables/ticket.sql:14:37
+check chk.ticket ck_ticket_rate at tables/ticket.sql:34:5
+check chk.ticket ck_ticket_replicated at tables/ticket.sql:29:37
+check chk.ticket ck_ticket_restored at tables/ticket.sql:31:37
+check chk.ticket ck_ticket_score at tables/ticket.sql:15:37
+check chk.ticket ck_ticket_sigil at tables/ticket.sql:25:69
+check chk.ticket ck_ticket_status at tables/ticket.sql:13:74
+check chk.ticket ck_ticket_title at tables/ticket.sql:20:41
+check chk.ticket unnamed at tables/ticket.sql:22:70
+check chk.ticket_event ck_ticket_event_kind at tables/ticket_event.sql:5:35
+check chk.ticket_event ck_ticket_event_minutes at tables/ticket_event.sql:6:31
+column chk.owner.grade nchar(1) at tables/owner.sql:6:5
+column chk.owner.name nvarchar(20) at tables/owner.sql:4:5
+column chk.owner.owner_id int at tables/owner.sql:3:5
+column chk.ticket.alt_code short_code at tables/ticket.sql:12:5
+column chk.ticket.big bigint at tables/ticket.sql:19:5
+column chk.ticket.code short_code at tables/ticket.sql:11:5
+column chk.ticket.discount pct at tables/ticket.sql:17:5
+column chk.ticket.late int at tables/ticket.sql:33:5
+column chk.ticket.level smallint at tables/ticket.sql:16:5
+column chk.ticket.muted int at tables/ticket.sql:28:5
+column chk.ticket.note varchar(30) at tables/ticket.sql:21:5
+column chk.ticket.owner_id int at tables/ticket.sql:10:5
+column chk.ticket.pad_utf8 char(4) at tables/ticket.sql:27:5
+column chk.ticket.priority tinyint at tables/ticket.sql:14:5
+column chk.ticket.rate decimal(9,4) at tables/ticket.sql:18:5
+column chk.ticket.region char(2) at tables/ticket.sql:22:5
+column chk.ticket.replicated int at tables/ticket.sql:29:5
+column chk.ticket.restored int at tables/ticket.sql:31:5
+column chk.ticket.score int at tables/ticket.sql:15:5
+column chk.ticket.sigil varchar(6) at tables/ticket.sql:25:5
+column chk.ticket.status varchar(10) at tables/ticket.sql:13:5
+column chk.ticket.tag_utf8 varchar(12) at tables/ticket.sql:26:5
+column chk.ticket.ticket_id int at tables/ticket.sql:9:5
+column chk.ticket.title nvarchar(60) at tables/ticket.sql:20:5
+column chk.ticket_event.event_id int at tables/ticket_event.sql:3:5
+column chk.ticket_event.kind nchar(4) at tables/ticket_event.sql:5:5
+column chk.ticket_event.minutes smallint at tables/ticket_event.sql:6:5
+column chk.ticket_event.ticket_id int at tables/ticket_event.sql:4:5
+key chk.owner pk_owner (owner_id) at tables/owner.sql:3:38
+key chk.ticket pk_ticket (ticket_id) at tables/ticket.sql:9:41
+key chk.ticket_event pk_ticket_event (event_id) at tables/ticket_event.sql:3:35
+procedure chk.list_tickets at procedures/list_tickets.sql:3:1
+procedure chk.ticket_rows at procedures/ticket_rows.sql:2:1
+table chk.owner at tables/owner.sql:1:1
+table chk.ticket at tables/ticket.sql:7:1
+table chk.ticket_event at tables/ticket_event.sql:1:1
+type chk.pct decimal(5,2) at tables/types.sql:4:1
+type chk.short_code nvarchar(8) at tables/types.sql:2:1

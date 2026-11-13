@@ -1,0 +1,65 @@
+column cafe.guest.guest_id int at tables/guest.sql:2:5
+column cafe.guest.name nvarchar(40) at tables/guest.sql:3:5
+column cafe.guest.nickname nvarchar(20) at tables/guest.sql:4:5
+column cafe.guest.phone varchar(15) at tables/guest.sql:5:5
+column cafe.menu_item.item_id int at tables/menu_item.sql:2:5
+column cafe.menu_item.price decimal(9,2) at tables/menu_item.sql:4:5
+column cafe.menu_item.short_code char(4) at tables/menu_item.sql:5:5
+column cafe.menu_item.title nvarchar(30) at tables/menu_item.sql:3:5
+column cafe.tab.closed_at datetime2(0) at tables/tab.sql:5:5
+column cafe.tab.guest_id int at tables/tab.sql:3:5
+column cafe.tab.note varchar(20) at tables/tab.sql:8:5
+column cafe.tab.opened_at datetime2(0) at tables/tab.sql:4:5
+column cafe.tab.tab_id int at tables/tab.sql:2:5
+column cafe.tab.table_no tinyint at tables/tab.sql:6:5
+column cafe.tab.tip decimal(9,2) at tables/tab.sql:7:5
+column cafe.tab_item.discount decimal(5,2) at tables/tab_item.sql:6:5
+column cafe.tab_item.item_id int at tables/tab_item.sql:4:5
+column cafe.tab_item.qty smallint at tables/tab_item.sql:5:5
+column cafe.tab_item.tab_id int at tables/tab_item.sql:3:5
+column cafe.tab_item.tab_item_id int at tables/tab_item.sql:2:5
+function cafe.guest_label at functions/guest_label.sql:3:1
+function cafe.guest_open_tab at functions/guest_open_tab.sql:2:1
+function cafe.guest_tabs at functions/guest_tabs.sql:1:1
+function cafe.open_tabs_json at functions/open_tabs_json.sql:2:1
+function cafe.tab_by_id at functions/tab_by_id.sql:1:1
+function cafe.tab_lines at functions/tab_lines.sql:2:1
+function cafe.tab_totals at functions/tab_totals.sql:3:1
+key cafe.guest pk_guest (guest_id) at tables/guest.sql:2:27
+key cafe.menu_item pk_menu_item (item_id) at tables/menu_item.sql:2:26
+key cafe.tab pk_tab (tab_id) at tables/tab.sql:2:25
+key cafe.tab_item pk_tab_item (tab_item_id) at tables/tab_item.sql:2:30
+named function cafe.guest_label
+named function cafe.guest_open_tab
+named function cafe.guest_tabs
+named function cafe.open_tabs_json
+named function cafe.tab_by_id
+named function cafe.tab_lines
+named function cafe.tab_totals
+parameter cafe.dirty_tab @tab_id at procedures/dirty_tab.sql:4:5
+parameter cafe.guest_label @name at functions/guest_label.sql:3:35
+parameter cafe.guest_label @nickname at functions/guest_label.sql:3:55
+parameter cafe.guest_open_tab @guest_id at functions/guest_open_tab.sql:2:38
+parameter cafe.guest_tab_list @guest_id at procedures/guest_tab_list.sql:3:5
+parameter cafe.guest_tabs @guest_id at functions/guest_tabs.sql:1:34
+parameter cafe.tab_by_id @tab_id at functions/tab_by_id.sql:1:33
+parameter cafe.tab_lines @tab_id at functions/tab_lines.sql:2:33
+parameter cafe.tab_lines_list @tab_id at procedures/tab_lines_list.sql:3:5
+parameter cafe.tab_receipt @tab_id at procedures/tab_receipt.sql:4:5
+parameter cafe.tab_summary @tab_id at procedures/tab_summary.sql:5:5
+parameter cafe.tab_totals @tab_id at functions/tab_totals.sql:3:34
+procedure cafe.dirty_tab at procedures/dirty_tab.sql:3:1
+procedure cafe.guest_labels at procedures/guest_labels.sql:2:1
+procedure cafe.guest_spending at procedures/guest_spending.sql:3:1
+procedure cafe.guest_tab_list at procedures/guest_tab_list.sql:2:1
+procedure cafe.guests_with_open_tab at procedures/guests_with_open_tab.sql:2:1
+procedure cafe.menu_prices at procedures/menu_prices.sql:4:1
+procedure cafe.open_tabs_payload at procedures/open_tabs_payload.sql:2:1
+procedure cafe.tab_lines_list at procedures/tab_lines_list.sql:2:1
+procedure cafe.tab_receipt at procedures/tab_receipt.sql:3:1
+procedure cafe.tab_summary at procedures/tab_summary.sql:4:1
+table cafe.guest at tables/guest.sql:1:1
+table cafe.menu_item at tables/menu_item.sql:1:1
+table cafe.tab at tables/tab.sql:1:1
+table cafe.tab_item at tables/tab_item.sql:1:1
+view cafe.open_tab at views/open_tab.sql:2:1

@@ -1,0 +1,53 @@
+check bom.component ck_component_quantity at tables/component.sql:6:35
+check bom.part ck_part_kind at tables/part.sql:6:37
+check bom.part ck_part_unit_cost at tables/part.sql:7:33
+column bom.component.assembly_id int at tables/component.sql:4:5
+column bom.component.part_id int at tables/component.sql:5:5
+column bom.component.quantity smallint at tables/component.sql:6:5
+column bom.part.kind varchar(8) at tables/part.sql:6:5
+column bom.part.name nvarchar(30) at tables/part.sql:5:5
+column bom.part.part_id int at tables/part.sql:4:5
+column bom.part.unit_cost decimal(9,2) at tables/part.sql:7:5
+column cat.category.category_id int at tables/category.sql:3:5
+column cat.category.name nvarchar(20) at tables/category.sql:5:5
+column cat.category.parent_id int at tables/category.sql:4:5
+column cat.item.category_id int at tables/item.sql:4:5
+column cat.item.item_id int at tables/item.sql:3:5
+column cat.item.note nvarchar(20) at tables/item.sql:6:5
+column cat.item.related_item_id int at tables/item.sql:7:5
+column cat.item.title nvarchar(20) at tables/item.sql:5:5
+function bom.components at functions/components.sql:4:1
+function cat.category_contents at functions/category_contents.sql:2:1
+function cat.category_tree at functions/category_tree.sql:2:1
+function cat.item_card at functions/item_card.sql:2:1
+function cat.item_label at functions/item_label.sql:2:1
+function cat.item_tag at functions/item_tag.sql:3:1
+key bom.component unnamed (assembly_id, part_id) at tables/component.sql:7:5
+key bom.part unnamed (part_id) at tables/part.sql:4:37
+key cat.category unnamed (category_id) at tables/category.sql:3:39
+key cat.item unnamed (item_id) at tables/item.sql:3:43
+named function bom.components
+named function cat.category_contents
+named function cat.category_tree
+named function cat.item_card
+named function cat.item_label
+named function cat.item_tag
+parameter bom.components @assembly_id at functions/components.sql:4:32
+parameter bom.get_assembly @part_id at procedures/get_assembly.sql:3:5
+parameter cat.category_contents @category_id at functions/category_contents.sql:2:39
+parameter cat.category_tree @parent_id at functions/category_tree.sql:2:35
+parameter cat.get_category @category_id at procedures/get_category.sql:3:5
+parameter cat.item_card @item_id at functions/item_card.sql:2:31
+parameter cat.item_label @item_id at functions/item_label.sql:2:32
+parameter cat.item_label @text at functions/item_label.sql:2:46
+parameter cat.item_tag @item_id at functions/item_tag.sql:3:30
+parameter cat.item_tag @note at functions/item_tag.sql:3:44
+procedure bom.get_assembly at procedures/get_assembly.sql:2:1
+procedure bom.list_parts at procedures/list_parts.sql:2:1
+procedure cat.get_category at procedures/get_category.sql:2:1
+procedure cat.item_rows at procedures/item_rows.sql:2:1
+procedure cat.list_items at procedures/list_items.sql:2:1
+table bom.component at tables/component.sql:2:1
+table bom.part at tables/part.sql:2:1
+table cat.category at tables/category.sql:1:1
+table cat.item at tables/item.sql:1:1

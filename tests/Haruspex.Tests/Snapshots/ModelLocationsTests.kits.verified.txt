@@ -1,0 +1,29 @@
+column kit.kit.extras nvarchar(max) at tables/kit.sql:7:5
+column kit.kit.kit_id int at tables/kit.sql:3:5
+column kit.kit.name nvarchar(40) at tables/kit.sql:4:5
+column kit.kit.price decimal(9,2) at tables/kit.sql:5:5
+column kit.kit_part.colour nvarchar(10) at tables/kit_part.sql:7:5
+column kit.kit_part.kit_id int at tables/kit_part.sql:4:5
+column kit.kit_part.part_id int at tables/kit_part.sql:3:5
+column kit.kit_part.qty tinyint at tables/kit_part.sql:6:5
+column kit.kit_part.sku varchar(8) at tables/kit_part.sql:5:5
+function kit.part_sheet at functions/part_sheet.sql:3:1
+function kit.parts_of at functions/parts_of.sql:2:1
+key kit.kit unnamed (kit_id) at tables/kit.sql:3:37
+key kit.kit_part unnamed (part_id) at tables/kit_part.sql:3:37
+named function kit.part_sheet
+named function kit.parts_of
+parameter kit.get_kit @kit_id at procedures/get_kit.sql:3:30
+parameter kit.kit_badges @kit_id at procedures/kit_badges.sql:3:33
+parameter kit.kit_routes @kit_id at procedures/kit_routes.sql:2:33
+parameter kit.part_rows @kit_id at procedures/part_rows.sql:3:32
+parameter kit.part_sheet @kit_id at functions/part_sheet.sql:3:32
+parameter kit.parts_of @kit_id at functions/parts_of.sql:2:30
+procedure kit.get_kit at procedures/get_kit.sql:3:1
+procedure kit.kit_badges at procedures/kit_badges.sql:3:1
+procedure kit.kit_routes at procedures/kit_routes.sql:2:1
+procedure kit.kit_sheets at procedures/kit_sheets.sql:3:1
+procedure kit.part_rows at procedures/part_rows.sql:3:1
+table kit.kit at tables/kit.sql:1:1
+table kit.kit_part at tables/kit_part.sql:1:1
+view kit.kit_card at views/kit_card.sql:2:1

@@ -1,0 +1,34 @@
+check gym.member ck_member_plan at tables/member.sql:6:36
+column gym.member.born smalldatetime at tables/member.sql:9:5
+column gym.member.code char(5) at tables/member.sql:5:5
+column gym.member.joined date at tables/member.sql:7:5
+column gym.member.last_seen datetime at tables/member.sql:8:5
+column gym.member.member_id int at tables/member.sql:2:5
+column gym.member.name varchar(40) at tables/member.sql:3:5
+column gym.member.nickname nvarchar(20) at tables/member.sql:4:5
+column gym.member.plan_name varchar(10) at tables/member.sql:6:5
+column gym.member.prefs nvarchar(max) at tables/member.sql:10:5
+column gym.visit.fee money at tables/visit.sql:7:5
+column gym.visit.member_id int at tables/visit.sql:3:5
+column gym.visit.minutes int at tables/visit.sql:5:5
+column gym.visit.rating real at tables/visit.sql:9:5
+column gym.visit.room tinyint at tables/visit.sql:6:5
+column gym.visit.started_at datetime2(3) at tables/visit.sql:4:5
+column gym.visit.tip smallmoney at tables/visit.sql:8:5
+column gym.visit.visit_id int at tables/visit.sql:2:5
+column gym.visit.weight float at tables/visit.sql:10:5
+key gym.member pk_member (member_id) at tables/member.sql:2:28
+key gym.visit pk_visit (visit_id) at tables/visit.sql:2:27
+parameter gym.member_dates @offset at procedures/member_dates.sql:2:5
+parameter gym.member_names @format at procedures/member_names.sql:2:5
+parameter gym.series @upto at procedures/series.sql:2:5
+parameter gym.visit_totals @member_id at procedures/visit_totals.sql:2:5
+procedure gym.lenient at procedures/lenient.sql:1:1
+procedure gym.member_dates at procedures/member_dates.sql:1:1
+procedure gym.member_names at procedures/member_names.sql:1:1
+procedure gym.series at procedures/series.sql:1:1
+procedure gym.visit_money at procedures/visit_money.sql:1:1
+procedure gym.visit_totals at procedures/visit_totals.sql:1:1
+procedure gym.visit_windows at procedures/visit_windows.sql:1:1
+table gym.member at tables/member.sql:1:1
+table gym.visit at tables/visit.sql:1:1

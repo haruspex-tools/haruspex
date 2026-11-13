@@ -1,0 +1,32 @@
+check shop.product ck_product_status at tables/product.sql:7:74
+column shop.basket.basket_id int at tables/basket.sql:9:5
+column shop.basket.customer_id int at tables/basket.sql:11:5
+column shop.basket_line.basket_id int at tables/basket.sql:16:5
+column shop.basket_line.line_no int at tables/basket.sql:17:5
+column shop.basket_line.product_id int at tables/basket.sql:18:5
+column shop.basket_line.quantity int at tables/basket.sql:19:5
+column shop.customer.customer_id int at tables/basket.sql:3:5
+column shop.customer.name nvarchar(60) at tables/basket.sql:4:5
+column shop.product.attributes json at tables/product.sql:9:5
+column shop.product.name nvarchar(80) at tables/product.sql:5:5
+column shop.product.price decimal(9,2) at tables/product.sql:10:5
+column shop.product.product_id int at tables/product.sql:3:5
+column shop.product.sku varchar(12) at tables/product.sql:4:5
+column shop.product.status varchar(8) at tables/product.sql:7:5
+key shop.basket pk_basket (basket_id) at tables/basket.sql:9:32
+key shop.basket_line pk_basket_line (basket_id, line_no) at tables/basket.sql:20:5
+key shop.customer pk_customer (customer_id) at tables/basket.sql:3:41
+key shop.product pk_product (product_id) at tables/product.sql:3:41
+parameter shop.basket_line# @basket_id at procedures/basket_line#.sql:4:5
+parameter shop.basket_line# @line_no at procedures/basket_line#.sql:5:5
+parameter shop.get_basket @basket_id at procedures/get_basket.sql:4:5
+procedure shop.basket_line# at procedures/basket_line#.sql:3:1
+procedure shop.get_basket at procedures/get_basket.sql:3:1
+procedure shop.list_products at procedures/list_products.sql:2:1
+procedure shop.recalculate_internal at procedures/recalculate_internal.sql:2:1
+procedure shop_admin.purge_baskets at procedures/purge.sql:2:1
+procedure shop_admin.report_sales at procedures/report_sales.sql:2:1
+table shop.basket at tables/basket.sql:7:1
+table shop.basket_line at tables/basket.sql:14:1
+table shop.customer at tables/basket.sql:1:1
+table shop.product at tables/product.sql:1:1

@@ -1,0 +1,51 @@
+check rink.locker ck_locker_size at tables/locker.sql:4:27
+check rink.member ck_member_level at tables/member.sql:5:28
+check rink.session ck_session_kind at tables/session.sql:4:30
+column rink.booking.booking_id int at tables/booking.sql:2:5
+column rink.booking.extras nvarchar(max) at tables/booking.sql:7:5
+column rink.booking.guest_id int at tables/booking.sql:5:5
+column rink.booking.member_id int at tables/booking.sql:4:5
+column rink.booking.session_id int at tables/booking.sql:3:5
+column rink.booking.skates tinyint at tables/booking.sql:6:5
+column rink.guest.guest_id int at tables/guest.sql:2:5
+column rink.guest.name varchar(30) at tables/guest.sql:3:5
+column rink.guest.phone varchar(20) at tables/guest.sql:4:5
+column rink.locker.locker_no int at tables/locker.sql:2:5
+column rink.locker.member_id int at tables/locker.sql:3:5
+column rink.locker.size char(1) at tables/locker.sql:4:5
+column rink.member.email varchar(80) at tables/member.sql:4:5
+column rink.member.level varchar(10) at tables/member.sql:5:5
+column rink.member.member_id int at tables/member.sql:2:5
+column rink.member.name varchar(40) at tables/member.sql:3:5
+column rink.member.prefs nvarchar(max) at tables/member.sql:6:5
+column rink.session.coach_id int at tables/session.sql:5:5
+column rink.session.kind varchar(8) at tables/session.sql:4:5
+column rink.session.session_id int at tables/session.sql:2:5
+column rink.session.starts_at datetime2(0) at tables/session.sql:3:5
+function rink.session_people at functions/session_people.sql:2:1
+key rink.booking pk_booking (booking_id) at tables/booking.sql:2:29
+key rink.guest pk_guest (guest_id) at tables/guest.sql:2:27
+key rink.locker pk_locker (locker_no) at tables/locker.sql:2:28
+key rink.member pk_member (member_id) at tables/member.sql:2:28
+key rink.session pk_session (session_id) at tables/session.sql:2:29
+named function rink.session_people
+parameter rink.overlaps @min at procedures/overlaps.sql:6:5
+parameter rink.reach @person_id at procedures/reach.sql:3:5
+parameter rink.reach @session_id at procedures/reach.sql:4:5
+parameter rink.regulars @member_id at procedures/regulars.sql:5:5
+parameter rink.session_people @session_id at functions/session_people.sql:2:38
+procedure rink.busy_people at procedures/busy_people.sql:2:1
+procedure rink.counts at procedures/counts.sql:3:1
+procedure rink.everyone at procedures/everyone.sql:3:1
+procedure rink.lockers at procedures/lockers.sql:3:1
+procedure rink.member_prefs at procedures/member_prefs.sql:3:1
+procedure rink.overlaps at procedures/overlaps.sql:5:1
+procedure rink.reach at procedures/reach.sql:2:1
+procedure rink.regulars at procedures/regulars.sql:4:1
+procedure rink.session_board at procedures/session_board.sql:4:1
+table rink.booking at tables/booking.sql:1:1
+table rink.guest at tables/guest.sql:1:1
+table rink.locker at tables/locker.sql:1:1
+table rink.member at tables/member.sql:1:1
+table rink.session at tables/session.sql:1:1
+view rink.contacts at views/contacts.sql:2:1

@@ -1,0 +1,64 @@
+check mart.purchase ck_purchase_status at tables/purchase.sql:5:32
+column mart.customer.city nvarchar(40) at tables/customer.sql:5:5
+column mart.customer.customer_id int at tables/customer.sql:2:5
+column mart.customer.email varchar(100) at tables/customer.sql:4:5
+column mart.customer.name nvarchar(50) at tables/customer.sql:3:5
+column mart.price.amount decimal(9,2) at tables/price.sql:5:5
+column mart.price.product_id int at tables/price.sql:4:5
+column mart.price.valid_from datetime2 at tables/price.sql:6:5
+column mart.price.valid_to datetime2 at tables/price.sql:7:5
+column mart.product.colour nvarchar(20) at tables/product.sql:6:5
+column mart.product.height_mm int at tables/product.sql:8:5
+column mart.product.product_id int at tables/product.sql:3:5
+column mart.product.sku varchar(20) at tables/product.sql:4:5
+column mart.product.title nvarchar(80) at tables/product.sql:5:5
+column mart.product.width_mm int at tables/product.sql:7:5
+column mart.purchase.customer_id int at tables/purchase.sql:3:5
+column mart.purchase.note nvarchar(200) at tables/purchase.sql:6:5
+column mart.purchase.placed_on date at tables/purchase.sql:4:5
+column mart.purchase.purchase_id int at tables/purchase.sql:2:5
+column mart.purchase.status varchar(4) at tables/purchase.sql:5:5
+column mart.purchase_line.discount decimal(5,2) at tables/purchase_line.sql:7:5
+column mart.purchase_line.line_no int at tables/purchase_line.sql:3:5
+column mart.purchase_line.product_id int at tables/purchase_line.sql:4:5
+column mart.purchase_line.purchase_id int at tables/purchase_line.sql:2:5
+column mart.purchase_line.quantity int at tables/purchase_line.sql:5:5
+column mart.purchase_line.unit_price decimal(9,2) at tables/purchase_line.sql:6:5
+key mart.customer pk_customer (customer_id) at tables/customer.sql:2:30
+key mart.price pk_price (product_id) at tables/price.sql:4:29
+key mart.product pk_product (product_id) at tables/product.sql:3:29
+key mart.product uq_product_sku (sku) at tables/product.sql:4:30
+key mart.purchase pk_purchase (purchase_id) at tables/purchase.sql:2:30
+key mart.purchase_line pk_purchase_line (purchase_id, line_no) at tables/purchase_line.sql:8:5
+parameter mart.get_purchase @purchase_id at procedures/get_purchase.sql:5:5
+parameter mart.open_purchase_by_id @purchase_id at procedures/open_purchase_by_id.sql:4:5
+parameter mart.price_versions @product_id at procedures/price_versions.sql:3:5
+parameter mart.purchase_lines @purchase_id at procedures/purchase_lines.sql:3:5
+procedure mart.customer_activity at procedures/customer_activity.sql:5:1
+procedure mart.customer_purchases at procedures/customer_purchases.sql:2:1
+procedure mart.customer_tree at procedures/customer_tree.sql:3:1
+procedure mart.get_purchase at procedures/get_purchase.sql:4:1
+procedure mart.last_purchase at procedures/last_purchase.sql:3:1
+procedure mart.list_products at procedures/list_products.sql:2:1
+procedure mart.list_purchases at procedures/list_purchases.sql:4:1
+procedure mart.open_contacts at procedures/open_contacts.sql:2:1
+procedure mart.open_purchase_by_id at procedures/open_purchase_by_id.sql:3:1
+procedure mart.price_versions at procedures/price_versions.sql:2:1
+procedure mart.product_sizes at procedures/product_sizes.sql:3:1
+procedure mart.purchase_lines at procedures/purchase_lines.sql:2:1
+procedure mart.purchase_overview at procedures/purchase_overview.sql:2:1
+procedure mart.purchases_json at procedures/purchases_json.sql:2:1
+table mart.customer at tables/customer.sql:1:1
+table mart.price at tables/price.sql:3:1
+table mart.product at tables/product.sql:2:1
+table mart.purchase at tables/purchase.sql:1:1
+table mart.purchase_line at tables/purchase_line.sql:1:1
+view mart.bowl_price at views/price_views.sql:16:1
+view mart.customer_contact at views/customer_contact.sql:2:1
+view mart.open_purchase at views/open_purchase.sql:3:1
+view mart.open_purchase_contact at views/open_purchase_contact.sql:2:1
+view mart.price_all at views/price_views.sql:2:1
+view mart.price_now at views/price_views.sql:9:1
+view mart.product_all at views/product_all.sql:2:1
+view mart.purchase_line_detail at views/purchase_line_detail.sql:2:1
+view mart.purchase_summary at views/purchase_summary.sql:3:1

@@ -1,0 +1,124 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "plot.bed_with_crops",
+      "name": "BedWithCrops",
+      "kind": "procedure",
+      "at": "plots.sql:49:1",
+      "parameters": [
+        {
+          "name": "@bed_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "BedWithCropsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "BedWithCropsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "plot.bed_with_crops",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "crop",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unmatched-row",
+              "at": "plots.sql:53:21"
+            }
+          ]
+        },
+        {
+          "name": "sown",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unmatched-row",
+              "at": "plots.sql:53:21"
+            }
+          ]
+        },
+        {
+          "name": "harvested",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "plot.sowing.harvested"
+            },
+            {
+              "rule": "unmatched-row",
+              "at": "plots.sql:53:21"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

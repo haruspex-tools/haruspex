@@ -1,0 +1,92 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "plot.crops_of",
+      "name": "CropsOf",
+      "kind": "procedure",
+      "at": "later.sql:5:1",
+      "parameters": [
+        {
+          "name": "@bed_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CropsOfRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "CropsOfRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "plot.crops_of",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "crop",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "sown",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "harvested",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "plot.sowing.harvested"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}
