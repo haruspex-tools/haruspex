@@ -44,7 +44,7 @@ public static class ModuleReader
                 ReturnsNullOnNullInput = definition.Options?.Any(o => o.OptionKind == FunctionOptionKind.ReturnsNullOnNullInput) == true,
             },
             SelectFunctionReturnType inline => new InlineFunction(name, span, parameters, inline.SelectStatement),
-            TableValuedFunctionReturnType table => new TableFunction(name, span, parameters, ReturnTable(table.DeclareTableVariableBody, span), Body(definition.StatementList, definition.MethodSpecifier)),
+            TableValuedFunctionReturnType table => new TableFunction(name, span, parameters, ReturnTable(name, table.DeclareTableVariableBody, span), Body(definition.StatementList, definition.MethodSpecifier)),
 
             // ScriptDom's three kinds of return are all T-SQL has.
             _ => throw new ArgumentException($"{name} returns {definition.ReturnType?.GetType().Name ?? "nothing"}, which is not a kind of function.", nameof(definition)),
@@ -126,8 +126,11 @@ public static class ModuleReader
 
     /// <summary>
     /// The table a multi-statement function returns: its variable's declaration, read as any table variable's is. A CLR
-    /// function declares its table with no variable, so its name is empty.
+    /// function declares its table with no variable, so its table is named as the function is.
     /// </summary>
-    private static Table ReturnTable(DeclareTableVariableBody declaration, SourceSpan within) =>
-        SyntaxReader.Table(new ObjectName("", declaration.VariableName?.Value ?? ""), declaration.Definition, within.Within(declaration));
+    private static Table ReturnTable(ObjectName function, DeclareTableVariableBody declaration, SourceSpan within) =>
+        SyntaxReader.Table(
+            declaration.VariableName is { } variable ? new ObjectName("", variable.Value) : function,
+            declaration.Definition,
+            within.Within(declaration));
 }

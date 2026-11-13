@@ -30,6 +30,12 @@ definition from ScriptDom, so its public surface was ScriptDom's.
 - *A computed column as a kind of its own.* Everything a reader asks of a column (its name, nullability, collation, whether
   `SELECT *` shows it) is asked of both kinds, and only where its type comes from differs, so `Column` stays one record whose
   `Column.Type` is null when its `Column.ComputedExpression` is set.
+- *A table's declaration apart from the table*, so that a body's `#t` and `@t` and a function's return table, which are not
+  schema objects, need not be `Table`s named with no schema. The schema's rules would then take a declaration, and the name
+  their facts are given in the IR would have to come with it: a check's fact is named by its schema for a table of the schema
+  (`sales.ck_status`) and by its table for a body's (`#totals.ck_amount`), and a message about a body's column names its
+  table. Binding a body's own tables as declared is Semantics' work, which it doesn't do yet, and the declaration belongs with
+  that change; until then such a table is a `Table` with an empty schema, never in `DatabaseModel`, as `SchemaObject` says.
 - *The reader in Model.* Anything public in Model's assembly is the model's public surface, and binding needs the reader too
   (a body's `CREATE TABLE #t` is read as the schema's is). In Sources, binding would depend on reading files. So it is a layer
   of its own between them.
