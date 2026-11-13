@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using Haruspex.Collections;
 using Haruspex.Diagnostics;
@@ -187,7 +188,7 @@ internal sealed partial class Typer
     /// The types OPENJSON's WITH was observed to give back unchanged from the text FOR JSON writes of them (see
     /// <see cref="Converted"/>): not float or real, whose text may round, nor the date and time types not observed.
     /// </summary>
-    private static readonly BuiltInType[] Exact =
+    private static readonly ImmutableArray<BuiltInType> Exact =
     [
         BuiltInType.TinyInt, BuiltInType.SmallInt, BuiltInType.Int, BuiltInType.BigInt, BuiltInType.Decimal, BuiltInType.Numeric,
         BuiltInType.Bit, BuiltInType.Date, BuiltInType.DateTime2, BuiltInType.DateTimeOffset, BuiltInType.UniqueIdentifier,
@@ -209,7 +210,7 @@ internal sealed partial class Typer
         if (Unpadded(SqlTypes.ToConvertedShape(model, target, at)) is not ScalarShape { BuiltIn: { } into } toShape)
             return null;
         var (sourceType, from, to) = (source.Type, source.BuiltIn, toShape.Type);
-        if (from is not null && from == into && from.Type.IsAnyOf(Exact))
+        if (from is not null && from == into && from.Type.IsAnyOf(Exact.AsSpan()))
         {
             // A varchar or char value converted to the database's code page and back may change a character that is not ASCII
             // (observed: Openjson_with_converts_a_varchar_to_the_databases_code_page), so its set holds only when every value is

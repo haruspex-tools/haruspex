@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+using System.Collections.Immutable;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -68,7 +70,7 @@ internal sealed partial class Typer
         Typing(function, arity, rule, nulls, observedIn, type, readsOnlyItsArguments: true, OtherForms.AggregateNotModelled);
 
     /// <summary>Every row, one for each function of the catalogue.</summary>
-    internal static IReadOnlyList<FunctionTyping> FunctionTable { get; } =
+    internal static ImmutableArray<FunctionTyping> FunctionTable { get; } =
     [
         // ---- dates ----
         Typing(ScalarFunctions.DateDiff, (3, 3), "int", [ArithmeticOverflow], [DateIntegers, DateKinds, DateNulls], (a, e, s) => a.DateDiff(Call(e), ScalarType.Of(BuiltInType.Int), s)),
@@ -188,7 +190,7 @@ internal sealed partial class Typer
         Typing(RowsetFunctions.OpenJson, null, "its WITH columns as declared, or key, value and type", [], ["Openjson_with_over_json_built_here_converts_its_own_types_exactly_and_cuts_strings_short", "Openjson_without_with_over_json_built_here_gives_its_keys_and_their_types"], null, readsOnlyItsArguments: false),
     ];
 
-    private static readonly Dictionary<BuiltInFunction, FunctionTyping> TypingByFunction = FunctionTable.ToDictionary(t => t.Function);
+    private static readonly FrozenDictionary<BuiltInFunction, FunctionTyping> TypingByFunction = FunctionTable.ToFrozenDictionary(t => t.Function);
 
     /// <summary>
     /// The row of the built-in function an expression calls: a call without a schema by its name and form (with OVER a window

@@ -11,7 +11,9 @@ and query in the scope of the state before the statement. Writes, cursors and ca
 the walker; what an `OUTPUT` knows of its write reaches the typer as an argument (`OutputReading`). Summaries of functions,
 views and procedures are reached through one root (`Summaries`), built by `IrInference` and passed to each body read; no
 summary holds another. An architecture test reads the compiled code for it (`TyperAndWalkerTests`): every field of the typer
-is readonly and none holds a walker, and nothing in the typer uses a member of the walker.
+is readonly, none holds a walker, none holds what can change (a list, a dictionary, an array, a type with a field that is
+not readonly) unless it is listed with why it is no state of a read (the binder's and the summaries' memo tables, the
+model), and nothing in the typer uses a member of the walker.
 
 **Context.** One type did both: the walk, and every expression's value, with what an expression depended on besides its
 syntax in fields set before a read and reset after (the facts proved, the query read, the aggregates around it, the
