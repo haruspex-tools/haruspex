@@ -139,6 +139,11 @@ internal sealed partial class ProcedureAnalyzer
         inserting |= context.Inserting;
         var target = binder.BindCall(execute);
         var at = target.At;
+
+        // A multi-statement function's body is walked with no procedures to follow: one it calls is not followed, so what the
+        // call returns and does is not known.
+        if (calls is null)
+            return new Called(null, ResultTrack.None, new UnknownShape(IrUnknownReason.UnsupportedStatement, $"{Text(execute)} calls a procedure from a function's body, which is not followed.", at));
         var temps = state.Temps;
         var needEscapes = catchEntries.Count > 0 || escapes is not null;
 

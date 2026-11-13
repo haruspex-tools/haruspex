@@ -183,6 +183,29 @@ public class TableFunctionTests
     }
 
     [Fact]
+    public void A_multi_statement_function_that_calls_a_procedure_is_its_declared_return_table()
+    {
+        // Its body is walked with no procedures to follow, so the call is not followed and the body's writes are not read: the
+        // table is as declared. (Walking it once failed on the call, with no caller to follow it.)
+        var doc = InferProcedure.Infer(
+            "dbo.p",
+            ("log.sql", "CREATE PROCEDURE dbo.log_it AS SELECT 1 AS one;"),
+            ("f.sql", """
+                CREATE FUNCTION dbo.logged() RETURNS @r TABLE (id int NOT NULL, note nvarchar(max) NULL) AS
+                BEGIN
+                    EXEC dbo.log_it;
+                    INSERT @r (id, note) VALUES (1, N'[]');
+                    RETURN;
+                END
+                """),
+            ("p.sql", "CREATE PROCEDURE dbo.p AS SELECT l.id, l.note FROM dbo.logged() AS l;"));
+
+        AllTyped(doc);
+        Assert.Equal("int", Typed(doc, "id"));
+        Assert.Equal("nvarchar(max) nullable-column", Typed(doc, "note"));
+    }
+
+    [Fact]
     public void A_function_of_a_name_two_schemas_have_names_both_in_name_order_whatever_order_they_are_defined_in()
     {
         // b.f is defined first in source order and a.f second; the caller's default schema decides which is read.
