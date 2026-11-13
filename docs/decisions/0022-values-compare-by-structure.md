@@ -12,11 +12,14 @@ none, and an array whose items are never null has an empty list of reasons.
 overrides in the order the file sorts them, since their order in the records means nothing (`IrDocument`, added 12 Nov 2026
 for the IR's round trip, in which a document read back from its file must equal the one written).
 
-**Exceptions, each compared by nothing.** A declaration's map of named types (`DeclaredResults.Types`), the set of declarations a walk used (`Walked.Declared`) and the inference's private working
-records, which hold syntax or live within one statement (`Row`, `SetNode`, `JsonPath`, `ChainType`), keep .NET's
-collections and so compare by reference. Nothing compares them; whatever first does must give them value equality. A value
-set's items and sources keep the order they were found in, so two sets with the same items in another order are different
-records: equality is stricter than meaning there, which costs a pass or a cache entry, never a wrong claim.
+**Every record, in every layer** (amended 13 Nov 2026). A record's lists are `EquatableArray` and its maps `EquatableMap`
+([decision 0034](0034-collections-that-compare-by-value-are-a-layer-of-their-own.md)), and `RecordEqualityTests` fails on a
+field of any record that compares by reference. Three kinds of type are listed there, each with its reason: a type compared
+by identity because identity is its meaning (a syntax node, a catalogue entry, the model, a bound scope); a type whose
+equality is written by hand, with the test that holds its laws; and a working type that keys what it holds by identity
+(`ReadScope`, the frames of `Facts`), which is a class, not a record, since nothing compares it. A value set's items and
+sources keep the order they were found in, so two sets with the same items in another order are different records:
+equality is stricter than meaning there, which costs a pass or a cache entry, never a wrong claim.
 
 **Context.** Records' generated equality compares lists by reference, so the inference compared values by writing them as
 text instead, through the IR's writer and a writer of its own. The text was written for a reader and left out facts a

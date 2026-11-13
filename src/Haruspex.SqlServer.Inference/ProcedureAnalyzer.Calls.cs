@@ -22,7 +22,7 @@ internal sealed partial class ProcedureAnalyzer
     private readonly List<FlowState>? escapes;
 
     /// <summary>The procedures whose declared results were taken, at any depth of calls.</summary>
-    private ImmutableSortedSet<string> declaredUsed = ImmutableSortedSet.Create<string>(StringComparer.Ordinal);
+    private EquatableArray<ObjectName> declaredUsed = [];
 
     /// <summary>What a call gave: the caller's state after it, before its result sets are placed, and those result sets.</summary>
     /// <param name="After">The caller's state once the callee has returned, its temporary tables as the callee left them; null when no call returns.</param>
@@ -155,7 +155,7 @@ internal sealed partial class ProcedureAnalyzer
             // known either way: the declaration says nothing of them.
             if (name is { } calledName && calls!.Declared(calledName) is var (declaredName, declaration))
             {
-                declaredUsed = declaredUsed.Add(declaredName.ToString());
+                declaredUsed = Walked.Union(declaredUsed, [declaredName]);
                 var forgotten = Forgotten(state, new UnknownShape(why.Reason, $"{declaredName}'s results are declared, but what it does to temporary tables is not known: {why.Detail}", why.At), at);
                 var received = Declared(declaration, declaredName, at);
                 if (needEscapes)
@@ -167,7 +167,7 @@ internal sealed partial class ProcedureAnalyzer
             return new Called(null, ResultTrack.None, through);
         }
 
-        declaredUsed = declaredUsed.Union(walked.Declared);
+        declaredUsed = Walked.Union(declaredUsed, walked.Declared);
         var own = target is ProcedureCall call ? Created(call.Procedure) : [];
         if (needEscapes)
         {

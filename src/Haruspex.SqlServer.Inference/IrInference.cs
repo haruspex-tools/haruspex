@@ -39,7 +39,7 @@ public static class IrInference
         var claims = analysed
             .Where(a => a.Item2.Results is not null)
             .SelectMany(a => a.Item2.Declared.Select(callee => (Object: a.procedure.Name.ToString(), Callee: callee)))
-            .Select(c => new IrOverride(c.Object, "results", IrOverrideSetting.Results, declarations.First(d => d.Key.ToString() == c.Callee).Value.Why) { Via = c.Callee })
+            .Select(c => new IrOverride(c.Object, "results", IrOverrideSetting.Results, declarations[c.Callee].Why) { Via = c.Callee.ToString() })
             .ToList();
         return document with { Overrides = [.. claims] };
     }

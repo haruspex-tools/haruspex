@@ -71,27 +71,12 @@ public class RecordEqualityTests
         ["Haruspex.SqlServer.Semantics.Binder+Adding"] = "A builder of one query's sources: each copy adds to the one list, and nothing compares two.",
     };
 
-    /// <summary>Records still holding a collection that compares by reference, by full name, until each is swept.</summary>
-    private static readonly HashSet<string> NotYetSwept = new(StringComparer.Ordinal)
-    {
-        "Haruspex.SqlServer.Inference.ProcedureAnalysis",
-        "Haruspex.SqlServer.Inference.Walked",
-    };
-
     [Fact]
     public void Every_record_of_every_layer_compares_each_field_by_value()
     {
-        var failures = Layers().SelectMany(Types).Where(t => !NotYetSwept.Contains(t.FullName!)).SelectMany(t => Failures([t])).ToList();
+        var failures = Failures(Layers().SelectMany(Types)).ToList();
 
         Assert.True(failures.Count == 0, $"{failures.Count} fields compare by reference, so their records do too:\n{string.Join("\n", failures)}");
-    }
-
-    [Fact]
-    public void A_record_listed_as_not_yet_swept_still_needs_it()
-    {
-        var failing = Layers().SelectMany(Types).Where(t => Failures([t]).Any()).Select(t => t.FullName).ToHashSet(StringComparer.Ordinal);
-
-        Assert.Empty(NotYetSwept.Where(name => !failing.Contains(name)).Order(StringComparer.Ordinal));
     }
 
     [Fact]

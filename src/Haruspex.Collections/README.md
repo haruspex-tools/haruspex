@@ -46,4 +46,4 @@ Console.WriteLine(prices == again);    // True: the same entries, added in anoth
 
 - **No mutation**: build a new one.
 - **No equality of its own choosing**: an item, key or value that compares by reference makes the collection compare by
-  reference.
+  reference. Which types haruspex's records hold is checked by `RecordEqualityTests`.

@@ -1,4 +1,5 @@
 using Haruspex.Collections;
+using Haruspex.SqlServer.Model;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -11,4 +12,4 @@ internal sealed record ProcedureAnalysis(
     EquatableArray<ParameterShape> Parameters,
     EquatableArray<ResultShape>? Results,
     UnknownShape? ResultsUnknown,
-    IReadOnlyCollection<string> Declared);
+    EquatableArray<ObjectName> Declared);

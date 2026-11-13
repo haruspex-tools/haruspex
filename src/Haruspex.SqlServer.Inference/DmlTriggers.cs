@@ -42,7 +42,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
     /// <param name="at">Where the write is.</param>
     public UnknownShape? Check(DmlTarget target, Binder binder, DmlEvents events, SourceLocation at)
     {
-        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var visited = new HashSet<Visit>();
         foreach (var written in target.Objects)
         {
             var resolved = binder.ResolveWritten(written);
@@ -71,12 +71,12 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
 
     /// <summary>How writing <paramref name="name"/> fires a trigger that may return results, as words; null when it fires none.</summary>
     /// <param name="binder">The binder of the body the write is in, which resolves the names written underneath too.</param>
-    private string? Reaches(ObjectName name, DmlEvents events, Binder binder, SourceLocation at, HashSet<string> visited)
+    private string? Reaches(ObjectName name, DmlEvents events, Binder binder, SourceLocation at, HashSet<Visit> visited)
     {
         // A write through a synonym writes its object (observed: A_write_through_a_synonym_fires_the_triggers_of_its_table).
         if (model.FindReadable(name) is Synonym synonym)
         {
-            if (!visited.Add($"synonym {name}"))
+            if (!visited.Add(new SynonymVisit(name)))
                 return null;
             var objects = binder.ResolveWritten(synonym.For);
             if (objects.Count == 0)
@@ -98,7 +98,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
             return null;
         }
 
-        if (!visited.Add($"{name}|{(int)events}"))
+        if (!visited.Add(new WriteVisit(name, events)))
             return null;
 
         var remaining = events;
@@ -144,11 +144,11 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
     }
 
     /// <summary>Why a trigger may return result sets, as words; null when every statement in it is known to return none.</summary>
-    private string? Returns(Trigger trigger, HashSet<string> visited) => trigger.Body is SqlBody body
+    private string? Returns(Trigger trigger, HashSet<Visit> visited) => trigger.Body is SqlBody body
         ? Statements(body.Statements, new Binder(model, trigger.Span), trigger.Span, visited)
         : "is a CLR trigger, whose code is not in the project";
 
-    private string? Statements(TSqlFragment body, Binder binder, SourceSpan where, HashSet<string> visited)
+    private string? Statements(TSqlFragment body, Binder binder, SourceSpan where, HashSet<Visit> visited)
     {
         var found = new StatementFinder();
         body.Accept(found);
@@ -162,7 +162,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
         return null;
     }
 
-    private string? Statement(TSqlStatement statement, HashSet<SelectStatement> cursorQueries, Binder binder, SourceLocation at, HashSet<string> visited)
+    private string? Statement(TSqlStatement statement, HashSet<SelectStatement> cursorQueries, Binder binder, SourceLocation at, HashSet<Visit> visited)
     {
         return statement switch
         {
@@ -188,7 +188,7 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
         };
     }
 
-    private string? Write(DataModificationSpecification spec, FromClause? from, WithCtesAndXmlNamespaces? with, DmlEvents events, Binder binder, SourceLocation at, HashSet<string> visited)
+    private string? Write(DataModificationSpecification spec, FromClause? from, WithCtesAndXmlNamespaces? with, DmlEvents events, Binder binder, SourceLocation at, HashSet<Visit> visited)
     {
         if (spec.OutputClause is not null)
             return $"returns the rows of its OUTPUT at {at}";
@@ -210,12 +210,12 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
         return null;
     }
 
-    private string? Call(ExecuteSpecification execute, Binder binder, SourceLocation at, HashSet<string> visited)
+    private string? Call(ExecuteSpecification execute, Binder binder, SourceLocation at, HashSet<Visit> visited)
     {
         switch (binder.BindCall(execute))
         {
             case ProcedureCall { Procedure: var callee }:
-                if (!visited.Add($"procedure {callee.Name}"))
+                if (!visited.Add(new CallVisit(callee.Name)))
                     return null;
                 if (callee.Body is not SqlBody body)
                     return $"calls {callee.Name} at {at}, a CLR procedure";
@@ -260,4 +260,24 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
                 CursorQueries.Add(node.Select);
         }
     }
+
+    /// <summary>
+    /// What the walk of the triggers a write may fire has already followed, so that a cycle (a trigger writing its own table,
+    /// a procedure calling itself) is followed once. Names compare as SQL Server compares them (<see cref="ObjectName"/>).
+    /// </summary>
+    private abstract record Visit
+    {
+        private protected Visit()
+        {
+        }
+    }
+
+    /// <summary>A synonym written through, which writes its object.</summary>
+    private sealed record SynonymVisit(ObjectName Synonym) : Visit;
+
+    /// <summary>A table or view written as these statements, whose triggers for them were followed.</summary>
+    private sealed record WriteVisit(ObjectName Target, DmlEvents Events) : Visit;
+
+    /// <summary>A procedure called from a trigger's body, or from one it calls, whose statements were followed.</summary>
+    private sealed record CallVisit(ObjectName Procedure) : Visit;
 }

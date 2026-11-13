@@ -100,9 +100,15 @@ and missing.
 
 The states that are classes rather than records (`FlowState`, `ResultTrack`) and the record that holds a dictionary
 (`CallContext`) compare their parts the same way, their maps entry by entry (`ImmutableMaps`). Their keys are SQL names,
-which SQL Server compares ignoring case, so `#Lines` and `#lines` are one key. A few collections still compare by
-reference because nothing compares them: a document's map of named types, and the inference's private working records
-([decision 0022](../decisions/0022-values-compare-by-structure.md) lists them).
+which SQL Server compares ignoring case, so `#Lines` and `#lines` are one key. A map a record holds is an `EquatableMap`,
+equal to another with the same keys holding equal values, in whatever order they were added.
+
+Every record of every layer is held to this by a test, `RecordEqualityTests`, which reads each record's fields and fails on
+one that compares by reference. Where equality is not generated field by field, the test lists the type with why: a syntax
+node or a catalogue entry, compared by identity because identity is what it means; an equality written by hand, with the
+test that holds its laws; and a working type that keys what it holds by identity (a scope keys its sources so, since two
+sources of one table in two scopes are equal as records), which is a class, not a record, because nothing compares it
+([decision 0022](../decisions/0022-values-compare-by-structure.md)).
 
 ### Why comparing rendered text was a trap
 
