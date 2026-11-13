@@ -1,4 +1,4 @@
-using Haruspex.Ir;
+using Haruspex.Collections;
 using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.SqlServer.Inference;

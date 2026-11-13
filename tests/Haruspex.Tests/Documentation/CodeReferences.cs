@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Haruspex.Cli;
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
@@ -76,6 +77,7 @@ internal sealed partial class CodeReferences
 
     private static readonly Assembly[] Assemblies =
     [
+        typeof(EquatableArray).Assembly,
         typeof(SourceLocation).Assembly,
         typeof(DatabaseModel).Assembly,
         typeof(SqlServer.Syntax.SyntaxReader).Assembly,

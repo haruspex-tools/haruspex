@@ -1,3 +1,5 @@
+using Haruspex.Collections;
+
 namespace Haruspex.Ir;
 
 /// <summary>The inferred shapes of a set of database objects.</summary>

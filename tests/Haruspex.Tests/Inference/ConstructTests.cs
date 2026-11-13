@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using static Haruspex.TestSupport.IrNavigation;

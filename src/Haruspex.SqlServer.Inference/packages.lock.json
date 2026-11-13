@@ -8,11 +8,17 @@
         "resolved": "180.140.0",
         "contentHash": "qdSHJPR3t2mqLcYQ31E9hBhQfuHo34jOtMEOrCKHBNuV+IShlLfDR8/tDzXR7MeI2ZhlZ+8wCVRMACifoAepAA=="
       },
+      "haruspex.collections": {
+        "type": "Project"
+      },
       "haruspex.diagnostics": {
         "type": "Project"
       },
       "haruspex.ir": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Collections": "[0.1.0-dev, )"
+        }
       },
       "haruspex.sqlserver.model": {
         "type": "Project",

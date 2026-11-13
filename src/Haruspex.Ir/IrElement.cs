@@ -1,3 +1,5 @@
+using Haruspex.Collections;
+
 namespace Haruspex.Ir;
 
 /// <summary>One position of a <see cref="IrTuple"/>.</summary>

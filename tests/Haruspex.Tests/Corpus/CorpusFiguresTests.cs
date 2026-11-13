@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Ir;
 using Haruspex.Tests.Snapshotting;
 using Microsoft.SqlServer.TransactSql.ScriptDom;

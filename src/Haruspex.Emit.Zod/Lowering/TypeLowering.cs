@@ -1,4 +1,5 @@
 using System.Globalization;
+using Haruspex.Collections;
 using Haruspex.Emit.Zod.Model;
 using Haruspex.Ir;
 using static Haruspex.Emit.Zod.Model.ZodExpression;

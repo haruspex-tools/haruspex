@@ -1,4 +1,5 @@
 using System.Globalization;
+using Haruspex.Collections;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Inference.Typing;

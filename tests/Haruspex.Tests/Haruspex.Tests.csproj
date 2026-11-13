@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Haruspex.Collections\Haruspex.Collections.csproj" />
     <ProjectReference Include="..\..\src\Haruspex.Ir\Haruspex.Ir.csproj" />
     <ProjectReference Include="..\..\src\Haruspex.Diagnostics\Haruspex.Diagnostics.csproj" />
     <ProjectReference Include="..\..\src\Haruspex.SqlServer.Model\Haruspex.SqlServer.Model.csproj" />

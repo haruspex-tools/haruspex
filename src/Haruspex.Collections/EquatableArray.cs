@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 
-namespace Haruspex.Ir;
+namespace Haruspex.Collections;
 
 /// <summary>
 /// An immutable sequence that is equal to another when it holds equal items in the same order, so that a record holding

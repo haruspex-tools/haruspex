@@ -1,6 +1,7 @@
+using Haruspex.Collections;
 using Haruspex.Ir;
 
-namespace Haruspex.Tests.Ir;
+namespace Haruspex.Tests.Collections;
 
 /// <summary>
 /// A sequence that compares by its items, so that the records holding one compare by value. The laws equality must keep

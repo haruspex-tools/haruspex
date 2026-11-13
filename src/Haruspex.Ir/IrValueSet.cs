@@ -1,3 +1,5 @@
+using Haruspex.Collections;
+
 namespace Haruspex.Ir;
 
 /// <summary>A set the value is drawn from.</summary>

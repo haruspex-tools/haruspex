@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Immutable collections that compare by value, so that a record holding one compares by value too.</Description>
+    <!-- Packable because Haruspex.SqlServer.Model is, and its public API holds these collections: without this package
+         its would depend on one that does not exist (docs/decisions/0034-collections-that-compare-by-value-are-a-layer-of-their-own.md). -->
+    <IsPackable>true</IsPackable>
+    <PackageId>Haruspex.Collections</PackageId>
+    <PackageTags>immutable;collections;value-equality</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <!-- The bottom layer, beside Diagnostics: it refers to nothing else of haruspex's (see docs/architecture.md). -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

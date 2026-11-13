@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Haruspex.Collections;
 
 namespace Haruspex.Ir;
 

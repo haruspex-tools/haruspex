@@ -2,4 +2,7 @@
   <PropertyGroup>
     <Description>The haruspex intermediate representation: inferred result shapes, dialect-neutral.</Description>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Haruspex.Collections\Haruspex.Collections.csproj" />
+  </ItemGroup>
 </Project>

@@ -423,6 +423,9 @@
           "System.CommandLine": "[2.0.14, )"
         }
       },
+      "haruspex.collections": {
+        "type": "Project"
+      },
       "haruspex.config": {
         "type": "Project",
         "dependencies": {
@@ -440,7 +443,10 @@
         }
       },
       "haruspex.ir": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Collections": "[0.1.0-dev, )"
+        }
       },
       "haruspex.sqlserver.inference": {
         "type": "Project",

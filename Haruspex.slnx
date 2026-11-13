@@ -3,6 +3,7 @@
     <Project Path="analysers/Haruspex.Analysers/Haruspex.Analysers.csproj" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/Haruspex.Collections/Haruspex.Collections.csproj" />
     <Project Path="src/Haruspex.Diagnostics/Haruspex.Diagnostics.csproj" />
     <Project Path="src/Haruspex.SqlServer.Model/Haruspex.SqlServer.Model.csproj" />
     <Project Path="src/Haruspex.SqlServer.Syntax/Haruspex.SqlServer.Syntax.csproj" />

@@ -1,3 +1,5 @@
+using Haruspex.Collections;
+
 namespace Haruspex.Ir;
 
 /// <summary>A field of an object type.</summary>

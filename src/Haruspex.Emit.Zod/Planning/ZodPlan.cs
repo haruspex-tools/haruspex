@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Emit.Zod.Model;
 using Haruspex.Ir;
 

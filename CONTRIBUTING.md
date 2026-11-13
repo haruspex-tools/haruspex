@@ -232,8 +232,8 @@ Nested types stay in the type they belong to, and a partial type's parts are nam
 | `examples` | Small applications that use what haruspex generates, compiled by the tests and in CI ([greenhouse](examples/greenhouse/README.md)). |
 | `tests/prose` | The prose checks (`check.sh`), their npm package and the fixtures that test them. |
 
-Only `Model` and `Sources` are packable (`IsPackable`, with package metadata and a readme), with `Diagnostics`
-because its types are in their public API; every other project is not. Nothing is published yet: that is a later decision, so don't push packages anywhere. Their public API
+Only `Model` and `Sources` are packable (`IsPackable`, with package metadata and a readme), with `Diagnostics` and
+`Collections` because their types are in those layers' public API; every other project is not. Nothing is published yet: that is a later decision, so don't push packages anywhere. Their public API
 must be documented, which the build enforces: a public member without a comment is an error (`CS1591`) in
 them and in the layers reusable enough to follow them (`Semantics` and `Ir`). A comment says what the member is
 for, not its name again.

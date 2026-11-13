@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Ir;
 
 namespace Haruspex.Config;
