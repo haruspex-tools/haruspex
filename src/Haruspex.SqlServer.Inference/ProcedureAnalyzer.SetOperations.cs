@@ -2,8 +2,8 @@ using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Inference.Typing;
-using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -359,7 +359,7 @@ internal sealed partial class ProcedureAnalyzer
                 continue;
             }
 
-            values.Add(Value.Computed(Unpadded(SqlTypes.ToConvertedShape(model, SqlType.From(column.DataType), where)), [JsonValue(where)]));
+            values.Add(Value.Computed(Unpadded(SqlTypes.ToConvertedShape(model, SyntaxReader.Type(column.DataType), where)), [JsonValue(where)]));
         }
 
         if (names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Count)

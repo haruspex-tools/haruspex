@@ -4,6 +4,7 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -61,8 +62,8 @@ internal sealed partial class ProcedureAnalyzer
         foreach (var parameter in procedure.Parameters)
         {
             var name = parameter.VariableName.Value;
-            variableTypes[name] = SqlType.From(parameter.DataType);
-            variableShapes[name] = DeclaredShape(SqlType.From(parameter.DataType), At(parameter), name, out var live);
+            variableTypes[name] = SyntaxReader.Type(parameter.DataType);
+            variableShapes[name] = DeclaredShape(SyntaxReader.Type(parameter.DataType), At(parameter), name, out var live);
             start.Add(new(name, Value.Computed(variableShapes[name], Because(IrNullRule.Parameter, name, variableShapes[name]), live)));
         }
 
@@ -81,8 +82,8 @@ internal sealed partial class ProcedureAnalyzer
             var name = element.VariableName.Value;
             if (variableShapes.ContainsKey(name))
                 continue;
-            variableTypes[name] = SqlType.From(element.DataType);
-            variableShapes[name] = DeclaredShape(SqlType.From(element.DataType), At(element), name, out var live);
+            variableTypes[name] = SyntaxReader.Type(element.DataType);
+            variableShapes[name] = DeclaredShape(SyntaxReader.Type(element.DataType), At(element), name, out var live);
 
             // A variable holds NULL until it is assigned.
             start.Add(new(name, Value.Computed(variableShapes[name], Because(IrNullRule.Variable, name, variableShapes[name]), live)));
@@ -93,7 +94,7 @@ internal sealed partial class ProcedureAnalyzer
             var name = table.VariableName.Value;
             if (tableVariables.ContainsKey(name))
                 continue;
-            var definition = Table.FromDefinition(new ObjectName("", name), table.Definition, file, At(table));
+            var definition = SyntaxReader.Table(new ObjectName("", name), table.Definition, file, At(table));
             tableVariableDefinitions[name] = definition;
             tableVariables[name] = new LocalRelationValues(
                 [.. definition.Columns.Select(c => c.Name)],
@@ -761,7 +762,7 @@ internal sealed partial class ProcedureAnalyzer
     private KnownTable Created(CreateTableStatement create)
     {
         var name = create.SchemaObjectName.BaseIdentifier.Value;
-        var definition = Table.FromDefinition(new ObjectName("", name), create.Definition, file, At(create));
+        var definition = SyntaxReader.Table(new ObjectName("", name), create.Definition, file, At(create));
         return new KnownTable(name, [.. definition.Columns.Select(c => Fresh(definition, c, name, c.IsIdentity, null))]);
     }
 
@@ -817,7 +818,7 @@ internal sealed partial class ProcedureAnalyzer
             {
                 // A new column's declaration is read like CREATE TABLE's. Constraints added on existing columns are not
                 // read, which only claims less. WITH NOCHECK leaves the new columns' own checks unproved for the rows there.
-                var definition = Table.FromDefinition(new ObjectName("", name), add.Definition, file, at);
+                var definition = SyntaxReader.Table(new ObjectName("", name), add.Definition, file, at);
                 if (add.ExistingRowsCheckEnforcement == ConstraintEnforcement.NoCheck)
                     definition = Disabled(definition, null, at);
                 return state.WithTemp(name, table with
@@ -836,7 +837,7 @@ internal sealed partial class ProcedureAnalyzer
                     break;
                 var column = new Column(
                     table.Columns[i].Name,
-                    SqlType.From(change.DataType),
+                    SyntaxReader.Type(change.DataType),
                     change.AlterTableAlterColumnOption == AlterTableAlterColumnOption.NotNull ? DeclaredNullability.NotNull : DeclaredNullability.Null,
                     isIdentity: false,
                     computedExpression: null,

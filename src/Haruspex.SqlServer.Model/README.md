@@ -26,7 +26,8 @@ flowchart LR
     model -.->|changed after its definition| redefinition["Redefinition"]
 ```
 
-`Table.FromDefinition` reads a table definition as written, so a body's own tables (`CREATE TABLE #t`,
+[Haruspex.SqlServer.Syntax](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Syntax/README.md)
+reads a table definition as written (`SyntaxReader.Table`), so a body's own tables (`CREATE TABLE #t`,
 `DECLARE @t TABLE`) are read the same way as the schema's.
 
 ## Example

@@ -3,6 +3,7 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -264,7 +265,7 @@ internal sealed class FunctionSummaries
     {
         var body = function.Body;
         var at = function.At;
-        var returnType = SqlType.From(((ScalarFunctionReturnType)body.ReturnType).DataType);
+        var returnType = SyntaxReader.Type(((ScalarFunctionReturnType)body.ReturnType).DataType);
         var resolvedType = SchemaRules.ResolveType(model, returnType);
         var resolved = resolvedType?.BuiltIn;
         var returnsJson = resolvedType?.Type == BuiltInType.Json;
@@ -306,7 +307,7 @@ internal sealed class FunctionSummaries
     {
         var at = new SourceLocation(file, parameter.StartLine, parameter.StartColumn);
         EquatableArray<IrNullReason> because = nullOnNull ? [] : [new IrNullReason(IrNullRule.Parameter, parameter.VariableName.Value)];
-        var type = SqlType.From(parameter.DataType);
+        var type = SyntaxReader.Type(parameter.DataType);
 
         // A json value nests as JSON (observed for variables and columns), and its shape is in the data.
         return SchemaRules.ResolveType(model, type)?.Type == BuiltInType.Json
@@ -351,7 +352,7 @@ internal sealed class FunctionSummaries
                         // A table variable or a cursor is not a value; a variable declared twice fails to compile.
                         if (variable.DataType is null || variables.ContainsKey(variable.VariableName.Value))
                             return null;
-                        variables[variable.VariableName.Value] = (HoldsAnyJson(SchemaRules.ResolveType(model, SqlType.From(variable.DataType))?.BuiltIn), variable.Value);
+                        variables[variable.VariableName.Value] = (HoldsAnyJson(SchemaRules.ResolveType(model, SyntaxReader.Type(variable.DataType))?.BuiltIn), variable.Value);
                     }
 
                     break;

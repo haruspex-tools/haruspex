@@ -1,7 +1,7 @@
 using System.Text;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
-namespace Haruspex.SqlServer.Semantics;
+namespace Haruspex.SqlServer.Syntax;
 
 /// <summary>Source text of fragments, for messages.</summary>
 public static class FragmentText

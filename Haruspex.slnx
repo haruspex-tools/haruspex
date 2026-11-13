@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Haruspex.Diagnostics/Haruspex.Diagnostics.csproj" />
     <Project Path="src/Haruspex.SqlServer.Model/Haruspex.SqlServer.Model.csproj" />
+    <Project Path="src/Haruspex.SqlServer.Syntax/Haruspex.SqlServer.Syntax.csproj" />
     <Project Path="src/Haruspex.SqlServer.Sources/Haruspex.SqlServer.Sources.csproj" />
     <Project Path="src/Haruspex.SqlServer.Semantics/Haruspex.SqlServer.Semantics.csproj" />
     <Project Path="src/Haruspex.SqlServer.Inference/Haruspex.SqlServer.Inference.csproj" />

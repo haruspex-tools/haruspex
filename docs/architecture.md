@@ -7,6 +7,7 @@ others, published alone as a NuGet package from this repository. Each project un
 .sql files ──► Sources ──► Model ──► Semantics ──► Inference ──► IR ──► Config ──► IR ──► emitters (Zod, …)
   (later .dacpac)                    (binding)                         (overrides,       (names settled)
                                                                          naming)
+              Syntax (ScriptDom's declarations read into the model) is shared by Sources, Semantics and Inference.
               Diagnostics (locations and messages) is used by all of the SQL Server layers.
               The CLI composes everything.
 ```
@@ -17,9 +18,10 @@ others, published alone as a NuGet package from this repository. Each project un
 |---|---|---|---|---|
 | `Haruspex.Diagnostics` | diagnostics: message and source location | anything else | nothing | may |
 | `Haruspex.SqlServer.Model` | the schema as data: tables, columns, types, collations, keys, CHECK constraints, alias and CLR types, procedures and functions (bodies as ScriptDom fragments), views, synonyms and functions by name | where the schema came from; what any reference in a body points to | Diagnostics; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
-| `Haruspex.SqlServer.Sources` | reading a folder of `.sql` files (later a DACPAC's `model.xml`) into the model | name resolution, types of expressions, the IR | Diagnostics, Model; `Microsoft.SqlServer.TransactSql.ScriptDom` | may |
-| `Haruspex.SqlServer.Semantics` | binding a body's references to model objects (scopes, aliases, ambiguity), and interpreting the schema (which columns are never null; what types, alias types and CHECK constraints guarantee about values); SQL Server's built-in types, conversions and functions, as catalogues | result shapes, nullability inference, the IR | Diagnostics, Model; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
-| `Haruspex.SqlServer.Inference` | shapes, nullability, presence and JSON structure, from bound bodies into the IR | files, zips, XML; the emitters; the config file | Diagnostics, Model, Semantics, Ir; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
+| `Haruspex.SqlServer.Syntax` | reading a declaration ScriptDom parsed (a name, a type, a table definition) into the model's values, wherever it is written: in a script or in a body | files; which object a reference means; types of expressions, the IR | Diagnostics, Model; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
+| `Haruspex.SqlServer.Sources` | reading a folder of `.sql` files (later a DACPAC's `model.xml`) into the model | name resolution, types of expressions, the IR | Diagnostics, Model, Syntax; `Microsoft.SqlServer.TransactSql.ScriptDom` | may |
+| `Haruspex.SqlServer.Semantics` | binding a body's references to model objects (scopes, aliases, ambiguity), and interpreting the schema (which columns are never null; what types, alias types and CHECK constraints guarantee about values); SQL Server's built-in types, conversions and functions, as catalogues | result shapes, nullability inference, the IR | Diagnostics, Model, Syntax; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
+| `Haruspex.SqlServer.Inference` | shapes, nullability, presence and JSON structure, from bound bodies into the IR | files, zips, XML; the emitters; the config file | Diagnostics, Model, Syntax, Semantics, Ir; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
 | `Haruspex.Ir` | the IR model and its deterministic JSON | SQL of any dialect | nothing | may |
 | `Haruspex.Config` | the config file: selection patterns, overrides as transformations of the IR, naming rules, emitter settings | SQL syntax | Diagnostics, Model, Ir | may |
 | `Haruspex.Emit.Zod` | the IR and its own target | SQL, the model, the config file | Ir | may |
@@ -29,15 +31,19 @@ others, published alone as a NuGet package from this repository. Each project un
 This table is the one copy: `ArchitectureTests` reads it (below), and every other mention of the layers points here. In
 "May refer to", a layer is named without `Haruspex.` and `SqlServer.`, and packages, in backticks, follow the semicolon.
 
-**The rule:** a layer refers only to what its row allows. In particular: ScriptDom is only for the four layers
-that handle SQL syntax; the IR and the emitters never see SQL; Model, Semantics and Inference never read files,
+**The rule:** a layer refers only to what its row allows. In particular: ScriptDom is only for the five layers
+that handle SQL syntax; the IR and the emitters never see SQL; Model, Syntax, Semantics and Inference never read files,
 zips or XML; and Semantics never sees the IR.
 
 Why these lines:
-- **Model and Sources are the "read a SQL Server project without DacFx" library** the SQL Server world lacks,
+- **Model, Syntax and Sources are the "read a SQL Server project without DacFx" library** the SQL Server world lacks,
   useful to linters, diff tools and documentation generators. Nothing in them may lean on inference. They are the
   packable layers, with Diagnostics because `SourceLocation` is in their public API, and each has a `README.md`
   saying what it is for and what it deliberately doesn't do.
+- **Syntax is apart from Model and from Sources** because reading ScriptDom's syntax is needed in two places: Sources
+  reads a script's declarations with it, and binding and inference read a body's own (`CREATE TABLE #t`,
+  `DECLARE @t TABLE`), which must mean what the same declaration means in the schema. In Model it would put ScriptDom's
+  types in the model's public surface; in Sources, binding would depend on reading files.
 - **Semantics is separate from Inference** because binding is what every analysis needs (lint, lineage, diff),
   while inference is haruspex's own concern. Interpreting the schema belongs with binding, so other tools get
   "this column is never null" and "this column takes `open`, `held` or `closed`" without running inference
@@ -66,7 +72,7 @@ reads the table above, from this file, and fails when
   assembly's metadata, so it is what the code really uses);
 - a project file has a `ProjectReference` or `PackageReference` its row doesn't allow (what a published package
   would depend on, even if unused);
-- a layer whose row says it never handles files, zips or XML (Model, Semantics and Inference) refers to the framework's
+- a layer whose row says it never handles files, zips or XML (Model, Syntax, Semantics and Inference) refers to the framework's
   XML, compression or packaging assemblies, or uses the file system's types (`File`, `Directory`, `FileInfo`,
   `DirectoryInfo`, `FileStream`, `FileSystemInfo`). Those types share `System.Runtime` with everything else, so the test
   reads each assembly's type references for them;
@@ -110,7 +116,7 @@ Semantics' job, as binding to a table is, so the `Binder` takes an `ILocalRelati
 SQL Server. What a relation's columns hold is not binding: Inference supplies the relations (`FlowLocals`), keeps
 their values, and carries the state of each temporary table from statement to statement (`FlowState`). So Semantics
 still never sees a value, and Inference never resolves a name. A temporary table's or table variable's definition is
-read into a `Table` by `Table.FromDefinition` in Model, the same reading `CREATE TABLE` gets in Sources, so the
+read into a `Table` by `SyntaxReader.Table` in Syntax, the same reading `CREATE TABLE` gets in Sources, so the
 schema rules (`SchemaRules.IsNeverNull`, `ColumnFacts`) apply to it unchanged.
 
 `APPLY`, `CROSS JOIN` and `FULL OUTER JOIN` are bound: the binder gives an `APPLY`'s right side a scope of its left

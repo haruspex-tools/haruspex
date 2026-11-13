@@ -4,6 +4,7 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -317,7 +318,7 @@ internal sealed partial class ProcedureAnalyzer
                 continue;
             }
 
-            var declared = SqlType.From(column.DataType);
+            var declared = SyntaxReader.Type(column.DataType);
             if (declared is not null && found?.Shape is ScalarShape scalar && Converted(scalar, declared, where) is { } converted)
                 values.Add(present ? converted : converted.WithNullableBecause([JsonValue(where)]));
             else

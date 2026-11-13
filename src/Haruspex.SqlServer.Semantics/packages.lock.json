@@ -17,6 +17,14 @@
           "Haruspex.Diagnostics": "[0.1.0-dev, )",
           "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
         }
+      },
+      "haruspex.sqlserver.syntax": {
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Diagnostics": "[0.1.0-dev, )",
+          "Haruspex.SqlServer.Model": "[0.1.0-dev, )",
+          "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
+        }
       }
     }
   }

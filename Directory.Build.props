@@ -14,8 +14,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Deterministic>true</Deterministic>
 
-    <!-- Nothing is published yet. The reusable layers that may be (Haruspex.SqlServer.Model and .Sources, and
-         Haruspex.Diagnostics, which their API uses) opt in with their package metadata; everything else stays
+    <!-- Nothing is published yet. The reusable layers that may be (Haruspex.SqlServer.Model, .Syntax and .Sources,
+         and Haruspex.Diagnostics, which their API uses) opt in with their package metadata; everything else stays
          unpackable. -->
     <IsPackable>false</IsPackable>
 

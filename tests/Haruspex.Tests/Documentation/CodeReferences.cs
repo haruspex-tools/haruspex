@@ -78,6 +78,7 @@ internal sealed partial class CodeReferences
     [
         typeof(SourceLocation).Assembly,
         typeof(DatabaseModel).Assembly,
+        typeof(SqlServer.Syntax.SyntaxReader).Assembly,
         typeof(SqlScriptFolder).Assembly,
         typeof(SqlServer.Semantics.Binder).Assembly,
         typeof(IrInference).Assembly,

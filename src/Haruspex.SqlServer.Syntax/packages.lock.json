@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "Microsoft.SqlServer.TransactSql.ScriptDom": {
+        "type": "Direct",
+        "requested": "[180.140.0, )",
+        "resolved": "180.140.0",
+        "contentHash": "qdSHJPR3t2mqLcYQ31E9hBhQfuHo34jOtMEOrCKHBNuV+IShlLfDR8/tDzXR7MeI2ZhlZ+8wCVRMACifoAepAA=="
+      },
+      "haruspex.diagnostics": {
+        "type": "Project"
+      },
+      "haruspex.sqlserver.model": {
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Diagnostics": "[0.1.0-dev, )",
+          "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
+        }
+      }
+    }
+  }
+}

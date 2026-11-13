@@ -1,5 +1,3 @@
-using Microsoft.SqlServer.TransactSql.ScriptDom;
-
 namespace Haruspex.SqlServer.Model;
 
 /// <summary>A data type as declared: <c>decimal(19,2)</c>, <c>nvarchar(max)</c>, <c>sysname</c>.</summary>
@@ -23,27 +21,6 @@ public sealed class SqlType(SqlTypeKind kind, string name, IReadOnlyList<string>
 
     /// <summary>The schema a named type was qualified with, or null.</summary>
     public string? Schema { get; } = schema;
-
-    /// <summary>The type from a ScriptDom data type reference, or null when there is none or it has no name.</summary>
-    public static SqlType? From(DataTypeReference? type)
-    {
-        switch (type)
-        {
-            case SqlDataTypeReference sql:
-#pragma warning disable CA1308 // A canonical name, as sys.types gives it, not a comparison.
-                return new SqlType(SqlTypeKind.BuiltIn, sql.SqlDataTypeOption.ToString().ToLowerInvariant(), [.. sql.Parameters.Select(p => p.Value)]);
-#pragma warning restore CA1308
-            case XmlDataTypeReference { Name.BaseIdentifier.Value: { } xml }:
-                return new SqlType(SqlTypeKind.Xml, xml, []);
-            case XmlDataTypeReference:
-                return null;
-            case { Name.BaseIdentifier.Value: { } name }:
-                var arguments = (type as ParameterizedDataTypeReference)?.Parameters.Select(p => p.Value) ?? [];
-                return new SqlType(SqlTypeKind.Named, name, [.. arguments], type.Name.SchemaIdentifier?.Value);
-            default:
-                return null;
-        }
-    }
 
     /// <summary>The type as written, with the name in canonical case: <c>decimal(19,2)</c>.</summary>
     public override string ToString() => Arguments.Count == 0 ? Name : Name + "(" + string.Join(",", Arguments) + ")";

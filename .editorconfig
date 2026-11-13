@@ -238,7 +238,7 @@ dotnet_diagnostic.CS1591.severity = none
 # demanding one for every other parameter as soon as one is written would produce restatements ("a: the first value").
 dotnet_diagnostic.CS1573.severity = none
 
-[src/{Haruspex.Diagnostics,Haruspex.SqlServer.Model,Haruspex.SqlServer.Sources,Haruspex.SqlServer.Semantics,Haruspex.Ir}/**.cs]
+[src/{Haruspex.Diagnostics,Haruspex.SqlServer.Model,Haruspex.SqlServer.Syntax,Haruspex.SqlServer.Sources,Haruspex.SqlServer.Semantics,Haruspex.Ir}/**.cs]
 # The packable layers, and the reusable ones that may follow them: every public member documented, and every
 # parameter of a documented member.
 dotnet_diagnostic.CS1591.severity = error

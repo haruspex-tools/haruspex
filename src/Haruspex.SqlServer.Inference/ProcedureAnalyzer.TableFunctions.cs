@@ -3,6 +3,7 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Typing;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -32,7 +33,7 @@ internal sealed partial class ProcedureAnalyzer
         UserFunction? function;
         if (name.SchemaIdentifier is not null)
         {
-            function = model.FindFunction(ObjectName.From(name));
+            function = model.FindFunction(SyntaxReader.Name(name));
         }
         else
         {
@@ -73,7 +74,7 @@ internal sealed partial class ProcedureAnalyzer
     private Value Argument(UserFunction function, ProcedureParameter parameter, ScalarExpression argument, BindingScope scope)
     {
         var at = new SourceLocation(function.File, parameter.StartLine, parameter.StartColumn);
-        var declared = SqlTypes.ToConvertedShape(model, SqlType.From(parameter.DataType), at);
+        var declared = SqlTypes.ToConvertedShape(model, SyntaxReader.Type(parameter.DataType), at);
         var any = Value.Computed(declared, [new IrNullReason(IrNullRule.Parameter, parameter.VariableName.Value)]);
         if (declared is UnknownShape unknown)
             return Value.Unknown(unknown);
@@ -112,7 +113,7 @@ internal sealed partial class ProcedureAnalyzer
         ArgumentNullException.ThrowIfNull(function);
         ArgumentNullException.ThrowIfNull(select);
         foreach (var parameter in function.Body.Parameters)
-            variableTypes[parameter.VariableName.Value] = SqlType.From(parameter.DataType);
+            variableTypes[parameter.VariableName.Value] = SyntaxReader.Type(parameter.DataType);
         locals = Locals(new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase));
         var at = At(select);
         LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{function.Name}: {detail}", at));
@@ -143,7 +144,7 @@ internal sealed partial class ProcedureAnalyzer
         ArgumentNullException.ThrowIfNull(function);
         ArgumentNullException.ThrowIfNull(returns);
         var name = function.Name.ToString();
-        var table = Table.FromDefinition(new ObjectName("", returns.DeclareTableVariableBody.VariableName.Value), returns.DeclareTableVariableBody.Definition, file, At(returns));
+        var table = SyntaxReader.Table(new ObjectName("", returns.DeclareTableVariableBody.VariableName.Value), returns.DeclareTableVariableBody.Definition, file, At(returns));
         var values = table.Columns.Select(c => Declared(table, c, name, temporary: false)).ToList();
         var keys = new List<RelationKey>();
         foreach (var key in SchemaRules.EnforcedKeys(table))

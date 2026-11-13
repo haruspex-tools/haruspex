@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Reads SQL Server declarations parsed by ScriptDom (names, types, table definitions, parameters, procedures, functions, views, triggers and synonyms) into Haruspex.SqlServer.Model, and gives each its place in the source. Shared by the reader of a folder of scripts and by binding, so a declaration in a body is read as one in the schema is.</Description>
+    <IsPackable>true</IsPackable>
+    <PackageId>Haruspex.SqlServer.Syntax</PackageId>
+    <PackageTags>sql-server;t-sql;schema;scriptdom</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Haruspex.Diagnostics\Haruspex.Diagnostics.csproj" />
+    <ProjectReference Include="..\Haruspex.SqlServer.Model\Haruspex.SqlServer.Model.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

@@ -3,6 +3,7 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -82,7 +83,7 @@ internal sealed partial class ProcedureAnalyzer
     public Value Return(ScalarExpression expression, IEnumerable<ProcedureParameter> parameters)
     {
         foreach (var parameter in parameters)
-            variableTypes[parameter.VariableName.Value] = SqlType.From(parameter.DataType);
+            variableTypes[parameter.VariableName.Value] = SyntaxReader.Type(parameter.DataType);
         locals = Locals(new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase));
         return Expression(expression, binder.BindFrom(new QuerySpecification(), null, locals));
     }
@@ -92,7 +93,7 @@ internal sealed partial class ProcedureAnalyzer
     [
         .. procedure.Body.Parameters.Select(p => new ParameterShape(
             p.VariableName.Value,
-            SqlTypes.ToShape(model, SqlType.From(p.DataType), new SourceLocation(procedure.File, p.StartLine, p.StartColumn)),
+            SqlTypes.ToShape(model, SyntaxReader.Type(p.DataType), new SourceLocation(procedure.File, p.StartLine, p.StartColumn)),
             HasDefault: p.Value is not null,
             IsOutput: p.Modifier == ParameterModifier.Output)),
     ];

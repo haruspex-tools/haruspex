@@ -4,6 +4,7 @@ using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Inference.Typing;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -293,7 +294,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private Value Cast(DataTypeReference target, ScalarExpression operand, TSqlFragment call, BindingScope scope, bool styled = false, bool attempt = false)
     {
-        var type = SqlType.From(target);
+        var type = SyntaxReader.Type(target);
         var to = SqlTypes.Modelled(SchemaRules.ResolveType(model, type)?.Scalar);
         if (to is { IsString: true } && type is { Kind: SqlTypeKind.BuiltIn, Arguments.Count: 0 })
             to = to with { Length = BuiltInType.LengthInConversion };

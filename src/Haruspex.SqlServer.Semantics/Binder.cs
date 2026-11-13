@@ -1,5 +1,6 @@
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Semantics;
@@ -234,7 +235,7 @@ public sealed class Binder(DatabaseModel model, string file)
         ObjectName objectName;
         if (name.SchemaIdentifier is not null)
         {
-            objectName = ObjectName.From(name);
+            objectName = SyntaxReader.Name(name);
         }
         else
         {
@@ -250,7 +251,7 @@ public sealed class Binder(DatabaseModel model, string file)
                     $"{name.BaseIdentifier.Value} is not schema-qualified, and {string.Join(" and ", candidates.Select(c => $"the {c.Kind} {c.Name}"))} have that name: which is read depends on the caller's default schema.");
             }
 
-            objectName = candidates.Count == 1 ? candidates[0].Name : ObjectName.From(name);
+            objectName = candidates.Count == 1 ? candidates[0].Name : SyntaxReader.Name(name);
         }
 
         if (model.FindTableRedefinition(objectName) is { } change)
@@ -281,9 +282,9 @@ public sealed class Binder(DatabaseModel model, string file)
         if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
             return [];
         if (name.SchemaIdentifier is not null)
-            return [ObjectName.From(name)];
+            return [SyntaxReader.Name(name)];
         var candidates = ReadableNamed(name.BaseIdentifier.Value).Where(c => c.Kind != "function").Select(c => c.Name).Distinct().ToList();
-        return candidates.Count > 0 ? candidates : [ObjectName.From(name)];
+        return candidates.Count > 0 ? candidates : [SyntaxReader.Name(name)];
     }
 
     /// <summary>
@@ -387,7 +388,7 @@ public sealed class Binder(DatabaseModel model, string file)
 
         if (name.SchemaIdentifier is not null)
         {
-            var objectName = ObjectName.From(name);
+            var objectName = SyntaxReader.Name(name);
             return model.FindProcedure(objectName) is { } procedure
                 ? new ProcedureCall(procedure, at)
                 : new UnknowableCall(UnknowableCallKind.MissingProcedure, objectName, Missing(objectName, text), at);
@@ -400,7 +401,7 @@ public sealed class Binder(DatabaseModel model, string file)
                 $"{text} names {own} without a schema, and {string.Join(" and ", candidates.Select(c => c.Name))} have that name: which runs depends on the caller's default schema.", at);
         }
 
-        var dbo = ObjectName.From(name);
+        var dbo = SyntaxReader.Name(name);
         return candidates.Count == 1 ? new ProcedureCall(candidates[0], at) : new UnknowableCall(UnknowableCallKind.MissingProcedure, dbo, Missing(dbo, text), at);
     }
 

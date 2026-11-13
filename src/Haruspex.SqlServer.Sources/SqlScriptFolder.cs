@@ -1,6 +1,7 @@
 using System.Text;
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Sources;
@@ -119,53 +120,53 @@ public static class SqlScriptFolder
                         ansiNullsOff = !set.IsOn;
                         break;
                     case CreateTableStatement table when !table.SchemaObjectName.BaseIdentifier.Value.StartsWith('#'):
-                        Add(tables, ObjectName.From(table.SchemaObjectName), ReadTable(table, relative), table, relative, diagnostics);
-                        CascadingKeys(ObjectName.From(table.SchemaObjectName), table.Definition, relative, cascadingKeys);
+                        Add(tables, SyntaxReader.Name(table.SchemaObjectName), ReadTable(table, relative), table, relative, diagnostics);
+                        CascadingKeys(SyntaxReader.Name(table.SchemaObjectName), table.Definition, relative, cascadingKeys);
                         break;
                     case TriggerStatementBody trigger when ReadTrigger(trigger, relative) is { } read:
                         triggers.Add(read);
                         break;
                     case CreateProcedureStatement or CreateOrAlterProcedureStatement:
                         var body = (ProcedureStatementBody)statement;
-                        var name = ObjectName.From(body.ProcedureReference.Name);
+                        var name = SyntaxReader.Name(body.ProcedureReference.Name);
                         Add(procedures, name, new Procedure(name, body, relative) { AnsiNullsOff = ansiNullsOff }, body, relative, diagnostics);
                         break;
                     case AlterProcedureStatement alter:
-                        var altered = ObjectName.From(alter.ProcedureReference.Name);
+                        var altered = SyntaxReader.Name(alter.ProcedureReference.Name);
                         procedureChanges.TryAdd(altered, (Changed(altered, "ALTER PROCEDURE", alter, relative), new Procedure(altered, alter, relative) { AnsiNullsOff = ansiNullsOff }));
                         break;
                     case DropProcedureStatement drop:
-                        foreach (var dropped in drop.Objects.Select(ObjectName.From))
+                        foreach (var dropped in drop.Objects.Select(SyntaxReader.Name))
                             procedureChanges.TryAdd(dropped, (Changed(dropped, "DROP PROCEDURE", drop, relative), null));
                         break;
                     // Objects a FROM clause can read besides tables. They are not modelled, but they must be known,
                     // because an unqualified name may resolve to one of them instead of to a table.
                     case ViewStatementBody view:
-                        TryAddNamed(others, ObjectName.From(view.SchemaObjectName), NamedObjectKind.View);
-                        if (!views.TryGetValue(ObjectName.From(view.SchemaObjectName), out var definitions))
-                            views[ObjectName.From(view.SchemaObjectName)] = definitions = [];
+                        TryAddNamed(others, SyntaxReader.Name(view.SchemaObjectName), NamedObjectKind.View);
+                        if (!views.TryGetValue(SyntaxReader.Name(view.SchemaObjectName), out var definitions))
+                            views[SyntaxReader.Name(view.SchemaObjectName)] = definitions = [];
                         definitions.Add((view, relative, ansiNullsOff));
                         break;
                     case CreateSynonymStatement synonym:
-                        others.TryAdd(ObjectName.From(synonym.Name), new NamedObject(ObjectName.From(synonym.Name), NamedObjectKind.Synonym) { SynonymFor = synonym.ForName });
+                        others.TryAdd(SyntaxReader.Name(synonym.Name), new NamedObject(SyntaxReader.Name(synonym.Name), NamedObjectKind.Synonym) { SynonymFor = synonym.ForName });
                         break;
                     case CreateFunctionStatement or CreateOrAlterFunctionStatement:
                         var function = (FunctionStatementBody)statement;
-                        var functionName = ObjectName.From(function.Name);
+                        var functionName = SyntaxReader.Name(function.Name);
                         TryAddNamed(others, functionName, NamedObjectKind.Function);
                         Add(functions, functionName, new UserFunction(functionName, function, relative) { AnsiNullsOff = ansiNullsOff }, function, relative, diagnostics);
                         break;
                     case AlterFunctionStatement alterFunction:
-                        var alteredFunction = ObjectName.From(alterFunction.Name);
+                        var alteredFunction = SyntaxReader.Name(alterFunction.Name);
                         TryAddNamed(others, alteredFunction, NamedObjectKind.Function);
                         functionChanges.TryAdd(alteredFunction, (Changed(alteredFunction, "ALTER FUNCTION", alterFunction, relative), new UserFunction(alteredFunction, alterFunction, relative) { AnsiNullsOff = ansiNullsOff }));
                         break;
                     case DropFunctionStatement dropFunction:
-                        foreach (var dropped in dropFunction.Objects.Select(ObjectName.From))
+                        foreach (var dropped in dropFunction.Objects.Select(SyntaxReader.Name))
                             functionChanges.TryAdd(dropped, (Changed(dropped, "DROP FUNCTION", dropFunction, relative), null));
                         break;
-                    case CreateTypeUddtStatement alias when SqlType.From(alias.DataType) is { } baseType:
-                        var aliasName = ObjectName.From(alias.Name);
+                    case CreateTypeUddtStatement alias when SyntaxReader.Type(alias.DataType) is { } baseType:
+                        var aliasName = SyntaxReader.Name(alias.Name);
                         var aliasNullability = alias.NullableConstraint is null ? DeclaredNullability.NotDeclared
                             : alias.NullableConstraint.Nullable ? DeclaredNullability.Null : DeclaredNullability.NotNull;
                         Add(userTypes, aliasName, new UserType(aliasName, baseType, aliasNullability, new SourceLocation(relative, alias.StartLine, alias.StartColumn)), alias, relative, diagnostics);
@@ -173,20 +174,20 @@ public static class SqlScriptFolder
                     // Recorded so that an unqualified type name that could mean it is not resolved to an alias type
                     // of the same name in another schema.
                     case CreateTypeUdtStatement clr:
-                        var clrName = ObjectName.From(clr.Name);
+                        var clrName = SyntaxReader.Name(clr.Name);
                         Add(userTypes, clrName, new UserType(clrName, null, DeclaredNullability.NotDeclared, new SourceLocation(relative, clr.StartLine, clr.StartColumn)), clr, relative, diagnostics);
                         break;
                     case AlterTableAddTableElementStatement addKey when OnlyTightens(addKey):
-                        CascadingKeys(ObjectName.From(addKey.SchemaObjectName), addKey.Definition, relative, cascadingKeys);
+                        CascadingKeys(SyntaxReader.Name(addKey.SchemaObjectName), addKey.Definition, relative, cascadingKeys);
                         break;
                     case AlterTableStatement alterTable when !OnlyTightens(alterTable):
-                        var changedTable = ObjectName.From(alterTable.SchemaObjectName);
+                        var changedTable = SyntaxReader.Name(alterTable.SchemaObjectName);
                         tableChanges.TryAdd(changedTable, Changed(changedTable, "ALTER TABLE", alterTable, relative));
                         if (alterTable is AlterTableAddTableElementStatement addColumn)
                             CascadingKeys(changedTable, addColumn.Definition, relative, cascadingKeys);
                         break;
                     case DropTableStatement dropTable:
-                        foreach (var dropped in dropTable.Objects.Select(ObjectName.From))
+                        foreach (var dropped in dropTable.Objects.Select(SyntaxReader.Name))
                             tableChanges.TryAdd(dropped, Changed(dropped, "DROP TABLE", dropTable, relative));
                         break;
                 }
@@ -248,7 +249,7 @@ public static class SqlScriptFolder
             };
         }
 
-        var parent = ObjectName.From(on);
+        var parent = SyntaxReader.Name(on);
 
         // A trigger is in its table's schema, whatever its own name says.
         var name = new ObjectName(parent.Schema, trigger.Name.BaseIdentifier.Value);
@@ -273,12 +274,12 @@ public static class SqlScriptFolder
                 continue;
             }
 
-            into.Add(new CascadingKey(table, ObjectName.From(key.ReferenceTableName), new SourceLocation(file, key.StartLine, key.StartColumn)));
+            into.Add(new CascadingKey(table, SyntaxReader.Name(key.ReferenceTableName), new SourceLocation(file, key.StartLine, key.StartColumn)));
         }
     }
 
     private static Table ReadTable(CreateTableStatement statement, string file) =>
-        Table.FromDefinition(ObjectName.From(statement.SchemaObjectName), statement.Definition, file, new SourceLocation(file, statement.StartLine, statement.StartColumn), statement.AsNode || statement.AsEdge);
+        SyntaxReader.Table(SyntaxReader.Name(statement.SchemaObjectName), statement.Definition, file, new SourceLocation(file, statement.StartLine, statement.StartColumn), statement.AsNode || statement.AsEdge);
 
     /// <summary>ALTER TABLE … NOCHECK CONSTRAINT, or … WITH CHECK CHECK CONSTRAINT.</summary>
     /// <param name="Table">The table it names; in <c>dbo</c> when <paramref name="Qualified"/> is false.</param>
@@ -330,7 +331,7 @@ public static class SqlScriptFolder
             if (change.ConstraintEnforcement != ConstraintEnforcement.NoCheck && !validates)
                 continue;
             into.Add(new Enforcement(
-                ObjectName.From(change.SchemaObjectName),
+                SyntaxReader.Name(change.SchemaObjectName),
                 change.SchemaObjectName.SchemaIdentifier is not null,
                 validates,
                 change.All ? null : [.. change.ConstraintNames.Select(n => n.Value)],
@@ -399,7 +400,7 @@ public static class SqlScriptFolder
         foreach (var alter in visitor.Found.Where(a => a.AlterIndexType == AlterIndexType.Disable))
         {
             into.Add(new IndexDisable(
-                ObjectName.From(alter.OnName),
+                SyntaxReader.Name(alter.OnName),
                 alter.OnName.SchemaIdentifier is not null,
                 alter.All ? null : alter.Name?.Value,
                 new SourceLocation(file, alter.StartLine, alter.StartColumn)));

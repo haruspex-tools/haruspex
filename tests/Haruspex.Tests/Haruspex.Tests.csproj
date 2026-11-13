@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\src\Haruspex.Ir\Haruspex.Ir.csproj" />
     <ProjectReference Include="..\..\src\Haruspex.Diagnostics\Haruspex.Diagnostics.csproj" />
     <ProjectReference Include="..\..\src\Haruspex.SqlServer.Model\Haruspex.SqlServer.Model.csproj" />
+    <ProjectReference Include="..\..\src\Haruspex.SqlServer.Syntax\Haruspex.SqlServer.Syntax.csproj" />
     <ProjectReference Include="..\..\src\Haruspex.SqlServer.Sources\Haruspex.SqlServer.Sources.csproj" />
     <ProjectReference Include="..\..\src\Haruspex.SqlServer.Semantics\Haruspex.SqlServer.Semantics.csproj" />
     <ProjectReference Include="..\..\src\Haruspex.SqlServer.Inference\Haruspex.SqlServer.Inference.csproj" />
