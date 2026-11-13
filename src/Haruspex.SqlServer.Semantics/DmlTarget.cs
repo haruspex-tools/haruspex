@@ -1,8 +1,7 @@
-using Haruspex.Ir;
 using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
-namespace Haruspex.SqlServer.Inference;
+namespace Haruspex.SqlServer.Semantics;
 
 /// <summary>
 /// What a statement that writes a table is aimed at, as written: the permanent tables or views it may change (through an
@@ -13,7 +12,7 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="Temps">Temporary tables it may change through a CTE or derived table, which then hold what is not followed.</param>
 /// <param name="Direct">The temporary table (<c>#t</c>) or table variable (<c>@t</c>) it writes directly, if it does.</param>
 /// <param name="Unmodelled">Why the target is of a form not modelled (<c>OPENROWSET</c>, <c>OPENQUERY</c>, …), if it is.</param>
-internal sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, EquatableArray<string> Temps, string? Direct, string? Unmodelled)
+public sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadOnlyList<string> Temps, string? Direct, string? Unmodelled)
 {
     /// <summary>
     /// The permanent object the write changes when it names one, directly or through an alias in FROM, rather than through a
@@ -27,6 +26,7 @@ internal sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, Equat
     /// </summary>
     public static DmlTarget Of(TableReference target, FromClause? from, WithCtesAndXmlNamespaces? with)
     {
+        ArgumentNullException.ThrowIfNull(target);
         var objects = new List<SchemaObjectName>();
         var temps = new List<string>();
         string? direct = null;
@@ -89,9 +89,7 @@ internal sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, Equat
         // Every table a CTE's or derived table's query names: one of them is the table the write changes underneath.
         void Read(QueryExpression query, HashSet<string> seen)
         {
-            var names = new NamedTables();
-            query.Accept(names);
-            foreach (var name in names.Found)
+            foreach (var name in NamesRead(query))
             {
                 var one = name.BaseIdentifier.Value;
                 if (name is { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null } && ctes.TryGetValue(one, out var cte))
@@ -113,11 +111,13 @@ internal sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, Equat
 
     /// <summary>The name a source's columns are qualified by: its alias, or its own name without one.</summary>
     public static string? Alias(TableReferenceWithAlias source) =>
+        source is null ? throw new ArgumentNullException(nameof(source)) :
         source.Alias?.Value ?? (source as NamedTableReference)?.SchemaObject.BaseIdentifier.Value ?? (source as VariableTableReference)?.Variable.Name;
 
     /// <summary>The sources of a FROM clause, through its joins.</summary>
     public static IEnumerable<TableReferenceWithAlias> Sources(IEnumerable<TableReference> references)
     {
+        ArgumentNullException.ThrowIfNull(references);
         foreach (var reference in references)
         {
             switch (reference)
@@ -137,8 +137,17 @@ internal sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, Equat
         }
     }
 
-    /// <summary>Every table name a fragment reads, at any depth.</summary>
-    internal sealed class NamedTables : TSqlFragmentVisitor
+    /// <summary>Every table name a fragment reads, at any depth, in the order they are written.</summary>
+    /// <param name="fragment">The fragment: a query, a view's definition, a statement.</param>
+    public static IReadOnlyList<SchemaObjectName> NamesRead(TSqlFragment fragment)
+    {
+        ArgumentNullException.ThrowIfNull(fragment);
+        var names = new NamedTables();
+        fragment.Accept(names);
+        return names.Found;
+    }
+
+    private sealed class NamedTables : TSqlFragmentVisitor
     {
         public List<SchemaObjectName> Found { get; } = [];
 

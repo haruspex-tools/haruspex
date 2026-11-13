@@ -376,9 +376,7 @@ internal sealed partial class ProcedureAnalyzer
         if (candidates is not [var declaration] || declaration.CursorDefinition.Select is not { QueryExpression: QuerySpecification query } select)
             return null;
 
-        var reads = new DmlTarget.NamedTables();
-        query.Accept(reads);
-        var temps = reads.Found.Where(IsTemporary).Select(n => n.BaseIdentifier.Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var temps = DmlTarget.NamesRead(query).Where(IsTemporary).Select(n => n.BaseIdentifier.Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (temps.Count > 0 && Restructured(temps, declaration))
             return null;
 

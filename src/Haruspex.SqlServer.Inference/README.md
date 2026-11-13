@@ -298,7 +298,7 @@ it on the stack of calls.
   A write through a CTE (`WITH c AS (SELECT … FROM #t) UPDATE c …`) or a derived table changes the table underneath
   (`Dml_through_a_view_or_a_cte_fires_the_triggers_of_the_table_underneath` shows it for a permanent one), which is not
   followed: every temporary table the CTE's query names becomes unknown.
-- **The target** is resolved as written (`DmlTarget`): an alias of a source in `FROM` (`UPDATE x … FROM t AS x`), a CTE of
+- **The target** is resolved as written, by Semantics (`DmlTarget`): an alias of a source in `FROM` (`UPDATE x … FROM t AS x`), a CTE of
   the statement's `WITH`, whose query's tables are all taken as possibly written (more than are, which only claims less),
   a temporary table, a table variable, or a permanent object, resolved by the binder's rule for table names
   (`Binder.ResolveWritten`). A target of another form (`OPENROWSET`, `OPENQUERY`) is not modelled and makes the results

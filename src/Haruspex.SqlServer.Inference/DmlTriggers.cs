@@ -117,10 +117,8 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
             // Observed: Dml_through_a_view_or_a_cte_fires_the_triggers_of_the_table_underneath.
             if (view.Redefinition is not null)
                 return $"writes the view {name}, which is defined more than once, so the tables it writes underneath are not known";
-            var underneath = new DmlTarget.NamedTables();
-            view.Query.Accept(underneath);
             var own = view.Query.WithCtesAndXmlNamespaces?.CommonTableExpressions.Select(c => c.ExpressionName.Value).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
-            foreach (var read in underneath.Found.Where(n => n.SchemaIdentifier is not null || !own.Contains(n.BaseIdentifier.Value)))
+            foreach (var read in DmlTarget.NamesRead(view.Query).Where(n => n.SchemaIdentifier is not null || !own.Contains(n.BaseIdentifier.Value)))
             {
                 if (binder.ResolveWritten(read).Count == 0)
                     Warn(FragmentText.OneLine(read), at);
