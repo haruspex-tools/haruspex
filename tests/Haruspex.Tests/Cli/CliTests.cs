@@ -53,7 +53,31 @@ public class CliTests
 
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);
-        Assert.Contains("not found", error, StringComparison.Ordinal);
+        Assert.StartsWith("haruspex: error HAR6004: directory not found: ", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_option_haruspex_does_not_know_is_a_usage_error_with_its_code()
+    {
+        var (exitCode, output, error) = Run("generate", "--colour", "blue");
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal("", output);
+        Assert.StartsWith("haruspex: error HAR6001: ", error, StringComparison.Ordinal);
+        Assert.EndsWith("Run 'haruspex --help' for usage.\n", error.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_include_that_is_not_a_two_part_name_is_a_usage_error_with_its_code()
+    {
+        using var outDir = new TempDirectory();
+
+        var (exitCode, _, error) = Run("generate", Fixture.Named("orders").Database, "--include", "a.b.c", "--out", outDir.Path);
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal(
+            "haruspex: error HAR6006: invalid --include pattern: 'a.b.c' is not a two-part name such as sales.get_order, sales.* or *.list_*.\n",
+            error.ReplaceLineEndings("\n"));
     }
 
     [Fact]
@@ -86,7 +110,7 @@ public class CliTests
 
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);
-        Assert.Equal("haruspex: give --out, the folder to write to, or a config file with \"out\".\n", error.ReplaceLineEndings("\n"));
+        Assert.Equal("haruspex: error HAR6005: give --out, the folder to write to, or a config file with \"out\".\n", error.ReplaceLineEndings("\n"));
     }
 
     [Fact]
@@ -98,7 +122,7 @@ public class CliTests
 
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);
-        Assert.Equal("haruspex: nothing is selected: give --include, or a config file whose \"schemas\" include procedures. Use '*.*' to type every procedure.\n", error.ReplaceLineEndings("\n"));
+        Assert.Equal("haruspex: error HAR6007: nothing is selected: give --include, or a config file whose \"schemas\" include procedures. Use '*.*' to type every procedure.\n", error.ReplaceLineEndings("\n"));
     }
 
     [Fact]
@@ -109,7 +133,7 @@ public class CliTests
         var (exitCode, _, error) = Run("generate", "--include", "*.*", "--out", outDir.Path);
 
         Assert.Equal(2, exitCode);
-        Assert.Equal("haruspex: give the folder of .sql files to read, or a config file with \"source\".\n", error.ReplaceLineEndings("\n"));
+        Assert.Equal("haruspex: error HAR6003: give the folder of .sql files to read, or a config file with \"source\".\n", error.ReplaceLineEndings("\n"));
     }
 
     [Fact]

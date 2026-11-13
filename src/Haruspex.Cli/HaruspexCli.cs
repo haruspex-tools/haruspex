@@ -48,7 +48,7 @@ internal static class HaruspexCli
         if (parsed.Errors.Count > 0)
         {
             foreach (var parseError in parsed.Errors)
-                error.WriteLine($"haruspex: {parseError.Message}");
+                error.WriteLine(CliCodes.BadCommandLine.At(null, parseError.Message));
             error.WriteLine("Run 'haruspex --help' for usage.");
             return ExitCodes.Usage;
         }
@@ -126,7 +126,7 @@ internal static class HaruspexCli
         {
             if (!File.Exists(configPath))
             {
-                error.WriteLine($"haruspex: config file not found: {request.Config}");
+                error.WriteLine(CliCodes.ConfigNotFound.At(null, $"config file not found: {request.Config}"));
                 return ExitCodes.Usage;
             }
 
@@ -141,24 +141,24 @@ internal static class HaruspexCli
         var directory = request.Directory is { } given ? request.Resolve(given) : config.Source;
         if (directory is null)
         {
-            error.WriteLine(configPath is null
-                ? "haruspex: give the folder of .sql files to read, or a config file with \"source\"."
-                : $"haruspex: give the folder of .sql files to read, or \"source\" in {configPath}.");
+            error.WriteLine(CliCodes.NoSource.At(null, configPath is null
+                ? "give the folder of .sql files to read, or a config file with \"source\"."
+                : $"give the folder of .sql files to read, or \"source\" in {configPath}."));
             return ExitCodes.Usage;
         }
 
         if (!Directory.Exists(directory))
         {
-            error.WriteLine($"haruspex: directory not found: {request.Directory ?? directory}");
+            error.WriteLine(CliCodes.SourceNotFound.At(null, $"directory not found: {request.Directory ?? directory}"));
             return ExitCodes.Usage;
         }
 
         var outDirectory = request.Out is { } outGiven ? request.Resolve(outGiven) : config.Out;
         if (outDirectory is null)
         {
-            error.WriteLine(configPath is null
-                ? "haruspex: give --out, the folder to write to, or a config file with \"out\"."
-                : $"haruspex: give --out, the folder to write to, or \"out\" in {configPath}.");
+            error.WriteLine(CliCodes.NoOut.At(null, configPath is null
+                ? "give --out, the folder to write to, or a config file with \"out\"."
+                : $"give --out, the folder to write to, or \"out\" in {configPath}."));
             return ExitCodes.Usage;
         }
 
@@ -168,7 +168,7 @@ internal static class HaruspexCli
         {
             if (!ObjectPattern.TryParse(text, out var pattern, out var problem))
             {
-                error.WriteLine($"haruspex: invalid --include pattern: {problem}");
+                error.WriteLine(CliCodes.BadInclude.At(null, $"invalid --include pattern: {problem}"));
                 return ExitCodes.Usage;
             }
 
@@ -179,9 +179,9 @@ internal static class HaruspexCli
         if (!fromCommandLine && !config.SelectsAnything)
         {
             // Nothing is selected without an include: typing every procedure is asked for, never the default.
-            error.WriteLine(configPath is null
-                ? "haruspex: nothing is selected: give --include, or a config file whose \"schemas\" include procedures. Use '*.*' to type every procedure."
-                : $"haruspex: nothing is selected: give --include, or a schema with \"include\" in {configPath}, such as \"schemas\": {{ \"dbo\": {{ \"include\": [\"*\"] }} }}.");
+            error.WriteLine(CliCodes.NothingSelected.At(null, configPath is null
+                ? "nothing is selected: give --include, or a config file whose \"schemas\" include procedures. Use '*.*' to type every procedure."
+                : $"nothing is selected: give --include, or a schema with \"include\" in {configPath}, such as \"schemas\": {{ \"dbo\": {{ \"include\": [\"*\"] }} }}."));
             return ExitCodes.Usage;
         }
 
@@ -239,7 +239,7 @@ internal static class HaruspexCli
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            error.WriteLine($"haruspex: cannot write to {outDirectory}: {e.Message}");
+            error.WriteLine(CliCodes.CannotWrite.At(null, $"cannot write to {outDirectory}: {e.Message}"));
             return ExitCodes.Failed;
         }
 
