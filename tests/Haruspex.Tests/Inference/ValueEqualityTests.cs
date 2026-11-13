@@ -172,6 +172,40 @@ public class ValueEqualityTests
         Assert.NotEqual(Context("#lines"), CallContext.Top);
     }
 
+    [Fact]
+    public void The_equality_of_states_keeps_the_laws()
+    {
+        var number = new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []);
+        var text = new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.String, null, "nvarchar(10)")), []);
+        static FlowState State(string name, Value value) => FlowState.Start([new(name, value with { })]);
+
+        EqualityLaws.Hold([
+            State("@id", number), State("@ID", number), State("@id", number), State("@id", text), State("@name", number),
+            State("@id", number).WithReadUncommitted(true), State("@id", number).WithTemp("#t", new AbsentTable(Generator.Places[0])),
+        ]);
+    }
+
+    [Fact]
+    public void The_equality_of_call_contexts_keeps_the_laws()
+    {
+        var column = new TempColumn("qty", new Value(ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []), null);
+        CallContext Context(string name) => CallContext.Top with { Temps = ImmutableDictionary.Create<string, TempTable>(StringComparer.OrdinalIgnoreCase).Add(name, new KnownTable("#lines", [column with { }])) };
+
+        EqualityLaws.Hold([Context("#lines"), Context("#LINES"), Context("#lines") with { Escapes = true }, Context("#other"), CallContext.Top, CallContext.Top with { }]);
+    }
+
+    [Fact]
+    public void The_equality_of_result_tracks_keeps_the_laws()
+    {
+        ResultShape Result(string type) => new(IrEncoding.Rowset, ScalarShape.FromIr(new IrScalar(IrScalarKind.Number, IrFormat.Int32, type)), []);
+        ResultTrack Track(params string[] types) => types.Aggregate(ResultTrack.None, (track, type) => track.Append(Result(type), Generator.Places[0]));
+
+        EqualityLaws.Hold([
+            ResultTrack.None, Track(), Track("int"), Track("int"), Track("int", "bigint"), Track("bigint", "int"), Track("int").Join(Track("bigint")),
+            Track("bigint").Join(Track("int")),
+        ]);
+    }
+
     /// <summary>
     /// Values and shapes drawn at random from small alphabets, every list and record built new, so that equal values are
     /// never the same objects.
