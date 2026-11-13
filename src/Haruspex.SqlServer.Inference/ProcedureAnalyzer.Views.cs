@@ -57,7 +57,7 @@ internal sealed partial class ProcedureAnalyzer
         OpenJsonCall openJson => OpenJsonRelation(openJson, scope.In(openJson.Arguments)),
         SeriesCall series => GenerateSeries(series, scope.In(series.Arguments)),
         TemporaryTable temporary => Temporary(temporary.Local, scope.State),
-        TableVariable variable => AsWritten(variable.Local, tableVariables[variable.Local], scope.State),
+        TableVariable variable => AsWritten(variable.Local, TableVariableValues(variable.Declaration), scope.State),
     };
 
     /// <summary>What a temporary table holds in <paramref name="state"/>, or why it is not known there.</summary>
@@ -278,7 +278,7 @@ internal sealed partial class ProcedureAnalyzer
         return Binder.Star(star, scope.Bound) is { } columns
             ? [.. columns.Select(c => c.Column switch
             {
-                TableColumn table => new RowColumn(c.Name, FromColumn(table), at, table),
+                TableColumn table => new RowColumn(c.Name, FromColumn(table, scope), at, table),
                 RelationColumn relation => new RowColumn(c.Name, FromLocal(relation.Source, relation.Ordinal, scope, at), at),
                 UnlistedColumn unlisted => new RowColumn(c.Name, FromLocal(unlisted.Source, -1, scope, at), at),
                 Unresolved unresolved => new RowColumn(c.Name, Value.Unknown(Unknown(unresolved.Problem)), at),

@@ -195,9 +195,9 @@ internal sealed partial class ProcedureAnalyzer
             : values.Take(first).Select((v, i) => i).Where(i => ReadTwice(arguments[i]))
                 .Select(i => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRule.ReadTwice, At(arguments[i]).ToString())])
                 .Aggregate((EquatableArray<IrNullReason>)[], NullReasons.Join);
-        if (values.Any(IsJson) || ReferenceEquals(coalesce, jsonQueryArgument))
+        if (values.Any(IsJson) || ReferenceEquals(coalesce, scope.JsonQueryArgument))
         {
-            var json = CoalesceJson(coalesce, arguments, values, because);
+            var json = CoalesceJson(coalesce, arguments, values, because, scope);
             if (values.Any(IsJson) || json.Shape is JsonTextShape)
                 return json;
         }
@@ -506,17 +506,17 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private Value Sum(FunctionCall call, ReadScope scope)
     {
-        var argument = InAggregate(() => Expression(call.Parameters[0], scope));
+        var argument = Expression(call.Parameters[0], scope.InAggregate());
         if (argument.Shape is UnknownShape)
             return argument;
         var type = TypeOf(argument) is { } of ? SumType(of) : null;
         if (type is null)
             return NotModelled(call, "SUM of a value of this type is not modelled yet.");
-        if (ProvedAggregate(call))
+        if (ProvedAggregate(call, scope))
             return Typed(type, [], call);
 
         var from = TypeOf(argument);
-        EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call)];
+        EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call, scope)];
         return Typed(type, from is { IsDecimal: true, Precision: <= 19 } ? because : NullReasons.Join(because, [Overflow(call)]), call);
     }
 

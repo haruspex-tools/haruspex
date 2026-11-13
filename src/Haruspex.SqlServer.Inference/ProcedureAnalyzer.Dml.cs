@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
@@ -11,24 +12,6 @@ namespace Haruspex.SqlServer.Inference;
 // model; the observations it rests on are DmlObservationTests in the differential tests.
 internal sealed partial class ProcedureAnalyzer
 {
-    /// <summary>While a MERGE's OUTPUT is read: the actions it takes, the closed set its <c>$action</c> is drawn from.</summary>
-    private IReadOnlyList<string>? mergeActions;
-
-    /// <summary>
-    /// While an OUTPUT is read: the sources that name the write's target through its alias in FROM, which OUTPUT may read,
-    /// but whether as the row before or after the write is not observed, so a column read through one is unknown.
-    /// </summary>
-    private IReadOnlyList<BoundSource> outputTarget = [];
-
-    /// <summary>
-    /// While a MERGE's OUTPUT is read: the sources of its source, whose columns are null for the rows it changes because they
-    /// are not matched by the source, when it has such a clause; and why.
-    /// </summary>
-    private (IReadOnlyList<BoundSource> Sources, IrNullReason Why)? unmatchedSource;
-
-    /// <summary>While a cursor's query is read: no filter proves anything of the row a FETCH returns (see <see cref="FetchRow"/>).</summary>
-    private bool unfiltered;
-
     /// <summary>
     /// A write: <c>INSERT</c>, <c>UPDATE</c>, <c>DELETE</c> or <c>MERGE</c>, of any target. It returns no result set
     /// (observed: Dml_on_a_permanent_table_returns_no_result_set) unless it has an <c>OUTPUT</c> without <c>INTO</c>, or fires
@@ -113,25 +96,18 @@ internal sealed partial class ProcedureAnalyzer
         var inserted = spec is DeleteSpecification ? null : Pseudo(spec, target, after, actions?.Contains("DELETE") == true ? because : null, at);
         var deleted = spec is InsertSpecification ? null : Pseudo(spec, target, before, actions?.Contains("INSERT") == true ? because : null, at);
 
-        var outerActions = mergeActions;
-        mergeActions = actions is null || actions.Contains(null) ? null : [.. actions.OfType<string>().Distinct().Order(StringComparer.Ordinal)];
-        try
-        {
-            // Read in the state before the write: OUTPUT's own columns are inserted and deleted, which are given.
-            if (spec.OutputClause is { } output)
-            {
-                var row = OutputRow(spec, output, output.SelectColumns, from, where, with, inserted, deleted, because, Reading(before));
-                appended++;
-                after = after.WithResults(after.Results.Append(new ResultShape(IrEncoding.Rowset, Rowset(row), [], IrCardinality.Many), at));
-            }
+        EquatableArray<string>? mergeActions = actions is null || actions.Contains(null) ? null : [.. actions.OfType<string>().Distinct().Order(StringComparer.Ordinal)];
 
-            if (spec.OutputIntoClause is { } into)
-                after = OutputInto(into, OutputRow(spec, into, into.SelectColumns, from, where, with, inserted, deleted, because, Reading(before)), after, at);
-        }
-        finally
+        // Read in the state before the write: OUTPUT's own columns are inserted and deleted, which are given.
+        if (spec.OutputClause is { } output)
         {
-            mergeActions = outerActions;
+            var row = OutputRow(spec, output, output.SelectColumns, from, where, with, inserted, deleted, mergeActions, because, Reading(before));
+            appended++;
+            after = after.WithResults(after.Results.Append(new ResultShape(IrEncoding.Rowset, Rowset(row), [], IrCardinality.Many), at));
         }
+
+        if (spec.OutputIntoClause is { } into)
+            after = OutputInto(into, OutputRow(spec, into, into.SelectColumns, from, where, with, inserted, deleted, mergeActions, because, Reading(before)), after, at);
 
         return after;
     }
@@ -152,7 +128,7 @@ internal sealed partial class ProcedureAnalyzer
             && binder.ResolveWritten(only) is [var name] && model.FindTable(name) is { } table && model.FindTableRedefinition(name) is null)
         {
             var source = new BoundSource(name.Name, new TableTarget(table), null, spec.Target);
-            values = new LocalRelationValues([.. table.Columns.Select(c => c.Name)], [.. table.Columns.Select(c => FromColumn(new TableColumn(source, table, c)))], null);
+            values = new LocalRelationValues([.. table.Columns.Select(c => c.Name)], [.. table.Columns.Select(c => FromColumn(new TableColumn(source, table, c), Reading(state)))], null);
         }
         else
         {
@@ -178,6 +154,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <param name="with">The write's WITH.</param>
     /// <param name="inserted">What <c>inserted</c> holds, or null when the write has none.</param>
     /// <param name="deleted">What <c>deleted</c> holds, or null when the write has none.</param>
+    /// <param name="mergeActions">A MERGE's actions, which its <c>$action</c> is one of; null for another write.</param>
     /// <param name="because">Why a MERGE's source is null in the rows it does not match.</param>
     /// <param name="at">The statement's scope, in the state before the write.</param>
     private Row OutputRow(
@@ -189,6 +166,7 @@ internal sealed partial class ProcedureAnalyzer
         WithCtesAndXmlNamespaces? with,
         LocalRelationValues? inserted,
         LocalRelationValues? deleted,
+        EquatableArray<string>? mergeActions,
         IrNullReason because,
         ReadScope at)
     {
@@ -197,21 +175,10 @@ internal sealed partial class ProcedureAnalyzer
         {
             var output = binder.BindOutput(spec, clause, columns, from, where, statement.Names, inserted?.Names, deleted?.Names);
             var scope = output.Pseudo.Aggregate(statement, (s, p) => (p.Name == "inserted" ? inserted : deleted) is { } values ? s.Naming(p, values) : s);
-            var outerTarget = outputTarget;
-            var outerUnmatched = unmatchedSource;
-            outputTarget = output.Written;
 
             // Every source in the USING tree: a joined USING is null-extended as a whole.
-            unmatchedSource = output.Unmatched.Count > 0 ? (output.Unmatched, because) : null;
-            try
-            {
-                return Query(output.Query, scope);
-            }
-            finally
-            {
-                outputTarget = outerTarget;
-                unmatchedSource = outerUnmatched;
-            }
+            var reading = new OutputReading(mergeActions, output.Written, output.Unmatched, output.Unmatched.Count > 0 ? because : null);
+            return Query(output.Query, scope.Outputting(reading));
         }, why => new Row([new RowColumn(null, Value.Unknown(why), location)], null));
     }
 
@@ -249,10 +216,10 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>$action</c> in a MERGE's OUTPUT: an <c>nvarchar(10)</c>, never null (observed: Merge_action_is_an_nvarchar_10), one of
     /// the actions the statement has.
     /// </summary>
-    private Value MergeAction(ColumnReferenceExpression action)
+    private Value MergeAction(ColumnReferenceExpression action, ReadScope scope)
     {
         var at = At(action);
-        if (mergeActions is null)
+        if (scope.Output?.Actions is not { } mergeActions)
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{Text(action)} outside a MERGE's OUTPUT is not modelled.", at));
         var shape = (ScalarShape)SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, 10), at);
         var values = new IrValueSet([.. mergeActions.Select(a => new IrValue(a, IsString: true))], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Engine, "$action")]);
@@ -260,7 +227,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>Whether a column read in an OUTPUT names the write's target through its alias, which is not modelled.</summary>
-    private bool ReadsOutputTarget(Resolution binding)
+    private static bool ReadsOutputTarget(Resolution binding, ReadScope scope)
     {
         var source = binding switch
         {
@@ -268,12 +235,12 @@ internal sealed partial class ProcedureAnalyzer
             RelationColumn local => local.Source,
             _ => null,
         };
-        return source is not null && outputTarget.Contains(source, ReferenceEqualityComparer.Instance);
+        return source is not null && scope.Output is { } output && output.Target.Contains(source, ReferenceEqualityComparer.Instance);
     }
 
     /// <summary>Why a column of a MERGE's source may be null in its OUTPUT: the rows it changes not matched by the source have none.</summary>
-    private IrNullReason? Unmatched(BoundSource source) =>
-        unmatchedSource is { } unmatched && unmatched.Sources.Contains(source, ReferenceEqualityComparer.Instance) ? unmatched.Why : null;
+    private static IrNullReason? Unmatched(BoundSource source, ReadScope scope) =>
+        scope.Output is { UnmatchedBecause: { } why } output && output.Unmatched.Contains(source, ReferenceEqualityComparer.Instance) ? why : null;
 
     // ---- cursors --------------------------------------------------------------------------------------------------
 
@@ -338,16 +305,7 @@ internal sealed partial class ProcedureAnalyzer
         if (temps.Count > 0 && Restructured(temps, declaration))
             return null;
 
-        var outer = unfiltered;
-        unfiltered = true;
-        try
-        {
-            return WithCtes(select.WithCtesAndXmlNamespaces, Reading(state), scope => Outermost(query, scope) is { Star: null } row ? row.Columns.Select(c => c.Value).ToList() : null, _ => null);
-        }
-        finally
-        {
-            unfiltered = outer;
-        }
+        return WithCtes(select.WithCtesAndXmlNamespaces, Reading(state).Fetching(), scope => Outermost(query, scope) is { Star: null } row ? row.Columns.Select(c => c.Value).ToList() : null, _ => null);
     }
 
     /// <summary>

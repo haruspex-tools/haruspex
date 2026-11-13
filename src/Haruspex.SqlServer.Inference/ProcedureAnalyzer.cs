@@ -34,9 +34,6 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>Inside a function's body, its parameters by name; empty in a procedure, whose parameters are not followed yet.</summary>
     private readonly EquatableMap<LocalName, Value> parameters;
 
-    /// <summary>The query whose select list is being read, for an aggregate to know whether it has GROUP BY.</summary>
-    private QuerySpecification? current;
-
     /// <param name="model">The model the body's references resolve in.</param>
     /// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
     /// <param name="functions">What each scalar function returns.</param>
@@ -167,38 +164,27 @@ internal sealed partial class ProcedureAnalyzer
         // the select list and every subquery in it; GROUP BY is not read beyond what cardinality needs.
         var columns = new List<RowColumn>();
         SourceLocation? star = null;
-        var outer = current;
-        current = query;
         var found = Filters(query, scope);
 
         // A cursor's row is read again when it is fetched, so its query's filters prove nothing of it (FetchRow).
-        if (unfiltered)
+        if (scope.Fetched)
             found.Forget();
 
-        var outside = facts;
-        facts = facts.With(found);
-        try
+        var row = scope.Selecting(query, found);
+        foreach (var element in query.SelectElements)
         {
-            foreach (var element in query.SelectElements)
+            switch (element)
             {
-                switch (element)
-                {
-                    case SelectScalarExpression scalar:
-                        columns.Add(new RowColumn(Binder.ColumnName(scalar), Expression(scalar.Expression, scope), At(scalar), Origin(scalar.Expression, scope), scalar.Expression));
-                        break;
-                    case SelectStarExpression all when scope.Names.ExpandsStars && Expand(all, scope) is { } expanded:
-                        columns.AddRange(expanded);
-                        break;
-                    case SelectStarExpression:
-                        star ??= At(element);
-                        break;
-                }
+                case SelectScalarExpression scalar:
+                    columns.Add(new RowColumn(Binder.ColumnName(scalar), Expression(scalar.Expression, row), At(scalar), Origin(scalar.Expression, scope), scalar.Expression));
+                    break;
+                case SelectStarExpression all when scope.Names.ExpandsStars && Expand(all, row) is { } expanded:
+                    columns.AddRange(expanded);
+                    break;
+                case SelectStarExpression:
+                    star ??= At(element);
+                    break;
             }
-        }
-        finally
-        {
-            facts = outside;
-            current = outer;
         }
 
         return new Row([.. columns], star, Cardinality(query, scope), [.. scope.Bound.Sources]);
@@ -349,7 +335,7 @@ internal sealed partial class ProcedureAnalyzer
 
     private Value Expression(ScalarExpression expression, ReadScope scope) => expression switch
     {
-        ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnAction } action => MergeAction(action),
+        ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnAction } action => MergeAction(action, scope),
         ColumnReferenceExpression column => Column(column, scope),
         ParenthesisExpression parenthesis => Expression(parenthesis.Expression, scope),
         ScalarSubquery subquery => Subquery(subquery, scope),
@@ -357,7 +343,7 @@ internal sealed partial class ProcedureAnalyzer
         // Every built-in function, by the function table (ProcedureAnalyzer.FunctionTable.cs): the one path a call is typed by.
         _ when Function(expression, scope) is { } called => called,
         FunctionCall call when FunctionSummaries.Callee(call) is { } callee => CallFunction(call, callee, scope),
-        VariableReference variable => Branched(variable, Variable(variable, scope)),
+        VariableReference variable => Branched(variable, Variable(variable, scope), scope),
         IntegerLiteral literal => Integer(literal),
         StringLiteral literal => FromString(literal),
         NumericLiteral literal => FromNumeric(literal),
@@ -373,11 +359,11 @@ internal sealed partial class ProcedureAnalyzer
 
     private Value Column(ColumnReferenceExpression column, ReadScope scope) => binder.Resolve(column, scope.Bound) switch
     {
-        var target when ReadsOutputTarget(target) => Value.Unknown(Unsupported(
+        var target when ReadsOutputTarget(target, scope) => Value.Unknown(Unsupported(
             IrUnknownReason.UnsupportedExpression,
             $"{Text(column)} names the table the write changes, which OUTPUT may read before or after the change; read inserted or deleted instead.",
             At(column))),
-        TableColumn bound => FromColumn(bound),
+        TableColumn bound => FromColumn(bound, scope),
         RelationColumn local => FromLocal(local.Source, local.Ordinal, scope, At(column)),
         UnlistedColumn unlisted => FromLocal(unlisted.Source, -1, scope, At(column)),
         Unresolved unbound => Value.Unknown(Unknown(unbound.Problem)),
@@ -388,24 +374,24 @@ internal sealed partial class ProcedureAnalyzer
     /// unchanged: a column reference, through aliases, joins and FOR JSON nesting. Any expression makes the value
     /// something else, and none is modelled yet, so it becomes unknown and the facts go with it.
     /// </remarks>
-    private Value FromColumn(TableColumn bound)
+    private Value FromColumn(TableColumn bound, ReadScope scope)
     {
         var (source, table, column) = bound;
         var because = new List<IrNullReason>();
-        if (!SchemaRules.IsNeverNull(model, table, column) && facts.Proved(source, ColumnKey.Of(bound)) == Facts.Proof.None)
+        if (!SchemaRules.IsNeverNull(model, table, column) && scope.Facts.Proved(source, ColumnKey.Of(bound)) == Facts.Proof.None)
             because.Add(new IrNullReason(IrNullRule.NullableColumn, $"{table.Name}.{column.Name}"));
 
         // The optional side of an outer join, or of an OUTER APPLY, has no row when nothing matches, so every column read
         // from it can be null, whatever its declaration says; unless a filter proves the row matched.
-        if (source.Optional is { } optional && !facts.Matched(source))
+        if (source.Optional is { } optional && !scope.Facts.Matched(source))
             because.Add(new IrNullReason(optional.IsApplied ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.At.ToString()));
-        if (Rolled(source) is { } rolled)
+        if (Rolled(source, scope) is { } rolled)
             because.Add(rolled);
-        if (Unmatched(source) is { } unmatched)
+        if (Unmatched(source, scope) is { } unmatched)
             because.Add(unmatched);
 
         // A CASE branch that tested this very value proves it, whatever made it nullable (ProcedureAnalyzer.Case.cs).
-        if (facts.Proved(source, ColumnKey.Of(bound)) == Facts.Proof.OfTheValue)
+        if (scope.Facts.Proved(source, ColumnKey.Of(bound)) == Facts.Proof.OfTheValue)
             because.Clear();
 
         // A json column nests as JSON inside FOR JSON and the constructors (observed), but what it holds is data.
@@ -662,11 +648,11 @@ internal sealed partial class ProcedureAnalyzer
         if (call.Parameters.Count != 1)
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"json_arrayagg of {call.Parameters.Count} values is not modelled: {Text(call)}", At(call)));
 
-        var value = InAggregate(() => Expression(call.Parameters[0], scope));
+        var value = Expression(call.Parameters[0], scope.InAggregate());
         var neverEmpty = nullOnNull || value.NullableBecause.Count == 0;
         return new Value(
             new ArrayShape(value.Shape, nullOnNull ? value.NullableBecause : [], MinItems: neverEmpty ? 1 : null),
-            Aggregate(call),
+            Aggregate(call, scope),
             IsLiveJson: true);
     }
 
@@ -679,16 +665,16 @@ internal sealed partial class ProcedureAnalyzer
         if (call.JsonParameters is not [var pair])
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This form of json_objectagg is not modelled: {Text(call)}", At(call)));
 
-        var value = InAggregate(() => Expression(pair.JsonValue, scope));
-        return new Value(new RecordShape(value.Shape, nullOnNull ? value.NullableBecause : []), Aggregate(call), IsLiveJson: true);
+        var value = Expression(pair.JsonValue, scope.InAggregate());
+        return new Value(new RecordShape(value.Shape, nullOnNull ? value.NullableBecause : []), Aggregate(call, scope), IsLiveJson: true);
     }
 
     /// <summary>
     /// Why an aggregate can be null: over no rows it is NULL, which only a query without GROUP BY can give it (with
     /// GROUP BY, no rows means no groups at all).
     /// </summary>
-    private EquatableArray<IrNullReason> Aggregate(FunctionCall call) =>
-        current?.GroupByClause is null && !ProvedAggregate(call) ? [new IrNullReason(IrNullRule.EmptyAggregate, At(call).ToString())] : [];
+    private EquatableArray<IrNullReason> Aggregate(FunctionCall call, ReadScope scope) =>
+        scope.Query?.GroupByClause is null && !ProvedAggregate(call, scope) ? [new IrNullReason(IrNullRule.EmptyAggregate, At(call).ToString())] : [];
 
     // ---- helpers ------------------------------------------------------------------------------------
 

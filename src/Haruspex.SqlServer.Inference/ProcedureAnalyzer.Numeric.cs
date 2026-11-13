@@ -48,15 +48,15 @@ internal sealed partial class ProcedureAnalyzer
     private Value Average(FunctionCall call, ReadScope scope, BuiltInFunction function)
     {
         var name = function.Name;
-        var argument = InAggregate(() => Expression(call.Parameters[0], scope));
+        var argument = Expression(call.Parameters[0], scope.InAggregate());
         if (argument.Shape is UnknownShape)
             return argument;
         if (argument.IsLiveJson || TypeOf(argument) is not { } of || Statistic(function == AggregateFunctions.Avg, of) is not var (type, overflows))
             return NotModelled(call, $"{name.ToUpperInvariant()} of a value of this type is not modelled.");
-        if (ProvedAggregate(call))
+        if (ProvedAggregate(call, scope))
             return Typed(type, [], call);
 
-        EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call)];
+        EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call, scope)];
         if (function == AggregateFunctions.Stdev || function == AggregateFunctions.Var)
             because = NullReasons.Join(because, [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())]);
         return Typed(type, overflows ? NullReasons.Join(because, [Overflow(call)]) : because, call);

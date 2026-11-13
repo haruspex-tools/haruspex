@@ -364,7 +364,7 @@ internal sealed partial class ProcedureAnalyzer
             IntegerLiteral literal => new KeyValue(long.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n <= int.MaxValue ? BuiltInType.Int : BuiltInType.Numeric),
             NumericLiteral => new KeyValue(BuiltInType.Numeric),
             StringLiteral literal => new KeyValue(literal.IsNational ? BuiltInType.NVarChar : BuiltInType.VarChar),
-            VariableReference variable => Resolved(variable) switch
+            VariableReference variable => Binder.Resolve(variable, scope.Names) switch
             {
                 ParameterVariable parameter => KeyValue.Of(SchemaRules.ResolveType(model, parameter.Parameter.Type)?.Type),
                 LocalVariable local => KeyValue.Of(SchemaRules.ResolveType(model, local.Type)?.Type),

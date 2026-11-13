@@ -1,4 +1,3 @@
-using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Semantics;
@@ -129,15 +128,9 @@ internal sealed partial class ProcedureAnalyzer
     // ---- json_query ---------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// The expression json_query is reading, while it is read: a CASE, IIF, CHOOSE or COALESCE there holds JSON whether or not the
-    /// server folds it to one result, so its results' JSON is joined (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, EquatableArray{IrNullReason})"/>, <see cref="Coalesce"/>).
-    /// </summary>
-    private TSqlFragment? jsonQueryArgument;
-
-    /// <summary>
     /// What <c>json_query</c>'s argument holds: a literal that is a JSON document its exact shape, as JSON text never null; a
     /// literal that is not, an unknown saying why (it is an error, 13609, observed); anything else its value, a CASE, IIF,
-    /// CHOOSE or COALESCE read as JSON (<see cref="jsonQueryArgument"/>).
+    /// CHOOSE or COALESCE read as JSON (<see cref="ReadScope.JsonQueryArgument"/>).
     /// </summary>
     private Value JsonQueryArgument(ScalarExpression argument, ReadScope scope)
     {
@@ -147,16 +140,7 @@ internal sealed partial class ProcedureAnalyzer
             return parsed is UnknownShape unknown ? Value.Unknown(unknown) : new Value(new JsonTextShape(parsed), []);
         }
 
-        var outer = jsonQueryArgument;
-        jsonQueryArgument = Strip(argument);
-        try
-        {
-            return Expression(argument, scope);
-        }
-        finally
-        {
-            jsonQueryArgument = outer;
-        }
+        return Expression(argument, scope.UnderJsonQuery(Strip(argument)));
     }
 
     /// <summary>

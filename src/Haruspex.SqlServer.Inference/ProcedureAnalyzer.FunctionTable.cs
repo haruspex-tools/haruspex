@@ -123,8 +123,8 @@ internal sealed partial class ProcedureAnalyzer
         Typing(ScalarFunctions.JsonArray, null, "an array or tuple of its values, never null", [], ["An_aggregate_over_no_rows_is_null_not_empty"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonArray), readsOnlyItsArguments: false),
 
         // ---- aggregates ----
-        AggregateRow(AggregateFunctions.Count, (1, 1), "int", [CountOverflow], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off", OneRow], (a, e, s) => a.Count(Call(e), big: false)),
-        AggregateRow(AggregateFunctions.CountBig, (1, 1), "bigint, never null", [], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off"], (a, e, s) => a.Count(Call(e), big: true)),
+        AggregateRow(AggregateFunctions.Count, (1, 1), "int", [CountOverflow], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off", OneRow], (a, e, s) => a.Count(Call(e), s, big: false)),
+        AggregateRow(AggregateFunctions.CountBig, (1, 1), "bigint, never null", [], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off"], (a, e, s) => a.Count(Call(e), s, big: true)),
         AggregateRow(AggregateFunctions.Sum, (1, 1), "the argument's type, widened", [EmptyAggregate, ArithmeticOverflow], ["Sum_widens_its_argument"], (a, e, s) => a.Sum(Call(e), s)),
         AggregateRow(AggregateFunctions.Avg, (1, 1), "the argument's type, widened", [EmptyAggregate, ArithmeticOverflow], ["Avg_is_typed_by_its_argument_with_or_without_a_window", "Avg_is_null_over_no_rows_and_overflows_as_sum_does"], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Avg)),
         AggregateRow(AggregateFunctions.Min, (1, 1), "the argument, with its facets", [EmptyAggregate], [OneRow, "Min_and_max_of_a_bit_are_refused_with_or_without_a_window"], (a, e, s) => a.MinOrMax(Call(e), s, AggregateFunctions.Min)),

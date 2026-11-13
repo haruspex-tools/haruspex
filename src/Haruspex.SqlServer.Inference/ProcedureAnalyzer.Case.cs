@@ -16,8 +16,8 @@ internal sealed partial class ProcedureAnalyzer
     // ---- what a branch knows --------------------------------------------------------------------------------------------
 
     /// <summary>A variable or parameter, never null in a branch that proved it so.</summary>
-    private Value Branched(VariableReference variable, Value value) =>
-        value.Shape is not UnknownShape && facts.Proved(Resolved(variable).Name) ? value.WithNullableBecause([]) : value;
+    private static Value Branched(VariableReference variable, Value value, ReadScope scope) =>
+        value.Shape is not UnknownShape && scope.Facts.Proved(Binder.Resolve(variable, scope.Names).Name) ? value.WithNullableBecause([]) : value;
 
     /// <summary>
     /// What a branch knows: <paramref name="held"/> was TRUE (none for an ELSE) and each of <paramref name="failed"/> was FALSE
@@ -28,7 +28,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private Facts.Found Branch(IReadOnlyList<BooleanExpression> failed, BooleanExpression? held, ReadScope scope)
     {
-        var found = new Facts.Found(Facts.Proof.OfTheValue, current, []);
+        var found = new Facts.Found(Facts.Proof.OfTheValue, scope.Query, []);
         if (held is not null)
             Prove(held, Truth.True, scope, found);
         foreach (var condition in failed)
@@ -53,10 +53,10 @@ internal sealed partial class ProcedureAnalyzer
 
                     break;
                 case VariableReference variable:
-                    if (Resolved(variable) is var proved && Impossible(e => e is VariableReference v && Resolved(v) == proved))
+                    if (Binder.Resolve(variable, scope.Names) is var proved && Impossible(e => e is VariableReference v && Binder.Resolve(v, scope.Names) == proved))
                         found.Variable(proved.Name);
                     break;
-                case FunctionCall call when IsAggregate(call) && current is not null:
+                case FunctionCall call when IsAggregate(call) && scope.Query is not null:
                     var aggregate = AggregateKey.Of(call);
                     if (Impossible(e => e is FunctionCall c && IsAggregate(c) && AggregateKey.Of(c) == aggregate))
                         found.Aggregate(aggregate);
@@ -71,26 +71,6 @@ internal sealed partial class ProcedureAnalyzer
         RelationColumn { Ordinal: >= 0 } l => (l.Source, ColumnKey.Of(l)),
         _ => null,
     };
-
-    /// <summary>
-    /// Reads a branch knowing what held there (<see cref="Facts.Proof.OfTheValue"/>): what a branch tested is the value
-    /// itself, read in the same row after any grouping, so a column proved here is never null whatever else made it
-    /// nullable (an outer join, a ROLLUP's super-aggregate row; observed:
-    /// A_case_branch_runs_only_when_its_condition_is_true_and_later_ones_only_when_earlier_were_not).
-    /// </summary>
-    private T InBranch<T>(Facts.Found found, Func<T> read)
-    {
-        var outside = facts;
-        facts = facts.With(found);
-        try
-        {
-            return read();
-        }
-        finally
-        {
-            facts = outside;
-        }
-    }
 
     // ---- CASE and IIF ---------------------------------------------------------------------------------------------------
 
@@ -120,7 +100,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The branches of a CASE: each read knowing what held (<see cref="Branch"/>). Its type is the precedence over its results
-    /// (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, EquatableArray{IrNullReason})"/>); without ELSE it is NULL when no WHEN holds (<c>no-branch-matched</c>).
+    /// (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, EquatableArray{IrNullReason}, ReadScope)"/>); without ELSE it is NULL when no WHEN holds (<c>no-branch-matched</c>).
     /// </summary>
     private Value Branches(TSqlFragment at, IReadOnlyList<(BooleanExpression When, ScalarExpression Then)> whens, ScalarExpression? otherwise, ReadScope scope)
     {
@@ -128,13 +108,13 @@ internal sealed partial class ProcedureAnalyzer
         var failed = new List<BooleanExpression>();
         foreach (var (when, then) in whens)
         {
-            results.Add((then, Strip(then) is NullLiteral ? null : InBranch(Branch(failed, when, scope), () => Expression(then, scope))));
+            results.Add((then, Strip(then) is NullLiteral ? null : Expression(then, scope.Branching(Branch(failed, when, scope)))));
             failed.Add(when);
         }
 
         if (otherwise is not null)
-            results.Add((otherwise, Strip(otherwise) is NullLiteral ? null : InBranch(Branch(failed, null, scope), () => Expression(otherwise, scope))));
-        return Results(at, results, otherwise is null ? [new IrNullReason(IrNullRule.NoBranchMatched, At(at).ToString())] : []);
+            results.Add((otherwise, Strip(otherwise) is NullLiteral ? null : Expression(otherwise, scope.Branching(Branch(failed, null, scope)))));
+        return Results(at, results, otherwise is null ? [new IrNullReason(IrNullRule.NoBranchMatched, At(at).ToString())] : [], scope);
     }
 
     /// <summary>
@@ -150,7 +130,7 @@ internal sealed partial class ProcedureAnalyzer
     /// Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch). Results that are all JSON
     /// text are JSON text of their join, and under json_query, where folding does not matter, so are any.
     /// </summary>
-    private Value Results(TSqlFragment at, List<(ScalarExpression Expression, Value? Value)> results, EquatableArray<IrNullReason> also)
+    private Value Results(TSqlFragment at, List<(ScalarExpression Expression, Value? Value)> results, EquatableArray<IrNullReason> also, ReadScope scope)
     {
         var given = new List<(ScalarExpression Expression, Value Value)>();
         foreach (var (expression, result) in results)
@@ -166,7 +146,7 @@ internal sealed partial class ProcedureAnalyzer
 
         // Under json_query whether the server folds it no longer matters: json_query makes either result JSON, so what it holds
         // is the join of its results' JSON, literals parsed. Elsewhere, JSON text in every result is JSON text.
-        var underJsonQuery = ReferenceEquals(at, jsonQueryArgument);
+        var underJsonQuery = ReferenceEquals(at, scope.JsonQueryArgument);
         if (given.Any(r => r.Value.IsLiveJson) && !underJsonQuery)
             return NotModelled(at, "whether it nests as JSON depends on whether the server folds it to one result.");
         if (underJsonQuery || given.Any(r => r.Value.Shape is JsonTextShape))
@@ -249,7 +229,7 @@ internal sealed partial class ProcedureAnalyzer
     // ---- CHOOSE ---------------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// <c>CHOOSE(i, a, b, …)</c>: the precedence over its values, as CASE (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, EquatableArray{IrNullReason})"/>). NULL when i is, or is below 1
+    /// <c>CHOOSE(i, a, b, …)</c>: the precedence over its values, as CASE (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, EquatableArray{IrNullReason}, ReadScope)"/>). NULL when i is, or is below 1
     /// or above the count (<c>out-of-range</c>; observed: Case_without_else_choose_out_of_range_and_nullif_of_equal_values_are_null),
     /// unless i is an integer literal in range or an integer whose bounds (a CHECK's) keep it in range. Its values are not read
     /// as branches: which one is taken is a number, not a condition.
@@ -262,7 +242,7 @@ internal sealed partial class ProcedureAnalyzer
         var because = InRange(index, call.Parameters[0], count)
             ? index.NullableBecause
             : NullReasons.Join(index.NullableBecause, [new IrNullReason(IrNullRule.OutOfRange, At(call).ToString())]);
-        return Results(call, results, because);
+        return Results(call, results, because, scope);
     }
 
     private static bool InRange(Value index, ScalarExpression expression, int count)
@@ -388,9 +368,9 @@ internal sealed partial class ProcedureAnalyzer
     /// subquery before the fallback is read twice, so <c>COALESCE((SELECT … FOR JSON PATH), '[]')</c> keeps the subquery's
     /// <c>empty-subquery</c> (observed: Coalesce_reads_a_for_json_subquery_twice_so_it_can_be_null_though_its_fallback_is_not).
     /// </summary>
-    private Value CoalesceJson(CoalesceExpression coalesce, List<ScalarExpression> arguments, List<Value> values, EquatableArray<IrNullReason> because)
+    private Value CoalesceJson(CoalesceExpression coalesce, List<ScalarExpression> arguments, List<Value> values, EquatableArray<IrNullReason> because, ReadScope scope)
     {
-        if (!ReferenceEquals(coalesce, jsonQueryArgument) && arguments.Where((a, i) => values[i].IsLiveJson && !Unfoldable(a)).Any())
+        if (!ReferenceEquals(coalesce, scope.JsonQueryArgument) && arguments.Where((a, i) => values[i].IsLiveJson && !Unfoldable(a)).Any())
             return NotModelled(coalesce, "whether COALESCE over this JSON nests as JSON depends on whether the server folds it.");
         var (json, content) = JsonContent(arguments.Zip(values));
         if (json)

@@ -18,31 +18,11 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>Whether the body was created with ANSI_NULLS off, under which <c>c = @x</c> is TRUE when both are null.</summary>
     private readonly bool ansiNullsOff;
 
-    /// <summary>What the filters and branches being read prove (<see cref="Facts"/>): extended on entering one, restored on leaving.</summary>
-    private Facts facts = Facts.None;
-
-    /// <summary>The queries whose aggregate's arguments are being read: a column read there is a row's, not a group's.</summary>
-    private readonly List<QuerySpecification?> aggregating = [];
-
-    /// <summary>Why a column read now may be NULL in a super-aggregate row (<see cref="Facts.Rolled"/>).</summary>
-    private IrNullReason? Rolled(BoundSource source) => facts.Rolled(source, aggregating);
-
-    /// <summary>Reads an aggregate's arguments of the query whose select list is being read.</summary>
-    private T InAggregate<T>(Func<T> read)
-    {
-        aggregating.Add(current);
-        try
-        {
-            return read();
-        }
-        finally
-        {
-            aggregating.RemoveAt(aggregating.Count - 1);
-        }
-    }
+    /// <summary>Why a column read in <paramref name="scope"/> may be NULL in a super-aggregate row (<see cref="Facts.Rolled"/>).</summary>
+    private static IrNullReason? Rolled(BoundSource source, ReadScope scope) => scope.Facts.Rolled(source, scope.Aggregating);
 
     /// <summary>Whether HAVING, or a branch read in its row, proves this aggregate of the query whose select list is being read non-null.</summary>
-    private bool ProvedAggregate(FunctionCall call) => facts.Proved(current, AggregateKey.Of(call));
+    private static bool ProvedAggregate(FunctionCall call, ReadScope scope) => scope.Facts.Proved(scope.Query, AggregateKey.Of(call));
 
     // ---- what a query's filters prove ---------------------------------------------------------------------------------
 
@@ -354,10 +334,10 @@ internal sealed partial class ProcedureAnalyzer
     /// Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off), which a procedure can't
     /// prevent (docs/decisions/0014-count-is-nullable.md); COUNT_BIG can't overflow.
     /// </summary>
-    private Value Count(FunctionCall call, bool big)
+    private Value Count(FunctionCall call, ReadScope scope, bool big)
     {
         var at = At(call);
-        EquatableArray<IrNullReason> because = !big && !ProvedAggregate(call) ? [new IrNullReason(IrNullRule.CountOverflow, at.ToString())] : [];
+        EquatableArray<IrNullReason> because = !big && !ProvedAggregate(call, scope) ? [new IrNullReason(IrNullRule.CountOverflow, at.ToString())] : [];
         return Value.Computed(SqlTypes.ToConvertedShape(ScalarType.Of(big ? BuiltInType.BigInt : BuiltInType.Int), at), because);
     }
 
@@ -370,7 +350,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = At(call);
         var name = function.Name.ToUpperInvariant();
-        var argument = InAggregate(() => Expression(call.Parameters[0], scope));
+        var argument = Expression(call.Parameters[0], scope.InAggregate());
         if (argument.Shape is UnknownShape unknown)
             return Value.Unknown(unknown);
         if (argument.IsLiveJson || argument.Shape is not ScalarShape)
@@ -379,9 +359,9 @@ internal sealed partial class ProcedureAnalyzer
         // Refused when the procedure is created (8117; observed: Min_and_max_of_a_bit_are_refused_with_or_without_a_window).
         if (TypeOf(argument) is { IsBit: true })
             return NotModelled(call, $"SQL Server refuses {name} of bit.");
-        return ProvedAggregate(call)
+        return ProvedAggregate(call, scope)
             ? argument.WithNullableBecause([])
-            : argument.WithNullableBecause([.. argument.NullableBecause, .. Aggregate(call)]);
+            : argument.WithNullableBecause([.. argument.NullableBecause, .. Aggregate(call, scope)]);
     }
 
     /// <summary>An aggregate, or a form of one, that is not modelled.</summary>

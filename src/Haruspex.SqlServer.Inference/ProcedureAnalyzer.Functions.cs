@@ -314,7 +314,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private Value StringAggregate(FunctionCall call, ReadScope scope)
     {
-        var argument = InAggregate(() => Expression(call.Parameters[0], scope));
+        var argument = Expression(call.Parameters[0], scope.InAggregate());
         if (argument.Shape is UnknownShape)
             return argument;
         if (argument.IsLiveJson || TypeOf(argument) is not { } from)
@@ -326,7 +326,7 @@ internal sealed partial class ProcedureAnalyzer
         var type = from.IsString
             ? ScalarType.CharacterString(from.IsNational, varying: true, from.IsMax ? -1 : BuiltInType.MostBytes)
             : ScalarType.CharacterString(national: true, varying: true, BuiltInType.MostBytes);
-        return Typed(type, ProvedAggregate(call) ? [] : [.. argument.NullableBecause, .. Aggregate(call)], call);
+        return Typed(type, ProvedAggregate(call, scope) ? [] : [.. argument.NullableBecause, .. Aggregate(call, scope)], call);
     }
 
     // ---- GENERATE_SERIES ------------------------------------------------------------------------------------------------

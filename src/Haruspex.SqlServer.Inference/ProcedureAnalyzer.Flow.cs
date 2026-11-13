@@ -21,9 +21,6 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private NameEnvironment names = NameEnvironment.Empty;
 
-    /// <summary>What each table variable holds as declared, by name; JSON written to it is in the state (<see cref="Holding"/>).</summary>
-    private Dictionary<LocalName, LocalRelationValues> tableVariables = [];
-
     /// <summary>The first statement that makes the results impossible to list, once found.</summary>
     private UnknownShape? blocker;
 
@@ -80,16 +77,7 @@ internal sealed partial class ProcedureAnalyzer
             start.Add(new(name, Value.Computed(variableShapes[name], Because(IrNullRule.Variable, name, variableShapes[name]), live)));
         }
 
-        var tableVariables = new Dictionary<LocalName, LocalRelationValues>();
-        foreach (var definition in declarations.TableVariables)
-        {
-            tableVariables[new LocalName(definition.Name)] = new LocalRelationValues(
-                [.. definition.Columns.Select(c => c.Name)],
-                [.. definition.Columns.Select(c => Declared(definition, c, definition.Name, temporary: false))],
-                null);
-        }
-
-        this.tableVariables = tableVariables;
+        var tableVariables = declarations.TableVariables.ToDictionary(t => new LocalName(t.Name), TableVariableValues);
         names = NameEnvironment.Empty.WithDeclarations(declarations);
         var initial = FlowState.Start(start).WithTemps(context.Temps).WithReadUncommitted(context.ReadUncommitted);
 
@@ -127,6 +115,20 @@ internal sealed partial class ProcedureAnalyzer
 
     private static EquatableArray<IrNullReason> Because(IrNullRule rule, LocalName name, Shape shape) =>
         shape is UnknownShape unknown ? [new IrNullReason(rule, name.Text), new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())] : [new IrNullReason(rule, name.Text)];
+
+    /// <summary>The type a variable or parameter is declared with, as <see cref="DeclaredShape(SqlType, SourceLocation, LocalName, out bool)"/> gives it; null for one undeclared.</summary>
+    private Shape? DeclaredShape(VariableResolution resolved) => resolved switch
+    {
+        ParameterVariable parameter => DeclaredShape(parameter.Parameter.Type, parameter.Parameter.At, resolved.Name, out _),
+        LocalVariable local => DeclaredShape(local.Type, local.At, local.Name, out _),
+        UndeclaredVariable => null,
+    };
+
+    /// <summary>What a table variable holds as declared; JSON written to it is in the state (<see cref="Holding"/>).</summary>
+    private LocalRelationValues TableVariableValues(DeclaredTable definition) => new(
+        [.. definition.Columns.Select(c => c.Name)],
+        [.. definition.Columns.Select(c => Declared(definition, c, definition.Name, temporary: false))],
+        null);
 
     /// <summary>A variable's or parameter's type: every value it holds has been converted to it, so the type's facets hold.</summary>
     private Shape DeclaredShape(SqlType? type, SourceLocation at, LocalName name, out bool live)
@@ -394,7 +396,7 @@ internal sealed partial class ProcedureAnalyzer
         // A cursor's query takes its variables as they were when its DECLARE ran (observed:
         // A_cursors_query_takes_its_variables_as_they_are_when_it_is_declared), not where the FETCH reads it: any value of
         // the variable's declared type, which every assignment converts to, or null.
-        if (unfiltered && variableShapes.TryGetValue(name, out var declared))
+        if (scope.Fetched && DeclaredShape(resolved) is { } declared)
             return Value.Computed(declared, Because(IrNullRule.Variable, name, declared), value.IsLiveJson);
 
         // A variable holding JSON built here holds it as text.
@@ -454,25 +456,16 @@ internal sealed partial class ProcedureAnalyzer
     private FlowState SetVariables(QuerySpecification query, FlowState state, ReadScope at, bool unknown = false)
     {
         var once = query is { FromClause: null, WhereClause: null, GroupByClause: null, HavingClause: null, TopRowFilter: null };
-        var scope = Enter(query, at);
-        var outer = current;
-        current = query;
-        try
+        var scope = Enter(query, at).Assigning(query);
+        foreach (var assignment in query.SelectElements.Cast<SelectSetVariable>())
         {
-            foreach (var assignment in query.SelectElements.Cast<SelectSetVariable>())
-            {
-                var value = unknown
-                    ? Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "WITH XMLNAMESPACES is not modelled yet.", At(assignment)))
-                    : Assigned(assignment.AssignmentKind, assignment.Expression, scope, assignment);
-                state = Assign(state, Resolved(assignment.Variable).Name, value, once, At(assignment), unknown ? null : assignment.Expression);
-            }
+            var value = unknown
+                ? Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "WITH XMLNAMESPACES is not modelled yet.", At(assignment)))
+                : Assigned(assignment.AssignmentKind, assignment.Expression, scope, assignment);
+            state = Assign(state, Resolved(assignment.Variable).Name, value, once, At(assignment), unknown ? null : assignment.Expression);
+        }
 
-            return state;
-        }
-        finally
-        {
-            current = outer;
-        }
+        return state;
     }
 
     /// <summary>
@@ -1038,7 +1031,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <param name="ordinal">Its position among the relation's columns; -1 when binding could not list them.</param>
     /// <param name="scope">The scope it is read in, which holds what the source's relation holds.</param>
     /// <param name="at">Where it is read.</param>
-    private Value FromLocal(BoundSource source, int ordinal, ReadScope scope, SourceLocation at)
+    private static Value FromLocal(BoundSource source, int ordinal, ReadScope scope, SourceLocation at)
     {
         var values = scope.Of(source);
 
@@ -1047,17 +1040,17 @@ internal sealed partial class ProcedureAnalyzer
             ? Value.Unknown(why with { At = at })
             : ordinal >= 0 && values.Values is { } all ? all[ordinal]
             : throw new InvalidOperationException($"Binding could not list the columns of {Text(source.Syntax)}, whose values are known.");
-        if (value.Shape is not UnknownShape && ordinal >= 0 && facts.Proved(source, new RelationColumnKey(ordinal)) != Facts.Proof.None)
+        if (value.Shape is not UnknownShape && ordinal >= 0 && scope.Facts.Proved(source, new RelationColumnKey(ordinal)) != Facts.Proof.None)
             value = value.WithNullableBecause([]);
-        if (source.Optional is { } optional && !facts.Matched(source) && !AlwaysApplied(source, scope))
+        if (source.Optional is { } optional && !scope.Facts.Matched(source) && !AlwaysApplied(source, scope))
             value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [new IrNullReason(optional.IsApplied ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.At.ToString())]));
-        if (Unmatched(source) is { } unmatched && value.Shape is not UnknownShape)
+        if (Unmatched(source, scope) is { } unmatched && value.Shape is not UnknownShape)
             value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [unmatched]));
-        if (Rolled(source) is { } rolled && value.Shape is not UnknownShape)
+        if (Rolled(source, scope) is { } rolled && value.Shape is not UnknownShape)
             value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [rolled]));
 
         // A CASE branch that tested this very value proves it, whatever made it nullable (ProcedureAnalyzer.Case.cs).
-        return value.Shape is not UnknownShape && ordinal >= 0 && facts.Proved(source, new RelationColumnKey(ordinal)) == Facts.Proof.OfTheValue
+        return value.Shape is not UnknownShape && ordinal >= 0 && scope.Facts.Proved(source, new RelationColumnKey(ordinal)) == Facts.Proof.OfTheValue
             ? value.WithNullableBecause([])
             : value;
     }
