@@ -12,15 +12,21 @@ state. Asking it every question is running the program, once for every input, wh
 interpretation** (Cousot and Cousot, 1977) runs it instead over an **abstract domain**: a set of descriptions, each of which
 stands for a set of concrete values, ordered by how much they allow. An `int` that is never null stands for every `int`;
 an `int` that may be null stands for those and `NULL` too, so it is above the first in the order. Two maps tie the worlds
-together. *Abstraction* takes a set of concrete values to the most precise description of them; its partner takes a
-description back to every value it allows.
+together. *Abstraction* (α) takes a set of concrete values to the most precise description of them; *concretisation* (γ)
+takes a description back to every value it allows. The two agree: a set of values lies within what a description allows
+exactly when the set's abstraction is below that description; a pair of maps with that property is a **Galois
+connection**, and it is what lets an argument about descriptions be read as one about values.
 
 Each construct of the language gets an **abstract transfer function**: the description of its result, from the
 descriptions of its inputs. Addition of two never-null `int`s gives an `int` that may be null, since an overflow is `NULL`
 under some session options; `ISNULL` of anything with a never-null second argument gives a never-null result. Where paths
 meet, the descriptions are **joined**: the least description above both ([Values as a lattice](05-values-as-a-lattice.md)
 gives the order and the joins). Where a program describes itself (a loop, recursion), the description is the **least fixed
-point** of its transfer function ([Flow, joins and fixed points](06-flow-joins-and-fixed-points.md)).
+point** of its transfer function ([Flow, joins and fixed points](06-flow-joins-and-fixed-points.md)), found by applying the
+step until the description stops changing. Some descriptions can climb for ever (an array of arrays of arrays), so the
+iteration must also be made to stop: a **widening** replaces a description that may go on climbing with one above it, where
+the climb stops. The coarsest in haruspex is a cap on the passes (`FixedPoint.MostPasses`): a fixed point not reached by then is
+unknown, the top, which allows every value and so is sound, and the analysis always ends.
 
 **Soundness** is one property of each transfer function: whatever concrete values its inputs hold, the concrete result is
 among those its output allows. If every transfer function and every join is sound, so is the whole analysis, by induction

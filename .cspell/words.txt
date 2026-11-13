@@ -115,6 +115,7 @@ scriban
 # Words of the subject that the dictionary lacks
 bigints
 callees
+concretisation
 consing
 datetimes
 linters
