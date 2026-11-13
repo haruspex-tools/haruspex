@@ -1,0 +1,158 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "kennel.merge_two_actions",
+      "name": "MergeTwoActions",
+      "kind": "procedure",
+      "at": "procedures/merge_two_actions.sql:2:1",
+      "parameters": [
+        {
+          "name": "@owner_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MergeTwoActionsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "MergeTwoActionsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kennel.merge_two_actions",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "did",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "INSERT",
+                "UPDATE"
+              ],
+              "from": [
+                {
+                  "engine": "$action"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "now",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "before",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "missing-for-action",
+              "at": "procedures/merge_two_actions.sql:6:1"
+            }
+          ]
+        },
+        {
+          "name": "booked",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

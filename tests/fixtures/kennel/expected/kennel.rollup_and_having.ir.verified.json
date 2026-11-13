@@ -1,0 +1,177 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "kennel.rollup_and_having",
+      "name": "RollupAndHaving",
+      "kind": "procedure",
+      "at": "procedures/rollup_and_having.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "RollupAndHavingResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "RollupAndHavingResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "RollupAndHavingResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kennel.rollup_and_having",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "owner_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "subtotal-row",
+              "at": "procedures/rollup_and_having.sql:7:1"
+            }
+          ]
+        },
+        {
+          "name": "dogs",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "count-overflow",
+              "at": "procedures/rollup_and_having.sql:4:20"
+            }
+          ]
+        },
+        {
+          "name": "top_chip",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(15)",
+            "maxLength": {
+              "value": 15,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(15)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "RollupAndHavingResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kennel.rollup_and_having",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "owner_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "phone",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

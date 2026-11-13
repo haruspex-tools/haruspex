@@ -1,0 +1,35 @@
+column kennel.booking.dog_id int at tables/booking.sql:3:5
+column kennel.booking.nights int at tables/booking.sql:4:5
+column kennel.dog.chip varchar(15) at tables/dog.sql:5:5
+column kennel.dog.dog_id int at tables/dog.sql:3:5
+column kennel.dog.name nvarchar(20) at tables/dog.sql:4:5
+column kennel.dog.owner_id int at tables/dog.sql:6:5
+column kennel.owner.name nvarchar(20) at tables/owner.sql:4:5
+column kennel.owner.owner_id int at tables/owner.sql:3:5
+column kennel.owner.phone varchar(20) at tables/owner.sql:5:5
+column kennel.stay.dog_id int at tables/stay.sql:4:5
+column kennel.stay.nights int at tables/stay.sql:5:5
+column kennel.stay.note nvarchar(40) at tables/stay.sql:6:5
+column kennel.stay.stay_id int at tables/stay.sql:3:5
+key kennel.booking unnamed (dog_id) at tables/booking.sql:3:25
+key kennel.dog unnamed (dog_id) at tables/dog.sql:3:36
+key kennel.owner unnamed (owner_id) at tables/owner.sql:3:36
+key kennel.stay unnamed (stay_id) at tables/stay.sql:3:44
+parameter kennel.coalesce_under_json_query @owner_id at procedures/coalesce_under_json_query.sql:2:51
+parameter kennel.cursor_row @dog_id at procedures/cursor_row.sql:3:36
+parameter kennel.merge_every_action @owner_id at procedures/merge_every_action.sql:3:44
+parameter kennel.merge_joined_source @owner_id at procedures/merge_joined_source.sql:2:45
+parameter kennel.merge_two_actions @owner_id at procedures/merge_two_actions.sql:2:43
+parameter kennel.update_reads_its_target @owner_id at procedures/update_reads_its_target.sql:3:49
+procedure kennel.coalesce_under_json_query at procedures/coalesce_under_json_query.sql:2:1
+procedure kennel.cursor_row at procedures/cursor_row.sql:3:1
+procedure kennel.merge_every_action at procedures/merge_every_action.sql:3:1
+procedure kennel.merge_joined_source at procedures/merge_joined_source.sql:2:1
+procedure kennel.merge_two_actions at procedures/merge_two_actions.sql:2:1
+procedure kennel.rollup_and_having at procedures/rollup_and_having.sql:2:1
+procedure kennel.update_reads_its_target at procedures/update_reads_its_target.sql:3:1
+procedure kennel.where_reaches_inside at procedures/where_reaches_inside.sql:2:1
+table kennel.booking at tables/booking.sql:1:1
+table kennel.dog at tables/dog.sql:1:1
+table kennel.owner at tables/owner.sql:1:1
+table kennel.stay at tables/stay.sql:1:1

@@ -1,0 +1,23 @@
+// The runs of the kennel fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what
+// each key means. The procedures that write run in a session that is rolled back.
+{
+  "setups": {
+    "writes": "SET NOCOUNT ON;",
+    "no chips": "UPDATE kennel.dog SET chip = NULL;"
+  },
+
+  "runs": [
+    { "name": "merge_every_action, owner of an update, an insert and a delete", "procedure": "kennel.merge_every_action", "parameters": { "@owner_id": 1 }, "setup": "writes" },
+    { "name": "merge_every_action, owner of no booking", "procedure": "kennel.merge_every_action", "parameters": { "@owner_id": 3 }, "setup": "writes" },
+    { "name": "merge_two_actions", "procedure": "kennel.merge_two_actions", "parameters": { "@owner_id": 1 }, "setup": "writes" },
+    { "name": "merge_joined_source", "procedure": "kennel.merge_joined_source", "parameters": { "@owner_id": 1 }, "setup": "writes" },
+    { "name": "update_reads_its_target", "procedure": "kennel.update_reads_its_target", "parameters": { "@owner_id": 1 }, "setup": "writes" },
+    { "name": "cursor_row, the first row changed after open", "procedure": "kennel.cursor_row", "parameters": { "@dog_id": 1 }, "setup": "writes" },
+    { "name": "cursor_row, another row changed", "procedure": "kennel.cursor_row", "parameters": { "@dog_id": 4 }, "setup": "writes" },
+    { "name": "cursor_row, no row to fetch", "procedure": "kennel.cursor_row", "parameters": { "@dog_id": 1 }, "setup": "no chips" },
+    { "name": "where_reaches_inside", "procedure": "kennel.where_reaches_inside" },
+    { "name": "rollup_and_having", "procedure": "kennel.rollup_and_having" },
+    { "name": "coalesce_under_json_query, an owner of dogs", "procedure": "kennel.coalesce_under_json_query", "parameters": { "@owner_id": 1 } },
+    { "name": "coalesce_under_json_query, an owner of none", "procedure": "kennel.coalesce_under_json_query", "parameters": { "@owner_id": 3 } }
+  ]
+}

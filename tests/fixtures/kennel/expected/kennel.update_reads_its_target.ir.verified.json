@@ -1,0 +1,138 @@
+{
+  "irVersion": "0.16",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "kennel.update_reads_its_target",
+      "name": "UpdateReadsItsTarget",
+      "kind": "procedure",
+      "at": "procedures/update_reads_its_target.sql:3:1",
+      "parameters": [
+        {
+          "name": "@owner_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "UpdateReadsItsTargetRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "UpdateReadsItsTargetRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kennel.update_reads_its_target",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "now",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "before",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "kennel.stay.note"
+            }
+          ]
+        },
+        {
+          "name": "dog",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}
