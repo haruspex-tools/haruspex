@@ -82,10 +82,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </param>
     public Value Return(ScalarExpression expression, IReadOnlyList<Parameter> parameters)
     {
-        var declared = binder.Declarations(parameters);
-        foreach (var parameter in declared.Parameters)
-            variableTypes[parameter.Name] = parameter.Type;
-        names = NameEnvironment.Empty.WithDeclarations(declared);
+        names = NameEnvironment.Empty.WithDeclarations(binder.Declarations(parameters));
         return Expression(expression, ReadScope.Statement(names, FlowState.Start([])));
     }
 
@@ -343,6 +340,9 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     // ---- expressions --------------------------------------------------------------------------------
+
+    /// <summary>What a variable reference means in this body: a parameter, a variable it declares, or neither (<see cref="Binder.Resolve(VariableReference, NameEnvironment)"/>).</summary>
+    private VariableResolution Resolved(VariableReference variable) => Binder.Resolve(variable, names);
 
     private Value Expression(ScalarExpression expression, ReadScope scope) => expression switch
     {

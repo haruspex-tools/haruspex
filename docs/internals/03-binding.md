@@ -143,7 +143,10 @@ SQL Server compiles a body's declarations rather than running them: a variable d
 still exists after it (observed: `A_variable_or_table_variable_declared_in_a_branch_not_taken_still_exists`). So binding reads
 a body's declarations once, from the whole of it (`BodyDeclarations`): its parameters, its variables, its table variables (a
 multi-statement function's return table among them) and its cursors. A variable reference resolves to a `ParameterVariable`,
-a `LocalVariable` or an `UndeclaredVariable` (`VariableResolution`). A body's own tables are `DeclaredTable`s, named as the body
+a `LocalVariable` or an `UndeclaredVariable` (`VariableResolution`), and the inference reads a variable only through that: its
+declared type from the declaration, and its value from the walk's state, which keeps it under the declared name, so two
+spellings of one variable are one. A temporary table's state is kept under its name too, because the name is its identity
+across a call: a procedure reads its caller's `#t` by name. A body's own tables are `DeclaredTable`s, named as the body
 writes them, with their sigil, and belonging to no schema; the schema's rules read them as they read a schema table (`ITable`).
 
 ## The bound tree, and binding once
@@ -171,7 +174,7 @@ A column reference is then `Binder.Resolve`'s answer and the value attached to t
 
 An architecture test holds the line (`NameResolutionTests`): it reads Inference's compiled code and fails on any method that
 reads what a resolver reads (a source's alias, a column reference's parts, a table reference's name, a schema object name's
-parts, the name of a declaration), apart from one listed with why (a scalar function's straight-line body substituted variable
+parts, a declaration's name, a variable reference's name), apart from one listed with why (a scalar function's straight-line body substituted variable
 by variable, which follows assignments rather than resolving names). A planted reader of each, in a method, a lambda, an
 iterator and a local function, must be found.
 

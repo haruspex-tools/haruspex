@@ -8,7 +8,8 @@ function of a fragment, the scope it is read inside and the names in force (`Nam
 result is kept for those three (`Bindings`): a query is bound the first time it is read with a given set of names, and never
 again for the same set. The names in force include each temporary table's columns at the statement, which the walk passes
 in. Inference attaches values to what binding gave (`ReadScope`) and resolves no name, which an architecture test reads its
-compiled code for (`NameResolutionTests`).
+compiled code for (`NameResolutionTests`). The walk's state keeps each variable's value under the name its resolution
+declares, and each temporary table's under its name, which is its identity across a call.
 
 **Context.** Binding was done as inference went: the binder called back into Inference for each derived table, view or call
 to learn its columns, and Inference kept CTE frames and temporary tables in state it set before every statement. So binding

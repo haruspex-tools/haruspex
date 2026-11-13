@@ -354,9 +354,12 @@ internal sealed partial class ProcedureAnalyzer
             IntegerLiteral literal => new KeyValue(long.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n <= int.MaxValue ? BuiltInType.Int : BuiltInType.Numeric),
             NumericLiteral => new KeyValue(BuiltInType.Numeric),
             StringLiteral literal => new KeyValue(literal.IsNational ? BuiltInType.NVarChar : BuiltInType.VarChar),
-            VariableReference variable => variableTypes.TryGetValue(variable.Name, out var declared)
-                ? KeyValue.Of(SchemaRules.ResolveType(model, declared)?.Type)
-                : null,
+            VariableReference variable => Resolved(variable) switch
+            {
+                ParameterVariable parameter => KeyValue.Of(SchemaRules.ResolveType(model, parameter.Parameter.Type)?.Type),
+                LocalVariable local => KeyValue.Of(SchemaRules.ResolveType(model, local.Type)?.Type),
+                UndeclaredVariable => null,
+            },
             ColumnReferenceExpression reference => binder.Resolve(reference, scope.Bound) switch
             {
                 // A column of an enclosing query is one value while this query runs; one of this query is, once its

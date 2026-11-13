@@ -303,7 +303,7 @@ internal sealed partial class ProcedureAnalyzer
             var value = row is not null && row.Count == fetch.IntoVariables.Count
                 ? row[i]
                 : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedStatement, $"The row FETCH at {at} reads is not known: its cursor is not one declared once in this procedure with a query whose columns can be listed.", at));
-            state = Assign(state, fetch.IntoVariables[i].Name, value, definitely: false, at);
+            state = Assign(state, Resolved(fetch.IntoVariables[i]).Name, value, definitely: false, at);
         }
 
         return Continue(state);

@@ -105,6 +105,23 @@ public sealed class BodyDeclarations
     public IReadOnlyList<DeclareCursorStatement> Cursors(CursorId cursor) =>
         cursor?.Name?.Identifier is { } name && cursors.TryGetValue(name.Value, out var found) ? found : [];
 
+    /// <summary>The table variables a fragment names, each once, in the order first named; one the body doesn't declare is left out.</summary>
+    /// <param name="fragment">The fragment: a write's target, a WITH.</param>
+    public IReadOnlyList<DeclaredTable> TableVariablesIn(TSqlFragment fragment)
+    {
+        ArgumentNullException.ThrowIfNull(fragment);
+        var found = new TableVariableFinder();
+        fragment.Accept(found);
+        return [.. found.Names.Select(n => TableVariables.FirstOrDefault(t => t.Name.Equals(n, StringComparison.OrdinalIgnoreCase))).OfType<DeclaredTable>().Distinct()];
+    }
+
+    private sealed class TableVariableFinder : TSqlFragmentVisitor
+    {
+        public List<string> Names { get; } = [];
+
+        public override void Visit(VariableTableReference node) => Names.Add(node.Variable.Name);
+    }
+
     /// <summary>Every DECLARE in a body, at any depth.</summary>
     private sealed class Collector : TSqlFragmentVisitor
     {

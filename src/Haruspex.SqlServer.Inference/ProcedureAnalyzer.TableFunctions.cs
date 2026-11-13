@@ -101,8 +101,6 @@ internal sealed partial class ProcedureAnalyzer
     {
         ArgumentNullException.ThrowIfNull(function);
         var select = function.Query;
-        foreach (var parameter in function.Parameters)
-            variableTypes[parameter.Name] = parameter.Type;
         names = NameEnvironment.Empty.WithDeclarations(binder.Declarations(function.Parameters));
         var at = At(select);
         LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{function.Name}: {detail}", at));

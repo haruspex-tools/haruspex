@@ -16,7 +16,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>A variable or parameter, never null in a branch that proved it so.</summary>
     private Value Branched(VariableReference variable, Value value) =>
-        value.Shape is not UnknownShape && facts.Proved(variable.Name) ? value.WithNullableBecause([]) : value;
+        value.Shape is not UnknownShape && facts.Proved(Resolved(variable).Name) ? value.WithNullableBecause([]) : value;
 
     /// <summary>
     /// What a branch knows: <paramref name="held"/> was TRUE (none for an ELSE) and each of <paramref name="failed"/> was FALSE
@@ -52,8 +52,8 @@ internal sealed partial class ProcedureAnalyzer
 
                     break;
                 case VariableReference variable:
-                    if (Impossible(e => e is VariableReference v && v.Name.Equals(variable.Name, StringComparison.OrdinalIgnoreCase)))
-                        found.Variable(variable.Name);
+                    if (Resolved(variable) is var proved && Impossible(e => e is VariableReference v && Resolved(v) == proved))
+                        found.Variable(proved.Name);
                     break;
                 case FunctionCall call when IsAggregate(call) && current is not null:
                     var text = Text(call);

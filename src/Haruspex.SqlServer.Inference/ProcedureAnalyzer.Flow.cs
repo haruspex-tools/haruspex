@@ -42,7 +42,6 @@ internal sealed partial class ProcedureAnalyzer
     private readonly Dictionary<string, Shape> variableShapes = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Each parameter's and variable's declared type, for comparing it with a key (Cardinality.cs).</summary>
-    private readonly Dictionary<string, SqlType?> variableTypes = new(StringComparer.OrdinalIgnoreCase);
 
     private sealed record Outcome(FlowState? Next, FlowState? Breaks, FlowState? Continues)
     {
@@ -66,7 +65,6 @@ internal sealed partial class ProcedureAnalyzer
         foreach (var parameter in declarations.Parameters)
         {
             var name = parameter.Name;
-            variableTypes[name] = parameter.Type;
             variableShapes[name] = DeclaredShape(parameter.Type, parameter.At, name, out var live);
             start.Add(new(name, Value.Computed(variableShapes[name], Because(IrNullRule.Parameter, name, variableShapes[name]), live)));
         }
@@ -75,7 +73,6 @@ internal sealed partial class ProcedureAnalyzer
         foreach (var variable in declarations.Variables)
         {
             var name = variable.Name;
-            variableTypes[name] = variable.Type;
             variableShapes[name] = DeclaredShape(variable.Type, variable.At, name, out var live);
 
             // A variable holds NULL until it is assigned.
@@ -192,7 +189,7 @@ internal sealed partial class ProcedureAnalyzer
                     state = Assign(state, names.Declarations.Declared(element).Name, Expression(element.Value, Reading(state)), definitely: true, at, element.Value);
                 return Continue(state);
             case SetVariableStatement set when set.CursorDefinition is null && set.Identifier is null && set.Expression is not null:
-                return Continue(Assign(state, set.Variable.Name, Assigned(set.AssignmentKind, set.Expression, Reading(state), set), definitely: true, at, set.Expression));
+                return Continue(Assign(state, Resolved(set.Variable).Name, Assigned(set.AssignmentKind, set.Expression, Reading(state), set), definitely: true, at, set.Expression));
             case BeginEndBlockStatement block:
                 return Walk(block.StatementList.Statements, state);
             case IfStatement branch:
@@ -382,21 +379,23 @@ internal sealed partial class ProcedureAnalyzer
 
     private Value Variable(VariableReference variable, ReadScope scope)
     {
-        // A function's parameter holds its argument for this call; a procedure's, and a variable, what the walk says.
+        // A function's parameter holds its argument for this call; a procedure's, and a variable, what the walk says, which it
+        // keeps under the declared name (the state is joined, and passed to a callee, by name).
         var resolved = Binder.Resolve(variable, scope.Names);
         if (resolved is ParameterVariable { Parameter.Name: var parameter } && parameters.TryGetValue(parameter, out var argument))
             return argument;
-        if (resolved is UndeclaredVariable || !scope.State.Variables.TryGetValue(variable.Name, out var value))
-            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The variable {variable.Name} is not declared.", At(variable)));
+        var name = resolved.Name;
+        if (resolved is UndeclaredVariable || !scope.State.Variables.TryGetValue(name, out var value))
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The variable {name} is not declared.", At(variable)));
 
         // A cursor's query takes its variables as they were when its DECLARE ran (observed:
         // A_cursors_query_takes_its_variables_as_they_are_when_it_is_declared), not where the FETCH reads it: any value of
         // the variable's declared type, which every assignment converts to, or null.
-        if (unfiltered && variableShapes.TryGetValue(variable.Name, out var declared))
-            return Value.Computed(declared, Because(IrNullRule.Variable, variable.Name, declared), value.IsLiveJson);
+        if (unfiltered && variableShapes.TryGetValue(name, out var declared))
+            return Value.Computed(declared, Because(IrNullRule.Variable, name, declared), value.IsLiveJson);
 
         // A variable holding JSON built here holds it as text.
-        return scope.State.Json.TryGetValue(variable.Name, out var slot) ? slot.Read(value) : value;
+        return scope.State.Json.TryGetValue(name, out var slot) ? slot.Read(value) : value;
     }
 
     /// <summary>The value an assignment writes: the expression, unless a compound one (<c>+=</c>) combines it with the old.</summary>
@@ -462,7 +461,7 @@ internal sealed partial class ProcedureAnalyzer
                 var value = unknown
                     ? Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "WITH XMLNAMESPACES is not modelled yet.", At(assignment)))
                     : Assigned(assignment.AssignmentKind, assignment.Expression, scope, assignment);
-                state = Assign(state, assignment.Variable.Name, value, once, At(assignment), unknown ? null : assignment.Expression);
+                state = Assign(state, Resolved(assignment.Variable).Name, value, once, At(assignment), unknown ? null : assignment.Expression);
             }
 
             return state;
@@ -699,7 +698,7 @@ internal sealed partial class ProcedureAnalyzer
 
                 var value = Assigned(set.AssignmentKind, set.NewValue, scope, set);
                 if (set.Variable is { } variable)
-                    state = Assign(state, variable.Name, value, definitely: false, At(set), set.NewValue);
+                    state = Assign(state, Resolved(variable).Name, value, definitely: false, At(set), set.NewValue);
                 if (set.Column is not null && target.StartsWith('@') && state.Json.TryGetValue($"{target}.{Binder.WrittenColumn(set.Column)}", out var traced))
                 {
                     var key = $"{target}.{Binder.WrittenColumn(set.Column)}";

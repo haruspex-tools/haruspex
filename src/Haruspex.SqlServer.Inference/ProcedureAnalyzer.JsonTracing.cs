@@ -119,19 +119,10 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private FlowState Underneath(FlowState state, TableReference target, WithCtesAndXmlNamespaces? with, SourceLocation at)
     {
-        var found = new TableVariables();
-        target.Accept(found);
-        with?.Accept(found);
-        foreach (var name in found.Names.Distinct(StringComparer.OrdinalIgnoreCase))
-            state = TableVariableWritten(state, name, null, null, null, at, "through a CTE or derived table, which is not followed");
+        TSqlFragment?[] written = [target, with];
+        foreach (var table in written.OfType<TSqlFragment>().SelectMany(names.Declarations.TableVariablesIn).Distinct())
+            state = TableVariableWritten(state, table.Name, null, null, null, at, "through a CTE or derived table, which is not followed");
         return state;
-    }
-
-    private sealed class TableVariables : TSqlFragmentVisitor
-    {
-        public List<string> Names { get; } = [];
-
-        public override void Visit(VariableTableReference node) => Names.Add(node.Variable.Name);
     }
 
     // ---- json_query ---------------------------------------------------------------------------------------------------

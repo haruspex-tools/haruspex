@@ -29,6 +29,7 @@ public class NameResolutionTests
         $"{typeof(DeclareTableVariableBody).FullName}.get_{nameof(DeclareTableVariableBody.VariableName)}",
         $"{typeof(DeclareCursorStatement).FullName}.get_{nameof(DeclareCursorStatement.Name)}",
         $"{typeof(CursorId).FullName}.get_{nameof(CursorId.Name)}",
+        $"{typeof(VariableReference).FullName}.get_{nameof(VariableReference.Name)}",
     ];
 
     /// <summary>
@@ -47,7 +48,8 @@ public class NameResolutionTests
         var reads = MemberReads.Of(typeof(IrInference).Assembly.Location, _ => true)
             .Where(r => ResolverReads.Any(m => r.EndsWith(": " + m, StringComparison.Ordinal)))
             .ToList();
-        var unlisted = reads.Where(r => !NameParts.ContainsKey(r[..r.IndexOf(':', StringComparison.Ordinal)]) || !(r.Contains(".SchemaObjectName.", StringComparison.Ordinal) || r.Contains(".DeclareVariableElement.", StringComparison.Ordinal)));
+        var unlisted = reads.Where(r => !NameParts.ContainsKey(r[..r.IndexOf(':', StringComparison.Ordinal)])
+            || !(r.Contains(".SchemaObjectName.", StringComparison.Ordinal) || r.Contains(".DeclareVariableElement.", StringComparison.Ordinal) || r.Contains(".VariableReference.", StringComparison.Ordinal)));
         var stale = NameParts.Keys.Where(m => !reads.Any(r => r.StartsWith(m + ":", StringComparison.Ordinal)));
 
         Assert.True(!unlisted.Any(), "Inference reads what only binding should:\n" + string.Join("\n", unlisted));
@@ -69,6 +71,7 @@ public class NameResolutionTests
                 $"Planted.Schemas: {ResolverReads[2]}",
                 $"Planted.TableAlias: {ResolverReads[3]}",
                 $"Planted.TableName: {ResolverReads[4]}",
+                $"Planted.Variable: {ResolverReads[^1]}",
             ],
             reads);
     }
@@ -92,6 +95,8 @@ public class NameResolutionTests
 
             string? Named() => table.Alias?.Value;
         }
+
+        public static string Variable(VariableReference variable) => variable.Name;
 
         public static bool TableName(IEnumerable<SchemaObjectName> names, string name) =>
             names.Any(n => n.BaseIdentifier.Value.Equals(name, StringComparison.OrdinalIgnoreCase));

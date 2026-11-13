@@ -268,11 +268,15 @@ internal sealed partial class ProcedureAnalyzer
     {
         var at = At(execute);
         if (execute.Variable is { } returned)
-            state = Assign(state, returned.Name, Nulls(returned.Name, []), definitely: true, at);
+            state = Assign(state, Resolved(returned).Name, Nulls(Resolved(returned).Name, []), definitely: true, at);
         foreach (var parameter in execute.ExecutableEntity?.Parameters ?? [])
         {
             if (parameter.IsOutput && parameter.ParameterValue is VariableReference output)
-                state = Assign(state, output.Name, Nulls(output.Name, [new IrNullReason(IrNullRule.Parameter, parameter.Variable?.Name ?? FragmentText.OneLine(execute))]), definitely: true, at);
+            {
+                // The reason names the callee's parameter as the call writes it (@p = @v OUTPUT), or the call.
+                var variable = Resolved(output).Name;
+                state = Assign(state, variable, Nulls(variable, [new IrNullReason(IrNullRule.Parameter, FragmentText.OneLine((TSqlFragment?)parameter.Variable ?? execute))]), definitely: true, at);
+            }
         }
 
         return state;
