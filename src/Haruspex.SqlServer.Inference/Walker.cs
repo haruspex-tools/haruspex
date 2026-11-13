@@ -101,10 +101,17 @@ internal sealed partial class Walker
     /// <summary>Each scalar variable's declared type, from every DECLARE in the body.</summary>
     private readonly Dictionary<LocalName, Shape> variableShapes = [];
 
-    /// <summary>Each parameter's and variable's declared type, for comparing it with a key (Cardinality.cs).</summary>
-
+    /// <summary>
+    /// What a statement leads to, the statement semantics' answer for it: the state where control goes next, and the states
+    /// that reach a <c>BREAK</c> or a <c>CONTINUE</c>, which the loop around it joins in at its exit and its head. Each is null
+    /// when no path goes there (the bottom, which a join leaves the other side of unchanged).
+    /// </summary>
+    /// <param name="Next">The state after the statement, for the statement that follows.</param>
+    /// <param name="Breaks">The state that reaches a <c>BREAK</c> inside it.</param>
+    /// <param name="Continues">The state that reaches a <c>CONTINUE</c> inside it.</param>
     private sealed record Outcome(FlowState? Next, FlowState? Breaks, FlowState? Continues)
     {
+        /// <summary>A statement no path leaves: a <c>RETURN</c>, a <c>THROW</c>, or one that stops the walk.</summary>
         public static Outcome Ends { get; } = new(null, null, null);
     }
 
