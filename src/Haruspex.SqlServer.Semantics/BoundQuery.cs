@@ -25,6 +25,20 @@ public abstract record BoundQuery
     public abstract IReadOnlyList<string?>? Names { get; }
 
     /// <summary>
+    /// Whether this query reads <paramref name="relation"/> in a FROM: a source of one of its scopes, its derived tables' and
+    /// <c>APPLY</c> sides' included. A recursive CTE's members are told apart so: those that read the CTE are its recursive
+    /// members (SQL Server refuses a recursive reference anywhere else, such as a subquery).
+    /// </summary>
+    /// <param name="relation">The relation, as binding gave it.</param>
+    public bool Reads(RelationSymbol relation) => this switch
+    {
+        BoundSpecification specification => specification.Scope.Sources.Any(s => s.Target is RelationTarget { Relation: var read }
+            && (ReferenceEquals(read, relation) || (read is DerivedTable derived && derived.Query.Reads(relation)))),
+        BoundSetOperation operation => operation.First.Reads(relation) || operation.Second.Reads(relation),
+        BoundParenthesis parenthesis => parenthesis.Inner.Reads(relation),
+    };
+
+    /// <summary>
     /// The names of a relation over this query: <paramref name="columnList"/> when there is one, else <see cref="Names"/>; null
     /// when they can't be listed, as SQL Server refuses a relation whose columns are not each named once (8155, 4506) or a
     /// column list of another length (8158).

@@ -988,7 +988,7 @@ internal sealed partial class ProcedureAnalyzer
         var members = new List<BoundQuery>();
         var operators = new List<BinaryQueryExpression>();
         Flatten(bound.Query, members, operators);
-        var recursive = members.Select(m => References(m.Syntax, name)).ToList();
+        var recursive = members.Select(m => m.Reads(symbol)).ToList();
         if (recursive[0] || recursive.Skip(1).Contains(false) || members.Any(m => m is not BoundSpecification)
             || operators.Any(o => o.BinaryQueryExpressionType != BinaryQueryExpressionType.Union || !o.All))
         {
@@ -1065,11 +1065,6 @@ internal sealed partial class ProcedureAnalyzer
             members.Add(query);
         }
     }
-
-    /// <summary>Whether a query reads a table of this one-part name: in a CTE, the CTE itself.</summary>
-    private static bool References(QueryExpression query, string name) =>
-        DmlTarget.NamesRead(query).Any(n => n is { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null }
-            && n.BaseIdentifier.Value.Equals(name, StringComparison.OrdinalIgnoreCase));
 
     // ---- reading the body's own relations and expressions it needs ----------------------------------------------------
 

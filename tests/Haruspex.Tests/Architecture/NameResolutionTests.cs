@@ -11,14 +11,39 @@ namespace Haruspex.Tests.Architecture;
 /// </summary>
 public class NameResolutionTests
 {
-    /// <summary>The members a resolver reads: a source's alias, a column reference's parts, a table reference's name or alias.</summary>
+    /// <summary>The members a resolver reads: a source's alias, a column reference's parts, a table reference's name or alias, a schema object name's parts.</summary>
     private static readonly string[] ResolverReads =
     [
         $"{typeof(BoundSource).FullName}.get_{nameof(BoundSource.Alias)}",
         $"{typeof(ColumnReferenceExpression).FullName}.get_{nameof(ColumnReferenceExpression.MultiPartIdentifier)}",
         $"{typeof(NamedTableReference).FullName}.get_{nameof(NamedTableReference.SchemaObject)}",
         $"{typeof(TableReferenceWithAlias).FullName}.get_{nameof(TableReferenceWithAlias.Alias)}",
+        $"{typeof(SchemaObjectName).FullName}.get_{nameof(SchemaObjectName.BaseIdentifier)}",
+        $"{typeof(SchemaObjectName).FullName}.get_{nameof(SchemaObjectName.SchemaIdentifier)}",
+        $"{typeof(SchemaObjectName).FullName}.get_{nameof(SchemaObjectName.DatabaseIdentifier)}",
+        $"{typeof(SchemaObjectName).FullName}.get_{nameof(SchemaObjectName.ServerIdentifier)}",
     ];
+
+    /// <summary>The temporary table's name, which keys its state in the walk (<c>FlowState.Temps</c>) until it has a declaration of its own.</summary>
+    private const string TemporaryState = "A temporary table's state in the walk is keyed by its name, which this statement declares or names.";
+
+    /// <summary>
+    /// The methods of Inference that read a schema object name's parts, and why: none finds a source or a column. Each says what
+    /// it reads the name for; the test fails on a read not listed, and on a listing that reads nothing any more.
+    /// </summary>
+    private static readonly Dictionary<string, string> NameParts = new(StringComparer.Ordinal)
+    {
+        ["ProcedureAnalyzer.Statement"] = TemporaryState + " (DROP TABLE)",
+        ["ProcedureAnalyzer.Created"] = TemporaryState + " (CREATE TABLE)",
+        ["ProcedureAnalyzer.Alter"] = TemporaryState + " (ALTER TABLE)",
+        ["ProcedureAnalyzer.SelectInto"] = TemporaryState + " (SELECT … INTO)",
+        ["ProcedureAnalyzer.IsTemporary"] = "Whether a name a statement declares or writes is a local temporary table's: one part and one #.",
+        ["ProcedureAnalyzer.FetchRow"] = "Which temporary tables a cursor's query reads, to ask whether any is restructured after its DECLARE.",
+        ["Restructures.Visit"] = "Which temporary tables the body alters, drops or creates, by the names those statements declare.",
+        ["CreateFinder.Add"] = "Which temporary tables a procedure creates, by the names its statements declare, for its callers' state.",
+        ["WriteFinder.Add"] = "Which temporary tables a procedure writes, for its callers' state.",
+        ["DmlTriggers.Reaches"] = "The tables a view's definition names, whose triggers a write through the view fires; schema names get one rule of their own next.",
+    };
 
     [Fact]
     public void Inference_reads_no_name_a_resolver_reads()
@@ -26,8 +51,11 @@ public class NameResolutionTests
         var reads = MemberReads.Of(typeof(IrInference).Assembly.Location, _ => true)
             .Where(r => ResolverReads.Any(m => r.EndsWith(": " + m, StringComparison.Ordinal)))
             .ToList();
+        var unlisted = reads.Where(r => !(NameParts.ContainsKey(r[..r.IndexOf(':', StringComparison.Ordinal)]) && r.Contains(".SchemaObjectName.", StringComparison.Ordinal)));
+        var stale = NameParts.Keys.Where(m => !reads.Any(r => r.StartsWith(m + ":", StringComparison.Ordinal)));
 
-        Assert.True(reads.Count == 0, "Inference reads what only binding should:\n" + string.Join("\n", reads));
+        Assert.True(!unlisted.Any(), "Inference reads what only binding should:\n" + string.Join("\n", unlisted));
+        Assert.True(!stale.Any(), "Listed as reading a name's parts, but no longer does:\n" + string.Join("\n", stale));
     }
 
     [Fact]
@@ -44,6 +72,7 @@ public class NameResolutionTests
                 $"Planted.Parts: {ResolverReads[1]}",
                 $"Planted.Schemas: {ResolverReads[2]}",
                 $"Planted.TableAlias: {ResolverReads[3]}",
+                $"Planted.TableName: {ResolverReads[4]}",
             ],
             reads);
     }
@@ -67,5 +96,8 @@ public class NameResolutionTests
 
             string? Named() => table.Alias?.Value;
         }
+
+        public static bool TableName(IEnumerable<SchemaObjectName> names, string name) =>
+            names.Any(n => n.BaseIdentifier.Value.Equals(name, StringComparison.OrdinalIgnoreCase));
     }
 }
