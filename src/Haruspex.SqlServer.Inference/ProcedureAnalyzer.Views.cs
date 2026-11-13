@@ -279,7 +279,8 @@ internal sealed partial class ProcedureAnalyzer
             {
                 TableColumn table => new RowColumn(c.Name, FromColumn(table), at, table),
                 RelationColumn relation => new RowColumn(c.Name, FromLocal(relation.Source, relation.Ordinal, scope, at), at),
-                _ => throw new InvalidOperationException($"A star stands for a {c.Column.GetType().Name}, which is not a column."),
+                UnlistedColumn unlisted => new RowColumn(c.Name, FromLocal(unlisted.Source, -1, scope, at), at),
+                Unresolved unresolved => new RowColumn(c.Name, Value.Unknown(Unknown(unresolved.Problem)), at),
             })]
             : null;
     }
