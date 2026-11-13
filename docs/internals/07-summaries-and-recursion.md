@@ -348,6 +348,8 @@ such prefix, which is what a `CATCH` block starts from.
 
 ## In the code
 
+- `Summaries`: the one root of the others, built by `IrInference` and handed to every body read with each question, so
+  that no summary holds another.
 - `FunctionSummaries`: scalar functions' summaries; Tarjan's algorithm in `FunctionSummaries.FindComponents`, and the
   iteration in `FunctionSummaries.Solve`.
 - `ViewSummaries`: views, read once per way of reading them (`ViewSummaries.Read`), and table-valued functions, read once

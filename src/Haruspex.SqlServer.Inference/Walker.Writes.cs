@@ -40,7 +40,7 @@ internal sealed partial class Walker
         var target = DmlTarget.Of(spec.Target, from, with);
         if (target.Unmodelled is not null)
             return Blocked(statement);
-        if (calls?.Triggers.Check(target, binder, events, at) is { } fired)
+        if (followsCalls && summaries.Triggers.Check(target, binder, events, at) is { } fired)
         {
             blocker ??= fired;
             return Outcome.Ends;
@@ -223,7 +223,7 @@ internal sealed partial class Walker
         {
             // In a function's body, which has no calls to follow, a call is not followed either (one of a procedure fails there,
             // 557, and an extended stored procedure's is not read): the row is not known.
-            if (calls is null || binder.BindCall(call) is not ProcedureCall { Procedure: var callee } || calls.TempWrites(callee.Name).Overlaps(temps))
+            if (!followsCalls || binder.BindCall(call) is not ProcedureCall { Procedure: var callee } || summaries.TempWrites(callee.Name).Overlaps(temps))
                 return true;
         }
 

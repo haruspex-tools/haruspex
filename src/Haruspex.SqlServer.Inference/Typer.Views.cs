@@ -48,12 +48,8 @@ internal sealed partial class Typer
             : throw new InvalidOperationException($"{relation.Name} is bound, but nothing it holds was attached."),
         DerivedTable derived => Derived(derived, scope),
         ValuesTable values => ValuesList(values, scope.In(values.Rows)),
-        ViewRelation { View: var view } => views is null
-            ? LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnresolvedTable, $"{view.Name} is a view, which is not modelled here.", view.Span.Start))
-            : views.Read(view, hinted || ReadUncommitted(scope)),
-        TableFunctionCall call => views is null
-            ? LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(call.Syntax)}: a table-valued function is not modelled here.", At(call.Syntax)))
-            : TableFunction(call, scope.In(call.Arguments), views),
+        ViewRelation { View: var view } => summaries.View(view, hinted || ReadUncommitted(scope)),
+        TableFunctionCall call => TableFunction(call, scope.In(call.Arguments)),
         OpenJsonCall openJson => OpenJsonRelation(openJson, scope.In(openJson.Arguments)),
         SeriesCall series => GenerateSeries(series, scope.In(series.Arguments)),
         TemporaryTable temporary => Temporary(temporary.Local, scope.State),

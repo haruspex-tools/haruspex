@@ -64,27 +64,19 @@ internal sealed class FunctionSummaries
     /// <summary>The results assumed for the component being solved, at the current step.</summary>
     private Dictionary<ObjectName, FunctionReturn>? assumed;
 
-    /// <summary>The views a body may read, once they are known (<see cref="ViewSummaries"/> sets it); null leaves them unread.</summary>
-    public ViewSummaries? Views { get; set; }
-
     /// <summary>Whether every body is read uncommitted, so that no key of what it reads holds.</summary>
     private readonly bool uncommitted;
 
-    /// <summary>
-    /// The same functions read uncommitted, for calls in a statement that reads uncommitted, so that a key inside one no longer holds. A
-    /// recursive function is not read there: it gives its declared type only, so that its named node (<see cref="Nodes"/>,
-    /// which the IR's type table holds once) comes from the committed reading alone. That only claims less.
-    /// </summary>
-    public FunctionSummaries Uncommitted => uncommitted ? this : field ??= new FunctionSummaries(model, uncommitted: true, Bindings) { Views = Views };
-
-    /// <summary>What every body of the model binds to, shared by every body read, so each query is bound once (<see cref="Semantics.Bindings"/>).</summary>
-    public Bindings Bindings { get; }
-
-    public FunctionSummaries(DatabaseModel model, bool uncommitted = false, Bindings? bindings = null)
+    /// <param name="model">The model whose functions these are.</param>
+    /// <param name="uncommitted">
+    /// Whether every body is read uncommitted, for calls in a statement that reads uncommitted, so that a key inside one no
+    /// longer holds. A recursive function is not read so: it gives its declared type only, so that its named node
+    /// (<see cref="Nodes"/>, which the IR's type table holds once) comes from the committed reading alone. That only claims less.
+    /// </param>
+    public FunctionSummaries(DatabaseModel model, bool uncommitted)
     {
         this.uncommitted = uncommitted;
         this.model = model;
-        Bindings = bindings ?? new Bindings(model);
         FindComponents();
     }
 
@@ -93,7 +85,10 @@ internal sealed class FunctionSummaries
 
     /// <summary>The function a call names, when it is a scalar function of the model whose definition can be trusted.</summary>
     /// <returns>The function's return, or an unknown saying why there is none.</returns>
-    public OneOf Find(ObjectName name, SourceLocation at)
+    /// <param name="name">The function's name.</param>
+    /// <param name="at">Where it is called.</param>
+    /// <param name="summaries">What a body this reads may ask of the document's other objects.</param>
+    public OneOf Find(ObjectName name, SourceLocation at, Summaries summaries)
     {
         var function = model.FindFunction(name);
         if (function is null)
@@ -102,39 +97,39 @@ internal sealed class FunctionSummaries
             return new OneOf(null, new UnknownShape(IrUnknownReason.Redefined, Redefinitions.Why(redefinition), redefinition.At));
         if (function is not ScalarFunction scalar)
             return new OneOf(null, new UnknownShape(IrUnknownReason.UnsupportedExpression, $"{name} is not a scalar function.", at));
-        return new OneOf(Return(scalar), null);
+        return new OneOf(Return(scalar, summaries), null);
     }
 
     /// <summary>A function's return, or the reason it has none.</summary>
     internal readonly record struct OneOf(FunctionReturn? Return, UnknownShape? Unknown);
 
-    private FunctionReturn Return(ScalarFunction function)
+    private FunctionReturn Return(ScalarFunction function, Summaries summaries)
     {
         if (assumed is not null && assumed.TryGetValue(function.Name, out var current))
             return current;
         if (done.TryGetValue(function.Name, out var result))
             return result;
 
-        Solve(component[function.Name]);
+        Solve(component[function.Name], summaries);
         return done[function.Name];
     }
 
     // ---- the fixed point ------------------------------------------------------------------------------------
 
-    private void Solve(int index)
+    private void Solve(int index, Summaries summaries)
     {
         var members = components[index];
         if (!recursiveComponents.Contains(index))
         {
             var only = Scalar(members[0]);
-            done[only.Name] = Read(only);
+            done[only.Name] = Read(only, summaries);
             return;
         }
 
         if (uncommitted)
         {
             foreach (var member in members.Select(Scalar))
-                done[member.Name] = Read(member, header: true) with { Content = null, NullableBecause = [new IrNullReason(IrNullRule.FunctionResult, member.Span.ToString())] };
+                done[member.Name] = Read(member, summaries, header: true) with { Content = null, NullableBecause = [new IrNullReason(IrNullRule.FunctionResult, member.Span.ToString())] };
             return;
         }
 
@@ -145,11 +140,11 @@ internal sealed class FunctionSummaries
         try
         {
             iteration = FixedPoint.Iterate<EquatableArray<FunctionReturn>>(
-                [.. functions.Select(Start)],
+                [.. functions.Select(f => Start(f, summaries))],
                 results =>
                 {
                     assumed = functions.Select((f, i) => (f.Name, Result: Abstract(f.Name, results[i]))).ToDictionary(p => p.Name, p => p.Result);
-                    return Pass<EquatableArray<FunctionReturn>>.To([.. functions.Select(f => Read(f))]);
+                    return Pass<EquatableArray<FunctionReturn>>.To([.. functions.Select(f => Read(f, summaries))]);
                 });
         }
         finally
@@ -241,9 +236,9 @@ internal sealed class FunctionSummaries
     private ScalarFunction Scalar(ObjectName name) => scalars[name];
 
     /// <summary>No information: the result before any step.</summary>
-    private FunctionReturn Start(ScalarFunction function)
+    private FunctionReturn Start(ScalarFunction function, Summaries summaries)
     {
-        var start = Read(function, header: true);
+        var start = Read(function, summaries, header: true);
         return start.Content is null ? start : start with { Content = new NeverShape(function.Span.Start), NullableBecause = [] };
     }
 
@@ -272,7 +267,7 @@ internal sealed class FunctionSummaries
 
     /// <summary>Reads a body. Inside a recursive component, the calls it makes see the previous step's results.</summary>
     /// <param name="header">Read only the header: whether the body is a form that can return JSON at all.</param>
-    private FunctionReturn Read(ScalarFunction function, bool header = false)
+    private FunctionReturn Read(ScalarFunction function, Summaries summaries, bool header = false)
     {
         var at = function.Span.Start;
         var returnType = function.Returns;
@@ -295,7 +290,7 @@ internal sealed class FunctionSummaries
             return declaredOnly with { Content = new NeverShape(at) };
 
         var parameters = function.Parameters.ToEquatableMap(p => new LocalName(p.Name), p => Parameter(p, nullOnNull));
-        var value = new Typer(model, function.Span, this, parameters, ansiNullsOff: function.AnsiNullsOff, views: Views, uncommittedReads: uncommitted).Return(expression, function.Parameters);
+        var value = new Typer(model, function.Span, summaries, parameters, function.AnsiNullsOff, uncommitted).Return(expression, function.Parameters);
 
         var content = value switch
         {

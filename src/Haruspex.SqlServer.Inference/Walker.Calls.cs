@@ -14,7 +14,11 @@ namespace Haruspex.SqlServer.Inference;
 // are ExecObservationTests in the differential tests.
 internal sealed partial class Walker
 {
-    private readonly ProcedureCalls? calls;
+    /// <summary>What each procedure called does, and what the triggers a write fires may return.</summary>
+    private readonly Summaries summaries;
+
+    /// <summary>Whether this is a procedure's walk, which follows the calls it makes and the triggers its writes fire; a function's follows neither.</summary>
+    private readonly bool followsCalls;
 
     /// <summary>What this procedure's walk starts from: its caller's temporary tables, and how it was called.</summary>
     private readonly CallContext context;
@@ -73,7 +77,7 @@ internal sealed partial class Walker
             return Blocked(insert);
 
         // Into a permanent table: what its triggers may return (DmlTriggers), then the rows of its OUTPUT, if it has one.
-        if (calls?.Triggers.Check(written, binder, DmlEvents.Insert, at) is { } fired)
+        if (followsCalls && summaries.Triggers.Check(written, binder, DmlEvents.Insert, at) is { } fired)
         {
             blocker ??= fired;
             return Outcome.Ends;
@@ -146,14 +150,14 @@ internal sealed partial class Walker
         // A_function_that_calls_a_procedure_is_created_and_every_call_of_it_fails), so no call of it returns; an extended
         // stored procedure (xp_…) may be called there, and is not followed either. The walk stops at the call, so the function's
         // table is as declared, which claims nothing a call could contradict.
-        if (calls is null)
+        if (!followsCalls)
             return new Called(null, ResultTrack.None, new UnknownShape(IrUnknownReason.UnsupportedStatement, $"{Text(execute)} calls a procedure from a function's body, which SQL Server refuses when the function runs (557); it is not followed.", at));
         var temps = state.Temps;
         var needEscapes = catchEntries.Count > 0 || escapes is not null;
 
         var (walked, name) = target switch
         {
-            ProcedureCall { Procedure: var callee } => (calls.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted), at), (ObjectName?)callee.Name),
+            ProcedureCall { Procedure: var callee } => (summaries.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted), at), (ObjectName?)callee.Name),
             UnknowableCall unknowable => (new Walked(null, [], new UnknownShape(Reason(unknowable.Kind), unknowable.Detail, at), []), unknowable.Name),
         };
 
@@ -161,7 +165,7 @@ internal sealed partial class Walker
         {
             // Its results cannot be known; a declaration of them stands in for them. What it did to the caller's tables is not
             // known either way: the declaration says nothing of them.
-            if (name is { } calledName && calls.Declared(calledName) is var (declaredName, declaration))
+            if (name is { } calledName && summaries.Declared(calledName) is var (declaredName, declaration))
             {
                 declaredUsed = Walked.Union(declaredUsed, [declaredName]);
                 var forgotten = Forgotten(state, new UnknownShape(why.Reason, $"{declaredName}'s results are declared, but what it does to temporary tables is not known: {why.Detail}", why.At), at);

@@ -25,15 +25,14 @@ public static class IrInference
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(procedures);
         declarations ??= new Dictionary<ObjectName, DeclaredResults>();
-        var functions = new FunctionSummaries(model);
-        var calls = new ProcedureCalls(model, functions, declarations, new DmlTriggers(model, warnings), new ViewSummaries(model, functions));
+        var summaries = new Summaries(model, declarations, warnings);
         var analysed = procedures
             .Distinct()
             .Select(name => model.FindProcedure(name)
                 ?? throw new ArgumentException($"No procedure named {name} in the project.", nameof(procedures)))
-            .Select(procedure => (procedure, calls.Analyse(procedure)))
+            .Select(procedure => (procedure, summaries.Analyse(procedure)))
             .ToList();
-        var document = new IrBuilder(functions).Build(analysed);
+        var document = new IrBuilder(summaries.Nodes).Build(analysed);
 
         // A caller's results that include a callee's declared results rest on that declaration, so the claim is listed.
         var claims = analysed

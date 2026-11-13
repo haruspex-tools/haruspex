@@ -11,22 +11,12 @@ namespace Haruspex.SqlServer.Inference;
 /// view or function reads others; one that reads itself through them cannot be created, and is unknown here.
 /// The idea, and the alternatives, are in docs/internals/07-summaries-and-recursion.md.
 /// </summary>
-internal sealed class ViewSummaries
+/// <param name="model">The model whose views and functions these are.</param>
+internal sealed class ViewSummaries(DatabaseModel model)
 {
-    private readonly DatabaseModel model;
-    private readonly FunctionSummaries functions;
     private readonly Dictionary<(ObjectName, bool), LocalRelationValues> done = [];
     private readonly HashSet<ObjectName> reading = [];
     private readonly Dictionary<Reading, LocalRelationValues> calls = [];
-
-    public ViewSummaries(DatabaseModel model, FunctionSummaries functions)
-    {
-        this.model = model;
-        this.functions = functions;
-
-        // A scalar function's body may read views too.
-        functions.Views = this;
-    }
 
     /// <summary>
     /// What a call of a table-valued function returns, with its parameters holding <paramref name="arguments"/>: an inline
@@ -34,7 +24,8 @@ internal sealed class ViewSummaries
     /// table (<see cref="Walker.ReadReturnTable"/>).
     /// </summary>
     /// <param name="uncommitted">Whether it is read uncommitted (Typer.Cardinality.cs), so that no key of what it reads holds.</param>
-    public LocalRelationValues Function(Function function, EquatableMap<LocalName, Value> arguments, bool uncommitted)
+    /// <param name="summaries">What the function's body may ask of the document's other objects.</param>
+    public LocalRelationValues Function(Function function, EquatableMap<LocalName, Value> arguments, bool uncommitted, Summaries summaries)
     {
         var key = new Reading(function.Name, uncommitted, arguments);
         if (calls.TryGetValue(key, out var found))
@@ -46,8 +37,8 @@ internal sealed class ViewSummaries
         {
             found = function switch
             {
-                InlineFunction inline => new Typer(model, function.Span, Functions(uncommitted), arguments, function.AnsiNullsOff, this, uncommitted).ReadInline(inline),
-                TableFunction declared => new Walker(model, function.Span, Functions(uncommitted), arguments, ansiNullsOff: function.AnsiNullsOff, views: this, uncommittedReads: uncommitted).ReadReturnTable(declared),
+                InlineFunction inline => new Typer(model, function.Span, summaries, arguments, function.AnsiNullsOff, uncommitted).ReadInline(inline),
+                TableFunction declared => new Walker(model, function.Span, summaries, arguments, ansiNullsOff: function.AnsiNullsOff, uncommittedReads: uncommitted).ReadReturnTable(declared),
                 _ => throw new ArgumentException("Not a table-valued function.", nameof(function)),
             };
         }
@@ -63,15 +54,13 @@ internal sealed class ViewSummaries
     /// <summary>A placeholder location for an unknown about the view as a whole; each read reports its own location instead.</summary>
     private static readonly Diagnostics.SourceLocation Nowhere = new("", 0, 0);
 
-    /// <summary>The scalar functions' summaries for a body read committed or uncommitted (<see cref="FunctionSummaries.Uncommitted"/>).</summary>
-    private FunctionSummaries Functions(bool uncommitted) => uncommitted ? functions.Uncommitted : functions;
-
     /// <summary>A view's rows, read once per document and per way of reading it: committed, or uncommitted inside too.</summary>
     /// <param name="uncommitted">
     /// Whether it is read uncommitted: under a NOLOCK or READUNCOMMITTED hint on it, which applies to every table under it, or
     /// in a statement that reads uncommitted. Then no key of the tables inside holds.
     /// </param>
-    public LocalRelationValues Read(View view, bool uncommitted)
+    /// <param name="summaries">What the view's body may ask of the document's other objects.</param>
+    public LocalRelationValues Read(View view, bool uncommitted, Summaries summaries)
     {
         if (done.TryGetValue((view.Name, uncommitted), out var found))
             return found;
@@ -84,7 +73,7 @@ internal sealed class ViewSummaries
 
         try
         {
-            found = new Typer(model, view.Span, Functions(uncommitted), ansiNullsOff: view.AnsiNullsOff, views: this, uncommittedReads: uncommitted).ReadView(view);
+            found = new Typer(model, view.Span, summaries, ansiNullsOff: view.AnsiNullsOff, uncommittedReads: uncommitted).ReadView(view);
         }
         finally
         {

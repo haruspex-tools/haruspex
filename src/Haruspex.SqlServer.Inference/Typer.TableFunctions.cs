@@ -12,11 +12,11 @@ internal sealed partial class Typer
 {
     /// <summary>
     /// A call of a table-valued function in FROM or APPLY: its arguments read where the call is (an APPLY's left input's
-    /// columns too), converted to its parameters' types, and the function read with them (<see cref="ViewSummaries.Function"/>).
+    /// columns too), converted to its parameters' types, and the function read with them (<see cref="Summaries.TableFunction"/>).
     /// </summary>
     /// <param name="symbol">The call, bound: which function it names was resolved by binding.</param>
     /// <param name="scope">The scope its arguments are read in.</param>
-    private LocalRelationValues TableFunction(TableFunctionCall symbol, ReadScope scope, ViewSummaries views)
+    private LocalRelationValues TableFunction(TableFunctionCall symbol, ReadScope scope)
     {
         var call = symbol.Syntax;
         var at = At(call);
@@ -48,7 +48,7 @@ internal sealed partial class Typer
                 return Fails(IrUnknownReason.UnsupportedSource, $"{function.Name} takes {parameters.Count} arguments.");
 
             var arguments = parameters.Select((p, i) => KeyValuePair.Create(new LocalName(p.Name), Argument(p, call.Parameters[i], scope)));
-            return views.Function(function, [.. arguments], ReadUncommitted(scope));
+            return summaries.TableFunction(function, [.. arguments], ReadUncommitted(scope));
         }
     }
 

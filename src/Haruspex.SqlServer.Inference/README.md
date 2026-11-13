@@ -16,14 +16,15 @@ type system are planned.
 flowchart LR
     model["DatabaseModel"] --> infer["IrInference.Infer"]
     declared["DeclaredResults, from the config file"] --> infer
-    infer --> calls["ProcedureCalls: one walk per procedure and call context"]
+    infer --> root["Summaries: the one root, passed to each body read"]
+    root --> calls["ProcedureCalls: one walk per procedure and call context"]
     calls --> walk["Walker: the statement walk"]
     walk -->|carries| state["FlowState: a Value per variable and column, ResultTrack"]
     walk -->|"each expression and query, in a ReadScope"| typer["Typer: what an expression gives"]
     typer -->|binds names with| binder["Binder (Semantics)"]
-    typer -->|asks| summaries["FunctionSummaries, ViewSummaries"]
-    walk -->|EXEC| calls
-    calls --> analysis["ProcedureAnalysis"]
+    typer -->|asks| root
+    walk -->|"EXEC, triggers"| root
+    root --> analysis["ProcedureAnalysis"]
     analysis --> builder["IrBuilder"]
     builder --> document["IrDocument"]
 ```
@@ -860,7 +861,7 @@ uncommitted a scan can return a row twice, or miss one, while pages split under 
 statement after `SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED` on any path (`FlowState.ReadUncommitted`), is treated as
 history is: no key holds, and only a relation of exactly one row counts as fixed. It reaches inside what such a statement or
 hint reads: a view, an inline function and a scalar function's body are read uncommitted there too (`ViewSummaries` keys its
-reads on it, and `FunctionSummaries.Uncommitted` reads scalar bodies so), so a `FOR JSON` subquery inside one loses its
+reads on it, and `Summaries.Function` asks a second `FunctionSummaries` that reads scalar bodies so), so a `FOR JSON` subquery inside one loses its
 `maxItems` as the same subquery written in the procedure does. A recursive scalar function read uncommitted gives its declared
 type only, since its named node is the committed reading's; that claims less. The duplicate row itself is not observed (it
 needs another session splitting pages during the scan); Microsoft documents it, and dropping the claim only claims less. What

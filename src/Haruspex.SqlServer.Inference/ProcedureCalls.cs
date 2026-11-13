@@ -34,11 +34,10 @@ namespace Haruspex.SqlServer.Inference;
 /// rested on an assumption about a procedure further down the stack of calls; those are walked again.
 /// </para>
 /// </remarks>
-internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries functions, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations, DmlTriggers triggers, ViewSummaries views)
+/// <param name="model">The model whose procedures these are.</param>
+/// <param name="declarations">The results declared for procedures whose results can't be inferred.</param>
+internal sealed class ProcedureCalls(DatabaseModel model, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations)
 {
-    /// <summary>What the triggers a write fires may return, shared by every walk so that each gap is warned of once.</summary>
-    public DmlTriggers Triggers => triggers;
-
     /// <summary>What a recursive procedure's walk assumes: the result sets its calls of itself return (none: they never return), and the tables it starts from.</summary>
     private sealed record Assumption(ResultTrack? Results, CallContext Context);
 
@@ -73,20 +72,20 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     private readonly Dictionary<(ObjectName Procedure, CallContext Context), Walked> cache = [];
     private readonly Dictionary<ObjectName, ImmutableHashSet<LocalName>> writes = [];
 
-    public DatabaseModel Model => model;
-
     /// <summary>The declaration of a procedure's results, if there is one, with the name it is declared by.</summary>
     public (ObjectName Name, DeclaredResults Results)? Declared(ObjectName name) =>
         declarations.Keys.Where(k => k == name).Select(k => ((ObjectName, DeclaredResults)?)(k, declarations[k])).FirstOrDefault();
 
     /// <summary>Infers one procedure's results, as the outermost call.</summary>
-    public ProcedureAnalysis Analyse(Procedure procedure)
+    /// <param name="procedure">The procedure.</param>
+    /// <param name="summaries">What its body may ask of the document's other objects.</param>
+    public ProcedureAnalysis Analyse(Procedure procedure, Summaries summaries)
     {
         var parameters = Typer.Parameters(model, procedure);
         if (Unwalkable(procedure) is { } why)
             return new ProcedureAnalysis([.. parameters], null, why, []);
 
-        var walked = Run(procedure, CallContext.Top);
+        var walked = Run(procedure, CallContext.Top, summaries);
         if (walked.Blocker is { } blocker)
             return new ProcedureAnalysis([.. parameters], null, blocker, walked.Declared);
         if (walked.End is null)
@@ -96,14 +95,18 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
     }
 
     /// <summary>What a call of <paramref name="callee"/> from a caller in <paramref name="context"/> does.</summary>
-    public Walked Follow(Procedure callee, CallContext context, SourceLocation at)
+    /// <param name="callee">The procedure called.</param>
+    /// <param name="context">What the caller's walk is at the call.</param>
+    /// <param name="at">Where it is called.</param>
+    /// <param name="summaries">What its body may ask of the document's other objects.</param>
+    public Walked Follow(Procedure callee, CallContext context, SourceLocation at, Summaries summaries)
     {
         if (Unwalkable(callee) is { } why)
             return new Walked(null, [], why, []);
 
         var index = stack.FindIndex(f => f.Name == callee.Name);
         if (index < 0)
-            return Run(callee, context);
+            return Run(callee, context, summaries);
 
         // A recursive call: what is assumed of the callee, and every frame above it rests on that assumption.
         var frame = stack[index];
@@ -143,7 +146,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
         return procedure.Redefinition is { } redefinition ? new UnknownShape(IrUnknownReason.Redefined, Redefinitions.Why(redefinition), redefinition.At) : null;
     }
 
-    private Walked Run(Procedure procedure, CallContext context)
+    private Walked Run(Procedure procedure, CallContext context, Summaries summaries)
     {
         if (cache.TryGetValue((procedure.Name, context), out var cached))
             return cached;
@@ -170,7 +173,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
                     frame.Context = assumption.Context;
                     frame.Recursive = false;
                     frame.Widened = false;
-                    walked = new Walker(model, procedure.Span, functions, calls: this, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff, views: views).Walk(procedure.Parameters, statements);
+                    walked = new Walker(model, procedure.Span, summaries, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff).Walk(procedure.Parameters, statements);
                     if (!frame.Recursive || walked.Blocker is not null)
                         return Pass<Assumption>.Stop();
 

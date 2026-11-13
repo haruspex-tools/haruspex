@@ -13,8 +13,8 @@ namespace Haruspex.SqlServer.Inference;
 /// keyed by its identity (<c>sales.get_order:results[0][]</c>) until then. Settling names here, with a number added to
 /// break a clash, would let adding one procedure rename another's types.
 /// </remarks>
-/// <param name="functions">The functions the procedures call, for the named type of each recursive one's node.</param>
-internal sealed class IrBuilder(FunctionSummaries functions)
+/// <param name="nodes">The object each recursive function the procedures call stands for, for the named type of its node.</param>
+internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nodes)
 {
     private readonly Dictionary<string, IrObjectType> types = new(StringComparer.Ordinal);
 
@@ -127,7 +127,7 @@ internal sealed class IrBuilder(FunctionSummaries functions)
             enclosingNodes.Push(name);
             try
             {
-                Object(functions.Nodes[function], owner, id, path, name);
+                Object(nodes[function], owner, id, path, name);
             }
             finally
             {

@@ -32,31 +32,31 @@ internal sealed partial class Walker
 
     /// <param name="model">The model the body's references resolve in.</param>
     /// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
-    /// <param name="functions">What each scalar function returns.</param>
+    /// <param name="summaries">What each object the body calls or reads does or holds.</param>
     /// <param name="parameters">Inside a function, its parameters' values.</param>
-    /// <param name="calls">The calls being followed, inside a procedure; null inside a function, which cannot call one.</param>
-    /// <param name="context">What a procedure's walk starts from: its caller's temporary tables, and how it is called.</param>
+    /// <param name="context">
+    /// What a procedure's walk starts from: its caller's temporary tables, and how it is called. Null inside a function, which
+    /// follows no call of a procedure and fires no trigger.
+    /// </param>
     /// <param name="ansiNullsOff">Whether the body was created with ANSI_NULLS off.</param>
-    /// <param name="views">What each view of the project holds, read from its definition; null leaves views unmodelled.</param>
     /// <param name="uncommittedReads">
     /// Whether the body (a function's) is read uncommitted where it is used, so that no key of what it reads holds.
     /// </param>
     public Walker(
         DatabaseModel model,
         SourceSpan source,
-        FunctionSummaries functions,
+        Summaries summaries,
         EquatableMap<LocalName, Value>? parameters = null,
-        ProcedureCalls? calls = null,
         CallContext? context = null,
         bool ansiNullsOff = false,
-        ViewSummaries? views = null,
         bool uncommittedReads = false)
     {
         this.model = model;
-        binder = functions.Bindings.For(source);
+        binder = summaries.Bindings.For(source);
         this.source = source;
-        typer = new Typer(model, source, functions, parameters, ansiNullsOff, views, uncommittedReads);
-        this.calls = calls;
+        typer = new Typer(model, source, summaries, parameters, ansiNullsOff, uncommittedReads);
+        this.summaries = summaries;
+        followsCalls = context is not null;
         this.context = context ?? CallContext.Top;
         escapes = this.context.Escapes ? [] : null;
     }

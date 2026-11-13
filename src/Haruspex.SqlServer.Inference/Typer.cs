@@ -23,31 +23,26 @@ namespace Haruspex.SqlServer.Inference;
 /// </remarks>
 /// <param name="model">The model the body's references resolve in.</param>
 /// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
-/// <param name="functions">What each scalar function returns.</param>
+/// <param name="summaries">What each function the body calls returns and what each view it reads holds.</param>
 /// <param name="parameters">Inside a function, its parameters' values.</param>
 /// <param name="ansiNullsOff">Whether the body was created with ANSI_NULLS off.</param>
-/// <param name="views">What each view of the project holds, read from its definition; null leaves views unmodelled.</param>
 /// <param name="uncommittedReads">
 /// Whether the body (a view's, a function's) is read uncommitted where it is used, so that no key of what it reads holds.
 /// </param>
 internal sealed partial class Typer(
     DatabaseModel model,
     SourceSpan source,
-    FunctionSummaries functions,
+    Summaries summaries,
     EquatableMap<LocalName, Value>? parameters = null,
     bool ansiNullsOff = false,
-    ViewSummaries? views = null,
     bool uncommittedReads = false)
 {
     private readonly DatabaseModel model = model;
-    private readonly Binder binder = functions.Bindings.For(source);
+    private readonly Binder binder = summaries.Bindings.For(source);
     private readonly SourceSpan source = source;
 
-    /// <summary>What each scalar function returns.</summary>
-    private readonly FunctionSummaries functions = functions;
-
-    /// <summary>What each view holds (<c>Typer.Views.cs</c>); null leaves views unmodelled.</summary>
-    private readonly ViewSummaries? views = views;
+    /// <summary>What each scalar function returns, and what each view and table-valued function holds (<c>Typer.Views.cs</c>).</summary>
+    private readonly Summaries summaries = summaries;
 
     /// <summary>Inside a function's body, its parameters by name; empty in a procedure, whose parameters are not followed yet.</summary>
     private readonly EquatableMap<LocalName, Value> parameters = parameters ?? [];
@@ -470,7 +465,7 @@ internal sealed partial class Typer(
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This form of call is not modelled: {Text(call)}", at));
 
         // A function's body read in a statement that reads uncommitted reads its tables so too.
-        var (result, why) = (ReadUncommitted(scope) ? functions.Uncommitted : functions).Find(callee, at);
+        var (result, why) = summaries.Function(callee, at, ReadUncommitted(scope));
         if (result is null)
             return Value.Unknown(why!); // Never null: Find gives a return or why there is none.
 
