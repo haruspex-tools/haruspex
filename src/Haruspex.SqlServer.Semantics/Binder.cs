@@ -335,24 +335,11 @@ public sealed class Binder
         /// </summary>
         public QueryScope? Lateral { get; init; }
 
-        /// <summary>How the optional side being added to came about (see <see cref="Side"/>).</summary>
-        public Side Side { get; init; } = Side.Join;
+        /// <summary>How the optional side being added to came about: an outer join's, or an OUTER APPLY's right side, whole or inside.</summary>
+        public OptionalSideKind Side { get; init; } = OptionalSideKind.OuterJoin;
 
         /// <summary>The scope a derived table, <c>VALUES</c> list or call here reads beyond itself.</summary>
         public QueryScope? Outer => Lateral ?? Parent;
-    }
-
-    /// <summary>What kind of optional side a source is added on.</summary>
-    private enum Side
-    {
-        /// <summary>None, or an outer join's.</summary>
-        Join,
-
-        /// <summary>An OUTER APPLY's right side, which the source is the whole of.</summary>
-        Applied,
-
-        /// <summary>An OUTER APPLY's right side, which the source is joined inside.</summary>
-        InsideApplied,
     }
 
     /// <param name="adding">The scope being built, and where in its FROM the reference is.</param>
@@ -361,8 +348,8 @@ public sealed class Binder
     private void AddSources(Adding adding, TableReference reference, SourceLocation? optionalSideOf)
     {
         // A source joined inside an OUTER APPLY's right side is on that side, but is not the whole of it.
-        var inside = adding with { Side = adding.Side == Side.Applied ? Side.InsideApplied : adding.Side };
-        var asJoin = inside with { Side = Side.Join };
+        var inside = adding with { Side = adding.Side == OptionalSideKind.WholeApplied ? OptionalSideKind.InsideApplied : adding.Side };
+        var asJoin = inside with { Side = OptionalSideKind.OuterJoin };
 
         switch (reference)
         {
@@ -386,7 +373,7 @@ public sealed class Binder
                 AddSources(inside, apply.FirstTableReference, optionalSideOf);
                 var left = new QueryScope(adding.Outer, [.. adding.Sources.Skip(first)], adding.Names);
                 if (apply.UnqualifiedJoinType == UnqualifiedJoinType.OuterApply && optionalSideOf is null)
-                    AddSources(adding with { Lateral = left, Side = Side.Applied }, apply.SecondTableReference, At(apply.SecondTableReference));
+                    AddSources(adding with { Lateral = left, Side = OptionalSideKind.WholeApplied }, apply.SecondTableReference, At(apply.SecondTableReference));
                 else
                     AddSources(inside with { Lateral = left }, apply.SecondTableReference, optionalSideOf);
                 break;
@@ -487,15 +474,8 @@ public sealed class Binder
     }
 
     /// <summary>A source's optional side, from the location of the outermost one it is inside and how it came about.</summary>
-    private static OptionalSide? Optional(SourceLocation? optionalSideOf, Side side) => optionalSideOf is null
-        ? null
-        : new OptionalSide(optionalSideOf, side switch
-        {
-            Side.Join => OptionalSideKind.OuterJoin,
-            Side.Applied => OptionalSideKind.WholeApplied,
-            Side.InsideApplied => OptionalSideKind.InsideApplied,
-            _ => throw new ArgumentOutOfRangeException(nameof(side)),
-        });
+    private static OptionalSide? Optional(SourceLocation? optionalSideOf, OptionalSideKind side) =>
+        optionalSideOf is null ? null : new OptionalSide(optionalSideOf, side);
 
     /// <summary>Whether a table or view is read with a <c>NOLOCK</c> or <c>READUNCOMMITTED</c> hint.</summary>
     private static bool Uncommitted(NamedTableReference named) =>
