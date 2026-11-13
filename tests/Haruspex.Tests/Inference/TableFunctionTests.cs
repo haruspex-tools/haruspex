@@ -185,8 +185,10 @@ public class TableFunctionTests
     [Fact]
     public void A_multi_statement_function_that_calls_a_procedure_is_its_declared_return_table()
     {
-        // Its body is walked with no procedures to follow, so the call is not followed and the body's writes are not read: the
-        // table is as declared. (Walking it once failed on the call, with no caller to follow it.)
+        // SQL Server creates such a function and refuses the call when it runs (557, observed:
+        // A_function_that_calls_a_procedure_is_created_and_every_call_of_it_fails), so no call returns a row. Its body's walk
+        // stops at the call, which is not followed, so the table is as declared, which no call contradicts. (Walking it once
+        // failed on the call, with no procedures to follow.)
         var doc = InferProcedure.Infer(
             "dbo.p",
             ("log.sql", "CREATE PROCEDURE dbo.log_it AS SELECT 1 AS one;"),

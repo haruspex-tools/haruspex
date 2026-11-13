@@ -984,7 +984,9 @@ bound like a derived table: its arguments read the enclosing queries' columns, a
   `TOP (1)` is at most one.
 - **A multi-statement function** is its declared return table (`ProcedureAnalyzer.ReadReturnTable`), and its `nvarchar(max)` columns hold the JSON
   its body writes to them: the body is walked as a procedure's is, the return table a table variable ("JSON built
-  here, traced"); a body the walk cannot follow leaves them as declared. The table enforces
+  here, traced"); a body the walk cannot follow leaves them as declared. A body that calls a procedure is one: SQL Server
+  creates the function and refuses the call when it runs (557, `A_function_that_calls_a_procedure_is_created_and_every_call_of_it_fails`),
+  so the call is not followed, nor is one of an extended stored procedure, which a function may make. The table enforces
   its declaration, so a NULL into a `NOT NULL` column, a repeated `PRIMARY KEY` or `UNIQUE` value (one NULL at most) and a value
   its `CHECK` refuses each fail the call (`A_multi_statement_functions_return_table_enforces_its_constraints`). Its columns
   are the declared ones, with their CHECK facets, null as declared (`nullable-column` at `<function>.<column>`), and its keys

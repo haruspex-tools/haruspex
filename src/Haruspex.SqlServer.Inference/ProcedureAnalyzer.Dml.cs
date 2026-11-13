@@ -363,7 +363,8 @@ internal sealed partial class ProcedureAnalyzer
             return true;
         foreach (var call in changes.Calls)
         {
-            // In a function's body, which has no calls to follow, a call is not followed either: the row is not known.
+            // In a function's body, which has no calls to follow, a call is not followed either (one of a procedure fails there,
+            // 557, and an extended stored procedure's is not read): the row is not known.
             if (calls is null || binder.BindCall(call) is not ProcedureCall { Procedure: var callee } || calls.TempWrites(callee.Name).Overlaps(temps))
                 return true;
         }

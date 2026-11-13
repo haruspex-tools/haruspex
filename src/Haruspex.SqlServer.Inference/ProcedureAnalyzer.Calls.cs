@@ -140,10 +140,13 @@ internal sealed partial class ProcedureAnalyzer
         var target = binder.BindCall(execute);
         var at = target.At;
 
-        // A multi-statement function's body is walked with no procedures to follow: one it calls is not followed, so what the
-        // call returns and does is not known.
+        // A multi-statement function's body is walked with no procedures to follow. SQL Server creates a function that calls a
+        // procedure, and refuses the call when the function runs (557, observed:
+        // A_function_that_calls_a_procedure_is_created_and_every_call_of_it_fails), so no call of it returns; an extended
+        // stored procedure (xp_…) may be called there, and is not followed either. The walk stops at the call, so the function's
+        // table is as declared, which claims nothing a call could contradict.
         if (calls is null)
-            return new Called(null, ResultTrack.None, new UnknownShape(IrUnknownReason.UnsupportedStatement, $"{Text(execute)} calls a procedure from a function's body, which is not followed.", at));
+            return new Called(null, ResultTrack.None, new UnknownShape(IrUnknownReason.UnsupportedStatement, $"{Text(execute)} calls a procedure from a function's body, which SQL Server refuses when the function runs (557); it is not followed.", at));
         var temps = state.Temps;
         var needEscapes = catchEntries.Count > 0 || escapes is not null;
 

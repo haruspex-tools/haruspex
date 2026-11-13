@@ -44,6 +44,20 @@ public class TableFunctionObservationTests(SqlServerFixture server)
         Assert.Equal("id,code,n,label: 1,a,1,toolo", (await Run([Declared], "SET ANSI_WARNINGS OFF; SELECT * FROM dbo.obs_declared(6);")).ToString());
     }
 
+    [Fact]
+    public async Task A_function_that_calls_a_procedure_is_created_and_every_call_of_it_fails()
+    {
+        // The function is created: whether its body may call a procedure is checked when it runs, and it may not (557, "only
+        // functions and some extended stored procedures can be executed from within a function"). So no call of it returns.
+        string[] setup =
+        [
+            "CREATE PROCEDURE dbo.obs_log AS SELECT 1 AS one;",
+            "CREATE FUNCTION dbo.obs_logged() RETURNS @r TABLE (id int NOT NULL) AS BEGIN EXEC dbo.obs_log; INSERT @r VALUES (1); RETURN; END",
+        ];
+
+        Assert.Equal(557, (await Run(setup, "SELECT * FROM dbo.obs_logged();")).Error);
+    }
+
     private const string Echo = "CREATE FUNCTION dbo.obs_echo (@p tinyint, @s varchar(3)) RETURNS TABLE AS RETURN SELECT @p AS p, @s AS s;";
 
     [Fact]
