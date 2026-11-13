@@ -18,7 +18,7 @@ internal sealed partial class ProcedureAnalyzer
     /// The JSON a document argument holds when it was built here: live JSON its shape, JSON text its content, a literal that is a
     /// JSON document its parsed shape; and why it may be NULL. Null when not known (data, or unknown).
     /// </summary>
-    private (Shape Shape, EquatableArray<IrNullReason> NullableBecause)? DocumentOf(ScalarExpression document, BindingScope scope)
+    private (Shape Shape, EquatableArray<IrNullReason> NullableBecause)? DocumentOf(ScalarExpression document, ReadScope scope)
     {
         if (LiteralOf(document) is ({ } literal and StringLiteral, false))
             return JsonLiterals.Parse(literal.Value, literal is StringLiteral { IsNational: true }, At(literal)) is var parsed and not UnknownShape ? (parsed, []) : null;
@@ -253,7 +253,7 @@ internal sealed partial class ProcedureAnalyzer
     /// JSON null and converts without failing (<see cref="Converted"/>); under a <c>strict</c> path a missing value is an error,
     /// not a NULL (observed). An AS JSON column holds the object or array there, live, and NULL for anything else.
     /// </summary>
-    private List<Value>? TracedOpenJson(OpenJsonTableReference reference, BindingScope scope, SourceLocation at)
+    private List<Value>? TracedOpenJson(OpenJsonTableReference reference, ReadScope scope, SourceLocation at)
     {
         if (DocumentOf(reference.Variable, scope) is not ({ } document, _))
             return null;
@@ -414,7 +414,7 @@ internal sealed partial class ProcedureAnalyzer
     /// else an error); a string keeps its length bound and value set, and true or false is <c>'true'</c> or <c>'false'</c>
     /// (observed: Json_value_over_json_built_here_gives_its_scalars_as_text). Null when the document or path is not read.
     /// </summary>
-    private Value? TracedJsonValue(FunctionCall call, BindingScope scope)
+    private Value? TracedJsonValue(FunctionCall call, ReadScope scope)
     {
         if (call.Parameters.Count != 2 || LiteralOf(call.Parameters[1]) is not ({ } literal and StringLiteral, false) || ParsePath(literal.Value) is not { } path)
             return null;

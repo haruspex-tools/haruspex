@@ -63,7 +63,7 @@ them gives: calls ("Calls" below), what filters and single-row queries prove ("R
 `VALUES` lists and views ("APPLY", "Views"), expressions ("Expressions", "CASE, IIF, CHOOSE and NULLIF", "Built-in
 functions", "Window functions"), table-valued functions, set operations and the other joins, `OPENJSON`, and JSON built in
 the project and traced to where it is read. The walk is `ProcedureAnalyzer.Flow.cs`, with `FlowState.cs` (the state and
-its join), `FlowLocals.cs` (what the binder sees) and `Lattice/` (the knowledge join of values, one lattice per fact, composed in `Value.Join`). Every engine rule it leans on is
+its join), `ReadScope.cs` (what each source a query binds holds, and the state it is read in) and `Lattice/` (the knowledge join of values, one lattice per fact, composed in `Value.Join`). Every engine rule it leans on is
 observed on SQL Server 2025 RTM-CU10 and kept as a test in
 `tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs`; the test names are given below. Each later section
 names its own code and its own test class. A construct's unit tests are in the class of the same family, in
@@ -890,7 +890,7 @@ side is evaluated once for each row of its left input. Each rule is observed in 
 
 - **What the right side sees.** Its left input's sources (joins included) and the enclosing queries' columns, never a
   source listed before it with a comma (`An_applied_query_sees_its_left_input_only`, 4104). The binder gives it a scope of
-  exactly those sources (`BindingScope.Lateral`), the same objects, so facts about them stay keyed to them; a derived table
+  exactly those sources, the same objects, so facts about them stay keyed to them; a derived table
   nested inside the right side sees them too.
 - **Rows.** `CROSS APPLY` keeps only outer rows with a right-side row; `OUTER APPLY` keeps every outer row and null-extends
   the ones without (`Cross_apply_keeps_only_outer_rows_with_a_right_row_and_outer_apply_fills_the_others_with_null`). So
@@ -903,7 +903,7 @@ side is evaluated once for each row of its left input. Each rule is observed in 
   rows; so under either APPLY their columns keep their own nullability, and `CROSS APPLY` removes no outer row. Which queries
   are one row is the cardinality of "How many rows" above (`Cardinality.cs`): a relation records its query's `LocalRelationValues.Rows` and `LocalRelationValues.AtLeastOne`
   (`LocalRelationValues`), and the null-extension is skipped only for a source that *is* the whole right side
-  (`BoundSource.WholeApplied`): one joined inside it may have a row while the side as a whole has none. With `GROUP BY` (even
+  (`OptionalSideKind.WholeApplied`): one joined inside it may have a row while the side as a whole has none. With `GROUP BY` (even
   `GROUP BY ()`) or `HAVING` the right side may have no row (`A_grouped_aggregate_applied_gives_no_row_for_an_outer_row_without_rows`).
 - **Filters.** The applied query's `WHERE` is its own: its facts are pushed only while its select list is read (as for any
   subquery), so they refine its own columns and never the outer columns read outside it. Inside it, an outer column read in

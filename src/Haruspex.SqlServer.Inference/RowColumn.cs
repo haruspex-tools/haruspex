@@ -13,4 +13,4 @@ namespace Haruspex.SqlServer.Inference;
 /// The select-list expression it was read from, when there is one: a set operation types an integer literal by its digits
 /// and makes a closed set of literals.
 /// </param>
-internal sealed record RowColumn(string? Name, Value Value, SourceLocation At, BoundColumn? Origin = null, ScalarExpression? Expression = null);
+internal sealed record RowColumn(string? Name, Value Value, SourceLocation At, TableColumn? Origin = null, ScalarExpression? Expression = null);

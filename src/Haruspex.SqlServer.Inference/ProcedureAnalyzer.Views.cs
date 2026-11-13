@@ -11,19 +11,83 @@ namespace Haruspex.SqlServer.Inference;
 // observations they rest on (ApplyViewObservationTests in the differential tests).
 internal sealed partial class ProcedureAnalyzer
 {
-    /// <summary>Whether <c>SELECT *</c> is expanded: only in a view, whose star SQL Server binds when it creates it.</summary>
-    private bool expandStars;
+    // ---- what the relations a query reads hold ------------------------------------------------------------------------
 
-    /// <summary>The body's relations, with derived tables, VALUES lists and views read here.</summary>
-    private FlowLocals Locals(IReadOnlyDictionary<string, LocalRelationValues> tableVariables) => new(tableVariables)
+    /// <summary>
+    /// A query's scope with what each of its sources' relations holds attached, in the order the sources are written, so that
+    /// an APPLY's right side reads its left input's as they are attached. Binding said which relation each source reads; this
+    /// reads it.
+    /// </summary>
+    private ReadScope Attach(ReadScope scope)
     {
-        ReadDerived = Derived,
-        ReadValues = ValuesList,
-        ReadView = views is null ? null : (view, hinted) => views.Read(view, hinted || ReadUncommitted),
-        ReadFunction = views is null ? null : TableFunction,
-        ReadOpenJson = OpenJsonRelation,
-        ReadGenerateSeries = GenerateSeries,
+        foreach (var source in scope.Bound.Sources)
+        {
+            if (source.Target is RelationTarget { Relation: var relation })
+                scope = scope.Attached(source, Holding(relation, source.Uncommitted, scope));
+        }
+
+        return scope;
+    }
+
+    /// <summary>
+    /// The scope of a statement's query, a specification read as the statement's own (not as a subquery), with what its
+    /// relations hold attached.
+    /// </summary>
+    private ReadScope Enter(QuerySpecification query, ReadScope at) =>
+        Attach(at.In(((BoundSpecification)binder.Bind(query, null, at.Names)).Scope));
+
+    /// <summary>What a relation holds where it is read in <paramref name="scope"/>.</summary>
+    /// <param name="relation">The relation.</param>
+    /// <param name="hinted">Whether it is read with a NOLOCK or READUNCOMMITTED hint, which a view passes to every table under it.</param>
+    /// <param name="scope">The scope it is read in.</param>
+    private LocalRelationValues Holding(RelationSymbol relation, bool hinted, ReadScope scope) => relation switch
+    {
+        CommonTable or PseudoTable => scope.Named.TryGetValue(relation, out var named)
+            ? named
+            : throw new InvalidOperationException($"{relation.Name} is bound, but nothing it holds was attached."),
+        DerivedTable derived => Derived(derived, scope),
+        ValuesTable values => ValuesList(values, scope.In(values.Rows)),
+        ViewRelation { View: var view } => views is null
+            ? LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnresolvedTable, $"{view.Name} is a view, which is not modelled here.", view.Span.Start))
+            : views.Read(view, hinted || ReadUncommitted(scope)),
+        TableFunctionCall call => views is null
+            ? LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(call.Syntax)}: a table-valued function is not modelled here.", At(call.Syntax)))
+            : TableFunction(call, scope.In(call.Arguments)),
+        OpenJsonCall openJson => OpenJsonRelation(openJson, scope.In(openJson.Arguments)),
+        SeriesCall series => GenerateSeries(series, scope.In(series.Arguments)),
+        TemporaryTable temporary => Temporary(temporary.Name, scope.State),
+        TableVariable variable => AsWritten(variable.Name, tableVariables[variable.Name], scope.State),
+        _ => throw new InvalidOperationException($"{relation.GetType().Name} is a relation this switch does not list."),
     };
+
+    /// <summary>What a temporary table holds in <paramref name="state"/>, or why it is not known there.</summary>
+    private static LocalRelationValues Temporary(string name, FlowState state)
+    {
+        // A global temporary table (##t) is shared with every session, which may change it at any time.
+        if (name.StartsWith("##", StringComparison.Ordinal))
+            return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnsupportedSource, $"{name} is a global temporary table, which any session may change.", Nowhere));
+
+        return state.Temp(name) switch
+        {
+            KnownTable known => new LocalRelationValues([.. known.Columns.Select(c => c.Name)], [.. known.Columns.Select(c => c.Read)], null),
+            UnknownTable unknown => LocalRelationValues.Unknown(unknown.Why),
+            AbsentTable absent => LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{name} was dropped at {absent.At}, so it is not there to read.", absent.At)),
+            _ => LocalRelationValues.Unknown(new UnknownShape(
+                IrUnknownReason.CallerTempTable,
+                $"{name} is not created by the procedure before this, so it is the caller's, whose shape depends on who calls.",
+                Nowhere)),
+        };
+    }
+
+    /// <summary>A table variable's columns as they stand in <paramref name="state"/>: each declared, holding the JSON written to it.</summary>
+    private static LocalRelationValues AsWritten(string name, LocalRelationValues declared, FlowState state) =>
+        declared.Names is null ? declared : declared with
+        {
+            Values = [.. declared.Names.Select((c, i) => state.Json.TryGetValue($"{name}.{c}", out var slot) ? slot.Read(declared.Values![i]) : declared.Values![i])],
+        };
+
+    /// <summary>A placeholder location for an unknown that has none of its own; each read reports its own location instead.</summary>
+    private static readonly Diagnostics.SourceLocation Nowhere = new("", 0, 0);
 
     /// <summary>
     /// Whether a source on an OUTER APPLY's right side is never null-extended: when it is the whole right side and always
@@ -32,8 +96,8 @@ internal sealed partial class ProcedureAnalyzer
     /// A_values_list_gives_one_row_for_each_of_its_rows_for_every_outer_row). A relation joined inside the right side is
     /// not enough: the join may still leave the side without a row.
     /// </summary>
-    private bool AlwaysApplied(BoundLocalColumn bound) =>
-        bound.Source.WholeApplied && locals!.Values(bound.Relation).AtLeastOne;
+    private static bool AlwaysApplied(BoundSource source, ReadScope scope) =>
+        source.Optional?.Kind == OptionalSideKind.WholeApplied && scope.Of(source).AtLeastOne;
 
     // ---- VALUES ---------------------------------------------------------------------------------------------------------
 
@@ -46,10 +110,13 @@ internal sealed partial class ProcedureAnalyzer
     /// is one row, or when every row is a string literal (<see cref="Literals"/>), whose common type is known. JSON passes
     /// through as JSON (observed: Json_passes_through_a_values_list_as_json).
     /// </summary>
-    private LocalRelationValues ValuesList(InlineDerivedTable table, BindingScope? outer)
+    /// <param name="symbol">The list, bound.</param>
+    /// <param name="scope">The scope its rows are read in: no FROM of their own, an enclosing query's or an APPLY's left input's beyond.</param>
+    private LocalRelationValues ValuesList(ValuesTable symbol, ReadScope scope)
     {
+        var table = symbol.Syntax;
         var at = At(table);
-        var name = table.Alias?.Value ?? "(VALUES)";
+        var name = symbol.Name.Length > 0 ? symbol.Name : "(VALUES)";
         LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{name}: {detail}", at));
 
         // SQL Server requires a name for every column (8155) and the same number of values in every row (10709).
@@ -60,7 +127,6 @@ internal sealed partial class ProcedureAnalyzer
             return Fails("its column names are not distinct.");
 
         // Its rows are read with no FROM of their own: an enclosing query's columns, or an APPLY's left input's.
-        var scope = binder.BindFrom(new QuerySpecification(), outer, outer is null ? locals : null);
         var rows = table.RowValues.Select(r => r.ColumnValues.Select(v => Expression(v, scope)).ToList()).ToList();
         var values = new List<Value>();
         for (var i = 0; i < names.Count; i++)
@@ -136,28 +202,29 @@ internal sealed partial class ProcedureAnalyzer
         ArgumentNullException.ThrowIfNull(view);
         if (view.Redefinition is not null)
             throw new ArgumentException("The view has no single definition.", nameof(view));
-        expandStars = true;
-        locals = Locals(new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase));
         var at = view.Span.Start;
         LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{view.Name}: {detail}", at));
 
+        // Its stars are expanded, as SQL Server bound them when it created the view.
         var select = view.Query;
         return WithCtes(
             select.WithCtesAndXmlNamespaces,
-            () =>
+            ReadScope.Statement(NameEnvironment.View, FlowState.Start([])),
+            scope =>
             {
                 if (select.QueryExpression is not { } query || ForOf(query) is not null)
                     return Fails("a view whose query is FOR XML or FOR JSON is not modelled yet.");
-                var row = Query(query, parent: null);
-                return Relation(view.Columns, row) is { } relation
-                    ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One, Keys = Keys(query, row) }
+                var bound = binder.Bind(query, null, scope.Names);
+                var row = Query(bound, scope);
+                return Holds(bound.Listed(view.Columns), row) is { } relation
+                    ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One, Keys = Keys(query, row, scope) }
                     : Fails("its columns cannot be listed: a SELECT * over a source whose columns are not known, or over a table whose * differs from its columns (hidden or graph columns), or a column without a name of its own.");
             },
             LocalRelationValues.Unknown);
     }
 
     /// <summary>A set operation keeps no key (UNION ALL repeats one); a query specification's are <see cref="ViewKeys"/>.</summary>
-    private EquatableArray<RelationKey> Keys(QueryExpression query, Row row) => query is QuerySpecification specification ? [.. ViewKeys(specification, row)] : [];
+    private EquatableArray<RelationKey> Keys(QueryExpression query, Row row, ReadScope scope) => query is QuerySpecification specification ? [.. ViewKeys(specification, row, scope)] : [];
 
     /// <summary>
     /// The keys a view has: those of its one table that it selects whole, unchanged. A view that reads one table, without a
@@ -167,10 +234,13 @@ internal sealed partial class ProcedureAnalyzer
     /// its kind add rows that would share it; a join is left out, though one that matches at most one row keeps the other
     /// side's keys, because proving that needs the joined side's key fixed by the ON, and views rarely need it.
     /// </summary>
-    private List<RelationKey> ViewKeys(QuerySpecification query, Row row)
+    private List<RelationKey> ViewKeys(QuerySpecification query, Row row, ReadScope scope)
     {
-        if (ReadUncommitted || query.GroupByClause is not null || row.Sources is not [{ Table: { } table, OptionalSideOf: null, History: false, Uncommitted: false } source])
+        if (ReadUncommitted(scope) || query.GroupByClause is not null
+            || row.Sources is not [{ Target: TableTarget { Table: var table }, Optional: null, History: false, Uncommitted: false } source])
+        {
             return [];
+        }
 
         var keys = new List<RelationKey>();
         foreach (var key in SchemaRules.EnforcedKeys(table))
@@ -197,47 +267,19 @@ internal sealed partial class ProcedureAnalyzer
     // ---- SELECT * ---------------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// The columns <c>*</c> or <c>alias.*</c> stands for: each source's columns in order, a table's as declared, a relation's
-    /// as it names them. Null when one of them is not known, or a table's <c>*</c> differs from its declared columns: a hidden
-    /// period column is left out of it, and a graph table adds pseudo-columns.
+    /// The columns <c>*</c> or <c>alias.*</c> stands for, as binding lists them (<see cref="Binder.Star"/>), each read as a
+    /// column reference to it would be. Null when binding can't list them.
     /// </summary>
-    private List<RowColumn>? Expand(SelectStarExpression star, BindingScope scope)
+    private List<RowColumn>? Expand(SelectStarExpression star, ReadScope scope)
     {
         var at = At(star);
-        var sources = scope.Sources;
-        if (star.Qualifier is { } qualifier)
-        {
-            if (qualifier.Identifiers.Count != 1)
-                return null;
-            sources = [.. scope.Sources.Where(s => qualifier.Identifiers[0].Value.Equals(s.Alias, StringComparison.OrdinalIgnoreCase))];
-            if (sources.Count != 1)
-                return null;
-        }
-
-        var columns = new List<RowColumn>();
-        foreach (var source in sources)
-        {
-            if (source.Table is { } table)
+        return Binder.Star(star, scope.Bound) is { } columns
+            ? [.. columns.Select(c => c.Column switch
             {
-                if (table.IsGraph || table.Columns.Any(c => c.IsHidden))
-                    return null;
-                foreach (var column in table.Columns)
-                {
-                    var bound = new BoundColumn(source, table, column);
-                    columns.Add(new RowColumn(column.Name, FromColumn(bound), at, bound));
-                }
-            }
-            else if (source.Local is { Columns: { } names } local)
-            {
-                for (var i = 0; i < names.Count; i++)
-                    columns.Add(new RowColumn(names[i], FromLocal(new BoundLocalColumn(source, local, i), at), at));
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        return columns;
+                TableColumn table => new RowColumn(c.Name, FromColumn(table), at, table),
+                RelationColumn relation => new RowColumn(c.Name, FromLocal(relation.Source, relation.Ordinal, scope, at), at),
+                _ => throw new InvalidOperationException($"A star stands for a {c.Column.GetType().Name}, which is not a column."),
+            })]
+            : null;
     }
 }

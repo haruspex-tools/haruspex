@@ -13,7 +13,11 @@ namespace Haruspex.Tests.Inference;
 /// </summary>
 public class FactsTests
 {
-    private static readonly BoundSource Lines = new("l", null, null, new SourceLocation("p.sql", 4, 1));
+    private static readonly BoundSource Lines = new(
+        "l",
+        new UnresolvedTarget(new BindingProblem(BindingProblemKind.UnsupportedSource, "Not bound in this test.", new SourceLocation("p.sql", 4, 1))),
+        new OptionalSide(new SourceLocation("p.sql", 4, 1), OptionalSideKind.OuterJoin),
+        new NamedTableReference());
 
     [Fact]
     public void Extending_the_facts_leaves_the_ones_before_as_they_were()

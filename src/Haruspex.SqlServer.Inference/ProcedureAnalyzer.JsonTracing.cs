@@ -79,7 +79,7 @@ internal sealed partial class ProcedureAnalyzer
         var names = table.Columns.Select(c => c.Name).ToList();
         var targets = listed.Count == 0
             ? [.. Enumerable.Range(0, names.Count).Where(i => !table.Columns[i].IsIdentity)]
-            : listed.Select(c => names.FindIndex(n => n.Equals(c.MultiPartIdentifier.Identifiers[^1].Value, StringComparison.OrdinalIgnoreCase))).ToList();
+            : Binder.Written(listed, names).ToList();
         return targets.Any(i => i < 0) ? null : targets;
     }
 
@@ -87,7 +87,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <param name="how">How the statement writes it, when its values are not read.</param>
     private FlowState TableVariableWritten(FlowState state, string name, List<int>? targets, IReadOnlyList<IReadOnlyList<Value>>? rows, IReadOnlyList<IReadOnlyList<ScalarExpression?>>? expressions, SourceLocation at, string how = "by a statement whose values are not read")
     {
-        if (locals!.TableVariableColumns(name) is not { } columns)
+        if (names.TableVariable(name)?.Columns is not { } columns)
             return state;
         foreach (var (position, key) in TracedColumns(state, name, columns).ToList())
         {
@@ -104,12 +104,12 @@ internal sealed partial class ProcedureAnalyzer
     {
         var spec = insert.InsertSpecification;
         var at = At(insert);
-        if (locals!.TableVariableColumns(name) is not { } columns || !TracedColumns(state, name, columns).Any())
+        if (names.TableVariable(name)?.Columns is not { } columns || !TracedColumns(state, name, columns).Any())
             return state;
         var targets = spec.InsertSource is ValuesInsertSource { IsDefaultValues: true } ? [] : TableVariableTargets(name, spec.Columns);
         if (targets is null)
             return TableVariableWritten(state, name, null, null, null, at);
-        var rows = WithCtes(insert.WithCtesAndXmlNamespaces, () => InsertedRows(spec.InsertSource, targets.Count, at), why => [[.. targets.Select(_ => Value.Unknown(why))]]);
+        var rows = WithCtes(insert.WithCtesAndXmlNamespaces, Reading(state), scope => InsertedRows(spec.InsertSource, targets.Count, at, scope), why => [[.. targets.Select(_ => Value.Unknown(why))]]);
         return TableVariableWritten(state, name, targets, rows, rows is null ? null : InsertedExpressions(spec.InsertSource, rows.Count), at);
     }
 
@@ -147,7 +147,7 @@ internal sealed partial class ProcedureAnalyzer
     /// literal that is not, an unknown saying why (it is an error, 13609, observed); anything else its value, a CASE, IIF,
     /// CHOOSE or COALESCE read as JSON (<see cref="jsonQueryArgument"/>).
     /// </summary>
-    private Value JsonQueryArgument(ScalarExpression argument, BindingScope scope)
+    private Value JsonQueryArgument(ScalarExpression argument, ReadScope scope)
     {
         if (LiteralOf(argument) is ({ } literal and StringLiteral, false))
         {

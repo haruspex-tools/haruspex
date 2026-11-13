@@ -16,9 +16,13 @@ internal sealed partial class ProcedureAnalyzer
     /// Whether the statement being read may read uncommitted: by the procedure's isolation level (FlowState), or because the
     /// view or function body being read is read so where it is used.
     /// </summary>
-    private bool ReadUncommitted => BodyReadUncommitted || locals?.State.ReadUncommitted == true;
+    /// <summary>
+    /// Whether the statement being read may read uncommitted rows: the whole body is read so where it is used, or the
+    /// isolation level was set to READ UNCOMMITTED on the path to it.
+    /// </summary>
+    private bool ReadUncommitted(ReadScope scope) => BodyReadUncommitted || scope.State.ReadUncommitted;
 
-    private IrCardinality Cardinality(QuerySpecification query, BindingScope scope)
+    private IrCardinality Cardinality(QuerySpecification query, ReadScope scope)
     {
         IrCardinality rows;
         if (query.GroupByClause is null && (query.HavingClause is not null || HasAggregate(query, scope)))
@@ -86,7 +90,7 @@ internal sealed partial class ProcedureAnalyzer
     /// counts only when every column its arguments read is of this query's own sources; an argument that reads none is not
     /// counted, which only claims less. A subquery's aggregates are its own.
     /// </summary>
-    private bool HasAggregate(QuerySpecification query, BindingScope scope)
+    private bool HasAggregate(QuerySpecification query, ReadScope scope)
     {
         var finder = new AggregateFinder();
         foreach (var element in query.SelectElements.OfType<SelectScalarExpression>())
@@ -98,10 +102,10 @@ internal sealed partial class ProcedureAnalyzer
             var columns = new ColumnFinder();
             foreach (var parameter in call.Parameters)
                 parameter.Accept(columns);
-            return columns.Found.Count > 0 && columns.Found.All(c => binder.BindColumn(c, scope) switch
+            return columns.Found.Count > 0 && columns.Found.All(c => binder.Resolve(c, scope.Bound) switch
             {
-                BoundColumn b => scope.Sources.Contains(b.Source, ReferenceEqualityComparer.Instance),
-                BoundLocalColumn l => scope.Sources.Contains(l.Source, ReferenceEqualityComparer.Instance),
+                TableColumn b => scope.Bound.Sources.Contains(b.Source, ReferenceEqualityComparer.Instance),
+                RelationColumn l => scope.Bound.Sources.Contains(l.Source, ReferenceEqualityComparer.Instance),
                 _ => false,
             });
         });
@@ -153,9 +157,9 @@ internal sealed partial class ProcedureAnalyzer
     /// keyed here, and a relation of at most one row is fixed already; a CTE, temporary table or table variable source, or a
     /// derived table of more rows, makes the answer many.</para>
     /// </summary>
-    private bool Keyed(QuerySpecification query, BindingScope scope)
+    private bool Keyed(QuerySpecification query, ReadScope scope)
     {
-        if (scope.Sources.Count == 0)
+        if (scope.Bound.Sources.Count == 0)
             return false;
 
         // A FULL JOIN is never bounded by its sides: two sides of one row each that do not match give two rows, and a key
@@ -171,9 +175,9 @@ internal sealed partial class ProcedureAnalyzer
         // table, table variable, CTE or unresolved source makes the answer many.
         var fixedSources = new HashSet<BoundSource>(ReferenceEqualityComparer.Instance);
         var keys = new Dictionary<BoundSource, List<List<KeyColumn>>>(ReferenceEqualityComparer.Instance);
-        foreach (var source in scope.Sources)
+        foreach (var source in scope.Bound.Sources)
         {
-            if (source.History || source.Uncommitted || ReadUncommitted)
+            if (source.History || source.Uncommitted || ReadUncommitted(scope))
             {
                 // Read uncommitted (a NOLOCK or READUNCOMMITTED hint, or the procedure's isolation level), a scan can return a
                 // row twice, so no key holds either; the same rule as history.
@@ -182,17 +186,17 @@ internal sealed partial class ProcedureAnalyzer
                 // WHERE fixes, which the history repeats (FOR SYSTEM_TIME on a view applies to every temporal table under
                 // it), so it bounds nothing here. TOP (1) would still bound it, but the cardinality does not say why.
                 keys[source] = [];
-                if (source.Local is { } historic && locals?.Values(historic) is { Why: null, Rows: IrCardinality.One })
+                if (source.Target is RelationTarget && scope.Of(source) is { Why: null, Rows: IrCardinality.One })
                     fixedSources.Add(source);
-                else if (source.Table is null && source.Local is null)
+                else if (source.Target is UnresolvedTarget)
                     return false;
             }
-            else if (source.Table is { } table)
+            else if (source.Target is TableTarget { Table: var table })
             {
                 keys[source] = [.. SchemaRules.EnforcedKeys(table).Select(k => k.Columns
                     .Select(c => new KeyColumn(c, -1, SchemaRules.ResolveType(model, table.Column(c)?.Type)?.Type)).ToList())];
             }
-            else if (source.Local is { } local && locals?.Values(local) is { Why: null } values)
+            else if (source.Target is RelationTarget && scope.Of(source) is { Why: null } values)
             {
                 if (values.Rows != IrCardinality.Many)
                     fixedSources.Add(source);
@@ -214,7 +218,7 @@ internal sealed partial class ProcedureAnalyzer
         do
         {
             progress = false;
-            foreach (var source in scope.Sources.Where(s => !fixedSources.Contains(s)))
+            foreach (var source in scope.Bound.Sources.Where(s => !fixedSources.Contains(s)))
             {
                 if (keys[source].Any(key => key.All(column => conditions.Any(c => Fixes(c, source, column, scope, fixedSources)))))
                 {
@@ -225,7 +229,7 @@ internal sealed partial class ProcedureAnalyzer
         }
         while (progress);
 
-        return fixedSources.Count == scope.Sources.Count;
+        return fixedSources.Count == scope.Bound.Sources.Count;
     }
 
     private static bool HasFullJoin(TableReference reference) => reference switch
@@ -240,7 +244,7 @@ internal sealed partial class ProcedureAnalyzer
     /// Whether a FROM clause is only cross joins (or commas) of relations of exactly one row each, which is one row (observed:
     /// A_cross_join_of_two_one_row_queries_is_one_row_and_with_an_empty_side_none). An inner join's ON or an APPLY may drop it.
     /// </summary>
-    private bool AllOneRow(QuerySpecification query, BindingScope scope)
+    private static bool AllOneRow(QuerySpecification query, ReadScope scope)
     {
         static bool Crossed(TableReference reference) => reference switch
         {
@@ -252,11 +256,11 @@ internal sealed partial class ProcedureAnalyzer
 
         return query.FromClause is { TableReferences: var references }
             && references.All(Crossed)
-            && scope.Sources.Count > 0
-            && scope.Sources.All(s => s.Local is { } local && locals?.Values(local) is { Why: null, Rows: IrCardinality.One, AtLeastOne: true });
+            && scope.Bound.Sources.Count > 0
+            && scope.Bound.Sources.All(s => s.Target is RelationTarget && scope.Of(s) is { Why: null, Rows: IrCardinality.One, AtLeastOne: true });
     }
 
-    private static void JoinConditions(TableReference reference, BindingScope scope, List<Fixing> into)
+    private static void JoinConditions(TableReference reference, ReadScope scope, List<Fixing> into)
     {
         switch (reference)
         {
@@ -298,7 +302,7 @@ internal sealed partial class ProcedureAnalyzer
     };
 
     /// <summary>Whether a condition fixes this column of this source, given the sources already fixed.</summary>
-    private bool Fixes(Fixing fixing, BoundSource source, KeyColumn column, BindingScope scope, HashSet<BoundSource> fixedSources)
+    private bool Fixes(Fixing fixing, BoundSource source, KeyColumn column, ReadScope scope, HashSet<BoundSource> fixedSources)
     {
         if (fixing.Within is { } within && !within.Contains(source))
             return false;
@@ -306,10 +310,10 @@ internal sealed partial class ProcedureAnalyzer
         // A view's key column is its table's, unchanged (ViewKeys), so it compares in that column's type and collation.
         bool IsKeyColumn(ScalarExpression e) =>
             Strip(e) is ColumnReferenceExpression { Collation: null } reference
-            && binder.BindColumn(reference, scope) switch
+            && binder.Resolve(reference, scope.Bound) switch
             {
-                BoundColumn bound => ReferenceEquals(bound.Source, source) && column.Name is { } name && bound.Column.Name.Equals(name, StringComparison.OrdinalIgnoreCase),
-                BoundLocalColumn local => ReferenceEquals(local.Source, source) && column.Name is null && local.Ordinal == column.Ordinal,
+                TableColumn bound => ReferenceEquals(bound.Source, source) && column.Name is { } name && bound.Column.Name.Equals(name, StringComparison.OrdinalIgnoreCase),
+                RelationColumn local => ReferenceEquals(local.Source, source) && column.Name is null && local.Ordinal == column.Ordinal,
                 _ => false,
             };
 
@@ -341,7 +345,7 @@ internal sealed partial class ProcedureAnalyzer
     /// The built-in type of a value that is the same for every row of the query, with no COLLATE of its own; null when it
     /// is not such a value, or its type is not known. A null literal is <see cref="KeyValue.Null"/>: it matches no row.
     /// </summary>
-    private KeyValue? ValueType(ScalarExpression value, BoundSource keySource, BindingScope scope, HashSet<BoundSource> fixedSources)
+    private KeyValue? ValueType(ScalarExpression value, BoundSource keySource, ReadScope scope, HashSet<BoundSource> fixedSources)
     {
         return value switch
         {
@@ -353,12 +357,12 @@ internal sealed partial class ProcedureAnalyzer
             VariableReference variable => variableTypes.TryGetValue(variable.Name, out var declared)
                 ? KeyValue.Of(SchemaRules.ResolveType(model, declared)?.Type)
                 : null,
-            ColumnReferenceExpression reference => binder.BindColumn(reference, scope) switch
+            ColumnReferenceExpression reference => binder.Resolve(reference, scope.Bound) switch
             {
                 // A column of an enclosing query is one value while this query runs; one of this query is, once its
                 // source is fixed. Never the key's own source: t.id = t.n fixes nothing.
-                BoundColumn bound when !ReferenceEquals(bound.Source, keySource)
-                    && (!scope.Sources.Contains(bound.Source, ReferenceEqualityComparer.Instance) || fixedSources.Contains(bound.Source))
+                TableColumn bound when !ReferenceEquals(bound.Source, keySource)
+                    && (!scope.Bound.Sources.Contains(bound.Source, ReferenceEqualityComparer.Instance) || fixedSources.Contains(bound.Source))
                     => KeyValue.Of(SchemaRules.ResolveType(model, bound.Column.Type)?.Type),
                 _ => null,
             },

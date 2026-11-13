@@ -36,7 +36,7 @@ internal sealed partial class ProcedureAnalyzer
 
     private static FunctionTyping Typing(
         BuiltInFunction function, (int, int?)? arity, string rule, IrNullRule[] nulls, string[] observedIn,
-        Func<ProcedureAnalyzer, ScalarExpression, BindingScope, Value>? type, bool readsOnlyItsArguments = true, OtherForms otherForms = OtherForms.FormNotModelled) =>
+        Func<ProcedureAnalyzer, ScalarExpression, ReadScope, Value>? type, bool readsOnlyItsArguments = true, OtherForms otherForms = OtherForms.FormNotModelled) =>
         new(function, arity, otherForms, rule, nulls, observedIn, readsOnlyItsArguments, type);
 
     private static FunctionCall Call(ScalarExpression call) => (FunctionCall)call;
@@ -44,7 +44,7 @@ internal sealed partial class ProcedureAnalyzer
     private static FunctionTyping WindowRow(BuiltInFunction function, (int, int?) arity, string rule, IrNullRule[] nulls, string[] observedIn, WindowRule window) =>
         Typing(function, arity, rule, nulls, observedIn, (a, e, s) => a.Window(Call(e), s, function, window), readsOnlyItsArguments: false, OtherForms.WindowNotModelled);
 
-    private static FunctionTyping AggregateRow(BuiltInFunction function, (int, int?)? arity, string rule, IrNullRule[] nulls, string[] observedIn, Func<ProcedureAnalyzer, ScalarExpression, BindingScope, Value> type) =>
+    private static FunctionTyping AggregateRow(BuiltInFunction function, (int, int?)? arity, string rule, IrNullRule[] nulls, string[] observedIn, Func<ProcedureAnalyzer, ScalarExpression, ReadScope, Value> type) =>
         Typing(function, arity, rule, nulls, observedIn, type, readsOnlyItsArguments: true, OtherForms.AggregateNotModelled);
 
     /// <summary>Every row, one for each function of the catalogue.</summary>
@@ -202,7 +202,7 @@ internal sealed partial class ProcedureAnalyzer
     /// what the row says of other forms. Null when the expression calls no function the table holds; a call with OVER of one it
     /// lacks is a window function not modelled.
     /// </summary>
-    private Value? Function(ScalarExpression expression, BindingScope scope)
+    private Value? Function(ScalarExpression expression, ReadScope scope)
     {
         if (TypingOf(expression) is not { Type: { } type } typing)
         {

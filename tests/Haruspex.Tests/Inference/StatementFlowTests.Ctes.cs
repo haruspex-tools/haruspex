@@ -26,6 +26,20 @@ public partial class StatementFlowTests
     }
 
     [Fact]
+    public void A_column_a_cte_lacks_is_the_enclosing_query_s_even_when_the_ctes_rows_are_not_read()
+    {
+        // Two anchors are not modelled, so c's rows are unknown; but binding knows its one column, n, so code is t's, as
+        // SQL Server binds it (observed: An_unqualified_column_a_cte_lacks_is_the_enclosing_query_s_whatever_the_cte_is).
+        var doc = Procedure("""
+            WITH c AS (SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT c.n + 1 FROM c WHERE c.n < 5)
+            SELECT t.id, (SELECT TOP (1) code FROM c) AS outer_code FROM dbo.t AS t;
+            """);
+
+        Assert.Equal("int", Scalar(Field(doc, "outer_code")).Sql);
+        Assert.Equal(IrNullRule.EmptySubquery, Assert.Single(Field(doc, "outer_code").NullableBecause).Rule);
+    }
+
+    [Fact]
     public void A_cte_may_read_an_earlier_one_in_the_same_with()
     {
         var doc = Procedure("""

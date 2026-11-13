@@ -109,6 +109,17 @@ public sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadOnl
         }
     }
 
+    /// <summary>
+    /// The body's own table a reference names directly as a table, as written: <c>#t</c> (not a global <c>##t</c>) or
+    /// <c>@t</c>, a name of one part; null for any other. <c>OUTPUT … INTO</c> names its table so.
+    /// </summary>
+    /// <param name="target">The reference.</param>
+    public static string? Local(TableReference target) =>
+        target is NamedTableReference { SchemaObject: { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null, BaseIdentifier.Value: var name } }
+            && (name.StartsWith('@') || (name.StartsWith('#') && !name.StartsWith("##", StringComparison.Ordinal)))
+            ? name
+            : null;
+
     /// <summary>The name a source's columns are qualified by: its alias, or its own name without one.</summary>
     public static string? Alias(TableReferenceWithAlias source) =>
         source is null ? throw new ArgumentNullException(nameof(source)) :

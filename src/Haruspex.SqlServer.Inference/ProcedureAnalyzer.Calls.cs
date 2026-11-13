@@ -101,7 +101,7 @@ internal sealed partial class ProcedureAnalyzer
 
         var targets = spec.Columns.Count == 0
             ? [.. Enumerable.Range(0, table.Columns.Count).Where(i => table.Columns[i].Identity != true)]
-            : spec.Columns.Select(c => IndexOf(table, c.MultiPartIdentifier.Identifiers[^1].Value)).ToList();
+            : Binder.Written(spec.Columns, [.. table.Columns.Select(c => c.Name)]).ToList();
         if (targets.Any(i => i < 0))
             return Continue(after.WithTemp(target, Unknown(target, Unsupported(IrUnknownReason.UnresolvedColumn, "The insert names a column the table does not have.", at))));
 

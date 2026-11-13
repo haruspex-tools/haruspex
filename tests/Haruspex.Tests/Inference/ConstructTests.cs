@@ -186,6 +186,17 @@ public class ConstructTests
         Assert.Contains("ambiguous", unknown.Detail, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("SELECT t.nope AS c FROM dbo.t AS t;")]
+    [InlineData("SELECT nope AS c FROM dbo.t AS t;")]
+    [InlineData("WITH w AS (SELECT t.id FROM dbo.t AS t) SELECT w.nope AS c FROM w;")]
+    public void A_column_no_source_has_is_unknown(string body) =>
+        AssertUnknown(Procedure(body), "results[0][].c", IrUnknownReason.UnresolvedColumn);
+
+    [Fact]
+    public void A_column_reference_of_three_parts_is_unknown() =>
+        AssertUnknown(Procedure("SELECT dbo.t.id AS c FROM dbo.t;"), "results[0][].c", IrUnknownReason.UnsupportedExpression);
+
     [Fact]
     public void An_unqualified_column_resolves_when_only_one_table_has_it()
     {

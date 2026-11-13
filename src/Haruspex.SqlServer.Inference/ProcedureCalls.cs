@@ -293,8 +293,8 @@ internal sealed class ProcedureCalls(DatabaseModel model, FunctionSummaries func
 
         private void Add(TableReference target)
         {
-            if (target is NamedTableReference named)
-                Add(named.SchemaObject);
+            foreach (var name in DmlTarget.NamesRead(target))
+                Add(name);
         }
 
         private void Add(SchemaObjectName name)

@@ -71,12 +71,16 @@ internal sealed class FunctionSummaries
     /// recursive function is not read there: it gives its declared type only, so that its named node (<see cref="Nodes"/>,
     /// which the IR's type table holds once) comes from the committed reading alone. That only claims less.
     /// </summary>
-    public FunctionSummaries Uncommitted => uncommitted ? this : field ??= new FunctionSummaries(model, uncommitted: true) { Views = Views };
+    public FunctionSummaries Uncommitted => uncommitted ? this : field ??= new FunctionSummaries(model, uncommitted: true, Bindings) { Views = Views };
 
-    public FunctionSummaries(DatabaseModel model, bool uncommitted = false)
+    /// <summary>What every body of the model binds to, shared by every body read, so each query is bound once (<see cref="Semantics.Bindings"/>).</summary>
+    public Bindings Bindings { get; }
+
+    public FunctionSummaries(DatabaseModel model, bool uncommitted = false, Bindings? bindings = null)
     {
         this.uncommitted = uncommitted;
         this.model = model;
+        Bindings = bindings ?? new Bindings(model);
         FindComponents();
     }
 

@@ -25,7 +25,7 @@ internal sealed partial class ProcedureAnalyzer
     /// proved: each is the same value wherever it is read in the row. A subquery or a call may give another value when read
     /// again (Coalesce_reads_a_subquery_twice…), so testing one proves nothing about it.
     /// </summary>
-    private Facts.Found Branch(IReadOnlyList<BooleanExpression> failed, BooleanExpression? held, BindingScope scope)
+    private Facts.Found Branch(IReadOnlyList<BooleanExpression> failed, BooleanExpression? held, ReadScope scope)
     {
         var found = new Facts.Found(Facts.Proof.OfTheValue, current, []);
         if (held is not null)
@@ -35,7 +35,7 @@ internal sealed partial class ProcedureAnalyzer
         return found;
     }
 
-    private void Prove(BooleanExpression condition, Truth took, BindingScope scope, Facts.Found found)
+    private void Prove(BooleanExpression condition, Truth took, ReadScope scope, Facts.Found found)
     {
         bool Impossible(Func<ScalarExpression, bool> target) => (Possible(condition, target) & took) == Truth.None;
 
@@ -64,10 +64,10 @@ internal sealed partial class ProcedureAnalyzer
         }
     }
 
-    private (BoundSource Source, string Key)? Bound(ColumnReferenceExpression column, BindingScope scope) => binder.BindColumn(column, scope) switch
+    private (BoundSource Source, string Key)? Bound(ColumnReferenceExpression column, ReadScope scope) => binder.Resolve(column, scope.Bound) switch
     {
-        BoundColumn c => (c.Source, Key(c)),
-        BoundLocalColumn { Ordinal: >= 0 } l => (l.Source, Key(l)),
+        TableColumn c => (c.Source, Key(c)),
+        RelationColumn { Ordinal: >= 0 } l => (l.Source, Key(l)),
         _ => null,
     };
 
@@ -94,14 +94,14 @@ internal sealed partial class ProcedureAnalyzer
     // ---- CASE and IIF ---------------------------------------------------------------------------------------------------
 
     /// <summary>A searched CASE: each WHEN's condition, its result, and the ELSE.</summary>
-    private Value Case(SearchedCaseExpression expression, BindingScope scope) =>
+    private Value Case(SearchedCaseExpression expression, ReadScope scope) =>
         Branches(expression, [.. expression.WhenClauses.Select(w => (w.WhenExpression, w.ThenExpression))], expression.ElseExpression, scope);
 
     /// <summary>
     /// A simple CASE, <c>CASE x WHEN 1 THEN …</c>, compares with <c>=</c> (observed: WHEN NULL never matches), so each WHEN is
     /// read as <c>x = 1</c>.
     /// </summary>
-    private Value Case(SimpleCaseExpression expression, BindingScope scope) =>
+    private Value Case(SimpleCaseExpression expression, ReadScope scope) =>
         Branches(
             expression,
             [.. expression.WhenClauses.Select(w => ((BooleanExpression)new BooleanComparisonExpression
@@ -114,14 +114,14 @@ internal sealed partial class ProcedureAnalyzer
             scope);
 
     /// <summary><c>IIF(c, a, b)</c> is <c>CASE WHEN c THEN a ELSE b END</c> (observed: the same types).</summary>
-    private Value Iif(IIfCall call, BindingScope scope) =>
+    private Value Iif(IIfCall call, ReadScope scope) =>
         Branches(call, [(call.Predicate, call.ThenExpression)], call.ElseExpression, scope);
 
     /// <summary>
     /// The branches of a CASE: each read knowing what held (<see cref="Branch"/>). Its type is the precedence over its results
     /// (<see cref="Results(TSqlFragment, List{ValueTuple{ScalarExpression, Value}}, EquatableArray{IrNullReason})"/>); without ELSE it is NULL when no WHEN holds (<c>no-branch-matched</c>).
     /// </summary>
-    private Value Branches(TSqlFragment at, IReadOnlyList<(BooleanExpression When, ScalarExpression Then)> whens, ScalarExpression? otherwise, BindingScope scope)
+    private Value Branches(TSqlFragment at, IReadOnlyList<(BooleanExpression When, ScalarExpression Then)> whens, ScalarExpression? otherwise, ReadScope scope)
     {
         var results = new List<(ScalarExpression Expression, Value? Value)>();
         var failed = new List<BooleanExpression>();
@@ -246,7 +246,7 @@ internal sealed partial class ProcedureAnalyzer
     /// unless i is an integer literal in range or an integer whose bounds (a CHECK's) keep it in range. Its values are not read
     /// as branches: which one is taken is a number, not a condition.
     /// </summary>
-    private Value Choose(FunctionCall call, BindingScope scope)
+    private Value Choose(FunctionCall call, ReadScope scope)
     {
         var count = call.Parameters.Count - 1;
         var index = Expression(call.Parameters[0], scope);
@@ -281,7 +281,7 @@ internal sealed partial class ProcedureAnalyzer
     /// Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it). Over JSON it is text
     /// unless the server folds it (observed, as for CASE), which is not modelled.
     /// </summary>
-    private Value NullIf(NullIfExpression nullIf, BindingScope scope)
+    private Value NullIf(NullIfExpression nullIf, ReadScope scope)
     {
         if (Strip(nullIf.FirstExpression) is NullLiteral)
             return NotModelled(nullIf, "NULLIF of the NULL literal is an error.");
@@ -401,7 +401,7 @@ internal sealed partial class ProcedureAnalyzer
     /// holding it is never left out, which is not modelled. Over JSON text (WITHOUT_ARRAY_WRAPPER) it is text. It reads a once, so it is
     /// NULL only when b is too: b's reasons say why.
     /// </summary>
-    private Value IsNullJson(FunctionCall call, ScalarExpression a, Value first, ScalarExpression b, BindingScope scope)
+    private Value IsNullJson(FunctionCall call, ScalarExpression a, Value first, ScalarExpression b, ReadScope scope)
     {
         var second = Expression(b, scope);
         if (second.Shape is UnknownShape)

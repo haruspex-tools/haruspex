@@ -102,7 +102,7 @@ because the reasons still hold for the code as it is:
 | `SqlProject` (read a folder, select, infer) | `SqlScriptFolder` (Sources), `DatabaseModel` (Model), `IrInference` (Inference), and `SqlProject` kept as the composition in the CLI | Reading and inferring are different layers, and no layer below the CLI may know both. Tests and the differential harness still use `SqlProject`, now from `Haruspex.Cli`. |
 | `Catalog`, `TableModel`, `ColumnModel` (tables with each column's IR shape and a proved-non-null flag) | `Table`, `Column`, `DeclaredNullability` (Model); `SchemaRules.IsNeverNull` (Semantics); the column's shape in `ProcedureAnalyzer` (Inference) | The model holds declarations (NULL / NOT NULL, primary key, IDENTITY, computed expression). That NOT NULL, a key column or an identity column is never null is an interpretation of the schema, so it moved to Semantics. Mapping a column to an IR shape is inference. |
 | `SqlTypes.ToShape(DataTypeReference)` | `SqlType` (Model: kind, canonical name, arguments as written); `SqlTypes.ToShape(SqlType)` (Inference) | What a type *is* is schema data; what it becomes in the IR is inference's choice. Lower-casing the arguments for the IR's SQL type text stays in Inference. |
-| `ProcedureAnalyzer` (scopes, sources, aliases, column resolution, and shapes) | `Binder`, `BindingScope`, `BoundSource`, `ColumnBinding`, `BindingProblem` (Semantics); the rest of `ProcedureAnalyzer` (Inference) | Binding needs no IR. A binding problem has its own kind, which Inference maps to the IR's unknown reason. An outer join's optional side is recorded as structure (`BoundSource.OptionalSideOf`); that it makes a value nullable is decided in Inference. |
+| `ProcedureAnalyzer` (scopes, sources, aliases, column resolution, and shapes) | `Binder`, `QueryScope`, `BoundSource`, `Resolution`, `BindingProblem` (Semantics); the rest of `ProcedureAnalyzer` (Inference) | Binding needs no IR. A binding problem has its own kind, which Inference maps to the IR's unknown reason. An outer join's optional side is recorded as structure (`BoundSource.Optional`); that it makes a value nullable is decided in Inference. |
 | `UnknownShape` built by `SqlProject.Changed` for ALTER/DROP | `Redefinition` (Model), turned into an unknown by Semantics (tables) and Inference (procedures) | The doubt about which definition is in effect is a fact about the source; how it surfaces in the IR is inference's. |
 | `Diagnostic`, `SourceLocation` | moved whole to `Haruspex.Diagnostics` | Already one concern. |
 | `ObjectName` | moved whole to Model | Names are schema data. |
@@ -110,18 +110,22 @@ because the reasons still hold for the code as it is:
 
 ## The body's own relations
 
-A procedure defines relations of its own: CTEs, temporary tables and table variables. Binding a name to one is
-Semantics' job, as binding to a table is, so the `Binder` takes an `ILocalRelations` and binds a one-part name to a
-`LocalRelation` (a name and its columns' names) before looking in the schema; a CTE hides a table of its name, as in
-SQL Server. What a relation's columns hold is not binding: Inference supplies the relations (`FlowLocals`), keeps
-their values, and carries the state of each temporary table from statement to statement (`FlowState`). So Semantics
+A procedure defines relations of its own: CTEs, temporary tables and table variables; and it reads others whose rows
+come from a definition or a call: derived tables, views, table-valued functions, `OPENJSON`. Binding a name to any of
+them is Semantics' job, as binding to a table is: the `Binder` binds each query into an immutable `QueryScope` whose
+sources read a table or a `RelationSymbol` (a CTE, a derived table with its bound query, a view, a temporary table and the
+rest, each with its columns' names), and resolves every column reference to a `Resolution`. The names a body defines are
+an argument, a `NameEnvironment`; a CTE hides a table of its name, as in SQL Server. A temporary table's columns at a
+statement depend on the path to it, which only the walk knows, so the walk passes them in; binding asks Inference for
+nothing. What a relation's columns hold is not binding: Inference attaches values to the bound sources as it reads them
+(`ReadScope`), and carries the state of each temporary table from statement to statement (`FlowState`). So Semantics
 still never sees a value, and Inference never resolves a name. A temporary table's or table variable's definition is
 read into a `Table` by `SyntaxReader.Table` in Syntax, the same reading `CREATE TABLE` gets in Sources, so the
 schema rules (`SchemaRules.IsNeverNull`, `ColumnFacts`) apply to it unchanged.
 
 `APPLY`, `CROSS JOIN` and `FULL OUTER JOIN` are bound: the binder gives an `APPLY`'s right side a scope of its left
-input's sources and records which side a source is on, and Inference supplies the relations, a view's read from its
-definition, as for derived tables. `RIGHT JOIN` is left unbound: binding it is easy, but what it means for nulls is not
+input's sources and records which side a source is on, and Inference attaches what each relation holds, a view's read
+from its definition, as for derived tables. `RIGHT JOIN` is left unbound: binding it is easy, but what it means for nulls is not
 modelled, and binding it would change which unknowns are reported. A permanent table changed by `ALTER TABLE` is reported with the reason `unsupported-source`, because which definition applies
 depends on the order the scripts run. The forms that can't make a column nullable, change its type, or add or remove one
 are the exceptions: adding a constraint, checking or disabling constraints, rebuilding, and switching triggers or change

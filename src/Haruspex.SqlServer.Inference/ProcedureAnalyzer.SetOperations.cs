@@ -17,18 +17,26 @@ internal sealed partial class ProcedureAnalyzer
     /// The row any query expression gives: a query specification's, or a set operation's over the queries it combines. Each
     /// query is read on its own, with its own filters, so what its WHERE proves holds of its own columns only.
     /// </summary>
-    private Row Query(QueryExpression query, BindingScope? parent)
+    /// <param name="bound">The query, bound.</param>
+    /// <param name="outer">The scope it is read inside: the enclosing query's, or a statement's.</param>
+    private Row Query(BoundQuery bound, ReadScope outer)
     {
-        if (query is QuerySpecification specification)
-            return Query(specification, parent);
+        if (bound is BoundSpecification specification)
+            return Query(specification, outer);
 
         // A chain of set operations, which the parser gives left to right; parentheses group a query of their own.
-        var members = new List<QueryExpression>();
+        var members = new List<BoundQuery>();
         var operators = new List<BinaryQueryExpression>();
-        Flatten(query, members, operators);
-        var rows = members.Select(m => m is QueryParenthesisExpression p ? Parenthesised(p, parent) : Query(m, parent)).ToList();
-        return Limited(rows.Count == 1 ? rows[0] : Combine(rows, operators, At(query)), OffsetOf(query));
+        Flatten(bound, members, operators);
+        var rows = members.Select(m => m is BoundParenthesis p ? Parenthesised(p, outer) : Query(m, outer)).ToList();
+        return Limited(rows.Count == 1 ? rows[0] : Combine(rows, operators, At(bound.Syntax)), OffsetOf(bound.Syntax));
     }
+
+    /// <summary>A statement's own query, bound with the names in force at <paramref name="at"/>, outside any other query.</summary>
+    private Row Outermost(QueryExpression query, ReadScope at) => Query(binder.Bind(query, null, at.Names), at);
+
+    /// <summary>A subquery of the query whose scope is <paramref name="scope"/>, which it reads beyond its own sources.</summary>
+    private Row Nested(QueryExpression query, ReadScope scope) => Query(binder.Bind(query, scope.Bound, scope.Names), scope);
 
     /// <summary>
     /// The FOR clause of a query expression. A set operation's ORDER BY, OFFSET and FOR belong to the whole of it, but the
@@ -54,8 +62,8 @@ internal sealed partial class ProcedureAnalyzer
     };
 
     /// <summary>A parenthesised query: its query's row, under its own OFFSET … FETCH when it has one.</summary>
-    private Row Parenthesised(QueryParenthesisExpression parenthesis, BindingScope? parent) =>
-        Limited(Query(parenthesis.QueryExpression, parent), parenthesis.OffsetClause);
+    private Row Parenthesised(BoundParenthesis parenthesis, ReadScope outer) =>
+        Limited(Query(parenthesis.Inner, outer), parenthesis.Parenthesis.OffsetClause);
 
     private static Row Limited(Row row, OffsetClause? offset) => offset is null ? row : row with { Rows = Limited(row.Rows, offset) };
 
@@ -311,14 +319,17 @@ internal sealed partial class ProcedureAnalyzer
     /// which FOR JSON nests as JSON, whose shape is in the data (observed:
     /// Openjson_as_json_is_nvarchar_max_holding_an_object_or_array_that_nests_as_json). How many rows is the data's.
     /// </summary>
-    private LocalRelationValues OpenJsonRelation(OpenJsonTableReference reference, BindingScope? outer)
+    /// <param name="symbol">The call, bound.</param>
+    /// <param name="scope">The scope its arguments are read in.</param>
+    private LocalRelationValues OpenJsonRelation(OpenJsonCall symbol, ReadScope scope)
     {
+        var reference = symbol.Syntax;
         var at = At(reference);
-        var name = reference.Alias?.Value ?? "OPENJSON";
+        var name = symbol.Name;
         static IrNullReason JsonValue(SourceLocation where) => new(IrNullRule.JsonNullOrAbsent, where.ToString());
 
         // Over JSON built here its shape says more (ProcedureAnalyzer.JsonReads.cs).
-        if (TracedOpenJson(reference, outer ?? NoFrom(), at) is { } traced)
+        if (TracedOpenJson(reference, scope, at) is { } traced)
         {
             List<string> columns = reference.SchemaDeclarationItems.Count == 0 ? ["key", "value", "type"] : [.. reference.SchemaDeclarationItems.Select(i => i.ColumnDefinition.ColumnIdentifier.Value)];
             return columns.Distinct(StringComparer.OrdinalIgnoreCase).Count() != columns.Count

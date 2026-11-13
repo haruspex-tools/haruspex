@@ -14,8 +14,14 @@ namespace Haruspex.SqlServer.Inference;
 // observations they rest on (StatementFlowObservationTests in the differential tests).
 internal sealed partial class ProcedureAnalyzer
 {
-    /// <summary>The body's relations and variables, while a procedure is walked; null inside a function.</summary>
-    private FlowLocals? locals;
+    /// <summary>
+    /// The names the body defines that hold for the whole of it: its table variables, as declared. The temporary tables'
+    /// columns at a statement are added to them there (<see cref="Reading"/>).
+    /// </summary>
+    private NameEnvironment names = NameEnvironment.Empty;
+
+    /// <summary>What each table variable holds as declared, by name; JSON written to it is in the state (<see cref="Holding"/>).</summary>
+    private Dictionary<string, LocalRelationValues> tableVariables = [];
 
     /// <summary>The first statement that makes the results impossible to list, once found.</summary>
     private UnknownShape? blocker;
@@ -104,7 +110,8 @@ internal sealed partial class ProcedureAnalyzer
                 null);
         }
 
-        locals = Locals(tableVariables);
+        this.tableVariables = tableVariables;
+        names = NameEnvironment.Empty.WithTableVariables(tableVariableDefinitions.Values);
         var initial = FlowState.Start(start).WithTemps(context.Temps).WithReadUncommitted(context.ReadUncommitted);
 
         // What each variable and table variable column of nvarchar(max) holds as JSON: nothing yet. A parameter is
@@ -199,7 +206,6 @@ internal sealed partial class ProcedureAnalyzer
 
     private Outcome Statement(TSqlStatement statement, FlowState state)
     {
-        locals!.State = state;
         var at = At(statement);
         switch (statement)
         {
@@ -221,10 +227,10 @@ internal sealed partial class ProcedureAnalyzer
                 return Continue(RolledBack(state, at));
             case DeclareVariableStatement declare:
                 foreach (var element in declare.Declarations.Where(d => d.Value is not null))
-                    state = Assign(state, element.VariableName.Value, Expression(element.Value, NoFrom()), definitely: true, at, element.Value);
+                    state = Assign(state, element.VariableName.Value, Expression(element.Value, Reading(state)), definitely: true, at, element.Value);
                 return Continue(state);
             case SetVariableStatement set when set.CursorDefinition is null && set.Identifier is null && set.Expression is not null:
-                return Continue(Assign(state, set.Variable.Name, Assigned(set.AssignmentKind, set.Expression, NoFrom(), set), definitely: true, at, set.Expression));
+                return Continue(Assign(state, set.Variable.Name, Assigned(set.AssignmentKind, set.Expression, Reading(state), set), definitely: true, at, set.Expression));
             case BeginEndBlockStatement block:
                 return Walk(block.StatementList.Statements, state);
             case IfStatement branch:
@@ -400,12 +406,21 @@ internal sealed partial class ProcedureAnalyzer
 
     // ---- variables ------------------------------------------------------------------------------------------------
 
-    /// <summary>A scope with no FROM, for an expression outside a query: <c>SET @v = …</c>, <c>VALUES (…)</c>.</summary>
-    private BindingScope NoFrom() => binder.BindFrom(new QuerySpecification(), null, locals);
+    /// <summary>
+    /// The scope of a statement that starts from <paramref name="state"/>, outside any query: the body's names, with each
+    /// temporary table's columns as the state knows them, for <c>SET @v = …</c>, <c>VALUES (…)</c> and every query the
+    /// statement reads. The names change only where a temporary table's columns do, so a statement read again from a state
+    /// with the same columns is bound again with the same names, which binding keeps (<see cref="Bindings"/>).
+    /// </summary>
+    private ReadScope Reading(FlowState state) => ReadScope.Statement(
+        names.WithTemporaryColumns(state.Temps
+            .Where(t => t.Value is KnownTable)
+            .Select(t => KeyValuePair.Create(t.Key, (IReadOnlyList<string>)[.. ((KnownTable)t.Value).Columns.Select(c => c.Name)]))),
+        state);
 
-    private Value Variable(VariableReference variable)
+    private Value Variable(VariableReference variable, ReadScope scope)
     {
-        if (!locals!.State.Variables.TryGetValue(variable.Name, out var value))
+        if (!scope.State.Variables.TryGetValue(variable.Name, out var value))
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The variable {variable.Name} is not declared.", At(variable)));
 
         // A cursor's query takes its variables as they were when its DECLARE ran (observed:
@@ -415,11 +430,11 @@ internal sealed partial class ProcedureAnalyzer
             return Value.Computed(declared, Because(IrNullRule.Variable, variable.Name, declared), value.IsLiveJson);
 
         // A variable holding JSON built here holds it as text.
-        return locals.State.Json.TryGetValue(variable.Name, out var slot) ? slot.Read(value) : value;
+        return scope.State.Json.TryGetValue(variable.Name, out var slot) ? slot.Read(value) : value;
     }
 
     /// <summary>The value an assignment writes: the expression, unless a compound one (<c>+=</c>) combines it with the old.</summary>
-    private Value Assigned(AssignmentKind kind, ScalarExpression expression, BindingScope scope, TSqlFragment at) =>
+    private Value Assigned(AssignmentKind kind, ScalarExpression expression, ReadScope scope, TSqlFragment at) =>
         kind == AssignmentKind.Equals
             ? Expression(expression, scope)
             : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The compound assignment {Text(at)} is not modelled yet.", At(at)));
@@ -453,9 +468,9 @@ internal sealed partial class ProcedureAnalyzer
             return SelectInto(select, state);
 
         if (select.QueryExpression is QuerySpecification { SelectElements: var elements } query && elements.All(e => e is SelectSetVariable))
-            return WithCtes(select.WithCtesAndXmlNamespaces, () => SetVariables(query, state), _ => SetVariables(query, state, unknown: true));
+            return WithCtes(select.WithCtesAndXmlNamespaces, Reading(state), scope => SetVariables(query, state, scope), _ => SetVariables(query, state, Reading(state), unknown: true));
 
-        var result = Select(select)!;
+        var result = Select(select, Reading(state))!;
         appended++;
         return state.WithResults(state.Results.Append(result, At(select)));
     }
@@ -464,10 +479,14 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>SELECT @a = …, @b = …</c>. Without FROM, WHERE, GROUP BY, HAVING or TOP it assigns exactly once; otherwise it may
     /// assign once per row or not at all (observed: a SELECT that matches nothing leaves the variable as it was).
     /// </summary>
-    private FlowState SetVariables(QuerySpecification query, FlowState state, bool unknown = false)
+    /// <param name="query">The SELECT's query.</param>
+    /// <param name="state">The state the assignments change.</param>
+    /// <param name="at">The statement's scope, its WITH's CTEs included.</param>
+    /// <param name="unknown">Whether its WITH is not modelled, so every value is unknown.</param>
+    private FlowState SetVariables(QuerySpecification query, FlowState state, ReadScope at, bool unknown = false)
     {
         var once = query is { FromClause: null, WhereClause: null, GroupByClause: null, HavingClause: null, TopRowFilter: null };
-        var scope = binder.BindFrom(query, null, locals);
+        var scope = Enter(query, at);
         var outer = current;
         current = query;
         try
@@ -503,15 +522,15 @@ internal sealed partial class ProcedureAnalyzer
         }
 
         var name = select.Into.BaseIdentifier.Value;
-        var table = WithCtes<TempTable>(select.WithCtesAndXmlNamespaces, () =>
+        var table = WithCtes<TempTable>(select.WithCtesAndXmlNamespaces, Reading(state), scope =>
         {
-            var row = Query(select.QueryExpression, parent: null);
+            var row = Outermost(select.QueryExpression, scope);
             if (row.Star is { } star)
                 return Unknown(name, Unsupported(IrUnknownReason.UnsupportedQuery, "SELECT * is not expanded yet.", star));
             if (row.Columns.Any(c => string.IsNullOrEmpty(c.Name)) || row.Columns.GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
                 return Unknown(name, Unsupported(IrUnknownReason.UnnamedColumn, $"SELECT … INTO {name} has a column without a name, or two of one name, which SQL Server refuses.", at));
             // Through a set operation SQL Server does not copy IDENTITY (observed: Select_into_from_a_union_does_not_copy_an_identity).
-            var identity = select.QueryExpression is QuerySpecification query ? Identities(query) : new bool?[row.Columns.Count];
+            var identity = select.QueryExpression is QuerySpecification query ? Identities(query, scope) : new bool?[row.Columns.Count];
             return new KnownTable(name, [.. row.Columns.Select((c, i) => new TempColumn(c.Name!, Stored(c.Value, $"{name}.{c.Name}", c.At, c.Expression), null, identity[i]))]);
         }, why => Unknown(name, why));
         return state.WithTemp(name, table);
@@ -526,12 +545,14 @@ internal sealed partial class ProcedureAnalyzer
     /// Through a join, a column listed twice, or a relation whose columns' properties are not known (a CTE, a table
     /// variable, a caller's table), it may be: null.
     /// </summary>
-    private bool?[] Identities(QuerySpecification query)
+    /// <param name="query">The SELECT … INTO's query.</param>
+    /// <param name="at">The statement's scope, its WITH's CTEs included.</param>
+    private bool?[] Identities(QuerySpecification query, ReadScope at)
     {
-        var scope = binder.BindFrom(query, null, locals);
+        var scope = ((BoundSpecification)binder.Bind(query, null, at.Names)).Scope;
         var single = query.FromClause?.TableReferences is [NamedTableReference];
         var bound = query.SelectElements.OfType<SelectScalarExpression>()
-            .Select(e => e.Expression is ColumnReferenceExpression column ? binder.BindColumn(column, scope) : null)
+            .Select(e => e.Expression is ColumnReferenceExpression column ? binder.Resolve(column, scope) : null)
             .ToList();
         var elements = query.SelectElements.OfType<SelectScalarExpression>().ToList();
         return [.. elements.Select((element, i) =>
@@ -540,9 +561,9 @@ internal sealed partial class ProcedureAnalyzer
                 return element.Expression is ParenthesisExpression ? null : false;
             var identity = binding switch
             {
-                BoundColumn column => column.Column.IsIdentity,
-                BoundLocalColumn { Relation: var relation, Ordinal: >= 0 and var ordinal } when locals!.IsTemporary(relation)
-                    && locals.State.Temp(relation.Name) is KnownTable known => known.Columns[ordinal].Identity,
+                TableColumn column => column.Column.IsIdentity,
+                RelationColumn { Relation: TemporaryTable temporary, Ordinal: var ordinal }
+                    when at.State.Temp(temporary.Name) is KnownTable known => known.Columns[ordinal].Identity,
                 _ => null,
             };
 
@@ -551,10 +572,10 @@ internal sealed partial class ProcedureAnalyzer
             return identity == false ? false : single && once ? identity : null;
         })];
 
-        static bool Same(ColumnBinding? a, ColumnBinding b) => (a, b) switch
+        static bool Same(Resolution? a, Resolution b) => (a, b) switch
         {
-            (BoundColumn x, BoundColumn y) => ReferenceEquals(x.Column, y.Column),
-            (BoundLocalColumn x, BoundLocalColumn y) => ReferenceEquals(x.Relation, y.Relation) && x.Ordinal == y.Ordinal,
+            (TableColumn x, TableColumn y) => ReferenceEquals(x.Column, y.Column),
+            (RelationColumn x, RelationColumn y) => ReferenceEquals(x.Relation, y.Relation) && x.Ordinal == y.Ordinal,
             _ => ReferenceEquals(a, b),
         };
     }
@@ -591,11 +612,11 @@ internal sealed partial class ProcedureAnalyzer
         var targets = spec.InsertSource is ValuesInsertSource { IsDefaultValues: true } ? []
             : spec.Columns.Count == 0
             ? [.. Enumerable.Range(0, table.Columns.Count)]
-            : spec.Columns.Select(c => IndexOf(table, c.MultiPartIdentifier.Identifiers[^1].Value)).ToList();
+            : Binder.Written(spec.Columns, [.. table.Columns.Select(c => c.Name)]).ToList();
         if (targets.Any(i => i < 0))
             return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnresolvedColumn, "The insert names a column the table does not have.", at)));
 
-        var rows = WithCtes(insert.WithCtesAndXmlNamespaces, () => InsertedRows(spec.InsertSource, targets.Count, at), why => [[.. targets.Select(_ => Value.Unknown(why))]]);
+        var rows = WithCtes(insert.WithCtesAndXmlNamespaces, Reading(state), scope => InsertedRows(spec.InsertSource, targets.Count, at, scope), why => [[.. targets.Select(_ => Value.Unknown(why))]]);
         if (rows is null)
             return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnsupportedStatement, "The insert's values do not match its columns one to one.", at)));
 
@@ -664,17 +685,21 @@ internal sealed partial class ProcedureAnalyzer
     };
 
     /// <summary>The values each row of an insert writes, by the insert's column positions; null when a row has the wrong number.</summary>
-    private List<IReadOnlyList<Value>>? InsertedRows(InsertSource source, int count, SourceLocation at)
+    /// <param name="source">The insert's source.</param>
+    /// <param name="count">How many columns it writes.</param>
+    /// <param name="at">Where the insert is.</param>
+    /// <param name="scope">The statement's scope, its WITH's CTEs included.</param>
+    private List<IReadOnlyList<Value>>? InsertedRows(InsertSource source, int count, SourceLocation at, ReadScope scope)
     {
         switch (source)
         {
             case ValuesInsertSource { IsDefaultValues: true }:
                 return [];
             case ValuesInsertSource values:
-                var rows = values.RowValues.Select(r => (IReadOnlyList<Value>)[.. r.ColumnValues.Select(v => Expression(v, NoFrom()))]).ToList();
+                var rows = values.RowValues.Select(r => (IReadOnlyList<Value>)[.. r.ColumnValues.Select(v => Expression(v, scope))]).ToList();
                 return rows.All(r => r.Count == count) ? rows : null;
             case SelectInsertSource { Select: { } query }:
-                var row = Query(query, parent: null);
+                var row = Outermost(query, scope);
                 if (row.Star is { } star)
                     return [[.. Enumerable.Range(0, count).Select(_ => Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "SELECT * is not expanded yet.", star)))]];
                 return row.Columns.Count == count ? [[.. row.Columns.Select(c => c.Value)]] : null;
@@ -697,11 +722,9 @@ internal sealed partial class ProcedureAnalyzer
         var at = At(update);
         var target = written.Direct ?? "";
 
-        return WithCtes(update.WithCtesAndXmlNamespaces, () =>
+        return WithCtes(update.WithCtesAndXmlNamespaces, Reading(state), statement =>
         {
-            var from = spec.FromClause ?? new FromClause { TableReferences = { spec.Target } };
-            var query = new QuerySpecification { FromClause = from, WhereClause = spec.WhereClause };
-            var scope = binder.BindFrom(query, null, locals);
+            var scope = Attach(statement.In(binder.BindUpdate(spec, statement.Names).Scope));
             var table = target.StartsWith('#') ? state.Temp(target) as KnownTable : null;
             var columns = table?.Columns.ToList();
             foreach (var clause in spec.SetClauses)
@@ -712,16 +735,16 @@ internal sealed partial class ProcedureAnalyzer
                 var value = Assigned(set.AssignmentKind, set.NewValue, scope, set);
                 if (set.Variable is { } variable)
                     state = Assign(state, variable.Name, value, definitely: false, At(set), set.NewValue);
-                if (set.Column is not null && target.StartsWith('@') && state.Json.TryGetValue($"{target}.{set.Column.MultiPartIdentifier.Identifiers[^1].Value}", out var traced))
+                if (set.Column is not null && target.StartsWith('@') && state.Json.TryGetValue($"{target}.{Binder.WrittenColumn(set.Column)}", out var traced))
                 {
-                    var key = $"{target}.{set.Column.MultiPartIdentifier.Identifiers[^1].Value}";
+                    var key = $"{target}.{Binder.WrittenColumn(set.Column)}";
                     state = state.WithJson(key, JsonSlot.Join(traced, JsonWritten(value, set.NewValue, At(set), key)));
                 }
 
                 if (set.Column is null || columns is null)
                     continue;
 
-                var i = IndexOf(table!, set.Column.MultiPartIdentifier.Identifiers[^1].Value);
+                var i = Binder.Written([set.Column], [.. table!.Columns.Select(c => c.Name)])[0];
                 if (i < 0)
                     return state.WithTemp(target, Unknown(target, Unsupported(IrUnknownReason.UnresolvedColumn, $"The update sets {Text(set.Column)}, which {target} does not have.", At(set))));
                 if (columns[i].Declaration is null)
@@ -924,51 +947,49 @@ internal sealed partial class ProcedureAnalyzer
     // ---- CTEs -----------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// Runs <paramref name="body"/> with the CTEs of <paramref name="with"/> visible, each defined in order so that it may
-    /// read the ones before it. A CTE is part of its statement's query, so its values pass through unchanged, live JSON
-    /// included (observed).
+    /// Runs <paramref name="body"/> with the CTEs of <paramref name="with"/> in scope, as binding binds them, each with what it
+    /// holds attached in order, so that each may read the ones before it. A CTE is part of its statement's query, so its values
+    /// pass through unchanged, live JSON included (observed).
     /// </summary>
-    private T WithCtes<T>(WithCtesAndXmlNamespaces? with, Func<T> body, Func<UnknownShape, T> failed)
+    /// <param name="with">The statement's WITH, or null.</param>
+    /// <param name="at">The statement's scope.</param>
+    /// <param name="body">What reads the statement, in its scope with the CTEs.</param>
+    /// <param name="failed">What a WITH that is not modelled gives.</param>
+    private T WithCtes<T>(WithCtesAndXmlNamespaces? with, ReadScope at, Func<ReadScope, T> body, Func<UnknownShape, T> failed)
     {
         if (with is null)
-            return body();
+            return body(at);
         if (with.XmlNamespaces is not null)
             return failed(Unsupported(IrUnknownReason.UnsupportedQuery, "WITH XMLNAMESPACES is not modelled yet.", At(with)));
-        if (locals is null)
-            return failed(Unsupported(IrUnknownReason.UnsupportedQuery, "A common table expression (WITH) is not modelled here yet.", At(with)));
 
-        var frame = locals.PushCtes();
-        try
-        {
-            foreach (var cte in with.CommonTableExpressions)
-                frame[cte.ExpressionName.Value] = locals.Register(cte.ExpressionName.Value, Cte(cte, frame));
-            return body();
-        }
-        finally
-        {
-            locals.PopCtes();
-        }
+        var bound = binder.BindWith(with, at.Names);
+        var scope = at.In(QueryScope.Empty(null, bound.Names));
+        foreach (var cte in bound.Ctes)
+            scope = scope.Naming(cte.Symbol, Cte(cte, scope));
+        return body(scope);
     }
 
-    private LocalRelationValues Cte(CommonTableExpression cte, Dictionary<string, LocalRelation> frame)
+    /// <param name="bound">The CTE, bound.</param>
+    /// <param name="scope">The statement's scope, with the CTEs before it attached.</param>
+    private LocalRelationValues Cte(BoundCommonTable bound, ReadScope scope)
     {
-        var name = cte.ExpressionName.Value;
-        var at = At(cte);
+        var symbol = bound.Symbol;
+        var name = symbol.Name;
+        var at = At(symbol.Definition);
         LocalRelationValues Fails(IrUnknownReason reason, string detail) => LocalRelationValues.Unknown(Unsupported(reason, $"{name}: {detail}", at));
 
-        var members = new List<QueryExpression>();
-        var operators = new List<BinaryQueryExpression>();
-        Flatten(cte.QueryExpression, members, operators);
-        var recursive = members.Select(m => References(m, name)).ToList();
-
-        if (!recursive.Contains(true))
+        if (!symbol.IsRecursive)
         {
-            return Relation(cte, Query(cte.QueryExpression, parent: null)) ?? Fails(IrUnknownReason.UnsupportedQuery, "its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
+            return Holds(symbol, Query(bound.Query, scope)) ?? Fails(IrUnknownReason.UnsupportedQuery, "its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
         }
 
         // A recursive CTE is an anchor member, then recursive members, each joined by UNION ALL; SQL Server refuses any
         // other form. Several anchors (themselves a UNION) are not modelled yet.
-        if (recursive[0] || recursive.Skip(1).Contains(false) || members.Any(m => m is not QuerySpecification)
+        var members = new List<BoundQuery>();
+        var operators = new List<BinaryQueryExpression>();
+        Flatten(bound.Query, members, operators);
+        var recursive = members.Select(m => References(m.Syntax, name)).ToList();
+        if (recursive[0] || recursive.Skip(1).Contains(false) || members.Any(m => m is not BoundSpecification)
             || operators.Any(o => o.BinaryQueryExpressionType != BinaryQueryExpressionType.Union || !o.All))
         {
             return Fails(IrUnknownReason.UnsupportedQuery, "only a recursive CTE of one anchor member and recursive members, joined by UNION ALL, is modelled.");
@@ -980,18 +1001,19 @@ internal sealed partial class ProcedureAnalyzer
         // compared whole, don't change. Each pass only joins upwards. A recursive member's value is never a constant
         // (observed: A_recursive_ctes_column_is_not_a_constant_even_when_every_member_is_one_literal), and the join drops
         // the anchor's digits (Value.Digits), so even a member that gives the anchor's literal again takes one more pass.
-        if (Relation(cte, Query((QuerySpecification)members[0], parent: null)) is not { } current)
+        // The members are bound once (Binder.BindWith); each pass attaches the CTE's values as they stand.
+        if (Holds(symbol, Query((BoundSpecification)members[0], scope)) is not { } current)
             return Fails(IrUnknownReason.UnsupportedQuery, "its anchor's columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
         LocalRelationValues? failed = null;
         var iteration = FixedPoint.Iterate(
             current.Values!,
             values =>
             {
-                frame[name] = locals!.Register(name, current with { Values = values });
+                var pass = scope.Naming(symbol, current with { Values = values });
                 var next = values.ToList();
-                foreach (var member in members.Skip(1).Cast<QuerySpecification>())
+                foreach (var member in members.Skip(1).Cast<BoundSpecification>())
                 {
-                    var row = Query(member, parent: null);
+                    var row = Query(member, pass);
                     if (row.Star is not null || row.Columns.Count != next.Count)
                     {
                         failed = Fails(IrUnknownReason.UnsupportedQuery, "a recursive member's columns cannot be listed against the anchor's.");
@@ -1013,27 +1035,30 @@ internal sealed partial class ProcedureAnalyzer
         };
     }
 
-    /// <summary>A CTE's columns from its query's row, named by its column list when it has one; null when they cannot be listed.</summary>
-    private static LocalRelationValues? Relation(CommonTableExpression cte, Row row) => Relation([.. cte.Columns.Select(c => c.Value)], row);
+    /// <summary>
+    /// What a relation over a query holds: the query's values under the names binding gave the relation (its column list, or
+    /// its query's); null when binding could not list them.
+    /// </summary>
+    private static LocalRelationValues? Holds(RelationSymbol relation, Row row) => Holds(relation.Columns, row);
 
-    /// <summary>A CTE's or derived table's columns from its query's row, named by its column list when it has one.</summary>
-    private static LocalRelationValues? Relation(IReadOnlyList<string> columns, Row row)
+    /// <summary>What a relation over a query holds, under the names binding listed for it; null when it listed none.</summary>
+    private static LocalRelationValues? Holds(IReadOnlyList<string>? names, Row row)
     {
-        if (row.Star is not null)
+        if (names is null)
             return null;
-        List<string?> names = columns.Count > 0 ? [.. columns] : [.. row.Columns.Select(c => c.Name)];
-        if (names.Count != row.Columns.Count || names.Any(string.IsNullOrEmpty) || names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Count)
-            return null;
-        return new LocalRelationValues([.. names.Select(n => n!)], [.. row.Columns.Select(c => c.Value)], null);
+        if (row.Star is not null || row.Columns.Count != names.Count)
+            throw new InvalidOperationException($"Binding listed {names.Count} columns where the query reads {row.Columns.Count}.");
+        return new LocalRelationValues([.. names], [.. row.Columns.Select(c => c.Value)], null);
     }
 
-    private static void Flatten(QueryExpression query, List<QueryExpression> members, List<BinaryQueryExpression> operators)
+    /// <summary>A chain of set operations' queries in order, and the operators between them; parentheses group a query of their own.</summary>
+    private static void Flatten(BoundQuery query, List<BoundQuery> members, List<BinaryQueryExpression> operators)
     {
-        if (query is BinaryQueryExpression binary)
+        if (query is BoundSetOperation operation)
         {
-            Flatten(binary.FirstQueryExpression, members, operators);
-            operators.Add(binary);
-            Flatten(binary.SecondQueryExpression, members, operators);
+            Flatten(operation.First, members, operators);
+            operators.Add(operation.Operation);
+            Flatten(operation.Second, members, operators);
         }
         else
         {
@@ -1042,42 +1067,41 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>Whether a query reads a table of this one-part name: in a CTE, the CTE itself.</summary>
-    private static bool References(QueryExpression query, string name)
-    {
-        var finder = new NameFinder(name);
-        query.Accept(finder);
-        return finder.Found;
-    }
-
-    private sealed class NameFinder(string name) : TSqlFragmentVisitor
-    {
-        public bool Found { get; private set; }
-
-        public override void Visit(NamedTableReference node) =>
-            Found |= node.SchemaObject is { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null }
-                && node.SchemaObject.BaseIdentifier.Value.Equals(name, StringComparison.OrdinalIgnoreCase);
-    }
+    private static bool References(QueryExpression query, string name) =>
+        DmlTarget.NamesRead(query).Any(n => n is { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null }
+            && n.BaseIdentifier.Value.Equals(name, StringComparison.OrdinalIgnoreCase));
 
     // ---- reading the body's own relations and expressions it needs ----------------------------------------------------
 
     /// <summary>
-    /// A column of a CTE, derived table, temporary table or table variable: what it holds, never null where a filter proves
-    /// it (Refinement.cs), and null too on an outer join's optional side unless a filter proves the row matched.
+    /// A column of a relation (a CTE, a derived table, a temporary table, a table variable, a view and the rest): what it
+    /// holds, never null where a filter proves it (Refinement.cs), and null too on an outer join's optional side unless a
+    /// filter proves the row matched.
     /// </summary>
-    private Value FromLocal(BoundLocalColumn bound, SourceLocation at)
+    /// <param name="source">The source it is read through.</param>
+    /// <param name="ordinal">Its position among the relation's columns; -1 when binding could not list them.</param>
+    /// <param name="scope">The scope it is read in, which holds what the source's relation holds.</param>
+    /// <param name="at">Where it is read.</param>
+    private Value FromLocal(BoundSource source, int ordinal, ReadScope scope, SourceLocation at)
     {
-        var value = locals!.Column(bound.Relation, bound.Ordinal, at);
-        if (value.Shape is not UnknownShape && bound.Ordinal >= 0 && facts.Proved(bound.Source, Key(bound)) != Facts.Proof.None)
+        var values = scope.Of(source);
+
+        // Reported where it is read, as a binding problem is; the detail names the statement that caused it.
+        var value = values.Why is { } why
+            ? Value.Unknown(why with { At = at })
+            : ordinal >= 0 && values.Values is { } all ? all[ordinal]
+            : throw new InvalidOperationException($"Binding could not list the columns of {Text(source.Syntax)}, whose values are known.");
+        if (value.Shape is not UnknownShape && ordinal >= 0 && facts.Proved(source, Key(ordinal)) != Facts.Proof.None)
             value = value.WithNullableBecause([]);
-        if (bound.Source.OptionalSideOf is { } optional && !facts.Matched(bound.Source) && !AlwaysApplied(bound))
-            value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [new IrNullReason(bound.Source.OuterApply ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.ToString())]));
-        if (Unmatched(bound.Source) is { } unmatched && value.Shape is not UnknownShape)
+        if (source.Optional is { } optional && !facts.Matched(source) && !AlwaysApplied(source, scope))
+            value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [new IrNullReason(optional.IsApplied ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.At.ToString())]));
+        if (Unmatched(source) is { } unmatched && value.Shape is not UnknownShape)
             value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [unmatched]));
-        if (Rolled(bound.Source) is { } rolled && value.Shape is not UnknownShape)
+        if (Rolled(source) is { } rolled && value.Shape is not UnknownShape)
             value = value.WithNullableBecause(NullReasons.Join(value.NullableBecause, [rolled]));
 
         // A CASE branch that tested this very value proves it, whatever made it nullable (ProcedureAnalyzer.Case.cs).
-        return value.Shape is not UnknownShape && bound.Ordinal >= 0 && facts.Proved(bound.Source, Key(bound)) == Facts.Proof.OfTheValue
+        return value.Shape is not UnknownShape && ordinal >= 0 && facts.Proved(source, Key(ordinal)) == Facts.Proof.OfTheValue
             ? value.WithNullableBecause([])
             : value;
     }
@@ -1085,15 +1109,15 @@ internal sealed partial class ProcedureAnalyzer
     /// <summary>
     /// A derived table, <c>FROM (SELECT …) AS d (columns)</c>: read like a CTE of its own, so its values pass through
     /// unchanged and keep what its query proves of them. It may read the enclosing queries' columns, and an APPLY's left
-    /// input's when it is (or is inside) the APPLY's right side. Its row count is its query's (Cardinality.cs), where it is
-    /// read: for an APPLY's right side, for each outer row.
+    /// input's when it is (or is inside) the APPLY's right side, as its query was bound. Its row count is its query's
+    /// (Cardinality.cs), where it is read: for an APPLY's right side, for each outer row.
     /// </summary>
-    private LocalRelationValues Derived(QueryDerivedTable derived, BindingScope? outer)
+    private LocalRelationValues Derived(DerivedTable derived, ReadScope scope)
     {
-        var at = At(derived);
-        var name = derived.Alias?.Value ?? "(derived table)";
-        var row = Query(derived.QueryExpression, outer);
-        return Relation([.. derived.Columns.Select(c => c.Value)], row) is { } relation
+        var at = At(derived.Syntax);
+        var name = derived.Name.Length > 0 ? derived.Name : "(derived table)";
+        var row = Query(derived.Query, scope);
+        return Holds(derived, row) is { } relation
             ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One }
             : LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{name}: its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.", at));
     }

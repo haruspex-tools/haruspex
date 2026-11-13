@@ -25,4 +25,4 @@ internal sealed record FunctionTyping(
     IReadOnlyList<IrNullRule> MayBeNullBecause,
     IReadOnlyList<string> ObservedIn,
     bool ReadsOnlyItsArguments,
-    Func<ProcedureAnalyzer, ScalarExpression, BindingScope, Value>? Type);
+    Func<ProcedureAnalyzer, ScalarExpression, ReadScope, Value>? Type);

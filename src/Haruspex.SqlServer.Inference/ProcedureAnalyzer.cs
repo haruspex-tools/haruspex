@@ -62,7 +62,7 @@ internal sealed partial class ProcedureAnalyzer
         this.views = views;
         this.ansiNullsOff = ansiNullsOff;
         this.model = model;
-        binder = new Binder(model, source);
+        binder = functions.Bindings.For(source);
         this.source = source;
         this.functions = functions;
         this.parameters = parameters ?? new Dictionary<string, Value>();
@@ -84,8 +84,7 @@ internal sealed partial class ProcedureAnalyzer
     {
         foreach (var parameter in parameters)
             variableTypes[parameter.Name] = parameter.Type;
-        locals = Locals(new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase));
-        return Expression(expression, binder.BindFrom(new QuerySpecification(), null, locals));
+        return Expression(expression, ReadScope.Statement(names, FlowState.Start([])));
     }
 
     /// <summary>A procedure's declared parameters and their types.</summary>
@@ -112,7 +111,9 @@ internal sealed partial class ProcedureAnalyzer
         (set.Options & ~(set.IsOn ? AnyValue | OnlyOn : AnyValue)) == SetOptions.None;
 
     /// <summary>The result set a SELECT returns, or null if it returns none.</summary>
-    private ResultShape? Select(SelectStatement select)
+    /// <param name="select">The statement.</param>
+    /// <param name="statement">The scope of the statement: the names in force and the state it starts from.</param>
+    private ResultShape? Select(SelectStatement select, ReadScope statement)
     {
         // SELECT ... INTO writes a table and SELECT @v = ... assigns variables; neither returns a result set.
         if (select.Into is not null)
@@ -131,12 +132,13 @@ internal sealed partial class ProcedureAnalyzer
 
         return WithCtes(
             select.WithCtesAndXmlNamespaces,
-            () =>
+            statement,
+            scope =>
             {
                 // A set operation's FOR, ORDER BY and OFFSET belong to the whole (observed:
                 // Order_by_and_offset_apply_to_the_whole_set_operation_and_top_to_its_first_query).
                 var query = select.QueryExpression;
-                var row = Query(query, parent: null);
+                var row = Outermost(query, scope);
                 return ForOf(query) switch
                 {
                     JsonForClause json => new ResultShape(IrEncoding.Json, ForJson(row, json, subquery: false), NoRows(row), row.Rows),
@@ -153,10 +155,13 @@ internal sealed partial class ProcedureAnalyzer
     /// <param name="Sources">The sources of its FROM, for a view's keys.</param>
     private sealed record Row(IReadOnlyList<RowColumn> Columns, SourceLocation? Star, IrCardinality Rows = IrCardinality.Many, IReadOnlyList<BoundSource>? Sources = null);
 
-    private Row Query(QuerySpecification query, BindingScope? parent)
+    /// <summary>A query specification's row, read in its bound scope, with what its relations hold attached first.</summary>
+    /// <param name="bound">The query, bound.</param>
+    /// <param name="enclosing">The scope it is read inside: the enclosing query's, or a statement's.</param>
+    private Row Query(BoundSpecification bound, ReadScope enclosing)
     {
-        // An outermost query sees the body's own relations; a subquery inherits them through its parent's scope.
-        var scope = binder.BindFrom(query, parent, parent is null ? locals : null);
+        var query = bound.Query;
+        var scope = Attach(enclosing.In(bound.Scope));
 
         // WHERE, the joins' ON and HAVING prove columns and aggregates non-null in the rows they keep (Refinement.cs), for
         // the select list and every subquery in it; GROUP BY is not read beyond what cardinality needs.
@@ -179,13 +184,9 @@ internal sealed partial class ProcedureAnalyzer
                 switch (element)
                 {
                     case SelectScalarExpression scalar:
-                        // $action is named so, as the server names it (observed: Merge_action_is_an_nvarchar_10).
-                        var name = scalar.ColumnName?.Value
-                            ?? (scalar.Expression is ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnAction } ? "$action" : null)
-                            ?? (scalar.Expression as ColumnReferenceExpression)?.MultiPartIdentifier?.Identifiers[^1].Value;
-                        columns.Add(new RowColumn(name, Expression(scalar.Expression, scope), At(scalar), Origin(scalar.Expression, scope), scalar.Expression));
+                        columns.Add(new RowColumn(Binder.ColumnName(scalar), Expression(scalar.Expression, scope), At(scalar), Origin(scalar.Expression, scope), scalar.Expression));
                         break;
-                    case SelectStarExpression all when expandStars && Expand(all, scope) is { } expanded:
+                    case SelectStarExpression all when scope.Names.ExpandsStars && Expand(all, scope) is { } expanded:
                         columns.AddRange(expanded);
                         break;
                     case SelectStarExpression:
@@ -200,12 +201,12 @@ internal sealed partial class ProcedureAnalyzer
             current = outer;
         }
 
-        return new Row(columns, star, Cardinality(query, scope), scope.Sources);
+        return new Row(columns, star, Cardinality(query, scope), scope.Bound.Sources);
     }
 
     /// <summary>The table column a select-list expression is, unchanged: a bare column reference without COLLATE.</summary>
-    private BoundColumn? Origin(ScalarExpression expression, BindingScope scope) =>
-        expression is ColumnReferenceExpression { Collation: null, ColumnType: ColumnType.Regular } column && binder.BindColumn(column, scope) is BoundColumn bound
+    private TableColumn? Origin(ScalarExpression expression, ReadScope scope) =>
+        expression is ColumnReferenceExpression { Collation: null, ColumnType: ColumnType.Regular } column && binder.Resolve(column, scope.Bound) is TableColumn bound
             ? bound
             : null;
 
@@ -341,7 +342,7 @@ internal sealed partial class ProcedureAnalyzer
 
     // ---- expressions --------------------------------------------------------------------------------
 
-    private Value Expression(ScalarExpression expression, BindingScope scope) => expression switch
+    private Value Expression(ScalarExpression expression, ReadScope scope) => expression switch
     {
         ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnAction } action => MergeAction(action),
         ColumnReferenceExpression column => Column(column, scope),
@@ -352,7 +353,7 @@ internal sealed partial class ProcedureAnalyzer
         _ when Function(expression, scope) is { } called => called,
         FunctionCall call when FunctionSummaries.Callee(call) is { } callee => CallFunction(call, callee, scope),
         VariableReference variable when parameters.TryGetValue(variable.Name, out var parameter) => Branched(variable, parameter),
-        VariableReference variable when locals is not null => Branched(variable, Variable(variable)),
+        VariableReference variable => Branched(variable, Variable(variable, scope)),
         IntegerLiteral literal => Integer(literal),
         StringLiteral literal => FromString(literal),
         NumericLiteral literal => FromNumeric(literal),
@@ -366,15 +367,16 @@ internal sealed partial class ProcedureAnalyzer
         _ => Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
     };
 
-    private Value Column(ColumnReferenceExpression column, BindingScope scope) => binder.BindColumn(column, scope) switch
+    private Value Column(ColumnReferenceExpression column, ReadScope scope) => binder.Resolve(column, scope.Bound) switch
     {
         var target when ReadsOutputTarget(target) => Value.Unknown(Unsupported(
             IrUnknownReason.UnsupportedExpression,
             $"{Text(column)} names the table the write changes, which OUTPUT may read before or after the change; read inserted or deleted instead.",
             At(column))),
-        BoundColumn bound => FromColumn(bound),
-        BoundLocalColumn local => FromLocal(local, At(column)),
-        UnboundColumn unbound => Value.Unknown(Unknown(unbound.Problem)),
+        TableColumn bound => FromColumn(bound),
+        RelationColumn local => FromLocal(local.Source, local.Ordinal, scope, At(column)),
+        UnlistedColumn unlisted => FromLocal(unlisted.Source, -1, scope, At(column)),
+        Unresolved unbound => Value.Unknown(Unknown(unbound.Problem)),
         _ => throw new InvalidOperationException("Unknown binding."),
     };
 
@@ -383,7 +385,7 @@ internal sealed partial class ProcedureAnalyzer
     /// unchanged: a column reference, through aliases, joins and FOR JSON nesting. Any expression makes the value
     /// something else, and none is modelled yet, so it becomes unknown and the facts go with it.
     /// </remarks>
-    private Value FromColumn(BoundColumn bound)
+    private Value FromColumn(TableColumn bound)
     {
         var (source, table, column) = bound;
         var because = new List<IrNullReason>();
@@ -392,8 +394,8 @@ internal sealed partial class ProcedureAnalyzer
 
         // The optional side of an outer join, or of an OUTER APPLY, has no row when nothing matches, so every column read
         // from it can be null, whatever its declaration says; unless a filter proves the row matched.
-        if (source.OptionalSideOf is { } optional && !facts.Matched(source))
-            because.Add(new IrNullReason(source.OuterApply ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.ToString()));
+        if (source.Optional is { } optional && !facts.Matched(source))
+            because.Add(new IrNullReason(optional.IsApplied ? IrNullRule.UnmatchedLateralRow : IrNullRule.UnmatchedRow, optional.At.ToString()));
         if (Rolled(source) is { } rolled)
             because.Add(rolled);
         if (Unmatched(source) is { } unmatched)
@@ -437,7 +439,7 @@ internal sealed partial class ProcedureAnalyzer
         problem.Detail,
         problem.At);
 
-    private Value Subquery(ScalarSubquery subquery, BindingScope scope)
+    private Value Subquery(ScalarSubquery subquery, ReadScope scope)
     {
         var at = At(subquery);
 
@@ -449,7 +451,7 @@ internal sealed partial class ProcedureAnalyzer
         if (ForOf(subquery.QueryExpression) is null)
         {
             var plain = subquery.QueryExpression;
-            var row = Query(plain, scope);
+            var row = Nested(plain, scope);
             if (row is not { Star: null, Columns: [var only] })
                 return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"A subquery of other than one listed column is not modelled: {Text(subquery)}", at));
             if (only.Value.Shape is UnknownShape)
@@ -469,7 +471,7 @@ internal sealed partial class ProcedureAnalyzer
         // its array wrapper: WITHOUT_ARRAY_WRAPPER makes it text, escaped as a string wherever it nests, until json_query
         // makes it JSON again (both observed). Either is null when the subquery returns no rows, unless its query always
         // returns exactly one.
-        var forJson = Query(query, scope);
+        var forJson = Nested(query, scope);
         var shape = ForJson(forJson, json, subquery: true);
         if (shape is UnknownShape unknown)
             return Value.Unknown(unknown);
@@ -479,7 +481,7 @@ internal sealed partial class ProcedureAnalyzer
             : new Value(shape, empty, IsLiveJson: true);
     }
 
-    private Value JsonQuery(FunctionCall call, BindingScope scope)
+    private Value JsonQuery(FunctionCall call, ReadScope scope)
     {
         // A literal, or CASE, IIF, CHOOSE or COALESCE over JSON, is read for what it holds (ProcedureAnalyzer.JsonTracing.cs).
         var argument = JsonQueryArgument(call.Parameters[0], scope);
@@ -502,14 +504,14 @@ internal sealed partial class ProcedureAnalyzer
     // and a key whose value is NULL is left out of FOR JSON PATH. RETURNS NULL ON NULL INPUT makes f(NULL) NULL without
     // running the body. FunctionSummaries says which bodies are read and how recursion is solved.
 
-    private Value CallFunction(FunctionCall call, ObjectName callee, BindingScope scope)
+    private Value CallFunction(FunctionCall call, ObjectName callee, ReadScope scope)
     {
         var at = At(call);
         if (call.OverClause is not null || call.WithinGroupClause is not null)
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This form of call is not modelled: {Text(call)}", at));
 
         // A function's body read in a statement that reads uncommitted reads its tables so too.
-        var (result, why) = (ReadUncommitted ? functions.Uncommitted : functions).Find(callee, at);
+        var (result, why) = (ReadUncommitted(scope) ? functions.Uncommitted : functions).Find(callee, at);
         if (result is null)
             return Value.Unknown(why!);
 
@@ -553,7 +555,7 @@ internal sealed partial class ProcedureAnalyzer
         && ((BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) is { } scalar && (scalar == ScalarFunctions.JsonObject || scalar == ScalarFunctions.JsonArray))
             || (BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Aggregate) is { } aggregate && (aggregate == AggregateFunctions.JsonArrayAgg || aggregate == AggregateFunctions.JsonObjectAgg)));
 
-    private Value Constructor(FunctionCall call, BindingScope scope, BuiltInFunction function)
+    private Value Constructor(FunctionCall call, ReadScope scope, BuiltInFunction function)
     {
         var at = At(call);
         var name = function.Name;
@@ -587,7 +589,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary><c>json_object('k': v, …)</c>: an object of literal keys, never null.</summary>
-    private Value JsonObjectConstructor(FunctionCall call, BindingScope scope, bool nullOnNull)
+    private Value JsonObjectConstructor(FunctionCall call, ReadScope scope, bool nullOnNull)
     {
         var fields = new List<FieldShape>();
         var keys = new HashSet<string>(StringComparer.Ordinal);
@@ -612,7 +614,7 @@ internal sealed partial class ProcedureAnalyzer
     /// NULL a null is dropped and the rest close up: a tuple only when no element can be null, otherwise an array of the
     /// elements' types, with as many items as the elements never null and at most one per element.
     /// </summary>
-    private Value JsonArrayConstructor(FunctionCall call, BindingScope scope, bool nullOnNull)
+    private Value JsonArrayConstructor(FunctionCall call, ReadScope scope, bool nullOnNull)
     {
         var elements = call.Parameters.Select(p => Expression(p, scope)).ToList();
         if (nullOnNull || elements.All(e => e.NullableBecause.Count == 0))
@@ -649,7 +651,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>json_arrayagg(v [ORDER BY …])</c>: an array of v. A non-null result means at least one row, so it has an item
     /// unless ABSENT ON NULL can drop them all.
     /// </summary>
-    private Value ArrayAggregate(FunctionCall call, BindingScope scope, bool nullOnNull)
+    private Value ArrayAggregate(FunctionCall call, ReadScope scope, bool nullOnNull)
     {
         if (call.Parameters.Count != 1)
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"json_arrayagg of {call.Parameters.Count} values is not modelled: {Text(call)}", At(call)));
@@ -666,7 +668,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>json_objectagg(k: v)</c>: keys come from data, so a record of string to v. Every key is a string whatever the
     /// key expression's type, so the key is not typed; a repeated key is written each time, and JSON.parse keeps the last.
     /// </summary>
-    private Value ObjectAggregate(FunctionCall call, BindingScope scope, bool nullOnNull)
+    private Value ObjectAggregate(FunctionCall call, ReadScope scope, bool nullOnNull)
     {
         if (call.JsonParameters is not [var pair])
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This form of json_objectagg is not modelled: {Text(call)}", At(call)));

@@ -179,7 +179,7 @@ internal sealed partial class ProcedureAnalyzer
     /// tested NULL is passed over, so only the second read can make it NULL. No seed reaches it, so it has a rule of its own.
     /// A NULL literal adds nothing but its place.
     /// </summary>
-    private Value Coalesce(CoalesceExpression coalesce, BindingScope scope)
+    private Value Coalesce(CoalesceExpression coalesce, ReadScope scope)
     {
         var arguments = coalesce.Expressions.Where(e => Strip(e) is not NullLiteral).ToList();
         if (arguments.Count == 0)
@@ -245,7 +245,7 @@ internal sealed partial class ProcedureAnalyzer
     /// overflow, which would make it NULL under a caller's session options (observed for ISNULL(@ti, 1000)). A value never
     /// null is a itself, with its facts; otherwise only a's type's facts hold, since b may be outside a's CHECK set.
     /// </summary>
-    private Value IsNull(FunctionCall call, BindingScope scope)
+    private Value IsNull(FunctionCall call, ReadScope scope)
     {
         var (a, b) = (call.Parameters[0], call.Parameters[1]);
         if (Strip(a) is NullLiteral)
@@ -292,7 +292,7 @@ internal sealed partial class ProcedureAnalyzer
     /// declaration's is 1 (observed: A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration). A conversion to
     /// x's own type changes nothing, so the value keeps its facts. The format a style gives is not claimed.
     /// </summary>
-    private Value Cast(DataTypeReference target, ScalarExpression operand, TSqlFragment call, BindingScope scope, bool styled = false, bool attempt = false)
+    private Value Cast(DataTypeReference target, ScalarExpression operand, TSqlFragment call, ReadScope scope, bool styled = false, bool attempt = false)
     {
         var type = SyntaxReader.Type(target);
         var to = SqlTypes.Modelled(SchemaRules.ResolveType(model, type)?.Scalar);
@@ -346,7 +346,7 @@ internal sealed partial class ProcedureAnalyzer
     /// What a value adds to a string built by CONCAT: a string its length (bytes for varchar, characters for nvarchar), an int
     /// 12 and a bit 1 (observed), the NULL literal nothing; null for anything else, whose length is not modelled.
     /// </summary>
-    private (ScalarType Type, int Length)? Piece(ScalarExpression expression, BindingScope scope)
+    private (ScalarType Type, int Length)? Piece(ScalarExpression expression, ReadScope scope)
     {
         if (Strip(expression) is NullLiteral)
             return (new ScalarType(BuiltInType.VarChar, 0), 0);
@@ -366,7 +366,7 @@ internal sealed partial class ProcedureAnalyzer
     /// any is, otherwise cut at 8000 bytes, 4000 characters for nvarchar (observed:
     /// Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null).
     /// </summary>
-    private Value Concat(FunctionCall call, BindingScope scope, bool separated)
+    private Value Concat(FunctionCall call, ReadScope scope, bool separated)
     {
         var arguments = call.Parameters.ToList();
         if (arguments.Count < (separated ? 3 : 2))
@@ -402,7 +402,7 @@ internal sealed partial class ProcedureAnalyzer
     /// ARITHABORT off when it may overflow or divide by zero (<see cref="Arithmetic.MayOverflow"/>, which reads a literal
     /// divisor). A string with a number is not modelled yet.
     /// </summary>
-    private Value Binary(BinaryExpression binary, BindingScope scope)
+    private Value Binary(BinaryExpression binary, ReadScope scope)
     {
         var op = binary.BinaryExpressionType switch
         {
@@ -456,7 +456,7 @@ internal sealed partial class ProcedureAnalyzer
     /// Arithmetic_over_float_real_money_and_dates_follows_data_type_precedence). Negating an int, smallint, bigint, money or
     /// smallmoney overflows at its least value; a literal, a decimal, a float, a real, a tinyint and <c>+</c> cannot.
     /// </summary>
-    private Value Unary(UnaryExpression unary, BindingScope scope)
+    private Value Unary(UnaryExpression unary, ReadScope scope)
     {
         if (unary.UnaryExpressionType is not (UnaryExpressionType.Negative or UnaryExpressionType.Positive))
             return NotModelled(unary, "this operator is not modelled yet.");
@@ -500,7 +500,7 @@ internal sealed partial class ProcedureAnalyzer
     /// than 2^63 values below 10^(p - s) each sum to less than 10^(p - s + 19) ≤ 10^(38 - s), and no query reads 2^63 rows
     /// (a billion a second would take 292 years). HAVING comparing it proves it, as for any aggregate.
     /// </summary>
-    private Value Sum(FunctionCall call, BindingScope scope)
+    private Value Sum(FunctionCall call, ReadScope scope)
     {
         var argument = InAggregate(() => Expression(call.Parameters[0], scope));
         if (argument.Shape is UnknownShape)

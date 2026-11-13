@@ -2,7 +2,6 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Typing;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
-using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -15,35 +14,33 @@ internal sealed partial class ProcedureAnalyzer
     /// A call of a table-valued function in FROM or APPLY: its arguments read where the call is (an APPLY's left input's
     /// columns too), converted to its parameters' types, and the function read with them (<see cref="ViewSummaries.Function"/>).
     /// </summary>
-    private LocalRelationValues TableFunction(SchemaObjectFunctionTableReference call, BindingScope? outer)
+    /// <param name="symbol">The call, bound: which function it names was resolved by binding.</param>
+    /// <param name="scope">The scope its arguments are read in.</param>
+    private LocalRelationValues TableFunction(TableFunctionCall symbol, ReadScope scope)
     {
+        var call = symbol.Syntax;
         var at = At(call);
         LocalRelationValues Fails(IrUnknownReason reason, string detail) => LocalRelationValues.Unknown(Unsupported(reason, $"{Text(call)}: {detail}", at));
 
         // A column list at the call is refused for a function (observed: 317), and so are table hints (a syntax error).
         if (call.Columns.Count > 0)
             return Fails(IrUnknownReason.UnsupportedSource, "a table-valued function cannot have a column alias (317).");
-        var name = call.SchemaObject;
-        if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
-            return Fails(IrUnknownReason.UnsupportedSource, "a function of another database is not modelled yet.");
-
-        // An unqualified name resolves in the caller's default schema and then in dbo, as a table's does (Binder): the one
-        // function of that name when exactly one schema has it.
-        Function? function;
-        if (name.SchemaIdentifier is not null)
+        Function function;
+        switch (symbol.Callee)
         {
-            function = model.FindFunction(SyntaxReader.Name(name));
-        }
-        else
-        {
-            var candidates = model.Functions.Where(f => f.Name.Name.Equals(name.BaseIdentifier.Value, StringComparison.OrdinalIgnoreCase)).OrderBy(f => f.Name.ToString(), StringComparer.Ordinal).ToList();
-            if (candidates.Count > 1)
-                return Fails(IrUnknownReason.UnresolvedTable, $"{name.BaseIdentifier.Value} is not schema-qualified, and {string.Join(" and ", candidates.Select(c => c.Name))} have that name.");
-            function = candidates.FirstOrDefault();
+            case ForeignCallee:
+                return Fails(IrUnknownReason.UnsupportedSource, "a function of another database is not modelled yet.");
+            case AmbiguousCallee { Candidates: var candidates }:
+                return Fails(IrUnknownReason.UnresolvedTable, $"{call.SchemaObject.BaseIdentifier.Value} is not schema-qualified, and {string.Join(" and ", candidates.Select(c => c.Name))} have that name.");
+            case MissingCallee:
+                return Fails(IrUnknownReason.UnresolvedTable, "there is no such function in the project.");
+            case KnownCallee known:
+                function = known.Function;
+                break;
+            default:
+                throw new InvalidOperationException($"{symbol.Callee.GetType().Name} is a callee this switch does not list.");
         }
 
-        if (function is null)
-            return Fails(IrUnknownReason.UnresolvedTable, "there is no such function in the project.");
         if (function.Redefinition is { } redefinition)
             return LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.Redefined, Redefinitions.Why(redefinition), redefinition.At));
         if (function is ScalarFunction { Body: ClrBody } or TableFunction { Body: ClrBody })
@@ -55,11 +52,10 @@ internal sealed partial class ProcedureAnalyzer
         if (call.Parameters.Count != parameters.Count)
             return Fails(IrUnknownReason.UnsupportedSource, $"{function.Name} takes {parameters.Count} arguments.");
 
-        var scope = binder.BindFrom(new QuerySpecification(), outer, outer is null ? locals : null);
         var arguments = new Dictionary<string, Value>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < parameters.Count; i++)
             arguments[parameters[i].Name] = Argument(parameters[i], call.Parameters[i], scope);
-        return views!.Function(function, arguments, ReadUncommitted);
+        return views!.Function(function, arguments, ReadUncommitted(scope));
     }
 
     /// <summary>
@@ -70,7 +66,7 @@ internal sealed partial class ProcedureAnalyzer
     /// An argument of the parameter's own type keeps its facts. One not modelled is any value of the type, or null
     /// (<c>parameter</c>), as a scalar function's parameter is.
     /// </summary>
-    private Value Argument(Parameter parameter, ScalarExpression argument, BindingScope scope)
+    private Value Argument(Parameter parameter, ScalarExpression argument, ReadScope scope)
     {
         var declared = SqlTypes.ToConvertedShape(model, parameter.Type, parameter.At);
         var any = Value.Computed(declared, [new IrNullReason(IrNullRule.Parameter, parameter.Name)]);
@@ -83,7 +79,7 @@ internal sealed partial class ProcedureAnalyzer
             // The default is read where the function is defined; a constant reads nothing there.
             if (parameter.Default is not { } fallback)
                 return any;
-            value = Expression(fallback, binder.BindFrom(new QuerySpecification(), null));
+            value = Expression(fallback, ReadScope.Statement(NameEnvironment.Empty, scope.State));
         }
         else
         {
@@ -112,19 +108,20 @@ internal sealed partial class ProcedureAnalyzer
         var select = function.Query;
         foreach (var parameter in function.Parameters)
             variableTypes[parameter.Name] = parameter.Type;
-        locals = Locals(new Dictionary<string, LocalRelationValues>(StringComparer.OrdinalIgnoreCase));
         var at = At(select);
         LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{function.Name}: {detail}", at));
 
         return WithCtes(
             select.WithCtesAndXmlNamespaces,
-            () =>
+            ReadScope.Statement(NameEnvironment.Empty, FlowState.Start([])),
+            scope =>
             {
                 if (select.QueryExpression is not { } query || ForOf(query) is not null)
                     return Fails("a function whose query is FOR XML or FOR JSON is not modelled yet.");
-                var row = Query(query, parent: null);
-                return Relation([], row) is { } relation
-                    ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One, Keys = Keys(query, row) }
+                var bound = binder.Bind(query, null, scope.Names);
+                var row = Query(bound, scope);
+                return Holds(bound.Listed([]), row) is { } relation
+                    ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One, Keys = Keys(query, row, scope) }
                     : Fails("its columns cannot be listed: SELECT * is not expanded in a function, and every column needs one name of its own.");
             },
             LocalRelationValues.Unknown);

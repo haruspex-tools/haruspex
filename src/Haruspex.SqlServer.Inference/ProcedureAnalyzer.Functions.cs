@@ -16,7 +16,7 @@ internal sealed partial class ProcedureAnalyzer
     /// string literal that isn't a JSON object or array (13609); null for any other (observed:
     /// Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read).
     /// </summary>
-    private Value? RefusedJsonDocument(FunctionCall call, BindingScope scope)
+    private Value? RefusedJsonDocument(FunctionCall call, ReadScope scope)
     {
         var document = call.Parameters[0];
         if (Strip(document) is StringLiteral literal)
@@ -28,7 +28,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>Reads arguments, giving the first that is unknown, if any.</summary>
-    private (List<Value> Values, Value? Unknown) Arguments(IEnumerable<ScalarExpression> arguments, BindingScope scope)
+    private (List<Value> Values, Value? Unknown) Arguments(IEnumerable<ScalarExpression> arguments, ReadScope scope)
     {
         var values = arguments.Select(a => Expression(a, scope)).ToList();
         return (values, values.FirstOrDefault(v => v.Shape is UnknownShape));
@@ -53,7 +53,7 @@ internal sealed partial class ProcedureAnalyzer
     /// any session options (observed: A_date_overflow_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off), so
     /// no <c>arithmetic-overflow</c>. The part is a keyword, never read as an expression.
     /// </summary>
-    private Value DateDiff(FunctionCall call, ScalarType type, BindingScope scope)
+    private Value DateDiff(FunctionCall call, ScalarType type, ReadScope scope)
     {
         var (values, unknown) = Arguments(call.Parameters.Skip(1), scope);
         if (unknown is not null)
@@ -88,7 +88,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>DATEADD(part, n, d)</c>: d's type, or datetime for a string or an integer; NULL when n or d is. An overflow is an
     /// error (517) under any session options.
     /// </summary>
-    private Value DateAdd(FunctionCall call, BindingScope scope)
+    private Value DateAdd(FunctionCall call, ReadScope scope)
     {
         var (values, unknown) = Arguments(call.Parameters.Skip(1), scope);
         if (unknown is not null)
@@ -104,7 +104,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary><c>DATEPART</c>, <c>YEAR</c>, <c>MONTH</c>, <c>DAY</c> (int) and <c>DATENAME</c> (nvarchar(30), whose names
     /// depend on the session's language, so no closed set): NULL when the date is.</summary>
-    private Value DatePart(FunctionCall call, ScalarExpression date, ScalarType type, BindingScope scope)
+    private Value DatePart(FunctionCall call, ScalarExpression date, ScalarType type, ReadScope scope)
     {
         var value = Expression(date, scope);
         if (value.Shape is UnknownShape)
@@ -118,7 +118,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>EOMONTH(d [, n])</c>: a date, NULL when d is. A NULL n is taken as 0, so it does not make it NULL (observed:
     /// A_date_function_is_null_when_an_argument_is_but_eomonth_ignores_a_null_offset).
     /// </summary>
-    private Value EndOfMonth(FunctionCall call, BindingScope scope)
+    private Value EndOfMonth(FunctionCall call, ReadScope scope)
     {
         var date = call.Parameters[0];
         var value = Expression(date, scope);
@@ -143,7 +143,7 @@ internal sealed partial class ProcedureAnalyzer
     /// literal; NULL when any part is. Parts out of range are an error (289). Only integer parts narrower than bigint are
     /// read, which convert to int without an overflow.
     /// </summary>
-    private Value FromParts(FunctionCall call, ScalarType type, BindingScope scope, bool precision = false)
+    private Value FromParts(FunctionCall call, ScalarType type, ReadScope scope, bool precision = false)
     {
         var parts = precision ? call.Parameters.Take(call.Parameters.Count - 1).ToList() : [.. call.Parameters];
         if (precision)
@@ -172,7 +172,7 @@ internal sealed partial class ProcedureAnalyzer
     /// varchar), max staying max; with characters to trim, nvarchar if either is. NULL when an argument is (observed:
     /// Trimming_and_case_keep_the_strings_length_and_make_a_fixed_length_string_varying). The values change, so no CHECK set holds.
     /// </summary>
-    private Value Trim(FunctionCall call, ScalarExpression text, ScalarExpression? characters, BindingScope scope)
+    private Value Trim(FunctionCall call, ScalarExpression text, ScalarExpression? characters, ReadScope scope)
     {
         var (values, unknown) = Arguments(characters is null ? [text] : [text, characters], scope);
         if (unknown is not null)
@@ -189,7 +189,7 @@ internal sealed partial class ProcedureAnalyzer
     /// Left_right_and_substring_are_as_long_as_a_literal_length_allows). A length the server folds (<c>1 + 1</c>) is not
     /// modelled, one reading a column or variable is the string's length.
     /// </summary>
-    private Value Part(TSqlFragment call, ScalarExpression text, IReadOnlyList<ScalarExpression> others, ScalarExpression length, BindingScope scope)
+    private Value Part(TSqlFragment call, ScalarExpression text, IReadOnlyList<ScalarExpression> others, ScalarExpression length, ReadScope scope)
     {
         var (values, unknown) = Arguments([text, .. others], scope);
         if (unknown is not null)
@@ -239,7 +239,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>LEN</c> of a string and <c>DATALENGTH</c> of any scalar: int, bigint over max (observed:
     /// Len_and_datalength_are_int_or_bigint_over_max_and_len_ignores_trailing_spaces). NULL when its argument is.
     /// </summary>
-    private Value Length(FunctionCall call, ScalarExpression argument, BindingScope scope, bool bytes)
+    private Value Length(FunctionCall call, ScalarExpression argument, ReadScope scope, bool bytes)
     {
         var value = Expression(argument, scope);
         if (value.Shape is UnknownShape)
@@ -254,7 +254,7 @@ internal sealed partial class ProcedureAnalyzer
     /// <c>REPLACE(s, p, r)</c>: varchar(8000), nvarchar(4000) if any argument is national, max only when s is (observed:
     /// Replace_widens_to_8000_bytes_unless_its_string_is_max). NULL when any argument is.
     /// </summary>
-    private Value Replace(FunctionCall call, BindingScope scope)
+    private Value Replace(FunctionCall call, ReadScope scope)
     {
         var (values, unknown) = Arguments(call.Parameters, scope);
         if (unknown is not null)
@@ -266,7 +266,7 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary><c>STRING_ESCAPE(s, 'json')</c>: nvarchar(max), NULL when s is.</summary>
-    private Value StringEscape(FunctionCall call, BindingScope scope)
+    private Value StringEscape(FunctionCall call, ReadScope scope)
     {
         var value = Expression(call.Parameters[0], scope);
         if (value.Shape is UnknownShape)
@@ -282,7 +282,7 @@ internal sealed partial class ProcedureAnalyzer
     /// String_escape_is_nvarchar_max_and_formatmessage_nvarchar_4000_writing_a_null_argument_as_null_in_brackets). A message
     /// number names a message the project does not hold.
     /// </summary>
-    private Value FormatMessage(FunctionCall call, BindingScope scope)
+    private Value FormatMessage(FunctionCall call, ReadScope scope)
     {
         var format = Expression(call.Parameters[0], scope);
         if (format.Shape is UnknownShape)
@@ -310,7 +310,7 @@ internal sealed partial class ProcedureAnalyzer
     /// String_agg_past_its_limit_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off). The separator, even NULL,
     /// changes neither.
     /// </summary>
-    private Value StringAggregate(FunctionCall call, BindingScope scope)
+    private Value StringAggregate(FunctionCall call, ReadScope scope)
     {
         var argument = InAggregate(() => Expression(call.Parameters[0], scope));
         if (argument.Shape is UnknownShape)
@@ -335,10 +335,12 @@ internal sealed partial class ProcedureAnalyzer
     /// included, is an error (5373). A NULL argument, or a step the wrong way,
     /// gives no rows (observed: Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument).
     /// </summary>
-    private LocalRelationValues GenerateSeries(GlobalFunctionTableReference reference, BindingScope? outer)
+    /// <param name="symbol">The call, bound.</param>
+    /// <param name="scope">The scope its arguments are read in.</param>
+    private LocalRelationValues GenerateSeries(SeriesCall symbol, ReadScope scope)
     {
+        var reference = symbol.Syntax;
         var at = At(reference);
-        var scope = binder.BindFrom(new QuerySpecification(), outer, outer is null ? locals : null);
         var arguments = reference.Parameters.ToList();
         if (arguments.Count is not (2 or 3))
             return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, "GENERATE_SERIES takes two or three arguments.", at));

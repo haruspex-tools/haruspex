@@ -44,7 +44,7 @@ internal sealed partial class ProcedureAnalyzer
     /// float, and overflow only over a float, whose squares can pass float's range; an exact type's or a real's cannot
     /// (observed: The_statistical_aggregates_overflow_only_over_float).
     /// </summary>
-    private Value Average(FunctionCall call, BindingScope scope, BuiltInFunction function)
+    private Value Average(FunctionCall call, ReadScope scope, BuiltInFunction function)
     {
         var name = function.Name;
         var argument = InAggregate(() => Expression(call.Parameters[0], scope));
@@ -94,7 +94,7 @@ internal sealed partial class ProcedureAnalyzer
             : null;
 
     /// <summary>A numeric function's argument: its value, and its type when it is a number or a bit.</summary>
-    private (Value Value, ScalarType? Type) NumberArgument(ScalarExpression expression, BindingScope scope)
+    private (Value Value, ScalarType? Type) NumberArgument(ScalarExpression expression, ReadScope scope)
     {
         var value = Expression(expression, scope);
         return (value, value.Shape is UnknownShape || value.IsLiveJson ? null : TypeOf(value) is { } t && (t.IsNumber || t.IsBit) ? t : null);
@@ -112,7 +112,7 @@ internal sealed partial class ProcedureAnalyzer
     /// first makes the result NULL when it is, except ROUND's third (observed: a NULL third argument rounds), so
     /// <paramref name="onlyTheSecondCounts"/>.
     /// </summary>
-    private Value Numeric(FunctionCall call, BindingScope scope, Func<NumberCall, Value> typing, bool onlyTheSecondCounts = false)
+    private Value Numeric(FunctionCall call, ReadScope scope, Func<NumberCall, Value> typing, bool onlyTheSecondCounts = false)
     {
         var p = call.Parameters;
         var (value, type) = NumberArgument(p[0], scope);

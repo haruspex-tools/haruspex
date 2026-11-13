@@ -15,16 +15,16 @@ internal sealed partial class ProcedureAnalyzer
     private IReadOnlyList<string>? mergeActions;
 
     /// <summary>
-    /// While an OUTPUT is read: the alias of the source in FROM the write changes, which OUTPUT may name, but whether as
-    /// the row before or after the write is not observed, so a column read through it is unknown.
+    /// While an OUTPUT is read: the sources that name the write's target through its alias in FROM, which OUTPUT may read,
+    /// but whether as the row before or after the write is not observed, so a column read through one is unknown.
     /// </summary>
-    private string? outputTarget;
+    private IReadOnlyList<BoundSource> outputTarget = [];
 
     /// <summary>
-    /// While a MERGE's OUTPUT is read: the alias of its source, whose columns are null for the rows it changes because they
+    /// While a MERGE's OUTPUT is read: the sources of its source, whose columns are null for the rows it changes because they
     /// are not matched by the source, when it has such a clause; and why.
     /// </summary>
-    private (HashSet<string> Aliases, IrNullReason Why)? unmatchedSource;
+    private (IReadOnlyList<BoundSource> Sources, IrNullReason Why)? unmatchedSource;
 
     /// <summary>While a cursor's query is read: no filter proves anything of the row a FETCH returns (see <see cref="FetchRow"/>).</summary>
     private bool unfiltered;
@@ -113,41 +113,24 @@ internal sealed partial class ProcedureAnalyzer
         var inserted = spec is DeleteSpecification ? null : Pseudo(spec, target, after, actions?.Contains("DELETE") == true ? because : null, at);
         var deleted = spec is InsertSpecification ? null : Pseudo(spec, target, before, actions?.Contains("INSERT") == true ? because : null, at);
 
-        var sources = new List<TableReference>();
-        if (from is not null)
-            sources.AddRange(from.TableReferences);
-        if (spec is MergeSpecification { TableReference: { } source })
-            sources.Add(source);
-
         var outerActions = mergeActions;
-        var outerTarget = outputTarget;
-        var outerUnmatched = unmatchedSource;
         mergeActions = actions is null || actions.Contains(null) ? null : [.. actions.OfType<string>().Distinct().Order(StringComparer.Ordinal)];
-        outputTarget = from is not null && spec.Target is NamedTableReference { SchemaObject: { SchemaIdentifier: null } written } ? written.BaseIdentifier.Value : null;
-        // Every source in the USING tree: a joined USING is null-extended as a whole.
-        unmatchedSource = spec is MergeSpecification { TableReference: { } merged } m
-            && m.ActionClauses.Any(c => c.Condition == MergeCondition.NotMatchedBySource)
-            ? (DmlTarget.Sources([merged]).Select(DmlTarget.Alias).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase), because)
-            : null;
-        locals!.State = before;
         try
         {
+            // Read in the state before the write: OUTPUT's own columns are inserted and deleted, which are given.
             if (spec.OutputClause is { } output)
             {
-                var row = OutputRow(output.SelectColumns, sources, where, with, inserted, deleted, at);
+                var row = OutputRow(spec, output, output.SelectColumns, from, where, with, inserted, deleted, because, Reading(before));
                 appended++;
                 after = after.WithResults(after.Results.Append(new ResultShape(IrEncoding.Rowset, Rowset(row), [], IrCardinality.Many), at));
             }
 
             if (spec.OutputIntoClause is { } into)
-                after = OutputInto(into, OutputRow(into.SelectColumns, sources, where, with, inserted, deleted, at), after, at);
+                after = OutputInto(into, OutputRow(spec, into, into.SelectColumns, from, where, with, inserted, deleted, because, Reading(before)), after, at);
         }
         finally
         {
             mergeActions = outerActions;
-            outputTarget = outerTarget;
-            unmatchedSource = outerUnmatched;
-            locals.State = after;
         }
 
         return after;
@@ -163,14 +146,13 @@ internal sealed partial class ProcedureAnalyzer
         LocalRelationValues values;
         if (target.Direct is { } direct)
         {
-            locals!.State = state;
-            values = locals.Find(direct) is { } relation ? locals.Values(relation) : LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnresolvedTable, $"{direct} is not declared.", at));
+            values = Reading(state).Names.Find(direct) is { } relation ? Holding(relation, hinted: false, Reading(state)) : LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnresolvedTable, $"{direct} is not declared.", at));
         }
         else if (target.Named is { } only
             && binder.ResolveWritten(only) is [var name] && model.FindTable(name) is { } table && model.FindTableRedefinition(name) is null)
         {
-            var source = new BoundSource(name.Name, table, null, null);
-            values = new LocalRelationValues([.. table.Columns.Select(c => c.Name)], [.. table.Columns.Select(c => FromColumn(new BoundColumn(source, table, c)))], null);
+            var source = new BoundSource(name.Name, new TableTarget(table), null, spec.Target);
+            values = new LocalRelationValues([.. table.Columns.Select(c => c.Name)], [.. table.Columns.Select(c => FromColumn(new TableColumn(source, table, c)))], null);
         }
         else
         {
@@ -186,70 +168,51 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <summary>
     /// The row an OUTPUT's columns give, read as the select list of a query over the write's sources and the
-    /// <c>inserted</c> and <c>deleted</c> relations, filtered by its WHERE. <c>inserted.*</c> and <c>deleted.*</c> list the
-    /// target's columns.
+    /// <c>inserted</c> and <c>deleted</c> relations, filtered by its WHERE, as binding binds it (<see cref="Binder.BindOutput"/>).
     /// </summary>
-    private Row OutputRow(IList<SelectElement> columns, List<TableReference> sources, BooleanExpression? where, WithCtesAndXmlNamespaces? with, LocalRelationValues? inserted, LocalRelationValues? deleted, SourceLocation at)
+    /// <param name="spec">The write.</param>
+    /// <param name="clause">Its OUTPUT or OUTPUT … INTO clause.</param>
+    /// <param name="columns">The clause's select list.</param>
+    /// <param name="from">The write's FROM.</param>
+    /// <param name="where">The write's WHERE.</param>
+    /// <param name="with">The write's WITH.</param>
+    /// <param name="inserted">What <c>inserted</c> holds, or null when the write has none.</param>
+    /// <param name="deleted">What <c>deleted</c> holds, or null when the write has none.</param>
+    /// <param name="because">Why a MERGE's source is null in the rows it does not match.</param>
+    /// <param name="at">The statement's scope, in the state before the write.</param>
+    private Row OutputRow(
+        DataModificationSpecification spec,
+        TSqlFragment clause,
+        IList<SelectElement> columns,
+        FromClause? from,
+        BooleanExpression? where,
+        WithCtesAndXmlNamespaces? with,
+        LocalRelationValues? inserted,
+        LocalRelationValues? deleted,
+        IrNullReason because,
+        ReadScope at)
     {
-        return WithCtes(with, () =>
+        var location = At(clause);
+        return WithCtes(with, at, statement =>
         {
-            var frame = locals!.PushCtes();
+            var output = binder.BindOutput(spec, clause, columns, from, where, statement.Names, inserted?.Names, deleted?.Names);
+            var scope = output.Pseudo.Aggregate(statement, (s, p) => s.Naming(p, p.Name == "inserted" ? inserted! : deleted!));
+            var outerTarget = outputTarget;
+            var outerUnmatched = unmatchedSource;
+            outputTarget = output.Written;
+
+            // Every source in the USING tree: a joined USING is null-extended as a whole.
+            unmatchedSource = output.Unmatched.Count > 0 ? (output.Unmatched, because) : null;
             try
             {
-                var query = new QuerySpecification { FromClause = new FromClause(), WhereClause = where is null ? null : new WhereClause { SearchCondition = where } };
-                foreach (var source in sources)
-                    query.FromClause.TableReferences.Add(source);
-                foreach (var (name, values) in new[] { ("inserted", inserted), ("deleted", deleted) })
-                {
-                    if (values is null)
-                        continue;
-                    frame[name] = locals.Register(name, values);
-                    query.FromClause.TableReferences.Add(Like(new NamedTableReference { SchemaObject = Name(name) }, columns[0]));
-                }
-
-                foreach (var column in columns)
-                {
-                    if (column is SelectStarExpression { Qualifier.Identifiers: [var qualifier] } star
-                        && (qualifier.Value.Equals("inserted", StringComparison.OrdinalIgnoreCase) ? inserted : qualifier.Value.Equals("deleted", StringComparison.OrdinalIgnoreCase) ? deleted : null) is { Names: { } names })
-                    {
-                        foreach (var name in names)
-                        {
-                            var reference = Like(new ColumnReferenceExpression { MultiPartIdentifier = new MultiPartIdentifier() }, star);
-                            reference.MultiPartIdentifier.Identifiers.Add(new Identifier { Value = qualifier.Value });
-                            reference.MultiPartIdentifier.Identifiers.Add(new Identifier { Value = name });
-                            query.SelectElements.Add(Like(new SelectScalarExpression { Expression = reference }, star));
-                        }
-                    }
-                    else
-                    {
-                        query.SelectElements.Add(column);
-                    }
-                }
-
-                return Query(query, parent: null);
+                return Query(output.Query, scope);
             }
             finally
             {
-                locals.PopCtes();
+                outputTarget = outerTarget;
+                unmatchedSource = outerUnmatched;
             }
-        }, why => new Row([new RowColumn(null, Value.Unknown(why), at)], null));
-
-        static SchemaObjectName Name(string name)
-        {
-            var schemaObject = new SchemaObjectName();
-            schemaObject.Identifiers.Add(new Identifier { Value = name });
-            return schemaObject;
-        }
-    }
-
-    /// <summary>A fragment made here, placed where <paramref name="like"/> is, so that locations and texts name the source.</summary>
-    private static T Like<T>(T fragment, TSqlFragment like)
-        where T : TSqlFragment
-    {
-        fragment.ScriptTokenStream = like.ScriptTokenStream;
-        fragment.FirstTokenIndex = like.FirstTokenIndex;
-        fragment.LastTokenIndex = like.LastTokenIndex;
-        return fragment;
+        }, why => new Row([new RowColumn(null, Value.Unknown(why), location)], null));
     }
 
     /// <summary>
@@ -259,7 +222,8 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private FlowState OutputInto(OutputIntoClause into, Row row, FlowState state, SourceLocation at)
     {
-        if (into.IntoTable is NamedTableReference { SchemaObject: { SchemaIdentifier: null, BaseIdentifier.Value: var variable } } && variable.StartsWith('@'))
+        var local = DmlTarget.Local(into.IntoTable);
+        if (local is { } variable && variable.StartsWith('@'))
         {
             var columns = TableVariableTargets(variable, into.IntoTableColumns);
             return row.Star is null && columns is not null && columns.Count == row.Columns.Count
@@ -267,16 +231,15 @@ internal sealed partial class ProcedureAnalyzer
                 : TableVariableWritten(state, variable, null, null, null, at);
         }
 
-        if (into.IntoTable is not NamedTableReference { SchemaObject: var name } || !IsTemporary(name))
+        if (local is not { } table)
             return state;
-        var table = name.BaseIdentifier.Value;
         if (state.Temp(table) is not KnownTable known)
             return state;
         if (row.Star is not null || (into.IntoTableColumns.Count == 0 && known.Columns.Any(c => c.Identity != false)))
             return state.WithTemp(table, Unknown(table, Unsupported(IrUnknownReason.UnsupportedStatement, $"Which columns the OUTPUT at {at} writes in {table} is not modelled.", at)));
         var targets = into.IntoTableColumns.Count == 0
             ? [.. Enumerable.Range(0, known.Columns.Count)]
-            : into.IntoTableColumns.Select(c => IndexOf(known, c.MultiPartIdentifier.Identifiers[^1].Value)).ToList();
+            : Binder.Written(into.IntoTableColumns, [.. known.Columns.Select(c => c.Name)]).ToList();
         if (targets.Any(i => i < 0) || targets.Count != row.Columns.Count)
             return state.WithTemp(table, Unknown(table, Unsupported(IrUnknownReason.UnresolvedColumn, $"The OUTPUT at {at} does not match the columns of {table} one to one.", at)));
         return state.WithTemp(table, Written(known, targets, [[.. row.Columns.Select(c => c.Value)]], at, [[.. row.Columns.Select(c => c.Expression)]]));
@@ -297,23 +260,20 @@ internal sealed partial class ProcedureAnalyzer
     }
 
     /// <summary>Whether a column read in an OUTPUT names the write's target through its alias, which is not modelled.</summary>
-    private bool ReadsOutputTarget(ColumnBinding binding)
+    private bool ReadsOutputTarget(Resolution binding)
     {
         var source = binding switch
         {
-            BoundColumn column => column.Source,
-            BoundLocalColumn local => local.Source,
+            TableColumn column => column.Source,
+            RelationColumn local => local.Source,
             _ => null,
         };
-        return outputTarget is { } alias && source?.Alias is { } bound && bound.Equals(alias, StringComparison.OrdinalIgnoreCase);
+        return source is not null && outputTarget.Contains(source, ReferenceEqualityComparer.Instance);
     }
 
     /// <summary>Why a column of a MERGE's source may be null in its OUTPUT: the rows it changes not matched by the source have none.</summary>
     private IrNullReason? Unmatched(BoundSource source) =>
-        unmatchedSource is { } unmatched && source.Alias is { } alias && unmatched.Aliases.Contains(alias)
-            && !(source.Local?.Name is "inserted" or "deleted")
-            ? unmatched.Why
-            : null;
+        unmatchedSource is { } unmatched && unmatched.Sources.Contains(source, ReferenceEqualityComparer.Instance) ? unmatched.Why : null;
 
     // ---- cursors --------------------------------------------------------------------------------------------------
 
@@ -340,7 +300,7 @@ internal sealed partial class ProcedureAnalyzer
             return Outcome.Ends;
         }
 
-        var row = FetchRow(fetch);
+        var row = FetchRow(fetch, state);
         for (var i = 0; i < fetch.IntoVariables.Count; i++)
         {
             var value = row is not null && row.Count == fetch.IntoVariables.Count
@@ -363,7 +323,7 @@ internal sealed partial class ProcedureAnalyzer
     /// known either; a cursor is declared when its DECLARE runs, not when the procedure is compiled (observed:
     /// A_cursor_is_declared_when_its_declare_runs_not_when_the_procedure_is_compiled), so a FETCH where none ran fails.
     /// </summary>
-    private List<Value>? FetchRow(FetchCursorStatement fetch)
+    private List<Value>? FetchRow(FetchCursorStatement fetch, FlowState state)
     {
         if (fetch.Cursor?.Name?.Identifier is not { } name || !cursors.TryGetValue(name.Value, out var declared))
             return null;
@@ -384,7 +344,7 @@ internal sealed partial class ProcedureAnalyzer
         unfiltered = true;
         try
         {
-            return WithCtes(select.WithCtesAndXmlNamespaces, () => Query(query, parent: null) is { Star: null } row ? row.Columns.Select(c => c.Value).ToList() : null, _ => null);
+            return WithCtes(select.WithCtesAndXmlNamespaces, Reading(state), scope => Outermost(query, scope) is { Star: null } row ? row.Columns.Select(c => c.Value).ToList() : null, _ => null);
         }
         finally
         {

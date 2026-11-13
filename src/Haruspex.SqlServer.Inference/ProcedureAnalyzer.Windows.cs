@@ -29,7 +29,7 @@ internal sealed partial class ProcedureAnalyzer
     /// A_frame_that_may_leave_out_the_current_row_can_be_empty_and_give_null_over_a_never_null_column,
     /// Ranking_is_never_null_and_percentiles_are_null_only_over_all_null_input.
     /// </summary>
-    private Value Window(FunctionCall call, BindingScope scope, BuiltInFunction function, WindowRule rule)
+    private Value Window(FunctionCall call, ReadScope scope, BuiltInFunction function, WindowRule rule)
     {
         var name = function.Name;
         var over = call.OverClause!;
@@ -136,7 +136,7 @@ internal sealed partial class ProcedureAnalyzer
     /// Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type).
     /// Without a default it gives x's values only, so x's facts; with one, which may be outside them, only the type's.
     /// </summary>
-    private Value Offset(FunctionCall call, BindingScope scope)
+    private Value Offset(FunctionCall call, ReadScope scope)
     {
         var parameters = call.Parameters;
         var value = Expression(parameters[0], scope);

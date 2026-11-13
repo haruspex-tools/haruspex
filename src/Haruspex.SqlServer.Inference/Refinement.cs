@@ -21,9 +21,12 @@ internal sealed partial class ProcedureAnalyzer
     private Facts facts = Facts.None;
 
     /// <summary>A bound column's key among its source's columns: a table's column by name as declared, a relation's by position.</summary>
-    private static string Key(BoundColumn bound) => "c:" + bound.Column.Name;
+    private static string Key(TableColumn bound) => "c:" + bound.Column.Name;
 
-    private static string Key(BoundLocalColumn bound) => "#" + bound.Ordinal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    private static string Key(RelationColumn bound) => Key(bound.Ordinal);
+
+    /// <summary>The key of a relation's column by its position, as <see cref="Key(RelationColumn)"/> gives it.</summary>
+    private static string Key(int ordinal) => "#" + ordinal.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>The queries whose aggregate's arguments are being read: a column read there is a row's, not a group's.</summary>
     private readonly List<QuerySpecification?> aggregating = [];
@@ -51,9 +54,9 @@ internal sealed partial class ProcedureAnalyzer
     // ---- what a query's filters prove ---------------------------------------------------------------------------------
 
     /// <summary>What a query's filters prove of the rows it keeps, for reading its select list.</summary>
-    private Facts.Found Filters(QuerySpecification query, BindingScope scope)
+    private Facts.Found Filters(QuerySpecification query, ReadScope scope)
     {
-        var found = new Facts.Found(Facts.Proof.WhereTheRowIsThere, query, scope.Sources)
+        var found = new Facts.Found(Facts.Proof.WhereTheRowIsThere, query, scope.Bound.Sources)
         {
             Rolled = SuperAggregate(query) ? new IrNullReason(IrNullRule.SubtotalRow, At(query.GroupByClause).ToString()) : null,
         };
@@ -91,7 +94,7 @@ internal sealed partial class ProcedureAnalyzer
     /// optional side's row when it matched.
     /// </summary>
     /// <param name="own">When set, only these sources' columns are refined (see <see cref="Filters"/>).</param>
-    private void Joins(TableReference reference, BindingScope scope, Facts.Found found, bool insideOptional, HashSet<BoundSource>? own)
+    private void Joins(TableReference reference, ReadScope scope, Facts.Found found, bool insideOptional, HashSet<BoundSource>? own)
     {
         switch (reference)
         {
@@ -158,36 +161,12 @@ internal sealed partial class ProcedureAnalyzer
         return finder.Found.Count > 0;
     }
 
-    /// <summary>The sources of this scope that a table reference binds.</summary>
-    private static HashSet<BoundSource> Sources(TableReference reference, BindingScope scope)
-    {
-        var aliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        Collect(reference);
-        var found = new HashSet<BoundSource>(ReferenceEqualityComparer.Instance);
-        foreach (var source in scope.Sources.Where(s => s.Alias is not null && aliases.Contains(s.Alias)))
-            found.Add(source);
-        return found;
-
-        void Collect(TableReference r)
-        {
-            switch (r)
-            {
-                case JoinTableReference join:
-                    Collect(join.FirstTableReference);
-                    Collect(join.SecondTableReference);
-                    break;
-                case JoinParenthesisTableReference parenthesis:
-                    Collect(parenthesis.Join);
-                    break;
-                case NamedTableReference named:
-                    aliases.Add(named.Alias?.Value ?? named.SchemaObject.BaseIdentifier.Value);
-                    break;
-                case TableReferenceWithAlias { Alias: { } alias }:
-                    aliases.Add(alias.Value);
-                    break;
-            }
-        }
-    }
+    /// <summary>
+    /// The sources of this scope that a table reference binds (<see cref="QueryScope.SourcesUnder"/>), those with an alias: an
+    /// <c>OPENJSON</c> or <c>GENERATE_SERIES</c> without one is left out, as when sources were found by alias.
+    /// </summary>
+    private static HashSet<BoundSource> Sources(TableReference reference, ReadScope scope) =>
+        new(scope.Bound.SourcesUnder(reference).Where(s => s.Alias is not null), ReferenceEqualityComparer.Instance);
 
     /// <summary>
     /// Records every column that <paramref name="condition"/> proves non-null in the rows it keeps: those for which it is
@@ -195,17 +174,17 @@ internal sealed partial class ProcedureAnalyzer
     /// outer join's null-extended row has every column NULL, so it is never kept. With <paramref name="only"/>, only
     /// columns of those sources are recorded.
     /// </summary>
-    private void Refine(BooleanExpression condition, BindingScope scope, Facts.Found found, bool rows, HashSet<BoundSource>? only)
+    private void Refine(BooleanExpression condition, ReadScope scope, Facts.Found found, bool rows, HashSet<BoundSource>? only)
     {
         var bindings = new Dictionary<ColumnReferenceExpression, (BoundSource Source, string Key)?>(ReferenceEqualityComparer.Instance);
         (BoundSource Source, string Key)? Bind(ColumnReferenceExpression column)
         {
             if (!bindings.TryGetValue(column, out var bound))
             {
-                bound = binder.BindColumn(column, scope) switch
+                bound = binder.Resolve(column, scope.Bound) switch
                 {
-                    BoundColumn c => (c.Source, Key(c)),
-                    BoundLocalColumn { Ordinal: >= 0 } l => (l.Source, Key(l)),
+                    TableColumn c => (c.Source, Key(c)),
+                    RelationColumn { Ordinal: >= 0 } l => (l.Source, Key(l)),
                     _ => null,
                 };
                 bindings[column] = bound;
@@ -393,7 +372,7 @@ internal sealed partial class ProcedureAnalyzer
     /// and when every value is (observed: An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows,
     /// An_aggregate_with_group_by_returns_no_row_over_no_rows).
     /// </summary>
-    private Value MinOrMax(FunctionCall call, BindingScope scope, BuiltInFunction function)
+    private Value MinOrMax(FunctionCall call, ReadScope scope, BuiltInFunction function)
     {
         var at = At(call);
         var name = function.Name.ToUpperInvariant();
