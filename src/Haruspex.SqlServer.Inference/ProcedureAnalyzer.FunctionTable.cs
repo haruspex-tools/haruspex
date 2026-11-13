@@ -37,7 +37,7 @@ internal sealed partial class ProcedureAnalyzer
     private static FunctionTyping Typing(
         BuiltInFunction function, (int, int?)? arity, string rule, IrNullRule[] nulls, string[] observedIn,
         Func<ProcedureAnalyzer, ScalarExpression, ReadScope, Value>? type, bool readsOnlyItsArguments = true, OtherForms otherForms = OtherForms.FormNotModelled) =>
-        new(function, arity, otherForms, rule, nulls, observedIn, readsOnlyItsArguments, type);
+        new(function, arity, otherForms, rule, [.. nulls], [.. observedIn], readsOnlyItsArguments, type);
 
     private static FunctionCall Call(ScalarExpression call) => (FunctionCall)call;
 

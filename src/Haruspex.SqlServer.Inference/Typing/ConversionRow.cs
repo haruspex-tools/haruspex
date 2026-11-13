@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.SqlServer.Inference.Typing;
@@ -10,4 +11,4 @@ namespace Haruspex.SqlServer.Inference.Typing;
 /// <param name="From">The source types.</param>
 /// <param name="When">The condition on their arguments.</param>
 /// <param name="ObservedIn">The observation tests that establish the row, by name.</param>
-internal sealed record ConversionRow(IReadOnlyList<BuiltInType> To, IReadOnlyList<BuiltInType> From, ConversionCondition When, IReadOnlyList<string> ObservedIn);
+internal sealed record ConversionRow(EquatableArray<BuiltInType> To, EquatableArray<BuiltInType> From, ConversionCondition When, EquatableArray<string> ObservedIn);

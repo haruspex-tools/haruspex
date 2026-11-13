@@ -153,7 +153,7 @@ internal sealed partial class ProcedureAnalyzer
 
     /// <param name="Rows">How many rows the query returns.</param>
     /// <param name="Sources">The sources of its FROM, for a view's keys.</param>
-    private sealed record Row(IReadOnlyList<RowColumn> Columns, SourceLocation? Star, IrCardinality Rows = IrCardinality.Many, IReadOnlyList<BoundSource>? Sources = null);
+    private sealed record Row(EquatableArray<RowColumn> Columns, SourceLocation? Star, IrCardinality Rows = IrCardinality.Many, EquatableArray<BoundSource>? Sources = null);
 
     /// <summary>A query specification's row, read in its bound scope, with what its relations hold attached first.</summary>
     /// <param name="bound">The query, bound.</param>
@@ -201,7 +201,7 @@ internal sealed partial class ProcedureAnalyzer
             current = outer;
         }
 
-        return new Row(columns, star, Cardinality(query, scope), scope.Bound.Sources);
+        return new Row([.. columns], star, Cardinality(query, scope), [.. scope.Bound.Sources]);
     }
 
     /// <summary>The table column a select-list expression is, unchanged: a bare column reference without COLLATE.</summary>

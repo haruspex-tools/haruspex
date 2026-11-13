@@ -137,10 +137,20 @@ internal sealed partial class ProcedureAnalyzer
 
     // ---- keys ----------------------------------------------------------------------------------------------------------
 
-    /// <summary>A condition that must be TRUE for a row to be kept, and the sources whose key it may fix.</summary>
-    /// <param name="Condition">A conjunct of WHERE, or of a join's ON.</param>
-    /// <param name="Within">The sources it may fix: any for WHERE; those of its join for ON, the optional side's for an outer join.</param>
-    private sealed record Fixing(BooleanExpression Condition, HashSet<BoundSource>? Within);
+    /// <summary>
+    /// A condition that must be TRUE for a row to be kept, and the sources whose key it may fix: a working value of one query's
+    /// reading, whose sources are a set by identity, so nothing compares two.
+    /// </summary>
+    /// <param name="condition">A conjunct of WHERE, or of a join's ON.</param>
+    /// <param name="within">The sources it may fix: any for WHERE; those of its join for ON, the optional side's for an outer join.</param>
+    private sealed class Fixing(BooleanExpression condition, HashSet<BoundSource>? within)
+    {
+        /// <summary>A conjunct of WHERE, or of a join's ON.</summary>
+        public BooleanExpression Condition { get; } = condition;
+
+        /// <summary>The sources it may fix; null for any.</summary>
+        public HashSet<BoundSource>? Within { get; } = within;
+    }
 
     /// <summary>
     /// Whether the filters fix a whole unique key of every source, so that the query returns at most one row. A source is

@@ -123,7 +123,7 @@ internal sealed partial class ProcedureAnalyzer
     /// ANSI_WARNINGS and ARITHABORT off (observed: A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options);
     /// empty when it cannot (<see cref="Conversions.NeverNull"/>, or a literal that fits).</param>
     /// <param name="Why">When the type is not known, why, naming the types so a user knows what to change.</param>
-    private sealed record ChainType(ScalarType? Type, IReadOnlyList<EquatableArray<IrNullReason>> Overflows, string? Why);
+    private sealed record ChainType(ScalarType? Type, EquatableArray<EquatableArray<IrNullReason>> Overflows, string? Why);
 
     /// <param name="values">Each value, the expression it came from (for a literal's digits and value), and where an overflow
     /// converting it would happen.</param>
@@ -167,7 +167,7 @@ internal sealed partial class ProcedureAnalyzer
                 ?? Conversions.NeverNull(known[i], type);
             return fits ? (EquatableArray<IrNullReason>)[] : [new IrNullReason(IrNullRule.ArithmeticOverflow, v.At.ToString())];
         }).ToList();
-        return new ChainType(type, overflows, null);
+        return new ChainType(type, [.. overflows], null);
     }
 
     // ---- COALESCE and ISNULL ----------------------------------------------------------------------------------------

@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -22,7 +23,7 @@ internal sealed record FunctionTyping(
     (int Least, int? Most)? Arity,
     OtherForms OtherForms,
     string Rule,
-    IReadOnlyList<IrNullRule> MayBeNullBecause,
-    IReadOnlyList<string> ObservedIn,
+    EquatableArray<IrNullRule> MayBeNullBecause,
+    EquatableArray<string> ObservedIn,
     bool ReadsOnlyItsArguments,
     Func<ProcedureAnalyzer, ScalarExpression, ReadScope, Value>? Type);

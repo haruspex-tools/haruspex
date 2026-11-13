@@ -128,14 +128,14 @@ internal sealed partial class ProcedureAnalyzer
             columns.Add(new RowColumn(first.Name, SetColumn([.. rows.Select(r => r.Columns[c])], node, first.At), first.At));
         }
 
-        return new Row(columns, null, node.Rows);
+        return new Row([.. columns], null, node.Rows);
     }
 
     /// <summary>
     /// One step of a set operation: which queries' values come out (<paramref name="Out"/>), and the tree it was built from,
     /// for nulls.
     /// </summary>
-    private sealed record SetNode(IReadOnlyList<int> Out, SetNode? Left, SetNode? Right, bool Intersect, IrCardinality Rows);
+    private sealed record SetNode(EquatableArray<int> Out, SetNode? Left, SetNode? Right, bool Intersect, IrCardinality Rows);
 
     private static SetNode Join(SetNode left, SetNode right, BinaryQueryExpressionType type) => type switch
     {

@@ -81,15 +81,36 @@ internal sealed class Facts
     public IrNullReason? Rolled(BoundSource source, IReadOnlyList<QuerySpecification?> aggregating) =>
         frames.FirstOrDefault(f => f.Rolled is not null && f.Own.Contains(source) && !aggregating.Any(q => ReferenceEquals(q, f.Query)))?.Rolled;
 
-    private sealed record Frame(
-        Proof Strength,
-        QuerySpecification? Query,
-        ImmutableHashSet<BoundSource> Own,
-        IrNullReason? Rolled,
-        ImmutableDictionary<BoundSource, ImmutableHashSet<string>> Values,
-        ImmutableHashSet<BoundSource> Rows,
-        ImmutableHashSet<string> Variables,
-        ImmutableHashSet<string> Aggregates);
+    /// <summary>
+    /// What one query's filters or one branch's conditions proved, as <see cref="Found"/> gathered it. Its sources are sets by
+    /// identity, and the environment is read, never compared, so nothing compares two frames.
+    /// </summary>
+    private sealed class Frame(
+        Proof strength,
+        QuerySpecification? query,
+        ImmutableHashSet<BoundSource> own,
+        IrNullReason? rolled,
+        ImmutableDictionary<BoundSource, ImmutableHashSet<string>> values,
+        ImmutableHashSet<BoundSource> rows,
+        ImmutableHashSet<string> variables,
+        ImmutableHashSet<string> aggregates)
+    {
+        public Proof Strength { get; } = strength;
+
+        public QuerySpecification? Query { get; } = query;
+
+        public ImmutableHashSet<BoundSource> Own { get; } = own;
+
+        public IrNullReason? Rolled { get; } = rolled;
+
+        public ImmutableDictionary<BoundSource, ImmutableHashSet<string>> Values { get; } = values;
+
+        public ImmutableHashSet<BoundSource> Rows { get; } = rows;
+
+        public ImmutableHashSet<string> Variables { get; } = variables;
+
+        public ImmutableHashSet<string> Aggregates { get; } = aggregates;
+    }
 
     /// <summary>
     /// What one query's filters, or one branch's conditions, prove: gathered while they are read, then added to the

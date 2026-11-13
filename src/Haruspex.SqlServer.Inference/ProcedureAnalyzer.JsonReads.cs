@@ -30,8 +30,22 @@ internal sealed partial class ProcedureAnalyzer
 
     // ---- paths --------------------------------------------------------------------------------------------------------
 
-    /// <summary>A JSON path: whether it is strict, and its steps (a key, or an index into an array).</summary>
-    private sealed record JsonPath(bool Strict, IReadOnlyList<object> Steps);
+    /// <summary>A JSON path: whether it is strict, and its steps.</summary>
+    private sealed record JsonPath(bool Strict, EquatableArray<JsonStep> Steps);
+
+    /// <summary>A step of a JSON path: a key of an object, or an index into an array.</summary>
+    private abstract record JsonStep
+    {
+        private protected JsonStep()
+        {
+        }
+    }
+
+    /// <summary>A key of an object, as the path writes it.</summary>
+    private sealed record JsonKey(string Name) : JsonStep;
+
+    /// <summary>An index into an array, from 0.</summary>
+    private sealed record JsonIndex(int Position) : JsonStep;
 
     /// <summary>
     /// Reads a path such as <c>'strict $.lines[0]."unit price"'</c>: <c>lax</c> or <c>strict</c>, <c>$</c>, then keys and
@@ -48,7 +62,7 @@ internal sealed partial class ProcedureAnalyzer
         if (s.Length == 0 || s[0] != '$')
             return null;
 
-        var steps = new List<object>();
+        var steps = new List<JsonStep>();
         var i = 1;
         while (i < s.Length)
         {
@@ -57,7 +71,7 @@ internal sealed partial class ProcedureAnalyzer
                 var end = s.IndexOf('"', i + 2);
                 if (end < 0 || s[(i + 2)..end].Contains('\\', StringComparison.Ordinal))
                     return null;
-                steps.Add(s[(i + 2)..end]);
+                steps.Add(new JsonKey(s[(i + 2)..end]));
                 i = end + 1;
             }
             else if (s[i] == '.')
@@ -67,14 +81,14 @@ internal sealed partial class ProcedureAnalyzer
                     i++;
                 if (i == start)
                     return null;
-                steps.Add(s[start..i]);
+                steps.Add(new JsonKey(s[start..i]));
             }
             else if (s[i] == '[')
             {
                 var end = s.IndexOf(']', i);
                 if (end < 0 || !int.TryParse(s[(i + 1)..end], NumberStyles.None, CultureInfo.InvariantCulture, out var index))
                     return null;
-                steps.Add(index);
+                steps.Add(new JsonIndex(index));
                 i = end + 1;
             }
             else
@@ -83,7 +97,7 @@ internal sealed partial class ProcedureAnalyzer
             }
         }
 
-        return new JsonPath(strict, steps);
+        return new JsonPath(strict, [.. steps]);
     }
 
     /// <summary>
@@ -93,7 +107,7 @@ internal sealed partial class ProcedureAnalyzer
     /// </summary>
     private sealed record Found(Shape? Shape, bool MayBeMissing, bool MayBeNull);
 
-    private static Found? Follow(Shape shape, IReadOnlyList<object> steps, int from = 0)
+    private static Found? Follow(Shape shape, EquatableArray<JsonStep> steps, int from = 0)
     {
         if (from == steps.Count)
             return new Found(shape, false, false);
@@ -109,7 +123,7 @@ internal sealed partial class ProcedureAnalyzer
                 }
 
                 return all;
-            case (ObjectShape obj, string key):
+            case (ObjectShape obj, JsonKey(var key)):
                 if (obj.Fields.FirstOrDefault(f => f.Name == key) is not { } field)
                     return new Found(null, true, false);
                 var nullable = field.NullableBecause.Count > 0;
@@ -117,7 +131,7 @@ internal sealed partial class ProcedureAnalyzer
                 if (Follow(field.Type, steps, from + 1) is not { } below)
                     return null;
                 return below with { MayBeMissing = below.MayBeMissing || missing || (nullable && from + 1 < steps.Count), MayBeNull = below.MayBeNull || (nullable && !missing && from + 1 == steps.Count) };
-            case (TupleShape tuple, int index):
+            case (TupleShape tuple, JsonIndex(var index)):
                 if (index >= tuple.Items.Count)
                     return new Found(null, true, false);
                 var item = tuple.Items[index];
@@ -127,7 +141,7 @@ internal sealed partial class ProcedureAnalyzer
                 return inner with { MayBeMissing = inner.MayBeMissing || (itemNull && from + 1 < steps.Count), MayBeNull = inner.MayBeNull || (itemNull && from + 1 == steps.Count) };
             case (ObjectShape or TupleShape or ArrayShape or ScalarShape or JsonTextShape, _):
                 // A key of an array or a scalar, an index of an object or a scalar: not there.
-                return shape is ArrayShape && steps[from] is int ? null : new Found(null, true, false);
+                return shape is ArrayShape && steps[from] is JsonIndex ? null : new Found(null, true, false);
             default:
                 return null;
         }

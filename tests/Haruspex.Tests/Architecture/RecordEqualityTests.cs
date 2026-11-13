@@ -65,22 +65,16 @@ public class RecordEqualityTests
     private static readonly Dictionary<string, string> NotCompared = new(StringComparer.Ordinal)
     {
         ["Haruspex.Emit.Zod.Planning.ZodPlan"] = "A stage's output, handed to the next once: nothing compares two plans.",
+        ["Haruspex.SqlServer.Inference.Facts+Frame"] = "What one query or branch proved, its sources a set by identity: the environment is read, never compared.",
+        ["Haruspex.SqlServer.Inference.ProcedureAnalyzer+Fixing"] = "A condition and the sources it may fix, a set by identity, within one query's reading.",
+        ["Haruspex.SqlServer.Inference.ReadScope"] = "What a source holds, keyed by the source by identity: two sources of one table in two scopes are equal as records.",
         ["Haruspex.SqlServer.Semantics.Binder+Adding"] = "A builder of one query's sources: each copy adds to the one list, and nothing compares two.",
     };
 
     /// <summary>Records still holding a collection that compares by reference, by full name, until each is swept.</summary>
     private static readonly HashSet<string> NotYetSwept = new(StringComparer.Ordinal)
     {
-        "Haruspex.SqlServer.Inference.Facts+Frame",
-        "Haruspex.SqlServer.Inference.FunctionTyping",
         "Haruspex.SqlServer.Inference.ProcedureAnalysis",
-        "Haruspex.SqlServer.Inference.ProcedureAnalyzer+ChainType",
-        "Haruspex.SqlServer.Inference.ProcedureAnalyzer+Fixing",
-        "Haruspex.SqlServer.Inference.ProcedureAnalyzer+JsonPath",
-        "Haruspex.SqlServer.Inference.ProcedureAnalyzer+Row",
-        "Haruspex.SqlServer.Inference.ProcedureAnalyzer+SetNode",
-        "Haruspex.SqlServer.Inference.ReadScope",
-        "Haruspex.SqlServer.Inference.Typing.ConversionRow",
         "Haruspex.SqlServer.Inference.Walked",
     };
 
