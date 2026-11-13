@@ -66,7 +66,7 @@ public class ConfigCliTests
 
         Assert.Equal(0, exitCode);
         Assert.Equal(
-            $"{Path.Combine(dir.Path, "haruspex.json")}: warning: rpt.search: its result sets are unknown: EXEC (@sql) runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (search.sql:5:1) Declare them in haruspex.json under procedures[\"rpt.search\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it.\n",
+            $"{Path.Combine(dir.Path, "haruspex.json")}: warning HAR4204: rpt.search: its result sets are unknown: EXEC (@sql) runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (search.sql:5:1) Declare them in haruspex.json under procedures[\"rpt.search\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it.\n",
             error);
         Assert.Contains("haruspex: 1 procedure, 1 unknown(s).", output, StringComparison.Ordinal);
     }
@@ -223,7 +223,7 @@ public class ConfigCliTests
 
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);
-        Assert.Equal($"{Path.Combine(copy.Path, "haruspex.json")}:3:14: error: objects: must be \"strip\" or \"strict\", not \"loose\".\n", error);
+        Assert.Equal($"{Path.Combine(copy.Path, "haruspex.json")}:3:14: error HAR3005: objects: must be \"strip\" or \"strict\", not \"loose\".\n", error);
         Assert.False(Directory.Exists(Path.Combine(copy.Path, "out")));
     }
 
@@ -235,7 +235,7 @@ public class ConfigCliTests
         var (exitCode, _, error) = Run(copy.Path, "generate", "--out", Path.Combine(copy.Path, "out"));
 
         Assert.Equal(2, exitCode);
-        Assert.Equal($"{Path.Combine(copy.Path, "haruspex.json")}:4:5: error: schemas.shop.include[1]: 'get_baskte' matches no procedure in the schema \"shop\". Correct it, or remove it.\n", error);
+        Assert.Equal($"{Path.Combine(copy.Path, "haruspex.json")}:4:5: error HAR4002: schemas.shop.include[1]: 'get_baskte' matches no procedure in the schema \"shop\". Correct it, or remove it.\n", error);
     }
 
     [Fact]
@@ -246,7 +246,7 @@ public class ConfigCliTests
         var (exitCode, _, error) = Run(copy.Path, "generate", "--out", Path.Combine(copy.Path, "out"));
 
         Assert.Equal(2, exitCode);
-        Assert.Equal($"{Path.Combine(copy.Path, "haruspex.json")}:1:78: error: schemas.shop.exclude[0]: '*_old' excludes nothing: it matches no procedure that \"include\" selects in the schema \"shop\". Remove it.\n", error);
+        Assert.Equal($"{Path.Combine(copy.Path, "haruspex.json")}:1:78: error HAR4003: schemas.shop.exclude[0]: '*_old' excludes nothing: it matches no procedure that \"include\" selects in the schema \"shop\". Remove it.\n", error);
     }
 
     [Fact]
@@ -274,7 +274,7 @@ public class ConfigCliTests
 
         Assert.Equal(2, exitCode);
         Assert.StartsWith($"{Path.Combine(copy.Path, "haruspex.json")}:2:", error, StringComparison.Ordinal);
-        Assert.Contains("error: procedures[\"shop.list_products\"].name: 'delete' is not a valid name", error, StringComparison.Ordinal);
+        Assert.Contains("error HAR3019: procedures[\"shop.list_products\"].name: 'delete' is not a valid name", error, StringComparison.Ordinal);
         Assert.False(Directory.Exists(Path.Combine(copy.Path, "out")));
     }
 
@@ -307,7 +307,7 @@ public class ConfigCliTests
 
         Assert.Equal(2, exitCode);
         Assert.StartsWith(
-            $"{Path.Combine(copy.Path, "haruspex.json")}:2:58: error: schemas.shop_admin: \"Sales\" would name both the procedure shop.list_products and the procedure shop_admin.report_sales. Generated names must not clash: give one of their schemas a \"prefix\"",
+            $"{Path.Combine(copy.Path, "haruspex.json")}:2:58: error HAR4303: schemas.shop_admin: \"Sales\" would name both the procedure shop.list_products and the procedure shop_admin.report_sales. Generated names must not clash: give one of their schemas a \"prefix\"",
             error,
             StringComparison.Ordinal);
         Assert.False(Directory.Exists(Path.Combine(copy.Path, "out")));
@@ -323,7 +323,7 @@ public class ConfigCliTests
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);
         Assert.Equal(
-            $"{Path.Combine(copy.Path, "haruspex.json")}:1:38: error: schemas.shop: the schema \"shop\" selects nothing: its \"exclude\" removes every procedure its \"include\" selects. Narrow the exclude, or remove the block.\n",
+            $"{Path.Combine(copy.Path, "haruspex.json")}:1:38: error HAR4004: schemas.shop: the schema \"shop\" selects nothing: its \"exclude\" removes every procedure its \"include\" selects. Narrow the exclude, or remove the block.\n",
             error);
         Assert.False(Directory.Exists(Path.Combine(copy.Path, "out")));
     }
@@ -337,7 +337,7 @@ public class ConfigCliTests
 
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);
-        Assert.Equal("haruspex: error: --include 'shop.recalculate_internal' matches only procedures that schemas.shop.exclude leaves out, so it selects nothing.\n", error);
+        Assert.Equal("haruspex: error HAR4006: --include 'shop.recalculate_internal' matches only procedures that schemas.shop.exclude leaves out, so it selects nothing.\n", error);
         Assert.Empty(Directory.EnumerateFileSystemEntries(outDir.Path));
     }
 
@@ -349,7 +349,7 @@ public class ConfigCliTests
         var (exitCode, _, error) = Run(copy.Path, "generate", "--out", Path.Combine(copy.Path, "out"));
 
         Assert.Equal(2, exitCode);
-        Assert.Contains("error: schemas.shopp: the project has no procedure in a schema named \"shopp\".", error, StringComparison.Ordinal);
+        Assert.Contains("error HAR4001: schemas.shopp: the project has no procedure in a schema named \"shopp\".", error, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -364,7 +364,7 @@ public class ConfigCliTests
 
         Assert.Equal(0, exitCode);
         Assert.Equal(
-            $"{Path.Combine(copy.Path, "haruspex.json")}:2:54: warning: procedures[\"shop.list_products\"].paths[\"[].sku\"]: \"nullable\": false agrees with the inference, which already proves the value at results[0][].sku is never null. Remove it.\n",
+            $"{Path.Combine(copy.Path, "haruspex.json")}:2:54: warning HAR4110: procedures[\"shop.list_products\"].paths[\"[].sku\"]: \"nullable\": false agrees with the inference, which already proves the value at results[0][].sku is never null. Remove it.\n",
             error);
     }
 

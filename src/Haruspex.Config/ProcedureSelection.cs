@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Config;
@@ -23,13 +24,13 @@ public static class ProcedureSelection
         ArgumentNullException.ThrowIfNull(config);
 
         var selected = new List<ObjectName>();
-        var problems = new List<ConfigProblem>();
+        var problems = new List<Diagnostic>();
         foreach (var schema in config.Schemas)
         {
             var own = procedures.Where(p => string.Equals(p.Schema, schema.Name, StringComparison.OrdinalIgnoreCase)).ToList();
             if (own.Count == 0)
             {
-                problems.Add(new ConfigProblem(ConfigSeverity.Error, config.File, schema.At,
+                problems.Add(ConfigCodes.NoSuchSchema.At(schema.At,
                     $"the project has no procedure in a schema named \"{schema.Name}\". A schema key is the schema's name as it is, without brackets."));
                 continue;
             }
@@ -38,12 +39,12 @@ public static class ProcedureSelection
                 continue;
 
             foreach (var pattern in include.Where(i => !own.Any(p => i.Pattern.Matches(p.Name))))
-                problems.Add(new ConfigProblem(ConfigSeverity.Error, config.File, pattern.At, $"'{pattern.Pattern.Text}' matches no procedure in the schema \"{schema.Name}\". Correct it, or remove it."));
+                problems.Add(ConfigCodes.IncludeMatchesNothing.At(pattern.At, $"'{pattern.Pattern.Text}' matches no procedure in the schema \"{schema.Name}\". Correct it, or remove it."));
 
             var included = own.Where(p => include.Any(i => i.Pattern.Matches(p.Name))).ToList();
             foreach (var pattern in schema.Exclude.Where(e => !included.Any(p => e.Pattern.Matches(p.Name))))
             {
-                problems.Add(new ConfigProblem(ConfigSeverity.Error, config.File, pattern.At,
+                problems.Add(ConfigCodes.ExcludeMatchesNothing.At(pattern.At,
                     $"'{pattern.Pattern.Text}' excludes nothing: it matches no procedure that \"include\" selects in the schema \"{schema.Name}\". Remove it."));
             }
 
@@ -51,7 +52,7 @@ public static class ProcedureSelection
             var kept = included.Where(p => !schema.Exclude.Any(e => e.Pattern.Matches(p.Name))).ToList();
             if (included.Count > 0 && kept.Count == 0)
             {
-                problems.Add(new ConfigProblem(ConfigSeverity.Error, config.File, schema.At,
+                problems.Add(ConfigCodes.SelectsNothing.At(schema.At,
                     $"the schema \"{schema.Name}\" selects nothing: its \"exclude\" removes every procedure its \"include\" selects. Narrow the exclude, or remove the block."));
             }
 
@@ -67,7 +68,7 @@ public static class ProcedureSelection
     /// is a message for the command line: a pattern that matches no procedure, or one whose every match the file's
     /// excludes leave out (which would otherwise type nothing, silently).
     /// </summary>
-    public static (IReadOnlyList<ObjectName> Procedures, IReadOnlyList<string> Problems) Select(
+    public static (IReadOnlyList<ObjectName> Procedures, IReadOnlyList<Diagnostic> Problems) Select(
         IReadOnlyList<ObjectName> procedures, IReadOnlyList<ObjectPattern> include, HaruspexConfig config)
     {
         ArgumentNullException.ThrowIfNull(procedures);
@@ -75,18 +76,18 @@ public static class ProcedureSelection
         ArgumentNullException.ThrowIfNull(config);
 
         bool Excluded(ObjectName p) => config.Schema(p.Schema) is { } schema && schema.Exclude.Any(e => e.Pattern.Matches(p.Name));
-        var problems = new List<string>();
+        var problems = new List<Diagnostic>();
         foreach (var pattern in include)
         {
             var matches = procedures.Where(pattern.Matches).ToList();
             if (matches.Count == 0)
             {
-                problems.Add($"--include '{pattern.Text}' matches no procedure. Correct it, or remove it.");
+                problems.Add(ConfigCodes.CommandLineIncludeMatchesNothing.At(null, $"--include '{pattern.Text}' matches no procedure. Correct it, or remove it."));
             }
             else if (matches.All(Excluded))
             {
                 var schemas = string.Join(", ", matches.Select(m => config.Schema(m.Schema)?.Name).OfType<string>().Distinct(StringComparer.Ordinal).Select(s => $"schemas.{s}.exclude"));
-                problems.Add($"--include '{pattern.Text}' matches only procedures that {schemas} leaves out, so it selects nothing.");
+                problems.Add(ConfigCodes.CommandLineIncludeExcluded.At(null, $"--include '{pattern.Text}' matches only procedures that {schemas} leaves out, so it selects nothing."));
             }
         }
 

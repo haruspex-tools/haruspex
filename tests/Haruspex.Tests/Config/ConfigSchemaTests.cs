@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Haruspex.Collections;
+using Haruspex.Diagnostics;
 using Haruspex.Tests.Schemas;
 
 namespace Haruspex.Tests.Config;
@@ -35,7 +36,7 @@ public class ConfigSchemaTests
         return Schema().Validate(instance.RootElement);
     }
 
-    private static EquatableArray<ConfigProblem> ReaderProblems(string file) => ConfigReader.Read(file).Problems;
+    private static EquatableArray<Diagnostic> ReaderProblems(string file) => ConfigReader.Read(file).Problems;
 
     public static TheoryData<string> Valid { get; } = [.. Directory.GetFiles(Path.Combine(Examples, "valid")).Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal)];
 
@@ -67,7 +68,7 @@ public class ConfigSchemaTests
         var file = Path.Combine(Examples, "invalid", name);
 
         Assert.NotEmpty(SchemaErrors(file));
-        Assert.Contains(ReaderProblems(file), p => p.Severity == ConfigSeverity.Error);
+        Assert.Contains(ReaderProblems(file), p => p.IsError);
     }
 
     [Fact]

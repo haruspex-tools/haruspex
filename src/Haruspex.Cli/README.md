@@ -35,7 +35,8 @@ haruspex generate path/to/database --include 'sales.*' --out src/db
 
 `generate` writes `haruspex.ir.json` and `haruspex.zod.ts` to the output folder. The folder argument, `--include` and
 `--out` override the config file for one run, and `--config` names a config file instead of searching for one.
-Diagnostics go to standard error as `file:line:column: error: message`, or `warning:`, which editors and CI annotate.
+Diagnostics go to standard error as `file:line:column: error HAR1001: message`, or `warning`, with the problem's code,
+which editors and CI annotate.
 A warning, such as a call whose results only a declaration in the config file could give, doesn't stop the run. A run
 that succeeds prints one line to standard output: how many procedures it typed and how many unknowns there are. The
 unknowns themselves are in the IR file's `unknowns`, each with its reason, a sentence saying why, and where it is; they

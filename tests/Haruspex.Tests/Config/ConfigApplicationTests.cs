@@ -42,7 +42,7 @@ public partial class ConfigApplicationTests
 
         public IReadOnlyList<string> Problems => [.. Applied.Problems.Select(p => p.ToString())];
 
-        public string Error => Assert.Single(Applied.Problems, p => p.Severity == ConfigSeverity.Error).ToString();
+        public string Error => Assert.Single(Applied.Problems, p => p.IsError).ToString();
     }
 
     private static Run Apply(string procedures, string config, string include = "*.*", string? output = null, IReadOnlyCollection<string>? selectedByFile = null)

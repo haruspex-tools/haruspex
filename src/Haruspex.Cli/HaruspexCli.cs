@@ -204,7 +204,7 @@ internal static class HaruspexCli
         {
             var (oneOff, problems) = ProcedureSelection.Select(project.Procedures, include, config);
             foreach (var problem in problems)
-                error.WriteLine($"haruspex: error: {problem}");
+                error.WriteLine(problem);
             if (problems.Count > 0)
                 return ExitCodes.Usage;
             selected = oneOff;

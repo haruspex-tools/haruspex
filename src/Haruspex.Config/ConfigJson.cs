@@ -24,14 +24,14 @@ internal static class ConfigJson
         try
         {
             if (!reader.Read())
-                throw new ConfigJsonException("The file is empty; it must hold a JSON object.", 1, 1);
+                throw new ConfigJsonException(ConfigCodes.NotJson, "The file is empty; it must hold a JSON object.", 1, 1);
             var value = Read(ref reader, positions, "");
 
             // The reader itself refuses anything after the value, with its position; this only guards that it does.
             if (reader.Read())
             {
                 var (line, column) = positions.Of(reader.TokenStartIndex);
-                throw new ConfigJsonException("Unexpected text after the end of the JSON value.", line, column);
+                throw new ConfigJsonException(ConfigCodes.NotJson, "Unexpected text after the end of the JSON value.", line, column);
             }
 
             return value;
@@ -41,7 +41,7 @@ internal static class ConfigJson
             // The reader counts lines from 0 and positions in bytes; a message here counts both from 1, in characters.
             var line = (int)(e.LineNumber ?? 0);
             var column = positions.Column(line, (int)(e.BytePositionInLine ?? 0));
-            throw new ConfigJsonException(Plain(e.Message), line + 1, column);
+            throw new ConfigJsonException(ConfigCodes.NotJson, Plain(e.Message), line + 1, column);
         }
     }
 
@@ -59,7 +59,7 @@ internal static class ConfigJson
                     var name = reader.GetString()!; // Never null: a property name always has its text; GetString is null only for a JSON null.
                     var memberPath = ConfigPath.Child(path, name);
                     if (!seen.Add(name))
-                        throw new ConfigJsonException($"The key \"{name}\" is written twice in one object.", keyLine, keyColumn, memberPath);
+                        throw new ConfigJsonException(ConfigCodes.KeyTwice, $"The key \"{name}\" is written twice in one object.", keyLine, keyColumn, memberPath);
                     reader.Read();
                     members.Add(new JsonMember(name, Read(ref reader, positions, memberPath), keyLine, keyColumn));
                 }

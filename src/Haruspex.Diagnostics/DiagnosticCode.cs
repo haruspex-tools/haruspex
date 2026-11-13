@@ -41,6 +41,11 @@ public sealed record DiagnosticCode
     /// <summary>Whether haruspex no longer reports it. A retired code keeps its number and its page, so it is never reused.</summary>
     public bool Retired { get; init; }
 
+    /// <summary>A problem of this kind: <paramref name="message"/>, at <paramref name="at"/>.</summary>
+    /// <param name="at">Where, or null when it has no place.</param>
+    /// <param name="message">What is wrong, and what to do about it.</param>
+    public Diagnostic At(DiagnosticLocation? at, string message) => new(this, message, at);
+
     /// <summary>The code as it is written, <c>HAR1001</c>.</summary>
     public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"HAR{Number:D4}");
 }

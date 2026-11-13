@@ -37,11 +37,11 @@ public static class ConfigApplication
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(procedures);
 
-        var problems = new List<ConfigProblem>();
+        var problems = new List<Diagnostic>();
         var types = document.Types.ToDictionary(t => t.Key, t => t.Value, StringComparer.Ordinal);
         var unknowns = document.Unknowns.ToList();
         var claims = new List<IrOverride>();
-        var applier = new OverrideApplier(config.File, types, unknowns, claims, problems, from => Import(from, config.Directory, outputDirectory));
+        var applier = new OverrideApplier(types, unknowns, claims, problems, from => Import(from, config.Directory, outputDirectory));
         var results = document.Objects.Select(o => o.Results).ToArray();
         var procedureNames = new Dictionary<string, (string, JsonLocation?)>(StringComparer.Ordinal);
         var seen = new Dictionary<string, JsonLocation>(StringComparer.Ordinal);
@@ -58,7 +58,7 @@ public static class ConfigApplication
                 if (onlyDeclared)
                     Unused(entry, entry.Procedure.Name is { } literal ? literal.ToString() : entry.Procedure.Text);
                 else
-                    problems.Add(new ConfigProblem(ConfigSeverity.Error, config.File, entry.At, $"there is no procedure {entry.Procedure.Text} in the project."));
+                    problems.Add(ConfigCodes.NoSuchProcedure.At(entry.At, $"there is no procedure {entry.Procedure.Text} in the project."));
                 continue;
             }
 
@@ -77,7 +77,7 @@ public static class ConfigApplication
             {
                 if (selectedByFile is null || !selectedByFile.Contains(target[0]))
                 {
-                    problems.Add(new ConfigProblem(ConfigSeverity.Error, config.File, entry.At,
+                    problems.Add(ConfigCodes.NotSelected.At(entry.At,
                         $"the procedure {target[0]} is not selected, so it can't be overridden. Overrides apply only to the procedures its schema's \"include\" selects and \"exclude\" leaves in."));
                 }
 
@@ -87,7 +87,7 @@ public static class ConfigApplication
             var obj = document.Objects[index];
             if (seen.TryGetValue(obj.Id, out var earlier))
             {
-                problems.Add(new ConfigProblem(ConfigSeverity.Error, config.File, entry.At,
+                problems.Add(ConfigCodes.OverriddenTwice.At(entry.At,
                     $"{obj.Id} already has overrides, at line {earlier.Line}; names are compared ignoring case, as SQL Server compares them. Merge the two."));
                 continue;
             }
@@ -128,7 +128,7 @@ public static class ConfigApplication
             }
 
             var file = config.File.Length == 0 ? HaruspexConfig.FileName : Path.GetFileName(config.File);
-            problems.Add(new ConfigProblem(ConfigSeverity.Warning, config.File, null,
+            problems.Add(ConfigCodes.ResultsToDeclare.At(config.Location,
                 $"{obj.Id}: its result sets are unknown: {why.Detail} ({why.At}) Declare them in {file} under procedures[\"{obj.Id}\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it."));
         }
 
@@ -143,22 +143,22 @@ public static class ConfigApplication
             foreach (var call in unknowns.Where(u => u.Object == obj.Id && u.Path != "results" && Unknowable.Contains(u.Reason)).GroupBy(u => u.Detail, StringComparer.Ordinal))
             {
                 var paths = call.Select(u => u.Path).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
-                problems.Add(new ConfigProblem(ConfigSeverity.Warning, config.File, null,
+                problems.Add(ConfigCodes.UnknownAfterCall.At(config.Location,
                     $"{obj.Id}: {string.Join(", ", paths)} {(paths.Count == 1 ? "is" : "are")} unknown: {call.Key} A declaration can't type {(paths.Count == 1 ? "it" : "them")}: after a call that is not followed, temporary tables are unknown even when its results are declared. To type the value, override its path under \"paths\" with \"type\" and \"import\"."));
             }
         }
 
         var settler = new NameSettler(config, types, procedureNames, applier.Names, problems);
-        var named = problems.Any(p => p.Severity == ConfigSeverity.Error) ? null : settler.Settle(document with { Unknowns = [.. unknowns] }, results);
+        var named = problems.Any(p => p.IsError) ? null : settler.Settle(document with { Unknowns = [.. unknowns] }, results);
         return new ConfigApplied(named is null ? null : named with { Overrides = [.. document.Overrides, .. claims] }, [.. problems]);
 
         // A declaration of results haruspex infers: an error if they differ, a warning if not (it can go).
         void Check(ProcedureOverride entry, ResultsDeclaration declared, string id, IReadOnlyList<IrResult> inferred, IReadOnlyDictionary<string, IrObjectType> inferredTypes)
         {
             problems.Add(ResultsComparison.Difference(inferred, inferredTypes, declared) is { } difference
-                ? new ConfigProblem(ConfigSeverity.Error, config.File, entry.At,
+                ? ConfigCodes.DeclarationDisagrees.At(entry.At,
                     $"haruspex infers the results of {id}, and the declaration disagrees at {difference} A declaration is for results that can't be inferred; to correct inferred results, override a path under \"paths\".")
-                : new ConfigProblem(ConfigSeverity.Warning, config.File, entry.At,
+                : ConfigCodes.DeclarationAgrees.At(entry.At,
                     $"the declared results agree with the inference, which already infers the results of {id}. Remove the declaration."));
         }
 
@@ -167,7 +167,7 @@ public static class ConfigApplication
         {
             if (!document.Overrides.Any(o => string.Equals(o.Via, name, StringComparison.OrdinalIgnoreCase)))
             {
-                problems.Add(new ConfigProblem(ConfigSeverity.Warning, config.File, entry.At,
+                problems.Add(ConfigCodes.DeclarationUnused.At(entry.At,
                     $"the declared results are not used: {name} is not selected, and no selected procedure calls it."));
             }
         }

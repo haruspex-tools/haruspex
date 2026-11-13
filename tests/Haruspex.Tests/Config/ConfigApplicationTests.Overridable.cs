@@ -7,7 +7,7 @@ public partial class ConfigApplicationTests
     {
         var run = Apply(GetCustomer, """{ "procedures": { "sales.get_customr": { "name": "X" } } }""");
 
-        Assert.Equal("haruspex.json:1:19: error: procedures[\"sales.get_customr\"]: there is no procedure sales.get_customr in the project.", run.Error);
+        Assert.Equal("haruspex.json:1:19: error HAR4101: procedures[\"sales.get_customr\"]: there is no procedure sales.get_customr in the project.", run.Error);
     }
 
     [Fact]
@@ -16,7 +16,7 @@ public partial class ConfigApplicationTests
         var run = Apply(GetCustomer + "CREATE PROCEDURE sales.other AS SELECT 1 AS a;\nGO\n", """{ "procedures": { "sales.other": { "name": "X" } } }""", include: "sales.get_*");
 
         Assert.Equal(
-            "haruspex.json:1:19: error: procedures[\"sales.other\"]: the procedure sales.other is not selected, so it can't be overridden. Overrides apply only to the procedures its schema's \"include\" selects and \"exclude\" leaves in.",
+            "haruspex.json:1:19: error HAR4102: procedures[\"sales.other\"]: the procedure sales.other is not selected, so it can't be overridden. Overrides apply only to the procedures its schema's \"include\" selects and \"exclude\" leaves in.",
             run.Error);
     }
 
@@ -34,7 +34,7 @@ public partial class ConfigApplicationTests
     {
         var run = Apply(GetCustomer, "{ \"procedures\": {\n\"sales.get_customer\": { \"name\": \"A\" },\n\"SALES.Get_Customer\": { \"name\": \"B\" } } }");
 
-        Assert.Equal("haruspex.json:3:1: error: procedures[\"SALES.Get_Customer\"]: sales.get_customer already has overrides, at line 2; names are compared ignoring case, as SQL Server compares them. Merge the two.", run.Error);
+        Assert.Equal("haruspex.json:3:1: error HAR4103: procedures[\"SALES.Get_Customer\"]: sales.get_customer already has overrides, at line 2; names are compared ignoring case, as SQL Server compares them. Merge the two.", run.Error);
     }
 
     [Fact]

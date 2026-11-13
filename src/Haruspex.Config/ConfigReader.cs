@@ -47,7 +47,7 @@ public static class ConfigReader
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            return new(null, [new ConfigProblem(ConfigSeverity.Error, path, null, $"cannot read the config file: {e.Message}")]);
+            return new(null, [ConfigCodes.Unreadable.At(new FileLocation(path), $"cannot read the config file: {e.Message}")]);
         }
 
         // Never null: the full path of the file read above, which is never a root.
@@ -71,19 +71,19 @@ public static class ConfigReader
         }
         catch (ConfigJsonException e)
         {
-            return new(null, [new ConfigProblem(ConfigSeverity.Error, file, new JsonLocation(file, e.Path, e.Line, e.Column), e.Message)]);
+            return new(null, [e.Code.At(new JsonLocation(file, e.Path, e.Line, e.Column), e.Message)]);
         }
 
         var reader = new Checker(file, directory, reserved ?? ReservedWords.None);
         var config = reader.Root(root, directory);
 
         // A warning (a JSON Schema keyword in a declaration that is not checked) leaves the config usable.
-        return new(reader.Problems.Any(p => p.Severity == ConfigSeverity.Error) ? null : config, [.. reader.Problems]);
+        return new(reader.Problems.Any(p => p.IsError) ? null : config, [.. reader.Problems]);
     }
 
     private sealed class Checker(string file, string directory, ReservedWords reserved)
     {
-        public List<ConfigProblem> Problems { get; } = [];
+        public List<Diagnostic> Problems { get; } = [];
 
         public HaruspexConfig Root(JsonValue value, string directory)
         {
@@ -142,13 +142,13 @@ public static class ConfigReader
                 var at = new JsonLocation(file, schemaPath, member.Line, member.Column);
                 if (member.Name.Length == 0)
                 {
-                    Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, at, "a schema's name must not be empty."));
+                    Problems.Add(ConfigCodes.WrongKind.At(at, "a schema's name must not be empty."));
                     continue;
                 }
 
                 if (schemas.FirstOrDefault(s => string.Equals(s.Name, member.Name, StringComparison.OrdinalIgnoreCase)) is { } earlier)
                 {
-                    Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, at,
+                    Problems.Add(ConfigCodes.SchemaTwice.At(at,
                         $"the schema \"{earlier.Name}\" already has a block, at line {earlier.At.Line}; schema names are compared ignoring case, as SQL Server compares them. Merge the two."));
                     continue;
                 }
@@ -185,7 +185,7 @@ public static class ConfigReader
                 // Without an include nothing in the schema is selected, so an exclude there could only ever be stale.
                 if (exclude is not null && schema.Include is null)
                 {
-                    Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, new JsonLocation(file, Child(schemaPath, "exclude"), exclude.Line, exclude.Column),
+                    Problems.Add(ConfigCodes.ExcludeWithoutInclude.At(new JsonLocation(file, Child(schemaPath, "exclude"), exclude.Line, exclude.Column),
                         "does nothing without an \"include\" in the same block, since nothing in the schema is selected. Add the include, or remove the exclude."));
                 }
 
@@ -200,12 +200,12 @@ public static class ConfigReader
             var patterns = new List<NamePatternEntry>();
             if (value is not JsonArrayValue array)
             {
-                Error(value, path, "must be an array of patterns matching the schema's procedures by name, such as \"get_*\".");
+                Report(ConfigCodes.WrongKind, value, path, "must be an array of patterns matching the schema's procedures by name, such as \"get_*\".");
                 return patterns;
             }
 
             if (requireOne && array.Items.Count == 0)
-                Error(value, path, "must list at least one pattern; with none, nothing is selected. Use \"*\" to select every procedure of the schema.");
+                Report(ConfigCodes.WrongKind, value, path, "must list at least one pattern; with none, nothing is selected. Use \"*\" to select every procedure of the schema.");
 
             for (var i = 0; i < array.Items.Count; i++)
             {
@@ -215,7 +215,7 @@ public static class ConfigReader
                 if (NamePattern.TryParse(text, out var pattern, out var problem))
                     patterns.Add(new NamePatternEntry(pattern, At(array.Items[i], itemPath)));
                 else
-                    Error(array.Items[i], itemPath, problem);
+                    Report(ConfigCodes.BadPattern, array.Items[i], itemPath, problem);
             }
 
             return patterns;
@@ -265,7 +265,7 @@ public static class ConfigReader
             var replacements = new List<NamingReplacement>();
             if (value is not JsonArrayValue array)
             {
-                Error(value, path, "must be an array of { \"pattern\": \"…\", \"with\": \"…\" }.");
+                Report(ConfigCodes.WrongKind, value, path, "must be an array of { \"pattern\": \"…\", \"with\": \"…\" }.");
                 return replacements;
             }
 
@@ -293,7 +293,7 @@ public static class ConfigReader
                                 }
                                 catch (Exception e) when (e is ArgumentException or NotSupportedException)
                                 {
-                                    Error(member.Value, memberPath, $"is not a regular expression haruspex can use: {e.Message}");
+                                    Report(ConfigCodes.BadRegex, member.Value, memberPath, $"is not a regular expression haruspex can use: {e.Message}");
                                 }
                             }
 
@@ -308,9 +308,9 @@ public static class ConfigReader
                 }
 
                 if (!rule.Members.Any(m => m.Name == "pattern"))
-                    Error(rule, itemPath, "needs \"pattern\", the regular expression to replace.");
+                    Report(ConfigCodes.NeedsAnother, rule, itemPath, "needs \"pattern\", the regular expression to replace.");
                 if (!rule.Members.Any(m => m.Name == "with"))
-                    Error(rule, itemPath, "needs \"with\", the replacement (\"\" to remove the match).");
+                    Report(ConfigCodes.NeedsAnother, rule, itemPath, "needs \"with\", the replacement (\"\" to remove the match).");
                 if (regex is not null && with is not null)
                     replacements.Add(new NamingReplacement(regex, with, At(rule, itemPath)));
             }
@@ -330,9 +330,9 @@ public static class ConfigReader
                 var at = new JsonLocation(file, procedurePath, member.Line, member.Column);
                 ObjectPattern? procedure = null;
                 if (!ObjectPattern.TryParse(member.Name, out var pattern, out var problem))
-                    Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, at, problem));
+                    Problems.Add(ConfigCodes.BadPattern.At(at, problem));
                 else if (Wildcard(member.Name))
-                    Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, at, "names one procedure, so it cannot use * or ?; write a part that holds them in brackets, as [a*b]."));
+                    Problems.Add(ConfigCodes.WildcardProcedure.At(at, "names one procedure, so it cannot use * or ?; write a part that holds them in brackets, as [a*b]."));
                 else
                     procedure = pattern;
 
@@ -378,11 +378,11 @@ public static class ConfigReader
 
                 var has = body.Members.Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
                 if (has.Contains("results") && !has.Contains("why"))
-                    Error(body, procedurePath, "\"results\" needs \"why\": the project doesn't show them, so say what does.");
+                    Report(ConfigCodes.ClaimWithoutWhy, body, procedurePath, "\"results\" needs \"why\": the project doesn't show them, so say what does.");
                 if (has.Contains("why") && !has.Contains("results"))
-                    Error(body, procedurePath, "\"why\" explains declared results, but there are none here: give \"results\", or move \"why\" into the path it explains.");
+                    Report(ConfigCodes.WhyWithoutClaim, body, procedurePath, "\"why\" explains declared results, but there are none here: give \"results\", or move \"why\" into the path it explains.");
                 if (has.Contains("results") && has.Contains("paths"))
-                    Error(body, procedurePath, "\"paths\" can't be used with \"results\": the declared schema says it all, so put the detail there.");
+                    Report(ConfigCodes.PathsWithResults, body, procedurePath, "\"paths\" can't be used with \"results\": the declared schema says it all, so put the detail there.");
 
                 ResultsDeclaration? declared = null;
                 if (results is not null && procedure?.Name is { } declaredName)
@@ -402,7 +402,7 @@ public static class ConfigReader
         private ResultsDeclaration? Declared(JsonMember member, string path, string procedure, string why)
         {
             var at = new JsonLocation(file, path, member.Line, member.Column);
-            var errors = Problems.Count(p => p.Severity == ConfigSeverity.Error);
+            var errors = Problems.Count(p => p.IsError);
             var types = new Dictionary<string, IrObjectType>(StringComparer.Ordinal);
             var results = new List<IrResult>();
             switch (member.Value)
@@ -414,7 +414,7 @@ public static class ConfigReader
                         results.Add(single);
                     break;
                 case JsonArrayValue { Items.Count: 0 } empty:
-                    Error(empty, path, "must list at least one result; for none, use \"none\".");
+                    Report(ConfigCodes.WrongKind, empty, path, "must list at least one result; for none, use \"none\".");
                     break;
                 case JsonArrayValue many:
                     for (var i = 0; i < many.Items.Count; i++)
@@ -425,11 +425,11 @@ public static class ConfigReader
 
                     break;
                 default:
-                    Error(member.Value, path, "must be \"none\", a result ({ \"rowset\": … } or { \"json\": … }) or an array of them, in the order the procedure returns them.");
+                    Report(ConfigCodes.WrongKind, member.Value, path, "must be \"none\", a result ({ \"rowset\": … } or { \"json\": … }) or an array of them, in the order the procedure returns them.");
                     break;
             }
 
-            return Problems.Count(p => p.Severity == ConfigSeverity.Error) == errors ? new ResultsDeclaration([.. results], [.. types], why, at) : null;
+            return Problems.Count(p => p.IsError) == errors ? new ResultsDeclaration([.. results], [.. types], why, at) : null;
         }
 
         private IrResult? Result(JsonObjectValue result, string path, int index, string procedure, Dictionary<string, IrObjectType> types)
@@ -445,7 +445,7 @@ public static class ConfigReader
                     case "rowset" or "json":
                         if (schema is not null)
                         {
-                            Error(result, path, "must have either \"rowset\" or \"json\", the schema of a row or of the JSON document, not both.");
+                            Report(ConfigCodes.RowsetOrJson, result, path, "must have either \"rowset\" or \"json\", the schema of a row or of the JSON document, not both.");
                             return null;
                         }
 
@@ -456,7 +456,7 @@ public static class ConfigReader
                         if (member.Value is JsonOtherValue { Kind: JsonTokenType.True or JsonTokenType.False } flag)
                             mayBeAbsent = flag.Kind == JsonTokenType.True;
                         else
-                            Error(member.Value, memberPath, "must be true or false.");
+                            Report(ConfigCodes.WrongKind, member.Value, memberPath, "must be true or false.");
                         break;
                     default:
                         Unknown(member, memberPath, "rowset, json, mayBeAbsent");
@@ -466,13 +466,13 @@ public static class ConfigReader
 
             if (schema is null)
             {
-                Error(result, path, "must have either \"rowset\" or \"json\", the schema of a row or of the JSON document.");
+                Report(ConfigCodes.RowsetOrJson, result, path, "must have either \"rowset\" or \"json\", the schema of a row or of the JSON document.");
                 return null;
             }
 
             if (!json && result.Members.Any(m => m.Name == "mayBeAbsent"))
             {
-                Error(result, path, "\"mayBeAbsent\" is for a JSON result, which FOR JSON leaves out when it matches no rows; a rowset with no rows is still there.");
+                Report(ConfigCodes.AbsentRowset, result, path, "\"mayBeAbsent\" is for a JSON result, which FOR JSON leaves out when it matches no rows; a rowset with no rows is still there.");
                 return null;
             }
 
@@ -492,18 +492,18 @@ public static class ConfigReader
                     }
                     catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                     {
-                        Error(reference, schemaPath, $"cannot read the schema {reference.Value}: {e.Message}");
+                        Report(ConfigCodes.Unreadable, reference, schemaPath, $"cannot read the schema {reference.Value}: {e.Message}");
                         return null;
                     }
                     catch (ConfigJsonException e)
                     {
-                        Problems.Add(new ConfigProblem(ConfigSeverity.Error, schemaFile, new JsonLocation(schemaFile, e.Path, e.Line, e.Column), e.Message));
+                        Problems.Add(e.Code.At(new JsonLocation(schemaFile, e.Path, e.Line, e.Column), e.Message));
                         return null;
                     }
 
                     break;
                 default:
-                    Error(schema.Value, schemaPath, "must be a JSON Schema, or the path of a file holding one, relative to this file.");
+                    Report(ConfigCodes.WrongKind, schema.Value, schemaPath, "must be a JSON Schema, or the path of a file holding one, relative to this file.");
                     return null;
             }
 
@@ -515,7 +515,7 @@ public static class ConfigReader
         {
             var at = new JsonLocation(file, path, entry.Line, entry.Column);
             if (!IrPath.TryParse(entry.Name, out _, out var problem))
-                Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, at, problem));
+                Problems.Add(ConfigCodes.BadPath.At(at, problem));
             if (Object(entry.Value, path) is not { } body)
                 return null;
 
@@ -533,9 +533,9 @@ public static class ConfigReader
                         if (member.Value is JsonOtherValue { Kind: JsonTokenType.False })
                             result = result with { NotNull = true };
                         else if (member.Value is JsonOtherValue { Kind: JsonTokenType.True })
-                            Error(member.Value, memberPath, "can only be false. A value is nullable unless the database proves otherwise, so there is nothing to declare.");
+                            Report(ConfigCodes.NullableTrue, member.Value, memberPath, "can only be false. A value is nullable unless the database proves otherwise, so there is nothing to declare.");
                         else
-                            Error(member.Value, memberPath, "must be false.");
+                            Report(ConfigCodes.WrongKind, member.Value, memberPath, "must be false.");
                         break;
                     case "why":
                         result = result with { Why = NonEmpty(member.Value, memberPath) };
@@ -550,7 +550,7 @@ public static class ConfigReader
                             }
                             else
                             {
-                                Error(member.Value, memberPath, "must be the name of an exported schema, with [] for each level of array, such as \"TagSchema[]\".");
+                                Report(ConfigCodes.BadName, member.Value, memberPath, "must be the name of an exported schema, with [] for each level of array, such as \"TagSchema[]\".");
                             }
                         }
 
@@ -570,17 +570,17 @@ public static class ConfigReader
 
             var has = body.Members.Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
             if (!has.Overlaps(["name", "nullable", "type", "values"]) && has.IsSubsetOf(["why", "import"]))
-                Error(body, path, "says nothing to override: give \"name\", \"nullable\", \"type\" or \"values\".");
+                Report(ConfigCodes.EmptyOverride, body, path, "says nothing to override: give \"name\", \"nullable\", \"type\" or \"values\".");
             if (has.Contains("nullable") && !has.Contains("why"))
-                Error(body, path, "\"nullable\": false needs \"why\": the database doesn't prove it, so say what does.");
+                Report(ConfigCodes.ClaimWithoutWhy, body, path, "\"nullable\": false needs \"why\": the database doesn't prove it, so say what does.");
             if (has.Contains("values") && !has.Contains("why"))
-                Error(body, path, "\"values\": \"exact\" needs \"why\": the database compares the values under its collation, so say why they are exact.");
+                Report(ConfigCodes.ClaimWithoutWhy, body, path, "\"values\": \"exact\" needs \"why\": the database compares the values under its collation, so say why they are exact.");
             if (has.Contains("type") && !has.Contains("import"))
-                Error(body, path, "\"type\" needs \"import\": the module that exports the schema.");
+                Report(ConfigCodes.NeedsAnother, body, path, "\"type\" needs \"import\": the module that exports the schema.");
             if (has.Contains("import") && !has.Contains("type"))
-                Error(body, path, "\"import\" needs \"type\": the schema to import from it.");
+                Report(ConfigCodes.NeedsAnother, body, path, "\"import\" needs \"type\": the schema to import from it.");
             if (has.Contains("why") && !has.Overlaps(["nullable", "type", "values"]))
-                Error(body, path, "\"why\" explains a claim, but there is none here: give \"nullable\", \"type\" or \"values\".");
+                Report(ConfigCodes.WhyWithoutClaim, body, path, "\"why\" explains a claim, but there is none here: give \"nullable\", \"type\" or \"values\".");
             return Problems.Count == errors ? result : null;
         }
 
@@ -608,7 +608,7 @@ public static class ConfigReader
                 return null;
             if (IrIdentifiers.IsIdentifier(name) && !reserved.Contains(name))
                 return name;
-            Error(value, path, $"'{name}' is not a valid name: an ASCII letter, _ or $, then letters, digits, _ or $, and not a reserved word.");
+            Report(ConfigCodes.BadName, value, path, $"'{name}' is not a valid name: an ASCII letter, _ or $, then letters, digits, _ or $, and not a reserved word.");
             return null;
         }
 
@@ -616,7 +616,7 @@ public static class ConfigReader
         {
             if (value is JsonObjectValue obj)
                 return obj;
-            Error(value, path, "must be an object.");
+            Report(ConfigCodes.WrongKind, value, path, "must be an object.");
             return null;
         }
 
@@ -624,7 +624,7 @@ public static class ConfigReader
         {
             if (value is JsonStringValue text)
                 return text.Value;
-            Error(value, path, "must be a string.");
+            Report(ConfigCodes.WrongKind, value, path, "must be a string.");
             return null;
         }
 
@@ -633,7 +633,7 @@ public static class ConfigReader
             var text = String(value, path);
             if (text is { Length: 0 })
             {
-                Error(value, path, "must not be empty.");
+                Report(ConfigCodes.WrongKind, value, path, "must not be empty.");
                 return null;
             }
 
@@ -645,15 +645,15 @@ public static class ConfigReader
             var text = String(value, path);
             if (text is null || choices.Contains(text, StringComparer.Ordinal))
                 return text;
-            Error(value, path, $"must be {string.Join(" or ", choices.Select(c => $"\"{c}\""))}, not \"{text}\".");
+            Report(ConfigCodes.WrongKind, value, path, $"must be {string.Join(" or ", choices.Select(c => $"\"{c}\""))}, not \"{text}\".");
             return null;
         }
 
         private void Unknown(JsonMember member, string path, string known) =>
-            Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, new JsonLocation(file, path, member.Line, member.Column), $"unknown setting \"{member.Name}\". The settings here are {known}."));
+            Problems.Add(ConfigCodes.UnknownSetting.At(new JsonLocation(file, path, member.Line, member.Column), $"unknown setting \"{member.Name}\". The settings here are {known}."));
 
-        private void Error(JsonValue value, string path, string message) =>
-            Problems.Add(new ConfigProblem(ConfigSeverity.Error, file, At(value, path), message));
+        private void Report(DiagnosticCode code, JsonValue value, string path, string message) =>
+            Problems.Add(code.At(At(value, path), message));
 
         private JsonLocation At(JsonValue value, string path) => new(file, path, value.Line, value.Column);
 

@@ -29,7 +29,7 @@ internal sealed class NameSettler(
     IReadOnlyDictionary<string, IrObjectType> types,
     IReadOnlyDictionary<string, (string Name, JsonLocation? At)> procedureNames,
     IReadOnlyDictionary<(string Object, string Path), (string Name, JsonLocation At)> pathNames,
-    List<ConfigProblem> problems)
+    List<Diagnostic> problems)
 {
     /// <summary>Provisional key to settled name.</summary>
     private readonly Dictionary<string, string> named = new(StringComparer.Ordinal);
@@ -38,6 +38,13 @@ internal sealed class NameSettler(
     private readonly Dictionary<string, Holder> holders = new(StringComparer.Ordinal);
 
     private string ConfigFile => config.File;
+
+    /// <summary>
+    /// Where the naming of the object <paramref name="id"/> is set, for a problem with its name: the setting that decides it,
+    /// else the file as a whole.
+    /// </summary>
+    private DiagnosticLocation? NamingOf(string id) =>
+        TrySplit(id, out var schema, out _) && config.NamingLocation(schema) is { } at ? at : config.Location;
 
     /// <summary>What holds a name: the object it belongs to, a description for errors, whether it is a type, and the setting to change.</summary>
     private sealed record Holder(string Owner, string Description, bool IsType, JsonLocation? At);
@@ -56,7 +63,7 @@ internal sealed class NameSettler(
     /// <summary>The document with every name settled, or null when a name could not be (the problems say why).</summary>
     public IrDocument? Settle(IrDocument document, IReadOnlyList<IrResult>?[] results)
     {
-        var errors = problems.Count(p => p.Severity == ConfigSeverity.Error);
+        var errors = problems.Count(p => p.IsError);
         var objects = new List<IrObject>();
         var ordered = document.Objects.Select((o, i) => (Object: o, Results: results[i])).OrderBy(o => o.Object.Id, StringComparer.Ordinal).ToList();
         var settledNames = new List<(IrObject Object, IReadOnlyList<IrResult>? Results, string Name)>();
@@ -94,7 +101,7 @@ internal sealed class NameSettler(
             });
         }
 
-        if (problems.Count(p => p.Severity == ConfigSeverity.Error) > errors)
+        if (problems.Count(p => p.IsError) > errors)
             return null;
 
         // Types no result reaches any more (replaced by an override's import) are dropped.
@@ -114,12 +121,12 @@ internal sealed class NameSettler(
         if (procedureNames.TryGetValue(id, out var given))
         {
             if (given.Name == generated)
-                problems.Add(new ConfigProblem(ConfigSeverity.Warning, ConfigFile, given.At, $"the name \"{given.Name}\" is what the naming rules give {id} already. Remove it."));
+                problems.Add(ConfigCodes.NameAgrees.At(given.At, $"the name \"{given.Name}\" is what the naming rules give {id} already. Remove it."));
             return given.Name;
         }
 
         if (generated is null)
-            problems.Add(new ConfigProblem(ConfigSeverity.Error, ConfigFile, TrySplit(id, out var schema, out _) ? config.NamingLocation(schema) : null, $"the procedure {id} cannot be named: {why}"));
+            problems.Add(ConfigCodes.ProcedureUnnamed.At(NamingOf(id), $"the procedure {id} cannot be named: {why}"));
         return generated;
     }
 
@@ -193,7 +200,7 @@ internal sealed class NameSettler(
         {
             name = given.Name;
             if (name == generated)
-                problems.Add(new ConfigProblem(ConfigSeverity.Warning, ConfigFile, given.At, $"the name \"{name}\" is what the naming rules give the type at {path} already. Remove it."));
+                problems.Add(ConfigCodes.NameAgrees.At(given.At, $"the name \"{name}\" is what the naming rules give the type at {path} already. Remove it."));
         }
         else
         {
@@ -216,7 +223,7 @@ internal sealed class NameSettler(
         var generated = Generated(function, out var why);
         if (generated is null)
         {
-            problems.Add(new ConfigProblem(ConfigSeverity.Error, ConfigFile, TrySplit(function, out var schema, out _) ? config.NamingLocation(schema) : null,
+            problems.Add(ConfigCodes.TypeUnnamed.At(NamingOf(function),
                 $"the recursive function {function}'s type cannot be named: {why} Change the naming rules so that they name it."));
             named[key] = key;
             return;
@@ -294,7 +301,7 @@ internal sealed class NameSettler(
                 : "give one of them its own name with a \"name\" override in \"procedures\"",
         };
         var noFile = ConfigFile.Length == 0 ? " These settings go in a haruspex.json beside the project, which it doesn't have yet." : "";
-        problems.Add(new ConfigProblem(ConfigSeverity.Error, ConfigFile, second.At ?? first.At,
+        problems.Add(ConfigCodes.NamesClash.At((DiagnosticLocation?)second.At ?? (DiagnosticLocation?)first.At ?? config.Location,
             $"\"{name}\" would name both {first.Description} and {second.Description}. Generated names must not clash: {string.Join(", or ", ways)}.{noFile}"));
     }
 

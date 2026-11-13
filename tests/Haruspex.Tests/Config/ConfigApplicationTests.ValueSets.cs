@@ -24,7 +24,7 @@ public partial class ConfigApplicationTests
         var run = Apply(GetCustomer, """{ "procedures": { "sales.get_customer": { "paths": { "[].level": { "values": "exact", "why": "x" } } } } }""");
 
         Assert.Equal(
-            ["haruspex.json:1:54: warning: procedures[\"sales.get_customer\"].paths[\"[].level\"]: \"values\": \"exact\" agrees with the inference, which already proves the set at results[0][].level exact. Remove it."],
+            ["haruspex.json:1:54: warning HAR4111: procedures[\"sales.get_customer\"].paths[\"[].level\"]: \"values\": \"exact\" agrees with the inference, which already proves the set at results[0][].level exact. Remove it."],
             run.Problems);
     }
 
@@ -34,7 +34,7 @@ public partial class ConfigApplicationTests
         var run = Apply(GetCustomer, """{ "procedures": { "sales.get_customer": { "paths": { "[].name": { "values": "exact", "why": "x" } } } } }""");
 
         Assert.Equal(
-            "haruspex.json:1:54: error: procedures[\"sales.get_customer\"].paths[\"[].name\"]: the value at results[0][].name has no value set to declare exact. A value set is inferred from a CHECK constraint on a column the value passes through unchanged; canonical value sets for other cases are planned, not done.",
+            "haruspex.json:1:54: error HAR4108: procedures[\"sales.get_customer\"].paths[\"[].name\"]: the value at results[0][].name has no value set to declare exact. A value set is inferred from a CHECK constraint on a column the value passes through unchanged; canonical value sets for other cases are planned, not done.",
             run.Error);
     }
 

@@ -34,7 +34,7 @@ project file builds.
 ```csharp
 var read = SqlScriptFolder.Read("path/to/database");
 foreach (var diagnostic in read.Diagnostics)
-    Console.Error.WriteLine(diagnostic);          // file:line:column: error: message
+    Console.Error.WriteLine(diagnostic);          // file:line:column: error HAR1001: message
 var orders = read.Model.FindTable(new ObjectName("sales", "orders"));
 ```
 

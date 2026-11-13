@@ -73,7 +73,7 @@ public class ProcedureSelectionTests
     {
         var result = Select("""{ "sales": { "include": ["*", "get_ordr"] } }""");
 
-        Assert.Equal("haruspex.json:1:44: error: schemas.sales.include[1]: 'get_ordr' matches no procedure in the schema \"sales\". Correct it, or remove it.", Assert.Single(result.Problems).ToString());
+        Assert.Equal("haruspex.json:1:44: error HAR4002: schemas.sales.include[1]: 'get_ordr' matches no procedure in the schema \"sales\". Correct it, or remove it.", Assert.Single(result.Problems).ToString());
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class ProcedureSelectionTests
         var result = Select("""{ "sales": { "include": ["get_*"], "exclude": ["*_internal"] } }""");
 
         Assert.Equal(
-            "haruspex.json:1:61: error: schemas.sales.exclude[0]: '*_internal' excludes nothing: it matches no procedure that \"include\" selects in the schema \"sales\". Remove it.",
+            "haruspex.json:1:61: error HAR4003: schemas.sales.exclude[0]: '*_internal' excludes nothing: it matches no procedure that \"include\" selects in the schema \"sales\". Remove it.",
             Assert.Single(result.Problems).ToString());
     }
 
@@ -93,7 +93,7 @@ public class ProcedureSelectionTests
 
         Assert.Empty(result.Procedures);
         Assert.Equal(
-            "haruspex.json:1:16: error: schemas.sales: the schema \"sales\" selects nothing: its \"exclude\" removes every procedure its \"include\" selects. Narrow the exclude, or remove the block.",
+            "haruspex.json:1:16: error HAR4004: schemas.sales: the schema \"sales\" selects nothing: its \"exclude\" removes every procedure its \"include\" selects. Narrow the exclude, or remove the block.",
             Assert.Single(result.Problems).ToString());
     }
 
@@ -103,7 +103,7 @@ public class ProcedureSelectionTests
         var result = Select("""{ "[RDF.]": { "include": ["*"] } }""");
 
         Assert.Equal(
-            "haruspex.json:1:16: error: schemas[\"[RDF.]\"]: the project has no procedure in a schema named \"[RDF.]\". A schema key is the schema's name as it is, without brackets.",
+            "haruspex.json:1:16: error HAR4001: schemas[\"[RDF.]\"]: the project has no procedure in a schema named \"[RDF.]\". A schema key is the schema's name as it is, without brackets.",
             Assert.Single(result.Problems).ToString());
     }
 
@@ -118,9 +118,9 @@ public class ProcedureSelectionTests
         Assert.Equal(["sales.list_orders"], procedures.Select(p => p.ToString()));
         Assert.Equal(
             [
-                "--include 'hr.nobody' matches no procedure. Correct it, or remove it.",
-                "--include 'sales.*_internal' matches only procedures that schemas.sales.exclude leaves out, so it selects nothing.",
+                "haruspex: error HAR4005: --include 'hr.nobody' matches no procedure. Correct it, or remove it.",
+                "haruspex: error HAR4006: --include 'sales.*_internal' matches only procedures that schemas.sales.exclude leaves out, so it selects nothing.",
             ],
-            problems);
+            problems.Select(p => p.ToString()));
     }
 }

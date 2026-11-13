@@ -19,11 +19,10 @@ namespace Haruspex.Config;
 /// with is a warning, so it can be removed as the SQL improves.</para>
 /// </remarks>
 internal sealed class OverrideApplier(
-    string file,
     Dictionary<string, IrObjectType> types,
     List<IrUnknown> unknowns,
     List<IrOverride> claims,
-    List<ConfigProblem> problems,
+    List<Diagnostic> problems,
     Func<string, string> importFrom)
 {
     /// <summary>The names given by path overrides, by object and canonical path, for the namer.</summary>
@@ -38,7 +37,7 @@ internal sealed class OverrideApplier(
         try
         {
             if (results is null)
-                throw new PathException($"the results of {obj.Id} are unknown (see the unknowns in the IR), so no path in them exists.");
+                throw new PathException(ConfigCodes.NoSuchPath, $"the results of {obj.Id} are unknown (see the unknowns in the IR), so no path in them exists.");
 
             // A path is relative to the only result, or names one: results[1][].id.
             int index;
@@ -46,7 +45,7 @@ internal sealed class OverrideApplier(
             if (written is [IrPathKey { Key: "results" }, IrPathIndex given, ..])
             {
                 if (given.Index >= results.Count)
-                    throw new PathException($"{obj.Id} returns {Count(results.Count, "result set")}, so there is no results[{given.Index}].");
+                    throw new PathException(ConfigCodes.NoSuchPath, $"{obj.Id} returns {Count(results.Count, "result set")}, so there is no results[{given.Index}].");
                 (index, rest) = (given.Index, written.Skip(2).ToList());
             }
             else if (results.Count == 1)
@@ -55,7 +54,7 @@ internal sealed class OverrideApplier(
             }
             else
             {
-                throw new PathException($"{obj.Id} returns {Count(results.Count, "result set")}, so the path must start with the one it means, as results[0].");
+                throw new PathException(ConfigCodes.NoSuchPath, $"{obj.Id} returns {Count(results.Count, "result set")}, so the path must start with the one it means, as results[0].");
             }
 
             var canonical = IrPath.Render([new IrPathKey("results"), new IrPathIndex(index), .. rest]);
@@ -68,7 +67,7 @@ internal sealed class OverrideApplier(
         }
         catch (PathException e)
         {
-            problems.Add(new ConfigProblem(ConfigSeverity.Error, file, entry.At, e.Message));
+            problems.Add(e.Code.At(entry.At, e.Message));
             return results;
         }
     }
@@ -83,10 +82,10 @@ internal sealed class OverrideApplier(
         if (entry.NotNull)
         {
             if (!slot.CanBeNull)
-                throw new PathException($"the value at {path} is what JSON text holds, which is never null itself; nothing can be declared about its nullability.");
+                throw new PathException(ConfigCodes.NullableJsonContent, $"the value at {path} is what JSON text holds, which is never null itself; nothing can be declared about its nullability.");
             if (slot.Reasons.Count == 0)
             {
-                problems.Add(new ConfigProblem(ConfigSeverity.Warning, file, at, $"\"nullable\": false agrees with the inference, which already proves the value at {path} is never null. Remove it."));
+                problems.Add(ConfigCodes.NullableAgrees.At(at, $"\"nullable\": false agrees with the inference, which already proves the value at {path} is never null. Remove it."));
             }
             else
             {
@@ -99,13 +98,13 @@ internal sealed class OverrideApplier(
         {
             if (slot.Type is not IrScalar { Facets: { Values: { } set } facets } scalar)
             {
-                throw new PathException($"the value at {path} has no value set to declare exact. A value set is inferred from a CHECK constraint on a column the value passes through unchanged; "
+                throw new PathException(ConfigCodes.NoValueSet, $"the value at {path} has no value set to declare exact. A value set is inferred from a CHECK constraint on a column the value passes through unchanged; "
                     + "canonical value sets for other cases are planned, not done.");
             }
 
             if (set.Match == IrValueMatch.Exact)
             {
-                problems.Add(new ConfigProblem(ConfigSeverity.Warning, file, at, $"\"values\": \"exact\" agrees with the inference, which already proves the set at {path} exact. Remove it."));
+                problems.Add(ConfigCodes.ExactAgrees.At(at, $"\"values\": \"exact\" agrees with the inference, which already proves the set at {path} exact. Remove it."));
             }
             else
             {
@@ -132,11 +131,11 @@ internal sealed class OverrideApplier(
             if (slot.Type is not IrRef reference)
             {
                 var hint = slot.Type is IrArray { Items: IrRef } ? $" To name its items, use the path \"{entry.Path}[]\"." : "";
-                throw new PathException($"only an object type can be named, and the value at {path} is {Describe(slot.Type)}.{hint}");
+                throw new PathException(ConfigCodes.NameNotObject, $"only an object type can be named, and the value at {path} is {Describe(slot.Type)}.{hint}");
             }
 
             if (types[reference.Name].Identity?.Owner == IrTypeOwner.Function)
-                throw new PathException(Shared(path, types[reference.Name]));
+                throw new PathException(ConfigCodes.SharedType, Shared(path, types[reference.Name]));
             Names[(objectId, path)] = (name, at);
         }
 
@@ -156,11 +155,11 @@ internal sealed class OverrideApplier(
             case (IrPathKey key, IrRef reference):
                 var obj = types[reference.Name];
                 if (obj.Identity?.Owner == IrTypeOwner.Function)
-                    throw new PathException(Shared(whole, obj));
+                    throw new PathException(ConfigCodes.SharedType, Shared(whole, obj));
                 var position = obj.Fields.ToList().FindIndex(f => f.Name == key.Key);
                 if (position < 0)
                 {
-                    throw new PathException($"the path {whole} does not exist: the object at {here} has no key \"{key.Key}\". Its keys are "
+                    throw new PathException(ConfigCodes.NoSuchPath, $"the path {whole} does not exist: the object at {here} has no key \"{key.Key}\". Its keys are "
                         + string.Join(", ", obj.Fields.Select(f => $"\"{f.Name}\"")) + ".");
                 }
 
@@ -186,9 +185,9 @@ internal sealed class OverrideApplier(
                 var parsed = Edit(new Slot(content, [], CanBeNull: false), path, i + 1, whole, settle);
                 return slot with { Type = new IrJsonText(parsed.Type) };
             case (_, IrUnion):
-                throw new PathException($"the path {whole} passes through a value of several types at {here}, and a path can't choose between them.");
+                throw new PathException(ConfigCodes.PathThroughUnion, $"the path {whole} passes through a value of several types at {here}, and a path can't choose between them.");
             default:
-                throw new PathException($"the path {whole} does not exist: the value at {here} is {Describe(slot.Type)}, so it has no {Describe(segment)}.");
+                throw new PathException(ConfigCodes.NoSuchPath, $"the path {whole} does not exist: the value at {here} is {Describe(slot.Type)}, so it has no {Describe(segment)}.");
         }
     }
 
@@ -235,5 +234,8 @@ internal sealed class OverrideApplier(
 
     [SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "Thrown and caught inside this class, always with a message.")]
     [SuppressMessage("Design", "CA1064:Exceptions should be public", Justification = "Thrown and caught inside this class; never part of an API.")]
-    private sealed class PathException(string message) : Exception(message);
+    private sealed class PathException(DiagnosticCode code, string message) : Exception(message)
+    {
+        public DiagnosticCode Code { get; } = code;
+    }
 }

@@ -33,7 +33,7 @@ public partial class ConfigApplicationTests
         var run = Apply(GetCustomer, """{ "procedures": { "sales.get_customer": { "paths": { "[].id": { "nullable": false, "why": "a key" } } } } }""");
 
         Assert.Equal(
-            ["haruspex.json:1:54: warning: procedures[\"sales.get_customer\"].paths[\"[].id\"]: \"nullable\": false agrees with the inference, which already proves the value at results[0][].id is never null. Remove it."],
+            ["haruspex.json:1:54: warning HAR4110: procedures[\"sales.get_customer\"].paths[\"[].id\"]: \"nullable\": false agrees with the inference, which already proves the value at results[0][].id is never null. Remove it."],
             run.Problems);
         Assert.Empty(run.Document.Overrides);
     }
@@ -44,6 +44,6 @@ public partial class ConfigApplicationTests
         var run = Apply("CREATE PROCEDURE dbo.p AS SELECT (SELECT c.customer_id AS id FROM sales.customer AS c FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS one;\nGO\n",
             """{ "procedures": { "dbo.p": { "paths": { "[].one<json>": { "nullable": false, "why": "x" } } } } }""");
 
-        Assert.Equal("haruspex.json:1:41: error: procedures[\"dbo.p\"].paths[\"[].one<json>\"]: the value at results[0][].one<json> is what JSON text holds, which is never null itself; nothing can be declared about its nullability.", run.Error);
+        Assert.Equal("haruspex.json:1:41: error HAR4107: procedures[\"dbo.p\"].paths[\"[].one<json>\"]: the value at results[0][].one<json> is what JSON text holds, which is never null itself; nothing can be declared about its nullability.", run.Error);
     }
 }

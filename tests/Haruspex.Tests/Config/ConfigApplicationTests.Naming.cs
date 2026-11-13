@@ -64,8 +64,8 @@ public partial class ConfigApplicationTests
 
         Assert.Equal(
             [
-                "haruspex.json:1:51: warning: procedures[\"sales.get_customer\"].name: the name \"GetCustomer\" is what the naming rules give sales.get_customer already. Remove it.",
-                "haruspex.json:2:14: warning: procedures[\"sales.get_customer\"].paths[\"[].lines[]\"]: the name \"GetCustomerLine\" is what the naming rules give the type at results[0][].lines[] already. Remove it.",
+                "haruspex.json:1:51: warning HAR4304: procedures[\"sales.get_customer\"].name: the name \"GetCustomer\" is what the naming rules give sales.get_customer already. Remove it.",
+                "haruspex.json:2:14: warning HAR4304: procedures[\"sales.get_customer\"].paths[\"[].lines[]\"]: the name \"GetCustomerLine\" is what the naming rules give the type at results[0][].lines[] already. Remove it.",
             ],
             run.Problems);
         Assert.NotNull(run.Applied.Document);
@@ -78,7 +78,7 @@ public partial class ConfigApplicationTests
 
         Assert.Null(run.Applied.Document);
         Assert.Equal(
-            "haruspex.json: error: \"Person\" would name both the procedure dbo.person and the procedure dbo.person#. Generated names must not clash: add a naming \"replace\" rule that tells their names apart (such as { \"pattern\": \"#$\", \"with\": \"Row\" }), or give one of them its own name with a \"name\" override in \"procedures\".",
+            "haruspex.json: error HAR4303: \"Person\" would name both the procedure dbo.person and the procedure dbo.person#. Generated names must not clash: add a naming \"replace\" rule that tells their names apart (such as { \"pattern\": \"#$\", \"with\": \"Row\" }), or give one of them its own name with a \"name\" override in \"procedures\".",
             run.Error);
     }
 
@@ -98,11 +98,11 @@ public partial class ConfigApplicationTests
 
         // A prefix tells two schemas apart, so that is the advice here.
         Assert.Equal(
-            "haruspex.json: error: \"GetCustomer2\" would name both the procedure audit.get_customer2 and the procedure sales.get_customer2. Generated names must not clash: give one of their schemas a \"prefix\" in \"schemas\", or give one of them its own name with a \"name\" override in \"procedures\".",
+            "haruspex.json: error HAR4303: \"GetCustomer2\" would name both the procedure audit.get_customer2 and the procedure sales.get_customer2. Generated names must not clash: give one of their schemas a \"prefix\" in \"schemas\", or give one of them its own name with a \"name\" override in \"procedures\".",
             Apply(Two, "{}").Error);
 
         // With a block for a schema, the problem points at it, where the prefix would go.
-        Assert.StartsWith("haruspex.json:1:16: error: schemas.sales: \"GetCustomer2\" would name both", Apply(Two, """{ "schemas": { "sales": { "include": ["*"] } } }""").Error, StringComparison.Ordinal);
+        Assert.StartsWith("haruspex.json:1:16: error HAR4303: schemas.sales: \"GetCustomer2\" would name both", Apply(Two, """{ "schemas": { "sales": { "include": ["*"] } } }""").Error, StringComparison.Ordinal);
         Assert.Equal(["AuditGetCustomer2", "GetCustomer2"], Apply(Two, """{ "schemas": { "audit": { "prefix": "Audit" } } }""").Document.Objects.Select(o => o.Name));
     }
 
@@ -112,7 +112,7 @@ public partial class ConfigApplicationTests
         var run = Apply("CREATE PROCEDURE [dbo].[person#] AS SELECT 1 AS a;\nGO\n", "{\n  \"naming\": { \"case\": \"preserve\" }\n}");
 
         Assert.Equal(
-            "haruspex.json:2:13: error: naming: the procedure dbo.person# cannot be named: \"case\": \"preserve\" gives 'person#', which is not a valid identifier (an ASCII letter, _ or $, then letters, digits, _ or $). Add a replacement, or give it a name in \"procedures\".",
+            "haruspex.json:2:13: error HAR4301: naming: the procedure dbo.person# cannot be named: \"case\": \"preserve\" gives 'person#', which is not a valid identifier (an ASCII letter, _ or $, then letters, digits, _ or $). Add a replacement, or give it a name in \"procedures\".",
             run.Error);
     }
 
@@ -122,7 +122,7 @@ public partial class ConfigApplicationTests
         var run = Apply(GetCustomer + "CREATE PROCEDURE sales.get_customer_line AS SELECT 1 AS a;\nGO\n", "{}");
 
         Assert.StartsWith(
-            "haruspex.json: error: \"GetCustomerLine\" would name both the procedure sales.get_customer_line and the type at results[0][].lines[] in sales.get_customer.",
+            "haruspex.json: error HAR4303: \"GetCustomerLine\" would name both the procedure sales.get_customer_line and the type at results[0][].lines[] in sales.get_customer.",
             run.Error,
             StringComparison.Ordinal);
     }
@@ -164,7 +164,7 @@ public partial class ConfigApplicationTests
             """{ "procedures": { "sales.other": { "name": "GetCustomerRow" } } }""");
 
         // It points at the override, the setting to change.
-        Assert.StartsWith("haruspex.json:1:44: error: procedures[\"sales.other\"].name: \"GetCustomerRow\" would name both the procedure sales.other and the type at results[0][] in sales.get_customer.", run.Error, StringComparison.Ordinal);
+        Assert.StartsWith("haruspex.json:1:44: error HAR4303: procedures[\"sales.other\"].name: \"GetCustomerRow\" would name both the procedure sales.other and the type at results[0][] in sales.get_customer.", run.Error, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public partial class ConfigApplicationTests
         var run = Apply("CREATE PROCEDURE dbo.p AS SELECT 1 AS a;\nSELECT 2 AS b;\nGO\n",
             """{ "procedures": { "dbo.p": { "paths": { "[]": { "name": "X" } } } } }""");
 
-        Assert.Equal("haruspex.json:1:41: error: procedures[\"dbo.p\"].paths[\"[]\"]: dbo.p returns 2 result sets, so the path must start with the one it means, as results[0].", run.Error);
+        Assert.Equal("haruspex.json:1:41: error HAR4104: procedures[\"dbo.p\"].paths[\"[]\"]: dbo.p returns 2 result sets, so the path must start with the one it means, as results[0].", run.Error);
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public partial class ConfigApplicationTests
     {
         var run = Apply("CREATE PROCEDURE dbo.p AS SELECT 1 AS a;\nGO\n", """{ "procedures": { "dbo.p": { "paths": { "results[1][]": { "name": "X" } } } } }""");
 
-        Assert.Equal("haruspex.json:1:41: error: procedures[\"dbo.p\"].paths[\"results[1][]\"]: dbo.p returns 1 result set, so there is no results[1].", run.Error);
+        Assert.Equal("haruspex.json:1:41: error HAR4104: procedures[\"dbo.p\"].paths[\"results[1][]\"]: dbo.p returns 1 result set, so there is no results[1].", run.Error);
     }
 
     [Fact]
@@ -215,7 +215,7 @@ public partial class ConfigApplicationTests
 
         var run = Apply(Tree, """{ "procedures": { "dbo.p": { "paths": { "[].children[]": { "name": "Child" } } } } }""");
         Assert.Equal(
-            "haruspex.json:1:41: error: procedures[\"dbo.p\"].paths[\"[].children[]\"]: the value at results[0][].children[] is the recursive type of dbo.tree, which every procedure that reaches it shares, so it can't be overridden for one of them.",
+            "haruspex.json:1:41: error HAR4106: procedures[\"dbo.p\"].paths[\"[].children[]\"]: the value at results[0][].children[] is the recursive type of dbo.tree, which every procedure that reaches it shares, so it can't be overridden for one of them.",
             run.Error);
     }
 }

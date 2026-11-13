@@ -19,7 +19,7 @@ namespace Haruspex.Config;
 /// A declaration is a claim, and is checked at runtime like the inferred types: the generated validator refuses output that
 /// does not fit it. So a wrong declaration fails loudly, on real data.
 /// </remarks>
-internal sealed class DeclaredSchema(string file, JsonValue root, string rootPath, List<ConfigProblem> problems, string procedure, Dictionary<string, IrObjectType> types)
+internal sealed class DeclaredSchema(string file, JsonValue root, string rootPath, List<Diagnostic> problems, string procedure, Dictionary<string, IrObjectType> types)
 {
     private static readonly HashSet<string> Annotations = new(StringComparer.Ordinal)
     {
@@ -63,7 +63,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
 
         if (value is not JsonObjectValue schema || !Members(schema).ContainsKey("properties") || Types(schema, at) is not ["object"])
         {
-            Error(value, at, "a rowset is declared by the schema of one row: an object with \"properties\", one for each column.");
+            Report(ConfigCodes.RowsetShape, value, at, "a rowset is declared by the schema of one row: an object with \"properties\", one for each column.");
             return null;
         }
 
@@ -71,14 +71,14 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
         var properties = Members(schema)["properties"];
         if (properties.Value is not JsonObjectValue columns)
         {
-            Error(properties.Value, Child(at, "properties"), "must be an object: each column's name and schema.");
+            Report(ConfigCodes.WrongKind, properties.Value, Child(at, "properties"), "must be an object: each column's name and schema.");
             return null;
         }
 
         if (Members(schema).TryGetValue("required", out var required)
             && (required.Value is not JsonArrayValue list || !columns.Members.All(c => list.Items.Any(i => i is JsonStringValue s && s.Value == c.Name))))
         {
-            Error(required.Value, Child(at, "required"), "every column of a rowset is always there, so \"required\" must list them all, or be left out.");
+            Report(ConfigCodes.RowsetRequired, required.Value, Child(at, "required"), "every column of a rowset is always there, so \"required\" must list them all, or be left out.");
             return null;
         }
 
@@ -90,7 +90,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
                 continue;
             if (type is not IrScalar)
             {
-                Error(column.Value, columnPath, "a rowset's column holds a scalar: a string, number, integer or boolean. JSON a column holds is a string.");
+                Report(ConfigCodes.RowsetColumn, column.Value, columnPath, "a rowset's column holds a scalar: a string, number, integer or boolean. JSON a column holds is a string.");
                 continue;
             }
 
@@ -108,7 +108,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
             return null;
         if (nullable)
         {
-            Error(root, rootPath, "the JSON document itself is never null; when a query may match no rows, use \"mayBeAbsent\": true.");
+            Report(ConfigCodes.NullDocument, root, rootPath, "the JSON document itself is never null; when a query may match no rows, use \"mayBeAbsent\": true.");
             return null;
         }
 
@@ -136,7 +136,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
 
         if (value is not JsonObjectValue schema)
         {
-            Error(value, at, "must be a schema: an object with a \"type\".");
+            Report(ConfigCodes.NoType, value, at, "must be a schema: an object with a \"type\".");
             return null;
         }
 
@@ -147,13 +147,13 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
         var nonNull = types.Where(t => t != "null").ToList();
         if (nonNull.Count == 0)
         {
-            Error(schema, at, Members(schema).ContainsKey("type") ? "needs a type other than \"null\"." : "needs a \"type\".");
+            Report(ConfigCodes.NoType, schema, at, Members(schema).ContainsKey("type") ? "needs a type other than \"null\"." : "needs a \"type\".");
             return null;
         }
 
         if (nonNull.Count > 1)
         {
-            Error(Members(schema)["type"].Value, Child(at, "type"), "can have only one type besides \"null\": a value of several types is not supported yet.");
+            Report(ConfigCodes.SeveralTypes, Members(schema)["type"].Value, Child(at, "type"), "can have only one type besides \"null\": a value of several types is not supported yet.");
             return null;
         }
 
@@ -191,13 +191,13 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
         IrScalar Unchecked(IrScalar scalar)
         {
             if (formatted is not null)
-                Warning(formatted, Child(at, "format"), $"\"{format}\" is not a format haruspex checks, so the generated schema does not check it.");
+                Report(ConfigCodes.UncheckedFormat, formatted, Child(at, "format"), $"\"{format}\" is not a format haruspex checks, so the generated schema does not check it.");
             return scalar;
         }
 
         IrType? Invalid(string other)
         {
-            Error(members["type"].Value, Child(at, "type"), $"\"{other}\" is not a JSON Schema type: use string, integer, number, boolean, object, array or null.");
+            Report(ConfigCodes.NotAType, members["type"].Value, Child(at, "type"), $"\"{other}\" is not a JSON Schema type: use string, integer, number, boolean, object, array or null.");
             return null;
         }
     }
@@ -215,13 +215,13 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
                     : null;
             }
 
-            Error(schema, at, "needs \"properties\" (its keys), or \"additionalProperties\" (the type of every value, for an object whose keys are data).");
+            Report(ConfigCodes.NoProperties, schema, at, "needs \"properties\" (its keys), or \"additionalProperties\" (the type of every value, for an object whose keys are data).");
             return null;
         }
 
         if (properties.Value is not JsonObjectValue keys)
         {
-            Error(properties.Value, Child(at, "properties"), "must be an object: each key's name and schema.");
+            Report(ConfigCodes.WrongKind, properties.Value, Child(at, "properties"), "must be an object: each key's name and schema.");
             return null;
         }
 
@@ -230,20 +230,20 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
         {
             if (list.Value is not JsonArrayValue array || array.Items.Any(i => i is not JsonStringValue))
             {
-                Error(list.Value, Child(at, "required"), "must be an array of the keys that are always there.");
+                Report(ConfigCodes.WrongKind, list.Value, Child(at, "required"), "must be an array of the keys that are always there.");
                 return null;
             }
 
             foreach (var item in array.Items.Cast<JsonStringValue>())
             {
                 if (!keys.Members.Any(k => k.Name == item.Value))
-                    Error(item, Child(at, "required"), $"names \"{item.Value}\", which is not in \"properties\".");
+                    Report(ConfigCodes.RequiredUnknownKey, item, Child(at, "required"), $"names \"{item.Value}\", which is not in \"properties\".");
                 required.Add(item.Value);
             }
         }
 
         if (members.TryGetValue("additionalProperties", out var extra) && extra.Value is JsonObjectValue)
-            Warning(extra.Value, Child(at, "additionalProperties"), "is not supported beside \"properties\" yet, so the generated schema does not check it; the \"objects\" setting decides what happens to keys it does not list.");
+            Report(ConfigCodes.UncheckedKeyword, extra.Value, Child(at, "additionalProperties"), "is not supported beside \"properties\" yet, so the generated schema does not check it; the \"objects\" setting decides what happens to keys it does not list.");
 
         var fields = new List<IrField>();
         foreach (var key in keys.Members)
@@ -264,7 +264,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
             }
             else
             {
-                Error(key.Value, keyPath, "may be both left out and null, which haruspex can't express yet: FOR JSON leaves a null out, so make the key required, or not nullable.");
+                Report(ConfigCodes.OptionalAndNullable, key.Value, keyPath, "may be both left out and null, which haruspex can't express yet: FOR JSON leaves a null out, so make the key required, or not nullable.");
             }
         }
 
@@ -276,7 +276,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
         var members = Members(schema);
         if (!members.TryGetValue("items", out var items))
         {
-            Error(schema, at, "needs \"items\", the schema of its items.");
+            Report(ConfigCodes.NoItems, schema, at, "needs \"items\", the schema of its items.");
             return null;
         }
 
@@ -300,7 +300,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
             return n;
         }
 
-        Error(member.Value, Child(at, keyword), "must be a whole number, zero or more.");
+        Report(ConfigCodes.WrongKind, member.Value, Child(at, keyword), "must be a whole number, zero or more.");
         return null;
     }
 
@@ -326,7 +326,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
             case JsonArrayValue many when many.Items.All(i => i is JsonStringValue):
                 return [.. many.Items.Cast<JsonStringValue>().Select(i => i.Value)];
             default:
-                Error(type.Value, Child(at, "type"), "must be a type's name, or an array of them.");
+                Report(ConfigCodes.WrongKind, type.Value, Child(at, "type"), "must be a type's name, or an array of them.");
                 return null;
         }
     }
@@ -338,7 +338,7 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
         {
             if (Annotations.Contains(member.Name) || Read.Contains(member.Name))
                 continue;
-            Warning(member, Child(at, member.Name), "is not supported yet, so the generated schema does not check it.");
+            Report(ConfigCodes.UncheckedKeyword, member, Child(at, member.Name), "is not supported yet, so the generated schema does not check it.");
         }
     }
 
@@ -353,23 +353,23 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
         if (reference.Value is not JsonStringValue { Value: var target }
             || (Split(target, "#/$defs/") ?? Split(target, "#/definitions/")) is not var (container, name))
         {
-            Error(reference.Value, refPath, "can refer only to \"#/$defs/…\" or \"#/definitions/…\" of the same schema.");
+            Report(ConfigCodes.ForeignReference, reference.Value, refPath, "can refer only to \"#/$defs/…\" or \"#/definitions/…\" of the same schema.");
             return null;
         }
 
         foreach (var sibling in schema.Members.Where(m => m.Name != "$ref" && !Annotations.Contains(m.Name)))
-            Warning(sibling, Child(path, sibling.Name), "is ignored beside \"$ref\".");
+            Report(ConfigCodes.IgnoredBesideReference, sibling, Child(path, sibling.Name), "is ignored beside \"$ref\".");
 
         if (root is not JsonObjectValue top || !Members(top).TryGetValue(container, out var defs) || defs.Value is not JsonObjectValue definitions
             || definitions.Members.FirstOrDefault(d => d.Name == name) is not { } definition)
         {
-            Error(reference.Value, refPath, $"refers to \"{target}\", which the schema does not define.");
+            Report(ConfigCodes.MissingReference, reference.Value, refPath, $"refers to \"{target}\", which the schema does not define.");
             return null;
         }
 
         if (refs.Contains(target))
         {
-            Error(reference.Value, refPath, $"refers to \"{target}\" inside itself: a recursive schema is not supported yet.");
+            Report(ConfigCodes.RecursiveSchema, reference.Value, refPath, $"refers to \"{target}\" inside itself: a recursive schema is not supported yet.");
             return null;
         }
 
@@ -390,14 +390,11 @@ internal sealed class DeclaredSchema(string file, JsonValue root, string rootPat
         return members;
     }
 
-    private void Error(JsonValue value, string path, string message) =>
-        problems.Add(new ConfigProblem(ConfigSeverity.Error, file, new JsonLocation(file, path, value.Line, value.Column), message));
+    private void Report(DiagnosticCode code, JsonValue value, string path, string message) =>
+        problems.Add(code.At(new JsonLocation(file, path, value.Line, value.Column), message));
 
-    private void Warning(JsonValue value, string path, string message) =>
-        problems.Add(new ConfigProblem(ConfigSeverity.Warning, file, new JsonLocation(file, path, value.Line, value.Column), message));
-
-    private void Warning(JsonMember member, string path, string message) =>
-        problems.Add(new ConfigProblem(ConfigSeverity.Warning, file, new JsonLocation(file, path, member.Line, member.Column), message));
+    private void Report(DiagnosticCode code, JsonMember member, string path, string message) =>
+        problems.Add(code.At(new JsonLocation(file, path, member.Line, member.Column), message));
 
     private static string Child(string path, string key) => ConfigPath.Child(path, key);
 }

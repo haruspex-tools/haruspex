@@ -376,7 +376,7 @@ that defines a cursor returns nothing.
 
 **A table the project does not define** may have a trigger the project cannot show. Its results are not withdrawn for that,
 which would make every procedure that writes a table of another database unknown, but haruspex warns, once per table: the
-CLI writes `file:line:column: warning: … is written here but is not defined in the project, …`. The same goes for a table
+CLI writes `file:line:column: warning HAR2101: … is written here but is not defined in the project, …`. The same goes for a table
 of another database, a synonym for an object outside the project, and a table a view reads that the project does not
 define. DDL triggers are not read: no
 write fires them. A trigger disabled by `DISABLE TRIGGER` is still counted, which only claims less.

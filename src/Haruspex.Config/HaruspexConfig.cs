@@ -12,6 +12,9 @@ public sealed record HaruspexConfig
     /// <summary>The file, as found or named. Problems are reported against it.</summary>
     public required string File { get; init; }
 
+    /// <summary>The file as a whole, for a problem with no place in it; null when there is no file.</summary>
+    public FileLocation? Location => File.Length == 0 ? null : new FileLocation(File);
+
     /// <summary>The folder holding the file, which its relative paths are relative to.</summary>
     public required string Directory { get; init; }
 

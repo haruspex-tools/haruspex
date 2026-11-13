@@ -5,7 +5,7 @@ namespace Haruspex.Tests.Config;
 
 /// <summary>
 /// Reading <c>haruspex.json</c>: JSON with comments, every setting checked, and every problem reported with the path
-/// inside the file and its line, as <c>file:line:column: error: path: message</c>.
+/// inside the file and its line, as <c>file:line:column: error HAR3005: path: message</c>.
 /// </summary>
 public class ConfigReaderTests
 {
@@ -115,10 +115,10 @@ public class ConfigReaderTests
 
     /// <summary>Text that is not JSON with comments: the reader's message, at the line and column it stopped.</summary>
     [Theory]
-    [InlineData("{\n  \"include\": [\"a.b\"\n}", "haruspex.json:3:1: error: '}' is invalid without a matching open.")]
-    [InlineData("{} {}", "haruspex.json:1:4: error: '{' is invalid after a single JSON value. Expected end of data.")]
-    [InlineData("{\n  \"objects\": \"strip\",\n  \"objects\": \"strict\"\n}", "haruspex.json:3:3: error: objects: The key \"objects\" is written twice in one object.")]
-    [InlineData("{ \"schemas\": { \"sales\": { \"include\": [\"*\"], \"include\": [\"x\"] } } }", "haruspex.json:1:45: error: schemas.sales.include: The key \"include\" is written twice in one object.")]
+    [InlineData("{\n  \"include\": [\"a.b\"\n}", "haruspex.json:3:1: error HAR3002: '}' is invalid without a matching open.")]
+    [InlineData("{} {}", "haruspex.json:1:4: error HAR3002: '{' is invalid after a single JSON value. Expected end of data.")]
+    [InlineData("{\n  \"objects\": \"strip\",\n  \"objects\": \"strict\"\n}", "haruspex.json:3:3: error HAR3003: objects: The key \"objects\" is written twice in one object.")]
+    [InlineData("{ \"schemas\": { \"sales\": { \"include\": [\"*\"], \"include\": [\"x\"] } } }", "haruspex.json:1:45: error HAR3003: schemas.sales.include: The key \"include\" is written twice in one object.")]
     public void Text_that_is_not_json_is_an_error_with_its_line(string text, string expected) =>
         Assert.Equal(expected, Single(text));
 
@@ -127,73 +127,73 @@ public class ConfigReaderTests
     {
         var problem = Single("");
 
-        Assert.StartsWith("haruspex.json:1:1: error: ", problem, StringComparison.Ordinal);
+        Assert.StartsWith("haruspex.json:1:1: error HAR3002: ", problem, StringComparison.Ordinal);
     }
 
     public static TheoryData<string, string> Errors { get; } = new()
     {
         // The file as a whole, and its settings' types.
-        { "[]", "haruspex.json:1:1: error: must be an object." },
-        { """{ "colour": "red" }""", "haruspex.json:1:3: error: colour: unknown setting \"colour\". The settings here are $schema, source, out, schemas, objects, naming, procedures." },
-        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error: include: unknown setting \"include\". The settings here are $schema, source, out, schemas, objects, naming, procedures." },
-        { """{ "$schema": 1 }""", "haruspex.json:1:14: error: $schema: must be a string." },
-        { """{ "source": "" }""", "haruspex.json:1:13: error: source: must not be empty." },
-        { """{ "out": 3 }""", "haruspex.json:1:10: error: out: must be a string." },
-        { """{ "objects": "loose" }""", "haruspex.json:1:14: error: objects: must be \"strip\" or \"strict\", not \"loose\"." },
+        { "[]", "haruspex.json:1:1: error HAR3005: must be an object." },
+        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, out, schemas, objects, naming, procedures." },
+        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, out, schemas, objects, naming, procedures." },
+        { """{ "$schema": 1 }""", "haruspex.json:1:14: error HAR3005: $schema: must be a string." },
+        { """{ "source": "" }""", "haruspex.json:1:13: error HAR3005: source: must not be empty." },
+        { """{ "out": 3 }""", "haruspex.json:1:10: error HAR3005: out: must be a string." },
+        { """{ "objects": "loose" }""", "haruspex.json:1:14: error HAR3005: objects: must be \"strip\" or \"strict\", not \"loose\"." },
 
         // Schemas and selection.
-        { """{ "schemas": [] }""", "haruspex.json:1:14: error: schemas: must be an object." },
-        { """{ "schemas": { "": {} } }""", "haruspex.json:1:16: error: schemas[\"\"]: a schema's name must not be empty." },
-        { """{ "schemas": { "sales": [] } }""", "haruspex.json:1:25: error: schemas.sales: must be an object." },
-        { """{ "schemas": { "sales": { "output": "x" } } }""", "haruspex.json:1:27: error: schemas.sales.output: unknown setting \"output\". The settings here are include, exclude, prefix, naming." },
-        { "{ \"schemas\": {\n\"sales\": {},\n\"SALES\": {} } }", "haruspex.json:3:1: error: schemas.SALES: the schema \"sales\" already has a block, at line 2; schema names are compared ignoring case, as SQL Server compares them. Merge the two." },
-        { """{ "schemas": { "sales": { "include": "*" } } }""", "haruspex.json:1:38: error: schemas.sales.include: must be an array of patterns matching the schema's procedures by name, such as \"get_*\"." },
-        { """{ "schemas": { "sales": { "include": [] } } }""", "haruspex.json:1:38: error: schemas.sales.include: must list at least one pattern; with none, nothing is selected. Use \"*\" to select every procedure of the schema." },
-        { """{ "schemas": { "sales": { "include": [1] } } }""", "haruspex.json:1:39: error: schemas.sales.include[0]: must be a string." },
-        { """{ "schemas": { "sales": { "include": [""] } } }""", "haruspex.json:1:39: error: schemas.sales.include[0]: '' is empty: a pattern names procedures of its schema, such as get_order, list_* or *." },
-        { """{ "schemas": { "sales": { "include": ["*"], "exclude": ["[x"] } } }""", "haruspex.json:1:57: error: schemas.sales.exclude[0]: '[x' has a '[' without its closing ']'." },
-        { """{ "schemas": { "audit": { "exclude": ["nothing_here"] } } }""", "haruspex.json:1:27: error: schemas.audit.exclude: does nothing without an \"include\" in the same block, since nothing in the schema is selected. Add the include, or remove the exclude." },
-        { """{ "schemas": { "sales": { "prefix": 1 } } }""", "haruspex.json:1:37: error: schemas.sales.prefix: must be a string." },
-        { """{ "schemas": { "sales": { "naming": { "prefix": "S" } } } }""", "haruspex.json:1:39: error: schemas.sales.naming.prefix: unknown setting \"prefix\". The settings here are replace, case." },
+        { """{ "schemas": [] }""", "haruspex.json:1:14: error HAR3005: schemas: must be an object." },
+        { """{ "schemas": { "": {} } }""", "haruspex.json:1:16: error HAR3005: schemas[\"\"]: a schema's name must not be empty." },
+        { """{ "schemas": { "sales": [] } }""", "haruspex.json:1:25: error HAR3005: schemas.sales: must be an object." },
+        { """{ "schemas": { "sales": { "output": "x" } } }""", "haruspex.json:1:27: error HAR3004: schemas.sales.output: unknown setting \"output\". The settings here are include, exclude, prefix, naming." },
+        { "{ \"schemas\": {\n\"sales\": {},\n\"SALES\": {} } }", "haruspex.json:3:1: error HAR3008: schemas.SALES: the schema \"sales\" already has a block, at line 2; schema names are compared ignoring case, as SQL Server compares them. Merge the two." },
+        { """{ "schemas": { "sales": { "include": "*" } } }""", "haruspex.json:1:38: error HAR3005: schemas.sales.include: must be an array of patterns matching the schema's procedures by name, such as \"get_*\"." },
+        { """{ "schemas": { "sales": { "include": [] } } }""", "haruspex.json:1:38: error HAR3005: schemas.sales.include: must list at least one pattern; with none, nothing is selected. Use \"*\" to select every procedure of the schema." },
+        { """{ "schemas": { "sales": { "include": [1] } } }""", "haruspex.json:1:39: error HAR3005: schemas.sales.include[0]: must be a string." },
+        { """{ "schemas": { "sales": { "include": [""] } } }""", "haruspex.json:1:39: error HAR3006: schemas.sales.include[0]: '' is empty: a pattern names procedures of its schema, such as get_order, list_* or *." },
+        { """{ "schemas": { "sales": { "include": ["*"], "exclude": ["[x"] } } }""", "haruspex.json:1:57: error HAR3006: schemas.sales.exclude[0]: '[x' has a '[' without its closing ']'." },
+        { """{ "schemas": { "audit": { "exclude": ["nothing_here"] } } }""", "haruspex.json:1:27: error HAR3009: schemas.audit.exclude: does nothing without an \"include\" in the same block, since nothing in the schema is selected. Add the include, or remove the exclude." },
+        { """{ "schemas": { "sales": { "prefix": 1 } } }""", "haruspex.json:1:37: error HAR3005: schemas.sales.prefix: must be a string." },
+        { """{ "schemas": { "sales": { "naming": { "prefix": "S" } } } }""", "haruspex.json:1:39: error HAR3004: schemas.sales.naming.prefix: unknown setting \"prefix\". The settings here are replace, case." },
 
         // Naming.
-        { """{ "naming": [] }""", "haruspex.json:1:13: error: naming: must be an object." },
-        { """{ "naming": { "style": "pascal" } }""", "haruspex.json:1:15: error: naming.style: unknown setting \"style\". The settings here are replace, case." },
-        { """{ "naming": { "stripSchema": ["dbo"] } }""", "haruspex.json:1:15: error: naming.stripSchema: unknown setting \"stripSchema\". The settings here are replace, case." },
-        { """{ "naming": { "case": "snake" } }""", "haruspex.json:1:23: error: naming.case: must be \"pascal\" or \"camel\" or \"preserve\", not \"snake\"." },
-        { """{ "naming": { "replace": {} } }""", "haruspex.json:1:26: error: naming.replace: must be an array of { \"pattern\": \"…\", \"with\": \"…\" }." },
-        { """{ "naming": { "replace": [1] } }""", "haruspex.json:1:27: error: naming.replace[0]: must be an object." },
-        { """{ "naming": { "replace": [{ "with": "x" }] } }""", "haruspex.json:1:27: error: naming.replace[0]: needs \"pattern\", the regular expression to replace." },
-        { """{ "naming": { "replace": [{ "pattern": "x" }] } }""", "haruspex.json:1:27: error: naming.replace[0]: needs \"with\", the replacement (\"\" to remove the match)." },
-        { """{ "naming": { "replace": [{ "pattern": "x", "with": "", "flags": "i" }] } }""", "haruspex.json:1:57: error: naming.replace[0].flags: unknown setting \"flags\". The settings here are pattern, with." },
+        { """{ "naming": [] }""", "haruspex.json:1:13: error HAR3005: naming: must be an object." },
+        { """{ "naming": { "style": "pascal" } }""", "haruspex.json:1:15: error HAR3004: naming.style: unknown setting \"style\". The settings here are replace, case." },
+        { """{ "naming": { "stripSchema": ["dbo"] } }""", "haruspex.json:1:15: error HAR3004: naming.stripSchema: unknown setting \"stripSchema\". The settings here are replace, case." },
+        { """{ "naming": { "case": "snake" } }""", "haruspex.json:1:23: error HAR3005: naming.case: must be \"pascal\" or \"camel\" or \"preserve\", not \"snake\"." },
+        { """{ "naming": { "replace": {} } }""", "haruspex.json:1:26: error HAR3005: naming.replace: must be an array of { \"pattern\": \"…\", \"with\": \"…\" }." },
+        { """{ "naming": { "replace": [1] } }""", "haruspex.json:1:27: error HAR3005: naming.replace[0]: must be an object." },
+        { """{ "naming": { "replace": [{ "with": "x" }] } }""", "haruspex.json:1:27: error HAR3012: naming.replace[0]: needs \"pattern\", the regular expression to replace." },
+        { """{ "naming": { "replace": [{ "pattern": "x" }] } }""", "haruspex.json:1:27: error HAR3012: naming.replace[0]: needs \"with\", the replacement (\"\" to remove the match)." },
+        { """{ "naming": { "replace": [{ "pattern": "x", "with": "", "flags": "i" }] } }""", "haruspex.json:1:57: error HAR3004: naming.replace[0].flags: unknown setting \"flags\". The settings here are pattern, with." },
 
         // Procedures.
-        { """{ "procedures": [] }""", "haruspex.json:1:17: error: procedures: must be an object." },
-        { """{ "procedures": { "get_order": {} } }""", "haruspex.json:1:19: error: procedures.get_order: 'get_order' is not a two-part name such as sales.get_order, sales.* or *.list_*." },
-        { """{ "procedures": { "sales.*": {} } }""", "haruspex.json:1:19: error: procedures[\"sales.*\"]: names one procedure, so it cannot use * or ?; write a part that holds them in brackets, as [a*b]." },
-        { """{ "procedures": { "sales.p": 1 } }""", "haruspex.json:1:30: error: procedures[\"sales.p\"]: must be an object." },
-        { """{ "procedures": { "sales.p": { "rename": "X" } } }""", "haruspex.json:1:32: error: procedures[\"sales.p\"].rename: unknown setting \"rename\". The settings here are name, paths, results, why." },
-        { """{ "procedures": { "sales.p": { "name": "Order Detail" } } }""", "haruspex.json:1:40: error: procedures[\"sales.p\"].name: 'Order Detail' is not a valid name: an ASCII letter, _ or $, then letters, digits, _ or $, and not a reserved word." },
-        { """{ "procedures": { "sales.p": { "name": "delete" } } }""", "haruspex.json:1:40: error: procedures[\"sales.p\"].name: 'delete' is not a valid name: an ASCII letter, _ or $, then letters, digits, _ or $, and not a reserved word." },
-        { """{ "procedures": { "sales.p": { "paths": [] } } }""", "haruspex.json:1:41: error: procedures[\"sales.p\"].paths: must be an object." },
+        { """{ "procedures": [] }""", "haruspex.json:1:17: error HAR3005: procedures: must be an object." },
+        { """{ "procedures": { "get_order": {} } }""", "haruspex.json:1:19: error HAR3006: procedures.get_order: 'get_order' is not a two-part name such as sales.get_order, sales.* or *.list_*." },
+        { """{ "procedures": { "sales.*": {} } }""", "haruspex.json:1:19: error HAR3007: procedures[\"sales.*\"]: names one procedure, so it cannot use * or ?; write a part that holds them in brackets, as [a*b]." },
+        { """{ "procedures": { "sales.p": 1 } }""", "haruspex.json:1:30: error HAR3005: procedures[\"sales.p\"]: must be an object." },
+        { """{ "procedures": { "sales.p": { "rename": "X" } } }""", "haruspex.json:1:32: error HAR3004: procedures[\"sales.p\"].rename: unknown setting \"rename\". The settings here are name, paths, results, why." },
+        { """{ "procedures": { "sales.p": { "name": "Order Detail" } } }""", "haruspex.json:1:40: error HAR3019: procedures[\"sales.p\"].name: 'Order Detail' is not a valid name: an ASCII letter, _ or $, then letters, digits, _ or $, and not a reserved word." },
+        { """{ "procedures": { "sales.p": { "name": "delete" } } }""", "haruspex.json:1:40: error HAR3019: procedures[\"sales.p\"].name: 'delete' is not a valid name: an ASCII letter, _ or $, then letters, digits, _ or $, and not a reserved word." },
+        { """{ "procedures": { "sales.p": { "paths": [] } } }""", "haruspex.json:1:41: error HAR3005: procedures[\"sales.p\"].paths: must be an object." },
 
         // Path overrides.
-        { """{ "procedures": { "sales.p": { "paths": { "a..b": { "name": "X" } } } } }""", "haruspex.json:1:43: error: procedures[\"sales.p\"].paths[\"a..b\"]: 'a..b' is not a path: at 1, a '.' must be followed by a key; write a key that is not an identifier as [\"key\"]." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": 1 } } } }""", "haruspex.json:1:48: error: procedures[\"sales.p\"].paths.a: must be an object." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": {} } } } }""", "haruspex.json:1:48: error: procedures[\"sales.p\"].paths.a: says nothing to override: give \"name\", \"nullable\", \"type\" or \"values\"." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "optional": true } } } } }""", "haruspex.json:1:50: error: procedures[\"sales.p\"].paths.a.optional: unknown setting \"optional\". The settings here are name, nullable, why, type, import, values." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "nullable": true, "why": "x" } } } } }""", "haruspex.json:1:62: error: procedures[\"sales.p\"].paths.a.nullable: can only be false. A value is nullable unless the database proves otherwise, so there is nothing to declare." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "nullable": "no", "why": "x" } } } } }""", "haruspex.json:1:62: error: procedures[\"sales.p\"].paths.a.nullable: must be false." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "nullable": false } } } } }""", "haruspex.json:1:48: error: procedures[\"sales.p\"].paths.a: \"nullable\": false needs \"why\": the database doesn't prove it, so say what does." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "nullable": false, "why": "" } } } } }""", "haruspex.json:1:76: error: procedures[\"sales.p\"].paths.a.why: must not be empty." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "values": "exact" } } } } }""", "haruspex.json:1:48: error: procedures[\"sales.p\"].paths.a: \"values\": \"exact\" needs \"why\": the database compares the values under its collation, so say why they are exact." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "values": "enum", "why": "x" } } } } }""", "haruspex.json:1:60: error: procedures[\"sales.p\"].paths.a.values: must be \"exact\", not \"enum\"." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "type": "Tag" } } } } }""", "haruspex.json:1:48: error: procedures[\"sales.p\"].paths.a: \"type\" needs \"import\": the module that exports the schema." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "type": "Tag Schema", "import": "x" } } } } }""", "haruspex.json:1:58: error: procedures[\"sales.p\"].paths.a.type: must be the name of an exported schema, with [] for each level of array, such as \"TagSchema[]\"." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "type": "Tag", "import": "" } } } } }""", "haruspex.json:1:75: error: procedures[\"sales.p\"].paths.a.import: must not be empty." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "import": "x", "name": "A" } } } } }""", "haruspex.json:1:48: error: procedures[\"sales.p\"].paths.a: \"import\" needs \"type\": the schema to import from it." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "name": "A", "why": "x" } } } } }""", "haruspex.json:1:48: error: procedures[\"sales.p\"].paths.a: \"why\" explains a claim, but there is none here: give \"nullable\", \"type\" or \"values\"." },
-        { """{ "procedures": { "sales.p": { "paths": { "a": { "name": "1st" } } } } }""", "haruspex.json:1:58: error: procedures[\"sales.p\"].paths.a.name: '1st' is not a valid name: an ASCII letter, _ or $, then letters, digits, _ or $, and not a reserved word." },
+        { """{ "procedures": { "sales.p": { "paths": { "a..b": { "name": "X" } } } } }""", "haruspex.json:1:43: error HAR3017: procedures[\"sales.p\"].paths[\"a..b\"]: 'a..b' is not a path: at 1, a '.' must be followed by a key; write a key that is not an identifier as [\"key\"]." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": 1 } } } }""", "haruspex.json:1:48: error HAR3005: procedures[\"sales.p\"].paths.a: must be an object." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": {} } } } }""", "haruspex.json:1:48: error HAR3020: procedures[\"sales.p\"].paths.a: says nothing to override: give \"name\", \"nullable\", \"type\" or \"values\"." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "optional": true } } } } }""", "haruspex.json:1:50: error HAR3004: procedures[\"sales.p\"].paths.a.optional: unknown setting \"optional\". The settings here are name, nullable, why, type, import, values." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "nullable": true, "why": "x" } } } } }""", "haruspex.json:1:62: error HAR3018: procedures[\"sales.p\"].paths.a.nullable: can only be false. A value is nullable unless the database proves otherwise, so there is nothing to declare." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "nullable": "no", "why": "x" } } } } }""", "haruspex.json:1:62: error HAR3005: procedures[\"sales.p\"].paths.a.nullable: must be false." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "nullable": false } } } } }""", "haruspex.json:1:48: error HAR3011: procedures[\"sales.p\"].paths.a: \"nullable\": false needs \"why\": the database doesn't prove it, so say what does." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "nullable": false, "why": "" } } } } }""", "haruspex.json:1:76: error HAR3005: procedures[\"sales.p\"].paths.a.why: must not be empty." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "values": "exact" } } } } }""", "haruspex.json:1:48: error HAR3011: procedures[\"sales.p\"].paths.a: \"values\": \"exact\" needs \"why\": the database compares the values under its collation, so say why they are exact." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "values": "enum", "why": "x" } } } } }""", "haruspex.json:1:60: error HAR3005: procedures[\"sales.p\"].paths.a.values: must be \"exact\", not \"enum\"." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "type": "Tag" } } } } }""", "haruspex.json:1:48: error HAR3012: procedures[\"sales.p\"].paths.a: \"type\" needs \"import\": the module that exports the schema." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "type": "Tag Schema", "import": "x" } } } } }""", "haruspex.json:1:58: error HAR3019: procedures[\"sales.p\"].paths.a.type: must be the name of an exported schema, with [] for each level of array, such as \"TagSchema[]\"." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "type": "Tag", "import": "" } } } } }""", "haruspex.json:1:75: error HAR3005: procedures[\"sales.p\"].paths.a.import: must not be empty." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "import": "x", "name": "A" } } } } }""", "haruspex.json:1:48: error HAR3012: procedures[\"sales.p\"].paths.a: \"import\" needs \"type\": the schema to import from it." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "name": "A", "why": "x" } } } } }""", "haruspex.json:1:48: error HAR3013: procedures[\"sales.p\"].paths.a: \"why\" explains a claim, but there is none here: give \"nullable\", \"type\" or \"values\"." },
+        { """{ "procedures": { "sales.p": { "paths": { "a": { "name": "1st" } } } } }""", "haruspex.json:1:58: error HAR3019: procedures[\"sales.p\"].paths.a.name: '1st' is not a valid name: an ASCII letter, _ or $, then letters, digits, _ or $, and not a reserved word." },
     };
 
     [Theory]
@@ -243,6 +243,6 @@ public class ConfigReaderTests
         var result = ConfigReader.Read(missing);
 
         Assert.Null(result.Config);
-        Assert.StartsWith($"{missing}: error: cannot read the config file: ", Assert.Single(result.Problems).ToString(), StringComparison.Ordinal);
+        Assert.StartsWith($"{missing}: error HAR3001: cannot read the config file: ", Assert.Single(result.Problems).ToString(), StringComparison.Ordinal);
     }
 }
