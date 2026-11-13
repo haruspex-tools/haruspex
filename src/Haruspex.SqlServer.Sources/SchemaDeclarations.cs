@@ -61,7 +61,7 @@ internal sealed class SchemaDeclarations
     {
         ArgumentNullException.ThrowIfNull(into);
         if (!into.TryAdd(name, definition))
-            Diagnostics.Add(new Diagnostic($"{name} is defined more than once.", at));
+            Diagnostics.Add(new Diagnostic(SourceCodes.DefinedTwice, $"{name} is defined more than once.", at));
     }
 
     /// <summary>The model: each object's definition in effect, as the passes settle it, in the model's own order.</summary>

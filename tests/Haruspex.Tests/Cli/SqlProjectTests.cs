@@ -1,5 +1,7 @@
 using System.Text;
 using Haruspex.Cli;
+using Haruspex.Diagnostics;
+using Haruspex.SqlServer.Sources;
 
 namespace Haruspex.Tests.Cli;
 
@@ -14,8 +16,10 @@ public class SqlProjectTests
         var project = SqlProject.Load(dir.Path);
 
         var diagnostic = Assert.Single(project.Diagnostics);
-        Assert.Equal("procedures/bad.sql", diagnostic.At?.File);
-        Assert.Equal(3, diagnostic.At?.Line);
+        Assert.Equal(SourceCodes.ParseError, diagnostic.Code);
+        var at = Assert.IsType<SourceLocation>(diagnostic.At);
+        Assert.Equal("procedures/bad.sql", at.File);
+        Assert.Equal(3, at.Line);
         Assert.StartsWith("procedures/bad.sql:3:", diagnostic.ToString(), StringComparison.Ordinal);
     }
 
@@ -29,8 +33,9 @@ public class SqlProjectTests
         var project = SqlProject.Load(dir.Path);
 
         var diagnostic = Assert.Single(project.Diagnostics);
+        Assert.Equal(SourceCodes.DefinedTwice, diagnostic.Code);
         Assert.Contains("dbo.t", diagnostic.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal("b.sql", diagnostic.At?.File);
+        Assert.Equal("b.sql", Assert.IsType<SourceLocation>(diagnostic.At).File);
     }
 
     [Fact]

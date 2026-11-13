@@ -63,9 +63,9 @@ internal sealed class DmlTriggers(DatabaseModel model, ICollection<Diagnostic>? 
         if (warnings is not null && warned.Add(name))
         {
             warnings.Add(new Diagnostic(
+                InferenceCodes.UndefinedWriteTarget,
                 $"{name} is written here but is not defined in the project, so a trigger on it, which could return result sets of its own, cannot be seen. SQL Server allows results from triggers unless the server's 'disallow results from triggers' option is on, which it is not by default.",
-                at,
-                DiagnosticSeverity.Warning));
+                at));
         }
     }
 

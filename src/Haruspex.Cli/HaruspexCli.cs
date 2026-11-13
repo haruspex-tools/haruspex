@@ -189,11 +189,7 @@ internal static class HaruspexCli
         if (project.Diagnostics.Count > 0)
         {
             foreach (var diagnostic in project.Diagnostics)
-            {
-                error.WriteLine(diagnostic.At is { } at
-                    ? $"{Path.Join(directory, at.File)}:{at.Line}:{at.Column}: error: {diagnostic.Message}"
-                    : $"haruspex: error: {diagnostic.Message}");
-            }
+                error.WriteLine(DiagnosticFormatter.Format(diagnostic, directory));
 
             error.WriteLine($"haruspex: {project.Diagnostics.Count} error(s); nothing was written.");
             return ExitCodes.Failed;
@@ -229,11 +225,7 @@ internal static class HaruspexCli
         var warnings = new List<Diagnostic>();
         var applied = project.Infer(selected, config, selectedByFile, outDirectory, warnings);
         foreach (var warning in warnings)
-        {
-            error.WriteLine(warning.At is { } at
-                ? $"{Path.Join(directory, at.File)}:{at.Line}:{at.Column}: warning: {warning.Message}"
-                : $"haruspex: warning: {warning.Message}");
-        }
+            error.WriteLine(DiagnosticFormatter.Format(warning, directory));
 
         foreach (var problem in applied.Problems)
             error.WriteLine(problem);

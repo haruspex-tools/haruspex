@@ -137,8 +137,8 @@ public class CliTests
         var (exitCode, _, error) = Run("generate", source.Path, "--include", "*.*", "--out", outDir.Path);
 
         Assert.Equal(0, exitCode);
-        Assert.Single(error.Split('\n'), l => l.Contains("warning:", StringComparison.Ordinal));
-        Assert.Contains("p.sql:2:1: warning: audit.trail is written here but is not defined in the project", error, StringComparison.Ordinal);
+        Assert.Single(error.Split('\n'), l => l.Contains("warning HAR2101:", StringComparison.Ordinal));
+        Assert.Contains("p.sql:2:1: warning HAR2101: audit.trail is written here but is not defined in the project", error, StringComparison.Ordinal);
         Assert.NotEmpty(Directory.EnumerateFileSystemEntries(outDir.Path));
     }
 

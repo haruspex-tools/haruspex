@@ -8,7 +8,7 @@ others, published alone as a NuGet package from this repository. Each project un
   (later .dacpac)                    (binding)                         (overrides,       (names settled)
                                                                          naming)
               Syntax (ScriptDom's declarations read into the model) is shared by Sources, Semantics and Inference.
-              Diagnostics (locations and messages) is used by all of the SQL Server layers.
+              Diagnostics (codes, messages, locations and the outcome of a step) is used by every layer but Collections and the IR.
               Collections (lists that compare by value) is used by the layers whose records hold them.
               The CLI composes everything.
 ```
@@ -18,7 +18,7 @@ others, published alone as a NuGet package from this repository. Each project un
 | Layer (project) | Knows | Must not know | May refer to | Files, zips, XML |
 |---|---|---|---|---|
 | `Haruspex.Collections` | immutable collections that compare by value | anything else | nothing | never |
-| `Haruspex.Diagnostics` | diagnostics: message and source location | anything else | nothing | may |
+| `Haruspex.Diagnostics` | diagnostics: a stable code, a message and where (a place in a source file, a value in a JSON document, a file); the outcome of a step, a value or why there is none | anything else | Collections | may |
 | `Haruspex.SqlServer.Model` | the schema as data: tables, columns, types, collations, keys, CHECK constraints, alias and CLR types, procedures, functions, views and triggers (their bodies and expressions as ScriptDom fragments, nothing else of ScriptDom), synonyms | where the schema came from; how a declaration is parsed; what any reference in a body points to | Collections, Diagnostics; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
 | `Haruspex.SqlServer.Syntax` | reading what ScriptDom parsed (a name, a type, a table definition, a procedure, function, view, trigger or synonym) into the model's values, wherever it is written: in a script or in a body | files; which object a reference means; types of expressions, the IR | Collections, Diagnostics, Model; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
 | `Haruspex.SqlServer.Sources` | reading a folder of `.sql` files (later a DACPAC's `model.xml`) into the model | name resolution, types of expressions, the IR | Collections, Diagnostics, Model, Syntax; `Microsoft.SqlServer.TransactSql.ScriptDom` | may |

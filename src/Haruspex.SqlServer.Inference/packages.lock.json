@@ -12,7 +12,10 @@
         "type": "Project"
       },
       "haruspex.diagnostics": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Haruspex.Collections": "[0.1.0-dev, )"
+        }
       },
       "haruspex.ir": {
         "type": "Project",

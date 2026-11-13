@@ -8,7 +8,10 @@
     <PackageTags>diagnostics;source-location</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-  <!-- The bottom layer: it refers to nothing else of haruspex's (see docs/architecture.md). -->
+  <!-- Above Collections only, whose lists let a record of diagnostics compare by value (see docs/architecture.md). -->
+  <ItemGroup>
+    <ProjectReference Include="../Haruspex.Collections/Haruspex.Collections.csproj" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>

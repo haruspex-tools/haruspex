@@ -26,4 +26,7 @@ has no use for it. So their records held .NET's collections, which compare by re
 **Reason.** One definition of "two lists are equal", usable by every layer without teaching any layer what another knows.
 The cost is one more small package for anyone publishing the model, as Diagnostics already is.
 
+**Amended 13 Nov 2026.** Diagnostics now refers to Collections, so that a list of diagnostics compares by value
+([decision 0037](0037-steps-return-outcomes.md)); Collections is the one layer at the bottom.
+
 **See also:** `src/Haruspex.Collections/README.md`.

@@ -41,6 +41,8 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0033](0033-binding-is-on-demand-and-kept-for-each-set-of-names.md) | 13 Nov 2026 | Binding is on demand, and kept for each set of names |
 | [0034](0034-collections-that-compare-by-value-are-a-layer-of-their-own.md) | 13 Nov 2026 | Collections that compare by value are a layer of their own |
 | [0035](0035-the-typer-apart-from-the-walker.md) | 13 Nov 2026 | The typer apart from the walker: expressions as a function of their scope, statements as the flow |
+| [0036](0036-diagnostics-have-stable-codes.md) | 13 Nov 2026 | Diagnostics have stable codes, one type and one written form |
+| [0037](0037-steps-return-outcomes.md) | 13 Nov 2026 | Steps return outcomes; exceptions are for faults |
 
 ## Writing a record
 

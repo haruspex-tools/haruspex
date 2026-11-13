@@ -49,7 +49,7 @@ internal sealed record ScriptFile(string Path, string Relative)
 
         // A parse error is a position the parser gives, not a fragment: the one place a location is made from a line and column.
         foreach (var error in errors)
-            diagnostics.Add(new Diagnostic(error.Message, new SourceLocation(Relative, error.Line, error.Column)));
+            diagnostics.Add(new Diagnostic(SourceCodes.ParseError, error.Message, new SourceLocation(Relative, error.Line, error.Column)));
         return errors.Count == 0 ? fragment as TSqlScript : null;
     }
 }

@@ -1,21 +1,20 @@
 namespace Haruspex.Diagnostics;
 
 /// <summary>
-/// Something found in the source: an error that stops analysis, such as a parse error, or a warning about a gap the
-/// results cannot show, such as a table the project does not define.
+/// A problem found by a step of haruspex, in one shape for every step: what kind it is (its code, which gives its
+/// severity), what is wrong and what to do, and where.
 /// </summary>
-/// <remarks>
-/// A diagnostic has no code yet. None needs one, so codes are left until something does, rather than invented here.
-/// </remarks>
-/// <param name="Message">What is wrong, in a sentence.</param>
-/// <param name="At">Where, when it is known.</param>
-/// <param name="Severity">Whether it stops analysis.</param>
-public sealed record Diagnostic(string Message, SourceLocation? At, DiagnosticSeverity Severity = DiagnosticSeverity.Error)
+/// <param name="Code">The kind of problem, which has a page of its own and decides the severity.</param>
+/// <param name="Message">What is wrong, and what to do about it, in a sentence or two.</param>
+/// <param name="At">Where, when it has a place.</param>
+public sealed record Diagnostic(DiagnosticCode Code, string Message, DiagnosticLocation? At)
 {
-    /// <summary><c>file:line:column: error: message</c>, or <c>warning</c>.</summary>
-    public override string ToString()
-    {
-        var severity = Severity == DiagnosticSeverity.Warning ? "warning" : "error";
-        return At is null ? $"{severity}: {Message}" : $"{At}: {severity}: {Message}";
-    }
+    /// <summary>How serious it is: its code's severity.</summary>
+    public DiagnosticSeverity Severity => Code.Severity;
+
+    /// <summary>Whether it stops the step that found it.</summary>
+    public bool IsError => Severity == DiagnosticSeverity.Error;
+
+    /// <summary>The diagnostic as <see cref="DiagnosticFormatter"/> writes it, with paths as they are held.</summary>
+    public override string ToString() => DiagnosticFormatter.Format(this);
 }
