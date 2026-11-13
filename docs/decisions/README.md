@@ -38,6 +38,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0030](0030-built-in-functions-are-entries-with-stable-codes-typed-through-one-table.md) | 13 Nov 2026 | Built-in functions are entries with stable codes, typed through one table |
 | [0031](0031-the-model-is-closed-hierarchies-of-records.md) | 13 Nov 2026 | The model is closed hierarchies of records, read from ScriptDom in one place, in source order |
 | [0032](0032-a-switch-over-a-closed-hierarchy-is-exhaustive.md) | 13 Nov 2026 | A switch over a closed hierarchy is exhaustive, and the build checks it |
+| [0033](0033-binding-is-on-demand-and-kept-for-each-set-of-names.md) | 13 Nov 2026 | Binding is on demand, and kept for each set of names |
 
 ## Writing a record
 

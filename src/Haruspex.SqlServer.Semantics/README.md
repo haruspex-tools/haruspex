@@ -29,7 +29,10 @@ flowchart LR
   `RelationSymbol`: a CTE, a derived table (bound with its query, so the whole is a tree, `BoundQuery`), a `VALUES` list, a
   view, a table-valued function's call, a `#temp` table, a table variable, each with its columns' names. The names a body
   defines (`NameEnvironment`) are an argument, and each query is bound once for each set of them (`Bindings`).
-  `Binder.Resolve` is the one rule a column reference is resolved by, and gives a `Resolution`.
+  `Binder.Resolve` is the one rule a column reference is resolved by, and gives a `Resolution`; a variable reference
+  resolves to a parameter, a variable the body declares or neither (`VariableResolution`), from what the whole body declares
+  (`BodyDeclarations`). A name written without a schema means the objects `SchemaNames.Unqualified` gives, for every kind of
+  name.
 - **Schema rules.** `SchemaRules` and `CheckReader` turn declarations into facts about values: whether a column is never
   null (declared `NOT NULL`, in the primary key, or `IDENTITY`), which keys every row satisfies, what an alias type stands
   for, and what a type and its CHECK constraints guarantee about a column's non-null values (lengths, digits, ranges,
@@ -77,4 +80,5 @@ foreach (var column in orders.Columns)
 The layers and what each may know are in
 [docs/architecture.md](https://github.com/sharpblue/haruspex/blob/main/docs/architecture.md). It is part of
 [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API will change. Its chapter of
-[the guide](https://github.com/sharpblue/haruspex/blob/main/docs/internals/README.md), *Binding*, is planned.
+[the guide](https://github.com/sharpblue/haruspex/blob/main/docs/internals/README.md) is
+[*Binding*](https://github.com/sharpblue/haruspex/blob/main/docs/internals/03-binding.md).

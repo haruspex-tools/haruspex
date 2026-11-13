@@ -28,8 +28,9 @@ flowchart LR
 ```
 
 [Haruspex.SqlServer.Syntax](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Syntax/README.md)
-reads a table definition as written (`SyntaxReader.Table`), so a body's own tables (`CREATE TABLE #t`,
-`DECLARE @t TABLE`) are read the same way as the schema's.
+reads a table definition as written (`SyntaxReader.Table`), and a body's own tables (`CREATE TABLE #t`,
+`DECLARE @t TABLE`, a function's return table) the same way (`SyntaxReader.Declared`). Those are a `DeclaredTable`, named as
+the body writes them and in no schema, not a `Table`: the schema's rules read either through `ITable`.
 
 ## Example
 
