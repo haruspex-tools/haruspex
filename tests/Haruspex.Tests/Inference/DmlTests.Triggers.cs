@@ -83,6 +83,21 @@ public partial class DmlTests
     }
 
     [Fact]
+    public void A_write_through_a_view_defined_more_than_once_is_not_followed_to_the_tables_underneath()
+    {
+        // Which of the two definitions is in effect depends on the order the scripts run, so neither is read for the tables a
+        // write through it reaches; the table here has no trigger, and the write is unknown all the same.
+        var doc = Doc(
+            ("view", "CREATE VIEW dbo.item_view AS SELECT i.id, i.label FROM dbo.item AS i;"),
+            ("view_again", "ALTER VIEW dbo.item_view AS SELECT i.id, i.label FROM dbo.item AS i WHERE i.id > 0;"),
+            ("p", "CREATE PROCEDURE dbo.p AS UPDATE dbo.item_view SET label = N'v'; SELECT 1 AS a;"));
+
+        var unknown = ResultsUnknown(doc);
+        Assert.Equal(IrUnknownReason.TriggerResults, unknown.Reason);
+        Assert.Contains("writes the view dbo.item_view, which is defined more than once, so the tables it writes underneath are not known", unknown.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_write_through_a_synonym_reaches_the_triggers_of_its_table()
     {
         // Observed: A_write_through_a_synonym_fires_the_triggers_of_its_table.
