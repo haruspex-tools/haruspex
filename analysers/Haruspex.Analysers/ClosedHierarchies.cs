@@ -11,11 +11,30 @@ namespace Haruspex.Analysers;
 /// </summary>
 internal static class ClosedHierarchies
 {
+    /// <summary>Whether <paramref name="type"/> is the root of a closed hierarchy.</summary>
+    public static bool IsRoot(ITypeSymbol? type) => type is INamedTypeSymbol { TypeKind: TypeKind.Class, IsAbstract: true } root && IsClosed(root);
+
+    /// <summary>
+    /// Whether code in another assembly can name the type: it is public, and so is every type it is nested in. A case of a
+    /// closed hierarchy such code can't name is one its switches can't see, so it would take them to be complete.
+    /// </summary>
+    public static bool IsVisibleOutside(ITypeSymbol type)
+    {
+        for (var t = type; t is not null; t = t.ContainingType)
+        {
+            if (t.DeclaredAccessibility != Accessibility.Public)
+                return false;
+        }
+
+        return true;
+    }
+
     /// <summary>The cases of <paramref name="type"/> when it is a closed hierarchy; empty when it is not one.</summary>
     public static ImmutableArray<INamedTypeSymbol> Cases(ITypeSymbol? type)
     {
-        if (type is not INamedTypeSymbol { TypeKind: TypeKind.Class, IsAbstract: true } root || !IsClosed(root))
+        if (!IsRoot(type))
             return [];
+        var root = (INamedTypeSymbol)type!;
 
         var cases = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
         foreach (var candidate in Types(root.ContainingAssembly.GlobalNamespace))

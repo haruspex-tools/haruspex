@@ -148,4 +148,16 @@ public class ExhaustiveSwitchTests
             }
             """,
             assembly: "Elsewhere"));
+
+    [Fact]
+    public async Task A_case_less_visible_than_its_hierarchy_fails_the_build() =>
+        Assert.Equal(["HX0003", "HX0003"], await Errors("""
+            internal sealed record Hidden : Shape;
+            public static class Outer
+            {
+                private sealed record Nested : Polygon;
+            }
+            internal abstract record Inner { private protected Inner() { } }
+            internal sealed record InnerCase : Inner;
+            """));
 }

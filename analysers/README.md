@@ -16,6 +16,7 @@ package):
 | `ExhaustiveSwitchSuppressor` (HXS0001, HXS0002) | A switch expression over a closed hierarchy needs no discard arm when its arms cover every case: it suppresses the compiler's CS8509 (or CS8846) there, and only there, so a switch that forgets a case still fails the build. |
 | HX0001 (`ExhaustiveSwitchAnalyser`) | A switch statement over a closed hierarchy without `default` handles every case. |
 | HX0002 (`ExhaustiveSwitchAnalyser`) | A switch that handles every case has no discard arm, and no `default` that only throws: it could never run, and would take a case added later without a word. |
+| HX0003 (`ExhaustiveSwitchAnalyser`) | A case of a closed hierarchy that other assemblies can name is one they can name too, or their switches would miss it unseen. |
 
 `ExhaustiveSwitchTests` compiles each rule's cases and refusals. The analysers target .NET Standard 2.0, as the compiler
 that loads them requires, and are written against `Microsoft.CodeAnalysis.CSharp`, no newer than the compiler of the SDK in

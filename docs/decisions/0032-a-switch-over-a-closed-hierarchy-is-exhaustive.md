@@ -14,6 +14,9 @@ runs on every project:
 - A switch that handles every case may not also have a discard arm, or a `default` that only throws (HX0002): such an arm can
   never run, and it would take a case added later without a word. A discard over a value that may be null is its null arm,
   and stays.
+- A case of a closed hierarchy that other assemblies can name must be one they can name (HX0003), checked where the hierarchy
+  is declared. Another assembly compiles against what it can see, so a switch there over `Resolution` would otherwise be taken
+  to cover every case without an internal one, and fail at run time.
 
 A case is matched by a type, a declaration, `or` of them, or a property pattern whose properties are all `var x` or `_`.
 Every sum type of the code is closed so: the model's, `RelationSymbol`, `Resolution`, `SourceTarget`, `Callee`, `BoundQuery`,

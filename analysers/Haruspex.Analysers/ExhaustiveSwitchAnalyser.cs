@@ -11,7 +11,7 @@ namespace Haruspex.Analysers;
 /// <see cref="ExhaustiveSwitchSuppressor"/> lets the compiler's own check stand for a switch expression. And a switch that
 /// handles every case may not also have a discard arm, or a <c>default</c> that only throws (HX0002): that arm stands for
 /// "can't happen", or quietly takes a case added later, and either way keeps it from failing the build at the switch that
-/// forgot it.
+/// forgot it. And a case of a closed hierarchy that other assemblies can name must be one they can name (HX0003).
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ExhaustiveSwitchAnalyser : DiagnosticAnalyzer
@@ -36,8 +36,18 @@ public sealed class ExhaustiveSwitchAnalyser : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "A switch over a closed hierarchy that handles every case has no discard arm, and no default that only throws.");
 
+    /// <summary>A case of a closed hierarchy that code in another assembly can't name, though it can name the hierarchy.</summary>
+    public static readonly DiagnosticDescriptor HiddenCase = new(
+        "HX0003",
+        "A case of a closed hierarchy is less visible than the hierarchy",
+        "{0} is a case of {1}, which other assemblies can name, but they can't name {0}: their switches over {1} would take themselves to be complete without it",
+        "Correctness",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "Every case of a closed hierarchy that other assemblies can name can be named by them too.");
+
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = [MissesCases, ThrowsForNoCase];
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = [MissesCases, ThrowsForNoCase, HiddenCase];
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -48,6 +58,26 @@ public sealed class ExhaustiveSwitchAnalyser : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterOperationAction(Check, OperationKind.Switch);
         context.RegisterOperationAction(CheckExpression, OperationKind.SwitchExpression);
+        context.RegisterSymbolAction(CheckCase, SymbolKind.NamedType);
+    }
+
+    /// <summary>
+    /// In the assembly that declares a closed hierarchy, a case of it less visible than it (HX0003): another assembly compiles
+    /// against what it can see, so a switch there over the hierarchy would be taken to cover every case without that one.
+    /// </summary>
+    private static void CheckCase(SymbolAnalysisContext context)
+    {
+        var type = (INamedTypeSymbol)context.Symbol;
+        if (ClosedHierarchies.IsVisibleOutside(type))
+            return;
+        for (var root = type.BaseType; root is not null; root = root.BaseType)
+        {
+            if (ClosedHierarchies.IsRoot(root) && ClosedHierarchies.IsVisibleOutside(root))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(HiddenCase, type.Locations[0], type.Name, root.Name));
+                return;
+            }
+        }
     }
 
     private static void CheckExpression(OperationAnalysisContext context)
