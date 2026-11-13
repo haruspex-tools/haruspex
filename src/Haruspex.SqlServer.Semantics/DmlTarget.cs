@@ -150,6 +150,18 @@ public sealed record DmlTarget(IReadOnlyList<SchemaObjectName> Objects, IReadOnl
         }
     }
 
+    /// <summary>
+    /// The names a view's query reads that are tables or views of the schema, not CTEs of its own: those a write through the
+    /// view may change underneath, more than it does (which only claims less).
+    /// </summary>
+    /// <param name="query">The view's definition.</param>
+    public static IReadOnlyList<SchemaObjectName> Underneath(SelectStatement query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        var own = query.WithCtesAndXmlNamespaces?.CommonTableExpressions.Select(c => c.ExpressionName.Value).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+        return [.. NamesRead(query).Where(n => n.SchemaIdentifier is not null || !own.Contains(n.BaseIdentifier.Value))];
+    }
+
     /// <summary>Every table name a fragment reads, at any depth, in the order they are written.</summary>
     /// <param name="fragment">The fragment: a query, a view's definition, a statement.</param>
     public static IReadOnlyList<SchemaObjectName> NamesRead(TSqlFragment fragment)

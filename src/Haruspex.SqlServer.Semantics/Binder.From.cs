@@ -216,7 +216,7 @@ public sealed partial class Binder
             {
                 return Unresolved(
                     BindingProblemKind.UnresolvedTable,
-                    $"{name.BaseIdentifier.Value} is not schema-qualified, and {string.Join(" and ", candidates.Select(c => $"the {c.Kind} {c.Name}"))} have that name: which is read depends on the caller's default schema.");
+                    $"{name.BaseIdentifier.Value} is not schema-qualified, and {string.Join(" and ", candidates.Select(c => $"the {SchemaNames.Kind(c)} {c.Name}"))} have that name: which is read depends on the caller's default schema.");
             }
 
             objectName = candidates.Count == 1 ? candidates[0].Name : SyntaxReader.Name(name);
@@ -229,7 +229,7 @@ public sealed partial class Binder
         if (Model.FindReadable(objectName) is View view)
             return new RelationTarget(new ViewRelation(view, ViewColumns(view)));
         if (Model.FindReadable(objectName) is { } other)
-            return Unresolved(BindingProblemKind.UnresolvedTable, $"{objectName} is a {KindName(other)}, which is not modelled yet.");
+            return Unresolved(BindingProblemKind.UnresolvedTable, $"{objectName} is a {SchemaNames.Kind(other)}, which is not modelled yet.");
 
         return Model.FindTable(objectName) is { } table
             ? new TableTarget(table)
@@ -260,8 +260,7 @@ public sealed partial class Binder
             return new ForeignCallee();
         if (name.SchemaIdentifier is not null)
             return Model.FindFunction(SyntaxReader.Name(name)) is { } function ? new KnownCallee(function) : new MissingCallee();
-        var candidates = Model.Functions.Where(f => f.Name.Name.Equals(name.BaseIdentifier.Value, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(f => f.Name.ToString(), StringComparer.Ordinal).ToList();
+        var candidates = SchemaNames.Unqualified(Model.Functions, name.BaseIdentifier.Value);
         return candidates switch
         {
             [] => new MissingCallee(),

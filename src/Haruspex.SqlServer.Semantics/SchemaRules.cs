@@ -66,7 +66,7 @@ public static class SchemaRules
                 // CLR types count, so that one can't be mistaken for an alias of the same name.
                 var candidates = type.Schema is { } schema
                     ? model.FindUserType(new ObjectName(schema, type.Name)) is { } found ? [found] : []
-                    : model.UserTypes.Where(t => t.Name.Name.Equals(type.Name, StringComparison.OrdinalIgnoreCase)).ToList();
+                    : SchemaNames.Unqualified(model.UserTypes, type.Name);
                 if (candidates is not [AliasType { BaseType: { Kind: SqlTypeKind.BuiltIn } builtIn } alias])
                     return null;
                 return new ResolvedType(builtIn, alias.Name.ToString(), alias.Nullability);

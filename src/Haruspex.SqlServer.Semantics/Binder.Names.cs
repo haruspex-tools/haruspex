@@ -51,31 +51,16 @@ public sealed partial class Binder
             return [];
         if (schema is not null)
             return [new ObjectName(schema, name)];
-        var candidates = ReadableNamed(name).Where(c => c.Kind != "function").Select(c => c.Name).Distinct().ToList();
+        var candidates = ReadableNamed(name).Where(c => c is not Function).Select(c => c.Name).Distinct().ToList();
         return candidates.Count > 0 ? candidates : [new ObjectName("dbo", name)];
     }
 
     /// <summary>
-    /// Every object with this name, in any schema, that a FROM clause could read: tables, and the views,
-    /// synonyms and functions. In a stable order.
+    /// Every object a FROM clause could read that a name without a schema may mean (<see cref="SchemaNames.Unqualified"/>):
+    /// tables, and the views, synonyms and functions.
     /// </summary>
-    private List<(ObjectName Name, string Kind)> ReadableNamed(string name) =>
-    [
-        .. Model.Tables.Select(t => (t.Name, Kind: "table"))
-            .Concat(Model.Readable.Select(o => (o.Name, Kind: KindName(o))))
-            .Where(c => c.Name.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(c => c.Name.ToString(), StringComparer.Ordinal)
-            .ThenBy(c => c.Kind, StringComparer.Ordinal),
-    ];
-
-    /// <summary>What a view, synonym or function is, in a word for messages.</summary>
-    private static string KindName(SchemaObject readable) => readable switch
-    {
-        View => "view",
-        Synonym => "synonym",
-        Function => "function",
-        _ => throw new ArgumentException($"{readable.Name} is not an object a FROM clause reads besides a table.", nameof(readable)),
-    };
+    private IReadOnlyList<SchemaObject> ReadableNamed(string name) =>
+        SchemaNames.Unqualified(Model.Tables.Cast<SchemaObject>().Concat(Model.Readable), name);
 
     // ---- EXEC ---------------------------------------------------------------------------------------------------------
 
@@ -132,7 +117,7 @@ public sealed partial class Binder
                 : new UnknowableCall(UnknowableCallKind.MissingProcedure, objectName, Missing(objectName, text), at);
         }
 
-        var candidates = Model.Procedures.Where(p => p.Name.Name.Equals(own, StringComparison.OrdinalIgnoreCase)).OrderBy(p => p.Name.ToString(), StringComparer.Ordinal).ToList();
+        var candidates = SchemaNames.Unqualified(Model.Procedures, own);
         if (candidates.Count > 1)
         {
             return new UnknowableCall(UnknowableCallKind.AmbiguousProcedure, null,

@@ -39,7 +39,6 @@ public class NameResolutionTests
     private static readonly Dictionary<string, string> NameParts = new(StringComparer.Ordinal)
     {
         ["FunctionSummaries.Returned"] = "A scalar function's straight-line body read as one expression: each variable's last value substituted in the order the body declares and assigns them, not a name resolved.",
-        ["DmlTriggers.Reaches"] = "The tables a view's definition names, whose triggers a write through the view fires; schema names get one rule of their own next.",
     };
 
     [Fact]
