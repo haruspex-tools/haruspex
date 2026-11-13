@@ -217,4 +217,50 @@ public class ExhaustiveSwitchTests
                 public static int Of(Ending<int> e) => e switch { Done<int> d => d.Value, Stopped<int> => 0, _ => throw new System.InvalidOperationException() };
             }
             """));
+
+    [Fact]
+    public async Task A_case_with_a_type_parameter_the_root_does_not_fix_leaves_the_switch_unproved() =>
+        Assert.Equal(["CS8509"], await Errors(Generic + """
+            public sealed record Extra<T, TU> : Ending<T>;
+            public static class Use
+            {
+                public static int Of(Ending<string> e) => e switch { Done<string> => 1, Stopped<string> => 2 };
+            }
+            """));
+
+    [Fact]
+    public async Task A_case_closed_over_one_argument_leaves_a_switch_over_the_open_hierarchy_unproved_and_is_no_case_of_another()
+    {
+        const string IntOnly = "public sealed record IntOnly : Ending<int>;\n";
+
+        Assert.Equal(["CS8509"], await Errors(Generic + IntOnly + """
+            public static class Use
+            {
+                public static int Of<T>(Ending<T> e) => e switch { Done<T> => 1, Stopped<T> => 2 };
+            }
+            """));
+        Assert.Empty(await Errors(Generic + IntOnly + """
+            public static class Use
+            {
+                public static int Of(Ending<string> e) => e switch { Done<string> => 1, Stopped<string> => 2 };
+            }
+            """));
+        Assert.Equal(["CS8509"], await Errors(Generic + IntOnly + """
+            public static class Use
+            {
+                public static int Of(Ending<int> e) => e switch { Done<int> => 1, Stopped<int> => 2 };
+            }
+            """));
+    }
+
+    [Fact]
+    public async Task A_case_that_passes_the_root_an_argument_built_from_its_parameter_leaves_the_switch_unproved() =>
+        Assert.Equal(["CS8509"], await Errors(Generic + """
+            public sealed record Wrapped<T> : Ending<System.Collections.Generic.List<T>>;
+            public static class Use
+            {
+                public static int Of(Ending<System.Collections.Generic.List<string>> e) =>
+                    e switch { Done<System.Collections.Generic.List<string>> => 1, Stopped<System.Collections.Generic.List<string>> => 2 };
+            }
+            """));
 }

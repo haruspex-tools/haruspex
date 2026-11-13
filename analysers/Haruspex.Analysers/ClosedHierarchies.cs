@@ -29,7 +29,10 @@ internal static class ClosedHierarchies
         return true;
     }
 
-    /// <summary>The cases of <paramref name="type"/> when it is a closed hierarchy; empty when it is not one.</summary>
+    /// <summary>
+    /// The cases of <paramref name="type"/> when it is a closed hierarchy; empty when it is not one, or when, for a generic
+    /// hierarchy, some type derived from it can't be matched exactly by a pattern over <paramref name="type"/> (below).
+    /// </summary>
     public static ImmutableArray<INamedTypeSymbol> Cases(ITypeSymbol? type)
     {
         if (!IsRoot(type))
@@ -39,44 +42,97 @@ internal static class ClosedHierarchies
         var cases = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
         foreach (var candidate in Types(root.ContainingAssembly.GlobalNamespace))
         {
-            if (!candidate.IsAbstract && Case(candidate, root) is { } found)
-                cases.Add(found);
+            if (candidate.IsAbstract)
+                continue;
+            switch (Fit(candidate, root, out var found))
+            {
+                case Fitting.Case:
+                    cases.Add(found!);
+                    break;
+                case Fitting.Unsure:
+                    return [];
+            }
         }
 
         return cases.ToImmutable();
     }
 
-    /// <summary>
-    /// <paramref name="candidate"/> as a case of <paramref name="root"/>, or null when it is not one. A case of a generic
-    /// hierarchy is declared with type parameters of its own (<c>Done&lt;T&gt; : Ending&lt;T&gt;</c>), and a switch is over the
-    /// hierarchy with arguments (<c>Ending&lt;int&gt;</c>), whose cases are the declared ones with the same arguments
-    /// (<c>Done&lt;int&gt;</c>), which is what a pattern names. So the case is constructed with the arguments the root's base
-    /// gives each of its parameters; a case whose parameters the root doesn't fix is left out, as no pattern names it.
-    /// </summary>
-    private static INamedTypeSymbol? Case(INamedTypeSymbol candidate, INamedTypeSymbol root)
+    /// <summary>How a type derived from a hierarchy's definition stands to a switch over the hierarchy with its arguments.</summary>
+    private enum Fitting
     {
-        if (!root.IsGenericType || candidate.TypeParameters.IsEmpty)
-            return Derives(candidate, root) ? candidate : null;
+        /// <summary>Not a case of it: it derives from the hierarchy with other arguments, which a value of it can never have.</summary>
+        None,
+
+        /// <summary>A case, which a pattern names as constructed.</summary>
+        Case,
+
+        /// <summary>Maybe a case, in a form no pattern names exactly; the switch is not known to be complete.</summary>
+        Unsure,
+    }
+
+    /// <summary>
+    /// <paramref name="candidate"/> as a case of <paramref name="root"/>. A case of a generic hierarchy is declared with type
+    /// parameters of its own (<c>Done&lt;T&gt; : Ending&lt;T&gt;</c>), and a switch is over the hierarchy with arguments
+    /// (<c>Ending&lt;int&gt;</c>), whose cases are the declared ones with the same arguments (<c>Done&lt;int&gt;</c>), which is
+    /// what a pattern names. That holds only when the case passes the root its own parameters, each once, and has no others.
+    /// Any other shape, a parameter the root doesn't fix (<c>Extra&lt;T, U&gt; : Ending&lt;T&gt;</c>), an argument built from one
+    /// (<c>Done&lt;T&gt; : Ending&lt;List&lt;T&gt;&gt;</c>), or a case closed over one argument (<c>IntOnly : Ending&lt;int&gt;</c>)
+    /// in a switch whose arguments are still parameters, could be a case that no list of constructed types holds, so the
+    /// hierarchy is not taken as closed for that switch: the compiler's own check stands, and the switch needs its discard arm.
+    /// A case closed over arguments other than a switch's concrete ones is not a case of it.
+    /// </summary>
+    private static Fitting Fit(INamedTypeSymbol candidate, INamedTypeSymbol root, out INamedTypeSymbol? found)
+    {
+        found = null;
+        if (!root.IsGenericType)
+        {
+            found = candidate;
+            return Derives(candidate, root) ? Fitting.Case : Fitting.None;
+        }
 
         for (var t = candidate.BaseType; t is not null; t = t.BaseType)
         {
             if (!SymbolEqualityComparer.Default.Equals(t.OriginalDefinition, root.OriginalDefinition))
                 continue;
+
+            if (candidate.TypeParameters.IsEmpty)
+            {
+                found = candidate;
+                if (SymbolEqualityComparer.Default.Equals(t, root))
+                    return Fitting.Case;
+                return Mentions(root) ? Fitting.Unsure : Fitting.None;
+            }
+
             var arguments = new ITypeSymbol?[candidate.TypeParameters.Length];
             for (var i = 0; i < t.TypeArguments.Length; i++)
             {
-                if (t.TypeArguments[i] is ITypeParameterSymbol parameter && SymbolEqualityComparer.Default.Equals(parameter.ContainingSymbol, candidate))
-                    arguments[parameter.Ordinal] = root.TypeArguments[i];
+                if (t.TypeArguments[i] is not ITypeParameterSymbol parameter
+                    || !SymbolEqualityComparer.Default.Equals(parameter.ContainingSymbol, candidate)
+                    || arguments[parameter.Ordinal] is not null)
+                {
+                    return Fitting.Unsure;
+                }
+
+                arguments[parameter.Ordinal] = root.TypeArguments[i];
             }
 
             if (arguments.Any(a => a is null))
-                return null;
-            var constructed = candidate.Construct([.. arguments.OfType<ITypeSymbol>()]);
-            return Derives(constructed, root) ? constructed : null;
+                return Fitting.Unsure;
+            found = candidate.Construct([.. arguments.OfType<ITypeSymbol>()]);
+            return Fitting.Case;
         }
 
-        return null;
+        return Fitting.None;
     }
+
+    /// <summary>Whether a type parameter appears anywhere in <paramref name="type"/>'s arguments.</summary>
+    private static bool Mentions(ITypeSymbol type) => type switch
+    {
+        ITypeParameterSymbol => true,
+        INamedTypeSymbol named => named.TypeArguments.Any(Mentions),
+        IArrayTypeSymbol array => Mentions(array.ElementType),
+        _ => false,
+    };
 
     /// <summary>
     /// Whether the type is one of haruspex's own and no other assembly can call a constructor of it: each is private, private

@@ -10,7 +10,11 @@ A closed hierarchy is an abstract class of haruspex whose constructors no other 
 types its own assembly derives from it. C# checks a switch over an enum for completeness but not one over such a class, so
 these do ([decision 0032](../docs/decisions/0032-a-switch-over-a-closed-hierarchy-is-exhaustive.md) argues why, and why not a
 package). A generic hierarchy is closed in the same way, and a switch over it with type arguments has as its cases the cases
-with the same arguments, which are what its patterns name:
+with the same arguments, which are what its patterns name. That holds when each case passes the root its own type parameters,
+each once, and has no others. A hierarchy with a case of another shape (a parameter the root doesn't fix, an argument built from
+one, a case closed over one argument while the switch's arguments are still parameters) is not taken as closed for that switch:
+the compiler's own check stands, and the switch needs its discard arm. A case closed over arguments other than a switch's
+concrete ones is not a case of it:
 
 | Rule | What it says |
 |---|---|

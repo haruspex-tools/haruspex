@@ -48,4 +48,10 @@ hierarchy of haruspex only (a library's abstract type may have cases this compil
 closed), cases read from what the compiler can see (a case only a friend assembly can see would not be one), and a property
 pattern counts only when it can't fail. A test compiles each rule's cases and its refusals (`ExhaustiveSwitchTests`).
 
+**Amended 13 Nov 2026.** A generic hierarchy is closed too (`Outcome<T>`, [decision 0037](0037-steps-return-outcomes.md)): a
+switch over it with arguments has as its cases the cases constructed with those arguments, which is what a pattern names. That
+holds only for a case that passes the root its own type parameters, each once, and has no others; when any type derived from
+the hierarchy has another shape and could be a value of the switched type, the hierarchy is not taken as closed for that
+switch, and the compiler's check stands (`analysers/README.md`; `ExhaustiveSwitchTests`, one test per shape).
+
 **See also:** `analysers/README.md`; decision [0031](0031-the-model-is-closed-hierarchies-of-records.md).
