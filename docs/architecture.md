@@ -119,7 +119,7 @@ an argument, a `NameEnvironment`; a CTE hides a table of its name, as in SQL Ser
 statement depend on the path to it, which only the walk knows, so the walk passes them in; binding asks Inference for
 nothing. What a relation's columns hold is not binding: Inference attaches values to the bound sources as it reads them
 (`ReadScope`), and carries the state of each temporary table from statement to statement (`FlowState`). So Semantics
-still never sees a value, and Inference never resolves a name. A temporary table's or table variable's definition is
+still never sees a value, and Inference never resolves a name, which `NameResolutionTests` holds by reading Inference's IL. A temporary table's or table variable's definition is
 read into a `Table` by `SyntaxReader.Table` in Syntax, the same reading `CREATE TABLE` gets in Sources, so the
 schema rules (`SchemaRules.IsNeverNull`, `ColumnFacts`) apply to it unchanged.
 
