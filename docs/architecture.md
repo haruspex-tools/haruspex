@@ -125,4 +125,4 @@ definition, as for derived tables. `RIGHT JOIN` is left unbound: binding it is e
 modelled, and binding it would change which unknowns are reported. A permanent table changed by `ALTER TABLE` is reported with the reason `unsupported-source`, because which definition applies
 depends on the order the scripts run. The forms that can't make a column nullable, change its type, or add or remove one
 are the exceptions: adding a constraint, checking or disabling constraints, rebuilding, and switching triggers or change
-tracking (`SqlScriptFolder.OnlyTightens`).
+tracking (`ScriptReader.OnlyTightens`).
