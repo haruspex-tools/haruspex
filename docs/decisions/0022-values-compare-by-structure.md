@@ -14,8 +14,10 @@ for the IR's round trip, in which a document read back from its file must equal 
 
 **Every record, in every layer** (amended 13 Nov 2026). A record's lists are `EquatableArray` and its maps `EquatableMap`
 ([decision 0034](0034-collections-that-compare-by-value-are-a-layer-of-their-own.md)), and `RecordEqualityTests` fails on a
-field of any record that compares by reference. Three kinds of type are listed there, each with its reason: a type compared
-by identity because identity is its meaning (a syntax node, a catalogue entry, the model, a bound scope); a type whose
+field of any record that compares by reference: a tuple or a nullable value is checked through what it holds, and `object` or
+a type from outside haruspex fails unless it is listed. Four kinds of type are listed there, each with its reason: a type
+compared by identity because identity is its meaning (a syntax node, a catalogue entry, the model, a bound scope); a type
+from outside haruspex that compares by value (`BigInteger`); a type whose
 equality is written by hand, with the test that holds its laws; and a working type that keys what it holds by identity
 (`ReadScope`, the frames of `Facts`), which is a class, not a record, since nothing compares it. A value set's items and
 sources keep the order they were found in, so two sets with the same items in another order are different records:

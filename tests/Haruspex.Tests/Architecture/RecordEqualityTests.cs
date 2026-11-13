@@ -17,9 +17,10 @@ namespace Haruspex.Tests.Architecture;
 /// This reads every record of every assembly under <c>src/</c> and fails on a field whose type does not compare by value.
 /// </summary>
 /// <remarks>
-/// Three lists say where equality is not generated field by field, so that each such place needs a line: the types compared
-/// by identity because that is what they mean; the types with an equality written by hand, each with the test that holds its
-/// laws; and the working types that are classes because nothing compares them. A list that names a type that no longer
+/// Four lists say where equality is not generated field by field, so that each such place needs a line: the types compared
+/// by identity because that is what they mean; the types from outside haruspex that compare by value; the types with an
+/// equality written by hand, each with the test that holds its laws; and the working types that are classes because nothing
+/// compares them. A list that names a type that no longer
 /// needs its line fails too, so the lists stay true.
 /// </remarks>
 public class RecordEqualityTests
@@ -37,6 +38,15 @@ public class RecordEqualityTests
         [typeof(DatabaseModel)] = "The model a run reads, made once: the records that hold it are about that one model.",
         [typeof(QueryScope)] = "A scope binding made for one place in a body: two places with the same names are two scopes.",
         [typeof(Delegate)] = "A rule given as a function, written once where it is declared: equal when it is the same method on the same target.",
+    };
+
+    /// <summary>
+    /// Types from outside haruspex that compare by value, each with what vouches for it: a type outside can't be read for its
+    /// fields, so it is accepted only when listed here.
+    /// </summary>
+    private static readonly Dictionary<Type, string> OutsideByValue = new()
+    {
+        [typeof(System.Numerics.BigInteger)] = "An integer of any size, equal to another of the same value (.NET's documented equality).",
     };
 
     /// <summary>
@@ -108,24 +118,40 @@ public class RecordEqualityTests
         Assert.NotEqual(Planted.Of("x"), Planted.Of("x"));
 
     [Fact]
-    public void The_check_finds_a_list_a_map_a_set_and_an_array_in_a_record()
+    public void The_check_finds_a_list_a_map_a_set_an_array_a_tuple_of_a_list_an_object_and_an_outside_type_in_a_record()
     {
         // So that the check can't pass by seeing nothing: each kind of collection is planted once, and the two that do compare
         // by value are not reported.
         Assert.Equal(
             [
+                $"{typeof(Planted).FullName}.Anything: {typeof(object)}",
                 $"{typeof(Planted).FullName}.Array: {typeof(int[])}",
                 $"{typeof(Planted).FullName}.List: {typeof(IReadOnlyList<string>)}",
                 $"{typeof(Planted).FullName}.Map: {typeof(ImmutableDictionary<string, int>)}",
+                $"{typeof(Planted).FullName}.Pair: {typeof((IReadOnlyList<int> Items, int Count))}",
                 $"{typeof(Planted).FullName}.Set: {typeof(HashSet<string>)}",
+                $"{typeof(Planted).FullName}.Uri: {typeof(Uri)}",
             ],
             Failures([typeof(Planted)]).Order(StringComparer.Ordinal));
     }
 
-    /// <summary>A record with a field of each kind that compares by reference, and two that compare by value.</summary>
-    private sealed record Planted(IReadOnlyList<string> List, ImmutableDictionary<string, int> Map, HashSet<string> Set, int[] Array, EquatableArray<string> Fine, EquatableMap<string, int> AlsoFine)
+    /// <summary>
+    /// A record with a field of each kind that compares by reference, or may: a list, a map, a set, an array, a tuple holding a
+    /// list, an object, and a type from outside haruspex with an equality of its own that nothing here vouches for; and three
+    /// that compare by value, a tuple and a nullable value among them.
+    /// </summary>
+    private sealed record Planted(
+        IReadOnlyList<string> List,
+        ImmutableDictionary<string, int> Map,
+        HashSet<string> Set,
+        int[] Array,
+        (IReadOnlyList<int> Items, int Count) Pair,
+        object Anything,
+        Uri Uri,
+        EquatableArray<string> Fine,
+        (EquatableMap<string, int> Map, int? Count) AlsoFine)
     {
-        public static Planted Of(string item) => new([item], [], [item], [1], [item], []);
+        public static Planted Of(string item) => new([item], [], [item], [1], ([1], 1), new object(), new("https://example.test/"), [item], ([], 1));
     }
 
     /// <summary>The assemblies of the layers, every project under <c>src/</c>.</summary>
@@ -166,28 +192,38 @@ public class RecordEqualityTests
 
     private static bool ComparesByValue(Type type)
     {
-        if (Nullable.GetUnderlyingType(type) is { } underlying)
-            return ComparesByValue(underlying);
         if (type.IsGenericParameter || type.IsPrimitive || type.IsEnum || type == typeof(string) || type == typeof(decimal))
             return true;
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(EquatableArray<>))
-            return ComparesByValue(type.GetGenericArguments()[0]);
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(EquatableMap<,>))
+
+        // A nullable value, a tuple and the two collections compare by what they hold, so what they hold is checked.
+        if (type.IsGenericType && ComparedByArguments.Contains(type.GetGenericTypeDefinition()))
             return type.GetGenericArguments().All(ComparesByValue);
-        if (ComparedByIdentity.Keys.Any(t => t.IsAssignableFrom(type)))
+        if (ComparedByIdentity.Keys.Any(t => t.IsAssignableFrom(type)) || OutsideByValue.ContainsKey(type))
             return true;
-        if (type.IsArray || type.Namespace?.StartsWith("System.Collections", StringComparison.Ordinal) == true)
+        if (!type.Assembly.GetName().Name!.StartsWith("Haruspex", StringComparison.Ordinal))
             return false;
 
         // An interface of haruspex compares by value when every type of the layers that implements it does.
         if (type.IsInterface)
         {
             var implementations = Layers().SelectMany(Types).Where(t => !t.IsInterface && !t.IsAbstract && type.IsAssignableFrom(t)).ToList();
-            return type.Assembly.GetName().Name!.StartsWith("Haruspex", StringComparison.Ordinal) && implementations.Count > 0 && implementations.All(ComparesByValue);
+            return implementations.Count > 0 && implementations.All(ComparesByValue);
         }
 
         return IsRecord(type) || HasOwnEquality(type);
     }
+
+    /// <summary>
+    /// The generic types that compare by their type arguments' equality, item by item: a nullable value, the tuples, and the
+    /// two collections of <c>Haruspex.Collections</c>. Any other type from outside haruspex, <see cref="object"/> among them,
+    /// says nothing that can be checked, so a field of it is reported unless its type is listed as compared by identity.
+    /// </summary>
+    private static readonly HashSet<Type> ComparedByArguments =
+    [
+        typeof(Nullable<>), typeof(EquatableArray<>), typeof(EquatableMap<,>),
+        typeof(ValueTuple<>), typeof(ValueTuple<,>), typeof(ValueTuple<,,>), typeof(ValueTuple<,,,>), typeof(ValueTuple<,,,,>), typeof(ValueTuple<,,,,,>), typeof(ValueTuple<,,,,,,>),
+        typeof(Tuple<>), typeof(Tuple<,>), typeof(Tuple<,,>), typeof(Tuple<,,,>), typeof(Tuple<,,,,>), typeof(Tuple<,,,,,>), typeof(Tuple<,,,,,,>),
+    ];
 
     /// <summary>A field's name as written: a property's, for its backing field.</summary>
     private static string Name(FieldInfo field) =>

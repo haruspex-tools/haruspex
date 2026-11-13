@@ -104,8 +104,10 @@ The keys are names that compare as SQL Server compares them, ignoring case (`Loc
 `#lines` are one key, and the comparison is the key's own rather than a comparer each map must be given.
 
 Every record of every layer is held to this by a test, `RecordEqualityTests`, which reads each record's fields and fails on
-one that compares by reference. Where equality is not generated field by field, the test lists the type with why: a syntax
-node or a catalogue entry, compared by identity because identity is what it means; an equality written by hand, with the
+one that compares by reference, looking through a tuple or a nullable value at what it holds, and refusing `object` or a
+type from outside haruspex it can't read unless it is listed. Where equality is not generated field by field, the test
+lists the type with why: a syntax node or a catalogue entry, compared by identity because identity is what it means; an
+equality written by hand, with the
 test that holds its laws; and a working type that keys what it holds by identity (a scope keys its sources so, since two
 sources of one table in two scopes are equal as records), which is a class, not a record, because nothing compares it
 ([decision 0022](../decisions/0022-values-compare-by-structure.md)).
