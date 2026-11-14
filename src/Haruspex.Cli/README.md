@@ -9,13 +9,15 @@ output of [Haruspex.Emit.Zod](https://github.com/sharpblue/haruspex/blob/main/sr
 
 ## How data flows through it
 
-`SqlProject` is the composition; `HaruspexCli` parses the command line and writes the files.
+`HaruspexCli` parses the command line; `Generate` runs the command as named steps, each returning an outcome; `SqlProject`
+composes the layers that read and infer.
 
 ```mermaid
 flowchart LR
     args["command line"] --> cli["HaruspexCli"]
-    configFile["haruspex.json"] --> cli
-    cli --> project["SqlProject"]
+    cli --> generate["Generate"]
+    configFile["haruspex.json"] --> generate
+    generate --> project["SqlProject"]
     project -->|Sources| model["DatabaseModel"]
     project -->|Config| selected["the selected procedures"]
     model --> infer["IrInference.Infer"]
@@ -35,27 +37,43 @@ haruspex generate path/to/database --include 'sales.*' --out src/db
 
 `generate` writes `haruspex.ir.json` and `haruspex.zod.ts` to the output folder. The folder argument, `--include` and
 `--out` override the config file for one run, and `--config` names a config file instead of searching for one.
-Diagnostics go to standard error as `file:line:column: error HAR1001: message`, or `warning`, with the problem's code,
-which editors and CI annotate.
-A warning, such as a call whose results only a declaration in the config file could give, doesn't stop the run. A run
-that succeeds prints one line to standard output: how many procedures it typed and how many unknowns there are. The
-unknowns themselves are in the IR file's `unknowns`, each with its reason, a sentence saying why, and where it is; they
-aren't listed on the console.
+
+Everything it finds goes to standard error, one line each, in the form compilers write and editors and CI annotate, with
+the problem's code (decision
+[0036](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0036-diagnostics-have-stable-codes.md)):
+
+```text
+db/procedures/get_order.sql:7:5: error HAR1001: Incorrect syntax near 'FROM'.
+haruspex.json:14:9: error HAR4104: procedures["sales.get_order"].paths["lines[].skew"]: the path results[0].lines[].skew does not exist: …
+db/procedures/list_orders.sql:12:9: note HAR2013: sales.list_orders results[0][].settings: JSON whose shape is not visible …
+```
+
+An error stops the run. A warning, such as a call whose results only a declaration in the config file could give, and a
+note, one for each unknown in the output with where it is and why, don't. A run that succeeds prints one line to standard
+output: how many procedures it typed, how many unknowns there are, and where it wrote.
 
 ## What it guarantees
 
-- **Nothing is written when the input is wrong.** When the SQL, the command line or the config file has an error, nothing
-  is written. Both outputs are made in memory before either is written, and then written one after the other, so only a
-  failure to write (a full disk, a folder that can't be written to) can leave a new IR file beside a missing or older Zod
-  file; the exit code is then 1.
+- **Every unknown is reported**, as a note with its code, its place in the SQL and its reason, except one only a
+  declaration can resolve (dynamic SQL, a procedure chosen when it runs, one outside the project), which is a warning
+  saying what to declare instead. One fact is said once.
+- **Every independent problem is reported**, not only the first: a missing source folder, a missing output folder and a
+  malformed `--include` are all listed in one run. A check that needs what an earlier step failed to give is not run, so
+  one mistake doesn't bring others with it.
+- **No half output.** When the SQL, the command line or the config file has an error, or the module can't be emitted,
+  nothing is written, and the output folder isn't even created. When the run succeeds, both files are written in full to
+  temporary names in the output folder and then renamed into place, the IR first; if the module can't be put in place,
+  the IR is put back as it was (or removed, if there was none), no temporary file is left, and the exit code is 1. Two
+  files can't be replaced as one, so only a process killed between the two renames can leave a new IR beside the old
+  module.
 - **The same input gives the same bytes**, on every platform, so a CI check can compare the output with what is committed.
-- **The exit codes are fixed**, so scripts and CI can rely on them:
+- **The exit codes are fixed**, so scripts and CI can rely on them (`ExitCodeTests` holds each row):
 
 | Code | Meaning |
 |---|---|
-| 0 | Success |
+| 0 | Success, with or without warnings and notes |
 | 1 | The input has errors (SQL that doesn't parse, an object defined twice), or the output couldn't be written |
-| 2 | The command line or the config file is wrong: a missing option, a pattern that matches nothing, an override whose path doesn't exist, generated names that clash |
+| 2 | The command line or the config file is wrong: an unknown option, a missing folder, a pattern that matches nothing, an override whose path doesn't exist, generated names that clash, an import the module can't write |
 | 3 | A fault in haruspex itself |
 
 ## What it deliberately doesn't do
