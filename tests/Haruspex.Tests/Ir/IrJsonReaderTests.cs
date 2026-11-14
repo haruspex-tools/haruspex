@@ -98,6 +98,15 @@ public class IrJsonReaderTests
     }
 
     [Fact]
+    public void A_0_16_file_that_declares_a_session_is_refused_since_no_0_16_writer_could()
+    {
+        var e = Refused(json => json["irVersion"] = "0.16");
+
+        Assert.Equal("$.source.session", e.Path);
+        Assert.Equal("is not a property the format has in IR 0.16: a session is declared from IR 0.17 on.", e.Problem);
+    }
+
+    [Fact]
     public void A_session_option_that_is_not_true_or_false_is_refused()
     {
         var e = Refused(json => json["source"]!["session"] = new JsonObject { ["ansiWarnings"] = "on" });

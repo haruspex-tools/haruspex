@@ -105,7 +105,8 @@ of program handle one.
 
 **A reader**:
 - must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further,
-  except 0.16, which it may read as a 0.17 document that declares no session (every 0.16 document is one);
+  except 0.16, which it may read as a 0.17 document that declares no session (every 0.16 document is one), refusing a
+  0.16 document that holds `session`;
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
   missing required property, a value of the wrong JSON type, a count that is negative or past 2,147,483,647, a number in a
   facet that is not plain decimal text, a union of fewer than two variants, a flag that disagrees with its reasons, and a
