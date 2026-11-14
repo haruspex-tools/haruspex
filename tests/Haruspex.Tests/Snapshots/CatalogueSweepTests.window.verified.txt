@@ -335,8 +335,8 @@ MIN(m) OVER () -> money number/decimal {digits=19,4 [-922337203685477.5808 92233
 MIN(sm) OVER () -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 MIN(f) OVER () -> float number/float
 MIN(r) OVER () -> real number/float
-MIN(f24) OVER () -> float(24) number/float
-MIN(f25) OVER () -> float(25) number/float
+MIN(f24) OVER () -> real number/float
+MIN(f25) OVER () -> float number/float
 MIN(c3) OVER () -> char(3) string {length=3}
 MIN(v10) OVER () -> varchar(10) string {length<=10}
 MIN(vx) OVER () -> varchar(max) string
@@ -375,8 +375,8 @@ MAX(m) OVER (PARTITION BY id) -> money number/decimal {digits=19,4 [-92233720368
 MAX(sm) OVER (PARTITION BY id) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 MAX(f) OVER (PARTITION BY id) -> float number/float
 MAX(r) OVER (PARTITION BY id) -> real number/float
-MAX(f24) OVER (PARTITION BY id) -> float(24) number/float
-MAX(f25) OVER (PARTITION BY id) -> float(25) number/float
+MAX(f24) OVER (PARTITION BY id) -> real number/float
+MAX(f25) OVER (PARTITION BY id) -> float number/float
 MAX(c3) OVER (PARTITION BY id) -> char(3) string {length=3}
 MAX(v10) OVER (PARTITION BY id) -> varchar(10) string {length<=10}
 MAX(vx) OVER (PARTITION BY id) -> varchar(max) string
@@ -415,8 +415,8 @@ FIRST_VALUE(m) OVER (ORDER BY id) -> money number/decimal {digits=19,4 [-9223372
 FIRST_VALUE(sm) OVER (ORDER BY id) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 FIRST_VALUE(f) OVER (ORDER BY id) -> float number/float
 FIRST_VALUE(r) OVER (ORDER BY id) -> real number/float
-FIRST_VALUE(f24) OVER (ORDER BY id) -> float(24) number/float
-FIRST_VALUE(f25) OVER (ORDER BY id) -> float(25) number/float
+FIRST_VALUE(f24) OVER (ORDER BY id) -> real number/float
+FIRST_VALUE(f25) OVER (ORDER BY id) -> float number/float
 FIRST_VALUE(c3) OVER (ORDER BY id) -> char(3) string {length=3}
 FIRST_VALUE(v10) OVER (ORDER BY id) -> varchar(10) string {length<=10}
 FIRST_VALUE(vx) OVER (ORDER BY id) -> varchar(max) string
@@ -455,8 +455,8 @@ LAST_VALUE(m) OVER (ORDER BY id) -> money number/decimal {digits=19,4 [-92233720
 LAST_VALUE(sm) OVER (ORDER BY id) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 LAST_VALUE(f) OVER (ORDER BY id) -> float number/float
 LAST_VALUE(r) OVER (ORDER BY id) -> real number/float
-LAST_VALUE(f24) OVER (ORDER BY id) -> float(24) number/float
-LAST_VALUE(f25) OVER (ORDER BY id) -> float(25) number/float
+LAST_VALUE(f24) OVER (ORDER BY id) -> real number/float
+LAST_VALUE(f25) OVER (ORDER BY id) -> float number/float
 LAST_VALUE(c3) OVER (ORDER BY id) -> char(3) string {length=3}
 LAST_VALUE(v10) OVER (ORDER BY id) -> varchar(10) string {length<=10}
 LAST_VALUE(vx) OVER (ORDER BY id) -> varchar(max) string
@@ -495,8 +495,8 @@ LAG(m) OVER (ORDER BY id) -> money number/decimal null:window-edge {digits=19,4 
 LAG(sm) OVER (ORDER BY id) -> smallmoney number/decimal null:window-edge {digits=10,4 [-214748.3648 214748.3647]}
 LAG(f) OVER (ORDER BY id) -> float number/float null:window-edge
 LAG(r) OVER (ORDER BY id) -> real number/float null:window-edge
-LAG(f24) OVER (ORDER BY id) -> float(24) number/float null:window-edge
-LAG(f25) OVER (ORDER BY id) -> float(25) number/float null:window-edge
+LAG(f24) OVER (ORDER BY id) -> real number/float null:window-edge
+LAG(f25) OVER (ORDER BY id) -> float number/float null:window-edge
 LAG(c3) OVER (ORDER BY id) -> char(3) string null:window-edge {length=3}
 LAG(v10) OVER (ORDER BY id) -> varchar(10) string null:window-edge {length<=10}
 LAG(vx) OVER (ORDER BY id) -> varchar(max) string null:window-edge
@@ -615,8 +615,8 @@ PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY m) OVER () -> money number/decimal {
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY sm) OVER () -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY f) OVER () -> float number/float
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY r) OVER () -> real number/float
-PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY f24) OVER () -> float(24) number/float
-PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY f25) OVER () -> float(25) number/float
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY f24) OVER () -> real number/float
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY f25) OVER () -> float number/float
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY c3) OVER () -> char(3) string {length=3}
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY v10) OVER () -> varchar(10) string {length<=10}
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY vx) OVER () -> varchar(max) string

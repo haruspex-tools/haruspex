@@ -1,10 +1,8 @@
-using System.Text.RegularExpressions;
 using Haruspex.Cli;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.SqlServer.Model;
-using Haruspex.SqlServer.Semantics;
 using Haruspex.SqlServer.Sources;
 using Haruspex.SqlServer.Sources.Dacpacs;
 
@@ -16,7 +14,7 @@ namespace Haruspex.Tests.Sources;
 /// location is rewritten as the same place in the package (<see cref="PackageLocationMap"/>) and the source record is set
 /// aside, since only the package has one. The packages are in <c>tests/dacpacs</c>, built by DacFx from the same scripts.
 /// </summary>
-public partial class DacpacEquivalenceTests
+public class DacpacEquivalenceTests
 {
     private static string Packages => Path.Combine(RepositoryPaths.Root, "tests", "dacpacs");
 
@@ -99,31 +97,14 @@ public partial class DacpacEquivalenceTests
     }
 
     /// <summary>
-    /// The two outputs equal, the folder's locations rewritten, the package's source record set aside, and each fact's type
-    /// source spelt with its defaults (see <see cref="Canonical"/>). With <paramref name="zod"/>, the Zod emitted from each too.
+    /// The two outputs equal, the folder's locations rewritten and the package's source record set aside. With
+    /// <paramref name="zod"/>, the Zod emitted from each too. Nothing else is rewritten: a type is spelt with its defaults however
+    /// it was read (<c>docs/decisions/0041-a-type-is-spelt-with-its-defaults-written-out.md</c>).
     /// </summary>
     private static void AssertSame(IrDocument fromFolder, IrDocument fromPackage, PackageLocationMap map, bool zod = true)
     {
-        var expected = Canonical(map.Map(IrJsonWriter.Write(fromFolder)));
-        var actual = Canonical(IrJsonWriter.Write(fromPackage with { Source = fromFolder.Source }));
-        Assert.Equal(expected, actual);
+        Assert.Equal(map.Map(IrJsonWriter.Write(fromFolder)), IrJsonWriter.Write(fromPackage with { Source = fromFolder.Source }));
         if (zod)
-            Assert.Equal(Canonical(ZodEmitter.Emit(fromFolder).Expected()), Canonical(ZodEmitter.Emit(fromPackage with { Source = fromFolder.Source }).Expected()));
+            Assert.Equal(ZodEmitter.Emit(fromFolder).Expected(), ZodEmitter.Emit(fromPackage with { Source = fromFolder.Source }).Expected());
     }
-
-    /// <summary>
-    /// The text with each built-in type a fact is attributed to (<c>"type": "decimal"</c>) spelt with its defaults
-    /// (<c>decimal(18,0)</c>), through Semantics' own reading of a type. A fact's type source is the type as written, and a
-    /// package holds the type DacFx resolved, not its spelling, so <c>decimal</c> and <c>decimal(18,0)</c> are one type written two
-    /// ways. Nothing else is rewritten, and a type that resolves differently stays different.
-    /// </summary>
-    private static string Canonical(string text) => TypeSource().Replace(text, match =>
-    {
-        var arguments = match.Groups["arguments"].Success ? match.Groups["arguments"].Value.Split(',') : [];
-        var type = new SqlType(SqlTypeKind.BuiltIn, match.Groups["name"].Value, [.. arguments]);
-        return ScalarType.Of(type) is { } scalar ? $"\"type\": \"{scalar.Declaration}\"" : match.Value;
-    });
-
-    [GeneratedRegex(@"""type"": ""(?<name>[a-z0-9]+)(?:\((?<arguments>[^)]*)\))?""")]
-    private static partial Regex TypeSource();
 }

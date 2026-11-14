@@ -2097,8 +2097,8 @@ NULLIF(m, m) -> money number/decimal null:null-when-equal {digits=19,4 [-9223372
 NULLIF(sm, sm) -> smallmoney number/decimal null:null-when-equal {digits=10,4 [-214748.3648 214748.3647]}
 NULLIF(f, f) -> float number/float null:null-when-equal
 NULLIF(r, r) -> real number/float null:null-when-equal
-NULLIF(f24, f24) -> float(24) number/float null:null-when-equal
-NULLIF(f25, f25) -> float(25) number/float null:null-when-equal
+NULLIF(f24, f24) -> real number/float null:null-when-equal
+NULLIF(f25, f25) -> float number/float null:null-when-equal
 NULLIF(c3, c3) -> char(3) string null:null-when-equal {length=3}
 NULLIF(v10, v10) -> varchar(10) string null:null-when-equal {length<=10}
 NULLIF(vx, vx) -> varchar(max) string null:null-when-equal

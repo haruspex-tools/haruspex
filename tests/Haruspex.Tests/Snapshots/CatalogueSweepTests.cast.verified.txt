@@ -465,8 +465,8 @@ CAST(f24 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overf
 CAST(f24 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 CAST(f24 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(f24 AS float) -> float number/float
-CAST(f24 AS real) -> float(24) number/float
-CAST(f24 AS float(24)) -> float(24) number/float
+CAST(f24 AS real) -> real number/float
+CAST(f24 AS float(24)) -> real number/float
 CAST(f24 AS float(25)) -> float number/float
 CAST(f24 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(f24 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
@@ -499,10 +499,10 @@ CAST(f25 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-ove
 CAST(f25 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
 CAST(f25 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 CAST(f25 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
-CAST(f25 AS float) -> float(25) number/float
+CAST(f25 AS float) -> float number/float
 CAST(f25 AS real) -> real number/float null:arithmetic-overflow
 CAST(f25 AS float(24)) -> real number/float null:arithmetic-overflow
-CAST(f25 AS float(25)) -> float(25) number/float
+CAST(f25 AS float(25)) -> float number/float
 CAST(f25 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(f25 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(f25 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow

@@ -73,21 +73,21 @@
               "precision": 18,
               "scale": 0,
               "from": {
-                "type": "decimal"
+                "type": "decimal(18,0)"
               }
             },
             "min": {
               "value": -999999999999999999,
               "inclusive": true,
               "from": {
-                "type": "decimal"
+                "type": "decimal(18,0)"
               }
             },
             "max": {
               "value": 999999999999999999,
               "inclusive": true,
               "from": {
-                "type": "decimal"
+                "type": "decimal(18,0)"
               }
             }
           },
@@ -104,21 +104,21 @@
               "precision": 18,
               "scale": 0,
               "from": {
-                "type": "numeric"
+                "type": "numeric(18,0)"
               }
             },
             "min": {
               "value": -999999999999999999,
               "inclusive": true,
               "from": {
-                "type": "numeric"
+                "type": "numeric(18,0)"
               }
             },
             "max": {
               "value": 999999999999999999,
               "inclusive": true,
               "from": {
-                "type": "numeric"
+                "type": "numeric(18,0)"
               }
             }
           },
@@ -134,7 +134,7 @@
               "value": 1,
               "unit": "bytes",
               "from": {
-                "type": "char"
+                "type": "char(1)"
               }
             }
           },
@@ -150,7 +150,7 @@
               "value": 1,
               "unit": "bytes",
               "from": {
-                "type": "varchar"
+                "type": "varchar(1)"
               }
             }
           },

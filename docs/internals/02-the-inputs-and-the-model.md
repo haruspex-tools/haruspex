@@ -153,7 +153,7 @@ Its elements come in two kinds, and each is read the way that keeps one meaning 
   collation; its constraints and indexes are elements of their own that name it. `TableReader` builds the model's `Table`
   from them directly. Only the expressions in them (a CHECK's condition, a computed column's) are text, parsed by ScriptDom
   as a folder's are. DacFx has already resolved what the script said, so a column's nullability is the one it deploys, and a
-  type has all its arguments: `decimal` is there as `decimal(18,0)`.
+  type has all its arguments: `decimal` is there as `decimal(18,0)`, which is how haruspex spells it from a folder too.
 - **Modules are text.** A procedure, function, view or trigger keeps its definition as written: the header DacFx stores in
   an annotation (`CREATE PROCEDURE … AS`, with any comment before it) and the body. `ModuleTextReader` puts the two back
   together, parses them with ScriptDom and hands the statement to the same `ModuleReader` a folder's scripts go through. So
@@ -195,8 +195,9 @@ in its list.
 **The proof.** For every fixture that builds as a project, and for WideWorldImporters, the IR and Zod inferred from the
 package are byte for byte those inferred from the folder, once each of the folder's locations is rewritten as the package's
 (`DacpacEquivalenceTests`). The rewriting is built from names and texts, never from the reader's own positions, which would
-agree with any reader. The one other difference is what a package can't know: a fact that names the declared type as written
-(`decimal`) names it as DacFx resolved it (`decimal(18,0)`), and the test compares the two spelt alike.
+agree with any reader. Nothing else differs, though a package can't know how a type was written, because haruspex never
+writes a type as written: a column declared `decimal` is `decimal(18,0)` in the output from either
+([decision 0041](../decisions/0041-a-type-is-spelt-with-its-defaults-written-out.md)).
 
 ## Where things are
 

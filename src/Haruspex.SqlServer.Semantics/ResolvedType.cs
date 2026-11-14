@@ -47,6 +47,20 @@ public sealed record ResolvedType
     /// <summary>What the alias type says about null; <see cref="DeclaredNullability.NotDeclared"/> without one.</summary>
     public DeclaredNullability AliasNullability { get; }
 
-    /// <summary>The name facts from the type are attributed to: the alias's, or the built-in type as written.</summary>
-    public string SourceName => Alias ?? BuiltIn.ToString();
+    /// <summary>
+    /// The built-in type with its defaults written out, as every value of it is spelt in output: <c>decimal(18,0)</c> for a
+    /// <c>decimal</c> declared bare, as for one computed. One database read from its scripts or from its DACPAC then gives one
+    /// output, since a DACPAC holds the type DacFx resolved and not how it was written
+    /// (<c>docs/decisions/0041-a-type-is-spelt-with-its-defaults-written-out.md</c>). A type the catalogue can't read the
+    /// arguments of is spelt as written.
+    /// </summary>
+    public string Spelt => Scalar?.Text ?? Written(BuiltIn);
+
+    /// <summary>The name facts from the type are attributed to: the alias's, or the built-in type (<see cref="Spelt"/>).</summary>
+    public string SourceName => Alias ?? Spelt;
+
+#pragma warning disable CA1308 // Type names are written in lower case, as T-SQL usually is; this is not a comparison.
+    private static string Written(SqlType type) =>
+        type.Arguments.Count == 0 ? type.Name : type.Name + "(" + string.Join(",", type.Arguments.Select(a => a.ToLowerInvariant())) + ")";
+#pragma warning restore CA1308
 }

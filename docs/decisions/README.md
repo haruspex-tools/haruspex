@@ -46,6 +46,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0038](0038-the-callers-session-is-declared.md) | 14 Nov 2026 | The callers' session options are declared, and not known by default |
 | [0039](0039-a-location-in-a-dacpac-names-the-package-and-the-object.md) | 14 Nov 2026 | A location in a DACPAC names the package and the object |
 | [0040](0040-a-dacpac-is-read-with-the-packages-of-its-database.md) | 14 Nov 2026 | A DACPAC is read with the packages of its database, found beside it first |
+| [0041](0041-a-type-is-spelt-with-its-defaults-written-out.md) | 14 Nov 2026 | A type is spelt with its defaults written out |
 
 ## Writing a record
 

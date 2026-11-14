@@ -132,8 +132,8 @@ COUNT(f24) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(f24) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(f24) -> float number/float null:empty-aggregate,arithmetic-overflow
 AVG(f24) -> float number/float null:empty-aggregate,arithmetic-overflow
-MIN(f24) -> float(24) number/float null:empty-aggregate
-MAX(f24) -> float(24) number/float null:empty-aggregate
+MIN(f24) -> real number/float null:empty-aggregate
+MAX(f24) -> real number/float null:empty-aggregate
 STDEV(f24) -> float number/float null:empty-aggregate,too-few-values
 STDEVP(f24) -> float number/float null:empty-aggregate
 VAR(f24) -> float number/float null:empty-aggregate,too-few-values
@@ -142,8 +142,8 @@ COUNT(f25) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(f25) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
 AVG(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
-MIN(f25) -> float(25) number/float null:empty-aggregate
-MAX(f25) -> float(25) number/float null:empty-aggregate
+MIN(f25) -> float number/float null:empty-aggregate
+MAX(f25) -> float number/float null:empty-aggregate
 STDEV(f25) -> float number/float null:empty-aggregate,too-few-values,arithmetic-overflow
 STDEVP(f25) -> float number/float null:empty-aggregate,arithmetic-overflow
 VAR(f25) -> float number/float null:empty-aggregate,too-few-values,arithmetic-overflow

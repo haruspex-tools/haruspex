@@ -92,7 +92,7 @@ internal static class SqlTypes
     /// <param name="withFacets">Whether the type's and the column's facts are kept.</param>
     private static Shape ToShape(ColumnFacts facts, ResolvedType resolved, SourceLocation at, bool withFacets)
     {
-        var text = Text(resolved.BuiltIn);
+        var text = resolved.Spelt;
         var type = resolved.Type;
 
         // A json parameter is text the caller sends, and a driver returns a json column as text. A json column inside FOR
@@ -156,14 +156,4 @@ internal static class SqlTypes
         CheckSource { Check.Name: { } name, Table: Table table } => new IrFactSource(IrFactSourceKind.Check, $"{table.Name.Schema}.{name}"),
         CheckSource check => new IrFactSource(IrFactSourceKind.Check, check.Check.At.ToString()),
     };
-
-    /// <summary>The type as written, normalised: <c>decimal(19,2)</c>, <c>nvarchar(max)</c>.</summary>
-    private static string Text(SqlType type)
-    {
-#pragma warning disable CA1308 // The IR writes SQL type names in lower case, as T-SQL is usually written; this is not a comparison.
-        return type.Arguments.Count == 0
-            ? type.Name
-            : type.Name + "(" + string.Join(",", type.Arguments.Select(a => a.ToLowerInvariant())) + ")";
-#pragma warning restore CA1308
-    }
 }

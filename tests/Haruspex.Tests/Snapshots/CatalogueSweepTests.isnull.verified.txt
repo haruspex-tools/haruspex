@@ -518,27 +518,27 @@ ISNULL(r, 'ab') -> real number/float
 ISNULL(r, N'ab') -> real number/float
 ISNULL(r, 1e0) -> real number/float
 ISNULL(r, $1) -> real number/float
-ISNULL(f24, bt) -> float(24) number/float
-ISNULL(f24, ti) -> float(24) number/float
-ISNULL(f24, si) -> float(24) number/float
-ISNULL(f24, i) -> float(24) number/float
-ISNULL(f24, bi) -> float(24) number/float
-ISNULL(f24, d52) -> float(24) number/float
-ISNULL(f24, d380) -> float(24) number/float
-ISNULL(f24, d3838) -> float(24) number/float
-ISNULL(f24, n102) -> float(24) number/float
-ISNULL(f24, m) -> float(24) number/float
-ISNULL(f24, sm) -> float(24) number/float
-ISNULL(f24, f) -> float(24) number/float
-ISNULL(f24, r) -> float(24) number/float
-ISNULL(f24, f24) -> float(24) number/float
-ISNULL(f24, f25) -> float(24) number/float
-ISNULL(f24, c3) -> float(24) number/float
-ISNULL(f24, v10) -> float(24) number/float
-ISNULL(f24, vx) -> float(24) number/float
-ISNULL(f24, nc3) -> float(24) number/float
-ISNULL(f24, nv10) -> float(24) number/float
-ISNULL(f24, nvx) -> float(24) number/float
+ISNULL(f24, bt) -> real number/float
+ISNULL(f24, ti) -> real number/float
+ISNULL(f24, si) -> real number/float
+ISNULL(f24, i) -> real number/float
+ISNULL(f24, bi) -> real number/float
+ISNULL(f24, d52) -> real number/float
+ISNULL(f24, d380) -> real number/float
+ISNULL(f24, d3838) -> real number/float
+ISNULL(f24, n102) -> real number/float
+ISNULL(f24, m) -> real number/float
+ISNULL(f24, sm) -> real number/float
+ISNULL(f24, f) -> real number/float
+ISNULL(f24, r) -> real number/float
+ISNULL(f24, f24) -> real number/float
+ISNULL(f24, f25) -> real number/float
+ISNULL(f24, c3) -> real number/float
+ISNULL(f24, v10) -> real number/float
+ISNULL(f24, vx) -> real number/float
+ISNULL(f24, nc3) -> real number/float
+ISNULL(f24, nv10) -> real number/float
+ISNULL(f24, nvx) -> real number/float
 ISNULL(f24, dt) -> unknown unsupported-expression: ISNULL(f24, dt): SQL Server refuses it: date doesn't convert implicitly to real.
 ISNULL(f24, tm3) -> unknown unsupported-expression: ISNULL(f24, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to real.
 ISNULL(f24, dtm) -> unknown unsupported-expression: ISNULL(f24, dtm): SQL Server refuses it: datetime doesn't convert implicitly to real.
@@ -546,39 +546,39 @@ ISNULL(f24, dt23) -> unknown unsupported-expression: ISNULL(f24, dt23): SQL Serv
 ISNULL(f24, sdt) -> unknown unsupported-expression: ISNULL(f24, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to real.
 ISNULL(f24, dto3) -> unknown unsupported-expression: ISNULL(f24, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to real.
 ISNULL(f24, u) -> unknown unsupported-expression: ISNULL(f24, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to real.
-ISNULL(f24, bin4) -> float(24) number/float
-ISNULL(f24, vb10) -> float(24) number/float
-ISNULL(f24, x) -> float(24) number/float
-ISNULL(f24, sv) -> float(24) number/float
-ISNULL(f24, j) -> float(24) number/float
-ISNULL(f24, 1) -> float(24) number/float
-ISNULL(f24, 12345) -> float(24) number/float
-ISNULL(f24, 2.50) -> float(24) number/float
-ISNULL(f24, 'ab') -> float(24) number/float
-ISNULL(f24, N'ab') -> float(24) number/float
-ISNULL(f24, 1e0) -> float(24) number/float
-ISNULL(f24, $1) -> float(24) number/float
-ISNULL(f25, bt) -> float(25) number/float
-ISNULL(f25, ti) -> float(25) number/float
-ISNULL(f25, si) -> float(25) number/float
-ISNULL(f25, i) -> float(25) number/float
-ISNULL(f25, bi) -> float(25) number/float
-ISNULL(f25, d52) -> float(25) number/float
-ISNULL(f25, d380) -> float(25) number/float
-ISNULL(f25, d3838) -> float(25) number/float
-ISNULL(f25, n102) -> float(25) number/float
-ISNULL(f25, m) -> float(25) number/float
-ISNULL(f25, sm) -> float(25) number/float
-ISNULL(f25, f) -> float(25) number/float
-ISNULL(f25, r) -> float(25) number/float
-ISNULL(f25, f24) -> float(25) number/float
-ISNULL(f25, f25) -> float(25) number/float
-ISNULL(f25, c3) -> float(25) number/float
-ISNULL(f25, v10) -> float(25) number/float
-ISNULL(f25, vx) -> float(25) number/float
-ISNULL(f25, nc3) -> float(25) number/float
-ISNULL(f25, nv10) -> float(25) number/float
-ISNULL(f25, nvx) -> float(25) number/float
+ISNULL(f24, bin4) -> real number/float
+ISNULL(f24, vb10) -> real number/float
+ISNULL(f24, x) -> real number/float
+ISNULL(f24, sv) -> real number/float
+ISNULL(f24, j) -> real number/float
+ISNULL(f24, 1) -> real number/float
+ISNULL(f24, 12345) -> real number/float
+ISNULL(f24, 2.50) -> real number/float
+ISNULL(f24, 'ab') -> real number/float
+ISNULL(f24, N'ab') -> real number/float
+ISNULL(f24, 1e0) -> real number/float
+ISNULL(f24, $1) -> real number/float
+ISNULL(f25, bt) -> float number/float
+ISNULL(f25, ti) -> float number/float
+ISNULL(f25, si) -> float number/float
+ISNULL(f25, i) -> float number/float
+ISNULL(f25, bi) -> float number/float
+ISNULL(f25, d52) -> float number/float
+ISNULL(f25, d380) -> float number/float
+ISNULL(f25, d3838) -> float number/float
+ISNULL(f25, n102) -> float number/float
+ISNULL(f25, m) -> float number/float
+ISNULL(f25, sm) -> float number/float
+ISNULL(f25, f) -> float number/float
+ISNULL(f25, r) -> float number/float
+ISNULL(f25, f24) -> float number/float
+ISNULL(f25, f25) -> float number/float
+ISNULL(f25, c3) -> float number/float
+ISNULL(f25, v10) -> float number/float
+ISNULL(f25, vx) -> float number/float
+ISNULL(f25, nc3) -> float number/float
+ISNULL(f25, nv10) -> float number/float
+ISNULL(f25, nvx) -> float number/float
 ISNULL(f25, dt) -> unknown unsupported-expression: ISNULL(f25, dt): SQL Server refuses it: date doesn't convert implicitly to float.
 ISNULL(f25, tm3) -> unknown unsupported-expression: ISNULL(f25, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to float.
 ISNULL(f25, dtm) -> unknown unsupported-expression: ISNULL(f25, dtm): SQL Server refuses it: datetime doesn't convert implicitly to float.
@@ -586,18 +586,18 @@ ISNULL(f25, dt23) -> unknown unsupported-expression: ISNULL(f25, dt23): SQL Serv
 ISNULL(f25, sdt) -> unknown unsupported-expression: ISNULL(f25, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to float.
 ISNULL(f25, dto3) -> unknown unsupported-expression: ISNULL(f25, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to float.
 ISNULL(f25, u) -> unknown unsupported-expression: ISNULL(f25, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to float.
-ISNULL(f25, bin4) -> float(25) number/float
-ISNULL(f25, vb10) -> float(25) number/float
-ISNULL(f25, x) -> float(25) number/float
-ISNULL(f25, sv) -> float(25) number/float
-ISNULL(f25, j) -> float(25) number/float
-ISNULL(f25, 1) -> float(25) number/float
-ISNULL(f25, 12345) -> float(25) number/float
-ISNULL(f25, 2.50) -> float(25) number/float
-ISNULL(f25, 'ab') -> float(25) number/float
-ISNULL(f25, N'ab') -> float(25) number/float
-ISNULL(f25, 1e0) -> float(25) number/float
-ISNULL(f25, $1) -> float(25) number/float
+ISNULL(f25, bin4) -> float number/float
+ISNULL(f25, vb10) -> float number/float
+ISNULL(f25, x) -> float number/float
+ISNULL(f25, sv) -> float number/float
+ISNULL(f25, j) -> float number/float
+ISNULL(f25, 1) -> float number/float
+ISNULL(f25, 12345) -> float number/float
+ISNULL(f25, 2.50) -> float number/float
+ISNULL(f25, 'ab') -> float number/float
+ISNULL(f25, N'ab') -> float number/float
+ISNULL(f25, 1e0) -> float number/float
+ISNULL(f25, $1) -> float number/float
 ISNULL(c3, bt) -> char(3) string {length=3}
 ISNULL(c3, ti) -> char(3) string {length=3}
 ISNULL(c3, si) -> char(3) string {length=3}
