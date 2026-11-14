@@ -89,6 +89,54 @@ public class CliTests
     }
 
     [Fact]
+    public void A_problem_in_a_referenced_package_is_printed_under_the_folder_that_package_was_found_in()
+    {
+        // The view is in lib.dacpac, found in shared/ through "references"; what it reads isn't there, so the note about the
+        // procedure that reads it is placed in the view, and its path must be shared/lib.dacpac/…, not app/lib.dacpac/….
+        using var dir = new TempDirectory();
+        Directory.CreateDirectory(Path.Combine(dir.Path, "app"));
+        Directory.CreateDirectory(Path.Combine(dir.Path, "shared"));
+        WritePackage(Path.Combine(dir.Path, "shared", "lib.dacpac"), null, """
+            <Element Type="SqlView" Name="[dbo].[v]">
+              <Property Name="QueryScript"><Value><![CDATA[
+            SELECT m.id FROM dbo.missing AS m;]]></Value></Property>
+              <Property Name="IsAnsiNullsOn" Value="True" />
+              <Annotation Type="SysCommentsObjectAnnotation"><Property Name="HeaderContents" Value="CREATE VIEW dbo.v AS" /></Annotation>
+            </Element>
+            """);
+        WritePackage(Path.Combine(dir.Path, "app", "app.dacpac"), "lib.dacpac", """
+            <Element Type="SqlProcedure" Name="[dbo].[p]">
+              <Property Name="BodyScript"><Value><![CDATA[
+            SELECT v.id FROM dbo.v AS v;]]></Value></Property>
+              <Property Name="IsAnsiNullsOn" Value="True" />
+              <Annotation Type="SysCommentsObjectAnnotation"><Property Name="HeaderContents" Value="CREATE PROCEDURE dbo.p AS" /></Annotation>
+            </Element>
+            """);
+        dir.File("haruspex.json", """{ "source": "app/app.dacpac", "references": ["shared"], "out": "out", "schemas": { "dbo": { "include": ["*"] } } }""");
+
+        var (exitCode, _, error) = RunIn(dir.Path, "generate");
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains(Path.Join(dir.Path, "shared", "lib.dacpac/[dbo].[v]:2:"), error, StringComparison.Ordinal);
+        Assert.DoesNotContain(Path.Join(dir.Path, "app", "lib.dacpac"), error, StringComparison.Ordinal);
+    }
+
+    /// <summary>A package of the elements given, referring to <paramref name="reference"/> in the same database when one is named.</summary>
+    private static void WritePackage(string path, string? reference, string elements)
+    {
+        var header = reference is null ? "" : $"""<CustomData Category="Reference" Type="SqlSchema"><Metadata Name="FileName" Value="C:\build\{reference}" /><Metadata Name="LogicalName" Value="{reference}" /></CustomData>""";
+        using var zip = System.IO.Compression.ZipFile.Open(path, System.IO.Compression.ZipArchiveMode.Create);
+        using var writer = new StreamWriter(zip.CreateEntry("model.xml").Open(), new System.Text.UTF8Encoding(false));
+        writer.Write($"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <DataSchemaModel xmlns="http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02">
+              <Header>{header}</Header>
+              <Model>{elements}</Model>
+            </DataSchemaModel>
+            """);
+    }
+
+    [Fact]
     public void Generate_refuses_a_dacpac_that_is_not_there()
     {
         var (exitCode, _, error) = Run("generate", "missing.dacpac", "--include", "*.*", "--out", "out");
