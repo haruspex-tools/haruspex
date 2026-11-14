@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 
 namespace Haruspex.SqlServer.Model;
@@ -80,6 +81,16 @@ public sealed class DatabaseModel
         triggersOn = Triggers.ToLookup(t => t.Parent);
         keysTo = CascadingKeys.ToLookup(k => k.Referenced);
     }
+
+    /// <summary>The database's own settings, when the source records them (a DACPAC does); null when it doesn't (a folder of scripts).</summary>
+    public DatabaseSettings? Settings { get; init; }
+
+    /// <summary>
+    /// The parts of the database the source refers to but which weren't read, each as a message names it (a referenced package
+    /// that wasn't found): a name that binds to nothing may be defined in one, so a reader saying it is missing can say where
+    /// it may be. Empty when the source is whole as far as it knows.
+    /// </summary>
+    public EquatableArray<string> Unread { get; init; } = [];
 
     /// <summary>The tables, in source order.</summary>
     public IReadOnlyList<Table> Tables { get; }

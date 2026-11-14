@@ -60,7 +60,9 @@ foreach (var column in orders.Columns)
 ## What it guarantees
 
 - **A reference it can't bind for certain is unbound, never guessed.** An ambiguous column, a table outside the project or
-  a name only dynamic SQL could create becomes a binding that says why, and the layers above treat it as unknown.
+  a name only dynamic SQL could create becomes a binding that says why, and the layers above treat it as unknown. When the
+  source left part of the database unread (a referenced package that wasn't found), a name that binds to nothing says where
+  it may be defined (`SchemaGaps.MayBeIn`).
 - **A fact is never narrower than the truth.** A CHECK constraint is read only in the forms `CheckReader` understands, and
   anything else is ignored, which leaves a type wider than it could be, never narrower. A constraint that a later
   `ALTER TABLE … NOCHECK` may disable, and a key whose index may be disabled, prove nothing.

@@ -281,6 +281,7 @@ reason of its own, unless the config file declares them (below):
 | Another database, a linked server (`AT`), `OPENDATASOURCE`, a synonym, or no such procedure | `missing-procedure` |
 | An unqualified name that more than one schema has | `ambiguous-procedure` |
 | A CLR procedure | `external-code` |
+| A procedure created `WITH ENCRYPTION` whose text the source lacks, as in a DACPAC extracted from a database | `encrypted-definition`. The placeholder such a package holds would claim the procedure returns nothing, so its body is never read (`An_encrypted_procedure_whose_text_the_source_lacks_has_unknown_results_with_their_own_reason`) |
 | A procedure changed after its definition | `redefined` |
 
 Under `INSERT … EXEC` such a call's result sets go into the table, so only the temporary tables become unknown: dynamic SQL

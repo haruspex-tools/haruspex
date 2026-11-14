@@ -31,7 +31,7 @@ internal sealed partial class Typer
             KnownCallee known => Rows(known.Function),
             ForeignCallee => Fails(IrUnknownReason.UnsupportedSource, "a function of another database is not modelled yet."),
             AmbiguousCallee ambiguous => Fails(IrUnknownReason.UnresolvedTable, $"{ambiguous.Name} is not schema-qualified, and {string.Join(" and ", ambiguous.Candidates.Select(c => c.Name))} have that name."),
-            MissingCallee => Fails(IrUnknownReason.UnresolvedTable, "there is no such function in the project."),
+            MissingCallee => Fails(IrUnknownReason.UnresolvedTable, $"there is no such function in the project.{SchemaGaps.MayBeIn(model)}"),
         };
 
         LocalRelationValues Rows(Function function)

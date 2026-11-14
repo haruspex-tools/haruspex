@@ -251,7 +251,7 @@ public sealed partial class Binder
 
         return Model.FindTable(objectName) is { } table
             ? new TableTarget(table)
-            : Unresolved(BindingProblemKind.UnresolvedTable, $"There is no table {objectName} in the project.");
+            : Unresolved(BindingProblemKind.UnresolvedTable, $"There is no table {objectName} in the project.{SchemaGaps.MayBeIn(Model)}");
     }
 
     /// <summary>

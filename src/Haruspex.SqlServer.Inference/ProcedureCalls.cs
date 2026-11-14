@@ -135,11 +135,18 @@ internal sealed class ProcedureCalls(DatabaseModel model, IReadOnlyDictionary<Ob
         return Assumed(callee, context, at);
     }
 
-    /// <summary>Why a procedure cannot be walked at all: a CLR procedure, or one changed after its definition.</summary>
+    /// <summary>Why a procedure cannot be walked at all: a CLR procedure, an encrypted one whose text the source lacks, or one changed after its definition.</summary>
     private static UnknownShape? Unwalkable(Procedure procedure)
     {
-        if (procedure.Body is not SqlBody)
-            return new UnknownShape(IrUnknownReason.ExternalCode, $"{procedure.Name} is a CLR procedure: its results come from .NET code, which is not in the project.", procedure.Span.Start);
+        switch (procedure.Body)
+        {
+            case SqlBody:
+                break;
+            case EncryptedBody:
+                return new UnknownShape(IrUnknownReason.EncryptedDefinition, $"{procedure.Name} is encrypted, and the source holds a placeholder, not its text: what it returns can only be declared.", procedure.Span.Start);
+            case ClrBody or NoBody:
+                return new UnknownShape(IrUnknownReason.ExternalCode, $"{procedure.Name} is a CLR procedure: its results come from .NET code, which is not in the project.", procedure.Span.Start);
+        }
 
         // The parameters are still read from the definition the model kept, but which body runs depends on the order the
         // scripts run, so the results are withdrawn.

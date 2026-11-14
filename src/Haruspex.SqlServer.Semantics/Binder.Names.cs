@@ -129,5 +129,5 @@ public sealed partial class Binder
 
     private string Missing(ObjectName name, string text) => Model.FindReadable(name) is Synonym
         ? $"{text} runs the synonym {name}, which is not modelled yet."
-        : $"{text} runs {name}, which is not a procedure of the project.";
+        : $"{text} runs {name}, which is not a procedure of the project.{SchemaGaps.MayBeIn(Model)}";
 }

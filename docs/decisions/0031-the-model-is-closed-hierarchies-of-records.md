@@ -6,7 +6,8 @@
 constructor only its own assembly can call, with a sealed record for each kind. `SchemaObject` (a name and a `SourceSpan`) is
 over `Table`, `UserType`, `Synonym` and `Module`; `Module` is over `Procedure`, `Function`, `View` and `Trigger`; `Function` is
 a `ScalarFunction`, an `InlineFunction` or a `TableFunction`; a `UserType` is an `AliasType` or a `ClrType`; and what a module
-runs, its `ModuleBody`, is a `SqlBody`, a `ClrBody` or a `NoBody`. ScriptDom's types appear in the model only as bodies and
+runs, its `ModuleBody`, is a `SqlBody`, a `ClrBody`, a `NoBody` or (since 14 Nov 2026, for a DACPAC extracted from a database) an
+`EncryptedBody`. ScriptDom's types appear in the model only as bodies and
 expressions (statements, a query, a scalar or Boolean expression), which an architecture test holds. Reading ScriptDom into the
 model is in one layer, Haruspex.SqlServer.Syntax (`SyntaxReader`, `ModuleReader`), which Sources and the layers that bind and
 infer share. Every collection of schema objects is in source order.

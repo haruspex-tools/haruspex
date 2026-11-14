@@ -43,7 +43,7 @@ foreach (var table in model.Tables)
 ## What it guarantees
 
 - **One of several is a closed set of kinds.** A function is a `ScalarFunction`, an `InlineFunction` or a `TableFunction`, a
-  body a `SqlBody`, a `ClrBody` or a `NoBody`, a user type an `AliasType` or a `ClrType`: a reader matches on the kind and gets
+  body a `SqlBody`, a `ClrBody`, a `NoBody` or an `EncryptedBody` (text the source doesn't hold), a user type an `AliasType` or a `ClrType`: a reader matches on the kind and gets
   exactly its fields, and no other assembly can add one
   ([decision 0031](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0031-the-model-is-closed-hierarchies-of-records.md)).
 - **ScriptDom only in code.** ScriptDom's types appear only as bodies and expressions; names, types, parameters and options
@@ -53,6 +53,11 @@ foreach (var table in model.Tables)
 - **Names are two-part** (`schema.name`, `ObjectName`) and compared case-insensitively, as SQL Server compares them in
   almost every database.
 - **Declarations are kept as written**, so a tool reading the model sees what the source says, not an interpretation.
+- **What the source records of the database itself is kept, and only that.** A source that records the database's settings
+  (a DACPAC does) gives its collation, compatibility level and `SET` defaults (`DatabaseSettings`); a folder of scripts
+  doesn't, and `DatabaseModel.Settings` is null. They are recorded, not applied: a column's collation is the one it declares,
+  and a caller's options are the caller's. What the source refers to but couldn't read, such as a referenced package that
+  wasn't found, is listed (`DatabaseModel.Unread`), so a name missing from the model can say where it may be.
 - **An object changed after its definition says so.** When the source changes an object (`ALTER TABLE`, `DROP PROCEDURE`,
   `ALTER FUNCTION`) and doesn't say which runs last, the model records a `Redefinition` rather than applying one. A CHECK
   constraint that a later `ALTER TABLE … NOCHECK CONSTRAINT` may disable records where (`CheckConstraint.DisabledAt`).

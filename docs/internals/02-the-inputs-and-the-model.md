@@ -115,7 +115,7 @@ same declaration means in the schema.
 
 What is one of several kinds is a *sum type*, the idea functional languages call an algebraic data type: a value is exactly
 one of a closed set of cases, each with its own fields. A function is a `ScalarFunction`, an `InlineFunction` or a
-`TableFunction`; what a module runs, its `ModuleBody`, is a `SqlBody`, a `ClrBody` or a `NoBody`; a user type is an
+`TableFunction`; what a module runs, its `ModuleBody`, is a `SqlBody`, a `ClrBody`, a `NoBody` or an `EncryptedBody`; a user type is an
 `AliasType` or a `ClrType`. C# has no sum types as such, so each is a *closed hierarchy*: an abstract record whose
 constructor only its own assembly can call, with a sealed record for each case. A reader matches on the case and gets
 exactly its fields; there is no field that is null for every case but one, and no case can be added from outside, so a

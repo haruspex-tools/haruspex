@@ -144,9 +144,12 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
     }
 
     /// <summary>Why a trigger may return result sets, as words; null when every statement in it is known to return none.</summary>
-    private string? Returns(Trigger trigger, HashSet<Visit> visited) => trigger.Body is SqlBody body
-        ? Statements(body.Statements, new Binder(model, trigger.Span), trigger.Span, visited)
-        : "is a CLR trigger, whose code is not in the project";
+    private string? Returns(Trigger trigger, HashSet<Visit> visited) => trigger.Body switch
+    {
+        SqlBody body => Statements(body.Statements, new Binder(model, trigger.Span), trigger.Span, visited),
+        EncryptedBody => "is encrypted, and the source holds a placeholder, not its text",
+        ClrBody or NoBody => "is a CLR trigger, whose code is not in the project",
+    };
 
     private string? Statements(TSqlFragment body, Binder binder, SourceSpan where, HashSet<Visit> visited)
     {
@@ -217,9 +220,12 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
             case ProcedureCall { Procedure: var callee }:
                 if (!visited.Add(new CallVisit(callee.Name)))
                     return null;
-                if (callee.Body is not SqlBody body)
-                    return $"calls {callee.Name} at {at}, a CLR procedure";
-                return Statements(body.Statements, new Binder(model, callee.Span), callee.Span, visited) is { } why ? $"calls {callee.Name} at {at}, which {why}" : null;
+                return callee.Body switch
+                {
+                    SqlBody body => Statements(body.Statements, new Binder(model, callee.Span), callee.Span, visited) is { } why ? $"calls {callee.Name} at {at}, which {why}" : null,
+                    EncryptedBody => $"calls {callee.Name} at {at}, which is encrypted, and the source holds a placeholder, not its text",
+                    ClrBody or NoBody => $"calls {callee.Name} at {at}, a CLR procedure",
+                };
             case UnknowableCall unknowable:
                 return $"calls what is not followed at {at}: {unknowable.Detail}";
             default:
