@@ -68,4 +68,23 @@ public class DiagnosticFormatterTests
             new Diagnostic(Broken, "m", new FileLocation("f")),
             new Diagnostic(Broken, "m", null),
         ]);
+
+    [Theory]
+    [InlineData("procedures/get_order.sql:7:5", "procedures/get_order.sql", 7, 5)]
+    [InlineData("C:/db/p.sql:12:1", "C:/db/p.sql", 12, 1)]
+    public void A_location_reads_back_as_it_is_written(string text, string file, int line, int column)
+    {
+        Assert.True(SourceLocation.TryParse(text, out var at));
+        Assert.Equal(new SourceLocation(file, line, column), at);
+        Assert.Equal(text, at.ToString());
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(":0:0")]
+    [InlineData("p.sql:0:1")]
+    [InlineData("p.sql:x:1")]
+    [InlineData("p.sql:3")]
+    public void Text_that_is_not_a_location_does_not_read_as_one(string text) =>
+        Assert.False(SourceLocation.TryParse(text, out _));
 }

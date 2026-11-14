@@ -5,7 +5,9 @@ namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
 /// The codes of what inference reports (HAR2xxx), each explained on its page in <c>docs/diagnostics</c>: an unknown in the
-/// output, a note with one code for each of its reasons, and what inference could not check, a warning.
+/// output, a note with one code for each of its reasons but those only a declaration resolves (<see cref="Of"/>), and what
+/// inference could not check, a warning. The numbers left out (2002, 2016 to 2020) were never reported, and are not given
+/// out.
 /// </summary>
 public static class InferenceCodes
 {
@@ -14,9 +16,6 @@ public static class InferenceCodes
 
     /// <summary>An unknown for <see cref="IrUnknownReason.UnsupportedStatement"/>.</summary>
     public static DiagnosticCode UnsupportedStatement { get; } = Unknown(2001, "A statement that isn't modelled yet");
-
-    /// <summary>An unknown for <see cref="IrUnknownReason.ExternalCode"/>.</summary>
-    public static DiagnosticCode ExternalCode { get; } = Unknown(2002, "Results from code outside the project");
 
     /// <summary>An unknown for <see cref="IrUnknownReason.Redefined"/>.</summary>
     public static DiagnosticCode Redefined { get; } = Unknown(2003, "An object whose definition depends on the order of scripts");
@@ -57,21 +56,6 @@ public static class InferenceCodes
     /// <summary>An unknown for <see cref="IrUnknownReason.VaryingResults"/>.</summary>
     public static DiagnosticCode VaryingResults { get; } = Unknown(2015, "Result sets that depend on the path taken");
 
-    /// <summary>An unknown for <see cref="IrUnknownReason.DynamicSql"/>.</summary>
-    public static DiagnosticCode DynamicSql { get; } = Unknown(2016, "Dynamic SQL");
-
-    /// <summary>An unknown for <see cref="IrUnknownReason.ProcedureVariable"/>.</summary>
-    public static DiagnosticCode ProcedureVariable { get; } = Unknown(2017, "A procedure chosen when the call runs");
-
-    /// <summary>An unknown for <see cref="IrUnknownReason.SystemProcedure"/>.</summary>
-    public static DiagnosticCode SystemProcedure { get; } = Unknown(2018, "A system procedure");
-
-    /// <summary>An unknown for <see cref="IrUnknownReason.MissingProcedure"/>.</summary>
-    public static DiagnosticCode MissingProcedure { get; } = Unknown(2019, "A procedure that isn't in the project");
-
-    /// <summary>An unknown for <see cref="IrUnknownReason.AmbiguousProcedure"/>.</summary>
-    public static DiagnosticCode AmbiguousProcedure { get; } = Unknown(2020, "A procedure name more than one schema has");
-
     /// <summary>An unknown for <see cref="IrUnknownReason.TriggerResults"/>.</summary>
     public static DiagnosticCode TriggerResults { get; } = Unknown(2021, "A trigger that may return result sets");
 
@@ -79,13 +63,16 @@ public static class InferenceCodes
     public static DiagnosticCode HiddenColumn { get; } = Unknown(2022, "A result set with a hidden column");
 
     /// <summary>
-    /// The code of an unknown with <paramref name="reason"/>. A switch over every reason, so a reason added to the IR fails the
-    /// build here until it has a code.
+    /// The code of the note an unknown with <paramref name="reason"/> is reported with; null for a reason only a declaration
+    /// can resolve (code outside the project, dynamic SQL, a procedure chosen when it runs, a system procedure, one outside
+    /// the project or one more than one schema has), whose unknowns the config layer reports instead, each once, with what to
+    /// declare (HAR4204, HAR4205). A switch over every reason, so a reason added to the IR fails the build here until it is
+    /// given a code or said to be one of those.
     /// </summary>
-    public static DiagnosticCode Of(IrUnknownReason reason) => reason switch
+    public static DiagnosticCode? Of(IrUnknownReason reason) => reason switch
     {
         IrUnknownReason.UnsupportedStatement => UnsupportedStatement,
-        IrUnknownReason.ExternalCode => ExternalCode,
+        IrUnknownReason.ExternalCode => null,
         IrUnknownReason.Redefined => Redefined,
         IrUnknownReason.UnsupportedQuery => UnsupportedQuery,
         IrUnknownReason.UnsupportedExpression => UnsupportedExpression,
@@ -99,11 +86,11 @@ public static class InferenceCodes
         IrUnknownReason.JsonShapeUnknown => JsonShapeUnknown,
         IrUnknownReason.CallerTempTable => CallerTempTable,
         IrUnknownReason.VaryingResults => VaryingResults,
-        IrUnknownReason.DynamicSql => DynamicSql,
-        IrUnknownReason.ProcedureVariable => ProcedureVariable,
-        IrUnknownReason.SystemProcedure => SystemProcedure,
-        IrUnknownReason.MissingProcedure => MissingProcedure,
-        IrUnknownReason.AmbiguousProcedure => AmbiguousProcedure,
+        IrUnknownReason.DynamicSql => null,
+        IrUnknownReason.ProcedureVariable => null,
+        IrUnknownReason.SystemProcedure => null,
+        IrUnknownReason.MissingProcedure => null,
+        IrUnknownReason.AmbiguousProcedure => null,
         IrUnknownReason.TriggerResults => TriggerResults,
         IrUnknownReason.HiddenColumn => HiddenColumn,
     };

@@ -174,7 +174,13 @@ public static class ConfigApplication
         }
     }
 
-    /// <summary>The reasons for results that the project cannot show, which only a declaration can supply.</summary>
+    /// <summary>
+    /// The reasons for results that the project cannot show, which only a declaration can supply. <see cref="Apply"/> reports
+    /// every unknown with one of them, with what to declare (<see cref="ConfigCodes.ResultsToDeclare"/>,
+    /// <see cref="ConfigCodes.UnknownAfterCall"/>), so nothing else needs to.
+    /// </summary>
+    public static IReadOnlySet<IrUnknownReason> Declarable => Unknowable;
+
     private static readonly HashSet<IrUnknownReason> Unknowable =
     [
         IrUnknownReason.DynamicSql,

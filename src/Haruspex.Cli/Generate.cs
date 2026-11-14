@@ -3,6 +3,7 @@ using Haruspex.Config;
 using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference;
 using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Cli;
@@ -25,7 +26,8 @@ internal static class Generate
             .Then(Select)
             .Then(Infer)
             .Then(Emit)
-            .Then(Write);
+            .Then(Write)
+            .Then(Noted);
         return Report(run, output, error);
     }
 
@@ -80,8 +82,8 @@ internal static class Generate
         public string Zod { get; } = zod;
     }
 
-    /// <summary>The written output: where each file went.</summary>
-    private sealed record Written(IrDocument Document, string IrPath, string ZodPath);
+    /// <summary>The written output: where each file went, and the folder its SQL files are under.</summary>
+    private sealed record Written(IrDocument Document, string IrPath, string ZodPath, string Source);
 
     /// <summary>The config file: named, or found by walking up from the working directory, or none.</summary>
     private static Outcome<Settings> ReadConfig(GenerateRequest request)
@@ -210,8 +212,19 @@ internal static class Generate
             return Refused<Written>(CliCodes.CannotWrite, $"cannot write to {output.Plan.Out}: {e.Message}");
         }
 
-        return new Succeeded<Written>(new Written(output.Document, irPath, zodPath));
+        return new Succeeded<Written>(new Written(output.Document, irPath, zodPath, output.Plan.Source));
     }
+
+    /// <summary>
+    /// Each unknown in what was written, as a note with its reason's code, where it is and why, so that none is silent. One
+    /// that only a declaration can resolve is reported by the config layer instead, with what to declare, and is not said
+    /// twice (<see cref="InferenceCodes.Of"/>).
+    /// </summary>
+    private static Succeeded<Written> Noted(Written written) =>
+        new(written, [.. written.Document.Unknowns.Select(u => InferenceCodes.Of(u.Reason) is { } code
+                ? Rooted(code.At(SourceLocation.TryParse(u.At, out var at) ? at : null, $"{u.Object} {u.Path}: {u.Detail}"), written.Source)
+                : null)
+            .OfType<Diagnostic>()]);
 
     /// <summary>Writes what the run found, and its summary, and gives the exit code.</summary>
     private static int Report(Outcome<Written> run, TextWriter output, TextWriter error)

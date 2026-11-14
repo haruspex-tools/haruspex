@@ -57,4 +57,9 @@ suppress or to give a SARIF rule, and changing a message's words changed the onl
 **Reason.** A problem has a name that outlives its wording, a page that explains it, and one written form that editors and
 CI annotate, whichever step found it.
 
+**Amended 13 Nov 2026.** An unknown whose reason only a declaration can resolve (dynamic SQL, a procedure chosen when it runs, a
+system procedure, one outside the project or that more than one schema has, code outside the project) is reported once, by the
+config layer, as a warning with what to declare (HAR4204, HAR4205), and has no note of its own: one fact is said once. The
+note codes first given to those six reasons (HAR2002, HAR2016 to HAR2020) were never reported, and are not given out.
+
 **See also:** `src/Haruspex.Diagnostics/README.md`; [decision 0037](0037-steps-return-outcomes.md), on how steps return them.

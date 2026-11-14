@@ -1,4 +1,6 @@
 using Haruspex.Cli;
+using Haruspex.Ir;
+using Haruspex.SqlServer.Inference;
 using Haruspex.Tests.Snapshotting;
 
 namespace Haruspex.Tests.Cli;
@@ -23,7 +25,7 @@ public class CliTests
         var (exitCode, output, error) = Run("generate", Fixture.Named("orders").Database, "--include", "sales.*", "--out", outDir.Path);
 
         Assert.Equal(0, exitCode);
-        Assert.Equal("", error);
+        Assert.All(error.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n'), line => Assert.Contains(": note HAR", line, StringComparison.Ordinal));
         Assert.Contains("6 procedures", output, StringComparison.Ordinal);
         Assert.True(File.Exists(Path.Combine(outDir.Path, "haruspex.ir.json")));
         Snapshot.Match(
@@ -161,6 +163,43 @@ public class CliTests
         Assert.DoesNotContain("HAR6007", error, StringComparison.Ordinal);
         Assert.Single(error.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n'));
     }
+
+    [Fact]
+    public void Each_unknown_is_listed_as_a_note_with_its_code_where_it_is_and_why()
+    {
+        using var source = new TempDirectory();
+        using var outDir = new TempDirectory();
+        source.File("tables.sql", "CREATE TABLE dbo.t (id int NOT NULL);");
+        source.File("p.sql", "CREATE PROCEDURE dbo.p AS\nSELECT t.id, t.nope AS gone FROM dbo.t AS t;\n");
+
+        var (exitCode, output, error) = Run("generate", source.Path, "--include", "*.*", "--out", outDir.Path);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("1 unknown(s)", output, StringComparison.Ordinal);
+        var note = Assert.Single(error.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n'));
+        Assert.StartsWith($"{Path.Join(source.Path, "p.sql")}:2:", note, StringComparison.Ordinal);
+        Assert.Contains(": note HAR2009: dbo.p results[0][].gone: ", note, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Results_only_a_declaration_can_give_are_said_once_as_a_warning_with_what_to_declare_and_not_again_as_a_note()
+    {
+        using var source = new TempDirectory();
+        using var outDir = new TempDirectory();
+        source.File("p.sql", "CREATE PROCEDURE dbo.p @sql nvarchar(max) AS\nEXEC sp_executesql @sql;\n");
+
+        var (exitCode, _, error) = Run("generate", source.Path, "--include", "*.*", "--out", outDir.Path);
+
+        Assert.Equal(0, exitCode);
+        var line = Assert.Single(error.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n'));
+        Assert.StartsWith("haruspex: warning HAR4204: dbo.p: its result sets are unknown: ", line, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_reasons_without_a_note_are_exactly_those_the_config_layer_reports_with_what_to_declare() =>
+        Assert.Equal(
+            ConfigApplication.Declarable.Order(),
+            Enum.GetValues<IrUnknownReason>().Where(r => InferenceCodes.Of(r) is null).Order());
 
     [Fact]
     public void A_parse_error_fails_with_its_location_and_writes_nothing()
