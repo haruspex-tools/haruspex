@@ -1,0 +1,7 @@
+// The meters fixture's callers connect with SqlClient, as the differential tests do, which sets ANSI_WARNINGS on at login
+// (and ARITHABORT off, which then makes no difference: A_sqlclient_connection_sets_these_options_at_login). So an overflow is an
+// error, never NULL. Only what is known is declared.
+{
+  "$schema": "../../../schemas/haruspex.schema.json",
+  "session": { "ansiWarnings": true, "arithAbort": false }
+}

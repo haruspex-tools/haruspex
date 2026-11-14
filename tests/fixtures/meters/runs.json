@@ -1,0 +1,15 @@
+// The runs of the meters fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  // Not held to every edge: under the declared session a value at its type's edge would overflow and fail the call.
+  "seedReachesEveryEdge": false,
+
+  "runs": [
+    { "name": "usage_summary", "procedure": "meter.usage_summary" },
+    { "name": "running_totals, three readings", "procedure": "meter.running_totals", "parameters": { "@meter_id": 1 } },
+    { "name": "running_totals, none", "procedure": "meter.running_totals", "parameters": { "@meter_id": 3 } },
+    { "name": "meter_card, with readings", "procedure": "meter.meter_card", "parameters": { "@meter_id": 2 } },
+    { "name": "meter_card, no readings", "procedure": "meter.meter_card", "parameters": { "@meter_id": 3 } },
+    { "name": "meter_card, no such meter", "procedure": "meter.meter_card", "parameters": { "@meter_id": 99 } }
+  ]
+}

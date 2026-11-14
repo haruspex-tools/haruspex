@@ -186,7 +186,9 @@ single-byte collation) there is nothing to explain, and no note.
 **A fact many notes rest on is said once.** Why a byte length bounds a string only from above is the same for every
 `varchar` in the module; written into each note it buried what was particular to the property under the general rule.
 So each note names only its own case, and the header states the general facts the module's notes use, each once, and only
-those.
+those. One fact is not about any property: what the callers' sessions were declared to set, which the IR records
+(`IrSource.Session`). Every claim about an overflow rests on it, so the header says it, and says nothing when nothing was
+declared ([decision 0038](../decisions/0038-the-callers-session-is-declared.md)).
 
 **A check the schema already makes is not repeated.** `z.int32()` checks an `int`'s range, so an `int` with one bound of its
 own from a CHECK constraint is `z.int32().gt(0)`, not `z.int().gt(0).max(2147483647)`; with both bounds its own, `z.int()`

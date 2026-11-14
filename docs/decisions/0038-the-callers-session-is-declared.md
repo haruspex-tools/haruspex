@@ -85,5 +85,6 @@ under a newer label) don't hold where nothing is mapped.
   each reason.
 
 **In the code:** `SessionOptions` (the declaration, and `SessionOptions.OverflowIsAnError`), read by the typer through
-`Summaries.Session`; `IrSource.Session`; the config file's `session` block. The observations are
+`Summaries.Session`; `IrSource.Session`; the config file's `session` block; `ZodLowering`'s header; the `meters` fixture, which declares the
+session its own test driver sets. The observations are
 `SessionObservationTests`.

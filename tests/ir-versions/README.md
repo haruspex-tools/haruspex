@@ -26,6 +26,7 @@ Each file is named for its version (`0.15.ir.json`) and holds the IR of the inve
 | 0.14 | `3bdcf35` |
 | 0.15 | `89756aa` |
 | 0.16 | `8a7c00d` |
+| 0.17 | `4e7760b` |
 
 **When the version changes**, add the new version's file here, written by the new version, and a row for it. The test fails
 until there is one, so that every version the format has ever had is kept. The previous current file then becomes one the

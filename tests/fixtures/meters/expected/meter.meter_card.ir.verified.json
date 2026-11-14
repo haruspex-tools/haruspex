@@ -1,0 +1,206 @@
+{
+  "irVersion": "0.17",
+  "source": {
+    "dialect": "tsql",
+    "session": {
+      "ansiWarnings": true,
+      "arithAbort": false
+    }
+  },
+  "objects": [
+    {
+      "id": "meter.meter_card",
+      "name": "MeterCard",
+      "kind": "procedure",
+      "at": "procedures/meter_card.sql:1:1",
+      "parameters": [
+        {
+          "name": "@meter_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MeterCardRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "MeterCardCard": {
+      "kind": "object",
+      "identity": {
+        "procedure": "meter.meter_card",
+        "path": "results[0][].card<json>"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "label",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "readings",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "days",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "MeterCardCardDay"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/meter_card.sql:7:12"
+            }
+          ]
+        }
+      ]
+    },
+    "MeterCardCardDay": {
+      "kind": "object",
+      "identity": {
+        "procedure": "meter.meter_card",
+        "path": "results[0][].card<json>.days[]"
+      },
+      "fields": [
+        {
+          "name": "on",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "wh",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "MeterCardRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "meter.meter_card",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "card",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "ref": "MeterCardCard"
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/meter_card.sql:4:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

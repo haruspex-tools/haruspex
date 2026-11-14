@@ -1,0 +1,17 @@
+column meter.meter.label varchar(20) at tables/meter.sql:5:5
+column meter.meter.meter_id int at tables/meter.sql:4:5
+column meter.meter.site varchar(20) at tables/meter.sql:6:5
+column meter.reading.kwh int at tables/reading.sql:5:5
+column meter.reading.meter_id int at tables/reading.sql:3:5
+column meter.reading.peak_kw decimal(9,3) at tables/reading.sql:6:5
+column meter.reading.read_on date at tables/reading.sql:4:5
+column meter.reading.reading_id int at tables/reading.sql:2:5
+key meter.meter pk_meter (meter_id) at tables/meter.sql:4:27
+key meter.reading pk_reading (reading_id) at tables/reading.sql:2:29
+parameter meter.meter_card @meter_id at procedures/meter_card.sql:2:5
+parameter meter.running_totals @meter_id at procedures/running_totals.sql:2:5
+procedure meter.meter_card at procedures/meter_card.sql:1:1
+procedure meter.running_totals at procedures/running_totals.sql:1:1
+procedure meter.usage_summary at procedures/usage_summary.sql:1:1
+table meter.meter at tables/meter.sql:3:1
+table meter.reading at tables/reading.sql:1:1

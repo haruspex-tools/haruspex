@@ -76,6 +76,21 @@ public class ZodLoweringTests
             Lower(Document([], [])).Header);
 
     [Fact]
+    public void The_header_states_what_the_callers_sessions_are_declared_to_set()
+    {
+        var declared = Document([], []) with
+        {
+            Source = new IrSource("tsql") { Session = [new IrSessionOption("ansiWarnings", true), new IrSessionOption("concatNullYieldsNull", false)] },
+        };
+        var one = Document([], []) with { Source = new IrSource("tsql") { Session = [new IrSessionOption("arithAbort", true)] } };
+
+        Assert.Equal(
+            "Its types assume that callers' sessions set ansiWarnings on and concatNullYieldsNull off, as the config file declares.",
+            Lower(declared).Header[2]);
+        Assert.Equal("Its types assume that callers' sessions set arithAbort on, as the config file declares.", Lower(one).Header[2]);
+    }
+
+    [Fact]
     public void Only_references_back_into_the_types_own_cycle_are_getters()
     {
         var module = Lower(Document(
