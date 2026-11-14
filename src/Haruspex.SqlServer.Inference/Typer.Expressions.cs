@@ -136,6 +136,21 @@ internal sealed partial class Typer
         (expression is not null && LiteralOf(expression) is ({ } literal, _) ? Conversions.Rounds(literal, to) : null)
         ?? (TypeOf(value) is { } from ? Conversions.Rounds(from, to) : to.IsDecimal);
 
+    /// <summary>
+    /// Why converting <paramref name="value"/>, read from <paramref name="expression"/> when there is one, to
+    /// <paramref name="to"/> at <paramref name="at"/> may give NULL besides the value's own reasons: an overflow unless it
+    /// <paramref name="fits"/> (under TRY_CAST and TRY_CONVERT, an <paramref name="attempt"/>, a failed conversion instead), and a
+    /// rounding to fewer places when it may round (<see cref="Rounds"/>), each as the callers' session makes it NULL. Every
+    /// conversion inference reads gives its reasons here: CAST and CONVERT, an assignment or argument, the common type of a
+    /// chain, ISNULL's second argument, LAG's default.
+    /// </summary>
+    private static EquatableArray<IrNullReason> ConversionReasons(
+        SessionOptions session, Value value, ScalarExpression? expression, ScalarType to, bool fits, SourceLocation at, bool attempt = false) =>
+    [
+        .. fits ? [] : attempt ? [new IrNullReason(IrNullRule.FailedConversion, at.ToString())] : Overflow(session, at),
+        .. Rounds(value, expression, to) ? PrecisionLoss(session, at, attempt) : [],
+    ];
+
     private Value NotModelled(TSqlFragment expression, string why) =>
         Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{Text(expression)}: {why}", At(expression)));
 
@@ -196,7 +211,7 @@ internal sealed partial class Typer
         {
             var fits = (LiteralOf(v.Expression) is ({ } literal, var negative) ? Conversions.Fits(literal, type, negative) : null)
                 ?? Conversions.NeverNull(known[i], type);
-            return (EquatableArray<IrNullReason>)[.. fits ? [] : Overflow(summaries.Session, v.At), .. Rounds(v.Value, v.Expression, type) ? PrecisionLoss(summaries.Session, v.At) : []];
+            return ConversionReasons(summaries.Session, v.Value, v.Expression, type, fits, v.At);
         }).ToList();
         return new ChainType(type, [.. converted], null);
     }
@@ -311,7 +326,7 @@ internal sealed partial class Typer
             ?? (OperandOf(second, b) is { } from && Conversions.Converts(from, type));
         // An overflow converting the second, or a rounding to a's fewer places, is NULL, or an error that fails the call when
         // the callers' sessions make it one (or silent, for the rounding); then ISNULL of a second never null is never null.
-        EquatableArray<IrNullReason> converting = [.. fits ? [] : Overflow(call), .. Rounds(second, b, type) ? PrecisionLoss(call) : []];
+        var converting = ConversionReasons(summaries.Session, second, b, type, fits, At(call));
         if (second.NullableBecause.Count == 0 && converting.Count == 0)
             return Typed(type, [], call);
         return Typed(type, NullReasons.Join(NullReasons.Join(first.NullableBecause, second.NullableBecause), converting), call);
@@ -362,12 +377,7 @@ internal sealed partial class Typer
         // A NULL cast to int and cast again stays that constant; CAST(1 AS int) counts an int's 10 digits (same observation).
         if (fits && from?.Type.Text == to.Text && !styled)
             return value.Digits == IntDigits.Literal(1) && IsNullCast(operand) ? value : value with { Digits = IntDigits.OfType };
-        EquatableArray<IrNullReason> converting =
-        [
-            .. fits ? [] : attempt ? [new IrNullReason(IrNullRule.FailedConversion, At(call).ToString())] : Overflow(call),
-            .. Rounds(value, operand, to) ? PrecisionLoss(call, attempt) : [],
-        ];
-        return Value.Computed(shape, NullReasons.Join(value.NullableBecause, converting));
+        return Value.Computed(shape, NullReasons.Join(value.NullableBecause, ConversionReasons(summaries.Session, value, operand, to, fits, At(call), attempt)));
     }
 
     /// <summary>The NULL literal, cast or converted, however many times.</summary>
@@ -592,7 +602,7 @@ internal sealed partial class Typer
     {
         if (value.Shape is UnknownShape || value.IsLiveJson || declared is not ScalarShape { BuiltIn: { } to })
             return value.NullableBecause;
-        var overflows = !fits && !(TypeOf(value) is { } from && Conversions.Converts(Operand.OfType(from), to));
-        return NullReasons.Join(value.NullableBecause, [.. overflows ? Overflow(session, at) : [], .. Rounds(value, expression, to) ? PrecisionLoss(session, at) : []]);
+        var converts = fits || (TypeOf(value) is { } from && Conversions.Converts(Operand.OfType(from), to));
+        return NullReasons.Join(value.NullableBecause, ConversionReasons(session, value, expression, to, converts, at));
     }
 }

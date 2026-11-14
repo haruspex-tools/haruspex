@@ -183,6 +183,6 @@ internal sealed partial class Typer
         EquatableArray<IrNullReason> because = [.. value.NullableBecause, .. offsetBecause, .. itself ? [] : fallback.NullableBecause];
         if (itself)
             return Typed(type, because, call);
-        return Typed(type, NullReasons.Join(because, [.. fits ? [] : Overflow(call), .. Rounds(fallback, parameters[2], type) ? PrecisionLoss(call) : []]), call);
+        return Typed(type, NullReasons.Join(because, ConversionReasons(summaries.Session, fallback, parameters[2], type, fits, At(call))), call);
     }
 }

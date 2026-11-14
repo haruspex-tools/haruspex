@@ -506,7 +506,7 @@ internal sealed partial class Typer(
         {
             var value = Expression(argument, scope);
             var type = i < parameters.Count ? SqlTypes.Modelled(SchemaRules.ResolveType(model, parameters[i].Type)?.Scalar) : null;
-            return value.NullableBecause.Count > 0 || (type is not null && Rounds(value, argument, type) && PrecisionLoss(argument).Count > 0);
+            return value.NullableBecause.Count > 0 || (type is not null && Rounds(value, argument, type) && summaries.Session.RoundingMayBeNull(attempt: false));
         }).Any(mayBeNull => mayBeNull);
     }
 
