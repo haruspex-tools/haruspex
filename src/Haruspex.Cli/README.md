@@ -39,8 +39,8 @@ haruspex generate path/to/database --include 'sales.*' --out src/db
 `--out` override the config file for one run, and `--config` names a config file instead of searching for one.
 
 Everything it finds goes to standard error, one line each, in the form compilers write and editors and CI annotate, with
-the problem's code (decision
-[0036](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0036-diagnostics-have-stable-codes.md)):
+the problem's code, whose page in [docs/diagnostics](https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/README.md)
+says what it means and what to do:
 
 ```text
 db/procedures/get_order.sql:7:5: error HAR1001: Incorrect syntax near 'FROM'.

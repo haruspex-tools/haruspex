@@ -37,6 +37,8 @@ Outcome<int> read = Outcome.Of(42, [problem]);   // a Failed<int>: one of what w
 
 - **A code is stable**: `HAR` and four digits, whose number, severity and meaning never change, and which is never given
   out twice ([decision 0036](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0036-diagnostics-have-stable-codes.md)).
+  Each has a page in [docs/diagnostics](https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/README.md) saying what
+  it means, why it is reported and what to do.
 - **A diagnostic is an error, a warning or a note**, as its code says: an error stops the step that found it, a warning is
   about something the output rests on that couldn't be checked or input that could be simpler, and a note says what the
   output is (an unknown, with its reason). They are SARIF's three levels.
