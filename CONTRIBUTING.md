@@ -265,6 +265,7 @@ the maintainer's agreement.
 | `Microsoft.Data.SqlClient` | MIT | differential tests | Microsoft's SQL Server driver for .NET: the tests must run procedures and read their results as SQL Server returns them. |
 | `Testcontainers.MsSql` | MIT | differential tests | Starts a throwaway SQL Server in Docker when no server is configured, as in CI; it can later run a matrix of SQL Server versions. |
 | `System.Security.Cryptography.Pkcs` | MIT | differential tests | Not used directly: pinned to a patched version because the one SqlClient brings has two advisories (see `Directory.Packages.props`). |
+| `Microsoft.SqlServer.Dacpacs.Master` | Microsoft Software License Terms | tests | Microsoft's `master.dacpac`, to show the hand-written stand-in in `tests/dacpacs/master-shape` has its shape. Its terms allow use "to develop and test your applications" and not redistribution, so it is only restored, never committed or copied. |
 
 These three are used only by the differential tests, and nothing in them is shipped. Their transitive
 packages are MIT, with one exception: `Microsoft.Data.SqlClient.SNI.runtime`, SqlClient's native network

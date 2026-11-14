@@ -21,8 +21,11 @@ your applications"), and they are rebuilt only when a test needs a new one.
 
 `harbour` also references `master.dacpac`, from the `Microsoft.SqlServer.Dacpacs.Master` package, but it is not here: its
 licence lets it be used to develop and test, and distributed only under terms a public repository can't meet. Its absence
-is itself tested: harbour is read with one reference missing. `master-shape/master.dacpac` stands in for it, and a test reads
-Microsoft's own package from the NuGet cache when a build has put it there, and is skipped otherwise.
+is itself tested: harbour is read with one reference missing. `master-shape/master.dacpac` stands in for it, a quick test on
+every run. Microsoft's own package is restored, never committed: the test project references
+`Microsoft.SqlServer.Dacpacs.Master` (pinned in `Directory.Packages.props`, its hash in the lock file, so a changed package
+fails the restore), and `Microsoft_s_master_dacpac_has_the_shape_the_stand_in_has` reads it where NuGet put it, on every run, CI
+included. The maintainer chose this on 14 Nov 2026, over skipping the test where the package happened to be absent.
 
 A package keeps where its references were when it was built, as absolute paths on the build machine, so every
 reference here records a path that doesn't exist on any other machine. That is the case a reader must handle: the

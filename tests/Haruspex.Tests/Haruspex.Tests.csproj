@@ -15,6 +15,15 @@
     <PackageReference Include="xunit.v3" />
     <!-- To compile code with haruspex's own analysers in ExhaustiveSwitchTests. -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <!-- Microsoft's master.dacpac, restored and read where NuGet put it: no assets of it are built into anything or copied. -->
+    <PackageReference Include="Microsoft.SqlServer.Dacpacs.Master" ExcludeAssets="all" PrivateAssets="all" GeneratePathProperty="true" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Where the restore put that package, for the test that reads it (OtherDatabasesTests). -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>MasterDacpacPackage</_Parameter1>
+      <_Parameter2>$(PkgMicrosoft_SqlServer_Dacpacs_Master)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Haruspex.Collections\Haruspex.Collections.csproj" />

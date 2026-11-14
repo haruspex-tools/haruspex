@@ -1,3 +1,4 @@
+using System.Reflection;
 using Haruspex.Cli;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
@@ -174,16 +175,11 @@ public class OtherDatabasesTests
     [Fact]
     public void Microsoft_s_master_dacpac_has_the_shape_the_stand_in_has()
     {
-        // Microsoft's package can't be committed; it is in the NuGet cache wherever a project referring to it was built.
-        var cache = Environment.GetEnvironmentVariable("NUGET_PACKAGES") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
-        var master = Directory.Exists(Path.Combine(cache, "microsoft.sqlserver.dacpacs.master"))
-            ? Directory.EnumerateFiles(Path.Combine(cache, "microsoft.sqlserver.dacpacs.master"), "master.dacpac", SearchOption.AllDirectories).Order(StringComparer.Ordinal).LastOrDefault()
-            : null;
-        if (master is null)
-        {
-            Assert.SkipWhen(Environment.GetEnvironmentVariable("HARUSPEX_REQUIRE_MASTER_DACPAC") != "1", "master.dacpac is not in the NuGet cache (microsoft.sqlserver.dacpacs.master), so its shape isn't checked.");
-            Assert.Fail("HARUSPEX_REQUIRE_MASTER_DACPAC is set, and master.dacpac is not in the NuGet cache.");
-        }
+        // Microsoft's package can't be committed: the test project restores it (Microsoft.SqlServer.Dacpacs.Master, its hash in
+        // the lock file) and its build records where (AssemblyMetadata MasterDacpacPackage), so this runs wherever the tests do.
+        var package = typeof(OtherDatabasesTests).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().Single(a => a.Key == "MasterDacpacPackage").Value;
+        var master = Path.Combine(package ?? "", "tools", "master.dacpac");
+        Assert.True(File.Exists(master), $"master.dacpac isn't at {master}: restore the solution, which restores Microsoft.SqlServer.Dacpacs.Master.");
 
         var model = DacpacReader.Read(master).Model;
         var objects = Assert.IsType<View>(model.FindReadable(new ObjectName("sys", "objects")));

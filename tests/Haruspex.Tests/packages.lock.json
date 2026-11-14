@@ -12,6 +12,12 @@
           "Microsoft.CodeAnalysis.Common": "[4.14.0]"
         }
       },
+      "Microsoft.SqlServer.Dacpacs.Master": {
+        "type": "Direct",
+        "requested": "[170.0.4, )",
+        "resolved": "170.0.4",
+        "contentHash": "dYYFaYhI8gSRMHsgY7kaLXwFx9I6IylxRZUehWLTucXPgv+/hwCBsk8vgs/K7ZxpcMDO3wWV7lSdc1MHqYK52A=="
+      },
       "xunit.v3": {
         "type": "Direct",
         "requested": "[4.0.2, )",
