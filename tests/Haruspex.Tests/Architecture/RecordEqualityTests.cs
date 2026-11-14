@@ -74,6 +74,10 @@ public class RecordEqualityTests
     /// </summary>
     private static readonly Dictionary<string, string> NotCompared = new(StringComparer.Ordinal)
     {
+        ["Haruspex.Cli.Generate+Plan"] = "A step's value, handed to the next once: nothing compares two runs' plans.",
+        ["Haruspex.Cli.Generate+Loaded"] = "A step's value, holding the project read, which compares by identity: nothing compares two.",
+        ["Haruspex.Cli.Generate+Selection"] = "A step's value, handed to the next once: nothing compares two selections.",
+        ["Haruspex.Cli.Generate+Output"] = "A step's value, handed to the next once: nothing compares two outputs.",
         ["Haruspex.Emit.Zod.Planning.ZodPlan"] = "A stage's output, handed to the next once: nothing compares two plans.",
         ["Haruspex.SqlServer.Inference.Facts+Frame"] = "What one query or branch proved, its sources a set by identity: the environment is read, never compared.",
         ["Haruspex.SqlServer.Inference.Cardinality+Fixing"] = "A condition and the sources it may fix, a set by identity, within one query's reading.",
