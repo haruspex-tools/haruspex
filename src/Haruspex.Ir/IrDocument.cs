@@ -22,14 +22,15 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.17";
+    public const string CurrentVersion = "0.18";
 
     /// <summary>
-    /// The versions a reader reads: the current one, and 0.16, since every 0.16 file is a 0.17 file that declares no session
-    /// and means what it meant (0.17 added only <see cref="IrSource.Session"/>, which a file leaves out when nothing is
-    /// declared). Decision 0024 refuses any other, older or newer; decision 0038 makes this exception to it.
+    /// The versions a reader reads: the current one only, as decision 0024 says. 0.17 read 0.16 too, every file of which was
+    /// a 0.17 file that declared no session; 0.18 reads neither, because their claims are not 0.18's: with nothing declared,
+    /// each claimed never null a decimal that 0.18 says may be null for a loss of precision (<see cref="IrNullRule.PrecisionLoss"/>),
+    /// so read as 0.18 a file of either would carry the older engine's claims under the newer label.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = ["0.16", CurrentVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion];
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override

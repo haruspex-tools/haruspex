@@ -74,6 +74,16 @@ public enum IrNullRule
     /// </summary>
     ArithmeticOverflow,
 
+    /// <summary>
+    /// It is a decimal value that may be rounded to fewer places than it has (0.18): a conversion to a type of fewer places,
+    /// an assignment that converts so, values brought to a common type of fewer places, arithmetic whose result keeps fewer
+    /// places than its operands need, an average. In SQL Server that rounds silently by default, but with
+    /// <c>NUMERIC_ROUNDABORT</c> on it is an error, NULL when the caller's session also has <c>ANSI_WARNINGS</c> and
+    /// <c>ARITHABORT</c> off, and NULL under <c>TRY_CAST</c> and <c>TRY_CONVERT</c> whatever those are: a session a procedure
+    /// cannot prevent.
+    /// </summary>
+    PrecisionLoss,
+
     /// <summary>It is <c>TRY_CAST</c> or <c>TRY_CONVERT</c> of a value that may not convert, which gives NULL instead of an error.</summary>
     FailedConversion,
 

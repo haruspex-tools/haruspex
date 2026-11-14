@@ -21,8 +21,8 @@ namespace Haruspex.Ir;
 /// <para>
 /// A version it doesn't read is refused before anything else, rather than read with its differences guessed at: the IR has
 /// no stable version yet (0.x), so a file from another version is regenerated, not migrated. <c>docs/internals/10-the-ir-as-a-contract.md</c>
-/// argues the choice. The one exception is a version every file of which is a file of the current version that means the same
-/// (<see cref="IrDocument.ReadableVersions"/>).
+/// argues the choice. It would read another version only if every file of it were a file of the current version that means
+/// the same (<see cref="IrDocument.ReadableVersions"/>, which says why none is at present).
 /// </para>
 /// </remarks>
 public static class IrJsonReader
@@ -102,7 +102,7 @@ public static class IrJsonReader
 
         var source = json.Object("source");
         var document = new IrDocument(
-            new IrSource(source.String("dialect")) { Session = Session(source.OptionalObject("session"), version) },
+            new IrSource(source.String("dialect")) { Session = Session(source.OptionalObject("session")) },
             [.. json.Array("objects").Select(o => Object(IrJsonObject.At(o.Item, o.Path)))],
             Types(json.Object("types")),
             [.. json.Array("unknowns").Select(u => Unknown(IrJsonObject.At(u.Item, u.Path)))])
@@ -359,17 +359,13 @@ public static class IrJsonReader
     }
 
     /// <summary>
-    /// The options the callers' sessions are declared to set, sorted by name; none when the file leaves <c>session</c> out, as
-    /// every file before 0.17 does. An empty object is refused: the writer leaves it out, so there is one way to say "none". A
-    /// 0.16 file is read as a 0.17 file that declares nothing, so one that holds a session is refused: no 0.16 writer wrote
-    /// one, and reading it would give 0.16's label to a claim 0.16 couldn't make.
+    /// The options the callers' sessions are declared to set, sorted by name; none when the file leaves <c>session</c> out. An
+    /// empty object is refused: the writer leaves it out, so there is one way to say "none".
     /// </summary>
-    private static EquatableArray<IrSessionOption> Session(IrJsonObject? json, string version)
+    private static EquatableArray<IrSessionOption> Session(IrJsonObject? json)
     {
         if (json is null)
             return [];
-        if (version != IrDocument.CurrentVersion)
-            throw new IrFormatException(json.Path, $"is not a property the format has in IR {version}: a session is declared from IR {IrDocument.CurrentVersion} on.");
         var options = json.Names.Select(name => new IrSessionOption(name, json.Boolean(name))).OrderBy(o => o.Name, StringComparer.Ordinal).ToList();
         if (options.Count == 0)
             throw new IrFormatException(json.Path, "must declare at least one option; leave session out when none is declared.");

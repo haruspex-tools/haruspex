@@ -74,9 +74,10 @@ other value of these, and `CONCAT_NULL_YIELDS_NULL` either way, stops the walk w
 holds past one of them.
 
 **The IR and an older reader.** 0.17 adds `source.session`, which a file leaves out when nothing is declared. So every 0.16 file
-is a 0.17 file that declares nothing and means what it meant, and the reader reads it: the one exception to
+is a 0.17 file that declares nothing and means what it meant, and the 0.17 reader read it: the one exception to
 [decision 0024](0024-an-ir-reader-refuses-other-versions.md), whose reasons (a mapped file would carry an older engine's claims
-under a newer label) don't hold where nothing is mapped.
+under a newer label) don't hold where nothing is mapped. 0.18 ended the exception: its reader reads neither 0.16 nor 0.17,
+whose claims the precision-loss rule changed (decision 0024, amended again).
 
 **Alternatives.**
 - *Assume the common drivers' options*: wrong in silence for a caller that sets them otherwise (above).

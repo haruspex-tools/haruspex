@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json",
   "title": "haruspex.ir.json",
-  "description": "An IR file of version 0.17: the shapes haruspex inferred for a set of database objects. The format is described in src/Haruspex.Ir/README.md.",
+  "description": "An IR file of version 0.18: the shapes haruspex inferred for a set of database objects. The format is described in src/Haruspex.Ir/README.md.",
   "type": "object",
   "properties": {
     "irVersion": {
       "description": "The IR's version, which a reader checks before anything else.",
-      "const": "0.17"
+      "const": "0.18"
     },
     "source": {
       "description": "Where the shapes were inferred from.",
@@ -384,6 +384,7 @@
             "variable",
             "count-overflow",
             "arithmetic-overflow",
+            "precision-loss",
             "failed-conversion",
             "subtotal-row",
             "missing-for-action",

@@ -102,6 +102,7 @@ public static class IrWireNames
         IrNullRule.EmptyFrame => "empty-frame",
         IrNullRule.WindowEdge => "window-edge",
         IrNullRule.DomainError => "domain-error",
+        IrNullRule.PrecisionLoss => "precision-loss",
         IrNullRule.TooFewValues => "too-few-values",
         IrNullRule.Unknown => "unknown",
         IrNullRule.Declared => "declared",

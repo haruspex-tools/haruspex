@@ -97,13 +97,16 @@ public class IrJsonReaderTests
         Assert.Equal("$.source.session", e.Path);
     }
 
-    [Fact]
-    public void A_0_16_file_that_declares_a_session_is_refused_since_no_0_16_writer_could()
+    [Theory]
+    [InlineData("0.16")]
+    [InlineData("0.17")]
+    public void A_file_of_0_16_or_0_17_is_refused_though_every_property_in_it_is_one_0_18_has(string version)
     {
-        var e = Refused(json => json["irVersion"] = "0.16");
+        // Their claims are not 0.18's: with nothing declared, each claimed never null a decimal that 0.18 says may lose
+        // precision (IrDocument.ReadableVersions).
+        var e = Refused(json => json["irVersion"] = version);
 
-        Assert.Equal("$.source.session", e.Path);
-        Assert.Equal("is not a property the format has in IR 0.16: a session is declared from IR 0.17 on.", e.Problem);
+        Assert.Equal("$.irVersion", e.Path);
     }
 
     [Fact]
@@ -124,7 +127,7 @@ public class IrJsonReaderTests
         });
 
         Assert.Equal("$.irVersion", e.Path);
-        Assert.Equal("is \"0.14\", and this reader reads IR 0.16 and 0.17 only. Run haruspex generate again to write the file in this version.", e.Problem);
+        Assert.Equal("is \"0.14\", and this reader reads IR 0.18 only. Run haruspex generate again to write the file in this version.", e.Problem);
     }
 
     [Fact]

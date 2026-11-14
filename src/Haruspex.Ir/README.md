@@ -1,7 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.17
+# Haruspex.Ir: the IR format, version 0.18
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.17: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
+version 0.18: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
 guide's chapter [The IR as a contract](../../docs/internals/10-the-ir-as-a-contract.md). What SQL Server's constructs give in
@@ -78,8 +78,7 @@ shows one whole, with an unknown.
 - **No target language.** It knows no language's keywords or module system: which names TypeScript reserves, and how an
   import is written, are the Zod emitter's (`TypeScriptNames`).
 - **No JSON Schema.** It maps to JSON Schema without loss, but isn't it ([decision 0003](../../docs/decisions/0003-an-ir-of-its-own.md)).
-- **No migration.** A file of another version is refused, not converted: it is regenerated from its source. The one older
-  version read, 0.16, is read as it is, since it already is a 0.17 file.
+- **No migration.** A file of another version is refused, not converted: it is regenerated from its source.
 
 ## Why not JSON Schema
 
@@ -94,7 +93,7 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as `"0.17"` and a document that this page and the schema allow;
+- must write `irVersion` as `"0.18"` and a document that this page and the schema allow;
 - must write a flag and its reasons together: `nullable`, `itemsNullable`, `valuesNullable` and `mayBeAbsent` are `true`
   exactly when the matching list of reasons (`nullableBecause`, …) is there, with at least one reason;
 - must write every `ref` as the name of a type in `types`;
@@ -104,9 +103,7 @@ of program handle one.
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further,
-  except 0.16, which it may read as a 0.17 document that declares no session (every 0.16 document is one), refusing a
-  0.16 document that holds `session`;
+- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further;
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
   missing required property, a value of the wrong JSON type, a count that is negative or past 2,147,483,647, a number in a
   facet that is not plain decimal text, a union of fewer than two variants, a flag that disagrees with its reasons, and a
@@ -132,7 +129,7 @@ object, and a `ref` that names no type.
 
 ```jsonc
 {
-  "irVersion": "0.17",                // versioned separately from the tool; a reader checks it first
+  "irVersion": "0.18",                // versioned separately from the tool; a reader checks it first
   "source": { "dialect": "tsql",      // the session is left out when the callers' options aren't declared
     "session": { "ansiWarnings": true } },
   "objects": [{                       // sorted by id
@@ -238,6 +235,7 @@ of which dialect made it ([decision 0025](../../docs/decisions/0025-null-reasons
 | `variable` | it is a variable, null until a value never null is assigned on every path |
 | `count-overflow` | it is a count, which overflows its type over enough rows, and the caller's session may make that null |
 | `arithmetic-overflow` | it is arithmetic or a conversion that can overflow or divide by zero, and the caller's session may make that null |
+| `precision-loss` | it is a decimal that may be rounded to fewer places, and the caller's session may make that null |
 | `failed-conversion` | it is a conversion that gives null rather than an error when the value doesn't convert |
 | `subtotal-row` | it is a grouped column, and the query adds subtotal rows, which total over it and hold null in it |
 | `missing-for-action` | it is a column a statement taking several actions reports, which some of the actions don't set |
@@ -413,6 +411,13 @@ when the claims change. Another writer need not write the same bytes, but must w
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
 reads only its own version ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
+
+**0.18** (14 Nov 2026, precision lost under `NUMERIC_ROUNDABORT`). The null rule `precision-loss`: a decimal that may be
+rounded to fewer places than it has, which is NULL for a caller whose session has `NUMERIC_ROUNDABORT` on and
+`ANSI_WARNINGS` and `ARITHABORT` off, and under `TRY_CAST` whenever `NUMERIC_ROUNDABORT` is on. A 0.17 reader would meet
+a null rule it does not know, which is why the version changed. This reader no longer reads 0.16 or 0.17: a file of either
+claims never null, with nothing declared, a decimal 0.18 says may lose precision, so read as 0.18 it would carry an older
+engine's claim under the newer label ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)).
 
 **0.17** (14 Nov 2026, the callers' session). `source.session`: the options the callers' sessions are declared to set, left
 out when none is. With `ANSI_WARNINGS` or `ARITHABORT` declared on, `arithmetic-overflow`, `count-overflow` and

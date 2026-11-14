@@ -29,5 +29,10 @@ every file of which is a file of the current version that means the same: 0.17 a
 leaves out when nothing is declared, and 0.16 assumed nothing about the callers. Nothing is mapped or guessed, so neither
 reason above applies. `IrDocument.ReadableVersions` lists what a reader reads; any other version is refused as before.
 
+**Amended again** (14 Nov 2026, IR 0.18). The exception has ended: the 0.18 reader reads 0.18 only. 0.18 added the null rule
+`precision-loss`, because 0.17, with nothing declared, claimed never null a decimal that a caller with `NUMERIC_ROUNDABORT` on
+gets as NULL ([decision 0038](0038-the-callers-session-is-declared.md)). A 0.16 or 0.17 file has no property 0.18 lacks, but its
+claims are not 0.18's, so reading it would carry an older engine's claims under the current label, the first reason above.
+
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "A version the reader doesn't read";
 [`tests/ir-versions`](../../tests/ir-versions/README.md).
