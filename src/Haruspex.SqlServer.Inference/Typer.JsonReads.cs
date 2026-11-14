@@ -260,6 +260,24 @@ internal sealed partial class Typer
             ? scalar.WithFacets(facets with { Length = length with { IsFixed = false } })
             : declared;
 
+    /// <summary>
+    /// An OPENJSON WITH column of <paramref name="declared"/> where nothing more is known of what its path finds: of that type,
+    /// NULL for a JSON null or nothing there (<c>json-null-or-absent</c>), and into a decimal NULL too for a number or string of
+    /// more places than the type keeps, which WITH rounds as CAST does (observed:
+    /// A_loss_of_precision_is_null_when_numeric_roundabort_is_on_and_ansi_warnings_and_arithabort_are_off, "a JSON number read
+    /// by OPENJSON into a decimal"): a document's numbers may have any number of places. Into money it rounds unseen.
+    /// </summary>
+    private Value OpenJsonColumn(SqlType? declared, SourceLocation where)
+    {
+        var shape = Unpadded(SqlTypes.ToConvertedShape(model, declared, where));
+        EquatableArray<IrNullReason> because =
+        [
+            new IrNullReason(IrNullRule.JsonNullOrAbsent, where.ToString()),
+            .. shape is ScalarShape { BuiltIn.IsDecimal: true } ? PrecisionLoss(summaries.Session, where) : [],
+        ];
+        return Value.Computed(shape, because);
+    }
+
     // ---- OPENJSON -----------------------------------------------------------------------------------------------------
 
     /// <summary>
@@ -338,7 +356,7 @@ internal sealed partial class Typer
             if (declared is not null && found?.Shape is ScalarShape scalar && Converted(scalar, declared, where) is { } converted)
                 values.Add(present ? converted : converted.WithNullableBecause([JsonValue(where)]));
             else
-                values.Add(Value.Computed(Unpadded(SqlTypes.ToConvertedShape(model, declared, where)), [JsonValue(where)]));
+                values.Add(OpenJsonColumn(declared, where));
         }
 
         return values;

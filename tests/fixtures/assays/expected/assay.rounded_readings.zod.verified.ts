@@ -46,6 +46,11 @@ export const RoundedReadingsResult3RowSchema = z.object({
 })
 export type RoundedReadingsResult3Row = z.infer<typeof RoundedReadingsResult3RowSchema>
 
-/** assay.rounded_readings: returns 3 result sets: rows; rows; rows. */
-export const RoundedReadingsSchema = z.tuple([z.array(RoundedReadingsResult1RowSchema), z.array(RoundedReadingsResult2RowSchema), z.array(RoundedReadingsResult3RowSchema)])
+export const RoundedReadingsResult4RowSchema = z.object({
+  level: z.number().min(-99999999.99).max(99999999.99).multipleOf(1e-2).nullable(),
+})
+export type RoundedReadingsResult4Row = z.infer<typeof RoundedReadingsResult4RowSchema>
+
+/** assay.rounded_readings: returns 4 result sets: rows; rows; rows; rows. */
+export const RoundedReadingsSchema = z.tuple([z.array(RoundedReadingsResult1RowSchema), z.array(RoundedReadingsResult2RowSchema), z.array(RoundedReadingsResult3RowSchema), z.array(RoundedReadingsResult4RowSchema)])
 export type RoundedReadings = z.infer<typeof RoundedReadingsSchema>

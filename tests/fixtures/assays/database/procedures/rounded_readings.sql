@@ -36,3 +36,7 @@ SELECT s.sample_id, AVG(s.concentration) AS mean_concentration
 FROM assay.sample AS s
 GROUP BY s.sample_id
 ORDER BY s.sample_id;
+
+-- A JSON number read by OPENJSON into a decimal of fewer places: WITH converts as CAST does.
+SELECT j.level
+FROM OPENJSON(N'[{"level": 1.2345}]') WITH (level decimal(10,2)) AS j;

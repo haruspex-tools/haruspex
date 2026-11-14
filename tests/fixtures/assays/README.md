@@ -11,7 +11,7 @@ off, where each rounded value is NULL, and under `NUMERIC_ROUNDABORT` on alone, 
 
 | Procedure | Covers |
 |---|---|
-| `assay.rounded_readings` | `CAST` and `CONVERT` to fewer places, of a decimal, money and a string; `COALESCE`, `CASE`, `IIF` and `UNION ALL` to a common type of fewer places; a product, a quotient and a sum whose scale is cut past 38 digits; `AVG` grouped and over a window; `LAG`'s default; an inline function's argument; a variable's declared value |
+| `assay.rounded_readings` | `CAST` and `CONVERT` to fewer places, of a decimal, money and a string; `COALESCE`, `CASE`, `IIF` and `UNION ALL` to a common type of fewer places; a product, a quotient and a sum whose scale is cut past 38 digits; `AVG` grouped and over a window; `LAG`'s default; an inline function's argument; a variable's declared value; a JSON number read by `OPENJSON … WITH` into a decimal |
 | `assay.exact_readings` | the guards: a widening `CAST`, `decimal(10,2) + decimal(10,2)`, a decimal and a string literal that fit, a decimal to `int` and to `money`, a float to a decimal, money to four places, `ROUND`, a product and a quotient within 38 digits, money's arithmetic, `%`, `SUM`, `AVG` of money |
 | `assay.attempted_readings` | `TRY_CAST` to fewer places and to more |
 | `assay.silent_rounding` | a body's `SET NUMERIC_ROUNDABORT OFF`, passed over |

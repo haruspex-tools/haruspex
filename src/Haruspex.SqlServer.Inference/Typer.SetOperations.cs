@@ -315,8 +315,8 @@ internal sealed partial class Typer
     /// An <c>OPENJSON</c> call's rows. Without <c>WITH</c>: <c>key</c> nvarchar(4000) and <c>type</c> tinyint, never null, and
     /// <c>value</c> nvarchar(max), NULL for a JSON null; <c>type</c> is 0 to 5 (observed:
     /// Openjson_without_with_gives_key_value_and_type). With <c>WITH</c>: each column of its declared type, the value converted
-    /// to it as CAST does (a string cut short), and NULL for a JSON null even under a <c>strict</c> path, which only turns a
-    /// missing property into an error (observed: Openjson_with_columns_are_of_their_declared_types_and_null_for_a_missing_path_or_a_json_null,
+    /// to it as CAST does (a string cut short, a decimal rounded: <see cref="OpenJsonColumn"/>), and NULL for a JSON null even
+    /// under a <c>strict</c> path, which only turns a missing property into an error (observed: Openjson_with_columns_are_of_their_declared_types_and_null_for_a_missing_path_or_a_json_null,
     /// Openjson_with_a_strict_path_that_is_missing_is_an_error_not_a_null). An <c>AS JSON</c> column holds an object or array,
     /// which FOR JSON nests as JSON, whose shape is in the data (observed:
     /// Openjson_as_json_is_nvarchar_max_holding_an_object_or_array_that_nests_as_json). How many rows is the data's.
@@ -372,7 +372,7 @@ internal sealed partial class Typer
                 continue;
             }
 
-            values.Add(Value.Computed(Unpadded(SqlTypes.ToConvertedShape(model, SyntaxReader.Type(column.DataType), where)), [JsonValue(where)]));
+            values.Add(OpenJsonColumn(SyntaxReader.Type(column.DataType), where));
         }
 
         if (names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Count)

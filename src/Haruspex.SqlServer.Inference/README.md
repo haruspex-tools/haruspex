@@ -642,6 +642,7 @@ it cannot. Which expressions round is decided by the types, not the values, exce
 | a value brought to a common type (`ISNULL`'s second argument, `COALESCE`, `CASE`, `IIF`, `CHOOSE`, a set operation's column, `LAG`'s and `LEAD`'s default) | as a conversion to that type: `decimal(10,4)` beside `decimal(38,0)` is `decimal(38,0)` | `Typer.Chained`, `Typer.IsNull`, `Typer.Offset` |
 | `*`, and `+` and `-` | the result's scale is cut past 38 digits ("Decimal arithmetic" above); for `+` and `-` only a result whose digits at the full scale pass 38 rounds, which no type rules out once it is cut (`decimal(38,10) + decimal(38,20)` drops its last places silently for 1 + 10⁻²⁰, while `decimal(38,0)` 10³⁷ + 1.5 is NULL) | `Arithmetic.Rounds` |
 | `/` | the result's scale is below s1 + (p2 − s2) + 1, the dividend's places, the divisor's integer digits and one more, whatever the values: never when the scale is not cut, though 1 / 3 is inexact, nor when it is cut by less (`decimal(10,0) / decimal(20,10)` keeps 18 places of 21) | `Arithmetic.Rounds` |
+| a column of `OPENJSON … WITH` of a decimal type | always: a document's numbers and strings may have any number of places (into `money`, never) | `Typer.OpenJsonColumn` |
 | `AVG` of a decimal, grouped or over a window | always, whatever its places, one value or many, exact or not | `Typer.AverageRounds` |
 | a call of a function declared `RETURNS NULL ON NULL INPUT` | an argument rounds into its parameter, which makes the call NULL without running it (`null-input`) | `Typer.MayBeNullInput` |
 
@@ -1236,7 +1237,9 @@ outer join's ON proves its columns as it proves an aliased one's
   (`Openjson_without_with_gives_key_value_and_type`). `value` nests in `FOR JSON` as escaped text, as any string.
 - **With `WITH`**: each column of its declared type, the value converted to it as `CAST` does: a longer string is cut to its
   length, a failed conversion is an error, and a number too large is an error, or NULL under the caller's `ANSI_WARNINGS`
-  and `ARITHABORT` off (`Openjson_with_converts_as_cast_does_a_failure_an_error_and_an_overflow_null_under_the_callers_options`).
+  and `ARITHABORT` off (`Openjson_with_converts_as_cast_does_a_failure_an_error_and_an_overflow_null_under_the_callers_options`);
+  a number or string of more places than a decimal column keeps is rounded, NULL under the caller's `NUMERIC_ROUNDABORT` on
+  too, so such a column is also `precision-loss` ("Precision lost" above, `Typer.OpenJsonColumn`).
   So it has its type's facets, and is nullable with `json-null-or-absent`: NULL where the JSON holds `null` or, under a lax path,
   where nothing is there or an object or array stands where a scalar is declared.
 - **`strict` does not make a column non-null** (a deviation from the brief, which expected it to): it turns a missing
@@ -1449,7 +1452,7 @@ constructs this front end gives each reason for:
 | `variable` | a variable until a value never null is assigned on every path |
 | `count-overflow` | `COUNT` (an `int`) under a caller's `ANSI_WARNINGS` and `ARITHABORT` off; never when either is declared on |
 | `arithmetic-overflow` | arithmetic, `SUM`, `AVG`, numeric functions and conversions that can overflow or divide by zero, under the same session options |
-| `precision-loss` | a decimal rounded to fewer places by a conversion, an assignment, a common type, arithmetic whose scale is cut, or `AVG`, under a caller's `NUMERIC_ROUNDABORT` on with `ANSI_WARNINGS` and `ARITHABORT` off, and under `TRY_CAST` with `NUMERIC_ROUNDABORT` on |
+| `precision-loss` | a decimal rounded to fewer places by a conversion (`OPENJSON … WITH`'s too), an assignment, a common type, arithmetic whose scale is cut, or `AVG`, under a caller's `NUMERIC_ROUNDABORT` on with `ANSI_WARNINGS` and `ARITHABORT` off, and under `TRY_CAST` with `NUMERIC_ROUNDABORT` on |
 | `failed-conversion` | `TRY_CAST` and `TRY_CONVERT` |
 | `subtotal-row` | a grouped column of a query with `ROLLUP`, `CUBE` or `GROUPING SETS` |
 | `missing-for-action` | a column of a `MERGE`'s `OUTPUT` that some of its actions don't set |

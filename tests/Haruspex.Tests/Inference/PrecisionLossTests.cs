@@ -171,6 +171,26 @@ public class PrecisionLossTests
     }
 
     [Fact]
+    public void An_openjson_with_column_of_a_decimal_may_lose_precision_and_one_of_money_never()
+    {
+        // WITH converts as CAST does, and a document's numbers may have any number of places (A_loss_of_precision_is_null_when_
+        // numeric_roundabort_is_on_and_ansi_warnings_and_arithabort_are_off, "a JSON number read by OPENJSON into a decimal");
+        // into money it rounds unseen (These_round_or_truncate_whatever_numeric_roundabort_is). A strict path changes nothing.
+        const string Body = """
+            SELECT j.level, j.fee, j.strict_level
+            FROM dbo.t AS t
+            CROSS APPLY OPENJSON(t.text20) WITH (level decimal(10,2), fee money, strict_level decimal(10,2) 'strict $.level') AS j;
+            """;
+
+        Assert.Equal(
+            "level: json-null-or-absent precision-loss\nfee: json-null-or-absent\nstrict_level: json-null-or-absent precision-loss",
+            Reasons(Procedure(SessionOptions.NotKnown, Body)));
+        Assert.Equal(
+            "level: json-null-or-absent\nfee: json-null-or-absent\nstrict_level: json-null-or-absent",
+            Reasons(Procedure(new SessionOptions(NumericRoundAbort: false), Body)));
+    }
+
+    [Fact]
     public void A_rounding_that_may_also_overflow_gives_both_reasons_each_removed_by_its_own_options()
     {
         // decimal(38,10) into decimal(10,2) may overflow (eight integer digits of twenty-eight) and rounds (two places of ten).
