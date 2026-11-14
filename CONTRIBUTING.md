@@ -184,7 +184,7 @@ split into parts along the constructs it covers. The families today:
 | JSON constructors | `JsonConstructorTests` | `JsonConstructorObservationTests` | `tests/fixtures/payloads` | "JSON constructors" |
 | Functions that return JSON | `JsonFunctionTests` | `JsonFunctionObservationTests` | `tests/fixtures/trees` | the guide's [Summaries and recursion](docs/internals/07-summaries-and-recursion.md) |
 | Read uncommitted | `ReadUncommittedTests` | `ReadUncommittedObservationTests` | `tests/fixtures/tabs` | [decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md) |
-| The callers' session | `SessionTests` | `SessionObservationTests` | `tests/fixtures/meters` | "The callers' session" |
+| The callers' session | `SessionTests` | `SessionObservationTests`, `PrecisionLossObservationTests` | `tests/fixtures/meters` | "The callers' session" |
 | Binding | `BinderTests`, in `tests/Haruspex.Tests/Semantics` | `BindingObservationTests` | `tests/fixtures/scopes` | the Semantics README's "How data flows through it" |
 
 Eleven classes are named otherwise, for what they cover across families: `ConstructTests` (queries, results and sources
