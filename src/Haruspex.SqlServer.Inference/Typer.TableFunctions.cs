@@ -88,7 +88,7 @@ internal sealed partial class Typer
         var fits = LiteralOf(argument) is ({ } literal, var negative) && target is not null
             ? Conversions.Fits(literal, target, negative)
             : null;
-        return Value.Computed(declared, fits == true ? value.NullableBecause : Converting(value, declared, At(argument)));
+        return Value.Computed(declared, fits == true ? value.NullableBecause : Converting(value, declared, At(argument), summaries.Session));
     }
 
     /// <summary>

@@ -10,6 +10,7 @@ cume
 datalength
 dateadd
 datediff
+datefirst
 datefromparts
 datename
 datepart
@@ -49,6 +50,7 @@ raiserror
 readcommitted
 readuncommitted
 refreshview
+roundabort
 rowcount
 rowset
 rowsets
@@ -56,6 +58,7 @@ rowstat
 rowversion
 rtrim
 schemabinding
+sessionproperty
 smalldatetime
 smalldatetimefromparts
 smallint

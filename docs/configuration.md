@@ -17,6 +17,8 @@ otherwise silently do nothing.
 
   "objects": "strip",                       // or "strict"
 
+  "session": { "ansiWarnings": true },      // what the callers' connections set; see "The callers' session"
+
   "naming": {                               // for every schema
     "replace": [{ "pattern": "#$", "with": "Row" }],
     "case": "pascal"                        // or "camel", "preserve"
@@ -163,6 +165,41 @@ exits as before (the `check` command will fail it).
 
 This is the one deliberate exception to "claim everything it does guarantee": `FOR JSON` produces exactly the known
 keys, so strict is the accurate schema, and strip is the default for deployment safety. It applies to results only.
+
+## The callers' session: `session`
+
+Whether some values can be null depends on `SET` options of the session that calls the procedure, not on the procedure:
+with `ANSI_WARNINGS` and `ARITHABORT` both off, an overflow, a division by zero or a `COUNT` past `int` is NULL; with either
+on, it is an error that fails the call. The caller is out of sight, so by default haruspex assumes nothing, and each such
+value is nullable (`arithmetic-overflow`, `count-overflow`, `domain-error` in the IR). Declare what your callers set and
+those reasons go:
+
+```jsonc
+"session": {
+  "ansiWarnings": true,             // ANSI_WARNINGS
+  "arithAbort": false,              // ARITHABORT
+  "concatNullYieldsNull": true      // CONCAT_NULL_YIELDS_NULL
+}
+```
+
+- **`ansiWarnings`** or **`arithAbort`** `true`: an overflow, a division by zero, a `COUNT` past `int` and a value outside a
+  math function's domain are errors, so none makes a value nullable. Either one is enough.
+- **`concatNullYieldsNull`** `false`: string `+` with one side NULL gives the other side, so it is null only when both sides
+  may be. `true` changes nothing: that is what haruspex assumes when it isn't known.
+- **An option left out is not known**, and haruspex claims only what holds whatever it is. With no `session` block the
+  output is what it was before this setting existed.
+
+Declare what the **callers' connections** set, not the database's defaults: those apply only to a connection that sets
+nothing, and current drivers set these options at login. tedious (the `mssql` package's driver) sets all three on;
+Microsoft.Data.SqlClient sets `ANSI_WARNINGS` and `CONCAT_NULL_YIELDS_NULL` on and `ARITHABORT` off; the ODBC and OLE DB
+drivers set `ANSI_WARNINGS` on. [Decision 0038](decisions/0038-the-callers-session-is-declared.md) lists the sources, and
+why each option is or isn't here. An application can `SET` its own after connecting, so when in doubt, ask the session:
+`SELECT SESSIONPROPERTY('ANSI_WARNINGS')`.
+
+A declaration is a claim, like `"nullable": false`: if a caller sets the options otherwise, a value the schema says is never
+null can be NULL. A procedure that sets one of these options otherwise in its body overrides the declaration until it
+returns; haruspex then leaves its results unknown. Other options that change no claim haruspex makes (`NUMERIC_ROUNDABORT`,
+`DATEFIRST`, `LANGUAGE`, `DATEFORMAT`) are not settings; writing one is an unknown setting.
 
 ## Naming
 

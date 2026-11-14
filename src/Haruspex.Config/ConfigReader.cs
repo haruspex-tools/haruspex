@@ -118,13 +118,40 @@ public static class ConfigReader
                     case "procedures":
                         config = config with { Procedures = [.. Procedures(member.Value, path)] };
                         break;
+                    case "session":
+                        config = config with { Session = Session(member.Value, path) };
+                        break;
                     default:
-                        Unknown(member, path, "$schema, source, out, schemas, objects, naming, procedures");
+                        Unknown(member, path, "$schema, source, out, schemas, objects, naming, procedures, session");
                         break;
                 }
             }
 
             return config;
+        }
+
+        /// <summary>
+        /// The options the callers' connections set, each true or false; one left out is not known. Only the options a rule
+        /// reads are settings (<see cref="SessionOptions.Names"/>): any other, a database's default or a driver's, is unknown
+        /// rather than silently ignored (<c>docs/decisions/0038-the-callers-session-is-declared.md</c>).
+        /// </summary>
+        private SessionOptions Session(JsonValue value, string path)
+        {
+            var session = SessionOptions.NotKnown;
+            if (Object(value, path) is not { } block)
+                return session;
+            foreach (var member in block.Members)
+            {
+                var memberPath = Child(path, member.Name);
+                if (!SessionOptions.Names.Contains(member.Name, StringComparer.Ordinal))
+                    Unknown(member, memberPath, string.Join(", ", SessionOptions.Names));
+                else if (member.Value is JsonOtherValue { Kind: JsonTokenType.True or JsonTokenType.False } flag)
+                    session = session.With(member.Name, flag.Kind == JsonTokenType.True);
+                else
+                    Report(ConfigCodes.WrongKind, member.Value, memberPath, "must be true or false; leave the option out when it is not known.");
+            }
+
+            return session;
         }
 
         private List<SchemaSettings> Schemas(JsonValue value, string path)

@@ -85,7 +85,7 @@ internal sealed class SqlProject
                 declarations.TryAdd(name, new DeclaredResults(declared.Results, declared.IrTypes, declared.Why));
         }
 
-        var inferred = IrInference.Infer(model, selected, declarations);
+        var inferred = IrInference.Infer(model, selected, declarations, config.Session);
         var others = declarations.Keys
             .Select(name => model.FindProcedure(name)?.Name)
             .OfType<ObjectName>()
@@ -94,7 +94,7 @@ internal sealed class SqlProject
             .ToList();
 
         // Inferred only to check their declarations against: what inference couldn't check of them is not this run's to report.
-        var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations).Value;
+        var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations, config.Session).Value;
         return inferred.Then(document => ConfigApplication.Apply(document, config, Procedures, selectedByFile, outputDirectory, declaredDocument));
     }
 }

@@ -15,6 +15,7 @@ flowchart LR
     reader --> config["HaruspexConfig"]
     config --> selection["ProcedureSelection: which procedures are the interface"]
     config --> declared["DeclaredSchema: declared results, as IR results"]
+    config --> session["SessionOptions: the callers' session, handed to inference"]
     inferred["IrDocument from inference"] --> apply["ConfigApplication.Apply"]
     config --> apply
     apply --> overrides["OverrideApplier, ResultsComparison"]
@@ -26,6 +27,7 @@ flowchart LR
 |---|---|
 | `ConfigJson.cs` | Reads JSON with comments into a tree that remembers each value's line and column. `JsonDocument` forgets positions, and every error must name its line. |
 | `ConfigReader.cs` | Finds the file (walking up) and checks every setting; an unknown key is an error, never ignored. The same checks as the JSON Schema, plus what a schema can't say (a pattern, a path or a regular expression that doesn't parse, a reserved word). |
+| `ConfigReader.cs`, the `session` block | The options the callers' connections set, read into the model's `SessionOptions` and handed to inference with the declared results, since the rules that depend on them are inference's ([decision 0038](../../docs/decisions/0038-the-callers-session-is-declared.md)). Only the options a rule reads are settings; one left out is not known. |
 | `NamePattern.cs`, `ObjectPattern.cs`, `ProcedureSelection.cs` | Selection per schema (`schemas["sales"].include`, matching names only), and the CLI's one-off `--include schema.pattern`. A pattern or a schema key that matches nothing is reported. |
 | `DeclaredSchema.cs` | A procedure's declared results (`results`): the JSON Schema of each, inline or in a file, translated into IR results. A keyword it doesn't read is a warning and is not checked, so a declared type is never narrower than its schema. |
 | `ResultsComparison.cs` | A declaration of results that inference can infer is compared with them: an error where they differ, a warning where they agree. |
@@ -74,11 +76,13 @@ statement walk can do. So the declarations, translated into IR results here, are
 - **No SQL syntax.** It knows the IR and the model's object names, and not ScriptDom, as the layer table in
   [docs/architecture.md](../../docs/architecture.md) says.
 - **No reaching into inference.** Overrides transform the finished document, so they work the same however it was
-  produced.
+  produced. The two things it hands inference beforehand, declared results and the callers' session, are inputs to it,
+  not changes made inside it.
 - **No emitters.** The CLI maps `objects` to the Zod emitter's own options.
 
 How haruspex works, layer by layer, is in [the guide](../../docs/internals/README.md); the decisions this layer rests on
 are [0008](../../docs/decisions/0008-objects-strip-unknown-keys-by-default.md),
 [0010](../../docs/decisions/0010-procedures-are-selected-per-schema.md),
-[0011](../../docs/decisions/0011-generated-names-leave-the-schema-out.md) and
-[0013](../../docs/decisions/0013-results-that-cannot-be-inferred-are-declared.md).
+[0011](../../docs/decisions/0011-generated-names-leave-the-schema-out.md),
+[0013](../../docs/decisions/0013-results-that-cannot-be-inferred-are-declared.md) and
+[0038](../../docs/decisions/0038-the-callers-session-is-declared.md).

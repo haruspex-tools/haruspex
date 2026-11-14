@@ -65,7 +65,7 @@ HAR3003
 haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
 
 HAR3004
-haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, out, schemas, objects, naming, procedures.
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, out, schemas, objects, naming, procedures, session.
 
 HAR3005
 haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".

@@ -106,7 +106,15 @@ internal sealed partial class Typer
     private Value Typed(ScalarType type, EquatableArray<IrNullReason> because, TSqlFragment at) =>
         Value.Computed(SqlTypes.ToConvertedShape(type, At(at)), because);
 
-    private IrNullReason Overflow(TSqlFragment at) => new(IrNullRule.ArithmeticOverflow, At(at).ToString());
+    /// <summary>
+    /// The reason an overflow or a division by zero at <paramref name="at"/> gives NULL: none when the callers' sessions make
+    /// it an error (<see cref="SessionOptions.OverflowIsAnError"/>), which fails the call and so describes nothing the IR does.
+    /// </summary>
+    private EquatableArray<IrNullReason> Overflow(TSqlFragment at) => Overflow(summaries.Session, At(at));
+
+    /// <inheritdoc cref="Overflow(TSqlFragment)"/>
+    private static EquatableArray<IrNullReason> Overflow(SessionOptions session, SourceLocation at) =>
+        session.OverflowIsAnError ? [] : [new IrNullReason(IrNullRule.ArithmeticOverflow, at.ToString())];
 
     private Value NotModelled(TSqlFragment expression, string why) =>
         Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{Text(expression)}: {why}", At(expression)));
@@ -127,7 +135,7 @@ internal sealed partial class Typer
 
     /// <param name="values">Each value, the expression it came from (for a literal's digits and value), and where an overflow
     /// converting it would happen.</param>
-    private static ChainType Chained(IReadOnlyList<(Value Value, ScalarExpression Expression, SourceLocation At)> values)
+    private ChainType Chained(IReadOnlyList<(Value Value, ScalarExpression Expression, SourceLocation At)> values)
     {
         var operands = values.Select(v => OperandOf(v.Value, v.Expression)).ToList();
         var types = operands.Select(o => o?.Type).ToList();
@@ -166,7 +174,7 @@ internal sealed partial class Typer
         {
             var fits = (LiteralOf(v.Expression) is ({ } literal, var negative) ? Conversions.Fits(literal, type, negative) : null)
                 ?? Conversions.NeverNull(known[i], type);
-            return fits ? (EquatableArray<IrNullReason>)[] : [new IrNullReason(IrNullRule.ArithmeticOverflow, v.At.ToString())];
+            return fits ? [] : Overflow(summaries.Session, v.At);
         }).ToList();
         return new ChainType(type, [.. overflows], null);
     }
@@ -277,10 +285,12 @@ internal sealed partial class Typer
             return second;
         var fits = (LiteralOf(b) is ({ } literal, var negative) ? Conversions.Fits(literal, type, negative) : null)
             ?? (OperandOf(second, b) is { } from && Conversions.Converts(from, type));
-        if (second.NullableBecause.Count == 0 && fits)
+        // An overflow converting the second is NULL, or an error that fails the call when the callers' sessions make it one;
+        // then ISNULL of a second never null is never null.
+        var overflow = fits ? [] : Overflow(call);
+        if (second.NullableBecause.Count == 0 && overflow.Count == 0)
             return Typed(type, [], call);
-        var because = NullReasons.Join(first.NullableBecause, second.NullableBecause);
-        return Typed(type, fits ? because : NullReasons.Join(because, [Overflow(call)]), call);
+        return Typed(type, NullReasons.Join(NullReasons.Join(first.NullableBecause, second.NullableBecause), overflow), call);
     }
 
     // ---- CAST and CONVERT -------------------------------------------------------------------------------------------
@@ -327,7 +337,7 @@ internal sealed partial class Typer
             return value.Digits == IntDigits.Literal(1) && IsNullCast(operand) ? value : value with { Digits = IntDigits.OfType };
         var because = fits
             ? value.NullableBecause
-            : NullReasons.Join(value.NullableBecause, [attempt ? new IrNullReason(IrNullRule.FailedConversion, At(call).ToString()) : Overflow(call)]);
+            : NullReasons.Join(value.NullableBecause, attempt ? [new IrNullReason(IrNullRule.FailedConversion, At(call).ToString())] : Overflow(call));
         return Value.Computed(shape, because);
     }
 
@@ -389,12 +399,16 @@ internal sealed partial class Typer
     /// String <c>a + b</c>: as CONCAT for its type, but fixed-length when both operands are (char, or nchar if either is:
     /// observed, Fixed_length_strings_plus_is_fixed_length), and null when either operand is. With
     /// CONCAT_NULL_YIELDS_NULL off, which only a session can set and is deprecated, NULL + 'x' is 'x'
-    /// (With_concat_null_yields_null_off_a_string_plus_null_is_the_string): less often null, so the claim holds either way.
+    /// (With_concat_null_yields_null_off_a_string_plus_null_is_the_string), so only when both are: when the callers' sessions
+    /// are declared to set it off, an operand never null makes the sum never null. Not known, the claim of either is null holds
+    /// under both settings, since off is only less often null.
     /// </summary>
     private Value Plus(BinaryExpression plus, Value left, Value right, ScalarType l, ScalarType r) =>
         Typed(
             ScalarType.CharacterString(l.IsNational || r.IsNational, varying: l.IsVarying || r.IsVarying, l.IsMax || r.IsMax ? -1 : l.Length + r.Length),
-            NullReasons.Join(left.NullableBecause, right.NullableBecause),
+            summaries.Session.ConcatenatingNullKeepsTheString && (left.NullableBecause.Count == 0 || right.NullableBecause.Count == 0)
+                ? []
+                : NullReasons.Join(left.NullableBecause, right.NullableBecause),
             plus);
 
     // ---- arithmetic ---------------------------------------------------------------------------------------------------
@@ -445,7 +459,7 @@ internal sealed partial class Typer
         }
 
         var because = NullReasons.Join(left.NullableBecause, right.NullableBecause);
-        return Typed(type, mayOverflow ? NullReasons.Join(because, [Overflow(binary)]) : because, binary);
+        return Typed(type, mayOverflow ? NullReasons.Join(because, Overflow(binary)) : because, binary);
     }
 
     /// <summary>The value of an integer or decimal literal, through parentheses and signs; null for anything else.</summary>
@@ -490,7 +504,7 @@ internal sealed partial class Typer
         {
             ({ IsDecimal: true } or { IsApproximate: true }) and var exact => Typed(exact, operand.NullableBecause, unary),
             { } tiny when tiny.Type == BuiltInType.TinyInt => Typed(ScalarType.Of(BuiltInType.SmallInt), operand.NullableBecause, unary),
-            ({ IsInteger: true } or { IsMoney: true }) and var integer => Typed(integer, NullReasons.Join(operand.NullableBecause, [Overflow(unary)]), unary),
+            ({ IsInteger: true } or { IsMoney: true }) and var integer => Typed(integer, NullReasons.Join(operand.NullableBecause, Overflow(unary)), unary),
             _ => NotModelled(unary, "negating a value of this type is not modelled yet."),
         };
     }
@@ -517,7 +531,7 @@ internal sealed partial class Typer
 
         var from = TypeOf(argument);
         EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call, scope)];
-        return Typed(type, from is { IsDecimal: true, Precision: <= 19 } ? because : NullReasons.Join(because, [Overflow(call)]), call);
+        return Typed(type, from is { IsDecimal: true, Precision: <= 19 } ? because : NullReasons.Join(because, Overflow(call)), call);
     }
 
     /// <summary>The type SUM gives a value of this type, over a window too (observed: Sum_widens_its_argument).</summary>
@@ -537,7 +551,7 @@ internal sealed partial class Typer
     /// A value converted to a declared type, as an assignment to a variable converts it: NULL too under a caller's
     /// ANSI_WARNINGS and ARITHABORT off when it may overflow (observed for CAST, which is the same conversion).
     /// </summary>
-    internal static EquatableArray<IrNullReason> Converting(Value value, Shape declared, SourceLocation at)
+    internal static EquatableArray<IrNullReason> Converting(Value value, Shape declared, SourceLocation at, SessionOptions session)
     {
         if (value.Shape is UnknownShape || value.IsLiveJson || declared is not ScalarShape { BuiltIn: { } to })
             return value.NullableBecause;
@@ -549,6 +563,6 @@ internal sealed partial class Typer
         };
         return from is not null && Conversions.Converts(Operand.OfType(from), to)
             ? value.NullableBecause
-            : NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.ArithmeticOverflow, at.ToString())]);
+            : NullReasons.Join(value.NullableBecause, Overflow(session, at));
     }
 }

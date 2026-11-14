@@ -58,6 +58,9 @@ internal sealed partial class CodeReferences
         // Names from before the split into layers, in the table of what each type became (docs/architecture.md).
         "Haruspex.SqlServer", "Catalog", "TableModel", "ColumnModel", "SqlProject.Changed",
 
+        // An element of a DACPAC's model.xml, which the decision on the callers' session says is not where they come from.
+        "SqlDatabaseOptions",
+
         // Products named in the layers' diagrams.
         "ScriptDom", "TypeScript",
 

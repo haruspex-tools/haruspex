@@ -334,9 +334,17 @@ internal sealed partial class Typer
     private Value Count(FunctionCall call, ReadScope scope, bool big)
     {
         var at = At(call);
-        EquatableArray<IrNullReason> because = !big && !ProvedAggregate(call, scope) ? [new IrNullReason(IrNullRule.CountOverflow, at.ToString())] : [];
+        var because = !big && !ProvedAggregate(call, scope) ? CountPastInt(call) : [];
         return Value.Computed(SqlTypes.ToConvertedShape(ScalarType.Of(big ? BuiltInType.BigInt : BuiltInType.Int), at), because);
     }
+
+    /// <summary>
+    /// The reason a COUNT past int's range gives NULL: none when the callers' sessions make it an error, as for any overflow
+    /// (<see cref="SessionOptions.OverflowIsAnError"/>; observed under each combination of the two options:
+    /// Count_over_more_rows_than_int_holds_is_an_error_unless_ansi_warnings_and_arithabort_are_both_off).
+    /// </summary>
+    private EquatableArray<IrNullReason> CountPastInt(FunctionCall call) =>
+        summaries.Session.OverflowIsAnError ? [] : [new IrNullReason(IrNullRule.CountOverflow, At(call).ToString())];
 
     /// <summary>
     /// MIN and MAX return one of their argument's values, so its type and facets, and are NULL over no rows (without GROUP BY)

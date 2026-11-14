@@ -15,19 +15,24 @@ public static class IrInference
     /// making its caller's results unknown. A procedure's own declaration is not applied to it here; that is the config
     /// layer's, which also checks it against what is inferred.
     /// </param>
+    /// <param name="session">
+    /// The options the callers' connections are declared to set; not known when null, so every rule that depends on one claims
+    /// what holds under any value.
+    /// </param>
     /// <returns>
     /// The document, with what could not be checked, once each: a write to a table the project does not define, whose
     /// triggers (which could return result sets) are not in the project. Inference always gives a document, since what it
     /// can't type is an unknown in it, so it returns a success, and says so in its type.
     /// </returns>
     /// <exception cref="ArgumentException">A name is not a procedure of the model: a fault of the caller, which selected it.</exception>
-    public static Succeeded<IrDocument> Infer(DatabaseModel model, IReadOnlyList<ObjectName> procedures, IReadOnlyDictionary<ObjectName, DeclaredResults>? declarations = null)
+    public static Succeeded<IrDocument> Infer(DatabaseModel model, IReadOnlyList<ObjectName> procedures, IReadOnlyDictionary<ObjectName, DeclaredResults>? declarations = null, SessionOptions? session = null)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(procedures);
         declarations ??= new Dictionary<ObjectName, DeclaredResults>();
+        session ??= SessionOptions.NotKnown;
         var warnings = new List<Diagnostic>();
-        var summaries = new Summaries(model, declarations, warnings);
+        var summaries = new Summaries(model, declarations, warnings, session);
         var analysed = procedures
             .Distinct()
             .Select(name => model.FindProcedure(name)

@@ -74,7 +74,7 @@ internal sealed partial class Typer
     /// </summary>
     private EquatableArray<IrNullReason> DatetimeOverflow(IReadOnlyList<(ScalarType Type, ScalarExpression Expression)> dates, TSqlFragment call) =>
         dates.Any(d => d.Type.IsInteger) && !dates.All(d => Fits(d.Type, d.Expression))
-            ? [Overflow(call)]
+            ? Overflow(call)
             : [];
 
     /// <summary>

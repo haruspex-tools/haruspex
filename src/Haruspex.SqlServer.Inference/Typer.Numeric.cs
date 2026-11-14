@@ -1,6 +1,7 @@
 using Haruspex.Collections;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
+using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -11,7 +12,12 @@ namespace Haruspex.SqlServer.Inference;
 // (NumericObservationTests in the differential tests).
 internal sealed partial class Typer
 {
-    private IrNullReason Domain(TSqlFragment at) => new(IrNullRule.DomainError, At(at).ToString());
+    /// <summary>
+    /// The reason a value outside a math function's domain gives NULL: none when the callers' sessions make it an error, as for
+    /// an overflow (<see cref="SessionOptions.OverflowIsAnError"/>, observed for SQRT of a negative).
+    /// </summary>
+    private EquatableArray<IrNullReason> Domain(TSqlFragment at) =>
+        summaries.Session.OverflowIsAnError ? [] : [new IrNullReason(IrNullRule.DomainError, At(at).ToString())];
 
     // ---- AVG and the statistical aggregates ---------------------------------------------------------------------------
 
@@ -59,7 +65,7 @@ internal sealed partial class Typer
         EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call, scope)];
         if (function == AggregateFunctions.Stdev || function == AggregateFunctions.Var)
             because = NullReasons.Join(because, [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())]);
-        return Typed(type, overflows ? NullReasons.Join(because, [Overflow(call)]) : because, call);
+        return Typed(type, overflows ? NullReasons.Join(because, Overflow(call)) : because, call);
     }
 
     /// <summary>The type of AVG or a statistic of a value of this type, and whether it may overflow; null when not a number.</summary>
@@ -132,7 +138,7 @@ internal sealed partial class Typer
     }
 
     private EquatableArray<IrNullReason> With(NumberCall n, bool overflows, bool domain = false) =>
-        NullReasons.Join(n.Because, [.. overflows ? [Overflow(n.Call)] : (EquatableArray<IrNullReason>)[], .. domain ? [Domain(n.Call)] : (EquatableArray<IrNullReason>)[]]);
+        NullReasons.Join(n.Because, [.. overflows ? Overflow(n.Call) : [], .. domain ? Domain(n.Call) : []]);
 
     private Value Round(NumberCall n) => Typed(n.Result, With(n, RoundMayOverflow(n.Type, n.Call.Parameters)), n.Call);
 
@@ -196,9 +202,9 @@ internal sealed partial class Typer
         var (call, type, result, because) = power;
         var typed = result.IsDecimal ? result with { Precision = 38 } : result;
         if (WholeOf(call.Parameters[1]) is not { } n)
-            return Typed(typed, NullReasons.Join(because, [Overflow(call), Domain(call)]), call);
+            return Typed(typed, NullReasons.Join(because, [.. Overflow(call), .. Domain(call)]), call);
         if (n < 0)
-            return Typed(typed, NullReasons.Join(because, [Overflow(call)]), call);
+            return Typed(typed, NullReasons.Join(because, Overflow(call)), call);
         var fits = type switch
         {
             { IsDecimal: true } d => (d.Precision - d.Scale) * n < 38 - d.Scale,
@@ -206,6 +212,6 @@ internal sealed partial class Typer
             { IsBit: true } => true,
             _ => false,
         };
-        return Typed(typed, fits ? because : NullReasons.Join(because, [Overflow(call)]), call);
+        return Typed(typed, fits ? because : NullReasons.Join(because, Overflow(call)), call);
     }
 }

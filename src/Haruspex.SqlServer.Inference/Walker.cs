@@ -433,7 +433,7 @@ internal sealed partial class Walker
     {
         if (!variableShapes.TryGetValue(name, out var shape) || !state.Variables.TryGetValue(name, out var old))
             return state;
-        var because = shape is UnknownShape unknown ? NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]) : Converting(value, shape, at);
+        var because = shape is UnknownShape unknown ? NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]) : Converting(value, shape, at, summaries.Session);
         var assigned = Value.Computed(shape, because, old.IsLiveJson);
         state = state.WithVariable(name, definitely ? assigned : Value.Join(old, assigned, at, name.Text));
         if (state.Json.TryGetValue(new VariableSlot(name), out var slot))

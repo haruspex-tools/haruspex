@@ -89,6 +89,31 @@ A path that raises an error to the caller describes no call that returns, so it 
 - A missing table is not caught by a `CATCH` in the same procedure (`A_missing_table_is_not_caught_by_catch_in_the_same_procedure`):
   it fails the call. Treating it as reaching `CATCH` anyway only adds states to the join, which claims less.
 
+## The callers' session
+
+Some values are NULL or an error depending on `SET` options of the session that calls the procedure, which it runs under
+whoever created it (`A_procedure_runs_under_its_callers_options_not_those_of_whoever_created_it`). `IrInference.Infer` takes
+what the config file declares the callers set (`SessionOptions`), and every body reads it through `Summaries.Session`: a
+procedure, the procedures it calls, and the functions, views and triggers they reach all run in the caller's session. An
+option not declared is not known, and each rule then claims what holds whatever it is
+([decision 0038](../../docs/decisions/0038-the-callers-session-is-declared.md)).
+
+- **`ANSI_WARNINGS` or `ARITHABORT` on** (`SessionOptions.OverflowIsAnError`): an overflow, a division by zero, a `COUNT`
+  past `int` and a value outside a math function's domain are errors, which fail the call, so `arithmetic-overflow`,
+  `count-overflow` and `domain-error` are not given; NULL comes only from both off
+  (`An_overflow_is_null_only_when_ansi_warnings_and_arithabort_are_both_off`). The typer makes each of those reasons in one
+  place (`Typer.Overflow`, `Typer.CountPastInt`, `Typer.Domain`), so the rule is read once for each, and a rule that asks
+  whether a value can be null asks its reasons: `ISNULL` of a second argument never null is never null when its overflow is
+  an error.
+- **`CONCAT_NULL_YIELDS_NULL` off** (`SessionOptions.ConcatenatingNullKeepsTheString`): string `+` is null only when both
+  sides may be ("Strings" below).
+- A `SET` of one of these in a body overrides the caller's for its duration. `ON` for `ANSI_WARNINGS` or `ARITHABORT` is passed
+  over, since it can only make an overflow an error; anything else stops the walk with an unknown (`Walker.IsHarmless`), so a
+  declaration never holds past it.
+- `NUMERIC_ROUNDABORT` on makes a decimal rounded to fewer places NULL when both of the others are off
+  (`Numeric_roundabort_on_makes_a_loss_of_precision_null_when_ansi_warnings_and_arithabort_are_both_off`). That is not
+  modelled: with nothing declared, a rounding conversion is typed never null. The decision says why it is apart.
+
 ## The state
 
 `FlowState` is immutable, so a branch starts from the state before it and both ends can be joined. It holds:
@@ -437,8 +462,16 @@ precision adds those before it, less leading zeros (`A_literals_type_is_its_own_
   (`An_overflow_is_an_error_by_default_and_null_under_the_callers_ansi_warnings_and_arithabort_off`). A procedure cannot stop
   a caller doing that, so, as for `COUNT` ("Aggregates and scalar subqueries" below, and
 [decision 0014](../../docs/decisions/0014-count-is-nullable.md)), each is nullable for it, unless the
-  type rules below prove it cannot happen. `SET ANSI_WARNINGS ON` inside the procedure would make it an error again; that is
-  not read, which only claims less. A conversion that **fails** for a value (`'abc'` as `int`, a date that does not exist, a
+  type rules below prove it cannot happen, or the callers' sessions are declared to make it an error ("The callers'
+  session" above). `SET ANSI_WARNINGS ON` inside the procedure would make it an error again; that is not read, which only
+  claims less. **A known limitation:** a decimal rounded to fewer places (a narrowing `CAST`, a division, a product whose
+  scale is cut at 38 digits, an assignment to a narrower variable) is NULL when the caller has `NUMERIC_ROUNDABORT` on and
+  `ANSI_WARNINGS` and `ARITHABORT` both off
+  (`Numeric_roundabort_on_makes_a_loss_of_precision_null_when_ansi_warnings_and_arithabort_are_both_off`), and haruspex types
+  it never null. So with nothing declared, today's output is unsound for such a caller, and only for one: declaring either
+  option on makes the loss an error, and with `NUMERIC_ROUNDABORT` off, every driver's default, the value is rounded. The rule
+  and its option are the next slice's ([decision 0038](../../docs/decisions/0038-the-callers-session-is-declared.md)). A
+  conversion that **fails** for a value (`'abc'` as `int`, a date that does not exist, a
   GUID into a short string) is an error even then (`A_failed_conversion_is_an_error_even_under_ansi_warnings_and_arithabort_off`),
   so it never makes NULL.
 - **`TRY_CAST` and `TRY_CONVERT`** (`failed-conversion`) are NULL whenever the conversion may fail or overflow
@@ -517,8 +550,9 @@ modelled.
   either is (`Fixed_length_strings_plus_is_fixed_length`), and is null when an operand is. A `+` with the `NULL` literal is
   always NULL under the default setting and is not modelled. With
   `CONCAT_NULL_YIELDS_NULL` off, `NULL + 'x'` is `'x'` (`With_concat_null_yields_null_off_a_string_plus_null_is_the_string`):
-  less often null, so the claim holds under either setting, and nothing needs assuming about it. On is SQL Server's default,
-  and off is deprecated; a procedure that sets it off is unknown, as before (`Walker.IsHarmless`). `+` of a string and a number is
+  less often null, so the claim holds under either setting. When the callers' sessions are declared to set it off, `+` is
+  null only when both sides may be, and never null when either side is never null. On is SQL Server's default and every
+  driver's, and off is deprecated; a procedure that sets it, either way, is unknown, as before (`Walker.IsHarmless`). `+` of a string and a number is
   arithmetic, which may fail, and is not modelled.
 
 ### Decimal arithmetic
@@ -818,7 +852,7 @@ themselves: what a query proved is what its row holds.
   (`Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off`), and a procedure cannot
   prevent it, so `COUNT` is nullable with `count-overflow`, and `COUNT_BIG` never null
   ([decision 0014](../../docs/decisions/0014-count-is-nullable.md)). A `HAVING` that compares the count
-  removes it.
+  removes it, and so does a session declared with either option on.
 - `MIN` and `MAX` return one of their argument's values: its type and facets, null when the argument can be, and
   `empty-aggregate` without `GROUP BY` (`An_aggregate_without_group_by_returns_exactly_one_row_even_over_no_rows`,
   `An_aggregate_with_group_by_returns_no_row_over_no_rows`); of a `bit`, with a window or without, the server refuses them
@@ -1382,7 +1416,7 @@ constructs this front end gives each reason for:
 | `no-rows` | a top-level `FOR JSON` result over no rows, which returns no row at all |
 | `not-run` | a result inside a branch, or after a `RETURN` that may be taken |
 | `variable` | a variable until a value never null is assigned on every path |
-| `count-overflow` | `COUNT` (an `int`) under a caller's `ANSI_WARNINGS` and `ARITHABORT` off |
+| `count-overflow` | `COUNT` (an `int`) under a caller's `ANSI_WARNINGS` and `ARITHABORT` off; never when either is declared on |
 | `arithmetic-overflow` | arithmetic, `SUM`, `AVG`, numeric functions and conversions that can overflow or divide by zero, under the same session options |
 | `failed-conversion` | `TRY_CAST` and `TRY_CONVERT` |
 | `subtotal-row` | a grouped column of a query with `ROLLUP`, `CUBE` or `GROUPING SETS` |

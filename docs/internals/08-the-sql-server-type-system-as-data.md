@@ -118,7 +118,8 @@ fail when it is created, so haruspex says unknown for it rather than describe so
 
 **Does it keep every value?** That is a fact the chart doesn't give, and the one that matters for a claim: a conversion that
 may overflow is an error by default and NULL under a caller's `ANSI_WARNINGS` and `ARITHABORT` off, so the result may be
-NULL. `Conversions.Table` lists, for the types inference models, the conversions that can't overflow: a row is a set of
+NULL, unless the config file declares the callers' sessions set either on ([decision 0038](../decisions/0038-the-callers-session-is-declared.md)):
+the table below says whether an overflow can happen, and the declared session whether it is NULL or an error. `Conversions.Table` lists, for the types inference models, the conversions that can't overflow: a row is a set of
 target types, a set of source types, and a condition on their arguments (`ConversionCondition`).
 
 | Into | From | Keeps every value when |

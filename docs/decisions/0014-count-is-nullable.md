@@ -18,5 +18,12 @@ its caller doing that.
 `COUNT_BIG`, or override the field in the config file with a reason. Users will notice the `.nullable()`, so the
 documentation says why wherever a count is shown.
 
+**Amended** (14 Nov 2026, [decision 0038](0038-the-callers-session-is-declared.md)). The caller is still out of sight, but
+the config file may now say what the callers' connections set. When it declares `ANSI_WARNINGS` or `ARITHABORT` on, a `COUNT`
+past `int` is an error that fails the call (observed under each combination:
+`Count_over_more_rows_than_int_holds_is_an_error_unless_ansi_warnings_and_arithabort_are_both_off`), so `COUNT` is never null
+and `count-overflow` is not given; so too every overflow's `arithmetic-overflow`. With nothing declared, this decision stands
+as written: the declaration is the user's claim about their callers, not a default haruspex assumes.
+
 **In the code:** `IrNullRule.CountOverflow`, applied in `Typer.Refinement.cs`; the Inference README, "Aggregates and scalar
 subqueries".

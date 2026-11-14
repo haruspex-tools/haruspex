@@ -20,8 +20,15 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="model">The model the document is inferred from.</param>
 /// <param name="declarations">The results declared for procedures whose results can't be inferred.</param>
 /// <param name="warnings">Where this run of inference adds what could not be checked, once each (<see cref="DmlTriggers"/>); the run returns them.</param>
-internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations, List<Diagnostic> warnings)
+/// <param name="session">The options the callers' connections are declared to set.</param>
+internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations, List<Diagnostic> warnings, SessionOptions session)
 {
+    /// <summary>
+    /// The options the callers' connections are declared to set, which every body runs under: a procedure, the procedures it
+    /// calls, and the functions, views and triggers they reach all run in the caller's session.
+    /// </summary>
+    public SessionOptions Session { get; } = session;
+
     private readonly FunctionSummaries functions = new(model, uncommitted: false);
     private readonly FunctionSummaries uncommittedFunctions = new(model, uncommitted: true);
     private readonly ViewSummaries views = new(model);

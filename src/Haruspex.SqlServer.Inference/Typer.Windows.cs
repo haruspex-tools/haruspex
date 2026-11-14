@@ -42,7 +42,7 @@ internal sealed partial class Typer
         {
             case WindowResult.Fixed:
                 // Never null: a fixed result's rule names its type (the window rules of the function table).
-                return Typed(ScalarType.Of(rule.Type!), rule.CountOverflow ? [new IrNullReason(IrNullRule.CountOverflow, At(call).ToString())] : [], call);
+                return Typed(ScalarType.Of(rule.Type!), rule.CountOverflow ? CountPastInt(call) : [], call);
 
             case WindowResult.Sum:
             {
@@ -51,7 +51,7 @@ internal sealed partial class Typer
                     return argument;
                 if (argument.IsLiveJson || TypeOf(argument) is not { } from || SumType(from) is not { } type)
                     return NotModelled(call, "SUM of a value of this type is not modelled yet.");
-                EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. from is { IsDecimal: true, Precision: <= 19 } ? [] : (EquatableArray<IrNullReason>)[Overflow(call)], .. Framed()];
+                EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. from is { IsDecimal: true, Precision: <= 19 } ? [] : Overflow(call), .. Framed()];
                 return Typed(type, because, call);
             }
 
@@ -68,7 +68,7 @@ internal sealed partial class Typer
                 [
                     .. argument.NullableBecause,
                     .. Sample(),
-                    .. overflows ? [Overflow(call)] : (EquatableArray<IrNullReason>)[],
+                    .. overflows ? Overflow(call) : [],
                     .. Framed(),
                 ];
                 return Typed(type, because, call);
@@ -179,6 +179,6 @@ internal sealed partial class Typer
         var fits = (LiteralOf(parameters[2]) is ({ } literal, var negative) ? Conversions.Fits(literal, type, negative) : null)
             ?? (!fallback.IsLiveJson && OperandOf(fallback, parameters[2]) is { } from && Conversions.Converts(from, type));
         EquatableArray<IrNullReason> because = [.. value.NullableBecause, .. offsetBecause, .. itself ? [] : fallback.NullableBecause];
-        return Typed(type, fits || itself ? because : NullReasons.Join(because, [Overflow(call)]), call);
+        return Typed(type, fits || itself ? because : NullReasons.Join(because, Overflow(call)), call);
     }
 }

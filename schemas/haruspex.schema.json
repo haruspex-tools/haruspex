@@ -40,6 +40,25 @@
     "naming": {
       "$ref": "#/$defs/naming"
     },
+    "session": {
+      "description": "The SET options the callers' connections set: the driver's at login, or what the application sets after. Each is true for ON or false for OFF; leave out one that isn't known, which claims only what holds whatever it is. A database's defaults apply only to a connection that sets nothing, and current drivers set these at login, so declare the driver's, not the database's.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ansiWarnings": {
+          "description": "ANSI_WARNINGS. On, an overflow or a division by zero is an error, not NULL, so it no longer makes a value nullable.",
+          "type": "boolean"
+        },
+        "arithAbort": {
+          "description": "ARITHABORT. On, an overflow or a division by zero is an error, not NULL, as with ansiWarnings on.",
+          "type": "boolean"
+        },
+        "concatNullYieldsNull": {
+          "description": "CONCAT_NULL_YIELDS_NULL. Off, string + with one side NULL gives the other side, so it is null only when both sides may be.",
+          "type": "boolean"
+        }
+      }
+    },
     "procedures": {
       "description": "Overrides per procedure, keyed by its two-part name (schema.name, with T-SQL brackets around a part that holds a dot). name and paths need a selected procedure; results alone may be declared for any procedure, in the project or not.",
       "type": "object",

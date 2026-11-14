@@ -1,5 +1,6 @@
 using Haruspex.Collections;
 using Haruspex.Diagnostics;
+using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Config;
 
@@ -26,6 +27,12 @@ public sealed record HaruspexConfig
 
     /// <summary>The settings of each schema (<c>schemas</c>), in the order written: selection, prefix and naming.</summary>
     public EquatableArray<SchemaSettings> Schemas { get; init; } = [];
+
+    /// <summary>
+    /// The <c>SET</c> options the callers' connections set (<c>session</c>), each not known unless the file declares it: what
+    /// an overflow gives, and string <c>+</c> with a NULL, depend on them.
+    /// </summary>
+    public SessionOptions Session { get; init; } = SessionOptions.NotKnown;
 
     /// <summary>How result objects treat keys their type does not list.</summary>
     public ObjectsPolicy Objects { get; init; } = ObjectsPolicy.Strip;

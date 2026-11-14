@@ -43,6 +43,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0035](0035-the-typer-apart-from-the-walker.md) | 13 Nov 2026 | The typer apart from the walker: expressions as a function of their scope, statements as the flow |
 | [0036](0036-diagnostics-have-stable-codes.md) | 13 Nov 2026 | Diagnostics have stable codes, one type and one written form |
 | [0037](0037-steps-return-outcomes.md) | 13 Nov 2026 | Steps return outcomes; exceptions are for faults |
+| [0038](0038-the-callers-session-is-declared.md) | 14 Nov 2026 | The callers' session options are declared, and not known by default |
 
 ## Writing a record
 

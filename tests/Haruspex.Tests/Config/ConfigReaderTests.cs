@@ -1,6 +1,7 @@
 using System.Text;
 using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod;
+using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Tests.Config;
 
@@ -31,6 +32,7 @@ public class ConfigReaderTests
               "source": "db", /* a block comment */
               "out": "../generated",
               "objects": "strict",
+              "session": { "ansiWarnings": true, "concatNullYieldsNull": false },
               "naming": { "replace": [{ "pattern": "#$", "with": "Row" }], "case": "camel" },
               "schemas": {
                 "sales": { "include": ["get_*", "list_*",], "exclude": ["*_internal"] },
@@ -57,13 +59,14 @@ public class ConfigReaderTests
         Assert.Equal(Path.GetFullPath(Path.Combine(directory, "..", "generated")), config.Out);
         Assert.Equal(["sales", "RDF.", "reference"], config.Schemas.Select(s => s.Name));
         Assert.Equal(["get_*", "list_*"], config.Schemas[0].Include!.Select(p => p.Pattern.Text));
-        Assert.Equal(9, config.Schemas[0].Include![0].At.Line);
+        Assert.Equal(10, config.Schemas[0].Include![0].At.Line);
         Assert.Equal(["*_internal"], config.Schemas[0].Exclude.Select(p => p.Pattern.Text));
         Assert.Equal("", config.Schemas[0].Prefix);
         Assert.Equal("Rdf", config.Schemas[1].Prefix);
         Assert.Null(config.Schemas[2].Include);
         Assert.True(config.SelectsAnything);
         Assert.Equal(ObjectsPolicy.Strict, config.Objects);
+        Assert.Equal(new SessionOptions(AnsiWarnings: true, ConcatNullYieldsNull: false), config.Session);
         Assert.Equal(NamingCase.Camel, config.Naming.Case);
         Assert.Equal("Row", Assert.Single(config.Naming.Replace).With);
 
@@ -91,6 +94,7 @@ public class ConfigReaderTests
         Assert.Empty(config.Schemas);
         Assert.False(config.SelectsAnything);
         Assert.Equal(ObjectsPolicy.Strip, config.Objects);
+        Assert.True(config.Session.IsNotKnown);
         Assert.Equal(NamingRules.Default, config.Naming);
         Assert.Null(config.Source);
         Assert.Null(config.Out);
@@ -135,12 +139,18 @@ public class ConfigReaderTests
     {
         // The file as a whole, and its settings' types.
         { "[]", "haruspex.json:1:1: error HAR3005: must be an object." },
-        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, out, schemas, objects, naming, procedures." },
-        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, out, schemas, objects, naming, procedures." },
+        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, out, schemas, objects, naming, procedures, session." },
+        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, out, schemas, objects, naming, procedures, session." },
         { """{ "$schema": 1 }""", "haruspex.json:1:14: error HAR3005: $schema: must be a string." },
         { """{ "source": "" }""", "haruspex.json:1:13: error HAR3005: source: must not be empty." },
         { """{ "out": 3 }""", "haruspex.json:1:10: error HAR3005: out: must be a string." },
         { """{ "objects": "loose" }""", "haruspex.json:1:14: error HAR3005: objects: must be \"strip\" or \"strict\", not \"loose\"." },
+
+        // The callers' session: only the options a rule reads, each true or false.
+        { """{ "session": [] }""", "haruspex.json:1:14: error HAR3005: session: must be an object." },
+        { """{ "session": { "ansiWarnings": "on" } }""", "haruspex.json:1:32: error HAR3005: session.ansiWarnings: must be true or false; leave the option out when it is not known." },
+        { """{ "session": { "arithAbort": null } }""", "haruspex.json:1:30: error HAR3005: session.arithAbort: must be true or false; leave the option out when it is not known." },
+        { """{ "session": { "language": "us_english" } }""", "haruspex.json:1:16: error HAR3004: session.language: unknown setting \"language\". The settings here are ansiWarnings, arithAbort, concatNullYieldsNull." },
 
         // Schemas and selection.
         { """{ "schemas": [] }""", "haruspex.json:1:14: error HAR3005: schemas: must be an object." },

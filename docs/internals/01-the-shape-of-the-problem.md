@@ -237,7 +237,11 @@ becomes a check in the generated code wherever the target can hold it exactly
 The two rules together sometimes give a type looser than intuition expects. `COUNT(*)` is nullable, because past
 2,147,483,647 rows it returns NULL under session options the caller controls
 ([decision 0014](../decisions/0014-count-is-nullable.md)). That `.nullable()` is not caution for its own sake: it is
-something SQL Server really does, and `COUNT_BIG` is the way out.
+something SQL Server really does, and `COUNT_BIG` is the way out. The other way out is to say what the callers do: those
+options belong to the session that calls the procedure, which haruspex can't see, so the config file may declare them, and
+with `ANSI_WARNINGS` declared on the overflow is an error and `COUNT` never null
+([decision 0038](../decisions/0038-the-callers-session-is-declared.md)). Left undeclared, nothing is assumed. A tool may claim
+what it is told only when the telling is written down, so the IR records the declaration and the generated file says it.
 
 ## The alternatives, and why they lost
 
