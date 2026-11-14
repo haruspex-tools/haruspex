@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 
@@ -35,7 +36,7 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
     /// <summary>Which object has had which node's unknowns listed.</summary>
     private readonly HashSet<(string Object, string Node)> listedNodes = [];
 
-    public IrDocument Build(IReadOnlyList<(Procedure Source, ProcedureAnalysis Analysis)> procedures)
+    public IrDocument Build(IReadOnlyList<(Procedure Source, ProcedureAnalysis Analysis)> procedures, SessionOptions session)
     {
         var ordered = procedures.OrderBy(p => p.Source.Name.ToString(), StringComparer.Ordinal).ToList();
 
@@ -67,8 +68,15 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
             objects.Add(new IrObject(id, id, IrObjectKind.Procedure, at.ToString(), [.. parameters], results is null ? null : [.. results]));
         }
 
-        return MarkRecursive(new IrDocument(new IrSource("tsql"), [.. objects], types, [.. unknowns]));
+        return MarkRecursive(new IrDocument(new IrSource("tsql") { Session = Session(session) }, [.. objects], types, [.. unknowns]));
     }
+
+    /// <summary>
+    /// The options declared, as the IR records them: by the names the config file gives them, sorted, each left out when it is
+    /// not known, so a document that assumes nothing records nothing.
+    /// </summary>
+    private static EquatableArray<IrSessionOption> Session(SessionOptions session) =>
+        [.. session.ByName.Where(o => o.On.HasValue).Select(o => new IrSessionOption(o.Name, o.On.GetValueOrDefault())).OrderBy(o => o.Name, StringComparer.Ordinal)];
 
     /// <summary>The object, procedure or recursive function, that the types being written belong to.</summary>
     private sealed record Owner(IrTypeOwner Kind, string Object);

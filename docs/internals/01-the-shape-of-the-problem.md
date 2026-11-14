@@ -170,7 +170,7 @@ The IR says what is known (the parameter's type) and lists the unknown, with its
 
 ```json haruspex-ir
 {
-  "irVersion": "0.16",
+  "irVersion": "0.17",
   "source": {
     "dialect": "tsql"
   },

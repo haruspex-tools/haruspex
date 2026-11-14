@@ -17,7 +17,7 @@ internal static class IrSamples
 
     /// <summary>The document.</summary>
     public static IrDocument Everything { get; } = new(
-        new IrSource("tsql"),
+        new IrSource("tsql") { Session = [new IrSessionOption("ansiWarnings", true), new IrSessionOption("concatNullYieldsNull", false)] },
         [
             new IrObject(
                 "sales.get_order",

@@ -90,7 +90,23 @@ public class IrJsonReaderTests
     }
 
     [Fact]
-    public void Another_version_is_refused_naming_it_and_the_version_read()
+    public void An_empty_session_is_refused_since_none_declared_is_written_by_leaving_it_out()
+    {
+        var e = Refused(json => json["source"]!["session"] = new JsonObject());
+
+        Assert.Equal("$.source.session", e.Path);
+    }
+
+    [Fact]
+    public void A_session_option_that_is_not_true_or_false_is_refused()
+    {
+        var e = Refused(json => json["source"]!["session"] = new JsonObject { ["ansiWarnings"] = "on" });
+
+        Assert.Equal("$.source.session.ansiWarnings", e.Path);
+    }
+
+    [Fact]
+    public void Another_version_is_refused_naming_it_and_the_versions_read()
     {
         var e = Refused(json =>
         {
@@ -99,7 +115,7 @@ public class IrJsonReaderTests
         });
 
         Assert.Equal("$.irVersion", e.Path);
-        Assert.Equal($"is \"0.14\", and this reader reads IR {IrDocument.CurrentVersion} only. Run haruspex generate again to write the file in this version.", e.Problem);
+        Assert.Equal("is \"0.14\", and this reader reads IR 0.16 and 0.17 only. Run haruspex generate again to write the file in this version.", e.Problem);
     }
 
     [Fact]

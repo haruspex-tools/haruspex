@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json",
   "title": "haruspex.ir.json",
-  "description": "An IR file of version 0.16: the shapes haruspex inferred for a set of database objects. The format is described in src/Haruspex.Ir/README.md.",
+  "description": "An IR file of version 0.17: the shapes haruspex inferred for a set of database objects. The format is described in src/Haruspex.Ir/README.md.",
   "type": "object",
   "properties": {
     "irVersion": {
       "description": "The IR's version, which a reader checks before anything else.",
-      "const": "0.16"
+      "const": "0.17"
     },
     "source": {
       "description": "Where the shapes were inferred from.",
@@ -16,6 +16,14 @@
         "dialect": {
           "description": "The SQL dialect, such as tsql.",
           "type": "string"
+        },
+        "session": {
+          "description": "The options the callers' sessions are declared to set, by the dialect's name for each: true for on, false for off. Left out when none is declared.",
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "boolean"
+          }
         }
       },
       "required": [

@@ -30,6 +30,9 @@ public class IrJsonSchemaTests
         (typeof(IrDocument), nameof(IrDocument.Unknowns), "", "unknowns"),
         (typeof(IrDocument), nameof(IrDocument.Overrides), "", "overrides"),
         (typeof(IrSource), nameof(IrSource.Dialect), "document.source", "dialect"),
+        (typeof(IrSource), nameof(IrSource.Session), "document.source", "session"),
+        (typeof(IrSessionOption), nameof(IrSessionOption.Name), "document.source", null), // a key of the session
+        (typeof(IrSessionOption), nameof(IrSessionOption.On), "document.source", null), // that key's value
         (typeof(IrObject), nameof(IrObject.Id), "object", "id"),
         (typeof(IrObject), nameof(IrObject.Name), "object", "name"),
         (typeof(IrObject), nameof(IrObject.Kind), "object", "kind"),

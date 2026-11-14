@@ -17,7 +17,7 @@ public static class IrInference
     /// </param>
     /// <param name="session">
     /// The options the callers' connections are declared to set; not known when null, so every rule that depends on one claims
-    /// what holds under any value.
+    /// what holds under any value. The document records it.
     /// </param>
     /// <returns>
     /// The document, with what could not be checked, once each: a write to a table the project does not define, whose
@@ -39,7 +39,7 @@ public static class IrInference
                 ?? throw new ArgumentException($"No procedure named {name} in the project.", nameof(procedures)))
             .Select(procedure => (procedure, summaries.Analyse(procedure)))
             .ToList();
-        var document = new IrBuilder(summaries.Nodes).Build(analysed);
+        var document = new IrBuilder(summaries.Nodes).Build(analysed, session);
 
         // A caller's results that include a callee's declared results rest on that declaration, so the claim is listed.
         var claims = analysed

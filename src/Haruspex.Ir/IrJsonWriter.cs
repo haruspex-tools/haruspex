@@ -37,6 +37,15 @@ public static class IrJsonWriter
 
             json.WriteStartObject("source");
             json.WriteString("dialect", document.Source.Dialect);
+            if (document.Source.Session.Count > 0)
+            {
+                // Left out when nothing is declared, so that a document that assumes nothing reads as it did before 0.17.
+                json.WriteStartObject("session");
+                foreach (var option in document.Source.Session.OrderBy(o => o.Name, StringComparer.Ordinal))
+                    json.WriteBoolean(option.Name, option.On);
+                json.WriteEndObject();
+            }
+
             json.WriteEndObject();
 
             json.WriteStartArray("objects");

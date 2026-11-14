@@ -1,7 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.16
+# Haruspex.Ir: the IR format, version 0.17
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.16: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
+version 0.17: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
 guide's chapter [The IR as a contract](../../docs/internals/10-the-ir-as-a-contract.md). What SQL Server's constructs give in
@@ -73,11 +73,13 @@ shows one whole, with an unknown.
 
 - **No SQL, and no dialect's vocabulary.** It depends on nothing. Its names say what a value is and why it may be null,
   never which construct of which dialect made it ([decision 0025](../../docs/decisions/0025-null-reasons-in-neutral-terms.md)),
-  so a second front end writes the same format.
+  so a second front end writes the same format. The two places a dialect's own words appear are data the format carries
+  without reading: a scalar's `sql` type and the names of the session's options (`source.session`).
 - **No target language.** It knows no language's keywords or module system: which names TypeScript reserves, and how an
   import is written, are the Zod emitter's (`TypeScriptNames`).
 - **No JSON Schema.** It maps to JSON Schema without loss, but isn't it ([decision 0003](../../docs/decisions/0003-an-ir-of-its-own.md)).
-- **No migration.** A file of another version is refused, not converted: it is regenerated from its source.
+- **No migration.** A file of another version is refused, not converted: it is regenerated from its source. The one older
+  version read, 0.16, is read as it is, since it already is a 0.17 file.
 
 ## Why not JSON Schema
 
@@ -92,7 +94,7 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as `"0.16"` and a document that this page and the schema allow;
+- must write `irVersion` as `"0.17"` and a document that this page and the schema allow;
 - must write a flag and its reasons together: `nullable`, `itemsNullable`, `valuesNullable` and `mayBeAbsent` are `true`
   exactly when the matching list of reasons (`nullableBecause`, …) is there, with at least one reason;
 - must write every `ref` as the name of a type in `types`;
@@ -102,7 +104,8 @@ of program handle one.
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further;
+- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further,
+  except 0.16, which it may read as a 0.17 document that declares no session (every 0.16 document is one);
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
   missing required property, a value of the wrong JSON type, a count that is negative or past 2,147,483,647, a number in a
   facet that is not plain decimal text, a union of fewer than two variants, a flag that disagrees with its reasons, and a
@@ -128,8 +131,9 @@ object, and a `ref` that names no type.
 
 ```jsonc
 {
-  "irVersion": "0.16",                // versioned separately from the tool; a reader checks it first
-  "source": { "dialect": "tsql" },
+  "irVersion": "0.17",                // versioned separately from the tool; a reader checks it first
+  "source": { "dialect": "tsql",      // the session is left out when the callers' options aren't declared
+    "session": { "ansiWarnings": true } },
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database: the object's identity
     "name": "GetOrder",               // the name for generated code, from the config file's naming rules
@@ -175,6 +179,13 @@ object, and a `ref` that names no type.
 Every property shown is required unless this page says it may be left out. An object's `results` is `null`, not `[]`, when
 its result sets can't be listed: an empty list claims it returns none. `at` is a source location, `path:line:column`
 relative to the source root, or for a null reason the column it applies to (`schema.table.column`).
+
+`source.session` (0.17) holds the options the callers' sessions are declared to set, by the dialect's name for each as the
+config file writes it, `true` for on and `false` for off: for `tsql`, `ansiWarnings`, `arithAbort` and
+`concatNullYieldsNull`. Every claim in the document assumes them. It is left out when none is declared, and must not be
+written empty: then every claim holds whatever the callers set, as in every version before 0.17. A reader doesn't interpret
+the names; an emitter should say what was assumed where its output is read, as the Zod emitter's header does
+([decision 0038](../../docs/decisions/0038-the-callers-session-is-declared.md)).
 
 ## Type nodes
 
@@ -401,6 +412,14 @@ when the claims change. Another writer need not write the same bytes, but must w
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
 reads only its own version ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
+
+**0.17** (14 Nov 2026, the callers' session). `source.session`: the options the callers' sessions are declared to set, left
+out when none is. With `ANSI_WARNINGS` or `ARITHABORT` declared on, `arithmetic-overflow`, `count-overflow` and
+`domain-error` are not given; with `CONCAT_NULL_YIELDS_NULL` declared off, string `+` is null only when both sides may be.
+A document that declares nothing is what 0.16 wrote, byte for byte but for `irVersion`, so the reader reads 0.16 too
+([decision 0038](../../docs/decisions/0038-the-callers-session-is-declared.md)). A 0.16 reader would meet `session` and
+refuse it, which is why the version changed: read without it, a document that declares a session would claim, to a
+reader that can't tell, more than holds for every caller.
 
 **0.16** (12 Nov 2026). Null reasons are named for the reason, not the SQL construct
 ([decision 0025](../../docs/decisions/0025-null-reasons-in-neutral-terms.md)); seven names change:

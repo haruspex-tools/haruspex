@@ -24,5 +24,10 @@ claim means or how it is made. A reader has to do something with a file from ano
 which command to run costs the reader one step. The decision is for 0.x; a stable 1.0 will need its own rule for which
 additions a reader may skip.
 
+**Amended** (14 Nov 2026, [decision 0038](0038-the-callers-session-is-declared.md)). The reader also reads 0.16, the one version
+every file of which is a file of the current version that means the same: 0.17 added only `source.session`, which a file
+leaves out when nothing is declared, and 0.16 assumed nothing about the callers. Nothing is mapped or guessed, so neither
+reason above applies. `IrDocument.ReadableVersions` lists what a reader reads; any other version is refused as before.
+
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "A version the reader doesn't read";
 [`tests/ir-versions`](../../tests/ir-versions/README.md).

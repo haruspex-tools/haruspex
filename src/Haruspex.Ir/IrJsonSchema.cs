@@ -63,7 +63,15 @@ public static class IrJsonSchema
         ("type", "object"),
         ("properties", Node(
             ("irVersion", Node(("description", "The IR's version, which a reader checks before anything else."), ("const", IrDocument.CurrentVersion))),
-            ("source", Closed("Where the shapes were inferred from.", ["dialect"], ("dialect", Text("The SQL dialect, such as tsql.")))),
+            ("source", Closed(
+                "Where the shapes were inferred from.",
+                ["dialect"],
+                ("dialect", Text("The SQL dialect, such as tsql.")),
+                ("session", Node(
+                    ("description", "The options the callers' sessions are declared to set, by the dialect's name for each: true for on, false for off. Left out when none is declared."),
+                    ("type", "object"),
+                    ("minProperties", 1),
+                    ("additionalProperties", Node(("type", "boolean"))))))),
             ("objects", ArrayOf(Ref("object"))),
             ("types", Node(
                 ("description", "The named object types, by name."),

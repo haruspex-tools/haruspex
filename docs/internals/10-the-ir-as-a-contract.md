@@ -151,10 +151,10 @@ is made in RFC 9413 (Thomson and Schinazi, 2023): tolerance lets mistakes spread
 ## A version the reader doesn't read
 
 The version is read first, before anything else in the file. A file of any version but the reader's own is refused, with
-a message that names the file's version, the version the reader reads and where:
+a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.16 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.16 and 0.17 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -173,9 +173,17 @@ A newer version than the reader's is refused for the same reason and more plainl
 ignoring. One file from every version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md), and
 `IrVersionTests` checks that the current one is read and every older one refused with that message.
 
+There is one exception, and it shows what the rule is for. Version 0.17 added one thing: `source.session`, the options the
+callers' sessions are declared to set, which a file leaves out when none is declared. Every 0.16 file is therefore a 0.17 file
+that declares nothing, and its claims were made, as 0.17's are without a declaration, assuming nothing about the callers. Read
+as 0.17 it means exactly what it meant, so the reader reads it: nothing is mapped and nothing is guessed, which are the two
+things the rule exists to prevent ([decision 0038](../decisions/0038-the-callers-session-is-declared.md)). An older file can't
+be read so, since every earlier version changed what a claim means or how it is spelled.
+
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims
-says that not every addition can be. Until then, the rule is the simple one: a reader reads its own version.
+says that not every addition can be. Until then, the rule is the simple one: a reader reads its own version, and an older one
+only where, as for 0.16, every file of it is already a file of its own.
 
 ## Names that belong to no dialect
 

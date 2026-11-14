@@ -12,7 +12,7 @@ namespace Haruspex.Ir;
 /// <remarks>
 /// <para>
 /// The reader is as strict as the format is closed. It refuses, with an <see cref="IrFormatException"/> that names the path
-/// in the document: text that is not JSON; a version other than <see cref="IrDocument.CurrentVersion"/>; a property missing,
+/// in the document: text that is not JSON; a version other than those in <see cref="IrDocument.ReadableVersions"/>; a property missing,
 /// of the wrong type, unknown or given twice; a name outside its vocabulary; a negative count; a flag that disagrees with
 /// its reasons (<c>nullable</c> without <c>nullableBecause</c>); and a reference that names no type. It supplies no default: a
 /// property is either in the file or, where the format lets the writer leave it out, absent with the meaning the format gives
@@ -21,7 +21,8 @@ namespace Haruspex.Ir;
 /// <para>
 /// A version it doesn't read is refused before anything else, rather than read with its differences guessed at: the IR has
 /// no stable version yet (0.x), so a file from another version is regenerated, not migrated. <c>docs/internals/10-the-ir-as-a-contract.md</c>
-/// argues the choice.
+/// argues the choice. The one exception is a version every file of which is a file of the current version that means the same
+/// (<see cref="IrDocument.ReadableVersions"/>).
 /// </para>
 /// </remarks>
 public static class IrJsonReader
@@ -92,16 +93,16 @@ public static class IrJsonReader
         var version = json.Optional("irVersion") is { } found
             ? IrJsonObject.AsString(found, json.PathOf("irVersion"))
             : throw new IrFormatException(json.PathOf("irVersion"), "is missing, so this is not a haruspex IR file.");
-        if (version != IrDocument.CurrentVersion)
+        if (!IrDocument.ReadableVersions.Contains(version, StringComparer.Ordinal))
         {
             throw new IrFormatException(
                 json.PathOf("irVersion"),
-                $"is \"{version}\", and this reader reads IR {IrDocument.CurrentVersion} only. Run haruspex generate again to write the file in this version.");
+                $"is \"{version}\", and this reader reads IR {string.Join(" and ", IrDocument.ReadableVersions)} only. Run haruspex generate again to write the file in this version.");
         }
 
         var source = json.Object("source");
         var document = new IrDocument(
-            new IrSource(source.String("dialect")),
+            new IrSource(source.String("dialect")) { Session = Session(source.OptionalObject("session")) },
             [.. json.Array("objects").Select(o => Object(IrJsonObject.At(o.Item, o.Path)))],
             Types(json.Object("types")),
             [.. json.Array("unknowns").Select(u => Unknown(IrJsonObject.At(u.Item, u.Path)))])
@@ -355,6 +356,21 @@ public static class IrJsonReader
             throw new IrFormatException(path, "must be a number.");
         var text = element.GetRawText();
         return IrJsonWriter.IsPlainDecimal(text) ? text : throw new IrFormatException(path, $"is {text}, which is not a plain decimal number such as -12.5.");
+    }
+
+    /// <summary>
+    /// The options the callers' sessions are declared to set, sorted by name; none when the file leaves <c>session</c> out, as
+    /// every file before 0.17 does. An empty object is refused: the writer leaves it out, so there is one way to say "none".
+    /// </summary>
+    private static EquatableArray<IrSessionOption> Session(IrJsonObject? json)
+    {
+        if (json is null)
+            return [];
+        var options = json.Names.Select(name => new IrSessionOption(name, json.Boolean(name))).OrderBy(o => o.Name, StringComparer.Ordinal).ToList();
+        if (options.Count == 0)
+            throw new IrFormatException(json.Path, "must declare at least one option; leave session out when none is declared.");
+        json.End();
+        return [.. options];
     }
 
     /// <summary>Where a fact came from: one property, whose name is the kind of source and whose value is its ref.</summary>

@@ -5,14 +5,15 @@ namespace Haruspex.Tests.Ir;
 
 /// <summary>
 /// The IR file kept from each version of the format (<c>tests/ir-versions</c>): the current version's is read and round trips,
-/// and every older one is refused with a message that names its version, the version read and where in the file.
+/// 0.16's is read as a 0.17 document that declares no session, and every older one is refused with a message that names its
+/// version, the versions read and where in the file.
 /// </summary>
 public class IrVersionTests
 {
     private static string Folder => Path.Combine(RepositoryPaths.Root, "tests", "ir-versions");
 
     public static TheoryData<string> Older { get; } =
-        [.. Versions().Where(v => v != IrDocument.CurrentVersion)];
+        [.. Versions().Where(v => !IrDocument.ReadableVersions.Contains(v))];
 
     [Fact]
     public void There_is_a_file_for_every_version_up_to_the_current_one()
@@ -40,6 +41,15 @@ public class IrVersionTests
         Assert.Equal(text, IrJsonWriter.Write(IrJsonReader.Read(text)));
     }
 
+    [Fact]
+    public void The_0_16_file_is_read_as_the_0_17_file_without_a_session()
+    {
+        var older = IrJsonReader.Read(File.ReadAllText(FileOf("0.16")));
+
+        Assert.Empty(older.Source.Session);
+        Assert.Equal(IrJsonReader.Read(File.ReadAllText(FileOf("0.17"))), older);
+    }
+
     [Theory]
     [MemberData(nameof(Older))]
     public void An_older_version_s_file_is_refused_naming_both_versions(string version)
@@ -48,7 +58,7 @@ public class IrVersionTests
 
         Assert.Equal("$.irVersion", e.Path);
         Assert.Equal(
-            $"$.irVersion is \"{version}\", and this reader reads IR {IrDocument.CurrentVersion} only. Run haruspex generate again to write the file in this version.",
+            $"$.irVersion is \"{version}\", and this reader reads IR 0.16 and 0.17 only. Run haruspex generate again to write the file in this version.",
             e.Message);
     }
 

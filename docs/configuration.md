@@ -197,7 +197,7 @@ why each option is or isn't here. An application can `SET` its own after connect
 `SELECT SESSIONPROPERTY('ANSI_WARNINGS')`.
 
 A declaration is a claim, like `"nullable": false`: if a caller sets the options otherwise, a value the schema says is never
-null can be NULL. A procedure that sets one of these options otherwise in its body overrides the declaration until it
+null can be NULL. The IR records it (`source.session`), so a generated file says what it assumed. A procedure that sets one of these options otherwise in its body overrides the declaration until it
 returns; haruspex then leaves its results unknown. Other options that change no claim haruspex makes (`NUMERIC_ROUNDABORT`,
 `DATEFIRST`, `LANGUAGE`, `DATEFORMAT`) are not settings; writing one is an unknown setting.
 

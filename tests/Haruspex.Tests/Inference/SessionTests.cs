@@ -188,4 +188,14 @@ public class SessionTests
 
         Assert.Equal("a:", Reasons(doc));
     }
+
+    [Fact]
+    public void The_document_records_the_options_declared_by_name_and_leaves_out_those_not_known()
+    {
+        var declared = Procedure(new SessionOptions(ConcatNullYieldsNull: false, AnsiWarnings: true), "SELECT n FROM dbo.t;");
+        var none = Procedure(SessionOptions.NotKnown, "SELECT n FROM dbo.t;");
+
+        Assert.Equal([new IrSessionOption("ansiWarnings", true), new IrSessionOption("concatNullYieldsNull", false)], declared.Source.Session);
+        Assert.Empty(none.Source.Session);
+    }
 }

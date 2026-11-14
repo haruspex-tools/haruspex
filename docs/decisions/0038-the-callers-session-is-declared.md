@@ -85,5 +85,5 @@ under a newer label) don't hold where nothing is mapped.
   each reason.
 
 **In the code:** `SessionOptions` (the declaration, and `SessionOptions.OverflowIsAnError`), read by the typer through
-`Summaries.Session`; the config file's `session` block. The observations are
+`Summaries.Session`; `IrSource.Session`; the config file's `session` block. The observations are
 `SessionObservationTests`.

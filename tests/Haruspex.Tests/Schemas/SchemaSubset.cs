@@ -16,7 +16,7 @@ internal sealed class SchemaSubset(JsonElement root)
 
     private static readonly HashSet<string> Implemented = new(StringComparer.Ordinal)
     {
-        "type", "enum", "const", "properties", "additionalProperties", "required", "items", "minItems", "maxProperties", "minimum", "maximum", "minLength", "pattern",
+        "type", "enum", "const", "properties", "additionalProperties", "required", "items", "minItems", "maxProperties", "minProperties", "minimum", "maximum", "minLength", "pattern",
         "$ref", "dependentRequired", "dependentSchemas", "anyOf", "not", "propertyNames",
     };
 
@@ -110,6 +110,10 @@ internal sealed class SchemaSubset(JsonElement root)
                 case "maxProperties" when value.ValueKind == JsonValueKind.Object:
                     if (value.EnumerateObject().Count() > k.GetInt32())
                         errors.Add($"{at}: has more than {k.GetInt32()} properties");
+                    break;
+                case "minProperties" when value.ValueKind == JsonValueKind.Object:
+                    if (value.EnumerateObject().Count() < k.GetInt32())
+                        errors.Add($"{at}: has fewer than {k.GetInt32()} properties");
                     break;
                 case "minLength" when value.ValueKind == JsonValueKind.String:
                     // JSON Schema counts code points; every limit here is about emptiness, where the two agree.

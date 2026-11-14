@@ -22,7 +22,14 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.16";
+    public const string CurrentVersion = "0.17";
+
+    /// <summary>
+    /// The versions a reader reads: the current one, and 0.16, since every 0.16 file is a 0.17 file that declares no session
+    /// and means what it meant (0.17 added only <see cref="IrSource.Session"/>, which a file leaves out when nothing is
+    /// declared). Decision 0024 refuses any other, older or newer; decision 0038 makes this exception to it.
+    /// </summary>
+    public static IReadOnlyList<string> ReadableVersions { get; } = ["0.16", CurrentVersion];
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
