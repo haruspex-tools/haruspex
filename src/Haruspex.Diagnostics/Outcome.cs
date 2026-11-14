@@ -14,7 +14,7 @@ namespace Haruspex.Diagnostics;
 /// value is never run without it, and a failure skips what follows while keeping everything found so far: the railway of
 /// railway-oriented programming. <see cref="Outcome.Combine{TFirst, TSecond}"/> joins two steps that don't need each other's
 /// values and reports what both found, so independent errors are all reported, as a compiler reports every error it can
-/// rather than stopping at the first.
+/// rather than stopping at the first. The guide's chapter docs/internals/12-from-input-to-output.md explains both.
 /// </para>
 /// <para>
 /// A closed hierarchy (docs/decisions/0031-the-model-is-closed-hierarchies-of-records.md): a switch over an outcome names both

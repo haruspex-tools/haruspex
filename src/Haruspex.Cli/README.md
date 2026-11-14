@@ -86,5 +86,5 @@ output: how many procedures it typed, how many unknowns there are, and where it 
 - **No watch mode or server.** It runs once and exits, which is what a build step or a CI job needs.
 
 It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its commands, options and output will
-change. Its chapter of [the guide](https://github.com/sharpblue/haruspex/blob/main/docs/internals/README.md), *From input
-to output*, is planned.
+change. How a run goes from input to output, step by step, and why it is built so, is
+[the guide's chapter 12](https://github.com/sharpblue/haruspex/blob/main/docs/internals/12-from-input-to-output.md).

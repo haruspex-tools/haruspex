@@ -12,7 +12,8 @@ namespace Haruspex.Cli;
 /// <c>haruspex generate</c>, as named steps: read the config file, settle what the run is asked, read the project, select
 /// procedures, infer and apply the config, emit, and write. Each step returns an outcome, and they are composed with
 /// <see cref="Outcome{T}.Then{TNext}"/>, so a step runs only on the value of the one before, and a failure carries everything
-/// found so far to the end, where it is reported (docs/decisions/0037-steps-return-outcomes.md).
+/// found so far to the end, where it is reported (docs/decisions/0037-steps-return-outcomes.md). The guide's chapter
+/// docs/internals/12-from-input-to-output.md follows a run through them.
 /// </summary>
 internal static class Generate
 {

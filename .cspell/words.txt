@@ -178,6 +178,7 @@ appel
 cormen
 oppen
 wadler
+wlaschin
 
 # A conference and a journal the guide cites papers from
 OOPSLA
