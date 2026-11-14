@@ -29,5 +29,9 @@ SQLCMD variable that names it.
 what a build leaves where it leaves it, and the config's folders cover packages kept elsewhere, as a monorepo's build may.
 The recorded path is the last resort, and the IR's hashes say which copy was read either way.
 
+**Amended** (14 Nov 2026, [decision 0042](0042-a-table-of-another-database-is-read-as-its-package-declares-it.md)). A package
+of another database, or `master.dacpac`, is now read too, with the packages of its own database, into a model of its own that
+the model holds under the name a body writes the database by; its references to a third database are recorded, not read.
+
 **See also:** [The inputs and the model](../internals/02-the-inputs-and-the-model.md), "A DACPAC becomes the same model"; `ReferenceFinder`,
 `DacpacReader`; [HAR1003](../diagnostics/HAR1003.md).

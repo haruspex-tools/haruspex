@@ -462,7 +462,7 @@ public class DacpacReaderTests
     {
         using var dir = new TempDirectory();
         for (var i = 0; i < 100; i++)
-            WritePackage(Path.Combine(dir.Path, $"part{i}.dacpac"), $"t{i}", i < 99 ? $"part{i + 1}.dacpac" : null);
+            TestPackage.Write(Path.Combine(dir.Path, $"part{i}.dacpac"), TestPackage.Table("dbo", $"t{i}", "id int"), references: i < 99 ? [new TestPackage.Reference($"part{i + 1}.dacpac")] : []);
 
         var clock = Stopwatch.StartNew();
         var read = DacpacReader.Read(Path.Combine(dir.Path, "part0.dacpac"));
@@ -471,28 +471,5 @@ public class DacpacReaderTests
         Assert.Equal(99, read.References.Count);
         Assert.Empty(read.Diagnostics);
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), $"took {clock.Elapsed}");
-    }
-
-    /// <summary>A package holding one table, referring to the next of the chain: the least a reader needs, made here.</summary>
-    private static void WritePackage(string path, string table, string? next)
-    {
-        var reference = next is null ? "" : $"""<CustomData Category="Reference" Type="SqlSchema"><Metadata Name="FileName" Value="C:\build\{next}" /><Metadata Name="LogicalName" Value="{next}" /></CustomData>""";
-        var model = $"""
-            <?xml version="1.0" encoding="utf-8"?>
-            <DataSchemaModel xmlns="http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02">
-              <Header>{reference}</Header>
-              <Model>
-                <Element Type="SqlTable" Name="[dbo].[{table}]">
-                  <Relationship Name="Columns"><Entry><Element Type="SqlSimpleColumn" Name="[dbo].[{table}].[id]">
-                    <Property Name="IsNullable" Value="False" />
-                    <Relationship Name="TypeSpecifier"><Entry><Element Type="SqlTypeSpecifier"><Relationship Name="Type"><Entry><References ExternalSource="BuiltIns" Name="[int]" /></Entry></Relationship></Element></Entry></Relationship>
-                  </Element></Entry></Relationship>
-                </Element>
-              </Model>
-            </DataSchemaModel>
-            """;
-        using var zip = ZipFile.Open(path, ZipArchiveMode.Create);
-        using var writer = new StreamWriter(zip.CreateEntry("model.xml").Open(), new UTF8Encoding(false));
-        writer.Write(model);
     }
 }

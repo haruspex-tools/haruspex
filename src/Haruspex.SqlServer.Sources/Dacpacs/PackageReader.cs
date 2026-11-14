@@ -76,7 +76,7 @@ internal static class PackageReader
             }
         }
 
-        ReadModules(modules, package.Name, into);
+        ReadModules(modules, package.Name, into, notModelled);
         if (notModelled.Count > 0)
         {
             var counts = string.Join(", ", notModelled.Select(n => $"{n.Value.ToString(CultureInfo.InvariantCulture)} {n.Key}"));
@@ -115,7 +115,11 @@ internal static class PackageReader
     /// The modules, parsed in parallel (parsing is most of a large package's reading time) and added in the package's order,
     /// so the outcome doesn't depend on which finishes first.
     /// </summary>
-    private static void ReadModules(List<XElement> modules, string package, SchemaDeclarations into)
+    /// <param name="modules">The modules' elements, in the package's order.</param>
+    /// <param name="package">The package's file name, for locations.</param>
+    /// <param name="into">What the database's sources declare.</param>
+    /// <param name="notModelled">The count of elements not read, by kind, which a module with neither text nor a reason to be read without it joins.</param>
+    private static void ReadModules(List<XElement> modules, string package, SchemaDeclarations into, SortedDictionary<string, int> notModelled)
     {
         var read = modules
             .AsParallel()
@@ -124,12 +128,18 @@ internal static class PackageReader
             {
                 var diagnostics = new List<Diagnostic>();
                 var file = PackageLocation.File(package, ElementName.Object(ModelXml.Named(element)));
-                return (Module: ModuleTextReader.Read(element, file, diagnostics), Diagnostics: diagnostics);
+                return (Element: element, Module: ModuleTextReader.Read(element, file, diagnostics), Diagnostics: diagnostics);
             })
             .ToList();
-        foreach (var (module, diagnostics) in read)
+        foreach (var (element, module, diagnostics) in read)
         {
             into.Diagnostics.AddRange(diagnostics);
+            if (module is null && diagnostics.Count == 0)
+            {
+                var kind = $"{ModelXml.TypeOf(element)} without its text";
+                notModelled[kind] = notModelled.GetValueOrDefault(kind) + 1;
+            }
+
             switch (module)
             {
                 case Procedure procedure:

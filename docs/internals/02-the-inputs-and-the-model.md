@@ -181,8 +181,13 @@ reader follows them, breadth first, reading each package of the same database on
 database is: the sum of its packages. It looks for each beside the package that refers to it, where a build leaves it, then
 in the folders the config file's `references` names, and only last at the path recorded when the package was built, which is a
 path on another machine ([decision 0040](../decisions/0040-a-dacpac-is-read-with-the-packages-of-its-database.md)). A package
-of another database, or `master.dacpac`, is found and its SHA-256 recorded but not read: binding a three-part name to another
-database's model is the next step. A reference found nowhere is one warning, and a name that binds to nothing then says
+of another database, or `master.dacpac`, is read the same way into a model of its own, which the model holds under the name a
+body writes the database by (`DatabaseModel.Databases`). A three-part name then reads a table there, handed on as this database
+sees it: named with its database, with its alias types resolved there and each column's collation that database's
+([decision 0042](../decisions/0042-a-table-of-another-database-is-read-as-its-package-declares-it.md)); a SQLCMD variable is
+bound only through the reference that names it. A view, function or procedure of another database stays unknown, since its
+body binds against its own database. The system's views, in every database, are read from `master` by their two-part names;
+`master.dacpac` lists their columns without types. A reference found nowhere is one warning, and a name that binds to nothing then says
 where it may be defined (`DatabaseModel.Unread`), so the cause is found once rather than chased name by name.
 
 **What the database itself says.** A package records the database's settings: its default collation, compatibility level

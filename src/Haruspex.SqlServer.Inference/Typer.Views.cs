@@ -203,9 +203,14 @@ internal sealed partial class Typer
         var at = view.Span.Start;
         LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{view.Name}: {detail}", at));
 
-        // An encrypted view whose text the source lacks: its columns are known by name, their values not at all.
+        // A view whose text the source lacks: its columns are known by name, their values not at all. An encrypted one's text is
+        // withheld by the server; a system view's columns are untyped in master.dacpac (SystemViews).
         if (view.Query is not { } select)
-            return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.EncryptedDefinition, $"{view.Name} is encrypted, and the source holds a placeholder, not its text, so what its columns hold is unknown.", at));
+        {
+            return LocalRelationValues.Unknown(view.IsEncrypted
+                ? Unsupported(IrUnknownReason.EncryptedDefinition, $"{view.Name} is encrypted, and the source holds a placeholder, not its text, so what its columns hold is unknown.", at)
+                : Unsupported(IrUnknownReason.UnsupportedSource, $"{view.Name} is a system view, whose columns master.dacpac lists without their types.", at));
+        }
 
         // Its stars are expanded, as SQL Server bound them when it created the view.
         return WithCtes(

@@ -92,6 +92,17 @@ public sealed class DatabaseModel
     /// </summary>
     public EquatableArray<UnreadPart> Unread { get; init; } = [];
 
+    /// <summary>
+    /// The other databases the source refers to and holds the schema of, by the name a three-part name in a body writes the
+    /// database by: a name (<c>master</c>) or a SQLCMD variable (<c>$(Ledger)</c>), compared ignoring case. Empty when there are
+    /// none; a database a body names that isn't here is unknown.
+    /// </summary>
+    public IReadOnlyDictionary<string, DatabaseModel> Databases
+    {
+        get;
+        init => field = new Dictionary<string, DatabaseModel>(value ?? throw new ArgumentNullException(nameof(value)), StringComparer.OrdinalIgnoreCase);
+    } = new Dictionary<string, DatabaseModel>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>The tables, in source order.</summary>
     public IReadOnlyList<Table> Tables { get; }
 

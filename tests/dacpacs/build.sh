@@ -11,6 +11,7 @@
 #   tests/dacpacs/build.sh extract              atelier and orders deployed and extracted again; needs SqlPackage on the
 #                                               PATH and HARUSPEX_TEST_SQLSERVER, a server of your own
 #   tests/dacpacs/build.sh clr                  the CLR assembly compiled, and the script that deploys it written
+#   tests/dacpacs/build.sh shapes               the package in master.dacpac's shape, zipped from its hand-written model.xml
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -155,7 +156,16 @@ SQL
   echo "wrote kiln-clr-deploy.sql: run it, then extract haruspex_dacpac_clr to versions/kiln-clr-extract.dacpac"
 }
 
+# master.dacpac can't be committed (README.md), so a package in its shape stands in for it: model.xml written by hand in
+# projects/master-shape, zipped as a package is. Needs zip, wherever it runs.
+shapes() {
+  mkdir -p "$out/master-shape"
+  rm -f "$out/master-shape/master.dacpac"
+  (cd "$out/projects/master-shape" && zip -q -X "$out/master-shape/master.dacpac" model.xml)
+  echo "zipped master-shape/master.dacpac"
+}
+
 mkdir -p "$out/versions"
-step="${1:?give fixtures, corpus, projects, versions, extract or clr}"
+step="${1:?give fixtures, corpus, projects, versions, extract, clr or shapes}"
 shift
 "$step" "$@"

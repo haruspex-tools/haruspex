@@ -67,7 +67,8 @@ internal sealed class SchemaDeclarations
     /// <summary>The model: each object's definition in effect, as the passes settle it, in the model's own order.</summary>
     /// <param name="settings">The database's settings, when the source records them (<see cref="DatabaseModel.Settings"/>).</param>
     /// <param name="unread">What the source refers to but couldn't read (<see cref="DatabaseModel.Unread"/>).</param>
-    public DatabaseModel ToModel(DatabaseSettings? settings = null, IEnumerable<UnreadPart>? unread = null) => new(
+    /// <param name="databases">The other databases the source holds the schema of (<see cref="DatabaseModel.Databases"/>).</param>
+    public DatabaseModel ToModel(DatabaseSettings? settings = null, IEnumerable<UnreadPart>? unread = null, IReadOnlyDictionary<string, DatabaseModel>? databases = null) => new(
         [.. Tables.Values.Select(t => ConstraintTrust.Trusted(t, Enforcement, IndexDisables))],
         UserTypes.Values,
         DefinitionsInEffect.Modules(Procedures, ProcedureChanges, (procedure, why) => procedure with { Redefinition = why }),
@@ -80,5 +81,6 @@ internal sealed class SchemaDeclarations
     {
         Settings = settings,
         Unread = [.. unread ?? []],
+        Databases = databases ?? new Dictionary<string, DatabaseModel>(),
     };
 }

@@ -85,9 +85,10 @@ Console.WriteLine($"{package.Package?.Name} {package.Package?.Sha256}, {package.
 ## What it deliberately doesn't do
 
 - **No building or deploying.** It never builds, writes or publishes a DACPAC, and never connects to a server.
-- **No other database yet.** A DACPAC's reference to another database (by name or SQLCMD variable) or to `master.dacpac` is
-  found and its hash recorded, but its objects aren't read: a three-part name stays unbound, as it is from a folder. A
-  `$(Variable)` in a module's text is read as written, a bracketed name such as `[$(Ledger)]`.
+- **Another database is read, not bound.** A DACPAC's reference to another database (by name or SQLCMD variable) or to
+  `master.dacpac` is read into a model of its own (`DatabaseModel.Databases`), one level deep: its references to a third are
+  recorded, not read. What a three-part name in a body means is Semantics' question. A `$(Variable)` in a module's text is
+  read as written, a bracketed name such as `[$(Ledger)]`.
 - **No DacFx.** DacFx's licence asks anyone who redistributes it to indemnify Microsoft, which no free tool should have to
   take on; ScriptDom is enough to read a project
   ([decision 0004](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0004-scriptdom-is-the-only-sql-dependency.md)).

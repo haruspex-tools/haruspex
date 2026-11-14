@@ -12,7 +12,8 @@ your applications"), and they are rebuilt only when a test needs a new one.
 | `fixtures/<name>.dacpac` | Each fixture that builds as a project, from its `database/` folder: every one but `checks` | `Microsoft.Build.Sql` 2.3.0 (DacFx 170.5.96), SQL Server 2025's provider |
 | `corpus/WideWorldImporters.dacpac` | WideWorldImporters, from the items its vendored project builds, with its collation and compatibility level (130) | the same, with SQL Server 2016's provider: the project names Azure SQL Database's, which refuses the storage its scripts declare |
 | `atelier/atelier.dacpac` | `projects/atelier`: what the fixtures don't show, such as an alias type, a table type, a check disabled by `NOCHECK`, a unique index created apart, temporal and graph tables, a synonym, `ANSI_NULLS` and `QUOTED_IDENTIFIER` off by item metadata, an encrypted procedure, view, scalar function and inline function with procedures that use them, a computed column `PERSISTED NOT NULL`, and a name with `:` and `/` | `Microsoft.Build.Sql` 2.3.0 |
-| `harbour/*.dacpac` | `projects/harbour` and the packages it references, as its build leaves them in its `bin` folder: `crane` (the same database), `quay` (referenced by `crane`, so harbour reaches it only through it) and `tally` (another database, named by the SQLCMD variable `$(Tally)`) | `Microsoft.Build.Sql` 2.3.0 |
+| `harbour/*.dacpac` | `projects/harbour` and the packages it references, as its build leaves them in its `bin` folder: `crane` (the same database), `quay` (referenced by `crane`, so harbour reaches it only through it) and `tally` (another database, named by the SQLCMD variable `$(Tally)`, in a collation other than harbour's) | `Microsoft.Build.Sql` 2.3.0 |
+| `master-shape/master.dacpac` | A package in `master.dacpac`'s shape, standing in for it: a `sys` view and an `INFORMATION_SCHEMA` view whose columns are untyped, and a system procedure with a parameter and no text. Its `model.xml` is written by hand in `projects/master-shape` from the shapes of the real package's elements, not copied from it | zipped by `build.sh shapes` |
 | `versions/orders-build-sql-<version>.dacpac` | The `orders` fixture under older versions | `Microsoft.Build.Sql` 2.0.0 (DacFx 170.2.70) and 1.0.0 (DacFx 162.5.57), SQL Server 2022's provider |
 | `versions/<name>-extract.dacpac` | `atelier` and `orders` deployed to SQL Server 2025 and extracted again | SqlPackage 170.2.70, `/a:Publish` then `/a:Extract` |
 | `versions/kiln-clr-extract.dacpac` | A CLR scalar function and procedure (`projects/kiln-clr`, compiled for .NET Framework 4.8), and a procedure that calls the function, deployed by the script `build.sh clr` writes and extracted, since a project's build in the dev container refuses a .NET Framework assembly (SQL70557) | SqlPackage 170.2.70, `/a:Extract` |
@@ -20,7 +21,8 @@ your applications"), and they are rebuilt only when a test needs a new one.
 
 `harbour` also references `master.dacpac`, from the `Microsoft.SqlServer.Dacpacs.Master` package, but it is not here: its
 licence lets it be used to develop and test, and distributed only under terms a public repository can't meet. Its absence
-is itself tested: harbour is read with one reference missing.
+is itself tested: harbour is read with one reference missing. `master-shape/master.dacpac` stands in for it, and a test reads
+Microsoft's own package from the NuGet cache when a build has put it there, and is skipped otherwise.
 
 A package keeps where its references were when it was built, as absolute paths on the build machine, so every
 reference here records a path that doesn't exist on any other machine. That is the case a reader must handle: the
@@ -28,7 +30,7 @@ package is found beside the one that references it, as a build leaves it.
 
 ## How they were built
 
-`build.sh` builds each group in the dev container (`fixtures`, `corpus`, `projects`, `versions`, `extract`, `clr`). It writes an
+`build.sh` builds each group in the dev container (`fixtures`, `corpus`, `projects`, `versions`, `extract`, `clr`, `shapes`). It writes an
 SDK-style project for a fixture's folder of scripts; the two projects of their own keep their `.sqlproj` in `projects/`.
 `extract` deploys to a server of your own (`HARUSPEX_TEST_SQLSERVER`, as for the differential tests), extracts, and leaves
 dropping the database to you.

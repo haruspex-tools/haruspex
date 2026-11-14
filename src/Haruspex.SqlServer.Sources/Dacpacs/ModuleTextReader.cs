@@ -68,21 +68,27 @@ internal static class ModuleTextReader
     /// A module whose text the package doesn't hold, read from its element, which keeps what a caller needs: its parameters, a
     /// scalar function's return type, a table function's columns, a view's column names, a trigger's table and events. Its body
     /// is a <see cref="ClrBody"/> for a CLR module (the element names its assembly, class and method), and an
-    /// <see cref="EncryptedBody"/> for one created <c>WITH ENCRYPTION</c> in an extract; any other is left out, said in a note.
+    /// <see cref="EncryptedBody"/> for one created <c>WITH ENCRYPTION</c> in an extract; a view needs no body. Any other is left
+    /// out, and counted in the package's note.
     /// </summary>
     private static Module? WithoutText(XElement element, string type, string file, ICollection<Diagnostic> diagnostics)
     {
         var name = ElementName.Object(ModelXml.Named(element));
-        var implementation = ModelXml.Elements(element, ModelXml.FunctionBody).FirstOrDefault() ?? element;
-        ModuleBody? body = Clr(implementation) is { } clr ? clr : ModelXml.IsTrue(element, ModelXml.IsEncrypted) ? new EncryptedBody() : null;
-        if (body is null)
-        {
-            diagnostics.Add(SourceCodes.NotModelled.At(new SourceLocation(file, 1, 1), $"{name} has no text in the package and is neither CLR nor encrypted, so it is not read."));
-            return null;
-        }
-
         var span = PackageLocation.Whole(file, 1);
         var ansiNullsOff = !ModelXml.IsTrue(element, ModelXml.IsAnsiNullsOn);
+        var encrypted = ModelXml.IsTrue(element, ModelXml.IsEncrypted);
+
+        // A view needs no body: an encrypted one's columns are its element's, as are a system view's in master.dacpac.
+        if (type == ModelXml.SqlView)
+            return new View(name, span, [.. ModelXml.Elements(element, ModelXml.Columns).Select(c => ElementName.Last(ModelXml.Named(c)))], null) { AnsiNullsOff = ansiNullsOff, IsEncrypted = encrypted };
+
+        // Anything else neither CLR nor encrypted (master.dacpac's system procedures, which a call names by sp_ anyway) is not
+        // read; the package's one note counts them (PackageReader).
+        var implementation = ModelXml.Elements(element, ModelXml.FunctionBody).FirstOrDefault() ?? element;
+        ModuleBody? body = Clr(implementation) is { } clr ? clr : encrypted ? new EncryptedBody() : null;
+        if (body is null)
+            return null;
+
         Collections.EquatableArray<Parameter> parameters = [.. ModelXml.Elements(element, ModelXml.Parameters).Select(p => Parameter(p, span, diagnostics))];
         return type switch
         {
@@ -94,7 +100,6 @@ internal static class ModuleTextReader
             },
             ModelXml.SqlInlineTableValuedFunction or ModelXml.SqlMultiStatementTableValuedFunction =>
                 new TableFunction(name, span, parameters, ReturnTable(element, name, span, inline: type == ModelXml.SqlInlineTableValuedFunction, diagnostics), body) { AnsiNullsOff = ansiNullsOff },
-            ModelXml.SqlView => new View(name, span, [.. ModelXml.Elements(element, ModelXml.Columns).Select(c => ElementName.Last(ModelXml.Named(c)))], null) { AnsiNullsOff = ansiNullsOff },
             ModelXml.SqlDmlTrigger => Trigger(element, name, span, body),
             _ => null,
         };

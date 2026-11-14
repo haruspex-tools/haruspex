@@ -17,8 +17,9 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// <para>
 /// <b>References.</b> A database split across projects builds a package per project, each referring to the others it uses. Every
 /// package of the same database reachable through references is read, each once, into the one model: what the database holds
-/// is the sum of them. One referring to another database (by name or SQLCMD variable) or to <c>master</c> is found and hashed,
-/// so the output says what it rests on, but not read: names in another database are not bound yet. A reference not found is
+/// is the sum of them. A package of another database (by name or SQLCMD variable) or <c>master</c> is read the same way into a
+/// model of its own, which the model holds under the name a body writes the database by
+/// (<see cref="DatabaseModel.Databases"/>); that database's own references to a third are recorded, not read. A reference not found is
 /// one warning, with every place looked (<see cref="ReferenceFinder"/>), and the model says what it lacks
 /// (<see cref="DatabaseModel.Unread"/>); an object defined in two packages is reported as a folder's would be.
 /// </para>
@@ -32,13 +33,36 @@ public static class DacpacReader
     {
         ArgumentNullException.ThrowIfNull(path);
         var folders = (searchFolders ?? []).Select(Path.GetFullPath).ToList();
-        var declarations = new SchemaDeclarations();
-        if (DacPackage.Open(path, declarations.Diagnostics) is not { } root)
-            return new DacpacReadResult(declarations.ToModel(), null, [], [.. declarations.Diagnostics]);
+        var diagnostics = new List<Diagnostic>();
+        if (DacPackage.Open(path, diagnostics) is not { } root)
+            return new DacpacReadResult(new SchemaDeclarations().ToModel(), null, [], [.. diagnostics]);
 
-        // Breadth first from the package given: each package of the database once, by its file name, whatever refers to it.
-        var database = new List<DacPackage> { root };
         var seen = new Dictionary<(string Name, string? Database), ReferenceRead>();
+        var others = new Dictionary<string, DacPackage>(StringComparer.OrdinalIgnoreCase);
+        var own = Database(root, folders, seen, others, diagnostics);
+
+        // Each other database the package refers to, read with the packages of its own database; its references to a third
+        // database are recorded, not followed (decision 0040).
+        var databases = others.ToDictionary(o => o.Key, o => Database(o.Value, folders, seen, null, diagnostics).ToModel(), StringComparer.OrdinalIgnoreCase);
+        var model = own.ToModel(databases);
+        return new DacpacReadResult(model, new LoadedPackage(root.Name, root.Path, root.Sha256), [.. seen.Values], [.. diagnostics]);
+    }
+
+    /// <summary>
+    /// The model of one database: <paramref name="root"/> and every package of its database reachable through references,
+    /// breadth first, each once by its file name whatever refers to it. Each reference met is recorded in <paramref name="seen"/>;
+    /// a found package of another database is added to <paramref name="others"/> by the name the reference gives the database,
+    /// when that is wanted, and otherwise only recorded.
+    /// </summary>
+    private static DatabaseRead Database(
+        DacPackage root,
+        IReadOnlyList<string> folders,
+        Dictionary<(string Name, string? Database), ReferenceRead> seen,
+        Dictionary<string, DacPackage>? others,
+        List<Diagnostic> diagnostics)
+    {
+        var declarations = new SchemaDeclarations();
+        var database = new List<DacPackage> { root };
         var unread = new List<UnreadPart>();
         for (var i = 0; i < database.Count; i++)
         {
@@ -46,22 +70,42 @@ public static class DacpacReader
             foreach (var reference in referrer.References)
             {
                 var key = (reference.LogicalName.ToUpperInvariant(), reference.Database);
-                if (seen.ContainsKey(key) || (reference.Database is null && reference.LogicalName.Equals(root.Name, StringComparison.OrdinalIgnoreCase)))
+                if (reference.Database is null && database.Any(p => p.Name.Equals(reference.LogicalName, StringComparison.OrdinalIgnoreCase)))
                     continue;
-                var found = Find(reference, referrer, folders, declarations.Diagnostics);
+                if (seen.TryGetValue(key, out var met))
+                {
+                    if (reference.Database is null && met.Found is null)
+                        unread.Add(new UnreadPart(reference.LogicalName, referrer.Name));
+                    continue;
+                }
+
+                var found = Find(reference, referrer, folders, diagnostics);
                 seen[key] = new ReferenceRead(reference.LogicalName, reference.Database, found is null ? null : new LoadedPackage(found.Name, found.Path, found.Sha256));
-                if (found is not null && reference.Database is null)
-                    database.Add(found);
-                else if (found is null && reference.Database is null)
-                    unread.Add(new UnreadPart(reference.LogicalName, referrer.Name));
+                if (reference.Database is null)
+                {
+                    if (found is not null)
+                        database.Add(found);
+                    else
+                        unread.Add(new UnreadPart(reference.LogicalName, referrer.Name));
+                }
+                else if (found is not null && others is not null)
+                {
+                    others.TryAdd(reference.Database, found);
+                }
             }
         }
 
         foreach (var package in database)
             PackageReader.Read(package, declarations);
+        diagnostics.AddRange(declarations.Diagnostics);
+        return new DatabaseRead(declarations, PackageReader.Settings(root), unread);
+    }
 
-        var model = declarations.ToModel(PackageReader.Settings(root), unread);
-        return new DacpacReadResult(model, new LoadedPackage(root.Name, root.Path, root.Sha256), [.. seen.Values], [.. declarations.Diagnostics]);
+    /// <summary>One database's packages read, to become its model once the databases it refers to are read too.</summary>
+    private sealed class DatabaseRead(SchemaDeclarations declarations, DatabaseSettings? settings, List<UnreadPart> unread)
+    {
+        /// <summary>The model, holding <paramref name="databases"/> as the other databases it refers to.</summary>
+        public DatabaseModel ToModel(IReadOnlyDictionary<string, DatabaseModel>? databases = null) => declarations.ToModel(settings, unread, databases);
     }
 
     /// <summary>The referenced package, opened; or null, with a warning naming every place looked, when there is none.</summary>

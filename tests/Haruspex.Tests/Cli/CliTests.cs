@@ -2,6 +2,7 @@ using Haruspex.Cli;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.Tests.Snapshotting;
+using Haruspex.Tests.Sources;
 
 namespace Haruspex.Tests.Cli;
 
@@ -96,22 +97,8 @@ public class CliTests
         using var dir = new TempDirectory();
         Directory.CreateDirectory(Path.Combine(dir.Path, "app"));
         Directory.CreateDirectory(Path.Combine(dir.Path, "shared"));
-        WritePackage(Path.Combine(dir.Path, "shared", "lib.dacpac"), null, """
-            <Element Type="SqlView" Name="[dbo].[v]">
-              <Property Name="QueryScript"><Value><![CDATA[
-            SELECT m.id FROM dbo.missing AS m;]]></Value></Property>
-              <Property Name="IsAnsiNullsOn" Value="True" />
-              <Annotation Type="SysCommentsObjectAnnotation"><Property Name="HeaderContents" Value="CREATE VIEW dbo.v AS" /></Annotation>
-            </Element>
-            """);
-        WritePackage(Path.Combine(dir.Path, "app", "app.dacpac"), "lib.dacpac", """
-            <Element Type="SqlProcedure" Name="[dbo].[p]">
-              <Property Name="BodyScript"><Value><![CDATA[
-            SELECT v.id FROM dbo.v AS v;]]></Value></Property>
-              <Property Name="IsAnsiNullsOn" Value="True" />
-              <Annotation Type="SysCommentsObjectAnnotation"><Property Name="HeaderContents" Value="CREATE PROCEDURE dbo.p AS" /></Annotation>
-            </Element>
-            """);
+        TestPackage.Write(Path.Combine(dir.Path, "shared", "lib.dacpac"), TestPackage.View("dbo", "v", "SELECT m.id FROM dbo.missing AS m;"));
+        TestPackage.Write(Path.Combine(dir.Path, "app", "app.dacpac"), TestPackage.Procedure("dbo", "p", "SELECT v.id FROM dbo.v AS v;"), references: new TestPackage.Reference("lib.dacpac"));
         dir.File("haruspex.json", """{ "source": "app/app.dacpac", "references": ["shared"], "out": "out", "schemas": { "dbo": { "include": ["*"] } } }""");
 
         var (exitCode, _, error) = RunIn(dir.Path, "generate");
@@ -119,21 +106,6 @@ public class CliTests
         Assert.Equal(0, exitCode);
         Assert.Contains(Path.Join(dir.Path, "shared", "lib.dacpac/[dbo].[v]:2:"), error, StringComparison.Ordinal);
         Assert.DoesNotContain(Path.Join(dir.Path, "app", "lib.dacpac"), error, StringComparison.Ordinal);
-    }
-
-    /// <summary>A package of the elements given, referring to <paramref name="reference"/> in the same database when one is named.</summary>
-    private static void WritePackage(string path, string? reference, string elements)
-    {
-        var header = reference is null ? "" : $"""<CustomData Category="Reference" Type="SqlSchema"><Metadata Name="FileName" Value="C:\build\{reference}" /><Metadata Name="LogicalName" Value="{reference}" /></CustomData>""";
-        using var zip = System.IO.Compression.ZipFile.Open(path, System.IO.Compression.ZipArchiveMode.Create);
-        using var writer = new StreamWriter(zip.CreateEntry("model.xml").Open(), new System.Text.UTF8Encoding(false));
-        writer.Write($"""
-            <?xml version="1.0" encoding="utf-8"?>
-            <DataSchemaModel xmlns="http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02">
-              <Header>{header}</Header>
-              <Model>{elements}</Model>
-            </DataSchemaModel>
-            """);
     }
 
     [Fact]

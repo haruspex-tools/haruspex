@@ -216,6 +216,16 @@ public sealed partial class Binder
         if (IsOnePart(name) && names.Find(name.BaseIdentifier.Value) is { } relation)
             return new RelationTarget(relation);
 
+        // Another database is read only through a reference the source holds for it, by the very name the body writes: a
+        // variable ([$(Ledger)]) never as a database of that literal name, a literal only as a reference's literal.
+        if (name.ServerIdentifier is null && name.DatabaseIdentifier is { Value: var database } && Model.Databases.TryGetValue(database, out var other))
+        {
+            // db..t has a schema identifier with no text: the caller's default schema there decides.
+            return name.SchemaIdentifier is { Value: { Length: > 0 } schema }
+                ? InOtherDatabase(other, database, new ObjectName(schema, name.BaseIdentifier.Value), at)
+                : Unresolved(BindingProblemKind.UnresolvedTable, $"The reference {FragmentText.OneLine(name)} names no schema, so what it reads depends on the caller's default schema in {database}.");
+        }
+
         if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
             return Unresolved(BindingProblemKind.UnsupportedSource, $"The reference {FragmentText.OneLine(name)} to another database is not modelled yet.");
 
@@ -246,12 +256,65 @@ public sealed partial class Binder
         // A view is read from its definition, by whoever reads the body's values (it may say why it cannot be).
         if (Model.FindReadable(objectName) is View view)
             return new RelationTarget(new ViewRelation(view, ViewColumns(view)));
+
+        // A synonym reads what it stands for: a table or view of this database, or a table of another one the source holds.
+        if (Model.FindReadable(objectName) is Synonym { For: var target } synonym)
+            return Through(synonym, target, at);
         if (Model.FindReadable(objectName) is { } other)
             return Unresolved(BindingProblemKind.UnresolvedTable, $"{objectName} is a {SchemaNames.Kind(other)}, which is not modelled yet.");
 
-        return Model.FindTable(objectName) is { } table
-            ? new TableTarget(table)
-            : Unresolved(BindingProblemKind.UnresolvedTable, $"There is no table {objectName} in the project.{SchemaGaps.MayBeIn(Model)}");
+        if (Model.FindTable(objectName) is { } table)
+            return new TableTarget(table);
+
+        // The system's views (sys, INFORMATION_SCHEMA) are in every database; master.dacpac lists them.
+        if (SystemViews.IsSystemSchema(objectName.Schema) && Model.Databases.TryGetValue(SystemViews.Master, out var master) && master.FindReadable(objectName) is View system)
+            return new RelationTarget(new ViewRelation(system, system.Columns));
+
+        return Unresolved(BindingProblemKind.UnresolvedTable, $"There is no table {objectName} in the project.{SchemaGaps.MayBeIn(Model)}");
+    }
+
+    /// <summary>
+    /// What a synonym reads: a name of this database (with its schema: one without depends on the caller's default schema), or a
+    /// name of another database the source holds. SQL Server doesn't let a synonym stand for a synonym, so this ends.
+    /// </summary>
+    private SourceTarget Through(Synonym synonym, SynonymTarget target, SourceLocation at)
+    {
+        UnresolvedTarget Unresolved(string detail) => new(Problem(BindingProblemKind.UnresolvedTable, detail, at));
+        if (target.Server is not null)
+            return Unresolved($"The synonym {synonym.Name} stands for {target}, on another server, which is not modelled.");
+        if (target.Schema is not { } schema)
+            return Unresolved($"The synonym {synonym.Name} stands for {target}, which names no schema, so what it reads depends on the caller's default schema.");
+        if (target.Database is null)
+            return InSchema(new ObjectName(schema, target.Name), at);
+        return Model.Databases.TryGetValue(target.Database, out var other)
+            ? InOtherDatabase(other, target.Database, new ObjectName(schema, target.Name), at)
+            : Unresolved($"The synonym {synonym.Name} stands for {target}, in another database the source doesn't hold.");
+    }
+
+    /// <summary>
+    /// What a name of another database reads: a table, as this database sees it (<see cref="OtherDatabases.AsSeenHere"/>); a
+    /// synonym of that database, followed there; or why neither. A view, function or procedure of another database isn't read:
+    /// its body binds against its own database, which inference doesn't do yet.
+    /// </summary>
+    private static SourceTarget InOtherDatabase(DatabaseModel other, string database, ObjectName objectName, SourceLocation at)
+    {
+        UnresolvedTarget Unresolved(BindingProblemKind kind, string detail) => new(new BindingProblem(kind, detail, at));
+        var named = objectName with { Database = database };
+        if (other.FindTable(objectName) is { } table)
+        {
+            return OtherDatabases.AsSeenHere(table, other, database) is { } seen
+                ? new TableTarget(seen)
+                : Unresolved(BindingProblemKind.UnsupportedSource, $"{named} is a table of a database whose package records no collation, so how its strings compare isn't known.");
+        }
+
+        return other.FindReadable(objectName) switch
+        {
+            Synonym { For: { Database: null, Server: null, Schema: { } schema } target } => other.FindTable(new ObjectName(schema, target.Name)) is { } through && OtherDatabases.AsSeenHere(through, other, database) is { } seenThrough
+                ? new TableTarget(seenThrough)
+                : Unresolved(BindingProblemKind.UnsupportedSource, $"{named} is a synonym of {database} for {target}, which is not a table read across databases yet."),
+            { } readable => Unresolved(BindingProblemKind.UnsupportedSource, $"{named} is a {SchemaNames.Kind(readable)} of the database {database}, which is not read across databases yet."),
+            null => Unresolved(BindingProblemKind.UnresolvedTable, $"There is no table {objectName} in the database {database}."),
+        };
     }
 
     /// <summary>

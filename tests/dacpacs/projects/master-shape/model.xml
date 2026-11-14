@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A package in master.dacpac's shape, written by hand from the shapes of its elements (tests/dacpacs/README.md): a sys view
+     and an INFORMATION_SCHEMA view whose columns are untyped computed columns, and a system procedure with a parameter and no
+     text. Microsoft's own master.dacpac can't be committed; this stands in for it in every test run. -->
+<DataSchemaModel FileFormatVersion="1.2" SchemaVersion="2.9" DspName="Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider" CollationLcid="1033" CollationCaseSensitive="False" xmlns="http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02">
+  <Model>
+    <Element Type="SqlDatabaseOptions">
+      <Property Name="Collation" Value="SQL_Latin1_General_CP1_CI_AS" />
+    </Element>
+    <Element Type="SqlView" Name="[sys].[objects]">
+      <Relationship Name="Columns">
+        <Entry>
+          <Element Type="SqlComputedColumn" Name="[sys].[objects].[name]" />
+        </Entry>
+        <Entry>
+          <Element Type="SqlComputedColumn" Name="[sys].[objects].[object_id]" />
+        </Entry>
+        <Entry>
+          <Element Type="SqlComputedColumn" Name="[sys].[objects].[type]" />
+        </Entry>
+      </Relationship>
+    </Element>
+    <Element Type="SqlView" Name="[INFORMATION_SCHEMA].[TABLES]">
+      <Relationship Name="Columns">
+        <Entry>
+          <Element Type="SqlComputedColumn" Name="[INFORMATION_SCHEMA].[TABLES].[TABLE_NAME]" />
+        </Entry>
+      </Relationship>
+    </Element>
+    <Element Type="SqlProcedure" Name="[sys].[sp_who]">
+      <Relationship Name="Parameters">
+        <Entry>
+          <Element Type="SqlSubroutineParameter" Name="[sys].[sp_who].[@loginame]">
+            <Relationship Name="Type">
+              <Entry>
+                <Element Type="SqlTypeSpecifier">
+                  <Relationship Name="Type">
+                    <Entry>
+                      <References ExternalSource="BuiltIns" Name="[sysname]" />
+                    </Entry>
+                  </Relationship>
+                </Element>
+              </Entry>
+            </Relationship>
+          </Element>
+        </Entry>
+      </Relationship>
+    </Element>
+  </Model>
+</DataSchemaModel>

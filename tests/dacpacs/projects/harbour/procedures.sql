@@ -6,7 +6,7 @@ JOIN dock.berth AS b ON b.berth_id = c.berth_id;
 GO
 -- Reads a table of another database, named through a SQLCMD variable.
 CREATE PROCEDURE dock.crane_fees AS
-SELECT c.crane_id, e.fee
+SELECT c.crane_id, e.fee, e.state
 FROM dock.crane AS c
 JOIN [$(Tally)].ledger.entry AS e ON e.crane_id = c.crane_id;
 GO

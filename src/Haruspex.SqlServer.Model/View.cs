@@ -25,6 +25,12 @@ public sealed record View(ObjectName Name, SourceSpan Span, EquatableArray<strin
     public bool AnsiNullsOff { get; init; }
 
     /// <summary>
+    /// Whether it was created <c>WITH ENCRYPTION</c>. With no <see cref="Query"/>, it says why the text is missing: encrypted, in a
+    /// DACPAC extracted from a database; or else a system view, which <c>master.dacpac</c> lists without a definition.
+    /// </summary>
+    public bool IsEncrypted { get; init; }
+
+    /// <summary>
     /// The second definition of a view defined more than once (created and altered, or created twice), so that which
     /// definition applies depends on the order the scripts run; null when it is defined once.
     /// </summary>

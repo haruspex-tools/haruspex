@@ -189,7 +189,9 @@ same database first: each with its `sha256` when one was found and read, left ou
 holds is known, and an object it may define is an unknown like any other the source lacks), and a `database` when it is
 another database, named as the reference names it (`master`, or a SQLCMD variable such as `$(Ledger)`, whose value is only
 known when it is deployed). It is left out when there are none, and must not be written empty. A package's hash makes the
-claims reproducible: the same packages give the same document.
+claims reproducible: the same packages give the same document. A claim about a table of another database rests on that
+database's package being what is deployed there, which it may not be, since another database is deployed on its own schedule:
+regenerate the document when a referenced package's hash changes.
 
 `source.session` (0.17) holds the options the callers' sessions are declared to set, by the dialect's name for each as the
 config file writes it, `true` for on and `false` for off: for `tsql`, `ansiWarnings`, `arithAbort`, `concatNullYieldsNull`
