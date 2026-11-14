@@ -210,7 +210,8 @@ internal static class Generate
     /// full to a temporary name in the folder itself (so that putting it in place is a rename within one file system), then
     /// both are put in place, the IR first; if the module can't be, the IR is put back as it was, or removed when there was
     /// none, and no temporary file is left. Two files can't be replaced as one, so a process killed between the two renames
-    /// can still leave a new IR beside the old module; nothing short of that can. The folder is created here, after every
+    /// can still leave a new IR beside the old module (and the hidden temporary and backup files beside them), and so can a
+    /// file system that refuses to put the IR back, which the message then says, keeping the old IR's backup. The folder is created here, after every
     /// other step has succeeded, so a run that fails before writing creates nothing.
     /// </summary>
     private static Outcome<Written> Write(Output output)
@@ -222,6 +223,7 @@ internal static class Generate
         var irTemporary = Path.Join(folder, $".{HaruspexCli.IrFileName}.{run}.tmp");
         var zodTemporary = Path.Join(folder, $".{HaruspexCli.ZodFileName}.{run}.tmp");
         var irBackup = Path.Join(folder, $".{HaruspexCli.IrFileName}.{run}.old");
+        var keepBackup = false;
         try
         {
             Directory.CreateDirectory(folder);
@@ -236,10 +238,14 @@ internal static class Generate
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
-                if (hadIr)
-                    File.Move(irBackup, irPath, overwrite: true);
-                else
-                    File.Delete(irPath);
+                if (PutBack(hadIr, irBackup, irPath) is { } failure)
+                {
+                    // The new IR stands beside the old module, so the old IR, the backup, is the one copy left: it is kept.
+                    keepBackup = hadIr;
+                    return Refused<Written>(CliCodes.CannotWrite,
+                        $"cannot write to {folder}: {e.Message} The IR written before it could not be put back ({failure}), so {irPath} is new and {zodPath} is not{(hadIr ? $"; the old IR is kept at {irBackup}" : "")}.");
+                }
+
                 throw;
             }
         }
@@ -249,11 +255,31 @@ internal static class Generate
         }
         finally
         {
-            foreach (var temporary in new[] { irTemporary, zodTemporary, irBackup })
+            foreach (var temporary in keepBackup ? [irTemporary, zodTemporary] : new[] { irTemporary, zodTemporary, irBackup })
                 Remove(temporary);
         }
 
         return new Succeeded<Written>(new Written(output.Document, irPath, zodPath, output.Plan.Source));
+    }
+
+    /// <summary>
+    /// Puts the IR back as it was after the module could not be put in place: the old one from its backup, or none when there
+    /// was none. Null when it is back; otherwise what the file system said.
+    /// </summary>
+    private static string? PutBack(bool hadIr, string backup, string path)
+    {
+        try
+        {
+            if (hadIr)
+                File.Move(backup, path, overwrite: true);
+            else
+                File.Delete(path);
+            return null;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return e.Message;
+        }
     }
 
     /// <summary>

@@ -65,8 +65,9 @@ output: how many procedures it typed, how many unknowns there are, and where it 
   nothing is written, and the output folder isn't even created. When the run succeeds, both files are written in full to
   temporary names in the output folder and then renamed into place, the IR first; if the module can't be put in place,
   the IR is put back as it was (or removed, if there was none), no temporary file is left, and the exit code is 1. Two
-  files can't be replaced as one, so only a process killed between the two renames can leave a new IR beside the old
-  module.
+  files can't be replaced as one, so a new IR can still be left beside the old module in two cases: a process killed
+  between the two renames, which can also leave the hidden temporary files (`.haruspex.ir.json.….tmp`, `….old`) in the
+  folder; and a file system that refuses to put the IR back, which the error then says, keeping the old IR beside it.
 - **The same input gives the same bytes**, on every platform, so a CI check can compare the output with what is committed.
 - **The exit codes are fixed**, so scripts and CI can rely on them (`ExitCodeTests` holds each row):
 
