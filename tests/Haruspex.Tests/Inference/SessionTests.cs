@@ -169,6 +169,19 @@ public class SessionTests
             Reasons(Procedure(SessionOptions.NotKnown, Body)));
     }
 
+    [Fact]
+    public void A_string_cast_to_a_date_type_may_overflow_unless_the_session_makes_that_an_error()
+    {
+        // Into datetime or smalldatetime, a date that does not exist or is out of range is an overflow (242), NULL under both
+        // options off (A_string_that_names_no_date_or_a_date_out_of_range_fails_or_overflows_by_the_target_type). Into date it
+        // is an error whatever the options (241), so arithmetic-overflow there claims less than the server does: sound, and
+        // left as it is. A declared session makes each an error.
+        const string Body = "SELECT CAST(code AS datetime) AS dt, CAST(code AS smalldatetime) AS small, CAST(code AS date) AS d FROM dbo.t;";
+
+        Assert.Equal("dt: arithmetic-overflow\nsmall: arithmetic-overflow\nd: arithmetic-overflow", Reasons(Procedure(SessionOptions.NotKnown, Body)));
+        Assert.Equal("dt:\nsmall:\nd:", Reasons(Procedure(new SessionOptions(AnsiWarnings: true), Body)));
+    }
+
     [Theory]
     [InlineData("SET ANSI_WARNINGS OFF;")]
     [InlineData("SET ARITHABORT OFF;")]

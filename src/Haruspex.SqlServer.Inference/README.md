@@ -469,11 +469,15 @@ precision adds those before it, less leading zeros (`A_literals_type_is_its_own_
   `ANSI_WARNINGS` and `ARITHABORT` both off
   (`Numeric_roundabort_on_makes_a_loss_of_precision_null_when_ansi_warnings_and_arithabort_are_both_off`), and haruspex types
   it never null. So with nothing declared, today's output is unsound for such a caller, and only for one: declaring either
-  option on makes the loss an error, and with `NUMERIC_ROUNDABORT` off, every driver's default, the value is rounded. The rule
+  option on makes the loss an error, and with `NUMERIC_ROUNDABORT` off, the value is rounded (off is tedious's documented
+default and SqlClient's, observed). The rule
   and its option are the next slice's ([decision 0038](../../docs/decisions/0038-the-callers-session-is-declared.md)). A
-  conversion that **fails** for a value (`'abc'` as `int`, a date that does not exist, a
-  GUID into a short string) is an error even then (`A_failed_conversion_is_an_error_even_under_ansi_warnings_and_arithabort_off`),
-  so it never makes NULL.
+  conversion that **fails** for a value (`'abc'` as `int`, a string that names no date, a date that does not exist into
+  `date`, `datetime2` or `time`, a GUID into a short string) is an error even then
+  (`A_failed_conversion_is_an_error_even_under_ansi_warnings_and_arithabort_off`), so it never makes NULL. Into `datetime` and
+  `smalldatetime`, a date that does not exist or is out of their range is an overflow (242), NULL under both options off
+  (`A_string_that_names_no_date_or_a_date_out_of_range_fails_or_overflows_by_the_target_type`); a string converted to any
+  date type is typed `arithmetic-overflow` unless a declared session makes it an error, which for `date` claims less than holds.
 - **`TRY_CAST` and `TRY_CONVERT`** (`failed-conversion`) are NULL whenever the conversion may fail or overflow
   (`Try_cast_and_try_convert_are_null_when_the_conversion_fails`); one that cannot (the table below) is null only as its
   operand is.
@@ -551,8 +555,8 @@ modelled.
   always NULL under the default setting and is not modelled. With
   `CONCAT_NULL_YIELDS_NULL` off, `NULL + 'x'` is `'x'` (`With_concat_null_yields_null_off_a_string_plus_null_is_the_string`):
   less often null, so the claim holds under either setting. When the callers' sessions are declared to set it off, `+` is
-  null only when both sides may be, and never null when either side is never null. On is SQL Server's default and every
-  driver's, and off is deprecated; a procedure that sets it, either way, is unknown, as before (`Walker.IsHarmless`). `+` of a string and a number is
+  null only when both sides may be, and never null when either side is never null. On is SQL Server's default, tedious's
+  documented one and SqlClient's (observed), and off is deprecated; a procedure that sets it, either way, is unknown, as before (`Walker.IsHarmless`). `+` of a string and a number is
   arithmetic, which may fail, and is not modelled.
 
 ### Decimal arithmetic

@@ -110,7 +110,8 @@ public class SessionObservationTests(SqlServerFixture server)
     [Fact]
     public async Task Numeric_roundabort_on_makes_a_loss_of_precision_null_when_ansi_warnings_and_arithabort_are_both_off()
     {
-        // A decimal rounded to fewer places is rounded silently with NUMERIC_ROUNDABORT off, the default of every driver. On, it
+        // A decimal rounded to fewer places is rounded silently with NUMERIC_ROUNDABORT off (tedious documents off as its
+        // default; SqlClient connects so, A_sqlclient_connection_sets_these_options_at_login). On, it
         // is an error (8115), or NULL under both options off. haruspex does not model it: decision 0038 says why and what
         // follows. A float or money converted to a decimal of fewer places, and a decimal to int (which truncates), are not
         // a loss of precision here.
@@ -144,17 +145,39 @@ public class SessionObservationTests(SqlServerFixture server)
     }
 
     [Fact]
-    public async Task Dateformat_decides_which_strings_convert_but_a_failure_is_an_error_whatever_it_is()
+    public async Task Dateformat_decides_which_strings_are_dates_and_a_cast_fails_or_overflows_as_for_any_string()
     {
-        // Which strings are dates depends on DATEFORMAT; one that is not fails CAST (241) and is NULL under TRY_CAST, which is
-        // nullable anyway. So it changes no type and no nullability.
+        // Which strings are dates depends on DATEFORMAT, and under TRY_CAST one that is not is NULL, which is nullable anyway.
+        // Under CAST it is what any string that names no date is, below: so DATEFORMAT changes which values fail, never a type
+        // or a reason to be null.
         var outcome = await Run([], """
             SET DATEFORMAT dmy; SELECT TRY_CAST('13/02/2026' AS date) AS a, TRY_CAST('02/13/2026' AS date) AS b;
             SET DATEFORMAT mdy; SELECT TRY_CAST('13/02/2026' AS date) AS a, TRY_CAST('02/13/2026' AS date) AS b;
-            SELECT CAST('13/02/2026' AS date) AS c;
             """);
 
-        Assert.StartsWith("a,b: 02/13/2026 00:00:00,null | a,b: null,02/13/2026 00:00:00", outcome.ToString(), StringComparison.Ordinal);
-        Assert.Equal(241, outcome.Error);
+        Assert.Equal("a,b: 02/13/2026 00:00:00,null | a,b: null,02/13/2026 00:00:00", outcome.ToString());
+        Assert.Equal("242 242 242 null", await UnderEach([], "SET DATEFORMAT dmy; SELECT CAST('02/13/2026' AS datetime) AS v;"));
+        Assert.Equal("241 241 241 241", await UnderEach([], "SET DATEFORMAT dmy; SELECT CAST('02/13/2026' AS date) AS v;"));
+    }
+
+    public static TheoryData<string, string, string> StringsToDates { get; } = new()
+    {
+        { "no date at all, to datetime", "SELECT CAST('abc' AS datetime) AS v;", "241 241 241 241" },
+        { "a day that does not exist, to datetime", "SELECT CAST('2026-02-30' AS datetime) AS v;", "242 242 242 null" },
+        { "an hour that does not exist, to smalldatetime", "SELECT CAST('2026-01-01T25:00' AS smalldatetime) AS v;", "242 242 242 null" },
+        { "a year before datetime's range", "SELECT CAST('1700-01-01' AS datetime) AS v;", "242 242 242 null" },
+        { "a day that does not exist, to date", "SELECT CAST('2026-02-30' AS date) AS v;", "241 241 241 241" },
+        { "a day that does not exist, to datetime2", "SELECT CAST('2026-02-30' AS datetime2) AS v;", "241 241 241 241" },
+    };
+
+    [Theory]
+    [MemberData(nameof(StringsToDates))]
+    public async Task A_string_that_names_no_date_or_a_date_out_of_range_fails_or_overflows_by_the_target_type(string construct, string batch, string expected)
+    {
+        // A string that is no date fails (241) whatever the options. One that is a date out of the target's range, or that
+        // doesn't exist, is an overflow into datetime and smalldatetime (242), NULL under both options off, as any overflow is;
+        // into date, datetime2 and time it fails (241).
+        _ = construct;
+        Assert.Equal(expected, await UnderEach([], batch));
     }
 }

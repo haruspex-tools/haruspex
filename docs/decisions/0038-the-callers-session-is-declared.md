@@ -55,10 +55,14 @@ application's own `SET`s may change them, so check the session (`SELECT SESSIONP
   output for everyone who declares nothing, so it is a slice of its own, the precision-loss rule, and `numericRoundAbort` is
   added with it, not before, so that the config file never accepts a setting nothing reads.
 - *`DATEFIRST`, `LANGUAGE`, `DATEFORMAT`* change names, numbering and which strings convert, but no claim haruspex makes:
-  `DATEPART(weekday, …)` is 1 to 7 whatever the first day, `DATENAME` is never a closed set, a style with month names is a
-  string of the target's length, and a string that doesn't convert is an error, or NULL under `TRY_CAST`, which is nullable
-  anyway (`Datefirst_and_language_change_names_and_numbering_but_no_claim_haruspex_makes`,
-  `Dateformat_decides_which_strings_convert_but_a_failure_is_an_error_whatever_it_is`). A declared language could make
+  `DATEPART(weekday, …)` is 1 to 7 whatever the first day, `DATENAME` is never a closed set, and a style with month names is a
+  string of the target's length (`Datefirst_and_language_change_names_and_numbering_but_no_claim_haruspex_makes`).
+  `DATEFORMAT` decides which strings are dates, and so which values fail, but not how a failure ends: a string that names no
+  date is an error whatever the options, and a date out of range or that doesn't exist is an overflow into `datetime` and
+  `smalldatetime`, NULL under both options off as any overflow is, and an error into the other date types
+  (`Dateformat_decides_which_strings_are_dates_and_a_cast_fails_or_overflows_as_for_any_string`,
+  `A_string_that_names_no_date_or_a_date_out_of_range_fails_or_overflows_by_the_target_type`). A string converted to a date
+  type is typed `arithmetic-overflow` already, unless a declared session makes the overflow an error. A declared language could make
   `DATENAME`'s names a closed set; that would be a new claim, for a later slice.
 
 A setting no rule reads is not added: it would look as if it changed the output when it doesn't. One written anyway is an
