@@ -76,6 +76,19 @@ public class CliTests
     }
 
     [Fact]
+    public void References_beside_a_folder_of_scripts_are_a_warning_since_a_folder_has_none_to_find()
+    {
+        using var dir = new TempDirectory();
+        dir.File("db/p.sql", "CREATE PROCEDURE dbo.p AS SELECT 1 AS one;");
+        dir.File("haruspex.json", """{ "source": "db", "references": ["db"], "out": "out", "schemas": { "dbo": { "include": ["*"] } } }""");
+
+        var (exitCode, _, error) = RunIn(dir.Path, "generate");
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("warning HAR6009", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Generate_refuses_a_dacpac_that_is_not_there()
     {
         var (exitCode, _, error) = Run("generate", "missing.dacpac", "--include", "*.*", "--out", "out");

@@ -19,9 +19,9 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// <para>
 /// <b>Which checks are trusted.</b> A check SQL Server doesn't trust guarantees nothing: one disabled (<c>IsDisabled</c>), or
 /// one an extract marks not trusted, is recorded as disabled. A built package doesn't record whether a check added by
-/// <c>ALTER TABLE … WITH NOCHECK ADD</c> is trusted (observed: <c>atelier</c>'s <c>ck_kiln_late</c> has no mark), so in a build a
-/// check that wasn't written inline in its table is not read at all, as a folder doesn't read one added by <c>ALTER TABLE</c>;
-/// that only claims less. An extract records trust, so every check in it is read.
+/// <c>ALTER TABLE … WITH NOCHECK ADD</c> is trusted (observed: <c>atelier</c>'s <c>ck_kiln_late</c> has no mark), so unless the
+/// package is an extract a check that wasn't written inline in its table is not read at all, as a folder doesn't read one added
+/// by <c>ALTER TABLE</c>; that only claims less. An extract records trust, so every check in it is read.
 /// </para>
 /// <para>
 /// <b>Unique keys.</b> The primary key, unique constraints and unique indexes without a filter, wherever they were created: a
@@ -30,9 +30,9 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// </para>
 /// </remarks>
 /// <param name="package">The package's file name, for locations.</param>
-/// <param name="built">Whether a project's build made the package (<see cref="DacPackage.Built"/>).</param>
+/// <param name="extracted">Whether the package was extracted from a database (<see cref="DacPackage.Extracted"/>).</param>
 /// <param name="diagnostics">Where an expression that doesn't parse is reported.</param>
-internal sealed class TableReader(string package, bool built, ICollection<Diagnostic> diagnostics)
+internal sealed class TableReader(string package, bool extracted, ICollection<Diagnostic> diagnostics)
 {
     /// <summary>The table, from its element and the parts that name it, in <c>model.xml</c>'s order; and the foreign keys on it with an action.</summary>
     public (Table Table, IReadOnlyList<CascadingKey> Keys) Read(XElement element, IReadOnlyList<XElement> parts)
@@ -97,16 +97,23 @@ internal sealed class TableReader(string package, bool built, ICollection<Diagno
     }
 
     /// <summary>
-    /// A column. Its nullability is what DacFx resolved and deploys: <c>IsNullable</c> false is NOT NULL, and its absence NULL,
-    /// whether the script said NULL or nothing (an alias type's NOT NULL included). A computed column takes its nullability
-    /// from its expression, as in a folder.
+    /// A column, of a table or of the table a function returns. Its nullability is what DacFx resolved and deploys:
+    /// <c>IsNullable</c> false is NOT NULL, and its absence NULL, whether the script said NULL or nothing (an alias type's NOT NULL
+    /// included). A computed column takes its nullability from its expression, as in a folder, unless it is declared
+    /// <c>PERSISTED NOT NULL</c> (<c>IsPersistedNullable</c> false) or <c>PERSISTED NULL</c> (true).
     /// </summary>
-    private Column Column(XElement column, string name, SourceLocation at)
+    public Column Column(XElement column, string name, SourceLocation at)
     {
         if (ModelXml.TypeOf(column) == ModelXml.SqlComputedColumn)
         {
             var expression = Parse(ModelXml.Property(column, ModelXml.ExpressionScript) ?? "", at, (parser, reader) => (parser.ParseExpression(reader, out var errors), errors));
-            return new Column(name, null, DeclaredNullability.NotDeclared, false, expression, at);
+            var declared = ModelXml.Property(column, ModelXml.IsPersistedNullable) switch
+            {
+                "False" => DeclaredNullability.NotNull,
+                "True" => DeclaredNullability.Null,
+                _ => DeclaredNullability.NotDeclared,
+            };
+            return new Column(name, null, declared, false, expression, at);
         }
 
         var nullability = ModelXml.Property(column, ModelXml.IsNullable) == "False" ? DeclaredNullability.NotNull : DeclaredNullability.Null;
@@ -124,7 +131,7 @@ internal sealed class TableReader(string package, bool built, ICollection<Diagno
     private CheckConstraint? Check(XElement check, Dictionary<string, string> owners, SourceLocation at)
     {
         var owner = ModelXml.Disambiguators(check).Select(d => owners.GetValueOrDefault(d)).FirstOrDefault(o => o is not null);
-        if (built && owner is null)
+        if (!extracted && owner is null)
             return null;
         if (Parse(ModelXml.Property(check, ModelXml.CheckExpressionScript) ?? "", at, (parser, reader) => (parser.ParseBooleanExpression(reader, out var errors), errors)) is not { } condition)
             return null;

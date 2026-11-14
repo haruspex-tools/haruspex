@@ -45,12 +45,6 @@ internal static class Generate
 
         public string Source { get; } = source;
 
-        /// <summary>
-        /// The folder the locations in what is read are relative to: the source folder, or the folder holding the DACPAC, whose
-        /// locations start with its file name (<c>sales.dacpac/[sales].[get_order]:3:5</c>).
-        /// </summary>
-        public string Root => SqlProject.IsPackage(Source) ? Path.GetDirectoryName(Source) ?? "." : Source;
-
         public string Out { get; } = @out;
 
         public EquatableArray<ObjectPattern> Include { get; } = include;
@@ -80,17 +74,28 @@ internal static class Generate
     }
 
     /// <summary>The document with the config applied, and the Zod module emitted from it.</summary>
-    private sealed class Output(Plan plan, IrDocument document, string zod)
+    private sealed class Output(Plan plan, SqlProject project, IrDocument document, string zod)
     {
         public Plan Plan { get; } = plan;
+
+        public SqlProject Project { get; } = project;
 
         public IrDocument Document { get; } = document;
 
         public string Zod { get; } = zod;
     }
 
-    /// <summary>The written output: where each file went, and the folder its locations are relative to.</summary>
-    private sealed record Written(IrDocument Document, string IrPath, string ZodPath, string Source);
+    /// <summary>The written output: where each file went, and the project it was read from, which roots its locations.</summary>
+    private sealed class Written(IrDocument document, string irPath, string zodPath, SqlProject project)
+    {
+        public IrDocument Document { get; } = document;
+
+        public string IrPath { get; } = irPath;
+
+        public string ZodPath { get; } = zodPath;
+
+        public SqlProject Project { get; } = project;
+    }
 
     /// <summary>The config file: named, or found by walking up from the working directory, or none.</summary>
     private static Outcome<Settings> ReadConfig(GenerateRequest request)
@@ -173,13 +178,18 @@ internal static class Generate
                 ? "nothing is selected: give --include, or a config file whose \"schemas\" include procedures. Use '*.*' to type every procedure."
                 : $"nothing is selected: give --include, or a schema with \"include\" in {settings.Path}, such as \"schemas\": {{ \"dbo\": {{ \"include\": [\"*\"] }} }}.");
 
-    /// <summary>The project, read from the source folder or DACPAC; its diagnostics, with their files under the source's folder.</summary>
+    /// <summary>
+    /// The project, read from the source folder or DACPAC; its diagnostics, with their files under the folder each was read from.
+    /// The config file's <c>references</c> beside a folder of scripts is said, not ignored: a folder has no references to find.
+    /// </summary>
     private static Outcome<Loaded> ReadProject(Plan plan)
     {
-        var project = SqlProject.IsPackage(plan.Source)
-            ? SqlProject.LoadPackage(plan.Source, plan.Config.References)
-            : SqlProject.Load(plan.Source);
-        return Outcome.Of(new Loaded(plan, project), project.Diagnostics.Select(d => Rooted(d, plan.Root)));
+        var package = SqlProject.IsPackage(plan.Source);
+        var project = package ? SqlProject.LoadPackage(plan.Source, plan.Config.References) : SqlProject.Load(plan.Source);
+        IEnumerable<Diagnostic> unused = package || plan.Config.References.Count == 0
+            ? []
+            : [CliCodes.ReferencesUnused.At(plan.Config.Location, $"\"references\" is read only when the source is a .dacpac, and {plan.Source} is a folder of scripts.")];
+        return Outcome.Of(new Loaded(plan, project), [.. unused, .. project.Diagnostics.Select(d => Rooted(d, project))]);
     }
 
     /// <summary>
@@ -201,25 +211,26 @@ internal static class Generate
     }
 
     /// <summary>The IR of the selected procedures, with the config file's overrides and naming applied.</summary>
-    private static Outcome<(Plan Plan, IrDocument Document)> Infer(Selection selection)
+    private static Outcome<(Plan Plan, SqlProject Project, IrDocument Document)> Infer(Selection selection)
     {
         var plan = selection.Loaded.Plan;
-        var applied = selection.Loaded.Project.Infer(selection.Procedures, plan.Config, selection.ByFile, plan.Out);
-        return Rebased(applied, plan.Root).Select(document => (plan, document));
+        var project = selection.Loaded.Project;
+        var applied = project.Infer(selection.Procedures, plan.Config, selection.ByFile, plan.Out);
+        return Rebased(applied, project).Select(document => (plan, project, document));
     }
 
     /// <summary>
     /// The Zod module. The emitter knows no config file; what it refuses is a name or an import the file's settings made, so
     /// it is reported against the file.
     /// </summary>
-    private static Outcome<Output> Emit((Plan Plan, IrDocument Document) inferred)
+    private static Outcome<Output> Emit((Plan Plan, SqlProject Project, IrDocument Document) inferred)
     {
-        var (plan, document) = inferred;
+        var (plan, project, document) = inferred;
         var emitted = ZodEmitter.Emit(document, new ZodOptions
         {
             Objects = plan.Config.Objects == ObjectsPolicy.Strict ? ZodObjects.Strict : ZodObjects.Strip,
         });
-        return Located(emitted, plan.Config.Location).Select(zod => new Output(plan, document, zod));
+        return Located(emitted, plan.Config.Location).Select(zod => new Output(plan, project, document, zod));
     }
 
     /// <summary>
@@ -276,7 +287,7 @@ internal static class Generate
                 Remove(temporary);
         }
 
-        return new Succeeded<Written>(new Written(output.Document, irPath, zodPath, output.Plan.Root));
+        return new Succeeded<Written>(new Written(output.Document, irPath, zodPath, output.Project));
     }
 
     /// <summary>
@@ -335,7 +346,7 @@ internal static class Generate
     /// </summary>
     private static Succeeded<Written> Noted(Written written) =>
         new(written, [.. written.Document.Unknowns.Select(u => InferenceCodes.Of(u.Reason) is { } code
-                ? Rooted(code.At(SourceLocation.TryParse(u.At, out var at) ? at : null, $"{u.Object} {u.Path}: {u.Detail}"), written.Source)
+                ? Rooted(code.At(SourceLocation.TryParse(u.At, out var at) ? at : null, $"{u.Object} {u.Path}: {u.Detail}"), written.Project)
                 : null)
             .OfType<Diagnostic>()]);
 
@@ -380,11 +391,11 @@ internal static class Generate
     /// <summary>A failure of the command line's own (<see cref="CliCodes"/>), with no place.</summary>
     private static Failed<T> Refused<T>(DiagnosticCode code, string message) => new([code.At(null, message)]);
 
-    /// <summary>The outcome with each diagnostic's SQL file under <paramref name="source"/>, as the user names it.</summary>
-    private static Outcome<T> Rebased<T>(Outcome<T> outcome, string source) => outcome switch
+    /// <summary>The outcome with each diagnostic's SQL file under the folder it was read from.</summary>
+    private static Outcome<T> Rebased<T>(Outcome<T> outcome, SqlProject project) => outcome switch
     {
-        Succeeded<T> succeeded => new Succeeded<T>(succeeded.Value, [.. succeeded.Diagnostics.Select(d => Rooted(d, source))]),
-        Failed<T> failed => new Failed<T>([.. failed.Diagnostics.Select(d => Rooted(d, source))]),
+        Succeeded<T> succeeded => new Succeeded<T>(succeeded.Value, [.. succeeded.Diagnostics.Select(d => Rooted(d, project))]),
+        Failed<T> failed => new Failed<T>([.. failed.Diagnostics.Select(d => Rooted(d, project))]),
     };
 
     /// <summary>The outcome with each diagnostic that has no place placed at <paramref name="location"/>.</summary>
@@ -394,6 +405,7 @@ internal static class Generate
         Failed<T> failed => new Failed<T>([.. failed.Diagnostics.Select(d => d with { At = d.At ?? location })]),
     };
 
-    private static Diagnostic Rooted(Diagnostic diagnostic, string source) =>
-        diagnostic.At is SourceLocation at ? diagnostic with { At = at with { File = Path.Join(source, at.File) } } : diagnostic;
+    /// <summary>The diagnostic with its SQL location's file under the folder it was read from, as the user names it (<see cref="SqlProject.FolderOf"/>).</summary>
+    private static Diagnostic Rooted(Diagnostic diagnostic, SqlProject project) =>
+        diagnostic.At is SourceLocation at ? diagnostic with { At = at with { File = Path.Join(project.FolderOf(at.File), at.File) } } : diagnostic;
 }

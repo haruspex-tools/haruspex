@@ -11,7 +11,7 @@ namespace Haruspex.Tests.Semantics;
 /// </summary>
 public class SchemaGapsTests
 {
-    private static DatabaseModel Model(params string[] unread) =>
+    private static DatabaseModel Model(params UnreadPart[] unread) =>
         new([], [], [], [], [], [], [], [], []) { Unread = [.. unread] };
 
     [Fact]
@@ -20,8 +20,8 @@ public class SchemaGapsTests
     [Fact]
     public void Each_part_left_unread_is_named_as_where_a_missing_name_may_be() =>
         Assert.Equal(
-            " It may be defined in crane.dacpac, a package referred to that was not found; or in quay.dacpac, a package referred to that was not found.",
-            SchemaGaps.MayBeIn(Model("crane.dacpac, a package referred to that was not found", "quay.dacpac, a package referred to that was not found")));
+            " It may be defined in crane.dacpac, which harbour.dacpac refers to and which was not found; or in quay.dacpac, which crane.dacpac refers to and which was not found.",
+            SchemaGaps.MayBeIn(Model(new UnreadPart("crane.dacpac", "harbour.dacpac"), new UnreadPart("quay.dacpac", "crane.dacpac"))));
 
     [Fact]
     public void A_table_that_binds_to_nothing_names_the_part_it_may_be_in()
@@ -31,11 +31,11 @@ public class SchemaGapsTests
         var read = SqlScriptFolder.Read(dir.Path).Model;
         var model = new DatabaseModel(read.Tables, read.UserTypes, read.Procedures, read.Functions, read.Views, read.Synonyms, read.Triggers, read.CascadingKeys, read.TableRedefinitions)
         {
-            Unread = ["quay.dacpac, a package referred to that was not found"],
+            Unread = [new UnreadPart("quay.dacpac", "crane.dacpac")],
         };
 
         var doc = IrInference.Infer(model, [new ObjectName("dbo", "p")]).Value;
 
-        Assert.Contains(doc.Unknowns, u => u.Detail.EndsWith("It may be defined in quay.dacpac, a package referred to that was not found.", StringComparison.Ordinal));
+        Assert.Contains(doc.Unknowns, u => u.Detail.EndsWith("It may be defined in quay.dacpac, which crane.dacpac refers to and which was not found.", StringComparison.Ordinal));
     }
 }

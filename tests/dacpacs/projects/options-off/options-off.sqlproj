@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+  <!-- Every database option off, and an older compatibility level and another collation: what a package writes when each
+       differs from DacFx's default. -->
+  <PropertyGroup>
+    <Name>options-off</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql160DatabaseSchemaProvider</DSP>
+    <DefaultCollation>Japanese_CI_AS_KS_WS</DefaultCollation>
+    <CompatibilityMode>150</CompatibilityMode>
+    <AnsiNulls>False</AnsiNulls>
+    <AnsiPadding>False</AnsiPadding>
+    <AnsiWarnings>False</AnsiWarnings>
+    <ArithAbort>False</ArithAbort>
+    <ConcatNullYieldsNull>False</ConcatNullYieldsNull>
+    <NumericRoundAbort>False</NumericRoundAbort>
+    <QuotedIdentifier>False</QuotedIdentifier>
+    <AnsiNullDefault>False</AnsiNullDefault>
+  </PropertyGroup>
+</Project>

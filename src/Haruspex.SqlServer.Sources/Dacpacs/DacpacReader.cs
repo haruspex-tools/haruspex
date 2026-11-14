@@ -39,7 +39,7 @@ public static class DacpacReader
         // Breadth first from the package given: each package of the database once, by its file name, whatever refers to it.
         var database = new List<DacPackage> { root };
         var seen = new Dictionary<(string Name, string? Database), ReferenceRead>();
-        var unread = new List<string>();
+        var unread = new List<UnreadPart>();
         for (var i = 0; i < database.Count; i++)
         {
             var referrer = database[i];
@@ -53,7 +53,7 @@ public static class DacpacReader
                 if (found is not null && reference.Database is null)
                     database.Add(found);
                 else if (found is null && reference.Database is null)
-                    unread.Add($"{reference.LogicalName}, a package {referrer.Name} refers to that was not found");
+                    unread.Add(new UnreadPart(reference.LogicalName, referrer.Name));
             }
         }
 

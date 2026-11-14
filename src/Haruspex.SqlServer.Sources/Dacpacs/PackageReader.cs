@@ -45,7 +45,7 @@ internal static class PackageReader
     {
         var elements = package.Model.Elements(ModelXml.Name("Element")).ToList();
         var parts = elements.Where(e => TableParts.Contains(ModelXml.TypeOf(e))).ToLookup(Owner, StringComparer.Ordinal);
-        var tables = new TableReader(package.Name, package.Built, into.Diagnostics);
+        var tables = new TableReader(package.Name, package.Extracted, into.Diagnostics);
         var modules = new List<XElement>();
         var notModelled = new SortedDictionary<string, int>(StringComparer.Ordinal);
         foreach (var element in elements)
@@ -86,28 +86,29 @@ internal static class PackageReader
 
     /// <summary>
     /// The database's settings, from the package's <c>SqlDatabaseOptions</c>; null when it has none, or names no collation. The
-    /// compatibility level is written there when it differs from the provider's, and otherwise in the header.
+    /// compatibility level is written there when it differs from the provider's, and otherwise in the header, or for an extract
+    /// nowhere (<see cref="DacPackage.CompatibilityMode"/>). Each option is written only when it differs from DacFx's default,
+    /// which is on for <c>ANSI_PADDING</c> and <c>QUOTED_IDENTIFIER</c> and off for the rest (observed: projects with every option
+    /// on and every option off).
     /// </summary>
     public static DatabaseSettings? Settings(DacPackage package)
     {
         var options = package.Model.Elements(ModelXml.Name("Element")).FirstOrDefault(e => ModelXml.TypeOf(e) == ModelXml.SqlDatabaseOptions);
         if (options is null || ModelXml.Property(options, ModelXml.Collation) is not { } collation)
             return null;
-        var level = TypeSpecifier.Number(options, ModelXml.CompatibilityMode) ?? package.CompatibilityMode;
-        if (level is not { } compatibility)
-            return null;
         bool On(string name) => ModelXml.IsTrue(options, name);
+        bool OnUnlessOff(string name) => ModelXml.Property(options, name) != "False";
         return new DatabaseSettings(
             collation,
-            compatibility,
+            TypeSpecifier.Number(options, ModelXml.CompatibilityMode) ?? package.CompatibilityMode,
             On(ModelXml.IsAnsiNullsOn),
             On(ModelXml.IsAnsiNullDefaultOn),
-            On(ModelXml.IsAnsiPaddingOn),
+            OnUnlessOff(ModelXml.IsAnsiPaddingOn),
             On(ModelXml.IsAnsiWarningsOn),
             On(ModelXml.IsArithAbortOn),
             On(ModelXml.IsConcatNullYieldsNullOn),
             On(ModelXml.IsNumericRoundAbortOn),
-            ModelXml.Property(options, ModelXml.IsQuotedIdentifierOn) != "False");
+            OnUnlessOff(ModelXml.IsQuotedIdentifierOn));
     }
 
     /// <summary>

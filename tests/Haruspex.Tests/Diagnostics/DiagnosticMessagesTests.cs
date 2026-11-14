@@ -85,7 +85,6 @@ public class DiagnosticMessagesTests
         (1003, () => Package("harbour", "crane.dacpac", "dock.*")),
         (1004, () => Package("atelier", "atelier.dacpac", "studio.list_pots")),
         (1005, () => Cli([GetBook], args: ["broken.dacpac", "--include", "*.*", "--out", "out"], arrange: f => f.File("broken.dacpac", "not a zip"))),
-        (1006, () => Package("versions", "atelier-extract.dacpac", "studio.list_pots")),
 
         (2001, () => Cli(["CREATE PROCEDURE lib.p AS SET NOCOUNT, NOEXEC ON;\nSELECT b.id FROM lib.book AS b;"])),
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),
@@ -126,6 +125,7 @@ public class DiagnosticMessagesTests
         (3019, () => Config("\"procedures\": { \"lib.get_book\": { \"name\": \"delete\" } }")),
         (3020, () => Override("[].note", "{ }")),
 
+        (3021, () => Config("\"references\": [\"no/such/folder\"]")),
         (3101, () => Declares("{ \"rowset\": { \"type\": \"string\" } }")),
         (3102, () => Declares("{ \"rowset\": { \"type\": \"object\", \"properties\": { \"a\": { \"type\": \"integer\" }, \"b\": { \"type\": \"integer\" } }, \"required\": [\"a\"] } }")),
         (3103, () => Declares("{ \"rowset\": { \"type\": \"object\", \"properties\": { \"a\": { \"type\": \"array\", \"items\": { \"type\": \"integer\" } } } } }")),
@@ -192,6 +192,7 @@ public class DiagnosticMessagesTests
         (6006, () => Cli([GetBook], args: ["db", "--include", "a.b.c", "--out", "out"])),
         (6007, () => Cli([GetBook], args: ["db", "--out", "out"])),
         (6008, () => Cli([GetBook], arrange: f => f.File("out", "a file where the output folder would be"))),
+        (6009, () => Config("\"references\": [\"db\"]")),
     ];
 
     /// <summary>

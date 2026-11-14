@@ -10,6 +10,7 @@
 #   tests/dacpacs/build.sh versions             the orders fixture under older Microsoft.Build.Sql versions
 #   tests/dacpacs/build.sh extract              atelier and orders deployed and extracted again; needs SqlPackage on the
 #                                               PATH and HARUSPEX_TEST_SQLSERVER, a server of your own
+#   tests/dacpacs/build.sh clr                  the CLR assembly compiled, and the script that deploys it written
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -85,6 +86,7 @@ projects() {
   cp -R "$out/projects/." "$work/projects/"
   build "$work/projects/atelier" atelier "$out/atelier"
   build "$work/projects/harbour" harbour "$out/harbour"
+  build "$work/projects/options-off" options-off "$out/versions"
 }
 
 # Older versions write older model.xml. Microsoft.Build.Sql 1.0.0 imports NuGet's pack targets from where SDKs before .NET 10
@@ -121,7 +123,39 @@ extract() {
   done
 }
 
+# A CLR module has no text in a package, only its assembly, class and method. A project's build in the dev container refuses a
+# .NET Framework assembly (SQL70557), so the package is extracted from a database: the assembly in
+# projects/kiln-clr is compiled, and a script is written that enables CLR, trusts the assembly by its hash, creates it and the
+# modules that use it in a database of their own. Run it with sqlcmd on a server of your own, extract the database, then undo
+# what it changed (drop the database, sys.sp_drop_trusted_assembly, and 'clr enabled' back as it was).
+clr() {
+  local dir="$work/kiln-clr"
+  mkdir -p "$dir"
+  cp -R "$out/projects/kiln-clr/." "$dir/"
+  dotnet build "$dir/KilnClr.csproj" -c Release -nologo -v:q > "$dir/build.log" 2>&1
+  local dll="$dir/bin/Release/net48/KilnClr.dll"
+  cat > "$out/kiln-clr-deploy.sql" <<SQL
+EXEC sp_configure 'clr enabled', 1; RECONFIGURE;
+EXEC sys.sp_add_trusted_assembly 0x$(sha512sum "$dll" | cut -d' ' -f1), N'KilnClr';
+GO
+CREATE DATABASE haruspex_dacpac_clr;
+GO
+USE haruspex_dacpac_clr;
+GO
+CREATE SCHEMA studio;
+GO
+CREATE ASSEMBLY KilnClr FROM 0x$(od -An -v -tx1 "$dll" | tr -d ' \n') WITH PERMISSION_SET = SAFE;
+GO
+CREATE FUNCTION studio.doubled (@x int) RETURNS int AS EXTERNAL NAME KilnClr.Kiln.[Double];
+GO
+CREATE PROCEDURE studio.report AS EXTERNAL NAME KilnClr.Kiln.Report;
+GO
+CREATE PROCEDURE studio.uses_clr AS SELECT studio.doubled(21) AS answer;
+SQL
+  echo "wrote kiln-clr-deploy.sql: run it, then extract haruspex_dacpac_clr to versions/kiln-clr-extract.dacpac"
+}
+
 mkdir -p "$out/versions"
-step="${1:?give fixtures, corpus, projects, versions or extract}"
+step="${1:?give fixtures, corpus, projects, versions, extract or clr}"
 shift
 "$step" "$@"

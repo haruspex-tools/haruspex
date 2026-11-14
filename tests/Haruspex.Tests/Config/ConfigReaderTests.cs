@@ -144,6 +144,8 @@ public class ConfigReaderTests
         { """{ "$schema": 1 }""", "haruspex.json:1:14: error HAR3005: $schema: must be a string." },
         { """{ "source": "" }""", "haruspex.json:1:13: error HAR3005: source: must not be empty." },
         { """{ "out": 3 }""", "haruspex.json:1:10: error HAR3005: out: must be a string." },
+        { """{ "references": "lib" }""", "haruspex.json:1:17: error HAR3005: references: must be an array of folders to look for referenced DACPACs in, such as \"../shared/bin/Release\"." },
+        { """{ "references": ["no/such/folder"] }""", "haruspex.json:1:18: error HAR3021: references[0]: \"no/such/folder\" is not a folder, so no referenced DACPAC can be found in it." },
         { """{ "objects": "loose" }""", "haruspex.json:1:14: error HAR3005: objects: must be \"strip\" or \"strict\", not \"loose\"." },
 
         // The callers' session: only the options a rule reads, each true or false.

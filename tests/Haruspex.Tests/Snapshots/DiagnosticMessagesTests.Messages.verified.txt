@@ -13,9 +13,6 @@ atelier.dacpac: note HAR1004: atelier.dacpac holds elements haruspex doesn't mod
 HAR1005
 broken.dacpac: error HAR1005: broken.dacpac can't be read as a DACPAC: Central Directory corrupt.
 
-HAR1006
-atelier-extract.dacpac/[studio].[secret_kilns]:1:1: warning HAR1006: studio.secret_kilns is encrypted, and the package holds a placeholder, not its text: it is left out, so what reads it is unknown.
-
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
 
@@ -126,6 +123,9 @@ haruspex.json:1:119: error HAR3019: procedures["lib.get_book"].name: 'delete' is
 
 HAR3020
 haruspex.json:1:133: error HAR3020: procedures["lib.get_book"].paths["[].note"]: says nothing to override: give "name", "nullable", "type" or "values".
+
+HAR3021
+haruspex.json:1:92: error HAR3021: references[0]: "no/such/folder" is not a folder, so no referenced DACPAC can be found in it.
 
 HAR3101
 haruspex.json:1:127: error HAR3101: procedures["lib.p"].results.rowset: a rowset is declared by the schema of one row: an object with "properties", one for each column.
@@ -294,4 +294,7 @@ haruspex: error HAR6007: nothing is selected: give --include, or a config file w
 
 HAR6008
 haruspex: error HAR6008: cannot write to out: …
+
+HAR6009
+haruspex.json: warning HAR6009: "references" is read only when the source is a .dacpac, and db is a folder of scripts.
 

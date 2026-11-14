@@ -1,9 +1,13 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
+using System.Text.RegularExpressions;
+using Haruspex.Cli;
+using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
 using Haruspex.SqlServer.Sources.Dacpacs;
+using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests.Sources;
 
@@ -19,6 +23,8 @@ public class DacpacReaderTests
     private static readonly Lazy<DacpacReadResult> Atelier = new(() => DacpacReader.Read(Path.Combine(Packages, "atelier", "atelier.dacpac")));
 
     private static readonly Lazy<DacpacReadResult> AtelierExtract = new(() => DacpacReader.Read(Path.Combine(Packages, "versions", "atelier-extract.dacpac")));
+
+    private static readonly Lazy<DacpacReadResult> Clr = new(() => DacpacReader.Read(Path.Combine(Packages, "versions", "kiln-clr-extract.dacpac")));
 
     private static readonly Lazy<DacpacReadResult> Harbour = new(() => DacpacReader.Read(Path.Combine(Packages, "harbour", "harbour.dacpac")));
 
@@ -210,6 +216,139 @@ public class DacpacReaderTests
     }
 
     [Fact]
+    public void An_extract_records_the_collation_and_takes_the_level_of_the_provider_it_names()
+    {
+        // The extract was taken at its provider's level, so it records none (observed); the collation is there regardless.
+        var settings = AtelierExtract.Value.Model.Settings!;
+
+        Assert.Equal("SQL_Latin1_General_CP1_CI_AS", settings.Collation);
+        Assert.Equal(170, settings.CompatibilityLevel);
+    }
+
+    [Fact]
+    public void Every_option_is_read_as_the_package_writes_it_absent_at_dacfx_s_default()
+    {
+        var on = Atelier.Value.Model.Settings;
+        var off = DacpacReader.Read(Path.Combine(Packages, "versions", "options-off.dacpac")).Model.Settings;
+
+        Assert.Equal(new DatabaseSettings("SQL_Latin1_General_CP1_CI_AS", 170, true, true, true, true, true, true, false, true), on);
+        Assert.Equal(new DatabaseSettings("Japanese_CI_AS_KS_WS", 150, false, false, false, false, false, false, false, false), off);
+    }
+
+    [Fact]
+    public void A_computed_column_persisted_not_null_is_not_null() =>
+        Assert.Equal(DeclaredNullability.NotNull, Kiln(Atelier.Value).Column("peak_k")!.Nullability);
+
+    [Fact]
+    public void An_encrypted_scalar_function_in_an_extract_keeps_its_return_type_and_parameters()
+    {
+        var function = Assert.IsType<ScalarFunction>(AtelierExtract.Value.Model.FindFunction(Studio("secret_double")));
+
+        Assert.IsType<EncryptedBody>(function.Body);
+        Assert.Equal(new SqlType(SqlTypeKind.BuiltIn, "int", []), function.Returns);
+        Assert.Equal(["@x"], function.Parameters.Select(p => p.Name));
+    }
+
+    [Fact]
+    public void An_encrypted_inline_function_in_an_extract_returns_its_listed_columns_each_nullable()
+    {
+        var function = Assert.IsType<TableFunction>(AtelierExtract.Value.Model.FindFunction(Studio("secret_kilns_over")));
+
+        Assert.IsType<EncryptedBody>(function.Body);
+        Assert.Equal(["kiln_id", "label"], function.Returns.Columns.Select(c => c.Name));
+        Assert.All(function.Returns.Columns, c => Assert.Equal(DeclaredNullability.Null, c.Nullability));
+    }
+
+    [Fact]
+    public void An_encrypted_view_in_an_extract_keeps_its_column_names_and_no_query()
+    {
+        var view = Assert.IsType<View>(AtelierExtract.Value.Model.FindReadable(Studio("secret_kilns")));
+
+        Assert.Null(view.Query);
+        Assert.Equal(["kiln_id"], view.Columns);
+    }
+
+    [Fact]
+    public void A_clr_procedure_and_function_are_read_with_their_assembly_class_and_method()
+    {
+        Assert.Equal(new ClrBody("KilnClr", "Kiln", "Report"), Clr.Value.Model.FindProcedure(Studio("report"))!.Body);
+        var function = Assert.IsType<ScalarFunction>(Clr.Value.Model.FindFunction(Studio("doubled")));
+        Assert.Equal(new ClrBody("KilnClr", "Kiln", "Double"), function.Body);
+        Assert.Equal(new SqlType(SqlTypeKind.BuiltIn, "int", []), function.Returns);
+    }
+
+    /// <summary>The IR of one procedure of a package, with no config.</summary>
+    private static IrDocument Infer(string group, string package, string procedure) =>
+        SqlProject.LoadPackage(Path.Combine(Packages, group, package), []).Infer([new ObjectName("studio", procedure)]).Expected();
+
+    [Theory]
+    [InlineData("calls_secret_fn", "doubled", "int")]
+    [InlineData("reads_secret_tvf", "kiln_id", "int")]
+    [InlineData("reads_secret_tvf", "label", "varchar(8)")]
+    public void What_reads_an_encrypted_function_of_an_extract_is_typed_by_what_its_element_declares(string procedure, string field, string sql)
+    {
+        var type = Field(Infer("versions", "atelier-extract.dacpac", procedure), field).Type;
+
+        Assert.Equal(sql, Assert.IsType<IrScalar>(type).Sql);
+    }
+
+    [Fact]
+    public void What_reads_an_encrypted_view_of_an_extract_is_unknown_for_that_reason()
+    {
+        var doc = Infer("versions", "atelier-extract.dacpac", "reads_secret_view");
+
+        Assert.Equal(IrUnknownReason.EncryptedDefinition, Assert.Single(doc.Unknowns).Reason);
+    }
+
+    [Fact]
+    public void What_calls_a_clr_function_is_typed_by_its_declared_return_type_and_a_clr_procedure_is_external_code()
+    {
+        var answer = Field(Infer("versions", "kiln-clr-extract.dacpac", "uses_clr"), "answer").Type;
+
+        Assert.Equal("int", Assert.IsType<IrScalar>(answer).Sql);
+        Assert.Equal(IrUnknownReason.ExternalCode, Assert.Single(Infer("versions", "kiln-clr-extract.dacpac", "report").Unknowns).Reason);
+    }
+
+    [Fact]
+    public void A_package_without_a_server_in_its_origin_is_read_as_a_build_whatever_made_it()
+    {
+        // A build marks no check added WITH NOCHECK, so a package not positively an extract must not trust one (ck_kiln_late).
+        using var dir = new TempDirectory();
+        var path = Path.Combine(dir.Path, "atelier.dacpac");
+        File.Copy(Path.Combine(Packages, "versions", "atelier-extract.dacpac"), path);
+        using (var zip = ZipFile.Open(path, ZipArchiveMode.Update))
+        {
+            var origin = zip.GetEntry("Origin.xml")!;
+            string text;
+            using (var reader = new StreamReader(origin.Open()))
+                text = reader.ReadToEnd();
+            origin.Delete();
+            using var writer = new StreamWriter(zip.CreateEntry("Origin.xml").Open(), new UTF8Encoding(false));
+            writer.Write(Regex.Replace(text, "<Server>.*?</Server>", "", RegexOptions.Singleline)
+                .Replace("Microsoft.SqlServer.Dac,", "Some.Other.Tool,", StringComparison.Ordinal));
+        }
+
+        Assert.DoesNotContain(Kiln(DacpacReader.Read(path)).Checks, c => c.Name == "ck_kiln_late");
+        Assert.Contains(Kiln(AtelierExtract.Value).Checks, c => c.Name == "ck_kiln_late");
+    }
+
+    [Fact]
+    public void A_location_is_rooted_at_the_folder_its_own_package_was_found_in()
+    {
+        using var dir = new TempDirectory();
+        Directory.CreateDirectory(Path.Combine(dir.Path, "app"));
+        Directory.CreateDirectory(Path.Combine(dir.Path, "shared"));
+        File.Copy(Path.Combine(Packages, "harbour", "harbour.dacpac"), Path.Combine(dir.Path, "app", "harbour.dacpac"));
+        foreach (var name in new[] { "crane", "quay", "tally" })
+            File.Copy(Path.Combine(Packages, "harbour", name + ".dacpac"), Path.Combine(dir.Path, "shared", name + ".dacpac"));
+
+        var project = SqlProject.LoadPackage(Path.Combine(dir.Path, "app", "harbour.dacpac"), [Path.Combine(dir.Path, "shared")]);
+
+        Assert.Equal(Path.Combine(dir.Path, "shared"), project.FolderOf("crane.dacpac/[dock].[crane]"));
+        Assert.Equal(Path.Combine(dir.Path, "app"), project.FolderOf("harbour.dacpac/[dock].[list_cranes]"));
+    }
+
+    [Fact]
     public void A_folder_records_no_settings() =>
         Assert.Null(SqlScriptFolder.Read(Fixture.Named("orders").Database).Model.Settings);
 
@@ -262,7 +401,7 @@ public class DacpacReaderTests
 
         var read = DacpacReader.Read(Path.Combine(dir.Path, "harbour.dacpac"));
 
-        Assert.Equal(["crane.dacpac, a package harbour.dacpac refers to that was not found", "quay.dacpac, a package harbour.dacpac refers to that was not found"], read.Model.Unread.Order(StringComparer.Ordinal));
+        Assert.Equal([new UnreadPart("crane.dacpac", "harbour.dacpac"), new UnreadPart("quay.dacpac", "harbour.dacpac")], read.Model.Unread.OrderBy(p => p.Name, StringComparer.Ordinal));
         Assert.Equal(4, read.Diagnostics.Count(d => d.Code == SourceCodes.ReferenceNotFound));
     }
 

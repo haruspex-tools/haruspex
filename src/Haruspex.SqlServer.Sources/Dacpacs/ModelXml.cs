@@ -13,8 +13,9 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// <c>Value</c> attribute, or a <c>Value</c> element holding text such as a body), its links to other elements are
 /// <c>Relationship</c> elements whose entries hold an element or a <c>References</c> to one by name, and what DacFx keeps beside
 /// it is an <c>Annotation</c>. A boolean property is written only when it is true (observed: a project with <c>AnsiWarnings</c>
-/// false has no <c>IsAnsiWarningsOn</c>), so its absence is false; the one exception read here is
-/// <see cref="IsQuotedIdentifierOn"/>, written false and absent when true.
+/// false has no <c>IsAnsiWarningsOn</c>), so its absence is false; the exceptions read here are <see cref="IsQuotedIdentifierOn"/>
+/// and <see cref="IsAnsiPaddingOn"/>, written false and absent when true, and <see cref="IsPersistedNullable"/>, absent when
+/// nothing was declared.
 /// </remarks>
 internal static class ModelXml
 {
@@ -52,6 +53,16 @@ internal static class ModelXml
     public const string IsNullable = nameof(IsNullable);
     public const string IsIdentity = nameof(IsIdentity);
     public const string IsHidden = nameof(IsHidden);
+    public const string IsPersistedNullable = nameof(IsPersistedNullable);
+    public const string ReturnTableVariable = nameof(ReturnTableVariable);
+    public const string DoReturnNullForNullInput = nameof(DoReturnNullForNullInput);
+    public const string ClassName = nameof(ClassName);
+    public const string MethodName = nameof(MethodName);
+    public const string SqlTriggerType = nameof(SqlTriggerType);
+    public const string IsInsertTrigger = nameof(IsInsertTrigger);
+    public const string IsUpdateTrigger = nameof(IsUpdateTrigger);
+    public const string IsDeleteTrigger = nameof(IsDeleteTrigger);
+    public const string SqlClrFunctionImplementation = nameof(SqlClrFunctionImplementation);
     public const string GraphType = nameof(GraphType);
     public const string IsNode = nameof(IsNode);
     public const string IsEdge = nameof(IsEdge);
@@ -89,6 +100,7 @@ internal static class ModelXml
     public const string Parameters = nameof(Parameters);
     public const string FunctionBody = nameof(FunctionBody);
     public const string Parent = nameof(Parent);
+    public const string Assembly = nameof(Assembly);
 
     // Annotations read.
     public const string SysCommentsObjectAnnotation = nameof(SysCommentsObjectAnnotation);

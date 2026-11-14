@@ -117,6 +117,8 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
             // Observed: Dml_through_a_view_or_a_cte_fires_the_triggers_of_the_table_underneath.
             if (view.Redefinition is not null)
                 return $"writes the view {name}, which is defined more than once, so the tables it writes underneath are not known";
+            if (view.Query is null)
+                return $"writes the view {name}, which is encrypted, so the tables it writes underneath are not known";
             foreach (var read in DmlTarget.Underneath(view.Query))
             {
                 if (binder.ResolveWritten(read).Count == 0)

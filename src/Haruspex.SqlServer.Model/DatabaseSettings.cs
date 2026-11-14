@@ -13,12 +13,17 @@ namespace Haruspex.SqlServer.Model;
 /// declares).
 /// </para>
 /// <para>
-/// A DACPAC writes an option only when it is on, so an option it leaves out is off (observed in <c>tests/dacpacs</c>: a project
-/// with <c>AnsiWarnings</c> false has no <c>IsAnsiWarningsOn</c>), and each is known.
+/// Every option is known: a DACPAC writes each one only when it differs from DacFx's own default, which is on for
+/// <c>ANSI_PADDING</c> and <c>QUOTED_IDENTIFIER</c> and off for the rest (observed: projects with every option on and every option
+/// off, 14 Nov 2026). The compatibility level is not always written: a package extracted at its provider's level has none,
+/// and then it is the level of the provider the package names, or null for one that names no version.
 /// </para>
 /// </remarks>
 /// <param name="Collation">The default collation, such as <c>Latin1_General_100_CI_AS</c>.</param>
-/// <param name="CompatibilityLevel">The compatibility level (<c>160</c> for SQL Server 2022's), which decides how some syntax and functions behave.</param>
+/// <param name="CompatibilityLevel">
+/// The compatibility level (<c>160</c> for SQL Server 2022's), which decides how some syntax and functions behave; null when the
+/// source doesn't say.
+/// </param>
 /// <param name="AnsiNulls">Whether <c>ANSI_NULLS</c> is on by default.</param>
 /// <param name="AnsiNullDefault">Whether a column declared without <c>NULL</c> or <c>NOT NULL</c> is nullable by default (<c>ANSI_NULL_DEFAULT</c>).</param>
 /// <param name="AnsiPadding">Whether <c>ANSI_PADDING</c> is on by default.</param>
@@ -29,7 +34,7 @@ namespace Haruspex.SqlServer.Model;
 /// <param name="QuotedIdentifier">Whether <c>QUOTED_IDENTIFIER</c> is on by default.</param>
 public sealed record DatabaseSettings(
     string Collation,
-    int CompatibilityLevel,
+    int? CompatibilityLevel,
     bool AnsiNulls,
     bool AnsiNullDefault,
     bool AnsiPadding,

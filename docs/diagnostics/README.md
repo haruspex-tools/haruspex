@@ -18,7 +18,6 @@ reason.
 | [HAR1003](HAR1003.md) | warning | A referenced DACPAC isn't found |
 | [HAR1004](HAR1004.md) | note | Elements of a DACPAC that aren't modelled |
 | [HAR1005](HAR1005.md) | error | A file that can't be read as a DACPAC |
-| [HAR1006](HAR1006.md) | warning | An encrypted function or view whose text the DACPAC lacks |
 
 ## Inference
 
@@ -72,6 +71,7 @@ reason.
 | [HAR3018](HAR3018.md) | error | A value declared nullable |
 | [HAR3019](HAR3019.md) | error | A name isn't a valid identifier |
 | [HAR3020](HAR3020.md) | error | An override says nothing |
+| [HAR3021](HAR3021.md) | error | A references folder isn't there |
 | [HAR3101](HAR3101.md) | error | A rowset isn't declared by one row's schema |
 | [HAR3102](HAR3102.md) | error | A rowset's required leaves a column out |
 | [HAR3103](HAR3103.md) | error | A rowset's column isn't a scalar |
@@ -137,9 +137,10 @@ reason.
 |---|---|---|
 | [HAR6001](HAR6001.md) | error | The command line doesn't parse |
 | [HAR6002](HAR6002.md) | error | The config file isn't there |
-| [HAR6003](HAR6003.md) | error | No folder of SQL files is given |
-| [HAR6004](HAR6004.md) | error | The folder of SQL files isn't there |
+| [HAR6003](HAR6003.md) | error | No source is given |
+| [HAR6004](HAR6004.md) | error | The source isn't there |
 | [HAR6005](HAR6005.md) | error | No output folder is given |
 | [HAR6006](HAR6006.md) | error | An --include pattern isn't well formed |
 | [HAR6007](HAR6007.md) | error | Nothing is selected |
 | [HAR6008](HAR6008.md) | error | The output can't be written |
+| [HAR6009](HAR6009.md) | warning | References with a source that isn't a DACPAC |

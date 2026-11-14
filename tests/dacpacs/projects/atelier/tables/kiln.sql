@@ -6,6 +6,7 @@ CREATE TABLE studio.kiln (
     fired_at datetime2(0) NULL,
     peak int NULL CONSTRAINT ck_kiln_peak CHECK NOT FOR REPLICATION (peak < 1400),
     peak_f AS peak * 9 / 5 + 32,
+    peak_k AS ISNULL(peak, 0) + 273 PERSISTED NOT NULL,
     serial varchar(12) NOT NULL CONSTRAINT uq_kiln_serial UNIQUE,
     CONSTRAINT ck_kiln_id CHECK (kiln_id > 0),
     CHECK (fired_at > '2000-01-01'),

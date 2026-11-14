@@ -78,8 +78,9 @@ Console.WriteLine($"{package.Package?.Name} {package.Package?.Sha256}, {package.
 - **A DACPAC reads as its project's folder does.** For every fixture that builds as a project, and for WideWorldImporters, the
   output from the package is byte for byte the folder's once locations are rewritten (`DacpacEquivalenceTests`). Every element
   of `model.xml` is read, passed over for a stated reason, or counted in one note (HAR1004). A module created with
-  `ANSI_NULLS` or `QUOTED_IDENTIFIER` off is parsed and read as it runs. An encrypted module an extracted package holds no text
-  for is never read as its placeholder. A referenced package not found is one warning (HAR1003) naming every place looked.
+  `ANSI_NULLS` or `QUOTED_IDENTIFIER` off is parsed and read as it runs. A CLR module, and an encrypted one an extracted
+  package holds no text for, is read from its element with a `ClrBody` or an `EncryptedBody`, never from a placeholder. A
+  referenced package not found is one warning (HAR1003) naming every place looked.
 
 ## What it deliberately doesn't do
 

@@ -13,3 +13,12 @@ BEGIN
 END;
 GO
 CREATE SYNONYM studio.furnace FOR studio.kiln;
+GO
+-- Encrypted: an extract keeps their parameters, return type and columns, but not their text.
+CREATE FUNCTION studio.secret_double (@x int) RETURNS int WITH ENCRYPTION AS
+BEGIN
+    RETURN @x * 2;
+END;
+GO
+CREATE FUNCTION studio.secret_kilns_over (@peak int) RETURNS TABLE WITH ENCRYPTION AS
+RETURN SELECT k.kiln_id, k.label FROM studio.kiln AS k WHERE k.peak > @peak;

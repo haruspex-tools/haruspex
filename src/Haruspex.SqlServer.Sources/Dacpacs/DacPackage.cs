@@ -12,18 +12,23 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// </summary>
 /// <param name="Path">Where it was found.</param>
 /// <param name="Sha256">The SHA-256 of its bytes, in lower-case hexadecimal, which the IR records so that its claims are reproducible.</param>
-/// <param name="Built">
-/// Whether a project's build made it (<c>Origin.xml</c> names DacFx's build task), rather than SqlPackage from a database.
-/// The two differ in what they keep: a build keeps the project's text of every module, encrypted or not, and doesn't record
-/// whether a constraint added by <c>ALTER TABLE … WITH NOCHECK</c> is trusted; an extract keeps no encrypted text and marks
-/// each constraint the server doesn't trust (both observed in <c>tests/dacpacs</c>).
+/// <param name="Extracted">
+/// Whether it was extracted from a database, which its <c>Origin.xml</c> says by naming the server (a <c>Server</c> element,
+/// which no build writes, observed in <c>tests/dacpacs</c>). The two differ in what they keep: a build keeps the project's text
+/// of every module, encrypted or not, and doesn't record whether a constraint added by <c>ALTER TABLE … WITH NOCHECK</c> is
+/// trusted; an extract keeps no encrypted text and marks each constraint the server doesn't trust. A package made any other way
+/// (by the DacFx API, as community SDKs build one) is read as a build, the side that claims less.
 /// </param>
 /// <param name="Model">The <c>Model</c> element of <c>model.xml</c>, whose children are the schema's elements.</param>
 /// <param name="References">The database references its header records, in order.</param>
 /// <param name="CompatibilityMode">The compatibility level its header records, or null.</param>
-internal sealed class DacPackage(string Path, string Sha256, bool Built, XElement Model, IReadOnlyList<PackageReference> References, int? CompatibilityMode)
+internal sealed class DacPackage(string Path, string Sha256, bool Extracted, XElement Model, IReadOnlyList<PackageReference> References, int? CompatibilityMode)
 {
-    /// <summary>The compatibility level the header records, used when the database's options don't give one.</summary>
+    /// <summary>
+    /// The compatibility level the header records, or else the version of the provider the model names
+    /// (<c>Sql160DatabaseSchemaProvider</c> is 160): used when the database's options don't give one, as an extract's don't when
+    /// the level is its provider's.
+    /// </summary>
     public int? CompatibilityMode { get; } = CompatibilityMode;
 
     /// <summary>Where it was found.</summary>
@@ -32,8 +37,8 @@ internal sealed class DacPackage(string Path, string Sha256, bool Built, XElemen
     /// <summary>The SHA-256 of its bytes.</summary>
     public string Sha256 { get; } = Sha256;
 
-    /// <summary>Whether a project's build made it.</summary>
-    public bool Built { get; } = Built;
+    /// <summary>Whether it was extracted from a database.</summary>
+    public bool Extracted { get; } = Extracted;
 
     /// <summary>The <c>Model</c> element of <c>model.xml</c>.</summary>
     public XElement Model { get; } = Model;
@@ -63,10 +68,10 @@ internal sealed class DacPackage(string Path, string Sha256, bool Built, XElemen
             return new DacPackage(
                 path,
                 Convert.ToHexStringLower(SHA256.HashData(bytes)),
-                BuiltByProject(origin),
+                origin?.Root?.Element(ModelXml.Name("Server")) is not null,
                 elements,
                 [.. Header(root)],
-                HeaderCompatibility(root));
+                HeaderCompatibility(root) ?? ProviderLevel(root));
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or XmlException)
         {
@@ -84,11 +89,6 @@ internal sealed class DacPackage(string Path, string Sha256, bool Built, XElemen
         using var reader = XmlReader.Create(stream, new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null });
         return XDocument.Load(reader);
     }
-
-    /// <summary>Whether <c>Origin.xml</c> names DacFx's build task as what made the package.</summary>
-    private static bool BuiltByProject(XDocument? origin) =>
-        origin?.Root?.Element(ModelXml.Name("Operation"))?.Element(ModelXml.Name("ProductName"))?.Value
-            .StartsWith("Microsoft.Data.Tools.Schema.Tasks.Sql", StringComparison.Ordinal) == true;
 
     /// <summary>
     /// The database references in the header, each a <c>CustomData</c> of the category <c>Reference</c> and the type
@@ -117,6 +117,12 @@ internal sealed class DacPackage(string Path, string Sha256, bool Built, XElemen
             .SelectMany(d => d.Elements(ModelXml.Name("Metadata")))
             .Select(m => int.TryParse((string?)m.Attribute("Value"), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var level) ? level : (int?)null)
             .FirstOrDefault(level => level is not null);
+
+    /// <summary>The version a provider's name gives, such as 170 for <c>Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider</c>; null for one with none.</summary>
+    private static int? ProviderLevel(XElement root) =>
+        System.Text.RegularExpressions.Regex.Match((string?)root.Attribute("DspName") ?? "", @"\.Sql(\d+)DatabaseSchemaProvider$") is { Success: true } match
+            ? int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture)
+            : null;
 
     /// <summary>A recorded path's file name, whichever machine's separators it has.</summary>
     public static string FileNameOf(string recorded) => recorded[(recorded.LastIndexOfAny(['/', '\\']) + 1)..];

@@ -86,11 +86,11 @@ public sealed class DatabaseModel
     public DatabaseSettings? Settings { get; init; }
 
     /// <summary>
-    /// The parts of the database the source refers to but which weren't read, each as a message names it (a referenced package
-    /// that wasn't found): a name that binds to nothing may be defined in one, so a reader saying it is missing can say where
-    /// it may be. Empty when the source is whole as far as it knows.
+    /// The parts of the database the source refers to but which weren't read (a referenced package that wasn't found): a name
+    /// that binds to nothing may be defined in one, so a reader saying it is missing can say where it may be. Empty when the
+    /// source is whole as far as it knows.
     /// </summary>
-    public EquatableArray<string> Unread { get; init; } = [];
+    public EquatableArray<UnreadPart> Unread { get; init; } = [];
 
     /// <summary>The tables, in source order.</summary>
     public IReadOnlyList<Table> Tables { get; }

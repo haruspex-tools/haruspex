@@ -166,11 +166,15 @@ writes is never lost in silence.
 
 **Built or extracted.** A package made by a project's build and one SqlPackage extracted from a database differ in what they
 can know. A build keeps every module's text, encrypted or not; an extract can't, since SQL Server gives no one an encrypted
-module's text, and keeps a placeholder that, read as a body, would claim the procedure returns nothing. So a procedure whose
-text a package lacks has an `EncryptedBody`, and its results are unknown with a reason of their own
-(`encrypted-definition`). An extract records which constraints the server doesn't trust; a build doesn't say whether a check
-added by `ALTER TABLE … WITH NOCHECK` is trusted, so in a build only a check written in its table is read, as a folder reads
-none that `ALTER TABLE` adds.
+module's text, and keeps a placeholder that, read as a body, would claim the procedure returns nothing. A CLR module has no
+text in either. Such a module is still read, from its element, which keeps what a caller needs: its parameters, a scalar
+function's return type, a table function's columns, a view's column names, a trigger's table and events. Its body is a
+`ClrBody` (the element names the assembly, class and method) or an `EncryptedBody`, so what calls it is typed from what it
+declares, and what it does is unknown with the true reason (`external-code`, `encrypted-definition`). An extract records
+which constraints the server doesn't trust; a build doesn't say whether a check added by `ALTER TABLE … WITH NOCHECK` is
+trusted, so unless a package is an extract only a check written in its table is read, as a folder reads none that
+`ALTER TABLE` adds. A package is taken for an extract only when its `Origin.xml` names the server it came from; one made any
+other way, by the DacFx API as community SDKs make one, is read as a build, the side that claims less.
 
 **References.** A database split across projects builds a package per project, each referring to the ones it uses. The
 reader follows them, breadth first, reading each package of the same database once into the one model, which is what the
@@ -182,7 +186,8 @@ database's model is the next step. A reference found nowhere is one warning, and
 where it may be defined (`DatabaseModel.Unread`), so the cause is found once rather than chased name by name.
 
 **What the database itself says.** A package records the database's settings: its default collation, compatibility level
-and the defaults of its `SET` options. The model keeps them (`DatabaseSettings`), and applies none: a column's collation is
+and the defaults of its `SET` options. It writes each only where it differs from DacFx's own default, so an option absent is
+at that default, and an extract taken at its provider's level records no level, which is then the provider's. The model keeps them (`DatabaseSettings`), and applies none: a column's collation is
 the one it declares, and a caller's options are the caller's ([decision
 0038](../decisions/0038-the-callers-session-is-declared.md)).
 

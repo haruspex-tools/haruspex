@@ -22,10 +22,4 @@ public static class SourceCodes
 
     /// <summary>A file given or referred to as a DACPAC that can't be read as one: nothing in it is read.</summary>
     public static DiagnosticCode UnreadablePackage { get; } = new(1005, DiagnosticSeverity.Error, "A file that can't be read as a DACPAC");
-
-    /// <summary>
-    /// A function or view created <c>WITH ENCRYPTION</c> whose text the DACPAC doesn't hold, as one extracted from a database
-    /// doesn't: it is left out of the model, so what reads it is unknown.
-    /// </summary>
-    public static DiagnosticCode EncryptedNotRead { get; } = new(1006, DiagnosticSeverity.Warning, "An encrypted function or view whose text the DACPAC lacks");
 }

@@ -256,11 +256,14 @@ public sealed partial class Binder
 
     /// <summary>
     /// A view's columns: its column list (observed: A_view_column_list_names_every_column_and_no_more), or else its query's, with
-    /// its stars expanded as SQL Server binds them when it creates the view; null for a view defined more than once, one of
-    /// FOR XML or FOR JSON, or one whose columns can't be listed.
+    /// its stars expanded as SQL Server binds them when it creates the view; for a view whose text the source doesn't hold, the
+    /// names the source lists; null for a view defined more than once, one of FOR XML or FOR JSON, or one whose columns can't be
+    /// listed.
     /// </summary>
     private EquatableArray<string>? ViewColumns(View view) => bindings.Columns(view, () =>
     {
+        if (view.Query is null)
+            return view.Redefinition is null ? view.Columns : null;
         if (view.Redefinition is not null || view.Query.QueryExpression is not { } query || ForOf(query) is not null)
             return null;
         var binder = bindings.For(view.Span);

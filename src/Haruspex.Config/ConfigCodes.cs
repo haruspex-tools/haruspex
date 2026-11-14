@@ -72,6 +72,12 @@ public static class ConfigCodes
     /// <summary>A path override that sets nothing.</summary>
     public static DiagnosticCode EmptyOverride { get; } = new(3020, Error, "An override says nothing");
 
+    /// <summary>
+    /// A folder in <c>references</c> that isn't there: a typo would otherwise show only as a referenced DACPAC not found, which
+    /// blames the package.
+    /// </summary>
+    public static DiagnosticCode NoSuchFolder { get; } = new(3021, Error, "A references folder isn't there");
+
     /// <summary>A rowset declared by something other than the schema of one row, an object with properties.</summary>
     public static DiagnosticCode RowsetShape { get; } = new(3101, Error, "A rowset isn't declared by one row's schema");
 

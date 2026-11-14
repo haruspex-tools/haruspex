@@ -7,9 +7,16 @@ namespace Haruspex.SqlServer.Model;
 /// <summary>A view: the query it is, and the names it gives its columns.</summary>
 /// <param name="Name">Its name.</param>
 /// <param name="Span">Where its definition is.</param>
-/// <param name="Columns">The names its column list gives (<c>CREATE VIEW v (a, b)</c>); empty when it has none.</param>
-/// <param name="Query">Its query, as ScriptDom parsed it. What it reads matters to DML through it, which changes the tables underneath.</param>
-public sealed record View(ObjectName Name, SourceSpan Span, EquatableArray<string> Columns, SelectStatement Query) : Module(Name, Span)
+/// <param name="Columns">
+/// The names its column list gives (<c>CREATE VIEW v (a, b)</c>); empty when it has none. For a view whose text the source
+/// doesn't hold, the names of its columns as the source lists them.
+/// </param>
+/// <param name="Query">
+/// Its query, as ScriptDom parsed it. What it reads matters to DML through it, which changes the tables underneath. Null when the
+/// source doesn't hold its text: a view created <c>WITH ENCRYPTION</c>, in a DACPAC extracted from a database, whose columns are
+/// then known by name only.
+/// </param>
+public sealed record View(ObjectName Name, SourceSpan Span, EquatableArray<string> Columns, SelectStatement? Query) : Module(Name, Span)
 {
     /// <summary>
     /// Whether it was created with ANSI_NULLS off, which it keeps (as a procedure does): set by <c>SET ANSI_NULLS OFF</c> before

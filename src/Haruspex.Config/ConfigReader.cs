@@ -237,8 +237,13 @@ public static class ConfigReader
 
             for (var i = 0; i < array.Items.Count; i++)
             {
-                if (NonEmpty(array.Items[i], Index(path, i)) is { } folder)
-                    folders.Add(Path.GetFullPath(Path.Combine(directory, folder)));
+                if (NonEmpty(array.Items[i], Index(path, i)) is not { } folder)
+                    continue;
+                var full = Path.GetFullPath(Path.Combine(directory, folder));
+                if (Directory.Exists(full))
+                    folders.Add(full);
+                else
+                    Report(ConfigCodes.NoSuchFolder, array.Items[i], Index(path, i), $"\"{folder}\" is not a folder, so no referenced DACPAC can be found in it.");
             }
 
             return folders;

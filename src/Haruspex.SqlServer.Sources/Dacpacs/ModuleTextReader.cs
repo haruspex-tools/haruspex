@@ -21,10 +21,11 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// created with <c>ANSI_NULLS</c> off is read as it runs (<see cref="Procedure.AnsiNullsOff"/>).
 /// </para>
 /// <para>
-/// <b>An encrypted module.</b> A package built from a project keeps an encrypted module's text; one extracted from a database
-/// can't, and keeps a placeholder body and no header. A procedure with no header is read with its parameters and an
-/// <see cref="EncryptedBody"/>, so its results are unknown rather than the nothing its placeholder would claim. A function or
-/// view with no header can't be read at all (its return type or columns are in the header) and is left out, said once.
+/// <b>A module without text.</b> A package built from a project keeps an encrypted module's text; one extracted from a database
+/// can't, and keeps a placeholder body and no header. A CLR module has no text in either. Such a module is read from its element
+/// (<see cref="WithoutText"/>), with an <see cref="EncryptedBody"/> or a <see cref="ClrBody"/>, so that what calls it is typed
+/// from what the element declares, and what it does is unknown with the true reason rather than the nothing a placeholder would
+/// claim.
 /// </para>
 /// </remarks>
 internal static class ModuleTextReader
@@ -64,27 +65,75 @@ internal static class ModuleTextReader
     }
 
     /// <summary>
-    /// A module whose text the package doesn't hold: an encrypted procedure, with its parameters from their elements; anything
-    /// else is left out and said (see the remarks).
+    /// A module whose text the package doesn't hold, read from its element, which keeps what a caller needs: its parameters, a
+    /// scalar function's return type, a table function's columns, a view's column names, a trigger's table and events. Its body
+    /// is a <see cref="ClrBody"/> for a CLR module (the element names its assembly, class and method), and an
+    /// <see cref="EncryptedBody"/> for one created <c>WITH ENCRYPTION</c> in an extract; any other is left out, said in a note.
     /// </summary>
-    private static Procedure? WithoutText(XElement element, string type, string file, ICollection<Diagnostic> diagnostics)
+    private static Module? WithoutText(XElement element, string type, string file, ICollection<Diagnostic> diagnostics)
     {
         var name = ElementName.Object(ModelXml.Named(element));
-        if (!ModelXml.IsTrue(element, ModelXml.IsEncrypted))
+        var implementation = ModelXml.Elements(element, ModelXml.FunctionBody).FirstOrDefault() ?? element;
+        ModuleBody? body = Clr(implementation) is { } clr ? clr : ModelXml.IsTrue(element, ModelXml.IsEncrypted) ? new EncryptedBody() : null;
+        if (body is null)
         {
-            diagnostics.Add(SourceCodes.NotModelled.At(new SourceLocation(file, 1, 1), $"{name} has no text in the package, so it is not read."));
-            return null;
-        }
-
-        if (type != ModelXml.SqlProcedure)
-        {
-            diagnostics.Add(SourceCodes.EncryptedNotRead.At(new SourceLocation(file, 1, 1), $"{name} is encrypted, and the package holds a placeholder, not its text: it is left out, so what reads it is unknown."));
+            diagnostics.Add(SourceCodes.NotModelled.At(new SourceLocation(file, 1, 1), $"{name} has no text in the package and is neither CLR nor encrypted, so it is not read."));
             return null;
         }
 
         var span = PackageLocation.Whole(file, 1);
-        var parameters = ModelXml.Elements(element, ModelXml.Parameters).Select(p => Parameter(p, span, diagnostics));
-        return new Procedure(name, span, [.. parameters], new EncryptedBody()) { AnsiNullsOff = !ModelXml.IsTrue(element, ModelXml.IsAnsiNullsOn) };
+        var ansiNullsOff = !ModelXml.IsTrue(element, ModelXml.IsAnsiNullsOn);
+        Collections.EquatableArray<Parameter> parameters = [.. ModelXml.Elements(element, ModelXml.Parameters).Select(p => Parameter(p, span, diagnostics))];
+        return type switch
+        {
+            ModelXml.SqlProcedure => new Procedure(name, span, parameters, body) { AnsiNullsOff = ansiNullsOff },
+            ModelXml.SqlScalarFunction => new ScalarFunction(name, span, parameters, TypeSpecifier.Of(element, ModelXml.Type), body)
+            {
+                AnsiNullsOff = ansiNullsOff,
+                ReturnsNullOnNullInput = ModelXml.IsTrue(element, ModelXml.DoReturnNullForNullInput),
+            },
+            ModelXml.SqlInlineTableValuedFunction or ModelXml.SqlMultiStatementTableValuedFunction =>
+                new TableFunction(name, span, parameters, ReturnTable(element, name, span, inline: type == ModelXml.SqlInlineTableValuedFunction, diagnostics), body) { AnsiNullsOff = ansiNullsOff },
+            ModelXml.SqlView => new View(name, span, [.. ModelXml.Elements(element, ModelXml.Columns).Select(c => ElementName.Last(ModelXml.Named(c)))], null) { AnsiNullsOff = ansiNullsOff },
+            ModelXml.SqlDmlTrigger => Trigger(element, name, span, body),
+            _ => null,
+        };
+    }
+
+    /// <summary>A CLR body, when the element (a procedure, trigger or function's implementation) names an assembly; otherwise null.</summary>
+    private static ClrBody? Clr(XElement implementation) =>
+        ModelXml.References(implementation, ModelXml.Assembly).FirstOrDefault() is { } assembly
+            ? new ClrBody(ElementName.Last(ModelXml.Named(assembly)), ModelXml.Property(implementation, ModelXml.ClassName) ?? "", ModelXml.Property(implementation, ModelXml.MethodName))
+            : null;
+
+    /// <summary>
+    /// The table a function without text returns, from the columns its element lists: named by its variable when it has one, as
+    /// a body's table variable is, or else as the function is. A multi-statement function's columns are declared, NOT NULL
+    /// enforced as in any table. An inline function's are the engine's description of its query, whose nullability is not a
+    /// guarantee haruspex can check (a caller's session can make an expression NULL that the description says can't be), so
+    /// each is read as nullable, which claims less.
+    /// </summary>
+    private static DeclaredTable ReturnTable(XElement element, ObjectName function, SourceSpan span, bool inline, ICollection<Diagnostic> diagnostics)
+    {
+        var reader = new TableReader(span.File, extracted: true, diagnostics);
+        var columns = ModelXml.Elements(element, ModelXml.Columns)
+            .Select(c => reader.Column(c, ElementName.Last(ModelXml.Named(c)), span.Start))
+            .Select(c => inline ? c with { Nullability = DeclaredNullability.Null } : c);
+        return new DeclaredTable(ModelXml.Property(element, ModelXml.ReturnTableVariable) ?? function.ToString(), span, [.. columns], [], [], []);
+    }
+
+    /// <summary>
+    /// A DML trigger without text: its table, its events, and whether it runs instead of the statement (<c>SqlTriggerType</c> 3,
+    /// observed on an <c>INSTEAD OF</c> trigger, against 2 on an <c>AFTER</c> one).
+    /// </summary>
+    private static Trigger? Trigger(XElement element, ObjectName name, SourceSpan span, ModuleBody body)
+    {
+        if (ModelXml.References(element, ModelXml.Parent).FirstOrDefault() is not { } parent)
+            return null;
+        var events = (ModelXml.IsTrue(element, ModelXml.IsInsertTrigger) ? DmlEvents.Insert : DmlEvents.None)
+            | (ModelXml.IsTrue(element, ModelXml.IsUpdateTrigger) ? DmlEvents.Update : DmlEvents.None)
+            | (ModelXml.IsTrue(element, ModelXml.IsDeleteTrigger) ? DmlEvents.Delete : DmlEvents.None);
+        return new Trigger(name, span, ElementName.Object(ModelXml.Named(parent)), ModelXml.Property(element, ModelXml.SqlTriggerType) == "3", events, body);
     }
 
     /// <summary>A parameter from its element: its type, whether it is OUTPUT, and its default parsed from its script.</summary>

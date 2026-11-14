@@ -24,9 +24,13 @@ internal sealed class SqlProject
     /// <summary>What the IR's source record says of the packages read, or nothing for a folder (<see cref="Recorded"/>).</summary>
     private readonly Func<IrSource, IrSource> recorded;
 
-    private SqlProject(DatabaseModel model, IReadOnlyList<Diagnostic> diagnostics, Func<IrSource, IrSource>? recorded = null)
+    /// <summary>The folder a location's file is relative to (<see cref="FolderOf"/>).</summary>
+    private readonly Func<string, string> folderOf;
+
+    private SqlProject(DatabaseModel model, IReadOnlyList<Diagnostic> diagnostics, Func<string, string> folderOf, Func<IrSource, IrSource>? recorded = null)
     {
         this.model = model;
+        this.folderOf = folderOf;
         this.recorded = recorded ?? (source => source);
         Diagnostics = diagnostics;
         // In name order, as a listing is: the model's own order is where each was read, which would make the order the
@@ -44,7 +48,7 @@ internal sealed class SqlProject
     public static SqlProject Load(string directory)
     {
         var read = SqlScriptFolder.Read(directory);
-        return new SqlProject(read.Model, read.Diagnostics);
+        return new SqlProject(read.Model, read.Diagnostics, _ => directory);
     }
 
     /// <summary>Whether <paramref name="source"/> names a DACPAC rather than a folder of scripts: a file, by its extension.</summary>
@@ -57,8 +61,20 @@ internal sealed class SqlProject
     public static SqlProject LoadPackage(string package, IReadOnlyList<string> references)
     {
         var read = DacpacReader.Read(package, references);
-        return new SqlProject(read.Model, read.Diagnostics, source => Recorded(source, read));
+        var folders = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var found in read.References.Select(r => r.Found).Prepend(read.Package).OfType<LoadedPackage>())
+            folders.TryAdd(found.Name, Path.GetDirectoryName(found.Path) ?? ".");
+        var beside = Path.GetDirectoryName(Path.GetFullPath(package)) ?? ".";
+        return new SqlProject(read.Model, read.Diagnostics, file => folders.GetValueOrDefault(file.Split('/')[0], beside), source => Recorded(source, read));
     }
+
+    /// <summary>
+    /// The folder a location's file is relative to, so that a path the user is shown exists: the source folder, or for a
+    /// location in a DACPAC (<c>sales.dacpac/[sales].[get_order]</c>) the folder the package named first in it was found in,
+    /// which for a referenced package may be a folder of the config file's <c>references</c>.
+    /// </summary>
+    /// <param name="file">The location's file.</param>
+    public string FolderOf(string file) => folderOf(file);
 
     /// <summary>
     /// The IR's source record with the package and its references, by file name and SHA-256: the IR knows nothing of DACPACs,

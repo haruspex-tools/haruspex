@@ -203,8 +203,11 @@ internal sealed partial class Typer
         var at = view.Span.Start;
         LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{view.Name}: {detail}", at));
 
+        // An encrypted view whose text the source lacks: its columns are known by name, their values not at all.
+        if (view.Query is not { } select)
+            return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.EncryptedDefinition, $"{view.Name} is encrypted, and the source holds a placeholder, not its text, so what its columns hold is unknown.", at));
+
         // Its stars are expanded, as SQL Server bound them when it created the view.
-        var select = view.Query;
         return WithCtes(
             select.WithCtesAndXmlNamespaces,
             ReadScope.Statement(NameEnvironment.View, FlowState.Start([])),

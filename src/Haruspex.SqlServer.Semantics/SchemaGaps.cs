@@ -14,6 +14,8 @@ public static class SchemaGaps
     public static string MayBeIn(DatabaseModel model)
     {
         ArgumentNullException.ThrowIfNull(model);
-        return model.Unread.Count == 0 ? "" : $" It may be defined in {string.Join("; or in ", model.Unread)}.";
+        return model.Unread.Count == 0
+            ? ""
+            : $" It may be defined in {string.Join("; or in ", model.Unread.Select(p => $"{p.Name}, which {p.ReferredToBy} refers to and which was not found"))}.";
     }
 }
