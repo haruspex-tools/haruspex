@@ -50,7 +50,7 @@ disk that fails or a bug. For a user's mistake they are a poor fit, for three re
   several calls away.
 
 The alternative is to make failure a value. A function returns either its result or what went wrong, and its type says
-so: Haskell's *Either*, ML's *result*, Rust's *Result* (whose `?` operator passes a failure up without a word
+so: Haskell's *Either*, OCaml's and F#'s *result*, Rust's *Result* (whose `?` operator passes a failure up without a word
 more). In haruspex it is `Outcome<T>` ([decision 0037](../decisions/0037-steps-return-outcomes.md)), a closed hierarchy of
 two cases:
 
@@ -120,8 +120,10 @@ haruspex.json:4:14: error HAR3005: objects: must be "strip" or "strict", not "lo
 ```
 
 Only the first is reported. Reading the config file failed, so no step after it ran: there is no selection to check a
-pattern against until there is a config to select with. That is the failure track at work, and it is what keeps one
-mistake from bringing others with it. Corrected, the next run reaches selection and stops there:
+pattern against until there is a config to select with. That is the failure track at work. Here it costs something: the
+pattern `lend_*` is a mistake of its own, not an echo of the first, and the run can't see it yet, because the step that
+can needs the config the first mistake took away. Sequencing trades that delay for never reporting a problem that only
+follows from another (a later section comes back to it). Corrected, the next run reaches selection and stops there:
 
 ```jsonc haruspex-config
 {
