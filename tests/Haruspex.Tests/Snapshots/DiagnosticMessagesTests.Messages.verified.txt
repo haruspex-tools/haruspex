@@ -1,0 +1,285 @@
+HAR1001
+db/p1.sql:1:34: error HAR1001: Incorrect syntax near 'FROM'.
+
+HAR1002
+db/p2.sql:1:1: error HAR1002: lib.get_book is defined more than once.
+
+HAR2001
+db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
+
+HAR2003
+db/p2.sql:1:1: note HAR2003: lib.p results: lib.p is changed by ALTER PROCEDURE at p2.sql:1:1, and which definition applies depends on the order the scripts run.
+
+HAR2004
+db/p1.sql:1:34: note HAR2004: lib.p results[0]: SELECT * is not expanded yet.
+
+HAR2005
+db/p1.sql:1:34: note HAR2005: lib.p results[0][].c: The multi-part column reference lib.book.id is not modelled yet.
+
+HAR2006
+db/p1.sql:1:34: note HAR2006: lib.p results[0][].id: RIGHT OUTER JOIN is not modelled yet.
+
+HAR2007
+db/tables.sql:8:5: note HAR2007: lib.p results[0][].pages: lib.book.pages is a computed column, which is not modelled yet.
+
+HAR2008
+db/p1.sql:1:34: note HAR2008: lib.p results[0][].a: There is no table lib.missing in the project.
+
+HAR2009
+db/p1.sql:1:34: note HAR2009: lib.p results[0][].gone: The table lib.book has no column nope.
+
+HAR2010
+db/p1.sql:1:34: note HAR2010: lib.p results[0]: The column at p1.sql:1:34 has no name.
+
+HAR2011
+db/p1.sql:1:45: note HAR2011: lib.p results[0]: The alias 'a' clashes with another key in the same JSON object.
+
+HAR2012
+db/p1.sql:1:1: note HAR2012: lib.p results[0][].v: Every return of lib.again calls itself again, so it never returns a value.
+
+HAR2013
+db/p1.sql:1:34: note HAR2013: lib.p results[0][].data: json_query(b.extra) reads JSON that is not built here, so its shape is unknown.
+
+HAR2014
+db/p1.sql:1:34: note HAR2014: lib.p results[0][].id: #caller is not created by the procedure before this, so it is the caller's, whose shape depends on who calls.
+
+HAR2015
+db/p1.sql:1:34: note HAR2015: lib.p results: A result set is returned inside a loop, which may return it any number of times.
+
+HAR2021
+db/p2.sql:1:27: note HAR2021: lib.p results: The write at p2.sql:1:27 fires the trigger lib.book_seen on lib.book (p1.sql:1:1), which returns a result set at p1.sql:1:58
+
+HAR2022
+db/p1.sql:1:94: note HAR2022: lib.p results: FETCH without INTO at p1.sql:1:94 returns the row with a hidden ROWSTAT column, which some drivers list among its columns and others leave out.
+
+HAR2101
+db/p1.sql:1:27: warning HAR2101: audit.trail is written here but is not defined in the project, so a trigger on it, which could return result sets of its own, cannot be seen. SQL Server allows results from triggers unless the server's 'disallow results from triggers' option is on, which it is not by default.
+
+HAR3001
+haruspex.json:1:134: error HAR3001: procedures["lib.get_book"].results.rowset: cannot read the schema schemas: Access to the path 'schemas' is denied.
+
+HAR3002
+haruspex.json:1:13: error HAR3002: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed.
+
+HAR3003
+haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
+
+HAR3004
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, out, schemas, objects, naming, procedures.
+
+HAR3005
+haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".
+
+HAR3006
+haruspex.json:1:67: error HAR3006: schemas.lib.include[0]: '[get' has a '[' without its closing ']'.
+
+HAR3007
+haruspex.json:1:93: error HAR3007: procedures["lib.get_*"]: names one procedure, so it cannot use * or ?; write a part that holds them in brackets, as [a*b].
+
+HAR3008
+haruspex.json:1:75: error HAR3008: schemas.LIB: the schema "lib" already has a block, at line 1; schema names are compared ignoring case, as SQL Server compares them. Merge the two.
+
+HAR3009
+haruspex.json:1:86: error HAR3009: schemas.audit.exclude: does nothing without an "include" in the same block, since nothing in the schema is selected. Add the include, or remove the exclude.
+
+HAR3010
+haruspex.json:1:114: error HAR3010: naming.replace[0].pattern: is not a regular expression haruspex can use: Invalid pattern '(' at offset 1. Not enough )'s.
+
+HAR3011
+haruspex.json:1:133: error HAR3011: procedures["lib.get_book"].paths["[].note"]: "nullable": false needs "why": the database doesn't prove it, so say what does.
+
+HAR3012
+haruspex.json:1:134: error HAR3012: procedures["lib.get_book"].paths["[].extra"]: "type" needs "import": the module that exports the schema.
+
+HAR3013
+haruspex.json:1:134: error HAR3013: procedures["lib.get_book"].paths["[].title"]: "why" explains a claim, but there is none here: give "nullable", "type" or "values".
+
+HAR3014
+haruspex.json:1:109: error HAR3014: procedures["lib.get_book"]: "paths" can't be used with "results": the declared schema says it all, so put the detail there.
+
+HAR3015
+haruspex.json:1:115: error HAR3015: procedures["lib.p"].results: must have either "rowset" or "json", the schema of a row or of the JSON document.
+
+HAR3016
+haruspex.json:1:115: error HAR3016: procedures["lib.p"].results: "mayBeAbsent" is for a JSON result, which FOR JSON leaves out when it matches no rows; a rowset with no rows is still there.
+
+HAR3017
+haruspex.json:1:122: error HAR3017: procedures["lib.get_book"].paths["a..b"]: 'a..b' is not a path: at 1, a '.' must be followed by a key; write a key that is not an identifier as ["key"].
+
+HAR3018
+haruspex.json:1:147: error HAR3018: procedures["lib.get_book"].paths["[].note"].nullable: can only be false. A value is nullable unless the database proves otherwise, so there is nothing to declare.
+
+HAR3019
+haruspex.json:1:119: error HAR3019: procedures["lib.get_book"].name: 'delete' is not a valid name: an ASCII letter, _ or $, then letters, digits, _ or $, and not a reserved word.
+
+HAR3020
+haruspex.json:1:133: error HAR3020: procedures["lib.get_book"].paths["[].note"]: says nothing to override: give "name", "nullable", "type" or "values".
+
+HAR3101
+haruspex.json:1:127: error HAR3101: procedures["lib.p"].results.rowset: a rowset is declared by the schema of one row: an object with "properties", one for each column.
+
+HAR3102
+haruspex.json:1:233: error HAR3102: procedures["lib.p"].results.rowset.required: every column of a rowset is always there, so "required" must list them all, or be left out.
+
+HAR3103
+haruspex.json:1:168: error HAR3103: procedures["lib.p"].results.rowset.properties.a: a rowset's column holds a scalar: a string, number, integer or boolean. JSON a column holds is a string.
+
+HAR3104
+haruspex.json:1:125: error HAR3104: procedures["lib.p"].results.json: the JSON document itself is never null; when a query may match no rows, use "mayBeAbsent": true.
+
+HAR3105
+haruspex.json:1:166: error HAR3105: procedures["lib.p"].results.json.properties.a: needs a "type".
+
+HAR3106
+haruspex.json:1:135: error HAR3106: procedures["lib.p"].results.json.type: can have only one type besides "null": a value of several types is not supported yet.
+
+HAR3107
+haruspex.json:1:135: error HAR3107: procedures["lib.p"].results.json.type: "date" is not a JSON Schema type: use string, integer, number, boolean, object, array or null.
+
+HAR3108
+haruspex.json:1:125: error HAR3108: procedures["lib.p"].results.json: needs "properties" (its keys), or "additionalProperties" (the type of every value, for an object whose keys are data).
+
+HAR3109
+haruspex.json:1:204: error HAR3109: procedures["lib.p"].results.json.required: names "b", which is not in "properties".
+
+HAR3110
+haruspex.json:1:166: error HAR3110: procedures["lib.p"].results.json.properties.a: may be both left out and null, which haruspex can't express yet: FOR JSON leaves a null out, so make the key required, or not nullable.
+
+HAR3111
+haruspex.json:1:125: error HAR3111: procedures["lib.p"].results.json: needs "items", the schema of its items.
+
+HAR3112
+haruspex.json:1:135: error HAR3112: procedures["lib.p"].results.json.$ref: can refer only to "#/$defs/…" or "#/definitions/…" of the same schema.
+
+HAR3113
+haruspex.json:1:135: error HAR3113: procedures["lib.p"].results.json.$ref: refers to "#/$defs/missing", which the schema does not define.
+
+HAR3114
+haruspex.json:1:224: error HAR3114: procedures["lib.p"].results.json.$defs.node.properties.next.$ref: refers to "#/$defs/node" inside itself: a recursive schema is not supported yet.
+
+HAR3150
+haruspex.json:1:155: warning HAR3150: procedures["lib.p"].results.json.format: "ipv4" is not a format haruspex checks, so the generated schema does not check it.
+
+HAR3151
+haruspex.json:1:145: warning HAR3151: procedures["lib.p"].results.json.pattern: is not supported yet, so the generated schema does not check it.
+
+HAR3152
+haruspex.json:1:148: warning HAR3152: procedures["lib.p"].results.json.type: is ignored beside "$ref".
+
+HAR4001
+haruspex.json:1:75: error HAR4001: schemas.shelf: the project has no procedure in a schema named "shelf". A schema key is the schema's name as it is, without brackets.
+
+HAR4002
+haruspex.json:1:76: error HAR4002: schemas.lib.include[1]: 'list_*' matches no procedure in the schema "lib". Correct it, or remove it.
+
+HAR4003
+haruspex.json:1:85: error HAR4003: schemas.lib.exclude[0]: '*_old' excludes nothing: it matches no procedure that "include" selects in the schema "lib". Remove it.
+
+HAR4004
+haruspex.json:1:46: error HAR4004: schemas.lib: the schema "lib" selects nothing: its "exclude" removes every procedure its "include" selects. Narrow the exclude, or remove the block.
+
+HAR4005
+haruspex: error HAR4005: --include 'lib.list_*' matches no procedure. Correct it, or remove it.
+
+HAR4006
+haruspex: error HAR4006: --include 'lib.get_book' matches only procedures that schemas.lib.exclude leaves out, so it selects nothing.
+
+HAR4101
+haruspex.json:1:93: error HAR4101: procedures["lib.lost_book"]: there is no procedure lib.lost_book in the project.
+
+HAR4102
+haruspex.json:1:97: error HAR4102: procedures["lib.purge"]: the procedure lib.purge is not selected, so it can't be overridden. Overrides apply only to the procedures its schema's "include" selects and "exclude" leaves in.
+
+HAR4103
+haruspex.json:1:130: error HAR4103: procedures["LIB.GET_BOOK"]: lib.get_book already has overrides, at line 1; names are compared ignoring case, as SQL Server compares them. Merge the two.
+
+HAR4104
+haruspex.json:1:122: error HAR4104: procedures["lib.get_book"].paths["[].nope"]: the path results[0][].nope does not exist: the object at results[0][] has no key "nope". Its keys are "id", "title", "note", "status", "copies", "extra".
+
+HAR4105
+haruspex.json:1:122: error HAR4105: procedures["lib.get_book"].paths["[].u<json>[].a"]: the path results[0][].u<json>[].a passes through a value of several types at results[0][].u<json>[], and a path can't choose between them.
+
+HAR4106
+haruspex.json:1:122: error HAR4106: procedures["lib.get_book"].paths["[].children[]"]: the value at results[0][].children[] is the recursive type of lib.tree, which every procedure that reaches it shares, so it can't be overridden for one of them.
+
+HAR4107
+haruspex.json:1:122: error HAR4107: procedures["lib.get_book"].paths["[].one<json>"]: the value at results[0][].one<json> is what JSON text holds, which is never null itself; nothing can be declared about its nullability.
+
+HAR4108
+haruspex.json:1:122: error HAR4108: procedures["lib.get_book"].paths["[].title"]: the value at results[0][].title has no value set to declare exact. A value set is inferred from a CHECK constraint on a column the value passes through unchanged; canonical value sets for other cases are planned, not done.
+
+HAR4109
+haruspex.json:1:122: error HAR4109: procedures["lib.get_book"].paths["[].title"]: only an object type can be named, and the value at results[0][].title is a string (nvarchar(100)).
+
+HAR4110
+haruspex.json:1:122: warning HAR4110: procedures["lib.get_book"].paths["[].id"]: "nullable": false agrees with the inference, which already proves the value at results[0][].id is never null. Remove it.
+
+HAR4111
+haruspex.json:1:122: warning HAR4111: procedures["lib.get_book"].paths["[].copies"]: "values": "exact" agrees with the inference, which already proves the set at results[0][].copies exact. Remove it.
+
+HAR4201
+haruspex.json:1:93: error HAR4201: procedures["lib.get_book"]: haruspex infers the results of lib.get_book, and the declaration disagrees at results: the inference says 1 result set, the declaration 0. A declaration is for results that can't be inferred; to correct inferred results, override a path under "paths".
+
+HAR4202
+haruspex.json:1:93: warning HAR4202: procedures["lib.count_books"]: the declared results agree with the inference, which already infers the results of lib.count_books. Remove the declaration.
+
+HAR4203
+haruspex.json:1:93: warning HAR4203: procedures["other.thing"]: the declared results are not used: other.thing is not selected, and no selected procedure calls it.
+
+HAR4204
+haruspex: warning HAR4204: lib.p: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (p1.sql:2:1) Declare them in haruspex.json under procedures["lib.p"].results, as "none" or a JSON Schema, or declare the results of the procedure that runs it.
+
+HAR4205
+haruspex: warning HAR4205: lib.p: results[0][].id is unknown: #s may be changed by the call at p1.sql:3:1, which is not followed: EXEC (N'SELECT 1') runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. A declaration can't type it: after a call that is not followed, temporary tables are unknown even when its results are declared. To type the value, override its path under "paths" with "type" and "import".
+
+HAR4301
+haruspex.json:1:87: error HAR4301: naming: the procedure lib.book# cannot be named: "case": "preserve" gives 'book#', which is not a valid identifier (an ASCII letter, _ or $, then letters, digits, _ or $). Add a replacement, or give it a name in "procedures".
+
+HAR4302
+haruspex.json:1:87: error HAR4302: naming: the recursive function lib.tree#'s type cannot be named: "case": "preserve" gives 'tree#', which is not a valid identifier (an ASCII letter, _ or $, then letters, digits, _ or $). Add a replacement, or give it a name in "procedures". Change the naming rules so that they name it.
+
+HAR4303
+haruspex.json:1:46: error HAR4303: schemas.lib: "GetBook" would name both the procedure lib.get_book and the procedure lib.get_book#. Generated names must not clash: add a naming "replace" rule that tells their names apart (such as { "pattern": "#$", "with": "Row" }), or give one of them its own name with a "name" override in "procedures".
+
+HAR4304
+haruspex.json:1:119: warning HAR4304: procedures["lib.get_book"].name: the name "GetBook" is what the naming rules give lib.get_book already. Remove it.
+
+HAR5001
+haruspex: error HAR5001: The IR name 'string' is not a valid TypeScript identifier.
+
+HAR5002
+haruspex: error HAR5002: The imported name 'class' is not a valid TypeScript identifier.
+
+HAR5003
+haruspex.json: error HAR5003: 'TextSchema' is imported from both '../a' and '../b'.
+
+HAR5004
+haruspex.json: error HAR5004: The imported name 'z' is also a name this module defines or uses.
+
+HAR5005
+haruspex: error HAR5005: The type Shared is read both as rows and as JSON, so one schema can't check it.
+
+HAR6001
+haruspex: error HAR6001: Unrecognized command or argument 'blue'.
+
+HAR6002
+haruspex: error HAR6002: config file not found: nowhere.json
+
+HAR6003
+haruspex: error HAR6003: give the folder of .sql files to read, or a config file with "source".
+
+HAR6004
+haruspex: error HAR6004: directory not found: nowhere
+
+HAR6005
+haruspex: error HAR6005: give --out, the folder to write to, or a config file with "out".
+
+HAR6006
+haruspex: error HAR6006: invalid --include pattern: 'a.b.c' is not a two-part name such as sales.get_order, sales.* or *.list_*.
+
+HAR6007
+haruspex: error HAR6007: nothing is selected: give --include, or a config file whose "schemas" include procedures. Use '*.*' to type every procedure.
+
+HAR6008
+haruspex: error HAR6008: cannot write to out: The file 'out' already exists.
+
