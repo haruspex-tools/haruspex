@@ -183,11 +183,26 @@ public class DiagnosticMessagesTests
         (6008, () => Cli([GetBook], arrange: f => f.File("out", "a file where the output folder would be"))),
     ];
 
+    /// <summary>
+    /// Where a message ends with the operating system's own words, which differ between Windows, macOS and Linux: the line is
+    /// pinned up to there, and the rest shown as <c>…</c>.
+    /// </summary>
+    private static readonly Dictionary<int, string> SystemMessageAfter = new()
+    {
+        [3001] = "cannot read the schema schemas: ",
+        [6008] = "cannot write to out: ",
+    };
+
     /// <summary>The first line each case writes with its code, by code: what the snapshot and the pages show.</summary>
     internal static IReadOnlyDictionary<string, string> Lines { get; } = Cases.ToDictionary(
         c => $"HAR{c.Code:D4}",
-        c => c.Run().FirstOrDefault(line => line.Contains($" HAR{c.Code:D4}: ", StringComparison.Ordinal)) ?? $"(no line with HAR{c.Code:D4}: {string.Join(" | ", c.Run())})",
+        c => Pinned(c.Code, c.Run().FirstOrDefault(line => line.Contains($" HAR{c.Code:D4}: ", StringComparison.Ordinal)) ?? $"(no line with HAR{c.Code:D4}: {string.Join(" | ", c.Run())})"),
         StringComparer.Ordinal);
+
+    private static string Pinned(int code, string line) =>
+        SystemMessageAfter.TryGetValue(code, out var before) && line.IndexOf(before, StringComparison.Ordinal) is var at and >= 0
+            ? line[..(at + before.Length)] + "…"
+            : line;
 
     [Fact]
     public void Every_code_in_use_is_made_to_happen_by_a_case()

@@ -74,7 +74,7 @@ public partial class DiagnosticPagesTests
         Assert.Equal(digitsBySection.Count, digitsBySection.Select(d => d[0]).Distinct().Count());
     }
 
-    [GeneratedRegex(@"## Example\n\n```text\n(?<line>[^\n]*)\n```")]
+    [GeneratedRegex(@"## Example\n\n(?:[^\n`][^\n]*\n\n)?```text\n(?<line>[^\n]*)\n```")]
     private static partial Regex Example();
 
     [GeneratedRegex(@"\[(?<code>HAR\d{4})\]\(\k<code>\.md\)")]

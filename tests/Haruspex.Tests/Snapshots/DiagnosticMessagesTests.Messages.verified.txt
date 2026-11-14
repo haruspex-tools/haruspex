@@ -56,7 +56,7 @@ HAR2101
 db/p1.sql:1:27: warning HAR2101: audit.trail is written here but is not defined in the project, so a trigger on it, which could return result sets of its own, cannot be seen. SQL Server allows results from triggers unless the server's 'disallow results from triggers' option is on, which it is not by default.
 
 HAR3001
-haruspex.json:1:134: error HAR3001: procedures["lib.get_book"].results.rowset: cannot read the schema schemas: Access to the path 'schemas' is denied.
+haruspex.json:1:134: error HAR3001: procedures["lib.get_book"].results.rowset: cannot read the schema schemas: …
 
 HAR3002
 haruspex.json:1:13: error HAR3002: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed.
@@ -281,5 +281,5 @@ HAR6007
 haruspex: error HAR6007: nothing is selected: give --include, or a config file whose "schemas" include procedures. Use '*.*' to type every procedure.
 
 HAR6008
-haruspex: error HAR6008: cannot write to out: The file 'out' already exists.
+haruspex: error HAR6008: cannot write to out: …
 
