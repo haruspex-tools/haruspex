@@ -43,6 +43,35 @@ public class ConfigCliTests
     }
 
     [Fact]
+    public void A_config_file_that_does_not_read_and_a_malformed_include_are_both_reported()
+    {
+        using var dir = new TempDirectory();
+        dir.File("haruspex.json", "{ \"source\": ");
+
+        var (exitCode, _, error) = Run(dir.Path, "generate", "--include", "a.b.c");
+
+        Assert.Equal(2, exitCode);
+        var lines = error.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
+        Assert.Equal(2, lines.Length);
+        Assert.Contains("error HAR3002:", lines[0], StringComparison.Ordinal);
+        Assert.StartsWith("haruspex: error HAR6006: ", lines[1], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_missing_config_file_and_a_malformed_include_are_both_reported()
+    {
+        using var dir = new TempDirectory();
+
+        var (exitCode, _, error) = Run(dir.Path, "generate", "--config", "nowhere.json", "--include", "a.b.c");
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal(
+            "haruspex: error HAR6002: config file not found: nowhere.json\n"
+            + "haruspex: error HAR6006: invalid --include pattern: 'a.b.c' is not a two-part name such as sales.get_order, sales.* or *.list_*.\n",
+            error.ReplaceLineEndings("\n"));
+    }
+
+    [Fact]
     public void Generates_the_shop_from_its_config_file()
     {
         using var outDir = new TempDirectory();

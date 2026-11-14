@@ -21,8 +21,7 @@ internal static class Generate
     /// <returns>The exit code (<see cref="HaruspexCli.ExitCodes"/>).</returns>
     public static int Run(GenerateRequest request, TextWriter output, TextWriter error)
     {
-        var run = ReadConfig(request)
-            .Then(config => Settle(request, config))
+        var run = Settle(request)
             .Then(ReadProject)
             .Then(Select)
             .Then(Infer)
@@ -100,16 +99,27 @@ internal static class Generate
     }
 
     /// <summary>
-    /// The folders to read and write, and the command line's patterns, from the command line over the config file. The three
-    /// don't depend on each other, so they are combined, and a problem with each is reported, not only the first. Whether
-    /// anything is selected depends on the patterns, so it is checked only once they are read: an error there would
-    /// otherwise cause another, about a selection that was never made.
+    /// What the run is asked: the config file, the folders it names or the command line gives, and the command line's patterns.
+    /// The patterns don't depend on the config file, so a problem with each is reported, not only the first: a config file
+    /// that doesn't read and a malformed pattern are both said. The folders depend on the config file, and whether anything
+    /// is selected on the config file and the patterns, so they follow it, combined with each other: a problem with each
+    /// is said, but none about a setting or a selection that was never made.
     /// </summary>
-    private static Outcome<Plan> Settle(GenerateRequest request, Settings settings) =>
-        Outcome.Combine(
-                Outcome.Combine(Source(request, settings), Out(request, settings)),
-                Includes(request).Then(include => Selects(settings, include).Select(_ => include)))
-            .Select(settled => new Plan(settings, settled.First.First, settled.First.Second, settled.Second));
+    private static Outcome<Plan> Settle(GenerateRequest request)
+    {
+        var include = Includes(request);
+        var read = ReadConfig(request);
+        if (read is not Succeeded<Settings>)
+            return new Failed<Plan>([.. read.Diagnostics, .. include.Diagnostics]);
+        return read.Then(settings => Outcome.Combine(
+                Folders(request, settings),
+                include.Then(patterns => Selects(settings, patterns).Select(_ => patterns)))
+            .Select(settled => new Plan(settings, settled.First.Source, settled.First.Out, settled.Second)));
+    }
+
+    /// <summary>The folders to read and write, which don't depend on each other, so a problem with each is reported.</summary>
+    private static Outcome<(string Source, string Out)> Folders(GenerateRequest request, Settings settings) =>
+        Outcome.Combine(Source(request, settings), Out(request, settings));
 
     private static Outcome<string> Source(GenerateRequest request, Settings settings)
     {

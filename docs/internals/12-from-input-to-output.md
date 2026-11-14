@@ -22,8 +22,8 @@ flowchart LR
     write --> noted["note the unknowns"]
 ```
 
-- **ReadConfig** finds `haruspex.json` (named, or in the working folder or the nearest above it) and reads it.
-- **Settle** works out what the run is asked: the folder to read, the folder to write and the `--include` patterns, the
+- **Settle** works out what the run is asked: it reads the config file (named, or `haruspex.json` in the working folder
+  or the nearest above it), then settles the folder to read, the folder to write and the `--include` patterns, the
   command line over the config file.
 - **ReadProject** reads every `.sql` file into the model.
 - **Select** picks the procedures to type.
@@ -73,8 +73,7 @@ together; on a failure it doesn't run the next step, and carries the failure, wi
 The functional literature calls it *monadic bind*. `Generate.Run` is the railway written down:
 
 ```csharp
-var run = ReadConfig(request)
-    .Then(config => Settle(request, config))
+var run = Settle(request)
     .Then(ReadProject)
     .Then(Select)
     .Then(Infer)
@@ -177,9 +176,10 @@ their own, since bind needs the first value before it can run the second; it is 
 Paterson, *Applicative programming with effects*, 2008), which libraries for validation (*Validated* in Scala's Cats,
 *Validation* in Haskell) are built on.
 
-In `Generate.Settle`, the source folder, the output folder and the `--include` patterns are independent, so they are combined;
-whether anything is selected depends on the patterns, so it follows them with `Outcome.Then`. A run with no folder, no output and a
-malformed pattern hears about all three, and nothing about a selection never made. With no config file:
+In `Generate.Settle`, the `--include` patterns don't depend on the config file, so a config file that doesn't read and a
+malformed pattern are both reported. The two folders depend on the config file, and whether anything is selected on the
+config file and the patterns, so they follow the config file with `Outcome.Then`, combined with each other. A run with no folder, no output and a malformed pattern hears about
+all three, and nothing about a selection never made. With no config file:
 
 ```sql haruspex-example
 CREATE TABLE lib.book (id int NOT NULL PRIMARY KEY);

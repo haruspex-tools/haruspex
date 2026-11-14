@@ -57,9 +57,10 @@ output: how many procedures it typed, how many unknowns there are, and where it 
 - **Every unknown is reported**, as a note with its code, its place in the SQL and its reason, except one only a
   declaration can resolve (dynamic SQL, a procedure chosen when it runs, one outside the project), which is a warning
   saying what to declare instead. One fact is said once.
-- **Every independent problem is reported**, not only the first: a missing source folder, a missing output folder and a
-  malformed `--include` are all listed in one run. A check that needs what an earlier step failed to give is not run, so
-  one mistake doesn't bring others with it.
+- **Every problem with a run's settings is reported**, not only the first: a config file that doesn't read, a missing
+  source folder, a missing output folder and a malformed `--include` are all listed in one run. A check that needs what an
+  earlier step failed to give is not run, so one mistake doesn't bring others with it; the price is that a problem only a
+  later step can see (a pattern that matches no procedure, say) waits until the run gets that far.
 - **No half output.** When the SQL, the command line or the config file has an error, or the module can't be emitted,
   nothing is written, and the output folder isn't even created. When the run succeeds, both files are written in full to
   temporary names in the output folder and then renamed into place, the IR first; if the module can't be put in place,
