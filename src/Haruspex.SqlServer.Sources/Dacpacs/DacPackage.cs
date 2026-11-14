@@ -90,13 +90,17 @@ internal sealed class DacPackage(string Path, string Sha256, bool Built, XElemen
         origin?.Root?.Element(ModelXml.Name("Operation"))?.Element(ModelXml.Name("ProductName"))?.Value
             .StartsWith("Microsoft.Data.Tools.Schema.Tasks.Sql", StringComparison.Ordinal) == true;
 
-    /// <summary>The database references in the header, each a <c>CustomData</c> of the category <c>Reference</c>.</summary>
+    /// <summary>
+    /// The database references in the header, each a <c>CustomData</c> of the category <c>Reference</c> and the type
+    /// <c>SqlSchema</c>. A reference of another type is not to a database: <c>Microsoft.Build.Sql</c> 1.0.0 lists the project's own
+    /// CLR assembly as a <c>Reference</c> of the type <c>Assembly</c> (observed in <c>tests/dacpacs/versions</c>).
+    /// </summary>
     private static IEnumerable<PackageReference> Header(XElement root)
     {
         var header = root.Element(ModelXml.Name("Header"));
         foreach (var data in header?.Elements(ModelXml.Name("CustomData")) ?? [])
         {
-            if ((string?)data.Attribute("Category") != ModelXml.Reference)
+            if ((string?)data.Attribute("Category") != ModelXml.Reference || (string?)data.Attribute("Type") != ModelXml.SqlSchema)
                 continue;
             var metadata = data.Elements(ModelXml.Name("Metadata")).ToDictionary(m => (string?)m.Attribute("Name") ?? "", m => (string?)m.Attribute("Value") ?? "", StringComparer.Ordinal);
             if (!metadata.TryGetValue(ModelXml.FileName, out var file))

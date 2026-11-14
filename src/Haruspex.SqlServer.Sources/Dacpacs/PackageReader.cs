@@ -21,7 +21,7 @@ internal static class PackageReader
     /// </summary>
     private static readonly HashSet<string> Irrelevant = new(StringComparer.Ordinal)
     {
-        "SqlSchema", "SqlUser", "SqlRole", "SqlRoleMembership", "SqlLogin", "SqlPermissionStatement", "SqlApplicationRole",
+        ModelXml.SqlSchema, "SqlUser", "SqlRole", "SqlRoleMembership", "SqlLogin", "SqlPermissionStatement", "SqlApplicationRole",
         "SqlSecurityPolicy", "SqlFilegroup", "SqlFile", "SqlPartitionFunction", "SqlPartitionScheme", "SqlColumnStoreIndex",
         "SqlStatistic", "SqlExtendedProperty", "SqlDefaultConstraint", "SqlFullTextCatalog", "SqlFullTextIndex",
         "SqlFullTextStopList", "SqlDatabaseCredential", "SqlMasterKey", "SqlCertificate", "SqlSymmetricKey",

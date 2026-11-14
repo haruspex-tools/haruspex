@@ -42,6 +42,45 @@ public partial class DacpacEquivalenceTests
         Assert.Empty(map.Unmapped);
     }
 
+    /// <summary>The orders fixture built by older versions of Microsoft.Build.Sql, whose model.xml DacFx wrote differently.</summary>
+    public static TheoryData<string> Versions { get; } = ["orders-build-sql-1.0.0.dacpac", "orders-build-sql-2.0.0.dacpac", "orders-extract.dacpac"];
+
+    [Theory]
+    [MemberData(nameof(Versions))]
+    public void The_orders_fixture_built_by_another_version_or_extracted_gives_its_folder_s_ir_and_zod(string file)
+    {
+        var fixture = Fixture.Named("orders");
+        var path = Path.Combine(Packages, "versions", file);
+        var package = SqlProject.LoadPackage(path, []);
+        Assert.DoesNotContain(package.Diagnostics, d => d.IsError);
+        var map = new PackageLocationMap(SqlScriptFolder.Read(fixture.Database).Model, fixture.Database, path);
+
+        foreach (var procedure in fixture.Project.Procedures)
+            AssertSame(fixture.Project.Infer([procedure]).Expected(), package.Infer([procedure]).Expected(), map);
+        Assert.Empty(map.Unmapped);
+    }
+
+    [Fact]
+    public void A_name_in_another_database_is_unknown_from_a_package_as_from_its_project_s_scripts()
+    {
+        // harbour reads [$(Tally)].ledger.entry: the reference to tally is found, but another database's names aren't bound
+        // yet, and the variable is not taken for a database's name.
+        using var dir = new TempDirectory();
+        foreach (var project in new[] { "quay", "crane", "harbour" })
+        {
+            foreach (var script in Directory.EnumerateFiles(Path.Combine(Packages, "projects", project), "*.sql"))
+                File.Copy(script, Path.Combine(dir.Path, project + "-" + Path.GetFileName(script)));
+        }
+
+        var name = new ObjectName("dock", "crane_fees");
+        var fromFolder = SqlProject.Load(dir.Path).Infer([name]).Expected();
+        var fromPackage = SqlProject.LoadPackage(Path.Combine(Packages, "harbour", "harbour.dacpac"), []).Infer([name]).Expected();
+
+        var expected = fromFolder.Unknowns.Select(u => (u.Path, u.Reason, u.Detail));
+        Assert.Equal(expected, fromPackage.Unknowns.Select(u => (u.Path, u.Reason, u.Detail)));
+        Assert.Contains(fromPackage.Unknowns, u => u.Detail.Contains("[$(Tally)].ledger.entry", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void WideWorldImporters_package_gives_the_ir_and_zod_of_its_project_s_scripts()
     {

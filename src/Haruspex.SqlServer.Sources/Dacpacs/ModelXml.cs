@@ -98,6 +98,7 @@ internal static class ModelXml
 
     // The header's references and their metadata.
     public const string Reference = nameof(Reference);
+    public const string SqlSchema = nameof(SqlSchema);
     public const string FileName = nameof(FileName);
     public const string LogicalName = nameof(LogicalName);
     public const string ExternalParts = nameof(ExternalParts);
