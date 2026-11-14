@@ -30,6 +30,19 @@ public class ConfigCliTests
     }
 
     [Fact]
+    public void A_config_file_that_does_not_read_is_reported_alone_without_the_settings_it_would_have_given()
+    {
+        using var dir = new TempDirectory();
+        dir.File("haruspex.json", "{ \"source\": ");
+
+        var (exitCode, _, error) = Run(dir.Path, "generate");
+
+        Assert.Equal(2, exitCode);
+        var line = Assert.Single(error.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n'));
+        Assert.Contains("error HAR3002:", line, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Generates_the_shop_from_its_config_file()
     {
         using var outDir = new TempDirectory();

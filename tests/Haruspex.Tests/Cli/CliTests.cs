@@ -137,6 +137,32 @@ public class CliTests
     }
 
     [Fact]
+    public void Problems_with_independent_settings_are_all_reported_not_only_the_first()
+    {
+        var (exitCode, output, error) = Run("generate", "--include", "a.b.c");
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal("", output);
+        Assert.Equal(
+            "haruspex: error HAR6003: give the folder of .sql files to read, or a config file with \"source\".\n"
+            + "haruspex: error HAR6005: give --out, the folder to write to, or a config file with \"out\".\n"
+            + "haruspex: error HAR6006: invalid --include pattern: 'a.b.c' is not a two-part name such as sales.get_order, sales.* or *.list_*.\n",
+            error.ReplaceLineEndings("\n"));
+    }
+
+    [Fact]
+    public void A_check_that_needs_a_value_another_step_failed_to_give_is_not_run()
+    {
+        // The includes are malformed, so whether anything is selected can't be known; saying nothing is would be a cascade.
+        using var outDir = new TempDirectory();
+
+        var (_, _, error) = Run("generate", Fixture.Named("orders").Database, "--include", "a.b.c", "--out", outDir.Path);
+
+        Assert.DoesNotContain("HAR6007", error, StringComparison.Ordinal);
+        Assert.Single(error.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n'));
+    }
+
+    [Fact]
     public void A_parse_error_fails_with_its_location_and_writes_nothing()
     {
         using var source = new TempDirectory();

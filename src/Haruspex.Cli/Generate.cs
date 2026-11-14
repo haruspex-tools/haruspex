@@ -96,12 +96,17 @@ internal static class Generate
         return ConfigReader.Read(path, reserved).Select(config => new Settings(config, path));
     }
 
-    /// <summary>The folders to read and write, and the command line's patterns, from the command line over the config file.</summary>
+    /// <summary>
+    /// The folders to read and write, and the command line's patterns, from the command line over the config file. The three
+    /// don't depend on each other, so they are combined, and a problem with each is reported, not only the first. Whether
+    /// anything is selected depends on the patterns, so it is checked only once they are read: an error there would
+    /// otherwise cause another, about a selection that was never made.
+    /// </summary>
     private static Outcome<Plan> Settle(GenerateRequest request, Settings settings) =>
-        Source(request, settings).Then(source =>
-        Out(request, settings).Then(output =>
-        Includes(request).Then(include =>
-        Selects(settings, include).Select(_ => new Plan(settings, source, output, include)))));
+        Outcome.Combine(
+                Outcome.Combine(Source(request, settings), Out(request, settings)),
+                Includes(request).Then(include => Selects(settings, include).Select(_ => include)))
+            .Select(settled => new Plan(settings, settled.First.First, settled.First.Second, settled.Second));
 
     private static Outcome<string> Source(GenerateRequest request, Settings settings)
     {
