@@ -47,7 +47,9 @@ namespace Haruspex.SqlServer.Semantics;
 /// binary collation ignores trailing spaces (both observed; see the differential tests'
 /// CheckConstraintObservationTests). Under a binary collation it is <see cref="ValueComparison.Padded"/> (exact but
 /// for trailing spaces); for a <c>char</c> or <c>varchar</c> column of a collation whose fold is proven,
-/// <see cref="ValueComparison.Canonical"/>; and otherwise <see cref="ValueComparison.Collation"/>; see StringComparisonOf.</para>
+/// <see cref="ValueComparison.Canonical"/>; and otherwise <see cref="ValueComparison.Collation"/>; see StringComparisonOf. A
+/// <c>COLLATE</c> on the column or a literal in the condition decides the comparison instead of the column's collation, so a set
+/// compared so is always <see cref="ValueComparison.Collation"/> (observed: CheckConstraintObservationTests).</para>
 /// <para><b>Minimum length.</b> <c>LEN</c> does not count trailing spaces, and counts a character (a surrogate pair
 /// under an <c>_SC</c> collation, several bytes in UTF-8) as one, so a value's UTF-16 length is at least its
 /// <c>LEN</c>. <c>col &lt;&gt; ''</c> is FALSE for an empty string (and for spaces, which compare equal to it), so
@@ -86,7 +88,9 @@ public static class CheckReader
 
         var reader = new Reader(column.Name, family, new CheckSource(table, check));
         var proved = reader.Condition(check.Expression);
-        return proved?.ToFacts(type, reader.Source, StringComparisonOf(type, collation, proved.Strings));
+        // A COLLATE on the column or a literal it is compared with decides the comparison, by SQL Server's precedence, so the
+        // column's collation says nothing of it (observed: A_collate_in_a_check_decides_how_it_compares): such a set is a note.
+        return proved?.ToFacts(type, reader.Source, reader.Collated ? (ValueComparison.Collation, null) : StringComparisonOf(type, collation, proved.Strings));
     }
 
     /// <summary>
@@ -303,9 +307,28 @@ public static class CheckReader
             && BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) == ScalarFunctions.Len
             && IsColumn(call.Parameters[0]);
 
-        private bool IsColumn(ScalarExpression expression) =>
-            Unwrap(expression) is ColumnReferenceExpression { ColumnType: ColumnType.Regular, MultiPartIdentifier.Identifiers: [var name] }
-            && Same(name.Value, column);
+        /// <summary>Whether a column or literal the condition compares carries a <c>COLLATE</c> of its own.</summary>
+        public bool Collated { get; private set; }
+
+        private bool IsColumn(ScalarExpression expression)
+        {
+            var isColumn = Unwrap(expression) is ColumnReferenceExpression { ColumnType: ColumnType.Regular, MultiPartIdentifier.Identifiers: [var name] }
+                && Same(name.Value, column);
+            Collated |= isColumn && HasCollation(expression);
+            return isColumn;
+        }
+
+        /// <summary>Whether the expression, or any parenthesis around it, has a <c>COLLATE</c>.</summary>
+        private static bool HasCollation(ScalarExpression expression)
+        {
+            for (var e = expression; ; e = ((ParenthesisExpression)e).Expression)
+            {
+                if (e is PrimaryExpression { Collation: not null })
+                    return true;
+                if (e is not ParenthesisExpression)
+                    return false;
+            }
+        }
 
         /// <summary>A numeric literal the column compares with exactly (see the class remarks), or null.</summary>
         private ExactDecimal? Number(ScalarExpression expression)
@@ -330,7 +353,13 @@ public static class CheckReader
             return negative ? value.Negate() : value;
         }
 
-        private string? String(ScalarExpression expression) => family.IsString && Literal(expression) is StringLiteral s ? s.Value : null;
+        private string? String(ScalarExpression expression)
+        {
+            if (!family.IsString || Literal(expression) is not StringLiteral literal)
+                return null;
+            Collated |= HasCollation(expression);
+            return literal.Value;
+        }
 
         private static Literal? Literal(ScalarExpression expression) => Unwrap(expression) as Literal;
 

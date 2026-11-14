@@ -51,6 +51,19 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
         Assert.Equal("""[{"s":"OPEN"},{"s":"open   "},{"s":"Closed"}]""", json);
     }
 
+    [Theory]
+    // A COLLATE in the condition decides the comparison, whatever the column's collation: so CheckReader gives a set compared
+    // so no exact, padded or canonical claim. A case-insensitive COLLATE on a literal, on the column, and in an OR of
+    // comparisons, each under a case-sensitive column, stores 'OPEN'; so does one under a binary column.
+    [InlineData("Latin1_General_100_CS_AS", "s IN ('open' COLLATE Latin1_General_100_CI_AS, 'shut')", "OPEN", true)]
+    [InlineData("Latin1_General_100_CS_AS", "s COLLATE Latin1_General_100_CI_AS IN ('open', 'shut')", "OPEN", true)]
+    [InlineData("Latin1_General_100_CS_AS", "s = 'open' COLLATE Latin1_General_100_CI_AS OR s = 'shut'", "OPEN", true)]
+    [InlineData("Latin1_General_100_BIN2", "s IN ('open' COLLATE Latin1_General_100_CI_AS, 'shut')", "OPEN", true)]
+    // And the reverse: a case-sensitive COLLATE under a case-insensitive column refuses what the column alone would store.
+    [InlineData("Latin1_General_100_CI_AS", "s IN ('open' COLLATE Latin1_General_100_CS_AS, 'shut')", "OPEN", false)]
+    public async Task A_collate_in_a_check_decides_how_it_compares(string column, string condition, string value, bool stored) =>
+        Assert.Equal(stored, await Succeeds($"CREATE TABLE dbo.obs (s varchar(10) COLLATE {column} NULL CHECK ({condition}));", $"INSERT INTO dbo.obs VALUES ('{value}')"));
+
     [Fact]
     public async Task A_binary_collation_still_ignores_trailing_spaces()
     {

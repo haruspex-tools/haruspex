@@ -41,6 +41,19 @@ public partial class SchemaFactsTests
         Assert.Equal(comparison, Column(definition).Values!.Comparison);
 
     [Theory]
+    // A COLLATE in the condition decides the comparison, not the column's collation (observed:
+    // A_collate_in_a_check_decides_how_it_compares). So a set compared so stays a note: no exact, padded or canonical claim.
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CS_AS NULL CHECK (c IN ('open' COLLATE Latin1_General_100_CI_AS, 'shut'))")]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CS_AS NULL CHECK (c COLLATE Latin1_General_100_CI_AS IN ('open', 'shut'))")]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CS_AS NULL CHECK (c = 'open' COLLATE Latin1_General_100_CI_AS OR c = 'shut')")]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CI_AS NULL CHECK (c IN ('open' COLLATE Latin1_General_100_CS_AS, 'shut'))")]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN ('open' COLLATE Latin1_General_100_CI_AS, 'shut'))")]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK ((c) COLLATE Latin1_General_100_CI_AS IN ('open', 'shut'))")]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN (('open') COLLATE Latin1_General_100_CI_AS, 'shut'))")]
+    public void A_set_a_check_compares_under_a_collate_of_its_own_stays_a_note(string definition) =>
+        Assert.Equal((ValueComparison.Collation, null), (Column(definition).Values!.Comparison, Column(definition).Values!.Fold));
+
+    [Theory]
     // SQL Server pads the shorter side before comparing, so 'a' passes IN ('a '): an item's own trailing spaces
     // mean nothing, and are removed (duplicates with them).
     [InlineData("varchar(6) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN ('a ', 'b', 'b  '))", "a|b")]
