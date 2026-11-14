@@ -202,6 +202,62 @@ public class CliTests
             Enum.GetValues<IrUnknownReason>().Where(r => InferenceCodes.Of(r) is null).Order());
 
     [Fact]
+    public void A_write_that_fails_on_the_second_file_puts_the_first_back_as_it_was_and_leaves_no_temporary_file()
+    {
+        using var outDir = new TempDirectory();
+        var irPath = Path.Combine(outDir.Path, "haruspex.ir.json");
+        File.WriteAllText(irPath, "the old IR\n");
+        Directory.CreateDirectory(Path.Combine(outDir.Path, "haruspex.zod.ts")); // a folder where the module would go
+
+        var (exitCode, output, error) = Run("generate", Fixture.Named("orders").Database, "--include", "sales.*", "--out", outDir.Path);
+
+        Assert.Equal(1, exitCode);
+        Assert.Equal("", output);
+        Assert.Contains("haruspex: error HAR6008: cannot write to ", error, StringComparison.Ordinal);
+        Assert.Equal("the old IR\n", File.ReadAllText(irPath));
+        Assert.Equal(["haruspex.ir.json", "haruspex.zod.ts"], Directory.EnumerateFileSystemEntries(outDir.Path).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void A_write_that_fails_on_the_second_file_removes_the_first_when_there_was_none_before()
+    {
+        using var outDir = new TempDirectory();
+        Directory.CreateDirectory(Path.Combine(outDir.Path, "haruspex.zod.ts"));
+
+        var (exitCode, _, _) = Run("generate", Fixture.Named("orders").Database, "--include", "sales.*", "--out", outDir.Path);
+
+        Assert.Equal(1, exitCode);
+        Assert.Equal(["haruspex.zod.ts"], Directory.EnumerateFileSystemEntries(outDir.Path).Select(Path.GetFileName));
+    }
+
+    [Fact]
+    public void A_run_that_fails_before_writing_creates_nothing_not_even_the_output_folder()
+    {
+        using var root = new TempDirectory();
+        var outDir = Path.Combine(root.Path, "out");
+
+        var (exitCode, _, _) = Run("generate", Fixture.Named("orders").Database, "--include", "sales.nothing_here", "--out", outDir);
+
+        Assert.Equal(2, exitCode);
+        Assert.False(Directory.Exists(outDir));
+    }
+
+    [Fact]
+    public void A_run_that_succeeds_replaces_both_files_and_leaves_nothing_else()
+    {
+        using var outDir = new TempDirectory();
+        File.WriteAllText(Path.Combine(outDir.Path, "haruspex.ir.json"), "old");
+        File.WriteAllText(Path.Combine(outDir.Path, "haruspex.zod.ts"), "old");
+
+        var (exitCode, _, _) = Run("generate", Fixture.Named("orders").Database, "--include", "sales.*", "--out", outDir.Path);
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal(["haruspex.ir.json", "haruspex.zod.ts"], Directory.EnumerateFileSystemEntries(outDir.Path).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.NotEqual("old", File.ReadAllText(Path.Combine(outDir.Path, "haruspex.ir.json")));
+        Assert.NotEqual("old", File.ReadAllText(Path.Combine(outDir.Path, "haruspex.zod.ts")));
+    }
+
+    [Fact]
     public void A_parse_error_fails_with_its_location_and_writes_nothing()
     {
         using var source = new TempDirectory();

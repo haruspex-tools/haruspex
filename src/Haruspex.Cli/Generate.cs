@@ -194,25 +194,84 @@ internal static class Generate
         return Located(emitted, plan.Config.Location).Select(zod => new Output(plan, document, zod));
     }
 
-    /// <summary>Both files, written to the output folder.</summary>
+    /// <summary>
+    /// Both files, written to the output folder so that a run never leaves a new file beside an old one: each is written in
+    /// full to a temporary name in the folder itself (so that putting it in place is a rename within one file system), then
+    /// both are put in place, the IR first; if the module can't be, the IR is put back as it was, or removed when there was
+    /// none, and no temporary file is left. Two files can't be replaced as one, so a process killed between the two renames
+    /// can still leave a new IR beside the old module; nothing short of that can. The folder is created here, after every
+    /// other step has succeeded, so a run that fails before writing creates nothing.
+    /// </summary>
     private static Outcome<Written> Write(Output output)
     {
-        var irPath = Path.Join(output.Plan.Out, HaruspexCli.IrFileName);
-        var zodPath = Path.Join(output.Plan.Out, HaruspexCli.ZodFileName);
+        var folder = output.Plan.Out;
+        var irPath = Path.Join(folder, HaruspexCli.IrFileName);
+        var zodPath = Path.Join(folder, HaruspexCli.ZodFileName);
+        var run = Guid.NewGuid().ToString("N");
+        var irTemporary = Path.Join(folder, $".{HaruspexCli.IrFileName}.{run}.tmp");
+        var zodTemporary = Path.Join(folder, $".{HaruspexCli.ZodFileName}.{run}.tmp");
+        var irBackup = Path.Join(folder, $".{HaruspexCli.IrFileName}.{run}.old");
         try
         {
-            Directory.CreateDirectory(output.Plan.Out);
+            Directory.CreateDirectory(folder);
 
             // File.WriteAllText writes UTF-8 without a byte order mark.
-            File.WriteAllText(irPath, IrJsonWriter.Write(output.Document));
-            File.WriteAllText(zodPath, output.Zod);
+            File.WriteAllText(irTemporary, IrJsonWriter.Write(output.Document));
+            File.WriteAllText(zodTemporary, output.Zod);
+            var hadIr = PutInPlace(irTemporary, irPath, irBackup);
+            try
+            {
+                PutInPlace(zodTemporary, zodPath, backup: null);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                if (hadIr)
+                    File.Move(irBackup, irPath, overwrite: true);
+                else
+                    File.Delete(irPath);
+                throw;
+            }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            return Refused<Written>(CliCodes.CannotWrite, $"cannot write to {output.Plan.Out}: {e.Message}");
+            return Refused<Written>(CliCodes.CannotWrite, $"cannot write to {folder}: {e.Message}");
+        }
+        finally
+        {
+            foreach (var temporary in new[] { irTemporary, zodTemporary, irBackup })
+                Remove(temporary);
         }
 
         return new Succeeded<Written>(new Written(output.Document, irPath, zodPath, output.Plan.Source));
+    }
+
+    /// <summary>
+    /// Moves <paramref name="temporary"/> to <paramref name="path"/>, keeping what was there at <paramref name="backup"/> when
+    /// one is given; whether there was a file there.
+    /// </summary>
+    private static bool PutInPlace(string temporary, string path, string? backup)
+    {
+        if (!File.Exists(path))
+        {
+            File.Move(temporary, path);
+            return false;
+        }
+
+        File.Replace(temporary, path, backup);
+        return true;
+    }
+
+    /// <summary>Removes a temporary file the write made; one that can't be removed is left, the write's outcome standing.</summary>
+    private static void Remove(string temporary)
+    {
+        try
+        {
+            File.Delete(temporary);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // A temporary file left behind is untidy, not wrong: the outputs are each whole, which is what the write promises.
+        }
     }
 
     /// <summary>
