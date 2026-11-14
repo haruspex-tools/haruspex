@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
@@ -322,74 +323,110 @@ public static class ConfigReader
 
             foreach (var member in members.Members)
             {
-                var procedurePath = Child(path, member.Name);
-                var at = new JsonLocation(file, procedurePath, member.Line, member.Column);
-                ObjectName? procedure = null;
-                if (!ObjectPattern.TryParse(member.Name, out var pattern, out var problem))
-                    Problems.Add(ConfigCodes.BadPattern.At(at, problem));
-                else if (Wildcard(member.Name) || pattern.Name is not { } literal)
-                    Problems.Add(ConfigCodes.WildcardProcedure.At(at, "names one procedure, so it cannot use * or ?; write a part that holds them in brackets, as [a*b]."));
-                else
-                    procedure = literal;
-
-                if (Object(member.Value, procedurePath) is not { } body)
-                    continue;
-
-                string? name = null;
-                JsonLocation? nameAt = null;
-                var paths = new List<PathOverride>();
-                JsonMember? results = null;
-                string? why = null;
-                foreach (var setting in body.Members)
-                {
-                    var settingPath = Child(procedurePath, setting.Name);
-                    switch (setting.Name)
-                    {
-                        case "results":
-                            results = setting;
-                            break;
-                        case "why":
-                            why = NonEmpty(setting.Value, settingPath);
-                            break;
-                        case "name":
-                            name = Identifier(setting.Value, settingPath);
-                            nameAt = At(setting.Value, settingPath);
-                            break;
-                        case "paths":
-                            if (Object(setting.Value, settingPath) is { } overrides)
-                            {
-                                foreach (var entry in overrides.Members)
-                                {
-                                    if (PathOverride(entry, Child(settingPath, entry.Name)) is { } parsed)
-                                        paths.Add(parsed);
-                                }
-                            }
-
-                            break;
-                        default:
-                            Unknown(setting, settingPath, "name, paths, results, why");
-                            break;
-                    }
-                }
-
-                var has = body.Members.Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
-                if (has.Contains("results") && !has.Contains("why"))
-                    Report(ConfigCodes.ClaimWithoutWhy, body, procedurePath, "\"results\" needs \"why\": the project doesn't show them, so say what does.");
-                if (has.Contains("why") && !has.Contains("results"))
-                    Report(ConfigCodes.WhyWithoutClaim, body, procedurePath, "\"why\" explains declared results, but there are none here: give \"results\", or move \"why\" into the path it explains.");
-                if (has.Contains("results") && has.Contains("paths"))
-                    Report(ConfigCodes.PathsWithResults, body, procedurePath, "\"paths\" can't be used with \"results\": the declared schema says it all, so put the detail there.");
-
-                // A declaration with paths is refused above; one that has problems of its own leaves none to add.
-                if (procedure is not { } named)
-                    continue;
-                if (results is null)
-                    procedures.Add(new InferredResultsOverride(named, member.Name, name, [.. paths], at, nameAt));
-                else if (Declared(results, Child(procedurePath, "results"), named.ToString(), why ?? "") is { } declared)
-                    procedures.Add(new DeclaredResultsOverride(named, member.Name, name, declared, at, nameAt));
+                if (Procedure(member, Child(path, member.Name)) is { } procedure)
+                    procedures.Add(procedure);
             }
 
             return procedures;
+        }
+
+        /// <summary>The settings a procedure's block holds, as read.</summary>
+        private sealed record ProcedureSettings(string? Name, JsonLocation? NameAt, EquatableArray<PathOverride> Paths, JsonMember? Results, string? Why);
+
+        /// <summary>One procedure's overrides (<c>procedures["s.p"]</c>), or null when its key or its block has a problem.</summary>
+        private ProcedureOverride? Procedure(JsonMember member, string path)
+        {
+            var at = new JsonLocation(file, path, member.Line, member.Column);
+            var procedure = ProcedureKey(member.Name, at);
+            if (Object(member.Value, path) is not { } body)
+                return null;
+
+            var settings = Settings(body, path);
+            CheckTogether(body, path);
+
+            // A declaration with paths is refused above; one that has problems of its own leaves none to add.
+            if (procedure is not { } named)
+                return null;
+            if (settings.Results is null)
+                return new InferredResultsOverride(named, member.Name, settings.Name, settings.Paths, at, settings.NameAt);
+            return Declared(settings.Results, Child(path, "results"), named.ToString(), settings.Why ?? "") is { } declared
+                ? new DeclaredResultsOverride(named, member.Name, settings.Name, declared, at, settings.NameAt)
+                : null;
+        }
+
+        /// <summary>The procedure a key of <c>procedures</c> names: one procedure, so a pattern without wildcards.</summary>
+        private ObjectName? ProcedureKey(string key, JsonLocation at)
+        {
+            if (!ObjectPattern.TryParse(key, out var pattern, out var problem))
+            {
+                Problems.Add(ConfigCodes.BadPattern.At(at, problem));
+                return null;
+            }
+
+            if (Wildcard(key) || pattern.Name is not { } literal)
+            {
+                Problems.Add(ConfigCodes.WildcardProcedure.At(at, "names one procedure, so it cannot use * or ?; write a part that holds them in brackets, as [a*b]."));
+                return null;
+            }
+
+            return literal;
+        }
+
+        /// <summary>A procedure's block, each setting read where it is written.</summary>
+        private ProcedureSettings Settings(JsonObjectValue body, string path)
+        {
+            var settings = new ProcedureSettings(null, null, [], null, null);
+            foreach (var setting in body.Members)
+            {
+                var settingPath = Child(path, setting.Name);
+                switch (setting.Name)
+                {
+                    case "results":
+                        settings = settings with { Results = setting };
+                        break;
+                    case "why":
+                        settings = settings with { Why = NonEmpty(setting.Value, settingPath) };
+                        break;
+                    case "name":
+                        settings = settings with { Name = Identifier(setting.Value, settingPath), NameAt = At(setting.Value, settingPath) };
+                        break;
+                    case "paths":
+                        settings = settings with { Paths = [.. PathOverrides(setting.Value, settingPath)] };
+                        break;
+                    default:
+                        Unknown(setting, settingPath, "name, paths, results, why");
+                        break;
+                }
+            }
+
+            return settings;
+        }
+
+        private List<PathOverride> PathOverrides(JsonValue value, string path)
+        {
+            var paths = new List<PathOverride>();
+            if (Object(value, path) is { } overrides)
+            {
+                foreach (var entry in overrides.Members)
+                {
+                    if (PathOverride(entry, Child(path, entry.Name)) is { } parsed)
+                        paths.Add(parsed);
+                }
+            }
+
+            return paths;
+        }
+
+        /// <summary>The settings of a procedure's block that must come together, or never.</summary>
+        private void CheckTogether(JsonObjectValue body, string path)
+        {
+            var has = body.Members.Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
+            if (has.Contains("results") && !has.Contains("why"))
+                Report(ConfigCodes.ClaimWithoutWhy, body, path, "\"results\" needs \"why\": the project doesn't show them, so say what does.");
+            if (has.Contains("why") && !has.Contains("results"))
+                Report(ConfigCodes.WhyWithoutClaim, body, path, "\"why\" explains declared results, but there are none here: give \"results\", or move \"why\" into the path it explains.");
+            if (has.Contains("results") && has.Contains("paths"))
+                Report(ConfigCodes.PathsWithResults, body, path, "\"paths\" can't be used with \"results\": the declared schema says it all, so put the detail there.");
         }
 
         /// <summary>
@@ -473,15 +510,25 @@ public static class ConfigReader
                 return null;
             }
 
-            var schemaPath = Child(path, schema.Name);
-            var (schemaFile, root, rootPath) = (file, schema.Value, schemaPath);
+            if (SchemaRoot(schema, Child(path, schema.Name)) is not var (schemaFile, root, rootPath))
+                return null;
+
+            var translator = new DeclaredSchema(schemaFile, root, rootPath, Problems, procedure, types);
+            return json ? translator.Json(index, mayBeAbsent) : translator.Rowset(index);
+        }
+
+        /// <summary>
+        /// Where a declared result's schema is: written in place, or in a file of its own, relative to this one like every path
+        /// here, whose problems are reported in it. Null when it can't be read.
+        /// </summary>
+        private (string File, JsonValue Root, string RootPath)? SchemaRoot(JsonMember schema, string schemaPath)
+        {
             switch (schema.Value)
             {
                 case JsonObjectValue:
-                    break;
+                    return (file, schema.Value, schemaPath);
                 case JsonStringValue { Value.Length: > 0 } reference:
-                    // A schema in a file of its own, relative to this one like every path here. Its problems are reported in it.
-                    schemaFile = Path.GetFullPath(Path.Combine(directory, reference.Value));
+                    var schemaFile = Path.GetFullPath(Path.Combine(directory, reference.Value));
                     byte[] bytes;
                     try
                     {
@@ -495,17 +542,11 @@ public static class ConfigReader
 
                     var parsed = ConfigJson.Parse(bytes, schemaFile);
                     Problems.AddRange(parsed.Diagnostics);
-                    if (parsed is not Succeeded<JsonValue> { Value: var read })
-                        return null;
-                    (root, rootPath) = (read, "");
-                    break;
+                    return parsed is Succeeded<JsonValue> { Value: var read } ? (schemaFile, read, "") : null;
                 default:
                     Report(ConfigCodes.WrongKind, schema.Value, schemaPath, "must be a JSON Schema, or the path of a file holding one, relative to this file.");
                     return null;
             }
-
-            var translator = new DeclaredSchema(schemaFile, root, rootPath, Problems, procedure, types);
-            return json ? translator.Json(index, mayBeAbsent) : translator.Rowset(index);
         }
 
         private PathOverride? PathOverride(JsonMember entry, string path)
