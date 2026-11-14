@@ -49,4 +49,12 @@ applicative validation, which the guide's chapter on the command line explains.
 
 Every check that a public method's argument is not null stays: a null there is a caller's fault.
 
+**Left in the layers below, and why.** The table covers Config, the emitter and the CLI, where a user's input arrives. In
+Sources, reading a folder returns its model and its diagnostics together (`SchemaReadResult`), since a tool reading a project
+may want the model even when a script has an error; inside that step, `ScriptFile.Parse` adds a script's parse errors to the
+step's own list, which no caller outside it sees, as inference's warnings are gathered inside its run. `ScriptFile.InOrder`
+throws `System.IO.FileNotFoundException` for a file a caller named that isn't there: a caller of `SqlScriptFolder.Read` that
+lists the files to read (the corpus tests do) has made a mistake of its own, not a user's, since the CLI reads a whole folder
+and names no file.
+
 **See also:** [decision 0036](0036-diagnostics-have-stable-codes.md); `src/Haruspex.Diagnostics/README.md`.

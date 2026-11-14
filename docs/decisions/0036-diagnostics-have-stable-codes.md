@@ -33,7 +33,7 @@ is retired, not removed: it stays declared, marked `DiagnosticCode.Retired`, its
 code shows in a diff.
 
 **Context.** A problem was reported three ways: a `Diagnostic` of message and source location for the SQL, a
-a config problem with a severity of its own for the config file, and plain strings for the command line's patterns, each
+config problem with a severity of its own for the config file, and plain strings for the command line's patterns, each
 written to the console by a method of its own or by the CLI inline. None had a code, so a problem had no name to look up, to
 suppress or to give a SARIF rule, and changing a message's words changed the only thing that identified it.
 
