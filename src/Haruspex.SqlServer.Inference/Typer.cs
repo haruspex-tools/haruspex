@@ -482,7 +482,7 @@ internal sealed partial class Typer(
         var because = new List<IrNullReason>(result.Content is null ? [new IrNullReason(IrNullRule.FunctionResult, at.ToString())] : result.NullableBecause);
 
         // With RETURNS NULL ON NULL INPUT a null argument makes the call NULL. The arguments are read only for that.
-        if (result.NullOnNullInput && call.Parameters.Any(p => Expression(p, scope).NullableBecause.Count > 0))
+        if (result.NullOnNullInput && MayBeNullInput(call, callee, scope))
             because.Add(new IrNullReason(IrNullRule.NullInput, at.ToString()));
 
         return result switch
@@ -492,6 +492,22 @@ internal sealed partial class Typer(
             { ReturnsJson: true } => result.Content is UnknownShape unknown ? Value.Unknown(unknown) : new Value(result.Content, [.. because], IsLiveJson: true),
             _ => new Value(new JsonTextShape(result.Content), [.. because]),
         };
+    }
+
+    /// <summary>
+    /// Whether an argument of a call may be NULL as its function receives it: null itself, or rounded to its parameter's fewer
+    /// places under NUMERIC_ROUNDABORT on, which makes a function declared RETURNS NULL ON NULL INPUT return NULL without
+    /// running (observed: A_loss_of_precision_is_null_when_numeric_roundabort_is_on_and_ansi_warnings_and_arithabort_are_off).
+    /// </summary>
+    private bool MayBeNullInput(FunctionCall call, ObjectName callee, ReadScope scope)
+    {
+        var parameters = model.FindFunction(callee)?.Parameters ?? [];
+        return call.Parameters.Select((argument, i) =>
+        {
+            var value = Expression(argument, scope);
+            var type = i < parameters.Count ? SqlTypes.Modelled(SchemaRules.ResolveType(model, parameters[i].Type)?.Scalar) : null;
+            return value.NullableBecause.Count > 0 || (type is not null && Rounds(value, argument, type) && PrecisionLoss(argument).Count > 0);
+        }).Any(mayBeNull => mayBeNull);
     }
 
     // ---- JSON constructors ----------------------------------------------------------------------------

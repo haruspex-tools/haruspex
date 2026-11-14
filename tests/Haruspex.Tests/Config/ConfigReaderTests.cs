@@ -32,7 +32,7 @@ public class ConfigReaderTests
               "source": "db", /* a block comment */
               "out": "../generated",
               "objects": "strict",
-              "session": { "ansiWarnings": true, "concatNullYieldsNull": false },
+              "session": { "ansiWarnings": true, "concatNullYieldsNull": false, "numericRoundAbort": true },
               "naming": { "replace": [{ "pattern": "#$", "with": "Row" }], "case": "camel" },
               "schemas": {
                 "sales": { "include": ["get_*", "list_*",], "exclude": ["*_internal"] },
@@ -66,7 +66,7 @@ public class ConfigReaderTests
         Assert.Null(config.Schemas[2].Include);
         Assert.True(config.SelectsAnything);
         Assert.Equal(ObjectsPolicy.Strict, config.Objects);
-        Assert.Equal(new SessionOptions(AnsiWarnings: true, ConcatNullYieldsNull: false), config.Session);
+        Assert.Equal(new SessionOptions(AnsiWarnings: true, ConcatNullYieldsNull: false, NumericRoundAbort: true), config.Session);
         Assert.Equal(NamingCase.Camel, config.Naming.Case);
         Assert.Equal("Row", Assert.Single(config.Naming.Replace).With);
 
@@ -150,7 +150,7 @@ public class ConfigReaderTests
         { """{ "session": [] }""", "haruspex.json:1:14: error HAR3005: session: must be an object." },
         { """{ "session": { "ansiWarnings": "on" } }""", "haruspex.json:1:32: error HAR3005: session.ansiWarnings: must be true or false; leave the option out when it is not known." },
         { """{ "session": { "arithAbort": null } }""", "haruspex.json:1:30: error HAR3005: session.arithAbort: must be true or false; leave the option out when it is not known." },
-        { """{ "session": { "language": "us_english" } }""", "haruspex.json:1:16: error HAR3004: session.language: unknown setting \"language\". The settings here are ansiWarnings, arithAbort, concatNullYieldsNull." },
+        { """{ "session": { "language": "us_english" } }""", "haruspex.json:1:16: error HAR3004: session.language: unknown setting \"language\". The settings here are ansiWarnings, arithAbort, concatNullYieldsNull, numericRoundAbort." },
 
         // Schemas and selection.
         { """{ "schemas": [] }""", "haruspex.json:1:14: error HAR3005: schemas: must be an object." },

@@ -111,10 +111,10 @@ public class SessionObservationTests(SqlServerFixture server)
     public async Task Numeric_roundabort_on_makes_a_loss_of_precision_null_when_ansi_warnings_and_arithabort_are_both_off()
     {
         // A decimal rounded to fewer places is rounded silently with NUMERIC_ROUNDABORT off (tedious documents off as its
-        // default; SqlClient connects so, A_sqlclient_connection_sets_these_options_at_login). On, it
-        // is an error (8115), or NULL under both options off. haruspex does not model it: decision 0038 says why and what
-        // follows. A float or money converted to a decimal of fewer places, and a decimal to int (which truncates), are not
-        // a loss of precision here.
+        // default; SqlClient connects so, A_sqlclient_connection_sets_these_options_at_login). On, it is an error (8115), or
+        // NULL under both options off: the precision-loss reason, read from numericRoundAbort as declared (decision 0038,
+        // amended). A float converted to a decimal of fewer places, and a decimal to int (which truncates), are not a loss of
+        // precision here; PrecisionLossObservationTests observes every construct.
         const string Batch = """
             SET NUMERIC_ROUNDABORT ON;
             DECLARE @d decimal(10,4) = 1.2345, @f float = 1.23456;

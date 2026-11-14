@@ -56,6 +56,10 @@
         "concatNullYieldsNull": {
           "description": "CONCAT_NULL_YIELDS_NULL. Off, string + with one side NULL gives the other side, so it is null only when both sides may be.",
           "type": "boolean"
+        },
+        "numericRoundAbort": {
+          "description": "NUMERIC_ROUNDABORT. Off, a decimal rounded to fewer places is rounded silently, so precision-loss no longer makes a value nullable; on, the rounding is an error, NULL only when ansiWarnings and arithAbort are both off, and NULL under TRY_CAST.",
+          "type": "boolean"
         }
       }
     },

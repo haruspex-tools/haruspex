@@ -1,0 +1,603 @@
+{
+  "irVersion": "0.18",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "assay.exact_readings",
+      "name": "ExactReadings",
+      "kind": "procedure",
+      "at": "procedures/exact_readings.sql:4:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ExactReadingsResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ExactReadingsResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ExactReadingsResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "assay.exact_readings",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "sample_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "dilution_4dp",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(12,4)",
+            "digits": {
+              "precision": 12,
+              "scale": 4,
+              "from": {
+                "type": "decimal(12,4)"
+              }
+            },
+            "min": {
+              "value": -99999999.9999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(12,4)"
+              }
+            },
+            "max": {
+              "value": 99999999.9999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(12,4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "doubled",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(11,2)",
+            "digits": {
+              "precision": 11,
+              "scale": 2,
+              "from": {
+                "type": "decimal(11,2)"
+              }
+            },
+            "min": {
+              "value": -999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(11,2)"
+              }
+            },
+            "max": {
+              "value": 999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(11,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "standard",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(10,2)",
+            "digits": {
+              "precision": 10,
+              "scale": 2,
+              "from": {
+                "type": "decimal(10,2)"
+              }
+            },
+            "min": {
+              "value": -99999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(10,2)"
+              }
+            },
+            "max": {
+              "value": 99999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(10,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "text_standard",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(10,2)",
+            "digits": {
+              "precision": 10,
+              "scale": 2,
+              "from": {
+                "type": "decimal(10,2)"
+              }
+            },
+            "min": {
+              "value": -99999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(10,2)"
+              }
+            },
+            "max": {
+              "value": 99999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(10,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/exact_readings.sql:11:8"
+            }
+          ]
+        },
+        {
+          "name": "whole_part",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "concentration_money",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "absorbance_2dp",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(10,2)",
+            "digits": {
+              "precision": 10,
+              "scale": 2,
+              "from": {
+                "type": "decimal(10,2)"
+              }
+            },
+            "min": {
+              "value": -99999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(10,2)"
+              }
+            },
+            "max": {
+              "value": 99999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(10,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/exact_readings.sql:14:8"
+            }
+          ]
+        },
+        {
+          "name": "fee_4dp",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,4)",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "decimal(19,4)"
+              }
+            },
+            "min": {
+              "value": -999999999999999.9999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,4)"
+              }
+            },
+            "max": {
+              "value": 999999999999999.9999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "concentration_rounded",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(10,4)",
+            "digits": {
+              "precision": 10,
+              "scale": 4,
+              "from": {
+                "type": "decimal(10,4)"
+              }
+            },
+            "min": {
+              "value": -999999.9999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(10,4)"
+              }
+            },
+            "max": {
+              "value": 999999.9999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(10,4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/exact_readings.sql:16:8"
+            }
+          ]
+        },
+        {
+          "name": "concentration_squared",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(21,8)",
+            "digits": {
+              "precision": 21,
+              "scale": 8,
+              "from": {
+                "type": "decimal(21,8)"
+              }
+            },
+            "min": {
+              "value": -9999999999999.99999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(21,8)"
+              }
+            },
+            "max": {
+              "value": 9999999999999.99999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(21,8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "unit",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(23,13)",
+            "digits": {
+              "precision": 23,
+              "scale": 13,
+              "from": {
+                "type": "decimal(23,13)"
+              }
+            },
+            "min": {
+              "value": -9999999999.9999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(23,13)"
+              }
+            },
+            "max": {
+              "value": 9999999999.9999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(23,13)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/exact_readings.sql:18:8"
+            }
+          ]
+        },
+        {
+          "name": "fee_squared",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/exact_readings.sql:19:8"
+            }
+          ]
+        },
+        {
+          "name": "fraction",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(5,4)",
+            "digits": {
+              "precision": 5,
+              "scale": 4,
+              "from": {
+                "type": "decimal(5,4)"
+              }
+            },
+            "min": {
+              "value": -9.9999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,4)"
+              }
+            },
+            "max": {
+              "value": 9.9999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ExactReadingsResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "assay.exact_readings",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "sample_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,4)",
+            "digits": {
+              "precision": 38,
+              "scale": 4,
+              "from": {
+                "type": "decimal(38,4)"
+              }
+            },
+            "min": {
+              "value": -9999999999999999999999999999999999.9999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,4)"
+              }
+            },
+            "max": {
+              "value": 9999999999999999999999999999999999.9999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "mean_fee",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/exact_readings.sql:24:52"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": []
+}

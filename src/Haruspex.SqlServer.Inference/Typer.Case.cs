@@ -168,7 +168,7 @@ internal sealed partial class Typer
             return NotModelled(at, combined.Why!); // Never null: a chain without a type says why (Chained).
 
         var because = given.Select(r => r.Value.NullableBecause)
-            .Concat(combined.Overflows)
+            .Concat(combined.Converted)
             .Concat(results.Where(r => r.Value is null).Select(r => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRule.NullLiteral, At(r.Expression).ToString())]))
             .Append(also)
             .Aggregate((EquatableArray<IrNullReason>)[], NullReasons.Join);

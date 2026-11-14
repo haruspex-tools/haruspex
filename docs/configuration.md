@@ -170,37 +170,44 @@ keys, so strict is the accurate schema, and strip is the default for deployment 
 
 Whether some values can be null depends on `SET` options of the session that calls the procedure, not on the procedure:
 with `ANSI_WARNINGS` and `ARITHABORT` both off, an overflow, a division by zero or a `COUNT` past `int` is NULL; with either
-on, it is an error that fails the call. The caller is out of sight, so by default haruspex assumes nothing, and each such
-value is nullable (`arithmetic-overflow`, `count-overflow`, `domain-error` in the IR). Declare what your callers set and
-those reasons go:
+on, it is an error that fails the call. With `NUMERIC_ROUNDABORT` on, a decimal rounded to fewer places is NULL in the same
+session, and an error in any other. The caller is out of sight, so by default haruspex assumes nothing, and each such value
+is nullable (`arithmetic-overflow`, `count-overflow`, `domain-error`, `precision-loss` in the IR). Declare what your callers
+set and those reasons go:
 
 ```jsonc
 "session": {
   "ansiWarnings": true,             // ANSI_WARNINGS
   "arithAbort": false,              // ARITHABORT
-  "concatNullYieldsNull": true      // CONCAT_NULL_YIELDS_NULL
+  "concatNullYieldsNull": true,     // CONCAT_NULL_YIELDS_NULL
+  "numericRoundAbort": false        // NUMERIC_ROUNDABORT
 }
 ```
 
-- **`ansiWarnings`** or **`arithAbort`** `true`: an overflow, a division by zero, a `COUNT` past `int` and a value outside a
-  math function's domain are errors, so none makes a value nullable. Either one is enough.
+- **`ansiWarnings`** or **`arithAbort`** `true`: an overflow, a division by zero, a `COUNT` past `int`, a value outside a
+  math function's domain and a loss of precision are errors, so none makes a value nullable. Either one is enough, but a
+  loss of precision under `TRY_CAST` or `TRY_CONVERT` is NULL all the same: only `numericRoundAbort` `false` removes that.
+- **`numericRoundAbort`** `false`: a decimal rounded to fewer places (a narrowing `CAST`, a division or a product whose scale
+  is cut, `AVG` of a decimal, an assignment to a variable of fewer places) is rounded silently, so it never makes a value
+  nullable. `true` changes nothing: that is what haruspex assumes when it isn't known.
 - **`concatNullYieldsNull`** `false`: string `+` with one side NULL gives the other side, so it is null only when both sides
   may be. `true` changes nothing: that is what haruspex assumes when it isn't known.
-- **An option left out is not known**, and haruspex claims only what holds whatever it is. With no `session` block the
-  output is what it was before this setting existed.
+- **An option left out is not known**, and haruspex claims only what holds whatever it is. With no `session` block every
+  value a caller's options could make NULL is nullable, a loss of precision included since IR 0.18, which made such values
+  nullable that earlier versions claimed never null.
 
 Declare what the **callers' connections** set, not the database's defaults: those apply only to a connection that sets
-nothing, and current drivers set these options at login. tedious (the `mssql` package's driver) sets all three on;
-Microsoft.Data.SqlClient sets `ANSI_WARNINGS` and `CONCAT_NULL_YIELDS_NULL` on and `ARITHABORT` off; the ODBC and OLE DB
-drivers set `ANSI_WARNINGS` on. [Decision 0038](decisions/0038-the-callers-session-is-declared.md) lists the sources, and
+nothing, and current drivers set these options at login. tedious (the `mssql` package's driver) sets the first three on and
+`NUMERIC_ROUNDABORT` off; Microsoft.Data.SqlClient sets `ANSI_WARNINGS` and `CONCAT_NULL_YIELDS_NULL` on and `ARITHABORT` and
+`NUMERIC_ROUNDABORT` off; the ODBC and OLE DB drivers set `ANSI_WARNINGS` on. [Decision 0038](decisions/0038-the-callers-session-is-declared.md) lists the sources, and
 why each option is or isn't here. An application can `SET` its own after connecting, so when in doubt, ask the session:
 `SELECT SESSIONPROPERTY('ANSI_WARNINGS')`.
 
 A declaration is a claim, like `"nullable": false`: if a caller sets the options otherwise, a value the schema says is never
 null can be NULL. The IR records it (`source.session`) and the generated module's header says it, so a generated file says what it
 assumed. A procedure that sets one of these options otherwise in its body overrides the declaration until it
-returns; haruspex then leaves its results unknown. Other options that change no claim haruspex makes (`NUMERIC_ROUNDABORT`,
-`DATEFIRST`, `LANGUAGE`, `DATEFORMAT`) are not settings; writing one is an unknown setting.
+returns; haruspex then leaves its results unknown. Other options that change no claim haruspex makes (`DATEFIRST`,
+`LANGUAGE`, `DATEFORMAT`) are not settings; writing one is an unknown setting.
 
 ## Naming
 

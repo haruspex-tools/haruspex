@@ -179,7 +179,7 @@ CAST(d52 AS smallint) -> smallint number/int16 {[-32768 32767]}
 CAST(d52 AS int) -> int number/int32 {[-2147483648 2147483647]}
 CAST(d52 AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 CAST(d52 AS decimal(5,2)) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
-CAST(d52 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(d52 AS decimal(38,0)) -> decimal(38,0) number/decimal null:precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST(d52 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 CAST(d52 AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
 CAST(d52 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -248,10 +248,10 @@ CAST(d3838 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]
 CAST(d3838 AS smallint) -> smallint number/int16 {[-32768 32767]}
 CAST(d3838 AS int) -> int number/int32 {[-2147483648 2147483647]}
 CAST(d3838 AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-CAST(d3838 AS decimal(5,2)) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
-CAST(d3838 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(d3838 AS decimal(5,2)) -> decimal(5,2) number/decimal null:precision-loss {digits=5,2 [-999.99 999.99]}
+CAST(d3838 AS decimal(38,0)) -> decimal(38,0) number/decimal null:precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST(d3838 AS decimal(38,38)) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST(d3838 AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+CAST(d3838 AS numeric(10,2)) -> numeric(10,2) number/decimal null:precision-loss {digits=10,2 [-99999999.99 99999999.99]}
 CAST(d3838 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 CAST(d3838 AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 CAST(d3838 AS float) -> float number/float
@@ -284,7 +284,7 @@ CAST(n102 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-3276
 CAST(n102 AS int) -> int number/int32 {[-2147483648 2147483647]}
 CAST(n102 AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 CAST(n102 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(n102 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(n102 AS decimal(38,0)) -> decimal(38,0) number/decimal null:precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST(n102 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 CAST(n102 AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
 CAST(n102 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -318,10 +318,10 @@ CAST(m AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
 CAST(m AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
 CAST(m AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 CAST(m AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-CAST(m AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(m AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(m AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow,precision-loss {digits=5,2 [-999.99 999.99]}
+CAST(m AS decimal(38,0)) -> decimal(38,0) number/decimal null:precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST(m AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST(m AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(m AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow,precision-loss {digits=10,2 [-99999999.99 99999999.99]}
 CAST(m AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 CAST(m AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(m AS float) -> float number/float
@@ -353,10 +353,10 @@ CAST(sm AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
 CAST(sm AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
 CAST(sm AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 CAST(sm AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-CAST(sm AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(sm AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(sm AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow,precision-loss {digits=5,2 [-999.99 999.99]}
+CAST(sm AS decimal(38,0)) -> decimal(38,0) number/decimal null:precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST(sm AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST(sm AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+CAST(sm AS numeric(10,2)) -> numeric(10,2) number/decimal null:precision-loss {digits=10,2 [-99999999.99 99999999.99]}
 CAST(sm AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 CAST(sm AS smallmoney) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
 CAST(sm AS float) -> float number/float
@@ -529,7 +529,7 @@ CAST(c3 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 
 CAST(c3 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 CAST(c3 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 CAST(c3 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(c3 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(c3 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow,precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST(c3 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 CAST(c3 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
 CAST(c3 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -563,10 +563,10 @@ CAST(v10 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
 CAST(v10 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
 CAST(v10 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 CAST(v10 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-CAST(v10 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(v10 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(v10 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow,precision-loss {digits=5,2 [-999.99 999.99]}
+CAST(v10 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow,precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST(v10 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST(v10 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(v10 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow,precision-loss {digits=10,2 [-99999999.99 99999999.99]}
 CAST(v10 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 CAST(v10 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(v10 AS float) -> float number/float null:arithmetic-overflow
@@ -598,10 +598,10 @@ CAST(vx AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
 CAST(vx AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
 CAST(vx AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 CAST(vx AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-CAST(vx AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(vx AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-CAST(vx AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST(vx AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(vx AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow,precision-loss {digits=5,2 [-999.99 999.99]}
+CAST(vx AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow,precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(vx AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow,precision-loss {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(vx AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow,precision-loss {digits=10,2 [-99999999.99 99999999.99]}
 CAST(vx AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 CAST(vx AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(vx AS float) -> float number/float null:arithmetic-overflow
@@ -634,7 +634,7 @@ CAST(nc3 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768
 CAST(nc3 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 CAST(nc3 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 CAST(nc3 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(nc3 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(nc3 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow,precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST(nc3 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 CAST(nc3 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
 CAST(nc3 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -668,10 +668,10 @@ CAST(nv10 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
 CAST(nv10 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
 CAST(nv10 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 CAST(nv10 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-CAST(nv10 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(nv10 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(nv10 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow,precision-loss {digits=5,2 [-999.99 999.99]}
+CAST(nv10 AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow,precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST(nv10 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST(nv10 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(nv10 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow,precision-loss {digits=10,2 [-99999999.99 99999999.99]}
 CAST(nv10 AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 CAST(nv10 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(nv10 AS float) -> float number/float null:arithmetic-overflow
@@ -703,10 +703,10 @@ CAST(nvx AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
 CAST(nvx AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
 CAST(nvx AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 CAST(nvx AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-CAST(nvx AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(nvx AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-CAST(nvx AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST(nvx AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST(nvx AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow,precision-loss {digits=5,2 [-999.99 999.99]}
+CAST(nvx AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow,precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(nvx AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow,precision-loss {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+CAST(nvx AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow,precision-loss {digits=10,2 [-99999999.99 99999999.99]}
 CAST(nvx AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 CAST(nvx AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST(nvx AS float) -> float number/float null:arithmetic-overflow
@@ -1229,7 +1229,7 @@ CAST(2.50 AS smallint) -> smallint number/int16 {[-32768 32767]}
 CAST(2.50 AS int) -> int number/int32 {[-2147483648 2147483647]}
 CAST(2.50 AS bigint) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 CAST(2.50 AS decimal(5,2)) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
-CAST(2.50 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(2.50 AS decimal(38,0)) -> decimal(38,0) number/decimal null:precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST(2.50 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 CAST(2.50 AS numeric(10,2)) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
 CAST(2.50 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -1264,7 +1264,7 @@ CAST('ab' AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-3276
 CAST('ab' AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 CAST('ab' AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 CAST('ab' AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST('ab' AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST('ab' AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow,precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST('ab' AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 CAST('ab' AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
 CAST('ab' AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -1299,7 +1299,7 @@ CAST(N'ab' AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-327
 CAST(N'ab' AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 CAST(N'ab' AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 CAST(N'ab' AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST(N'ab' AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST(N'ab' AS decimal(38,0)) -> decimal(38,0) number/decimal null:arithmetic-overflow,precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST(N'ab' AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 CAST(N'ab' AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
 CAST(N'ab' AS money) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -1368,10 +1368,10 @@ CAST($1 AS tinyint) -> tinyint number/uint8 null:arithmetic-overflow {[0 255]}
 CAST($1 AS smallint) -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
 CAST($1 AS int) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 CAST($1 AS bigint) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-CAST($1 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow {digits=5,2 [-999.99 999.99]}
-CAST($1 AS decimal(38,0)) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+CAST($1 AS decimal(5,2)) -> decimal(5,2) number/decimal null:arithmetic-overflow,precision-loss {digits=5,2 [-999.99 999.99]}
+CAST($1 AS decimal(38,0)) -> decimal(38,0) number/decimal null:precision-loss {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 CAST($1 AS decimal(38,38)) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-CAST($1 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow {digits=10,2 [-99999999.99 99999999.99]}
+CAST($1 AS numeric(10,2)) -> numeric(10,2) number/decimal null:arithmetic-overflow,precision-loss {digits=10,2 [-99999999.99 99999999.99]}
 CAST($1 AS money) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 CAST($1 AS smallmoney) -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 CAST($1 AS float) -> float number/float

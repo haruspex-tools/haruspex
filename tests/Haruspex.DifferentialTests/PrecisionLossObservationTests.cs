@@ -39,8 +39,8 @@ public class PrecisionLossObservationTests(SqlServerFixture server)
     private const string Declared = "DECLARE @d decimal(10,4) = 1.2345, @m money = 1.2345, @sm smallmoney = 1.2345, @s varchar(20) = '1.2345', @b decimal(38,0) = 1;";
 
     /// <summary>
-    /// The one value of <c>v</c> a batch gives (its rows joined by <c>;</c>), or the error that fails it, under each combination
-    /// in <see cref="Combinations"/>' order. NUMERIC_ROUNDABORT is set off again after the batch.
+    /// What the last result set of a batch holds (its rows joined by <c>;</c>, a row's columns by <c>,</c>), or the error that
+    /// fails it, under each combination in <see cref="Combinations"/>' order. NUMERIC_ROUNDABORT is set off again after the batch.
     /// </summary>
     private async Task<string> UnderEach(string batch)
     {
@@ -48,7 +48,7 @@ public class PrecisionLossObservationTests(SqlServerFixture server)
         foreach (var (ansiWarnings, arithAbort, numericRoundAbort) in Combinations)
         {
             var outcome = await ObservedCall.Run(server, Setup, $"SET ANSI_WARNINGS {ansiWarnings}; SET ARITHABORT {arithAbort}; SET NUMERIC_ROUNDABORT {numericRoundAbort};\n{batch}\nSET NUMERIC_ROUNDABORT OFF;");
-            outcomes.Add(outcome.Error is { } error ? error.ToString(System.Globalization.CultureInfo.InvariantCulture) : outcome.Sets[^1]["v: ".Length..]);
+            outcomes.Add(outcome.Error is { } error ? error.ToString(System.Globalization.CultureInfo.InvariantCulture) : outcome.Sets[^1][(outcome.Sets[^1].IndexOf(": ", StringComparison.Ordinal) + 2)..]);
         }
 
         return string.Join(" ", outcomes);
@@ -131,22 +131,40 @@ public class PrecisionLossObservationTests(SqlServerFixture server)
         Assert.Equal(expected, await UnderEach(batch));
     }
 
-    public static TheoryData<string, string> Attempts { get; } = new()
+    [Fact]
+    public async Task Each_function_that_converts_a_decimal_or_averages_one_is_null_when_it_rounds_under_both_others_off()
     {
-        { "TRY_CAST to fewer places", "SELECT CONVERT(varchar(60), TRY_CAST(@d AS decimal(10,2))) AS v;" },
-        { "TRY_CONVERT to fewer places", "SELECT CONVERT(varchar(60), TRY_CONVERT(decimal(10,2), @d)) AS v;" },
-        { "TRY_CAST of money", "SELECT CONVERT(varchar(60), TRY_CAST(@m AS decimal(10,2))) AS v;" },
-        { "TRY_CAST of a string", "SELECT CONVERT(varchar(60), TRY_CAST(@s AS decimal(10,2))) AS v;" },
-    };
+        // One call of each built-in function the theory above observes rounding (CAST, CONVERT, ISNULL, IIF, CHOOSE, AVG as an
+        // aggregate and over a window, LAG's default), in one batch, so that the function table's rows can cite where each is
+        // observed. ARITHABORT on ends the batch at the first; ANSI_WARNINGS on alone fails the statement.
+        const string Batch = $"""
+            {Declared}
+            SELECT CONVERT(varchar(60), CAST(@d AS decimal(10,2))) AS a, CONVERT(varchar(60), CONVERT(decimal(10,2), @d)) AS b,
+                   CONVERT(varchar(60), ISNULL(CAST(NULL AS decimal(10,2)), @d)) AS c, CONVERT(varchar(60), IIF(@b = 1, @d, @b)) AS e,
+                   CONVERT(varchar(60), CHOOSE(1, @d, @b)) AS g,
+                   (SELECT CONVERT(varchar(60), AVG(x)) FROM (VALUES (CAST(1 AS decimal(10,2))), (2)) AS t(x)) AS h,
+                   (SELECT TOP (1) CONVERT(varchar(60), AVG(x) OVER ()) FROM (VALUES (CAST(1 AS decimal(10,2))), (2)) AS t(x)) AS k,
+                   (SELECT TOP (1) CONVERT(varchar(60), LAG(x, 1, @d) OVER (ORDER BY x)) FROM (VALUES (CAST(1 AS decimal(10,2)))) AS t(x)) AS l;
+            """;
+        const string Values = "1.23,1.23,1.23,1,1,1.500000,1.500000,1.23";
 
-    [Theory]
-    [MemberData(nameof(Attempts))]
-    public async Task Under_try_cast_a_loss_of_precision_is_null_whenever_numeric_roundabort_is_on(string construct, string batch)
+        Assert.Equal($"{Values} {Values} {Values} {Values} 8115 8115 8115 null,null,null,null,null,null,null,null", await UnderEach(Batch));
+    }
+
+    [Fact]
+    public async Task Under_try_cast_a_loss_of_precision_is_null_whenever_numeric_roundabort_is_on()
     {
         // TRY_ turns the error into NULL, so ANSI_WARNINGS and ARITHABORT on don't make it an error: only NUMERIC_ROUNDABORT
-        // off keeps the value.
-        _ = construct;
-        Assert.Equal("1.23 1.23 1.23 1.23 null null null null", await UnderEach($"{Declared} {batch}"));
+        // off keeps the value. To fewer places, of money and of a string, by TRY_CAST and TRY_CONVERT.
+        const string Batch = $"""
+            {Declared}
+            SELECT CONVERT(varchar(60), TRY_CAST(@d AS decimal(10,2))) AS a, CONVERT(varchar(60), TRY_CONVERT(decimal(10,2), @d)) AS b,
+                   CONVERT(varchar(60), TRY_CAST(@m AS decimal(10,2))) AS c, CONVERT(varchar(60), TRY_CAST(@s AS decimal(10,2))) AS e;
+            """;
+        const string Values = "1.23,1.23,1.23,1.23";
+        const string Nulls = "null,null,null,null";
+
+        Assert.Equal($"{Values} {Values} {Values} {Values} {Nulls} {Nulls} {Nulls} {Nulls}", await UnderEach(Batch));
     }
 
     public static TheoryData<string, string, string> NotRounding { get; } = new()

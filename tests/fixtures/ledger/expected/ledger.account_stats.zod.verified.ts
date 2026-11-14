@@ -12,7 +12,7 @@ export const AccountStatsResult1RowSchema = z.object({
   avg_units: z.int32().nullable(),
   avg_delta: z.int32().nullable(),
   /** The driver may round decimal(38,6) past its bounds in a row, so they are not checked. */
-  avg_price: z.number().multipleOf(1e-6),
+  avg_price: z.number().multipleOf(1e-6).nullable(),
   /** The driver may round decimal(38,6) past its bounds in a row, so they are not checked. */
   avg_rate: z.number().multipleOf(1e-6).nullable(),
   /** The driver may round numeric(38,6) past its bounds in a row, so they are not checked. */

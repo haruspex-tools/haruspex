@@ -29,7 +29,7 @@ export type MixedResult3Row = z.infer<typeof MixedResult3RowSchema>
 
 export const MixedResult4RowSchema = z.object({
   /** The driver may round decimal(38,0) past its bounds in a row, so they are not checked. */
-  band: z.number().multipleOf(1),
+  band: z.number().multipleOf(1).nullable(),
 })
 export type MixedResult4Row = z.infer<typeof MixedResult4RowSchema>
 
@@ -51,7 +51,7 @@ export const MixedResult7RowSchema = z.object({
   /** The driver may round money past its bounds in a row, so they are not checked. */
   qty_or_price: z.number().multipleOf(1e-4),
   /** The driver may round numeric(38,0) past its bounds in a row, so they are not checked. */
-  big_or_half: z.number().multipleOf(1),
+  big_or_half: z.number().multipleOf(1).nullable(),
 })
 export type MixedResult7Row = z.infer<typeof MixedResult7RowSchema>
 

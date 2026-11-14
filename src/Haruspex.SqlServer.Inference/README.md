@@ -63,8 +63,8 @@ it, claim by claim.
 
 The rest of this page is the reference: how a procedure's statements are read in order, and what each construct inside
 them gives: calls ("Calls" below), what filters and single-row queries prove ("Refinement"), writes, triggers and cursors ("DML", "Triggers", "Cursors"), `APPLY`,
-`VALUES` lists and views ("APPLY", "Views"), expressions ("Expressions", "CASE, IIF, CHOOSE and NULLIF", "Built-in
-functions", "Window functions"), table-valued functions, set operations and the other joins, `OPENJSON`, and JSON built in
+`VALUES` lists and views ("APPLY", "Views"), expressions ("Expressions", "Precision lost", "CASE, IIF, CHOOSE and NULLIF",
+"Built-in functions", "Window functions"), table-valued functions, set operations and the other joins, `OPENJSON`, and JSON built in
 the project and traced to where it is read. The walk is `Walker.cs`, with `FlowState.cs` (the state and
 its join); what an expression or a query gives is `Typer.cs` and its parts, read in a `ReadScope.cs` (what each source a
 query binds holds, the state it is read in, what the conditions around it prove and the construct it is inside), and never
@@ -107,12 +107,13 @@ option not declared is not known, and each rule then claims what holds whatever 
   an error.
 - **`CONCAT_NULL_YIELDS_NULL` off** (`SessionOptions.ConcatenatingNullKeepsTheString`): string `+` is null only when both
   sides may be ("Strings" below).
-- A `SET` of one of these in a body overrides the caller's for its duration. `ON` for `ANSI_WARNINGS` or `ARITHABORT` is passed
-  over, since it can only make an overflow an error; anything else stops the walk with an unknown (`Walker.IsHarmless`), so a
-  declaration never holds past it.
-- `NUMERIC_ROUNDABORT` on makes a decimal rounded to fewer places NULL when both of the others are off
-  (`Numeric_roundabort_on_makes_a_loss_of_precision_null_when_ansi_warnings_and_arithabort_are_both_off`). That is not
-  modelled: with nothing declared, a rounding conversion is typed never null. The decision says why it is apart.
+- **`NUMERIC_ROUNDABORT` off, or `ANSI_WARNINGS` or `ARITHABORT` on** (`SessionOptions.RoundingMayBeNull`): a decimal rounded
+  to fewer places ("Precision lost" below) is rounded silently, or is an error, so `precision-loss` is not given. Under
+  `TRY_CAST` and `TRY_CONVERT` only `NUMERIC_ROUNDABORT` off removes it, since `TRY_` turns the error into NULL. The typer
+  makes the reason in one place, `Typer.PrecisionLoss`, as it does the overflow's.
+- A `SET` of one of these in a body overrides the caller's for its duration. `ON` for `ANSI_WARNINGS` or `ARITHABORT`, and `OFF`
+  for `NUMERIC_ROUNDABORT`, are passed over, since each can only make a value NULL less often; anything else stops the walk
+  with an unknown (`Walker.IsHarmless`), so a declaration never holds past it.
 
 ## The state
 
@@ -464,23 +465,18 @@ precision adds those before it, less leading zeros (`A_literals_type_is_its_own_
 [decision 0014](../../docs/decisions/0014-count-is-nullable.md)), each is nullable for it, unless the
   type rules below prove it cannot happen, or the callers' sessions are declared to make it an error ("The callers'
   session" above). `SET ANSI_WARNINGS ON` inside the procedure would make it an error again; that is not read, which only
-  claims less. **A known limitation:** a decimal rounded to fewer places (a narrowing `CAST`, a division, a product whose
-  scale is cut at 38 digits, an assignment to a narrower variable) is NULL when the caller has `NUMERIC_ROUNDABORT` on and
-  `ANSI_WARNINGS` and `ARITHABORT` both off
-  (`Numeric_roundabort_on_makes_a_loss_of_precision_null_when_ansi_warnings_and_arithabort_are_both_off`), and haruspex types
-  it never null. So with nothing declared, today's output is unsound for such a caller, and only for one: declaring either
-  option on makes the loss an error, and with `NUMERIC_ROUNDABORT` off, the value is rounded (off is tedious's documented
-default and SqlClient's, observed). The rule
-  and its option are the next slice's ([decision 0038](../../docs/decisions/0038-the-callers-session-is-declared.md)). A
-  conversion that **fails** for a value (`'abc'` as `int`, a string that names no date, a date that does not exist into
+  claims less. A conversion that **fails** for a value (`'abc'` as `int`, a string that names no date, a date that does not exist into
   `date`, `datetime2` or `time`, a GUID into a short string) is an error even then
   (`A_failed_conversion_is_an_error_even_under_ansi_warnings_and_arithabort_off`), so it never makes NULL. Into `datetime` and
   `smalldatetime`, a date that does not exist or is out of their range is an overflow (242), NULL under both options off
   (`A_string_that_names_no_date_or_a_date_out_of_range_fails_or_overflows_by_the_target_type`); a string converted to any
   date type is typed `arithmetic-overflow` unless a declared session makes it an error, which for `date` claims less than holds.
+- **Precision lost** (`precision-loss`). A decimal rounded to fewer places than it has is rounded silently by default, but is
+  an error under the caller's `NUMERIC_ROUNDABORT` on, and NULL when the caller also has `ANSI_WARNINGS` and `ARITHABORT`
+  off. Which expressions round is a rule of its own ("Precision lost" below).
 - **`TRY_CAST` and `TRY_CONVERT`** (`failed-conversion`) are NULL whenever the conversion may fail or overflow
   (`Try_cast_and_try_convert_are_null_when_the_conversion_fails`); one that cannot (the table below) is null only as its
-  operand is.
+  operand is, or for `precision-loss` when it rounds, which `TRY_` makes NULL whatever `ANSI_WARNINGS` and `ARITHABORT` are.
 
 ### Conversions: `CAST`, `CONVERT`, assignments and arguments
 
@@ -627,6 +623,37 @@ operators, with no difference; that took 14 minutes, so the grid kept as a test 
   date)`) it is of the target type and NULL, with no `arithmetic-overflow` though `int` would not convert. It is in fact always
   NULL, which the IR cannot say yet.
 - A string with a number is not modelled.
+
+### Precision lost
+
+With `NUMERIC_ROUNDABORT` on, SQL Server raises an error (8115) where it would round a decimal to fewer places than the value
+has, which `ANSI_WARNINGS` and `ARITHABORT` both off turn into NULL; `TRY_CAST` and `TRY_CONVERT` turn it into NULL whatever
+those two are. With it off, the default for tedious and SqlClient (observed), the value is rounded silently. Every case below
+was observed under all eight combinations of the three options (`PrecisionLossObservationTests`), and the arithmetic and the
+conversions are held to the server over a grid of operand types and values through the whole pipeline
+(`PrecisionLossGridTests`), so each `precision-loss` is a value the server can round to NULL, and each value without it one
+it cannot. Which expressions round is decided by the types, not the values, except where the table says otherwise:
+`CAST(1.2300 AS decimal(10,2))` rounds, though the places it drops are zeros.
+
+| Expression | Rounds when | Code |
+|---|---|---|
+| a conversion to a decimal (`CAST`, `CONVERT`, their `TRY_` forms) | from a decimal of more places; from `money` or `smallmoney`, which keep four, into fewer than four; from a string by the places it is written with: a literal its own (`'1.20'` has two), any other into fewer places than its length less one | `Conversions.Rounds` |
+| an assignment (`SET`, `SELECT @v =`, a declaration's value, `FETCH INTO`, `UPDATE … SET @v =`), an inline function's argument | as a conversion to the variable's or the parameter's type | `Typer.Converting` |
+| a value brought to a common type (`ISNULL`'s second argument, `COALESCE`, `CASE`, `IIF`, `CHOOSE`, a set operation's column, `LAG`'s and `LEAD`'s default) | as a conversion to that type: `decimal(10,4)` beside `decimal(38,0)` is `decimal(38,0)` | `Typer.Chained`, `Typer.IsNull`, `Typer.Offset` |
+| `*`, and `+` and `-` | the result's scale is cut past 38 digits ("Decimal arithmetic" above); for `+` and `-` only a result whose digits at the full scale pass 38 rounds, which no type rules out once it is cut (`decimal(38,10) + decimal(38,20)` drops its last places silently for 1 + 10⁻²⁰, while `decimal(38,0)` 10³⁷ + 1.5 is NULL) | `Arithmetic.Rounds` |
+| `/` | the result's scale is below s1 + (p2 − s2) + 1, the dividend's places, the divisor's integer digits and one more, whatever the values: never when the scale is not cut, though 1 / 3 is inexact, nor when it is cut by less (`decimal(10,0) / decimal(20,10)` keeps 18 places of 21) | `Arithmetic.Rounds` |
+| `AVG` of a decimal, grouped or over a window | always, whatever its places, one value or many, exact or not | `Typer.AverageRounds` |
+| a call of a function declared `RETURNS NULL ON NULL INPUT` | an argument rounds into its parameter, which makes the call NULL without running it (`null-input`) | `Typer.MayBeNullInput` |
+
+What never rounds so, under any of the options: a conversion to an integer (it truncates), to `money` or `smallmoney`, to
+`float` or `real`, or from them to a decimal; `ROUND`, `FLOOR`, `CEILING`, `SIGN` and `POWER` of a decimal, which compute their
+own result; `%`; `SUM`; `AVG` of `money` or an integer; `money`'s own arithmetic; `PARSE` and `TRY_PARSE`; `NULLIF`, which
+returns its first argument. Where the server refuses rather than rounds, nothing is claimed either: a procedure's argument of
+more places, or an `OUTPUT` parameter copied back to fewer, fails (8114) whatever the options, and a column declared
+`NOT NULL` refuses the NULL (515), so a column read later is as its declaration says; one declared `NULL` is nullable already.
+
+A body's `SET NUMERIC_ROUNDABORT OFF` is passed over, so the reason stays where the rounding is in fact silent, which claims
+less; `SET NUMERIC_ROUNDABORT ON` stops the walk, as `SET ANSI_WARNINGS OFF` does ("The callers' session" above).
 
 ### `SUM`, `AVG` and the statistical aggregates
 
@@ -1422,6 +1449,7 @@ constructs this front end gives each reason for:
 | `variable` | a variable until a value never null is assigned on every path |
 | `count-overflow` | `COUNT` (an `int`) under a caller's `ANSI_WARNINGS` and `ARITHABORT` off; never when either is declared on |
 | `arithmetic-overflow` | arithmetic, `SUM`, `AVG`, numeric functions and conversions that can overflow or divide by zero, under the same session options |
+| `precision-loss` | a decimal rounded to fewer places by a conversion, an assignment, a common type, arithmetic whose scale is cut, or `AVG`, under a caller's `NUMERIC_ROUNDABORT` on with `ANSI_WARNINGS` and `ARITHABORT` off, and under `TRY_CAST` with `NUMERIC_ROUNDABORT` on |
 | `failed-conversion` | `TRY_CAST` and `TRY_CONVERT` |
 | `subtotal-row` | a grouped column of a query with `ROLLUP`, `CUBE` or `GROUPING SETS` |
 | `missing-for-action` | a column of a `MERGE`'s `OUTPUT` that some of its actions don't set |
@@ -1784,6 +1812,9 @@ read; the engine rules, each observed, are above ("Decimal arithmetic",
 - New null rules: **`domain-error`** (`SQRT`, `LOG`, `LOG10` or `POWER` given a value outside its domain: an invalid floating
   point operation, error 3623 by default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off) and
   **`too-few-values`** (`STDEV` or `VAR`, NULL over fewer than two values, with `GROUP BY` and over a window too).
+- In 0.18, **`precision-loss`**: decimal arithmetic whose scale is cut, a quotient below its threshold and `AVG` of a decimal,
+  and every conversion that rounds ("Precision lost" above). With nothing declared, a value 0.17 claimed never null for these
+  is nullable.
 
 ### Combining types
 

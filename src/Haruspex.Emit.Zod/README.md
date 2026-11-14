@@ -45,8 +45,9 @@ value sets as `z.enum` or `z.literal`, and whether a field may be null or absent
 left out, and a note above the property says why, in one sentence; a fact many notes rest on is stated once, in the
 module's header. For example, a `bigint` from a rowset arrives from the driver as a string, so its range can't be checked
 as a number. A value set that is true only under the database's collation is a note, not an enum, because the value that
-arrives may differ in case or trailing spaces. When the IR records the options the callers' sessions were declared to set (`source.session`), the header says them
-too, since the schemas are true only for callers that set them; with none declared, it says nothing, as nothing was assumed.
+arrives may differ in case or trailing spaces. When the IR records the options the callers' sessions were declared to set
+(`source.session`: `ansiWarnings`, `arithAbort`, `concatNullYieldsNull`, `numericRoundAbort`), the header says them too, since
+the schemas are true only for callers that set them; with none declared, it says nothing, as nothing was assumed.
 
 What a value looks like depends on how it arrives, and the module follows what actually arrives:
 

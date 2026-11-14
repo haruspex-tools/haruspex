@@ -4,8 +4,8 @@ bt / si -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
 bt / i -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 bt / bi -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 bt / d52 -> decimal(13,8) number/decimal null:arithmetic-overflow {digits=13,8 [-99999.99999999 99999.99999999]}
-bt / d380 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
-bt / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+bt / d380 -> decimal(38,6) number/decimal null:arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+bt / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 bt / n102 -> numeric(23,13) number/decimal null:arithmetic-overflow {digits=23,13 [-9999999999.9999999999999 9999999999.9999999999999]}
 bt / m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 bt / sm -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
@@ -44,7 +44,7 @@ ti / si -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
 ti / i -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 ti / bi -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 ti / d52 -> decimal(11,6) number/decimal null:arithmetic-overflow {digits=11,6 [-99999.999999 99999.999999]}
-ti / d380 -> decimal(38,35) number/decimal null:arithmetic-overflow {digits=38,35 [-999.99999999999999999999999999999999999 999.99999999999999999999999999999999999]}
+ti / d380 -> decimal(38,35) number/decimal null:arithmetic-overflow,precision-loss {digits=38,35 [-999.99999999999999999999999999999999999 999.99999999999999999999999999999999999]}
 ti / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 ti / n102 -> numeric(16,11) number/decimal null:arithmetic-overflow {digits=16,11 [-99999.99999999999 99999.99999999999]}
 ti / m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -84,7 +84,7 @@ si / si -> smallint number/int16 null:arithmetic-overflow {[-32768 32767]}
 si / i -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 si / bi -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 si / d52 -> decimal(13,6) number/decimal null:arithmetic-overflow {digits=13,6 [-9999999.999999 9999999.999999]}
-si / d380 -> decimal(38,33) number/decimal null:arithmetic-overflow {digits=38,33 [-99999.999999999999999999999999999999999 99999.999999999999999999999999999999999]}
+si / d380 -> decimal(38,33) number/decimal null:arithmetic-overflow,precision-loss {digits=38,33 [-99999.999999999999999999999999999999999 99999.999999999999999999999999999999999]}
 si / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 si / n102 -> numeric(18,11) number/decimal null:arithmetic-overflow {digits=18,11 [-9999999.99999999999 9999999.99999999999]}
 si / m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -124,7 +124,7 @@ i / si -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 i / i -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 i / bi -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 i / d52 -> decimal(18,6) number/decimal null:arithmetic-overflow {digits=18,6 [-999999999999.999999 999999999999.999999]}
-i / d380 -> decimal(38,28) number/decimal null:arithmetic-overflow {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
+i / d380 -> decimal(38,28) number/decimal null:arithmetic-overflow,precision-loss {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
 i / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 i / n102 -> numeric(23,11) number/decimal null:arithmetic-overflow {digits=23,11 [-999999999999.99999999999 999999999999.99999999999]}
 i / m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -164,7 +164,7 @@ bi / si -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9
 bi / i -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 bi / bi -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 bi / d52 -> decimal(27,6) number/decimal null:arithmetic-overflow {digits=27,6 [-999999999999999999999.999999 999999999999999999999.999999]}
-bi / d380 -> decimal(38,19) number/decimal null:arithmetic-overflow {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
+bi / d380 -> decimal(38,19) number/decimal null:arithmetic-overflow,precision-loss {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
 bi / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 bi / n102 -> numeric(32,11) number/decimal null:arithmetic-overflow {digits=32,11 [-999999999999999999999.99999999999 999999999999999999999.99999999999]}
 bi / m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -204,7 +204,7 @@ d52 / si -> decimal(11,8) number/decimal null:arithmetic-overflow {digits=11,8 [
 d52 / i -> decimal(16,13) number/decimal null:arithmetic-overflow {digits=16,13 [-999.9999999999999 999.9999999999999]}
 d52 / bi -> decimal(25,22) number/decimal null:arithmetic-overflow {digits=25,22 [-999.9999999999999999999999 999.9999999999999999999999]}
 d52 / d52 -> decimal(13,8) number/decimal null:arithmetic-overflow {digits=13,8 [-99999.99999999 99999.99999999]}
-d52 / d380 -> decimal(38,35) number/decimal null:arithmetic-overflow {digits=38,35 [-999.99999999999999999999999999999999999 999.99999999999999999999999999999999999]}
+d52 / d380 -> decimal(38,35) number/decimal null:arithmetic-overflow,precision-loss {digits=38,35 [-999.99999999999999999999999999999999999 999.99999999999999999999999999999999999]}
 d52 / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 d52 / n102 -> numeric(18,13) number/decimal null:arithmetic-overflow {digits=18,13 [-99999.9999999999999 99999.9999999999999]}
 d52 / m -> decimal(29,22) number/decimal null:arithmetic-overflow {digits=29,22 [-9999999.9999999999999999999999 9999999.9999999999999999999999]}
@@ -238,17 +238,17 @@ d52 / 'ab' -> unknown unsupported-expression: d52 / 'ab': arithmetic on these ty
 d52 / N'ab' -> unknown unsupported-expression: d52 / N'ab': arithmetic on these types is not modelled yet.
 d52 / 1e0 -> float number/float null:arithmetic-overflow
 d52 / $1 -> decimal(29,22) number/decimal null:arithmetic-overflow {digits=29,22 [-9999999.9999999999999999999999 9999999.9999999999999999999999]}
-d380 / bt -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+d380 / bt -> decimal(38,6) number/decimal null:arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 d380 / ti -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 d380 / si -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
-d380 / i -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
-d380 / bi -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+d380 / i -> decimal(38,6) number/decimal null:arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+d380 / bi -> decimal(38,6) number/decimal null:arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 d380 / d52 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
-d380 / d380 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+d380 / d380 -> decimal(38,6) number/decimal null:arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 d380 / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
-d380 / n102 -> numeric(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
-d380 / m -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
-d380 / sm -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+d380 / n102 -> numeric(38,6) number/decimal null:arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+d380 / m -> decimal(38,6) number/decimal null:arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+d380 / sm -> decimal(38,6) number/decimal null:arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 d380 / f -> float number/float null:arithmetic-overflow
 d380 / r -> real number/float null:arithmetic-overflow
 d380 / f24 -> real number/float null:arithmetic-overflow
@@ -277,18 +277,18 @@ d380 / 2.50 -> numeric(38,6) number/decimal null:arithmetic-overflow {digits=38,
 d380 / 'ab' -> unknown unsupported-expression: d380 / 'ab': arithmetic on these types is not modelled yet.
 d380 / N'ab' -> unknown unsupported-expression: d380 / N'ab': arithmetic on these types is not modelled yet.
 d380 / 1e0 -> float number/float null:arithmetic-overflow
-d380 / $1 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
-d3838 / bt -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
-d3838 / ti -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-d3838 / si -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-d3838 / i -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-d3838 / bi -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-d3838 / d52 -> decimal(38,36) number/decimal null:arithmetic-overflow {digits=38,36 [-99.999999999999999999999999999999999999 99.999999999999999999999999999999999999]}
-d3838 / d380 -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-d3838 / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
-d3838 / n102 -> numeric(38,36) number/decimal null:arithmetic-overflow {digits=38,36 [-99.999999999999999999999999999999999999 99.999999999999999999999999999999999999]}
-d3838 / m -> decimal(38,34) number/decimal null:arithmetic-overflow {digits=38,34 [-9999.9999999999999999999999999999999999 9999.9999999999999999999999999999999999]}
-d3838 / sm -> decimal(38,34) number/decimal null:arithmetic-overflow {digits=38,34 [-9999.9999999999999999999999999999999999 9999.9999999999999999999999999999999999]}
+d380 / $1 -> decimal(38,6) number/decimal null:arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+d3838 / bt -> decimal(38,6) number/decimal null:arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+d3838 / ti -> decimal(38,38) number/decimal null:arithmetic-overflow,precision-loss {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+d3838 / si -> decimal(38,38) number/decimal null:arithmetic-overflow,precision-loss {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+d3838 / i -> decimal(38,38) number/decimal null:arithmetic-overflow,precision-loss {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+d3838 / bi -> decimal(38,38) number/decimal null:arithmetic-overflow,precision-loss {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+d3838 / d52 -> decimal(38,36) number/decimal null:arithmetic-overflow,precision-loss {digits=38,36 [-99.999999999999999999999999999999999999 99.999999999999999999999999999999999999]}
+d3838 / d380 -> decimal(38,38) number/decimal null:arithmetic-overflow,precision-loss {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+d3838 / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+d3838 / n102 -> numeric(38,36) number/decimal null:arithmetic-overflow,precision-loss {digits=38,36 [-99.999999999999999999999999999999999999 99.999999999999999999999999999999999999]}
+d3838 / m -> decimal(38,34) number/decimal null:arithmetic-overflow,precision-loss {digits=38,34 [-9999.9999999999999999999999999999999999 9999.9999999999999999999999999999999999]}
+d3838 / sm -> decimal(38,34) number/decimal null:arithmetic-overflow,precision-loss {digits=38,34 [-9999.9999999999999999999999999999999999 9999.9999999999999999999999999999999999]}
 d3838 / f -> float number/float null:arithmetic-overflow
 d3838 / r -> real number/float null:arithmetic-overflow
 d3838 / f24 -> real number/float null:arithmetic-overflow
@@ -311,20 +311,20 @@ d3838 / vb10 -> unknown unsupported-sql-type: The type varbinary(10) is not mode
 d3838 / x -> unknown unsupported-sql-type: The type xml is not modelled yet.
 d3838 / sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 d3838 / j -> unknown (no unknown recorded)
-d3838 / 1 -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-d3838 / 12345 -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-d3838 / 2.50 -> numeric(38,36) number/decimal {digits=38,36 [-99.999999999999999999999999999999999999 99.999999999999999999999999999999999999]}
+d3838 / 1 -> decimal(38,38) number/decimal null:arithmetic-overflow,precision-loss {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+d3838 / 12345 -> decimal(38,38) number/decimal null:arithmetic-overflow,precision-loss {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+d3838 / 2.50 -> numeric(38,36) number/decimal null:precision-loss {digits=38,36 [-99.999999999999999999999999999999999999 99.999999999999999999999999999999999999]}
 d3838 / 'ab' -> unknown unsupported-expression: d3838 / 'ab': arithmetic on these types is not modelled yet.
 d3838 / N'ab' -> unknown unsupported-expression: d3838 / N'ab': arithmetic on these types is not modelled yet.
 d3838 / 1e0 -> float number/float null:arithmetic-overflow
-d3838 / $1 -> decimal(38,34) number/decimal null:arithmetic-overflow {digits=38,34 [-9999.9999999999999999999999999999999999 9999.9999999999999999999999999999999999]}
+d3838 / $1 -> decimal(38,34) number/decimal null:arithmetic-overflow,precision-loss {digits=38,34 [-9999.9999999999999999999999999999999999 9999.9999999999999999999999999999999999]}
 n102 / bt -> numeric(23,13) number/decimal null:arithmetic-overflow {digits=23,13 [-9999999999.9999999999999 9999999999.9999999999999]}
 n102 / ti -> numeric(14,6) number/decimal null:arithmetic-overflow {digits=14,6 [-99999999.999999 99999999.999999]}
 n102 / si -> numeric(16,8) number/decimal null:arithmetic-overflow {digits=16,8 [-99999999.99999999 99999999.99999999]}
 n102 / i -> numeric(21,13) number/decimal null:arithmetic-overflow {digits=21,13 [-99999999.9999999999999 99999999.9999999999999]}
 n102 / bi -> numeric(30,22) number/decimal null:arithmetic-overflow {digits=30,22 [-99999999.9999999999999999999999 99999999.9999999999999999999999]}
 n102 / d52 -> numeric(18,8) number/decimal null:arithmetic-overflow {digits=18,8 [-9999999999.99999999 9999999999.99999999]}
-n102 / d380 -> numeric(38,30) number/decimal null:arithmetic-overflow {digits=38,30 [-99999999.999999999999999999999999999999 99999999.999999999999999999999999999999]}
+n102 / d380 -> numeric(38,30) number/decimal null:arithmetic-overflow,precision-loss {digits=38,30 [-99999999.999999999999999999999999999999 99999999.999999999999999999999999999999]}
 n102 / d3838 -> numeric(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 n102 / n102 -> numeric(23,13) number/decimal null:arithmetic-overflow {digits=23,13 [-9999999999.9999999999999 9999999999.9999999999999]}
 n102 / m -> numeric(34,22) number/decimal null:arithmetic-overflow {digits=34,22 [-999999999999.9999999999999999999999 999999999999.9999999999999999999999]}
@@ -364,7 +364,7 @@ m / si -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203
 m / i -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 m / bi -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 m / d52 -> decimal(27,10) number/decimal null:arithmetic-overflow {digits=27,10 [-99999999999999999.9999999999 99999999999999999.9999999999]}
-m / d380 -> decimal(38,23) number/decimal null:arithmetic-overflow {digits=38,23 [-999999999999999.99999999999999999999999 999999999999999.99999999999999999999999]}
+m / d380 -> decimal(38,23) number/decimal null:arithmetic-overflow,precision-loss {digits=38,23 [-999999999999999.99999999999999999999999 999999999999999.99999999999999999999999]}
 m / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 m / n102 -> numeric(32,15) number/decimal null:arithmetic-overflow {digits=32,15 [-99999999999999999.999999999999999 99999999999999999.999999999999999]}
 m / m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -404,7 +404,7 @@ sm / si -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214
 sm / i -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 sm / bi -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
 sm / d52 -> decimal(18,10) number/decimal null:arithmetic-overflow {digits=18,10 [-99999999.9999999999 99999999.9999999999]}
-sm / d380 -> decimal(38,32) number/decimal null:arithmetic-overflow {digits=38,32 [-999999.99999999999999999999999999999999 999999.99999999999999999999999999999999]}
+sm / d380 -> decimal(38,32) number/decimal null:arithmetic-overflow,precision-loss {digits=38,32 [-999999.99999999999999999999999999999999 999999.99999999999999999999999999999999]}
 sm / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 sm / n102 -> numeric(23,15) number/decimal null:arithmetic-overflow {digits=23,15 [-99999999.999999999999999 99999999.999999999999999]}
 sm / m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -1324,7 +1324,7 @@ j / $1 -> unknown (no unknown recorded)
 1 / i -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 1 / bi -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 1 / d52 -> decimal(9,6) number/decimal null:arithmetic-overflow {digits=9,6 [-999.999999 999.999999]}
-1 / d380 -> decimal(38,37) number/decimal null:arithmetic-overflow {digits=38,37 [-9.9999999999999999999999999999999999999 9.9999999999999999999999999999999999999]}
+1 / d380 -> decimal(38,37) number/decimal null:arithmetic-overflow,precision-loss {digits=38,37 [-9.9999999999999999999999999999999999999 9.9999999999999999999999999999999999999]}
 1 / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 1 / n102 -> numeric(14,11) number/decimal null:arithmetic-overflow {digits=14,11 [-999.99999999999 999.99999999999]}
 1 / m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -1364,7 +1364,7 @@ j / $1 -> unknown (no unknown recorded)
 12345 / i -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 12345 / bi -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 12345 / d52 -> decimal(13,6) number/decimal null:arithmetic-overflow {digits=13,6 [-9999999.999999 9999999.999999]}
-12345 / d380 -> decimal(38,33) number/decimal null:arithmetic-overflow {digits=38,33 [-99999.999999999999999999999999999999999 99999.999999999999999999999999999999999]}
+12345 / d380 -> decimal(38,33) number/decimal null:arithmetic-overflow,precision-loss {digits=38,33 [-99999.999999999999999999999999999999999 99999.999999999999999999999999999999999]}
 12345 / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 12345 / n102 -> numeric(18,11) number/decimal null:arithmetic-overflow {digits=18,11 [-9999999.99999999999 9999999.99999999999]}
 12345 / m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -1404,7 +1404,7 @@ j / $1 -> unknown (no unknown recorded)
 2.50 / i -> numeric(14,13) number/decimal null:arithmetic-overflow {digits=14,13 [-9.9999999999999 9.9999999999999]}
 2.50 / bi -> numeric(23,22) number/decimal null:arithmetic-overflow {digits=23,22 [-9.9999999999999999999999 9.9999999999999999999999]}
 2.50 / d52 -> numeric(11,8) number/decimal null:arithmetic-overflow {digits=11,8 [-999.99999999 999.99999999]}
-2.50 / d380 -> numeric(38,37) number/decimal null:arithmetic-overflow {digits=38,37 [-9.9999999999999999999999999999999999999 9.9999999999999999999999999999999999999]}
+2.50 / d380 -> numeric(38,37) number/decimal null:arithmetic-overflow,precision-loss {digits=38,37 [-9.9999999999999999999999999999999999999 9.9999999999999999999999999999999999999]}
 2.50 / d3838 -> numeric(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 2.50 / n102 -> numeric(16,13) number/decimal null:arithmetic-overflow {digits=16,13 [-999.9999999999999 999.9999999999999]}
 2.50 / m -> numeric(27,22) number/decimal null:arithmetic-overflow {digits=27,22 [-99999.9999999999999999999999 99999.9999999999999999999999]}
@@ -1564,7 +1564,7 @@ $1 / si -> money number/decimal null:arithmetic-overflow {digits=19,4 [-92233720
 $1 / i -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 $1 / bi -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 $1 / d52 -> decimal(27,10) number/decimal null:arithmetic-overflow {digits=27,10 [-99999999999999999.9999999999 99999999999999999.9999999999]}
-$1 / d380 -> decimal(38,23) number/decimal null:arithmetic-overflow {digits=38,23 [-999999999999999.99999999999999999999999 999999999999999.99999999999999999999999]}
+$1 / d380 -> decimal(38,23) number/decimal null:arithmetic-overflow,precision-loss {digits=38,23 [-999999999999999.99999999999999999999999 999999999999999.99999999999999999999999]}
 $1 / d3838 -> decimal(38,6) number/decimal null:arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 $1 / n102 -> numeric(32,15) number/decimal null:arithmetic-overflow {digits=32,15 [-99999999999999999.999999999999999 99999999999999999.999999999999999]}
 $1 / m -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}

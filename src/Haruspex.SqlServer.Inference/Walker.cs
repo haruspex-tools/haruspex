@@ -64,15 +64,19 @@ internal sealed partial class Walker
     /// <summary>
     /// Session options known not to change which result sets run or their shape. Anything else is not modelled:
     /// NOEXEC, FMTONLY and PARSEONLY stop the rows from being returned at all, and turning off ANSI_WARNINGS
-    /// or CONCAT_NULL_YIELDS_NULL changes where expressions produce null.
+    /// or CONCAT_NULL_YIELDS_NULL changes where expressions produce null. Those that can only claim less if passed over are
+    /// passed over (decision 0038, "A SET in a body"): ANSI_WARNINGS or ARITHABORT on makes an overflow an error, and
+    /// NUMERIC_ROUNDABORT off makes a loss of precision silent; NUMERIC_ROUNDABORT on makes it NULL, past any declaration.
     /// </summary>
     private const SetOptions AnyValue = SetOptions.NoCount | SetOptions.XactAbort;
 
     private const SetOptions OnlyOn =
         SetOptions.AnsiNulls | SetOptions.AnsiPadding | SetOptions.AnsiWarnings | SetOptions.QuotedIdentifier | SetOptions.ArithAbort;
 
+    private const SetOptions OnlyOff = SetOptions.NumericRoundAbort;
+
     private static bool IsHarmless(PredicateSetStatement set) =>
-        (set.Options & ~(set.IsOn ? AnyValue | OnlyOn : AnyValue)) == SetOptions.None;
+        (set.Options & ~(set.IsOn ? AnyValue | OnlyOn : AnyValue | OnlyOff)) == SetOptions.None;
 
     /// <summary>What a variable reference means in this body: a parameter, a variable it declares, or neither (<see cref="Binder.Resolve(VariableReference, NameEnvironment)"/>).</summary>
     private VariableResolution Resolved(VariableReference variable) => Binder.Resolve(variable, names);
@@ -433,7 +437,7 @@ internal sealed partial class Walker
     {
         if (!variableShapes.TryGetValue(name, out var shape) || !state.Variables.TryGetValue(name, out var old))
             return state;
-        var because = shape is UnknownShape unknown ? NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]) : Converting(value, shape, at, summaries.Session);
+        var because = shape is UnknownShape unknown ? NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]) : Converting(value, shape, at, summaries.Session, expression);
         var assigned = Value.Computed(shape, because, old.IsLiveJson);
         state = state.WithVariable(name, definitely ? assigned : Value.Join(old, assigned, at, name.Text));
         if (state.Json.TryGetValue(new VariableSlot(name), out var slot))

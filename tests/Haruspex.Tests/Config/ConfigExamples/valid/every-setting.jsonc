@@ -4,7 +4,7 @@
   "source": "database",
   "out": "generated",
   "objects": "strip",
-  "session": { "ansiWarnings": true, "arithAbort": true, "concatNullYieldsNull": true },
+  "session": { "ansiWarnings": true, "arithAbort": true, "concatNullYieldsNull": true, "numericRoundAbort": false },
   "naming": {
     "replace": [{ "pattern": "#$", "with": "Row" }],
     "case": "camel",

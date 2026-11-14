@@ -8,13 +8,14 @@ namespace Haruspex.SqlServer.Model;
 /// </summary>
 /// <remarks>
 /// Only the options a rule of inference reads are here, so that a declaration never looks as if it changed something it
-/// does not. <c>NUMERIC_ROUNDABORT</c>, <c>DATEFIRST</c>, <c>LANGUAGE</c> and <c>DATEFORMAT</c> change no claim haruspex
-/// makes; the decision says why for each.
+/// does not. <c>DATEFIRST</c>, <c>LANGUAGE</c> and <c>DATEFORMAT</c> change no claim haruspex makes; the decision says why
+/// for each.
 /// </remarks>
 /// <param name="AnsiWarnings">Whether <c>ANSI_WARNINGS</c> is on.</param>
 /// <param name="ArithAbort">Whether <c>ARITHABORT</c> is on.</param>
 /// <param name="ConcatNullYieldsNull">Whether <c>CONCAT_NULL_YIELDS_NULL</c> is on.</param>
-public sealed record SessionOptions(bool? AnsiWarnings = null, bool? ArithAbort = null, bool? ConcatNullYieldsNull = null)
+/// <param name="NumericRoundAbort">Whether <c>NUMERIC_ROUNDABORT</c> is on.</param>
+public sealed record SessionOptions(bool? AnsiWarnings = null, bool? ArithAbort = null, bool? ConcatNullYieldsNull = null, bool? NumericRoundAbort = null)
 {
     /// <summary>Nothing known about the callers' sessions: every rule assumes the option that claims least.</summary>
     public static SessionOptions NotKnown { get; } = new();
@@ -31,10 +32,11 @@ public sealed record SessionOptions(bool? AnsiWarnings = null, bool? ArithAbort 
         (AnsiWarningsName, AnsiWarnings),
         (ArithAbortName, ArithAbort),
         (ConcatNullYieldsNullName, ConcatNullYieldsNull),
+        (NumericRoundAbortName, NumericRoundAbort),
     ];
 
     /// <summary>The names of the options, in order.</summary>
-    public static IReadOnlyList<string> Names { get; } = [AnsiWarningsName, ArithAbortName, ConcatNullYieldsNullName];
+    public static IReadOnlyList<string> Names { get; } = [AnsiWarningsName, ArithAbortName, ConcatNullYieldsNullName, NumericRoundAbortName];
 
     /// <summary>These options with the one named <paramref name="name"/> (one of <see cref="Names"/>) declared.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The name is not one of <see cref="Names"/>.</exception>
@@ -43,12 +45,14 @@ public sealed record SessionOptions(bool? AnsiWarnings = null, bool? ArithAbort 
         AnsiWarningsName => this with { AnsiWarnings = on },
         ArithAbortName => this with { ArithAbort = on },
         ConcatNullYieldsNullName => this with { ConcatNullYieldsNull = on },
+        NumericRoundAbortName => this with { NumericRoundAbort = on },
         _ => throw new ArgumentOutOfRangeException(nameof(name), name, "Not the name of a session option."),
     };
 
     private const string AnsiWarningsName = "ansiWarnings";
     private const string ArithAbortName = "arithAbort";
     private const string ConcatNullYieldsNullName = "concatNullYieldsNull";
+    private const string NumericRoundAbortName = "numericRoundAbort";
 
     /// <summary>
     /// Whether an overflow, a division by zero or an invalid floating point operation is an error, which fails the call,
@@ -63,4 +67,14 @@ public sealed record SessionOptions(bool? AnsiWarnings = null, bool? ArithAbort 
     /// (observed: <c>With_concat_null_yields_null_off_a_string_plus_null_is_the_string</c>). Not known claims the NULL.
     /// </summary>
     public bool ConcatenatingNullKeepsTheString => ConcatNullYieldsNull == false;
+
+    /// <summary>
+    /// Whether a decimal rounded to fewer places may be NULL. With <c>NUMERIC_ROUNDABORT</c> off it is rounded silently; on, it
+    /// is an error, which fails the call, unless <c>ANSI_WARNINGS</c> and <c>ARITHABORT</c> are both off, when it is NULL, as an
+    /// overflow is (<see cref="OverflowIsAnError"/>). Under <c>TRY_CAST</c> and <c>TRY_CONVERT</c>, an
+    /// <paramref name="attempt"/>, it is NULL whenever <c>NUMERIC_ROUNDABORT</c> is on, since TRY_ turns the error into NULL
+    /// (observed: <c>A_loss_of_precision_is_null_when_numeric_roundabort_is_on_and_ansi_warnings_and_arithabort_are_off</c>,
+    /// <c>Under_try_cast_a_loss_of_precision_is_null_whenever_numeric_roundabort_is_on</c>).
+    /// </summary>
+    public bool RoundingMayBeNull(bool attempt) => NumericRoundAbort != false && (attempt || !OverflowIsAnError);
 }

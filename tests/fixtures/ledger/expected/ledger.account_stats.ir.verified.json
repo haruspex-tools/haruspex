@@ -202,7 +202,13 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "precision-loss",
+              "at": "procedures/account_stats.sql:10:8"
+            }
+          ]
         },
         {
           "name": "avg_rate",
@@ -238,6 +244,10 @@
             {
               "rule": "nullable-column",
               "at": "ledger.line.rate"
+            },
+            {
+              "rule": "precision-loss",
+              "at": "procedures/account_stats.sql:11:8"
             }
           ]
         },
@@ -275,6 +285,10 @@
             {
               "rule": "nullable-column",
               "at": "ledger.line.discount"
+            },
+            {
+              "rule": "precision-loss",
+              "at": "procedures/account_stats.sql:12:8"
             }
           ]
         },
@@ -368,6 +382,10 @@
           "nullableBecause": [
             {
               "rule": "arithmetic-overflow",
+              "at": "procedures/account_stats.sql:15:8"
+            },
+            {
+              "rule": "precision-loss",
               "at": "procedures/account_stats.sql:15:8"
             }
           ]
@@ -502,6 +520,10 @@
           "nullableBecause": [
             {
               "rule": "empty-aggregate",
+              "at": "procedures/account_stats.sql:25:8"
+            },
+            {
+              "rule": "precision-loss",
               "at": "procedures/account_stats.sql:25:8"
             }
           ]

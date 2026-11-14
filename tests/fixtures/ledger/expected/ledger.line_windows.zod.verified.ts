@@ -9,7 +9,7 @@ import { z } from 'zod'
 export const LineWindowsRowSchema = z.object({
   line_id: z.int32(),
   /** The driver may round decimal(38,6) past its bounds in a row, so they are not checked. */
-  avg_price: z.number().multipleOf(1e-6),
+  avg_price: z.number().multipleOf(1e-6).nullable(),
   avg_qty: z.int32().nullable(),
   sd_price: z.number().nullable(),
   varp_score: z.number().nullable(),

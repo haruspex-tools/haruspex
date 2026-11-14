@@ -86,7 +86,13 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "precision-loss",
+              "at": "procedures/line_windows.sql:6:8"
+            }
+          ]
         },
         {
           "name": "avg_qty",
@@ -239,6 +245,10 @@
           "presence": "always",
           "nullable": true,
           "nullableBecause": [
+            {
+              "rule": "precision-loss",
+              "at": "procedures/line_windows.sql:12:8"
+            },
             {
               "rule": "empty-frame",
               "at": "procedures/line_windows.sql:12:8"

@@ -51,7 +51,7 @@ VARP(bi) -> float number/float null:empty-aggregate
 COUNT(d52) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(d52) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(d52) -> decimal(38,2) number/decimal null:empty-aggregate {digits=38,2 [-999999999999999999999999999999999999.99 999999999999999999999999999999999999.99]}
-AVG(d52) -> decimal(38,6) number/decimal null:empty-aggregate {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+AVG(d52) -> decimal(38,6) number/decimal null:empty-aggregate,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 MIN(d52) -> decimal(5,2) number/decimal null:empty-aggregate {digits=5,2 [-999.99 999.99]}
 MAX(d52) -> decimal(5,2) number/decimal null:empty-aggregate {digits=5,2 [-999.99 999.99]}
 STDEV(d52) -> float number/float null:empty-aggregate,too-few-values
@@ -61,7 +61,7 @@ VARP(d52) -> float number/float null:empty-aggregate
 COUNT(d380) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(d380) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(d380) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-AVG(d380) -> decimal(38,6) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+AVG(d380) -> decimal(38,6) number/decimal null:empty-aggregate,arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 MIN(d380) -> decimal(38,0) number/decimal null:empty-aggregate {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 MAX(d380) -> decimal(38,0) number/decimal null:empty-aggregate {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 STDEV(d380) -> float number/float null:empty-aggregate,too-few-values
@@ -71,7 +71,7 @@ VARP(d380) -> float number/float null:empty-aggregate
 COUNT(d3838) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(d3838) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(d3838) -> decimal(38,38) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
-AVG(d3838) -> decimal(38,38) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+AVG(d3838) -> decimal(38,38) number/decimal null:empty-aggregate,arithmetic-overflow,precision-loss {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 MIN(d3838) -> decimal(38,38) number/decimal null:empty-aggregate {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 MAX(d3838) -> decimal(38,38) number/decimal null:empty-aggregate {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 STDEV(d3838) -> float number/float null:empty-aggregate,too-few-values
@@ -81,7 +81,7 @@ VARP(d3838) -> float number/float null:empty-aggregate
 COUNT(n102) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(n102) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(n102) -> numeric(38,2) number/decimal null:empty-aggregate {digits=38,2 [-999999999999999999999999999999999999.99 999999999999999999999999999999999999.99]}
-AVG(n102) -> numeric(38,6) number/decimal null:empty-aggregate {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+AVG(n102) -> numeric(38,6) number/decimal null:empty-aggregate,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 MIN(n102) -> numeric(10,2) number/decimal null:empty-aggregate {digits=10,2 [-99999999.99 99999999.99]}
 MAX(n102) -> numeric(10,2) number/decimal null:empty-aggregate {digits=10,2 [-99999999.99 99999999.99]}
 STDEV(n102) -> float number/float null:empty-aggregate,too-few-values
@@ -342,8 +342,8 @@ COUNT(*) + MIN(d52) -> decimal(13,2) number/decimal null:count-overflow,empty-ag
 MIN(d52) + COUNT(*) -> decimal(13,2) number/decimal null:empty-aggregate,count-overflow {digits=13,2 [-99999999999.99 99999999999.99]}
 COUNT(*) + MIN(d380) -> decimal(38,0) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 MIN(d380) + COUNT(*) -> decimal(38,0) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-COUNT(*) + MIN(d3838) -> decimal(38,28) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
-MIN(d3838) + COUNT(*) -> decimal(38,28) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
+COUNT(*) + MIN(d3838) -> decimal(38,28) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow,precision-loss {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
+MIN(d3838) + COUNT(*) -> decimal(38,28) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow,precision-loss {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
 COUNT(*) + MIN(n102) -> numeric(13,2) number/decimal null:count-overflow,empty-aggregate {digits=13,2 [-99999999999.99 99999999999.99]}
 MIN(n102) + COUNT(*) -> numeric(13,2) number/decimal null:empty-aggregate,count-overflow {digits=13,2 [-99999999999.99 99999999999.99]}
 COUNT(*) + MIN(m) -> money number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -422,8 +422,8 @@ COUNT(*) - MIN(d52) -> decimal(13,2) number/decimal null:count-overflow,empty-ag
 MIN(d52) - COUNT(*) -> decimal(13,2) number/decimal null:empty-aggregate,count-overflow {digits=13,2 [-99999999999.99 99999999999.99]}
 COUNT(*) - MIN(d380) -> decimal(38,0) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 MIN(d380) - COUNT(*) -> decimal(38,0) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-COUNT(*) - MIN(d3838) -> decimal(38,28) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
-MIN(d3838) - COUNT(*) -> decimal(38,28) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
+COUNT(*) - MIN(d3838) -> decimal(38,28) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow,precision-loss {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
+MIN(d3838) - COUNT(*) -> decimal(38,28) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow,precision-loss {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
 COUNT(*) - MIN(n102) -> numeric(13,2) number/decimal null:count-overflow,empty-aggregate {digits=13,2 [-99999999999.99 99999999999.99]}
 MIN(n102) - COUNT(*) -> numeric(13,2) number/decimal null:empty-aggregate,count-overflow {digits=13,2 [-99999999999.99 99999999999.99]}
 COUNT(*) - MIN(m) -> money number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -502,8 +502,8 @@ COUNT(*) * MIN(d52) -> decimal(16,2) number/decimal null:count-overflow,empty-ag
 MIN(d52) * COUNT(*) -> decimal(16,2) number/decimal null:empty-aggregate,count-overflow {digits=16,2 [-99999999999999.99 99999999999999.99]}
 COUNT(*) * MIN(d380) -> decimal(38,0) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 MIN(d380) * COUNT(*) -> decimal(38,0) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-COUNT(*) * MIN(d3838) -> decimal(38,27) number/decimal null:count-overflow,empty-aggregate {digits=38,27 [-99999999999.999999999999999999999999999 99999999999.999999999999999999999999999]}
-MIN(d3838) * COUNT(*) -> decimal(38,27) number/decimal null:empty-aggregate,count-overflow {digits=38,27 [-99999999999.999999999999999999999999999 99999999999.999999999999999999999999999]}
+COUNT(*) * MIN(d3838) -> decimal(38,27) number/decimal null:count-overflow,empty-aggregate,precision-loss {digits=38,27 [-99999999999.999999999999999999999999999 99999999999.999999999999999999999999999]}
+MIN(d3838) * COUNT(*) -> decimal(38,27) number/decimal null:empty-aggregate,count-overflow,precision-loss {digits=38,27 [-99999999999.999999999999999999999999999 99999999999.999999999999999999999999999]}
 COUNT(*) * MIN(n102) -> numeric(21,2) number/decimal null:count-overflow,empty-aggregate {digits=21,2 [-9999999999999999999.99 9999999999999999999.99]}
 MIN(n102) * COUNT(*) -> numeric(21,2) number/decimal null:empty-aggregate,count-overflow {digits=21,2 [-9999999999999999999.99 9999999999999999999.99]}
 COUNT(*) * MIN(m) -> money number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -580,10 +580,10 @@ COUNT(*) / MIN(bi) -> bigint number/int64 null:count-overflow,empty-aggregate,ar
 MIN(bi) / COUNT(*) -> bigint number/int64 null:empty-aggregate,count-overflow,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 COUNT(*) / MIN(d52) -> decimal(18,6) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=18,6 [-999999999999.999999 999999999999.999999]}
 MIN(d52) / COUNT(*) -> decimal(16,13) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=16,13 [-999.9999999999999 999.9999999999999]}
-COUNT(*) / MIN(d380) -> decimal(38,28) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
-MIN(d380) / COUNT(*) -> decimal(38,6) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+COUNT(*) / MIN(d380) -> decimal(38,28) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow,precision-loss {digits=38,28 [-9999999999.9999999999999999999999999999 9999999999.9999999999999999999999999999]}
+MIN(d380) / COUNT(*) -> decimal(38,6) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 COUNT(*) / MIN(d3838) -> decimal(38,6) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
-MIN(d3838) / COUNT(*) -> decimal(38,38) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+MIN(d3838) / COUNT(*) -> decimal(38,38) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow,precision-loss {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 COUNT(*) / MIN(n102) -> numeric(23,11) number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=23,11 [-999999999999.99999999999 999999999999.99999999999]}
 MIN(n102) / COUNT(*) -> numeric(21,13) number/decimal null:empty-aggregate,count-overflow,arithmetic-overflow {digits=21,13 [-99999999.9999999999999 99999999.9999999999999]}
 COUNT(*) / MIN(m) -> money number/decimal null:count-overflow,empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -742,8 +742,8 @@ COUNT_BIG(*) + MIN(d52) -> decimal(22,2) number/decimal null:empty-aggregate {di
 MIN(d52) + COUNT_BIG(*) -> decimal(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
 COUNT_BIG(*) + MIN(d380) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 MIN(d380) + COUNT_BIG(*) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-COUNT_BIG(*) + MIN(d3838) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
-MIN(d3838) + COUNT_BIG(*) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
+COUNT_BIG(*) + MIN(d3838) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow,precision-loss {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
+MIN(d3838) + COUNT_BIG(*) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow,precision-loss {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
 COUNT_BIG(*) + MIN(n102) -> numeric(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
 MIN(n102) + COUNT_BIG(*) -> numeric(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
 COUNT_BIG(*) + MIN(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -822,8 +822,8 @@ COUNT_BIG(*) - MIN(d52) -> decimal(22,2) number/decimal null:empty-aggregate {di
 MIN(d52) - COUNT_BIG(*) -> decimal(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
 COUNT_BIG(*) - MIN(d380) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 MIN(d380) - COUNT_BIG(*) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-COUNT_BIG(*) - MIN(d3838) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
-MIN(d3838) - COUNT_BIG(*) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
+COUNT_BIG(*) - MIN(d3838) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow,precision-loss {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
+MIN(d3838) - COUNT_BIG(*) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow,precision-loss {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
 COUNT_BIG(*) - MIN(n102) -> numeric(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
 MIN(n102) - COUNT_BIG(*) -> numeric(22,2) number/decimal null:empty-aggregate {digits=22,2 [-99999999999999999999.99 99999999999999999999.99]}
 COUNT_BIG(*) - MIN(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -902,8 +902,8 @@ COUNT_BIG(*) * MIN(d52) -> decimal(25,2) number/decimal null:empty-aggregate {di
 MIN(d52) * COUNT_BIG(*) -> decimal(25,2) number/decimal null:empty-aggregate {digits=25,2 [-99999999999999999999999.99 99999999999999999999999.99]}
 COUNT_BIG(*) * MIN(d380) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
 MIN(d380) * COUNT_BIG(*) -> decimal(38,0) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
-COUNT_BIG(*) * MIN(d3838) -> decimal(38,18) number/decimal null:empty-aggregate {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
-MIN(d3838) * COUNT_BIG(*) -> decimal(38,18) number/decimal null:empty-aggregate {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
+COUNT_BIG(*) * MIN(d3838) -> decimal(38,18) number/decimal null:empty-aggregate,precision-loss {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
+MIN(d3838) * COUNT_BIG(*) -> decimal(38,18) number/decimal null:empty-aggregate,precision-loss {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
 COUNT_BIG(*) * MIN(n102) -> numeric(30,2) number/decimal null:empty-aggregate {digits=30,2 [-9999999999999999999999999999.99 9999999999999999999999999999.99]}
 MIN(n102) * COUNT_BIG(*) -> numeric(30,2) number/decimal null:empty-aggregate {digits=30,2 [-9999999999999999999999999999.99 9999999999999999999999999999.99]}
 COUNT_BIG(*) * MIN(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -980,10 +980,10 @@ COUNT_BIG(*) / MIN(bi) -> bigint number/int64 null:empty-aggregate,arithmetic-ov
 MIN(bi) / COUNT_BIG(*) -> bigint number/int64 null:empty-aggregate,arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
 COUNT_BIG(*) / MIN(d52) -> decimal(27,6) number/decimal null:empty-aggregate,arithmetic-overflow {digits=27,6 [-999999999999999999999.999999 999999999999999999999.999999]}
 MIN(d52) / COUNT_BIG(*) -> decimal(25,22) number/decimal null:empty-aggregate,arithmetic-overflow {digits=25,22 [-999.9999999999999999999999 999.9999999999999999999999]}
-COUNT_BIG(*) / MIN(d380) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
-MIN(d380) / COUNT_BIG(*) -> decimal(38,6) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
+COUNT_BIG(*) / MIN(d380) -> decimal(38,19) number/decimal null:empty-aggregate,arithmetic-overflow,precision-loss {digits=38,19 [-9999999999999999999.9999999999999999999 9999999999999999999.9999999999999999999]}
+MIN(d380) / COUNT_BIG(*) -> decimal(38,6) number/decimal null:empty-aggregate,arithmetic-overflow,precision-loss {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
 COUNT_BIG(*) / MIN(d3838) -> decimal(38,6) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,6 [-99999999999999999999999999999999.999999 99999999999999999999999999999999.999999]}
-MIN(d3838) / COUNT_BIG(*) -> decimal(38,38) number/decimal null:empty-aggregate,arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+MIN(d3838) / COUNT_BIG(*) -> decimal(38,38) number/decimal null:empty-aggregate,arithmetic-overflow,precision-loss {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
 COUNT_BIG(*) / MIN(n102) -> numeric(32,11) number/decimal null:empty-aggregate,arithmetic-overflow {digits=32,11 [-999999999999999999999.99999999999 999999999999999999999.99999999999]}
 MIN(n102) / COUNT_BIG(*) -> numeric(30,22) number/decimal null:empty-aggregate,arithmetic-overflow {digits=30,22 [-99999999.9999999999999999999999 99999999.9999999999999999999999]}
 COUNT_BIG(*) / MIN(m) -> money number/decimal null:empty-aggregate,arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}

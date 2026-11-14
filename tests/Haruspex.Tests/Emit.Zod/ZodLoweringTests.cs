@@ -83,11 +83,18 @@ public class ZodLoweringTests
             Source = new IrSource("tsql") { Session = [new IrSessionOption("ansiWarnings", true), new IrSessionOption("concatNullYieldsNull", false)] },
         };
         var one = Document([], []) with { Source = new IrSource("tsql") { Session = [new IrSessionOption("arithAbort", true)] } };
+        var rounding = Document([], []) with
+        {
+            Source = new IrSource("tsql") { Session = [new IrSessionOption("ansiWarnings", true), new IrSessionOption("arithAbort", true), new IrSessionOption("numericRoundAbort", false)] },
+        };
 
         Assert.Equal(
             "Its types assume that callers' sessions set ansiWarnings on and concatNullYieldsNull off, as the config file declares.",
             Lower(declared).Header[2]);
         Assert.Equal("Its types assume that callers' sessions set arithAbort on, as the config file declares.", Lower(one).Header[2]);
+        Assert.Equal(
+            "Its types assume that callers' sessions set ansiWarnings on, arithAbort on and numericRoundAbort off, as the config file declares.",
+            Lower(rounding).Header[2]);
     }
 
     [Fact]

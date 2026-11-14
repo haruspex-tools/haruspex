@@ -3,8 +3,9 @@ using Haruspex.SqlServer.Semantics;
 namespace Haruspex.SqlServer.Inference.Typing;
 
 /// <summary>
-/// The server's rules for <c>+</c>, <c>-</c>, <c>*</c>, <c>/</c> and <c>%</c>: the type of the result, and whether it may
-/// overflow. README.md in the project ("Decimal arithmetic") gives the rules and the observations they rest on.
+/// The server's rules for <c>+</c>, <c>-</c>, <c>*</c>, <c>/</c> and <c>%</c>: the type of the result, whether it may
+/// overflow, and whether it may lose precision. README.md in the project ("Decimal arithmetic", "Precision lost") gives the
+/// rules and the observations they rest on.
 /// </summary>
 internal static class Arithmetic
 {
@@ -170,5 +171,43 @@ internal static class Arithmetic
         };
         var kept = 38 - scale;
         return needed > kept || (needed == kept && op is '*' or '/' && scale < uncappedScale);
+    }
+
+    /// <summary>
+    /// Whether <c>l op r</c> may round its result to fewer places than the server counts it as having, which with
+    /// NUMERIC_ROUNDABORT on is an error or NULL (<c>SessionOptions.RoundingMayBeNull</c>). Only decimal arithmetic does; an
+    /// integer's, money's or a float's rounding the option doesn't see. Observed construct by construct
+    /// (<c>A_loss_of_precision_is_null_when_numeric_roundabort_is_on_and_ansi_warnings_and_arithabort_are_off</c>), and over
+    /// operand pairs whose values are zero, so that only the types decide, and then the largest values of each, checked
+    /// through the whole pipeline (PrecisionLossGridTests); thousands of random pairs gave no exception when the rule was
+    /// written:
+    /// <list type="bullet">
+    /// <item><c>*</c> rounds when its scale is cut past 38 digits (<see cref="DecimalResult"/>), whatever the values, 0 * 0 too;</item>
+    /// <item><c>+</c> and <c>-</c> when the scale is cut too, but only for a result whose digits at the full scale pass 38,
+    /// which no type can rule out once it is cut: 1 + 0.00000000000000000001 as decimal(38,10) + decimal(38,20) loses its last
+    /// digit silently, while 0 + 9999999999999999999999999999.9999999 as decimal(37,14) + decimal(35,7) is NULL;</item>
+    /// <item><c>/</c> when its scale is below s1 + (p2 - s2) + 1, the dividend's places and the divisor's integer digits and one
+    /// more, whatever the values. A quotient whose scale is not cut is at least s1 + p2 + 1 and never rounds so, though 1 / 3
+    /// is inexact; nor does one cut by less than that (decimal(10,0) / decimal(20,10) keeps 18 places of 21);</item>
+    /// <item><c>%</c> never: its result is exact.</item>
+    /// </list>
+    /// </summary>
+    public static bool Rounds(char op, Operand leftOperand, Operand rightOperand)
+    {
+        if (Operands(leftOperand, rightOperand) is not var (lo, ro))
+            return false;
+        var (l, r) = (lo.Type, ro.Type);
+        if (l.IsApproximate || r.IsApproximate || (!l.IsDecimal && !r.IsDecimal))
+            return false;
+        if (DecimalResult(op, lo, ro) is not var (_, scale, _, uncappedScale))
+            return false;
+        var (_, s1) = lo.AsDecimal();
+        var (p2, s2) = ro.AsDecimal();
+        return op switch
+        {
+            '+' or '-' or '*' => scale < uncappedScale,
+            '/' => scale < s1 + (p2 - s2) + 1,
+            _ => false,
+        };
     }
 }

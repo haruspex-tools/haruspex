@@ -204,8 +204,8 @@ public class ExpressionTests
             FROM dbo.t;
             """);
         Assert.Equal("decimal(19,2) nullable-column", Typed(doc, "a"));
-        Assert.Equal("decimal(19,2)", Typed(doc, "b"));
-        Assert.Equal("decimal(10,2) arithmetic-overflow", Typed(doc, "c"));
+        Assert.Equal("decimal(19,2) precision-loss", Typed(doc, "b"));
+        Assert.Equal("decimal(10,2) arithmetic-overflow precision-loss", Typed(doc, "c"));
         Assert.Equal("decimal(19,2) arithmetic-overflow", Typed(doc, "d"));
         Assert.Equal("varchar(11) empty-aggregate", Typed(doc, "e"));
         Assert.Equal("varchar(5) empty-aggregate arithmetic-overflow", Typed(doc, "f"));
@@ -360,8 +360,8 @@ public class ExpressionTests
     public void Decimal_arithmetic_beyond_38_digits_is_capped_and_may_overflow()
     {
         // SQL Server then cuts the scale (NumericTests): decimal(38,4) * decimal(19,4) is decimal(38,6), whose 32
-        // integer digits cannot hold the 49 the product may need.
+        // integer digits cannot hold the 49 the product may need, and whose 6 places are fewer than the product's 8.
         var doc = Procedure("SELECT SUM(total) * total AS a FROM dbo.t GROUP BY total;");
-        Assert.Equal("decimal(38,6) arithmetic-overflow", Typed(doc, "a"));
+        Assert.Equal("decimal(38,6) arithmetic-overflow precision-loss", Typed(doc, "a"));
     }
 }

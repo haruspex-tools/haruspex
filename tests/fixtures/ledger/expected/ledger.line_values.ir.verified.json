@@ -122,6 +122,10 @@
             {
               "rule": "nullable-column",
               "at": "ledger.line.rate"
+            },
+            {
+              "rule": "precision-loss",
+              "at": "procedures/line_values.sql:7:8"
             }
           ]
         },
@@ -222,7 +226,13 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "precision-loss",
+              "at": "procedures/line_values.sql:10:8"
+            }
+          ]
         },
         {
           "name": "hundredth",

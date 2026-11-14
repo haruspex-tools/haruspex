@@ -36,6 +36,10 @@ internal sealed partial class Typer
 
     private const string Floats = "Power_is_typed_by_its_first_argument_and_the_others_are_float";
 
+    private const string LostPrecision = "Each_function_that_converts_a_decimal_or_averages_one_is_null_when_it_rounds_under_both_others_off";
+
+    private const string LostPrecisionUnderTry = "Under_try_cast_a_loss_of_precision_is_null_whenever_numeric_roundabort_is_on";
+
     private const string Domains = "A_math_function_outside_its_domain_is_an_error_by_default_and_null_under_the_callers_options";
 
     private const string Choices = "Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results";
@@ -128,15 +132,15 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.Log10, (1, 1), "float", [DomainError], [Floats, Domains], (a, e, s) => a.Numeric(Call(e), s, a.Log)),
 
         // ---- conversions and choices ----
-        Typing(ScalarFunctions.Cast, null, "the target type", [ArithmeticOverflow, IrNullRule.NullLiteral], ["Cast_and_convert_are_of_the_target_type_whatever_the_style", "The_conversion_chart_is_what_the_server_allows_implicitly_explicitly_or_not_at_all"], (a, e, s) => a.Cast(((CastCall)e).DataType, ((CastCall)e).Parameter, e, s)),
-        Typing(ScalarFunctions.Convert, null, "the target type, whatever the style", [ArithmeticOverflow, IrNullRule.NullLiteral], ["Cast_and_convert_are_of_the_target_type_whatever_the_style"], (a, e, s) => a.Cast(((ConvertCall)e).DataType, ((ConvertCall)e).Parameter, e, s, styled: ((ConvertCall)e).Style is not null)),
-        Typing(ScalarFunctions.TryCast, null, "the target type", [FailedConversion, IrNullRule.NullLiteral], ["Try_cast_and_try_convert_are_null_when_the_conversion_fails"], (a, e, s) => a.Cast(((TryCastCall)e).DataType, ((TryCastCall)e).Parameter, e, s, attempt: true)),
-        Typing(ScalarFunctions.TryConvert, null, "the target type, whatever the style", [FailedConversion, IrNullRule.NullLiteral], ["Try_cast_and_try_convert_are_null_when_the_conversion_fails"], (a, e, s) => a.Cast(((TryConvertCall)e).DataType, ((TryConvertCall)e).Parameter, e, s, styled: ((TryConvertCall)e).Style is not null, attempt: true)),
-        Typing(ScalarFunctions.IsNull, (2, 2), "the first argument's type", [ArithmeticOverflow], ["Isnull_converts_its_second_argument_to_the_firsts_type_cutting_a_string_short", Coalescing], (a, e, s) => a.IsNull(Call(e), s), otherForms: OtherForms.ExpressionNotModelled),
+        Typing(ScalarFunctions.Cast, null, "the target type", [ArithmeticOverflow, IrNullRule.PrecisionLoss, IrNullRule.NullLiteral], ["Cast_and_convert_are_of_the_target_type_whatever_the_style", "The_conversion_chart_is_what_the_server_allows_implicitly_explicitly_or_not_at_all", LostPrecision], (a, e, s) => a.Cast(((CastCall)e).DataType, ((CastCall)e).Parameter, e, s)),
+        Typing(ScalarFunctions.Convert, null, "the target type, whatever the style", [ArithmeticOverflow, IrNullRule.PrecisionLoss, IrNullRule.NullLiteral], ["Cast_and_convert_are_of_the_target_type_whatever_the_style", LostPrecision], (a, e, s) => a.Cast(((ConvertCall)e).DataType, ((ConvertCall)e).Parameter, e, s, styled: ((ConvertCall)e).Style is not null)),
+        Typing(ScalarFunctions.TryCast, null, "the target type", [FailedConversion, IrNullRule.PrecisionLoss, IrNullRule.NullLiteral], ["Try_cast_and_try_convert_are_null_when_the_conversion_fails", LostPrecisionUnderTry], (a, e, s) => a.Cast(((TryCastCall)e).DataType, ((TryCastCall)e).Parameter, e, s, attempt: true)),
+        Typing(ScalarFunctions.TryConvert, null, "the target type, whatever the style", [FailedConversion, IrNullRule.PrecisionLoss, IrNullRule.NullLiteral], ["Try_cast_and_try_convert_are_null_when_the_conversion_fails", LostPrecisionUnderTry], (a, e, s) => a.Cast(((TryConvertCall)e).DataType, ((TryConvertCall)e).Parameter, e, s, styled: ((TryConvertCall)e).Style is not null, attempt: true)),
+        Typing(ScalarFunctions.IsNull, (2, 2), "the first argument's type", [ArithmeticOverflow, IrNullRule.PrecisionLoss], ["Isnull_converts_its_second_argument_to_the_firsts_type_cutting_a_string_short", Coalescing, LostPrecision], (a, e, s) => a.IsNull(Call(e), s), otherForms: OtherForms.ExpressionNotModelled),
         Typing(ScalarFunctions.Coalesce, null, "the type of highest precedence over its arguments", [ArithmeticOverflow, IrNullRule.ReadTwice, IrNullRule.NullLiteral], [Coalescing, "Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot"], (a, e, s) => a.Coalesce((CoalesceExpression)e, s)),
         Typing(ScalarFunctions.NullIf, null, "the first argument's type", [NullWhenEqual], ["Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it"], (a, e, s) => a.NullIf((NullIfExpression)e, s)),
-        Typing(ScalarFunctions.Iif, null, "the type of highest precedence over its results", [ArithmeticOverflow], [Choices], (a, e, s) => a.Iif((IIfCall)e, s)),
-        Typing(ScalarFunctions.Choose, (2, null), "the type of highest precedence over its results", [OutOfRange, ArithmeticOverflow], [Choices, "Case_without_else_choose_out_of_range_and_nullif_of_equal_values_are_null"], (a, e, s) => a.Choose(Call(e), s), otherForms: OtherForms.ExpressionNotModelled),
+        Typing(ScalarFunctions.Iif, null, "the type of highest precedence over its results", [ArithmeticOverflow, IrNullRule.PrecisionLoss], [Choices, LostPrecision], (a, e, s) => a.Iif((IIfCall)e, s)),
+        Typing(ScalarFunctions.Choose, (2, null), "the type of highest precedence over its results", [OutOfRange, ArithmeticOverflow, IrNullRule.PrecisionLoss], [Choices, "Case_without_else_choose_out_of_range_and_nullif_of_equal_values_are_null", LostPrecision], (a, e, s) => a.Choose(Call(e), s), otherForms: OtherForms.ExpressionNotModelled),
 
         // ---- JSON ----
         Typing(ScalarFunctions.JsonValue, (2, 2), "nvarchar(4000), or what JSON built here holds", [JsonNullOrAbsent], ["Json_value_is_nvarchar_4000_and_null_for_a_json_null_a_missing_path_an_object_or_a_long_string", "Json_value_over_json_built_here_gives_its_scalars_as_text", Refusals], (a, e, s) => a.RefusedJsonDocument(Call(e), s) ?? a.TracedJsonValue(Call(e), s) ?? a.JsonValue(Call(e))),
@@ -148,7 +152,7 @@ internal sealed partial class Typer
         AggregateRow(AggregateFunctions.Count, (1, 1), "int", [CountOverflow], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off", OneRow], (a, e, s) => a.Count(Call(e), s, big: false)),
         AggregateRow(AggregateFunctions.CountBig, (1, 1), "bigint, never null", [], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off"], (a, e, s) => a.Count(Call(e), s, big: true)),
         AggregateRow(AggregateFunctions.Sum, (1, 1), "the argument's type, widened", [EmptyAggregate, ArithmeticOverflow], ["Sum_widens_its_argument"], (a, e, s) => a.Sum(Call(e), s)),
-        AggregateRow(AggregateFunctions.Avg, (1, 1), "the argument's type, widened", [EmptyAggregate, ArithmeticOverflow], ["Avg_is_typed_by_its_argument_with_or_without_a_window", "Avg_is_null_over_no_rows_and_overflows_as_sum_does"], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Avg)),
+        AggregateRow(AggregateFunctions.Avg, (1, 1), "the argument's type, widened", [EmptyAggregate, ArithmeticOverflow, IrNullRule.PrecisionLoss], ["Avg_is_typed_by_its_argument_with_or_without_a_window", "Avg_is_null_over_no_rows_and_overflows_as_sum_does", LostPrecision], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Avg)),
         AggregateRow(AggregateFunctions.Min, (1, 1), "the argument, with its facets", [EmptyAggregate], [OneRow, "Min_and_max_of_a_bit_are_refused_with_or_without_a_window"], (a, e, s) => a.MinOrMax(Call(e), s, AggregateFunctions.Min)),
         AggregateRow(AggregateFunctions.Max, (1, 1), "the argument, with its facets", [EmptyAggregate], [OneRow, "Min_and_max_of_a_bit_are_refused_with_or_without_a_window"], (a, e, s) => a.MinOrMax(Call(e), s, AggregateFunctions.Max)),
         AggregateRow(AggregateFunctions.Stdev, (1, 1), "float", [EmptyAggregate, TooFewValues, ArithmeticOverflow], [Statistics, "The_statistical_aggregates_overflow_only_over_float"], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Stdev)),
@@ -171,7 +175,7 @@ internal sealed partial class Typer
         WindowRow(WindowFunctions.Count, (1, 1), "int", [CountOverflow], [Windowed], new WindowRule(WindowResult.Fixed, BuiltInType.Int, CountOverflow: true)),
         WindowRow(WindowFunctions.CountBig, (1, 1), "bigint, never null", [], [Windowed], new WindowRule(WindowResult.Fixed, BuiltInType.BigInt)),
         WindowRow(WindowFunctions.Sum, (1, 1), "as the aggregate", [ArithmeticOverflow, EmptyFrame], [Windowed, Frames], new WindowRule(WindowResult.Sum, EmptyFrame: true)),
-        WindowRow(WindowFunctions.Avg, (1, 1), "as the aggregate", [ArithmeticOverflow, EmptyFrame], ["Avg_is_typed_by_its_argument_with_or_without_a_window"], new WindowRule(WindowResult.Statistic, EmptyFrame: true, Average: true)),
+        WindowRow(WindowFunctions.Avg, (1, 1), "as the aggregate", [ArithmeticOverflow, IrNullRule.PrecisionLoss, EmptyFrame], ["Avg_is_typed_by_its_argument_with_or_without_a_window", LostPrecision], new WindowRule(WindowResult.Statistic, EmptyFrame: true, Average: true)),
         WindowRow(WindowFunctions.Stdev, (1, 1), "float", [TooFewValues, ArithmeticOverflow, EmptyFrame], [Statistics], new WindowRule(WindowResult.Statistic, EmptyFrame: true, TooFewValues: true)),
         WindowRow(WindowFunctions.StdevP, (1, 1), "float", [ArithmeticOverflow, EmptyFrame], [Statistics], new WindowRule(WindowResult.Statistic, EmptyFrame: true)),
         WindowRow(WindowFunctions.Var, (1, 1), "float", [TooFewValues, ArithmeticOverflow, EmptyFrame], [Statistics], new WindowRule(WindowResult.Statistic, EmptyFrame: true, TooFewValues: true)),
@@ -180,8 +184,8 @@ internal sealed partial class Typer
         WindowRow(WindowFunctions.Max, (1, 1), "the argument, with its facets", [EmptyFrame], [Windowed, "Min_and_max_of_a_bit_are_refused_with_or_without_a_window"], new WindowRule(WindowResult.Argument, EmptyFrame: true, RefusesBit: true)),
         WindowRow(WindowFunctions.FirstValue, (1, 1), "the argument, with its facets", [EmptyFrame], [Windowed, Frames], new WindowRule(WindowResult.Argument, EmptyFrame: true)),
         WindowRow(WindowFunctions.LastValue, (1, 1), "the argument, with its facets", [EmptyFrame], [Windowed, Frames], new WindowRule(WindowResult.Argument, EmptyFrame: true)),
-        WindowRow(WindowFunctions.Lag, (1, 3), "the argument's type, its facets without a default", [WindowEdge, ArithmeticOverflow], ["Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type"], new WindowRule(WindowResult.Offset)),
-        WindowRow(WindowFunctions.Lead, (1, 3), "the argument's type, its facets without a default", [WindowEdge, ArithmeticOverflow], [Windowed], new WindowRule(WindowResult.Offset)),
+        WindowRow(WindowFunctions.Lag, (1, 3), "the argument's type, its facets without a default", [WindowEdge, ArithmeticOverflow, IrNullRule.PrecisionLoss], ["Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type", LostPrecision], new WindowRule(WindowResult.Offset)),
+        WindowRow(WindowFunctions.Lead, (1, 3), "the argument's type, its facets without a default", [WindowEdge, ArithmeticOverflow, IrNullRule.PrecisionLoss], [Windowed], new WindowRule(WindowResult.Offset)),
         WindowRow(WindowFunctions.PercentileCont, (1, 1), "float", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileBetweenValues)),
         WindowRow(WindowFunctions.PercentileDisc, (1, 1), "the argument, with its facets", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileOfValues)),
 

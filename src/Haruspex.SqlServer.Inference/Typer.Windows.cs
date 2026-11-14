@@ -69,6 +69,7 @@ internal sealed partial class Typer
                     .. argument.NullableBecause,
                     .. Sample(),
                     .. overflows ? Overflow(call) : [],
+                    .. AverageRounds(rule.Average, from) ? PrecisionLoss(call) : [],
                     .. Framed(),
                 ];
                 return Typed(type, because, call);
@@ -135,7 +136,8 @@ internal sealed partial class Typer
     /// <summary>
     /// <c>LAG(x [, offset [, default]])</c> and <c>LEAD</c>: x's type. Past the partition's edge it is NULL (<c>window-edge</c>),
     /// unless a default is given, which is converted to x's type: a long string cut, <c>1.9</c> to 1, and an overflow an error,
-    /// or NULL under a caller's ANSI_WARNINGS and ARITHABORT off. A NULL offset is NULL; offset 0 is the row itself (observed:
+    /// or NULL under a caller's ANSI_WARNINGS and ARITHABORT off; a decimal rounded to x's fewer places is NULL under
+    /// NUMERIC_ROUNDABORT on as well (observed in PrecisionLossObservationTests). A NULL offset is NULL; offset 0 is the row itself (observed:
     /// Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type).
     /// Without a default it gives x's values only, so x's facts; with one, which may be outside them, only the type's.
     /// </summary>
@@ -179,6 +181,8 @@ internal sealed partial class Typer
         var fits = (LiteralOf(parameters[2]) is ({ } literal, var negative) ? Conversions.Fits(literal, type, negative) : null)
             ?? (!fallback.IsLiveJson && OperandOf(fallback, parameters[2]) is { } from && Conversions.Converts(from, type));
         EquatableArray<IrNullReason> because = [.. value.NullableBecause, .. offsetBecause, .. itself ? [] : fallback.NullableBecause];
-        return Typed(type, fits || itself ? because : NullReasons.Join(because, Overflow(call)), call);
+        if (itself)
+            return Typed(type, because, call);
+        return Typed(type, NullReasons.Join(because, [.. fits ? [] : Overflow(call), .. Rounds(fallback, parameters[2], type) ? PrecisionLoss(call) : []]), call);
     }
 }

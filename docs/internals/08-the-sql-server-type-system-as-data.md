@@ -136,6 +136,18 @@ two limits the code had spelt out, `smallmoney`'s "at most 5 integer digits" and
 integers' rule: one fewer integer digit than the target's own, since its top digit is never free (`int`'s greatest value is
 2147483647).
 
+**Does it round to fewer places?** A third question, which neither the chart nor the table answers. By default the server
+rounds a decimal silently, but a caller with `NUMERIC_ROUNDABORT` on gets an error, or NULL when `ANSI_WARNINGS` and
+`ARITHABORT` are off as well, so a conversion that may round is nullable for `precision-loss` unless the declared session rules
+that out. It is two lines rather than a column of the table, because it turns on one argument of each side and nothing else:
+into a decimal of fewer places than a decimal's, money's four, or a string's (`Conversions.Rounds`). Arithmetic has the same
+question, and its answer comes from the same arguments: a product or a sum whose scale the server cuts past 38 digits rounds,
+and a quotient whose scale falls below the dividend's places and the divisor's integer digits (`Arithmetic.Rounds`). Both are
+the server's rules, not Microsoft's pages, which say nothing of them: each case is observed under the eight combinations of the
+three options (`PrecisionLossObservationTests`), and `PrecisionLossGridTests` holds the rules to the server over a grid of
+types and values. In the example below, `decimal(5,2)` into `decimal(4,2)` keeps both places, so it may overflow but never
+rounds.
+
 Each row names the observation tests it rests on, and `ConversionsTests` checks that each named test exists and reads the
 table, so that it checks the rows that cite it: a test about something else can't stand as a row's evidence. The evidence is
 `Each_conversion_the_table_lists_keeps_every_value_at_the_edges_of_its_types`: it takes every modelled type over a grid of

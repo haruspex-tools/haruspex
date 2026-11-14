@@ -17,7 +17,7 @@ export const LineValuesRowSchema = z.object({
   /** The driver may round numeric(25,6) past its bounds in a row, so they are not checked. */
   discounted: z.number().multipleOf(1e-6).nullable(),
   /** The driver may round decimal(38,37) past its bounds in a row, so they are not checked. */
-  frac_squared: z.number().multipleOf(1e-37),
+  frac_squared: z.number().multipleOf(1e-37).nullable(),
   /** The driver may round decimal(23,6) past its bounds in a row, so they are not checked. */
   hundredth: z.number().multipleOf(1e-6),
   /** The driver may round numeric(25,6) past its bounds in a row, so they are not checked. */

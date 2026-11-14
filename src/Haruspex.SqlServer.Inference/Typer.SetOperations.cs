@@ -183,15 +183,16 @@ internal sealed partial class Typer
             return new Value(new JsonTextShape(same ? contents[0] : null), because);
         }
 
-        // Each query's value is converted to the column's type, which may overflow, NULL under the caller's options; that is
-        // one more reason that query's value may be null, before INTERSECT and EXCEPT decide whose nulls come out.
+        // Each query's value is converted to the column's type, which may overflow or round it to fewer places, NULL under the
+        // caller's options; that is one more reason that query's value may be null, before INTERSECT and EXCEPT decide whose
+        // nulls come out.
         var combined = Chained([.. given.Select(c => (c.Value, c.Expression ?? new NullLiteral(), c.At))]);
         if (combined.Type is not { } type)
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This set operation's column: {combined.Why}", at));
         var next = 0;
         var reasons = SetNulls(node, [.. columns.Select(c => IsNull(c)
             ? [new IrNullReason(IrNullRule.NullLiteral, c.At.ToString())]
-            : NullReasons.Join(c.Value.NullableBecause, combined.Overflows[next++]))]);
+            : NullReasons.Join(c.Value.NullableBecause, combined.Converted[next++]))]);
 
         // When every query whose values come out is of the column's type already, nothing is converted, and the facets they
         // all have hold. Otherwise those of a query whose every value converts unchanged (Conversions.Preserves: an int into a

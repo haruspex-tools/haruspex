@@ -131,6 +131,10 @@
           "nullable": true,
           "nullableBecause": [
             {
+              "rule": "precision-loss",
+              "at": "procedures/mixed.sql:8:8"
+            },
+            {
               "rule": "null-literal",
               "at": "procedures/mixed.sql:14:8"
             },
@@ -338,7 +342,13 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "precision-loss",
+              "at": "procedures/mixed.sql:34:8"
+            }
+          ]
         }
       ]
     },
@@ -512,7 +522,13 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "precision-loss",
+              "at": "procedures/mixed.sql:57:8"
+            }
+          ]
         }
       ]
     }

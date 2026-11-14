@@ -56,7 +56,7 @@ internal sealed partial class Typer
     /// What a parameter holds for one call: the argument, converted to the parameter's type as an assignment converts it (a
     /// string cut short, an overflow NULL under a caller's ANSI_WARNINGS and ARITHABORT off: observed,
     /// An_argument_is_converted_to_its_parameters_type_as_an_assignment_is), null exactly when the argument may be or the
-    /// conversion may overflow. <c>DEFAULT</c> passes the parameter's default (observed: Default_passes_the_parameters_default).
+    /// conversion may overflow or round to fewer places (<see cref="Converting"/>). <c>DEFAULT</c> passes the parameter's default (observed: Default_passes_the_parameters_default).
     /// An argument of the parameter's own type keeps its facts. One not modelled is any value of the type, or null
     /// (<c>parameter</c>), as a scalar function's parameter is.
     /// </summary>
@@ -88,7 +88,7 @@ internal sealed partial class Typer
         var fits = LiteralOf(argument) is ({ } literal, var negative) && target is not null
             ? Conversions.Fits(literal, target, negative)
             : null;
-        return Value.Computed(declared, fits == true ? value.NullableBecause : Converting(value, declared, At(argument), summaries.Session));
+        return Value.Computed(declared, Converting(value, declared, At(argument), summaries.Session, argument, fits: fits == true));
     }
 
     /// <summary>

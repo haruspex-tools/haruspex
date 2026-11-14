@@ -213,6 +213,10 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:11:8"
+            },
+            {
+              "rule": "precision-loss",
+              "at": "procedures/lenient.sql:11:8"
             }
           ]
         },
@@ -390,6 +394,10 @@
           "nullableBecause": [
             {
               "rule": "arithmetic-overflow",
+              "at": "procedures/lenient.sql:16:8"
+            },
+            {
+              "rule": "precision-loss",
               "at": "procedures/lenient.sql:16:8"
             }
           ]
@@ -877,6 +885,10 @@
           "nullableBecause": [
             {
               "rule": "arithmetic-overflow",
+              "at": "procedures/lenient.sql:35:8"
+            },
+            {
+              "rule": "precision-loss",
               "at": "procedures/lenient.sql:35:8"
             }
           ]

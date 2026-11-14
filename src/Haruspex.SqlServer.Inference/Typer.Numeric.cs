@@ -65,8 +65,16 @@ internal sealed partial class Typer
         EquatableArray<IrNullReason> because = [.. argument.NullableBecause, .. Aggregate(call, scope)];
         if (function == AggregateFunctions.Stdev || function == AggregateFunctions.Var)
             because = NullReasons.Join(because, [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())]);
-        return Typed(type, overflows ? NullReasons.Join(because, Overflow(call)) : because, call);
+        return Typed(type, NullReasons.Join(because, [.. overflows ? Overflow(call) : [], .. AverageRounds(function == AggregateFunctions.Avg, of) ? PrecisionLoss(call) : []]), call);
     }
+
+    /// <summary>
+    /// Whether AVG of a value of this type rounds, so that NUMERIC_ROUNDABORT sees it: over any decimal, exact or not, one
+    /// value or many, whatever its places, with a window too; over money or an integer, never (observed:
+    /// A_loss_of_precision_is_null_when_numeric_roundabort_is_on_and_ansi_warnings_and_arithabort_are_off). The statistics
+    /// are float.
+    /// </summary>
+    private static bool AverageRounds(bool average, ScalarType of) => average && of.IsDecimal;
 
     /// <summary>The type of AVG or a statistic of a value of this type, and whether it may overflow; null when not a number.</summary>
     private static (ScalarType Type, bool Overflows)? Statistic(bool average, ScalarType of)

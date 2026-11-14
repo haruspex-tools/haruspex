@@ -116,6 +116,26 @@ internal sealed partial class Typer
     private static EquatableArray<IrNullReason> Overflow(SessionOptions session, SourceLocation at) =>
         session.OverflowIsAnError ? [] : [new IrNullReason(IrNullRule.ArithmeticOverflow, at.ToString())];
 
+    /// <summary>
+    /// The reason a decimal rounded to fewer places at <paramref name="at"/> gives NULL: none when the callers' sessions make the
+    /// rounding silent or an error (<see cref="SessionOptions.RoundingMayBeNull"/>). Under TRY_CAST and TRY_CONVERT, an
+    /// <paramref name="attempt"/>, only NUMERIC_ROUNDABORT declared off removes it.
+    /// </summary>
+    private EquatableArray<IrNullReason> PrecisionLoss(TSqlFragment at, bool attempt = false) => PrecisionLoss(summaries.Session, At(at), attempt);
+
+    /// <inheritdoc cref="PrecisionLoss(TSqlFragment, bool)"/>
+    private static EquatableArray<IrNullReason> PrecisionLoss(SessionOptions session, SourceLocation at, bool attempt = false) =>
+        session.RoundingMayBeNull(attempt) ? [new IrNullReason(IrNullRule.PrecisionLoss, at.ToString())] : [];
+
+    /// <summary>
+    /// Whether converting <paramref name="value"/>, read from <paramref name="expression"/> when there is one, to
+    /// <paramref name="to"/> may round it to fewer places: a string literal by the places it is written with, anything else by
+    /// its type (<see cref="Conversions.Rounds(ScalarType, ScalarType)"/>). A value whose type is not known may, into a decimal.
+    /// </summary>
+    private static bool Rounds(Value value, ScalarExpression? expression, ScalarType to) =>
+        (expression is not null && LiteralOf(expression) is ({ } literal, _) ? Conversions.Rounds(literal, to) : null)
+        ?? (TypeOf(value) is { } from ? Conversions.Rounds(from, to) : to.IsDecimal);
+
     private Value NotModelled(TSqlFragment expression, string why) =>
         Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{Text(expression)}: {why}", At(expression)));
 
@@ -127,11 +147,13 @@ internal sealed partial class Typer
     /// knowledge join (<see cref="Value.Join"/>), which says what is known of a value that may come from either side.
     /// </summary>
     /// <param name="Type">The type, or null when it is not known.</param>
-    /// <param name="Overflows">For each value, the reason converting it may give NULL: an overflow, NULL under a caller's
-    /// ANSI_WARNINGS and ARITHABORT off (observed: A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options);
-    /// empty when it cannot (<see cref="Conversions.NeverNull"/>, or a literal that fits).</param>
+    /// <param name="Converted">For each value, the reasons converting it may give NULL: an overflow, NULL under a caller's
+    /// ANSI_WARNINGS and ARITHABORT off (observed: A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options),
+    /// unless it cannot (<see cref="Conversions.NeverNull"/>, or a literal that fits); and a rounding to the type's fewer places,
+    /// NULL under NUMERIC_ROUNDABORT on as well (<see cref="Rounds"/>; observed for COALESCE, CASE, IIF, CHOOSE and UNION ALL).
+    /// Empty when neither can happen.</param>
     /// <param name="Why">When the type is not known, why, naming the types so a user knows what to change.</param>
-    private sealed record ChainType(ScalarType? Type, EquatableArray<EquatableArray<IrNullReason>> Overflows, string? Why);
+    private sealed record ChainType(ScalarType? Type, EquatableArray<EquatableArray<IrNullReason>> Converted, string? Why);
 
     /// <param name="values">Each value, the expression it came from (for a literal's digits and value), and where an overflow
     /// converting it would happen.</param>
@@ -170,13 +192,13 @@ internal sealed partial class Typer
             return new ChainType(null, [], $"its type depends on whether SQL Server folds {Names(values.Where(v => Uncertain(v.Value)).Select(v => Text(v.Expression)))} to a constant, whose digits it would count.");
         }
 
-        var overflows = values.Select((v, i) =>
+        var converted = values.Select((v, i) =>
         {
             var fits = (LiteralOf(v.Expression) is ({ } literal, var negative) ? Conversions.Fits(literal, type, negative) : null)
                 ?? Conversions.NeverNull(known[i], type);
-            return fits ? [] : Overflow(summaries.Session, v.At);
+            return (EquatableArray<IrNullReason>)[.. fits ? [] : Overflow(summaries.Session, v.At), .. Rounds(v.Value, v.Expression, type) ? PrecisionLoss(summaries.Session, v.At) : []];
         }).ToList();
-        return new ChainType(type, [.. overflows], null);
+        return new ChainType(type, [.. converted], null);
     }
 
     // ---- COALESCE and ISNULL ----------------------------------------------------------------------------------------
@@ -210,15 +232,16 @@ internal sealed partial class Typer
                 return json;
         }
 
-        // A value converted to the common type may overflow it, NULL under the caller's options, whichever argument it is
-        // (observed: A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options).
+        // A value converted to the common type may overflow it, or be rounded to its fewer places, NULL under the caller's
+        // options, whichever argument it is (observed: A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options,
+        // and for COALESCE in PrecisionLossObservationTests).
         var at = At(coalesce);
         var combined = Chained([.. values.Select((v, i) => (v, arguments[i], at))]);
         if (combined.Type is not { } type)
             return NotModelled(coalesce, combined.Why!); // Never null: a chain without a type says why (Chained).
 
         // COALESCE(NULL, 1) is folded to 1 and counts its digits (observed: An_int_constant_counts_its_own_digits_beside_a_decimal).
-        return Typed(type, combined.Overflows.Aggregate(because, NullReasons.Join), coalesce) with
+        return Typed(type, combined.Converted.Aggregate(because, NullReasons.Join), coalesce) with
         {
             Digits = type.Type == BuiltInType.Int ? IntDigits.Foldable(values.Select(v => v.Digits)) : IntDigits.OfType,
         };
@@ -252,7 +275,8 @@ internal sealed partial class Typer
     /// <c>ISNULL(a, b)</c>: a's type, to which b is converted, a longer string cut short (observed:
     /// Isnull_converts_its_second_argument_to_the_firsts_type_cutting_a_string_short); b's type when a is the NULL literal. It
     /// reads a once, so it is never null when a is never null; nor when b is never null and converts to a's type without an
-    /// overflow, which would make it NULL under a caller's session options (observed for ISNULL(@ti, 1000)). A value never
+    /// overflow or a rounding to fewer places, either of which would make it NULL under a caller's session options (observed
+    /// for ISNULL(@ti, 1000), and in PrecisionLossObservationTests). A value never
     /// null is a itself, with its facts; otherwise only a's type's facts hold, since b may be outside a's CHECK set.
     /// </summary>
     private Value IsNull(FunctionCall call, ReadScope scope)
@@ -285,12 +309,12 @@ internal sealed partial class Typer
             return second;
         var fits = (LiteralOf(b) is ({ } literal, var negative) ? Conversions.Fits(literal, type, negative) : null)
             ?? (OperandOf(second, b) is { } from && Conversions.Converts(from, type));
-        // An overflow converting the second is NULL, or an error that fails the call when the callers' sessions make it one;
-        // then ISNULL of a second never null is never null.
-        var overflow = fits ? [] : Overflow(call);
-        if (second.NullableBecause.Count == 0 && overflow.Count == 0)
+        // An overflow converting the second, or a rounding to a's fewer places, is NULL, or an error that fails the call when
+        // the callers' sessions make it one (or silent, for the rounding); then ISNULL of a second never null is never null.
+        EquatableArray<IrNullReason> converting = [.. fits ? [] : Overflow(call), .. Rounds(second, b, type) ? PrecisionLoss(call) : []];
+        if (second.NullableBecause.Count == 0 && converting.Count == 0)
             return Typed(type, [], call);
-        return Typed(type, NullReasons.Join(NullReasons.Join(first.NullableBecause, second.NullableBecause), overflow), call);
+        return Typed(type, NullReasons.Join(NullReasons.Join(first.NullableBecause, second.NullableBecause), converting), call);
     }
 
     // ---- CAST and CONVERT -------------------------------------------------------------------------------------------
@@ -300,9 +324,12 @@ internal sealed partial class Typer
     /// Cast_and_convert_are_of_the_target_type_whatever_the_style), null when x is; and, unless every value of x's type
     /// converts to t without an overflow (<see cref="Conversions.Converts"/>), NULL under a caller's ANSI_WARNINGS and ARITHABORT
     /// off (<c>arithmetic-overflow</c>), or for TRY_ whenever the conversion may fail (<c>failed-conversion</c>, observed:
-    /// Try_cast_and_try_convert_are_null_when_the_conversion_fails). A string type without a length is 30 long here, where a
-    /// declaration's is 1 (observed: A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration). A conversion to
-    /// x's own type changes nothing, so the value keeps its facts. The format a style gives is not claimed.
+    /// Try_cast_and_try_convert_are_null_when_the_conversion_fails). A decimal rounded to fewer places is NULL under
+    /// NUMERIC_ROUNDABORT on (<c>precision-loss</c>, <see cref="Rounds"/>), with ANSI_WARNINGS and ARITHABORT off, or for TRY_
+    /// whatever they are (observed: Under_try_cast_a_loss_of_precision_is_null_whenever_numeric_roundabort_is_on). A string
+    /// type without a length is 30 long here, where a declaration's is 1 (observed:
+    /// A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration). A conversion to x's own type changes
+    /// nothing, so the value keeps its facts. The format a style gives is not claimed.
     /// </summary>
     private Value Cast(DataTypeReference target, ScalarExpression operand, TSqlFragment call, ReadScope scope, bool styled = false, bool attempt = false)
     {
@@ -335,10 +362,12 @@ internal sealed partial class Typer
         // A NULL cast to int and cast again stays that constant; CAST(1 AS int) counts an int's 10 digits (same observation).
         if (fits && from?.Type.Text == to.Text && !styled)
             return value.Digits == IntDigits.Literal(1) && IsNullCast(operand) ? value : value with { Digits = IntDigits.OfType };
-        var because = fits
-            ? value.NullableBecause
-            : NullReasons.Join(value.NullableBecause, attempt ? [new IrNullReason(IrNullRule.FailedConversion, At(call).ToString())] : Overflow(call));
-        return Value.Computed(shape, because);
+        EquatableArray<IrNullReason> converting =
+        [
+            .. fits ? [] : attempt ? [new IrNullReason(IrNullRule.FailedConversion, At(call).ToString())] : Overflow(call),
+            .. Rounds(value, operand, to) ? PrecisionLoss(call, attempt) : [],
+        ];
+        return Value.Computed(shape, NullReasons.Join(value.NullableBecause, converting));
     }
 
     /// <summary>The NULL literal, cast or converted, however many times.</summary>
@@ -417,7 +446,8 @@ internal sealed partial class Typer
     /// <c>a + b</c>, <c>a - b</c>, <c>a * b</c>, <c>a / b</c>, <c>a % b</c>: string + (<see cref="Plus"/>), or numbers and dates
     /// typed by <see cref="Arithmetic.TypeOf"/>, null when an operand is, and NULL under a caller's ANSI_WARNINGS and
     /// ARITHABORT off when it may overflow or divide by zero (<see cref="Arithmetic.MayOverflow"/>, which reads a literal
-    /// divisor). A string with a number is not modelled yet.
+    /// divisor), or under NUMERIC_ROUNDABORT on too when it may lose precision (<see cref="Arithmetic.Rounds"/>). A string with
+    /// a number is not modelled yet.
     /// </summary>
     private Value Binary(BinaryExpression binary, ReadScope scope)
     {
@@ -449,6 +479,7 @@ internal sealed partial class Typer
         // An int the server may fold to a literal counts that literal's digits (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal); when its fewest digits give another scale, not modelled.
         var mayOverflow = Arithmetic.MayOverflow(op, l, r, NumberOf(binary.SecondExpression));
+        var rounds = Arithmetic.Rounds(op, l, r);
         if (Uncertain(left) || Uncertain(right))
         {
             // Never null: both operands were found above, and one by its fewest digits is found with it (OperandOf).
@@ -456,10 +487,11 @@ internal sealed partial class Typer
             if (Arithmetic.TypeOf(op, lf, rf) is not { } fewest || fewest.Scale != type.Scale || fewest.Type != type.Type)
                 return NotModelled(binary, "its type depends on whether SQL Server folds an operand to a constant, whose digits it would count.");
             mayOverflow |= Arithmetic.MayOverflow(op, lf, rf, NumberOf(binary.SecondExpression));
+            rounds |= Arithmetic.Rounds(op, lf, rf);
         }
 
         var because = NullReasons.Join(left.NullableBecause, right.NullableBecause);
-        return Typed(type, mayOverflow ? NullReasons.Join(because, Overflow(binary)) : because, binary);
+        return Typed(type, NullReasons.Join(because, [.. mayOverflow ? Overflow(binary) : [], .. rounds ? PrecisionLoss(binary) : []]), binary);
     }
 
     /// <summary>The value of an integer or decimal literal, through parentheses and signs; null for anything else.</summary>
@@ -548,21 +580,19 @@ internal sealed partial class Typer
     // ---- assignment ----------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// A value converted to a declared type, as an assignment to a variable converts it: NULL too under a caller's
-    /// ANSI_WARNINGS and ARITHABORT off when it may overflow (observed for CAST, which is the same conversion).
+    /// A value converted to a declared type, as an assignment to a variable or an argument to its parameter converts it: NULL
+    /// too under a caller's ANSI_WARNINGS and ARITHABORT off when it may overflow (observed for CAST, which is the same
+    /// conversion), unless <paramref name="fits"/> says a literal fits; and when it may be rounded to fewer places, under
+    /// NUMERIC_ROUNDABORT on as well (observed: A_loss_of_precision_is_null_when_numeric_roundabort_is_on_and_ansi_warnings_and_arithabort_are_off,
+    /// for SET, SELECT, a declaration's value, FETCH INTO, UPDATE and an inline function's argument).
     /// </summary>
-    internal static EquatableArray<IrNullReason> Converting(Value value, Shape declared, SourceLocation at, SessionOptions session)
+    /// <param name="expression">The expression the value was read from, when there is one, for a string literal's places.</param>
+    /// <param name="fits">Whether the value is a literal known to fit the type, so that it cannot overflow.</param>
+    internal static EquatableArray<IrNullReason> Converting(Value value, Shape declared, SourceLocation at, SessionOptions session, ScalarExpression? expression = null, bool fits = false)
     {
         if (value.Shape is UnknownShape || value.IsLiveJson || declared is not ScalarShape { BuiltIn: { } to })
             return value.NullableBecause;
-        var from = value.Shape switch
-        {
-            ScalarShape { BuiltIn: var s } => s,
-            JsonTextShape => new ScalarType(BuiltInType.NVarChar, -1),
-            _ => null,
-        };
-        return from is not null && Conversions.Converts(Operand.OfType(from), to)
-            ? value.NullableBecause
-            : NullReasons.Join(value.NullableBecause, Overflow(session, at));
+        var overflows = !fits && !(TypeOf(value) is { } from && Conversions.Converts(Operand.OfType(from), to));
+        return NullReasons.Join(value.NullableBecause, [.. overflows ? Overflow(session, at) : [], .. Rounds(value, expression, to) ? PrecisionLoss(session, at) : []]);
     }
 }

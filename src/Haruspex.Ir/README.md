@@ -179,8 +179,8 @@ its result sets can't be listed: an empty list claims it returns none. `at` is a
 relative to the source root, or for a null reason the column it applies to (`schema.table.column`).
 
 `source.session` (0.17) holds the options the callers' sessions are declared to set, by the dialect's name for each as the
-config file writes it, `true` for on and `false` for off: for `tsql`, `ansiWarnings`, `arithAbort` and
-`concatNullYieldsNull`. Every claim in the document assumes them. It is left out when none is declared, and must not be
+config file writes it, `true` for on and `false` for off: for `tsql`, `ansiWarnings`, `arithAbort`, `concatNullYieldsNull`
+and (0.18) `numericRoundAbort`. Every claim in the document assumes them. It is left out when none is declared, and must not be
 written empty: then every claim holds whatever the callers set, as in every version before 0.17. A reader doesn't interpret
 the names; an emitter should say what was assumed where its output is read, as the Zod emitter's header does
 ([decision 0038](../../docs/decisions/0038-the-callers-session-is-declared.md)).
@@ -414,8 +414,14 @@ from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/READM
 
 **0.18** (14 Nov 2026, precision lost under `NUMERIC_ROUNDABORT`). The null rule `precision-loss`: a decimal that may be
 rounded to fewer places than it has, which is NULL for a caller whose session has `NUMERIC_ROUNDABORT` on and
-`ANSI_WARNINGS` and `ARITHABORT` off, and under `TRY_CAST` whenever `NUMERIC_ROUNDABORT` is on. A 0.17 reader would meet
-a null rule it does not know, which is why the version changed. This reader no longer reads 0.16 or 0.17: a file of either
+`ANSI_WARNINGS` and `ARITHABORT` off, and under `TRY_CAST` whenever `NUMERIC_ROUNDABORT` is on; and the session option
+`numericRoundAbort`, which a declaration of it off removes the rule with. A rule of its own rather than `arithmetic-overflow`,
+because what removes it differs: `numericRoundAbort` declared off removes it and leaves an overflow NULL, and `ansiWarnings`
+declared on removes an overflow but not a rounding under `TRY_CAST`. **With nothing declared the output changes**, on purpose:
+every value 0.17 claimed never null where precision may be lost is now nullable, which closes the gap
+[decision 0038](../../docs/decisions/0038-the-callers-session-is-declared.md) recorded. With `ansiWarnings` or `arithAbort`
+declared on, only a rounding under `TRY_CAST` gains it. A 0.17 reader would meet a null rule it does not know, which is why
+the version changed. This reader no longer reads 0.16 or 0.17: a file of either
 claims never null, with nothing declared, a decimal 0.18 says may lose precision, so read as 0.18 it would carry an older
 engine's claim under the newer label ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)).
 

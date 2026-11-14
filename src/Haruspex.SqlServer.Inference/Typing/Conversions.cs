@@ -5,8 +5,8 @@ namespace Haruspex.SqlServer.Inference.Typing;
 
 /// <summary>
 /// The server's rules for converting a value to another type: whether every value converts without an overflow, whether
-/// it keeps the facts proved of it, and whether a literal fits. README.md in the project ("Conversions") gives the rules
-/// and the observations they rest on, and the guide's chapter <c>docs/internals/08-the-sql-server-type-system-as-data.md</c>
+/// it keeps the facts proved of it, whether a literal fits, and whether it may be rounded to fewer places. README.md in the
+/// project ("Conversions", "Precision lost") gives the rules and the observations they rest on, and the guide's chapter <c>docs/internals/08-the-sql-server-type-system-as-data.md</c>
 /// why they are a table.
 /// </summary>
 internal static class Conversions
@@ -134,6 +134,46 @@ internal static class Conversions
     /// in <see cref="Converts"/>, which also says TRY_CAST cannot fail.
     /// </summary>
     public static bool NeverNull(Operand from, ScalarType to) => Converts(from, to) || (from.Type.IsString && to.Type == BuiltInType.UniqueIdentifier);
+
+    /// <summary>
+    /// Whether converting a value of <paramref name="from"/> to <paramref name="to"/> may round it to fewer places, which with
+    /// NUMERIC_ROUNDABORT on is an error or NULL (<c>SessionOptions.RoundingMayBeNull</c>). Only a conversion to a decimal
+    /// rounds so: into an integer it truncates, into money it rounds, and from float or real the digits are approximate,
+    /// none of which the option sees. A decimal rounds into fewer places, decided by the types and not the value
+    /// (decimal(10,4) into decimal(10,2) rounds 1.2300 too); money and smallmoney, which keep four places, into fewer than
+    /// four; and a string by the places it is written with, so only into fewer than it could hold after its point, its length
+    /// less one (observed: <c>A_loss_of_precision_is_null_when_numeric_roundabort_is_on_and_ansi_warnings_and_arithabort_are_off</c>,
+    /// <c>These_round_or_truncate_whatever_numeric_roundabort_is</c>).
+    /// </summary>
+    public static bool Rounds(ScalarType from, ScalarType to) => to.IsDecimal && from switch
+    {
+        { IsDecimal: true } => to.Scale < from.Scale,
+        { IsMoney: true } => to.Scale < MoneyPlaces,
+        { IsString: true } => from.IsMax || to.Scale < from.Length - 1,
+        _ => false,
+    };
+
+    /// <summary>
+    /// Whether a literal converted to <paramref name="to"/> rounds: a string literal by the places it is written with
+    /// (<c>' 1.20 '</c> has two, observed); null for any other literal, and for a string that is not written as a plain decimal
+    /// number, whose type decides (<see cref="Rounds(ScalarType, ScalarType)"/>).
+    /// </summary>
+    public static bool? Rounds(Microsoft.SqlServer.TransactSql.ScriptDom.Literal literal, ScalarType to)
+    {
+        if (!to.IsDecimal || literal is not Microsoft.SqlServer.TransactSql.ScriptDom.StringLiteral { Value: var text })
+            return null;
+        var number = text.Trim();
+        if (number.Length > 0 && number[0] is '+' or '-')
+            number = number[1..];
+        var point = number.IndexOf('.', StringComparison.Ordinal);
+        var (whole, places) = point < 0 ? (number, "") : (number[..point], number[(point + 1)..]);
+        if (whole.Length + places.Length == 0 || !whole.All(char.IsAsciiDigit) || !places.All(char.IsAsciiDigit))
+            return null;
+        return to.Scale < places.Length;
+    }
+
+    /// <summary>The places money and smallmoney keep.</summary>
+    private const int MoneyPlaces = 4;
 
     /// <summary>
     /// Whether a literal's value converts to <paramref name="to"/> without an overflow: an integer within its range, or within

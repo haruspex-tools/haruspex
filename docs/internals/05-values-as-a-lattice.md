@@ -128,7 +128,8 @@ the recursion, and the server counts the type's 10 digits however the members ar
 fixed point, and the join with a recursive member drops the anchor's digits. But a member that gives the anchor's literal
 again gives a value whose *text* is the anchor's, so the fixed point compared by text stopped after one pass, keeping the
 anchor's digits, and claimed `decimal(38, 37)`. Compared by structure, the digits differ, the iteration takes one more
-pass, and the column is typed as the server types it:
+pass, and the column is typed as the server types it (nullable too, because `rate`'s 38 places are rounded to 28, which a
+caller's `NUMERIC_ROUNDABORT` can make NULL: `precision-loss`):
 
 ```sql haruspex-example
 CREATE TABLE shop.discount
@@ -148,7 +149,7 @@ SELECT f.rate FROM flat AS f;
 ```ts haruspex-zod
 export const RatesRowSchema = z.object({
   /** The driver may round decimal(38,28) past its bounds in a row, so they are not checked. */
-  rate: z.number().multipleOf(1e-28),
+  rate: z.number().multipleOf(1e-28).nullable(),
 })
 export type RatesRow = z.infer<typeof RatesRowSchema>
 

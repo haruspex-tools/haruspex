@@ -1,0 +1,25 @@
+// The runs of the assays fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  // Not held to every edge: a decimal at its type's greatest would overflow the arithmetic, and fail the call.
+  "seedReachesEveryEdge": false,
+
+  "setups": {
+    // Where a loss of precision is NULL: every value the IR claims never null for any other reason must still be a value.
+    "rounding to null": "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; SET NUMERIC_ROUNDABORT ON;",
+    // Where a loss of precision is an error, 8115, which fails the call: so a procedure that runs under it rounds nothing.
+    "rounding fails": "SET NUMERIC_ROUNDABORT ON;"
+  },
+
+  "runs": [
+    { "name": "rounded_readings", "procedure": "assay.rounded_readings" },
+    { "name": "rounded_readings, rounding to null", "procedure": "assay.rounded_readings", "setup": "rounding to null" },
+    { "name": "exact_readings", "procedure": "assay.exact_readings" },
+    { "name": "exact_readings, rounding to null", "procedure": "assay.exact_readings", "setup": "rounding to null" },
+    { "name": "exact_readings, rounding fails", "procedure": "assay.exact_readings", "setup": "rounding fails" },
+    { "name": "attempted_readings", "procedure": "assay.attempted_readings" },
+    { "name": "attempted_readings, rounding fails", "procedure": "assay.attempted_readings", "setup": "rounding fails" },
+    { "name": "silent_rounding", "procedure": "assay.silent_rounding" },
+    { "name": "silent_rounding, rounding to null", "procedure": "assay.silent_rounding", "setup": "rounding to null" }
+  ]
+}

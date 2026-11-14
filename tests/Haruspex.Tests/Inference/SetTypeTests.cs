@@ -63,10 +63,10 @@ public class SetTypeTests
     {
         // Exact_numbers_past_38_digits_keep_their_integer_digits_and_cut_the_scale;
         // A_cut_scale_rounds_but_never_overflows_since_the_integer_digits_are_kept.
-        Assert.Equal("decimal(38,8)", Union("amount", "whole"));
-        Assert.Equal("decimal(38,23)", Union("frac", "fee"));
-        Assert.Equal("decimal(38,28)", Union("frac", "qty"));
-        Assert.Equal("decimal(38,0)", Union("frac", "tier"));
+        Assert.Equal("decimal(38,8) precision-loss", Union("amount", "whole"));
+        Assert.Equal("decimal(38,23) precision-loss", Union("frac", "fee"));
+        Assert.Equal("decimal(38,28) precision-loss", Union("frac", "qty"));
+        Assert.Equal("decimal(38,0) precision-loss", Union("frac", "tier"));
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public class SetTypeTests
         Assert.Equal("decimal(23,4)", Chain("big", "price", "fee"));
         Assert.Equal("decimal(11,4) arithmetic-overflow", Chain("qty", "small", "price"));
         Assert.Equal("decimal(14,4)", Chain("qty", "price", "small"));
-        Assert.Equal("decimal(38,23) arithmetic-overflow", Chain("big", "fee", "frac"));
+        Assert.Equal("decimal(38,23) arithmetic-overflow precision-loss", Chain("big", "fee", "frac"));
         Assert.Equal("decimal(19,4) arithmetic-overflow", Typed(Procedure("SELECT COALESCE(s.big, s.fee, s.price) AS v FROM dbo.sale AS s;")));
         Assert.Equal("decimal(19,4) arithmetic-overflow", Typed(Procedure("SELECT CHOOSE(s.id, s.big, s.fee, s.price) AS v FROM dbo.sale AS s;")).Replace(" out-of-range", "", StringComparison.Ordinal));
 
@@ -105,22 +105,22 @@ public class SetTypeTests
     {
         // An_int_constant_counts_its_own_digits_beside_a_decimal.
         static string Beside(string other) => Typed(Procedure($"SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT {other} FROM dbo.sale AS s;"));
-        Assert.Equal("decimal(38,37) null-literal", Beside("CAST(NULL AS int)"));
-        Assert.Equal("decimal(38,37) null-literal", Beside("TRY_CONVERT(int, NULL)"));
-        Assert.Equal("decimal(38,33) null-literal", Beside("CAST(NULL AS smallint)"));
-        Assert.Equal("decimal(38,36)", Beside("-(12)"));
-        Assert.Equal("decimal(38,28)", Beside("CAST(2 AS int)"));
-        Assert.Equal("decimal(38,28)", Beside("(SELECT 1)"));
-        Assert.Equal("decimal(38,37)", Typed(Procedure("SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT q.y FROM (SELECT 1 AS y) AS q;")));
+        Assert.Equal("decimal(38,37) precision-loss null-literal", Beside("CAST(NULL AS int)"));
+        Assert.Equal("decimal(38,37) precision-loss null-literal", Beside("TRY_CONVERT(int, NULL)"));
+        Assert.Equal("decimal(38,33) precision-loss null-literal", Beside("CAST(NULL AS smallint)"));
+        Assert.Equal("decimal(38,36) precision-loss", Beside("-(12)"));
+        Assert.Equal("decimal(38,28) precision-loss", Beside("CAST(2 AS int)"));
+        Assert.Equal("decimal(38,28) precision-loss", Beside("(SELECT 1)"));
+        Assert.Equal("decimal(38,37) precision-loss", Typed(Procedure("SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT q.y FROM (SELECT 1 AS y) AS q;")));
         Assert.StartsWith("unknown: ", Beside("IIF(s.id > 0, 1, 2)"), StringComparison.Ordinal);
         Assert.Contains("folds", Beside("CASE WHEN s.id > 0 THEN 1 END"), StringComparison.Ordinal);
-        Assert.Equal("decimal(38,37)", Typed(Procedure("SELECT COALESCE(s.frac, CAST(NULL AS int)) AS v FROM dbo.sale AS s;")));
+        Assert.Equal("decimal(38,37) precision-loss", Typed(Procedure("SELECT COALESCE(s.frac, CAST(NULL AS int)) AS v FROM dbo.sale AS s;")));
 
         // Beside a decimal(9,2) the scale is 2 however the server folds it: typed, with the most digits.
         Assert.Equal("decimal(12,2)", Typed(Procedure("SELECT s.price AS v FROM dbo.sale AS s UNION ALL SELECT IIF(s.id > 0, 1, 2) FROM dbo.sale AS s;")));
 
         // Decimal arithmetic counts the same digits.
-        Assert.Equal("decimal(38,37) arithmetic-overflow", Typed(Procedure("SELECT s.frac + CAST(NULL AS int) AS v FROM dbo.sale AS s;")).Replace(" null-literal", "", StringComparison.Ordinal));
+        Assert.Equal("decimal(38,37) arithmetic-overflow precision-loss", Typed(Procedure("SELECT s.frac + CAST(NULL AS int) AS v FROM dbo.sale AS s;")).Replace(" null-literal", "", StringComparison.Ordinal));
         Assert.StartsWith("unknown: ", Typed(Procedure("SELECT s.frac + IIF(s.id > 0, 1, 2) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
     }
 
@@ -218,8 +218,8 @@ public class SetTypeTests
         // column as it stands and give the same shape as the anchor's literal, but not a constant: the CTE's fixed point
         // compares the values with their digits, so it takes one more pass and the column loses them.
         static string Beside(string cte) => Typed(Procedure($"WITH {cte} SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT c.n FROM c;"));
-        Assert.Equal("decimal(38,37)", Beside("c AS (SELECT 1 AS n)"));
-        Assert.Equal("decimal(38,28)", Beside("c AS (SELECT 1 AS n UNION ALL SELECT 1 FROM c WHERE 1 = 0)"));
+        Assert.Equal("decimal(38,37) precision-loss", Beside("c AS (SELECT 1 AS n)"));
+        Assert.Equal("decimal(38,28) precision-loss", Beside("c AS (SELECT 1 AS n UNION ALL SELECT 1 FROM c WHERE 1 = 0)"));
         Assert.StartsWith("decimal(38,28)", Beside("c AS (SELECT 12 AS n UNION ALL SELECT n + 1 FROM c WHERE n < 20)"), StringComparison.Ordinal);
     }
 
@@ -229,10 +229,10 @@ public class SetTypeTests
         // A_values_lists_int_column_is_a_constant_in_one_row_only. Several rows are joined, and the column is not a constant
         // even when every row is the same literal.
         static string Beside(string rows) => Typed(Procedure($"SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT r.n FROM (VALUES {rows}) AS r(n);"));
-        Assert.Equal("decimal(38,37)", Beside("(1)"));
-        Assert.Equal("decimal(38,28)", Beside("(1), (1)"));
-        Assert.Equal("decimal(38,28)", Beside("(1), (22)"));
-        Assert.Equal("decimal(38,28)", Beside("(22), (1)"));
+        Assert.Equal("decimal(38,37) precision-loss", Beside("(1)"));
+        Assert.Equal("decimal(38,28) precision-loss", Beside("(1), (1)"));
+        Assert.Equal("decimal(38,28) precision-loss", Beside("(1), (22)"));
+        Assert.Equal("decimal(38,28) precision-loss", Beside("(22), (1)"));
     }
 
     [Fact]
@@ -309,7 +309,7 @@ public class SetTypeTests
         // A_conversion_that_overflows_is_an_error_by_default_and_null_under_the_callers_options (COALESCE and CASE too).
         Assert.Equal("smallmoney arithmetic-overflow", Typed(Procedure("SELECT COALESCE(s.big, s.small) AS v FROM dbo.sale AS s;")));
         Assert.Equal("smallmoney arithmetic-overflow", Typed(Procedure("SELECT CASE WHEN s.id > 0 THEN s.big ELSE s.small END AS v FROM dbo.sale AS s;")));
-        Assert.Equal("decimal(38,8)", Typed(Procedure("SELECT COALESCE(s.amount, s.whole) AS v FROM dbo.sale AS s;")));
+        Assert.Equal("decimal(38,8) precision-loss", Typed(Procedure("SELECT COALESCE(s.amount, s.whole) AS v FROM dbo.sale AS s;")));
         Assert.Equal("datetimeoffset(3)", Typed(Procedure("SELECT IIF(s.id > 0, s.at_time, s.zoned) AS v FROM dbo.sale AS s;")));
         Assert.Contains("int and uniqueidentifier", Typed(Procedure("SELECT COALESCE(s.qty, s.ref) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
         Assert.Contains("int and uniqueidentifier", Typed(Procedure("SELECT CASE WHEN s.id > 0 THEN s.qty ELSE s.ref END AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
@@ -340,7 +340,7 @@ public class SetTypeTests
         // frac's places are cut from 38 to 28 beside an int, so its values round and its type's bounds do not carry: the
         // column has its own type's, not qty's 500.
         doc = Procedure("SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT s.qty FROM dbo.sale AS s;");
-        Assert.Equal("decimal(38,28)", Typed(doc));
+        Assert.Equal("decimal(38,28) precision-loss", Typed(doc));
         Assert.Equal("9999999999.9999999999999999999999999999", Facets(doc)?.Max?.Value);
 
         doc = Procedure("SELECT s.qty AS v FROM dbo.sale AS s UNION ALL SELECT s.price FROM dbo.sale AS s;");
@@ -390,7 +390,7 @@ public class SetTypeTests
 
         // tier is 1 or 2 as decimal(38,0); 2.5 beside it is rounded to 3, so neither set nor literal is claimed.
         var tier = Procedure("SELECT s.tier AS v FROM dbo.sale AS s UNION ALL SELECT 2.5;");
-        Assert.Equal("decimal(38,0)", Typed(tier));
+        Assert.Equal("decimal(38,0) precision-loss", Typed(tier));
         Assert.Null(Values(tier));
 
         // Within 38 digits nothing is rounded: 1, 2 and 2.5.
@@ -402,7 +402,7 @@ public class SetTypeTests
     {
         // A 38-digit integer literal is numeric(38,0), so 2.5 beside it is rounded to 3.
         var doc = Procedure("SELECT CASE WHEN s.id > 0 THEN 12345678901234567890123456789012345678 ELSE 2.5 END AS v FROM dbo.sale AS s;");
-        Assert.Equal("numeric(38,0)", Typed(doc));
+        Assert.Equal("numeric(38,0) precision-loss", Typed(doc));
         Assert.Null(Values(doc));
     }
 }

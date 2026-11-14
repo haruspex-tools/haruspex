@@ -212,8 +212,11 @@ whose right side may read the left. One test decides every such pair: two reason
 program does about them differs, and stay apart when what removes them differs. A condition proving the row matched
 removes either, but only a lateral query that always returns a row removes the lateral one, so they stay apart, as
 `unmatched-row` and `unmatched-lateral-row` (*lateral* is the SQL standard's word, and PostgreSQL's). The same test keeps
-the three reasons that are errors made null by a session setting apart (`count-overflow`, `arithmetic-overflow`,
-`domain-error`): what a person does about each differs. Names are neutral; distinctions that matter are kept.
+the reasons that are errors made null by a session setting apart (`count-overflow`, `arithmetic-overflow`, `domain-error`,
+`precision-loss`): what a person does about each differs. For `precision-loss`, added in 0.18, what removes it differs too:
+`numericRoundAbort` declared off removes it and leaves an overflow NULL, and `ansiWarnings` declared on removes an overflow but
+not a rounding under `TRY_CAST`. Folded into `arithmetic-overflow`, one of the two declarations would have no reason it could
+remove. Names are neutral; distinctions that matter are kept.
 
 **The code uses the same names.** The C# members were renamed with the wire names (`IrNullRule.UnmatchedRow`), though the
 old ones read naturally beside the SQL in the inference. One vocabulary with two sets of names is the drift that the one

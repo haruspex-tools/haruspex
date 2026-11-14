@@ -68,17 +68,17 @@ public class NumericTests
         Assert.Equal(
             """
             a: numeric(22,3)
-            b: decimal(38,7) nullable-column
+            b: decimal(38,7) nullable-column precision-loss
             c: decimal(38,0) arithmetic-overflow
-            e: decimal(38,37)
+            e: decimal(38,37) precision-loss
             h: decimal(38,6) arithmetic-overflow
             k: decimal(38,0) arithmetic-overflow
             l: decimal(38,10) arithmetic-overflow
-            n: decimal(38,0) arithmetic-overflow
+            n: decimal(38,0) arithmetic-overflow precision-loss
             o: numeric(38,1) arithmetic-overflow
             p: decimal(38,38) arithmetic-overflow
-            q: decimal(38,6) arithmetic-overflow
-            s: decimal(38,6) arithmetic-overflow
+            q: decimal(38,6) arithmetic-overflow precision-loss
+            s: decimal(38,6) arithmetic-overflow precision-loss
             t: decimal(11,2)
             u: decimal(14,2)
             w: decimal(38,0)
@@ -140,7 +140,7 @@ public class NumericTests
             g: int arithmetic-overflow
             h: money arithmetic-overflow
             k: float arithmetic-overflow
-            l: decimal(38,37) arithmetic-overflow
+            l: decimal(38,37) arithmetic-overflow precision-loss
             n: unknown
             o: unknown
             q: unknown
@@ -176,7 +176,7 @@ public class NumericTests
             a: decimal(6,5) arithmetic-overflow
             b: decimal(6,5) arithmetic-overflow
             c: decimal(11,10) arithmetic-overflow
-            e: decimal(38,37) arithmetic-overflow
+            e: decimal(38,37) arithmetic-overflow precision-loss
             g: decimal(11,2)
             h: decimal(9,4)
             """,
@@ -194,15 +194,15 @@ public class NumericTests
             a: int empty-aggregate arithmetic-overflow
             b: int empty-aggregate arithmetic-overflow
             c: bigint empty-aggregate arithmetic-overflow
-            e: decimal(38,6) empty-aggregate
-            h: decimal(38,6) empty-aggregate arithmetic-overflow
-            j: decimal(38,38) empty-aggregate arithmetic-overflow
-            k: numeric(38,6) nullable-column empty-aggregate
+            e: decimal(38,6) empty-aggregate precision-loss
+            h: decimal(38,6) empty-aggregate arithmetic-overflow precision-loss
+            j: decimal(38,38) empty-aggregate arithmetic-overflow precision-loss
+            k: numeric(38,6) nullable-column empty-aggregate precision-loss
             l: money empty-aggregate arithmetic-overflow
             n: money empty-aggregate arithmetic-overflow
             o: float empty-aggregate arithmetic-overflow
             q: float empty-aggregate arithmetic-overflow
-            s: decimal(38,6) empty-aggregate
+            s: decimal(38,6) empty-aggregate precision-loss
             """,
             Typed("""
                 SELECT AVG(ti) a, AVG(i) b, AVG(bi) c, AVG(d) e, AVG(d380) h, AVG(d3838) j, AVG(nd) k, AVG(m) l, AVG(sm) n, AVG(f) o, AVG(r) q,
@@ -212,8 +212,8 @@ public class NumericTests
         Assert.Equal(
             """
             g: int
-            a: decimal(38,6)
-            b: numeric(38,6) nullable-column
+            a: decimal(38,6) precision-loss
+            b: numeric(38,6) nullable-column precision-loss
             c: decimal(38,6)
             """,
             Typed("SELECT g, AVG(d) a, AVG(nd) b, AVG(d192) c FROM dbo.t GROUP BY g HAVING AVG(d192) > 0;"));
@@ -226,10 +226,10 @@ public class NumericTests
         // Avg_is_typed_by_its_argument_with_or_without_a_window; a frame that may leave out the current row can be empty.
         Assert.Equal(
             """
-            a: decimal(38,6)
+            a: decimal(38,6) precision-loss
             b: int arithmetic-overflow
-            c: decimal(38,6) empty-frame
-            e: numeric(38,6) nullable-column
+            c: decimal(38,6) precision-loss empty-frame
+            e: numeric(38,6) nullable-column precision-loss
             """,
             Typed("""
                 SELECT AVG(d) OVER (PARTITION BY g) a, AVG(i) OVER () b, AVG(d) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) c,
