@@ -50,6 +50,9 @@ public partial class SchemaFactsTests
     [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN ('open' COLLATE Latin1_General_100_CI_AS, 'shut'))")]
     [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK ((c) COLLATE Latin1_General_100_CI_AS IN ('open', 'shut'))")]
     [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN (('open') COLLATE Latin1_General_100_CI_AS, 'shut'))")]
+    // A COLLATE inside parentheses: the outer expression has none, and the one within still decides.
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CS_AS NULL CHECK ((c COLLATE Latin1_General_100_CI_AS) IN ('open', 'shut'))")]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CS_AS NULL CHECK (c IN (('open' COLLATE Latin1_General_100_CI_AS), 'shut'))")]
     public void A_set_a_check_compares_under_a_collate_of_its_own_stays_a_note(string definition) =>
         Assert.Equal((ValueComparison.Collation, null), (Column(definition).Values!.Comparison, Column(definition).Values!.Fold));
 
