@@ -27,8 +27,10 @@ public readonly record struct ObjectName(string Schema, string Name, string? Dat
     /// The name as written in T-SQL, bracketing a part only where it must be (a dot or bracket in it), and a database's where it
     /// is a SQLCMD variable too, as a body must write one.
     /// </summary>
-    public override string ToString() =>
-        (Database is null ? "" : QuoteDatabase(Database) + ".") + Quote(Schema) + "." + Quote(Name);
+    public override string ToString() => DatabasePrefix + Quote(Schema) + "." + Quote(Name);
+
+    /// <summary>The database part the name starts with, and its dot (<c>[$(Ledger)].</c>); empty for this database.</summary>
+    public string DatabasePrefix => Database is null ? "" : QuoteDatabase(Database) + ".";
 
     private static string Quote(string part) =>
         part.Length == 0 || part.Contains('.', StringComparison.Ordinal) || part.Contains('[', StringComparison.Ordinal) || part.Contains(']', StringComparison.Ordinal)

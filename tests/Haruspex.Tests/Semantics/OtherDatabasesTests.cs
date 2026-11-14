@@ -190,4 +190,95 @@ public class OtherDatabasesTests
         Assert.Contains("name", objects.Columns);
         Assert.NotNull(model.FindReadable(new ObjectName("INFORMATION_SCHEMA", "TABLES")));
     }
+
+    /// <summary>The unknowns of <c>dbo.p</c> read from a folder of the scripts given.</summary>
+    private static List<IrUnknown> FromFolder(params string[] scripts) =>
+        [.. InferProcedure.Infer("dbo.p", [.. scripts.Select((sql, i) => ($"s{i}.sql", sql))]).Unknowns];
+
+    [Theory]
+    [InlineData("CREATE SYNONYM dbo.a FOR dbo.b;", "CREATE SYNONYM dbo.b FOR dbo.a;")]
+    [InlineData("CREATE SYNONYM dbo.a FOR dbo.a;", "CREATE TABLE dbo.unused (id int NOT NULL);")]
+    [InlineData("CREATE SYNONYM dbo.a FOR dbo.b;", "CREATE SYNONYM dbo.b FOR dbo.t;")]
+    public void A_synonym_for_a_synonym_is_unknown_since_sql_server_refuses_a_chain_and_a_cycle_ends(string first, string second)
+    {
+        // Observed: Synonym_chaining_is_refused_when_read (Msg 470), for a chain, a cycle and a synonym for itself.
+        var unknown = Assert.Single(FromFolder("CREATE TABLE dbo.t (id int NOT NULL);", first, second, "CREATE PROCEDURE dbo.p AS SELECT x.id FROM dbo.a AS x;"));
+
+        Assert.Contains("Msg 470", unknown.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_synonym_here_for_a_synonym_of_another_database_is_unknown_as_a_chain()
+    {
+        using var dir = new TempDirectory();
+        TestPackage.Write(Path.Combine(dir.Path, "other.dacpac"), Entry + TestPackage.Synonym("dbo", "entries", "dbo.entry"));
+        TestPackage.Write(
+            Path.Combine(dir.Path, "app.dacpac"),
+            TestPackage.Synonym("dbo", "remote", "[$(Other)].dbo.entries") + TestPackage.Procedure("dbo", "p", "SELECT e.id FROM dbo.remote AS e;"),
+            references: new TestPackage.Reference("other.dacpac", "$(Other)"));
+
+        var doc = SqlProject.LoadPackage(Path.Combine(dir.Path, "app.dacpac"), []).Infer([new ObjectName("dbo", "p")]).Expected();
+
+        Assert.Contains("Msg 470", Assert.Single(doc.Unknowns).Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_synonym_of_another_database_for_one_of_its_synonyms_is_unknown_as_a_chain() =>
+        Assert.Contains(
+            "Msg 470",
+            Assert.Single(Read("SELECT e.id FROM [$(Other)].dbo.a AS e;", Entry + TestPackage.Synonym("dbo", "a", "dbo.b") + TestPackage.Synonym("dbo", "b", "dbo.entry")).Unknowns).Detail,
+            StringComparison.Ordinal);
+
+    [Fact]
+    public void A_column_of_another_database_s_type_that_is_no_alias_there_is_never_taken_for_a_type_here()
+    {
+        // Here dbo.code is an alias of int; there it is a CLR type. The column must not become an int.
+        using var dir = new TempDirectory();
+        TestPackage.Write(Path.Combine(dir.Path, "other.dacpac"), """<Element Type="SqlUserDefinedType" Name="[dbo].[code]" />""" + TestPackage.Table("dbo", "kind", "code dbo.code"));
+        TestPackage.Write(
+            Path.Combine(dir.Path, "app.dacpac"),
+            TestPackage.AliasType("dbo", "code", "int") + TestPackage.Procedure("dbo", "p", "SELECT k.code FROM [$(Other)].dbo.kind AS k;"),
+            references: new TestPackage.Reference("other.dacpac", "$(Other)"));
+
+        var doc = SqlProject.LoadPackage(Path.Combine(dir.Path, "app.dacpac"), []).Infer([new ObjectName("dbo", "p")]).Expected();
+
+        Assert.IsType<IrUnknownType>(Field(doc, "code").Type);
+    }
+
+    [Fact]
+    public void A_package_both_databases_hold_is_read_into_each()
+    {
+        using var dir = new TempDirectory();
+        TestPackage.Write(Path.Combine(dir.Path, "common.dacpac"), TestPackage.Table("common", "cfg", "k int"));
+        TestPackage.Write(Path.Combine(dir.Path, "other.dacpac"), Entry, references: new TestPackage.Reference("common.dacpac"));
+        TestPackage.Write(
+            Path.Combine(dir.Path, "app.dacpac"),
+            TestPackage.Procedure("dbo", "p", "SELECT c.k, o.k AS other_k FROM common.cfg AS c CROSS JOIN [$(Other)].common.cfg AS o;"),
+            references: [new TestPackage.Reference("common.dacpac"), new TestPackage.Reference("other.dacpac", "$(Other)")]);
+
+        var doc = SqlProject.LoadPackage(Path.Combine(dir.Path, "app.dacpac"), []).Infer([new ObjectName("dbo", "p")]).Expected();
+
+        Assert.Empty(doc.Unknowns);
+        Assert.Equal("int", Scalar(doc, "other_k").Sql);
+    }
+
+    [Fact]
+    public void A_fact_from_another_database_s_check_names_the_check_with_its_database()
+    {
+        var doc = SqlProject.LoadPackage(Path.Combine(Packages, "harbour", "harbour.dacpac"), []).Infer([new ObjectName("dock", "crane_fees")]).Expected();
+
+        Assert.Equal("[$(Tally)].ledger.ck_entry_state", Assert.Single(Scalar(doc, "state").Facets!.Values!.From).Ref);
+    }
+
+    [Fact]
+    public void Master_s_system_objects_that_are_not_read_are_not_noted_on_every_run()
+    {
+        using var dir = new TempDirectory();
+        File.Copy(Path.Combine(Packages, "master-shape", "master.dacpac"), Path.Combine(dir.Path, "master.dacpac"));
+        TestPackage.Write(Path.Combine(dir.Path, "app.dacpac"), TestPackage.Procedure("dbo", "p", "SELECT 1 AS one;"), references: new TestPackage.Reference("master.dacpac", "master"));
+
+        var project = SqlProject.LoadPackage(Path.Combine(dir.Path, "app.dacpac"), []);
+
+        Assert.Empty(project.Diagnostics);
+    }
 }

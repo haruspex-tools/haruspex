@@ -275,7 +275,9 @@ public sealed partial class Binder
 
     /// <summary>
     /// What a synonym reads: a name of this database (with its schema: one without depends on the caller's default schema), or a
-    /// name of another database the source holds. SQL Server doesn't let a synonym stand for a synonym, so this ends.
+    /// name of another database the source holds. A synonym for a synonym, here or there, is refused when it is read (observed:
+    /// Msg 470, "Synonym chaining is not allowed", for a chain, a cycle and a synonym for itself, though each can be created),
+    /// so it is unknown with that reason, and following a synonym never goes further than its one target.
     /// </summary>
     private SourceTarget Through(Synonym synonym, SynonymTarget target, SourceLocation at)
     {
@@ -285,18 +287,33 @@ public sealed partial class Binder
         if (target.Schema is not { } schema)
             return Unresolved($"The synonym {synonym.Name} stands for {target}, which names no schema, so what it reads depends on the caller's default schema.");
         if (target.Database is null)
-            return InSchema(new ObjectName(schema, target.Name), at);
+        {
+            var name = new ObjectName(schema, target.Name);
+            return Model.FindReadable(name) is Synonym
+                ? Unresolved(Chained(synonym.Name, target))
+                : InSchema(name, at);
+        }
+
         return Model.Databases.TryGetValue(target.Database, out var other)
-            ? InOtherDatabase(other, target.Database, new ObjectName(schema, target.Name), at)
+            ? InOtherDatabase(other, target.Database, new ObjectName(schema, target.Name), at, synonym.Name)
             : Unresolved($"The synonym {synonym.Name} stands for {target}, in another database the source doesn't hold.");
     }
+
+    /// <summary>Why a synonym for a synonym reads nothing: SQL Server refuses it (Msg 470).</summary>
+    private static string Chained(ObjectName synonym, SynonymTarget target) =>
+        $"The synonym {synonym} stands for {target}, which is a synonym too, and SQL Server refuses to read through a chain of synonyms (Msg 470).";
 
     /// <summary>
     /// What a name of another database reads: a table, as this database sees it (<see cref="OtherDatabases.AsSeenHere"/>); a
     /// synonym of that database, followed there; or why neither. A view, function or procedure of another database isn't read:
     /// its body binds against its own database, which inference doesn't do yet.
     /// </summary>
-    private static SourceTarget InOtherDatabase(DatabaseModel other, string database, ObjectName objectName, SourceLocation at)
+    /// <param name="other">The other database's model.</param>
+    /// <param name="database">The database as the body names it.</param>
+    /// <param name="objectName">The name in that database.</param>
+    /// <param name="at">Where the reference is.</param>
+    /// <param name="through">The synonym of this database the name was reached through, if any: a synonym there is then a chain.</param>
+    private static SourceTarget InOtherDatabase(DatabaseModel other, string database, ObjectName objectName, SourceLocation at, ObjectName? through = null)
     {
         UnresolvedTarget Unresolved(BindingProblemKind kind, string detail) => new(new BindingProblem(kind, detail, at));
         var named = objectName with { Database = database };
@@ -309,7 +326,10 @@ public sealed partial class Binder
 
         return other.FindReadable(objectName) switch
         {
-            Synonym { For: { Database: null, Server: null, Schema: { } schema } target } => other.FindTable(new ObjectName(schema, target.Name)) is { } through && OtherDatabases.AsSeenHere(through, other, database) is { } seenThrough
+            Synonym when through is { } here => Unresolved(BindingProblemKind.UnresolvedTable, $"The synonym {here} stands for {named}, which is a synonym too, and SQL Server refuses to read through a chain of synonyms (Msg 470)."),
+            Synonym { For: { Database: null, Server: null, Schema: { } schema } target } when other.FindReadable(new ObjectName(schema, target.Name)) is Synonym =>
+                Unresolved(BindingProblemKind.UnresolvedTable, Chained(named, target)),
+            Synonym { For: { Database: null, Server: null, Schema: { } schema } target } => other.FindTable(new ObjectName(schema, target.Name)) is { } targetTable && OtherDatabases.AsSeenHere(targetTable, other, database) is { } seenThrough
                 ? new TableTarget(seenThrough)
                 : Unresolved(BindingProblemKind.UnsupportedSource, $"{named} is a synonym of {database} for {target}, which is not a table read across databases yet."),
             { } readable => Unresolved(BindingProblemKind.UnsupportedSource, $"{named} is a {SchemaNames.Kind(readable)} of the database {database}, which is not read across databases yet."),

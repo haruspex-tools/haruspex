@@ -5,10 +5,13 @@
 **Decision.** A three-part name in a body (`[$(Ledger)].ledger.entry`) reads a table of another database when the DACPAC refers
 to that database by the very name the body writes: a SQLCMD variable only through a reference that names it, never as a
 database of that literal name, and a literal only through a reference whose literal it is. The table is read as its package
-declares it, as this database sees it (`OtherDatabases.AsSeenHere`): named with its database as the body writes it; its columns
-with their types and nullability, an alias type of that database given the built-in type it stands for and its NOT NULL folded
-in; each column with its effective collation, its own or its database's default, never this database's; its CHECK constraints
-and unique keys as that package records them. A table of a database whose package records no collation isn't read. A view,
+declares it, as this database sees it (`OtherDatabases.AsSeenHere`): named with its database as the body writes it, and so are
+the CHECKs facts come from; its columns with their types and nullability, an alias type of that database given the built-in
+type it stands for, and any other type of that database's own (a CLR type) named so that no type here can be taken for it, which
+leaves the column unknown; each column with its effective collation, its own or its database's default, never this database's;
+its CHECK constraints and unique keys as that package records them. A synonym is followed to its one target, here or there; a
+synonym for a synonym is unknown, since SQL Server refuses to read through one (Msg 470, observed:
+`Synonym_chaining_is_refused_when_read`). A project two databases both hold is read into each. A table of a database whose package records no collation isn't read. A view,
 function or procedure of another database is unknown, with that reason: its body binds against its own database, which
 inference doesn't do yet. The system's views (`sys`, `INFORMATION_SCHEMA`) are read by their two-part names from the `master`
 package, when the source holds one; it lists their columns without types, so a column read from one is unknown for that reason.

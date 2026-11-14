@@ -11,9 +11,11 @@ namespace Haruspex.SqlServer.Semantics;
 /// <remarks>
 /// <para>What crosses, and why each is still true here:</para>
 /// <list type="bullet">
-/// <item><b>Columns, their types and nullability, identity and hidden.</b> They are the table's own. An alias type is that
-/// database's, so a column of one is given the built-in type the alias stands for, its NOT NULL already folded in; every rule
-/// here resolves a type against this database's types, which don't have it.</item>
+/// <item><b>Columns, their types and nullability, identity and hidden.</b> They are the table's own. A type of that database's
+/// own (one with a schema) means what it means there, and every rule here resolves a type against this database's types: so an
+/// alias type is given the built-in type it stands for there, and any other (a CLR type, or a name that resolves to nothing there)
+/// is named so that nothing here can resolve it, which leaves the column unknown. A package's nullability is DacFx's, an alias's
+/// NOT NULL already in it. A system type (<c>sysname</c>, <c>geography</c>) is the same in every database, and stays.</item>
 /// <item><b>Collation.</b> A column without <c>COLLATE</c> takes its own database's default, not this one's, so each column is
 /// given its effective collation: its own, or else its database's. A database whose package records no collation is not read
 /// (<see cref="AsSeenHere"/> gives null), since its strings' comparison isn't known.</item>
@@ -35,20 +37,22 @@ public static class OtherDatabases
         ArgumentNullException.ThrowIfNull(other);
         if (other.Settings?.Collation is not { } collation)
             return null;
-        Column Seen(Column column)
-        {
-            var resolved = column.Type is { Kind: SqlTypeKind.Named } ? SchemaRules.ResolveType(other, column.Type) : null;
-            var nullability = column.Nullability == DeclaredNullability.NotDeclared && resolved?.AliasNullability == DeclaredNullability.NotNull
-                ? DeclaredNullability.NotNull
-                : column.Nullability;
-            return column with
-            {
-                Type = resolved is { Alias: not null } ? resolved.BuiltIn : column.Type,
-                Nullability = nullability,
-                Collation = column.Collation ?? collation,
-            };
-        }
+        Column Seen(Column column) => column with { Type = Type(column.Type, other, database), Collation = column.Collation ?? collation };
 
         return new Table(table.Name with { Database = database }, table.Span, [.. table.Columns.Select(Seen)], table.PrimaryKey, table.Checks, table.UniqueKeys) { IsGraph = table.IsGraph };
+    }
+
+    /// <summary>
+    /// A column's type as this database must read it: a type of that database's own schema resolved there, to the built-in type an
+    /// alias stands for, or else qualified with the database (<c>[$(Ledger)].ledger.code</c>), which no type here has, so that it is
+    /// unknown rather than taken for a type of this database of the same name. A built-in or system type is everywhere the same.
+    /// </summary>
+    private static SqlType? Type(SqlType? type, DatabaseModel other, string database)
+    {
+        if (type is not { Kind: SqlTypeKind.Named, Schema: { } schema })
+            return type;
+        return SchemaRules.ResolveType(other, type) is { Alias: not null } alias
+            ? alias.BuiltIn
+            : type with { Schema = new ObjectName(schema, type.Name, database).DatabasePrefix + schema };
     }
 }

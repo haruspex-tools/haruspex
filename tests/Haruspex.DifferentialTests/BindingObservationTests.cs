@@ -32,4 +32,13 @@ public class BindingObservationTests(SqlServerFixture server)
                 SELECT t.id, (SELECT TOP (1) code FROM c) AS outer_code FROM dbo.obs_t AS t ORDER BY t.id;
                 """));
     }
+
+    [Theory]
+    [InlineData("CREATE SYNONYM dbo.obs_a FOR dbo.obs_b;", "CREATE SYNONYM dbo.obs_b FOR dbo.obs_t;")]
+    [InlineData("CREATE SYNONYM dbo.obs_a FOR dbo.obs_b;", "CREATE SYNONYM dbo.obs_b FOR dbo.obs_a;")]
+    [InlineData("CREATE SYNONYM dbo.obs_a FOR dbo.obs_a;", "SELECT 1 AS nothing_more;")]
+    // A synonym's target isn't checked when it is created, so a chain, a cycle and a synonym for itself are all created; each is
+    // refused when read (Msg 470), so haruspex reads one as unknown rather than following it (Binder.Through).
+    public async Task Synonym_chaining_is_refused_when_read(string first, string second) =>
+        Assert.Equal(470, (await Run([Rows, first, second], "SELECT x.id FROM dbo.obs_a AS x;")).Error);
 }

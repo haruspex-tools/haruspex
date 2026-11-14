@@ -41,7 +41,10 @@ internal static class PackageReader
     };
 
     /// <summary>Reads the package's schema into <paramref name="into"/>.</summary>
-    public static void Read(DacPackage package, SchemaDeclarations into)
+    /// <param name="package">The package.</param>
+    /// <param name="into">What the database's sources declare.</param>
+    /// <param name="quiet">Whether to leave out the note of what isn't modelled, for a package of the system's objects.</param>
+    public static void Read(DacPackage package, SchemaDeclarations into, bool quiet = false)
     {
         var elements = package.Model.Elements(ModelXml.Name("Element")).ToList();
         var parts = elements.Where(e => TableParts.Contains(ModelXml.TypeOf(e))).ToLookup(Owner, StringComparer.Ordinal);
@@ -77,7 +80,7 @@ internal static class PackageReader
         }
 
         ReadModules(modules, package.Name, into, notModelled);
-        if (notModelled.Count > 0)
+        if (notModelled.Count > 0 && !quiet)
         {
             var counts = string.Join(", ", notModelled.Select(n => $"{n.Value.ToString(CultureInfo.InvariantCulture)} {n.Key}"));
             into.Diagnostics.Add(SourceCodes.NotModelled.At(new FileLocation(package.Path), $"{package.Name} holds elements haruspex doesn't model, which are passed over: {counts}."));

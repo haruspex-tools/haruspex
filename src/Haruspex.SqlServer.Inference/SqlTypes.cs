@@ -153,7 +153,7 @@ internal static class SqlTypes
     {
         TypeSource type => new IrFactSource(IrFactSourceKind.Type, type.Type),
         CheckSource { Check.Name: { } name, Table: DeclaredTable table } => new IrFactSource(IrFactSourceKind.Check, $"{table.Name}.{name}"),
-        CheckSource { Check.Name: { } name, Table: Table table } => new IrFactSource(IrFactSourceKind.Check, $"{table.Name.Schema}.{name}"),
+        CheckSource { Check.Name: { } name, Table: Table table } => new IrFactSource(IrFactSourceKind.Check, $"{table.Name.DatabasePrefix}{table.Name.Schema}.{name}"),
         CheckSource check => new IrFactSource(IrFactSourceKind.Check, check.Check.At.ToString()),
     };
 }
