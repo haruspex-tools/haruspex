@@ -33,6 +33,13 @@ public class IrJsonSchemaTests
         (typeof(IrSource), nameof(IrSource.Session), "document.source", "session"),
         (typeof(IrSessionOption), nameof(IrSessionOption.Name), "document.source", null), // a key of the session
         (typeof(IrSessionOption), nameof(IrSessionOption.On), "document.source", null), // that key's value
+        (typeof(IrSource), nameof(IrSource.Package), "document.source", null), // its two parts, package and sha256
+        (typeof(IrPackage), nameof(IrPackage.Name), "document.source", "package"),
+        (typeof(IrPackage), nameof(IrPackage.Sha256), "document.source", "sha256"),
+        (typeof(IrSource), nameof(IrSource.References), "document.source", "references"),
+        (typeof(IrPackageReference), nameof(IrPackageReference.Name), "packageReference", "package"),
+        (typeof(IrPackageReference), nameof(IrPackageReference.Sha256), "packageReference", "sha256"),
+        (typeof(IrPackageReference), nameof(IrPackageReference.Database), "packageReference", "database"),
         (typeof(IrObject), nameof(IrObject.Id), "object", "id"),
         (typeof(IrObject), nameof(IrObject.Name), "object", "name"),
         (typeof(IrObject), nameof(IrObject.Kind), "object", "kind"),

@@ -1,7 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.18
+# Haruspex.Ir: the IR format, version 0.19
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.18: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
+version 0.19: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
 guide's chapter [The IR as a contract](../../docs/internals/10-the-ir-as-a-contract.md). What SQL Server's constructs give in
@@ -93,7 +93,7 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as `"0.18"` and a document that this page and the schema allow;
+- must write `irVersion` as `"0.19"` and a document that this page and the schema allow;
 - must write a flag and its reasons together: `nullable`, `itemsNullable`, `valuesNullable` and `mayBeAbsent` are `true`
   exactly when the matching list of reasons (`nullableBecause`, …) is there, with at least one reason;
 - must write every `ref` as the name of a type in `types`;
@@ -103,7 +103,9 @@ of program handle one.
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further;
+- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further,
+  but for 0.18, whose documents are 0.19 documents that name no package (a 0.18 document that names one, or gives
+  `encrypted-definition`, must be refused);
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
   missing required property, a value of the wrong JSON type, a count that is negative or past 2,147,483,647, a number in a
   facet that is not plain decimal text, a union of fewer than two variants, a flag that disagrees with its reasons, and a
@@ -129,9 +131,11 @@ object, and a `ref` that names no type.
 
 ```jsonc
 {
-  "irVersion": "0.18",                // versioned separately from the tool; a reader checks it first
-  "source": { "dialect": "tsql",      // the session is left out when the callers' options aren't declared
-    "session": { "ansiWarnings": true } },
+  "irVersion": "0.19",                // versioned separately from the tool; a reader checks it first
+  "source": { "dialect": "tsql",      // the package is left out for a folder of scripts
+    "package": "sales.dacpac", "sha256": "3f1c…",
+    "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
+    "session": { "ansiWarnings": true } },  // the session is left out when the callers' options aren't declared
   "objects": [{                       // sorted by id
     "id": "sales.get_order",          // the name in the database: the object's identity
     "name": "GetOrder",               // the name for generated code, from the config file's naming rules
@@ -177,6 +181,15 @@ object, and a `ref` that names no type.
 Every property shown is required unless this page says it may be left out. An object's `results` is `null`, not `[]`, when
 its result sets can't be listed: an empty list claims it returns none. `at` is a source location, `path:line:column`
 relative to the source root, or for a null reason the column it applies to (`schema.table.column`).
+
+`source.package` and `source.sha256` (0.19) name the package the source was read from, such as a DACPAC, by its file name
+without a folder, and the SHA-256 of its bytes as 64 lower-case hexadecimal digits; both are left out, together, for a source
+that is not a package. `source.references` (0.19) lists the packages it refers to, sorted by `package` and then `database`, the
+same database first: each with its `sha256` when one was found and read, left out when none was (then nothing the package
+holds is known, and an object it may define is an unknown like any other the source lacks), and a `database` when it is
+another database, named as the reference names it (`master`, or a SQLCMD variable such as `$(Ledger)`, whose value is only
+known when it is deployed). It is left out when there are none, and must not be written empty. A package's hash makes the
+claims reproducible: the same packages give the same document.
 
 `source.session` (0.17) holds the options the callers' sessions are declared to set, by the dialect's name for each as the
 config file writes it, `true` for on and `false` for off: for `tsql`, `ansiWarnings`, `arithAbort`, `concatNullYieldsNull`
@@ -282,6 +295,7 @@ reader must refuse a `reason` not in this list.
 | `ambiguous-procedure` | a call whose procedure depends on the caller's default schema |
 | `trigger-results` | a statement firing a trigger of the project that may return result sets of its own |
 | `hidden-column` | a result set with a column the server marks hidden, which some drivers list and others don't |
+| `encrypted-definition` | (0.19) a module created `WITH ENCRYPTION` whose definition the source doesn't hold, such as a DACPAC extracted from a database |
 
 An override is `{ "object", "path", "setting", "via"?, "why"? }`: a claim the config file made rather than inference, kept so
 that what the database proves and what a person asserts stay apart. `setting` is `not-null` (declared never null), `type`
@@ -409,8 +423,14 @@ when the claims change. Another writer need not write the same bytes, but must w
 ## Changelog
 
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
-reads only its own version ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
+reads only its own version, or one whose every document means the same in it ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
+
+**0.19** (14 Nov 2026, DACPACs). `source.package` and `source.sha256`, the package a source was read from, and
+`source.references`, the packages it refers to, found or not; all are left out for a folder of scripts. The unknown reason
+`encrypted-definition`: a module created `WITH ENCRYPTION` that a DACPAC extracted from a database holds only a placeholder
+for. Nothing inferred from a folder changed, so this reader also reads 0.18, whose every document is a 0.19 document that
+names no package; a 0.18 reader would refuse a reason it doesn't know, which is why the version changed.
 
 **0.18** (14 Nov 2026, precision lost under `NUMERIC_ROUNDABORT`). The null rule `precision-loss`: a decimal that may be
 rounded to fewer places than it has, which is NULL for a caller whose session has `NUMERIC_ROUNDABORT` on and

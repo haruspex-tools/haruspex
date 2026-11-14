@@ -63,15 +63,22 @@ public static class IrJsonSchema
         ("type", "object"),
         ("properties", Node(
             ("irVersion", Node(("description", "The IR's version, which a reader checks before anything else."), ("const", IrDocument.CurrentVersion))),
-            ("source", Closed(
+            ("source", Together(["package", "sha256"], Closed(
                 "Where the shapes were inferred from.",
                 ["dialect"],
                 ("dialect", Text("The SQL dialect, such as tsql.")),
+                ("package", Text("The file name of the package the source was read from, such as a DACPAC. Left out for a source that is not a package.")),
+                ("sha256", Sha256("The SHA-256 of the package's bytes. Given exactly when package is.")),
+                ("references", Node(
+                    ("description", "The packages the package refers to, found or not, sorted by name and then database. Left out when there are none."),
+                    ("type", "array"),
+                    ("minItems", 1),
+                    ("items", Ref("packageReference")))),
                 ("session", Node(
                     ("description", "The options the callers' sessions are declared to set, by the dialect's name for each: true for on, false for off. Left out when none is declared."),
                     ("type", "object"),
                     ("minProperties", 1),
-                    ("additionalProperties", Node(("type", "boolean"))))))),
+                    ("additionalProperties", Node(("type", "boolean")))))))),
             ("objects", ArrayOf(Ref("object"))),
             ("types", Node(
                 ("description", "The named object types, by name."),
@@ -84,6 +91,12 @@ public static class IrJsonSchema
         ("$defs", Definitions()));
 
     private static JsonObject Definitions() => Node(
+        ("packageReference", Closed(
+            "A package the source's package refers to.",
+            ["package"],
+            ("package", Text("Its file name, as the referring package names it.")),
+            ("sha256", Sha256("The SHA-256 of the package read for it; left out when none was found.")),
+            ("database", Text("Left out for the same database; otherwise the other database, by name or SQLCMD variable, as the reference names it.")))),
         ("object", Closed(
             "A typed database object.",
             ["id", "name", "kind", "at", "parameters", "results"],
@@ -344,6 +357,16 @@ public static class IrJsonSchema
         Node(("enum", new JsonArray([.. Enum.GetValues<T>().Where(v => !unnamed.Contains(v)).Select(v => (JsonNode)name(v))])));
 
     private static JsonObject Text(string description) => Node(("description", description), ("type", "string"));
+
+    /// <summary>The object schema with each of <paramref name="names"/> required whenever any other of them is there.</summary>
+    private static JsonObject Together(string[] names, JsonObject schema)
+    {
+        schema.Add("dependentRequired", Node([.. names.Select(name => (name, (JsonNode?)Names([.. names.Where(other => other != name)])))]));
+        return schema;
+    }
+
+    /// <summary>A SHA-256 as the IR writes it: 64 lower-case hexadecimal digits.</summary>
+    private static JsonObject Sha256(string description) => Node(("description", description), ("type", "string"), ("pattern", "^[0-9a-f]{64}$"));
 
     private static JsonObject Flag(string description) => Node(("description", description), ("type", "boolean"));
 

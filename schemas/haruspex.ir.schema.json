@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json",
   "title": "haruspex.ir.json",
-  "description": "An IR file of version 0.18: the shapes haruspex inferred for a set of database objects. The format is described in src/Haruspex.Ir/README.md.",
+  "description": "An IR file of version 0.19: the shapes haruspex inferred for a set of database objects. The format is described in src/Haruspex.Ir/README.md.",
   "type": "object",
   "properties": {
     "irVersion": {
       "description": "The IR's version, which a reader checks before anything else.",
-      "const": "0.18"
+      "const": "0.19"
     },
     "source": {
       "description": "Where the shapes were inferred from.",
@@ -16,6 +16,23 @@
         "dialect": {
           "description": "The SQL dialect, such as tsql.",
           "type": "string"
+        },
+        "package": {
+          "description": "The file name of the package the source was read from, such as a DACPAC. Left out for a source that is not a package.",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "The SHA-256 of the package's bytes. Given exactly when package is.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "references": {
+          "description": "The packages the package refers to, found or not, sorted by name and then database. Left out when there are none.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/packageReference"
+          }
         },
         "session": {
           "description": "The options the callers' sessions are declared to set, by the dialect's name for each: true for on, false for off. Left out when none is declared.",
@@ -29,7 +46,15 @@
       "required": [
         "dialect"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "dependentRequired": {
+        "package": [
+          "sha256"
+        ],
+        "sha256": [
+          "package"
+        ]
+      }
     },
     "objects": {
       "type": "array",
@@ -67,6 +92,29 @@
   ],
   "additionalProperties": false,
   "$defs": {
+    "packageReference": {
+      "description": "A package the source's package refers to.",
+      "type": "object",
+      "properties": {
+        "package": {
+          "description": "Its file name, as the referring package names it.",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "The SHA-256 of the package read for it; left out when none was found.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "database": {
+          "description": "Left out for the same database; otherwise the other database, by name or SQLCMD variable, as the reference names it.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "package"
+      ],
+      "additionalProperties": false
+    },
     "object": {
       "description": "A typed database object.",
       "type": "object",
@@ -1020,7 +1068,8 @@
             "missing-procedure",
             "ambiguous-procedure",
             "trigger-results",
-            "hidden-column"
+            "hidden-column",
+            "encrypted-definition"
           ]
         }
       },
@@ -1065,7 +1114,8 @@
             "missing-procedure",
             "ambiguous-procedure",
             "trigger-results",
-            "hidden-column"
+            "hidden-column",
+            "encrypted-definition"
           ]
         },
         "detail": {

@@ -17,7 +17,17 @@ internal static class IrSamples
 
     /// <summary>The document.</summary>
     public static IrDocument Everything { get; } = new(
-        new IrSource("tsql") { Session = [new IrSessionOption("ansiWarnings", true), new IrSessionOption("concatNullYieldsNull", false)] },
+        new IrSource("tsql")
+        {
+            Session = [new IrSessionOption("ansiWarnings", true), new IrSessionOption("concatNullYieldsNull", false)],
+            Package = new IrPackage("shop.dacpac", Hash('a')),
+            References =
+            [
+                new IrPackageReference("master.dacpac", null, "master"),
+                new IrPackageReference("ledger.dacpac", Hash('c'), "$(Ledger)"),
+                new IrPackageReference("catalogue.dacpac", Hash('b'), null),
+            ],
+        },
         [
             new IrObject(
                 "sales.get_order",
@@ -104,4 +114,7 @@ internal static class IrSamples
         document.Objects.SelectMany(o => o.Parameters.Select(p => p.Type).Concat(o.Results?.Select(r => r.Type) ?? []))
             .Concat(document.Types.Values.SelectMany(t => t.Fields.Select(f => f.Type)))
             .SelectMany(IrTypeTree.Within);
+
+    /// <summary>A SHA-256 as the IR writes one, made of one digit: a sample needs its form, not a real file's.</summary>
+    private static string Hash(char digit) => new(digit, 64);
 }

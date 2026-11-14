@@ -37,6 +37,7 @@ public static class IrJsonWriter
 
             json.WriteStartObject("source");
             json.WriteString("dialect", document.Source.Dialect);
+            WritePackage(json, document.Source);
             if (document.Source.Session.Count > 0)
             {
                 // Left out when nothing is declared, so that a document that assumes nothing reads as it did before 0.17.
@@ -95,6 +96,35 @@ public static class IrJsonWriter
         }
 
         return Encoding.UTF8.GetString(buffer.ToArray()) + "\n";
+    }
+
+    /// <summary>
+    /// The package and the packages it refers to (0.19), each left out when there is none, so that a document read from a
+    /// folder reads as it did in 0.18. References are sorted by name, then by database, the same database first (<see cref="IrSource.References"/>).
+    /// </summary>
+    private static void WritePackage(Utf8JsonWriter json, IrSource source)
+    {
+        if (source.Package is { } package)
+        {
+            json.WriteString("package", package.Name);
+            json.WriteString("sha256", package.Sha256);
+        }
+
+        if (source.References.Count == 0)
+            return;
+        json.WriteStartArray("references");
+        foreach (var reference in source.References)
+        {
+            json.WriteStartObject();
+            json.WriteString("package", reference.Name);
+            if (reference.Sha256 is { } sha256)
+                json.WriteString("sha256", sha256);
+            if (reference.Database is { } database)
+                json.WriteString("database", database);
+            json.WriteEndObject();
+        }
+
+        json.WriteEndArray();
     }
 
     private static void WriteObject(Utf8JsonWriter json, IrObject obj)

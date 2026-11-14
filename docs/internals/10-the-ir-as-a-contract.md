@@ -154,7 +154,7 @@ The version is read first, before anything else in the file. A file of any versi
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.18 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.19 and 0.18 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -183,6 +183,12 @@ nothing declared, claimed never null a decimal that a caller with `NUMERIC_ROUND
 the reason `precision-loss`. A 0.16 or 0.17 file holds nothing a 0.18 file can't, but its claims are not 0.18's: read as 0.18
 it would present the older engine's claim with the newer label, so the 0.18 reader refuses both. What decides is the meaning of
 the claims, never only whether the properties are ones the reader knows.
+
+Version 0.19 started the exception again, on the same test. It added what a package gives: the package a source was read
+from and its SHA-256, the packages it refers to, and the reason `encrypted-definition`, which only a package extracted from a
+database can give. A folder's output didn't change, so every 0.18 file is a 0.19 file that names no package and means the
+same, and the 0.19 reader reads it. A file labelled 0.18 that names a package or gives that reason is refused, since 0.18
+could do neither.
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims

@@ -34,5 +34,11 @@ reason above applies. `IrDocument.ReadableVersions` lists what a reader reads; a
 gets as NULL ([decision 0038](0038-the-callers-session-is-declared.md)). A 0.16 or 0.17 file has no property 0.18 lacks, but its
 claims are not 0.18's, so reading it would carry an older engine's claims under the current label, the first reason above.
 
+**Amended a third time** (14 Nov 2026, IR 0.19). The 0.19 reader reads 0.18 too, by the first amendment's test: 0.19 added
+`source.package`, `source.sha256` and `source.references`, which a file read from a folder leaves out, and the unknown reason
+`encrypted-definition`, which only a package can give. Nothing inferred from a folder changed, so every 0.18 file is a 0.19
+file that names no package and means the same. A file labelled 0.18 that names a package or gives the new reason is refused,
+by its path, since 0.18 could do neither.
+
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "A version the reader doesn't read";
 [`tests/ir-versions`](../../tests/ir-versions/README.md).

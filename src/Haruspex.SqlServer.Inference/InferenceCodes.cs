@@ -82,7 +82,7 @@ public static class InferenceCodes
 
     /// <summary>
     /// The code of the note an unknown with <paramref name="reason"/> is reported with; null for a reason only a declaration
-    /// can resolve (code outside the project, dynamic SQL, a procedure chosen when it runs, a system procedure, one outside
+    /// can resolve (code outside the project, an encrypted definition, dynamic SQL, a procedure chosen when it runs, a system procedure, one outside
     /// the project or one more than one schema has), whose unknowns the config layer reports instead, each once, with what to
     /// declare (HAR4204, HAR4205). A switch over every reason, so a reason added to the IR fails the build here until it is
     /// given a code or said to be one of those.
@@ -111,6 +111,7 @@ public static class InferenceCodes
         IrUnknownReason.AmbiguousProcedure => null,
         IrUnknownReason.TriggerResults => TriggerResults,
         IrUnknownReason.HiddenColumn => HiddenColumn,
+        IrUnknownReason.EncryptedDefinition => null,
     };
 
     private static DiagnosticCode Unknown(int number, string title) => new(number, DiagnosticSeverity.Note, title);

@@ -5,7 +5,8 @@ namespace Haruspex.Tests.Ir;
 
 /// <summary>
 /// The IR file kept from each version of the format (<c>tests/ir-versions</c>): the current version's is read and round trips,
-/// and every older one is refused with a message that names its version, the version read and where in the file.
+/// an older one the reader still reads means what the current one's does, and every other is refused with a message that
+/// names its version, the versions read and where in the file.
 /// </summary>
 public class IrVersionTests
 {
@@ -40,6 +41,20 @@ public class IrVersionTests
         Assert.Equal(text, IrJsonWriter.Write(IrJsonReader.Read(text)));
     }
 
+    public static TheoryData<string> StillRead { get; } =
+        [.. IrDocument.ReadableVersions.Where(v => v != IrDocument.CurrentVersion)];
+
+    [Theory]
+    [MemberData(nameof(StillRead))]
+    public void An_older_version_still_read_writes_back_as_the_current_version_s_file(string version)
+    {
+        // The files hold the same procedure, so a version read because its files mean the same as the current one's (decision
+        // 0024) must give the current file's bytes exactly.
+        var text = File.ReadAllText(FileOf(version));
+
+        Assert.Equal(File.ReadAllText(FileOf(IrDocument.CurrentVersion)), IrJsonWriter.Write(IrJsonReader.Read(text)));
+    }
+
     [Theory]
     [MemberData(nameof(Older))]
     public void An_older_version_s_file_is_refused_naming_both_versions(string version)
@@ -48,7 +63,7 @@ public class IrVersionTests
 
         Assert.Equal("$.irVersion", e.Path);
         Assert.Equal(
-            $"$.irVersion is \"{version}\", and this reader reads IR 0.18 only. Run haruspex generate again to write the file in this version.",
+            $"$.irVersion is \"{version}\", and this reader reads IR 0.19 and 0.18 only. Run haruspex generate again to write the file in this version.",
             e.Message);
     }
 

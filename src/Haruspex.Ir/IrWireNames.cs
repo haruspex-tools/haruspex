@@ -133,6 +133,7 @@ public static class IrWireNames
         IrUnknownReason.AmbiguousProcedure => "ambiguous-procedure",
         IrUnknownReason.TriggerResults => "trigger-results",
         IrUnknownReason.HiddenColumn => "hidden-column",
+        IrUnknownReason.EncryptedDefinition => "encrypted-definition",
     };
 
     /// <summary>What an override sets (<c>setting</c>).</summary>

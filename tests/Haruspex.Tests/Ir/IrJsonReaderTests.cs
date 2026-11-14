@@ -97,6 +97,70 @@ public class IrJsonReaderTests
         Assert.Equal("$.source.session", e.Path);
     }
 
+    [Fact]
+    public void A_file_of_0_18_is_read_since_it_means_what_a_0_19_file_without_a_package_does()
+    {
+        var json = JsonNode.Parse(IrJsonWriter.Write(IrSamples.Everything with { Source = new IrSource("tsql") }))!.AsObject();
+        json["irVersion"] = "0.18";
+
+        Assert.Equal(new IrSource("tsql"), IrJsonReader.Read(json.ToJsonString()).Source);
+    }
+
+    [Fact]
+    public void A_file_of_0_18_that_names_a_package_is_refused_since_0_18_could_not()
+    {
+        var e = Refused(json => json["irVersion"] = "0.18");
+
+        Assert.Equal("$.source", e.Path);
+    }
+
+    [Fact]
+    public void A_file_of_0_18_with_an_encrypted_definition_is_refused_since_0_18_had_no_such_reason()
+    {
+        // The sample's second unknown is a procedure's results, which an encrypted definition would make unknown too.
+        var unknowns = IrSamples.Everything.Unknowns.Select((u, i) => i == 1 ? u with { Reason = IrUnknownReason.EncryptedDefinition } : u);
+        var json = JsonNode.Parse(IrJsonWriter.Write(IrSamples.Everything with { Source = new IrSource("tsql"), Unknowns = [.. unknowns] }))!.AsObject();
+        json["irVersion"] = "0.18";
+
+        var e = Assert.Throws<IrFormatException>(() => IrJsonReader.Read(json.ToJsonString()));
+
+        Assert.Equal("$.unknowns[1].reason", e.Path);
+    }
+
+    [Fact]
+    public void References_are_written_by_name_then_database_whatever_order_they_are_given_in()
+    {
+        var json = JsonNode.Parse(IrJsonWriter.Write(IrSamples.Everything))!;
+
+        Assert.Equal(
+            ["catalogue.dacpac", "ledger.dacpac", "master.dacpac"],
+            json["source"]!["references"]!.AsArray().Select(r => (string)r!["package"]!));
+    }
+
+    [Fact]
+    public void A_reference_not_found_is_written_without_a_hash()
+    {
+        var master = JsonNode.Parse(IrJsonWriter.Write(IrSamples.Everything))!["source"]!["references"]![2]!.AsObject();
+
+        Assert.Equal(["package", "database"], master.Select(p => p.Key));
+    }
+
+    [Fact]
+    public void A_hash_without_its_package_is_refused()
+    {
+        var e = Refused(json => json["source"]!.AsObject().Remove("package"));
+
+        Assert.Equal("$.source.package", e.Path);
+    }
+
+    [Fact]
+    public void An_empty_list_of_references_is_refused_since_none_is_written_by_leaving_it_out()
+    {
+        var e = Refused(json => json["source"]!["references"] = new JsonArray());
+
+        Assert.Equal("$.source.references", e.Path);
+    }
+
     [Theory]
     [InlineData("0.16")]
     [InlineData("0.17")]
@@ -127,7 +191,7 @@ public class IrJsonReaderTests
         });
 
         Assert.Equal("$.irVersion", e.Path);
-        Assert.Equal("is \"0.14\", and this reader reads IR 0.18 only. Run haruspex generate again to write the file in this version.", e.Problem);
+        Assert.Equal("is \"0.14\", and this reader reads IR 0.19 and 0.18 only. Run haruspex generate again to write the file in this version.", e.Problem);
     }
 
     [Fact]

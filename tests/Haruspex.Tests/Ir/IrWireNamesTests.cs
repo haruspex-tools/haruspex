@@ -60,7 +60,7 @@ public class IrWireNamesTests
 
     [Fact]
     public void Unknown_reasons_keep_their_names() => Assert.Equal(
-        ["unsupported-statement", "external-code", "redefined", "unsupported-query", "unsupported-expression", "unsupported-source", "unsupported-sql-type", "unresolved-table", "unresolved-column", "unnamed-column", "duplicate-column", "unresolved-recursion", "json-shape-unknown", "caller-temp-table", "varying-results", "dynamic-sql", "procedure-variable", "system-procedure", "missing-procedure", "ambiguous-procedure", "trigger-results", "hidden-column"],
+        ["unsupported-statement", "external-code", "redefined", "unsupported-query", "unsupported-expression", "unsupported-source", "unsupported-sql-type", "unresolved-table", "unresolved-column", "unnamed-column", "duplicate-column", "unresolved-recursion", "json-shape-unknown", "caller-temp-table", "varying-results", "dynamic-sql", "procedure-variable", "system-procedure", "missing-procedure", "ambiguous-procedure", "trigger-results", "hidden-column", "encrypted-definition"],
         Names<IrUnknownReason>(IrWireNames.Of));
 
     [Fact]

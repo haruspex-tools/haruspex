@@ -55,6 +55,7 @@ public static class ConfigApplication
         IrUnknownReason.MissingProcedure,
         IrUnknownReason.AmbiguousProcedure,
         IrUnknownReason.ExternalCode,
+        IrUnknownReason.EncryptedDefinition,
     ];
 
     /// <summary>

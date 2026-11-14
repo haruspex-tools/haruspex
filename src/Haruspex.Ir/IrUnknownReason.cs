@@ -90,4 +90,10 @@ public enum IrUnknownReason
     /// out, so its keys depend on the client: <c>FETCH</c> without <c>INTO</c>, whose row has <c>ROWSTAT</c>.
     /// </summary>
     HiddenColumn,
+
+    /// <summary>
+    /// A module created <c>WITH ENCRYPTION</c> whose definition the source doesn't hold: a DACPAC extracted from a database keeps
+    /// a placeholder in its place, since the server gives no one the text (0.19). What it returns can only be declared.
+    /// </summary>
+    EncryptedDefinition,
 }

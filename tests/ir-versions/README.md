@@ -1,8 +1,9 @@
 # IR files, one per version
 
 One IR file from each version of the format, kept so that the reader is tested against what each version really wrote. The
-current version's file must be read, and round trip to the same bytes; every older one must be refused, naming its version
-and the version the reader reads (`IrVersionTests`). The reader refuses rather than migrates; the guide's chapter
+current version's file must be read, and round trip to the same bytes; an older one the reader still reads (0.18, whose files
+mean what 0.19's do) must write back as the current version's file; every other must be refused, naming its version and the
+versions the reader reads (`IrVersionTests`). The reader refuses rather than migrates; the guide's chapter
 [The IR as a contract](../../docs/internals/10-the-ir-as-a-contract.md) says why.
 
 Each file is named for its version (`0.15.ir.json`) and holds the IR of the invented procedure `sales.get_order` from the

@@ -22,15 +22,16 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.18";
+    public const string CurrentVersion = "0.19";
 
     /// <summary>
-    /// The versions a reader reads: the current one only, as decision 0024 says. 0.17 read 0.16 too, every file of which was
-    /// a 0.17 file that declared no session; 0.18 reads neither, because their claims are not 0.18's: with nothing declared,
-    /// each claimed never null a decimal that 0.18 says may be null for a loss of precision (<see cref="IrNullRule.PrecisionLoss"/>),
-    /// so read as 0.18 a file of either would carry the older engine's claims under the newer label.
+    /// The versions a reader reads, as decision 0024 says: the current one, and 0.18, every file of which is a 0.19 file that
+    /// means the same. 0.19 added only what a package gives (<see cref="IrSource.Package"/>, <see cref="IrSource.References"/>, which a
+    /// file read from a folder leaves out) and the reason <see cref="IrUnknownReason.EncryptedDefinition"/>, which only a package
+    /// gives; the claims inferred from a folder are unchanged. 0.17 and older are refused, because their claims are not
+    /// 0.18's (see <see cref="IrNullRule.PrecisionLoss"/>).
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, "0.18"];
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override

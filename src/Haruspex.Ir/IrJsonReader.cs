@@ -102,7 +102,12 @@ public static class IrJsonReader
 
         var source = json.Object("source");
         var document = new IrDocument(
-            new IrSource(source.String("dialect")) { Session = Session(source.OptionalObject("session")) },
+            new IrSource(source.String("dialect"))
+            {
+                Session = Session(source.OptionalObject("session")),
+                Package = Package(source),
+                References = References(source),
+            },
             [.. json.Array("objects").Select(o => Object(IrJsonObject.At(o.Item, o.Path)))],
             Types(json.Object("types")),
             [.. json.Array("unknowns").Select(u => Unknown(IrJsonObject.At(u.Item, u.Path)))])
@@ -111,6 +116,21 @@ public static class IrJsonReader
         };
         source.End();
         json.End();
+        return version == IrDocument.CurrentVersion ? document : AsOlder(document, version, json);
+    }
+
+    /// <summary>
+    /// A document of an older version the reader still reads (<see cref="IrDocument.ReadableVersions"/>), which must hold only
+    /// what that version could: 0.18 had no package and no <c>encrypted-definition</c>, so a file labelled 0.18 that has either
+    /// is refused rather than read as what it claims to be.
+    /// </summary>
+    private static IrDocument AsOlder(IrDocument document, string version, IrJsonObject json)
+    {
+        if (document.Source.Package is not null || document.Source.References.Count > 0)
+            throw new IrFormatException(json.PathOf("source"), $"names a package, which IR {version} could not.");
+        var encrypted = document.Unknowns.ToList().FindIndex(u => u.Reason == IrUnknownReason.EncryptedDefinition);
+        if (encrypted >= 0)
+            throw new IrFormatException($"{json.PathOf("unknowns")}[{encrypted.ToString(CultureInfo.InvariantCulture)}].reason", $"is \"encrypted-definition\", which IR {version} did not have.");
         return document;
     }
 
@@ -356,6 +376,37 @@ public static class IrJsonReader
             throw new IrFormatException(path, "must be a number.");
         var text = element.GetRawText();
         return IrJsonWriter.IsPlainDecimal(text) ? text : throw new IrFormatException(path, $"is {text}, which is not a plain decimal number such as -12.5.");
+    }
+
+    /// <summary>The package a source was read from, or none when the file leaves <c>package</c> out; its hash comes with it.</summary>
+    private static IrPackage? Package(IrJsonObject source)
+    {
+        if (source.Optional("package") is null)
+            return source.Optional("sha256") is null ? null : throw new IrFormatException(source.PathOf("package"), "is missing, though sha256, its hash, is given.");
+        return new IrPackage(source.String("package"), source.String("sha256"));
+    }
+
+    /// <summary>
+    /// The packages the source's package refers to; none when the file leaves <c>references</c> out. An empty array is refused:
+    /// the writer leaves it out, so there is one way to say "none".
+    /// </summary>
+    private static EquatableArray<IrPackageReference> References(IrJsonObject source)
+    {
+        if (source.Optional("references") is null)
+            return [];
+        var references = source.Array("references").Select(r => Reference(IrJsonObject.At(r.Item, r.Path))).ToList();
+        return references.Count > 0 ? [.. references] : throw new IrFormatException(source.PathOf("references"), "must list at least one package; leave references out when there are none.");
+    }
+
+    /// <summary>A package the source's package refers to: its name, its hash when it was found, and its database when another.</summary>
+    private static IrPackageReference Reference(IrJsonObject json)
+    {
+        var reference = new IrPackageReference(
+            json.String("package"),
+            json.OptionalString("sha256"),
+            json.OptionalString("database"));
+        json.End();
+        return reference;
     }
 
     /// <summary>
