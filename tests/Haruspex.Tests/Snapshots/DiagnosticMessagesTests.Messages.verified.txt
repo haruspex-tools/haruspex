@@ -4,6 +4,18 @@ db/p1.sql:1:34: error HAR1001: Incorrect syntax near 'FROM'.
 HAR1002
 db/p2.sql:1:1: error HAR1002: lib.get_book is defined more than once.
 
+HAR1003
+crane.dacpac: warning HAR1003: crane.dacpac refers to quay.dacpac, a package of the same database, which isn't found: looked for at quay.dacpac, /tmp/tmp.m6Q5SKYaDN/projects/quay/bin/Debug/quay.dacpac. Put it beside crane.dacpac, or name its folder in "references" in the config file.
+
+HAR1004
+atelier.dacpac: note HAR1004: atelier.dacpac holds elements haruspex doesn't model, which are passed over: 1 SqlTableType.
+
+HAR1005
+broken.dacpac: error HAR1005: broken.dacpac can't be read as a DACPAC: Central Directory corrupt.
+
+HAR1006
+atelier-extract.dacpac/[studio].[secret_kilns]:1:1: warning HAR1006: studio.secret_kilns is encrypted, and the package holds a placeholder, not its text: it is left out, so what reads it is unknown.
+
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
 
@@ -65,7 +77,7 @@ HAR3003
 haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
 
 HAR3004
-haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, out, schemas, objects, naming, procedures, session.
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, references, out, schemas, objects, naming, procedures, session.
 
 HAR3005
 haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".
@@ -266,7 +278,7 @@ HAR6002
 haruspex: error HAR6002: config file not found: nowhere.json
 
 HAR6003
-haruspex: error HAR6003: give the folder of .sql files to read, or a config file with "source".
+haruspex: error HAR6003: give the folder of .sql files or the .dacpac to read, or a config file with "source".
 
 HAR6004
 haruspex: error HAR6004: directory not found: nowhere

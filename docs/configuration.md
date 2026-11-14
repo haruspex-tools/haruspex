@@ -12,7 +12,8 @@ otherwise silently do nothing.
 ```jsonc
 {
   "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
-  "source": "database",                     // the folder of .sql files
+  "source": "database",                     // the folder of .sql files, or a .dacpac
+  "references": ["../shared/bin/Release"],  // more folders to find a .dacpac's referenced packages in
   "out": "src/db",                          // where haruspex.ir.json and haruspex.zod.ts go
 
   "objects": "strip",                       // or "strict"
@@ -49,9 +50,25 @@ otherwise silently do nothing.
 }
 ```
 
-The command line overrides the file for one run: the folder argument replaces `source`, `--out` replaces `out`, and
+The command line overrides the file for one run: the source argument (a folder or a `.dacpac`) replaces `source`, `--out` replaces `out`, and
 `--include schema.pattern` replaces the schemas' includes (each schema's `exclude` still applies, and overrides of
 procedures the run leaves out are skipped). Without a file, `--include` and `--out` are required.
+
+## Reading a DACPAC: `source` and `references`
+
+`source` may name a `.dacpac` instead of a folder. The package's `model.xml` is then read, without DacFx, with every package
+of the same database it refers to, directly or through another, into one model; a reference to another database's
+package or to `master.dacpac` is found and recorded but not read
+([decision 0040](decisions/0040-a-dacpac-is-read-with-the-packages-of-its-database.md)). The IR records the package and each
+reference, with the SHA-256 of the file read for it (`source.package`, `source.references`).
+
+A referenced package is looked for beside the package that refers to it, where a build leaves it; then in each folder
+`references` lists, in order, relative to this file; and last at the path the package recorded when it was built. One found
+nowhere is a warning ([HAR1003](diagnostics/HAR1003.md)) that lists every place looked, and the run goes on: whatever would
+have come from it is unknown, and each such unknown says the package it may be in.
+
+Locations in what is read from a package name the package and the object, with a line in the object's own text:
+`sales.dacpac/[sales].[get_order]:3:5` ([decision 0039](decisions/0039-a-location-in-a-dacpac-names-the-package-and-the-object.md)).
 
 ## Which procedures are typed: `schemas`
 

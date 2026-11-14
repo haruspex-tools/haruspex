@@ -1,7 +1,7 @@
 # haruspex
 
-A static analyser for SQL Server database projects. It reads the `.sql` files of a database project
-and infers the shape of what each stored procedure returns, including `FOR JSON` payloads, which SQL
+A static analyser for SQL Server database projects. It reads the `.sql` files of a database project, or
+the DACPAC it builds, and infers the shape of what each stored procedure returns, including `FOR JSON` payloads, which SQL
 Server itself reports only as a single `nvarchar(max)` column. From that shape it generates
 [Zod](https://zod.dev) schemas and TypeScript types, so an application can call its procedures with
 types it can trust.
@@ -19,7 +19,8 @@ change without notice. Do not depend on it yet.
 What works today, each with an invented database in [`tests/fixtures`](tests/fixtures) that the differential tests run
 on a real SQL Server:
 
-- **The schema**, from a folder of `.sql` files: tables with their `CHECK` constraints, keys and unique indexes, views,
+- **The schema**, from a folder of `.sql` files or a DACPAC with the DACPACs of the same database it refers to (read from
+  its `model.xml`, without DacFx): tables with their `CHECK` constraints, keys and unique indexes, views,
   functions, procedures, DML triggers, synonyms and alias types. What the schema proves reaches the generated code: a
   column's `NOT NULL`, a `CHECK`'s set of values or range, a string's length.
 - **Queries**: `SELECT` with inner, left, `FULL OUTER` and `CROSS` joins, `CROSS APPLY` and `OUTER APPLY`, derived

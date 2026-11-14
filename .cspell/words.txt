@@ -21,6 +21,8 @@ dbcc
 dflt
 eomonth
 executesql
+filegroup
+filegroups
 fixeddrives
 fmtonly
 formatmessage

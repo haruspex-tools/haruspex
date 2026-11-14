@@ -17,6 +17,15 @@ public class CliTests
         return (exitCode, output.ToString(), error.ToString());
     }
 
+    /// <summary>As <c>Run</c>, from <paramref name="workingDirectory"/>, where a config file is looked for.</summary>
+    private static (int ExitCode, string Output, string Error) RunIn(string workingDirectory, params string[] args)
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var exitCode = HaruspexCli.Run(args, output, error, workingDirectory);
+        return (exitCode, output.ToString(), error.ToString());
+    }
+
     [Fact]
     public void Generate_writes_the_ir_and_the_zod_module()
     {
@@ -32,6 +41,47 @@ public class CliTests
             File.ReadAllText(Path.Combine(outDir.Path, "haruspex.zod.ts")),
             $"{nameof(CliTests)}.{nameof(Generate_writes_the_ir_and_the_zod_module)}",
             "ts");
+    }
+
+    [Fact]
+    public void Generate_reads_a_dacpac_and_records_it_and_its_references_in_the_ir()
+    {
+        using var outDir = new TempDirectory();
+        var package = Path.Combine(RepositoryPaths.Root, "tests", "dacpacs", "harbour", "harbour.dacpac");
+
+        var (exitCode, output, error) = Run("generate", package, "--include", "dock.*", "--out", outDir.Path);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("warning HAR1003", error, StringComparison.Ordinal);
+        Assert.Contains("3 procedures", output, StringComparison.Ordinal);
+        var source = IrJsonReader.Read(File.ReadAllText(Path.Combine(outDir.Path, "haruspex.ir.json"))).Source;
+        Assert.Equal(new IrPackage("harbour.dacpac", Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(package)))), source.Package);
+        Assert.Equal(["crane.dacpac", "master.dacpac", "quay.dacpac", "tally.dacpac"], source.References.Select(r => r.Name));
+        Assert.Null(source.References.Single(r => r.Name == "master.dacpac").Sha256);
+    }
+
+    [Fact]
+    public void Generate_reads_a_dacpac_named_as_the_config_file_s_source_with_its_references_folders()
+    {
+        using var dir = new TempDirectory();
+        var packages = Path.Combine(RepositoryPaths.Root, "tests", "dacpacs", "harbour");
+        Directory.CreateDirectory(Path.Combine(dir.Path, "app"));
+        File.Copy(Path.Combine(packages, "harbour.dacpac"), Path.Combine(dir.Path, "app", "harbour.dacpac"));
+        dir.File("haruspex.json", $$"""{ "source": "app/harbour.dacpac", "references": [{{System.Text.Json.JsonSerializer.Serialize(packages)}}], "out": "out", "schemas": { "dock": { "include": ["*"] } } }""");
+
+        var (exitCode, _, error) = RunIn(dir.Path, "generate");
+
+        Assert.Equal(0, exitCode);
+        Assert.Single(error.Split('\n'), line => line.Contains("HAR1003", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Generate_refuses_a_dacpac_that_is_not_there()
+    {
+        var (exitCode, _, error) = Run("generate", "missing.dacpac", "--include", "*.*", "--out", "out");
+
+        Assert.Equal(2, exitCode);
+        Assert.Contains("file not found: missing.dacpac", error, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -135,7 +185,7 @@ public class CliTests
         var (exitCode, _, error) = Run("generate", "--include", "*.*", "--out", outDir.Path);
 
         Assert.Equal(2, exitCode);
-        Assert.Equal("haruspex: error HAR6003: give the folder of .sql files to read, or a config file with \"source\".\n", error.ReplaceLineEndings("\n"));
+        Assert.Equal("haruspex: error HAR6003: give the folder of .sql files or the .dacpac to read, or a config file with \"source\".\n", error.ReplaceLineEndings("\n"));
     }
 
     [Fact]
@@ -146,7 +196,7 @@ public class CliTests
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);
         Assert.Equal(
-            "haruspex: error HAR6003: give the folder of .sql files to read, or a config file with \"source\".\n"
+            "haruspex: error HAR6003: give the folder of .sql files or the .dacpac to read, or a config file with \"source\".\n"
             + "haruspex: error HAR6005: give --out, the folder to write to, or a config file with \"out\".\n"
             + "haruspex: error HAR6006: invalid --include pattern: 'a.b.c' is not a two-part name such as sales.get_order, sales.* or *.list_*.\n",
             error.ReplaceLineEndings("\n"));

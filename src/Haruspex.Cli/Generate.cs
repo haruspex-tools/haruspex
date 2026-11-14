@@ -5,6 +5,7 @@ using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Sources;
 
 namespace Haruspex.Cli;
 
@@ -44,6 +45,12 @@ internal static class Generate
 
         public string Source { get; } = source;
 
+        /// <summary>
+        /// The folder the locations in what is read are relative to: the source folder, or the folder holding the DACPAC, whose
+        /// locations start with its file name (<c>sales.dacpac/[sales].[get_order]:3:5</c>).
+        /// </summary>
+        public string Root => SqlProject.IsPackage(Source) ? Path.GetDirectoryName(Source) ?? "." : Source;
+
         public string Out { get; } = @out;
 
         public EquatableArray<ObjectPattern> Include { get; } = include;
@@ -82,7 +89,7 @@ internal static class Generate
         public string Zod { get; } = zod;
     }
 
-    /// <summary>The written output: where each file went, and the folder its SQL files are under.</summary>
+    /// <summary>The written output: where each file went, and the folder its locations are relative to.</summary>
     private sealed record Written(IrDocument Document, string IrPath, string ZodPath, string Source);
 
     /// <summary>The config file: named, or found by walking up from the working directory, or none.</summary>
@@ -121,18 +128,26 @@ internal static class Generate
     private static Outcome<(string Source, string Out)> Folders(GenerateRequest request, Settings settings) =>
         Outcome.Combine(Source(request, settings), Out(request, settings));
 
+    /// <summary>The folder of scripts or the DACPAC to read, which must exist.</summary>
     private static Outcome<string> Source(GenerateRequest request, Settings settings)
     {
-        if ((request.Directory is { } given ? request.Resolve(given) : settings.Config.Source) is not { } directory)
+        if ((request.Directory is { } given ? request.Resolve(given) : settings.Config.Source) is not { } source)
         {
             return Refused<string>(CliCodes.NoSource, settings.Path is null
-                ? "give the folder of .sql files to read, or a config file with \"source\"."
-                : $"give the folder of .sql files to read, or \"source\" in {settings.Path}.");
+                ? "give the folder of .sql files or the .dacpac to read, or a config file with \"source\"."
+                : $"give the folder of .sql files or the .dacpac to read, or \"source\" in {settings.Path}.");
         }
 
-        return Directory.Exists(directory)
-            ? new Succeeded<string>(directory)
-            : Refused<string>(CliCodes.SourceNotFound, $"directory not found: {request.Directory ?? directory}");
+        if (SqlProject.IsPackage(source))
+        {
+            return File.Exists(source)
+                ? new Succeeded<string>(source)
+                : Refused<string>(CliCodes.SourceNotFound, $"file not found: {request.Directory ?? source}");
+        }
+
+        return Directory.Exists(source)
+            ? new Succeeded<string>(source)
+            : Refused<string>(CliCodes.SourceNotFound, $"directory not found: {request.Directory ?? source}");
     }
 
     private static Outcome<string> Out(GenerateRequest request, Settings settings) =>
@@ -158,11 +173,13 @@ internal static class Generate
                 ? "nothing is selected: give --include, or a config file whose \"schemas\" include procedures. Use '*.*' to type every procedure."
                 : $"nothing is selected: give --include, or a schema with \"include\" in {settings.Path}, such as \"schemas\": {{ \"dbo\": {{ \"include\": [\"*\"] }} }}.");
 
-    /// <summary>The project, read from the source folder; its diagnostics, with their files under that folder.</summary>
+    /// <summary>The project, read from the source folder or DACPAC; its diagnostics, with their files under the source's folder.</summary>
     private static Outcome<Loaded> ReadProject(Plan plan)
     {
-        var project = SqlProject.Load(plan.Source);
-        return Outcome.Of(new Loaded(plan, project), project.Diagnostics.Select(d => Rooted(d, plan.Source)));
+        var project = SqlProject.IsPackage(plan.Source)
+            ? SqlProject.LoadPackage(plan.Source, plan.Config.References)
+            : SqlProject.Load(plan.Source);
+        return Outcome.Of(new Loaded(plan, project), project.Diagnostics.Select(d => Rooted(d, plan.Root)));
     }
 
     /// <summary>
@@ -188,7 +205,7 @@ internal static class Generate
     {
         var plan = selection.Loaded.Plan;
         var applied = selection.Loaded.Project.Infer(selection.Procedures, plan.Config, selection.ByFile, plan.Out);
-        return Rebased(applied, plan.Source).Select(document => (plan, document));
+        return Rebased(applied, plan.Root).Select(document => (plan, document));
     }
 
     /// <summary>
@@ -259,7 +276,7 @@ internal static class Generate
                 Remove(temporary);
         }
 
-        return new Succeeded<Written>(new Written(output.Document, irPath, zodPath, output.Plan.Source));
+        return new Succeeded<Written>(new Written(output.Document, irPath, zodPath, output.Plan.Root));
     }
 
     /// <summary>
@@ -353,10 +370,10 @@ internal static class Generate
 
     /// <summary>
     /// The exit code of a failed run, by what failed (the contract in the CLI's README): the input itself, SQL that doesn't
-    /// read, or output that can't be written, is 1; the command line or the config file, 2.
+    /// read or a DACPAC that can't be, or output that can't be written, is 1; the command line or the config file, 2.
     /// </summary>
     private static int ExitCode(EquatableArray<Diagnostic> found) =>
-        found.Any(d => d.IsError && (d.At is SourceLocation || d.Code == CliCodes.CannotWrite))
+        found.Any(d => d.IsError && (d.At is SourceLocation || d.Code == SourceCodes.UnreadablePackage || d.Code == CliCodes.CannotWrite))
             ? HaruspexCli.ExitCodes.Failed
             : HaruspexCli.ExitCodes.Usage;
 

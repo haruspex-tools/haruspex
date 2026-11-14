@@ -1,11 +1,11 @@
 # The inputs and the model
 
 What haruspex reads is a SQL Server database project: a folder of `.sql` scripts, in no particular order, that together
-define a schema. Before anything can be inferred, those scripts become a *model*: the schema as data, each table, type, procedure,
+define a schema, or the DACPAC a project builds from them. Before anything can be inferred, those scripts become a *model*: the schema as data, each table, type, procedure,
 function, view, trigger and synonym a value with a name and a place in the source. This chapter is about that step: what is
 read, how a script becomes the model, why the model hides the parser it was read with, and the one order everything in it is
 kept in. The code is in three projects, each a layer with a chapter of its own in brief:
-[Sources](../../src/Haruspex.SqlServer.Sources/README.md) reads the folder,
+[Sources](../../src/Haruspex.SqlServer.Sources/README.md) reads the folder or the package,
 [Syntax](../../src/Haruspex.SqlServer.Syntax/README.md) reads what the parser parsed into model values, and
 [Model](../../src/Haruspex.SqlServer.Model/README.md) is the model.
 
@@ -138,6 +138,66 @@ flowchart TB
 A synonym is a schema object but not a module: SQL Server keeps a definition for its modules (`sys.sql_modules`), and a
 synonym has none, only the name it stands for.
 
+## A DACPAC becomes the same model
+
+A DACPAC is what a database project's build makes of its scripts: an OPC zip (the format of `.docx` files) whose
+`model.xml` holds the schema, with `Origin.xml` saying what made it and when. DacFx, the library that writes and deploys one,
+is the obvious way to read one too, and the one haruspex can't use, for the licence reason above. So `DacpacReader` reads
+`model.xml` itself, with .NET's own zip and XML readers, into the same model a folder gives. `model.xml` has no published
+specification: everything the reader knows of it was read from packages DacFx made, kept in
+[`tests/dacpacs`](../../tests/dacpacs/README.md) with how each was built, and its words are in one place (`ModelXml`).
+
+Its elements come in two kinds, and each is read the way that keeps one meaning for one thing:
+
+- **Tables are data.** A table is an element listing its columns, each with a type, whether it is nullable and its
+  collation; its constraints and indexes are elements of their own that name it. `TableReader` builds the model's `Table`
+  from them directly. Only the expressions in them (a CHECK's condition, a computed column's) are text, parsed by ScriptDom
+  as a folder's are. DacFx has already resolved what the script said, so a column's nullability is the one it deploys, and a
+  type has all its arguments: `decimal` is there as `decimal(18,0)`.
+- **Modules are text.** A procedure, function, view or trigger keeps its definition as written: the header DacFx stores in
+  an annotation (`CREATE PROCEDURE … AS`, with any comment before it) and the body. `ModuleTextReader` puts the two back
+  together, parses them with ScriptDom and hands the statement to the same `ModuleReader` a folder's scripts go through. So
+  there is one reading of what a procedure is, not two that can drift. The settings a module was created with, which SQL
+  Server keeps, reach the parse: one created with `QUOTED_IDENTIFIER` off reads `"word"` as the string it is there.
+
+Every element is read, passed over for a reason the reader states (permissions, storage, documentation, defaults: nothing
+that changes a shape), or counted in one note ([HAR1004](../diagnostics/HAR1004.md)), so a kind of element a newer DacFx
+writes is never lost in silence.
+
+**Built or extracted.** A package made by a project's build and one SqlPackage extracted from a database differ in what they
+can know. A build keeps every module's text, encrypted or not; an extract can't, since SQL Server gives no one an encrypted
+module's text, and keeps a placeholder that, read as a body, would claim the procedure returns nothing. So a procedure whose
+text a package lacks has an `EncryptedBody`, and its results are unknown with a reason of their own
+(`encrypted-definition`). An extract records which constraints the server doesn't trust; a build doesn't say whether a check
+added by `ALTER TABLE … WITH NOCHECK` is trusted, so in a build only a check written in its table is read, as a folder reads
+none that `ALTER TABLE` adds.
+
+**References.** A database split across projects builds a package per project, each referring to the ones it uses. The
+reader follows them, breadth first, reading each package of the same database once into the one model, which is what the
+database is: the sum of its packages. It looks for each beside the package that refers to it, where a build leaves it, then
+in the folders the config file's `references` names, and only last at the path recorded when the package was built, which is a
+path on another machine ([decision 0040](../decisions/0040-a-dacpac-is-read-with-the-packages-of-its-database.md)). A package
+of another database, or `master.dacpac`, is found and its SHA-256 recorded but not read: binding a three-part name to another
+database's model is the next step. A reference found nowhere is one warning, and a name that binds to nothing then says
+where it may be defined (`DatabaseModel.Unread`), so the cause is found once rather than chased name by name.
+
+**What the database itself says.** A package records the database's settings: its default collation, compatibility level
+and the defaults of its `SET` options. The model keeps them (`DatabaseSettings`), and applies none: a column's collation is
+the one it declares, and a caller's options are the caller's ([decision
+0038](../decisions/0038-the-callers-session-is-declared.md)).
+
+**Where things are, in a package.** A package keeps no file names, so a location names the package and the object, and a
+line in the object's own text: `sales.dacpac/[sales].[get_order]:3:5`
+([decision 0039](../decisions/0039-a-location-in-a-dacpac-names-the-package-and-the-object.md)). An extract keeps only that
+text, so a line means the same however the package was made. A table has no text, so its parts are numbered by their place
+in its list.
+
+**The proof.** For every fixture that builds as a project, and for WideWorldImporters, the IR and Zod inferred from the
+package are byte for byte those inferred from the folder, once each of the folder's locations is rewritten as the package's
+(`DacpacEquivalenceTests`). The rewriting is built from names and texts, never from the reader's own positions, which would
+agree with any reader. The one other difference is what a package can't know: a fact that names the declared type as written
+(`decimal`) names it as DacFx resolved it (`decimal(18,0)`), and the test compares the two spelt alike.
+
 ## Where things are
 
 Every object knows where it was read: its `SourceSpan`, the file and where the object starts and ends, captured once, when it
@@ -169,7 +229,8 @@ lists procedures by name, and when an unqualified name could mean either of two 
   That is the price of reading a project as it is kept rather than a deployment as it ran.
 - **No running anything.** A change made by code that would have to run, such as `EXEC sp_rename` or dynamic SQL, isn't
   seen. A database project defines its objects declaratively; such scripts belong in deployment.
-- **One database.** `USE` isn't followed, and every object the scripts define is read into one model.
+- **One database.** `USE` isn't followed, and every object the scripts define is read into one model. A DACPAC's packages of
+  the same database are composed into that one model; another database's package is found but not read.
 - **No `:r`.** A sqlcmd include isn't followed, so a script that uses one fails to parse rather than being read as a different
   script from the one that runs.
 

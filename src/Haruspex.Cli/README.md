@@ -1,6 +1,6 @@
 # Haruspex.Cli
 
-The `haruspex` command. It composes the layers: it reads a folder of `.sql` files with
+The `haruspex` command. It composes the layers: it reads a folder of `.sql` files or a DACPAC with
 [Haruspex.SqlServer.Sources](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md), infers
 with [Haruspex.SqlServer.Inference](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Inference/README.md),
 applies [`haruspex.json`](https://github.com/sharpblue/haruspex/blob/main/docs/configuration.md) with
@@ -33,9 +33,11 @@ flowchart LR
 ```sh
 haruspex generate                                    # settings from haruspex.json, found by walking up
 haruspex generate path/to/database --include 'sales.*' --out src/db
+haruspex generate bin/Release/Sales.dacpac --include 'sales.*' --out src/db   # a DACPAC and the packages it refers to
 ```
 
-`generate` writes `haruspex.ir.json` and `haruspex.zod.ts` to the output folder. The folder argument, `--include` and
+`generate` writes `haruspex.ir.json` and `haruspex.zod.ts` to the output folder. The source argument (a folder or a
+`.dacpac`), `--include` and
 `--out` override the config file for one run, and `--config` names a config file instead of searching for one.
 
 Everything it finds goes to standard error, one line each, in the form compilers write and editors and CI annotate, with
@@ -74,7 +76,7 @@ output: how many procedures it typed, how many unknowns there are, and where it 
 | Code | Meaning |
 |---|---|
 | 0 | Success, with or without warnings and notes |
-| 1 | The input has errors (SQL that doesn't parse, an object defined twice), or the output couldn't be written |
+| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), or the output couldn't be written |
 | 2 | The command line or the config file is wrong: an unknown option, a missing folder, a pattern that matches nothing, an override whose path doesn't exist, generated names that clash, an import the module can't write |
 | 3 | A fault in haruspex itself |
 

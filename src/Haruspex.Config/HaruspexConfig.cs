@@ -19,8 +19,14 @@ public sealed record HaruspexConfig
     /// <summary>The folder holding the file, which its relative paths are relative to.</summary>
     public required string Directory { get; init; }
 
-    /// <summary>The folder of <c>.sql</c> files, resolved against <see cref="Directory"/>, or null when the file doesn't say.</summary>
+    /// <summary>The folder of <c>.sql</c> files or the DACPAC, resolved against <see cref="Directory"/>, or null when the file doesn't say.</summary>
     public string? Source { get; init; }
+
+    /// <summary>
+    /// The folders to look for a DACPAC's referenced packages in (<c>references</c>), resolved against <see cref="Directory"/>, in
+    /// order, after the folder of the package that refers to them; empty when the file names none.
+    /// </summary>
+    public EquatableArray<string> References { get; init; } = [];
 
     /// <summary>The folder to write to, resolved against <see cref="Directory"/>, or null when the file doesn't say.</summary>
     public string? Out { get; init; }

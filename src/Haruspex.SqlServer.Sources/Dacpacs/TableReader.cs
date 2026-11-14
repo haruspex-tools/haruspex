@@ -1,0 +1,160 @@
+using System.Xml.Linq;
+using Haruspex.Diagnostics;
+using Haruspex.SqlServer.Model;
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+
+namespace Haruspex.SqlServer.Sources.Dacpacs;
+
+/// <summary>
+/// Reads a table from <c>model.xml</c> into the model's <see cref="Table"/>: its columns from the table's element, and its
+/// constraints and indexes from the elements that name it, which <c>model.xml</c> keeps apart from the table. Expressions (a
+/// CHECK's condition, a computed column's) are parsed by ScriptDom from their scripts, as a folder's are.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>What a constraint was declared on.</b> DacFx links an inline constraint to the column or table it was written in by a
+/// shared <c>Disambiguator</c> on their annotations, so a check written on a column is that column's
+/// (<see cref="CheckConstraint.Column"/>), as in a folder.
+/// </para>
+/// <para>
+/// <b>Which checks are trusted.</b> A check SQL Server doesn't trust guarantees nothing: one disabled (<c>IsDisabled</c>), or
+/// one an extract marks not trusted, is recorded as disabled. A built package doesn't record whether a check added by
+/// <c>ALTER TABLE … WITH NOCHECK ADD</c> is trusted (observed: <c>atelier</c>'s <c>ck_kiln_late</c> has no mark), so in a build a
+/// check that wasn't written inline in its table is not read at all, as a folder doesn't read one added by <c>ALTER TABLE</c>;
+/// that only claims less. An extract records trust, so every check in it is read.
+/// </para>
+/// <para>
+/// <b>Unique keys.</b> The primary key, unique constraints and unique indexes without a filter, wherever they were created: a
+/// package holds a unique index made by a <c>CREATE UNIQUE INDEX</c> of its own, which a folder's reader passes over, and the
+/// database has it, so the key is claimed. A disabled index's key is recorded as disabled.
+/// </para>
+/// </remarks>
+/// <param name="package">The package's file name, for locations.</param>
+/// <param name="built">Whether a project's build made the package (<see cref="DacPackage.Built"/>).</param>
+/// <param name="diagnostics">Where an expression that doesn't parse is reported.</param>
+internal sealed class TableReader(string package, bool built, ICollection<Diagnostic> diagnostics)
+{
+    /// <summary>The table, from its element and the parts that name it, in <c>model.xml</c>'s order; and the foreign keys on it with an action.</summary>
+    public (Table Table, IReadOnlyList<CascadingKey> Keys) Read(XElement element, IReadOnlyList<XElement> parts)
+    {
+        var name = ElementName.Object(ModelXml.Named(element));
+        var file = PackageLocation.File(package, name);
+        var columnElements = ModelXml.Elements(element, ModelXml.Columns).ToList();
+        SourceLocation At(int line) => new(file, line, 1);
+
+        // A column's line is its place among the columns, and a part's its place after them (PackageLocation).
+        var columns = new List<Column>();
+
+        // What each inline constraint was written in: a column, by name, or the table itself, as the empty name.
+        var owners = ModelXml.Disambiguators(element).Distinct(StringComparer.Ordinal).ToDictionary(d => d, _ => "", StringComparer.Ordinal);
+        for (var i = 0; i < columnElements.Count; i++)
+        {
+            var column = columnElements[i];
+            var columnName = ElementName.Last(ModelXml.Named(column));
+            foreach (var disambiguator in ModelXml.Disambiguators(column))
+                owners[disambiguator] = columnName;
+
+            // A graph table's pseudo-columns ($node_id, $from_id) are listed as columns; a folder's table lists only its own,
+            // and IsGraph says SELECT * has more (Table.IsGraph).
+            if (ModelXml.Property(column, ModelXml.GraphType) is not null)
+                continue;
+            columns.Add(Column(column, columnName, At(i + 1)));
+        }
+
+        var checks = new List<CheckConstraint>();
+        var keys = new List<UniqueKey>();
+        var cascading = new List<CascadingKey>();
+        for (var i = 0; i < parts.Count; i++)
+        {
+            var part = parts[i];
+            var at = At(columnElements.Count + i + 1);
+            switch (ModelXml.TypeOf(part))
+            {
+                case ModelXml.SqlCheckConstraint when Check(part, owners, at) is { } check:
+                    checks.Add(check);
+                    break;
+                case ModelXml.SqlPrimaryKeyConstraint or ModelXml.SqlUniqueConstraint:
+                    keys.Add(new UniqueKey(PartName(part), KeyColumns(part), ModelXml.TypeOf(part) == ModelXml.SqlPrimaryKeyConstraint, at));
+                    break;
+                case ModelXml.SqlIndex when ModelXml.IsTrue(part, ModelXml.IsUnique) && ModelXml.Property(part, ModelXml.FilterPredicate) is null:
+                    // A filtered index is unique only among the rows its filter keeps.
+                    keys.Add(new UniqueKey(PartName(part), KeyColumns(part), false, at) { DisabledAt = ModelXml.IsTrue(part, ModelXml.IsDisabled) ? at : null });
+                    break;
+                case ModelXml.SqlForeignKeyConstraint when Cascades(part) && ModelXml.References(part, ModelXml.ForeignTable).FirstOrDefault() is { } referenced:
+                    cascading.Add(new CascadingKey(name, ElementName.Object(ModelXml.Named(referenced)), at));
+                    break;
+            }
+        }
+
+        // Column constraints first, then the table's, each in the order read: the order a folder's reader gives them.
+        checks = [.. checks.Where(c => c.Column is not null), .. checks.Where(c => c.Column is null)];
+        var primaryKey = keys.FirstOrDefault(k => k.IsPrimaryKey)?.Columns ?? [];
+        var table = new Table(name, PackageLocation.Whole(file, columnElements.Count + parts.Count), [.. columns], primaryKey, [.. checks], [.. keys])
+        {
+            IsGraph = ModelXml.IsTrue(element, ModelXml.IsNode) || ModelXml.IsTrue(element, ModelXml.IsEdge),
+        };
+        return (table, cascading);
+    }
+
+    /// <summary>
+    /// A column. Its nullability is what DacFx resolved and deploys: <c>IsNullable</c> false is NOT NULL, and its absence NULL,
+    /// whether the script said NULL or nothing (an alias type's NOT NULL included). A computed column takes its nullability
+    /// from its expression, as in a folder.
+    /// </summary>
+    private Column Column(XElement column, string name, SourceLocation at)
+    {
+        if (ModelXml.TypeOf(column) == ModelXml.SqlComputedColumn)
+        {
+            var expression = Parse(ModelXml.Property(column, ModelXml.ExpressionScript) ?? "", at, (parser, reader) => (parser.ParseExpression(reader, out var errors), errors));
+            return new Column(name, null, DeclaredNullability.NotDeclared, false, expression, at);
+        }
+
+        var nullability = ModelXml.Property(column, ModelXml.IsNullable) == "False" ? DeclaredNullability.NotNull : DeclaredNullability.Null;
+        return new Column(name, TypeSpecifier.Of(column, ModelXml.TypeSpecifier), nullability, ModelXml.IsTrue(column, ModelXml.IsIdentity), null, at, ModelXml.Property(column, ModelXml.Collation))
+        {
+            IsHidden = ModelXml.IsTrue(column, ModelXml.IsHidden),
+        };
+    }
+
+    /// <summary>
+    /// A CHECK constraint, or null for one a build doesn't say is trusted (see the remarks). It was written inline when it shares
+    /// a <c>Disambiguator</c> with its table or one of its columns, whichever of the two carries the annotation and which the
+    /// attached one (observed: an unnamed check carries the annotation, a named one the attached one).
+    /// </summary>
+    private CheckConstraint? Check(XElement check, Dictionary<string, string> owners, SourceLocation at)
+    {
+        var owner = ModelXml.Disambiguators(check).Select(d => owners.GetValueOrDefault(d)).FirstOrDefault(o => o is not null);
+        if (built && owner is null)
+            return null;
+        if (Parse(ModelXml.Property(check, ModelXml.CheckExpressionScript) ?? "", at, (parser, reader) => (parser.ParseBooleanExpression(reader, out var errors), errors)) is not { } condition)
+            return null;
+        var column = owner is { Length: > 0 } ? owner : null;
+        var trusted = !ModelXml.IsTrue(check, ModelXml.IsDisabled) && ModelXml.Annotation(check, ModelXml.IsNotTrustedPropertyAnnotation) is null;
+        return new CheckConstraint(PartName(check), condition, column, ModelXml.IsTrue(check, ModelXml.IsNotForReplication), at, trusted ? null : at);
+    }
+
+    /// <summary>An expression's script parsed so that it starts at <paramref name="at"/>; null, reported, when it doesn't parse.</summary>
+    private T? Parse<T>(string script, SourceLocation at, Func<TSqlParser, TextReader, (T? Fragment, IList<ParseError> Errors)> parse)
+        where T : TSqlFragment
+    {
+        using var reader = new StringReader(new string('\n', at.Line - 1) + script);
+        var (fragment, errors) = parse(new TSql170Parser(initialQuotedIdentifiers: true), reader);
+        foreach (var error in errors)
+            diagnostics.Add(new Diagnostic(SourceCodes.ParseError, error.Message, new SourceLocation(at.File, error.Line, error.Column)));
+        return errors.Count == 0 ? fragment : null;
+    }
+
+    /// <summary>A constraint's or index's own name, or null for one declared without a name.</summary>
+    private static string? PartName(XElement part) => ModelXml.NameOf(part) is { } name ? ElementName.Last(name) : null;
+
+    /// <summary>The columns of a key or index, in key order.</summary>
+    private static Collections.EquatableArray<string> KeyColumns(XElement part) =>
+        [.. ModelXml.Elements(part, ModelXml.ColumnSpecifications)
+            .SelectMany(spec => ModelXml.References(spec, ModelXml.Column))
+            .Select(reference => ElementName.Last(ModelXml.Named(reference)))];
+
+    /// <summary>Whether a foreign key has an action on delete or update, so that a change to its referenced table changes this one.</summary>
+    private static bool Cascades(XElement key) =>
+        (ModelXml.Property(key, ModelXml.OnDeleteAction) is { } delete && delete != "0")
+        || (ModelXml.Property(key, ModelXml.OnUpdateAction) is { } update && update != "0");
+}

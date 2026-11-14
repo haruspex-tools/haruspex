@@ -15,6 +15,10 @@ reason.
 |---|---|---|
 | [HAR1001](HAR1001.md) | error | The SQL doesn't parse |
 | [HAR1002](HAR1002.md) | error | An object is defined more than once |
+| [HAR1003](HAR1003.md) | warning | A referenced DACPAC isn't found |
+| [HAR1004](HAR1004.md) | note | Elements of a DACPAC that aren't modelled |
+| [HAR1005](HAR1005.md) | error | A file that can't be read as a DACPAC |
+| [HAR1006](HAR1006.md) | warning | An encrypted function or view whose text the DACPAC lacks |
 
 ## Inference
 

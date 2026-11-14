@@ -58,8 +58,9 @@ internal sealed partial class CodeReferences
         // Names from before the split into layers, in the table of what each type became (docs/architecture.md).
         "Haruspex.SqlServer", "Catalog", "TableModel", "ColumnModel", "SqlProject.Changed",
 
-        // An element of a DACPAC's model.xml, which the decision on the callers' session says is not where they come from.
-        "SqlDatabaseOptions",
+        // Elements and annotations of a DACPAC's model.xml that the reader doesn't read, named where the documentation says
+        // what it passes over or how an extract differs (the ones it reads are its own words, ModelXmlWords).
+        "SqlTableType", "SqlSequence",
 
         // Products named in the layers' diagrams.
         "ScriptDom", "TypeScript",
@@ -106,6 +107,12 @@ internal sealed partial class CodeReferences
     private readonly HashSet<string> generated = new(StringComparer.Ordinal);
     private readonly HashSet<string> csharpFiles = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// The words of <c>model.xml</c> the DACPAC reader reads (<c>SqlTable</c>, <c>BodyScript</c>): the values of its <c>ModelXml</c>'s
+    /// constants, so a word the documentation names is one the reader really reads, and renaming one there fails here.
+    /// </summary>
+    private readonly HashSet<string> modelXmlWords = new(StringComparer.Ordinal);
+
     /// <summary>The references of this commit: read once, since reflection and the source scan are the slow part.</summary>
     public static CodeReferences Current { get; } = new();
 
@@ -116,6 +123,12 @@ internal sealed partial class CodeReferences
             Add(types, SimpleName(type), type);
             if (type.Namespace is { } ns)
                 namespaces.Add(ns);
+        }
+
+        foreach (var field in typeof(SqlScriptFolder).Assembly.GetType("Haruspex.SqlServer.Sources.Dacpacs.ModelXml", throwOnError: true)!
+            .GetFields(BindingFlags.Public | BindingFlags.Static).Where(f => f.IsLiteral))
+        {
+            modelXmlWords.Add((string)field.GetRawConstantValue()!);
         }
 
         // ScriptDom's types are named where haruspex says which syntax it reads.
@@ -217,7 +230,7 @@ internal sealed partial class CodeReferences
     private string? NameProblem(string code)
     {
         var parts = code.Split('.');
-        if (Outside.Contains(code) || namespaces.Contains(code) || (parts.Length > 1 && OutsideNamespaces.Contains(parts[0])))
+        if (Outside.Contains(code) || namespaces.Contains(code) || modelXmlWords.Contains(code) || (parts.Length > 1 && OutsideNamespaces.Contains(parts[0])))
             return null;
         if (types.TryGetValue(parts[0], out var candidates))
             return MemberProblem(candidates, parts);

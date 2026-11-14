@@ -63,9 +63,9 @@ internal static class HaruspexCli
 
     private static RootCommand Build(TextWriter output, TextWriter error, string workingDirectory)
     {
-        var directory = new Argument<string?>("dir")
+        var directory = new Argument<string?>("source")
         {
-            Description = "The folder of .sql files to read, including subfolders. Overrides \"source\" in the config file.",
+            Description = "The folder of .sql files to read, including subfolders, or the .dacpac to read with the packages of its database it refers to. Overrides \"source\" in the config file.",
             Arity = ArgumentArity.ZeroOrOne,
         };
         var config = new Option<string?>("--config", "-c")

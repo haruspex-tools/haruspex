@@ -11,9 +11,14 @@
       "type": "string"
     },
     "source": {
-      "description": "The folder of .sql files to read, including subfolders. The command line's folder argument overrides it.",
+      "description": "The folder of .sql files to read, including subfolders, or a .dacpac to read with the packages of its database it refers to, relative to this file. The command line's source argument overrides it.",
       "type": "string",
       "minLength": 1
+    },
+    "references": {
+      "description": "Folders to look for the DACPACs a .dacpac source refers to, relative to this file, in order, after the folder of the package that refers to them.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
     },
     "out": {
       "description": "The folder to write haruspex.ir.json and haruspex.zod.ts to. --out overrides it.",

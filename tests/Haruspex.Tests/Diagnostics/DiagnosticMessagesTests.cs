@@ -46,6 +46,13 @@ public class DiagnosticMessagesTests
         return error.ToString().ReplaceLineEndings("\n").Replace(folder.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal).TrimEnd('\n').Split('\n');
     }
 
+    /// <summary>
+    /// A run of the CLI on one of the test DACPACs (<c>tests/dacpacs</c>), copied alone into a folder of its own, so that what it
+    /// refers to isn't found beside it, selecting <paramref name="include"/>.
+    /// </summary>
+    private static string[] Package(string group, string package, string include) =>
+        Cli([], args: [package, "--include", include, "--out", "out"], arrange: f => File.Copy(Path.Combine(RepositoryPaths.Root, "tests", "dacpacs", group, package), Path.Combine(f.Path, package)));
+
     /// <summary>A run with <paramref name="sql"/> and a config file of the standard settings and <paramref name="more"/>.</summary>
     private static string[] Config(string more, params string[] sql) => Cli(sql.Length == 0 ? [GetBook] : sql, $"{{ {Plain}{(more.Length == 0 ? "" : ", " + more)} }}");
 
@@ -75,6 +82,10 @@ public class DiagnosticMessagesTests
     [
         (1001, () => Cli(["CREATE PROCEDURE lib.p AS SELECT FROM;"])),
         (1002, () => Cli([GetBook, GetBook])),
+        (1003, () => Package("harbour", "crane.dacpac", "dock.*")),
+        (1004, () => Package("atelier", "atelier.dacpac", "studio.list_pots")),
+        (1005, () => Cli([GetBook], args: ["broken.dacpac", "--include", "*.*", "--out", "out"], arrange: f => f.File("broken.dacpac", "not a zip"))),
+        (1006, () => Package("versions", "atelier-extract.dacpac", "studio.list_pots")),
 
         (2001, () => Cli(["CREATE PROCEDURE lib.p AS SET NOCOUNT, NOEXEC ON;\nSELECT b.id FROM lib.book AS b;"])),
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),

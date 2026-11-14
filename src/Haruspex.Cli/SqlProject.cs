@@ -4,11 +4,12 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
+using Haruspex.SqlServer.Sources.Dacpacs;
 
 namespace Haruspex.Cli;
 
 /// <summary>
-/// A database project read from a folder of <c>.sql</c> files, ready to infer: the layers composed for the
+/// A database project read from a folder of <c>.sql</c> files or from a DACPAC, ready to infer: the layers composed for the
 /// command line (reading in Haruspex.SqlServer.Sources, inference in Haruspex.SqlServer.Inference, the config file's
 /// selection, overrides and naming in Haruspex.Config).
 /// </summary>
@@ -20,9 +21,13 @@ internal sealed class SqlProject
 {
     private readonly DatabaseModel model;
 
-    private SqlProject(DatabaseModel model, IReadOnlyList<Diagnostic> diagnostics)
+    /// <summary>What the IR's source record says of the packages read, or nothing for a folder (<see cref="Recorded"/>).</summary>
+    private readonly Func<IrSource, IrSource> recorded;
+
+    private SqlProject(DatabaseModel model, IReadOnlyList<Diagnostic> diagnostics, Func<IrSource, IrSource>? recorded = null)
     {
         this.model = model;
+        this.recorded = recorded ?? (source => source);
         Diagnostics = diagnostics;
         // In name order, as a listing is: the model's own order is where each was read, which would make the order the
         // procedures are inferred in, and so of the warnings they give, depend on the files' names.
@@ -41,6 +46,29 @@ internal sealed class SqlProject
         var read = SqlScriptFolder.Read(directory);
         return new SqlProject(read.Model, read.Diagnostics);
     }
+
+    /// <summary>Whether <paramref name="source"/> names a DACPAC rather than a folder of scripts: a file, by its extension.</summary>
+    public static bool IsPackage(string source) => source.EndsWith(".dacpac", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Reads the DACPAC at <paramref name="package"/> and the packages of its database it refers to, looking for them beside it
+    /// and then in <paramref name="references"/>; the IR it infers records the packages read.
+    /// </summary>
+    public static SqlProject LoadPackage(string package, IReadOnlyList<string> references)
+    {
+        var read = DacpacReader.Read(package, references);
+        return new SqlProject(read.Model, read.Diagnostics, source => Recorded(source, read));
+    }
+
+    /// <summary>
+    /// The IR's source record with the package and its references, by file name and SHA-256: the IR knows nothing of DACPACs,
+    /// so the composition, which knows both, says what was read.
+    /// </summary>
+    private static IrSource Recorded(IrSource source, DacpacReadResult read) => source with
+    {
+        Package = read.Package is { } package ? new IrPackage(package.Name, package.Sha256) : null,
+        References = [.. read.References.Select(r => new IrPackageReference(r.Name, r.Found?.Sha256, r.Database))],
+    };
 
     /// <summary>
     /// The procedures that match any of the patterns, and the patterns that match none. A pattern that matches
@@ -85,7 +113,7 @@ internal sealed class SqlProject
                 declarations.TryAdd(name, new DeclaredResults(declared.Results, declared.IrTypes, declared.Why));
         }
 
-        var inferred = IrInference.Infer(model, selected, declarations, config.Session);
+        var inferred = IrInference.Infer(model, selected, declarations, config.Session).Select(d => d with { Source = recorded(d.Source) });
         var others = declarations.Keys
             .Select(name => model.FindProcedure(name)?.Name)
             .OfType<ObjectName>()

@@ -100,6 +100,9 @@ public static class ConfigReader
                         if (NonEmpty(member.Value, path) is { } source)
                             config = config with { Source = Path.GetFullPath(Path.Combine(directory, source)) };
                         break;
+                    case "references":
+                        config = config with { References = [.. Folders(member.Value, path, directory)] };
+                        break;
                     case "out":
                         if (NonEmpty(member.Value, path) is { } output)
                             config = config with { Out = Path.GetFullPath(Path.Combine(directory, output)) };
@@ -122,7 +125,7 @@ public static class ConfigReader
                         config = config with { Session = Session(member.Value, path) };
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, out, schemas, objects, naming, procedures, session");
+                        Unknown(member, path, "$schema, source, references, out, schemas, objects, naming, procedures, session");
                         break;
                 }
             }
@@ -217,6 +220,28 @@ public static class ConfigReader
             }
 
             return schemas;
+        }
+
+        /// <summary>
+        /// The folders <c>references</c> names, each resolved against the config file's folder, in order: where referenced DACPACs
+        /// are looked for after the folder of the package that refers to them.
+        /// </summary>
+        private List<string> Folders(JsonValue value, string path, string directory)
+        {
+            var folders = new List<string>();
+            if (value is not JsonArrayValue array)
+            {
+                Report(ConfigCodes.WrongKind, value, path, "must be an array of folders to look for referenced DACPACs in, such as \"../shared/bin/Release\".");
+                return folders;
+            }
+
+            for (var i = 0; i < array.Items.Count; i++)
+            {
+                if (NonEmpty(array.Items[i], Index(path, i)) is { } folder)
+                    folders.Add(Path.GetFullPath(Path.Combine(directory, folder)));
+            }
+
+            return folders;
         }
 
         private List<NamePatternEntry> Patterns(JsonValue value, string path, bool requireOne)

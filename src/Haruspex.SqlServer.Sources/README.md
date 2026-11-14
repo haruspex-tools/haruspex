@@ -1,10 +1,10 @@
 # Haruspex.SqlServer.Sources
 
 Reads a SQL Server database project into a
-[Haruspex.SqlServer.Model](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md): today a
-folder of `.sql` scripts, such as an SSDT or `Microsoft.Build.Sql` project's; later a DACPAC's `model.xml` as well. It
-parses with [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom), Microsoft's own T-SQL
-parser (MIT), and needs neither DacFx nor a database.
+[Haruspex.SqlServer.Model](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md): a folder of
+`.sql` scripts, such as an SSDT or `Microsoft.Build.Sql` project's, or a DACPAC with the DACPACs of the same database it refers
+to. It parses with [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom), Microsoft's own
+T-SQL parser (MIT), reads `model.xml` with .NET's own zip and XML readers, and needs neither DacFx nor a database.
 
 ## How data flows through it
 
@@ -29,6 +29,26 @@ sqlcmd is read as the server would receive it: each `:setvar` defines a variable
 first (`SqlcmdVariables`). `SqlScriptFolder.Read` can also be given which of a folder's scripts to read, such as the ones a
 project file builds.
 
+A DACPAC is read by `DacpacReader` into the same `SchemaDeclarations`, so the passes and the model are one for both:
+
+```mermaid
+flowchart LR
+    package["a .dacpac"] --> opened["DacPackage: model.xml, its references, its SHA-256"]
+    opened --> refs["references of the same database, found beside it first (ReferenceFinder)"]
+    refs --> opened
+    opened --> tables["TableReader: tables from their elements"]
+    opened --> modules["ModuleTextReader: header and body, parsed, read by ModuleReader"]
+    tables --> declarations["SchemaDeclarations"]
+    modules --> declarations
+    declarations --> model["DatabaseModel, with its DatabaseSettings"]
+```
+
+Tables are elements of `model.xml`, read as data (`TableReader`); each module keeps its text, header and body, which is parsed
+and read by the same `ModuleReader` a folder's script is (`ModuleTextReader`). Every package of the same database reachable
+through references is read once into the one model; another database's package is found and hashed, not read. A location
+names the package and the object, with a line in the object's own text (`sales.dacpac/[sales].[get_order]:3:5`). The guide's
+chapter 2 says why each is so, and `DacpacEquivalenceTests` proves a package of each fixture reads as its folder does.
+
 ## Example
 
 ```csharp
@@ -36,6 +56,9 @@ var read = SqlScriptFolder.Read("path/to/database");
 foreach (var diagnostic in read.Diagnostics)
     Console.Error.WriteLine(diagnostic);          // file:line:column: error HAR1001: message
 var orders = read.Model.FindTable(new ObjectName("sales", "orders"));
+
+var package = DacpacReader.Read("bin/Release/Sales.dacpac", ["../Shared/bin/Release"]);
+Console.WriteLine($"{package.Package?.Name} {package.Package?.Sha256}, {package.Model.Settings?.Collation}");
 ```
 
 ## What it guarantees
@@ -52,10 +75,18 @@ var orders = read.Model.FindTable(new ObjectName("sales", "orders"));
   it in its file, since SQL Server keeps the setting it was created with.
 - **Problems have a place.** Parse errors and objects defined twice are reported as diagnostics, with their file, line and
   column.
+- **A DACPAC reads as its project's folder does.** For every fixture that builds as a project, and for WideWorldImporters, the
+  output from the package is byte for byte the folder's once locations are rewritten (`DacpacEquivalenceTests`). Every element
+  of `model.xml` is read, passed over for a stated reason, or counted in one note (HAR1004). A module created with
+  `ANSI_NULLS` or `QUOTED_IDENTIFIER` off is parsed and read as it runs. An encrypted module an extracted package holds no text
+  for is never read as its placeholder. A referenced package not found is one warning (HAR1003) naming every place looked.
 
 ## What it deliberately doesn't do
 
 - **No building or deploying.** It never builds, writes or publishes a DACPAC, and never connects to a server.
+- **No other database yet.** A DACPAC's reference to another database (by name or SQLCMD variable) or to `master.dacpac` is
+  found and its hash recorded, but its objects aren't read: a three-part name stays unbound, as it is from a folder. A
+  `$(Variable)` in a module's text is read as written, a bracketed name such as `[$(Ledger)]`.
 - **No DacFx.** DacFx's licence asks anyone who redistributes it to indemnify Microsoft, which no free tool should have to
   take on; ScriptDom is enough to read a project
   ([decision 0004](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0004-scriptdom-is-the-only-sql-dependency.md)).
@@ -65,7 +96,7 @@ var orders = read.Model.FindTable(new ObjectName("sales", "orders"));
 - **One database.** `USE` is not followed: every object the scripts define is read into one model, whichever database a
   script has switched to by then.
 - **No project files yet.** It doesn't read a `.sqlproj`'s list of scripts or its settings; given a folder, it reads every
-  script in it.
+  script in it. A DACPAC carries the project's settings, and they are read from it.
 - **No running scripts.** A folder of scripts doesn't say the order they run in, so a statement that changes an object after
   its definition (`ALTER TABLE … ALTER COLUMN`, `DROP TABLE`, `ALTER PROCEDURE`, `DROP PROCEDURE`) is recorded as a
   `Redefinition`, not applied. Changes made only through code that would have to run, such as `EXEC sp_rename` or dynamic

@@ -188,7 +188,7 @@ CREATE TABLE lib.book (id int NOT NULL PRIMARY KEY);
 ```
 
 ```text haruspex-run --include a.b.c
-haruspex: error HAR6003: give the folder of .sql files to read, or a config file with "source".
+haruspex: error HAR6003: give the folder of .sql files or the .dacpac to read, or a config file with "source".
 haruspex: error HAR6005: give --out, the folder to write to, or a config file with "out".
 haruspex: error HAR6006: invalid --include pattern: 'a.b.c' is not a two-part name such as sales.get_order, sales.* or *.list_*.
 ```

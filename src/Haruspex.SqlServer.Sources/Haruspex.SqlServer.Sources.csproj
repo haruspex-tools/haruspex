@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Reads a SQL Server database project's folder of .sql scripts into Haruspex.SqlServer.Model, with ScriptDom and without DacFx. Read-only: it never builds or deploys a DACPAC.</Description>
+    <Description>Reads a SQL Server database project's folder of .sql scripts, or a DACPAC and the DACPACs it references, into Haruspex.SqlServer.Model, with ScriptDom and without DacFx. Read-only: it never builds or deploys a DACPAC.</Description>
     <IsPackable>true</IsPackable>
     <PackageId>Haruspex.SqlServer.Sources</PackageId>
-    <PackageTags>sql-server;t-sql;schema;scriptdom;database-project;sqlproj</PackageTags>
+    <PackageTags>sql-server;t-sql;schema;scriptdom;database-project;sqlproj;dacpac</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
@@ -16,5 +16,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The order a referenced DACPAC is looked for in is tested on the finder itself (DacpacReaderTests). -->
+    <InternalsVisibleTo Include="Haruspex.Tests" />
   </ItemGroup>
 </Project>

@@ -3,7 +3,7 @@
 A SQL Server database's schema as plain .NET data, for tools that need to read a schema without a database and without
 DacFx: linters, diff tools, documentation generators, code generators.
 [Haruspex.SqlServer.Sources](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md)
-fills it from a folder of `.sql` scripts.
+fills it from a folder of `.sql` scripts or from a DACPAC.
 
 It holds tables with their columns, declared types, collations, NULL or NOT NULL, identity, primary keys, unique keys and
 CHECK constraints; alias and CLR types (`CREATE TYPE`); stored procedures, functions of each kind, views and DML triggers,
@@ -67,7 +67,7 @@ foreach (var table in model.Tables)
 - **No building, comparing or deploying.** The model is read-only. It never builds a DACPAC, never writes one, and never
   talks to a server.
 - **No knowledge of where the schema came from.** A file path appears only in source locations, so errors can point at a
-  line. Reading `.sql` files, and later a DACPAC's `model.xml`, belongs to Sources.
+  line. Reading `.sql` files and a DACPAC's `model.xml` belongs to Sources.
 - **No interpretation.** Whether a column can be null follows from its declaration, its key, its identity and its alias
   type together; what a CHECK constraint says about values (a set, a range) is a reading of its expression; what a
   reference in a body points to depends on scopes and the caller's default schema. Those are
