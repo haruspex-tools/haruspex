@@ -1,0 +1,14 @@
+// The runs of the tannery fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  "seedReachesEveryEdge": false,
+
+  "runs": [
+    { "name": "list_vats", "procedure": "dye.list_vats" },
+    { "name": "vat_card, shouted", "procedure": "dye.vat_card", "parameters": { "@vat_id": 2 } },
+    { "name": "vat_card, padded and accented", "procedure": "dye.vat_card", "parameters": { "@vat_id": 3 } },
+    { "name": "vat_card, no mode", "procedure": "dye.vat_card", "parameters": { "@vat_id": 4 } },
+    { "name": "vat_card, no such vat", "procedure": "dye.vat_card", "parameters": { "@vat_id": 99 } },
+    { "name": "states", "procedure": "dye.states" }
+  ]
+}

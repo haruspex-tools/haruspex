@@ -23,9 +23,17 @@ public partial class SchemaFactsTests
     [InlineData("char(4) COLLATE Latin1_General_BIN NULL CHECK (c = 'NE')", ValueComparison.Padded)]
     [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2_UTF8 NULL CHECK (c IN (N'é'))", ValueComparison.Padded)]
     [InlineData("nvarchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN (N'é', N'ŝ'))", ValueComparison.Padded)]
-    // Not binary, or no collation declared: case, accents and more may differ.
-    [InlineData("varchar(10) COLLATE Latin1_General_100_CS_AS NULL CHECK (c IN ('open'))", ValueComparison.Collation)]
+    // A code-page column of a collation whose fold is proven: a value maps to the one string it folds like.
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CS_AS NULL CHECK (c IN ('open'))", ValueComparison.Canonical)]
+    [InlineData("char(6) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CHECK (c IN ('open', 'on-hold'))", ValueComparison.Canonical)]
+    // Otherwise case, accents and more may differ, and how isn't proven: no collation known, Unicode (whose comparison looks at a
+    // character's neighbours), a collation not proven, a string that isn't plain, or two strings that fold alike.
     [InlineData("varchar(10) NULL CHECK (c IN ('open'))", ValueComparison.Collation)]
+    [InlineData("nvarchar(10) COLLATE Latin1_General_100_CS_AS NULL CHECK (c IN ('open'))", ValueComparison.Collation)]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL CHECK (c IN ('open'))", ValueComparison.Collation)]
+    [InlineData("varchar(10) COLLATE French_CI_AS NULL CHECK (c IN ('open'))", ValueComparison.Collation)]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CI_AS NULL CHECK (c IN ('open', 'café'))", ValueComparison.Collation)]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CI_AS NULL CHECK (c IN ('open', 'OPEN'))", ValueComparison.Collation)]
     // A literal outside ASCII in a code-page column could be converted to another character ('?') before comparing.
     [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN (N'é'))", ValueComparison.Collation)]
     [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN ('a\\b'))", ValueComparison.Collation)]

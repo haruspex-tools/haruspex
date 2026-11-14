@@ -87,6 +87,16 @@ public class ConfigReaderTests
     }
 
     [Fact]
+    public void The_collation_is_read_and_a_value_that_names_none_is_an_error()
+    {
+        Assert.Equal("Latin1_General_100_CI_AS", Read("""{ "collation": "Latin1_General_100_CI_AS" }""").Expected().Collation);
+        Assert.Null(Read("{}").Expected().Collation);
+
+        var wrong = Read("""{ "collation": "Latin1 General" }""");
+        Assert.Contains("no collation's name", Assert.Single(wrong.Diagnostics).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void An_empty_object_is_a_valid_config_with_every_default()
     {
         var config = Read("{}").Expected();
@@ -139,8 +149,8 @@ public class ConfigReaderTests
     {
         // The file as a whole, and its settings' types.
         { "[]", "haruspex.json:1:1: error HAR3005: must be an object." },
-        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, references, out, schemas, objects, naming, procedures, session." },
-        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, references, out, schemas, objects, naming, procedures, session." },
+        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, references, collation, out, schemas, objects, naming, procedures, session." },
+        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, references, collation, out, schemas, objects, naming, procedures, session." },
         { """{ "$schema": 1 }""", "haruspex.json:1:14: error HAR3005: $schema: must be a string." },
         { """{ "source": "" }""", "haruspex.json:1:13: error HAR3005: source: must not be empty." },
         { """{ "out": 3 }""", "haruspex.json:1:10: error HAR3005: out: must be a string." },

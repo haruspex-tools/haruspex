@@ -1,0 +1,6 @@
+// The tannery database is created with the server's default collation, SQL Server's default on installation, which a folder
+// of scripts doesn't record: declared here, so a column without COLLATE takes it, as the database's columns do.
+{
+  "$schema": "../../../schemas/haruspex.schema.json",
+  "collation": "SQL_Latin1_General_CP1_CI_AS"
+}

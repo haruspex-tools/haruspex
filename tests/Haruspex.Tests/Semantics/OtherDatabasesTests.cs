@@ -103,7 +103,9 @@ public class OtherDatabasesTests
         var doc = SqlProject.LoadPackage(Path.Combine(Packages, "harbour", "harbour.dacpac"), []).Infer([new ObjectName("dock", "crane_fees")]).Expected();
 
         Assert.Equal("decimal(9,2)", Scalar(doc, "fee").Sql);
-        Assert.Equal(["paid", "due"], Scalar(doc, "state").Facets!.Values!.Items.Select(v => v.Text));
+        var state = Scalar(doc, "state").Facets!.Values!;
+        Assert.Equal(["due", "paid"], state.Items.Select(v => v.Text));
+        Assert.Equal((IrValueMatch.Canonical, "SQL_Latin1_General_CP1_CI_AS.codepage"), (state.Match, state.Fold));
     }
 
     [Fact]

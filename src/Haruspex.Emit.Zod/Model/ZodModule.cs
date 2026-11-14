@@ -1,4 +1,5 @@
 using Haruspex.Collections;
+using Haruspex.Ir;
 
 namespace Haruspex.Emit.Zod.Model;
 
@@ -7,12 +8,20 @@ namespace Haruspex.Emit.Zod.Model;
 /// <param name="Imports">The schemas imported from the application's modules, after Zod's own import.</param>
 /// <param name="JsonTextHelper">Whether the module defines the helper that <see cref="ZodExpression.JsonText"/> calls.</param>
 /// <param name="Declarations">The exported schemas, in the order written: each after the ones it refers to, but within a cycle.</param>
+/// <param name="Folds">
+/// The folds <see cref="ZodExpression.Canonical"/> sets name, by name, or null for none; when there are any, the module defines them and the helper
+/// that maps a value by one.
+/// </param>
 internal sealed record ZodModule(
     EquatableArray<string> Header,
     EquatableArray<ZodImport> Imports,
     bool JsonTextHelper,
-    EquatableArray<ZodDeclaration> Declarations)
+    EquatableArray<ZodDeclaration> Declarations,
+    EquatableMap<string, IrFold>? Folds = null)
 {
+    /// <summary>The names the canonical value sets' helper and its folds bind in the module, which no imported name may take.</summary>
+    public static IReadOnlyList<string> CanonicalNames { get; } = ["Fold", "canonicalForm", "canonicalOf", "folds"];
+
     /// <summary>The name the JSON text helper binds in the module, which no imported name may take.</summary>
     public const string JsonTextHelperName = "jsonText";
 

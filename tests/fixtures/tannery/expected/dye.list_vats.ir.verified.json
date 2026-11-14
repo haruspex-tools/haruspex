@@ -1,0 +1,565 @@
+{
+  "irVersion": "0.20",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "dye.list_vats",
+      "name": "ListVats",
+      "kind": "procedure",
+      "at": "procedures/list_vats.sql:1:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListVatsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListVatsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "dye.list_vats",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "vat_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "state",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(10)"
+              }
+            },
+            "values": {
+              "match": "canonical",
+              "items": [
+                "dyeing",
+                "idle",
+                "rinse"
+              ],
+              "from": [
+                {
+                  "check": "dye.ck_vat_state"
+                }
+              ],
+              "fold": "SQL_Latin1_General_CP1_CI_AS.codepage"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "shade",
+          "type": {
+            "kind": "string",
+            "sql": "char(4)",
+            "length": {
+              "value": 4,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "char(4)"
+              }
+            },
+            "values": {
+              "match": "canonical",
+              "items": [
+                "jet",
+                "rose",
+                "teal"
+              ],
+              "from": [
+                {
+                  "check": "dye.ck_vat_shade"
+                }
+              ],
+              "fold": "Latin1_General_100_CI_AI.codepage"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "mode",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(8)"
+              }
+            },
+            "values": {
+              "match": "canonical",
+              "items": [
+                "Hot",
+                "cold",
+                "hot"
+              ],
+              "from": [
+                {
+                  "check": "dye.ck_vat_mode"
+                }
+              ],
+              "fold": "Latin1_General_100_CS_AS.codepage"
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "dye.vat.mode"
+            }
+          ]
+        },
+        {
+          "name": "batch",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(12)",
+            "maxLength": {
+              "value": 12,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(12)"
+              }
+            },
+            "values": {
+              "match": "canonical",
+              "items": [
+                "flax_c",
+                "silk.b",
+                "wool-a"
+              ],
+              "from": [
+                {
+                  "check": "dye.ck_vat_batch"
+                }
+              ],
+              "fold": "Latin1_General_100_CI_AS.codepage"
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "dye.vat.batch"
+            }
+          ]
+        },
+        {
+          "name": "label",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "warp",
+                "weft"
+              ],
+              "from": [
+                {
+                  "check": "dye.ck_vat_label"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "dye.vat.label"
+            }
+          ]
+        },
+        {
+          "name": "grade",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(8)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "fine",
+                "coarse"
+              ],
+              "from": [
+                {
+                  "check": "dye.ck_vat_grade"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "dye.vat.grade"
+            }
+          ]
+        },
+        {
+          "name": "tone",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(8)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "pale",
+                "deep",
+                "café"
+              ],
+              "from": [
+                {
+                  "check": "dye.ck_vat_tone"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "dye.vat.tone"
+            }
+          ]
+        },
+        {
+          "name": "finish",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(8)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "matt",
+                "MATT",
+                "gloss"
+              ],
+              "from": [
+                {
+                  "check": "dye.ck_vat_finish"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "dye.vat.finish"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {
+    "Latin1_General_100_CI_AI.codepage": {
+      "ignored": "\u0000­",
+      "classes": {
+        " ": " ",
+        "-": "-",
+        ".": ".",
+        "0": "0",
+        "1": "1¹",
+        "2": "2²",
+        "3": "3³¾",
+        "4": "4",
+        "5": "5",
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9",
+        "A": "AaªÀÁÂÃÄÅàáâãäå",
+        "AE": "Ææ",
+        "B": "Bb",
+        "C": "CcÇç",
+        "D": "DdÐð",
+        "E": "EeÈÉÊËèéêë",
+        "F": "Ffƒ",
+        "G": "Gg",
+        "H": "Hh",
+        "I": "IiÌÍÎÏìíîï",
+        "J": "Jj",
+        "K": "Kk",
+        "L": "Ll",
+        "M": "Mm",
+        "N": "NnÑñ",
+        "O": "OoºÒÓÔÕÖØòóôõöø",
+        "OE": "Œœ",
+        "P": "Pp",
+        "Q": "Qq",
+        "R": "Rr",
+        "S": "SsŠš",
+        "SS": "ß",
+        "T": "Tt",
+        "TH": "Þþ",
+        "U": "UuÙÚÛÜùúûü",
+        "V": "Vv",
+        "W": "Ww",
+        "X": "Xx",
+        "Y": "YyÝýÿŸ",
+        "Z": "ZzŽž",
+        "_": "_"
+      }
+    },
+    "Latin1_General_100_CI_AS.codepage": {
+      "ignored": "\u0000­",
+      "classes": {
+        " ": " ",
+        "-": "-",
+        ".": ".",
+        "0": "0",
+        "1": "1¹",
+        "2": "2²",
+        "3": "3³",
+        "4": "4",
+        "5": "5",
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9",
+        "A": "Aa",
+        "AE": "Ææ",
+        "B": "Bb",
+        "C": "Cc",
+        "D": "Dd",
+        "E": "Ee",
+        "F": "Ff",
+        "G": "Gg",
+        "H": "Hh",
+        "I": "Ii",
+        "J": "Jj",
+        "K": "Kk",
+        "L": "Ll",
+        "M": "Mm",
+        "N": "Nn",
+        "O": "Oo",
+        "OE": "Œœ",
+        "P": "Pp",
+        "Q": "Qq",
+        "R": "Rr",
+        "S": "Ss",
+        "SS": "ß",
+        "T": "Tt",
+        "TH": "Þþ",
+        "U": "Uu",
+        "V": "Vv",
+        "W": "Ww",
+        "X": "Xx",
+        "Y": "Yy",
+        "Z": "Zz",
+        "_": "_"
+      }
+    },
+    "Latin1_General_100_CS_AS.codepage": {
+      "ignored": "\u0000­",
+      "classes": {
+        " ": " ",
+        "-": "-",
+        ".": ".",
+        "0": "0",
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5",
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9",
+        "A": "A",
+        "AE": "Æ",
+        "B": "B",
+        "C": "C",
+        "D": "D",
+        "E": "E",
+        "F": "F",
+        "G": "G",
+        "H": "H",
+        "I": "I",
+        "J": "J",
+        "K": "K",
+        "L": "L",
+        "M": "M",
+        "N": "N",
+        "O": "O",
+        "OE": "Œ",
+        "P": "P",
+        "Q": "Q",
+        "R": "R",
+        "S": "S",
+        "T": "T",
+        "TH": "Þ",
+        "U": "U",
+        "V": "V",
+        "W": "W",
+        "X": "X",
+        "Y": "Y",
+        "Z": "Z",
+        "_": "_",
+        "a": "a",
+        "ae": "æ",
+        "b": "b",
+        "c": "c",
+        "d": "d",
+        "e": "e",
+        "f": "f",
+        "g": "g",
+        "h": "h",
+        "i": "i",
+        "j": "j",
+        "k": "k",
+        "l": "l",
+        "m": "m",
+        "n": "n",
+        "o": "o",
+        "oe": "œ",
+        "p": "p",
+        "q": "q",
+        "r": "r",
+        "s": "s",
+        "ss": "ß",
+        "t": "t",
+        "th": "þ",
+        "u": "u",
+        "v": "v",
+        "w": "w",
+        "x": "x",
+        "y": "y",
+        "z": "z"
+      }
+    },
+    "SQL_Latin1_General_CP1_CI_AS.codepage": {
+      "ignored": "",
+      "classes": {
+        " ": " ",
+        "-": "-",
+        ".": ".",
+        "0": "0",
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5",
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9",
+        "A": "Aa",
+        "B": "Bb",
+        "C": "Cc",
+        "D": "Dd",
+        "E": "Ee",
+        "F": "Ff",
+        "G": "Gg",
+        "H": "Hh",
+        "I": "Ii",
+        "J": "Jj",
+        "K": "Kk",
+        "L": "Ll",
+        "M": "Mm",
+        "N": "Nn",
+        "O": "Oo",
+        "P": "Pp",
+        "Q": "Qq",
+        "R": "Rr",
+        "S": "Ss",
+        "T": "Tt",
+        "U": "Uu",
+        "V": "Vv",
+        "W": "Ww",
+        "X": "Xx",
+        "Y": "Yy",
+        "Z": "Zz",
+        "_": "_"
+      }
+    }
+  }
+}

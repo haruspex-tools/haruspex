@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Haruspex.SqlServer.Model\Haruspex.SqlServer.Model.csproj" />
     <ProjectReference Include="..\Haruspex.SqlServer.Syntax\Haruspex.SqlServer.Syntax.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Each proven collation's fold, observed from the server (CollationFold, CollationFoldGridTests). -->
+    <EmbeddedResource Include="Collations\*.json" LogicalName="Haruspex.SqlServer.Semantics.Collations.%(Filename)%(Extension)" />
+  </ItemGroup>
 </Project>

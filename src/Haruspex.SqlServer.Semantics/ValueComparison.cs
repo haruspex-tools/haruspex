@@ -17,4 +17,10 @@ public enum ValueComparison
     /// (<c>_BIN</c>, <c>_BIN2</c>), every value is one of the strings followed by any number of spaces.
     /// </summary>
     Padded,
+
+    /// <summary>
+    /// Under the column's collation, which a fold observed from the server gives exactly (<see cref="ValueSetFact.Fold"/>): every
+    /// value folds to what one of the strings folds to, and no two of the strings fold alike, so a value maps to one string.
+    /// </summary>
+    Canonical,
 }

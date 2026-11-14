@@ -36,6 +36,37 @@ internal static class ZodPrinter
 
         """;
 
+    /// <summary>
+    /// A canonical value set's mapping (<see cref="ZodExpression.Canonical"/>), by a fold as the IR README defines its canonical
+    /// form: a value becomes the item whose canonical form it has, the ordinally least where two share one; any other is left as it
+    /// is, for the enum to refuse. Each UTF-16 code unit is looked at alone, as the IR's fold is.
+    /// </summary>
+    private const string CanonicalHelper = $$"""
+
+        // A value set's canonical form, by a fold the IR gives for a column's collation: drop the characters it ignores, put each
+        // class's name for its characters, keep the rest, then drop trailing spaces. A value maps to the item whose canonical form
+        // it has; any other value is left as it is, for the enum to refuse.
+        type Fold = { ignored: string; classes: Record<string, string> }
+        const canonicalForm = (fold: Fold, value: string) => {
+          let form = ''
+          for (let i = 0; i < value.length; i++) {
+            const unit = value.charAt(i)
+            if (fold.ignored.includes(unit)) continue
+            form += Object.entries(fold.classes).find(([, units]) => units.includes(unit))?.[0] ?? unit
+          }
+          return form.replace(/ +$/, '')
+        }
+        const canonicalOf = (fold: Fold, items: readonly string[]) => {
+          const byForm = new Map<string, string>()
+          for (const item of items) {
+            const form = canonicalForm(fold, item)
+            if (!byForm.has(form)) byForm.set(form, item)
+          }
+          return (value: unknown) => (typeof value === 'string' ? (byForm.get(canonicalForm(fold, value)) ?? value) : value)
+        }
+
+        """;
+
     /// <summary>The module as text.</summary>
     public static string Print(ZodModule module)
     {
@@ -48,6 +79,20 @@ internal static class ZodPrinter
             output.Append("import { ").Append(string.Join(", ", import.Names)).Append(" } from ").Append(SingleQuoted(import.From)).Append('\n');
         if (module.JsonTextHelper)
             output.Append(JsonTextHelper);
+        if (module.Folds is { Count: > 0 } folds)
+        {
+            output.Append(CanonicalHelper).Append("const folds = {\n");
+            foreach (var (name, fold) in folds.OrderBy(f => f.Key, StringComparer.Ordinal))
+            {
+                output.Append("  ").Append(DoubleQuoted(name)).Append(": {\n")
+                    .Append("    ignored: ").Append(Units(fold.Ignored)).Append(",\n")
+                    .Append("    classes: { ")
+                    .Append(string.Join(", ", fold.Classes.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => DoubleQuoted(c.Key) + ": " + Units(c.Value))))
+                    .Append(" },\n  },\n");
+            }
+
+            output.Append("} satisfies Record<string, Fold>\n");
+        }
 
         foreach (var declaration in module.Declarations)
         {
@@ -77,6 +122,8 @@ internal static class ZodPrinter
             ZodExpression.Number number => JavaScriptNumbers.Literal(number.Value),
             ZodExpression.Text text => DoubleQuoted(text.Value),
             ZodExpression.Boolean boolean => boolean.Value ? "true" : "false",
+            ZodExpression.Canonical canonical => ZodModule.ZodName + ".preprocess(canonicalOf(folds[" + DoubleQuoted(canonical.Fold) + "], " + Items(canonical.Items) + "), "
+                + ZodModule.ZodName + ".enum(" + Items(canonical.Items) + "))",
             ZodExpression.PaddedValues padded => "/^(?:" + string.Join("|", padded.Values.Select(RegexEscape)) + ")\\u0020*$/",
             ZodExpression.PowerOfTen power => power.Exponent == 0 ? "1" : "1e" + power.Exponent.ToString(CultureInfo.InvariantCulture),
             ZodExpression.ArrayLiteral array => "[" + List(array.Items) + "]",
@@ -151,6 +198,15 @@ internal static class ZodPrinter
     private static string Key(string name) => IrIdentifiers.IsIdentifier(name) ? name : DoubleQuoted(name);
 
     private static string DoubleQuoted(string text) => "\"" + Escaped(text) + "\"";
+
+    private static string Items(IEnumerable<string> items) => "[" + string.Join(", ", items.Select(DoubleQuoted)) + "]";
+
+    /// <summary>
+    /// A fold's characters as a string literal, each outside printable ASCII escaped (<c>\u00ad</c>), so that one that prints as
+    /// nothing, such as the soft hyphen, can still be read.
+    /// </summary>
+    private static string Units(string units) =>
+        "\"" + string.Concat(units.Select(c => c is >= ' ' and <= '~' and not '"' and not '\\' ? c.ToString() : "\\u" + ((int)c).ToString("x4", CultureInfo.InvariantCulture))) + "\"";
 
     private static string SingleQuoted(string text) => "'" + Escaped(text).Replace("'", "\\'", StringComparison.Ordinal) + "'";
 

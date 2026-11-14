@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.19",
+  "irVersion": "0.20",
   "source": {
     "dialect": "tsql"
   },
@@ -93,5 +93,6 @@
       "at": "procedures/temp_table_from_a_branch.sql:14:19"
     }
   ],
-  "overrides": []
+  "overrides": [],
+  "folds": {}
 }

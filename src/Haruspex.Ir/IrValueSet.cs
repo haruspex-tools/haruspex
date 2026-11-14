@@ -6,4 +6,8 @@ namespace Haruspex.Ir;
 /// <param name="Items">The values, in a stable order. Numbers are exact decimal text.</param>
 /// <param name="Match">How a value relates to the items.</param>
 /// <param name="From">Every source that narrowed the set.</param>
-public sealed record IrValueSet(EquatableArray<IrValue> Items, IrValueMatch Match, EquatableArray<IrFactSource> From);
+/// <param name="Fold">
+/// For a <see cref="IrValueMatch.Canonical"/> set, the name of the fold in <see cref="IrDocument.Folds"/> that gives a value's
+/// canonical form (0.20); null for any other.
+/// </param>
+public sealed record IrValueSet(EquatableArray<IrValue> Items, IrValueMatch Match, EquatableArray<IrFactSource> From, string? Fold = null);

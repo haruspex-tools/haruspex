@@ -1,7 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.19
+# Haruspex.Ir: the IR format, version 0.20
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.19: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
+version 0.20: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
 guide's chapter [The IR as a contract](../../docs/internals/10-the-ir-as-a-contract.md). What SQL Server's constructs give in
@@ -93,23 +93,22 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as `"0.19"` and a document that this page and the schema allow;
+- must write `irVersion` as `"0.20"` and a document that this page and the schema allow;
 - must write a flag and its reasons together: `nullable`, `itemsNullable`, `valuesNullable` and `mayBeAbsent` are `true`
   exactly when the matching list of reasons (`nullableBecause`, …) is there, with at least one reason;
-- must write every `ref` as the name of a type in `types`;
+- must write every `ref` as the name of a type in `types`, and every `values.fold` as the name of a fold in `folds`;
 - must write a number in a facet (a bound, a value set's item) as plain decimal text, with no exponent;
 - must claim only what holds for every execution, and must write anything it can't prove as an `unknown` node with an
   entry in `unknowns`;
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further,
-  but for 0.18, whose documents are 0.19 documents that name no package (a 0.18 document that names one, or gives
-  `encrypted-definition`, must be refused);
+- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further;
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
   missing required property, a value of the wrong JSON type, a count that is negative or past 2,147,483,647, a number in a
-  facet that is not plain decimal text, a union of fewer than two variants, a flag that disagrees with its reasons, and a
-  `ref` that names no type;
+  facet that is not plain decimal text, a union of fewer than two variants, a flag that disagrees with its reasons, a
+  `ref` that names no type, a value set's `fold` that names no fold, and a `fold` on a set whose match isn't `canonical` or none
+  on one whose match is;
 - must not supply a default for a required property;
 - should read numbers in facets as exact decimals, not as binary floating point;
 - must follow the reader conventions for results that are absent or missing ("Results", below);
@@ -131,7 +130,7 @@ object, and a `ref` that names no type.
 
 ```jsonc
 {
-  "irVersion": "0.19",                // versioned separately from the tool; a reader checks it first
+  "irVersion": "0.20",                // versioned separately from the tool; a reader checks it first
   "source": { "dialect": "tsql",      // the package is left out for a folder of scripts
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
@@ -157,7 +156,8 @@ object, and a `ref` that names no type.
         "nullableBecause": [{ "rule": "nullable-column", "at": "sales.order.shipped_at" }] },
       { "name": "status", "type": { "kind": "string", "sql": "varchar(10)",
           "maxLength": { "value": 10, "unit": "bytes", "encoding": "single-byte", "from": { "type": "varchar(10)" } },
-          "values": { "match": "collation", "items": ["open", "closed"], "from": [{ "check": "sales.ck_order_status" }] } },
+          "values": { "match": "canonical", "items": ["closed", "open"], "from": [{ "check": "sales.ck_order_status" }],
+            "fold": "SQL_Latin1_General_CP1_CI_AS.codepage" } },
         "presence": "always", "nullable": false },
       { "name": "total", "type": { "kind": "number", "format": "decimal", "sql": "decimal(19,2)",
           "digits": { "precision": 19, "scale": 2, "from": { "type": "decimal(19,2)" } },
@@ -174,7 +174,11 @@ object, and a `ref` that names no type.
   "overrides": [                      // claims the config file made rather than inference
     { "object": "sales.get_order", "path": "results[0].customer.email", "setting": "not-null",
       "why": "checkout requires an email" }
-  ]
+  ],
+  "folds": {                          // how a collation compares strings, for the canonical value sets; sorted by name
+    "SQL_Latin1_General_CP1_CI_AS.codepage": { "ignored": "",
+      "classes": { " ": " ", "-": "-", ".": ".", "0": "0", "A": "Aa", "B": "Bb", …, "_": "_" } }
+  }
 }
 ```
 
@@ -192,6 +196,15 @@ known when it is deployed). It is left out when there are none, and must not be 
 claims reproducible: the same packages give the same document. A claim about a table of another database rests on that
 database's package being what is deployed there, which it may not be, since another database is deployed on its own schedule:
 regenerate the document when a referenced package's hash changes.
+
+`folds` (0.20) holds, by name, each fold a `canonical` value set names (`values.fold`), and no others; it is `{}` when none
+does. A fold says how a column's collation compares strings: `ignored`, the characters it ignores, and `classes`, the characters
+it holds equal to each class, by the class's name, each as a string of UTF-16 code units in ordinal order. The **canonical form**
+of a string, under a fold, is made in this order: drop each code unit in `ignored`; put a class's name in place of each code unit
+of that class; keep every other code unit; then drop trailing spaces (U+0020). The order matters: a value ending with a space and
+an ignored character is padded, as the database compares it. Two strings a column can hold are equal under its collation exactly
+when their canonical forms are equal. A front end gives a fold only where it has shown that, for every string the column can hold
+([decision 0043](../../docs/decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md)).
 
 `source.session` (0.17) holds the options the callers' sessions are declared to set, by the dialect's name for each as the
 config file writes it, `true` for on and `false` for off: for `tsql`, `ansiWarnings`, `arithAbort`, `concatNullYieldsNull`
@@ -358,7 +371,7 @@ null.
 | `minLength` | at least `value` UTF-16 code units |
 | `digits` | an exact decimal of at most `precision` digits, `scale` of them after the point |
 | `min` / `max` | a bound, `inclusive` or not. `value` is a JSON number written as plain decimal text (`99999999999999999.99`, `-9223372036854775808`), so a reader that parses decimals loses nothing |
-| `values` | the value is one of `items` (strings, or numbers as plain decimal text). `match` is `exact`, or `collation`: equal under the database's string comparison, which may ignore case, accents and trailing spaces, so `"Open "` can be a value of a set holding `"open"`. A `collation` set is true but not exact, and an emitter must not treat it as an enum. `padded`: one of the items followed by any number of spaces (U+0020) |
+| `values` | the value is one of `items` (strings, or numbers as plain decimal text). `match` is `exact`, or `collation`: equal under the database's string comparison, which may ignore case, accents and trailing spaces, so `"Open "` can be a value of a set holding `"open"`. A `collation` set is true but not exact, and an emitter must not treat it as an enum. `padded`: one of the items followed by any number of spaces (U+0020). `canonical` (0.20): the value's canonical form under the fold `fold` names (see `folds`) is an item's, so an emitter may map a value to the item whose canonical form it has and then treat the set as exact; its items are in ordinal order, and where two share a canonical form, a value maps to the first. `fold` is there exactly when `match` is `canonical` |
 
 Every count (a length, `digits`, `minItems`, `maxItems`) is a whole number from 0 to 2,147,483,647.
 
@@ -427,6 +440,11 @@ when the claims change. Another writer need not write the same bytes, but must w
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
 reads only its own version, or one whose every document means the same in it ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
+
+**0.20** (14 Nov 2026, canonical value sets). The value match `canonical`, its set's `fold`, and the document's `folds`: a set of
+strings a `char` or `varchar` column's CHECK gives, under a collation whose comparison is proven, is exact once a value is
+mapped by its canonical form. Such a set was `collation` in 0.19, so a 0.19 file claims less than a 0.20 file of the same source,
+and this reader reads 0.20 only ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)).
 
 **0.19** (14 Nov 2026, DACPACs). `source.package` and `source.sha256`, the package a source was read from, and
 `source.references`, the packages it refers to, found or not; all are left out for a folder of scripts. The unknown reason

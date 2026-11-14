@@ -112,14 +112,27 @@ public static class SchemaRules
         if (column.IsComputed || ResolveType(model, column.Type) is not { } type)
             return new ColumnFacts(null);
 
-        var facts = TypeFacts(type, column.Collation);
+        var collation = EffectiveCollation(model, table, column);
+        var facts = TypeFacts(type, collation);
         foreach (var check in table.Checks)
         {
-            if (CheckReader.Read(table, column, type, check) is { } proved)
+            if (CheckReader.Read(table, column, type, check, collation) is { } proved)
                 facts = Narrow(facts, proved);
         }
 
         return FilterValues(facts);
+    }
+
+    /// <summary>
+    /// The collation a column's strings compare under: its own <c>COLLATE</c>, or for a table of the schema the database's default
+    /// (<see cref="DatabaseModel.DefaultCollation"/>); null when neither is known. A body's own table (<c>#totals</c>, <c>@rows</c>)
+    /// takes no default here: a temporary table's columns take <c>tempdb</c>'s, which the model doesn't know.
+    /// </summary>
+    public static string? EffectiveCollation(DatabaseModel model, ITable table, Column column)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(column);
+        return column.Collation ?? (table is Table ? model.DefaultCollation : null);
     }
 
     /// <summary>

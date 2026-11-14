@@ -78,6 +78,15 @@ internal abstract record ZodExpression
     /// <param name="Values">The values, as they are, without their trailing spaces.</param>
     public sealed record PaddedValues(EquatableArray<string> Values) : ZodExpression;
 
+    /// <summary>
+    /// One of <paramref name="Items"/>, a value mapped first to the item whose canonical form it has under the fold
+    /// <paramref name="Fold"/> (<see cref="ZodModule.Folds"/>): <c>z.preprocess(canonicalOf(…), z.enum([…]))</c>. A value with
+    /// no item's canonical form is left as it is, and the enum refuses it.
+    /// </summary>
+    /// <param name="Fold">The fold's name in the IR.</param>
+    /// <param name="Items">The items, in the IR's (ordinal) order.</param>
+    public sealed record Canonical(string Fold, EquatableArray<string> Items) : ZodExpression;
+
     /// <summary>A number argument that is a power of ten, such as a decimal's step: <c>1</c>, <c>1e-2</c>.</summary>
     /// <param name="Exponent">The power, zero or less for a step.</param>
     public sealed record PowerOfTen(int Exponent) : ZodExpression;

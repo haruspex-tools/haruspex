@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.19",
+  "irVersion": "0.20",
   "source": {
     "dialect": "tsql"
   },
@@ -385,5 +385,6 @@
       "at": "tables/author.sql:7:5"
     }
   ],
-  "overrides": []
+  "overrides": [],
+  "folds": {}
 }

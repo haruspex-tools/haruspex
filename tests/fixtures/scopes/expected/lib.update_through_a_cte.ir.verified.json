@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.19",
+  "irVersion": "0.20",
   "source": {
     "dialect": "tsql"
   },
@@ -93,5 +93,6 @@
       "at": "procedures/update_through_a_cte.sql:13:26"
     }
   ],
-  "overrides": []
+  "overrides": [],
+  "folds": {}
 }

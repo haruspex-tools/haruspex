@@ -144,3 +144,4 @@ reason.
 | [HAR6007](HAR6007.md) | error | Nothing is selected |
 | [HAR6008](HAR6008.md) | error | The output can't be written |
 | [HAR6009](HAR6009.md) | warning | References with a source that isn't a DACPAC |
+| [HAR6010](HAR6010.md) | warning | A collation the package records otherwise |

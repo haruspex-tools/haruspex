@@ -27,6 +27,9 @@ public class IrJsonSchemaTests
         (typeof(IrDocument), nameof(IrDocument.Source), "", "source"),
         (typeof(IrDocument), nameof(IrDocument.Objects), "", "objects"),
         (typeof(IrDocument), nameof(IrDocument.Types), "", "types"),
+        (typeof(IrDocument), nameof(IrDocument.Folds), "", "folds"),
+        (typeof(IrFold), nameof(IrFold.Ignored), "fold", "ignored"),
+        (typeof(IrFold), nameof(IrFold.Classes), "fold", "classes"),
         (typeof(IrDocument), nameof(IrDocument.Unknowns), "", "unknowns"),
         (typeof(IrDocument), nameof(IrDocument.Overrides), "", "overrides"),
         (typeof(IrSource), nameof(IrSource.Dialect), "document.source", "dialect"),
@@ -95,6 +98,7 @@ public class IrJsonSchemaTests
         (typeof(IrValueSet), nameof(IrValueSet.Items), "values", "items"),
         (typeof(IrValueSet), nameof(IrValueSet.Match), "values", "match"),
         (typeof(IrValueSet), nameof(IrValueSet.From), "values", "from"),
+        (typeof(IrValueSet), nameof(IrValueSet.Fold), "values", "fold"),
         (typeof(IrValue), nameof(IrValue.Text), "values", null), // an item is the value itself
         (typeof(IrValue), nameof(IrValue.IsString), "values", null), // a JSON string or a JSON number
         (typeof(IrFactSource), nameof(IrFactSource.Kind), "factSource", null), // the kind is the key
@@ -145,7 +149,9 @@ public class IrJsonSchemaTests
         ["a fact source of an unknown kind"] = json => Field(json)["type"]!["maxLength"]!["from"] = new JsonObject { ["guess"] = "x" },
         ["a fact with two sources"] = json => Field(json)["type"]!["maxLength"]!["from"]!["check"] = "ck",
         ["a fixed length and a maximum"] = json => Field(json)["type"]!["length"] = Field(json)["type"]!["maxLength"]!.DeepClone(),
-        ["a union of one variant"] = json => json["types"]!["OrderRow"]!["fields"]![7]!["type"]!["variants"]!.AsArray().RemoveAt(1),
+        ["a union of one variant"] = json => json["types"]!["OrderRow"]!["fields"]![8]!["type"]!["variants"]!.AsArray().RemoveAt(1),
+        ["a canonical set without its fold"] = json => json["types"]!["OrderRow"]!["fields"]![2]!["type"]!["values"]!.AsObject().Remove("fold"),
+        ["a fold on a set that is not canonical"] = json => json["types"]!["OrderRow"]!["fields"]![2]!["type"]!["values"]!["match"] = "exact",
         ["an identity with two owners"] = json => json["types"]!["OrderRow"]!["identity"]!["function"] = "sales.line_tree",
         ["results that are neither listed nor null"] = json => json["objects"]![0]!["results"] = "none",
         ["an absent result without reasons"] = json => Result(json).Remove("absentBecause"),

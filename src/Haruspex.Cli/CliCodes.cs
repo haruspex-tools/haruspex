@@ -37,4 +37,10 @@ internal static class CliCodes
     /// are read only with a DACPAC.
     /// </summary>
     public static DiagnosticCode ReferencesUnused { get; } = new(6009, DiagnosticSeverity.Warning, "References with a source that isn't a DACPAC");
+
+    /// <summary>
+    /// The config file's <c>collation</c> beside a DACPAC that records another: the package's is the database's, so it is the
+    /// one used.
+    /// </summary>
+    public static DiagnosticCode CollationOverruled { get; } = new(6010, DiagnosticSeverity.Warning, "A collation the package records otherwise");
 }

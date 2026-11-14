@@ -2,6 +2,7 @@
 {
   "$schema": "../../../../schemas/haruspex.schema.json",
   "source": "database",
+  "collation": "Latin1_General_100_CI_AS",
   "out": "generated",
   "objects": "strip",
   "session": { "ansiWarnings": true, "arithAbort": true, "concatNullYieldsNull": true, "numericRoundAbort": false },

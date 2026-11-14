@@ -55,6 +55,7 @@ public static class IrJsonReader
         {
             var document = Document(IrJsonObject.At(parsed.RootElement, "$"));
             RequireReferencesResolve(parsed.RootElement, "$", document.Types);
+            RequireFoldsResolve(parsed.RootElement, "$", document.Folds);
             return document;
         }
     }
@@ -87,6 +88,25 @@ public static class IrJsonReader
         }
     }
 
+    /// <summary>Every value set's fold names a fold of the document: a value set is the object with a <c>match</c>.</summary>
+    private static void RequireFoldsResolve(JsonElement element, string path, EquatableMap<string, IrFold> folds)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                if (element.TryGetProperty("match", out _) && element.TryGetProperty("fold", out var fold) && fold.ValueKind == JsonValueKind.String && fold.GetString() is { } name && !folds.ContainsKey(name))
+                    throw new IrFormatException(path + IrPath.Key("fold"), $"is \"{name}\", which names no fold in $.folds.");
+                foreach (var property in element.EnumerateObject())
+                    RequireFoldsResolve(property.Value, path + IrPath.Key(property.Name), folds);
+                break;
+            case JsonValueKind.Array:
+                var i = 0;
+                foreach (var item in element.EnumerateArray())
+                    RequireFoldsResolve(item, path + "[" + i++.ToString(CultureInfo.InvariantCulture) + "]", folds);
+                break;
+        }
+    }
+
     private static IrDocument Document(IrJsonObject json)
     {
         // The version first: a file of another version may differ anywhere, so nothing else in it is read.
@@ -113,24 +133,10 @@ public static class IrJsonReader
             [.. json.Array("unknowns").Select(u => Unknown(IrJsonObject.At(u.Item, u.Path)))])
         {
             Overrides = [.. json.Array("overrides").Select(o => Override(IrJsonObject.At(o.Item, o.Path)))],
+            Folds = Folds(json.Object("folds")),
         };
         source.End();
         json.End();
-        return version == IrDocument.CurrentVersion ? document : AsOlder(document, version, json);
-    }
-
-    /// <summary>
-    /// A document of an older version the reader still reads (<see cref="IrDocument.ReadableVersions"/>), which must hold only
-    /// what that version could: 0.18 had no package and no <c>encrypted-definition</c>, so a file labelled 0.18 that has either
-    /// is refused rather than read as what it claims to be.
-    /// </summary>
-    private static IrDocument AsOlder(IrDocument document, string version, IrJsonObject json)
-    {
-        if (document.Source.Package is not null || document.Source.References.Count > 0)
-            throw new IrFormatException(json.PathOf("source"), $"names a package, which IR {version} could not.");
-        var encrypted = document.Unknowns.ToList().FindIndex(u => u.Reason == IrUnknownReason.EncryptedDefinition);
-        if (encrypted >= 0)
-            throw new IrFormatException($"{json.PathOf("unknowns")}[{encrypted.ToString(CultureInfo.InvariantCulture)}].reason", $"is \"encrypted-definition\", which IR {version} did not have.");
         return document;
     }
 
@@ -180,6 +186,23 @@ public static class IrJsonReader
             types.Add(name, ObjectType(json.Object(name)));
         json.End();
         return types;
+    }
+
+    private static EquatableMap<string, IrFold> Folds(IrJsonObject json)
+    {
+        var folds = json.Names.ToList().ToEquatableMap(name => name, name => Fold(json.Object(name)));
+        json.End();
+        return folds;
+    }
+
+    private static IrFold Fold(IrJsonObject json)
+    {
+        var ignored = json.String("ignored");
+        var classes = json.Object("classes");
+        var fold = new IrFold(ignored, classes.Names.ToList().ToEquatableMap(name => name, classes.String));
+        classes.End();
+        json.End();
+        return fold;
     }
 
     private static IrObjectType ObjectType(IrJsonObject json)
@@ -364,7 +387,10 @@ public static class IrJsonReader
             // Never null: GetString is null only for a JSON null, and the item is a string.
             [.. json.Array("items").Select(i => i.Item.ValueKind == JsonValueKind.String ? new IrValue(i.Item.GetString()!, IsString: true) : new IrValue(Number(i.Item, i.Path), IsString: false))],
             json.Name<IrValueMatch>("match", IrWireNames.TryParse, "a value set's match"),
-            [.. json.Array("from").Select(f => Source(IrJsonObject.At(f.Item, f.Path)))]);
+            [.. json.Array("from").Select(f => Source(IrJsonObject.At(f.Item, f.Path)))],
+            json.OptionalString("fold"));
+        if (set.Match == IrValueMatch.Canonical ? set.Fold is null : set.Fold is not null)
+            throw new IrFormatException(json.PathOf("fold"), "names the fold of a canonical value set, and is there exactly when the match is canonical.");
         json.End();
         return set;
     }

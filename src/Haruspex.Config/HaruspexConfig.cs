@@ -28,6 +28,12 @@ public sealed record HaruspexConfig
     /// </summary>
     public EquatableArray<string> References { get; init; } = [];
 
+    /// <summary>
+    /// The database's default collation (<c>collation</c>), for a source that doesn't record one, or null when the file doesn't say:
+    /// the collation a column without <c>COLLATE</c> takes (<c>DatabaseModel.WithDeclaredCollation</c>).
+    /// </summary>
+    public string? Collation { get; init; }
+
     /// <summary>The folder to write to, resolved against <see cref="Directory"/>, or null when the file doesn't say.</summary>
     public string? Out { get; init; }
 

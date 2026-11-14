@@ -193,6 +193,10 @@ public class DiagnosticMessagesTests
         (6007, () => Cli([GetBook], args: ["db", "--out", "out"])),
         (6008, () => Cli([GetBook], arrange: f => f.File("out", "a file where the output folder would be"))),
         (6009, () => Config("\"references\": [\"db\"]")),
+        (6010, () => Cli(
+            [],
+            """{ "source": "atelier.dacpac", "out": "out", "collation": "Latin1_General_100_CI_AS", "schemas": { "studio": { "include": ["list_pots"] } } }""",
+            arrange: f => File.Copy(Path.Combine(RepositoryPaths.Root, "tests", "dacpacs", "atelier", "atelier.dacpac"), Path.Combine(f.Path, "atelier.dacpac")))),
     ];
 
     /// <summary>

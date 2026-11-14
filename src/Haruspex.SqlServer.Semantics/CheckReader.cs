@@ -1,5 +1,6 @@
 using Haruspex.Collections;
 using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Semantics.Collations;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Semantics;
@@ -45,7 +46,8 @@ namespace Haruspex.SqlServer.Semantics;
 /// never exact: <c>'Open '</c> passes <c>IN ('open')</c> in the default case-insensitive collation, and even a
 /// binary collation ignores trailing spaces (both observed; see the differential tests'
 /// CheckConstraintObservationTests). Under a binary collation it is <see cref="ValueComparison.Padded"/> (exact but
-/// for trailing spaces), and otherwise <see cref="ValueComparison.Collation"/>; see StringComparisonOf.</para>
+/// for trailing spaces); for a <c>char</c> or <c>varchar</c> column of a collation whose fold is proven,
+/// <see cref="ValueComparison.Canonical"/>; and otherwise <see cref="ValueComparison.Collation"/>; see StringComparisonOf.</para>
 /// <para><b>Minimum length.</b> <c>LEN</c> does not count trailing spaces, and counts a character (a surrogate pair
 /// under an <c>_SC</c> collation, several bytes in UTF-8) as one, so a value's UTF-16 length is at least its
 /// <c>LEN</c>. <c>col &lt;&gt; ''</c> is FALSE for an empty string (and for spaces, which compare equal to it), so
@@ -55,7 +57,12 @@ public static class CheckReader
 {
     /// <summary>What <paramref name="check"/> proves about <paramref name="column"/>, or null when it proves nothing this reads.</summary>
     /// <returns>Facts with only <see cref="ColumnFacts.Min"/>, <see cref="ColumnFacts.Max"/>, <see cref="ColumnFacts.MinLength"/> and <see cref="ColumnFacts.Values"/> set.</returns>
-    public static ColumnFacts? Read(ITable table, Column column, ResolvedType type, CheckConstraint check)
+    /// <param name="table">The column's table.</param>
+    /// <param name="column">The column.</param>
+    /// <param name="type">The column's type, resolved.</param>
+    /// <param name="check">The constraint.</param>
+    /// <param name="collation">The collation the column's strings compare under (<see cref="SchemaRules.EffectiveCollation"/>); null when unknown.</param>
+    public static ColumnFacts? Read(ITable table, Column column, ResolvedType type, CheckConstraint check, string? collation)
     {
         ArgumentNullException.ThrowIfNull(table);
         ArgumentNullException.ThrowIfNull(column);
@@ -79,13 +86,14 @@ public static class CheckReader
 
         var reader = new Reader(column.Name, family, new CheckSource(table, check));
         var proved = reader.Condition(check.Expression);
-        return proved?.ToFacts(type, reader.Source, StringComparisonOf(type, column.Collation, proved.Strings));
+        return proved?.ToFacts(type, reader.Source, StringComparisonOf(type, collation, proved.Strings));
     }
 
     /// <summary>
     /// How a column's strings compare with a CHECK's: exactly but for trailing spaces under a binary collation
     /// (<c>_BIN</c>, <c>_BIN2</c>), which compares code points (or bytes) and, like every comparison in SQL Server,
-    /// ignores trailing spaces; otherwise under the collation, which may also ignore case, accents, width and more.
+    /// ignores trailing spaces; otherwise under the collation, which may also ignore case, accents, width and more, and
+    /// for a code-page column of a collation whose fold is proven, canonically (<see cref="CanonicalBy"/>).
     /// </summary>
     /// <remarks>
     /// For <c>char</c> and <c>varchar</c> in a code page, a literal is converted to the code page before comparing,
@@ -94,15 +102,28 @@ public static class CheckReader
     /// <c>~</c> are left out (code page 932 has the yen sign at 0x5C). A set with anything else stays a collation
     /// set. UTF-8 and Unicode columns hold every character, so they need no such care.
     /// </remarks>
-    private static ValueComparison StringComparisonOf(ResolvedType type, string? collation, IReadOnlyList<string>? strings)
+    private static (ValueComparison Comparison, CollationFold? Fold) StringComparisonOf(ResolvedType type, string? collation, IReadOnlyList<string>? strings)
     {
-        if (collation is null || !collation.Split('_').Any(t => t.Equals("BIN", StringComparison.OrdinalIgnoreCase) || t.Equals("BIN2", StringComparison.OrdinalIgnoreCase)))
-            return ValueComparison.Collation;
+        if (collation is null)
+            return (ValueComparison.Collation, null);
         var codePage = type.Scalar is { IsString: true, IsNational: false } && SchemaRules.EncodingOf(collation) != TextEncoding.Utf8;
+        if (!collation.Split('_').Any(t => t.Equals("BIN", StringComparison.OrdinalIgnoreCase) || t.Equals("BIN2", StringComparison.OrdinalIgnoreCase)))
+            return codePage && strings is not null && CanonicalBy(collation, strings) is { } fold ? (ValueComparison.Canonical, fold) : (ValueComparison.Collation, null);
         return codePage && strings is not null && strings.Any(s => s.Any(c => c is < ' ' or > '}' or '\\'))
-            ? ValueComparison.Collation
-            : ValueComparison.Padded;
+            ? (ValueComparison.Collation, null)
+            : (ValueComparison.Padded, null);
     }
+
+    /// <summary>
+    /// The fold a set of a code-page column compares by, when the collation's is proven, every string is plain, and no two fold
+    /// alike (which would leave a value two strings to map to); null otherwise, and the set compares under the collation.
+    /// </summary>
+    private static CollationFold? CanonicalBy(string collation, IReadOnlyList<string> strings) =>
+        CollationFold.For(collation, StringKind.CodePage) is { } fold
+        && strings.All(CollationFold.IsPlain)
+        && strings.Select(fold.Fold).Distinct(StringComparer.Ordinal).Count() == strings.Count
+            ? fold
+            : null;
 
     private static bool Same(string a, string b) => a.Equals(b, StringComparison.OrdinalIgnoreCase);
 
@@ -128,13 +149,18 @@ public static class CheckReader
     {
         public bool IsValueSet => (Numbers is not null || Strings is not null) && Min is null && Max is null && MinLength is null;
 
-        public ColumnFacts ToFacts(ResolvedType type, FactSource from, ValueComparison strings) => new(
+        public ColumnFacts ToFacts(ResolvedType type, FactSource from, (ValueComparison Comparison, CollationFold? Fold) strings) => new(
             type,
             MinLength: MinLength is { } length ? new MinLengthFact(length, from) : null,
             Min: Min is { } min ? new BoundFact(min.Value, min.Inclusive, from) : null,
             Max: Max is { } max ? new BoundFact(max.Value, max.Inclusive, from) : null,
             Values: Numbers is not null || Strings is not null
-                ? new ValueSetFact(Numbers, Strings, Strings is not null ? strings : ValueComparison.Exact, [from])
+                ? new ValueSetFact(
+                    Numbers,
+                    strings.Fold is not null && Strings is { } ordered ? [.. ordered.Order(StringComparer.Ordinal)] : Strings,
+                    Strings is not null ? strings.Comparison : ValueComparison.Exact,
+                    [from],
+                    Strings is not null ? strings.Fold : null)
                 : null);
     }
 

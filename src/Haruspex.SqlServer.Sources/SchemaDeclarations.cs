@@ -80,6 +80,7 @@ internal sealed class SchemaDeclarations
         TableChanges.Values)
     {
         Settings = settings,
+        DefaultCollation = settings?.Collation,
         Unread = [.. unread ?? []],
         Databases = databases ?? new Dictionary<string, DatabaseModel>(),
     };

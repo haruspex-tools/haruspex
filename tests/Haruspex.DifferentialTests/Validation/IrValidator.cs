@@ -69,7 +69,7 @@ public static partial class IrValidator
         /// <summary>Checks a non-null scalar's facets, recording a violation and the edges it reaches.</summary>
         private void Facets(IrScalar scalar, ScalarValue value, string path, string general)
         {
-            if (FacetProblem(scalar, value, e => edges.Add((general, e))) is { } claim)
+            if (FacetProblem(scalar, value, e => edges.Add((general, e)), document.Folds) is { } claim)
                 Violation(path, claim, value.Describe());
         }
 
@@ -484,11 +484,12 @@ public static partial class IrValidator
     /// What a facet claims, when <paramref name="value"/> breaks it; otherwise null. Each facet is checked in the
     /// unit it states: a length in UTF-16 code units, or in bytes of UTF-8 when the IR says so (and otherwise, for
     /// bytes, only as the upper bound on UTF-16 code units it always is); bounds and digits exactly, from the decimal
-    /// text, never through a double; an exact set by equality, and a set under a collation ignoring case and
-    /// trailing spaces, which is what the fixtures' collations ignore. It also reports, through
+    /// text, never through a double; an exact set by equality, a canonical one by the canonical form the IR README defines
+    /// (written here from the README, not taken from the front end, so the two are checked against each other), and a set under
+    /// a collation ignoring case and trailing spaces, which is what the fixtures' collations ignore. It also reports, through
     /// <paramref name="edge"/>, each edge the value reaches (<see cref="ValidationReport.Edges"/>).
     /// </summary>
-    internal static string? FacetProblem(IrScalar scalar, ScalarValue value, Action<string> edge)
+    internal static string? FacetProblem(IrScalar scalar, ScalarValue value, Action<string> edge, IReadOnlyDictionary<string, IrFold>? folds = null)
     {
         if (scalar.Facets is not { } facets)
             return null;
@@ -520,6 +521,7 @@ public static partial class IrValidator
                 {
                     IrValueMatch.Exact => i.Text.Equals(text, StringComparison.Ordinal),
                     IrValueMatch.Padded => text.TrimEnd(' ').Equals(i.Text.TrimEnd(' '), StringComparison.Ordinal),
+                    IrValueMatch.Canonical => Canonical(folds, strings.Fold, i.Text) == Canonical(folds, strings.Fold, text),
                     _ => i.Text.TrimEnd(' ').Equals(text.TrimEnd(' '), StringComparison.OrdinalIgnoreCase),
                 });
                 if (match is null)
@@ -568,6 +570,19 @@ public static partial class IrValidator
     }
 
     // ---- scalars ------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// A string's canonical form under the document's fold <paramref name="name"/>, as the IR README defines it: drop the ignored
+    /// code units, put each class's name for its units, keep the rest, then drop trailing spaces.
+    /// </summary>
+    private static string Canonical(IReadOnlyDictionary<string, IrFold>? folds, string? name, string text)
+    {
+        var fold = name is not null && folds?.GetValueOrDefault(name) is { } found ? found : throw new InvalidOperationException($"No fold {name} in the document.");
+        var form = new StringBuilder();
+        foreach (var unit in text.Where(u => !fold.Ignored.Contains(u, StringComparison.Ordinal)))
+            form.Append(fold.Classes.FirstOrDefault(c => c.Value.Contains(unit, StringComparison.Ordinal)).Key ?? unit.ToString());
+        return form.ToString().TrimEnd(' ');
+    }
 
     /// <summary>What the scalar claims, when <paramref name="value"/> breaks it; otherwise null.</summary>
     private static string? JsonScalarProblem(IrScalar scalar, JsonElement value)

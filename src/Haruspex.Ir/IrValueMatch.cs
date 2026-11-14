@@ -18,4 +18,12 @@ public enum IrValueMatch
     /// SQL Server ignores in comparisons, as under a binary collation.
     /// </summary>
     Padded,
+
+    /// <summary>
+    /// Every value has the canonical form of one of the items (0.20): the database's comparison may let case, accents, width,
+    /// ignorable characters and trailing spaces differ, and every value it lets through folds, by the canonical form the IR
+    /// README defines, to the same string as an item does. So an emitter may map a value to the item of its canonical form and
+    /// then treat the set as exact. A front end gives it only where it has shown its comparison is no finer than the fold.
+    /// </summary>
+    Canonical,
 }

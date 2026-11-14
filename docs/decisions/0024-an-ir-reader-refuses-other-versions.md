@@ -40,5 +40,10 @@ claims are not 0.18's, so reading it would carry an older engine's claims under 
 file that names no package and means the same. A file labelled 0.18 that names a package or gives the new reason is refused,
 by its path, since 0.18 could do neither.
 
+**Amended a fourth time** (14 Nov 2026, IR 0.20, [decision 0043](0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md)).
+The 0.20 reader reads 0.20 only. 0.20 added the value match `canonical`, which a set read under a proven collation has where 0.19
+said `collation`, from a folder as from a package; so a 0.19 file claims less than a 0.20 file of the same source, and reading it
+would carry the weaker claim under the newer label, the first reason above.
+
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "A version the reader doesn't read";
 [`tests/ir-versions`](../../tests/ir-versions/README.md).

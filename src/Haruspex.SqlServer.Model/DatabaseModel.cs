@@ -86,6 +86,27 @@ public sealed class DatabaseModel
     public DatabaseSettings? Settings { get; init; }
 
     /// <summary>
+    /// The collation a column without <c>COLLATE</c> takes: the database's own, as its source records it (<see cref="Settings"/>),
+    /// or else the one the config file declares (<see cref="WithDeclaredCollation"/>); null when neither says, and then nothing
+    /// that depends on how a column compares strings is claimed for such a column.
+    /// </summary>
+    public string? DefaultCollation { get; init; }
+
+    /// <summary>
+    /// This model, with <paramref name="collation"/> as its <see cref="DefaultCollation"/> if its source records none: a folder of
+    /// scripts doesn't say what database it deploys to, so the config file may. A source that records one keeps its own.
+    /// </summary>
+    public DatabaseModel WithDeclaredCollation(string? collation) => collation is null || DefaultCollation is not null
+        ? this
+        : new(Tables, UserTypes, Procedures, Functions, Views, Synonyms, Triggers, CascadingKeys, TableRedefinitions)
+        {
+            Settings = Settings,
+            Unread = Unread,
+            Databases = Databases,
+            DefaultCollation = collation,
+        };
+
+    /// <summary>
     /// The parts of the database the source refers to but which weren't read (a referenced package that wasn't found): a name
     /// that binds to nothing may be defined in one, so a reader saying it is missing can say where it may be. Empty when the
     /// source is whole as far as it knows.

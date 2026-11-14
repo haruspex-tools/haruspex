@@ -267,7 +267,7 @@ internal sealed partial class Typer
             sets.Add(set);
         }
 
-        if (sets.Select(s => s.Match).Distinct().Count() > 1 || sets.Select(s => s.Items.Any(i => i.IsString)).Distinct().Count() > 1)
+        if (sets.Select(s => (s.Match, s.Fold)).Distinct().Count() > 1 || sets.Select(s => s.Items.Any(i => i.IsString)).Distinct().Count() > 1)
             return null;
 
         // Strings ordinally, numbers in their numeric order, each once, as a CASE's literals are.
@@ -291,7 +291,7 @@ internal sealed partial class Typer
             merged = [.. numbers.OrderBy(n => n.Number).Select(n => n.Item)];
         }
 
-        return new IrValueSet([.. merged], sets[0].Match, [.. sets.SelectMany(s => s.From).Distinct()]);
+        return new IrValueSet([.. merged], sets[0].Match, [.. sets.SelectMany(s => s.From).Distinct()], sets[0].Fold);
     }
 
     /// <summary>

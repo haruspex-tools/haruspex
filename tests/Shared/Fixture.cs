@@ -30,7 +30,7 @@ internal sealed class Fixture
     {
         Folder = folder;
         Name = Path.GetFileName(folder);
-        project = new(() => SqlProject.Load(Database));
+        project = new(() => SqlProject.Load(Database, configRead?.OrDefault()?.Collation));
         ir = new(InferEveryProcedure);
         configRead = Config is { } config ? ConfigReader.Read(config) : null;
         IsProject = configRead?.OrDefault()?.Source is not null;

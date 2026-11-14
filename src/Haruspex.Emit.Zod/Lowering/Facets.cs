@@ -35,7 +35,8 @@ namespace Haruspex.Emit.Zod.Lowering;
 /// <c>varchar(n)</c> counts bytes, which is the same in a single-byte collation and only an upper bound in UTF-8 or a
 /// double-byte one; <c>char(n)</c> pads to <c>n</c> bytes, so <c>.length(n)</c> holds only in a single-byte
 /// collation. A set of strings from a CHECK constraint matches under the database's collation (case, accents and
-/// trailing spaces may differ), so it is a comment, never <c>z.enum</c>; only an exact set is. Under a binary
+/// trailing spaces may differ), so it is a comment, never <c>z.enum</c>; only an exact set is, and a canonical one, whose values are
+/// first mapped to the item they equal by the fold the IR gives (<c>z.preprocess(canonicalOf(…), z.enum([…]))</c>). Under a binary
 /// collation it is exact but for trailing spaces, which <c>.regex(/^(?:a|b)\u0020*$/)</c> says exactly (the type stays
 /// <c>string</c>, since TypeScript can't name "a followed by spaces").</para>
 /// </remarks>
@@ -49,6 +50,9 @@ internal static class Facets
         var facets = scalar.Facets;
         if (facets?.Values is { Match: IrValueMatch.Exact } exact && exact.Items.All(i => i.IsString))
             return exact.Items.Count == 0 ? Z("never") : Z("enum", new ArrayLiteral([.. exact.Items.Select(i => new Text(i.Text))]));
+
+        if (facets?.Values is { Match: IrValueMatch.Canonical, Fold: { } fold } canonical && canonical.Items.All(i => i.IsString))
+            return new Canonical(fold, [.. canonical.Items.Select(i => i.Text)]);
 
         var code = Z("string");
         var notes = new List<ZodNote>();

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.19",
+  "irVersion": "0.20",
   "source": {
     "dialect": "tsql"
   },
@@ -109,17 +109,18 @@
               }
             },
             "values": {
-              "match": "collation",
+              "match": "canonical",
               "items": [
-                "open",
+                "closed",
                 "held",
-                "closed"
+                "open"
               ],
               "from": [
                 {
                   "check": "chk.ck_ticket_status"
                 }
-              ]
+              ],
+              "fold": "Latin1_General_100_CI_AS.codepage"
             }
           },
           "presence": "always",
@@ -394,7 +395,7 @@
               }
             },
             "values": {
-              "match": "collation",
+              "match": "canonical",
               "items": [
                 "NE",
                 "SW"
@@ -403,7 +404,8 @@
                 {
                   "check": "tables/ticket.sql:22:70"
                 }
-              ]
+              ],
+              "fold": "Latin1_General_100_CI_AS.codepage"
             }
           },
           "presence": "always",
@@ -653,5 +655,56 @@
     }
   },
   "unknowns": [],
-  "overrides": []
+  "overrides": [],
+  "folds": {
+    "Latin1_General_100_CI_AS.codepage": {
+      "ignored": "\u0000­",
+      "classes": {
+        " ": " ",
+        "-": "-",
+        ".": ".",
+        "0": "0",
+        "1": "1¹",
+        "2": "2²",
+        "3": "3³",
+        "4": "4",
+        "5": "5",
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9",
+        "A": "Aa",
+        "AE": "Ææ",
+        "B": "Bb",
+        "C": "Cc",
+        "D": "Dd",
+        "E": "Ee",
+        "F": "Ff",
+        "G": "Gg",
+        "H": "Hh",
+        "I": "Ii",
+        "J": "Jj",
+        "K": "Kk",
+        "L": "Ll",
+        "M": "Mm",
+        "N": "Nn",
+        "O": "Oo",
+        "OE": "Œœ",
+        "P": "Pp",
+        "Q": "Qq",
+        "R": "Rr",
+        "S": "Ss",
+        "SS": "ß",
+        "T": "Tt",
+        "TH": "Þþ",
+        "U": "Uu",
+        "V": "Vv",
+        "W": "Ww",
+        "X": "Xx",
+        "Y": "Yy",
+        "Z": "Zz",
+        "_": "_"
+      }
+    }
+  }
 }

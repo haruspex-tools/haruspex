@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.19",
+  "irVersion": "0.20",
   "source": {
     "dialect": "tsql"
   },
@@ -23,5 +23,6 @@
       "at": "procedures/peek_parts.sql:8:1"
     }
   ],
-  "overrides": []
+  "overrides": [],
+  "folds": {}
 }

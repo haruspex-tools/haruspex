@@ -34,8 +34,9 @@ public class FactFlowTests
         var doc = Procedure("SELECT t.status AS state, t.score AS s, t.code FROM dbo.t AS t;");
 
         var state = Facts(doc, "PRow", "state");
-        Assert.Equal(["open", "closed"], state.Values!.Items.Select(i => i.Text));
-        Assert.Equal(IrValueMatch.Collation, state.Values.Match);
+        Assert.Equal(["closed", "open"], state.Values!.Items.Select(i => i.Text));
+        Assert.Equal((IrValueMatch.Canonical, "Latin1_General_100_CI_AS.codepage"), (state.Values.Match, state.Values.Fold));
+        Assert.Equal(["Latin1_General_100_CI_AS.codepage"], doc.Folds.Keys);
         Assert.Equal("dbo.ck_t_status", Assert.Single(state.Values.From).Ref);
         Assert.Equal((10, IrLengthUnit.Bytes, IrByteEncoding.SingleByte), (state.Length!.Value, state.Length.Unit, state.Length.Encoding));
 

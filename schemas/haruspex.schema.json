@@ -20,6 +20,11 @@
       "type": "array",
       "items": { "type": "string", "minLength": 1 }
     },
+    "collation": {
+      "description": "The database's default collation, which a column without COLLATE takes, for a source that doesn't record it: a folder of .sql files. A .dacpac records its own, which wins. Without either, a value set of such a column is a comment, not an enum.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_]+$"
+    },
     "out": {
       "description": "The folder to write haruspex.ir.json and haruspex.zod.ts to. --out overrides it.",
       "type": "string",

@@ -103,6 +103,16 @@ public static class ConfigReader
                     case "references":
                         config = config with { References = [.. Folders(member.Value, path, directory)] };
                         break;
+                    case "collation":
+                        if (NonEmpty(member.Value, path) is { } collation)
+                        {
+                            if (collation.All(c => char.IsAsciiLetterOrDigit(c) || c == '_'))
+                                config = config with { Collation = collation };
+                            else
+                                Report(ConfigCodes.WrongKind, member.Value, path, $"is \"{collation}\", which is no collation's name: a name such as Latin1_General_100_CI_AS has only letters, digits and underscores.");
+                        }
+
+                        break;
                     case "out":
                         if (NonEmpty(member.Value, path) is { } output)
                             config = config with { Out = Path.GetFullPath(Path.Combine(directory, output)) };
@@ -125,7 +135,7 @@ public static class ConfigReader
                         config = config with { Session = Session(member.Value, path) };
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, references, out, schemas, objects, naming, procedures, session");
+                        Unknown(member, path, "$schema, source, references, collation, out, schemas, objects, naming, procedures, session");
                         break;
                 }
             }

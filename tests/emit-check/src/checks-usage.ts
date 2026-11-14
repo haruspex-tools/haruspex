@@ -1,5 +1,5 @@
 // Type-level checks on the Zod generated from tests/fixtures/checks. tsc fails if any of them is wrong.
-import type { ListTicketsRow, TicketRowsRow } from '../generated/checks.zod'
+import type { ListTicketsEvent, ListTicketsRow, TicketRowsRow } from '../generated/checks.zod'
 
 export const ticket: ListTicketsRow = {
   id: 1,
@@ -14,9 +14,15 @@ export const levelTwo: ListTicketsRow = { ...ticket, level: 2 }
 // @ts-expect-error ...so 3 is not a level.
 export const levelThree: ListTicketsRow = { ...ticket, level: 3 }
 
-// A set of strings is matched under the column's collation ('CLOSED' and 'open   ' pass the CHECK), so the type
-// stays string rather than claiming an enum the data can break.
+// A set of strings is matched under the column's collation ('CLOSED' and 'open   ' pass the CHECK). The column is varchar
+// under a collation whose comparison is proven, so a value is mapped to the member it equals ('CLOSED' parses as 'closed')
+// and the type is the members...
+// @ts-expect-error ...which 'CLOSED' is not.
 export const shouted: ListTicketsRow = { ...ticket, status: 'CLOSED' }
+
+// An nchar column's set stays a note: under the Unicode rules a character may compare by its neighbours, which no
+// mapping of one character at a time can follow, so the type stays string rather than claiming an enum the data can break.
+export const shoutedKind: ListTicketsEvent = { id: 1, kind: 'OPEN' }
 
 // An alias type declared NOT NULL makes its column non-null.
 // @ts-expect-error code is never absent.

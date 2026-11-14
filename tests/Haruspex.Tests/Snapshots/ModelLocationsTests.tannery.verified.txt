@@ -1,0 +1,28 @@
+check dye.rinse_tank ck_rinse_tank_state at tables/vat.sql:25:35
+check dye.vat ck_vat_batch at tables/vat.sql:14:64
+check dye.vat ck_vat_finish at tables/vat.sql:19:64
+check dye.vat ck_vat_grade at tables/vat.sql:17:52
+check dye.vat ck_vat_label at tables/vat.sql:16:64
+check dye.vat ck_vat_mode at tables/vat.sql:12:64
+check dye.vat ck_vat_shade at tables/vat.sql:10:68
+check dye.vat ck_vat_state at tables/vat.sql:8:35
+check dye.vat ck_vat_tone at tables/vat.sql:18:31
+column dye.rinse_tank.state varchar(10) at tables/vat.sql:25:5
+column dye.rinse_tank.tank_id int at tables/vat.sql:24:5
+column dye.vat.batch varchar(12) at tables/vat.sql:14:5
+column dye.vat.finish varchar(8) at tables/vat.sql:19:5
+column dye.vat.grade varchar(8) at tables/vat.sql:17:5
+column dye.vat.label nvarchar(10) at tables/vat.sql:16:5
+column dye.vat.mode varchar(8) at tables/vat.sql:12:5
+column dye.vat.shade char(4) at tables/vat.sql:10:5
+column dye.vat.state varchar(10) at tables/vat.sql:8:5
+column dye.vat.tone varchar(8) at tables/vat.sql:18:5
+column dye.vat.vat_id int at tables/vat.sql:6:5
+key dye.rinse_tank pk_rinse_tank (tank_id) at tables/vat.sql:24:35
+key dye.vat pk_vat (vat_id) at tables/vat.sql:6:35
+parameter dye.vat_card @vat_id at procedures/vat_card.sql:1:31
+procedure dye.list_vats at procedures/list_vats.sql:1:1
+procedure dye.states at procedures/states.sql:1:1
+procedure dye.vat_card at procedures/vat_card.sql:1:1
+table dye.rinse_tank at tables/vat.sql:23:1
+table dye.vat at tables/vat.sql:5:1

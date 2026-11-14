@@ -70,6 +70,13 @@ foreach (var column in orders.Columns)
   `ALTER TABLE … NOCHECK` may disable, and a key whose index may be disabled, prove nothing.
 - **Numbers are compared exactly**, as `ExactDecimal`, never as doubles, because the bounds of `decimal(38, s)` don't survive
   a double.
+- **A set of strings says how its values compare, and is exact only where the server's comparison is proven.** Under a
+  collation, `'Paid '` passes `IN ('paid')`, so a set is `Collation`. It is `Canonical` only for a `char` or `varchar` column in
+  a code page whose collation has a fold observed from the server (`Collations/CollationFold`, its data in `Collations/*.json`).
+  A value then maps to the one string whose fold it shares
+  ([decision 0043](../../docs/decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md)). A column without
+  `COLLATE` takes the database's default only when it is a table of the schema (`SchemaRules.EffectiveCollation`): a temporary
+  table's columns take `tempdb`'s, which the model doesn't know.
 
 ## What it deliberately doesn't do
 

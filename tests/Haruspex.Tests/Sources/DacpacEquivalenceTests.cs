@@ -11,7 +11,9 @@ namespace Haruspex.Tests.Sources;
 /// The proof that a DACPAC is read as its project's folder of scripts is: for every fixture that builds as a project, and for
 /// WideWorldImporters, the IR and Zod inferred from the package are byte for byte those inferred from the folder, once each
 /// location is rewritten as the same place in the package (<see cref="PackageLocationMap"/>) and the source record is set
-/// aside, since only the package has one. The packages are in <c>tests/dacpacs</c>, built by DacFx from the same scripts.
+/// aside, since only the package has one. The folder is read with the package's default collation, as a config file's
+/// <c>collation</c> gives it, since only the package records one. The packages are in <c>tests/dacpacs</c>, built by DacFx from
+/// the same scripts.
 /// </summary>
 public class DacpacEquivalenceTests
 {
@@ -34,8 +36,9 @@ public class DacpacEquivalenceTests
         var config = fixture.Config is null ? HaruspexConfig.None(".") : ConfigReader.Read(fixture.Config).Expected();
         var map = new PackageLocationMap(SqlScriptFolder.Read(fixture.Database).Model, fixture.Database, PackageOf(fixture));
 
+        var folder = SqlProject.Load(fixture.Database, package.DefaultCollation);
         foreach (var procedure in fixture.Project.Procedures)
-            AssertSame(fixture.Project.Infer([procedure], config).Expected(), package.Infer([procedure], config).Expected(), map);
+            AssertSame(folder.Infer([procedure], config).Expected(), package.Infer([procedure], config).Expected(), map);
         Assert.Empty(map.Unmapped);
     }
 
@@ -52,8 +55,9 @@ public class DacpacEquivalenceTests
         Assert.DoesNotContain(package.Diagnostics, d => d.IsError);
         var map = new PackageLocationMap(SqlScriptFolder.Read(fixture.Database).Model, fixture.Database, path);
 
+        var folder = SqlProject.Load(fixture.Database, package.DefaultCollation);
         foreach (var procedure in fixture.Project.Procedures)
-            AssertSame(fixture.Project.Infer([procedure]).Expected(), package.Infer([procedure]).Expected(), map);
+            AssertSame(folder.Infer([procedure]).Expected(), package.Infer([procedure]).Expected(), map);
         Assert.Empty(map.Unmapped);
     }
 
@@ -61,9 +65,9 @@ public class DacpacEquivalenceTests
     public void WideWorldImporters_package_gives_the_ir_and_zod_of_its_project_s_scripts()
     {
         var corpus = Corpus.Corpus.All.Single(c => c.Name == "WideWorldImporters");
-        var folder = SqlScriptFolder.Read(corpus.ProjectFolder, corpus.Scripts).Model;
         var packagePath = Path.Combine(Packages, "corpus", "WideWorldImporters.dacpac");
         var package = DacpacReader.Read(packagePath);
+        var folder = SqlScriptFolder.Read(corpus.ProjectFolder, corpus.Scripts).Model.WithDeclaredCollation(package.Model.DefaultCollation);
         Assert.DoesNotContain(package.Diagnostics, d => d.IsError);
         var map = new PackageLocationMap(folder, corpus.ProjectFolder, packagePath);
         var procedures = folder.Procedures.Select(p => p.Name).ToList();

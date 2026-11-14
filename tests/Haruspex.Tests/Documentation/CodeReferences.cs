@@ -7,6 +7,7 @@ using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Semantics.Collations;
 using Haruspex.SqlServer.Sources;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -238,8 +239,9 @@ internal sealed partial class CodeReferences
             return SourceMemberProblem(files, parts);
         if (parts.Length > 1)
             return $"{parts[0]} is not a type of haruspex";
+        // A collation haruspex has proven a fold for is a name of SQL Server's that the code holds (CollationFold.Proven).
         if (code.Contains('_', StringComparison.Ordinal))
-            return methods.Contains(code) ? null : "names no test";
+            return methods.Contains(code) || CollationFold.Proven.Any(p => p.Collation == code) ? null : "names no test";
 
         // A name alone is a type, never a member: a type is often renamed while a property keeps its old name
         // (Procedure.Redefinition), so a member written alone would hide the rename. Write a member as Type.Member.

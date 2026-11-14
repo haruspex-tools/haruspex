@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.19",
+  "irVersion": "0.20",
   "source": {
     "dialect": "tsql"
   },
@@ -325,5 +325,6 @@
       "at": "procedures/member_prefs.sql:17:37"
     }
   ],
-  "overrides": []
+  "overrides": [],
+  "folds": {}
 }

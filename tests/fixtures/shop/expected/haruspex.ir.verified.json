@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.19",
+  "irVersion": "0.20",
   "source": {
     "dialect": "tsql"
   },
@@ -571,5 +571,6 @@
       "setting": "exact-values",
       "why": "the application writes the status in lower case only"
     }
-  ]
+  ],
+  "folds": {}
 }

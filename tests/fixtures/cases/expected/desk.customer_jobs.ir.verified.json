@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.19",
+  "irVersion": "0.20",
   "source": {
     "dialect": "tsql"
   },
@@ -191,5 +191,6 @@
     }
   },
   "unknowns": [],
-  "overrides": []
+  "overrides": [],
+  "folds": {}
 }

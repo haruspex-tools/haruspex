@@ -98,36 +98,6 @@ public class IrJsonReaderTests
     }
 
     [Fact]
-    public void A_file_of_0_18_is_read_since_it_means_what_a_0_19_file_without_a_package_does()
-    {
-        var json = JsonNode.Parse(IrJsonWriter.Write(IrSamples.Everything with { Source = new IrSource("tsql") }))!.AsObject();
-        json["irVersion"] = "0.18";
-
-        Assert.Equal(new IrSource("tsql"), IrJsonReader.Read(json.ToJsonString()).Source);
-    }
-
-    [Fact]
-    public void A_file_of_0_18_that_names_a_package_is_refused_since_0_18_could_not()
-    {
-        var e = Refused(json => json["irVersion"] = "0.18");
-
-        Assert.Equal("$.source", e.Path);
-    }
-
-    [Fact]
-    public void A_file_of_0_18_with_an_encrypted_definition_is_refused_since_0_18_had_no_such_reason()
-    {
-        // The sample's second unknown is a procedure's results, which an encrypted definition would make unknown too.
-        var unknowns = IrSamples.Everything.Unknowns.Select((u, i) => i == 1 ? u with { Reason = IrUnknownReason.EncryptedDefinition } : u);
-        var json = JsonNode.Parse(IrJsonWriter.Write(IrSamples.Everything with { Source = new IrSource("tsql"), Unknowns = [.. unknowns] }))!.AsObject();
-        json["irVersion"] = "0.18";
-
-        var e = Assert.Throws<IrFormatException>(() => IrJsonReader.Read(json.ToJsonString()));
-
-        Assert.Equal("$.unknowns[1].reason", e.Path);
-    }
-
-    [Fact]
     public void References_are_written_by_name_then_database_whatever_order_they_are_given_in()
     {
         var json = JsonNode.Parse(IrJsonWriter.Write(IrSamples.Everything))!;
@@ -162,12 +132,12 @@ public class IrJsonReaderTests
     }
 
     [Theory]
-    [InlineData("0.16")]
     [InlineData("0.17")]
-    public void A_file_of_0_16_or_0_17_is_refused_though_every_property_in_it_is_one_0_18_has(string version)
+    [InlineData("0.19")]
+    public void A_file_of_an_older_version_is_refused_though_every_property_in_it_is_one_the_current_version_has(string version)
     {
-        // Their claims are not 0.18's: with nothing declared, each claimed never null a decimal that 0.18 says may lose
-        // precision (IrDocument.ReadableVersions).
+        // Their claims are not the current version's: 0.17's never null a decimal 0.18 says may lose precision, and 0.19's call
+        // a set compared under a known collation what 0.20 may call canonical (IrDocument.ReadableVersions).
         var e = Refused(json => json["irVersion"] = version);
 
         Assert.Equal("$.irVersion", e.Path);
@@ -191,7 +161,7 @@ public class IrJsonReaderTests
         });
 
         Assert.Equal("$.irVersion", e.Path);
-        Assert.Equal("is \"0.14\", and this reader reads IR 0.19 and 0.18 only. Run haruspex generate again to write the file in this version.", e.Problem);
+        Assert.Equal("is \"0.14\", and this reader reads IR 0.20 only. Run haruspex generate again to write the file in this version.", e.Problem);
     }
 
     [Fact]
@@ -321,5 +291,25 @@ public class IrJsonReaderTests
         var read = IrJsonReader.Read(IrJsonWriter.Write(unlisted));
 
         Assert.All(read.Objects, o => Assert.Null(o.Results));
+    }
+
+    private static JsonObject StateValues(JsonObject json) =>
+        json["types"]!["OrderRow"]!["fields"]!.AsArray().Single(f => (string?)f!["name"] == "state")!["type"]!["values"]!.AsObject();
+
+    [Fact]
+    public void A_canonical_set_without_its_fold_is_refused() =>
+        Assert.EndsWith(".values.fold", Refused(json => StateValues(json).Remove("fold")).Path, StringComparison.Ordinal);
+
+    [Fact]
+    public void A_set_that_is_not_canonical_with_a_fold_is_refused() =>
+        Assert.EndsWith(".values.fold", Refused(json => StateValues(json)["match"] = "collation").Path, StringComparison.Ordinal);
+
+    [Fact]
+    public void A_fold_the_folds_lack_is_refused()
+    {
+        var e = Refused(json => json["folds"]!.AsObject().Remove("Latin1_General_100_CI_AS.codepage"));
+
+        Assert.EndsWith(".values.fold", e.Path, StringComparison.Ordinal);
+        Assert.Contains("names no fold in $.folds", e.Message, StringComparison.Ordinal);
     }
 }

@@ -27,7 +27,7 @@ internal static class ZodLowering
                 ZodPlanEntry.Procedure procedure => Procedure(procedure.Object, types),
             }),
         ];
-        return new ZodModule([.. Header(plan.Document.Source, declarations)], plan.Imports, plan.UsesJsonText, [.. declarations]);
+        return new ZodModule([.. Header(plan.Document.Source, declarations)], plan.Imports, plan.UsesJsonText, [.. declarations], plan.Document.Folds);
     }
 
     /// <summary>

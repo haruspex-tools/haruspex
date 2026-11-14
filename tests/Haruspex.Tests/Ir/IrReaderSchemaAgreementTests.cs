@@ -27,8 +27,11 @@ public class IrReaderSchemaAgreementTests
     /// <summary>Every property of every object in the sample's file, as the JSON Pointer of the object and the key.</summary>
     public static TheoryData<string, string> Properties { get; } = [.. Objects(JsonNode.Parse(File)!, "").SelectMany(o => o.Node.AsObject().Select(p => (o.Location, p.Key)))];
 
-    /// <summary>Every object in the sample's file, as its JSON Pointer.</summary>
-    public static TheoryData<string> AllObjects { get; } = [.. Objects(JsonNode.Parse(File)!, "").Select(o => o.Location)];
+    /// <summary>
+    /// Every object in the sample's file, as its JSON Pointer, but a fold's <c>classes</c>: its keys are the classes' names, any
+    /// string, so no key is one the format lacks.
+    /// </summary>
+    public static TheoryData<string> AllObjects { get; } = [.. Objects(JsonNode.Parse(File)!, "").Select(o => o.Location).Where(l => !l.EndsWith("/classes", StringComparison.Ordinal))];
 
     [Theory]
     [MemberData(nameof(Properties))]
@@ -42,11 +45,18 @@ public class IrReaderSchemaAgreementTests
         var schemaErrors = SchemaErrors(text);
         var refusal = Refusal(text);
 
-        // The one thing the reader refuses that the schema can't see: a type removed while something still refers to it.
+        // The things the reader refuses that the schema can't see: a type or a fold removed while something still names it.
         if (location == "/types" && File.Contains($"\"ref\": \"{key}\"", StringComparison.Ordinal))
         {
             Assert.Empty(schemaErrors);
             Assert.EndsWith($"which names no type in $.types.", refusal?.Problem, StringComparison.Ordinal);
+            return;
+        }
+
+        if (location == "/folds" && File.Contains($"\"fold\": \"{key}\"", StringComparison.Ordinal))
+        {
+            Assert.Empty(schemaErrors);
+            Assert.EndsWith($"which names no fold in $.folds.", refusal?.Problem, StringComparison.Ordinal);
             return;
         }
 

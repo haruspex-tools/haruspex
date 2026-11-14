@@ -1,6 +1,8 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Semantics.Collations;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -47,6 +49,7 @@ public static class IrInference
             .SelectMany(a => a.Item2.Declared.Select(callee => (Object: a.procedure.Name.ToString(), Callee: callee)))
             .Select(c => new IrOverride(c.Object, "results", IrOverrideSetting.Results, declarations[c.Callee].Why) { Via = c.Callee.ToString() })
             .ToList();
-        return new Succeeded<IrDocument>(document with { Overrides = [.. claims] }, [.. warnings]);
+        var folds = IrDocumentFolds.Named(document).ToEquatableMap(name => name, name => SqlTypes.Fold(CollationFold.Named(name)));
+        return new Succeeded<IrDocument>(document with { Overrides = [.. claims], Folds = folds }, [.. warnings]);
     }
 }

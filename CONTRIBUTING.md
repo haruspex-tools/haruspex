@@ -186,6 +186,7 @@ split into parts along the constructs it covers. The families today:
 | Read uncommitted | `ReadUncommittedTests` | `ReadUncommittedObservationTests` | `tests/fixtures/tabs` | [decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md) |
 | The callers' session | `SessionTests` | `SessionObservationTests` | `tests/fixtures/meters` | "The callers' session" |
 | Precision lost | `PrecisionLossTests` | `PrecisionLossObservationTests`, `PrecisionLossGridTests` | `tests/fixtures/assays` | "Precision lost" |
+| Canonical value sets | `CanonicalValueSetTests` | `CanonicalValueSetObservationTests`, `CollationFoldGridTests` | `tests/fixtures/tannery` | [decision 0043](docs/decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md) |
 | Binding | `BinderTests`, in `tests/Haruspex.Tests/Semantics` | `BindingObservationTests` | `tests/fixtures/scopes` | the Semantics README's "How data flows through it" |
 
 Eleven classes are named otherwise, for what they cover across families: `ConstructTests` (queries, results and sources

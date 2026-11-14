@@ -69,7 +69,7 @@ internal static class ScalarFacets
             && Holds(a.Digits, b.Digits, (x, y) => x.Precision == y.Precision && x.Scale == y.Scale)
             && Holds(a.Min, b.Min, (x, y) => BoundBelow(x, y, BoundSide.Lower))
             && Holds(a.Max, b.Max, (x, y) => BoundBelow(x, y, BoundSide.Upper))
-            && Holds(a.Values, b.Values, (x, y) => x.Match == y.Match && x.Items.All(y.Items.Contains));
+            && Holds(a.Values, b.Values, (x, y) => x.Match == y.Match && x.Fold == y.Fold && x.Items.All(y.Items.Contains));
 
         static bool Holds<T>(T? x, T? y, Func<T, T, bool> tighter) where T : class => y is null || (x is not null && tighter(x, y));
 
@@ -90,7 +90,7 @@ internal static class ScalarFacets
             && Same(a.Digits, b.Digits, (x, y) => x with { From = y.From } == y)
             && Same(a.Min, b.Min, (x, y) => x with { From = y.From } == y)
             && Same(a.Max, b.Max, (x, y) => x with { From = y.From } == y)
-            && Same(a.Values, b.Values, (x, y) => x.Match == y.Match && x.Items.ToHashSet().SetEquals(y.Items) && x.From.ToHashSet().SetEquals(y.From));
+            && Same(a.Values, b.Values, (x, y) => x.Match == y.Match && x.Fold == y.Fold && x.Items.ToHashSet().SetEquals(y.Items) && x.From.ToHashSet().SetEquals(y.From));
 
         static bool Same<T>(T? x, T? y, Func<T, T, bool> same) where T : class =>
             x is null || y is null ? x is null && y is null : same(x, y);
@@ -132,8 +132,11 @@ internal static class ScalarFacets
 
     private static IrValueSet? Union(IrValueSet? a, IrValueSet? b)
     {
-        if (a is null || b is null || a.Match != b.Match || a.Items.Any(i => i.IsString) != b.Items.Any(i => i.IsString))
+        if (a is null || b is null || a.Match != b.Match || a.Fold != b.Fold || a.Items.Any(i => i.IsString) != b.Items.Any(i => i.IsString))
             return null;
-        return new IrValueSet([.. a.Items.Concat(b.Items).Distinct()], a.Match, [.. a.From.Concat(b.From).Distinct()]);
+
+        // A canonical set's items are in ordinal order, as the IR README says; two may fold alike now, which the README allows.
+        var items = a.Items.Concat(b.Items).Distinct();
+        return new IrValueSet([.. a.Match == IrValueMatch.Canonical ? items.OrderBy(i => i.Text, StringComparer.Ordinal) : items], a.Match, [.. a.From.Concat(b.From).Distinct()], a.Fold);
     }
 }

@@ -92,6 +92,20 @@ public static class IrJsonWriter
             }
 
             json.WriteEndArray();
+
+            json.WriteStartObject("folds");
+            foreach (var (name, fold) in document.Folds.OrderBy(f => f.Key, StringComparer.Ordinal))
+            {
+                json.WriteStartObject(name);
+                json.WriteString("ignored", fold.Ignored);
+                json.WriteStartObject("classes");
+                foreach (var (representative, units) in fold.Classes.OrderBy(c => c.Key, StringComparer.Ordinal))
+                    json.WriteString(representative, units);
+                json.WriteEndObject();
+                json.WriteEndObject();
+            }
+
+            json.WriteEndObject();
             json.WriteEndObject();
         }
 
@@ -372,6 +386,8 @@ public static class IrJsonWriter
             foreach (var from in values.From)
                 WriteSourceObject(json, from);
             json.WriteEndArray();
+            if (values.Fold is not null)
+                json.WriteString("fold", values.Fold);
             json.WriteEndObject();
         }
     }

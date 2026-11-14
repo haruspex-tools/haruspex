@@ -37,7 +37,9 @@ public static class ConfigApplication
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(procedures);
-        return new ConfigApplying(document, config, procedures, selectedByFile, from => Import(from, config.Directory, outputDirectory), declaredDocument).Apply();
+        // An override that makes a set exact leaves its fold unnamed, and declared results may name one only their document holds.
+        return new ConfigApplying(document, config, procedures, selectedByFile, from => Import(from, config.Directory, outputDirectory), declaredDocument).Apply()
+            .Select(applied => IrDocumentFolds.Settled(applied, declaredDocument is null ? [] : [declaredDocument.Folds]));
     }
 
     /// <summary>

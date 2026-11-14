@@ -154,7 +154,7 @@ The version is read first, before anything else in the file. A file of any versi
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.19 and 0.18 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.20 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -166,7 +166,7 @@ The alternative was to migrate: to read an older file by mapping its differences
   a migration could map. Others change what a claim means or which rules made it: a rule observed wrong and corrected, a
   construct that was unknown and is now typed, a reason that was too wide. A migrated file would present an old engine's
   claims with a new version's label, and a reader would trust them as the new version's.
-- **Each migration is another reader to test.** The format has had sixteen versions so far. A chain of migrations is a
+- **Each migration is another reader to test.** The format has had twenty versions so far. A chain of migrations is a
   reader per version, each needing fixtures of its own, for a format that promises no compatibility while it is 0.x.
 
 A newer version than the reader's is refused for the same reason and more plainly: the reader can't know what it would be
@@ -189,6 +189,12 @@ from and its SHA-256, the packages it refers to, and the reason `encrypted-defin
 database can give. A folder's output didn't change, so every 0.18 file is a 0.19 file that names no package and means the
 same, and the 0.19 reader reads it. A file labelled 0.18 that names a package or gives that reason is refused, since 0.18
 could do neither.
+
+Version 0.20 ended it again. It made a value set of a `char` or `varchar` column, under a collation whose comparison haruspex
+has proven against the server, `canonical`: exact once a value is mapped to the item it equals. A 0.19 file of the same
+source says `collation` there, a weaker claim, and from a folder as from a package; read as 0.20, it would carry the weaker claim
+under the label of a version that makes the stronger one, so the 0.20 reader refuses it
+([decision 0043](../decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md)).
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims

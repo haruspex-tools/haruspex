@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.19",
+  "irVersion": "0.20",
   "source": {
     "dialect": "tsql"
   },
@@ -86,5 +86,6 @@
       "setting": "results",
       "why": "the search runs as dynamic SQL, with the product pattern as a parameter"
     }
-  ]
+  ],
+  "folds": {}
 }

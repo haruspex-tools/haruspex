@@ -1,0 +1,123 @@
+{
+  "irVersion": "0.20",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "dye.states",
+      "name": "States",
+      "kind": "procedure",
+      "at": "procedures/states.sql:1:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "StatesRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "StatesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "dye.states",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "state",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(10)"
+              }
+            },
+            "values": {
+              "match": "canonical",
+              "items": [
+                "drain",
+                "dyeing",
+                "idle",
+                "rinse"
+              ],
+              "from": [
+                {
+                  "check": "dye.ck_vat_state"
+                },
+                {
+                  "check": "dye.ck_rinse_tank_state"
+                }
+              ],
+              "fold": "SQL_Latin1_General_CP1_CI_AS.codepage"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {
+    "SQL_Latin1_General_CP1_CI_AS.codepage": {
+      "ignored": "",
+      "classes": {
+        " ": " ",
+        "-": "-",
+        ".": ".",
+        "0": "0",
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5",
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9",
+        "A": "Aa",
+        "B": "Bb",
+        "C": "Cc",
+        "D": "Dd",
+        "E": "Ee",
+        "F": "Ff",
+        "G": "Gg",
+        "H": "Hh",
+        "I": "Ii",
+        "J": "Jj",
+        "K": "Kk",
+        "L": "Ll",
+        "M": "Mm",
+        "N": "Nn",
+        "O": "Oo",
+        "P": "Pp",
+        "Q": "Qq",
+        "R": "Rr",
+        "S": "Ss",
+        "T": "Tt",
+        "U": "Uu",
+        "V": "Vv",
+        "W": "Ww",
+        "X": "Xx",
+        "Y": "Yy",
+        "Z": "Zz",
+        "_": "_"
+      }
+    }
+  }
+}

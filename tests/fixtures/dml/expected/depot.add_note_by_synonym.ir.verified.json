@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.19",
+  "irVersion": "0.20",
   "source": {
     "dialect": "tsql"
   },
@@ -43,5 +43,6 @@
       "at": "procedures/add_note_by_synonym.sql:8:1"
     }
   ],
-  "overrides": []
+  "overrides": [],
+  "folds": {}
 }

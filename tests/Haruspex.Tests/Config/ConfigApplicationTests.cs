@@ -18,7 +18,7 @@ public partial class ConfigApplicationTests
         (
             customer_id int NOT NULL PRIMARY KEY,
             name nvarchar(40) NULL,
-            status varchar(8) COLLATE Latin1_General_100_CI_AS NOT NULL CHECK (status IN ('open', 'closed')),
+            status nvarchar(8) COLLATE Latin1_General_100_CI_AS NOT NULL CHECK (status IN ('open', 'closed')),
             level int NOT NULL CHECK (level IN (1, 2)),
             notes json NULL
         );

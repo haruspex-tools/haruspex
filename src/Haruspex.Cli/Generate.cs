@@ -185,11 +185,15 @@ internal static class Generate
     private static Outcome<Loaded> ReadProject(Plan plan)
     {
         var package = SqlProject.IsPackage(plan.Source);
-        var project = package ? SqlProject.LoadPackage(plan.Source, plan.Config.References) : SqlProject.Load(plan.Source);
+        var collation = plan.Config.Collation;
+        var project = package ? SqlProject.LoadPackage(plan.Source, plan.Config.References, collation) : SqlProject.Load(plan.Source, collation);
         IEnumerable<Diagnostic> unused = package || plan.Config.References.Count == 0
             ? []
             : [CliCodes.ReferencesUnused.At(plan.Config.Location, $"\"references\" is read only when the source is a .dacpac, and {plan.Source} is a folder of scripts.")];
-        return Outcome.Of(new Loaded(plan, project), [.. unused, .. project.Diagnostics.Select(d => Rooted(d, project))]);
+        IEnumerable<Diagnostic> overruled = collation is null || string.Equals(project.DefaultCollation, collation, StringComparison.OrdinalIgnoreCase)
+            ? []
+            : [CliCodes.CollationOverruled.At(plan.Config.Location, $"\"collation\" is {collation}, but {Path.GetFileName(plan.Source)} records {project.DefaultCollation}, the database's own, which is the one used.")];
+        return Outcome.Of(new Loaded(plan, project), [.. unused, .. overruled, .. project.Diagnostics.Select(d => Rooted(d, project))]);
     }
 
     /// <summary>

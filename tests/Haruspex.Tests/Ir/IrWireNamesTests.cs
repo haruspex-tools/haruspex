@@ -85,7 +85,7 @@ public class IrWireNamesTests
 
     [Fact]
     public void Value_matches_keep_their_names() => Assert.Equal(
-        ["exact", "collation", "padded"],
+        ["exact", "collation", "padded", "canonical"],
         Names<IrValueMatch>(IrWireNames.Of));
 
     [Fact]

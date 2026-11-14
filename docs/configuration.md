@@ -14,6 +14,7 @@ otherwise silently do nothing.
   "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
   "source": "database",                     // the folder of .sql files, or a .dacpac
   "references": ["../shared/bin/Release"],  // more folders to find a .dacpac's referenced packages in
+  "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "Value sets"
   "out": "src/db",                          // where haruspex.ir.json and haruspex.zod.ts go
 
   "objects": "strip",                       // or "strict"
@@ -69,6 +70,20 @@ have come from it is unknown, and each such unknown says the package it may be i
 
 Locations in what is read from a package name the package and the object, with a line in the object's own text:
 `sales.dacpac/[sales].[get_order]:3:5` ([decision 0039](decisions/0039-a-location-in-a-dacpac-names-the-package-and-the-object.md)).
+
+## The database's collation: `collation`
+
+A column without `COLLATE` takes the database's default collation. A `.dacpac` records it; a folder of scripts doesn't, so
+`collation` declares it. A package's own wins, and one that disagrees with `collation` is a warning
+([HAR6010](diagnostics/HAR6010.md)).
+
+The collation decides how a `CHECK` constraint's set of strings is typed. For a `char` or `varchar` column under a collation
+haruspex has proven (`SQL_Latin1_General_CP1_CI_AS`, `Latin1_General_CI_AS`, `Latin1_General_100_CI_AS`,
+`Latin1_General_100_CS_AS`, `Latin1_General_100_CI_AI`), a set of plain strings (ASCII letters and digits, space, `_`, `-`,
+`.`) is an enum: a value is first mapped to the string it equals under the collation, so `'PAID'` and `'paid '` both arrive as
+`"paid"` ([decision 0043](decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md)). Any other set, and
+every set of an `nchar` or `nvarchar` column, is a comment saying the values match as the database compares strings; an
+override can still declare it exact (`"values": "exact"`).
 
 ## Which procedures are typed: `schemas`
 

@@ -117,7 +117,7 @@ internal sealed class OverrideApplier(
             }
             else
             {
-                slot = slot with { Type = scalar with { Facets = facets with { Values = set with { Match = IrValueMatch.Exact } } } };
+                slot = slot with { Type = scalar with { Facets = facets with { Values = set with { Match = IrValueMatch.Exact, Fold = null } } } };
                 claims.Add(new IrOverride(objectId, path, IrOverrideSetting.ExactValues, entry.Why));
             }
         }

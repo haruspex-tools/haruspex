@@ -2,6 +2,7 @@ using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Semantics.Collations;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -128,12 +129,17 @@ internal static class SqlTypes
                     {
                         ValueComparison.Exact => IrValueMatch.Exact,
                         ValueComparison.Padded => IrValueMatch.Padded,
+                        ValueComparison.Canonical => IrValueMatch.Canonical,
                         _ => IrValueMatch.Collation,
                     },
-                    [.. values.From.Select(Source)])
+                    [.. values.From.Select(Source)],
+                    values.Fold?.Name)
                 : null);
         return irFacets.IsEmpty ? null : irFacets;
     }
+
+    /// <summary>A fold as the IR holds it.</summary>
+    public static IrFold Fold(CollationFold fold) => new(fold.Ignored, fold.Classes);
 
     private static IrBound? Bound(BoundFact? bound) => bound is null ? null : new IrBound(bound.Value.ToString(), bound.Inclusive, Source(bound.From));
 

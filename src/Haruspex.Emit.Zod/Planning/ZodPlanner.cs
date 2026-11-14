@@ -99,7 +99,7 @@ internal static class ZodPlanner
         }
 
         var defined = document.Objects.Select(o => o.Name).Concat(document.Types.Keys)
-            .SelectMany(n => new[] { n, ZodModule.SchemaOf(n) }).Append(ZodModule.ZodName).Append(ZodModule.JsonTextHelperName).ToHashSet(StringComparer.Ordinal);
+            .SelectMany(n => new[] { n, ZodModule.SchemaOf(n) }).Append(ZodModule.ZodName).Append(ZodModule.JsonTextHelperName).Concat(ZodModule.CanonicalNames).ToHashSet(StringComparer.Ordinal);
         foreach (var name in modules.Keys.Where(defined.Contains).Order(StringComparer.Ordinal))
             refusals.Add(ZodCodes.ImportClashes.At(null, $"The imported name '{name}' is also a name this module defines or uses."));
 

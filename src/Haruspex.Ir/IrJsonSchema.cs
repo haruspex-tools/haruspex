@@ -85,8 +85,12 @@ public static class IrJsonSchema
                 ("type", "object"),
                 ("additionalProperties", Ref("objectType")))),
             ("unknowns", ArrayOf(Ref("unknown"))),
-            ("overrides", ArrayOf(Ref("override"))))),
-        ("required", Names("irVersion", "source", "objects", "types", "unknowns", "overrides")),
+            ("overrides", ArrayOf(Ref("override"))),
+            ("folds", Node(
+                ("description", "The folds the canonical value sets name, by name: how a collation compares a column's strings (0.20)."),
+                ("type", "object"),
+                ("additionalProperties", Ref("fold")))))),
+        ("required", Names("irVersion", "source", "objects", "types", "unknowns", "overrides", "folds")),
         ("additionalProperties", false),
         ("$defs", Definitions()));
 
@@ -180,7 +184,7 @@ public static class IrJsonSchema
             ("value", Node(("type", "number"))),
             ("inclusive", Flag("Whether the bound itself is allowed.")),
             ("from", Ref("factSource")))),
-        ("values", Closed(
+        ("values", FoldAgreeing(Closed(
             "A set the value is drawn from.",
             ["match", "items", "from"],
             ("match", Vocabulary<IrValueMatch>(IrWireNames.Of)),
@@ -188,7 +192,16 @@ public static class IrJsonSchema
                 ("description", "The values: strings, or numbers in plain decimal form (no exponent), which JSON Schema can't check and the reader does."),
                 ("type", "array"),
                 ("items", Node(("anyOf", new JsonArray(Node(("type", "string")), Node(("type", "number")))))))),
-            ("from", ArrayOf(Ref("factSource"))))),
+            ("from", ArrayOf(Ref("factSource"))),
+            ("fold", Text("The name of the fold in folds that gives a value's canonical form: present exactly when the match is canonical."))))),
+        ("fold", Closed(
+            "How a collation compares a column's strings. A string's canonical form drops each character of ignored, puts a class's name in place of each character of that class, keeps every other character, and then drops trailing spaces (U+0020), in that order.",
+            ["ignored", "classes"],
+            ("ignored", Text("The characters ignored, in ordinal order.")),
+            ("classes", Node(
+                ("description", "The characters of each class, in ordinal order, by the class's name, which is what they become."),
+                ("type", "object"),
+                ("additionalProperties", Node(("type", "string"), ("minLength", 1))))))),
         ("factSource", FactSource()),
         ("array", Agreeing(
             Closed(
@@ -311,6 +324,17 @@ public static class IrJsonSchema
         source.Add("maxProperties", 1);
         source.Add("anyOf", new JsonArray([.. kinds.Select(k => Having(k))]));
         return source;
+    }
+
+    /// <summary>Holds a value set's fold to its match: named when the match is canonical, and left out otherwise.</summary>
+    private static JsonObject FoldAgreeing(JsonObject schema)
+    {
+        // Each property named as well as required, as Having does, for a validator's strict mode.
+        var canonicalMatch = Node(("const", IrWireNames.Of(IrValueMatch.Canonical)));
+        var canonical = Node(("type", "object"), ("properties", Node(("match", canonicalMatch), ("fold", true))), ("required", Names("match", "fold")));
+        var other = Node(("type", "object"), ("properties", Node(("match", Node(("not", canonicalMatch.DeepClone()))))), ("required", Names("match")), ("not", Having("fold")));
+        schema.Add("anyOf", new JsonArray(canonical, other));
+        return schema;
     }
 
     /// <summary>

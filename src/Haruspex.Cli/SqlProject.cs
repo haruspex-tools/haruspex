@@ -44,12 +44,18 @@ internal sealed class SqlProject
     /// <summary>Every procedure in the project, in a stable order.</summary>
     public IReadOnlyList<ObjectName> Procedures { get; }
 
-    /// <summary>Reads every <c>*.sql</c> file under <paramref name="directory"/>.</summary>
-    public static SqlProject Load(string directory)
+    /// <summary>
+    /// Reads every <c>*.sql</c> file under <paramref name="directory"/>, whose database's default collation is
+    /// <paramref name="collation"/> (the config file's), since a folder doesn't say; null when not known.
+    /// </summary>
+    public static SqlProject Load(string directory, string? collation = null)
     {
         var read = SqlScriptFolder.Read(directory);
-        return new SqlProject(read.Model, read.Diagnostics, _ => directory);
+        return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, _ => directory);
     }
+
+    /// <summary>The database's default collation, as the source records it or else as the config file declares it; null when neither does.</summary>
+    public string? DefaultCollation => model.DefaultCollation;
 
     /// <summary>Whether <paramref name="source"/> names a DACPAC rather than a folder of scripts: a file, by its extension.</summary>
     public static bool IsPackage(string source) => source.EndsWith(".dacpac", StringComparison.OrdinalIgnoreCase);
@@ -58,14 +64,17 @@ internal sealed class SqlProject
     /// Reads the DACPAC at <paramref name="package"/> and the packages of its database it refers to, looking for them beside it
     /// and then in <paramref name="references"/>; the IR it infers records the packages read.
     /// </summary>
-    public static SqlProject LoadPackage(string package, IReadOnlyList<string> references)
+    /// <param name="package">The package.</param>
+    /// <param name="references">The config file's <c>references</c> folders.</param>
+    /// <param name="collation">The config file's <c>collation</c>, used only when the package records none.</param>
+    public static SqlProject LoadPackage(string package, IReadOnlyList<string> references, string? collation = null)
     {
         var read = DacpacReader.Read(package, references);
         var folders = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var found in read.References.Select(r => r.Found).Prepend(read.Package).OfType<LoadedPackage>())
             folders.TryAdd(found.Name, Path.GetDirectoryName(found.Path) ?? ".");
         var beside = Path.GetDirectoryName(Path.GetFullPath(package)) ?? ".";
-        return new SqlProject(read.Model, read.Diagnostics, file => folders.GetValueOrDefault(file.Split('/')[0], beside), source => Recorded(source, read));
+        return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, file => folders.GetValueOrDefault(file.Split('/')[0], beside), source => Recorded(source, read));
     }
 
     /// <summary>

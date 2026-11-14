@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json",
   "title": "haruspex.ir.json",
-  "description": "An IR file of version 0.19: the shapes haruspex inferred for a set of database objects. The format is described in src/Haruspex.Ir/README.md.",
+  "description": "An IR file of version 0.20: the shapes haruspex inferred for a set of database objects. The format is described in src/Haruspex.Ir/README.md.",
   "type": "object",
   "properties": {
     "irVersion": {
       "description": "The IR's version, which a reader checks before anything else.",
-      "const": "0.19"
+      "const": "0.20"
     },
     "source": {
       "description": "Where the shapes were inferred from.",
@@ -80,6 +80,13 @@
       "items": {
         "$ref": "#/$defs/override"
       }
+    },
+    "folds": {
+      "description": "The folds the canonical value sets name, by name: how a collation compares a column's strings (0.20).",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/fold"
+      }
     }
   },
   "required": [
@@ -88,7 +95,8 @@
     "objects",
     "types",
     "unknowns",
-    "overrides"
+    "overrides",
+    "folds"
   ],
   "additionalProperties": false,
   "$defs": {
@@ -683,7 +691,8 @@
           "enum": [
             "exact",
             "collation",
-            "padded"
+            "padded",
+            "canonical"
           ]
         },
         "items": {
@@ -705,12 +714,76 @@
           "items": {
             "$ref": "#/$defs/factSource"
           }
+        },
+        "fold": {
+          "description": "The name of the fold in folds that gives a value's canonical form: present exactly when the match is canonical.",
+          "type": "string"
         }
       },
       "required": [
         "match",
         "items",
         "from"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "match": {
+              "const": "canonical"
+            },
+            "fold": true
+          },
+          "required": [
+            "match",
+            "fold"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "match": {
+              "not": {
+                "const": "canonical"
+              }
+            }
+          },
+          "required": [
+            "match"
+          ],
+          "not": {
+            "type": "object",
+            "properties": {
+              "fold": true
+            },
+            "required": [
+              "fold"
+            ]
+          }
+        }
+      ]
+    },
+    "fold": {
+      "description": "How a collation compares a column's strings. A string's canonical form drops each character of ignored, puts a class's name in place of each character of that class, keeps every other character, and then drops trailing spaces (U+0020), in that order.",
+      "type": "object",
+      "properties": {
+        "ignored": {
+          "description": "The characters ignored, in ordinal order.",
+          "type": "string"
+        },
+        "classes": {
+          "description": "The characters of each class, in ordinal order, by the class's name, which is what they become.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "ignored",
+        "classes"
       ],
       "additionalProperties": false
     },

@@ -48,6 +48,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0040](0040-a-dacpac-is-read-with-the-packages-of-its-database.md) | 14 Nov 2026 | A DACPAC is read with the packages of its database, found beside it first |
 | [0041](0041-a-type-is-spelt-with-its-defaults-written-out.md) | 14 Nov 2026 | A type is spelt with its defaults written out |
 | [0042](0042-a-table-of-another-database-is-read-as-its-package-declares-it.md) | 14 Nov 2026 | A table of another database is read as its package declares it |
+| [0043](0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md) | 14 Nov 2026 | A value set is canonical by a fold observed from the server |
 
 ## Writing a record
 

@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Ir;
 
 namespace Haruspex.Tests.Ir;
@@ -68,6 +69,15 @@ internal static class IrSamples
                     IrPresence.Always,
                     []),
                 new IrField(
+                    "state",
+                    new IrScalar(IrScalarKind.String, null, "varchar(8)", new IrFacets(Values: new IrValueSet(
+                        [new IrValue("due", IsString: true), new IrValue("paid", IsString: true)],
+                        IrValueMatch.Canonical,
+                        [new IrFactSource(IrFactSourceKind.Check, "ck_orders_state")],
+                        "Latin1_General_100_CI_AS.codepage"))),
+                    IrPresence.Always,
+                    []),
+                new IrField(
                     "total",
                     new IrScalar(IrScalarKind.Number, IrFormat.Decimal, "decimal(7,2)", new IrFacets(
                         Digits: new IrDigits(7, 2, new IrFactSource(IrFactSourceKind.Type, "decimal(7,2)")),
@@ -102,6 +112,10 @@ internal static class IrSamples
             new IrUnknown("sales.run_report", "results", IrUnknownReason.DynamicSql, "Dynamic SQL.", "procedures/run_report.sql:2:5"),
         ])
     {
+        Folds = new Dictionary<string, IrFold>
+        {
+            ["Latin1_General_100_CI_AS.codepage"] = new("\u0000\u00ad", new Dictionary<string, string> { ["A"] = "Aa", ["AE"] = "\u00c6\u00e6", [" "] = " " }.ToEquatableMap(c => c.Key, c => c.Value)),
+        }.ToEquatableMap(f => f.Key, f => f.Value),
         Overrides =
         [
             new IrOverride("sales.get_order", "results[0].settings", IrOverrideSetting.Type, "Settings are checked by the application."),

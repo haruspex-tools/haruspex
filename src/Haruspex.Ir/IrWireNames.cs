@@ -176,6 +176,7 @@ public static class IrWireNames
         IrValueMatch.Exact => "exact",
         IrValueMatch.Collation => "collation",
         IrValueMatch.Padded => "padded",
+        IrValueMatch.Canonical => "canonical",
     };
 
     /// <summary>The member of a scalar's kind that <paramref name="name"/> names, or false when it names none.</summary>
