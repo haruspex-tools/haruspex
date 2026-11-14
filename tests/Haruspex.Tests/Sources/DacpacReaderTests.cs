@@ -431,6 +431,26 @@ public class DacpacReaderTests
         Assert.Equal([Path.GetFullPath("/work/app/quay.dacpac"), Path.GetFullPath("/shared/quay.dacpac"), Path.GetFullPath("/build/quay/bin/Debug/quay.dacpac")], candidates);
     }
 
+    [Theory]
+    [InlineData(@"C:\build\bin\Debug\other.dacpac")]
+    [InlineData(@"\\server\share\other.dacpac")]
+    [InlineData(@"\build\other.dacpac")]
+    public void A_path_rooted_the_Windows_way_is_listed_as_recorded_and_never_under_the_referrer_s_folder(string recorded)
+    {
+        using var dir = new TempDirectory();
+        var package = Path.Combine(dir.Path, "app.dacpac");
+        TestPackage.Write(package, TestPackage.Procedure("dbo", "p", "SELECT 1 AS one"), references: new TestPackage.Reference(recorded));
+
+        var read = DacpacReader.Read(package);
+
+        var warning = Assert.Single(read.Diagnostics, d => d.Code == SourceCodes.ReferenceNotFound);
+        var looked = ReferenceFinder.Candidates(new PackageReference(recorded, "other.dacpac", null), package, []);
+        Assert.Equal([Path.Combine(dir.Path, "other.dacpac")], looked.Where(place => place.StartsWith(dir.Path, StringComparison.Ordinal)));
+        Assert.All(looked, place => Assert.Contains(place, warning.Message, StringComparison.Ordinal));
+        if (!OperatingSystem.IsWindows())
+            Assert.Equal(recorded, looked[^1]);
+    }
+
     [Fact]
     public void An_object_defined_in_two_packages_of_one_database_is_reported_as_defined_twice()
     {

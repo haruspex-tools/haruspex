@@ -8,7 +8,8 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// leaves every package it references, in the referring one's <c>bin</c> folder;</item>
 /// <item>in each folder of the config file's <c>references</c>, in order, under the same names;</item>
 /// <item>at the path recorded when the referring package was built, made full against the referring package's folder when it
-/// is relative.</item>
+/// is relative; a path rooted the other platform's way (<c>C:\build\…</c>, <c>\\server\share\…</c> read on Linux) as
+/// recorded, since it can't be a place here and joining it to a folder would make one that never exists.</item>
 /// </list>
 /// </summary>
 /// <remarks>
@@ -26,15 +27,26 @@ internal static class ReferenceFinder
     {
         var beside = Path.GetDirectoryName(Path.GetFullPath(referrer)) ?? ".";
         var names = new[] { DacPackage.FileNameOf(reference.FileName), reference.LogicalName }.Where(n => n.Length > 0).Distinct(StringComparer.Ordinal).ToList();
-        var recorded = reference.FileName.Replace('\\', Path.DirectorySeparatorChar);
         IEnumerable<string> places =
         [
             .. names.Select(name => Path.Join(beside, name)),
             .. searchFolders.SelectMany(folder => names.Select(name => Path.Join(folder, name))),
-            Path.IsPathRooted(recorded) ? recorded : Path.Join(beside, recorded),
         ];
-        return [.. places.Select(Path.GetFullPath).Distinct(StringComparer.Ordinal)];
+        var looked = places.Select(Path.GetFullPath);
+        var recorded = reference.FileName;
+        if (IsRootedElsewhere(recorded))
+            return [.. looked.Append(recorded).Distinct(StringComparer.Ordinal)];
+        var here = recorded.Replace('\\', Path.DirectorySeparatorChar);
+        return [.. looked.Append(Path.GetFullPath(Path.IsPathRooted(here) ? here : Path.Join(beside, here))).Distinct(StringComparer.Ordinal)];
     }
+
+    /// <summary>
+    /// Whether a recorded path is rooted the way only Windows roots one (a drive, <c>C:\…</c>; a share, <c>\\server\…</c>; the
+    /// drive's root, <c>\build\…</c>) and this isn't Windows: such a path names no place here, whatever folder it is read from.
+    /// </summary>
+    private static bool IsRootedElsewhere(string path) =>
+        !OperatingSystem.IsWindows()
+        && ((path.Length >= 2 && char.IsAsciiLetter(path[0]) && path[1] == ':') || path.StartsWith('\\'));
 
     /// <summary>The first place a file is, or null when none.</summary>
     public static string? Find(PackageReference reference, string referrer, IReadOnlyList<string> searchFolders) =>

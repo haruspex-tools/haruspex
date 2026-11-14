@@ -29,6 +29,10 @@ SQLCMD variable that names it.
 what a build leaves where it leaves it, and the config's folders cover packages kept elsewhere, as a monorepo's build may.
 The recorded path is the last resort, and the IR's hashes say which copy was read either way.
 
+A recorded path rooted the way only Windows roots one (`C:\build\…`, `\\server\share\…`, `\build\…`) names no place on
+another platform, so there it is listed as recorded, never joined to the referring package's folder, where it would name a file
+that can't exist (found reading a package built on Windows, 14 Nov 2026).
+
 **Amended** (14 Nov 2026, [decision 0042](0042-a-table-of-another-database-is-read-as-its-package-declares-it.md)). A package
 of another database, or `master.dacpac`, is now read too, with the packages of its own database, into a model of its own that
 the model holds under the name a body writes the database by; its references to a third database are recorded, not read.
