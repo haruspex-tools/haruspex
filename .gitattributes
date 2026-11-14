@@ -8,3 +8,5 @@ tests/corpus/sql-server-samples/** -text
 # The plots fixture is about how scripts are laid out: byte order marks, UTF-16, CRLF and a lone CR. Git must keep its
 # scripts byte for byte (tests/fixtures/plots/README.md).
 tests/fixtures/plots/database/** -text
+# A DACPAC is a zip, and its SHA-256 is part of the IR it gives (tests/dacpacs/README.md), so git must keep it byte for byte.
+*.dacpac binary

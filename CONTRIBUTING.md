@@ -228,6 +228,7 @@ Nested types stay in the type they belong to, and a partial type's parts are nam
 | `tests/Haruspex.DifferentialTests` | Runs the fixtures in SQL Server and checks the output against the IR and the generated Zod. |
 | `tests/Shared` | Test support compiled into both test projects (`Haruspex.TestSupport`): the fixtures, found by listing their folder (`Fixture`); inferring procedures from SQL a test writes (`InferProcedure`) and finding things in the IR (`IrNavigation`); temporary folders, the repository's paths, and running the emit-check npm package. |
 | `tests/fixtures` | The fixtures, one folder each: schema, seed, runs and expected outputs ([its README](tests/fixtures/README.md)). |
+| `tests/dacpacs` | DACPACs built from the fixtures, the corpus and two small projects, and a few built or extracted in other ways, each with how it was made ([its README](tests/dacpacs/README.md)). DacFx made them, in development only; nothing refers to it. |
 | `tests/ir-versions` | One IR file from each version of the format, which the reader must read (the current one) or refuse ([its README](tests/ir-versions/README.md)). |
 | `tests/emit-check` | A small npm package that type-checks the generated Zod. |
 | `tests/emit-lint` | A small npm package that lints the generated Zod. |

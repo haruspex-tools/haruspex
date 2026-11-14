@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+  <PropertyGroup>
+    <Name>atelier</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider</DSP>
+  </PropertyGroup>
+  <ItemGroup>
+    <Build Update="procedures/nulls_off.sql" AnsiNulls="Off" />
+    <Build Update="procedures/quoted_off.sql" QuotedIdentifier="Off" />
+  </ItemGroup>
+</Project>

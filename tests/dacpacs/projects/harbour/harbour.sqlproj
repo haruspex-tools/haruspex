@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+  <PropertyGroup>
+    <Name>harbour</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider</DSP>
+    <DefaultCollation>Latin1_General_100_CI_AS_SC_UTF8</DefaultCollation>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../crane/crane.sqlproj" />
+    <ProjectReference Include="../tally/tally.sqlproj">
+      <DatabaseSqlCmdVariable>Tally</DatabaseSqlCmdVariable>
+    </ProjectReference>
+    <SqlCmdVariable Include="Tally">
+      <DefaultValue>tally</DefaultValue>
+      <Value>$(SqlCmdVar__1)</Value>
+    </SqlCmdVariable>
+    <PackageReference Include="Microsoft.SqlServer.Dacpacs.Master" Version="170.0.0" DatabaseVariableLiteralValue="master" />
+  </ItemGroup>
+</Project>

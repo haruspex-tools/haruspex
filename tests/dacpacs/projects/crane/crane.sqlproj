@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+  <PropertyGroup>
+    <Name>crane</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider</DSP>
+    <DefaultCollation>Latin1_General_100_CI_AS_SC_UTF8</DefaultCollation>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../quay/quay.sqlproj" />
+  </ItemGroup>
+</Project>
