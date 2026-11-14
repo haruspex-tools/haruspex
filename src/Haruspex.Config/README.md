@@ -33,6 +33,7 @@ flowchart LR
 | `NamingRules.cs` | `replace`, then the schema's `prefix`, then `case`; a schema's `naming` merges over the top level's. |
 | `NameSettler.cs` | Settles every name, replacing inference's provisional keys. Clashes between objects are errors; a number is added only between two types of one object. |
 | `ConfigApplication.cs` | The order: overrides and declared results first (their paths are in terms of the inferred document), then names. It also warns of a selected procedure whose results only a declaration could give, naming the statement. |
+| `ConfigApplying.cs` | One application, as named steps over the state they share (`ConfigApplying.Apply`): each procedure's overrides, the warnings for what only a declaration or a path override can type, then the names. |
 
 ## Example
 
