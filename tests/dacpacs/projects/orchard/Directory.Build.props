@@ -1,0 +1,6 @@
+<Project>
+  <!-- A setting the project takes from here, as MSBuild imports the nearest Directory.Build.props. -->
+  <PropertyGroup>
+    <AnsiPadding>False</AnsiPadding>
+  </PropertyGroup>
+</Project>

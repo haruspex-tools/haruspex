@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+  <!-- Part of orchard's database, built with QUOTED_IDENTIFIER off, which its scripts take and orchard's don't. -->
+  <PropertyGroup>
+    <Name>press</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql160DatabaseSchemaProvider</DSP>
+    <DefaultCollation>Latin1_General_100_CI_AS</DefaultCollation>
+    <QuotedIdentifier>False</QuotedIdentifier>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../cellar/cellar.sqlproj" />
+  </ItemGroup>
+</Project>

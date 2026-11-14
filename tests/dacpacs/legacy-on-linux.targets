@@ -1,0 +1,20 @@
+<Project>
+  <!--
+    Lets a legacy SSDT project build with the .NET SDK on Linux, for tests/dacpacs/build.sh only. Such a project names .NET
+    Framework 4.x and C#, whose reference assemblies and compiler step a Linux SDK lacks, though a database project compiles no
+    assembly. These targets replace the four steps that need them with empty ones, as Microsoft.Build.Sql's own Sdk.targets
+    does for an SDK-style project. A referenced database project's assembly, which Windows compiles empty, is then not there,
+    so it is taken out of the assemblies a referring project resolves, and the referring project takes the referenced one's
+    DACPAC alone, as the database build does on Windows. Nothing here defines a property or touches the project's Build,
+    None or deployment items: what is built, and with which settings, is the project's alone.
+  -->
+  <Target Name="GetReferenceAssemblyPaths" />
+  <Target Name="GetFrameworkPaths" />
+  <Target Name="CoreCompile" />
+  <Target Name="CopyFilesToOutputDirectory" />
+  <Target Name="DropDatabaseProjectAssemblies" AfterTargets="ResolveArtifactReferences">
+    <ItemGroup>
+      <SqlReferencePath Remove="@(SqlReferencePath)" Condition="'%(Extension)' == '.dll' And !Exists('%(FullPath)')" />
+    </ItemGroup>
+  </Target>
+</Project>

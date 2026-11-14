@@ -51,7 +51,8 @@ internal sealed partial class CodeReferences
         "TrustServerCertificate",
 
         // MSBuild's items and properties.
-        "PackageReference", "ProjectReference", "AnalysisLevel", "IsPackable",
+        "PackageReference", "ProjectReference", "AnalysisLevel", "IsPackable", "Build", "None", "Content", "Import", "Update", "AnsiNulls",
+        "QuotedIdentifier", "SQLDBExtensionsRefPath",
 
         // JavaScript, in the emitter's documentation.
         "Date", "Infinity",

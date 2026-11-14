@@ -7,6 +7,8 @@
 #   tests/dacpacs/build.sh fixtures [name...]   every fixture that builds as a project, or the ones named
 #   tests/dacpacs/build.sh corpus               WideWorldImporters, from its project's Build items
 #   tests/dacpacs/build.sh projects             the projects in projects/, with their references
+#   tests/dacpacs/build.sh legacy               the legacy SSDT projects in projects/ (mill), as Visual Studio writes them
+#   tests/dacpacs/build.sh ssdt                 WideWorldImporters from its own legacy SSDT project file
 #   tests/dacpacs/build.sh versions             the orders fixture under older Microsoft.Build.Sql versions
 #   tests/dacpacs/build.sh extract              atelier and orders deployed and extracted again; needs SqlPackage on the
 #                                               PATH and HARUSPEX_TEST_SQLSERVER, a server of your own
@@ -88,6 +90,53 @@ projects() {
   build "$work/projects/atelier" atelier "$out/atelier"
   build "$work/projects/harbour" harbour "$out/harbour"
   build "$work/projects/options-off" options-off "$out/versions"
+  build "$work/projects/orchard" orchard "$out/orchard"
+}
+
+# A legacy SSDT project builds with Visual Studio's SSDT on Windows. Here it builds with Microsoft.Build.Sql's own copy of the
+# same build targets (SqlTasks), named by SQLDBExtensionsRefPath as the project file's own Import allows, and
+# legacy-on-linux.targets, which skips the .NET Framework steps a database project doesn't need. The three other properties
+# given only stop .NET Framework's own assemblies being referenced. None of them is a property or item the database build
+# reads: the project file is used as it is, and only the build machine differs.
+legacy_build() {
+  local dir="$1" name="$2" into="$3"; shift 3
+  local tasks
+  tasks="$(dirname "$(find "$HOME/.nuget/packages/microsoft.build.sql/$current/tools/net8.0" -name Microsoft.Data.Tools.Schema.SqlTasks.targets)")"
+  if dotnet build "$dir/$name.sqlproj" -nologo -v:q -clp:ErrorsOnly -p:NetCoreBuild=true -p:SQLDBExtensionsRefPath="$tasks" \
+      -p:NETCoreTargetsPath="$tasks" -p:CustomAfterMicrosoftCommonTargets="$out/legacy-on-linux.targets" -p:NoStdLib=true \
+      -p:DisableImplicitFrameworkReferences=true -p:AddAdditionalExplicitAssemblyReferences=false "$@" > "$dir/build.log" 2>&1; then
+    mkdir -p "$into"
+    cp "$dir"/bin/Debug/*.dacpac "$into"/
+    echo "built $name into ${into#"$root"/}"
+  else
+    echo "FAILED $name"
+    grep -E " error " "$dir/build.log" | sed -E "s#$dir/##" | sort -u | head -5
+    return 1
+  fi
+}
+
+# The tasks come from Microsoft.Build.Sql's package, which an SDK-style build restores first.
+legacy() {
+  mkdir -p "$work/projects"
+  cp -R "$out/projects/." "$work/projects/"
+  build "$work/projects/cellar" cellar "$work/restore" > /dev/null
+  legacy_build "$work/projects/mill" mill "$out/mill"
+  # legacy-on-linux.targets skips the step that copies a referenced package beside the referring one, so it is copied here.
+  cp "$work/projects/granary/bin/Debug/granary.dacpac" "$out/mill/"
+}
+
+# WideWorldImporters from its own project file, unchanged, as legacy() builds one. Its DSP names Azure SQL Database, which
+# refuses the storage its scripts declare, so it is built for SQL Server 2016 (Sql130): the one property given on the command
+# line. The project's CompatibilityMode (130) makes the level the same either way.
+ssdt() {
+  local from="$root/tests/corpus/sql-server-samples/samples/databases/wide-world-importers/wwi-ssdt/wwi-ssdt"
+  local dir="$work/WideWorldImporters-ssdt"
+  mkdir -p "$dir" "$work/projects"
+  cp -R "$from/." "$dir/"
+  cp -R "$out/projects/cellar" "$work/projects/"
+  build "$work/projects/cellar" cellar "$work/restore" > /dev/null
+  legacy_build "$dir" WideWorldImporters "$work/ssdt" -p:DSP=Microsoft.Data.Tools.Schema.Sql.Sql130DatabaseSchemaProvider
+  cp "$work/ssdt/WideWorldImporters.dacpac" "$out/corpus/WideWorldImporters-ssdt.dacpac"
 }
 
 # Older versions write older model.xml. Microsoft.Build.Sql 1.0.0 imports NuGet's pack targets from where SDKs before .NET 10
@@ -166,6 +215,6 @@ shapes() {
 }
 
 mkdir -p "$out/versions"
-step="${1:?give fixtures, corpus, projects, versions, extract, clr or shapes}"
+step="${1:?give fixtures, corpus, projects, legacy, ssdt, versions, extract, clr or shapes}"
 shift
 "$step" "$@"

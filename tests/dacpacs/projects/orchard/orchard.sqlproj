@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+  <!-- One database over three projects: orchard, press (the same database, referenced here) and cellar (the same database,
+       referenced by press only). It holds every kind of item a build reads or leaves out. -->
+  <PropertyGroup>
+    <Name>orchard</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql160DatabaseSchemaProvider</DSP>
+    <DefaultCollation>Latin1_General_100_CI_AS</DefaultCollation>
+    <CompatibilityMode>150</CompatibilityMode>
+    <AnsiNullDefault>False</AnsiNullDefault>
+    <ArithAbort>False</ArithAbort>
+    <ConcatNullYieldsNull>False</ConcatNullYieldsNull>
+    <NumericRoundAbort>True</NumericRoundAbort>
+    <Beyond>../orchard-beyond</Beyond>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Build Update="procedures\quoted_off.sql" QuotedIdentifier="Off" />
+    <Build Update="procedures\nulls_off.sql">
+      <AnsiNulls>Off</AnsiNulls>
+    </Build>
+    <Build Remove="procedures\draft.sql" />
+    <Build Remove="scratch\**" />
+    <None Include="notes\readme.sql" />
+    <Content Include="procedures\in_content.sql" />
+    <Content Include="$(Beyond)\cider.sql" />
+    <Build Remove="procedures\taken_out.sql" />
+    <Content Include="procedures\taken_out.sql" />
+    <Build Include="$(Beyond)\harvest.sql" />
+    <PreDeploy Include="deploy\pre.sql" />
+    <PostDeploy Include="deploy\post.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\press\press.sqlproj" />
+  </ItemGroup>
+</Project>

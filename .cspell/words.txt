@@ -94,7 +94,7 @@ uddt
 # The compiler's API names a pattern inside another pattern a subpattern (PropertySubpatterns, in the analysers)
 subpatterns
 
-# Products, tools and their names
+# Products, tools and their names (sqldb: SSDT's MSBuild property SQLDBExtensionsRefPath)
 dacfx
 dacpac
 dacpacs
@@ -106,6 +106,7 @@ setvar
 shellcheck
 slnx
 sqlclient
+sqldb
 sqlproj
 ssdt
 ssms
