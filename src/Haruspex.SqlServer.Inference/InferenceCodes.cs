@@ -6,8 +6,8 @@ namespace Haruspex.SqlServer.Inference;
 /// <summary>
 /// The codes of what inference reports (HAR2xxx), each explained on its page in <c>docs/diagnostics</c>: an unknown in the
 /// output, a note with one code for each of its reasons but those only a declaration resolves (<see cref="Of"/>), and what
-/// inference could not check, a warning. The numbers left out (2002, 2016 to 2020) were never reported, and are not given
-/// out.
+/// inference could not check, a warning. The notes first given to the reasons only a declaration resolves (2002, 2016 to
+/// 2020) are retired: the config layer reports those unknowns, each once, with what to declare.
 /// </summary>
 public static class InferenceCodes
 {
@@ -62,6 +62,24 @@ public static class InferenceCodes
     /// <summary>An unknown for <see cref="IrUnknownReason.HiddenColumn"/>.</summary>
     public static DiagnosticCode HiddenColumn { get; } = Unknown(2022, "A result set with a hidden column");
 
+    /// <summary>Retired: an unknown for <see cref="IrUnknownReason.ExternalCode"/> is reported as HAR4204 or HAR4205.</summary>
+    public static DiagnosticCode ExternalCode { get; } = Retire(2002, "Results from code outside the project");
+
+    /// <summary>Retired: an unknown for <see cref="IrUnknownReason.DynamicSql"/> is reported as HAR4204 or HAR4205.</summary>
+    public static DiagnosticCode DynamicSql { get; } = Retire(2016, "Dynamic SQL");
+
+    /// <summary>Retired: an unknown for <see cref="IrUnknownReason.ProcedureVariable"/> is reported as HAR4204 or HAR4205.</summary>
+    public static DiagnosticCode ProcedureVariable { get; } = Retire(2017, "A procedure chosen when the call runs");
+
+    /// <summary>Retired: an unknown for <see cref="IrUnknownReason.SystemProcedure"/> is reported as HAR4204 or HAR4205.</summary>
+    public static DiagnosticCode SystemProcedure { get; } = Retire(2018, "A system procedure");
+
+    /// <summary>Retired: an unknown for <see cref="IrUnknownReason.MissingProcedure"/> is reported as HAR4204 or HAR4205.</summary>
+    public static DiagnosticCode MissingProcedure { get; } = Retire(2019, "A procedure that isn't in the project");
+
+    /// <summary>Retired: an unknown for <see cref="IrUnknownReason.AmbiguousProcedure"/> is reported as HAR4204 or HAR4205.</summary>
+    public static DiagnosticCode AmbiguousProcedure { get; } = Retire(2020, "A procedure name more than one schema has");
+
     /// <summary>
     /// The code of the note an unknown with <paramref name="reason"/> is reported with; null for a reason only a declaration
     /// can resolve (code outside the project, dynamic SQL, a procedure chosen when it runs, a system procedure, one outside
@@ -96,4 +114,6 @@ public static class InferenceCodes
     };
 
     private static DiagnosticCode Unknown(int number, string title) => new(number, DiagnosticSeverity.Note, title);
+
+    private static DiagnosticCode Retire(int number, string title) => Unknown(number, title) with { Retired = true };
 }

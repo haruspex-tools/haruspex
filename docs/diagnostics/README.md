@@ -21,6 +21,7 @@ reason.
 | Code | Severity | What |
 |---|---|---|
 | [HAR2001](HAR2001.md) | note | A statement that isn't modelled yet |
+| [HAR2002](HAR2002.md) | note | Results from code outside the project (retired) |
 | [HAR2003](HAR2003.md) | note | An object whose definition depends on the order of scripts |
 | [HAR2004](HAR2004.md) | note | A query form that isn't modelled yet |
 | [HAR2005](HAR2005.md) | note | An expression that isn't modelled yet |
@@ -34,6 +35,11 @@ reason.
 | [HAR2013](HAR2013.md) | note | JSON whose shape isn't visible |
 | [HAR2014](HAR2014.md) | note | A temporary table the caller may create |
 | [HAR2015](HAR2015.md) | note | Result sets that depend on the path taken |
+| [HAR2016](HAR2016.md) | note | Dynamic SQL (retired) |
+| [HAR2017](HAR2017.md) | note | A procedure chosen when the call runs (retired) |
+| [HAR2018](HAR2018.md) | note | A system procedure (retired) |
+| [HAR2019](HAR2019.md) | note | A procedure that isn't in the project (retired) |
+| [HAR2020](HAR2020.md) | note | A procedure name more than one schema has (retired) |
 | [HAR2021](HAR2021.md) | note | A trigger that may return result sets |
 | [HAR2022](HAR2022.md) | note | A result set with a hidden column |
 | [HAR2101](HAR2101.md) | warning | A write to an object the project doesn't define |
