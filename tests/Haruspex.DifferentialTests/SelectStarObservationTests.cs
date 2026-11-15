@@ -154,11 +154,19 @@ public class SelectStarObservationTests(SqlServerFixture server)
     [Fact]
     public async Task A_schema_bound_module_refuses_a_star()
     {
-        // 1054, for a view or a function: so no module whose star could not go stale has one.
+        // 1054, for a view or a function, even inside EXISTS: so no module whose star could not go stale has one. COUNT(*) is
+        // no star and is allowed. A natively compiled procedure, which must be schema-bound, refuses one the same way
+        // (observed by hand: it needs a memory-optimised filegroup, which a test's transaction can't add).
         string[] table = ["CREATE TABLE dbo.obs_t (a int NOT NULL);"];
         Assert.Equal(1054, (await Run(table, "EXEC (N'CREATE VIEW dbo.obs_v WITH SCHEMABINDING AS SELECT * FROM dbo.obs_t;');")).Error);
         Assert.Equal(1054, (await Run(table, "EXEC (N'CREATE FUNCTION dbo.obs_f() RETURNS TABLE WITH SCHEMABINDING AS RETURN SELECT * FROM dbo.obs_t;');")).Error);
+        Assert.Equal(1054, (await Run(table, "EXEC (N'CREATE VIEW dbo.obs_v WITH SCHEMABINDING AS SELECT t.a FROM dbo.obs_t AS t WHERE EXISTS (SELECT * FROM dbo.obs_t AS u WHERE u.a = t.a);');")).Error);
+        Assert.Equal("n: 0", (await Run([.. table, "CREATE VIEW dbo.obs_v WITH SCHEMABINDING AS SELECT COUNT_BIG(*) AS n FROM dbo.obs_t;"], "SELECT n FROM dbo.obs_v;")).ToString());
     }
+
+    [Fact]
+    public async Task Only_a_natively_compiled_procedure_can_be_schema_bound() =>
+        Assert.Equal(10796, (await Run(["CREATE TABLE dbo.obs_t (a int NOT NULL);"], "EXEC (N'CREATE PROCEDURE dbo.obs_p WITH SCHEMABINDING AS SELECT a FROM dbo.obs_t;');")).Error);
 
     // ---- two columns of one name -------------------------------------------------------------------------------------
 

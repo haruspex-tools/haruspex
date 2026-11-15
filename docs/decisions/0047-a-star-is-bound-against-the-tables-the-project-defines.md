@@ -15,7 +15,10 @@ is unknown with that reason, as before.
   (a multi-statement function's `INSERT … SELECT *` then fails, 213), even with a plan cached before the change.
 - **A view and an inline function** bind it when they are created, and keep that list until `sp_refreshsqlmodule` (or
   `sp_refreshview`) binds it again.
-- **A schema-bound module** can't have a star at all (1054), so no module whose star could go stale is protected from it.
+- **A schema-bound module** can't have a star at all (1054), not even inside `EXISTS`; `COUNT(*)` is no star and is allowed.
+  So a module protected from its tables changing never has a star, and a module with one is never protected. A natively
+  compiled procedure must be schema-bound, and refuses a star the same way, in `EXISTS` too (observed by hand, since it needs
+  a memory-optimised filegroup). Any other procedure can't be schema-bound (10796), so its star is always bound when it runs.
 
 So for a view or an inline function, what it returns depends on whether it was refreshed after its tables last changed, which
 the project doesn't say. What deployments do, observed the same day:
@@ -43,8 +46,9 @@ the project doesn't say. What deployments do, observed the same day:
 database: so a star stands for each table as the project defines it, in every module, as it already did for views. For a
 procedure and the functions that bind at run time this is the engine's own rule; for a view and an inline function it is the
 assumption that the deployment refreshes them, which SqlPackage does; and the declared order is assumed to be the deployed one,
-which its default publish keeps. A deployment that leaves a module bound to an older table, or that adds columns out of their
-declared order, is not described, and the reference says so.
+which its default publish keeps. Schema binding doesn't enter the rule: no module that has a star can be schema-bound, so a
+star gone stale is a question only for a view or an inline function that isn't. A deployment that leaves a module bound to an
+older table, or that adds columns out of their declared order, is not described, and the reference says so.
 
 **See also:** the inference reference's "SELECT *" section; [Binding](../internals/03-binding.md), "SELECT *"; the
 `haberdashery` fixture.

@@ -1074,8 +1074,8 @@ star) and everything the query proves of it: a `WHERE`, an outer join's optional
 - **When a star is bound.** A procedure, a scalar function and a multi-statement function bind it when they run
   (`A_procedures_star_is_bound_when_it_runs`, `A_scalar_functions_star_is_bound_when_it_runs`,
   `A_multi_statement_functions_star_is_bound_when_it_runs`); a view and an inline function when they are created
-  (`An_inline_functions_star_is_bound_when_it_is_created`); a schema-bound module can't have one
-  (`A_schema_bound_module_refuses_a_star`). Every star is bound here against the tables as the project defines them,
+  (`An_inline_functions_star_is_bound_when_it_is_created`); a schema-bound module can't have one, even in `EXISTS`, and only a natively compiled procedure can be schema-bound
+  (`A_schema_bound_module_refuses_a_star`, `Only_a_natively_compiled_procedure_can_be_schema_bound`). Every star is bound here against the tables as the project defines them,
   assuming a deployment that refreshes the modules bound earlier and keeps the declared column order, as SqlPackage's
   publish does by default ([decision 0047](../../docs/decisions/0047-a-star-is-bound-against-the-tables-the-project-defines.md)).
 - **Not expanded**, each unknown with its reason: a star over a table the project doesn't define (`unresolved-table`), over a
