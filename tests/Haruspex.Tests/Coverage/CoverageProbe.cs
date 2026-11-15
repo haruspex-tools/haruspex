@@ -27,6 +27,7 @@ internal static class CoverageProbe
         ("ticket.sql", "CREATE SEQUENCE dbo.ticket AS int START WITH 1;"),
         ("by_id.sql", "CREATE PARTITION FUNCTION by_id (int) AS RANGE LEFT FOR VALUES (10);"),
         ("helper.sql", "CREATE PROCEDURE dbo.helper AS SELECT 1 AS one;"),
+        ("twice.sql", "CREATE FUNCTION dbo.twice(@n int) RETURNS int AS BEGIN RETURN @n * 2; END"),
         ("rows_of.sql", "CREATE FUNCTION dbo.rows_of() RETURNS TABLE AS RETURN SELECT 1 AS a;"),
     ];
 

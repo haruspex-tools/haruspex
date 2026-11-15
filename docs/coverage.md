@@ -19,9 +19,9 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | Not in it, and unknown where they are called | 251 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 151 |
+| Modelled, wholly or in part | 152 |
 | Read, changing no result | 29 |
-| Unknown | 325 |
+| Unknown | 324 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -862,7 +862,7 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `( SELECT … )` | `ScalarSubquery` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#aggregates-and-scalar-subqueries) | Its one column, NULL when it returns no row. |
 | `CASE WHEN …` | `SearchedCaseExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#case-iif-choose-and-nullif) | The type of highest precedence over its results; NULL without ELSE. |
 | `CASE x WHEN …` | `SimpleCaseExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#case-iif-choose-and-nullif) | As searched CASE. |
-| `f( … )` | `FunctionCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#built-in-functions) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A function of the catalogue is typed by its row, and one of the project's by its body; any other, and a method of a CLR type, is unknown. |
+| `f( … )` | `FunctionCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#built-in-functions) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A function of the catalogue is typed by its row, and one of the project's (called by its schema) by its body; any other, and a method of a CLR type, is unknown. |
 | `CAST` | `CastCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type. |
 | `CONVERT` | `ConvertCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type, whatever the style. |
 | `TRY_CAST` | `TryCastCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type, NULL when the conversion fails. |
@@ -884,7 +884,7 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `{ fn … }` | `OdbcFunctionCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled. |
 | `SQL_ type in { fn CONVERT }` | `OdbcConvertSpecification` | part of `OdbcFunctionCall` |  |
 | `{ d '…' }` | `OdbcLiteral` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled. |
-| `t.c.method( … )` | `MultiPartIdentifierCallTarget` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: a method of an xml or CLR column. |
+| `schema.f( … ), t.c.method( … )` | `MultiPartIdentifierCallTarget` | modelled in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A function of the project called by its schema is typed by its body; a method of an xml or CLR column isn't modelled. |
 | `( expression ).method( … )` | `ExpressionCallTarget` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: a method of a CLR value. |
 | `type::method( … )` | `UserDefinedTypeCallTarget` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: the CLR types aren't. |
 | `type::property, value.property` | `UserDefinedTypePropertyAccess` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: the CLR types aren't. |
