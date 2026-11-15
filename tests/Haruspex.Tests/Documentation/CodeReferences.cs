@@ -51,8 +51,7 @@ internal sealed partial class CodeReferences
         "TrustServerCertificate",
 
         // MSBuild's items and properties.
-        "PackageReference", "ProjectReference", "AnalysisLevel", "IsPackable", "Build", "None", "Content", "Import", "Update", "AnsiNulls",
-        "QuotedIdentifier", "SQLDBExtensionsRefPath",
+        "AnalysisLevel", "IsPackable", "SQLDBExtensionsRefPath",
 
         // JavaScript, in the emitter's documentation.
         "Date", "Infinity",
@@ -61,7 +60,7 @@ internal sealed partial class CodeReferences
         "Haruspex.SqlServer", "Catalog", "TableModel", "ColumnModel", "SqlProject.Changed",
 
         // Elements and annotations of a DACPAC's model.xml that the reader doesn't read, named where the documentation says
-        // what it passes over or how an extract differs (the ones it reads are its own words, ModelXmlWords).
+        // what it passes over or how an extract differs (the ones it reads are its own words, readerWords).
         "SqlTableType", "SqlSequence",
 
         // Products named in the layers' diagrams.
@@ -77,9 +76,10 @@ internal sealed partial class CodeReferences
 
     /// <summary>
     /// The first part of a dotted name that is .NET's or a package's namespace (<c>System.CommandLine</c>,
-    /// <c>Microsoft.Data.SqlClient</c>, <c>Testcontainers.MsSql</c>), named where a dependency is listed. Not checked.
+    /// <c>Microsoft.Data.SqlClient</c>, <c>Testcontainers.MsSql</c>, <c>MSBuild.Sdk.SqlProj</c>, an SDK named where it isn't read),
+    /// named where a dependency is listed. Not checked.
     /// </summary>
-    public static readonly IReadOnlySet<string> OutsideNamespaces = new HashSet<string>(StringComparer.Ordinal) { "System", "Microsoft", "Testcontainers" };
+    public static readonly IReadOnlySet<string> OutsideNamespaces = new HashSet<string>(StringComparer.Ordinal) { "System", "Microsoft", "Testcontainers", "MSBuild" };
 
     private static readonly Assembly[] Assemblies =
     [
@@ -110,10 +110,11 @@ internal sealed partial class CodeReferences
     private readonly HashSet<string> csharpFiles = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// The words of <c>model.xml</c> the DACPAC reader reads (<c>SqlTable</c>, <c>BodyScript</c>): the values of its <c>ModelXml</c>'s
-    /// constants, so a word the documentation names is one the reader really reads, and renaming one there fails here.
+    /// The words of <c>model.xml</c> the DACPAC reader reads (<c>SqlTable</c>, <c>BodyScript</c>), and of a project file the project
+    /// reader reads (<c>Build</c>, <c>DefaultCollation</c>): the values of <c>ModelXml</c>'s and <c>ProjectXml</c>'s constants, so a
+    /// word the documentation names is one a reader really reads, and renaming one there fails here.
     /// </summary>
-    private readonly HashSet<string> modelXmlWords = new(StringComparer.Ordinal);
+    private readonly HashSet<string> readerWords = new(StringComparer.Ordinal);
 
     /// <summary>The references of this commit: read once, since reflection and the source scan are the slow part.</summary>
     public static CodeReferences Current { get; } = new();
@@ -127,10 +128,10 @@ internal sealed partial class CodeReferences
                 namespaces.Add(ns);
         }
 
-        foreach (var field in typeof(SqlScriptFolder).Assembly.GetType("Haruspex.SqlServer.Sources.Dacpacs.ModelXml", throwOnError: true)!
-            .GetFields(BindingFlags.Public | BindingFlags.Static).Where(f => f.IsLiteral))
+        foreach (var words in (string[])["Haruspex.SqlServer.Sources.Dacpacs.ModelXml", "Haruspex.SqlServer.Sources.Projects.ProjectXml"])
         {
-            modelXmlWords.Add((string)field.GetRawConstantValue()!);
+            foreach (var field in typeof(SqlScriptFolder).Assembly.GetType(words, throwOnError: true)!.GetFields(BindingFlags.Public | BindingFlags.Static).Where(f => f.IsLiteral))
+                readerWords.Add((string)field.GetRawConstantValue()!);
         }
 
         // ScriptDom's types are named where haruspex says which syntax it reads.
@@ -232,7 +233,7 @@ internal sealed partial class CodeReferences
     private string? NameProblem(string code)
     {
         var parts = code.Split('.');
-        if (Outside.Contains(code) || namespaces.Contains(code) || modelXmlWords.Contains(code) || (parts.Length > 1 && OutsideNamespaces.Contains(parts[0])))
+        if (Outside.Contains(code) || namespaces.Contains(code) || readerWords.Contains(code) || (parts.Length > 1 && OutsideNamespaces.Contains(parts[0])))
             return null;
         if (types.TryGetValue(parts[0], out var candidates))
             return MemberProblem(candidates, parts);

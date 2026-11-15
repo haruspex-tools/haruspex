@@ -34,10 +34,11 @@ flowchart LR
 haruspex generate                                    # settings from haruspex.json, found by walking up
 haruspex generate path/to/database --include 'sales.*' --out src/db
 haruspex generate bin/Release/Sales.dacpac --include 'sales.*' --out src/db   # a DACPAC and the packages it refers to
+haruspex generate Sales/Sales.sqlproj --include 'sales.*' --out src/db       # a project file, read as its build reads it
 ```
 
-`generate` writes `haruspex.ir.json` and `haruspex.zod.ts` to the output folder. The source argument (a folder or a
-`.dacpac`), `--include` and
+`generate` writes `haruspex.ir.json` and `haruspex.zod.ts` to the output folder. The source argument (a folder, a
+`.sqlproj` or a `.dacpac`), `--include` and
 `--out` override the config file for one run, and `--config` names a config file instead of searching for one.
 
 Everything it finds goes to standard error, one line each, in the form compilers write and editors and CI annotate, with

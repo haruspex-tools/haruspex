@@ -18,15 +18,22 @@ namespace Haruspex.SqlServer.Sources;
 /// </remarks>
 /// <param name="file">The script's path relative to the folder, which every location in it names.</param>
 /// <param name="into">What the folder's scripts declare, which this script adds to.</param>
-internal sealed class ScriptReader(string file, SchemaDeclarations into)
+/// <param name="settings">The settings the script starts with (<see cref="ScriptSettings"/>).</param>
+internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptSettings settings)
 {
     /// <summary>
     /// Whether <c>ANSI_NULLS</c> is off at this point of the script. A procedure, function or view keeps the setting in force
     /// when it was created (observed), so a SET before its definition in the same file is the one it runs with. Another
-    /// file's SET may run before it too, in an order the folder does not say; that is not followed, and the default, on, is
-    /// assumed.
+    /// file's SET may run before it too, in an order the folder does not say; that is not followed, and the script starts with
+    /// its own setting: a folder's with the default, on, a project's with the project's.
     /// </summary>
-    private bool ansiNullsOff;
+    private bool ansiNullsOff = !settings.AnsiNulls;
+
+    /// <summary>A script that starts with the default settings, as a folder's does.</summary>
+    public ScriptReader(string file, SchemaDeclarations into)
+        : this(file, into, ScriptSettings.Default)
+    {
+    }
 
     /// <summary>Reads the script's statements, in order, and every statement at any depth that may disable a constraint.</summary>
     public void Read(TSqlScript script)

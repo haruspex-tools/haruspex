@@ -2,8 +2,8 @@
 
 Reads a SQL Server database project into a
 [Haruspex.SqlServer.Model](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md): a folder of
-`.sql` scripts, such as an SSDT or `Microsoft.Build.Sql` project's, or a DACPAC with the DACPACs of the same database it refers
-to. It parses with [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom), Microsoft's own
+`.sql` scripts, such as an SSDT or `Microsoft.Build.Sql` project's; that project's file, `.sqlproj`, with the projects of the
+same database it refers to; or a DACPAC with the DACPACs of the same database it refers to. It parses with [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom), Microsoft's own
 T-SQL parser (MIT), reads `model.xml` with .NET's own zip and XML readers, and needs neither DacFx nor a database.
 
 ## How data flows through it
@@ -43,6 +43,24 @@ flowchart LR
     declarations --> model["DatabaseModel, with its DatabaseSettings"]
 ```
 
+A project file is read by `SqlProjectReader` into the same scripts a folder gives, each with the settings it starts with:
+
+```mermaid
+flowchart LR
+    project["a .sqlproj"] --> evaluated["ProjectEvaluator: properties, then items"]
+    evaluated --> files["ProjectFiles: the scripts the build reads, each with its settings"]
+    evaluated --> settings["ProjectSettings: the database's settings"]
+    evaluated --> refs["ProjectReferences: projects of the same database"]
+    refs --> project
+    files --> scripts["ScriptFile, ScriptReader: as a folder's"]
+    scripts --> model["DatabaseModel, with its DatabaseSettings"]
+    settings --> model
+```
+
+MSBuild is evaluated as far as decision 0044 says; what isn't is carried as a doubt to whatever it touches, and reported only
+where that is something read (`Doubt`). The guide's chapter 2 says how, and `ProjectEquivalenceTests` proves a project reads
+as the package its build makes.
+
 Tables are elements of `model.xml`, read as data (`TableReader`); each module keeps its text, header and body, which is parsed
 and read by the same `ModuleReader` a folder's script is (`ModuleTextReader`). Every package of the same database reachable
 through references is read once into the one model; another database's package is found and hashed, not read. A location
@@ -59,6 +77,9 @@ var orders = read.Model.FindTable(new ObjectName("sales", "orders"));
 
 var package = DacpacReader.Read("bin/Release/Sales.dacpac", ["../Shared/bin/Release"]);
 Console.WriteLine($"{package.Package?.Name} {package.Package?.Sha256}, {package.Model.Settings?.Collation}");
+
+var project = SqlProjectReader.Read("Sales/Sales.sqlproj");
+Console.WriteLine($"{project.Projects.Count} projects, {project.Model.Settings?.Collation}");
 ```
 
 ## What it guarantees
@@ -81,6 +102,11 @@ Console.WriteLine($"{package.Package?.Name} {package.Package?.Sha256}, {package.
   `ANSI_NULLS` or `QUOTED_IDENTIFIER` off is parsed and read as it runs. A CLR module, and an encrypted one an extracted
   package holds no text for, is read from its element with a `ClrBody` or an `EncryptedBody`, never from a placeholder. A
   referenced package not found is one warning (HAR1003) naming every place looked.
+- **A project reads as the package its build makes.** For two projects of its own in both formats (one database over three
+  projects; every kind of item a build reads or leaves out), for WideWorldImporters' own legacy project, and for every
+  fixture as a project that sets nothing, the model has exactly the package's objects and settings, and the output is byte
+  for byte the package's once locations are rewritten (`ProjectEquivalenceTests`). Each script starts with the
+  `ANSI_NULLS` and `QUOTED_IDENTIFIER` its build gives it, from its item or its own project.
 
 ## What it deliberately doesn't do
 
@@ -97,8 +123,10 @@ Console.WriteLine($"{package.Package?.Name} {package.Package?.Sha256}, {package.
   the environment, a project's own variables) are not known.
 - **One database.** `USE` is not followed: every object the scripts define is read into one model, whichever database a
   script has switched to by then.
-- **No project files yet.** It doesn't read a `.sqlproj`'s list of scripts or its settings; given a folder, it reads every
-  script in it. A DACPAC carries the project's settings, and they are read from it.
+- **Not all of MSBuild.** A project file is evaluated as far as decision 0044 says: no property functions, no `Choose`, no
+  targets. Each such part that touches what is read is reported and not read, never guessed. A project's references to
+  another database, to a DACPAC or to a package aren't read yet: each is a note, and a name in one is unknown, as from a
+  folder. Given a folder, it reads every script in it.
 - **No running scripts.** A folder of scripts doesn't say the order they run in, so a statement that changes an object after
   its definition (`ALTER TABLE … ALTER COLUMN`, `DROP TABLE`, `ALTER PROCEDURE`, `DROP PROCEDURE`) is recorded as a
   `Redefinition`, not applied. Changes made only through code that would have to run, such as `EXEC sp_rename` or dynamic

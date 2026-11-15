@@ -7,8 +7,15 @@ namespace Haruspex.SqlServer.Sources;
 /// <summary>One script of a folder: where it is on disk, and its path relative to the folder, which every location in it names.</summary>
 /// <param name="Path">The file's path.</param>
 /// <param name="Relative">Its path relative to the folder, with <c>/</c> separators.</param>
-internal sealed record ScriptFile(string Path, string Relative)
+/// <param name="Settings">The settings it starts with: a folder's scripts start with the defaults, a project's with its own.</param>
+internal sealed record ScriptFile(string Path, string Relative, ScriptSettings Settings)
 {
+    /// <summary>A script of a folder, which starts with the default settings.</summary>
+    public ScriptFile(string path, string relative)
+        : this(path, relative, ScriptSettings.Default)
+    {
+    }
+
     /// <summary>
     /// The scripts named, in ordinal order of their relative paths, each once: the order they are read in, so that which of
     /// two definitions of one name is reported doesn't depend on the order they were listed in.
@@ -43,8 +50,8 @@ internal sealed record ScriptFile(string Path, string Relative)
         // What the server would receive from sqlcmd, which an install script written for it needs.
         using var reader = new StringReader(SqlcmdVariables.Substitute(text));
 
-        // The SQL Server 2025 grammar. Later the target platform will come from the project file.
-        var parser = new TSql170Parser(initialQuotedIdentifiers: true);
+        // The SQL Server 2025 grammar, with QUOTED_IDENTIFIER as the script starts with it, which decides whether "x" is a name.
+        var parser = new TSql170Parser(initialQuotedIdentifiers: Settings.QuotedIdentifier);
         var fragment = parser.Parse(reader, out var errors);
 
         // A parse error is a position the parser gives, not a fragment: the one place a location is made from a line and column.

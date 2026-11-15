@@ -53,8 +53,8 @@ internal sealed record Corpus(string Name, string Folder, IReadOnlyList<string> 
         "and the `BULK INSERT` of the CSV data beside the script, which is not vendored.");
 
     /// <summary>
-    /// WideWorldImporters as an SSDT project. haruspex can't read a <c>.sqlproj</c> yet, so the scripts read are the ones the
-    /// project builds, taken from its <c>Build</c> items here.
+    /// WideWorldImporters as an SSDT project. The scripts read are the ones the project builds, taken from its <c>Build</c> items
+    /// here, so that the figures don't move with the project reader, which <c>ProjectEquivalenceTests</c> proves on its own.
     /// </summary>
     private static Corpus WideWorldImporters()
     {
@@ -96,11 +96,11 @@ internal sealed record Corpus(string Name, string Folder, IReadOnlyList<string> 
             folder,
             built,
             leftOut,
-            "An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. Reading a project file isn't built yet, so the " +
-            "test reads the scripts the project lists to build, as a build would, and leaves out the others, " +
-            "listed below with the reason. The project builds most of its scripts with `QUOTED_IDENTIFIER` off, and they are " +
-            "parsed with it on; in these scripts every double quote is inside a string or a comment, where the setting " +
-            "changes nothing.");
+            "An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. The figures read the scripts the project lists " +
+            "to build, as a build would, and leave out the others, listed below with the reason. The project builds most of " +
+            "its scripts with `QUOTED_IDENTIFIER` off, and they are parsed here with it on; in these scripts every double quote " +
+            "is inside a string or a comment, where the setting changes nothing. Read through the project file, each script " +
+            "with its own setting, the project gives the IR of the package its build makes (`ProjectEquivalenceTests`).");
     }
 
     /// <summary>Scripts of the project left out of the run, and why.</summary>

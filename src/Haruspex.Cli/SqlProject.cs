@@ -5,11 +5,12 @@ using Haruspex.SqlServer.Inference;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
 using Haruspex.SqlServer.Sources.Dacpacs;
+using Haruspex.SqlServer.Sources.Projects;
 
 namespace Haruspex.Cli;
 
 /// <summary>
-/// A database project read from a folder of <c>.sql</c> files or from a DACPAC, ready to infer: the layers composed for the
+/// A database project read from a folder of <c>.sql</c> files, a project file (<c>.sqlproj</c>) or a DACPAC, ready to infer: the layers composed for the
 /// command line (reading in Haruspex.SqlServer.Sources, inference in Haruspex.SqlServer.Inference, the config file's
 /// selection, overrides and naming in Haruspex.Config).
 /// </summary>
@@ -59,6 +60,22 @@ internal sealed class SqlProject
 
     /// <summary>Whether <paramref name="source"/> names a DACPAC rather than a folder of scripts: a file, by its extension.</summary>
     public static bool IsPackage(string source) => source.EndsWith(".dacpac", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Whether <paramref name="source"/> names a database project's file rather than a folder of scripts: by its extension.</summary>
+    public static bool IsProjectFile(string source) => source.EndsWith(".sqlproj", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Reads the project file at <paramref name="project"/> and the projects of its database it refers to, as its build would; the
+    /// IR it infers records no package, as a folder's doesn't (a project's scripts aren't hashed).
+    /// </summary>
+    /// <param name="project">The <c>.sqlproj</c>.</param>
+    /// <param name="collation">The config file's <c>collation</c>, used only when the project's isn't read (it always records one otherwise).</param>
+    public static SqlProject LoadProject(string project, string? collation = null)
+    {
+        var read = SqlProjectReader.Read(project);
+        var folder = Path.GetDirectoryName(Path.GetFullPath(project)) ?? ".";
+        return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, _ => folder);
+    }
 
     /// <summary>
     /// Reads the DACPAC at <paramref name="package"/> and the packages of its database it refers to, looking for them beside it

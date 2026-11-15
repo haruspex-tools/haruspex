@@ -12,7 +12,7 @@ otherwise silently do nothing.
 ```jsonc
 {
   "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
-  "source": "database",                     // the folder of .sql files, or a .dacpac
+  "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac
   "references": ["../shared/bin/Release"],  // more folders to find a .dacpac's referenced packages in
   "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "Value sets"
   "out": "src/db",                          // where haruspex.ir.json and haruspex.zod.ts go
@@ -51,7 +51,7 @@ otherwise silently do nothing.
 }
 ```
 
-The command line overrides the file for one run: the source argument (a folder or a `.dacpac`) replaces `source`, `--out` replaces `out`, and
+The command line overrides the file for one run: the source argument (a folder, a `.sqlproj` or a `.dacpac`) replaces `source`, `--out` replaces `out`, and
 `--include schema.pattern` replaces the schemas' includes (each schema's `exclude` still applies, and overrides of
 procedures the run leaves out are skipped). Without a file, `--include` and `--out` are required.
 
@@ -71,11 +71,40 @@ have come from it is unknown, and each such unknown says the package it may be i
 Locations in what is read from a package name the package and the object, with a line in the object's own text:
 `sales.dacpac/[sales].[get_order]:3:5` ([decision 0039](decisions/0039-a-location-in-a-dacpac-names-the-package-and-the-object.md)).
 
+## Reading a project file: `source` as a `.sqlproj`
+
+`source` may name a database project's file, `.sqlproj`, which is read as its build would read it, with no MSBuild, no DacFx
+and no build: the scripts the build reads, each with the settings it starts with, and the database's settings. Both kinds of
+project are read. A `Microsoft.Build.Sql` project's build reads every `.sql` file under its folder (but `bin` and `obj`), less
+what `Build Remove`, `None`, the pre- and post-deployment scripts and the files they include with `:r` take out, plus any
+`Build` item outside the folder; a `Content` item neither adds a script nor takes one out. A legacy SSDT project's build reads
+the `Build` items it lists. A script starts with its item's `AnsiNulls` and `QuotedIdentifier`, or else the project's.
+
+The database's settings are the project's properties (`DefaultCollation`, `CompatibilityMode` or the `DSP`'s version,
+`AnsiNulls`, `QuotedIdentifier` and the other options), with the values a build gives one the project doesn't set: the
+collation `SQL_Latin1_General_CP1_CI_AS`, every option on but `NUMERIC_ROUNDABORT`. So a project gives the collation a folder
+lacks, and the value sets it decides ("The database's collation", below).
+
+Each project of the same database it refers to (a `ProjectReference` naming no other database) is read too, from its own
+`.sqlproj` and with its scripts' own settings, as a DACPAC's packages are; one that isn't there is a warning
+([HAR1007](diagnostics/HAR1007.md)). A reference to another database, to a `.dacpac` or to a package such as
+`Microsoft.SqlServer.Dacpacs.Master` isn't read from a project yet: it is a note ([HAR1011](diagnostics/HAR1011.md)), and a name
+in it is unknown, as from a folder. `references` is read only for a `.dacpac`.
+
+A project file is MSBuild, and haruspex evaluates the part of it a database project uses: properties, conditions on the
+configuration, items and their patterns, the nearest `Directory.Build.props`, and the files it imports
+([decision 0044](decisions/0044-a-project-file-is-evaluated-in-part-and-the-rest-reported.md)). It is read as `Debug`, as
+`dotnet build` builds it, and a project that builds differently as `Release` says so. Whatever isn't evaluated (a property
+function, a property defined nowhere, `Choose`, an import it can't find) is never guessed: when it touches a script or a
+setting, that script or setting isn't read, and a warning ([HAR1008](diagnostics/HAR1008.md)) says what, where and why.
+Locations are relative to the project's folder (`../shared/audit.sql:3:5` for a script beside it), and the IR records no
+package, as for a folder.
+
 ## The database's collation: `collation`
 
-A column without `COLLATE` takes the database's default collation. A `.dacpac` records it; a folder of scripts doesn't, so
-`collation` declares it. A package's own wins, and one that disagrees with `collation` is a warning
-([HAR6010](diagnostics/HAR6010.md)).
+A column without `COLLATE` takes the database's default collation. A `.dacpac` records it, and a `.sqlproj` gives it; a folder
+of scripts doesn't, so `collation` declares it. A package's or a project's own wins, and one that disagrees with `collation` is
+a warning ([HAR6010](diagnostics/HAR6010.md)).
 
 The collation decides how a `CHECK` constraint's set of strings is typed. For a `char` or `varchar` column under a collation
 haruspex has proven (`SQL_Latin1_General_CP1_CI_AS`, `Latin1_General_CI_AS`, `Latin1_General_100_CI_AS`,

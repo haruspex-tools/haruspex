@@ -13,6 +13,21 @@ atelier.dacpac: note HAR1004: atelier.dacpac holds elements haruspex doesn't mod
 HAR1005
 broken.dacpac: error HAR1005: broken.dacpac can't be read as a DACPAC: Central Directory corrupt.
 
+HAR1007
+db/db.sqlproj:5:15: warning HAR1007: db.sqlproj refers to ..\shelf\shelf.sqlproj, a project of the same database, which isn't found: what it defines is missing.
+
+HAR1008
+db/db.sqlproj:5:19: warning HAR1008: DefaultCollation, a setting of the database, isn't read: $(LibraryCollation) is defined nowhere in the project or the files it imports, so a build would take it from the environment or its command line, if from anywhere.
+
+HAR1009
+db/db.sqlproj:5:15: error HAR1009: db.sqlproj builds ..\archive\loans.sql, which isn't there.
+
+HAR1010
+db/db.sqlproj:1:2: error HAR1010: db.sqlproj uses the SDK MSBuild.Sdk.SqlProj/3.0.0, which haruspex doesn't read: it reads Microsoft.Build.Sql projects and legacy SSDT ones.
+
+HAR1011
+db/db.sqlproj:5:15: note HAR1011: db.sqlproj refers to the DACPAC ..\archive\archive.dacpac, which isn't read from a project yet: a name in it stays unknown.
+
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
 
@@ -278,7 +293,7 @@ HAR6002
 haruspex: error HAR6002: config file not found: nowhere.json
 
 HAR6003
-haruspex: error HAR6003: give the folder of .sql files or the .dacpac to read, or a config file with "source".
+haruspex: error HAR6003: give the folder of .sql files, the .sqlproj or the .dacpac to read, or a config file with "source".
 
 HAR6004
 haruspex: error HAR6004: directory not found: nowhere

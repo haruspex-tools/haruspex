@@ -1,11 +1,11 @@
 # The inputs and the model
 
 What haruspex reads is a SQL Server database project: a folder of `.sql` scripts, in no particular order, that together
-define a schema, or the DACPAC a project builds from them. Before anything can be inferred, those scripts become a *model*: the schema as data, each table, type, procedure,
+define a schema, the project file that says which of them its build reads, or the DACPAC a project builds from them. Before anything can be inferred, those scripts become a *model*: the schema as data, each table, type, procedure,
 function, view, trigger and synonym a value with a name and a place in the source. This chapter is about that step: what is
 read, how a script becomes the model, why the model hides the parser it was read with, and the one order everything in it is
 kept in. The code is in three projects, each a layer with a chapter of its own in brief:
-[Sources](../../src/Haruspex.SqlServer.Sources/README.md) reads the folder or the package,
+[Sources](../../src/Haruspex.SqlServer.Sources/README.md) reads the folder, the project file or the package,
 [Syntax](../../src/Haruspex.SqlServer.Syntax/README.md) reads what the parser parsed into model values, and
 [Model](../../src/Haruspex.SqlServer.Model/README.md) is the model.
 
@@ -209,6 +209,42 @@ agree with any reader. Nothing else differs, though a package can't know how a t
 writes a type as written: a column declared `decimal` is `decimal(18,0)` in the output from either
 ([decision 0041](../decisions/0041-a-type-is-spelt-with-its-defaults-written-out.md)).
 
+## A project file becomes the same model
+
+A `.sqlproj` says which of the scripts beside it its build reads, with which settings, and what database they make. It is
+MSBuild, a language with expressions, functions and imports of its own, and running MSBuild would mean the .NET SDK, code from
+the project run as it is read, and DacFx to build. So `SqlProjectReader` evaluates the part a database project uses, as
+MSBuild does, and reports the rest ([decision 0044](../decisions/0044-a-project-file-is-evaluated-in-part-and-the-rest-reported.md)).
+
+`ProjectEvaluator` makes MSBuild's two passes: every property first, in document order across the project and what it
+imports (the nearest `Directory.Build.props` among them), then every item with the properties' final values. That is why a
+project can turn the SDK's default items off with a property set after the SDK's own item: items are evaluated last. The
+SDK's and SSDT's own files aren't read: what they do that the database's build reads is built in, as their files were read to
+say. For `Microsoft.Build.Sql`, that is the item `**/*.sql` less `bin` and `obj`, before the project, and after it the
+`Build Remove` of `None`, the deployment scripts and (from 2.3.0) `PrePlan`. `ProjectFiles` then takes out what the build takes
+out as it runs, the files a deployment script includes with `:r`, and gives each script the settings it starts with: its item's
+`AnsiNulls` and `QuotedIdentifier`, or its own project's, which are also the database's options (observed). Those settings
+reach the parse and the model, so a script built with `QUOTED_IDENTIFIER` off reads `"ripe"` as a string, as its package does.
+`ProjectSettings` gives the database's settings, with the defaults a build writes for a property a project doesn't set.
+
+Every value carries what wasn't evaluated in it, a `Doubt`: a property function, a property defined nowhere, a condition beyond
+the ones evaluated, a `Choose`. A doubt travels with every value it touches, through properties, conditions and items, and is
+reported once, where it is, only when it reaches what is read: a script, a script's settings, the database's. That keeps two
+things true at once. Nothing read is a guess, since what a doubt reaches isn't read. And a project beside a shared
+`Directory.Build.props` full of C# settings reads without a word, since none of those reach anything a database build reads.
+
+A project is read as `Debug`, as `dotnet build` builds it, and evaluated again as `Release` to find what differs by
+configuration, which is reported. Paths are matched ignoring case, as on Windows, where these projects are written and
+built. The projects of the same database it refers to are read from their own files, transitively, each with its own scripts'
+settings, into the one model, as a DACPAC's packages are; locations are relative to the given project's folder, so a
+referenced project's script is `../press/pressing.sql:8:1`, a file a person can open.
+
+**The proof.** `ProjectEquivalenceTests` builds nothing: the packages it compares with were built by DacFx from the same
+project files ([`tests/dacpacs`](../../tests/dacpacs/README.md)), legacy ones on Linux with SSDT's own build targets. For each,
+the model has exactly the package's objects and settings, and the IR and Zod are byte for byte the package's, with locations
+rewritten as for a DACPAC. That covers a `Microsoft.Build.Sql` database over three projects with every kind of item, a legacy
+project as Visual Studio writes it, WideWorldImporters' own project, and every fixture as a project that sets nothing.
+
 ## Where things are
 
 Every object knows where it was read: its `SourceSpan`, the file and where the object starts and ends, captured once, when it
@@ -241,7 +277,8 @@ lists procedures by name, and when an unqualified name could mean either of two 
 - **No running anything.** A change made by code that would have to run, such as `EXEC sp_rename` or dynamic SQL, isn't
   seen. A database project defines its objects declaratively; such scripts belong in deployment.
 - **One database.** `USE` isn't followed, and every object the scripts define is read into one model. A DACPAC's packages of
-  the same database are composed into that one model; another database's package is found but not read.
+  the same database, and a project's projects of the same database, are composed into that one model. Another database's
+  package is read into a model of its own; a project's reference to another database isn't read yet.
 - **No `:r`.** A sqlcmd include isn't followed, so a script that uses one fails to parse rather than being read as a different
   script from the one that runs.
 

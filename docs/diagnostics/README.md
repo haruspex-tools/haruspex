@@ -18,6 +18,11 @@ reason.
 | [HAR1003](HAR1003.md) | warning | A referenced DACPAC isn't found |
 | [HAR1004](HAR1004.md) | note | Elements of a DACPAC that aren't modelled |
 | [HAR1005](HAR1005.md) | error | A file that can't be read as a DACPAC |
+| [HAR1007](HAR1007.md) | warning | A referenced project isn't found |
+| [HAR1008](HAR1008.md) | warning | Part of a project file isn't read |
+| [HAR1009](HAR1009.md) | error | A script a project builds isn't found |
+| [HAR1010](HAR1010.md) | error | A file that can't be read as a database project |
+| [HAR1011](HAR1011.md) | note | A project's reference isn't read yet |
 
 ## Inference
 

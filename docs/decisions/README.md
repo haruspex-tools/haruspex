@@ -49,6 +49,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0041](0041-a-type-is-spelt-with-its-defaults-written-out.md) | 14 Nov 2026 | A type is spelt with its defaults written out |
 | [0042](0042-a-table-of-another-database-is-read-as-its-package-declares-it.md) | 14 Nov 2026 | A table of another database is read as its package declares it |
 | [0043](0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md) | 14 Nov 2026 | A value set is canonical by a fold observed from the server |
+| [0044](0044-a-project-file-is-evaluated-in-part-and-the-rest-reported.md) | 15 Nov 2026 | A project file is evaluated in part, and the rest reported |
 
 ## Writing a record
 

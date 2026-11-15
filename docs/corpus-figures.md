@@ -58,7 +58,7 @@ None: every script is read.
 
 **Typed 170 of 175 fields in WideWorldImporters; the results of 28 of its 129 procedures can't be described, so they have no fields to count.** 25 of the 30 procedures that return fields are fully typed.
 
-An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. Reading a project file isn't built yet, so the test reads the scripts the project lists to build, as a build would, and leaves out the others, listed below with the reason. The project builds most of its scripts with `QUOTED_IDENTIFIER` off, and they are parsed with it on; in these scripts every double quote is inside a string or a comment, where the setting changes nothing.
+An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. The figures read the scripts the project lists to build, as a build would, and leave out the others, listed below with the reason. The project builds most of its scripts with `QUOTED_IDENTIFIER` off, and they are parsed here with it on; in these scripts every double quote is inside a string or a comment, where the setting changes nothing. Read through the project file, each script with its own setting, the project gives the IR of the package its build makes (`ProjectEquivalenceTests`).
 
 | Figure | Count |
 |---|---:|

@@ -1,3 +1,5 @@
+using Haruspex.SqlServer.Sources.Projects;
+
 namespace Haruspex.SqlServer.Sources.Dacpacs;
 
 /// <summary>
@@ -34,19 +36,11 @@ internal static class ReferenceFinder
         ];
         var looked = places.Select(Path.GetFullPath);
         var recorded = reference.FileName;
-        if (IsRootedElsewhere(recorded))
+        if (DiskPath.IsRootedElsewhere(recorded))
             return [.. looked.Append(recorded).Distinct(StringComparer.Ordinal)];
         var here = recorded.Replace('\\', Path.DirectorySeparatorChar);
         return [.. looked.Append(Path.GetFullPath(Path.IsPathRooted(here) ? here : Path.Join(beside, here))).Distinct(StringComparer.Ordinal)];
     }
-
-    /// <summary>
-    /// Whether a recorded path is rooted the way only Windows roots one (a drive, <c>C:\…</c>; a share, <c>\\server\…</c>; the
-    /// drive's root, <c>\build\…</c>) and this isn't Windows: such a path names no place here, whatever folder it is read from.
-    /// </summary>
-    private static bool IsRootedElsewhere(string path) =>
-        !OperatingSystem.IsWindows()
-        && ((path.Length >= 2 && char.IsAsciiLetter(path[0]) && path[1] == ':') || path.StartsWith('\\'));
 
     /// <summary>The first place a file is, or null when none.</summary>
     public static string? Find(PackageReference reference, string referrer, IReadOnlyList<string> searchFolders) =>

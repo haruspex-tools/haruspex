@@ -22,7 +22,9 @@ namespace Haruspex.Tests.Sources;
 /// table's locations; a location inside a check's or computed column's expression keeps its offset from the expression's
 /// start.</item>
 /// </list>
-/// A location the map can't place stays as it was and is listed, so the comparison fails on it.
+/// A location the map can't place stays as it was and is listed, so the comparison fails on it. A database read from several
+/// packages (one and the packages of its database it refers to) is mapped package by package: each object to the package that
+/// holds it.
 /// </summary>
 internal sealed partial class PackageLocationMap
 {
@@ -33,7 +35,6 @@ internal sealed partial class PackageLocationMap
         "SqlCheckConstraint", "SqlPrimaryKeyConstraint", "SqlUniqueConstraint", "SqlIndex", "SqlForeignKeyConstraint",
     };
 
-    private readonly string package;
     private readonly List<(string File, Position Start, Position End, string Target, Position Origin)> regions = [];
     private readonly Dictionary<SourceLocation, SourceLocation> points = [];
 
@@ -43,16 +44,20 @@ internal sealed partial class PackageLocationMap
     /// <summary>The locations a <see cref="Map"/> could not place, each once.</summary>
     public SortedSet<string> Unmapped { get; } = new(StringComparer.Ordinal);
 
-    public PackageLocationMap(DatabaseModel folder, string folderRoot, string packagePath)
+    public PackageLocationMap(DatabaseModel folder, string folderRoot, params string[] packagePaths)
     {
-        package = Path.GetFileName(packagePath);
-        using var zip = ZipFile.OpenRead(packagePath);
-        using var stream = zip.GetEntry("model.xml")!.Open();
-        var elements = XDocument.Load(stream).Root!.Element(Ns + "Model")!.Elements(Ns + "Element").ToList();
-        foreach (var module in folder.Procedures.Cast<SchemaObject>().Concat(folder.Functions).Concat(folder.Views).Concat(folder.Triggers))
-            AddModule(module, elements, folderRoot);
-        foreach (var table in folder.Tables)
-            AddTable(table, elements);
+        foreach (var packagePath in packagePaths)
+        {
+            var package = Path.GetFileName(packagePath);
+            using var zip = ZipFile.OpenRead(packagePath);
+            using var stream = zip.GetEntry("model.xml")!.Open();
+            var elements = XDocument.Load(stream).Root!.Element(Ns + "Model")!.Elements(Ns + "Element").ToList();
+            foreach (var module in folder.Procedures.Cast<SchemaObject>().Concat(folder.Functions).Concat(folder.Views).Concat(folder.Triggers))
+                AddModule(module, elements, folderRoot, package);
+            foreach (var table in folder.Tables)
+                AddTable(table, elements, package);
+        }
+
         files = [.. regions.Select(r => r.File).Concat(points.Keys.Select(p => p.File)).Distinct(StringComparer.Ordinal).OrderByDescending(f => f.Length)];
     }
 
@@ -77,7 +82,7 @@ internal sealed partial class PackageLocationMap
         return match.Value;
     });
 
-    private void AddModule(SchemaObject module, List<XElement> elements, string folderRoot)
+    private void AddModule(SchemaObject module, List<XElement> elements, string folderRoot, string package)
     {
         var element = elements.FirstOrDefault(e => Name(e) is { } name && SameObject(name, module.Name) && e.Attribute("Type")!.Value is not "SqlTable" and not "SqlSchema" and not "SqlSynonym");
         if (element is null)
@@ -94,13 +99,14 @@ internal sealed partial class PackageLocationMap
         var index = file.IndexOf(definition, StringComparison.Ordinal);
         if (index < 0)
             return;
-        regions.Add((module.Span.File, PositionOf(file, index), PositionOf(file, index + definition.Length), PackageFile(module.Name), new Position(1, 1)));
+        regions.Add((module.Span.File, PositionOf(file, index), PositionOf(file, index + definition.Length), PackageFile(package, module.Name), new Position(1, 1)));
     }
 
-    private void AddTable(Table table, List<XElement> elements)
+    private void AddTable(Table table, List<XElement> elements, string package)
     {
-        var element = elements.First(e => (string?)e.Attribute("Type") == "SqlTable" && SameObject(Name(e)!, table.Name));
-        var target = PackageFile(table.Name);
+        if (elements.FirstOrDefault(e => (string?)e.Attribute("Type") == "SqlTable" && SameObject(Name(e)!, table.Name)) is not { } element)
+            return;
+        var target = PackageFile(package, table.Name);
         var columns = Relationship(element, "Columns").Select(c => Last(Name(c)!)).ToList();
         var parts = elements.Where(e => Parts.Contains((string?)e.Attribute("Type") ?? "") && Owner(e) is { } owner && SameObject(owner, table.Name)).ToList();
         points[table.Span.Start] = new SourceLocation(target, 1, 1);
@@ -139,7 +145,7 @@ internal sealed partial class PackageLocationMap
             ? new SourceLocation(target, origin.Line, origin.Column + at.Column - start.Column)
             : new SourceLocation(target, origin.Line + at.Line - start.Line, at.Column);
 
-    private string PackageFile(ObjectName name) => $"{package}/[{name.Schema.Replace("]", "]]", StringComparison.Ordinal)}].[{name.Name.Replace("]", "]]", StringComparison.Ordinal)}]";
+    private static string PackageFile(string package, ObjectName name) => $"{package}/[{name.Schema.Replace("]", "]]", StringComparison.Ordinal)}].[{name.Name.Replace("]", "]]", StringComparison.Ordinal)}]";
 
     private static Position Start(TSqlFragment fragment) => new(fragment.StartLine, fragment.StartColumn);
 

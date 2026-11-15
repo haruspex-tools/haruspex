@@ -17,7 +17,7 @@ internal static class CliCodes
     /// <summary>Neither the command line nor the config file says which folder of SQL files or DACPAC to read.</summary>
     public static DiagnosticCode NoSource { get; } = new(6003, DiagnosticSeverity.Error, "No source is given");
 
-    /// <summary>The folder of SQL files or the DACPAC named doesn't exist.</summary>
+    /// <summary>The folder of SQL files, the project file or the DACPAC named doesn't exist.</summary>
     public static DiagnosticCode SourceNotFound { get; } = new(6004, DiagnosticSeverity.Error, "The source isn't there");
 
     /// <summary>Neither the command line nor the config file says where to write.</summary>
@@ -33,8 +33,8 @@ internal static class CliCodes
     public static DiagnosticCode CannotWrite { get; } = new(6008, DiagnosticSeverity.Error, "The output can't be written");
 
     /// <summary>
-    /// The config file's <c>references</c> beside a source that is a folder of scripts, which has no references to find: they
-    /// are read only with a DACPAC.
+    /// The config file's <c>references</c> beside a source that is a folder of scripts, which has no references to find, or a
+    /// project file, which says where its own are: they are read only with a DACPAC.
     /// </summary>
     public static DiagnosticCode ReferencesUnused { get; } = new(6009, DiagnosticSeverity.Warning, "References with a source that isn't a DACPAC");
 

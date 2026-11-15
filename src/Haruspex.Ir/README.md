@@ -131,7 +131,7 @@ object, and a `ref` that names no type.
 ```jsonc
 {
   "irVersion": "0.20",                // versioned separately from the tool; a reader checks it first
-  "source": { "dialect": "tsql",      // the package is left out for a folder of scripts
+  "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
     "session": { "ansiWarnings": true } },  // the session is left out when the callers' options aren't declared

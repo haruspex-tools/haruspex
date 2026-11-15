@@ -53,6 +53,20 @@ public class DiagnosticMessagesTests
     private static string[] Package(string group, string package, string include) =>
         Cli([], args: [package, "--include", include, "--out", "out"], arrange: f => File.Copy(Path.Combine(RepositoryPaths.Root, "tests", "dacpacs", group, package), Path.Combine(f.Path, package)));
 
+    /// <summary>
+    /// A run of the CLI on the project file <c>db/db.sqlproj</c>, a <c>Microsoft.Build.Sql</c> project of the standard tables and
+    /// <see cref="GetBook"/> whose properties and items are <paramref name="inside"/>.
+    /// </summary>
+    private static string[] Project(string inside, string sdk = "Microsoft.Build.Sql/2.3.0") =>
+        Cli([GetBook], args: ["db/db.sqlproj", "--include", "*.*", "--out", "out"], arrange: f => f.File("db/db.sqlproj", $"""
+            <Project Sdk="{sdk}">
+              <PropertyGroup>
+                <DSP>Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider</DSP>
+              </PropertyGroup>
+              {inside}
+            </Project>
+            """));
+
     /// <summary>A run with <paramref name="sql"/> and a config file of the standard settings and <paramref name="more"/>.</summary>
     private static string[] Config(string more, params string[] sql) => Cli(sql.Length == 0 ? [GetBook] : sql, $"{{ {Plain}{(more.Length == 0 ? "" : ", " + more)} }}");
 
@@ -85,6 +99,11 @@ public class DiagnosticMessagesTests
         (1003, () => Package("harbour", "crane.dacpac", "dock.*")),
         (1004, () => Package("atelier", "atelier.dacpac", "studio.list_pots")),
         (1005, () => Cli([GetBook], args: ["broken.dacpac", "--include", "*.*", "--out", "out"], arrange: f => f.File("broken.dacpac", "not a zip"))),
+        (1007, () => Project("<ItemGroup><ProjectReference Include=\"..\\shelf\\shelf.sqlproj\" /></ItemGroup>")),
+        (1008, () => Project("<PropertyGroup><DefaultCollation>$(LibraryCollation)</DefaultCollation></PropertyGroup>")),
+        (1009, () => Project("<ItemGroup><Build Include=\"..\\archive\\loans.sql\" /></ItemGroup>")),
+        (1010, () => Project("", sdk: "MSBuild.Sdk.SqlProj/3.0.0")),
+        (1011, () => Project("<ItemGroup><ArtifactReference Include=\"..\\archive\\archive.dacpac\" /></ItemGroup>")),
 
         (2001, () => Cli(["CREATE PROCEDURE lib.p AS SET NOCOUNT, NOEXEC ON;\nSELECT b.id FROM lib.book AS b;"])),
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),

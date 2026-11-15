@@ -218,7 +218,7 @@ public class CliTests
         var (exitCode, _, error) = Run("generate", "--include", "*.*", "--out", outDir.Path);
 
         Assert.Equal(2, exitCode);
-        Assert.Equal("haruspex: error HAR6003: give the folder of .sql files or the .dacpac to read, or a config file with \"source\".\n", error.ReplaceLineEndings("\n"));
+        Assert.Equal("haruspex: error HAR6003: give the folder of .sql files, the .sqlproj or the .dacpac to read, or a config file with \"source\".\n", error.ReplaceLineEndings("\n"));
     }
 
     [Fact]
@@ -229,7 +229,7 @@ public class CliTests
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);
         Assert.Equal(
-            "haruspex: error HAR6003: give the folder of .sql files or the .dacpac to read, or a config file with \"source\".\n"
+            "haruspex: error HAR6003: give the folder of .sql files, the .sqlproj or the .dacpac to read, or a config file with \"source\".\n"
             + "haruspex: error HAR6005: give --out, the folder to write to, or a config file with \"out\".\n"
             + "haruspex: error HAR6006: invalid --include pattern: 'a.b.c' is not a two-part name such as sales.get_order, sales.* or *.list_*.\n",
             error.ReplaceLineEndings("\n"));

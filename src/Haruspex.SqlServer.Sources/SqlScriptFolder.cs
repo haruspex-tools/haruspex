@@ -71,12 +71,20 @@ public static class SqlScriptFolder
 
         // Three steps: which scripts, in which order; what each declares; and the passes that settle what is in effect.
         var declarations = new SchemaDeclarations();
-        foreach (var script in ScriptFile.InOrder(directory, files))
+        ReadInto(declarations, ScriptFile.InOrder(directory, files));
+        return new SchemaReadResult(declarations.ToModel(), [.. declarations.Diagnostics]);
+    }
+
+    /// <summary>
+    /// What each script declares, in the order given, each starting with its own settings: a folder's scripts, or a project's,
+    /// whose order and settings the project reader settles (<c>Projects.SqlProjectReader</c>).
+    /// </summary>
+    internal static void ReadInto(SchemaDeclarations declarations, IEnumerable<ScriptFile> scripts)
+    {
+        foreach (var script in scripts)
         {
             if (script.Parse(declarations.Diagnostics) is { } parsed)
-                new ScriptReader(script.Relative, declarations).Read(parsed);
+                new ScriptReader(script.Relative, declarations, script.Settings).Read(parsed);
         }
-
-        return new SchemaReadResult(declarations.ToModel(), [.. declarations.Diagnostics]);
     }
 }

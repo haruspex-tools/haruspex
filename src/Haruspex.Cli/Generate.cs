@@ -133,17 +133,17 @@ internal static class Generate
     private static Outcome<(string Source, string Out)> Folders(GenerateRequest request, Settings settings) =>
         Outcome.Combine(Source(request, settings), Out(request, settings));
 
-    /// <summary>The folder of scripts or the DACPAC to read, which must exist.</summary>
+    /// <summary>The folder of scripts, the project file or the DACPAC to read, which must exist.</summary>
     private static Outcome<string> Source(GenerateRequest request, Settings settings)
     {
         if ((request.Directory is { } given ? request.Resolve(given) : settings.Config.Source) is not { } source)
         {
             return Refused<string>(CliCodes.NoSource, settings.Path is null
-                ? "give the folder of .sql files or the .dacpac to read, or a config file with \"source\"."
-                : $"give the folder of .sql files or the .dacpac to read, or \"source\" in {settings.Path}.");
+                ? "give the folder of .sql files, the .sqlproj or the .dacpac to read, or a config file with \"source\"."
+                : $"give the folder of .sql files, the .sqlproj or the .dacpac to read, or \"source\" in {settings.Path}.");
         }
 
-        if (SqlProject.IsPackage(source))
+        if (SqlProject.IsPackage(source) || SqlProject.IsProjectFile(source))
         {
             return File.Exists(source)
                 ? new Succeeded<string>(source)
@@ -179,17 +179,21 @@ internal static class Generate
                 : $"nothing is selected: give --include, or a schema with \"include\" in {settings.Path}, such as \"schemas\": {{ \"dbo\": {{ \"include\": [\"*\"] }} }}.");
 
     /// <summary>
-    /// The project, read from the source folder or DACPAC; its diagnostics, with their files under the folder each was read from.
-    /// The config file's <c>references</c> beside a folder of scripts is said, not ignored: a folder has no references to find.
+    /// The project, read from the source folder, project file or DACPAC; its diagnostics, with their files under the folder each was
+    /// read from. The config file's <c>references</c> beside a source that isn't a DACPAC is said, not ignored: a folder has no
+    /// references to find, and a project's are found where it names them.
     /// </summary>
     private static Outcome<Loaded> ReadProject(Plan plan)
     {
         var package = SqlProject.IsPackage(plan.Source);
+        var projectFile = SqlProject.IsProjectFile(plan.Source);
         var collation = plan.Config.Collation;
-        var project = package ? SqlProject.LoadPackage(plan.Source, plan.Config.References, collation) : SqlProject.Load(plan.Source, collation);
+        var project = package ? SqlProject.LoadPackage(plan.Source, plan.Config.References, collation)
+            : projectFile ? SqlProject.LoadProject(plan.Source, collation)
+            : SqlProject.Load(plan.Source, collation);
         IEnumerable<Diagnostic> unused = package || plan.Config.References.Count == 0
             ? []
-            : [CliCodes.ReferencesUnused.At(plan.Config.Location, $"\"references\" is read only when the source is a .dacpac, and {plan.Source} is a folder of scripts.")];
+            : [CliCodes.ReferencesUnused.At(plan.Config.Location, $"\"references\" is read only when the source is a .dacpac, and {plan.Source} is {(projectFile ? "a project file" : "a folder of scripts")}.")];
         IEnumerable<Diagnostic> overruled = collation is null || string.Equals(project.DefaultCollation, collation, StringComparison.OrdinalIgnoreCase)
             ? []
             : [CliCodes.CollationOverruled.At(plan.Config.Location, $"\"collation\" is {collation}, but {Path.GetFileName(plan.Source)} records {project.DefaultCollation}, the database's own, which is the one used.")];
