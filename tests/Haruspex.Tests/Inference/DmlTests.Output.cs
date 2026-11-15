@@ -123,6 +123,17 @@ public partial class DmlTests
         Assert.IsType<IrUnknownType>(Field(doc, "label").Type);
     }
 
+    [Theory]
+    [InlineData("UPDATE dbo.item SET label = NULL OUTPUT dbo.item.label FROM dbo.item JOIN dbo.note AS n ON n.id = dbo.item.id WHERE dbo.item.label IS NOT NULL;")]
+    [InlineData("UPDATE dbo.item SET label = NULL OUTPUT item.label FROM dbo.item JOIN dbo.note AS n ON n.id = dbo.item.id WHERE dbo.item.label IS NOT NULL;")]
+    public void Output_reading_the_target_by_its_full_name_through_from_is_unknown(string statement)
+    {
+        // Observed: Output_cannot_name_the_target_by_its_table_name (4104), even when FROM lists it without an alias.
+        var doc = Doc(("p", $"CREATE PROCEDURE dbo.p AS {statement}"));
+
+        Assert.IsType<IrUnknownType>(Field(doc, "label").Type);
+    }
+
     [Fact]
     public void Output_on_a_table_with_a_trigger_that_returns_nothing_is_the_output()
     {

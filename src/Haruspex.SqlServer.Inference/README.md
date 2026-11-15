@@ -1082,9 +1082,11 @@ star) and everything the query proves of it: a `WHERE`, an outer join's optional
 - **Not expanded**, each unknown with its reason: a star over a table the project doesn't define (`unresolved-table`), over a
   caller's temporary table (`caller-temp-table`) or a relation whose own columns can't be listed (its reason), over a graph
   table, whose star adds pseudo-columns named by the server when it creates the table
-  (`A_graph_tables_star_adds_pseudo_columns_named_by_the_server`), a star qualified by two parts, `shop.orders.*`, which
-  waits with multi-part column references, and a star without a `FROM`, which SQL Server refuses
-  (`A_star_without_from_is_refused`), both `unsupported-query`.
+  (`A_graph_tables_star_adds_pseudo_columns_named_by_the_server`), a star qualified by a database, `db.shop.orders.*`, and a
+  star without a `FROM`, which SQL Server refuses (`A_star_without_from_is_refused`), both `unsupported-query`. A star
+  qualified by schema and table, `shop.orders.*`, is expanded as `o.*` is, when a source is exposed under that name (the
+  guide's [binding chapter](../../docs/internals/03-binding.md#a-full-name)); one that names no source, such as the full name
+  of a table with an alias, is `unresolved-column` (`An_alias_hides_a_tables_full_name`).
 
 The unit tests are `SelectStarTests`; the fixture is `tests/fixtures/haberdashery`.
 

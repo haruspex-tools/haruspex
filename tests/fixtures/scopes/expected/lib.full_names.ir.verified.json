@@ -1,0 +1,128 @@
+{
+  "irVersion": "0.21",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "lib.full_names",
+      "name": "FullNames",
+      "kind": "procedure",
+      "at": "procedures/full_names.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "FullNamesRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "FullNamesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "lib.full_names",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "title",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(80)",
+            "maxLength": {
+              "value": 80,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(80)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "pages",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "donor",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unmatched-row",
+              "at": "procedures/full_names.sql:10:11"
+            }
+          ]
+        },
+        {
+          "name": "loans",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

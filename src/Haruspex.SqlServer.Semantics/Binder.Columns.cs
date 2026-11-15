@@ -1,4 +1,5 @@
 using Haruspex.Diagnostics;
+using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -9,9 +10,10 @@ public sealed partial class Binder
 {
     /// <summary>
     /// What a column reference means in <paramref name="scope"/>: the one rule, SQL Server's, by which every column in a body is
-    /// resolved. A qualified column is the column of the source its qualifier names in the innermost scope that has one; an
-    /// unqualified one is the column of the one source of the innermost scope that has a column of its name, ambiguous when
-    /// more than one there has it, and of a source whose columns are not known when none is known to.
+    /// resolved. A qualified column is the column of the source its qualifier names in the innermost scope that has one: by its
+    /// alias, or by its table's name when it has none (<c>t.id</c>), or by its full name when it has none (<c>dbo.t.id</c>,
+    /// <see cref="ExposedName"/>). An unqualified one is the column of the one source of the innermost scope that has a column
+    /// of its name, ambiguous when more than one there has it, and of a source whose columns are not known when none is known to.
     /// </summary>
     /// <param name="column">The reference.</param>
     /// <param name="scope">The scope of the query it is read in.</param>
@@ -23,20 +25,26 @@ public sealed partial class Binder
         if (column.ColumnType != ColumnType.Regular || column.MultiPartIdentifier is null)
             return new UnmodelledReference(Problem(BindingProblemKind.UnsupportedReference, $"The column reference {FragmentText.OneLine(column)} is not modelled yet.", at));
 
+        // SQL Server binds db.schema.table.column in the database the query runs in (observed:
+        // A_four_part_column_reference_binds_in_this_database), so leaving it unknown claims less, never more. No corpus
+        // haruspex is measured on writes one (docs/corpus-harvest.md).
         var parts = column.MultiPartIdentifier.Identifiers;
-        if (parts.Count > 2)
-            return new UnmodelledReference(Problem(BindingProblemKind.UnsupportedReference, $"The multi-part column reference {FragmentText.OneLine(column)} is not modelled yet.", at));
+        if (parts.Count > 3)
+            return new UnmodelledReference(Problem(BindingProblemKind.UnsupportedReference, $"The column reference {FragmentText.OneLine(column)} names its database, which is not modelled yet.", at));
 
         var name = parts[^1].Value;
+        var qualifier = parts.Take(parts.Count - 1).ToList();
 
         // Innermost scope first: a correlated subquery sees its own sources before the outer query's.
         for (var s = scope; s is not null; s = s.Parent)
         {
-            if (parts.Count == 2)
+            if (qualifier.Count > 0)
             {
-                var qualifier = parts[0].Value;
-                if (s.Sources.FirstOrDefault(x => qualifier.Equals(x.Alias, StringComparison.OrdinalIgnoreCase)) is { } named)
-                    return FromSource(named, name, at);
+                var named = Named(s.Sources, qualifier);
+                if (named.Count > 1)
+                    return new AmbiguousColumn(Problem(BindingProblemKind.UnresolvedColumn, Repeated(qualifier), at));
+                if (named.Count == 1)
+                    return FromSource(named[0], name, at);
                 continue;
             }
 
@@ -51,8 +59,38 @@ public sealed partial class Binder
                 return FromSource(unknown, name, at);
         }
 
-        return new MissingColumn(Problem(BindingProblemKind.UnresolvedColumn, $"No table in scope has the column {FragmentText.OneLine(column)}.", at));
+        // Observed: An_alias_hides_a_tables_full_name (4104).
+        return new MissingColumn(Problem(BindingProblemKind.UnresolvedColumn, qualifier.Count == 2
+            ? $"No source in scope is named {FullName(qualifier)} without an alias, as a column of three parts needs: an alias hides a table's own name."
+            : $"No table in scope has the column {FragmentText.OneLine(column)}.", at));
     }
+
+    /// <summary>
+    /// The sources of one scope a qualifier of one or two parts names: by alias, or by table name when there is none
+    /// (<see cref="BoundSource.Alias"/>); or by full name (<see cref="BoundSource.Exposed"/>). A source whose full name can't be
+    /// told (it names another database the project doesn't hold, or a name whose schema is the caller's) is counted when its
+    /// own name matches, so that a column is never taken from a source further out that SQL Server might not reach.
+    /// </summary>
+    private static List<BoundSource> Named(IEnumerable<BoundSource> sources, List<Identifier> qualifier) => qualifier switch
+    {
+        [var alias] => [.. sources.Where(s => alias.Value.Equals(s.Alias, StringComparison.OrdinalIgnoreCase))],
+        [var schema, var table] => [.. sources.Where(s => s.Exposed is { } exposed
+            ? exposed.IsNamed(schema.Value, table.Value)
+            : s is { Target: UnresolvedTarget, Syntax: NamedTableReference { Alias: null, SchemaObject.BaseIdentifier.Value: var own } }
+              && own.Equals(table.Value, StringComparison.OrdinalIgnoreCase))],
+        _ => throw new ArgumentException($"A qualifier of {qualifier.Count} parts names no source of this database.", nameof(qualifier)),
+    };
+
+    /// <summary>
+    /// Why a qualifier that names more than one source of a scope means none: SQL Server refuses such a FROM (observed:
+    /// Two_sources_of_one_name_without_aliases_are_refused), so the query never runs.
+    /// </summary>
+    private static string Repeated(List<Identifier> qualifier) => qualifier.Count == 2
+        ? $"Two sources in scope are named {FullName(qualifier)}, which SQL Server refuses (Msg 1013)."
+        : $"Two sources in scope are named {qualifier[0].Value}, which SQL Server refuses.";
+
+    /// <summary>A qualifier of two parts as T-SQL writes it, with a part bracketed where it must be.</summary>
+    private static string FullName(List<Identifier> qualifier) => new ObjectName(qualifier[0].Value, qualifier[1].Value).ToString();
 
     /// <summary>Whether a source is known to have a column of this name.</summary>
     private static bool Has(BoundSource source, string name) => source.Target switch

@@ -32,3 +32,7 @@ check each claim against real rows. No part of it comes from a real system.
 | `lib.merge_returns` | `MERGE … USING (query) AS s`, `OUTPUT` reading `$action`, `inserted`, `deleted` and `s` |
 | `lib.update_returns`, `lib.delete_returns` | `UPDATE` and `DELETE` through a join, `OUTPUT` reading the joined table |
 | `lib.update_through_a_cte` | an `UPDATE` through an updatable CTE, with `OUTPUT` |
+| `lib.full_names` | columns named by their table's schema and name (`lib.book.title`), in the select list, `ON`, `WHERE`, `ORDER BY` and a subquery reaching outward |
+| `lib.full_name_groups` | `GROUP BY` a full name, and a star qualified by one (`lib.member.*`) |
+| `lib.full_name_return` | an `UPDATE` whose `SET` and `WHERE` name the target by its full name |
+| `lib.reading_rooms` | a schema and a table whose names contain dots, `[lib.annex].[reading.room].seats` |

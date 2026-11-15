@@ -11,7 +11,7 @@ namespace Haruspex.Tests.Semantics;
 /// input, and a reference that can't be bound for certain says why, case by case. The inference tests show what each
 /// meaning does to a value; these show the meaning itself.
 /// </summary>
-public class BinderTests
+public partial class BinderTests
 {
     private const string Tables = """
         CREATE TABLE dbo.t (id int NOT NULL PRIMARY KEY, name nvarchar(10) NULL, code int NOT NULL);
@@ -30,7 +30,7 @@ public class BinderTests
         public Sample(string statement, string more = "")
         {
             using var dir = new TempDirectory();
-            dir.File("tables.sql", Tables + more);
+            dir.File("tables.sql", Tables + "\n" + more);
             dir.File("p.sql", $"CREATE PROCEDURE dbo.p AS\n{statement}");
             var read = SqlScriptFolder.Read(dir.Path);
             Assert.Empty(read.Diagnostics);
@@ -218,14 +218,6 @@ public class BinderTests
 
         Assert.Equal(BindingProblemKind.UnresolvedColumn, resolution.Problem.Kind);
         Assert.Equal(detail, resolution.Problem.Detail);
-    }
-
-    [Fact]
-    public void A_column_reference_of_three_parts_is_not_modelled()
-    {
-        var resolution = Assert.IsType<UnmodelledReference>(new Sample("SELECT dbo.t.id FROM dbo.t;").Resolve("dbo.t.id"));
-
-        Assert.Equal(BindingProblemKind.UnsupportedReference, resolution.Problem.Kind);
     }
 
     [Fact]

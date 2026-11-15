@@ -37,7 +37,12 @@
     { "name": "update_through_a_cte", "procedure": "lib.update_through_a_cte", "parameters": { "@member_id": 1 }, "setup": "writes" },
     { "name": "shortlist_by_callee", "procedure": "lib.shortlist_by_callee", "setup": "writes" },
     { "name": "picks_from_a_call", "procedure": "lib.picks_from_a_call", "setup": "writes" },
-    { "name": "make_picks", "procedure": "lib.make_picks", "setup": "writes" }
+    { "name": "make_picks", "procedure": "lib.make_picks", "setup": "writes" },
+    { "name": "full_names", "procedure": "lib.full_names" },
+    { "name": "full_name_groups", "procedure": "lib.full_name_groups" },
+    { "name": "full_name_return, an open loan returned", "procedure": "lib.full_name_return", "parameters": { "@loan_id": 2, "@returned_on": "2026-11-04" }, "setup": "writes" },
+    { "name": "full_name_return, a returned loan cleared", "procedure": "lib.full_name_return", "parameters": { "@loan_id": 1, "@returned_on": null }, "setup": "writes" },
+    { "name": "reading_rooms", "procedure": "lib.reading_rooms" }
   ],
 
   "notRun": {

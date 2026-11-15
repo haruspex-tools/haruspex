@@ -63,6 +63,7 @@ public sealed partial class Binder
                 {
                     History = named.TemporalClause is { TemporalClauseType: not TemporalClauseType.AsOf },
                     Uncommitted = Uncommitted(named),
+                    Exposed = named.Alias is null ? Exposed(named.SchemaObject, adding.Names) : null,
                 });
                 break;
             case VariableTableReference variable:
@@ -77,9 +78,21 @@ public sealed partial class Binder
                 break;
             default:
                 if (Relation(adding, reference) is { } bound)
-                    adding.Sources.Add(new BoundSource(bound.Alias, new RelationTarget(bound.Relation), optional, reference));
+                {
+                    // A function called without an alias is known by its own full name (observed:
+                    // A_view_a_synonym_and_a_function_bind_by_their_own_full_names).
+                    adding.Sources.Add(new BoundSource(bound.Alias, new RelationTarget(bound.Relation), optional, reference)
+                    {
+                        Exposed = bound.Relation is TableFunctionCall { Syntax.Alias: null, Callee: KnownCallee { Function.Name: var function } }
+                            ? new ExposedName(function.Schema, function.Name)
+                            : null,
+                    });
+                }
                 else
+                {
                     AddUnresolved(adding.Sources, reference, Problem(BindingProblemKind.UnsupportedSource, $"The table source {FragmentText.OneLine(reference)} is not modelled yet.", At(reference)));
+                }
+
                 break;
         }
     }
@@ -203,6 +216,30 @@ public sealed partial class Binder
     /// <summary>Whether a table or view is read with a <c>NOLOCK</c> or <c>READUNCOMMITTED</c> hint.</summary>
     private static bool Uncommitted(NamedTableReference named) =>
         named.TableHints.Any(h => h.HintKind is TableHintKind.NoLock or TableHintKind.ReadUncommitted);
+
+    /// <summary>
+    /// The full name a table, view, synonym or temporary table named in FROM without an alias is known by: as written with its
+    /// schema; a one-part name under the schema it resolves to, which is the one schema that has it, or dbo; a temporary table
+    /// under any schema. Null for a CTE and the body's other relations, for a name whose schema depends on the caller, and for
+    /// a name of another database: SQL Server binds a full name to it only when that database is the one the query runs in
+    /// (observed: A_full_name_binds_a_source_named_with_this_databases_name), which the project can't say.
+    /// </summary>
+    private ExposedName? Exposed(SchemaObjectName name, NameEnvironment names)
+    {
+        if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
+            return null;
+        var one = name.BaseIdentifier.Value;
+        if (name.SchemaIdentifier is { Value: var schema })
+            return new ExposedName(schema, one);
+        if (names.Find(one) is { } relation)
+            return relation is TemporaryTable ? new ExposedName(null, one) : null;
+        return SchemaNames.Resolve(Readable(), one) switch
+        {
+            OneObject only => new ExposedName(only.Named.Name.Schema, only.Named.Name.Name),
+            NoObject none => new ExposedName(none.InDbo.Schema, none.InDbo.Name),
+            SeveralObjects => null,
+        };
+    }
 
     /// <summary>What a name in FROM reads.</summary>
     private SourceTarget Named(NamedTableReference named, NameEnvironment names)

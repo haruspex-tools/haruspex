@@ -86,16 +86,45 @@ Three names are bound here, and each binding decides a field:
 it gives a `Resolution`:
 
 - **A qualified column** (`p.name`) is the column of the source its qualifier names, in the innermost scope that has a source
-  of that name. A qualifier shadows the same alias further out.
+  of that name. A qualifier shadows the same alias further out. A source without an alias is named by its table's name
+  (`product.name`) or by its full name (`shop.product.name`, below).
 - **An unqualified column** (`name`) is the column of the one source of the innermost scope that has a column of that name.
   When two sources of that scope have it, it is ambiguous (SQL Server's error 209), and nothing is claimed. When none is
   known to have it but a source of that scope may (its columns aren't known), it is taken to be that source's, as in the
   example: going outward past it could read the wrong table.
 - **What it gives**: a `TableColumn` (a column of a table of the schema), a `RelationColumn` (of a CTE, a derived table, a
   temporary table and the rest), an `UnlistedColumn` (one of a relation whose columns aren't known), or an `Unresolved` case
-  saying why: `AmbiguousColumn`, `MissingColumn`, `UnmodelledReference` (three-part names, pseudo-columns), `UnboundSource`
+  saying why: `AmbiguousColumn`, `MissingColumn`, `UnmodelledReference` (four-part names, pseudo-columns), `UnboundSource`
   (a source that can't itself be bound, its problem moved to where the column is read). Every unresolved case becomes an
   unknown with its reason in the IR, never a guess.
+
+### A full name
+
+A column or star can name its source by schema and table, `shop.product.name` or `shop.product.*`, as some projects write
+every column. Once bound, it is exactly what `p.name` would be: binding is all there is to it. The rule is the name a source is
+**exposed** under, which `BoundSource.Exposed` records (an `ExposedName`), and each part of it was observed
+(`BindingObservationTests`), with the same outcome at every compatibility level from 100 to 170:
+
+- Only a source **without an alias** has one: an alias hides the table's own name, both `shop.product.name` and
+  `product.name` (SQL Server's error 4104). A full name an inner query hides that way is looked for outward, as any qualifier
+  is.
+- A name written with its schema is exposed so. A **one-part name** in FROM is exposed under the schema it resolves to *for the
+  caller*: `FROM product` exposes `dbo.product` to a caller whose default schema is `dbo`, `shop.product` to one whose
+  default schema is `shop`. Which object a one-part name reads is the same question (`SchemaNames.Resolve`), so when the
+  project has it in one schema only, that is the schema; when several schemas have it, which full name binds is the caller's,
+  and the column is unknown with the source's reason.
+- A view, a synonym and a table-valued function are exposed under their own names, a synonym not under its target's. A
+  temporary table is exposed under **any** schema (`dbo.#picked.note` and `shop.#picked.note` both bind), and a CTE under none.
+- Two sources of one query can't be exposed under one table name, even in two schemas: SQL Server refuses the FROM (error
+  1013), so a full name that matches two is ambiguous, never the first.
+- A source named with a database binds a full name only when that database is the one the query runs in, which the project
+  can't say, so a column through it is unknown. A four-part name, `db.shop.product.name`, binds in the database the query runs
+  in, but is unknown here: claiming less, and no corpus haruspex is measured on writes one.
+- `OUTPUT` can't name the table it writes by any name of its own, even when FROM lists it without an alias (4104): only
+  `inserted` and `deleted` read it. A column so named is unknown, as one through its alias in FROM already was.
+
+Names that contain dots are bracketed, `[sales.eu].[order.line].qty`, and ScriptDom gives the parts without their brackets,
+so they are compared as any other.
 
 ### A name in FROM
 
@@ -128,7 +157,8 @@ a select list's aliases and column names (a set operation's from its first query
 
 ### `SELECT *`
 
-A star is one more name to bind: `*` stands for every source of its query, `alias.*` for the one its qualifier names, and
+A star is one more name to bind: `*` stands for every source of its query, `alias.*` and `shop.product.*` for the one its
+qualifier names, and
 `Binder.Star` lists the columns it stands for as a column reference to each would resolve, so Inference reads a starred column
 exactly as a listed one, with its type, its facts and its optional side. A table gives its columns in the order it declares them,
 which is `column_id`'s, leaving out a `HIDDEN` period column and, when the table has a column set, its sparse columns, which the
@@ -136,7 +166,7 @@ set stands for; a relation gives the columns its symbol names; a temporary table
 that statement, through the names in force, as for any column of it. What it gives is a `StarExpansion`: an `ExpandedStar` with
 the columns, an `UnlistedStar` naming the relation whose columns can't be listed (a caller's `#t`), whose reason the reader
 finds in what that relation holds, or an `UnexpandedStar` with a binding problem (a table not in the project, a graph table,
-whose star adds pseudo-columns the server names, or a qualifier of two parts).
+whose star adds pseudo-columns the server names, or a qualifier naming a database).
 
 When SQL Server binds a star depends on the module: a procedure and the functions that run statements bind it when they run, a
 view and an inline function the star of their own select list when they are created (one in a subquery of either, when they

@@ -77,10 +77,16 @@ public sealed partial class Binder
             var bound = Specification(query, null, inForce);
 
             // OUTPUT may name the target through its alias in FROM, but whether as the row before or after the write is not
-            // observed, so the reader treats a column read through it as unknown.
-            var target = from is not null && spec.Target is NamedTableReference { SchemaObject: { SchemaIdentifier: null } written }
-                ? written.BaseIdentifier.Value
-                : null;
+            // observed, so the reader treats a column read through it as unknown. A target named with its schema is the FROM
+            // source of that full name without an alias, which OUTPUT can't name at all (observed:
+            // Output_cannot_name_the_target_by_its_table_name), so a column read through it is unknown too.
+            bool Written(BoundSource source) => from is not null && spec.Target switch
+            {
+                NamedTableReference { SchemaObject: { SchemaIdentifier: null } one } => one.BaseIdentifier.Value.Equals(source.Alias, StringComparison.OrdinalIgnoreCase),
+                NamedTableReference { SchemaObject: { DatabaseIdentifier: null, SchemaIdentifier.Value: var schema, BaseIdentifier.Value: var name } } =>
+                    source.Exposed?.IsNamed(schema, name) == true,
+                _ => false,
+            };
 
             // A MERGE's source has no row for the rows its WHEN NOT MATCHED BY SOURCE clauses change.
             var unmatched = spec is MergeSpecification { TableReference: { } usingSource } merge
@@ -89,7 +95,7 @@ public sealed partial class Binder
                 : [];
             return new BoundOutput(
                 bound,
-                [.. bound.Scope.Sources.Where(s => target is not null && target.Equals(s.Alias, StringComparison.OrdinalIgnoreCase))],
+                [.. bound.Scope.Sources.Where(Written)],
                 [.. bound.Scope.Sources.Where(s => s.Alias is { } alias && unmatched.Contains(alias) && s.Target is not RelationTarget { Relation: PseudoTable })],
                 [.. pseudo]);
         });

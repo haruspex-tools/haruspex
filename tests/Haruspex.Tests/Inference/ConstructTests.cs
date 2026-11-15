@@ -200,8 +200,19 @@ public class ConstructTests
         AssertUnknown(Procedure(body), "results[0][].n", reason);
 
     [Fact]
-    public void A_column_reference_of_three_parts_is_unknown() =>
-        AssertUnknown(Procedure("SELECT dbo.t.id AS c FROM dbo.t;"), "results[0][].c", IrUnknownReason.UnsupportedExpression);
+    public void A_column_reference_of_three_parts_is_typed_as_one_through_an_alias()
+    {
+        // Binding only: once bound, dbo.t.name is t.name (BinderTests.FullNames.cs has the rules).
+        var full = Procedure("SELECT dbo.t.id, dbo.t.name FROM dbo.t JOIN dbo.u AS u ON u.t_id = dbo.t.id WHERE dbo.t.name IS NOT NULL ORDER BY dbo.t.code;");
+        var aliased = Procedure("SELECT t.id, t.name FROM dbo.t AS t JOIN dbo.u AS u ON u.t_id = t.id WHERE t.name IS NOT NULL ORDER BY t.code;");
+
+        Assert.Equal(RowFields(aliased), RowFields(full));
+        Assert.False(RowFields(full)[1].Nullable);
+    }
+
+    [Fact]
+    public void A_column_reference_of_four_parts_is_unknown() =>
+        AssertUnknown(Procedure("SELECT here.dbo.t.id AS c FROM dbo.t;"), "results[0][].c", IrUnknownReason.UnsupportedExpression);
 
     [Fact]
     public void An_unqualified_column_resolves_when_only_one_table_has_it()

@@ -18,8 +18,8 @@ the rows at the top are where work types the most. **Places** adds the four colu
 
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters | Places | Corpora |
 |---|---:|---:|---:|---:|---:|---:|
-| `unsupported-expression` | 708 | 0 | 0 | 0 | 708 | 3 |
-| `unsupported-sql-type` | 25 | 0 | 0 | 143 | 168 | 6 |
+| `unsupported-sql-type` | 27 | 0 | 0 | 143 | 170 | 6 |
+| `unsupported-expression` | 145 | 0 | 0 | 0 | 145 | 3 |
 | `dynamic-sql` | 5 | 0 | 88 | 0 | 93 | 5 |
 | `unnamed-column` | 0 | 64 | 0 | 0 | 64 | 4 |
 | `unsupported-statement` | 16 | 0 | 19 | 0 | 35 | 6 |
@@ -170,7 +170,7 @@ From [its repository](https://github.com/microsoft/sql-server-samples) at commit
 
 ### ProfilesRNS
 
-**Typed 812 of 1,510 fields in ProfilesRNS; the results of 47 of its 460 procedures can't be described, so they have no fields to count.** 68 of the 168 procedures that return fields are fully typed.
+**Typed 1,373 of 1,510 fields in ProfilesRNS; the results of 47 of its 460 procedures can't be described, so they have no fields to count.** 136 of the 168 procedures that return fields are fully typed.
 
 From [its repository](https://github.com/ProfilesRNS/ProfilesRNS) at commit `5f6a46e4af905ba2073d7e913ea38847a0b3ca12`, under `BSD-3-Clause` (`LICENSE.txt` and `Database/Schema/CopyrightNotice.txt`, fetched with it). ProfilesRNS, a research networking application for universities: one script per object, the largest corpus here, with `FOR JSON PATH`, XML methods, `OPENJSON`, dynamic SQL and schema names that contain dots. The upgrade scripts beside the schema are not taken.
 
@@ -186,9 +186,9 @@ From [its repository](https://github.com/ProfilesRNS/ProfilesRNS) at commit `5f6
 | Procedures whose result sets can't be listed | 38 |
 | Procedures that return no result set | 245 |
 | Procedures whose known results have no fields | 0 |
-| Procedures that return fields, fully typed | 68 |
+| Procedures that return fields, fully typed | 136 |
 | Fields | 1,510 |
-| Fields typed | 812 |
+| Fields typed | 1,373 |
 | Fields typed as JSON text whose content isn't known | 0 |
 | Results | 213 |
 | Results of unknown shape | 12 |
@@ -202,8 +202,8 @@ From [its repository](https://github.com/ProfilesRNS/ProfilesRNS) at commit `5f6
 | `unnamed-column` | 0 | 12 | 0 | 0 |
 | `unresolved-column` | 1 | 0 | 0 | 0 |
 | `unresolved-table` | 3 | 0 | 0 | 0 |
-| `unsupported-expression` | 669 | 0 | 0 | 0 |
-| `unsupported-sql-type` | 20 | 0 | 0 | 32 |
+| `unsupported-expression` | 106 | 0 | 0 | 0 |
+| `unsupported-sql-type` | 22 | 0 | 0 | 32 |
 | `unsupported-statement` | 0 | 0 | 11 | 0 |
 | `varying-results` | 0 | 0 | 4 | 0 |
 

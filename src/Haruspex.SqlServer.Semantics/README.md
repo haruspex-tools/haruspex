@@ -29,7 +29,9 @@ flowchart LR
   `RelationSymbol`: a CTE, a derived table (bound with its query, so the whole is a tree, `BoundQuery`), a `VALUES` list, a
   view, a table-valued function's call, a `#temp` table, a table variable, each with its columns' names. The names a body
   defines (`NameEnvironment`) are an argument, and each query is bound once for each set of them (`Bindings`).
-  `Binder.Resolve` is the one rule a column reference is resolved by, and gives a `Resolution`; a variable reference
+  `Binder.Resolve` is the one rule a column reference is resolved by, and gives a `Resolution`; a column or star qualified by
+  its table's schema and name (`shop.orders.order_id`) names the source exposed under that name (`ExposedName`), as the
+  guide's [binding chapter](https://github.com/sharpblue/haruspex/blob/main/docs/internals/03-binding.md#a-full-name) says; a variable reference
   resolves to a parameter, a variable the body declares or neither (`VariableResolution`), from what the whole body declares
   (`BodyDeclarations`). A name written without a schema means what `SchemaNames.Resolve` decides (one object, several or none), for every kind of
   name.
@@ -65,6 +67,12 @@ foreach (var column in orders.Columns)
   it may be defined (`SchemaGaps.MayBeIn`). A three-part name binds a table of another database only through a reference the
   source holds for it by that very name, and hands the table on with what is true of it there (`OtherDatabases`); a view,
   function or procedure there stays unbound, with that reason.
+- **A full name binds only where SQL Server binds it.** `shop.orders.order_id` names a source without an alias exposed under
+  that name: an alias hides it; a one-part name in FROM is exposed under the schema it resolves to, and leaves the column
+  unknown when that is the caller's to decide; a temporary table under any schema, a CTE under none; two sources under one
+  name are refused by SQL Server (1013), so the column is ambiguous; a source in a database that may or may not be the
+  current one, and a four-part name, leave it unknown. `OUTPUT` can't name its target this way (4104), so such a column is
+  unknown. Each rule is observed in `BindingObservationTests`, at every compatibility level from 100 to 170.
 - **A fact is never narrower than the truth.** A CHECK constraint is read only in the forms `CheckReader` understands, and
   anything else is ignored, which leaves a type wider than it could be, never narrower. A constraint that a later
   `ALTER TABLE … NOCHECK` may disable, and a key whose index may be disabled, prove nothing.

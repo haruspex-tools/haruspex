@@ -21,4 +21,12 @@ public sealed record BoundSource(string? Alias, SourceTarget Target, OptionalSid
     /// scan under read-uncommitted can return a row twice, or miss one, while pages split, so no key of it holds.
     /// </summary>
     public bool Uncommitted { get; init; }
+
+    /// <summary>
+    /// The full name it is known by, when it has no alias and names an object of this database, a temporary table or a
+    /// table-valued function: what a column of three parts names it by. Null for a source with an alias, which hides the name
+    /// (observed: An_alias_hides_a_tables_full_name), for a CTE (observed: A_cte_has_no_full_name), a derived table and the
+    /// other relations a body makes, and for a name whose schema can't be told.
+    /// </summary>
+    public ExposedName? Exposed { get; init; }
 }

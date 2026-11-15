@@ -85,10 +85,20 @@ public partial class SelectStarTests
     public void A_star_without_from_is_unknown_as_sql_server_refuses_it() =>
         AssertUnknown(Procedure("SELECT *;"), "results[0]", IrUnknownReason.UnsupportedQuery);
 
-    // Two-part qualifiers wait with multi-part column references (a row of their own).
     [Fact]
-    public void A_star_qualified_by_schema_and_table_is_unknown_for_now() =>
-        AssertUnknown(Procedure("SELECT shop.orders.* FROM shop.orders;"), "results[0]", IrUnknownReason.UnsupportedQuery);
+    public void A_star_qualified_by_schema_and_table_lists_that_tables_columns()
+    {
+        var full = Procedure("SELECT shop.orders.* FROM shop.orders JOIN shop.order_line AS l ON l.order_id = shop.orders.order_id;");
+        var aliased = Procedure("SELECT o.* FROM shop.orders AS o JOIN shop.order_line AS l ON l.order_id = o.order_id;");
+
+        AllTyped(full);
+        Assert.Equal(Names(aliased), Names(full));
+    }
+
+    [Fact]
+    public void A_star_qualified_by_the_full_name_of_an_aliased_table_is_unknown() =>
+        // Observed: An_alias_hides_a_tables_full_name (Msg 107 for the star).
+        AssertUnknown(Procedure("SELECT shop.orders.* FROM shop.orders AS o;"), "results[0]", IrUnknownReason.UnresolvedColumn);
 
     [Fact]
     public void A_star_with_other_columns_keeps_the_select_lists_order()

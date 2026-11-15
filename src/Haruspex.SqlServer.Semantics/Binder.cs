@@ -170,7 +170,7 @@ public sealed partial class Binder
     // ---- SELECT * -----------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// What <c>*</c> or <c>alias.*</c> stands for: each source's columns in order, a table's in the order declared (observed:
+    /// What <c>*</c>, <c>alias.*</c> or <c>schema.table.*</c> stands for: each source's columns in order, a table's in the order declared (observed:
     /// A_star_gives_a_tables_columns_in_column_id_order) and a relation's as it names them. A table's star leaves out a hidden
     /// period column (observed: A_star_leaves_out_hidden_period_columns), and a table with a column set gives the set in place of
     /// its sparse columns (observed: A_column_set_stands_for_its_sparse_columns_in_star). It is bound where the query is, against
@@ -191,9 +191,11 @@ public sealed partial class Binder
         if (star.Qualifier is { } qualifier)
         {
             var text = string.Join('.', qualifier.Identifiers.Select(i => i.Value));
-            if (qualifier.Identifiers.Count != 1)
-                return Unexpanded(BindingProblemKind.UnsupportedStar, $"{text}.* names its source by more than one part, which is not modelled yet.", star);
-            var named = scope.Sources.Where(s => qualifier.Identifiers[0].Value.Equals(s.Alias, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (qualifier.Identifiers.Count > 2)
+                return Unexpanded(BindingProblemKind.UnsupportedStar, $"{text}.* names its database, which is not modelled yet.", star);
+
+            // By alias, table name or full name, as a column's qualifier (observed: An_alias_hides_a_tables_full_name, Msg 107).
+            var named = Named(scope.Sources, [.. qualifier.Identifiers]);
             if (named.Count != 1)
                 return Unexpanded(BindingProblemKind.UnresolvedColumn, $"{text}.* names no one source of this query.", star);
             sources = named;

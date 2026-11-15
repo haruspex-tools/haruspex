@@ -7,7 +7,12 @@ namespace Haruspex.DifferentialTests;
 /// Haruspex.SqlServer.Semantics (<c>Binder</c>) rests on, beyond those the <c>scopes</c> fixture shows in whole procedures.
 /// Each test creates what it needs in a write session, rolled back. Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
-public class BindingObservationTests(SqlServerFixture server)
+/// <remarks>
+/// The rules for full names (a column or star qualified by its table's schema and name) were also run by hand at every
+/// compatibility level from 100 to 170, on 15 Nov 2026, with the same outcome at each. A test can't change the level: it runs
+/// in a transaction, which <c>ALTER DATABASE</c> can't, and the level is the whole database's.
+/// </remarks>
+public partial class BindingObservationTests(SqlServerFixture server)
 {
     private Task<CallOutcome> Run(string[] setup, string call) => ObservedCall.Run(server, setup, call, errorsAsMessages: false);
 
