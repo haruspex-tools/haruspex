@@ -1,9 +1,11 @@
 # The shape of the problem
 
-One question drives haruspex: what exactly does each stored procedure in a SQL Server database return? It answers by
-reading the project's source, never by running anything, and it answers soundly: every claim it makes holds for every
-execution, and where it can't prove something it says so. This chapter says why the question matters, why it is answered
-from the source, and why soundness is the rule.
+Types stop at the database boundary. The application has types and the database has types, and the seam between them is
+where they are lost: a procedure's result becomes rows the driver can't describe, or a string of JSON, and a hand-written
+type stands in for it. This project exists to carry types across that seam, starting with one question: what exactly does each
+stored procedure in a SQL Server database return? It answers by reading the project's source, never by running anything,
+and it answers soundly: every claim it makes holds for every execution, and where it can't prove something it says so. This
+chapter says why the question matters, why it is answered from the source, and why soundness is the rule.
 
 ## What haruspex is for
 
