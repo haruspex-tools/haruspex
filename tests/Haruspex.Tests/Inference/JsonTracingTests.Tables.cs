@@ -24,11 +24,27 @@ public partial class JsonTracingTests
         Assert.Empty(doc.Unknowns);
     }
 
+    [Fact]
+    public void A_table_variable_column_holds_the_json_a_merge_writes_to_it()
+    {
+        var doc = Infer("""
+            DECLARE @t TABLE (id int NOT NULL, lines nvarchar(max) NULL);
+            MERGE @t AS t USING sales.[order] AS o ON t.id = o.order_id
+            WHEN MATCHED THEN UPDATE SET lines = (SELECT l.sku, l.qty FROM sales.order_line AS l WHERE l.order_id = o.order_id FOR JSON PATH)
+            WHEN NOT MATCHED THEN INSERT (id, lines) VALUES (o.order_id, (SELECT l.sku, l.qty FROM sales.order_line AS l WHERE l.order_id = o.order_id FOR JSON PATH));
+            SELECT json_query(v.lines) AS v FROM @t AS v FOR JSON PATH;
+            """);
+
+        AssertLines(doc, Field(doc, "v").Type);
+        Assert.Empty(doc.Unknowns);
+    }
+
     [Theory]
     [InlineData("INSERT @t (id) VALUES (1);", "default")]
     [InlineData("UPDATE @t SET lines = @raw;", "@raw")]
     [InlineData("WITH c AS (SELECT t.id, t.lines FROM @t AS t) UPDATE c SET lines = N'x';", "CTE")]
-    [InlineData("MERGE @t AS t USING sales.[order] AS o ON t.id = o.order_id WHEN NOT MATCHED THEN INSERT (id, lines) VALUES (o.order_id, o.notes);", "not read")]
+    [InlineData("MERGE @t AS t USING sales.[order] AS o ON t.id = o.order_id WHEN NOT MATCHED THEN INSERT (id, lines) VALUES (o.order_id, o.notes);", "o.notes")]
+    [InlineData("MERGE @t AS t USING sales.[order] AS o ON t.id = o.order_id WHEN MATCHED THEN UPDATE SET lines = o.notes;", "o.notes")]
     [InlineData("INSERT @t (id, lines) OUTPUT inserted.id, inserted.lines INTO @t (id, lines) VALUES (2, N'x');", "not valid JSON")]
     public void A_write_to_a_table_variable_whose_value_is_not_built_json_makes_it_unknown(string write, string named)
     {

@@ -611,7 +611,7 @@ Each construct as ScriptDom names it. What a modelled construct gives is explain
 | `INSERT` | `InsertStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | Writes rows, typed for a temporary table or variable it writes and for its OUTPUT; INSERT … EXEC runs the procedure into the table. |
 | `UPDATE` | `UpdateStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | Changes rows; a column it sets in a temporary table or variable takes the new value's type too. |
 | `DELETE` | `DeleteStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | Removes rows, which changes no column's type. |
-| `MERGE` | `MergeStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | Each WHEN clause is the insert, update or delete it holds. |
+| `MERGE` | `MergeStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | Each WHEN clause is the insert, update or delete it holds, into a temporary table or table variable too. |
 | `SET c = x in UPDATE` | `AssignmentSetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | The column, in a temporary table or variable, takes the value's type too. |
 | `SET c.WRITE( … ) in UPDATE` | `FunctionCallSetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) in part; otherwise unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Read in an UPDATE of a permanent table, which changes no column's type; on a temporary table or variable, whose column it changes, not modelled yet. |
 | `TRUNCATE TABLE` | `TruncateTableStatement` | read, changing no result | Removes every row and fires no trigger. |

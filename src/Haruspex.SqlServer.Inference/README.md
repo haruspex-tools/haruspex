@@ -151,8 +151,8 @@ always its declaration: nothing a statement does changes what its columns may ho
   `SELECT … INTO` makes `nvarchar(max)` of a `FOR JSON` subquery or a constructor, so the column is JSON text of its content
   ("JSON built here, traced", below), but `json` of one `RETURNING json`, which is not tracked, so other live JSON selected into a table is unknown. A
   declared `nvarchar(max)` column holds the JSON its writes put in it ("JSON built here, traced", below).
-- `DELETE` and `TRUNCATE` remove rows, which changes nothing a column may hold. `MERGE` into one, a write through a CTE
-  over it, or an `ALTER TABLE` form not listed, makes it unknown.
+- `DELETE` and `TRUNCATE` remove rows, which changes nothing a column may hold. `MERGE` writes as the statements its actions
+  hold do ("DML" below). A write through a CTE over it, or an `ALTER TABLE` form not listed, makes it unknown.
 - `CREATE TABLE #t` always makes a new table, hiding a caller's of that name
   (`A_temporary_table_a_procedure_creates_hides_the_callers_of_the_same_name`). A procedure that creates one name
   twice, even after a drop or in two branches, is refused when it is created (error 2714,
@@ -346,6 +346,14 @@ it on the stack of calls.
   a temporary table, a table variable, or a permanent object, resolved by the binder's rule for table names
   (`Binder.ResolveWritten`). A target of another form (`OPENROWSET`, `OPENQUERY`) is not modelled and makes the results
   unknown.
+- **`MERGE`** writes as the statements its actions hold do: a `WHEN … THEN INSERT` its row, a `THEN UPDATE` its `SET`
+  clauses, a `THEN DELETE` nothing a column may hold. Each action writes rows of its own and every write only joins into what
+  a column may hold, so the order they are read in doesn't matter. Their values are read over the target and the source, each
+  row as it is: an action reads only the rows it has, since a column of the target in `WHEN NOT MATCHED [BY TARGET]`, or of
+  the source in `WHEN NOT MATCHED BY SOURCE`, is refused (`A_merge_action_reads_only_the_rows_it_has`, Msg 4104); what `ON`
+  and each `WHEN … AND` prove isn't read, which only claims less. So into a temporary table or a table variable, as into a
+  permanent one, and a variable an `UPDATE` action sets (`SET @v = s.n`) may be set, whatever the target
+  (`Merge_into_a_temporary_table_writes_each_actions_rows_and_may_set_a_variable`).
 - **A write nested in an `INSERT`** (`INSERT … SELECT … FROM (DELETE … OUTPUT …) AS d`) is a write of its own, whose table's
   triggers fire as for the write alone (`A_write_nested_in_an_insert_fires_its_tables_triggers`). Only the outer write is
   walked, so such an `INSERT` makes the results after it unknown (`unsupported-statement`).
@@ -1363,7 +1371,7 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   of both (so `'[]'` keeps an array's items and only drops its least count); objects with the same keys in the same order, each
   present the same way, join key by key, and records join value by value; scalars of one type keep the facts both prove; anything else is a `union` of both, which is exact. NULL adds
   nothing. A write of a value that may not be JSON built here (a parameter, a stored column, concatenation, `json_modify`, a
-  literal that is not a JSON document, a default, a `MERGE`, an `INSERT … EXEC`, a write through a CTE or derived table)
+  literal that is not a JSON document, a default, an `INSERT … EXEC`, a write through a CTE or derived table)
   makes the content unknown, and `json_query` over the place reports `json-shape-unknown` at that write, naming it.
 - **Literals** (`JsonLiterals`). A literal that is valid JSON of an object or array has an exact shape: an array a tuple, keys
   always present, a JSON `null` `null-literal`, strings and numbers their own values (fact source `expression`). Observed

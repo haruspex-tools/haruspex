@@ -97,6 +97,36 @@ public class DmlObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task Merge_into_a_temporary_table_writes_each_actions_rows_and_may_set_a_variable()
+    {
+        // Into a table SELECT … INTO made (n nullable, from a variable): the update sets 2's n to NULL, the insert leaves 3's
+        // out, the delete removes 1. The UPDATE's SET @v sets the variable as an UPDATE's does: to the row's value, here NULL.
+        var outcome = await Run([], """
+            DECLARE @ten int = 10, @v int = 5;
+            SELECT 1 AS hr, @ten AS n INTO #obs_hourly UNION ALL SELECT 2, 20;
+            MERGE #obs_hourly AS t USING (VALUES (2, CAST(NULL AS int)), (3, 30)) AS s (hr, n) ON t.hr = s.hr
+            WHEN MATCHED THEN UPDATE SET n = s.n, @v = s.n
+            WHEN NOT MATCHED BY TARGET THEN INSERT (hr) VALUES (s.hr)
+            WHEN NOT MATCHED BY SOURCE THEN DELETE
+            OUTPUT $action AS what, inserted.n AS now, deleted.n AS was;
+            SELECT h.hr, h.n, ISNULL(CONVERT(varchar(5), @v), 'null') AS v FROM #obs_hourly AS h ORDER BY h.hr;
+            """);
+        var sets = outcome.Sets;
+        Assert.Equal(["DELETE,null,10", "INSERT,null,null", "UPDATE,null,20"], sets[0].Split(": ")[1].Split(';').Order(StringComparer.Ordinal));
+        Assert.Equal("hr,n,v: 2,null,null;3,null,null", sets[1]);
+    }
+
+    [Fact]
+    public async Task A_merge_action_reads_only_the_rows_it_has()
+    {
+        // WHEN NOT MATCHED [BY TARGET] has no target row and WHEN NOT MATCHED BY SOURCE no source row: a column of the other is
+        // refused (4104), so an action never reads a row it lacks.
+        const string Table = "CREATE TABLE #obs_h (hr int NOT NULL, n int NULL);";
+        Assert.Equal(4104, (await Run([], Table + " MERGE #obs_h AS t USING (SELECT 2 AS hr, 7 AS n) AS s ON t.hr = s.hr WHEN NOT MATCHED THEN INSERT (hr, n) VALUES (t.hr, s.n);")).Error);
+        Assert.Equal(4104, (await Run([], Table + " MERGE #obs_h AS t USING (SELECT 2 AS hr, 7 AS n) AS s ON t.hr = s.hr WHEN NOT MATCHED BY SOURCE THEN UPDATE SET n = s.n;")).Error);
+    }
+
+    [Fact]
     public async Task Merge_action_is_an_nvarchar_10()
     {
         // As the server describes the result: $action is nvarchar(10). Its values are the three above.

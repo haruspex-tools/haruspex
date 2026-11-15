@@ -25,6 +25,23 @@ public sealed partial class Binder
     }
 
     /// <summary>
+    /// The scope a <c>MERGE</c>'s actions read their values in: its target and its source, each row as it is, with no
+    /// condition. An action reads only the rows it has: a column of the target in <c>WHEN NOT MATCHED [BY TARGET]</c>, or of
+    /// the source in <c>WHEN NOT MATCHED BY SOURCE</c>, is refused (observed: A_merge_action_reads_only_the_rows_it_has), so
+    /// a column read is never of a row the action lacks. What <c>ON</c> and each <c>WHEN … AND</c> prove isn't read, which
+    /// only claims less.
+    /// </summary>
+    /// <param name="merge">The merge.</param>
+    /// <param name="names">The names in force, its WITH's included.</param>
+    public BoundSpecification BindMerge(MergeSpecification merge, NameEnvironment names)
+    {
+        ArgumentNullException.ThrowIfNull(merge);
+        ArgumentNullException.ThrowIfNull(names);
+        return bindings.Once(merge, null, names, () =>
+            Specification(new QuerySpecification { FromClause = new FromClause { TableReferences = { merge.Target, merge.TableReference } } }, null, names));
+    }
+
+    /// <summary>
     /// A write's <c>OUTPUT</c> (or <c>OUTPUT … INTO</c>), bound as the select list of a query over the write's FROM (and a
     /// MERGE's source), filtered by its WHERE, with <c>inserted</c> and <c>deleted</c> as relations: the target after the
     /// write and before it. <c>inserted.*</c> and <c>deleted.*</c> are stars as any other (<see cref="Star"/>), so they give the

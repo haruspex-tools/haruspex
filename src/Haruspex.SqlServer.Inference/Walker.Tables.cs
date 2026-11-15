@@ -127,11 +127,7 @@ internal sealed partial class Walker
 
         var at = At(insert);
 
-        // DEFAULT VALUES writes no column: each gets its default, or null, and a column SELECT … INTO made has no default.
-        var targets = spec.InsertSource is ValuesInsertSource { IsDefaultValues: true } ? []
-            : spec.Columns.Count == 0
-            ? [.. Enumerable.Range(0, table.Columns.Count)]
-            : Binder.Written(spec.Columns, [.. table.Columns.Select(c => c.Name)]).ToList();
+        var targets = InsertTargets(table, spec.Columns, spec.InsertSource);
         if (targets.Any(i => i < 0))
             return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnresolvedColumn, "The insert names a column the table does not have.", at)));
 
@@ -141,6 +137,15 @@ internal sealed partial class Walker
 
         return state.WithTemp(name, Written(table, targets, rows, at, InsertedExpressions(spec.InsertSource, rows.Count)));
     }
+
+    /// <summary>
+    /// The column of the table each value of an inserted row goes to, by position, -1 for a name it doesn't have. DEFAULT VALUES
+    /// writes no column: each gets its default, or null, and a column SELECT … INTO made has no default.
+    /// </summary>
+    private static List<int> InsertTargets(KnownTable table, IList<ColumnReferenceExpression> columns, InsertSource source) =>
+        source is ValuesInsertSource { IsDefaultValues: true } ? []
+            : columns.Count == 0 ? [.. Enumerable.Range(0, table.Columns.Count)]
+            : [.. Binder.Written(columns, [.. table.Columns.Select(c => c.Name)])];
 
     /// <summary>
     /// The table after rows are inserted into it: a declared column is unchanged (the engine converts each value to its type
@@ -238,55 +243,132 @@ internal sealed partial class Walker
     private FlowState Update(UpdateStatement update, DmlTarget written, FlowState state)
     {
         var spec = update.UpdateSpecification;
-        var at = At(update);
         var target = written.Direct;
 
         return typer.WithCtes(update.WithCtesAndXmlNamespaces, Reading(state), statement =>
-        {
-            var scope = typer.Attach(statement.In(binder.BindUpdate(spec, statement.Names).Scope));
-            var table = target is { IsTemporary: true } temporary ? state.Temp(temporary) as KnownTable : null;
-            var columns = table?.Columns.ToList();
-            foreach (var clause in spec.SetClauses)
-            {
-                if (clause is not AssignmentSetClause set)
-                    return table is null ? state : state.WithTemp(table.Name, Unknown(table.Name, Unsupported(IrUnknownReason.UnsupportedStatement, $"The update {Text(clause)} is not modelled yet.", At(clause))));
-
-                var value = typer.AssignedValue(set.AssignmentKind, set.NewValue, scope, set);
-                if (set.Variable is { } variable)
-                    state = Assign(state, Resolved(variable).Name, value, definitely: false, At(set), set.NewValue);
-                if (set.Column is not null && target is { IsVariable: true } tableVariable && new ColumnSlot(tableVariable, Binder.WrittenColumn(set.Column)) is var key
-                    && state.Json.TryGetValue(key, out var traced))
-                {
-                    state = state.WithJson(key, JsonSlot.Join(traced, JsonWritten(value, set.NewValue, At(set), key.ToString())));
-                }
-
-                if (set.Column is null || table is null || columns is null)
-                    continue;
-
-                var i = Binder.Written([set.Column], [.. table.Columns.Select(c => c.Name)])[0];
-                if (i < 0)
-                    return state.WithTemp(table.Name, Unknown(table.Name, Unsupported(IrUnknownReason.UnresolvedColumn, $"The update sets {Text(set.Column)}, which {table.Name} does not have.", At(set))));
-                if (columns[i].Declaration is null)
-                {
-                    var where = $"{table.Name}.{columns[i].Name}";
-                    columns[i] = columns[i] with { Value = Value.JoinConverted(columns[i].Value, Stored(value, where, at), at, where) };
-                }
-                else if (columns[i].Json is { } slot)
-                {
-                    columns[i] = columns[i] with { Json = JsonSlot.Join(slot, JsonWritten(value, set.NewValue, At(set), $"{table.Name}.{columns[i].Name}")) };
-                }
-            }
-
-            return table is null || columns is null ? state : state.WithTemp(table.Name, table with { Columns = [.. columns] });
-        }, why => target is { IsTemporary: true } temporary ? state.WithTemp(temporary, Unknown(temporary, why)) : state);
+            Set(spec.SetClauses, written, typer.Attach(statement.In(binder.BindUpdate(spec, statement.Names).Scope)), state, At(update)),
+            why => target is { IsTemporary: true } temporary ? state.WithTemp(temporary, Unknown(temporary, why)) : state);
     }
 
-    /// <summary>MERGE into a temporary table is not modelled, so the table becomes unknown; a table variable is as declared.</summary>
-    private FlowState Merge(MergeStatement merge, DmlTarget target, FlowState state) =>
-        target.Direct is { IsTemporary: true } name && state.Temp(name) is KnownTable
-            ? state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnsupportedStatement, $"MERGE at {At(merge)} is not modelled yet.", At(merge))))
-            : target.Direct is { IsVariable: true } variable ? TableVariableWritten(state, variable, null, null, null, At(merge))
-            : state;
+    /// <summary>
+    /// What an UPDATE's SET clauses do, an UPDATE's or a MERGE's: each variable they set may be set; each value written to a
+    /// column SELECT … INTO made of the temporary table written directly joins with it, and a declared column is unchanged
+    /// but for the JSON it holds; a table variable's traced column joins with the JSON written.
+    /// </summary>
+    /// <param name="clauses">The SET clauses.</param>
+    /// <param name="written">The write's target.</param>
+    /// <param name="scope">The scope their values are read in.</param>
+    /// <param name="state">The state before them.</param>
+    /// <param name="at">Where the statement is.</param>
+    private FlowState Set(IEnumerable<SetClause> clauses, DmlTarget written, ReadScope scope, FlowState state, SourceLocation at)
+    {
+        var target = written.Direct;
+        var table = target is { IsTemporary: true } temporary ? state.Temp(temporary) as KnownTable : null;
+        var columns = table?.Columns.ToList();
+        foreach (var clause in clauses)
+        {
+            if (clause is not AssignmentSetClause set)
+                return table is null ? state : state.WithTemp(table.Name, Unknown(table.Name, Unsupported(IrUnknownReason.UnsupportedStatement, $"The update {Text(clause)} is not modelled yet.", At(clause))));
+
+            var value = typer.AssignedValue(set.AssignmentKind, set.NewValue, scope, set);
+            if (set.Variable is { } variable)
+                state = Assign(state, Resolved(variable).Name, value, definitely: false, At(set), set.NewValue);
+            if (set.Column is not null && target is { IsVariable: true } tableVariable && new ColumnSlot(tableVariable, Binder.WrittenColumn(set.Column)) is var key
+                && state.Json.TryGetValue(key, out var traced))
+            {
+                state = state.WithJson(key, JsonSlot.Join(traced, JsonWritten(value, set.NewValue, At(set), key.ToString())));
+            }
+
+            if (set.Column is null || table is null || columns is null)
+                continue;
+
+            var i = Binder.Written([set.Column], [.. table.Columns.Select(c => c.Name)])[0];
+            if (i < 0)
+                return state.WithTemp(table.Name, Unknown(table.Name, Unsupported(IrUnknownReason.UnresolvedColumn, $"The update sets {Text(set.Column)}, which {table.Name} does not have.", At(set))));
+            if (columns[i].Declaration is null)
+            {
+                var where = $"{table.Name}.{columns[i].Name}";
+                columns[i] = columns[i] with { Value = Value.JoinConverted(columns[i].Value, Stored(value, where, at), at, where) };
+            }
+            else if (columns[i].Json is { } slot)
+            {
+                columns[i] = columns[i] with { Json = JsonSlot.Join(slot, JsonWritten(value, set.NewValue, At(set), $"{table.Name}.{columns[i].Name}")) };
+            }
+        }
+
+        return table is null || columns is null ? state : state.WithTemp(table.Name, table with { Columns = [.. columns] });
+    }
+
+    /// <summary>
+    /// What a MERGE does: each action writes as the statement it holds does, an INSERT its row (<see cref="Inserted"/>), an
+    /// UPDATE its SET clauses (<see cref="Set"/>), a DELETE nothing a column may hold. Each action writes rows of its own, and
+    /// a write only joins into what a column may hold, so the order they are read in doesn't matter. So into a temporary table
+    /// or a table variable, as into a permanent one, and a variable an UPDATE sets may be set whatever the target (observed:
+    /// Merge_into_a_temporary_table_writes_each_actions_rows_and_may_set_a_variable).
+    /// </summary>
+    private FlowState Merge(MergeStatement merge, DmlTarget written, FlowState state)
+    {
+        var spec = merge.MergeSpecification;
+        var at = At(merge);
+        return typer.WithCtes(merge.WithCtesAndXmlNamespaces, Reading(state), statement =>
+        {
+            var scope = typer.Attach(statement.In(binder.BindMerge(spec, statement.Names).Scope));
+            var after = state;
+            foreach (var clause in spec.ActionClauses)
+            {
+                after = clause.Action switch
+                {
+                    UpdateMergeAction update => Set(update.SetClauses, written, scope, after, at),
+                    InsertMergeAction insert => Inserted(insert, written, scope, after, at),
+                    _ => after,
+                };
+            }
+
+            return after;
+        }, why => Unread(spec, written.Direct, why, state, at));
+    }
+
+    /// <summary>
+    /// A MERGE's INSERT action: its row written to a temporary table, as an INSERT's (<see cref="Written"/>), or to a table
+    /// variable's traced columns.
+    /// </summary>
+    private FlowState Inserted(InsertMergeAction insert, DmlTarget written, ReadScope scope, FlowState state, SourceLocation at)
+    {
+        if (written.Direct is { IsVariable: true } variable)
+        {
+            if (names.TableVariable(variable)?.Columns is not { } declared || !TracedColumns(state, variable, declared).Any())
+                return state;
+            var into = insert.Source is { IsDefaultValues: true } ? [] : TableVariableTargets(variable, insert.Columns);
+            var values = into is null ? null : InsertedRows(insert.Source, into.Count, at, scope);
+            return TableVariableWritten(state, variable, into, values, values is null ? null : InsertedExpressions(insert.Source, values.Count), at);
+        }
+
+        if (written.Direct is not { IsTemporary: true } name || state.Temp(name) is not KnownTable table)
+            return state;
+        var targets = InsertTargets(table, insert.Columns, insert.Source);
+        if (targets.Any(i => i < 0))
+            return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnresolvedColumn, "The merge's insert names a column the table does not have.", at)));
+        var rows = InsertedRows(insert.Source, targets.Count, at, scope);
+        return rows is null
+            ? state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnsupportedStatement, "The merge's insert values do not match its columns one to one.", at)))
+            : state.WithTemp(name, Written(table, targets, rows, at, InsertedExpressions(insert.Source, rows.Count)));
+    }
+
+    /// <summary>
+    /// A MERGE whose values can't be read: the temporary table it writes is unknown, a table variable's traced columns are, and
+    /// so is each variable an UPDATE of it sets.
+    /// </summary>
+    private FlowState Unread(MergeSpecification spec, LocalName? target, UnknownShape why, FlowState state, SourceLocation at)
+    {
+        if (target is { IsTemporary: true } temporary)
+            state = state.WithTemp(temporary, Unknown(temporary, why));
+        else if (target is { IsVariable: true } variable)
+            state = TableVariableWritten(state, variable, null, null, null, at);
+        var set = spec.ActionClauses.Select(c => c.Action).OfType<UpdateMergeAction>().SelectMany(u => u.SetClauses).OfType<AssignmentSetClause>();
+        foreach (var assignment in set.Where(a => a.Variable is not null))
+            state = Assign(state, Resolved(assignment.Variable).Name, Value.Unknown(why), definitely: false, At(assignment));
+        return state;
+    }
 
     // ---- creating and altering temporary tables -----------------------------------------------------------------
 

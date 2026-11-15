@@ -346,7 +346,7 @@ public partial class StatementFlowTests
     {
         var doc = Procedure("""
             CREATE TABLE #t (a int NOT NULL);
-            MERGE #t AS x USING dbo.t AS s ON x.a = s.id WHEN NOT MATCHED THEN INSERT (a) VALUES (s.id);
+            WITH c AS (SELECT x.a FROM #t AS x) UPDATE c SET a = 1;
             SELECT t.a FROM #t AS t;
             SELECT u.id FROM dbo.u AS u;
             """);
