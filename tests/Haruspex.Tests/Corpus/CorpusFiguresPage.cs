@@ -26,6 +26,24 @@ internal static class CorpusFiguresPage
             : $"{typed}; the results of {N(figures.ProceduresNotDescribed)} of its {N(figures.Procedures)} procedures can't be described, so they have no fields to count";
     }
 
+    /// <summary>
+    /// The headline in bold, then how many of the procedures that return fields are fully typed. A corpus none of whose
+    /// procedures returns fields says so, rather than "typed 0 of 0".
+    /// </summary>
+    internal static string Summary(string corpus, CorpusFigures figures)
+    {
+        ArgumentNullException.ThrowIfNull(figures);
+        if (figures.ProceduresReturningFields == 0)
+        {
+            var none = $"No procedure in {corpus} returns fields";
+            return figures.ProceduresNotDescribed == 0
+                ? $"**{none}.**"
+                : $"**{none}; the results of {N(figures.ProceduresNotDescribed)} of its {N(figures.Procedures)} procedures can't be described.**";
+        }
+
+        return $"**{Headline(corpus, figures)}.** {N(figures.ProceduresFullyTyped)} of the {N(figures.ProceduresReturningFields)} procedures that return fields are fully typed.";
+    }
+
     /// <summary>The page for these runs.</summary>
     public static string Render(CorpusManifest manifest, IReadOnlyList<CorpusRun> runs)
     {
@@ -42,7 +60,9 @@ internal static class CorpusFiguresPage
 
             The databases are Microsoft's samples, from [microsoft/sql-server-samples]({manifest.Repository}) at commit
             `{manifest.Commit}` under the MIT licence, vendored in `tests/corpus/` ([how and why](../tests/corpus/README.md)).
-            Every procedure in every schema is inferred, with no config file, into IR version {IrDocument.CurrentVersion}.
+            Every procedure in every schema is inferred, with no config file, into IR version {IrDocument.CurrentVersion}. More public
+            corpora are fetched rather than vendored; [the harvest](corpus-harvest.md) gives their figures, and ranks what every
+            corpus shows haruspex missing.
 
             ## How the figures are counted
 
@@ -64,7 +84,7 @@ internal static class CorpusFiguresPage
 
             ## {corpus.Name}
 
-            **{Headline(corpus.Name, f)}.** {N(f.ProceduresFullyTyped)} of the {N(f.ProceduresReturningFields)} procedures that return fields are fully typed.
+            {Summary(corpus.Name, f)}
 
             {corpus.HowRead}
 
@@ -72,32 +92,12 @@ internal static class CorpusFiguresPage
             |---|---:|
             | Scripts read | {N(corpus.Scripts.Count)} |
             | Errors reading them | {N(run.Errors.Count)} |
-            | Procedures | {N(f.Procedures)} |
-            | Procedures that return fields | {N(f.ProceduresReturningFields)} |
-            | Procedures whose results have no fields, because a result's shape is unknown | {N(f.ProceduresWithUnknownResults)} |
-            | Procedures whose result sets can't be listed | {N(f.ProceduresWithUnlistedResults)} |
-            | Procedures that return no result set | {N(f.ProceduresWithNoResults)} |
-            | Procedures whose known results have no fields | {N(f.ProceduresWithoutFields)} |
-            | Procedures that return fields, fully typed | {N(f.ProceduresFullyTyped)} |
-            | Fields | {N(f.Fields)} |
-            | Fields typed | {N(f.FieldsTyped)} |
-            | Fields typed as JSON text whose content isn't known | {N(f.FieldsOfJsonText)} |
-            | Results | {N(f.Results)} |
-            | Results of unknown shape | {N(f.ResultsUnknown)} |
 
             """);
+        page.Append(FigureRows(f));
 
         page.Append("\n### Unknowns by reason\n\n");
-        if (f.Unknowns.Count == 0)
-        {
-            page.Append("Nothing is unknown.\n");
-        }
-        else
-        {
-            page.Append("| Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |\n|---|---:|---:|---:|---:|\n");
-            foreach (var reason in f.Unknowns)
-                page.Append(CultureInfo.InvariantCulture, $"| `{reason.Name}` | {N(reason.Fields)} | {N(reason.Results)} | {N(reason.Procedures)} | {N(reason.Parameters)} |\n");
-        }
+        UnknownsByReason(page, f);
 
         if (run.Errors.Count > 0)
         {
@@ -131,12 +131,43 @@ internal static class CorpusFiguresPage
         page.Length--;
     }
 
+    /// <summary>The rows of a corpus's table that count procedures, fields and results, each ending in a line break.</summary>
+    internal static string FigureRows(CorpusFigures f) => string.Create(CultureInfo.InvariantCulture, $"""
+        | Procedures | {N(f.Procedures)} |
+        | Procedures that return fields | {N(f.ProceduresReturningFields)} |
+        | Procedures whose results have no fields, because a result's shape is unknown | {N(f.ProceduresWithUnknownResults)} |
+        | Procedures whose result sets can't be listed | {N(f.ProceduresWithUnlistedResults)} |
+        | Procedures that return no result set | {N(f.ProceduresWithNoResults)} |
+        | Procedures whose known results have no fields | {N(f.ProceduresWithoutFields)} |
+        | Procedures that return fields, fully typed | {N(f.ProceduresFullyTyped)} |
+        | Fields | {N(f.Fields)} |
+        | Fields typed | {N(f.FieldsTyped)} |
+        | Fields typed as JSON text whose content isn't known | {N(f.FieldsOfJsonText)} |
+        | Results | {N(f.Results)} |
+        | Results of unknown shape | {N(f.ResultsUnknown)} |
+
+        """);
+
+    /// <summary>A corpus's unknowns by reason, as a table, or a line saying nothing is unknown.</summary>
+    internal static void UnknownsByReason(StringBuilder page, CorpusFigures f)
+    {
+        if (f.Unknowns.Count == 0)
+        {
+            page.Append("Nothing is unknown.\n");
+            return;
+        }
+
+        page.Append("| Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |\n|---|---:|---:|---:|---:|\n");
+        foreach (var reason in f.Unknowns)
+            page.Append(CultureInfo.InvariantCulture, $"| `{reason.Name}` | {N(reason.Fields)} | {N(reason.Results)} | {N(reason.Procedures)} | {N(reason.Parameters)} |\n");
+    }
+
     /// <summary>A number with a comma for thousands (docs/style.md, "Numbers and dates").</summary>
-    private static string N(int n) => n.ToString("N0", CultureInfo.InvariantCulture);
+    internal static string N(int n) => n.ToString("N0", CultureInfo.InvariantCulture);
 
-    private static string Count(int n, string noun) => $"{N(n)} {noun}{(n == 1 ? "" : "s")}";
+    internal static string Count(int n, string noun) => $"{N(n)} {noun}{(n == 1 ? "" : "s")}";
 
-    private static string Size(long bytes) => bytes >= 1_000_000
+    internal static string Size(long bytes) => bytes >= 1_000_000
         ? string.Create(CultureInfo.InvariantCulture, $"{bytes / 1_000_000.0:0.0} MB")
         : string.Create(CultureInfo.InvariantCulture, $"{(bytes + 999) / 1_000} KB");
 }

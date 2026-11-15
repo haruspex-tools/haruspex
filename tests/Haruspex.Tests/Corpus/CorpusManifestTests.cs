@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-
 namespace Haruspex.Tests.Corpus;
 
 /// <summary>
@@ -24,7 +22,7 @@ public class CorpusManifestTests
     public void Every_vendored_file_matches_its_recorded_hash()
     {
         var wrong = Manifest.Files
-            .Where(f => !File.Exists(Manifest.PathOf(f.Path)) || Sha256(Manifest.PathOf(f.Path)) != f.Sha256)
+            .Where(f => !File.Exists(Manifest.PathOf(f.Path)) || FileHash.Sha256(Manifest.PathOf(f.Path)) != f.Sha256)
             .Select(f => f.Path)
             .ToList();
 
@@ -59,11 +57,5 @@ public class CorpusManifestTests
         var solution = File.ReadAllText(Path.Combine(RepositoryPaths.Root, "Haruspex.slnx"));
 
         Assert.DoesNotContain("tests/corpus", solution.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string Sha256(string path)
-    {
-        using var stream = File.OpenRead(path);
-        return Convert.ToHexStringLower(SHA256.HashData(stream));
     }
 }

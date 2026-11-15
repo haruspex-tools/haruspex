@@ -20,3 +20,13 @@ exceptions:
   # Microsoft's sample databases, product names, which the corpus figures (docs/corpus-figures.md) head by name.
   - AdventureWorks
   - WideWorldImporters
+  # The fetched corpora's names, which the harvest (docs/corpus-harvest.md) heads by name, as tests/corpus/fetched.json gives them.
+  - Bitwarden
+  - Chinook
+  - Ed-Fi OneRoster
+  - First Responder Kit
+  - Northwind
+  - "Ola Hallengren's Maintenance Solution"
+  - ProfilesRNS
+  - pubs
+  - tSQLt

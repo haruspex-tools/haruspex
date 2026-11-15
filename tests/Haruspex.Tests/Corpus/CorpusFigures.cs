@@ -168,6 +168,34 @@ internal sealed record CorpusFigures(
             [.. byReason.Values]);
     }
 
+    /// <summary>
+    /// The figures of several databases read as one corpus: each count added, and the unknowns added reason by reason. A
+    /// corpus of several databases (each its own model, so their names can't clash) is counted as the sum of its parts.
+    /// </summary>
+    public static CorpusFigures Sum(IReadOnlyList<CorpusFigures> parts)
+    {
+        ArgumentNullException.ThrowIfNull(parts);
+        int Total(Func<CorpusFigures, int> figure) => parts.Sum(figure);
+        var reasons = parts.SelectMany(p => p.Unknowns)
+            .GroupBy(r => r.Name, StringComparer.Ordinal)
+            .Select(g => new Reason(g.Key, g.Sum(r => r.Fields), g.Sum(r => r.Results), g.Sum(r => r.Procedures), g.Sum(r => r.Parameters)))
+            .OrderBy(r => r.Name, StringComparer.Ordinal);
+        return new CorpusFigures(
+            Total(f => f.Procedures),
+            Total(f => f.ProceduresWithNoResults),
+            Total(f => f.ProceduresWithUnlistedResults),
+            Total(f => f.ProceduresWithUnknownResults),
+            Total(f => f.ProceduresWithoutFields),
+            Total(f => f.ProceduresReturningFields),
+            Total(f => f.ProceduresFullyTyped),
+            Total(f => f.Fields),
+            Total(f => f.FieldsTyped),
+            Total(f => f.FieldsOfJsonText),
+            Total(f => f.Results),
+            Total(f => f.ResultsUnknown),
+            [.. reasons]);
+    }
+
     /// <summary>Whether a field's value counts as a field: it reaches no named type, or it has an unknown of its own.</summary>
     private static bool IsField(IrType type) => !HoldsObject(type) || UnknownReasons(type).Count > 0;
 

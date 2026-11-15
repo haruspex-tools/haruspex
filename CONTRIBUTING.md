@@ -116,14 +116,46 @@ dotnet run --project src/Haruspex.Cli -- generate tests/fixtures/orders/database
 cd tests/fixtures/shop && dotnet run --project ../../../src/Haruspex.Cli -- generate --out ../../../out/shop  # with its haruspex.json
 ```
 
-### Coverage on the sample databases
+### Coverage on public corpora
 
 `tests/corpus` holds two of Microsoft's sample databases, vendored at a pinned commit, and `CorpusFiguresTests` writes what
-haruspex makes of them to [docs/corpus-figures.md](docs/corpus-figures.md). A change that types more or less of them fails
-that test until the page is rewritten with `HARUSPEX_ACCEPT=1`; commit the page with the change, and say in the commit why
-the figures moved. A figure in any other public text is copied from that page, never measured elsewhere
-([decision 0020](docs/decisions/0020-public-figures-come-from-public-corpora.md)). How the corpora are kept and refreshed
-is in [tests/corpus/README.md](tests/corpus/README.md).
+haruspex makes of them to [docs/corpus-figures.md](docs/corpus-figures.md). Every other public corpus is fetched into a
+folder outside the checkout, and `CorpusHarvestTests` writes its figures, with the harvest that ranks what every corpus shows
+haruspex missing, to [docs/corpus-harvest.md](docs/corpus-harvest.md). Fetch them once, before testing (it needs git):
+
+```sh
+node tests/corpus/fetch.mjs
+```
+
+Without them, the tests that need them are skipped, saying so. A change that types more or less of a corpus fails its page's
+test until the page is rewritten with `HARUSPEX_ACCEPT=1`; commit the page with the change, and say in the commit why the
+figures moved. A figure in any other public text is copied from these pages, never measured elsewhere
+([decision 0020](docs/decisions/0020-public-figures-come-from-public-corpora.md)). How the corpora are kept, fetched and
+refreshed is in [tests/corpus/README.md](tests/corpus/README.md).
+
+### Adding a corpus
+
+A corpus is added by fetching it, not by copying it into the repository: one entry in `tests/corpus/fetched.json` and the
+rewritten harvest are the whole change.
+
+1. **Check its licence.** It must be public, and its licence or terms must allow downloading it for analysis. A repository
+   with no licence is a pause, not a yes: all rights are reserved, and publishing counts from it is the project's act, so ask
+   the maintainer first. A copyleft licence is fine, since nothing from the corpus is committed.
+2. **Add its entry** to `tests/corpus/fetched.json`, in the format
+   [the corpus README](tests/corpus/README.md#the-manifest) gives: an `id`, its name and kind, the repository, the licence
+   and its notices, the paths to take, how to read it, and what it is. Leave `commit`, `committed` and `files` empty.
+3. **Pin it**, which fills them in and fetches it:
+
+   ```sh
+   node tests/corpus/fetch.mjs pin <id> <ref>
+   ```
+
+4. **Account for every script.** `FetchedCorpusManifestTests` fails until each script fetched is read or left out in
+   `leftOut` with a reason. Leave a script out only for a reason the harvest can state, such as a file that defines its
+   objects a second time.
+5. **Rewrite the harvest** with `HARUSPEX_ACCEPT=1 dotnet test --filter CorpusHarvestTests`, and read it.
+6. **Commit the entry and the page together.** Nothing else from the corpus is committed: not its code, not a name from it,
+   not the IR or Zod haruspex makes of it. A gap it shows becomes a fixture of invented SQL, never a copy of its code.
 
 ## Writing
 
@@ -281,8 +313,10 @@ BlueOak, WTFPL, MPL-2.0 or Apache-2.0 for DOMPurify), except two that are not or
 dictionary of common misspellings is CC BY-SA 4.0, and `elkjs`, a layout engine Mermaid includes but the check
 never calls, is EPL-2.0. Both would matter only to someone redistributing them, which this repository does not.
 
-The corpus in `tests/corpus` is data, not a dependency: Microsoft's sample databases under the MIT licence, whose
-`license.txt` is kept beside them. Nothing builds or ships it.
+The corpora are data, not dependencies. The vendored ones in `tests/corpus` are Microsoft's sample databases under the MIT
+licence, whose `license.txt` is kept beside them. The fetched ones are never in the repository: each is under its own
+licence, named in `tests/corpus/fetched.json`, and only counts made from it are committed. Nothing builds or ships any of
+them.
 
 ScriptDom (MIT) is the only SQL dependency. **DacFx must not be added**: its licence requires anyone who
 redistributes it to indemnify Microsoft, which no maintainer of a free tool should take on. DACPACs will

@@ -205,6 +205,12 @@ funcs
 # The corpus's install script (tests/corpus), which the documentation names
 instawdb
 
+# The fetched corpora and their authors, as tests/corpus/fetched.json names them on the harvest (docs/corpus-harvest.md)
+Bitwarden
+Hallengren
+Northwind
+Ozar
+
 # Packages the prose check uses, and the publisher of Vale's image
 elkjs
 jdkato

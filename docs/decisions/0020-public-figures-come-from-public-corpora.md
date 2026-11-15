@@ -28,4 +28,22 @@ first time inference changes, and nobody notices, because nothing fails.
 anyone with a checkout. When inference changes, the test fails until the page is rewritten, so the change to the figures
 shows in the same diff as the change to the code.
 
-**In the code:** `CorpusFiguresTests`, and [`tests/corpus/README.md`](../../tests/corpus/README.md).
+**Amended** (15 Nov 2026). The rule is public, pinned and written by a test, not Microsoft's samples only. A public figure
+comes from any public corpus, vendored or fetched, at a pinned commit, written by a test. Microsoft's two samples stay
+vendored, because the guide's worked examples and the project's README rest on them and must run offline on every build.
+Every other corpus is fetched: a manifest in the repository names its repository, commit, licence, the paths taken and each
+file's SHA-256, and a script fetches it into a folder outside the checkout, checking every hash. Only counts are committed
+from a fetched corpus ([the harvest](../corpus-harvest.md)), never its code, names, IR or generated code, so haruspex
+redistributes nobody's work, and a corpus under a copyleft licence can be measured without any of it entering the
+repository. A corpus's licence or terms must allow downloading it for analysis; a repository with no licence is not used
+until that is settled, since publishing counts from it is the project's act. A test over a fetched corpus is skipped,
+saying how to fetch it, where it hasn't been fetched; CI fetches first and fails rather than skips.
+
+This narrows the alternative rejected above, downloading the corpora when the test runs. What the rejection feared holds
+no longer: the manifest pins every byte measured, so a fetch can't measure anything but the commit it names, and offline a
+test is skipped rather than failing. Fetching is also what lets the corpora grow past what may be vendored: a repository of
+hundreds of megabytes costs a sparse, shallow fetch of the paths it uses, and a licence that would forbid vendoring forbids
+nothing here.
+
+**In the code:** `CorpusFiguresTests`, `CorpusHarvestTests`, `tests/corpus/fetched.json` and `tests/corpus/fetch.mjs`, and
+[`tests/corpus/README.md`](../../tests/corpus/README.md).
