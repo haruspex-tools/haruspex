@@ -26,7 +26,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, relative, sep } from "node:path";
+import { dirname, isAbsolute, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -34,7 +34,11 @@ const manifestPath = join(here, "fetched.json");
 
 /** Where the corpora are kept: the same rule as the tests' (FetchedCorpora.Root). */
 function corporaRoot() {
-  return process.env.HARUSPEX_CORPORA || join(homedir(), ".cache", "haruspex", "corpora");
+  const set = process.env.HARUSPEX_CORPORA;
+  if (!set) return join(homedir(), ".cache", "haruspex", "corpora");
+  // This script and the test host run in different folders, so a relative path would name two places.
+  if (!isAbsolute(set)) throw new Error(`HARUSPEX_CORPORA must be an absolute path, and is ${set}.`);
+  return set;
 }
 
 function readManifest() {
@@ -66,11 +70,21 @@ function taken(corpus, path) {
 /**
  * Fetches one commit's files that the corpus takes into a new temporary folder below the corpora folder, returning
  * the folder, the commit's date, and each file's path and bytes in ordinal order. Nothing is checked against the
- * manifest here.
+ * manifest here. If anything fails (git, the network, a commit gone upstream), the temporary folder is removed.
  */
 function fetchCommit(corpus, commit) {
   mkdirSync(corporaRoot(), { recursive: true });
   const work = mkdtempSync(join(corporaRoot(), `.${corpus.id}.`));
+  try {
+    return { work, ...readCommit(corpus, commit, work) };
+  } catch (error) {
+    rmSync(work, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+/** The body of fetchCommit, in the temporary folder it made. */
+function readCommit(corpus, commit, work) {
   const repo = join(work, "git");
   mkdirSync(repo);
   const g = (args, options) => git(["-C", repo, ...args], options);
@@ -115,7 +129,7 @@ function fetchCommit(corpus, commit) {
     }
   }
   files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
-  return { work, sha, committed, files };
+  return { sha, committed, files };
 }
 
 function sha256(bytes) {

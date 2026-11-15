@@ -56,12 +56,17 @@ internal sealed record FetchedCorpus(
     /// The folder the corpora are fetched into: <c>HARUSPEX_CORPORA</c>, or <c>~/.cache/haruspex/corpora</c>. The fetch script
     /// follows the same rule, so the tests look where it writes.
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// The variable names a relative folder: the fetch script and the test host run in different folders, so it would name two.
+    /// </exception>
     public static string Root(Func<string, string?> environment)
     {
         ArgumentNullException.ThrowIfNull(environment);
-        return environment(FolderVariable) is { Length: > 0 } set
+        if (environment(FolderVariable) is not { Length: > 0 } set)
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "haruspex", "corpora");
+        return Path.IsPathFullyQualified(set)
             ? set
-            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "haruspex", "corpora");
+            : throw new InvalidOperationException($"{FolderVariable} must be an absolute path, and is {set}: the fetch script and the tests run in different folders.");
     }
 
     /// <summary>This corpus's folder in the cache, holding its files at their upstream paths.</summary>
@@ -77,15 +82,18 @@ internal sealed record FetchedCorpus(
     /// What is wrong with the folder against the manifest: files missing, changed, or not listed. Empty when the folder is
     /// exactly what the pinned commit holds.
     /// </summary>
-    public IReadOnlyList<string> Problems()
+    public IReadOnlyList<string> Problems() => Problems(Folder);
+
+    /// <summary>As <see cref="Problems()"/>, for the corpus fetched into <paramref name="folder"/>.</summary>
+    public IReadOnlyList<string> Problems(string folder)
     {
         var listed = Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var problems = new List<string>();
-        foreach (var path in Directory.EnumerateFiles(Folder, "*", SearchOption.AllDirectories).Select(p => Path.GetRelativePath(Folder, p).Replace('\\', '/')).Order(StringComparer.Ordinal))
+        foreach (var path in Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories).Select(p => Path.GetRelativePath(folder, p).Replace('\\', '/')).Order(StringComparer.Ordinal))
         {
             if (!listed.Remove(path, out var file))
                 problems.Add($"{path}: not in the manifest");
-            else if (FileHash.Sha256(PathOf(path)) != file.Sha256)
+            else if (FileHash.Sha256(Path.Combine(folder, path)) != file.Sha256)
                 problems.Add($"{path}: differs from the manifest");
         }
 

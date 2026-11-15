@@ -90,7 +90,7 @@ node tests/corpus/fetch.mjs
 ```
 
 It needs Node 18 or later and git, and fetches each corpus that isn't already there into `~/.cache/haruspex/corpora/<id>`, or
-below `HARUSPEX_CORPORA` when that is set; the tests look in the same place. Give ids to fetch only those. A corpus costs one
+below `HARUSPEX_CORPORA` when that is set (an absolute path, since the tests run in another folder); the tests look in the same place. Give ids to fetch only those. A corpus costs one
 commit's worth of the paths it takes, without history: git fetches the commit with `--depth 1` and no file contents, then a
 sparse checkout brings only those paths, so even a repository of hundreds of megabytes costs a few. Every file is checked
 against its SHA-256 in the manifest before anything is put in place, so a fetch that fails leaves what was there. The fetched

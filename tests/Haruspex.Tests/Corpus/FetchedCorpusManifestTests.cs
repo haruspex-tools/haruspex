@@ -91,6 +91,44 @@ public class FetchedCorpusManifestTests
     }
 
     [Fact]
+    public void A_relative_folder_for_the_corpora_is_refused()
+    {
+        // The fetch script and the test host run in different working directories, so a relative folder would name two places.
+        var refused = Assert.Throws<InvalidOperationException>(() => FetchedCorpus.Root(v => v == FetchedCorpus.FolderVariable ? "cache" : null));
+
+        Assert.Contains(FetchedCorpus.FolderVariable, refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_folder_that_differs_from_the_manifest_is_reported_file_by_file()
+    {
+        var folder = Directory.CreateTempSubdirectory("haruspex-corpus-").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(folder, "kept.sql"), "SELECT 1;");
+            File.WriteAllText(Path.Combine(folder, "changed.sql"), "SELECT 2;");
+            File.WriteAllText(Path.Combine(folder, "extra.sql"), "SELECT 3;");
+            var corpus = FetchedCorpus.All[0] with
+            {
+                Files =
+                [
+                    new("changed.sql", 9, FileHash.Sha256(Path.Combine(folder, "kept.sql"))),
+                    new("kept.sql", 9, FileHash.Sha256(Path.Combine(folder, "kept.sql"))),
+                    new("missing.sql", 9, FileHash.Sha256(Path.Combine(folder, "kept.sql"))),
+                ],
+            };
+
+            Assert.Equal(
+                ["changed.sql: differs from the manifest", "extra.sql: not in the manifest", "missing.sql: missing"],
+                corpus.Problems(folder));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
     public void Nothing_fetched_is_committed()
     {
         // The fetch script writes outside the checkout; a corpus copied in would be vendored without its licence review.

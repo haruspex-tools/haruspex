@@ -71,6 +71,14 @@ public class CorpusHarvestTests
         allowed.UnionWith(FetchedCorpus.All.SelectMany(c => c.LeftOut.Select(o => o.Why).Append(c.About)).SelectMany(CodeSpans));
 
         Assert.All(CodeSpans(page).Distinct(StringComparer.Ordinal), t => Assert.Contains(t, allowed));
+
+        // Nor anywhere else on the page: no file the manifest lists, by its path or its leaf name, but the licences and notices
+        // the page names as such.
+        var licences = FetchedCorpus.All.SelectMany(c => c.Licence.Notices.Append(c.Licence.File)).ToHashSet(StringComparer.Ordinal);
+        var named = FetchedCorpus.All.SelectMany(c => c.Files).Select(f => f.Path).Where(p => !licences.Contains(p))
+            .SelectMany(p => new[] { p, p[(p.LastIndexOf('/') + 1)..] })
+            .Distinct(StringComparer.Ordinal);
+        Assert.All(named, n => Assert.DoesNotContain(n, page, StringComparison.Ordinal));
     }
 
     private static IEnumerable<string> CodeSpans(string markdown) =>

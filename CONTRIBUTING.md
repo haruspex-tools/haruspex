@@ -153,7 +153,9 @@ rewritten harvest are the whole change.
 4. **Account for every script.** `FetchedCorpusManifestTests` fails until each script fetched is read or left out in
    `leftOut` with a reason. Leave a script out only for a reason the harvest can state, such as a file that defines its
    objects a second time.
-5. **Rewrite the harvest** with `HARUSPEX_ACCEPT=1 dotnet test --filter CorpusHarvestTests`, and read it.
+5. **Rewrite the harvest** with `HARUSPEX_ACCEPT=1 dotnet test --filter CorpusHarvestTests`, and read it. The page heads each
+   corpus with its name, so if `tests/prose/check.sh` flags the name, add it to `.cspell/words.txt` and to the heading
+   exceptions in `.vale/styles/haruspex/Headings.yml`, beside the other corpora's, since it is a name.
 6. **Commit the entry and the page together.** Nothing else from the corpus is committed: not its code, not a name from it,
    not the IR or Zod haruspex makes of it. A gap it shows becomes a fixture of invented SQL, never a copy of its code.
 
