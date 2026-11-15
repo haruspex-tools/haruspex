@@ -154,7 +154,7 @@ The version is read first, before anything else in the file. A file of any versi
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.20 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.21 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -195,6 +195,13 @@ has proven against the server, `canonical`: exact once a value is mapped to the 
 source says `collation` there, a weaker claim, and from a folder as from a package; read as 0.20, it would carry the weaker claim
 under the label of a version that makes the stronger one, so the 0.20 reader refuses it
 ([decision 0043](../decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md)).
+
+Version 0.21 kept it ended, for the opposite reason. It found that every earlier version, from a folder, a package or a project
+alike, typed a literal holding a SQLCMD variable, `'$(Region)'`, by its written text, which a deployment replaces with the
+variable's value, and gave such a literal the reason `sqlcmd-variable`. So a 0.20 file may claim more than SQL Server
+guarantees, and nothing in it says whether it does: it doesn't record which literals its source held. Read as 0.21, any 0.20
+file might carry that claim under a label that promises the bug is fixed, so the 0.21 reader refuses it
+([decision 0046](../decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)).
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims

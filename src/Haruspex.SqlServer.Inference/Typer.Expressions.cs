@@ -27,6 +27,18 @@ internal sealed partial class Typer
             ? new Value(SqlTypes.ToConvertedShape(type, At(literal)), [])
             : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The literal {Text(literal)} is not ASCII, so its length in bytes depends on the code page.", At(literal)));
 
+    /// <summary>
+    /// A string literal holding a SQLCMD variable, <c>'$(Region)'</c>: unknown, since a deployment puts the variable's value in its
+    /// place as text before the server parses it. The value may be empty or of any length, and one with a quotation mark ends the
+    /// string, so not even the type is the written text's (decision 0046; SqlcmdVariableObservationTests). A script's own
+    /// <c>:setvar</c> has been applied by then, so what is left is a variable whose value only the deployment knows.
+    /// </summary>
+    private Value Replaced(StringLiteral literal, string variable) =>
+        Value.Unknown(Unsupported(
+            IrUnknownReason.SqlcmdVariable,
+            $"The literal {Text(literal)} holds the SQLCMD variable {variable}, which a deployment replaces with its value, so its length, value and type are not the text's.",
+            At(literal)));
+
     private static ScalarType? LiteralType(StringLiteral literal) =>
         literal.Collation is not null || (!literal.IsNational && literal.Value.Any(c => c > '\u007f'))
             ? null
@@ -88,7 +100,11 @@ internal sealed partial class Typer
         _ => null,
     };
 
-    /// <summary>A literal, through parentheses, with whether it is negated.</summary>
+    /// <summary>
+    /// A literal, through parentheses, with whether it is negated; null for anything else, and for a literal holding a SQLCMD
+    /// variable, whose text is not its value (<see cref="Replaced"/>). Every rule that reads a literal's text (a value set, a
+    /// JSON document, a conversion that fits) finds it here, so none of them reads the written text of one.
+    /// </summary>
     internal static (Literal Literal, bool Negative)? LiteralOf(ScalarExpression expression)
     {
         var negative = false;
@@ -99,7 +115,7 @@ internal sealed partial class Typer
             e = Strip(unary.Expression);
         }
 
-        return e is Literal literal ? (literal, negative) : null;
+        return e is Literal literal && !SqlcmdVariableReference.IsIn(literal) ? (literal, negative) : null;
     }
 
     /// <summary>A value the server computes, of this type: never folded to a constant, so it counts its type's digits.</summary>

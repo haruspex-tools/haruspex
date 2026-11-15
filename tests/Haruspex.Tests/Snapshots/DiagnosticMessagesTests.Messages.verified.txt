@@ -76,6 +76,9 @@ db/p2.sql:1:27: note HAR2021: lib.p results: The write at p2.sql:1:27 fires the 
 HAR2022
 db/p1.sql:1:94: note HAR2022: lib.p results: FETCH without INTO at p1.sql:1:94 returns the row with a hidden ROWSTAT column, which some drivers list among its columns and others leave out.
 
+HAR2023
+db/p1.sql:1:34: note HAR2023: lib.p results[0][].region: The literal '$(Region)' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's.
+
 HAR2101
 db/p1.sql:1:27: warning HAR2101: audit.trail is written here but is not defined in the project, so a trigger on it, which could return result sets of its own, cannot be seen. SQL Server allows results from triggers unless the server's 'disallow results from triggers' option is on, which it is not by default.
 

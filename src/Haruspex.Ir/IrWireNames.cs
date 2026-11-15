@@ -134,6 +134,7 @@ public static class IrWireNames
         IrUnknownReason.TriggerResults => "trigger-results",
         IrUnknownReason.HiddenColumn => "hidden-column",
         IrUnknownReason.EncryptedDefinition => "encrypted-definition",
+        IrUnknownReason.SqlcmdVariable => "sqlcmd-variable",
     };
 
     /// <summary>What an override sets (<c>setting</c>).</summary>

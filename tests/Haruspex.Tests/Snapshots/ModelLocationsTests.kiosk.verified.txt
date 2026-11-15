@@ -1,0 +1,12 @@
+check kiosk.stall ck_stall_kind at tables/stall.sql:11:36
+check kiosk.stall ck_stall_region at tables/stall.sql:9:36
+column kiosk.stall.kind varchar(10) at tables/stall.sql:11:5
+column kiosk.stall.region varchar(40) at tables/stall.sql:9:5
+column kiosk.stall.stall_id int at tables/stall.sql:7:5
+key kiosk.stall pk_stall (stall_id) at tables/stall.sql:7:36
+parameter kiosk.stall_card @stall_id at procedures/stall_card.sql:3:35
+procedure kiosk.labels at procedures/labels.sql:3:1
+procedure kiosk.list_stalls at procedures/list_stalls.sql:3:1
+procedure kiosk.stall_card at procedures/stall_card.sql:3:1
+procedure kiosk.whoami at procedures/whoami.sql:2:1
+table kiosk.stall at tables/stall.sql:6:1

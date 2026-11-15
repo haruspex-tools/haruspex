@@ -45,5 +45,11 @@ The 0.20 reader reads 0.20 only. 0.20 added the value match `canonical`, which a
 said `collation`, from a folder as from a package; so a 0.19 file claims less than a 0.20 file of the same source, and reading it
 would carry the weaker claim under the newer label, the first reason above.
 
+**Amended a fifth time** (15 Nov 2026, IR 0.21, [decision 0046](0046-a-sqlcmd-variable-in-a-body-is-unknown.md)). The 0.21
+reader reads 0.21 only. 0.21 added the unknown reason `sqlcmd-variable`, for a literal holding a SQLCMD variable, which every
+earlier version typed by its written text, though a deployment replaces it. A 0.20 file of such a source claims more than the
+server guarantees, and a 0.20 file doesn't say whether its source had one, so reading any of them as 0.21 could carry that claim
+under the newer label, the first reason above.
+
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "A version the reader doesn't read";
 [`tests/ir-versions`](../../tests/ir-versions/README.md).

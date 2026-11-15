@@ -1,7 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.20
+# Haruspex.Ir: the IR format, version 0.21
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.20: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
+version 0.21: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
 guide's chapter [The IR as a contract](../../docs/internals/10-the-ir-as-a-contract.md). What SQL Server's constructs give in
@@ -93,7 +93,7 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as `"0.20"` and a document that this page and the schema allow;
+- must write `irVersion` as `"0.21"` and a document that this page and the schema allow;
 - must write a flag and its reasons together: `nullable`, `itemsNullable`, `valuesNullable` and `mayBeAbsent` are `true`
   exactly when the matching list of reasons (`nullableBecause`, …) is there, with at least one reason;
 - must write every `ref` as the name of a type in `types`, and every `values.fold` as the name of a fold in `folds`;
@@ -130,7 +130,7 @@ object, and a `ref` that names no type.
 
 ```jsonc
 {
-  "irVersion": "0.20",                // versioned separately from the tool; a reader checks it first
+  "irVersion": "0.21",                // versioned separately from the tool; a reader checks it first
   "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file, the references for a folder
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
@@ -312,6 +312,7 @@ reader must refuse a `reason` not in this list.
 | `trigger-results` | a statement firing a trigger of the project that may return result sets of its own |
 | `hidden-column` | a result set with a column the server marks hidden, which some drivers list and others don't |
 | `encrypted-definition` | (0.19) a module created `WITH ENCRYPTION` whose definition the source doesn't hold, such as a DACPAC extracted from a database |
+| `sqlcmd-variable` | (0.21) a literal or a name holding a SQLCMD variable, `$(Region)`, which a deployment replaces with its value, so nothing drawn from the written text holds |
 
 An override is `{ "object", "path", "setting", "via"?, "why"? }`: a claim the config file made rather than inference, kept so
 that what the database proves and what a person asserts stay apart. `setting` is `not-null` (declared never null), `type`
@@ -441,6 +442,12 @@ when the claims change. Another writer need not write the same bytes, but must w
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
 reads only its own version, or one whose every document means the same in it ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
+
+**0.21** (15 Nov 2026, SQLCMD variables in bodies). The unknown reason `sqlcmd-variable`: a literal holding a SQLCMD variable,
+such as `'$(Region)'`, or a key holding one, which a deployment replaces with the variable's value before SQL Server sees the
+text ([decision 0046](../../docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)). A 0.20 document claimed the written
+text's length, value and type there, from every kind of source, and nothing in it says whether its source had such a literal,
+so this reader reads 0.21 only.
 
 **0.20** (14 Nov 2026, canonical value sets). The value match `canonical`, its set's `fold`, and the document's `folds`: a set of
 strings a `char` or `varchar` column's CHECK gives, under a collation whose comparison is proven, is exact once a value is

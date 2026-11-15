@@ -16,7 +16,8 @@ A database project's scripts are written to be deployed, not read in order. An S
 one object to a file, in folders by schema and kind, and the build works out the order to create them in. So the folder is a
 set, not a sequence, and haruspex reads it as one: every `*.sql` file under it (or the ones a project file builds, when it is
 given them), each decoded as UTF-8 unless a byte order mark says otherwise, since SQL Server Management Studio saves UTF-16.
-A script written for sqlcmd is read as the server would receive it, with each `:setvar` variable replaced. Each is parsed
+A script written for sqlcmd is read as the server would receive it, with each `:setvar` variable replaced; a variable it
+doesn't set is the deployment's, and what it holds is unknown ("SQLCMD variables", below). Each is parsed
 with [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom), Microsoft's own T-SQL parser, and
 never with DacFx, whose licence no free tool should have to take on
 ([decision 0004](../decisions/0004-scriptdom-is-the-only-sql-dependency.md)).
@@ -282,6 +283,25 @@ thing a project can (another database's project through a variable and by name, 
 `master.dacpac` by its package) built with `Microsoft.Build.Sql` 2.3.0 and 1.0.0, and a legacy project that refers to another
 database's project, two DACPACs and Visual Studio's own `master.dacpac`, each read with the stand-in for `master.dacpac`. Microsoft's own
 is read, from where the test project's restore put it, by a project's package reference.
+
+## SQLCMD variables
+
+Every kind of source holds text that isn't yet what the server runs. `'$(Region)'` in a procedure is a hole in a template: SqlPackage
+publishing a DACPAC, or sqlcmd running a script, fills it with the variable's value, as text, before SQL Server parses anything. A
+DACPAC keeps the hole as written and records every variable's value empty; a project's build does the same; a folder's script may
+be given any variable by sqlcmd's `-v` or the environment. Only a script that sets the variable itself, with `:setvar`, says what
+fills the hole, and the reader fills it then. So a literal still holding one is read as what it is, a value only the deployment
+knows: unknown, with the reason `sqlcmd-variable`, and so is everything drawn from its text, a length, a value set, a JSON
+document. A name holding one, an alias `[$(Label)]`, leaves the keys it gives unknown, while a database's name, `[$(LedgerDb)]`,
+is bound through the reference that names it, as above.
+
+It is the general rule of [Abstract interpretation](04-abstract-interpretation.md) met at the input: an analysis claims only what
+holds for every run, and here every run means every deployment. The value may be empty, or longer than the column it lands in,
+and a value holding a quotation mark ends the string, so even the type isn't the text's (`SqlcmdVariableObservationTests`, which
+deploys such text with values of each kind and holds haruspex's claims to them;
+[decision 0046](../decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)). The form of a reference is defined once, in
+`SqlcmdVariableReference`, which the reader that fills a script's own variables and the inference that leaves the rest unknown
+both use.
 
 ## Where things are
 

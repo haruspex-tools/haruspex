@@ -3,6 +3,7 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Inference.Typing;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -20,7 +21,7 @@ internal sealed partial class Typer
     private Value? RefusedJsonDocument(FunctionCall call, ReadScope scope)
     {
         var document = call.Parameters[0];
-        if (Strip(document) is StringLiteral literal)
+        if (Strip(document) is StringLiteral literal && !SqlcmdVariableReference.IsIn(literal))
             return JsonLiterals.IsDocumentText(literal.Value) ? null : NotModelled(call, "SQL Server refuses it: its document is not a JSON object or array.");
         var value = Expression(document, scope);
         return !value.IsLiveJson && value.Shape is ScalarShape && TypeOf(value) is { IsString: false } type

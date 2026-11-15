@@ -62,6 +62,9 @@ public static class InferenceCodes
     /// <summary>An unknown for <see cref="IrUnknownReason.HiddenColumn"/>.</summary>
     public static DiagnosticCode HiddenColumn { get; } = Unknown(2022, "A result set with a hidden column");
 
+    /// <summary>An unknown for <see cref="IrUnknownReason.SqlcmdVariable"/>.</summary>
+    public static DiagnosticCode SqlcmdVariable { get; } = Unknown(2023, "A SQLCMD variable a deployment replaces");
+
     /// <summary>Retired: an unknown for <see cref="IrUnknownReason.ExternalCode"/> is reported as HAR4204 or HAR4205.</summary>
     public static DiagnosticCode ExternalCode { get; } = Retire(2002, "Results from code outside the project");
 
@@ -112,6 +115,7 @@ public static class InferenceCodes
         IrUnknownReason.TriggerResults => TriggerResults,
         IrUnknownReason.HiddenColumn => HiddenColumn,
         IrUnknownReason.EncryptedDefinition => null,
+        IrUnknownReason.SqlcmdVariable => SqlcmdVariable,
     };
 
     private static DiagnosticCode Unknown(int number, string title) => new(number, DiagnosticSeverity.Note, title);

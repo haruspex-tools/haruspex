@@ -134,10 +134,12 @@ public class IrJsonReaderTests
     [Theory]
     [InlineData("0.17")]
     [InlineData("0.19")]
+    [InlineData("0.20")]
     public void A_file_of_an_older_version_is_refused_though_every_property_in_it_is_one_the_current_version_has(string version)
     {
         // Their claims are not the current version's: 0.17's never null a decimal 0.18 says may lose precision, and 0.19's call
-        // a set compared under a known collation what 0.20 may call canonical (IrDocument.ReadableVersions).
+        // a set compared under a known collation what 0.20 may call canonical, and 0.20's may claim the written text of a literal a
+        // deployment replaces (IrDocument.ReadableVersions).
         var e = Refused(json => json["irVersion"] = version);
 
         Assert.Equal("$.irVersion", e.Path);
@@ -161,7 +163,7 @@ public class IrJsonReaderTests
         });
 
         Assert.Equal("$.irVersion", e.Path);
-        Assert.Equal("is \"0.14\", and this reader reads IR 0.20 only. Run haruspex generate again to write the file in this version.", e.Problem);
+        Assert.Equal("is \"0.14\", and this reader reads IR 0.21 only. Run haruspex generate again to write the file in this version.", e.Problem);
     }
 
     [Fact]
