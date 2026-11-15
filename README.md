@@ -240,8 +240,8 @@ missing.
 
 ## Install
 
-No package is published yet. It is a .NET command-line application, built from source with the
-[.NET 10 SDK](https://dotnet.microsoft.com/download); a .NET tool to install with `dotnet tool install` is planned:
+It is a command-line tool. No package is published yet; packages for the usual package managers are planned. Until
+then, build it from source, which needs the [.NET 10 SDK](https://dotnet.microsoft.com/download):
 
 ```sh
 git clone https://github.com/sharpblue/haruspex.git
