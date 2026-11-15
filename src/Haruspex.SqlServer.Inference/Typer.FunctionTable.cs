@@ -30,6 +30,14 @@ internal sealed partial class Typer
 
     private const string Escapes = "String_escape_is_nvarchar_max_and_formatmessage_nvarchar_4000_writing_a_null_argument_as_null_in_brackets";
 
+    private const string Codes = "Ascii_and_unicode_are_int_and_null_for_an_empty_string";
+
+    private const string Positions = "Charindex_and_patindex_are_int_or_bigint_over_max_and_null_only_for_a_null_argument";
+
+    private const string Counts = "Replicate_and_space_are_as_long_as_a_literal_count_allows_up_to_8000_bytes_and_null_for_a_negative_one";
+
+    private const string Fixed = "Translate_is_8000_bytes_unless_its_string_is_max_and_soundex_and_difference_are_fixed";
+
     private const string Rounding = "Round_floor_ceiling_abs_and_sign_are_typed_by_their_argument";
 
     private const string RoundingOverflow = "Floor_ceiling_abs_and_sign_overflow_only_where_the_type_cannot_hold_the_result";
@@ -117,6 +125,21 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.FormatMessage, (1, null), "nvarchar(4000)", [], [Escapes], (a, e, s) => a.FormatMessage(Call(e), s)),
         Typing(ScalarFunctions.Concat, null, "as long as its arguments together, never null", [], ["Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null"], (a, e, s) => a.Concat(Call(e), s, separated: false)),
         Typing(ScalarFunctions.ConcatWithSeparator, null, "as long as its arguments and separators together, never null", [], ["Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null"], (a, e, s) => a.Concat(Call(e), s, separated: true)),
+
+        Typing(ScalarFunctions.Ascii, (1, 1), "int", [OutOfRange], [Codes], (a, e, s) => a.FirstCode(Call(e), s)),
+        Typing(ScalarFunctions.Unicode, (1, 1), "int", [OutOfRange], [Codes], (a, e, s) => a.FirstCode(Call(e), s)),
+        Typing(ScalarFunctions.CharOf, (1, 1), "char(1)", [OutOfRange, ArithmeticOverflow], ["Char_is_char_1_and_null_outside_0_to_255_and_overflows_past_int"], (a, e, s) => a.CharOf(Call(e), s)),
+        Typing(ScalarFunctions.CharIndex, (2, 3), "int, bigint over max", [], [Positions], (a, e, s) => a.Position(Call(e), s)),
+        Typing(ScalarFunctions.PatIndex, (2, 2), "int, bigint over max", [], [Positions], (a, e, s) => a.Position(Call(e), s)),
+        Typing(ScalarFunctions.Replicate, (2, 2), "the string varying, as long as a literal count allows up to 8000 bytes", [OutOfRange], [Counts], (a, e, s) => a.Replicate(Call(e), s)),
+        Typing(ScalarFunctions.Space, (1, 1), "varchar of a literal count up to 8000, or 8000", [OutOfRange], [Counts], (a, e, s) => a.Space(Call(e), s)),
+        Typing(ScalarFunctions.Reverse, (1, 1), "the string's length, varying", [], ["Reverse_keeps_the_strings_length_and_makes_it_varying"], (a, e, s) => a.Trim(Call(e), Call(e).Parameters[0], null, s)),
+        Typing(ScalarFunctions.Stuff, (4, 4), "varying, as long as both strings less a literal length, or 8000 bytes", [OutOfRange], ["Stuff_is_as_long_as_its_strings_less_a_literal_length_and_null_for_a_start_or_length_it_cannot_use"], (a, e, s) => a.Stuff(Call(e), s)),
+        Typing(ScalarFunctions.QuoteName, (1, 2), "nvarchar(258)", [OutOfRange], ["Quotename_is_nvarchar_258_and_null_past_128_characters_or_for_a_quote_it_cannot_use"], (a, e, s) => a.QuoteName(Call(e), s)),
+        Typing(ScalarFunctions.Str, (1, 3), "varchar(10), or of a literal length, or 8000", [OutOfRange], ["Str_is_varchar_of_its_literal_length_10_by_default_and_null_for_a_length_it_cannot_use"], (a, e, s) => a.Str(Call(e), s)),
+        Typing(ScalarFunctions.Translate, (3, 3), "varchar(8000) or nvarchar(4000), max when the string is", [], [Fixed], (a, e, s) => a.Translate(Call(e), s)),
+        Typing(ScalarFunctions.Soundex, (1, 1), "varchar(5)", [], [Fixed], (a, e, s) => a.Phonetic(Call(e), new ScalarType(BuiltInType.VarChar, 5), s)),
+        Typing(ScalarFunctions.Difference, (2, 2), "int", [], [Fixed], (a, e, s) => a.Phonetic(Call(e), ScalarType.Of(BuiltInType.Int), s)),
 
         // ---- numbers ----
         Typing(ScalarFunctions.Round, (2, 3), "the argument's type, widened", [ArithmeticOverflow], [Rounding, "Round_overflows_when_it_carries_into_a_digit_its_type_lacks_unless_it_truncates"], (a, e, s) => a.Numeric(Call(e), s, a.Round, onlyTheSecondCounts: true)),

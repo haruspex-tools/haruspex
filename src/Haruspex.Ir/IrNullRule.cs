@@ -109,7 +109,12 @@ public enum IrNullRule
     /// </summary>
     NullLiteral,
 
-    /// <summary>It is a <c>CHOOSE</c> whose index may be below 1 or above its count of values, which gives NULL.</summary>
+    /// <summary>
+    /// It is given an argument outside the range it reads, an index, a code, a position, a count or a length, for which it
+    /// gives NULL rather than an error: a <c>CHOOSE</c> whose index may be below 1 or above its count of values, or (from 0.21)
+    /// a string function such as <c>CHAR</c> of a code past 255, <c>ASCII</c> of an empty string, or <c>STUFF</c> at a start
+    /// past its string's end.
+    /// </summary>
     OutOfRange,
 
     /// <summary>

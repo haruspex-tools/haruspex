@@ -8,14 +8,14 @@ public partial class ConfigApplicationTests
     [Fact]
     public void A_type_override_imports_a_schema_and_clears_the_unknowns_under_it()
     {
-        const string Body = "CREATE PROCEDURE dbo.p AS SELECT reverse(c.name) AS shout, c.customer_id AS id FROM sales.customer AS c FOR JSON PATH;\nGO\n";
+        const string Body = "CREATE PROCEDURE dbo.p AS SELECT hashbytes('SHA2_256', c.name) AS shout, c.customer_id AS id FROM sales.customer AS c FOR JSON PATH;\nGO\n";
         Assert.Contains(Apply(Body, "{}").Document.Unknowns, u => u.Path == "results[0][].shout");
 
-        var doc = Apply(Body, """{ "procedures": { "dbo.p": { "paths": { "[].shout": { "type": "ShoutSchema", "import": "@app/types", "why": "reverse of a name" } } } } }""").Document;
+        var doc = Apply(Body, """{ "procedures": { "dbo.p": { "paths": { "[].shout": { "type": "ShoutSchema", "import": "@app/types", "why": "a hash of a name" } } } } }""").Document;
 
         Assert.Empty(doc.Unknowns);
         Assert.Equal(new IrImport("ShoutSchema", "@app/types"), Field(doc, "PRow", "shout").Type);
-        Assert.Equal(new IrOverride("dbo.p", "results[0][].shout", IrOverrideSetting.Type, "reverse of a name"), Assert.Single(doc.Overrides));
+        Assert.Equal(new IrOverride("dbo.p", "results[0][].shout", IrOverrideSetting.Type, "a hash of a name"), Assert.Single(doc.Overrides));
         var zod = ZodEmitter.Emit(doc).Expected();
         Assert.Contains("import { ShoutSchema } from '@app/types'\n", zod, StringComparison.Ordinal);
         Assert.Contains("  shout: ShoutSchema.optional(),\n", zod, StringComparison.Ordinal);

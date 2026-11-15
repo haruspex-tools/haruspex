@@ -270,7 +270,7 @@ of which dialect made it ([decision 0025](../../docs/decisions/0025-null-reasons
 | `missing-for-action` | it is a column a statement taking several actions reports, which some of the actions don't set |
 | `no-branch-matched` | it is a choice with no branch for when none of its conditions holds |
 | `null-literal` | it is, or may be, the null literal |
-| `out-of-range` | it picks one of several values by an index that may be out of range |
+| `out-of-range` | it is given an index, a code, a position, a count or a length that may be outside the range it reads, and gives null for it |
 | `read-twice` | it is read a second time after it was tested, and may have changed between the reads |
 | `null-when-equal` | it is made null when it equals a given value |
 | `json-null-or-absent` | it is read from JSON at a path, where the JSON may hold null, nothing, or the wrong kind of value |
@@ -447,7 +447,9 @@ from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/READM
 such as `'$(Region)'`, or a key holding one, which a deployment replaces with the variable's value before SQL Server sees the
 text ([decision 0046](../../docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)). A 0.20 document claimed the written
 text's length, value and type there, from every kind of source, and nothing in it says whether its source had such a literal,
-so this reader reads 0.21 only.
+so this reader reads 0.21 only. Within 0.21, `out-of-range` was widened from a choice by an index out of range to any argument
+outside the range a construct reads, as a string function's code, position, count or length; its name and its sense, null
+because of an argument the construct can't use, are as they were, so a 0.21 document stays valid and a reader needs no change.
 
 **0.20** (14 Nov 2026, canonical value sets). The value match `canonical`, its set's `fold`, and the document's `folds`: a set of
 strings a `char` or `varchar` column's CHECK gives, under a collation whose comparison is proven, is exact once a value is

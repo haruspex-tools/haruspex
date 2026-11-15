@@ -10,7 +10,7 @@ namespace Haruspex.DifferentialTests;
 /// The rules rest on these (Haruspex.SqlServer.Inference's README.md, "Built-in functions", "Window functions"). Observed on
 /// SQL Server 2025 RTM-CU10.
 /// </summary>
-public class FunctionObservationTests(SqlServerFixture server)
+public partial class FunctionObservationTests(SqlServerFixture server)
 {
     private Task<CallOutcome> Run(string[] setup, string call, bool errorsAsMessages = false) =>
         ObservedCall.Run(server, setup, call, errorsAsMessages);

@@ -13,10 +13,10 @@ namespace Haruspex.Tests.Inference;
 /// </summary>
 public partial class FunctionTableTests
 {
-    /// <summary>Every test method of the differential tests' observation and grid classes, by name, with its body.</summary>
+    /// <summary>Every test method of the differential tests' observation and grid classes, in any of their parts, by name, with its body.</summary>
     private static readonly Dictionary<string, string> Observations = Directory
         .EnumerateFiles(Path.Combine(RepositoryPaths.Root, "tests", "Haruspex.DifferentialTests"), "*.cs")
-        .Where(f => f.EndsWith("ObservationTests.cs", StringComparison.Ordinal) || f.EndsWith("GridTests.cs", StringComparison.Ordinal))
+        .Where(f => Path.GetFileName(f).Split('.')[0] is var type && (type.EndsWith("ObservationTests", StringComparison.Ordinal) || type.EndsWith("GridTests", StringComparison.Ordinal)))
         .SelectMany(f => Methods(File.ReadAllText(f)))
         .ToDictionary(m => m.Name, m => m.Body, StringComparer.Ordinal);
 

@@ -316,6 +316,9 @@ overrides:
   - filename: "**/tests/Haruspex.DifferentialTests/SetJoinObservationTests.cs"
     # A string longer than the other branch's, to show which length a set operation keeps.
     ignoreWords: [xxxxxxx]
+  - filename: "**/tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs"
+    # What STUFF gives for 'abc' with 'xyz' put in, which the test compares.
+    ignoreWords: [abxyz]
   - filename: "**/tests/Haruspex.DifferentialTests/TableFunctionObservationTests.cs"
     # A value too long for its column, and what is left of it once SQL Server truncates it.
     ignoreWords: [toolong, toolo]

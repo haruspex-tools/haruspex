@@ -1445,6 +1445,38 @@ not listed is not modelled.
   error (13609) (`Json_value_is_nvarchar_4000_and_null_for_a_json_null_a_missing_path_an_object_or_a_long_string`). Its
   arguments are not read: neither changes the type, and `json-null-or-absent` covers a NULL document.
 
+The functions that read characters or codes, or build a string from a count (`Typer.StringFunctions.cs`), are typed for string
+arguments, and integer codes, positions and counts, only: the server converts any other value to a string first, at a
+length of its own (`REVERSE` of an `int` is `varchar(12)`, of a `decimal` `varchar(41)`), which is not modelled. Several give
+NULL for an argument they can't use rather than an error: that is `out-of-range`, which the types alone never rule out
+unless a literal does. Observed in `FunctionObservationTests.Strings.cs`, and every typed call is held to the server by the
+sweep's grid.
+
+- **`ASCII`**, **`UNICODE`**: `int`; NULL for an empty string (`Ascii_and_unicode_are_int_and_null_for_an_empty_string`).
+- **`CHAR(n)`**: `char(1)`; NULL outside 0 to 255, which a `tinyint` or a literal in range can't be; a `bigint` is converted
+  to `int` first, an overflow (`Char_is_char_1_and_null_outside_0_to_255_and_overflows_past_int`). `NCHAR` is not modelled:
+  under a supplementary-character collation it gives two UTF-16 units in an `nchar(1)`.
+- **`CHARINDEX`**, **`PATINDEX`**: `int`, `bigint` when the string searched is max; NULL only when an argument is; a start
+  below 1 is 1 (`Charindex_and_patindex_are_int_or_bigint_over_max_and_null_only_for_a_null_argument`).
+- **`REPLICATE(s, n)`**: the string varying, as long as `s` times a literal `n` up to 8000 bytes, or 8000 bytes otherwise, max
+  staying max. **`SPACE(n)`**: `varchar` of a literal `n` (at least 1) up to 8000, or 8000. Both NULL for a negative count.
+  The literal count 0 is described as `varchar(2)` whatever the string, and is not modelled
+  (`Replicate_and_space_are_as_long_as_a_literal_count_allows_up_to_8000_bytes_and_null_for_a_negative_one`).
+- **`REVERSE`**: the string's length, varying (`Reverse_keeps_the_strings_length_and_makes_it_varying`).
+- **`STUFF(s, start, length, r)`**: varying, `nvarchar` if `s` or `r` is, max if either is; otherwise as long as both less what
+  a literal length deletes from a literal start inside `s`, which is at most what is left from it (a length of 5 from the
+  second of three characters deletes two), or 8000 bytes. NULL for a start of 0 or past the end, a negative length or an empty `s`, so always
+  `out-of-range`; a NULL `r` only deletes
+  (`Stuff_is_as_long_as_its_strings_less_a_literal_length_and_null_for_a_start_or_length_it_cannot_use`).
+- **`QUOTENAME`**: `nvarchar(258)`; NULL past 128 characters or for a quote it doesn't read, unless given a literal of 128
+  characters or fewer alone (`Quotename_is_nvarchar_258_and_null_past_128_characters_or_for_a_quote_it_cannot_use`).
+- **`STR(x [, length [, places]])`** of a number: `varchar(10)`, or of a literal length (at least 1), or 8000; NULL for a
+  length outside 0 to 8000, so `out-of-range` unless the length and the places are literals; a number too long gives stars
+  (`Str_is_varchar_of_its_literal_length_10_by_default_and_null_for_a_length_it_cannot_use`).
+- **`TRANSLATE`**: as `REPLACE`; strings of different lengths are an error. **`SOUNDEX`** (`varchar(5)`) and **`DIFFERENCE`**
+  (`int`): NULL only when an argument is
+  (`Translate_is_8000_bytes_unless_its_string_is_max_and_soundex_and_difference_are_fixed`).
+
 ### `STRING_AGG`
 
 `varchar(8000)` for a `varchar` or `char`, `nvarchar(4000)` for an `nvarchar` or anything that is not a string, max over max.
@@ -1527,7 +1559,7 @@ constructs this front end gives each reason for:
 | `missing-for-action` | a column of a `MERGE`'s `OUTPUT` that some of its actions don't set |
 | `no-branch-matched` | `CASE` without `ELSE` |
 | `null-literal` | a `NULL` literal, bare, converted, or a result of `CASE`, `IIF` or `CHOOSE`; a JSON `null` in a JSON literal |
-| `out-of-range` | `CHOOSE` with an index that may be out of range |
+| `out-of-range` | `CHOOSE` with an index that may be out of range; a string function given a code, position, count or length it can't use (`CHAR`, `ASCII`, `STUFF`, `QUOTENAME`, …) |
 | `read-twice` | `COALESCE` whose argument holding a subquery or a call is read a second time |
 | `null-when-equal` | `NULLIF` |
 | `json-null-or-absent` | a column `OPENJSON` reads, `JSON_VALUE` |
@@ -1812,7 +1844,7 @@ For the IR:
   trailing spaces: `CASE … THEN 'a ' …` gives `"a "` (a literal is `varchar`, never padded). The rule above that string items
   never end in a space is about the sets a `CHECK` gives.
 - New null rules: **`no-branch-matched`** (a `CASE` without `ELSE`, NULL when no `WHEN` holds), **`null-literal`** (a result that is the
-  `NULL` literal, at it), **`out-of-range`** (a `CHOOSE` whose index may be below 1 or above its count), **`null-when-equal`** (a
+  `NULL` literal, at it), **`out-of-range`** (a `CHOOSE` whose index may be below 1 or above its count, or a string function given an argument it can't use), **`null-when-equal`** (a
   `NULLIF`, NULL when its arguments are equal; otherwise it is its first argument with its facets).
 - **`read-twice`**: a `COALESCE` whose argument holding a subquery or a call, before one never null, is read a second time
   after it was tested, and may then be NULL. It replaces the reasons that argument had: an argument tested NULL is passed

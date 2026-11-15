@@ -15,8 +15,8 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | What | Count |
 |---|---:|
 | Built-in functions the reference documents | 340 |
-| In the catalogue | 87 |
-| Not in it, and unknown where they are called | 251 |
+| In the catalogue | 101 |
+| Not in it, and unknown where they are called | 237 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
 | Modelled, wholly or in part | 152 |
@@ -461,41 +461,41 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### String functions
 
-14 of 33 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/toc.json?view=sql-server-ver17).
+28 of 33 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/toc.json?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
-| `ASCII` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `ASCII` | `scalar.ascii` | int | `out-of-range` | [Ascii_and_unicode_are_int_and_null_for_an_empty_string](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
 | `BASE64_DECODE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `BASE64_ENCODE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `CHAR` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `CHARINDEX` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `CHAR` | `scalar.char` | char(1) | `out-of-range`, `arithmetic-overflow` | [Char_is_char_1_and_null_outside_0_to_255_and_overflows_past_int](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
+| `CHARINDEX` | `scalar.charindex` | int, bigint over max |  | [Charindex_and_patindex_are_int_or_bigint_over_max_and_null_only_for_a_null_argument](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
 | `CONCAT` | `scalar.concat` | as long as its arguments together, never null |  | [Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null](../tests/Haruspex.DifferentialTests/ExpressionObservationTests.cs) |
 | `CONCAT_WS` | `scalar.concat_ws` | as long as its arguments and separators together, never null |  | [Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null](../tests/Haruspex.DifferentialTests/ExpressionObservationTests.cs) |
-| `DIFFERENCE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `DIFFERENCE` | `scalar.difference` | int |  | [Translate_is_8000_bytes_unless_its_string_is_max_and_soundex_and_difference_are_fixed](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
 | `FORMAT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `LEFT` | `scalar.left` | the string varying, as long as a literal length allows |  | [Left_right_and_substring_are_as_long_as_a_literal_length_allows](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `LEN` | `scalar.len` | int, bigint over max |  | [Len_and_datalength_are_int_or_bigint_over_max_and_len_ignores_trailing_spaces](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `LOWER` | `scalar.lower` | the string's length, varying |  | [Trimming_and_case_keep_the_strings_length_and_make_a_fixed_length_string_varying](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `LTRIM` | `scalar.ltrim` | the string's length, varying |  | [Trimming_and_case_keep_the_strings_length_and_make_a_fixed_length_string_varying](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `NCHAR` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `PATINDEX` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `QUOTENAME` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `PATINDEX` | `scalar.patindex` | int, bigint over max |  | [Charindex_and_patindex_are_int_or_bigint_over_max_and_null_only_for_a_null_argument](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
+| `QUOTENAME` | `scalar.quotename` | nvarchar(258) | `out-of-range` | [Quotename_is_nvarchar_258_and_null_past_128_characters_or_for_a_quote_it_cannot_use](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
 | `REPLACE` | `scalar.replace` | varchar(8000) or nvarchar(4000), max when the string is |  | [Replace_widens_to_8000_bytes_unless_its_string_is_max](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
-| `REPLICATE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `REVERSE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `REPLICATE` | `scalar.replicate` | the string varying, as long as a literal count allows up to 8000 bytes | `out-of-range` | [Replicate_and_space_are_as_long_as_a_literal_count_allows_up_to_8000_bytes_and_null_for_a_negative_one](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
+| `REVERSE` | `scalar.reverse` | the string's length, varying |  | [Reverse_keeps_the_strings_length_and_makes_it_varying](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
 | `RIGHT` | `scalar.right` | the string varying, as long as a literal length allows |  | [Left_right_and_substring_are_as_long_as_a_literal_length_allows](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `RTRIM` | `scalar.rtrim` | the string's length, varying |  | [Trimming_and_case_keep_the_strings_length_and_make_a_fixed_length_string_varying](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
-| `SOUNDEX` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `SPACE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `STR` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `SOUNDEX` | `scalar.soundex` | varchar(5) |  | [Translate_is_8000_bytes_unless_its_string_is_max_and_soundex_and_difference_are_fixed](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
+| `SPACE` | `scalar.space` | varchar of a literal count up to 8000, or 8000 | `out-of-range` | [Replicate_and_space_are_as_long_as_a_literal_count_allows_up_to_8000_bytes_and_null_for_a_negative_one](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
+| `STR` | `scalar.str` | varchar(10), or of a literal length, or 8000 | `out-of-range` | [Str_is_varchar_of_its_literal_length_10_by_default_and_null_for_a_length_it_cannot_use](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
 | `STRING_AGG` | `aggregate.string_agg` | varchar(8000) or nvarchar(4000), max over max | `empty-aggregate` | [String_agg_is_8000_bytes_unless_max_and_null_over_no_rows_or_only_nulls](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [String_agg_past_its_limit_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `STRING_ESCAPE` | `scalar.string_escape` | nvarchar(max) |  | [String_escape_is_nvarchar_max_and_formatmessage_nvarchar_4000_writing_a_null_argument_as_null_in_brackets](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
-| `STUFF` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `STUFF` | `scalar.stuff` | varying, as long as both strings less a literal length, or 8000 bytes | `out-of-range` | [Stuff_is_as_long_as_its_strings_less_a_literal_length_and_null_for_a_start_or_length_it_cannot_use](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
 | `SUBSTRING` | `scalar.substring` | the string varying, as long as a literal length allows |  | [Left_right_and_substring_are_as_long_as_a_literal_length_allows](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
-| `TRANSLATE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `TRANSLATE` | `scalar.translate` | varchar(8000) or nvarchar(4000), max when the string is |  | [Translate_is_8000_bytes_unless_its_string_is_max_and_soundex_and_difference_are_fixed](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
 | `TRIM` | `scalar.trim` | the string's length, varying |  | [Trimming_and_case_keep_the_strings_length_and_make_a_fixed_length_string_varying](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
-| `UNICODE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `UNICODE` | `scalar.unicode` | int | `out-of-range` | [Ascii_and_unicode_are_int_and_null_for_an_empty_string](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
 | `UNISTR` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `UPPER` | `scalar.upper` | the string's length, varying |  | [Trimming_and_case_keep_the_strings_length_and_make_a_fixed_length_string_varying](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 

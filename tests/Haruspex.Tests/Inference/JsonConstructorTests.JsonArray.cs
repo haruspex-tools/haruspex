@@ -56,7 +56,7 @@ public partial class JsonConstructorTests
     [Fact]
     public void An_unknown_element_is_reported_at_its_position()
     {
-        var doc = Procedure("SELECT json_array(t.id, reverse(t.label) NULL ON NULL) AS v FROM dbo.t AS t FOR JSON PATH;");
+        var doc = Procedure("SELECT json_array(t.id, hashbytes('SHA2_256', t.label) NULL ON NULL) AS v FROM dbo.t AS t FOR JSON PATH;");
 
         Assert.Equal(IrUnknownReason.UnsupportedExpression, Unknown(doc, "results[0][].v[1]").Reason);
     }

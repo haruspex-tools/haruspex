@@ -111,6 +111,48 @@ public static class ScalarFunctions
     /// <summary><c>CONCAT_WS</c>.</summary>
     public static readonly BuiltInFunction ConcatWithSeparator = new("concat_ws", FunctionForm.Scalar);
 
+    /// <summary><c>ASCII</c>.</summary>
+    public static readonly BuiltInFunction Ascii = new("ascii", FunctionForm.Scalar);
+
+    /// <summary><c>UNICODE</c>.</summary>
+    public static readonly BuiltInFunction Unicode = new("unicode", FunctionForm.Scalar);
+
+    /// <summary><c>CHAR</c>: named for what it gives, a character of a code, since <c>Char</c> is a type's name (CA1720).</summary>
+    public static readonly BuiltInFunction CharOf = new("char", FunctionForm.Scalar);
+
+    /// <summary><c>CHARINDEX</c>.</summary>
+    public static readonly BuiltInFunction CharIndex = new("charindex", FunctionForm.Scalar);
+
+    /// <summary><c>PATINDEX</c>.</summary>
+    public static readonly BuiltInFunction PatIndex = new("patindex", FunctionForm.Scalar);
+
+    /// <summary><c>REPLICATE</c>.</summary>
+    public static readonly BuiltInFunction Replicate = new("replicate", FunctionForm.Scalar);
+
+    /// <summary><c>SPACE</c>.</summary>
+    public static readonly BuiltInFunction Space = new("space", FunctionForm.Scalar);
+
+    /// <summary><c>REVERSE</c>.</summary>
+    public static readonly BuiltInFunction Reverse = new("reverse", FunctionForm.Scalar);
+
+    /// <summary><c>STUFF</c>.</summary>
+    public static readonly BuiltInFunction Stuff = new("stuff", FunctionForm.Scalar);
+
+    /// <summary><c>QUOTENAME</c>.</summary>
+    public static readonly BuiltInFunction QuoteName = new("quotename", FunctionForm.Scalar);
+
+    /// <summary><c>STR</c>.</summary>
+    public static readonly BuiltInFunction Str = new("str", FunctionForm.Scalar);
+
+    /// <summary><c>TRANSLATE</c>.</summary>
+    public static readonly BuiltInFunction Translate = new("translate", FunctionForm.Scalar);
+
+    /// <summary><c>SOUNDEX</c>.</summary>
+    public static readonly BuiltInFunction Soundex = new("soundex", FunctionForm.Scalar);
+
+    /// <summary><c>DIFFERENCE</c>.</summary>
+    public static readonly BuiltInFunction Difference = new("difference", FunctionForm.Scalar);
+
     /// <summary><c>ROUND</c>.</summary>
     public static readonly BuiltInFunction Round = new("round", FunctionForm.Scalar);
 
@@ -184,5 +226,5 @@ public static class ScalarFunctions
     public static readonly BuiltInFunction JsonArray = new("json_array", FunctionForm.Scalar);
 
     /// <summary>Every one, in the order above.</summary>
-    public static IReadOnlyList<BuiltInFunction> All { get; } = [DateDiff, DateDiffBig, DateAdd, DatePart, Year, Month, Day, DateName, EndOfMonth, DateFromParts, DateTimeFromParts, SmallDateTimeFromParts, DateTime2FromParts, TimeFromParts, DateTimeOffsetFromParts, GetDate, GetUtcDate, SysDateTime, SysUtcDateTime, SysDateTimeOffset, CurrentTimestamp, LTrim, RTrim, Trim, Upper, Lower, Substring, Left, Right, Len, DataLength, Replace, StringEscape, FormatMessage, Concat, ConcatWithSeparator, Round, Floor, Ceiling, Abs, Sign, Power, Square, Sqrt, Exp, Log, Log10, Cast, Convert, TryCast, TryConvert, IsNull, Coalesce, NullIf, Iif, Choose, JsonValue, JsonQuery, JsonObject, JsonArray];
+    public static IReadOnlyList<BuiltInFunction> All { get; } = [DateDiff, DateDiffBig, DateAdd, DatePart, Year, Month, Day, DateName, EndOfMonth, DateFromParts, DateTimeFromParts, SmallDateTimeFromParts, DateTime2FromParts, TimeFromParts, DateTimeOffsetFromParts, GetDate, GetUtcDate, SysDateTime, SysUtcDateTime, SysDateTimeOffset, CurrentTimestamp, LTrim, RTrim, Trim, Upper, Lower, Substring, Left, Right, Len, DataLength, Replace, StringEscape, FormatMessage, Concat, ConcatWithSeparator, Ascii, Unicode, CharOf, CharIndex, PatIndex, Replicate, Space, Reverse, Stuff, QuoteName, Str, Translate, Soundex, Difference, Round, Floor, Ceiling, Abs, Sign, Power, Square, Sqrt, Exp, Log, Log10, Cast, Convert, TryCast, TryConvert, IsNull, Coalesce, NullIf, Iif, Choose, JsonValue, JsonQuery, JsonObject, JsonArray];
 }

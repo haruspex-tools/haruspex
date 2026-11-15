@@ -5,6 +5,7 @@
 
 # T-SQL keywords, functions, types and settings, and SQL Server's own names
 arithabort
+charindex
 checkident
 cume
 datalength
@@ -29,6 +30,7 @@ formatmessage
 fromparts
 getdate
 getutcdate
+hashbytes
 hierarchyid
 isnull
 keyset
@@ -49,6 +51,7 @@ openquery
 openrowset
 openxml
 parseonly
+patindex
 quotename
 raiserror
 readcommitted

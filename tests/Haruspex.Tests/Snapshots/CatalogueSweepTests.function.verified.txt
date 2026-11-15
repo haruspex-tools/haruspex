@@ -1924,6 +1924,806 @@ LOG10('ab') -> unknown unsupported-expression: LOG10('ab'): an argument of this 
 LOG10(N'ab') -> unknown unsupported-expression: LOG10(N'ab'): an argument of this type is not modelled.
 LOG10(1e0) -> float number/float null:domain-error
 LOG10($1) -> float number/float null:domain-error
+ASCII(bt) -> unknown unsupported-expression: ASCII(bt): a code of a value that is not a string is not modelled.
+ASCII(ti) -> unknown unsupported-expression: ASCII(ti): a code of a value that is not a string is not modelled.
+ASCII(si) -> unknown unsupported-expression: ASCII(si): a code of a value that is not a string is not modelled.
+ASCII(i) -> unknown unsupported-expression: ASCII(i): a code of a value that is not a string is not modelled.
+ASCII(bi) -> unknown unsupported-expression: ASCII(bi): a code of a value that is not a string is not modelled.
+ASCII(d52) -> unknown unsupported-expression: ASCII(d52): a code of a value that is not a string is not modelled.
+ASCII(d380) -> unknown unsupported-expression: ASCII(d380): a code of a value that is not a string is not modelled.
+ASCII(d3838) -> unknown unsupported-expression: ASCII(d3838): a code of a value that is not a string is not modelled.
+ASCII(n102) -> unknown unsupported-expression: ASCII(n102): a code of a value that is not a string is not modelled.
+ASCII(m) -> unknown unsupported-expression: ASCII(m): a code of a value that is not a string is not modelled.
+ASCII(sm) -> unknown unsupported-expression: ASCII(sm): a code of a value that is not a string is not modelled.
+ASCII(f) -> unknown unsupported-expression: ASCII(f): a code of a value that is not a string is not modelled.
+ASCII(r) -> unknown unsupported-expression: ASCII(r): a code of a value that is not a string is not modelled.
+ASCII(f24) -> unknown unsupported-expression: ASCII(f24): a code of a value that is not a string is not modelled.
+ASCII(f25) -> unknown unsupported-expression: ASCII(f25): a code of a value that is not a string is not modelled.
+ASCII(c3) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+ASCII(v10) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+ASCII(vx) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+ASCII(nc3) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+ASCII(nv10) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+ASCII(nvx) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+ASCII(dt) -> unknown unsupported-expression: ASCII(dt): a code of a value that is not a string is not modelled.
+ASCII(tm3) -> unknown unsupported-expression: ASCII(tm3): a code of a value that is not a string is not modelled.
+ASCII(dtm) -> unknown unsupported-expression: ASCII(dtm): a code of a value that is not a string is not modelled.
+ASCII(dt23) -> unknown unsupported-expression: ASCII(dt23): a code of a value that is not a string is not modelled.
+ASCII(sdt) -> unknown unsupported-expression: ASCII(sdt): a code of a value that is not a string is not modelled.
+ASCII(dto3) -> unknown unsupported-expression: ASCII(dto3): a code of a value that is not a string is not modelled.
+ASCII(u) -> unknown unsupported-expression: ASCII(u): a code of a value that is not a string is not modelled.
+ASCII(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ASCII(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ASCII(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ASCII(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ASCII(j) -> unknown (no unknown recorded)
+ASCII(1) -> unknown unsupported-expression: ASCII(1): a code of a value that is not a string is not modelled.
+ASCII(12345) -> unknown unsupported-expression: ASCII(12345): a code of a value that is not a string is not modelled.
+ASCII(2.50) -> unknown unsupported-expression: ASCII(2.50): a code of a value that is not a string is not modelled.
+ASCII('ab') -> int number/int32 {[-2147483648 2147483647]}
+ASCII(N'ab') -> int number/int32 {[-2147483648 2147483647]}
+ASCII(1e0) -> unknown unsupported-expression: ASCII(1e0): a code of a value that is not a string is not modelled.
+ASCII($1) -> unknown unsupported-expression: ASCII($1): a code of a value that is not a string is not modelled.
+UNICODE(bt) -> unknown unsupported-expression: UNICODE(bt): a code of a value that is not a string is not modelled.
+UNICODE(ti) -> unknown unsupported-expression: UNICODE(ti): a code of a value that is not a string is not modelled.
+UNICODE(si) -> unknown unsupported-expression: UNICODE(si): a code of a value that is not a string is not modelled.
+UNICODE(i) -> unknown unsupported-expression: UNICODE(i): a code of a value that is not a string is not modelled.
+UNICODE(bi) -> unknown unsupported-expression: UNICODE(bi): a code of a value that is not a string is not modelled.
+UNICODE(d52) -> unknown unsupported-expression: UNICODE(d52): a code of a value that is not a string is not modelled.
+UNICODE(d380) -> unknown unsupported-expression: UNICODE(d380): a code of a value that is not a string is not modelled.
+UNICODE(d3838) -> unknown unsupported-expression: UNICODE(d3838): a code of a value that is not a string is not modelled.
+UNICODE(n102) -> unknown unsupported-expression: UNICODE(n102): a code of a value that is not a string is not modelled.
+UNICODE(m) -> unknown unsupported-expression: UNICODE(m): a code of a value that is not a string is not modelled.
+UNICODE(sm) -> unknown unsupported-expression: UNICODE(sm): a code of a value that is not a string is not modelled.
+UNICODE(f) -> unknown unsupported-expression: UNICODE(f): a code of a value that is not a string is not modelled.
+UNICODE(r) -> unknown unsupported-expression: UNICODE(r): a code of a value that is not a string is not modelled.
+UNICODE(f24) -> unknown unsupported-expression: UNICODE(f24): a code of a value that is not a string is not modelled.
+UNICODE(f25) -> unknown unsupported-expression: UNICODE(f25): a code of a value that is not a string is not modelled.
+UNICODE(c3) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+UNICODE(v10) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+UNICODE(vx) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+UNICODE(nc3) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+UNICODE(nv10) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+UNICODE(nvx) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+UNICODE(dt) -> unknown unsupported-expression: UNICODE(dt): a code of a value that is not a string is not modelled.
+UNICODE(tm3) -> unknown unsupported-expression: UNICODE(tm3): a code of a value that is not a string is not modelled.
+UNICODE(dtm) -> unknown unsupported-expression: UNICODE(dtm): a code of a value that is not a string is not modelled.
+UNICODE(dt23) -> unknown unsupported-expression: UNICODE(dt23): a code of a value that is not a string is not modelled.
+UNICODE(sdt) -> unknown unsupported-expression: UNICODE(sdt): a code of a value that is not a string is not modelled.
+UNICODE(dto3) -> unknown unsupported-expression: UNICODE(dto3): a code of a value that is not a string is not modelled.
+UNICODE(u) -> unknown unsupported-expression: UNICODE(u): a code of a value that is not a string is not modelled.
+UNICODE(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+UNICODE(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+UNICODE(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+UNICODE(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+UNICODE(j) -> unknown (no unknown recorded)
+UNICODE(1) -> unknown unsupported-expression: UNICODE(1): a code of a value that is not a string is not modelled.
+UNICODE(12345) -> unknown unsupported-expression: UNICODE(12345): a code of a value that is not a string is not modelled.
+UNICODE(2.50) -> unknown unsupported-expression: UNICODE(2.50): a code of a value that is not a string is not modelled.
+UNICODE('ab') -> int number/int32 {[-2147483648 2147483647]}
+UNICODE(N'ab') -> int number/int32 {[-2147483648 2147483647]}
+UNICODE(1e0) -> unknown unsupported-expression: UNICODE(1e0): a code of a value that is not a string is not modelled.
+UNICODE($1) -> unknown unsupported-expression: UNICODE($1): a code of a value that is not a string is not modelled.
+CHAR(bt) -> unknown unsupported-expression: CHAR(bt): CHAR of a value that is not an integer is not modelled.
+CHAR(ti) -> char(1) string {length=1}
+CHAR(si) -> char(1) string null:out-of-range {length=1}
+CHAR(i) -> char(1) string null:out-of-range {length=1}
+CHAR(bi) -> char(1) string null:out-of-range,arithmetic-overflow {length=1}
+CHAR(d52) -> unknown unsupported-expression: CHAR(d52): CHAR of a value that is not an integer is not modelled.
+CHAR(d380) -> unknown unsupported-expression: CHAR(d380): CHAR of a value that is not an integer is not modelled.
+CHAR(d3838) -> unknown unsupported-expression: CHAR(d3838): CHAR of a value that is not an integer is not modelled.
+CHAR(n102) -> unknown unsupported-expression: CHAR(n102): CHAR of a value that is not an integer is not modelled.
+CHAR(m) -> unknown unsupported-expression: CHAR(m): CHAR of a value that is not an integer is not modelled.
+CHAR(sm) -> unknown unsupported-expression: CHAR(sm): CHAR of a value that is not an integer is not modelled.
+CHAR(f) -> unknown unsupported-expression: CHAR(f): CHAR of a value that is not an integer is not modelled.
+CHAR(r) -> unknown unsupported-expression: CHAR(r): CHAR of a value that is not an integer is not modelled.
+CHAR(f24) -> unknown unsupported-expression: CHAR(f24): CHAR of a value that is not an integer is not modelled.
+CHAR(f25) -> unknown unsupported-expression: CHAR(f25): CHAR of a value that is not an integer is not modelled.
+CHAR(c3) -> unknown unsupported-expression: CHAR(c3): CHAR of a value that is not an integer is not modelled.
+CHAR(v10) -> unknown unsupported-expression: CHAR(v10): CHAR of a value that is not an integer is not modelled.
+CHAR(vx) -> unknown unsupported-expression: CHAR(vx): CHAR of a value that is not an integer is not modelled.
+CHAR(nc3) -> unknown unsupported-expression: CHAR(nc3): CHAR of a value that is not an integer is not modelled.
+CHAR(nv10) -> unknown unsupported-expression: CHAR(nv10): CHAR of a value that is not an integer is not modelled.
+CHAR(nvx) -> unknown unsupported-expression: CHAR(nvx): CHAR of a value that is not an integer is not modelled.
+CHAR(dt) -> unknown unsupported-expression: CHAR(dt): CHAR of a value that is not an integer is not modelled.
+CHAR(tm3) -> unknown unsupported-expression: CHAR(tm3): CHAR of a value that is not an integer is not modelled.
+CHAR(dtm) -> unknown unsupported-expression: CHAR(dtm): CHAR of a value that is not an integer is not modelled.
+CHAR(dt23) -> unknown unsupported-expression: CHAR(dt23): CHAR of a value that is not an integer is not modelled.
+CHAR(sdt) -> unknown unsupported-expression: CHAR(sdt): CHAR of a value that is not an integer is not modelled.
+CHAR(dto3) -> unknown unsupported-expression: CHAR(dto3): CHAR of a value that is not an integer is not modelled.
+CHAR(u) -> unknown unsupported-expression: CHAR(u): CHAR of a value that is not an integer is not modelled.
+CHAR(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CHAR(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CHAR(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CHAR(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CHAR(j) -> unknown (no unknown recorded)
+CHAR(1) -> char(1) string {length=1}
+CHAR(12345) -> char(1) string null:out-of-range {length=1}
+CHAR(2.50) -> unknown unsupported-expression: CHAR(2.50): CHAR of a value that is not an integer is not modelled.
+CHAR('ab') -> unknown unsupported-expression: CHAR('ab'): CHAR of a value that is not an integer is not modelled.
+CHAR(N'ab') -> unknown unsupported-expression: CHAR(N'ab'): CHAR of a value that is not an integer is not modelled.
+CHAR(1e0) -> unknown unsupported-expression: CHAR(1e0): CHAR of a value that is not an integer is not modelled.
+CHAR($1) -> unknown unsupported-expression: CHAR($1): CHAR of a value that is not an integer is not modelled.
+CHARINDEX('a', bt) -> unknown unsupported-expression: CHARINDEX('a', bt): a position in a value that is not a string is not modelled.
+CHARINDEX('a', ti) -> unknown unsupported-expression: CHARINDEX('a', ti): a position in a value that is not a string is not modelled.
+CHARINDEX('a', si) -> unknown unsupported-expression: CHARINDEX('a', si): a position in a value that is not a string is not modelled.
+CHARINDEX('a', i) -> unknown unsupported-expression: CHARINDEX('a', i): a position in a value that is not a string is not modelled.
+CHARINDEX('a', bi) -> unknown unsupported-expression: CHARINDEX('a', bi): a position in a value that is not a string is not modelled.
+CHARINDEX('a', d52) -> unknown unsupported-expression: CHARINDEX('a', d52): a position in a value that is not a string is not modelled.
+CHARINDEX('a', d380) -> unknown unsupported-expression: CHARINDEX('a', d380): a position in a value that is not a string is not modelled.
+CHARINDEX('a', d3838) -> unknown unsupported-expression: CHARINDEX('a', d3838): a position in a value that is not a string is not modelled.
+CHARINDEX('a', n102) -> unknown unsupported-expression: CHARINDEX('a', n102): a position in a value that is not a string is not modelled.
+CHARINDEX('a', m) -> unknown unsupported-expression: CHARINDEX('a', m): a position in a value that is not a string is not modelled.
+CHARINDEX('a', sm) -> unknown unsupported-expression: CHARINDEX('a', sm): a position in a value that is not a string is not modelled.
+CHARINDEX('a', f) -> unknown unsupported-expression: CHARINDEX('a', f): a position in a value that is not a string is not modelled.
+CHARINDEX('a', r) -> unknown unsupported-expression: CHARINDEX('a', r): a position in a value that is not a string is not modelled.
+CHARINDEX('a', f24) -> unknown unsupported-expression: CHARINDEX('a', f24): a position in a value that is not a string is not modelled.
+CHARINDEX('a', f25) -> unknown unsupported-expression: CHARINDEX('a', f25): a position in a value that is not a string is not modelled.
+CHARINDEX('a', c3) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX('a', v10) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX('a', vx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CHARINDEX('a', nc3) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX('a', nv10) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX('a', nvx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+CHARINDEX('a', dt) -> unknown unsupported-expression: CHARINDEX('a', dt): a position in a value that is not a string is not modelled.
+CHARINDEX('a', tm3) -> unknown unsupported-expression: CHARINDEX('a', tm3): a position in a value that is not a string is not modelled.
+CHARINDEX('a', dtm) -> unknown unsupported-expression: CHARINDEX('a', dtm): a position in a value that is not a string is not modelled.
+CHARINDEX('a', dt23) -> unknown unsupported-expression: CHARINDEX('a', dt23): a position in a value that is not a string is not modelled.
+CHARINDEX('a', sdt) -> unknown unsupported-expression: CHARINDEX('a', sdt): a position in a value that is not a string is not modelled.
+CHARINDEX('a', dto3) -> unknown unsupported-expression: CHARINDEX('a', dto3): a position in a value that is not a string is not modelled.
+CHARINDEX('a', u) -> unknown unsupported-expression: CHARINDEX('a', u): a position in a value that is not a string is not modelled.
+CHARINDEX('a', bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CHARINDEX('a', vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CHARINDEX('a', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CHARINDEX('a', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CHARINDEX('a', j) -> unknown (no unknown recorded)
+CHARINDEX('a', 1) -> unknown unsupported-expression: CHARINDEX('a', 1): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 12345) -> unknown unsupported-expression: CHARINDEX('a', 12345): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 2.50) -> unknown unsupported-expression: CHARINDEX('a', 2.50): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'ab') -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX('a', N'ab') -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX('a', 1e0) -> unknown unsupported-expression: CHARINDEX('a', 1e0): a position in a value that is not a string is not modelled.
+CHARINDEX('a', $1) -> unknown unsupported-expression: CHARINDEX('a', $1): a position in a value that is not a string is not modelled.
+CHARINDEX(bt, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(bt, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(ti, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(ti, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(si, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(si, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(i, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(i, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(bi, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(bi, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(d52, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(d52, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(d380, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(d380, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(d3838, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(d3838, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(n102, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(n102, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(m, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(m, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(sm, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(sm, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(f, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(f, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(r, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(r, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(f24, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(f24, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(f25, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(f25, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(c3, 'abc', 2) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX(v10, 'abc', 2) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX(vx, 'abc', 2) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX(nc3, 'abc', 2) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX(nv10, 'abc', 2) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX(nvx, 'abc', 2) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX(dt, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(dt, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(tm3, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(tm3, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(dtm, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(dtm, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(dt23, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(dt23, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(sdt, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(sdt, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(dto3, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(dto3, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(u, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(u, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(bin4, 'abc', 2) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CHARINDEX(vb10, 'abc', 2) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CHARINDEX(x, 'abc', 2) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CHARINDEX(sv, 'abc', 2) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CHARINDEX(j, 'abc', 2) -> unknown (no unknown recorded)
+CHARINDEX(1, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(1, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(12345, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(12345, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX(2.50, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(2.50, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX('ab', 'abc', 2) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX(N'ab', 'abc', 2) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX(1e0, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(1e0, 'abc', 2): a position in a value that is not a string is not modelled.
+CHARINDEX($1, 'abc', 2) -> unknown unsupported-expression: CHARINDEX($1, 'abc', 2): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', bt) -> unknown unsupported-expression: PATINDEX('%a%', bt): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', ti) -> unknown unsupported-expression: PATINDEX('%a%', ti): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', si) -> unknown unsupported-expression: PATINDEX('%a%', si): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', i) -> unknown unsupported-expression: PATINDEX('%a%', i): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', bi) -> unknown unsupported-expression: PATINDEX('%a%', bi): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', d52) -> unknown unsupported-expression: PATINDEX('%a%', d52): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', d380) -> unknown unsupported-expression: PATINDEX('%a%', d380): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', d3838) -> unknown unsupported-expression: PATINDEX('%a%', d3838): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', n102) -> unknown unsupported-expression: PATINDEX('%a%', n102): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', m) -> unknown unsupported-expression: PATINDEX('%a%', m): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', sm) -> unknown unsupported-expression: PATINDEX('%a%', sm): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', f) -> unknown unsupported-expression: PATINDEX('%a%', f): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', r) -> unknown unsupported-expression: PATINDEX('%a%', r): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', f24) -> unknown unsupported-expression: PATINDEX('%a%', f24): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', f25) -> unknown unsupported-expression: PATINDEX('%a%', f25): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', c3) -> int number/int32 {[-2147483648 2147483647]}
+PATINDEX('%a%', v10) -> int number/int32 {[-2147483648 2147483647]}
+PATINDEX('%a%', vx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+PATINDEX('%a%', nc3) -> int number/int32 {[-2147483648 2147483647]}
+PATINDEX('%a%', nv10) -> int number/int32 {[-2147483648 2147483647]}
+PATINDEX('%a%', nvx) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+PATINDEX('%a%', dt) -> unknown unsupported-expression: PATINDEX('%a%', dt): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', tm3) -> unknown unsupported-expression: PATINDEX('%a%', tm3): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', dtm) -> unknown unsupported-expression: PATINDEX('%a%', dtm): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', dt23) -> unknown unsupported-expression: PATINDEX('%a%', dt23): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', sdt) -> unknown unsupported-expression: PATINDEX('%a%', sdt): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', dto3) -> unknown unsupported-expression: PATINDEX('%a%', dto3): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', u) -> unknown unsupported-expression: PATINDEX('%a%', u): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+PATINDEX('%a%', vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+PATINDEX('%a%', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+PATINDEX('%a%', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+PATINDEX('%a%', j) -> unknown (no unknown recorded)
+PATINDEX('%a%', 1) -> unknown unsupported-expression: PATINDEX('%a%', 1): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', 12345) -> unknown unsupported-expression: PATINDEX('%a%', 12345): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', 2.50) -> unknown unsupported-expression: PATINDEX('%a%', 2.50): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', 'ab') -> int number/int32 {[-2147483648 2147483647]}
+PATINDEX('%a%', N'ab') -> int number/int32 {[-2147483648 2147483647]}
+PATINDEX('%a%', 1e0) -> unknown unsupported-expression: PATINDEX('%a%', 1e0): a position in a value that is not a string is not modelled.
+PATINDEX('%a%', $1) -> unknown unsupported-expression: PATINDEX('%a%', $1): a position in a value that is not a string is not modelled.
+REPLICATE(bt, 3) -> unknown unsupported-expression: REPLICATE(bt, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(ti, 3) -> unknown unsupported-expression: REPLICATE(ti, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(si, 3) -> unknown unsupported-expression: REPLICATE(si, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(i, 3) -> unknown unsupported-expression: REPLICATE(i, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(bi, 3) -> unknown unsupported-expression: REPLICATE(bi, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(d52, 3) -> unknown unsupported-expression: REPLICATE(d52, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(d380, 3) -> unknown unsupported-expression: REPLICATE(d380, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(d3838, 3) -> unknown unsupported-expression: REPLICATE(d3838, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(n102, 3) -> unknown unsupported-expression: REPLICATE(n102, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(m, 3) -> unknown unsupported-expression: REPLICATE(m, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(sm, 3) -> unknown unsupported-expression: REPLICATE(sm, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(f, 3) -> unknown unsupported-expression: REPLICATE(f, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(r, 3) -> unknown unsupported-expression: REPLICATE(r, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(f24, 3) -> unknown unsupported-expression: REPLICATE(f24, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(f25, 3) -> unknown unsupported-expression: REPLICATE(f25, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(c3, 3) -> varchar(9) string {length<=9}
+REPLICATE(v10, 3) -> varchar(30) string {length<=30}
+REPLICATE(vx, 3) -> varchar(max) string
+REPLICATE(nc3, 3) -> nvarchar(9) string {length<=9}
+REPLICATE(nv10, 3) -> nvarchar(30) string {length<=30}
+REPLICATE(nvx, 3) -> nvarchar(max) string
+REPLICATE(dt, 3) -> unknown unsupported-expression: REPLICATE(dt, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(tm3, 3) -> unknown unsupported-expression: REPLICATE(tm3, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(dtm, 3) -> unknown unsupported-expression: REPLICATE(dtm, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(dt23, 3) -> unknown unsupported-expression: REPLICATE(dt23, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(sdt, 3) -> unknown unsupported-expression: REPLICATE(sdt, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(dto3, 3) -> unknown unsupported-expression: REPLICATE(dto3, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(u, 3) -> unknown unsupported-expression: REPLICATE(u, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(bin4, 3) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+REPLICATE(vb10, 3) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+REPLICATE(x, 3) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REPLICATE(sv, 3) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+REPLICATE(j, 3) -> unknown (no unknown recorded)
+REPLICATE(1, 3) -> unknown unsupported-expression: REPLICATE(1, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(12345, 3) -> unknown unsupported-expression: REPLICATE(12345, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE(2.50, 3) -> unknown unsupported-expression: REPLICATE(2.50, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', 3) -> varchar(6) string {length<=6}
+REPLICATE(N'ab', 3) -> nvarchar(6) string {length<=6}
+REPLICATE(1e0, 3) -> unknown unsupported-expression: REPLICATE(1e0, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE($1, 3) -> unknown unsupported-expression: REPLICATE($1, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', bt) -> unknown unsupported-expression: REPLICATE('ab', bt): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', ti) -> varchar(8000) string null:out-of-range {length<=8000}
+REPLICATE('ab', si) -> varchar(8000) string null:out-of-range {length<=8000}
+REPLICATE('ab', i) -> varchar(8000) string null:out-of-range {length<=8000}
+REPLICATE('ab', bi) -> varchar(8000) string null:out-of-range {length<=8000}
+REPLICATE('ab', d52) -> unknown unsupported-expression: REPLICATE('ab', d52): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', d380) -> unknown unsupported-expression: REPLICATE('ab', d380): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', d3838) -> unknown unsupported-expression: REPLICATE('ab', d3838): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', n102) -> unknown unsupported-expression: REPLICATE('ab', n102): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', m) -> unknown unsupported-expression: REPLICATE('ab', m): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', sm) -> unknown unsupported-expression: REPLICATE('ab', sm): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', f) -> unknown unsupported-expression: REPLICATE('ab', f): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', r) -> unknown unsupported-expression: REPLICATE('ab', r): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', f24) -> unknown unsupported-expression: REPLICATE('ab', f24): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', f25) -> unknown unsupported-expression: REPLICATE('ab', f25): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', c3) -> unknown unsupported-expression: REPLICATE('ab', c3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', v10) -> unknown unsupported-expression: REPLICATE('ab', v10): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', vx) -> unknown unsupported-expression: REPLICATE('ab', vx): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', nc3) -> unknown unsupported-expression: REPLICATE('ab', nc3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', nv10) -> unknown unsupported-expression: REPLICATE('ab', nv10): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', nvx) -> unknown unsupported-expression: REPLICATE('ab', nvx): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', dt) -> unknown unsupported-expression: REPLICATE('ab', dt): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', tm3) -> unknown unsupported-expression: REPLICATE('ab', tm3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', dtm) -> unknown unsupported-expression: REPLICATE('ab', dtm): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', dt23) -> unknown unsupported-expression: REPLICATE('ab', dt23): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', sdt) -> unknown unsupported-expression: REPLICATE('ab', sdt): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', dto3) -> unknown unsupported-expression: REPLICATE('ab', dto3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', u) -> unknown unsupported-expression: REPLICATE('ab', u): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+REPLICATE('ab', vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+REPLICATE('ab', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REPLICATE('ab', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+REPLICATE('ab', j) -> unknown (no unknown recorded)
+REPLICATE('ab', 1) -> varchar(2) string {length<=2}
+REPLICATE('ab', 12345) -> varchar(8000) string {length<=8000}
+REPLICATE('ab', 2.50) -> unknown unsupported-expression: REPLICATE('ab', 2.50): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', 'ab') -> unknown unsupported-expression: REPLICATE('ab', 'ab'): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', N'ab') -> unknown unsupported-expression: REPLICATE('ab', N'ab'): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', 1e0) -> unknown unsupported-expression: REPLICATE('ab', 1e0): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+REPLICATE('ab', $1) -> unknown unsupported-expression: REPLICATE('ab', $1): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
+SPACE(bt) -> unknown unsupported-expression: SPACE(bt): SPACE of a value that is not an int is not modelled.
+SPACE(ti) -> varchar(8000) string null:out-of-range {length<=8000}
+SPACE(si) -> varchar(8000) string null:out-of-range {length<=8000}
+SPACE(i) -> varchar(8000) string null:out-of-range {length<=8000}
+SPACE(bi) -> unknown unsupported-expression: SPACE(bi): SPACE of a value that is not an int is not modelled.
+SPACE(d52) -> unknown unsupported-expression: SPACE(d52): SPACE of a value that is not an int is not modelled.
+SPACE(d380) -> unknown unsupported-expression: SPACE(d380): SPACE of a value that is not an int is not modelled.
+SPACE(d3838) -> unknown unsupported-expression: SPACE(d3838): SPACE of a value that is not an int is not modelled.
+SPACE(n102) -> unknown unsupported-expression: SPACE(n102): SPACE of a value that is not an int is not modelled.
+SPACE(m) -> unknown unsupported-expression: SPACE(m): SPACE of a value that is not an int is not modelled.
+SPACE(sm) -> unknown unsupported-expression: SPACE(sm): SPACE of a value that is not an int is not modelled.
+SPACE(f) -> unknown unsupported-expression: SPACE(f): SPACE of a value that is not an int is not modelled.
+SPACE(r) -> unknown unsupported-expression: SPACE(r): SPACE of a value that is not an int is not modelled.
+SPACE(f24) -> unknown unsupported-expression: SPACE(f24): SPACE of a value that is not an int is not modelled.
+SPACE(f25) -> unknown unsupported-expression: SPACE(f25): SPACE of a value that is not an int is not modelled.
+SPACE(c3) -> unknown unsupported-expression: SPACE(c3): SPACE of a value that is not an int is not modelled.
+SPACE(v10) -> unknown unsupported-expression: SPACE(v10): SPACE of a value that is not an int is not modelled.
+SPACE(vx) -> unknown unsupported-expression: SPACE(vx): SPACE of a value that is not an int is not modelled.
+SPACE(nc3) -> unknown unsupported-expression: SPACE(nc3): SPACE of a value that is not an int is not modelled.
+SPACE(nv10) -> unknown unsupported-expression: SPACE(nv10): SPACE of a value that is not an int is not modelled.
+SPACE(nvx) -> unknown unsupported-expression: SPACE(nvx): SPACE of a value that is not an int is not modelled.
+SPACE(dt) -> unknown unsupported-expression: SPACE(dt): SPACE of a value that is not an int is not modelled.
+SPACE(tm3) -> unknown unsupported-expression: SPACE(tm3): SPACE of a value that is not an int is not modelled.
+SPACE(dtm) -> unknown unsupported-expression: SPACE(dtm): SPACE of a value that is not an int is not modelled.
+SPACE(dt23) -> unknown unsupported-expression: SPACE(dt23): SPACE of a value that is not an int is not modelled.
+SPACE(sdt) -> unknown unsupported-expression: SPACE(sdt): SPACE of a value that is not an int is not modelled.
+SPACE(dto3) -> unknown unsupported-expression: SPACE(dto3): SPACE of a value that is not an int is not modelled.
+SPACE(u) -> unknown unsupported-expression: SPACE(u): SPACE of a value that is not an int is not modelled.
+SPACE(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+SPACE(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+SPACE(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SPACE(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+SPACE(j) -> unknown (no unknown recorded)
+SPACE(1) -> varchar(1) string {length<=1}
+SPACE(12345) -> varchar(8000) string {length<=8000}
+SPACE(2.50) -> unknown unsupported-expression: SPACE(2.50): SPACE of a value that is not an int is not modelled.
+SPACE('ab') -> unknown unsupported-expression: SPACE('ab'): SPACE of a value that is not an int is not modelled.
+SPACE(N'ab') -> unknown unsupported-expression: SPACE(N'ab'): SPACE of a value that is not an int is not modelled.
+SPACE(1e0) -> unknown unsupported-expression: SPACE(1e0): SPACE of a value that is not an int is not modelled.
+SPACE($1) -> unknown unsupported-expression: SPACE($1): SPACE of a value that is not an int is not modelled.
+REVERSE(bt) -> unknown unsupported-expression: REVERSE(bt): an argument that is not a string is not modelled.
+REVERSE(ti) -> unknown unsupported-expression: REVERSE(ti): an argument that is not a string is not modelled.
+REVERSE(si) -> unknown unsupported-expression: REVERSE(si): an argument that is not a string is not modelled.
+REVERSE(i) -> unknown unsupported-expression: REVERSE(i): an argument that is not a string is not modelled.
+REVERSE(bi) -> unknown unsupported-expression: REVERSE(bi): an argument that is not a string is not modelled.
+REVERSE(d52) -> unknown unsupported-expression: REVERSE(d52): an argument that is not a string is not modelled.
+REVERSE(d380) -> unknown unsupported-expression: REVERSE(d380): an argument that is not a string is not modelled.
+REVERSE(d3838) -> unknown unsupported-expression: REVERSE(d3838): an argument that is not a string is not modelled.
+REVERSE(n102) -> unknown unsupported-expression: REVERSE(n102): an argument that is not a string is not modelled.
+REVERSE(m) -> unknown unsupported-expression: REVERSE(m): an argument that is not a string is not modelled.
+REVERSE(sm) -> unknown unsupported-expression: REVERSE(sm): an argument that is not a string is not modelled.
+REVERSE(f) -> unknown unsupported-expression: REVERSE(f): an argument that is not a string is not modelled.
+REVERSE(r) -> unknown unsupported-expression: REVERSE(r): an argument that is not a string is not modelled.
+REVERSE(f24) -> unknown unsupported-expression: REVERSE(f24): an argument that is not a string is not modelled.
+REVERSE(f25) -> unknown unsupported-expression: REVERSE(f25): an argument that is not a string is not modelled.
+REVERSE(c3) -> varchar(3) string {length<=3}
+REVERSE(v10) -> varchar(10) string {length<=10}
+REVERSE(vx) -> varchar(max) string
+REVERSE(nc3) -> nvarchar(3) string {length<=3}
+REVERSE(nv10) -> nvarchar(10) string {length<=10}
+REVERSE(nvx) -> nvarchar(max) string
+REVERSE(dt) -> unknown unsupported-expression: REVERSE(dt): an argument that is not a string is not modelled.
+REVERSE(tm3) -> unknown unsupported-expression: REVERSE(tm3): an argument that is not a string is not modelled.
+REVERSE(dtm) -> unknown unsupported-expression: REVERSE(dtm): an argument that is not a string is not modelled.
+REVERSE(dt23) -> unknown unsupported-expression: REVERSE(dt23): an argument that is not a string is not modelled.
+REVERSE(sdt) -> unknown unsupported-expression: REVERSE(sdt): an argument that is not a string is not modelled.
+REVERSE(dto3) -> unknown unsupported-expression: REVERSE(dto3): an argument that is not a string is not modelled.
+REVERSE(u) -> unknown unsupported-expression: REVERSE(u): an argument that is not a string is not modelled.
+REVERSE(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+REVERSE(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+REVERSE(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REVERSE(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+REVERSE(j) -> unknown (no unknown recorded)
+REVERSE(1) -> unknown unsupported-expression: REVERSE(1): an argument that is not a string is not modelled.
+REVERSE(12345) -> unknown unsupported-expression: REVERSE(12345): an argument that is not a string is not modelled.
+REVERSE(2.50) -> unknown unsupported-expression: REVERSE(2.50): an argument that is not a string is not modelled.
+REVERSE('ab') -> varchar(2) string {length<=2}
+REVERSE(N'ab') -> nvarchar(2) string {length<=2}
+REVERSE(1e0) -> unknown unsupported-expression: REVERSE(1e0): an argument that is not a string is not modelled.
+REVERSE($1) -> unknown unsupported-expression: REVERSE($1): an argument that is not a string is not modelled.
+STUFF(bt, 1, 1, 'x') -> unknown unsupported-expression: STUFF(bt, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(ti, 1, 1, 'x') -> unknown unsupported-expression: STUFF(ti, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(si, 1, 1, 'x') -> unknown unsupported-expression: STUFF(si, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(i, 1, 1, 'x') -> unknown unsupported-expression: STUFF(i, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(bi, 1, 1, 'x') -> unknown unsupported-expression: STUFF(bi, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(d52, 1, 1, 'x') -> unknown unsupported-expression: STUFF(d52, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(d380, 1, 1, 'x') -> unknown unsupported-expression: STUFF(d380, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(d3838, 1, 1, 'x') -> unknown unsupported-expression: STUFF(d3838, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(n102, 1, 1, 'x') -> unknown unsupported-expression: STUFF(n102, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(m, 1, 1, 'x') -> unknown unsupported-expression: STUFF(m, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(sm, 1, 1, 'x') -> unknown unsupported-expression: STUFF(sm, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(f, 1, 1, 'x') -> unknown unsupported-expression: STUFF(f, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(r, 1, 1, 'x') -> unknown unsupported-expression: STUFF(r, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(f24, 1, 1, 'x') -> unknown unsupported-expression: STUFF(f24, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(f25, 1, 1, 'x') -> unknown unsupported-expression: STUFF(f25, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(c3, 1, 1, 'x') -> varchar(3) string null:out-of-range {length<=3}
+STUFF(v10, 1, 1, 'x') -> varchar(10) string null:out-of-range {length<=10}
+STUFF(vx, 1, 1, 'x') -> varchar(max) string null:out-of-range
+STUFF(nc3, 1, 1, 'x') -> nvarchar(3) string null:out-of-range {length<=3}
+STUFF(nv10, 1, 1, 'x') -> nvarchar(10) string null:out-of-range {length<=10}
+STUFF(nvx, 1, 1, 'x') -> nvarchar(max) string null:out-of-range
+STUFF(dt, 1, 1, 'x') -> unknown unsupported-expression: STUFF(dt, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(tm3, 1, 1, 'x') -> unknown unsupported-expression: STUFF(tm3, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(dtm, 1, 1, 'x') -> unknown unsupported-expression: STUFF(dtm, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(dt23, 1, 1, 'x') -> unknown unsupported-expression: STUFF(dt23, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(sdt, 1, 1, 'x') -> unknown unsupported-expression: STUFF(sdt, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(dto3, 1, 1, 'x') -> unknown unsupported-expression: STUFF(dto3, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(u, 1, 1, 'x') -> unknown unsupported-expression: STUFF(u, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(bin4, 1, 1, 'x') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+STUFF(vb10, 1, 1, 'x') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+STUFF(x, 1, 1, 'x') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STUFF(sv, 1, 1, 'x') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+STUFF(j, 1, 1, 'x') -> unknown (no unknown recorded)
+STUFF(1, 1, 1, 'x') -> unknown unsupported-expression: STUFF(1, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(12345, 1, 1, 'x') -> unknown unsupported-expression: STUFF(12345, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(2.50, 1, 1, 'x') -> unknown unsupported-expression: STUFF(2.50, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('ab', 1, 1, 'x') -> varchar(2) string null:out-of-range {length<=2}
+STUFF(N'ab', 1, 1, 'x') -> nvarchar(2) string null:out-of-range {length<=2}
+STUFF(1e0, 1, 1, 'x') -> unknown unsupported-expression: STUFF(1e0, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF($1, 1, 1, 'x') -> unknown unsupported-expression: STUFF($1, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, bt) -> unknown unsupported-expression: STUFF('abc', 2, 1, bt): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, ti) -> unknown unsupported-expression: STUFF('abc', 2, 1, ti): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, si) -> unknown unsupported-expression: STUFF('abc', 2, 1, si): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, i) -> unknown unsupported-expression: STUFF('abc', 2, 1, i): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, bi) -> unknown unsupported-expression: STUFF('abc', 2, 1, bi): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, d52) -> unknown unsupported-expression: STUFF('abc', 2, 1, d52): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, d380) -> unknown unsupported-expression: STUFF('abc', 2, 1, d380): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, d3838) -> unknown unsupported-expression: STUFF('abc', 2, 1, d3838): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, n102) -> unknown unsupported-expression: STUFF('abc', 2, 1, n102): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, m) -> unknown unsupported-expression: STUFF('abc', 2, 1, m): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, sm) -> unknown unsupported-expression: STUFF('abc', 2, 1, sm): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, f) -> unknown unsupported-expression: STUFF('abc', 2, 1, f): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, r) -> unknown unsupported-expression: STUFF('abc', 2, 1, r): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, f24) -> unknown unsupported-expression: STUFF('abc', 2, 1, f24): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, f25) -> unknown unsupported-expression: STUFF('abc', 2, 1, f25): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, c3) -> varchar(5) string null:out-of-range {length<=5}
+STUFF('abc', 2, 1, v10) -> varchar(12) string null:out-of-range {length<=12}
+STUFF('abc', 2, 1, vx) -> varchar(max) string null:out-of-range
+STUFF('abc', 2, 1, nc3) -> nvarchar(5) string null:out-of-range {length<=5}
+STUFF('abc', 2, 1, nv10) -> nvarchar(12) string null:out-of-range {length<=12}
+STUFF('abc', 2, 1, nvx) -> nvarchar(max) string null:out-of-range
+STUFF('abc', 2, 1, dt) -> unknown unsupported-expression: STUFF('abc', 2, 1, dt): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, tm3) -> unknown unsupported-expression: STUFF('abc', 2, 1, tm3): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, dtm) -> unknown unsupported-expression: STUFF('abc', 2, 1, dtm): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, dt23) -> unknown unsupported-expression: STUFF('abc', 2, 1, dt23): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, sdt) -> unknown unsupported-expression: STUFF('abc', 2, 1, sdt): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, dto3) -> unknown unsupported-expression: STUFF('abc', 2, 1, dto3): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, u) -> unknown unsupported-expression: STUFF('abc', 2, 1, u): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+STUFF('abc', 2, 1, vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+STUFF('abc', 2, 1, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STUFF('abc', 2, 1, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+STUFF('abc', 2, 1, j) -> unknown (no unknown recorded)
+STUFF('abc', 2, 1, 1) -> unknown unsupported-expression: STUFF('abc', 2, 1, 1): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, 12345) -> unknown unsupported-expression: STUFF('abc', 2, 1, 12345): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, 2.50) -> unknown unsupported-expression: STUFF('abc', 2, 1, 2.50): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, 'ab') -> varchar(4) string null:out-of-range {length<=4}
+STUFF('abc', 2, 1, N'ab') -> nvarchar(4) string null:out-of-range {length<=4}
+STUFF('abc', 2, 1, 1e0) -> unknown unsupported-expression: STUFF('abc', 2, 1, 1e0): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('abc', 2, 1, $1) -> unknown unsupported-expression: STUFF('abc', 2, 1, $1): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(bt, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(bt, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(ti, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(ti, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(si, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(si, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(i, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(i, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(bi, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(bi, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(d52, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(d52, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(d380, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(d380, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(d3838, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(d3838, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(n102, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(n102, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(m, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(m, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(sm, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(sm, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(f, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(f, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(r, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(r, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(f24, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(f24, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(f25, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(f25, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(c3, 2, 5, N'xyz') -> nvarchar(4) string null:out-of-range {length<=4}
+STUFF(v10, 2, 5, N'xyz') -> nvarchar(8) string null:out-of-range {length<=8}
+STUFF(vx, 2, 5, N'xyz') -> nvarchar(max) string null:out-of-range
+STUFF(nc3, 2, 5, N'xyz') -> nvarchar(4) string null:out-of-range {length<=4}
+STUFF(nv10, 2, 5, N'xyz') -> nvarchar(8) string null:out-of-range {length<=8}
+STUFF(nvx, 2, 5, N'xyz') -> nvarchar(max) string null:out-of-range
+STUFF(dt, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(dt, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(tm3, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(tm3, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(dtm, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(dtm, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(dt23, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(dt23, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(sdt, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(sdt, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(dto3, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(dto3, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(u, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(u, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(bin4, 2, 5, N'xyz') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+STUFF(vb10, 2, 5, N'xyz') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+STUFF(x, 2, 5, N'xyz') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STUFF(sv, 2, 5, N'xyz') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+STUFF(j, 2, 5, N'xyz') -> unknown (no unknown recorded)
+STUFF(1, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(1, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(12345, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(12345, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(2.50, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(2.50, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('ab', 2, 5, N'xyz') -> nvarchar(4) string null:out-of-range {length<=4}
+STUFF(N'ab', 2, 5, N'xyz') -> nvarchar(4) string null:out-of-range {length<=4}
+STUFF(1e0, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(1e0, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF($1, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF($1, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(bt, id, 1, 'x') -> unknown unsupported-expression: STUFF(bt, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(ti, id, 1, 'x') -> unknown unsupported-expression: STUFF(ti, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(si, id, 1, 'x') -> unknown unsupported-expression: STUFF(si, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(i, id, 1, 'x') -> unknown unsupported-expression: STUFF(i, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(bi, id, 1, 'x') -> unknown unsupported-expression: STUFF(bi, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(d52, id, 1, 'x') -> unknown unsupported-expression: STUFF(d52, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(d380, id, 1, 'x') -> unknown unsupported-expression: STUFF(d380, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(d3838, id, 1, 'x') -> unknown unsupported-expression: STUFF(d3838, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(n102, id, 1, 'x') -> unknown unsupported-expression: STUFF(n102, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(m, id, 1, 'x') -> unknown unsupported-expression: STUFF(m, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(sm, id, 1, 'x') -> unknown unsupported-expression: STUFF(sm, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(f, id, 1, 'x') -> unknown unsupported-expression: STUFF(f, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(r, id, 1, 'x') -> unknown unsupported-expression: STUFF(r, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(f24, id, 1, 'x') -> unknown unsupported-expression: STUFF(f24, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(f25, id, 1, 'x') -> unknown unsupported-expression: STUFF(f25, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(c3, id, 1, 'x') -> varchar(8000) string null:out-of-range {length<=8000}
+STUFF(v10, id, 1, 'x') -> varchar(8000) string null:out-of-range {length<=8000}
+STUFF(vx, id, 1, 'x') -> varchar(max) string null:out-of-range
+STUFF(nc3, id, 1, 'x') -> nvarchar(4000) string null:out-of-range {length<=4000}
+STUFF(nv10, id, 1, 'x') -> nvarchar(4000) string null:out-of-range {length<=4000}
+STUFF(nvx, id, 1, 'x') -> nvarchar(max) string null:out-of-range
+STUFF(dt, id, 1, 'x') -> unknown unsupported-expression: STUFF(dt, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(tm3, id, 1, 'x') -> unknown unsupported-expression: STUFF(tm3, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(dtm, id, 1, 'x') -> unknown unsupported-expression: STUFF(dtm, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(dt23, id, 1, 'x') -> unknown unsupported-expression: STUFF(dt23, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(sdt, id, 1, 'x') -> unknown unsupported-expression: STUFF(sdt, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(dto3, id, 1, 'x') -> unknown unsupported-expression: STUFF(dto3, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(u, id, 1, 'x') -> unknown unsupported-expression: STUFF(u, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(bin4, id, 1, 'x') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+STUFF(vb10, id, 1, 'x') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+STUFF(x, id, 1, 'x') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STUFF(sv, id, 1, 'x') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+STUFF(j, id, 1, 'x') -> unknown (no unknown recorded)
+STUFF(1, id, 1, 'x') -> unknown unsupported-expression: STUFF(1, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(12345, id, 1, 'x') -> unknown unsupported-expression: STUFF(12345, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF(2.50, id, 1, 'x') -> unknown unsupported-expression: STUFF(2.50, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF('ab', id, 1, 'x') -> varchar(8000) string null:out-of-range {length<=8000}
+STUFF(N'ab', id, 1, 'x') -> nvarchar(4000) string null:out-of-range {length<=4000}
+STUFF(1e0, id, 1, 'x') -> unknown unsupported-expression: STUFF(1e0, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+STUFF($1, id, 1, 'x') -> unknown unsupported-expression: STUFF($1, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
+QUOTENAME(bt) -> unknown unsupported-expression: QUOTENAME(bt): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(ti) -> unknown unsupported-expression: QUOTENAME(ti): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(si) -> unknown unsupported-expression: QUOTENAME(si): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(i) -> unknown unsupported-expression: QUOTENAME(i): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(bi) -> unknown unsupported-expression: QUOTENAME(bi): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(d52) -> unknown unsupported-expression: QUOTENAME(d52): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(d380) -> unknown unsupported-expression: QUOTENAME(d380): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(d3838) -> unknown unsupported-expression: QUOTENAME(d3838): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(n102) -> unknown unsupported-expression: QUOTENAME(n102): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(m) -> unknown unsupported-expression: QUOTENAME(m): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(sm) -> unknown unsupported-expression: QUOTENAME(sm): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(f) -> unknown unsupported-expression: QUOTENAME(f): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(r) -> unknown unsupported-expression: QUOTENAME(r): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(f24) -> unknown unsupported-expression: QUOTENAME(f24): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(f25) -> unknown unsupported-expression: QUOTENAME(f25): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(c3) -> nvarchar(258) string null:out-of-range {length<=258}
+QUOTENAME(v10) -> nvarchar(258) string null:out-of-range {length<=258}
+QUOTENAME(vx) -> nvarchar(258) string null:out-of-range {length<=258}
+QUOTENAME(nc3) -> nvarchar(258) string null:out-of-range {length<=258}
+QUOTENAME(nv10) -> nvarchar(258) string null:out-of-range {length<=258}
+QUOTENAME(nvx) -> nvarchar(258) string null:out-of-range {length<=258}
+QUOTENAME(dt) -> unknown unsupported-expression: QUOTENAME(dt): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(tm3) -> unknown unsupported-expression: QUOTENAME(tm3): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(dtm) -> unknown unsupported-expression: QUOTENAME(dtm): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(dt23) -> unknown unsupported-expression: QUOTENAME(dt23): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(sdt) -> unknown unsupported-expression: QUOTENAME(sdt): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(dto3) -> unknown unsupported-expression: QUOTENAME(dto3): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(u) -> unknown unsupported-expression: QUOTENAME(u): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+QUOTENAME(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+QUOTENAME(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+QUOTENAME(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+QUOTENAME(j) -> unknown (no unknown recorded)
+QUOTENAME(1) -> unknown unsupported-expression: QUOTENAME(1): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(12345) -> unknown unsupported-expression: QUOTENAME(12345): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(2.50) -> unknown unsupported-expression: QUOTENAME(2.50): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME('ab') -> nvarchar(258) string {length<=258}
+QUOTENAME(N'ab') -> nvarchar(258) string {length<=258}
+QUOTENAME(1e0) -> unknown unsupported-expression: QUOTENAME(1e0): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME($1) -> unknown unsupported-expression: QUOTENAME($1): QUOTENAME of a value that is not a string is not modelled.
+STR(bt) -> unknown unsupported-expression: STR(bt): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(ti) -> varchar(10) string {length<=10}
+STR(si) -> varchar(10) string {length<=10}
+STR(i) -> varchar(10) string {length<=10}
+STR(bi) -> varchar(10) string {length<=10}
+STR(d52) -> varchar(10) string {length<=10}
+STR(d380) -> varchar(10) string {length<=10}
+STR(d3838) -> varchar(10) string {length<=10}
+STR(n102) -> varchar(10) string {length<=10}
+STR(m) -> varchar(10) string {length<=10}
+STR(sm) -> varchar(10) string {length<=10}
+STR(f) -> varchar(10) string {length<=10}
+STR(r) -> varchar(10) string {length<=10}
+STR(f24) -> varchar(10) string {length<=10}
+STR(f25) -> varchar(10) string {length<=10}
+STR(c3) -> unknown unsupported-expression: STR(c3): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(v10) -> unknown unsupported-expression: STR(v10): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(vx) -> unknown unsupported-expression: STR(vx): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(nc3) -> unknown unsupported-expression: STR(nc3): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(nv10) -> unknown unsupported-expression: STR(nv10): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(nvx) -> unknown unsupported-expression: STR(nvx): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(dt) -> unknown unsupported-expression: STR(dt): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(tm3) -> unknown unsupported-expression: STR(tm3): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(dtm) -> unknown unsupported-expression: STR(dtm): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(dt23) -> unknown unsupported-expression: STR(dt23): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(sdt) -> unknown unsupported-expression: STR(sdt): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(dto3) -> unknown unsupported-expression: STR(dto3): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(u) -> unknown unsupported-expression: STR(u): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+STR(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+STR(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STR(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+STR(j) -> unknown (no unknown recorded)
+STR(1) -> varchar(10) string {length<=10}
+STR(12345) -> varchar(10) string {length<=10}
+STR(2.50) -> varchar(10) string {length<=10}
+STR('ab') -> unknown unsupported-expression: STR('ab'): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(N'ab') -> unknown unsupported-expression: STR(N'ab'): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(1e0) -> varchar(10) string {length<=10}
+STR($1) -> varchar(10) string {length<=10}
+STR(bt, 5, 2) -> unknown unsupported-expression: STR(bt, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(ti, 5, 2) -> varchar(5) string {length<=5}
+STR(si, 5, 2) -> varchar(5) string {length<=5}
+STR(i, 5, 2) -> varchar(5) string {length<=5}
+STR(bi, 5, 2) -> varchar(5) string {length<=5}
+STR(d52, 5, 2) -> varchar(5) string {length<=5}
+STR(d380, 5, 2) -> varchar(5) string {length<=5}
+STR(d3838, 5, 2) -> varchar(5) string {length<=5}
+STR(n102, 5, 2) -> varchar(5) string {length<=5}
+STR(m, 5, 2) -> varchar(5) string {length<=5}
+STR(sm, 5, 2) -> varchar(5) string {length<=5}
+STR(f, 5, 2) -> varchar(5) string {length<=5}
+STR(r, 5, 2) -> varchar(5) string {length<=5}
+STR(f24, 5, 2) -> varchar(5) string {length<=5}
+STR(f25, 5, 2) -> varchar(5) string {length<=5}
+STR(c3, 5, 2) -> unknown unsupported-expression: STR(c3, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(v10, 5, 2) -> unknown unsupported-expression: STR(v10, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(vx, 5, 2) -> unknown unsupported-expression: STR(vx, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(nc3, 5, 2) -> unknown unsupported-expression: STR(nc3, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(nv10, 5, 2) -> unknown unsupported-expression: STR(nv10, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(nvx, 5, 2) -> unknown unsupported-expression: STR(nvx, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(dt, 5, 2) -> unknown unsupported-expression: STR(dt, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(tm3, 5, 2) -> unknown unsupported-expression: STR(tm3, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(dtm, 5, 2) -> unknown unsupported-expression: STR(dtm, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(dt23, 5, 2) -> unknown unsupported-expression: STR(dt23, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(sdt, 5, 2) -> unknown unsupported-expression: STR(sdt, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(dto3, 5, 2) -> unknown unsupported-expression: STR(dto3, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(u, 5, 2) -> unknown unsupported-expression: STR(u, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(bin4, 5, 2) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+STR(vb10, 5, 2) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+STR(x, 5, 2) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STR(sv, 5, 2) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+STR(j, 5, 2) -> unknown (no unknown recorded)
+STR(1, 5, 2) -> varchar(5) string {length<=5}
+STR(12345, 5, 2) -> varchar(5) string {length<=5}
+STR(2.50, 5, 2) -> varchar(5) string {length<=5}
+STR('ab', 5, 2) -> unknown unsupported-expression: STR('ab', 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(N'ab', 5, 2) -> unknown unsupported-expression: STR(N'ab', 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
+STR(1e0, 5, 2) -> varchar(5) string {length<=5}
+STR($1, 5, 2) -> varchar(5) string {length<=5}
+TRANSLATE(bt, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(bt, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(ti, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(ti, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(si, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(si, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(i, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(i, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(bi, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(bi, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(d52, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(d52, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(d380, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(d380, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(d3838, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(d3838, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(n102, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(n102, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(m, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(m, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(sm, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(sm, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(f, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(f, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(r, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(r, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(f24, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(f24, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(f25, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(f25, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(c3, 'a', 'b') -> varchar(8000) string {length<=8000}
+TRANSLATE(v10, 'a', 'b') -> varchar(8000) string {length<=8000}
+TRANSLATE(vx, 'a', 'b') -> varchar(max) string
+TRANSLATE(nc3, 'a', 'b') -> nvarchar(4000) string {length<=4000}
+TRANSLATE(nv10, 'a', 'b') -> nvarchar(4000) string {length<=4000}
+TRANSLATE(nvx, 'a', 'b') -> nvarchar(max) string
+TRANSLATE(dt, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(dt, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(tm3, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(tm3, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(dtm, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(dtm, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(dt23, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(dt23, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(sdt, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(sdt, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(dto3, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(dto3, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(u, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(u, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(bin4, 'a', 'b') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+TRANSLATE(vb10, 'a', 'b') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+TRANSLATE(x, 'a', 'b') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+TRANSLATE(sv, 'a', 'b') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+TRANSLATE(j, 'a', 'b') -> unknown (no unknown recorded)
+TRANSLATE(1, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(1, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(12345, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(12345, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE(2.50, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(2.50, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE('ab', 'a', 'b') -> varchar(8000) string {length<=8000}
+TRANSLATE(N'ab', 'a', 'b') -> nvarchar(4000) string {length<=4000}
+TRANSLATE(1e0, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(1e0, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+TRANSLATE($1, 'a', 'b') -> unknown unsupported-expression: TRANSLATE($1, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
+SOUNDEX(bt) -> unknown unsupported-expression: SOUNDEX(bt): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(ti) -> unknown unsupported-expression: SOUNDEX(ti): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(si) -> unknown unsupported-expression: SOUNDEX(si): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(i) -> unknown unsupported-expression: SOUNDEX(i): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(bi) -> unknown unsupported-expression: SOUNDEX(bi): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(d52) -> unknown unsupported-expression: SOUNDEX(d52): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(d380) -> unknown unsupported-expression: SOUNDEX(d380): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(d3838) -> unknown unsupported-expression: SOUNDEX(d3838): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(n102) -> unknown unsupported-expression: SOUNDEX(n102): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(m) -> unknown unsupported-expression: SOUNDEX(m): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(sm) -> unknown unsupported-expression: SOUNDEX(sm): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(f) -> unknown unsupported-expression: SOUNDEX(f): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(r) -> unknown unsupported-expression: SOUNDEX(r): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(f24) -> unknown unsupported-expression: SOUNDEX(f24): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(f25) -> unknown unsupported-expression: SOUNDEX(f25): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(c3) -> varchar(5) string {length<=5}
+SOUNDEX(v10) -> varchar(5) string {length<=5}
+SOUNDEX(vx) -> varchar(5) string {length<=5}
+SOUNDEX(nc3) -> varchar(5) string {length<=5}
+SOUNDEX(nv10) -> varchar(5) string {length<=5}
+SOUNDEX(nvx) -> varchar(5) string {length<=5}
+SOUNDEX(dt) -> unknown unsupported-expression: SOUNDEX(dt): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(tm3) -> unknown unsupported-expression: SOUNDEX(tm3): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(dtm) -> unknown unsupported-expression: SOUNDEX(dtm): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(dt23) -> unknown unsupported-expression: SOUNDEX(dt23): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(sdt) -> unknown unsupported-expression: SOUNDEX(sdt): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(dto3) -> unknown unsupported-expression: SOUNDEX(dto3): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(u) -> unknown unsupported-expression: SOUNDEX(u): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+SOUNDEX(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+SOUNDEX(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SOUNDEX(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+SOUNDEX(j) -> unknown (no unknown recorded)
+SOUNDEX(1) -> unknown unsupported-expression: SOUNDEX(1): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(12345) -> unknown unsupported-expression: SOUNDEX(12345): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX(2.50) -> unknown unsupported-expression: SOUNDEX(2.50): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX('ab') -> varchar(5) string {length<=5}
+SOUNDEX(N'ab') -> varchar(5) string {length<=5}
+SOUNDEX(1e0) -> unknown unsupported-expression: SOUNDEX(1e0): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+SOUNDEX($1) -> unknown unsupported-expression: SOUNDEX($1): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(bt, 'a') -> unknown unsupported-expression: DIFFERENCE(bt, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(ti, 'a') -> unknown unsupported-expression: DIFFERENCE(ti, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(si, 'a') -> unknown unsupported-expression: DIFFERENCE(si, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(i, 'a') -> unknown unsupported-expression: DIFFERENCE(i, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(bi, 'a') -> unknown unsupported-expression: DIFFERENCE(bi, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(d52, 'a') -> unknown unsupported-expression: DIFFERENCE(d52, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(d380, 'a') -> unknown unsupported-expression: DIFFERENCE(d380, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(d3838, 'a') -> unknown unsupported-expression: DIFFERENCE(d3838, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(n102, 'a') -> unknown unsupported-expression: DIFFERENCE(n102, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(m, 'a') -> unknown unsupported-expression: DIFFERENCE(m, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(sm, 'a') -> unknown unsupported-expression: DIFFERENCE(sm, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(f, 'a') -> unknown unsupported-expression: DIFFERENCE(f, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(r, 'a') -> unknown unsupported-expression: DIFFERENCE(r, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(f24, 'a') -> unknown unsupported-expression: DIFFERENCE(f24, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(f25, 'a') -> unknown unsupported-expression: DIFFERENCE(f25, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(c3, 'a') -> int number/int32 {[-2147483648 2147483647]}
+DIFFERENCE(v10, 'a') -> int number/int32 {[-2147483648 2147483647]}
+DIFFERENCE(vx, 'a') -> int number/int32 {[-2147483648 2147483647]}
+DIFFERENCE(nc3, 'a') -> int number/int32 {[-2147483648 2147483647]}
+DIFFERENCE(nv10, 'a') -> int number/int32 {[-2147483648 2147483647]}
+DIFFERENCE(nvx, 'a') -> int number/int32 {[-2147483648 2147483647]}
+DIFFERENCE(dt, 'a') -> unknown unsupported-expression: DIFFERENCE(dt, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(tm3, 'a') -> unknown unsupported-expression: DIFFERENCE(tm3, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(dtm, 'a') -> unknown unsupported-expression: DIFFERENCE(dtm, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(dt23, 'a') -> unknown unsupported-expression: DIFFERENCE(dt23, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(sdt, 'a') -> unknown unsupported-expression: DIFFERENCE(sdt, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(dto3, 'a') -> unknown unsupported-expression: DIFFERENCE(dto3, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(u, 'a') -> unknown unsupported-expression: DIFFERENCE(u, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(bin4, 'a') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+DIFFERENCE(vb10, 'a') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+DIFFERENCE(x, 'a') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DIFFERENCE(sv, 'a') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+DIFFERENCE(j, 'a') -> unknown (no unknown recorded)
+DIFFERENCE(1, 'a') -> unknown unsupported-expression: DIFFERENCE(1, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(12345, 'a') -> unknown unsupported-expression: DIFFERENCE(12345, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE(2.50, 'a') -> unknown unsupported-expression: DIFFERENCE(2.50, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE('ab', 'a') -> int number/int32 {[-2147483648 2147483647]}
+DIFFERENCE(N'ab', 'a') -> int number/int32 {[-2147483648 2147483647]}
+DIFFERENCE(1e0, 'a') -> unknown unsupported-expression: DIFFERENCE(1e0, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+DIFFERENCE($1, 'a') -> unknown unsupported-expression: DIFFERENCE($1, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
 CONCAT(bt, 'x') -> varchar(2) string {length<=2}
 CONCAT(ti, 'x') -> unknown unsupported-expression: CONCAT(ti, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT(si, 'x') -> unknown unsupported-expression: CONCAT(si, 'x'): an argument whose length as a string is not modelled yet.
