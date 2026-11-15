@@ -1437,7 +1437,8 @@ not listed is not modelled.
   NULLs are skipped, so it is NULL only when every value may be. Values of different kinds take the type of highest
   precedence by a rule of their own (an integer literal beside a decimal counts its own digits), which is not modelled
   (`Greatest_and_least_skip_nulls_and_cap_a_max_string_at_8000_bytes_which_a_longer_value_fails`).
-- **`ISJSON(s [, kind])`** of a string or JSON: `int`, NULL when `s` is. **`NEWID()`**: `uniqueidentifier`, never null, and a
+- **`ISJSON(s [, kind])`** of a string or JSON: `int`, 0 or 1 (`min` 0 and `max` 1 `from` `{ "engine": "ISJSON" }`;
+  `Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null`), NULL when `s` is. **`NEWID()`**: `uniqueidentifier`, never null, and a
   new value at each call, so it is not read twice as one value
   (`Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null`).
 
@@ -1467,8 +1468,9 @@ not listed is not modelled.
   fractional digits, 7 for a `date`, 3 for a `datetime`, 0 for a `smalldatetime`; NULL when either is. A number of minutes
   is converted to `smallint`, so a wider one may overflow; an offset it can't read, or one past the range, is an error
   (9812, 9813) (`Switchoffset_and_todatetimeoffset_are_datetimeoffset_of_the_dates_fractional_digits`).
-- **`ISDATE(x)`** of a string, a number, a `bit`, a `datetime` or a `smalldatetime`: `int`, never null; `ISDATE(NULL)` is 0
-  (`Isdate_is_an_int_never_null`). Which strings read as dates depends on the session's language and `DATEFORMAT`; the type
+- **`ISDATE(x)`** of a string, a number, a `bit`, a `datetime` or a `smalldatetime`: `int`, 0 or 1 (`min` 0 and `max` 1
+  `from` `{ "engine": "ISDATE" }`), never null; `ISDATE(NULL)` is 0 (`Isdate_is_an_int_never_null`,
+  `Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null`). Which strings read as dates depends on the session's language and `DATEFORMAT`; the type
   and the nullability don't.
 - A string given as the date to any of these is converted at a precision of its own (`datetime2(7)`), and is not modelled.
 
@@ -1508,6 +1510,10 @@ unless a literal does. Observed in `FunctionObservationTests.Strings.cs`, and ev
 sweep's grid.
 
 - **`ASCII`**, **`UNICODE`**: `int`; NULL for an empty string (`Ascii_and_unicode_are_int_and_null_for_an_empty_string`).
+  `ASCII` gives a byte, 0 to 255 (`min` and `max` `from` `{ "engine": "ASCII" }`), whatever the character or the collation,
+  since it reads the string as `varchar`: the first byte of its code page's encoding, or of UTF-8's
+  (`Ascii_is_a_byte_from_0_to_255_whatever_the_character_or_collation`). `UNICODE` claims no range but `int`'s: past 65535
+  under a collation that reads supplementary characters, it depends on the collation, which isn't modelled.
 - **`CHAR(n)`**: `char(1)`; NULL outside 0 to 255, which a `tinyint` or a literal in range can't be; a `bigint` is converted
   to `int` first, an overflow (`Char_is_char_1_and_null_outside_0_to_255_and_overflows_past_int`). `NCHAR` is not modelled:
   under a supplementary-character collation it gives two UTF-16 units in an `nchar(1)`.
@@ -1652,7 +1658,7 @@ dynamic SQL (`EXEC` of a string), whose text isn't visible. Static analysis can'
 not for these facts.
 
 - **Where facts come from** (`from`): `{ "engine": "$action" }` for a `MERGE`'s `$action` (0.9) and `{ "engine": "OPENJSON type" }`
-  for `OPENJSON`'s `type` (0.13); `{ "expression": "<location>" }` for the literals a `CASE`, `IIF` or `CHOOSE` gives (0.12) or
+  for `OPENJSON`'s `type` (0.13), and `{ "engine": "ASCII" }`, `"ISDATE"` and `"ISJSON"` for the range each gives; `{ "expression": "<location>" }` for the literals a `CASE`, `IIF` or `CHOOSE` gives (0.12) or
   a set operation's queries give (0.13).
 - **A length's encoding** is left out when the collation is unknown: none declared, since a folder of scripts doesn't record
   the database's default.

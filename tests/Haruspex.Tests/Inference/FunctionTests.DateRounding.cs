@@ -46,11 +46,13 @@ public partial class FunctionTests
     }
 
     [Fact]
-    public void Isdate_is_an_int_never_null_even_of_a_null()
+    public void Isdate_is_an_int_0_or_1_never_null_even_of_a_null()
     {
-        // Isdate_is_an_int_never_null.
+        // Isdate_is_an_int_never_null, Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null.
         var doc = Procedure("SELECT ISDATE(ns) AS a, ISDATE(NULL) AS b, ISDATE(dt) AS c, ISDATE(da) AS d FROM dbo.t;");
         Assert.Equal("int", Typed(doc, "a"));
+        Assert.Equal(("0", "1", "ISDATE"), Range(doc, "a"));
+        Assert.Equal(("0", "1", "ISDATE"), Range(doc, "b"));
         Assert.Equal("int", Typed(doc, "b"));
         Assert.Equal("int", Typed(doc, "c"));
         Unknown(doc, "d");

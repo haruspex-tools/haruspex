@@ -31,7 +31,9 @@ internal sealed partial class Typer
 
     /// <summary>
     /// <c>ASCII(s)</c> and <c>UNICODE(s)</c>: int, the code of s's first character, NULL when s is empty (observed:
-    /// Ascii_and_unicode_are_int_and_null_for_an_empty_string), unless s is a literal that isn't.
+    /// Ascii_and_unicode_are_int_and_null_for_an_empty_string), unless s is a literal that isn't. ASCII's is a byte, 0 to 255
+    /// (its entry in the function table says so, <see cref="Within"/>). UNICODE's bound depends on whether the collation reads
+    /// supplementary characters, which isn't modelled, so it claims none but int's.
     /// </summary>
     private Value FirstCode(FunctionCall call, ReadScope scope)
     {
@@ -242,8 +244,9 @@ internal sealed partial class Typer
     }
 
     /// <summary>
-    /// <c>ISJSON(s [, kind])</c> of a string or JSON: int, NULL when s is (observed:
-    /// Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null). The kind is a keyword, not a value.
+    /// <c>ISJSON(s [, kind])</c> of a string or JSON: int, 0 or 1, NULL when s is (observed:
+    /// Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null, Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null).
+    /// The kind is a keyword, not a value.
     /// </summary>
     private Value IsJson(FunctionCall call, ReadScope scope)
     {

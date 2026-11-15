@@ -42,6 +42,12 @@ public partial class FunctionTests
         _ => "unknown: " + string.Join("; ", doc.Unknowns.Where(u => u.Path.EndsWith("." + name, StringComparison.Ordinal)).Select(u => IrWireNames.Of(u.Reason))),
     };
 
+    /// <summary>The field's least and greatest values, and what the least is from: <c>("0", "255", "ASCII")</c>.</summary>
+    private static (string? Min, string? Max, string? From) Range(IrDocument doc, string name) =>
+        Assert.IsType<IrScalar>(Field(doc, name).Type).Facets is var facets
+            ? (facets?.Min?.Value, facets?.Max?.Value, facets?.Min?.From.Ref)
+            : default;
+
     private static void Unknown(IrDocument doc, string name) => Assert.StartsWith("unknown", Typed(doc, name), StringComparison.Ordinal);
 
     [Fact]

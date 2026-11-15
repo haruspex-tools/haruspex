@@ -240,7 +240,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `TODATETIMEOFFSET` | `scalar.todatetimeoffset` | datetimeoffset of the date's fractional digits | `arithmetic-overflow` | [Switchoffset_and_todatetimeoffset_are_datetimeoffset_of_the_dates_fractional_digits](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Dates.cs) |
 | `@@DATEFIRST` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `@@LANGUAGE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ISDATE` | `scalar.isdate` | int, never null |  | [Isdate_is_an_int_never_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Dates.cs) |
+| `ISDATE` | `scalar.isdate` | int, 0 or 1, never null |  | [Isdate_is_an_int_never_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Dates.cs), [Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
 | `CURRENT_TIMEZONE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `CURRENT_TIMEZONE_ID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 
@@ -274,7 +274,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
-| `ISJSON` | `scalar.isjson` | int |  | [Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
+| `ISJSON` | `scalar.isjson` | int, 0 or 1 |  | [Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs), [Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
 | `JSON_ARRAY` | `scalar.json_array` | an array or tuple of its values, never null |  | [An_aggregate_over_no_rows_is_null_not_empty](../tests/Haruspex.DifferentialTests/JsonConstructorObservationTests.cs) |
 | `JSON_ARRAYAGG` | `aggregate.json_arrayagg` | an array of its values, null over no rows | `empty-aggregate` | [Json_arrayagg_follows_its_order_by](../tests/Haruspex.DifferentialTests/JsonConstructorObservationTests.cs) |
 | `JSON_MODIFY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
@@ -465,7 +465,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
-| `ASCII` | `scalar.ascii` | int | `out-of-range` | [Ascii_and_unicode_are_int_and_null_for_an_empty_string](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
+| `ASCII` | `scalar.ascii` | int, 0 to 255 | `out-of-range` | [Ascii_and_unicode_are_int_and_null_for_an_empty_string](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs), [Ascii_is_a_byte_from_0_to_255_whatever_the_character_or_collation](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |
 | `BASE64_DECODE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `BASE64_ENCODE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `CHAR` | `scalar.char` | char(1) | `out-of-range`, `arithmetic-overflow` | [Char_is_char_1_and_null_outside_0_to_255_and_overflows_past_int](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Strings.cs) |

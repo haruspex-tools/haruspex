@@ -361,7 +361,8 @@ express the bound.
 
 A scalar may carry facets, each a guarantee about its **non-null** values, and each with `from`: where it came
 from, `{ "type": "<type or alias type>" }` or `{ "check": "<schema.constraint>" }` (the constraint's location
-when it has no name), or `{ "engine": "<what>" }` for a closed set the engine itself writes, or `{ "expression":
+when it has no name), or `{ "engine": "<what>" }` for a closed set the engine itself writes or a range it fixes (`ASCII`'s
+0 to 255), or `{ "expression":
 "<location>" }` for the literals an expression gives, for the origins graph. A facet that is not proved is left out:
 absence claims nothing. None says anything about null, which is the field's `nullable`: a CHECK constraint passes when
 its condition is UNKNOWN, as it is for null, so a constraint never makes a value non-null and a value set never excludes
@@ -450,6 +451,8 @@ text's length, value and type there, from every kind of source, and nothing in i
 so this reader reads 0.21 only. Within 0.21, `out-of-range` was widened from a choice by an index out of range to any argument
 outside the range a construct reads, as a string function's code, position, count or length; its name and its sense, null
 because of an argument the construct can't use, are as they were, so a 0.21 document stays valid and a reader needs no change.
+So, within 0.21, is the fact source `engine` on a `min` and `max`: a range the engine fixes, such as `ASCII`'s 0 to 255, where it
+was a closed set's only; the schema already allowed it.
 
 **0.20** (14 Nov 2026, canonical value sets). The value match `canonical`, its set's `fold`, and the document's `folds`: a set of
 strings a `char` or `varchar` column's CHECK gives, under a collation whose comparison is proven, is exact once a value is

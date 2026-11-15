@@ -22,6 +22,21 @@ public partial class FunctionObservationTests
     }
 
     [Fact]
+    public async Task Ascii_is_a_byte_from_0_to_255_whatever_the_character_or_collation() =>
+        // The first byte of the string as varchar: of every UTF-16 code unit converted under the database's code page, of every
+        // one under a UTF-8 collation (whose first byte is at most 239 in the basic plane, 240 for an emoji), and of every char.
+        Assert.Equal(
+            "lo,hi,ulo,uhi,clo,chi,emoji: 0,255,0,239,0,255,240",
+            await Select("""
+                SELECT MIN(ASCII(NCHAR(g.value))) AS lo, MAX(ASCII(NCHAR(g.value))) AS hi,
+                    MIN(ASCII(CAST(NCHAR(g.value) COLLATE Latin1_General_100_CI_AS_SC_UTF8 AS varchar(4)))) AS ulo,
+                    MAX(ASCII(CAST(NCHAR(g.value) COLLATE Latin1_General_100_CI_AS_SC_UTF8 AS varchar(4)))) AS uhi,
+                    MIN(ASCII(CHAR(g.value % 256))) AS clo, MAX(ASCII(CHAR(g.value % 256))) AS chi,
+                    MAX(ASCII(CAST((NCHAR(55357) + NCHAR(56832)) COLLATE Latin1_General_100_CI_AS_SC_UTF8 AS varchar(4)))) AS emoji
+                FROM GENERATE_SERIES(0, 65535) AS g;
+                """));
+
+    [Fact]
     public async Task Char_is_char_1_and_null_outside_0_to_255_and_overflows_past_int()
     {
         Assert.Equal("c1 char(1), c2 char(1), c3 char(1)", await Describe($"SELECT CHAR(ti) AS c1, CHAR(i) AS c2, CHAR(bi) AS c3 FROM {Strings}"));

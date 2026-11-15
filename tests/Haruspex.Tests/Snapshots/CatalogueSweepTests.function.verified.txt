@@ -918,32 +918,32 @@ TODATETIMEOFFSET('ab', '-05:00') -> unknown unsupported-expression: TODATETIMEOF
 TODATETIMEOFFSET(N'ab', '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(N'ab', '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 TODATETIMEOFFSET(1e0, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(1e0, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 TODATETIMEOFFSET($1, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET($1, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
-ISDATE(bt) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(ti) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(si) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(i) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(bi) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(d52) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(d380) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(d3838) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(n102) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(m) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(sm) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(f) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(r) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(f24) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(f25) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(c3) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(v10) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(vx) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(nc3) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(nv10) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(nvx) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(bt) -> int number/int32 {[0 1]}
+ISDATE(ti) -> int number/int32 {[0 1]}
+ISDATE(si) -> int number/int32 {[0 1]}
+ISDATE(i) -> int number/int32 {[0 1]}
+ISDATE(bi) -> int number/int32 {[0 1]}
+ISDATE(d52) -> int number/int32 {[0 1]}
+ISDATE(d380) -> int number/int32 {[0 1]}
+ISDATE(d3838) -> int number/int32 {[0 1]}
+ISDATE(n102) -> int number/int32 {[0 1]}
+ISDATE(m) -> int number/int32 {[0 1]}
+ISDATE(sm) -> int number/int32 {[0 1]}
+ISDATE(f) -> int number/int32 {[0 1]}
+ISDATE(r) -> int number/int32 {[0 1]}
+ISDATE(f24) -> int number/int32 {[0 1]}
+ISDATE(f25) -> int number/int32 {[0 1]}
+ISDATE(c3) -> int number/int32 {[0 1]}
+ISDATE(v10) -> int number/int32 {[0 1]}
+ISDATE(vx) -> int number/int32 {[0 1]}
+ISDATE(nc3) -> int number/int32 {[0 1]}
+ISDATE(nv10) -> int number/int32 {[0 1]}
+ISDATE(nvx) -> int number/int32 {[0 1]}
 ISDATE(dt) -> unknown unsupported-expression: ISDATE(dt): ISDATE of a value of this type is not modelled.
 ISDATE(tm3) -> unknown unsupported-expression: ISDATE(tm3): ISDATE of a value of this type is not modelled.
-ISDATE(dtm) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(dtm) -> int number/int32 {[0 1]}
 ISDATE(dt23) -> unknown unsupported-expression: ISDATE(dt23): ISDATE of a value of this type is not modelled.
-ISDATE(sdt) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(sdt) -> int number/int32 {[0 1]}
 ISDATE(dto3) -> unknown unsupported-expression: ISDATE(dto3): ISDATE of a value of this type is not modelled.
 ISDATE(u) -> unknown unsupported-expression: ISDATE(u): ISDATE of a value of this type is not modelled.
 ISDATE(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
@@ -951,13 +951,13 @@ ISDATE(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not mode
 ISDATE(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 ISDATE(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ISDATE(j) -> unknown (no unknown recorded)
-ISDATE(1) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(12345) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(2.50) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE('ab') -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(N'ab') -> int number/int32 {[-2147483648 2147483647]}
-ISDATE(1e0) -> int number/int32 {[-2147483648 2147483647]}
-ISDATE($1) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(1) -> int number/int32 {[0 1]}
+ISDATE(12345) -> int number/int32 {[0 1]}
+ISDATE(2.50) -> int number/int32 {[0 1]}
+ISDATE('ab') -> int number/int32 {[0 1]}
+ISDATE(N'ab') -> int number/int32 {[0 1]}
+ISDATE(1e0) -> int number/int32 {[0 1]}
+ISDATE($1) -> int number/int32 {[0 1]}
 GETDATE() -> datetime datetime/local
 GETUTCDATE() -> datetime datetime/local
 SYSDATETIME() -> datetime2(7) datetime/local
@@ -2740,12 +2740,12 @@ ISJSON(f) -> unknown unsupported-expression: ISJSON(f): ISJSON of a value that i
 ISJSON(r) -> unknown unsupported-expression: ISJSON(r): ISJSON of a value that is not a string is not modelled.
 ISJSON(f24) -> unknown unsupported-expression: ISJSON(f24): ISJSON of a value that is not a string is not modelled.
 ISJSON(f25) -> unknown unsupported-expression: ISJSON(f25): ISJSON of a value that is not a string is not modelled.
-ISJSON(c3) -> int number/int32 {[-2147483648 2147483647]}
-ISJSON(v10) -> int number/int32 {[-2147483648 2147483647]}
-ISJSON(vx) -> int number/int32 {[-2147483648 2147483647]}
-ISJSON(nc3) -> int number/int32 {[-2147483648 2147483647]}
-ISJSON(nv10) -> int number/int32 {[-2147483648 2147483647]}
-ISJSON(nvx) -> int number/int32 {[-2147483648 2147483647]}
+ISJSON(c3) -> int number/int32 {[0 1]}
+ISJSON(v10) -> int number/int32 {[0 1]}
+ISJSON(vx) -> int number/int32 {[0 1]}
+ISJSON(nc3) -> int number/int32 {[0 1]}
+ISJSON(nv10) -> int number/int32 {[0 1]}
+ISJSON(nvx) -> int number/int32 {[0 1]}
 ISJSON(dt) -> unknown unsupported-expression: ISJSON(dt): ISJSON of a value that is not a string is not modelled.
 ISJSON(tm3) -> unknown unsupported-expression: ISJSON(tm3): ISJSON of a value that is not a string is not modelled.
 ISJSON(dtm) -> unknown unsupported-expression: ISJSON(dtm): ISJSON of a value that is not a string is not modelled.
@@ -2757,12 +2757,12 @@ ISJSON(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled
 ISJSON(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 ISJSON(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 ISJSON(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
-ISJSON(j) -> int number/int32 {[-2147483648 2147483647]}
+ISJSON(j) -> int number/int32 {[0 1]}
 ISJSON(1) -> unknown unsupported-expression: ISJSON(1): ISJSON of a value that is not a string is not modelled.
 ISJSON(12345) -> unknown unsupported-expression: ISJSON(12345): ISJSON of a value that is not a string is not modelled.
 ISJSON(2.50) -> unknown unsupported-expression: ISJSON(2.50): ISJSON of a value that is not a string is not modelled.
-ISJSON('ab') -> int number/int32 {[-2147483648 2147483647]}
-ISJSON(N'ab') -> int number/int32 {[-2147483648 2147483647]}
+ISJSON('ab') -> int number/int32 {[0 1]}
+ISJSON(N'ab') -> int number/int32 {[0 1]}
 ISJSON(1e0) -> unknown unsupported-expression: ISJSON(1e0): ISJSON of a value that is not a string is not modelled.
 ISJSON($1) -> unknown unsupported-expression: ISJSON($1): ISJSON of a value that is not a string is not modelled.
 NEWID() -> uniqueidentifier uuid
@@ -2781,12 +2781,12 @@ ASCII(f) -> unknown unsupported-expression: ASCII(f): a code of a value that is 
 ASCII(r) -> unknown unsupported-expression: ASCII(r): a code of a value that is not a string is not modelled.
 ASCII(f24) -> unknown unsupported-expression: ASCII(f24): a code of a value that is not a string is not modelled.
 ASCII(f25) -> unknown unsupported-expression: ASCII(f25): a code of a value that is not a string is not modelled.
-ASCII(c3) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
-ASCII(v10) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
-ASCII(vx) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
-ASCII(nc3) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
-ASCII(nv10) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
-ASCII(nvx) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
+ASCII(c3) -> int number/int32 null:out-of-range {[0 255]}
+ASCII(v10) -> int number/int32 null:out-of-range {[0 255]}
+ASCII(vx) -> int number/int32 null:out-of-range {[0 255]}
+ASCII(nc3) -> int number/int32 null:out-of-range {[0 255]}
+ASCII(nv10) -> int number/int32 null:out-of-range {[0 255]}
+ASCII(nvx) -> int number/int32 null:out-of-range {[0 255]}
 ASCII(dt) -> unknown unsupported-expression: ASCII(dt): a code of a value that is not a string is not modelled.
 ASCII(tm3) -> unknown unsupported-expression: ASCII(tm3): a code of a value that is not a string is not modelled.
 ASCII(dtm) -> unknown unsupported-expression: ASCII(dtm): a code of a value that is not a string is not modelled.
@@ -2802,8 +2802,8 @@ ASCII(j) -> unknown (no unknown recorded)
 ASCII(1) -> unknown unsupported-expression: ASCII(1): a code of a value that is not a string is not modelled.
 ASCII(12345) -> unknown unsupported-expression: ASCII(12345): a code of a value that is not a string is not modelled.
 ASCII(2.50) -> unknown unsupported-expression: ASCII(2.50): a code of a value that is not a string is not modelled.
-ASCII('ab') -> int number/int32 {[-2147483648 2147483647]}
-ASCII(N'ab') -> int number/int32 {[-2147483648 2147483647]}
+ASCII('ab') -> int number/int32 {[0 255]}
+ASCII(N'ab') -> int number/int32 {[0 255]}
 ASCII(1e0) -> unknown unsupported-expression: ASCII(1e0): a code of a value that is not a string is not modelled.
 ASCII($1) -> unknown unsupported-expression: ASCII($1): a code of a value that is not a string is not modelled.
 UNICODE(bt) -> unknown unsupported-expression: UNICODE(bt): a code of a value that is not a string is not modelled.

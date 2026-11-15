@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using System.Collections.Immutable;
+using System.Globalization;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -64,6 +65,8 @@ internal sealed partial class Typer
 
     private const string Tests = "Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null";
 
+    private const string ZeroOrOne = "Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null";
+
     private const string Choices = "Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results";
 
     private const string Coalescing = "Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments";
@@ -118,7 +121,7 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.DateBucket, (3, 4), "the date's type", [ArithmeticOverflow], [Rounded], (a, e, s) => a.DateRounded(Call(e), s, bucket: true)),
         Typing(ScalarFunctions.SwitchOffset, (2, 2), "datetimeoffset of the date's fractional digits", [ArithmeticOverflow], [Offsets], (a, e, s) => a.AtOffset(Call(e), s)),
         Typing(ScalarFunctions.ToDateTimeOffset, (2, 2), "datetimeoffset of the date's fractional digits", [ArithmeticOverflow], [Offsets], (a, e, s) => a.AtOffset(Call(e), s)),
-        Typing(ScalarFunctions.IsDate, (1, 1), "int, never null", [], ["Isdate_is_an_int_never_null"], (a, e, s) => a.IsDate(Call(e), s)),
+        Typing(ScalarFunctions.IsDate, (1, 1), "int, 0 or 1, never null", [], ["Isdate_is_an_int_never_null", ZeroOrOne], (a, e, s) => Within(a.IsDate(Call(e), s), 0, 1, "ISDATE")),
         Typing(ScalarFunctions.GetDate, (0, 0), "datetime, never null", [], [Now], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.DateTime), [], e), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.GetUtcDate, (0, 0), "datetime, never null", [], [Now], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.DateTime), [], e), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.SysDateTime, (0, 0), "datetime2(7), never null", [], [Now], (a, e, s) => a.Typed(new ScalarType(BuiltInType.DateTime2, Precision: 7), [], e), readsOnlyItsArguments: false),
@@ -145,7 +148,7 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.Concat, null, "as long as its arguments together, never null", [], ["Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null"], (a, e, s) => a.Concat(Call(e), s, separated: false)),
         Typing(ScalarFunctions.ConcatWithSeparator, null, "as long as its arguments and separators together, never null", [], ["Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null"], (a, e, s) => a.Concat(Call(e), s, separated: true)),
 
-        Typing(ScalarFunctions.Ascii, (1, 1), "int", [OutOfRange], [Codes], (a, e, s) => a.FirstCode(Call(e), s)),
+        Typing(ScalarFunctions.Ascii, (1, 1), "int, 0 to 255", [OutOfRange], [Codes, "Ascii_is_a_byte_from_0_to_255_whatever_the_character_or_collation"], (a, e, s) => Within(a.FirstCode(Call(e), s), 0, 255, "ASCII")),
         Typing(ScalarFunctions.Unicode, (1, 1), "int", [OutOfRange], [Codes], (a, e, s) => a.FirstCode(Call(e), s)),
         Typing(ScalarFunctions.CharOf, (1, 1), "char(1)", [OutOfRange, ArithmeticOverflow], ["Char_is_char_1_and_null_outside_0_to_255_and_overflows_past_int"], (a, e, s) => a.CharOf(Call(e), s)),
         Typing(ScalarFunctions.CharIndex, (2, 3), "int, bigint over max", [ArithmeticOverflow], [Positions, WideStarts], (a, e, s) => a.Position(Call(e), s)),
@@ -205,7 +208,7 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.JsonObject, null, "an object of its keys, never null", [], ["Json_object_writes_a_repeated_literal_key_twice"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonObject), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.JsonArray, null, "an array or tuple of its values, never null", [], ["An_aggregate_over_no_rows_is_null_not_empty"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonArray), readsOnlyItsArguments: false),
 
-        Typing(ScalarFunctions.IsJson, (1, 2), "int", [], [Tests], (a, e, s) => a.IsJson(Call(e), s)),
+        Typing(ScalarFunctions.IsJson, (1, 2), "int, 0 or 1", [], [Tests, ZeroOrOne], (a, e, s) => Within(a.IsJson(Call(e), s), 0, 1, "ISJSON")),
         Typing(ScalarFunctions.NewId, (0, 0), "uniqueidentifier, never null", [], [Tests], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.UniqueIdentifier), [], e), readsOnlyItsArguments: false),
 
         // ---- aggregates ----
@@ -314,5 +317,25 @@ internal sealed partial class Typer
         }
 
         return type(this, expression, scope);
+    }
+
+    /// <summary>
+    /// An int a function gives only within a range the engine fixes: its least and greatest values are those, in place of int's
+    /// own, from the engine (<see cref="IrFactSourceKind.Engine"/>, named by the function). The function table applies it,
+    /// beside the rule it states: ASCII's byte, 0 to 255, whatever the character or collation, since it reads the string as
+    /// varchar (observed: Ascii_is_a_byte_from_0_to_255_whatever_the_character_or_collation); ISDATE's and ISJSON's 0 or 1
+    /// (Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null).
+    /// </summary>
+    private static Value Within(Value value, int least, int greatest, string function)
+    {
+        if (value.Shape is not ScalarShape scalar)
+            return value;
+        var from = new IrFactSource(IrFactSourceKind.Engine, function);
+        var facets = (scalar.Type.Facets ?? new IrFacets()) with
+        {
+            Min = new IrBound(least.ToString(CultureInfo.InvariantCulture), true, from),
+            Max = new IrBound(greatest.ToString(CultureInfo.InvariantCulture), true, from),
+        };
+        return value with { Shape = scalar with { Type = scalar.Type with { Facets = facets } } };
     }
 }

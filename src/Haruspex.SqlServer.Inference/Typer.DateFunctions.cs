@@ -192,8 +192,8 @@ internal sealed partial class Typer
     }
 
     /// <summary>
-    /// <c>ISDATE(x)</c> of a string, a number, a datetime or a smalldatetime: int, never null; NULL gives 0 (observed:
-    /// Isdate_is_an_int_never_null). Which strings read as dates depends on the session's language and DATEFORMAT, but the
+    /// <c>ISDATE(x)</c> of a string, a number, a datetime or a smalldatetime: int, 0 or 1, never null; NULL gives 0 (observed:
+    /// Isdate_is_an_int_never_null, Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null). Which strings read as dates depends on the session's language and DATEFORMAT, but the
     /// type and the nullability don't.
     /// </summary>
     private Value IsDate(FunctionCall call, ReadScope scope)

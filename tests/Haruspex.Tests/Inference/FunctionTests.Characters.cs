@@ -15,6 +15,17 @@ public partial class FunctionTests
     }
 
     [Fact]
+    public void Ascii_is_from_0_to_255_by_the_engine_and_unicode_has_no_range()
+    {
+        // Ascii_is_a_byte_from_0_to_255_whatever_the_character_or_collation. UNICODE's bound depends on the collation, so it
+        // claims none beyond int's.
+        var doc = Procedure("SELECT ASCII(s) AS a, ASCII(N'x') AS c, UNICODE(ns) AS u FROM dbo.t;");
+        Assert.Equal(("0", "255", "ASCII"), Range(doc, "a"));
+        Assert.Equal(("0", "255", "ASCII"), Range(doc, "c"));
+        Assert.Equal(("-2147483648", "2147483647", "int"), Range(doc, "u"));
+    }
+
+    [Fact]
     public void Char_is_char_1_out_of_range_but_for_a_tinyint_or_a_literal_in_range_and_overflows_from_a_bigint()
     {
         // Char_is_char_1_and_null_outside_0_to_255_and_overflows_past_int.

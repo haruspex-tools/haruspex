@@ -57,6 +57,19 @@ public partial class FunctionObservationTests
     }
 
     [Fact]
+    public async Task Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null()
+    {
+        // The reference says each returns 1 or 0; over strings of every kind they read, that is all they give, but ISJSON's NULL.
+        Assert.Equal(
+            "d,j: 0,null;0,0;0,1;1,0",
+            await Select("""
+                SELECT DISTINCT ISDATE(x) AS d, ISJSON(x) AS j
+                FROM (VALUES (NULL), (''), ('x'), ('2026-01-05'), ('{}'), ('[1]'), ('1'), ('null'), ('Jan 5 2026'), ('31/02/2026')) AS v (x)
+                ORDER BY d, j;
+                """));
+    }
+
+    [Fact]
     public async Task Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null()
     {
         Assert.Equal("a int, b int, c int, n uniqueidentifier", await Describe($"SELECT ISJSON(v) AS a, ISJSON(nm) AS b, ISJSON(c, OBJECT) AS c, NEWID() AS n FROM {Numbers}"));

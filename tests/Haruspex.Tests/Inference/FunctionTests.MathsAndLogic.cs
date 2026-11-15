@@ -55,11 +55,12 @@ public partial class FunctionTests
     }
 
     [Fact]
-    public void Isjson_is_an_int_null_as_its_string_is_and_newid_a_uniqueidentifier_never_null()
+    public void Isjson_is_an_int_0_or_1_null_as_its_string_is_and_newid_a_uniqueidentifier_never_null()
     {
-        // Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null.
+        // Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null, Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null.
         var doc = Procedure("SELECT ISJSON(doc) AS a, ISJSON(s) AS b, NEWID() AS c, ISJSON(n) AS d FROM dbo.t;");
         Assert.Equal("int nullable-column", Typed(doc, "a"));
+        Assert.Equal(("0", "1", "ISJSON"), Range(doc, "a"));
         Assert.Equal("int", Typed(doc, "b"));
         Assert.Equal("uniqueidentifier", Typed(doc, "c"));
         Unknown(doc, "d");

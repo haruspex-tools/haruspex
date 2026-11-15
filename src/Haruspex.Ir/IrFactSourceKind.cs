@@ -10,8 +10,8 @@ public enum IrFactSourceKind
     Check,
 
     /// <summary>
-    /// The engine itself: a value it writes from a closed set, such as <c>$action</c> in a <c>MERGE</c>'s <c>OUTPUT</c>. The
-    /// ref names the value.
+    /// The engine itself: a value it writes from a closed set, such as <c>$action</c> in a <c>MERGE</c>'s <c>OUTPUT</c>, or
+    /// within a range it fixes, such as <c>ASCII</c>'s 0 to 255. The ref names the value.
     /// </summary>
     Engine,
 
