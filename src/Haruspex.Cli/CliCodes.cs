@@ -33,10 +33,10 @@ internal static class CliCodes
     public static DiagnosticCode CannotWrite { get; } = new(6008, DiagnosticSeverity.Error, "The output can't be written");
 
     /// <summary>
-    /// The config file's <c>references</c> beside a source that is a folder of scripts, which has no references to find, or a
-    /// project file, which says where its own are: they are read only with a DACPAC.
+    /// The config file's <c>references</c> beside a source that is a folder of scripts, which has no references to find: they are read
+    /// only with a DACPAC or a project file.
     /// </summary>
-    public static DiagnosticCode ReferencesUnused { get; } = new(6009, DiagnosticSeverity.Warning, "References with a source that isn't a DACPAC");
+    public static DiagnosticCode ReferencesUnused { get; } = new(6009, DiagnosticSeverity.Warning, "References with a folder of scripts");
 
     /// <summary>
     /// The config file's <c>collation</c> beside a DACPAC that records another: the package's is the database's, so it is the

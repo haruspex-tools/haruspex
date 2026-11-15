@@ -62,6 +62,8 @@ internal static class ProjectXml
     public const string DatabaseSqlCmdVariable = "DatabaseSqlCmdVariable";
     public const string ServerSqlCmdVariable = "ServerSqlCmdVariable";
     public const string Version = "Version";
+    public const string DacpacName = "DacpacName";
+    public const string HintPath = "HintPath";
 
     // The properties: the database's settings, and those of the SDK's default items.
     public const string DSP = "DSP";
@@ -83,6 +85,7 @@ internal static class ProjectXml
     public const string Release = "Release";
     public const string ImportDirectoryBuildProps = "ImportDirectoryBuildProps";
     public const string ImportDirectoryBuildTargets = "ImportDirectoryBuildTargets";
+    public const string RestorePackagesPath = "RestorePackagesPath";
 
     // The SDK, and the files MSBuild imports on its own.
     public const string MicrosoftBuildSql = "Microsoft.Build.Sql";

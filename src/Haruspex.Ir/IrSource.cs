@@ -22,8 +22,9 @@ public sealed record IrSource(string Dialect)
     public IrPackage? Package { get; init; }
 
     /// <summary>
-    /// The packages <see cref="Package"/> refers to, whether found or not (0.19), held in the file's order (by name, then
-    /// database, the same database first) whatever order they are given in, so that two sources that say the same are equal.
+    /// The packages <see cref="Package"/> refers to, or a project file and the projects read with it refer to, whether found or
+    /// not (0.19), held in the file's order (by name, then database, the same database first) whatever order they are given in, so
+    /// that two sources that say the same are equal.
     /// Empty when there are none, and then the file leaves <c>references</c> out.
     /// </summary>
     public EquatableArray<IrPackageReference> References

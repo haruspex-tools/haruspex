@@ -42,8 +42,14 @@ public static class SourceCodes
     public static DiagnosticCode UnreadableProject { get; } = new(1010, DiagnosticSeverity.Error, "A file that can't be read as a database project");
 
     /// <summary>
-    /// A reference a project makes that haruspex doesn't read yet (another database, a DACPAC, a package): whatever is named in it
-    /// is unknown, exactly as when the scripts are read as a folder.
+    /// Retired: a reference a project made that wasn't read yet (another database, a DACPAC, a package). Each is read
+    /// now, as a DACPAC's are, but for one to a database on another server, which <see cref="OtherServer"/> reports.
     /// </summary>
-    public static DiagnosticCode ReferenceNotRead { get; } = new(1011, DiagnosticSeverity.Note, "A project's reference isn't read yet");
+    public static DiagnosticCode ReferenceNotRead { get; } = new(1011, DiagnosticSeverity.Note, "A project's reference isn't read yet") { Retired = true };
+
+    /// <summary>
+    /// A reference, from a project or a DACPAC, to a database on another server (<c>ServerSqlCmdVariable</c>): a body reaches it only
+    /// by a four-part name, which nothing binds, so it isn't read, and a name in it is unknown as any name in another server is.
+    /// </summary>
+    public static DiagnosticCode OtherServer { get; } = new(1012, DiagnosticSeverity.Note, "A reference to a database on another server isn't read");
 }

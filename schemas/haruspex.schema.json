@@ -16,7 +16,7 @@
       "minLength": 1
     },
     "references": {
-      "description": "Folders to look for the DACPACs a .dacpac source refers to, relative to this file, in order, after the folder of the package that refers to them.",
+      "description": "Folders to look for the DACPACs a .dacpac or .sqlproj source refers to, relative to this file, in order: after the folder of the package that refers to them, or where a project's build takes them from.",
       "type": "array",
       "items": { "type": "string", "minLength": 1 }
     },

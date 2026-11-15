@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Config;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
@@ -22,7 +23,7 @@ internal sealed class SqlProject
 {
     private readonly DatabaseModel model;
 
-    /// <summary>What the IR's source record says of the packages read, or nothing for a folder (<see cref="Recorded"/>).</summary>
+    /// <summary>What the IR's source record says of the packages read, or nothing for a folder (<see cref="Recorded(IEnumerable{ReferenceRead})"/>).</summary>
     private readonly Func<IrSource, IrSource> recorded;
 
     /// <summary>The folder a location's file is relative to (<see cref="FolderOf"/>).</summary>
@@ -65,16 +66,29 @@ internal sealed class SqlProject
     public static bool IsProjectFile(string source) => source.EndsWith(".sqlproj", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Reads the project file at <paramref name="project"/> and the projects of its database it refers to, as its build would; the
-    /// IR it infers records no package, as a folder's doesn't (a project's scripts aren't hashed).
+    /// Reads the project file at <paramref name="project"/> and what it refers to, as its build would, looking for a referenced
+    /// DACPAC where the build takes it from and then in <paramref name="references"/>; the IR it infers records the packages read, as
+    /// a DACPAC's does, and no package of its own (a project's scripts aren't hashed).
     /// </summary>
     /// <param name="project">The <c>.sqlproj</c>.</param>
+    /// <param name="references">The config file's <c>references</c> folders.</param>
     /// <param name="collation">The config file's <c>collation</c>, used only when the project's isn't read (it always records one otherwise).</param>
-    public static SqlProject LoadProject(string project, string? collation = null)
+    public static SqlProject LoadProject(string project, IReadOnlyList<string> references, string? collation = null) =>
+        LoadProject(project, SqlProjectReader.Read(project, references), collation);
+
+    /// <summary>The project at <paramref name="project"/>, from what reading it found.</summary>
+    /// <param name="project">The <c>.sqlproj</c>.</param>
+    /// <param name="read">What reading it found.</param>
+    /// <param name="collation">The config file's <c>collation</c>.</param>
+    internal static SqlProject LoadProject(string project, SqlProjectReadResult read, string? collation = null)
     {
-        var read = SqlProjectReader.Read(project);
         var folder = Path.GetDirectoryName(Path.GetFullPath(project)) ?? ".";
-        return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, _ => folder);
+        var packages = Folders(read.References.Select(r => r.Found).OfType<LoadedPackage>());
+        return new SqlProject(
+            read.Model.WithDeclaredCollation(collation),
+            read.Diagnostics,
+            file => packages.GetValueOrDefault(file.Split('/')[0], folder),
+            source => source with { References = Recorded(read.References) });
     }
 
     /// <summary>
@@ -87,9 +101,7 @@ internal sealed class SqlProject
     public static SqlProject LoadPackage(string package, IReadOnlyList<string> references, string? collation = null)
     {
         var read = DacpacReader.Read(package, references);
-        var folders = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var found in read.References.Select(r => r.Found).Prepend(read.Package).OfType<LoadedPackage>())
-            folders.TryAdd(found.Name, Path.GetDirectoryName(found.Path) ?? ".");
+        var folders = Folders(read.References.Select(r => r.Found).Prepend(read.Package).OfType<LoadedPackage>());
         var beside = Path.GetDirectoryName(Path.GetFullPath(package)) ?? ".";
         return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, file => folders.GetValueOrDefault(file.Split('/')[0], beside), source => Recorded(source, read));
     }
@@ -109,8 +121,21 @@ internal sealed class SqlProject
     private static IrSource Recorded(IrSource source, DacpacReadResult read) => source with
     {
         Package = read.Package is { } package ? new IrPackage(package.Name, package.Sha256) : null,
-        References = [.. read.References.Select(r => new IrPackageReference(r.Name, r.Found?.Sha256, r.Database))],
+        References = Recorded(read.References),
     };
+
+    /// <summary>The packages a source refers to, by file name and SHA-256, as the IR records them.</summary>
+    private static EquatableArray<IrPackageReference> Recorded(IEnumerable<ReferenceRead> references) =>
+        [.. references.Select(r => new IrPackageReference(r.Name, r.Found?.Sha256, r.Database))];
+
+    /// <summary>The folder each package was found in, by its file name, the first for a name winning.</summary>
+    private static Dictionary<string, string> Folders(IEnumerable<LoadedPackage> packages)
+    {
+        var folders = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var found in packages)
+            folders.TryAdd(found.Name, Path.GetDirectoryName(found.Path) ?? ".");
+        return folders;
+    }
 
     /// <summary>
     /// The procedures that match any of the patterns, and the patterns that match none. A pattern that matches

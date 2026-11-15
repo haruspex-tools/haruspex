@@ -14,7 +14,7 @@ HAR1005
 broken.dacpac: error HAR1005: broken.dacpac can't be read as a DACPAC: Central Directory corrupt.
 
 HAR1007
-db/db.sqlproj:5:15: warning HAR1007: db.sqlproj refers to ..\shelf\shelf.sqlproj, a project of the same database, which isn't found: what it defines is missing.
+db/db.sqlproj:5:15: warning HAR1007: db.sqlproj refers to the project ..\shelf\shelf.sqlproj, of the same database, which isn't found: what it defines is missing.
 
 HAR1008
 db/db.sqlproj:5:19: warning HAR1008: DefaultCollation, a setting of the database, isn't read: $(LibraryCollation) is defined nowhere in the project or the files it imports, so a build would take it from the environment or its command line, if from anywhere.
@@ -25,8 +25,8 @@ db/db.sqlproj:5:15: error HAR1009: db.sqlproj builds ..\archive\loans.sql, which
 HAR1010
 db/db.sqlproj:1:2: error HAR1010: db.sqlproj uses the SDK MSBuild.Sdk.SqlProj/3.0.0, which haruspex doesn't read: it reads Microsoft.Build.Sql projects and legacy SSDT ones.
 
-HAR1011
-db/db.sqlproj:5:15: note HAR1011: db.sqlproj refers to the DACPAC ..\archive\archive.dacpac, which isn't read from a project yet: a name in it stays unknown.
+HAR1012
+db/db.sqlproj:5:15: note HAR1012: db.sqlproj refers to the project ..\archive\archive.sqlproj, the database $(Archive) on the server $(Annexe), which isn't read: a name in it, which a body writes in four parts, stays unknown.
 
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
@@ -311,7 +311,7 @@ HAR6008
 haruspex: error HAR6008: cannot write to out: …
 
 HAR6009
-haruspex.json: warning HAR6009: "references" is read only when the source is a .dacpac, and db is a folder of scripts.
+haruspex.json: warning HAR6009: "references" is read only when the source is a .dacpac or a .sqlproj, and db is a folder of scripts.
 
 HAR6010
 haruspex.json: warning HAR6010: "collation" is Latin1_General_100_CI_AS, but atelier.dacpac records SQL_Latin1_General_CP1_CI_AS, the database's own, which is the one used.

@@ -2,8 +2,8 @@
 
 Reads a SQL Server database project into a
 [Haruspex.SqlServer.Model](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md): a folder of
-`.sql` scripts, such as an SSDT or `Microsoft.Build.Sql` project's; that project's file, `.sqlproj`, with the projects of the
-same database it refers to; or a DACPAC with the DACPACs of the same database it refers to. It parses with [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom), Microsoft's own
+`.sql` scripts, such as an SSDT or `Microsoft.Build.Sql` project's; that project's file, `.sqlproj`, with the projects and DACPACs
+it refers to; or a DACPAC with the DACPACs it refers to. It parses with [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom), Microsoft's own
 T-SQL parser (MIT), reads `model.xml` with .NET's own zip and XML readers, and needs neither DacFx nor a database.
 
 ## How data flows through it
@@ -50,12 +50,20 @@ flowchart LR
     project["a .sqlproj"] --> evaluated["ProjectEvaluator: properties, then items"]
     evaluated --> files["ProjectFiles: the scripts the build reads, each with its settings"]
     evaluated --> settings["ProjectSettings: the database's settings"]
-    evaluated --> refs["ProjectReferences: projects of the same database"]
+    evaluated --> refs["ProjectReferences: projects and DACPACs, where the build takes each"]
     refs --> project
+    refs --> packages["PackageSet: DACPACs, as a DACPAC's references are"]
     files --> scripts["ScriptFile, ScriptReader: as a folder's"]
     scripts --> model["DatabaseModel, with its DatabaseSettings"]
+    packages --> model
     settings --> model
 ```
+
+`ProjectReading` holds one read: each database from its root project, the projects of its database and the DACPACs they refer to;
+another database, a project or a DACPAC, into a model of its own, one level down. Where each reference is looked for
+(`ProjectReferences`, `PackageCache`) is what its build was observed to use: a DACPAC's `Include`, a NuGet package's
+`tools/<name>.dacpac` in the folder the restore gave its version, then the config file's `references` folders by file name
+(decision 0045).
 
 MSBuild is evaluated as far as decision 0044 says; what isn't is carried as a doubt to whatever it touches, and reported only
 where that is something read (`Doubt`). The guide's chapter 2 says how, and `ProjectEquivalenceTests` proves a project reads
@@ -63,7 +71,8 @@ as the package its build makes.
 
 Tables are elements of `model.xml`, read as data (`TableReader`); each module keeps its text, header and body, which is parsed
 and read by the same `ModuleReader` a folder's script is (`ModuleTextReader`). Every package of the same database reachable
-through references is read once into the one model; another database's package is found and hashed, not read. A location
+through references is read once into the one model; another database's package is read into a model of its own
+(`PackageSet`, which a project's read shares). A location
 names the package and the object, with a line in the object's own text (`sales.dacpac/[sales].[get_order]:3:5`). The guide's
 chapter 2 says why each is so, and `DacpacEquivalenceTests` proves a package of each fixture reads as its folder does.
 
@@ -78,8 +87,8 @@ var orders = read.Model.FindTable(new ObjectName("sales", "orders"));
 var package = DacpacReader.Read("bin/Release/Sales.dacpac", ["../Shared/bin/Release"]);
 Console.WriteLine($"{package.Package?.Name} {package.Package?.Sha256}, {package.Model.Settings?.Collation}");
 
-var project = SqlProjectReader.Read("Sales/Sales.sqlproj");
-Console.WriteLine($"{project.Projects.Count} projects, {project.Model.Settings?.Collation}");
+var project = SqlProjectReader.Read("Sales/Sales.sqlproj", ["../Shared/bin/Release"]);
+Console.WriteLine($"{project.Projects.Count} projects, {project.References.Count} packages, {project.Model.Settings?.Collation}");
 ```
 
 ## What it guarantees
@@ -106,15 +115,17 @@ Console.WriteLine($"{project.Projects.Count} projects, {project.Model.Settings?.
   projects; every kind of item a build reads or leaves out), for WideWorldImporters' own legacy project, and for every
   fixture as a project that sets nothing, the model has exactly the package's objects and settings, and the output is byte
   for byte the package's once locations are rewritten (`ProjectEquivalenceTests`). Each script starts with the
-  `ANSI_NULLS` and `QUOTED_IDENTIFIER` its build gives it, from its item or its own project.
+  `ANSI_NULLS` and `QUOTED_IDENTIFIER` its build gives it, from its item or its own project. So do projects that refer to
+  other databases and DACPACs, under `Microsoft.Build.Sql` 2.3.0 and 1.0.0 and as a legacy project: each other database has the
+  objects and settings its package gives it.
 
 ## What it deliberately doesn't do
 
 - **No building or deploying.** It never builds, writes or publishes a DACPAC, and never connects to a server.
-- **Another database is read, not bound.** A DACPAC's reference to another database (by name or SQLCMD variable) or to
-  `master.dacpac` is read into a model of its own (`DatabaseModel.Databases`), one level deep: its references to a third are
-  recorded, not read. What a three-part name in a body means is Semantics' question. A `$(Variable)` in a module's text is
-  read as written, a bracketed name such as `[$(Ledger)]`.
+- **Another database is read, not bound.** A reference to another database (by name or SQLCMD variable) or to
+  `master.dacpac`, from a DACPAC or a project, is read into a model of its own (`DatabaseModel.Databases`), one level deep: its
+  references to a third are recorded, not read. What a three-part name in a body means is Semantics' question. A `$(Variable)`
+  in a module's text is read as written, a bracketed name such as `[$(Ledger)]`. A database on another server isn't read.
 - **No DacFx.** DacFx's licence asks anyone who redistributes it to indemnify Microsoft, which no free tool should have to
   take on; ScriptDom is enough to read a project
   ([decision 0004](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0004-scriptdom-is-the-only-sql-dependency.md)).
@@ -124,9 +135,8 @@ Console.WriteLine($"{project.Projects.Count} projects, {project.Model.Settings?.
 - **One database.** `USE` is not followed: every object the scripts define is read into one model, whichever database a
   script has switched to by then.
 - **Not all of MSBuild.** A project file is evaluated as far as decision 0044 says: no property functions, no `Choose`, no
-  targets. Each such part that touches what is read is reported and not read, never guessed. A project's references to
-  another database, to a DACPAC or to a package aren't read yet: each is a note, and a name in one is unknown, as from a
-  folder. Given a folder, it reads every script in it.
+  targets. Each such part that touches what is read is reported and not read, never guessed. No restore: a package's version
+  is the one the project names, and a range or a floating version isn't resolved. Given a folder, it reads every script in it.
 - **No running scripts.** A folder of scripts doesn't say the order they run in, so a statement that changes an object after
   its definition (`ALTER TABLE … ALTER COLUMN`, `DROP TABLE`, `ALTER PROCEDURE`, `DROP PROCEDURE`) is recorded as a
   `Redefinition`, not applied. Changes made only through code that would have to run, such as `EXEC sp_rename` or dynamic

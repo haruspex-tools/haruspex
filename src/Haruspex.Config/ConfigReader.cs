@@ -234,7 +234,7 @@ public static class ConfigReader
 
         /// <summary>
         /// The folders <c>references</c> names, each resolved against the config file's folder, in order: where referenced DACPACs
-        /// are looked for after the folder of the package that refers to them.
+        /// are looked for after the folder of the package that refers to them, or where a project's build takes them from.
         /// </summary>
         private List<string> Folders(JsonValue value, string path, string directory)
         {

@@ -10,4 +10,8 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// Null for the same database (one database split across projects); otherwise the other database as the reference names it,
 /// without its brackets: a name (<c>master</c>) or a SQLCMD variable (<c>$(Ledger)</c>).
 /// </param>
-internal sealed record PackageReference(string FileName, string LogicalName, string? Database);
+/// <param name="Server">
+/// Null for a database on the same server; otherwise the server, without its brackets, for a reference the project made with
+/// <c>ServerSqlCmdVariable</c>, whose <c>ExternalParts</c> name the server first (<c>[$(Rack)].[$(Ledger)]</c>, observed).
+/// </param>
+internal sealed record PackageReference(string FileName, string LogicalName, string? Database, string? Server = null);

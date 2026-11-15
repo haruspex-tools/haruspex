@@ -1,7 +1,8 @@
 # The inputs and the model
 
 What haruspex reads is a SQL Server database project: a folder of `.sql` scripts, in no particular order, that together
-define a schema, the project file that says which of them its build reads, or the DACPAC a project builds from them. Before anything can be inferred, those scripts become a *model*: the schema as data, each table, type, procedure,
+define a schema, the project file that says which of them its build reads and what else it refers to, or the DACPAC a project
+builds from them. Before anything can be inferred, those scripts become a *model*: the schema as data, each table, type, procedure,
 function, view, trigger and synonym a value with a name and a place in the source. This chapter is about that step: what is
 read, how a script becomes the model, why the model hides the parser it was read with, and the one order everything in it is
 kept in. The code is in three projects, each a layer with a chapter of its own in brief:
@@ -241,11 +242,44 @@ built. The projects of the same database it refers to are read from their own fi
 settings, into the one model, as a DACPAC's packages are; locations are relative to the given project's folder, so a
 referenced project's script is `../press/pressing.sql:8:1`, a file a person can open.
 
+**References.** What else a project refers to is read as a DACPAC's references are, from where its build takes each, which was
+observed rather than read in documentation
+([decision 0045](../decisions/0045-a-project-s-references-are-read-from-where-its-build-takes-them.md)). `ProjectReferences`
+resolves each; `ProjectReading` reads them; `PackageSet` follows a package's own references for both readers, so a DACPAC is
+read one way whoever refers to it.
+
+- **What is referred to.** Another database project (`ProjectReference`), a DACPAC by its path (`ArtifactReference`, whose
+  `Include` the build uses and whose `HintPath` it doesn't), or the DACPAC a NuGet package holds (`PackageReference`, in a
+  `Microsoft.Build.Sql` project only: a legacy project's build makes no reference of one). A package's DACPAC is
+  `tools/<name>.dacpac` in the folder the restore gave its version, as the SDK's own targets name it; a package restored without
+  that file is no reference at all, since the build makes none. A version that is a range or a floating one is settled by the
+  restore against a feed, which isn't read, so it is reported rather than resolved to whatever the cache holds.
+- **Which database.** A reference that names a database, by `DatabaseSqlCmdVariable` or `DatabaseVariableLiteralValue`, is to
+  that database, and is read into a model of its own under the name a body writes (`[$(VaultDb)]`, `almanac`), one level down,
+  as from a DACPAC. A variable is taken by its name: a build binds a variable the project doesn't declare as it binds one it does, and
+  records every variable's value empty, so nothing about the reference rests on a value. One that names a server too isn't read
+  ([HAR1012](../diagnostics/HAR1012.md)): a body reaches it only by a four-part name, which nothing binds. A reference that
+  names no database is to the project's own, and its DACPAC is read into the one model with the packages of the database it
+  refers to.
+- **Visual Studio's `master.dacpac`.** SSDT's projects refer to it under `$(DacPacRootPath)`, which only a Visual Studio
+  install defines. It is looked for by its file name in the config file's `references`, as any DACPAC not where its build
+  takes it is. So is a package that isn't restored. One found nowhere is a warning saying where it was looked for
+  ([HAR1003](../diagnostics/HAR1003.md)), and is recorded in the IR without a hash.
+
+The IR's `source.references` then lists the packages a project read, with their hashes, as a DACPAC's does; a project of
+another database is read from its scripts, as the project given is, and is listed nowhere, since its scripts, like the given
+project's, aren't hashed.
+
 **The proof.** `ProjectEquivalenceTests` builds nothing: the packages it compares with were built by DacFx from the same
 project files ([`tests/dacpacs`](../../tests/dacpacs/README.md)), legacy ones on Linux with SSDT's own build targets. For each,
 the model has exactly the package's objects and settings, and the IR and Zod are byte for byte the package's, with locations
 rewritten as for a DACPAC. That covers a `Microsoft.Build.Sql` database over three projects with every kind of item, a legacy
-project as Visual Studio writes it, WideWorldImporters' own project, and every fixture as a project that sets nothing.
+project as Visual Studio writes it, WideWorldImporters' own project, and every fixture as a project that sets nothing. The
+references are proved the same way, each other database's model and settings included: a project that refers to every kind of
+thing a project can (another database's project through a variable and by name, a DACPAC of its own database and of another,
+`master.dacpac` by its package) built with `Microsoft.Build.Sql` 2.3.0 and 1.0.0, and a legacy project that refers to another
+database's project, two DACPACs and Visual Studio's own `master.dacpac`, each read with the stand-in for `master.dacpac`. Microsoft's own
+is read, from where the test project's restore put it, by a project's package reference.
 
 ## Where things are
 
@@ -279,8 +313,8 @@ lists procedures by name, and when an unqualified name could mean either of two 
 - **No running anything.** A change made by code that would have to run, such as `EXEC sp_rename` or dynamic SQL, isn't
   seen. A database project defines its objects declaratively; such scripts belong in deployment.
 - **One database.** `USE` isn't followed, and every object the scripts define is read into one model. A DACPAC's packages of
-  the same database, and a project's projects of the same database, are composed into that one model. Another database's
-  package is read into a model of its own; a project's reference to another database isn't read yet.
+  the same database, and a project's projects and packages of the same database, are composed into that one model. Another
+  database, a package or a project, is read into a model of its own, one level down; a database on another server isn't read.
 - **No `:r`.** A sqlcmd include isn't followed, so a script that uses one fails to parse rather than being read as a different
   script from the one that runs.
 

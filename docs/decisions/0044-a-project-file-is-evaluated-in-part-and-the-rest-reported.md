@@ -61,5 +61,9 @@ properties, conditions on the configuration, items, and the SDK's or SSDT's targ
 against packages its builds made (`ProjectEquivalenceTests`). Carrying each doubt to what it touches keeps the claim exact:
 what is read is the build's, and what can't be known is said where it matters, once, with where it is in which file.
 
+**Amended** (15 Nov 2026, [decision 0045](0045-a-project-s-references-are-read-from-where-its-build-takes-them.md)). A project's
+references to other databases, DACPACs and packages, which this decision left noted and unread, are read from where its build
+takes them.
+
 **See also:** [The inputs and the model](../internals/02-the-inputs-and-the-model.md), "A project file becomes the same model";
 `ProjectEvaluator`, `ProjectFiles`, `ProjectSettings`; [Configuration](../configuration.md), "Reading a project file".

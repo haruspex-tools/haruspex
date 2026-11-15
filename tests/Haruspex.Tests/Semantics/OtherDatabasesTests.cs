@@ -3,6 +3,7 @@ using Haruspex.Cli;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Sources;
 using Haruspex.SqlServer.Sources.Dacpacs;
 using Haruspex.Tests.Sources;
 using static Haruspex.TestSupport.IrNavigation;
@@ -278,5 +279,22 @@ public class OtherDatabasesTests
         var project = SqlProject.LoadPackage(Path.Combine(dir.Path, "app.dacpac"), []);
 
         Assert.Empty(project.Diagnostics);
+    }
+
+    [Fact]
+    public void A_database_on_another_server_is_noted_and_not_bound_even_by_its_database_alone()
+    {
+        using var dir = new TempDirectory();
+        TestPackage.Write(Path.Combine(dir.Path, "other.dacpac"), Entry);
+        TestPackage.Write(
+            Path.Combine(dir.Path, "app.dacpac"),
+            TestPackage.Procedure("dbo", "p", "SELECT e.id FROM [$(Other)].dbo.entry AS e;"),
+            references: new TestPackage.Reference("other.dacpac", "$(Other)", "$(Annexe)"));
+        var project = SqlProject.LoadPackage(Path.Combine(dir.Path, "app.dacpac"), []);
+        var doc = project.Infer([new ObjectName("dbo", "p")]).Expected();
+
+        Assert.Equal(SourceCodes.OtherServer, Assert.Single(project.Diagnostics).Code);
+        Assert.Contains("to another database is not modelled yet", Assert.Single(doc.Unknowns).Detail, StringComparison.Ordinal);
+        Assert.Empty(doc.Source.References);
     }
 }

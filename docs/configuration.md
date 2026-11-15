@@ -13,7 +13,7 @@ otherwise silently do nothing.
 {
   "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
   "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac
-  "references": ["../shared/bin/Release"],  // more folders to find a .dacpac's referenced packages in
+  "references": ["../shared/bin/Release"],  // more folders to find the DACPACs a .dacpac or .sqlproj refers to in
   "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "Value sets"
   "out": "src/db",                          // where haruspex.ir.json and haruspex.zod.ts go
 
@@ -58,10 +58,12 @@ procedures the run leaves out are skipped). Without a file, `--include` and `--o
 ## Reading a DACPAC: `source` and `references`
 
 `source` may name a `.dacpac` instead of a folder. The package's `model.xml` is then read, without DacFx, with every package
-of the same database it refers to, directly or through another, into one model; a reference to another database's
-package or to `master.dacpac` is found and recorded but not read
-([decision 0040](decisions/0040-a-dacpac-is-read-with-the-packages-of-its-database.md)). The IR records the package and each
-reference, with the SHA-256 of the file read for it (`source.package`, `source.references`).
+of the same database it refers to, directly or through another, into one model
+([decision 0040](decisions/0040-a-dacpac-is-read-with-the-packages-of-its-database.md)); another database's package, or
+`master.dacpac`, is read into a model of its own, so that a three-part name in a body reads its tables
+([decision 0042](decisions/0042-a-table-of-another-database-is-read-as-its-package-declares-it.md)). A database on another server
+isn't read ([HAR1012](diagnostics/HAR1012.md)). The IR records the package and each reference, with the SHA-256 of the file read
+for it (`source.package`, `source.references`).
 
 A referenced package is looked for beside the package that refers to it, where a build leaves it; then in each folder
 `references` lists, in order, relative to this file; and last at the path the package recorded when it was built. One found
@@ -87,9 +89,22 @@ lacks, and the value sets it decides ("The database's collation", below).
 
 Each project of the same database it refers to (a `ProjectReference` naming no other database) is read too, from its own
 `.sqlproj` and with its scripts' own settings, as a DACPAC's packages are; one that isn't there is a warning
-([HAR1007](diagnostics/HAR1007.md)). A reference to another database, to a `.dacpac` or to a package such as
-`Microsoft.SqlServer.Dacpacs.Master` isn't read from a project yet: it is a note ([HAR1011](diagnostics/HAR1011.md)), and a name
-in it is unknown, as from a folder. `references` is read only for a `.dacpac`.
+([HAR1007](diagnostics/HAR1007.md)). What else it refers to is read as a DACPAC's references are, from where its build takes each
+([decision 0045](decisions/0045-a-project-s-references-are-read-from-where-its-build-takes-them.md)):
+
+- another database's project (`DatabaseSqlCmdVariable` or `DatabaseVariableLiteralValue`), from its own `.sqlproj`, into a model
+  of its own under the name a body writes it by (`[$(VaultDb)]`, `almanac`);
+- a DACPAC (`ArtifactReference`), at the path its `Include` gives, of this database or, when it names one, another;
+- the DACPAC in a NuGet package (`PackageReference`, in a `Microsoft.Build.Sql` project), such as `master.dacpac` in
+  `Microsoft.SqlServer.Dacpacs.Master`: `tools/<name>.dacpac` where a restore of the version the project names put it, in
+  `NUGET_PACKAGES`, `.nuget/packages` in your home, or the project's `RestorePackagesPath`. A version that is a range or a
+  floating one (`170.*`) isn't read, and is reported, since only a restore against a feed settles it.
+
+A DACPAC not where its build takes it, such as one in a package not restored, or Visual Studio's own `master.dacpac`
+(`$(DacPacRootPath)\…\SqlSchemas\master.dacpac`, which only a Visual Studio install has), is looked for by its file name in each
+folder `references` lists. One found nowhere is a warning ([HAR1003](diagnostics/HAR1003.md)) naming where it was looked for. The
+IR records each package read, with its SHA-256, in `source.references`, and no `source.package`: the project's own scripts aren't
+hashed.
 
 A project file is MSBuild, and haruspex evaluates the part of it a database project uses: properties, conditions on the
 configuration, items and their patterns, the nearest `Directory.Build.props`, and the files it imports
@@ -97,8 +112,8 @@ configuration, items and their patterns, the nearest `Directory.Build.props`, an
 `dotnet build` builds it, and a project that builds differently as `Release` says so. Whatever isn't evaluated (a property
 function, a property defined nowhere, `Choose`, an import it can't find) is never guessed: when it touches a script or a
 setting, that script or setting isn't read, and a warning ([HAR1008](diagnostics/HAR1008.md)) says what, where and why.
-Locations are relative to the project's folder (`../shared/audit.sql:3:5` for a script beside it), and the IR records no
-package, as for a folder.
+Locations are relative to the project's folder (`../shared/audit.sql:3:5` for a script beside it); an object read from a DACPAC
+is located in it, as when the DACPAC is the source.
 
 ## The database's collation: `collation`
 

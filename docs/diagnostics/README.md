@@ -22,7 +22,8 @@ reason.
 | [HAR1008](HAR1008.md) | warning | Part of a project file isn't read |
 | [HAR1009](HAR1009.md) | error | A script a project builds isn't found |
 | [HAR1010](HAR1010.md) | error | A file that can't be read as a database project |
-| [HAR1011](HAR1011.md) | note | A project's reference isn't read yet |
+| [HAR1011](HAR1011.md) | note | A project's reference isn't read yet (retired) |
+| [HAR1012](HAR1012.md) | note | A reference to a database on another server isn't read |
 
 ## Inference
 
@@ -148,5 +149,5 @@ reason.
 | [HAR6006](HAR6006.md) | error | An --include pattern isn't well formed |
 | [HAR6007](HAR6007.md) | error | Nothing is selected |
 | [HAR6008](HAR6008.md) | error | The output can't be written |
-| [HAR6009](HAR6009.md) | warning | References with a source that isn't a DACPAC |
+| [HAR6009](HAR6009.md) | warning | References with a folder of scripts |
 | [HAR6010](HAR6010.md) | warning | A collation the package records otherwise |

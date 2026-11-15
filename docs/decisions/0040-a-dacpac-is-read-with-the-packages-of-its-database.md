@@ -37,5 +37,9 @@ that can't exist (found reading a package built on Windows, 14 Nov 2026).
 of another database, or `master.dacpac`, is now read too, with the packages of its own database, into a model of its own that
 the model holds under the name a body writes the database by; its references to a third database are recorded, not read.
 
+**Amended** (15 Nov 2026, [decision 0045](0045-a-project-s-references-are-read-from-where-its-build-takes-them.md)). A project
+file's references are found the same way, from where its build takes each and then in the `references` folders; and a reference
+to a database on another server is noted and not read, from a package as from a project.
+
 **See also:** [The inputs and the model](../internals/02-the-inputs-and-the-model.md), "A DACPAC becomes the same model"; `ReferenceFinder`,
 `DacpacReader`; [HAR1003](../diagnostics/HAR1003.md).

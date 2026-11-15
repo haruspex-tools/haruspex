@@ -54,6 +54,9 @@ internal sealed class ProjectEvaluator
     private readonly HashSet<string> imported = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<ProjectItem> items = [];
     private readonly List<DoubtedItem> doubted = [];
+
+    /// <summary>The metadata of the SDK's own default item, which has none.</summary>
+    private static readonly IReadOnlyDictionary<string, Evaluated> NoMetadata = new Dictionary<string, Evaluated>();
     private readonly List<ProjectTarget> targets = [];
     private readonly Dictionary<string, Dictionary<string, Evaluated>> definitions = new(StringComparer.OrdinalIgnoreCase);
     private bool targetsImported;
@@ -356,7 +359,7 @@ internal sealed class ProjectEvaluator
         var enabled = properties[ProjectXml.EnableDefaultSqlItems] ?? Evaluated.Sure("");
         if (!enabled.IsSure)
         {
-            doubted.Add(new DoubtedItem(ProjectXml.Build, ProjectXml.Include, DefaultPattern, DefaultPattern, at, enabled.Doubts));
+            doubted.Add(new DoubtedItem(ProjectXml.Build, ProjectXml.Include, DefaultPattern, DefaultPattern, at, enabled.Doubts, NoMetadata));
             return;
         }
 
@@ -365,7 +368,7 @@ internal sealed class ProjectEvaluator
         var excludes = properties[ProjectXml.DefaultSqlItemExcludes] ?? Evaluated.Sure("");
         if (!excludes.IsSure)
         {
-            doubted.Add(new DoubtedItem(ProjectXml.Build, ProjectXml.Include, DefaultPattern, DefaultPattern, at, excludes.Doubts));
+            doubted.Add(new DoubtedItem(ProjectXml.Build, ProjectXml.Include, DefaultPattern, DefaultPattern, at, excludes.Doubts, NoMetadata));
             return;
         }
 
@@ -406,7 +409,9 @@ internal sealed class ProjectEvaluator
         if (doubts.Count > 0)
         {
             var verb = include is not null ? ProjectXml.Include : remove is not null ? ProjectXml.Remove : ProjectXml.Update;
-            doubted.Add(new DoubtedItem(type, verb, written, spec.IsSure ? spec.Text : null, at, doubts));
+            var metadata = new Dictionary<string, Evaluated>(StringComparer.OrdinalIgnoreCase);
+            SetMetadata(element, file, Truth.Always, metadata);
+            doubted.Add(new DoubtedItem(type, verb, written, spec.IsSure ? spec.Text : null, at, doubts, metadata));
             return;
         }
 

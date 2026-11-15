@@ -106,7 +106,8 @@ internal sealed class DacPackage(string Path, string Sha256, bool Extracted, XEl
             if (!metadata.TryGetValue(ModelXml.FileName, out var file))
                 continue;
             var logical = metadata.GetValueOrDefault(ModelXml.LogicalName) is { Length: > 0 } named ? named : FileNameOf(file);
-            yield return new PackageReference(file, logical, metadata.GetValueOrDefault(ModelXml.ExternalParts) is { Length: > 0 } parts ? ElementName.Last(parts) : null);
+            var parts = metadata.GetValueOrDefault(ModelXml.ExternalParts) is { Length: > 0 } written ? ElementName.Parts(written) : [];
+            yield return new PackageReference(file, logical, parts.Count > 0 ? parts[^1] : null, parts.Count > 1 ? parts[^2] : null);
         }
     }
 

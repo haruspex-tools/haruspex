@@ -131,7 +131,7 @@ object, and a `ref` that names no type.
 ```jsonc
 {
   "irVersion": "0.20",                // versioned separately from the tool; a reader checks it first
-  "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file
+  "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file, the references for a folder
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
     "session": { "ansiWarnings": true } },  // the session is left out when the callers' options aren't declared
@@ -188,7 +188,8 @@ relative to the source root, or for a null reason the column it applies to (`sch
 
 `source.package` and `source.sha256` (0.19) name the package the source was read from, such as a DACPAC, by its file name
 without a folder, and the SHA-256 of its bytes as 64 lower-case hexadecimal digits; both are left out, together, for a source
-that is not a package. `source.references` (0.19) lists the packages it refers to, sorted by `package` and then `database`, the
+that is not a package. `source.references` (0.19) lists the packages it refers to (for a project file, the packages it and the
+projects it reads refer to), sorted by `package` and then `database`, the
 same database first: each with its `sha256` when one was found and read, left out when none was (then nothing the package
 holds is known, and an object it may define is an unknown like any other the source lacks), and a `database` when it is
 another database, named as the reference names it (`master`, or a SQLCMD variable such as `$(Ledger)`, whose value is only

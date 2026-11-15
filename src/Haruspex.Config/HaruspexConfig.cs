@@ -23,8 +23,9 @@ public sealed record HaruspexConfig
     public string? Source { get; init; }
 
     /// <summary>
-    /// The folders to look for a DACPAC's referenced packages in (<c>references</c>), resolved against <see cref="Directory"/>, in
-    /// order, after the folder of the package that refers to them; empty when the file names none.
+    /// The folders to look for the DACPACs a DACPAC or a project file refers to (<c>references</c>), resolved against
+    /// <see cref="Directory"/>, in order, after the folder of the package that refers to them or where a project's build takes them
+    /// from; empty when the file names none.
     /// </summary>
     public EquatableArray<string> References { get; init; } = [];
 

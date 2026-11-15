@@ -13,7 +13,7 @@ namespace Haruspex.Tests.Sources;
 /// evaluated (decision 0044) and what is reported where it isn't, and how references are read. That a project reads as the
 /// package its build makes is proved in <c>ProjectEquivalenceTests</c>.
 /// </summary>
-public class SqlProjectReaderTests
+public partial class SqlProjectReaderTests
 {
     private static string Projects => Path.Combine(RepositoryPaths.Root, "tests", "dacpacs", "projects");
 
@@ -73,7 +73,7 @@ public class SqlProjectReaderTests
         foreach (var (path, text) in files)
             folder.File(path, text);
         // An empty package cache of its own, so that no test depends on what this machine has restored.
-        return SqlProjectReader.Read(folder.File("p/p.sqlproj", project), new PackageCache(Path.Combine(folder.Path, "no-packages")));
+        return SqlProjectReader.Read(folder.File("p/p.sqlproj", project), [], new PackageCache(Path.Combine(folder.Path, "no-packages")));
     }
 
     private static string[] Procedures(SqlProjectReadResult read) => [.. read.Model.Procedures.Select(p => p.Name.Name).Order(StringComparer.Ordinal)];
@@ -335,8 +335,8 @@ public class SqlProjectReaderTests
             }
         }
 
-        var here = SqlProject.LoadProject(Path.Combine(Projects, "orchard", "orchard.sqlproj"));
-        var there = SqlProject.LoadProject(Path.Combine(folder.Path, "orchard", "orchard.sqlproj"));
+        var here = SqlProject.LoadProject(Path.Combine(Projects, "orchard", "orchard.sqlproj"), []);
+        var there = SqlProject.LoadProject(Path.Combine(folder.Path, "orchard", "orchard.sqlproj"), []);
 
         Assert.Empty(here.Diagnostics);
         Assert.Empty(there.Diagnostics);
@@ -533,33 +533,6 @@ public class SqlProjectReaderTests
         Assert.Empty(read.Diagnostics);
     }
 
-    [Fact]
-    public void A_reference_read_in_a_later_slice_is_one_note_each_and_a_name_in_it_is_unknown_as_from_a_folder()
-    {
-        const string reads = "CREATE PROCEDURE dbo.reads AS SELECT e.amount FROM [$(Ledger)].dbo.entry AS e;";
-        using var folder = new TempDirectory();
-        folder.File("ledger/ledger.sqlproj", Sdk());
-        var read = Read(
-            folder,
-            Sdk("""
-                <ItemGroup>
-                  <ProjectReference Include="..\ledger\ledger.sqlproj"><DatabaseSqlCmdVariable>Ledger</DatabaseSqlCmdVariable></ProjectReference>
-                  <ArtifactReference Include="..\lib\lib.dacpac" />
-                  <PackageReference Include="Microsoft.SqlServer.Dacpacs.Master" Version="170.0.4" />
-                  <SqlCmdVariable Include="Ledger"><DefaultValue>ledger</DefaultValue></SqlCmdVariable>
-                </ItemGroup>
-                """),
-            ("p/reads.sql", reads));
-        using var scripts = new TempDirectory();
-        scripts.File("reads.sql", reads);
-
-        Assert.Equal(3, read.Diagnostics.Count);
-        Assert.All(read.Diagnostics, d => Assert.Equal(SourceCodes.ReferenceNotRead, d.Code));
-        var fromProject = SqlProject.LoadProject(Path.Combine(folder.Path, "p", "p.sqlproj"), collation: null);
-        var fromFolder = SqlProject.Load(scripts.Path, fromProject.DefaultCollation);
-        Assert.Equal(IrJsonWriter.Write(fromFolder.Infer(fromFolder.Procedures).Expected()), IrJsonWriter.Write(fromProject.Infer(fromProject.Procedures).Expected()));
-    }
-
     // Round 1 of the review.
 
     public static TheoryData<string, string, string> DoubtedTakeOuts { get; } = new()
@@ -606,47 +579,6 @@ public class SqlProjectReaderTests
 
         Assert.Empty(read.Diagnostics);
         Assert.Equal(["in_block", "in_dash", "in_nested", "in_string"], Procedures(read));
-    }
-
-    [Fact]
-    public void Visual_studio_s_master_reference_is_one_note_like_any_reference_to_master()
-    {
-        using var folder = new TempDirectory();
-        var read = Read(folder, Legacy("""
-            <Build Include="a.sql" />
-            <ArtifactReference Include="$(DacPacRootPath)\Extensions\Microsoft\SQLDB\Extensions\SqlServer\150\SqlSchemas\master.dacpac">
-              <HintPath>$(DacPacRootPath)\Extensions\Microsoft\SQLDB\Extensions\SqlServer\150\SqlSchemas\master.dacpac</HintPath>
-              <SuppressMissingDependenciesErrors>False</SuppressMissingDependenciesErrors>
-              <DatabaseVariableLiteralValue>master</DatabaseVariableLiteralValue>
-            </ArtifactReference>
-            """), ("p/a.sql", Proc("a")));
-
-        var reported = Assert.Single(read.Diagnostics);
-        Assert.Equal(SourceCodes.ReferenceNotRead, reported.Code);
-        Assert.Contains("SSDT's own master.dacpac", reported.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void A_package_reference_is_noted_only_when_its_package_holds_a_dacpac_or_isn_t_in_the_cache()
-    {
-        using var cache = new TempDirectory();
-        cache.File("rules.package/1.0.0/lib/netstandard2.1/Rules.dll", "");
-        cache.File("shared.schema/2.0.0/tools/shared.dacpac", "");
-        using var folder = new TempDirectory();
-        folder.File("p/p.sqlproj", Sdk("""
-            <ItemGroup>
-              <PackageReference Include="Rules.Package" Version="1.0.0" />
-              <PackageReference Include="Shared.Schema" Version="2.0.0" />
-              <PackageReference Include="Not.Restored" Version="3.0.0" />
-              <PackageReference Include="Microsoft.SqlServer.Dacpacs.Master" Version="170.0.4" />
-            </ItemGroup>
-            """));
-        var read = SqlProjectReader.Read(Path.Combine(folder.Path, "p", "p.sqlproj"), new PackageCache(cache.Path));
-
-        Assert.All(read.Diagnostics, d => Assert.Equal(SourceCodes.ReferenceNotRead, d.Code));
-        Assert.Equal(3, read.Diagnostics.Count);
-        Assert.DoesNotContain(read.Diagnostics, d => d.Message.Contains("Rules.Package", StringComparison.Ordinal));
-        Assert.Contains(read.Diagnostics, d => d.Message.Contains("Not.Restored, which isn't in the NuGet cache", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -766,20 +698,6 @@ public class SqlProjectReaderTests
 
         Assert.Empty(read.Diagnostics);
         Assert.Equal(["kept"], Procedures(read));
-    }
-
-    [Fact]
-    public void A_reference_not_read_yet_is_one_note_however_many_projects_make_it()
-    {
-        const string Master = "<ItemGroup><PackageReference Include=\"Microsoft.SqlServer.Dacpacs.Master\" Version=\"170.0.4\" /></ItemGroup>";
-        using var folder = new TempDirectory();
-        folder.File("q/q.sqlproj", Sdk(Master));
-        folder.File("r/r.sqlproj", Sdk(Master));
-        var read = Read(folder, Sdk(Master + "<ItemGroup><ProjectReference Include=\"../q/q.sqlproj\" /><ProjectReference Include=\"../r/r.sqlproj\" /></ItemGroup>"));
-
-        var reported = Assert.Single(read.Diagnostics);
-        Assert.Equal(SourceCodes.ReferenceNotRead, reported.Code);
-        Assert.StartsWith("p.sqlproj and 2 other projects refer to the package Microsoft.SqlServer.Dacpacs.Master", reported.Message, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -94,10 +94,12 @@ uddt
 # The compiler's API names a pattern inside another pattern a subpattern (PropertySubpatterns, in the analysers)
 subpatterns
 
-# Products, tools and their names (sqldb: SSDT's MSBuild property SQLDBExtensionsRefPath; netsdk: the .NET SDK's error codes, NETSDK1022)
+# Products, tools and their names (sqldb: SSDT's MSBuild property SQLDBExtensionsRefPath; netsdk: the .NET SDK's error codes, NETSDK1022;
+# msdb: SQL Server's system database msdb, which has a DACPAC package of its own, as master has)
 dacfx
 dacpac
 dacpacs
+msdb
 mscorlib
 netsdk
 netstandard
