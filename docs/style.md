@@ -75,7 +75,7 @@ Use these terms consistently, and link the first use on a page to where the term
 | live JSON / JSON text | JSON that embeds as JSON, and a string holding JSON | raw JSON, stringified JSON |
 | IR | the intermediate representation, haruspex's output format | AST, model |
 | setting, control | a tunable parameter | knob |
-| fixture | an invented database used by the tests | sample, mock |
+| fixture | a database used by the tests, invented (two take their tables from Microsoft's samples, to run the README's examples) | sample, mock |
 
 Name ideas as the literature names them, at least once: *abstract interpretation*, *lattice*, *join*, *least
 fixed point*, *widening*, *strongly connected component*, *dataflow analysis*.

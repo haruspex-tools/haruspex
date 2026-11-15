@@ -23,8 +23,9 @@ Every change starts with a failing test.
 - **A bug** gets a test that reproduces it before the fix.
 - **A test's name is a sentence** saying what it proves, at least three words joined by underscores
   (`Separates_absent_keys_from_null_values`, never `Ir`). `TestNameTests` (in `tests/Shared`) checks every test in both projects.
-- Fixtures are invented. Never copy schema or code from a real organisation's database into this
-  repository, even in a test.
+- Fixtures are invented. The one exception is the README's showcase: `wide-world-importers` and `adventure-works` copy
+  tables from Microsoft's MIT-licensed sample databases, with the licence beside them. Never copy schema or code from a real
+  organisation's database into this repository, even in a test.
 
 ## Decision context lives with the code
 

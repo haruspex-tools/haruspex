@@ -15,10 +15,6 @@ query as a single `nvarchar(max)` column, however deep the document inside it. S
 checks them against the SQL, and they drift as the procedures change, until a field that "can't be null" is null in
 production.
 
-The gap is old. In January 2020 someone asked on Stack Overflow for
-[TypeScript definitions for SQL Server stored procedures](https://stackoverflow.com/questions/59652600/typescript-definitions-for-sql-server-stored-procedures),
-working with a database only through procedures, with its T-SQL source, a DACPAC and the database itself. It went unanswered.
-
 This tool reads a database project's source (a folder of `.sql` files, an SSDT `.sqlproj` or a DACPAC) and infers what each
 procedure returns, `FOR JSON` payloads included, then writes Zod schemas and TypeScript types for it. It never connects to a
 database: everything is inferred from the source, so it needs no credentials and no data. And it follows one rule: **never
@@ -192,13 +188,15 @@ also covers names, overrides and declared results.
 
 **It validates results at the seam, at run time.** The types are only as good as the data that arrives, so the application
 parses each result with the schema before using it. A wrong claim, such as one in an override a person wrote, fails there,
-loudly, rather than deep in the code:
+loudly, rather than deep in the code. SQL Server splits `FOR JSON` text over rows of about 2,000 characters, so join the first
+column of every row the driver returns before parsing it; no row at all means no match, which the schema reads as `null`:
 
 ```ts
 import { GetOrderSchema, type GetOrder } from './db/haruspex.zod'
 
 /** Website.GetOrder's FOR JSON text, or null when no order has the id. */
 export function readOrder(json: string | null): GetOrder {
+  // json is the rows' text joined, or null when the procedure returned no row.
   return GetOrderSchema.parse(json === null ? null : JSON.parse(json))
 }
 ```
@@ -242,7 +240,8 @@ missing.
 
 ## Install
 
-No package is published yet. It is a .NET tool, built from source with the [.NET 10 SDK](https://dotnet.microsoft.com/download):
+No package is published yet. It is a .NET command-line application, built from source with the
+[.NET 10 SDK](https://dotnet.microsoft.com/download); a .NET tool to install with `dotnet tool install` is planned:
 
 ```sh
 git clone https://github.com/sharpblue/haruspex.git
@@ -271,7 +270,12 @@ This reads `database/` with the settings in `haruspex.json`, and writes `src/db/
 }
 ```
 
-and run `generate` in that folder. `source` is the folder of scripts, the `.sqlproj` or the `.dacpac`.
+and run `generate` from that folder, with the path to your clone of haruspex. `source` is the folder of scripts, the `.sqlproj`
+or the `.dacpac`.
+
+```sh
+dotnet run --project path/to/haruspex/src/Haruspex.Cli -- generate
+```
 
 ## How it is built
 
