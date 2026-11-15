@@ -13,8 +13,9 @@ is unknown with that reason, as before.
 (`SelectStarObservationTests`, `ApplyViewObservationTests`), by creating a module over a table, then adding a column to it:
 - **A procedure, a scalar function and a multi-statement function** bind it when they run: the new column is in what they return
   (a multi-statement function's `INSERT … SELECT *` then fails, 213), even with a plan cached before the change.
-- **A view and an inline function** bind it when they are created, and keep that list until `sp_refreshsqlmodule` (or
-  `sp_refreshview`) binds it again.
+- **A view and an inline function** bind the star of their own select list when they are created, and keep that list until
+  `sp_refreshsqlmodule` (or `sp_refreshview`) binds it again. A star in a subquery of either, such as a `FOR JSON` subquery
+  in the select list, is bound when they run.
 - **A schema-bound module** can't have a star at all (1054), not even inside `EXISTS`; `COUNT(*)` is no star and is allowed.
   So a module protected from its tables changing never has a star, and a module with one is never protected. A natively
   compiled procedure must be schema-bound, and refuses a star the same way, in `EXISTS` too (observed by hand, since it needs

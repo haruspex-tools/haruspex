@@ -346,7 +346,7 @@ it on the stack of calls.
   (`Output_columns_are_the_values_converted_to_the_target_columns`); that holds also when the target is an alias of a
   table in `FROM` (`UPDATE o … FROM t AS o JOIN …`), and not through a CTE, a derived table, a view or a synonym, whose
   `inserted` and `deleted` are unknown. For a temporary table, the table as tracked after and
-  before the write; for a table variable, its declaration. `inserted.*` and `deleted.*` list the target's columns. `INSERT`
+  before the write; for a table variable, its declaration. `inserted.*` and `deleted.*` are stars over the target, so they leave out what a star over it leaves out ("`SELECT *`"). `INSERT`
   has no `deleted`, `DELETE` no `inserted`. Refinement works as for any query: a `WHERE` on a `FROM` source proves its
   columns, and a `DELETE`'s `WHERE` proves `deleted`'s. An `UPDATE`'s `WHERE` without a qualifier names the target's columns
   as they were before, which is `deleted`; in the query read they are ambiguous between `inserted` and `deleted`, so
@@ -1073,8 +1073,9 @@ star) and everything the query proves of it: a `WHERE`, an outer join's optional
   CTE (8156) and `SELECT … INTO` (2705) refuse them too, so each of those is unknown.
 - **When a star is bound.** A procedure, a scalar function and a multi-statement function bind it when they run
   (`A_procedures_star_is_bound_when_it_runs`, `A_scalar_functions_star_is_bound_when_it_runs`,
-  `A_multi_statement_functions_star_is_bound_when_it_runs`); a view and an inline function when they are created
-  (`An_inline_functions_star_is_bound_when_it_is_created`); a schema-bound module can't have one, even in `EXISTS`, and only a natively compiled procedure can be schema-bound
+  `A_multi_statement_functions_star_is_bound_when_it_runs`); a view and an inline function bind their own select list's when they are created
+  (`An_inline_functions_star_is_bound_when_it_is_created`), and a star in a subquery of either when they run
+  (`A_star_in_a_subquery_of_a_view_or_an_inline_function_is_bound_when_it_runs`); a schema-bound module can't have one, even in `EXISTS`, and only a natively compiled procedure can be schema-bound
   (`A_schema_bound_module_refuses_a_star`, `Only_a_natively_compiled_procedure_can_be_schema_bound`). Every star is bound here against the tables as the project defines them,
   assuming a deployment that refreshes the modules bound earlier and keeps the declared column order, as SqlPackage's
   publish does by default ([decision 0047](../../docs/decisions/0047-a-star-is-bound-against-the-tables-the-project-defines.md)).

@@ -139,7 +139,8 @@ finds in what that relation holds, or an `UnexpandedStar` with a binding problem
 whose star adds pseudo-columns the server names, or a qualifier of two parts).
 
 When SQL Server binds a star depends on the module: a procedure and the functions that run statements bind it when they run, a
-view and an inline function when they are created. Every star is bound here against the tables as the project defines them,
+view and an inline function the star of their own select list when they are created (one in a subquery of either, when they
+run). Every star is bound here against the tables as the project defines them,
 assuming a deployment that refreshes the modules created earlier, as SqlPackage does
 ([decision 0047](../decisions/0047-a-star-is-bound-against-the-tables-the-project-defines.md)).
 

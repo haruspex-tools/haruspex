@@ -3,6 +3,7 @@ using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
+using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -25,10 +26,9 @@ internal sealed partial class Typer
         {
             values = statement.Names.Find(direct.Text) is { } relation ? Holding(relation, hinted: false, statement) : LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnresolvedTable, $"{direct} is not declared.", at));
         }
-        else if (target.Named is { } only
-            && binder.ResolveWritten(only) is [var name] && model.FindTable(name) is { } table && model.FindTableRedefinition(name) is null)
+        else if (Written(target, statement) is Table table)
         {
-            var source = new BoundSource(name.Name, new TableTarget(table), null, spec.Target);
+            var source = new BoundSource(table.Name.Name, new TableTarget(table), null, spec.Target);
             values = new LocalRelationValues([.. table.Columns.Select(c => c.Name)], [.. table.Columns.Select(c => FromColumn(new TableColumn(source, table, c), statement))], null);
         }
         else
@@ -44,6 +44,17 @@ internal sealed partial class Typer
     }
 
     /// <summary>
+    /// The table a write writes, when it is one table of the project or a table variable, whose declaration says which columns a
+    /// star over its <c>inserted</c> and <c>deleted</c> gives; null for a temporary table, a view, a synonym and the rest.
+    /// </summary>
+    internal ITable? Written(DmlTarget target, ReadScope statement) => target switch
+    {
+        { Direct: { } direct } => statement.Names.Find(direct.Text) is TableVariable { Declaration: var declared } ? declared : null,
+        { Named: { } only } when binder.ResolveWritten(only) is [var name] && model.FindTableRedefinition(name) is null => model.FindTable(name),
+        _ => null,
+    };
+
+    /// <summary>
     /// The row an OUTPUT's columns give, read as the select list of a query over the write's sources and the
     /// <c>inserted</c> and <c>deleted</c> relations, filtered by its WHERE, as binding binds it (<see cref="Binder.BindOutput"/>).
     /// </summary>
@@ -55,6 +66,7 @@ internal sealed partial class Typer
     /// <param name="with">The write's WITH.</param>
     /// <param name="inserted">What <c>inserted</c> holds, or null when the write has none.</param>
     /// <param name="deleted">What <c>deleted</c> holds, or null when the write has none.</param>
+    /// <param name="written">The table written, when a star over it says which columns it gives (<see cref="Written"/>).</param>
     /// <param name="mergeActions">A MERGE's actions, which its <c>$action</c> is one of; null for another write.</param>
     /// <param name="because">Why a MERGE's source is null in the rows it does not match.</param>
     /// <param name="at">The statement's scope, in the state before the write.</param>
@@ -67,6 +79,7 @@ internal sealed partial class Typer
         WithCtesAndXmlNamespaces? with,
         LocalRelationValues? inserted,
         LocalRelationValues? deleted,
+        ITable? written,
         EquatableArray<string>? mergeActions,
         IrNullReason because,
         ReadScope at)
@@ -74,7 +87,7 @@ internal sealed partial class Typer
         var location = At(clause);
         return WithCtes(with, at, statement =>
         {
-            var output = binder.BindOutput(spec, clause, columns, from, where, statement.Names, inserted?.Names, deleted?.Names);
+            var output = binder.BindOutput(spec, clause, columns, from, where, statement.Names, inserted?.Names, deleted?.Names, written);
             var scope = output.Pseudo.Aggregate(statement, (s, p) => (p.Name == "inserted" ? inserted : deleted) is { } values ? s.Naming(p, values) : s);
 
             // Every source in the USING tree: a joined USING is null-extended as a whole.

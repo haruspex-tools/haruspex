@@ -28,6 +28,7 @@ parameter shop.order_card @id at procedures/order_card.sql:2:34
 parameter shop.order_json @order_id at functions/order_json.sql:2:34
 parameter shop.order_lines @id at procedures/order_lines.sql:2:35
 parameter shop.order_summary @id at procedures/order_summary.sql:2:37
+parameter shop.reprice @sku at procedures/reprice.sql:2:31
 procedure shop.all_lines at procedures/all_lines.sql:2:1
 procedure shop.current_prices at procedures/current_prices.sql:2:1
 procedure shop.list_orders at procedures/list_orders.sql:2:1
@@ -37,6 +38,7 @@ procedure shop.order_lines at procedures/order_lines.sql:2:1
 procedure shop.order_summary at procedures/order_summary.sql:2:1
 procedure shop.orders_with_lines at procedures/orders_with_lines.sql:2:1
 procedure shop.picking at procedures/picking.sql:2:1
+procedure shop.reprice at procedures/reprice.sql:2:1
 table shop.order_line at tables/order_line.sql:2:1
 table shop.orders at tables/orders.sql:2:1
 table shop.parcel at tables/parcel.sql:2:1

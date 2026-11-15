@@ -1,4 +1,5 @@
 using Haruspex.Collections;
+using Haruspex.SqlServer.Model;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Semantics;
@@ -26,7 +27,8 @@ public sealed partial class Binder
     /// <summary>
     /// A write's <c>OUTPUT</c> (or <c>OUTPUT … INTO</c>), bound as the select list of a query over the write's FROM (and a
     /// MERGE's source), filtered by its WHERE, with <c>inserted</c> and <c>deleted</c> as relations: the target after the
-    /// write and before it. <c>inserted.*</c> and <c>deleted.*</c> list the target's columns.
+    /// write and before it. <c>inserted.*</c> and <c>deleted.*</c> are stars as any other (<see cref="Star"/>), so they give the
+    /// columns a star over the target gives (observed: Output_stars_leave_out_what_a_star_over_the_target_leaves_out).
     /// </summary>
     /// <param name="spec">The write.</param>
     /// <param name="clause">The OUTPUT or OUTPUT … INTO clause.</param>
@@ -36,6 +38,7 @@ public sealed partial class Binder
     /// <param name="names">The names in force, its WITH's included.</param>
     /// <param name="inserted">The target's columns after the write, null when not known; ignored for a DELETE, which has no <c>inserted</c>.</param>
     /// <param name="deleted">The target's columns before the write, null when not known; ignored for an INSERT, which has no <c>deleted</c>.</param>
+    /// <param name="written">The table written, when it is a table of the schema or a table variable (<see cref="PseudoTable.Written"/>).</param>
     public BoundOutput BindOutput(
         DataModificationSpecification spec,
         TSqlFragment clause,
@@ -44,7 +47,8 @@ public sealed partial class Binder
         BooleanExpression? where,
         NameEnvironment names,
         EquatableArray<string>? inserted,
-        EquatableArray<string>? deleted)
+        EquatableArray<string>? deleted,
+        ITable? written)
     {
         ArgumentNullException.ThrowIfNull(spec);
         ArgumentNullException.ThrowIfNull(clause);
@@ -52,9 +56,9 @@ public sealed partial class Binder
         ArgumentNullException.ThrowIfNull(names);
         var pseudo = new List<PseudoTable>();
         if (spec is not DeleteSpecification)
-            pseudo.Add(new PseudoTable("inserted", inserted));
+            pseudo.Add(new PseudoTable("inserted", inserted) { Written = written });
         if (spec is not InsertSpecification)
-            pseudo.Add(new PseudoTable("deleted", deleted));
+            pseudo.Add(new PseudoTable("deleted", deleted) { Written = written });
         var inForce = pseudo.Aggregate(names, (n, p) => n.WithPseudo(p));
 
         return bindings.Once(clause, null, inForce, () =>
@@ -68,23 +72,7 @@ public sealed partial class Binder
                 query.FromClause.TableReferences.Add(Like(new NamedTableReference { SchemaObject = OnePart(table.Name) }, columns[0]));
 
             foreach (var column in columns)
-            {
-                if (column is SelectStarExpression { Qualifier.Identifiers: [var qualifier] } star
-                    && pseudo.FirstOrDefault(p => p.Name.Equals(qualifier.Value, StringComparison.OrdinalIgnoreCase)) is { Columns: { } listed })
-                {
-                    foreach (var name in listed)
-                    {
-                        var reference = Like(new ColumnReferenceExpression { MultiPartIdentifier = new MultiPartIdentifier() }, star);
-                        reference.MultiPartIdentifier.Identifiers.Add(new Identifier { Value = qualifier.Value });
-                        reference.MultiPartIdentifier.Identifiers.Add(new Identifier { Value = name });
-                        query.SelectElements.Add(Like(new SelectScalarExpression { Expression = reference }, star));
-                    }
-                }
-                else
-                {
-                    query.SelectElements.Add(column);
-                }
-            }
+                query.SelectElements.Add(column);
 
             var bound = Specification(query, null, inForce);
 

@@ -112,7 +112,7 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
         other is not null
         && (ReferenceEquals(this, other)
             || (ReferenceEquals(Declarations, other.Declarations)
-                && Same(pseudo, other.pseudo, (a, b) => a.Name == b.Name && Same(a.Columns, b.Columns))
+                && Same(pseudo, other.pseudo, (a, b) => a.Name == b.Name && Same(a.Columns, b.Columns) && ReferenceEquals(a.Written, b.Written))
                 && Same(ctes, other.ctes, ReferenceEquals)
                 && Same(tableVariables, other.tableVariables, ReferenceEquals)
                 && Same(temporaryColumns, other.temporaryColumns, Same)));

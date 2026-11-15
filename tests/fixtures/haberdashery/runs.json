@@ -6,6 +6,8 @@
   "seedReachesEveryEdge": false,
 
   "setups": {
+    // Changes nothing, but asks for a write session, which shop.reprice needs.
+    "writes": "SET NOCOUNT ON;",
     "no orders": "DELETE FROM shop.order_line; DELETE FROM shop.orders;",
     "no parcels": "DELETE FROM shop.parcel;"
   },
@@ -27,6 +29,8 @@
     { "name": "order_summary, two lines", "procedure": "shop.order_summary", "parameters": { "@id": 1 } },
     { "name": "order_summary, an order without a note", "procedure": "shop.order_summary", "parameters": { "@id": 2 } },
     { "name": "order_summary, no such order", "procedure": "shop.order_summary", "parameters": { "@id": 99 } },
-    { "name": "all_lines", "procedure": "shop.all_lines" }
+    { "name": "all_lines", "procedure": "shop.all_lines" },
+    { "name": "reprice, a priced sku", "procedure": "shop.reprice", "parameters": { "@sku": "RIB-SAT-25" }, "setup": "writes" },
+    { "name": "reprice, no such sku", "procedure": "shop.reprice", "parameters": { "@sku": "NONE" }, "setup": "writes" }
   ]
 }

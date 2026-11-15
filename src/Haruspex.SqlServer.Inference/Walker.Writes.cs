@@ -96,18 +96,19 @@ internal sealed partial class Walker
         var inserted = spec is DeleteSpecification ? null : typer.Pseudo(spec, target, Reading(after), actions?.Contains("DELETE") == true ? because : null, at);
         var deleted = spec is InsertSpecification ? null : typer.Pseudo(spec, target, Reading(before), actions?.Contains("INSERT") == true ? because : null, at);
 
+        var written = typer.Written(target, Reading(before));
         EquatableArray<string>? mergeActions = actions is null || actions.Contains(null) ? null : [.. actions.OfType<string>().Distinct().Order(StringComparer.Ordinal)];
 
         // Read in the state before the write: OUTPUT's own columns are inserted and deleted, which are given.
         if (spec.OutputClause is { } output)
         {
-            var row = typer.OutputRow(spec, output, output.SelectColumns, from, where, with, inserted, deleted, mergeActions, because, Reading(before));
+            var row = typer.OutputRow(spec, output, output.SelectColumns, from, where, with, inserted, deleted, written, mergeActions, because, Reading(before));
             appended++;
             after = after.WithResults(after.Results.Append(new ResultShape(IrEncoding.Rowset, Rowset(row), [], IrCardinality.Many), at));
         }
 
         if (spec.OutputIntoClause is { } into)
-            after = OutputInto(into, typer.OutputRow(spec, into, into.SelectColumns, from, where, with, inserted, deleted, mergeActions, because, Reading(before)), after, at);
+            after = OutputInto(into, typer.OutputRow(spec, into, into.SelectColumns, from, where, with, inserted, deleted, written, mergeActions, because, Reading(before)), after, at);
 
         return after;
     }

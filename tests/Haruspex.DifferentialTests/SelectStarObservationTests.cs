@@ -77,6 +77,30 @@ public class SelectStarObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task Output_stars_leave_out_what_a_star_over_the_target_leaves_out()
+    {
+        // inserted.* and deleted.*: no HIDDEN period column, and a column set in place of its sparse columns. A hidden column
+        // named outright is still given.
+        string[] setup =
+        [
+            """
+            CREATE TABLE dbo.obs_price (id int NOT NULL PRIMARY KEY, amount int NULL,
+                valid_from datetime2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL, valid_to datetime2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL,
+                PERIOD FOR SYSTEM_TIME (valid_from, valid_to)) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.obs_price_history));
+            CREATE TABLE dbo.obs_parcel (id int NOT NULL, weight int SPARSE NULL, extras xml COLUMN_SET FOR ALL_SPARSE_COLUMNS);
+            INSERT INTO dbo.obs_parcel (id, weight) VALUES (1, 5);
+            """,
+        ];
+        var outcome = await Run(setup, """
+            INSERT INTO dbo.obs_price (id, amount) OUTPUT inserted.* VALUES (1, 5);
+            UPDATE dbo.obs_price SET amount = 6 OUTPUT deleted.*, inserted.amount AS now WHERE id = 1;
+            DELETE FROM dbo.obs_price OUTPUT deleted.*, CASE WHEN deleted.valid_from IS NULL THEN 0 ELSE 1 END AS named WHERE id = 1;
+            UPDATE dbo.obs_parcel SET weight = 7 OUTPUT inserted.*, deleted.* WHERE id = 1;
+            """);
+        Assert.Equal("id,amount: 1,5 | id,amount,now: 1,5,6 | id,amount,named: 1,6,1 | id,extras,id,extras: 1,<weight>7</weight>,1,<weight>5</weight>", outcome.ToString());
+    }
+
+    [Fact]
     public async Task A_temporary_tables_star_is_its_columns_when_the_statement_runs()
     {
         // In one procedure: an ALTER TABLE between two reads adds its column to the second only.
@@ -149,6 +173,18 @@ public class SelectStarObservationTests(SqlServerFixture server)
         var setup = Changed("CREATE FUNCTION dbo.obs_f() RETURNS TABLE AS RETURN SELECT * FROM dbo.obs_t;");
         Assert.Equal("a,b: 1,2", (await Run(setup, "SELECT * FROM dbo.obs_f();")).ToString());
         Assert.Equal("a,b,c: 1,2,null", (await Run(setup, "EXEC sp_refreshsqlmodule 'dbo.obs_f'; SELECT * FROM dbo.obs_f();")).ToString());
+    }
+
+    [Fact]
+    public async Task A_star_in_a_subquery_of_a_view_or_an_inline_function_is_bound_when_it_runs()
+    {
+        // Only the module's own select list is fixed when it is created (An_inline_functions_star_is_bound_when_it_is_created):
+        // a star in a subquery of it reads the table as it is when the module runs, whether or not it ran before the change.
+        const string Nested = "SELECT (SELECT * FROM dbo.obs_t FOR JSON PATH) AS j";
+        var function = Changed($"CREATE FUNCTION dbo.obs_f() RETURNS TABLE AS RETURN {Nested};");
+        var view = Changed($"CREATE VIEW dbo.obs_v AS {Nested};");
+        Assert.Equal("""j: [{"a":1,"b":2,"c":3}]""", (await Run([.. function, "UPDATE dbo.obs_t SET c = 3;"], "SELECT j FROM dbo.obs_f();")).ToString());
+        Assert.Equal("""j: [{"a":1,"b":2,"c":3}]""", (await Run([.. view, "UPDATE dbo.obs_t SET c = 3;"], "SELECT j FROM dbo.obs_v;")).ToString());
     }
 
     [Fact]

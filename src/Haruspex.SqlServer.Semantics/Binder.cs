@@ -211,6 +211,9 @@ public sealed partial class Binder
                 case TableTarget { Table: var table }:
                     columns.AddRange(Starred(table).Select(c => new StarColumn(c.Column.Name, new TableColumn(source, table, c.Column))));
                     break;
+                case RelationTarget { Relation: PseudoTable { Written: { } written } pseudo }:
+                    columns.AddRange(Starred(written).Select(c => new StarColumn(c.Column.Name, new RelationColumn(source, pseudo, c.Ordinal))));
+                    break;
                 case RelationTarget { Relation: TableVariable { Declaration: var declared } variable }:
                     columns.AddRange(Starred(declared).Select(c => new StarColumn(c.Column.Name, new RelationColumn(source, variable, c.Ordinal))));
                     break;

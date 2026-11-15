@@ -62,6 +62,19 @@ public partial class SelectStarTests
     }
 
     [Fact]
+    public void Select_star_over_a_temporary_table_altered_on_one_path_only_is_unknown()
+    {
+        // Which columns it has depends on the path, so the star can't be listed, and says why.
+        var doc = Procedure("""
+            SELECT o.order_id INTO #picked FROM shop.orders AS o;
+            IF @packed = 1 ALTER TABLE #picked ADD packed bit NULL;
+            SELECT * FROM #picked;
+            """, "@packed bit");
+
+        Assert.NotEmpty(Unknown(doc, "results[0]").Detail);
+    }
+
+    [Fact]
     public void Select_star_into_a_temporary_table_copies_every_column()
     {
         var doc = Procedure("""
