@@ -235,8 +235,8 @@ public partial class SqlProjectReaderTests
     }
 
     [Theory]
-    [InlineData("Version=\"170.*\"", "its version 170.* is a range or a floating version")]
-    [InlineData("Version=\"[170.0.0,)\"", "its version [170.0.0,) is a range or a floating version")]
+    [InlineData("Version=\"170.*\"", "its version 170.* isn't one version")]
+    [InlineData("Version=\"[170.0.0,)\"", "its version [170.0.0,) isn't one version")]
     [InlineData("", "it gives no version")]
     public void A_package_whose_version_isn_t_one_version_in_the_project_is_reported_and_not_read(string version, string why)
     {
@@ -278,6 +278,21 @@ public partial class SqlProjectReaderTests
 
         Assert.Empty(read.Diagnostics);
         Assert.True(read.Model.Databases.ContainsKey("master"));
+    }
+
+    [Fact]
+    public void A_restore_folder_that_isn_t_evaluated_is_reported_and_the_package_not_read()
+    {
+        using var folder = new TempDirectory();
+        Restored(folder);
+        var read = ReadWith(folder, Sdk(
+            """<ItemGroup><PackageReference Include="Microsoft.SqlServer.Dacpacs.Master" Version="170.0.0" /></ItemGroup>""",
+            Dsp + "<RestorePackagesPath>$(SharedPackages)restored</RestorePackagesPath>"));
+
+        var reported = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.PartNotRead, reported.Code);
+        Assert.StartsWith("The PackageReference Microsoft.SqlServer.Dacpacs.Master of p.sqlproj isn't read", reported.Message, StringComparison.Ordinal);
+        Assert.Empty(read.References);
     }
 
     [Fact]

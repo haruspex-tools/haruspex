@@ -15,8 +15,8 @@ for a legacy project:
   `tools/<name>.dacpac` in the folder the restore gave its version: the cache NuGet uses (`NUGET_PACKAGES`, or `.nuget/packages`
   in the user's home), or the project's `RestorePackagesPath`; `<name>` is its `DacpacName`, else `master` or `msdb` for
   `Microsoft.SqlServer.Dacpacs.*`, else its id. A system database's package is that database unless it names another. A package
-  restored without that file is no reference; a version that isn't one version (`170.*`, a range, none in the project) isn't
-  read, and is reported.
+  restored without that file is no reference; a version that isn't one version (`170.*`, a range, none in the project), or a
+  `RestorePackagesPath` that isn't evaluated, isn't read, and is reported.
 - **Visual Studio's own system packages** (`$(DacPacRootPath)\…\SqlSchemas\master.dacpac`), when the project doesn't define
   `$(DacPacRootPath)`, are read by their file name from a `references` folder of the config file.
 - **Any DACPAC not where its build takes it** is looked for by its file name in the config file's `references` folders, in order.

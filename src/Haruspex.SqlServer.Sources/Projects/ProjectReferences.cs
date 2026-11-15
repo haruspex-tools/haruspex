@@ -177,10 +177,18 @@ internal static partial class ProjectReferences
             return;
         }
 
-        var restored = project.Properties[ProjectXml.RestorePackagesPath] is { IsSure: true, Text.Length: > 0 } path ? DiskPath.Full(folder, path.Text) : cache.Folder;
+        // The project's own restore folder, when it names one; a doubted one could be any folder, so nothing in a cache is read.
+        var own = project.Properties[ProjectXml.RestorePackagesPath];
+        if (own is { IsSure: false })
+        {
+            Doubt.Report(diagnostics, what, own.Doubts);
+            return;
+        }
+
+        var restored = own is { Text.Length: > 0 } path ? DiskPath.Full(folder, path.Text) : cache.Folder;
         if (PackageCache.VersionFolder(restored, id, version) is not { } versionFolder)
         {
-            Doubt.Report(diagnostics, what, [new Doubt(item.At, $"its version {version} is a range or a floating version, which the restore resolves against a feed")]);
+            Doubt.Report(diagnostics, what, [new Doubt(item.At, $"its version {version} isn't one version, and a range or a floating version is resolved by the restore against a feed")]);
             return;
         }
 
