@@ -11,6 +11,10 @@ anything not modelled is unknown, with a reason. The guide explains the ideas:
 [summaries and recursion](../../docs/internals/07-summaries-and-recursion.md) and
 [the SQL Server type system, as data](../../docs/internals/08-the-sql-server-type-system-as-data.md).
 
+This README explains the rules construct by construct. [What haruspex models](../../docs/coverage.md) is the list beside it:
+every built-in function and every construct ScriptDom parses, each with what haruspex does with it and a link to its section
+here, written by a test from the code.
+
 ## How data flows through it
 
 ```mermaid

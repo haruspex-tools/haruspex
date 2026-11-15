@@ -18,8 +18,9 @@ internal static class CoverageProbe
     /// </remarks>
     public static readonly (string File, string Sql)[] Schema =
     [
-        ("toy.sql", "CREATE TABLE dbo.toy (id int NOT NULL PRIMARY KEY, name nvarchar(40) NOT NULL, price decimal(9,2) NULL, note nvarchar(max) NULL, made datetime2(3) NOT NULL, code varchar(10) NULL, place vector(3) NULL);"),
+        ("toy.sql", "CREATE TABLE dbo.toy (id int NOT NULL PRIMARY KEY, name nvarchar(40) NOT NULL, price decimal(9,2) NULL, note nvarchar(max) NULL, made datetime2(3) NOT NULL, code varchar(10) NULL, place vector(3) NULL, spec xml NULL);"),
         ("box.sql", "CREATE TABLE dbo.box (id int NOT NULL PRIMARY KEY, toy_id int NOT NULL, qty int NOT NULL DEFAULT 0);"),
+        ("rate.sql", "CREATE TABLE dbo.rate (id int NOT NULL PRIMARY KEY, amount int NOT NULL, valid_from datetime2 GENERATED ALWAYS AS ROW START NOT NULL, valid_to datetime2 GENERATED ALWAYS AS ROW END NOT NULL, PERIOD FOR SYSTEM_TIME (valid_from, valid_to)) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.rate_history));"),
         ("person.sql", "CREATE TABLE dbo.person (id int NOT NULL) AS NODE;"),
         ("likes.sql", "CREATE TABLE dbo.likes (since date NULL) AS EDGE;"),
         ("inbox.sql", "CREATE QUEUE dbo.inbox;"),

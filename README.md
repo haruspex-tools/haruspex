@@ -50,7 +50,9 @@ on a real SQL Server:
   key returns at most one row.
 
 How each is read, and the observations each rule rests on, are in
-[the inference README](src/Haruspex.SqlServer.Inference/README.md). Anything else is reported as unknown, with a reason.
+[the inference README](src/Haruspex.SqlServer.Inference/README.md). Anything else is reported as unknown, with a reason:
+[what haruspex models](docs/coverage.md) lists every built-in function and every construct of T-SQL, with what haruspex
+does with each, written by a test from the code.
 How haruspex works, and why a static analyser is built this way, is explained in [the guide](docs/internals/README.md), and
 the decisions it rests on, with the alternatives, in [the decision log](docs/decisions/README.md). How much of a real
 database it types is measured on two of Microsoft's sample databases, by a test that writes

@@ -10,12 +10,18 @@ namespace Haruspex.Tests.Coverage;
 /// </summary>
 internal static class ScriptDomNodes
 {
-    /// <summary>The kinds of node a body is made of, each with every concrete type ScriptDom derives from it.</summary>
+    /// <summary>
+    /// The kinds of node a body is made of, each with every concrete type ScriptDom derives from it: what a statement is, and
+    /// the parts that decide what it gives (a call's target and options, an UPDATE's SET, a method's target). Left out: the
+    /// options of definitions (a table's, an index's, a login's), which only DDL holds, and data types, which the catalogue of
+    /// built-in types covers.
+    /// </summary>
     private static readonly Type[] Kinds =
     [
         typeof(TSqlStatement), typeof(ScalarExpression), typeof(BooleanExpression), typeof(TableReference), typeof(QueryExpression),
         typeof(SelectElement), typeof(ForClause), typeof(GroupingSpecification), typeof(InsertSource), typeof(MergeAction),
-        typeof(TableHint), typeof(OptimizerHint),
+        typeof(TableHint), typeof(OptimizerHint), typeof(ExecutableEntity), typeof(ExecuteOption), typeof(ResultSetDefinition),
+        typeof(SetClause), typeof(CallTarget),
     ];
 
     /// <summary>The clauses of a query or a write, which derive from nothing more particular than a fragment.</summary>
@@ -24,7 +30,8 @@ internal static class ScriptDomNodes
         typeof(WithCtesAndXmlNamespaces), typeof(CommonTableExpression), typeof(XmlNamespaces), typeof(FromClause), typeof(WhereClause),
         typeof(GroupByClause), typeof(HavingClause), typeof(OrderByClause), typeof(TopRowFilter), typeof(OffsetClause), typeof(OverClause),
         typeof(WindowFrameClause), typeof(WindowClause), typeof(WindowDefinition), typeof(WithinGroupClause), typeof(TableSampleClause),
-        typeof(OutputClause), typeof(OutputIntoClause),
+        typeof(OutputClause), typeof(OutputIntoClause), typeof(TemporalClause), typeof(MergeActionClause), typeof(FetchType),
+        typeof(CursorDefinition), typeof(WindowDelimiter), typeof(ExpressionWithSortOrder),
     ];
 
     /// <summary>The enums whose members are operators, joins, set operators and assignments, each an entry of its own.</summary>

@@ -1,5 +1,6 @@
-# What haruspex does with each construct ScriptDom parses: every statement, expression, predicate, table source, query
-# part, clause and hint type of ScriptDom 180.140.0, and every operator, join, set operator and assignment of its enums.
+# What haruspex does with each construct ScriptDom parses: every node type of the kinds a procedure's body is made of
+# (ScriptDomNodes lists them, and tests/coverage/README.md says how they were chosen) in ScriptDom 180.140.0, and every
+# operator, join, set operator and assignment of its enums.
 # CoveragePageTests fails when ScriptDom has a type or operator with no entry here, or an entry names one it lacks, and runs
 # every example through haruspex to check its claim. tests/coverage/README.md explains the format; in short, each line is
 #
@@ -29,8 +30,10 @@ InsertStatement | INSERT | modelled | DML | Writes rows, typed for a temporary t
 UpdateStatement | UPDATE | modelled | DML | Changes rows; a column it sets in a temporary table or variable takes the new value's type too. | UPDATE dbo.box SET qty = qty + 1 WHERE id = 1;
 DeleteStatement | DELETE | modelled | DML | Removes rows, which changes no column's type. | DELETE FROM dbo.box WHERE id = 1;
 MergeStatement | MERGE | modelled | DML | Each WHEN clause is the insert, update or delete it holds. | MERGE dbo.box AS b USING dbo.toy AS t ON b.toy_id = t.id WHEN MATCHED THEN UPDATE SET qty = 0 WHEN NOT MATCHED THEN INSERT (id, toy_id, qty) VALUES (t.id, t.id, 1);
+AssignmentSetClause | SET c = x in UPDATE | modelled | DML | The column, in a temporary table or variable, takes the value's type too. | UPDATE dbo.box SET qty = 1;
+FunctionCallSetClause | SET c.WRITE( … ) in UPDATE | partly unsupported-statement | DML | Read in an UPDATE of a permanent table, which changes no column's type; on a temporary table or variable, whose column it changes, not modelled yet. | UPDATE dbo.toy SET note.WRITE(N'x', 0, 1) WHERE id = 1; && CREATE TABLE #t (c nvarchar(max) NULL); UPDATE #t SET c.WRITE(N'x', 0, 1); SELECT c FROM #t;
 TruncateTableStatement | TRUNCATE TABLE | no-effect | DML | Removes every row and fires no trigger. | TRUNCATE TABLE dbo.box;
-ExecuteStatement | EXECUTE | partly dynamic-sql | Calls | A call of a procedure in the project returns what it returns; a string of dynamic SQL can't be read, so the results after it can't be listed. | EXEC dbo.helper; && EXEC sp_executesql N'SELECT 1 AS a';
+ExecuteStatement | EXECUTE | partly dynamic-sql | Calls | A call of a procedure in the project returns what it returns, unless WITH RESULT SETS changes it (below); a string of dynamic SQL can't be read, so the results after it can't be listed. | EXEC dbo.helper; && EXEC sp_executesql N'SELECT 1 AS a';
 BulkInsertStatement | BULK INSERT | unknown unsupported-statement | | Not modelled. | BULK INSERT dbo.box FROM 'boxes.csv';
 InsertBulkStatement | INSERT BULK | unknown unsupported-statement | | Not modelled. | INSERT BULK dbo.box (id int);
 ReadTextStatement | READTEXT | unknown unsupported-statement | | Not modelled. | DECLARE @p varbinary(16); READTEXT dbo.toy.note @p 0 1;
@@ -38,6 +41,15 @@ WriteTextStatement | WRITETEXT | unknown unsupported-statement | | Not modelled.
 UpdateTextStatement | UPDATETEXT | unknown unsupported-statement | | Not modelled. | DECLARE @p varbinary(16); UPDATETEXT dbo.toy.note @p 0 NULL 'x';
 CopyStatement | COPY INTO | unknown unsupported-statement | | Not modelled. | COPY INTO dbo.box FROM 'https://example.com/boxes.csv';
 ReceiveStatement | RECEIVE | unknown unsupported-statement | | Not modelled. | RECEIVE TOP (1) * FROM dbo.inbox;
+
+[Calls]
+ExecutableProcedureReference | EXEC procedure | modelled | Calls | The procedure called, whose result sets arrive where it is called. | EXEC dbo.helper;
+ExecutableStringList | EXEC ( 'string' ) | unknown dynamic-sql | Calls | Dynamic SQL, which can't be read, so the results after it can't be listed. | EXEC ('SELECT 1 AS a');
+ExecuteOption | EXEC … WITH RECOMPILE | no-effect | Calls | Changes no result. | EXEC dbo.helper WITH RECOMPILE;
+ResultSetsExecuteOption | EXEC … WITH RESULT SETS | partly unsupported-statement | Calls | UNDEFINED is as no clause; declared result sets or NONE aren't modelled, so the results after the call are unknown. | EXEC dbo.helper WITH RESULT SETS UNDEFINED; && EXEC dbo.helper WITH RESULT SETS NONE;
+InlineResultSetDefinition | RESULT SETS (( columns )) | unknown unsupported-statement | Calls | Not modelled yet: the declared columns rename the callee's and convert its values. | EXEC dbo.helper WITH RESULT SETS ((renamed varchar(3) NULL));
+SchemaObjectResultSetDefinition | RESULT SETS ( AS OBJECT … ) | unknown unsupported-statement | Calls | Not modelled yet. | EXEC dbo.helper WITH RESULT SETS (AS OBJECT dbo.box);
+ResultSetDefinition | RESULT SETS ( AS FOR XML ) | unknown unsupported-statement | Calls | Not modelled yet. | EXEC dbo.helper WITH RESULT SETS (AS FOR XML);
 
 [Statements that steer the flow]
 BeginEndBlockStatement | BEGIN … END | modelled | The state | Its statements in order. | BEGIN SELECT 1 AS a; END
@@ -60,6 +72,8 @@ DeclareVariableStatement | DECLARE @v | modelled | The state | Declares the vari
 SetVariableStatement | SET @v = … | partly unsupported-statement | The state | Assigns the value, converted to the variable's type; a variable of a CLR type set by a method call isn't read. | DECLARE @n int; SET @n = 2; SELECT @n AS n; && DECLARE @g geography; SET @g.STSrid = 4326;
 DeclareTableVariableStatement | DECLARE @t TABLE | modelled | The state | Declares the table variable with its columns. | DECLARE @t TABLE (a int NOT NULL); SELECT a FROM @t;
 DeclareCursorStatement | DECLARE … CURSOR | modelled | Cursors | Declares the cursor, whose FETCH reads its query's columns. | DECLARE c CURSOR FOR SELECT id FROM dbo.toy; OPEN c; CLOSE c; DEALLOCATE c;
+CursorDefinition | the cursor's options and query | within DeclareCursorStatement | | |
+FetchType | NEXT, PRIOR, FIRST, … in FETCH | within FetchCursorStatement | | |
 OpenCursorStatement | OPEN | no-effect | Cursors | Returns nothing. | DECLARE c CURSOR FOR SELECT id FROM dbo.toy; OPEN c;
 FetchCursorStatement | FETCH | modelled | Cursors | FETCH … INTO sets its variables to the cursor's columns; FETCH without INTO returns one row of them. | DECLARE @i int; DECLARE c CURSOR FOR SELECT id FROM dbo.toy; OPEN c; FETCH NEXT FROM c INTO @i; SELECT @i AS i;
 CloseCursorStatement | CLOSE | no-effect | Cursors | Returns nothing. | DECLARE c CURSOR FOR SELECT id FROM dbo.toy; OPEN c; CLOSE c;
@@ -386,6 +400,9 @@ FromClause | FROM | modelled | Result sets are positional | Its sources, joined.
 WhereClause | WHERE | modelled | Refinement | Filters rows, and what it proves about a column (such as IS NOT NULL) holds after it. | SELECT price FROM dbo.toy WHERE price IS NOT NULL;
 GroupByClause | GROUP BY | modelled | Aggregates and scalar subqueries | One row per group. | SELECT toy_id, SUM(qty) AS n FROM dbo.box GROUP BY toy_id;
 HavingClause | HAVING | modelled | Refinement | Filters groups. | SELECT toy_id FROM dbo.box GROUP BY toy_id HAVING SUM(qty) > 1;
+TemporalClause | FOR SYSTEM_TIME | modelled | How many rows (`Cardinality.cs`) | The table's columns, its hidden period columns left out of *; read at other than AS OF, its rows may repeat a key, so key claims are dropped. | SELECT id, amount FROM dbo.rate FOR SYSTEM_TIME ALL WHERE id = 1;
+ExpressionWithSortOrder | x ASC, x DESC | within OrderByClause | | |
+WindowDelimiter | UNBOUNDED PRECEDING, n PRECEDING, … | within WindowFrameClause | | |
 OrderByClause | ORDER BY | no-effect | | Orders rows, which changes no column. | SELECT id FROM dbo.toy ORDER BY name;
 TopRowFilter | TOP | modelled | How many rows (`Cardinality.cs`) | Limits the rows, which changes no column; TOP (1) returns at most one. | SELECT TOP (1) id FROM dbo.toy ORDER BY id;
 OffsetClause | OFFSET … FETCH | modelled | How many rows (`Cardinality.cs`) | Skips and limits rows, which changes no column. | SELECT id FROM dbo.toy ORDER BY id OFFSET 1 ROWS FETCH NEXT 2 ROWS ONLY;
@@ -457,6 +474,7 @@ VectorSearchTableReference | VECTOR_SEARCH | unknown unsupported-source | | Not 
 SelectInsertSource | INSERT … SELECT | modelled | DML | The query's rows, converted to the target's columns. | INSERT INTO dbo.box (id, toy_id, qty) SELECT id, id, 1 FROM dbo.toy;
 ValuesInsertSource | INSERT … VALUES | modelled | DML | The rows written, converted to the target's columns. | INSERT INTO dbo.box (id, toy_id, qty) VALUES (2, 1, 1);
 ExecuteInsertSource | INSERT … EXEC | modelled | `INSERT … EXEC` | The procedure's result sets, written into the table; they aren't returned. | DECLARE @t TABLE (one int); INSERT INTO @t EXEC dbo.helper; SELECT one FROM @t;
+MergeActionClause | WHEN … THEN | within MergeStatement | | |
 InsertMergeAction | WHEN NOT MATCHED THEN INSERT | modelled | DML | As INSERT. | MERGE dbo.box AS b USING dbo.toy AS t ON b.toy_id = t.id WHEN NOT MATCHED THEN INSERT (id, toy_id, qty) VALUES (t.id, t.id, 1);
 UpdateMergeAction | WHEN MATCHED THEN UPDATE | modelled | DML | As UPDATE. | MERGE dbo.box AS b USING dbo.toy AS t ON b.toy_id = t.id WHEN MATCHED THEN UPDATE SET qty = 0;
 DeleteMergeAction | WHEN MATCHED THEN DELETE | modelled | DML | As DELETE. | MERGE dbo.box AS b USING dbo.toy AS t ON b.toy_id = t.id WHEN MATCHED THEN DELETE;
@@ -502,6 +520,9 @@ ExtractFromExpression | EXTRACT( part FROM x ) | not-parsed | | Fabric's form, w
 OdbcFunctionCall | { fn … } | unknown unsupported-expression | | Not modelled. | SELECT {fn UCASE(name)} AS a FROM dbo.toy;
 OdbcConvertSpecification | SQL_ type in { fn CONVERT } | within OdbcFunctionCall | | |
 OdbcLiteral | { d '…' } | unknown unsupported-expression | | Not modelled. | SELECT {d '2026-01-01'} AS a;
+MultiPartIdentifierCallTarget | t.c.method( … ) | unknown unsupported-expression | | Not modelled: a method of an xml or CLR column. | SELECT t.spec.value('(/a)[1]', 'int') AS a FROM dbo.toy AS t;
+ExpressionCallTarget | ( expression ).method( … ) | unknown unsupported-expression | | Not modelled: a method of a CLR value. | SELECT hierarchyid::GetRoot().ToString() AS a;
+UserDefinedTypeCallTarget | type::method( … ) | unknown unsupported-expression | | Not modelled: the CLR types aren't. | SELECT hierarchyid::GetRoot() AS a;
 UserDefinedTypePropertyAccess | type::property, value.property | unknown unsupported-expression | | Not modelled: the CLR types aren't. | SELECT geography::Point(1, 1, 4326).Lat AS a;
 JsonKeyValue | key : value in JSON_OBJECT | within FunctionCall | | |
 AIGenerateEmbeddingsFunctionCall | AI_GENERATE_EMBEDDINGS | unknown unsupported-expression | | Not modelled. | SELECT AI_GENERATE_EMBEDDINGS(name USE MODEL toy_model) AS a FROM dbo.toy;
@@ -568,7 +589,7 @@ GraphRecursiveMatchQuantifier | {1,3} and + in SHORTEST_PATH | within GraphMatch
 BooleanExpressionSnippet | | not-parsed | | Built by code that holds SQL as text, never by the parser. |
 EventDeclarationCompareFunctionParameter | an event's predicate | not-parsed | | Part of an event session's definition, never of a body. |
 
-[Comparisons]
+[Comparisons and logical operators]
 BooleanComparisonType.Equals | = | modelled | Which conditions prove a column non-null | With the column as an operand, proves it non-null where it holds. | SELECT price FROM dbo.toy WHERE price = 1;
 BooleanComparisonType.NotEqualToBrackets | <> | modelled | Which conditions prove a column non-null | With the column as an operand, proves it non-null where it holds. | SELECT price FROM dbo.toy WHERE price <> 1;
 BooleanComparisonType.NotEqualToExclamation | != | modelled | Which conditions prove a column non-null | With the column as an operand, proves it non-null where it holds. | SELECT price FROM dbo.toy WHERE price != 1;

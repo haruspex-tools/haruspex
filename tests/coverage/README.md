@@ -34,11 +34,22 @@ To refresh the list for a later version, read the same pages again, change the n
 
 ## The syntax: `syntax.txt`
 
-An entry for every construct ScriptDom parses: each concrete node type that is a statement, an expression, a predicate, a
-table source, a query, a part of a select list, a `FOR` clause, a grouping, an insert source, a merge action or a hint;
-each clause of a query or a write; and each member of the enums that say which operator, join, set operator or
-assignment a node is. `ScriptDomNodes` reads them from ScriptDom itself, so a construct a new ScriptDom adds fails the test
-until it has an entry. The file's head gives the format.
+An entry for every construct ScriptDom parses that a procedure's body is made of. `ScriptDomNodes` reads them from
+ScriptDom itself, so a construct a new ScriptDom adds fails the test until it has an entry. They are:
+
+- each concrete node type of the kinds that say what a statement is or does: a statement, an expression, a predicate, a
+  table source, a query, a part of a select list, a `FOR` clause, a grouping, an insert source, a merge action, a hint, and
+  the parts of a statement that decide what it gives: what `EXEC` runs and its options (`WITH RESULT SETS`), an `UPDATE`'s
+  `SET` clauses, and the target of a method call (`t.c.value(…)`);
+- each clause of a query, a write, a cursor or a window that is a type of its own (`WHERE`, `FOR SYSTEM_TIME`, `OVER`, a
+  frame's bounds, a cursor's definition, `FETCH NEXT`);
+- each member of the enums that say which operator, comparison, join, set operator or assignment a node is.
+
+Left out on purpose: the options of definitions (a table's, an index's, a login's, a database's: most of ScriptDom's 938
+types), which only a `CREATE` or `ALTER` holds, and whose statement's entry says what haruspex does with it; and data types,
+which [the catalogue of built-in types](../../docs/internals/08-the-sql-server-type-system-as-data.md) covers, with tests
+of its own. Kinds were chosen by asking, of each kind ScriptDom has, whether a part of that kind can change what a body
+returns; a reviewer who finds a kind that can should add it to `ScriptDomNodes`. The file's head gives the format.
 
 Each entry claims what haruspex does with the construct, and its example shows it:
 

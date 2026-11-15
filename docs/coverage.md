@@ -18,12 +18,12 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | In the catalogue | 87 |
 | Not in it, and unknown where they are called | 251 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
-| Constructs ScriptDom parses | 549 |
-| Modelled, wholly or in part | 146 |
-| Read, changing no result | 28 |
-| Unknown | 318 |
+| Constructs ScriptDom parses | 567 |
+| Modelled, wholly or in part | 151 |
+| Read, changing no result | 29 |
+| Unknown | 325 |
 | Not in a procedure's body, or never parsed from one | 40 |
-| Parts of another construct | 17 |
+| Parts of another construct | 22 |
 
 ## Built-in functions
 
@@ -612,8 +612,10 @@ Each construct as ScriptDom names it. What a modelled construct gives is explain
 | `UPDATE` | `UpdateStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | Changes rows; a column it sets in a temporary table or variable takes the new value's type too. |
 | `DELETE` | `DeleteStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | Removes rows, which changes no column's type. |
 | `MERGE` | `MergeStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | Each WHEN clause is the insert, update or delete it holds. |
+| `SET c = x in UPDATE` | `AssignmentSetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | The column, in a temporary table or variable, takes the value's type too. |
+| `SET c.WRITE( … ) in UPDATE` | `FunctionCallSetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) in part; otherwise unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Read in an UPDATE of a permanent table, which changes no column's type; on a temporary table or variable, whose column it changes, not modelled yet. |
 | `TRUNCATE TABLE` | `TruncateTableStatement` | read, changing no result | Removes every row and fires no trigger. |
-| `EXECUTE` | `ExecuteStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#calls) in part; otherwise unknown, `dynamic-sql` | A call of a procedure in the project returns what it returns; a string of dynamic SQL can't be read, so the results after it can't be listed. |
+| `EXECUTE` | `ExecuteStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#calls) in part; otherwise unknown, `dynamic-sql` | A call of a procedure in the project returns what it returns, unless WITH RESULT SETS changes it (below); a string of dynamic SQL can't be read, so the results after it can't be listed. |
 | `BULK INSERT` | `BulkInsertStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `INSERT BULK` | `InsertBulkStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `READTEXT` | `ReadTextStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
@@ -621,6 +623,18 @@ Each construct as ScriptDom names it. What a modelled construct gives is explain
 | `UPDATETEXT` | `UpdateTextStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `COPY INTO` | `CopyStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `RECEIVE` | `ReceiveStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
+
+### Calls
+
+| Syntax | Node | Claim | What it gives |
+|---|---|---|---|
+| `EXEC procedure` | `ExecutableProcedureReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#calls) | The procedure called, whose result sets arrive where it is called. |
+| `EXEC ( 'string' )` | `ExecutableStringList` | unknown, `dynamic-sql` | Dynamic SQL, which can't be read, so the results after it can't be listed. |
+| `EXEC … WITH RECOMPILE` | `ExecuteOption` | read, changing no result | Changes no result. |
+| `EXEC … WITH RESULT SETS` | `ResultSetsExecuteOption` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#calls) in part; otherwise unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | UNDEFINED is as no clause; declared result sets or NONE aren't modelled, so the results after the call are unknown. |
+| `RESULT SETS (( columns ))` | `InlineResultSetDefinition` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled yet: the declared columns rename the callee's and convert its values. |
+| `RESULT SETS ( AS OBJECT … )` | `SchemaObjectResultSetDefinition` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled yet. |
+| `RESULT SETS ( AS FOR XML )` | `ResultSetDefinition` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled yet. |
 
 ### Statements that steer the flow
 
@@ -649,6 +663,8 @@ Each construct as ScriptDom names it. What a modelled construct gives is explain
 | `SET @v = …` | `SetVariableStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#the-state) in part; otherwise unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Assigns the value, converted to the variable's type; a variable of a CLR type set by a method call isn't read. |
 | `DECLARE @t TABLE` | `DeclareTableVariableStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#the-state) | Declares the table variable with its columns. |
 | `DECLARE … CURSOR` | `DeclareCursorStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#cursors) | Declares the cursor, whose FETCH reads its query's columns. |
+| `the cursor's options and query` | `CursorDefinition` | part of `DeclareCursorStatement` |  |
+| `NEXT, PRIOR, FIRST, … in FETCH` | `FetchType` | part of `FetchCursorStatement` |  |
 | `OPEN` | `OpenCursorStatement` | read, changing no result | Returns nothing. |
 | `FETCH` | `FetchCursorStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#cursors) | FETCH … INTO sets its variables to the cursor's columns; FETCH without INTO returns one row of them. |
 | `CLOSE` | `CloseCursorStatement` | read, changing no result | Returns nothing. |
@@ -736,6 +752,9 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `WHERE` | `WhereClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#refinement) | Filters rows, and what it proves about a column (such as IS NOT NULL) holds after it. |
 | `GROUP BY` | `GroupByClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#aggregates-and-scalar-subqueries) | One row per group. |
 | `HAVING` | `HavingClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#refinement) | Filters groups. |
+| `FOR SYSTEM_TIME` | `TemporalClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#how-many-rows-cardinalitycs) | The table's columns, its hidden period columns left out of *; read at other than AS OF, its rows may repeat a key, so key claims are dropped. |
+| `x ASC, x DESC` | `ExpressionWithSortOrder` | part of `OrderByClause` |  |
+| `UNBOUNDED PRECEDING, n PRECEDING, …` | `WindowDelimiter` | part of `WindowFrameClause` |  |
 | `ORDER BY` | `OrderByClause` | read, changing no result | Orders rows, which changes no column. |
 | `TOP` | `TopRowFilter` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#how-many-rows-cardinalitycs) | Limits the rows, which changes no column; TOP (1) returns at most one. |
 | `OFFSET … FETCH` | `OffsetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#how-many-rows-cardinalitycs) | Skips and limits rows, which changes no column. |
@@ -816,6 +835,7 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `INSERT … SELECT` | `SelectInsertSource` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | The query's rows, converted to the target's columns. |
 | `INSERT … VALUES` | `ValuesInsertSource` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | The rows written, converted to the target's columns. |
 | `INSERT … EXEC` | `ExecuteInsertSource` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#insert--exec) | The procedure's result sets, written into the table; they aren't returned. |
+| `WHEN … THEN` | `MergeActionClause` | part of `MergeStatement` |  |
 | `WHEN NOT MATCHED THEN INSERT` | `InsertMergeAction` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | As INSERT. |
 | `WHEN MATCHED THEN UPDATE` | `UpdateMergeAction` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | As UPDATE. |
 | `WHEN MATCHED THEN DELETE` | `DeleteMergeAction` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | As DELETE. |
@@ -864,6 +884,9 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `{ fn … }` | `OdbcFunctionCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled. |
 | `SQL_ type in { fn CONVERT }` | `OdbcConvertSpecification` | part of `OdbcFunctionCall` |  |
 | `{ d '…' }` | `OdbcLiteral` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled. |
+| `t.c.method( … )` | `MultiPartIdentifierCallTarget` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: a method of an xml or CLR column. |
+| `( expression ).method( … )` | `ExpressionCallTarget` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: a method of a CLR value. |
+| `type::method( … )` | `UserDefinedTypeCallTarget` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: the CLR types aren't. |
 | `type::property, value.property` | `UserDefinedTypePropertyAccess` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: the CLR types aren't. |
 | `key : value in JSON_OBJECT` | `JsonKeyValue` | part of `FunctionCall` |  |
 | `AI_GENERATE_EMBEDDINGS` | `AIGenerateEmbeddingsFunctionCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled. |
@@ -936,7 +959,7 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 |  | `BooleanExpressionSnippet` | never parsed from a body | Built by code that holds SQL as text, never by the parser. |
 | `an event's predicate` | `EventDeclarationCompareFunctionParameter` | never parsed from a body | Part of an event session's definition, never of a body. |
 
-### Comparisons
+### Comparisons and logical operators
 
 | Syntax | Node | Claim | What it gives |
 |---|---|---|---|
