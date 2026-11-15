@@ -302,6 +302,20 @@ public class ExpressionTests
     }
 
     [Fact]
+    public void Concat_of_a_json_column_is_unknown_with_a_reason_not_json_text()
+    {
+        // A json column is live JSON whose shape is unknown, not an unknown value: it is no argument to pass through. SQL Server
+        // refuses CONCAT of json (Msg 257), so the call stays not modelled, with a reason the IR records.
+        var doc = InferProcedure.Infer(
+            "dbo.p",
+            ("tables.sql", Tables + "\nCREATE TABLE dbo.d (id int NOT NULL PRIMARY KEY, j json NULL);\nGO\n"),
+            ("p.sql", "CREATE PROCEDURE dbo.p AS\nSELECT CONCAT(d.j, 'x') AS a, CONCAT_WS(',', d.j, 'x') AS b FROM dbo.d AS d;"));
+
+        Assert.Equal("unknown: unsupported-expression", Sql(doc, "a"));
+        Assert.Equal("unknown: unsupported-expression", Sql(doc, "b"));
+    }
+
+    [Fact]
     public void Concat_stops_at_8000_bytes_unless_an_argument_is_max()
     {
         var doc = Procedure("""

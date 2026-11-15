@@ -437,10 +437,11 @@ internal sealed partial class Typer
         var arguments = call.Parameters.ToList();
         if (arguments.Count < (separated ? 3 : 2))
             return NotModelled(call, "too few arguments.");
-        // An argument already unknown makes the whole unknown for its own reason, as it does an operand of +, so the note says
-        // why (a column not found, a SQLCMD variable) rather than that a length isn't modelled.
+        // An argument already unknown makes the whole unknown for its own reason, so the note says why (a column not found, a
+        // SQLCMD variable) rather than that a length isn't modelled. Live JSON whose shape is unknown, a json column's, is a value
+        // of known kind, not an unknown one, and SQL Server refuses CONCAT of json (Msg 257), so it stays not modelled.
         var values = arguments.Select(a => Strip(a) is NullLiteral ? null : Expression(a, scope)).ToList();
-        if (values.FirstOrDefault(v => v?.Shape is UnknownShape) is { } unknown)
+        if (values.FirstOrDefault(v => v is { IsLiveJson: false, Shape: UnknownShape }) is { } unknown)
             return unknown;
         var pieces = values.Select(Piece).ToList();
         if (pieces.Any(p => p is null))
