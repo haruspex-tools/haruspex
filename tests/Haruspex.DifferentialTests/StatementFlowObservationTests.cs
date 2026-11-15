@@ -262,6 +262,20 @@ public class StatementFlowObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_temporary_table_made_from_a_query_has_the_columns_the_query_gives()
+    {
+        // CREATE TABLE … AS SELECT, which SQL Server 2025 takes with a WITH clause (without one it is Msg 156), into a
+        // temporary table as into a permanent one.
+        Assert.Equal("a,b: 1,x", (await Run([], "CREATE TABLE #obs_copy WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT 1 AS a, 'x' AS b; SELECT * FROM #obs_copy;")).ToString());
+        Assert.Equal(156, await Fails([], "CREATE TABLE #obs_copy AS SELECT 1 AS a;"));
+    }
+
+    [Fact]
+    public async Task A_temporary_table_cannot_be_a_graph_table() =>
+        // A procedure that creates one is created, and fails when it runs (13914).
+        Assert.Equal(13914, await Fails(["CREATE PROCEDURE dbo.obs_edge AS CREATE TABLE #e AS EDGE;"], "EXEC dbo.obs_edge;"));
+
+    [Fact]
     public async Task A_variable_or_table_variable_declared_in_a_branch_not_taken_still_exists()
     {
         // Declarations are compiled, not run: the scope is the whole batch from the DECLARE on, and the value is NULL.

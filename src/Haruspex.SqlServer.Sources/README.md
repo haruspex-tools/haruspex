@@ -97,7 +97,10 @@ Console.WriteLine($"{project.Projects.Count} projects, {project.References.Count
 - **Everything the model needs is read.** Tables come with their CHECK constraints (a check that a later
   `ALTER TABLE … NOCHECK CONSTRAINT` may disable says so), their primary key, unique constraints and unfiltered unique
   indexes (a key whose index a later `ALTER INDEX … DISABLE` may disable says so), and alias and CLR types from
-  `CREATE TYPE`. DML triggers are read from `CREATE`, `CREATE OR ALTER` and `ALTER TRIGGER`, every definition kept, since
+  `CREATE TYPE`. An edge table that declares no columns of its own (`CREATE TABLE shop.follows AS EDGE`) is a graph table
+  with none listed, as its package reads it. A `CREATE TABLE` whose columns its script doesn't list, a FileTable's or one made
+  from a query (`WITH (…) AS SELECT`), is passed over with a note (HAR1013), so a name in it is unresolved, never guessed.
+  DML triggers are read from `CREATE`, `CREATE OR ALTER` and `ALTER TRIGGER`, every definition kept, since
   which applies depends on the order the scripts run. Foreign keys with an `ON DELETE` or `ON UPDATE` action are read from
   `CREATE TABLE` and `ALTER TABLE … ADD`, as their actions fire the referencing table's triggers. A view defined once keeps
   its definition (one defined twice records its second as a `Redefinition`), and a synonym the name it stands for. Every

@@ -204,12 +204,14 @@ public partial class SelectStarTests
     }
 
     [Theory]
-    [InlineData("CREATE TABLE shop.depot (depot_id int NOT NULL) AS NODE;")]
-    [InlineData("CREATE TABLE shop.route (km int NULL) AS EDGE;")]
-    public void Select_star_over_a_graph_table_is_unknown_since_its_pseudo_columns_are_named_by_the_server(string table)
+    [InlineData("depot", "CREATE TABLE shop.depot (depot_id int NOT NULL) AS NODE;")]
+    [InlineData("route", "CREATE TABLE shop.route (km int NULL) AS EDGE;")]
+    [InlineData("follows", "CREATE TABLE shop.follows AS EDGE;")]
+    public void Select_star_over_a_graph_table_is_unknown_since_its_pseudo_columns_are_named_by_the_server(string name, string table)
     {
-        // A_graph_tables_star_adds_pseudo_columns_named_by_the_server: $node_id_ and a generated suffix.
-        var unknown = Unknown(Procedure($"SELECT * FROM shop.{(table.Contains("depot", StringComparison.Ordinal) ? "depot" : "route")} AS g;", others: table), "results[0]");
+        // A_graph_tables_star_adds_pseudo_columns_named_by_the_server: $node_id_ and a generated suffix. An edge table may declare
+        // no columns of its own (An_edge_table_may_declare_no_columns_and_its_star_is_its_pseudo_columns), and is read the same.
+        var unknown = Unknown(Procedure($"SELECT * FROM shop.{name} AS g;", others: table), "results[0]");
 
         Assert.Equal(IrUnknownReason.UnsupportedQuery, unknown.Reason);
         Assert.Contains("graph", unknown.Detail, StringComparison.Ordinal);

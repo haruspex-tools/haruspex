@@ -104,6 +104,7 @@ public class DiagnosticMessagesTests
         (1009, () => Project("<ItemGroup><Build Include=\"..\\archive\\loans.sql\" /></ItemGroup>")),
         (1010, () => Project("", sdk: "MSBuild.Sdk.SqlProj/3.0.0")),
         (1012, () => Project("<ItemGroup><ProjectReference Include=\"..\\archive\\archive.sqlproj\"><DatabaseSqlCmdVariable>Archive</DatabaseSqlCmdVariable><ServerSqlCmdVariable>Annexe</ServerSqlCmdVariable></ProjectReference></ItemGroup>")),
+        (1013, () => Cli(["CREATE TABLE lib.scan WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT b.id, b.title FROM lib.book AS b;", GetBook])),
 
         (2001, () => Cli(["CREATE PROCEDURE lib.p AS SET NOCOUNT, NOEXEC ON;\nSELECT b.id FROM lib.book AS b;"])),
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),

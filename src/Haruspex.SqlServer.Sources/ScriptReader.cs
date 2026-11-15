@@ -121,10 +121,23 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
         into.Define(into.UserTypes, name, new ClrType(name, SyntaxReader.Span(file, clr)), At(clr));
     }
 
+    /// <summary>
+    /// A <c>CREATE TABLE</c>. ScriptDom gives no definition when the statement lists no columns: an edge table may declare none
+    /// of its own (observed: An_edge_table_may_declare_no_columns_and_its_star_is_its_pseudo_columns), and is read as a graph
+    /// table with none listed, as its package reads it; a FileTable's columns are fixed by the server and one made from a query
+    /// (<c>AS SELECT</c>) has its query's, neither of which is read here, so either is passed over with a note.
+    /// </summary>
     private void ReadTable(CreateTableStatement statement)
     {
         var name = SyntaxReader.Name(statement.SchemaObjectName);
-        var table = SyntaxReader.Table(name, statement.Definition, SyntaxReader.Span(file, statement), statement.AsNode || statement.AsEdge);
+        if (statement.Definition is null && !statement.AsEdge)
+        {
+            var kind = statement.AsFileTable ? "a FileTable, whose columns the server fixes" : "made from a query, whose columns are the query's";
+            into.Diagnostics.Add(SourceCodes.ColumnsNotListed.At(At(statement), $"{name} is {kind}; haruspex doesn't read them, so a name in it is unresolved."));
+            return;
+        }
+
+        var table = SyntaxReader.Table(name, statement.Definition ?? new TableDefinition(), SyntaxReader.Span(file, statement), statement.AsNode || statement.AsEdge);
         into.Define(into.Tables, name, table, At(statement));
         ReadCascadingKeys(name, statement.Definition);
     }

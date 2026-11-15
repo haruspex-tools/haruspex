@@ -77,6 +77,16 @@ public class SelectStarObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task An_edge_table_may_declare_no_columns_and_its_star_is_its_pseudo_columns()
+    {
+        // $edge_id_, $from_id_ and $to_id_, each with its suffix; the internal columns behind them are hidden. A node table
+        // must declare a column: AS NODE alone doesn't parse (Msg 102).
+        var outcome = await Run(["CREATE TABLE dbo.obs_follows AS EDGE;"], "SELECT * FROM dbo.obs_follows; EXEC (N'CREATE TABLE dbo.obs_member AS NODE;');");
+        Assert.Matches("^\\$edge_id_[0-9A-F]{32},\\$from_id_[0-9A-F]{32},\\$to_id_[0-9A-F]{32}: $", Assert.Single(outcome.Sets));
+        Assert.Equal(102, outcome.Error);
+    }
+
+    [Fact]
     public async Task Output_stars_leave_out_what_a_star_over_the_target_leaves_out()
     {
         // inserted.* and deleted.*: no HIDDEN period column, and a column set in place of its sparse columns. A hidden column

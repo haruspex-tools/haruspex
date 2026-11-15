@@ -9,6 +9,7 @@ HAR1009 E A script a project builds isn't found [Haruspex.SqlServer.Sources.Sour
 HAR1010 E A file that can't be read as a database project [Haruspex.SqlServer.Sources.SourceCodes.UnreadableProject]
 HAR1011 N A project's reference isn't read yet (retired) [Haruspex.SqlServer.Sources.SourceCodes.ReferenceNotRead]
 HAR1012 N A reference to a database on another server isn't read [Haruspex.SqlServer.Sources.SourceCodes.OtherServer]
+HAR1013 N A table whose definition lists no columns isn't read [Haruspex.SqlServer.Sources.SourceCodes.ColumnsNotListed]
 HAR2001 N A statement that isn't modelled yet [Haruspex.SqlServer.Inference.InferenceCodes.UnsupportedStatement]
 HAR2002 N Results from code outside the project (retired) [Haruspex.SqlServer.Inference.InferenceCodes.ExternalCode]
 HAR2003 N An object whose definition depends on the order of scripts [Haruspex.SqlServer.Inference.InferenceCodes.Redefined]

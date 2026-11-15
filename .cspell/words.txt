@@ -25,6 +25,7 @@ eomonth
 executesql
 filegroup
 filegroups
+filetable
 fixeddrives
 fmtonly
 formatmessage

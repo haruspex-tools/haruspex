@@ -16,6 +16,19 @@ public partial class StatementFlowTests
         Assert.Equal("#t.b is a computed column, which is not modelled yet.", unknown.Detail);
     }
 
+    [Theory]
+    [InlineData("CREATE TABLE #t WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT 1 AS a;")]
+    [InlineData("CREATE TABLE #t AS EDGE;")]
+    public void A_temporary_table_created_without_a_column_list_is_unknown(string create)
+    {
+        // Observed: A_temporary_table_made_from_a_query_has_the_columns_the_query_gives, which the walk doesn't read from the query yet;
+        // and A_temporary_table_cannot_be_a_graph_table (Msg 13914 when it runs).
+        var unknown = Unknown(Procedure($"{create}\nSELECT t.a FROM #t AS t;"), "results[0][].a");
+
+        Assert.Equal(IrUnknownReason.UnsupportedSource, unknown.Reason);
+        Assert.Contains("without a column list", unknown.Detail, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void A_temporary_table_is_read_as_it_was_created()
     {

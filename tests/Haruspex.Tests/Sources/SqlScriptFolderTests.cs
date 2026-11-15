@@ -34,6 +34,40 @@ public class SqlScriptFolderTests
     }
 
     [Fact]
+    public void An_edge_table_that_declares_no_columns_is_a_graph_table_with_none_listed()
+    {
+        // Observed: An_edge_table_may_declare_no_columns_and_its_star_is_its_pseudo_columns. Read as its package reads it
+        // (DacpacReaderTests, A_graph_table_is_marked_and_its_pseudo_columns_are_not_listed).
+        using var dir = new TempDirectory();
+        dir.File("follows.sql", "CREATE TABLE shop.follows AS EDGE;");
+
+        var read = SqlScriptFolder.Read(dir.Path);
+
+        Assert.Empty(read.Diagnostics);
+        var follows = read.Model.FindTable(new ObjectName("shop", "follows"))!;
+        Assert.True(follows.IsGraph);
+        Assert.Empty(follows.Columns);
+    }
+
+    [Theory]
+    [InlineData("CREATE TABLE shop.docs AS FILETABLE WITH (FILETABLE_DIRECTORY = 'docs');", "a FileTable")]
+    [InlineData("CREATE TABLE shop.copy WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT 1 AS a;", "made from a query")]
+    public void A_table_whose_definition_lists_no_columns_is_passed_over_with_a_note(string create, string kind)
+    {
+        // Its columns are the FileTable's fixed ones or its query's, which the reader doesn't model; a name in it is then
+        // unresolved, never guessed.
+        using var dir = new TempDirectory();
+        dir.File("t.sql", create);
+
+        var read = SqlScriptFolder.Read(dir.Path);
+
+        var note = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.ColumnsNotListed, note.Code);
+        Assert.Contains(kind, note.Message, StringComparison.Ordinal);
+        Assert.Empty(read.Model.Tables);
+    }
+
+    [Fact]
     public void A_file_it_is_given_that_does_not_exist_is_an_error()
     {
         using var dir = new TempDirectory();

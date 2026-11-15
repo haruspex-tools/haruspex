@@ -28,6 +28,9 @@ db/db.sqlproj:1:2: error HAR1010: db.sqlproj uses the SDK MSBuild.Sdk.SqlProj/3.
 HAR1012
 db/db.sqlproj:5:15: note HAR1012: db.sqlproj refers to the project ..\archive\archive.sqlproj, the database $(Archive) on the server $(Annexe), which isn't read: a name in it, which a body writes in four parts, stays unknown.
 
+HAR1013
+db/p1.sql:1:1: note HAR1013: lib.scan is made from a query, whose columns are the query's; haruspex doesn't read them, so a name in it is unresolved.
+
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
 

@@ -52,4 +52,10 @@ public static class SourceCodes
     /// by a four-part name, which nothing binds, so it isn't read, and a name in it is unknown as any name in another server is.
     /// </summary>
     public static DiagnosticCode OtherServer { get; } = new(1012, DiagnosticSeverity.Note, "A reference to a database on another server isn't read");
+
+    /// <summary>
+    /// A table whose <c>CREATE TABLE</c> lists no columns, a FileTable's or one made from a query (<c>AS SELECT</c>): its columns
+    /// aren't read from the definition, so it is passed over, and a name in it is unresolved, as a package's FileTable is.
+    /// </summary>
+    public static DiagnosticCode ColumnsNotListed { get; } = new(1013, DiagnosticSeverity.Note, "A table whose definition lists no columns isn't read");
 }

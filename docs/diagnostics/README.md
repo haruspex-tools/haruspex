@@ -24,6 +24,7 @@ reason.
 | [HAR1010](HAR1010.md) | error | A file that can't be read as a database project |
 | [HAR1011](HAR1011.md) | note | A project's reference isn't read yet (retired) |
 | [HAR1012](HAR1012.md) | note | A reference to a database on another server isn't read |
+| [HAR1013](HAR1013.md) | note | A table whose definition lists no columns isn't read |
 
 ## Inference
 
