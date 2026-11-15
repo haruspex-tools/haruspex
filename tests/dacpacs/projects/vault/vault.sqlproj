@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+  <!-- Another database, which winery refers to through the SQLCMD variable $(VaultDb), in a collation other than winery's. -->
+  <PropertyGroup>
+    <Name>vault</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider</DSP>
+    <DefaultCollation>Latin1_General_100_CS_AS</DefaultCollation>
+  </PropertyGroup>
+</Project>

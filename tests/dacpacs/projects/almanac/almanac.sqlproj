@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+  <!-- Another database, which winery refers to by its name, almanac. -->
+  <PropertyGroup>
+    <Name>almanac</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider</DSP>
+  </PropertyGroup>
+</Project>

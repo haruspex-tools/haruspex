@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+  <!-- Every kind of reference a Microsoft.Build.Sql project makes to a DACPAC or another database: a project of another database
+       through a SQLCMD variable and by its name, a DACPAC of the same database and of another, and master.dacpac from its package. -->
+  <PropertyGroup>
+    <Name>winery</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider</DSP>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../vault/vault.sqlproj">
+      <DatabaseSqlCmdVariable>VaultDb</DatabaseSqlCmdVariable>
+    </ProjectReference>
+    <ProjectReference Include="../almanac/almanac.sqlproj">
+      <DatabaseVariableLiteralValue>almanac</DatabaseVariableLiteralValue>
+    </ProjectReference>
+    <ArtifactReference Include="../lib/barrel.dacpac" />
+    <ArtifactReference Include="../lib/tasting.dacpac">
+      <DatabaseSqlCmdVariable>TastingDb</DatabaseSqlCmdVariable>
+    </ArtifactReference>
+    <PackageReference Include="Microsoft.SqlServer.Dacpacs.Master" Version="170.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <SqlCmdVariable Include="VaultDb">
+      <DefaultValue>vault</DefaultValue>
+      <Value>$(SqlCmdVar__1)</Value>
+    </SqlCmdVariable>
+    <SqlCmdVariable Include="TastingDb">
+      <DefaultValue>tasting</DefaultValue>
+      <Value>$(SqlCmdVar__2)</Value>
+    </SqlCmdVariable>
+  </ItemGroup>
+</Project>

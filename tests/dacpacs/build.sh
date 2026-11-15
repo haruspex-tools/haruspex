@@ -14,6 +14,8 @@
 #                                               PATH and HARUSPEX_TEST_SQLSERVER, a server of your own
 #   tests/dacpacs/build.sh clr                  the CLR assembly compiled, and the script that deploys it written
 #   tests/dacpacs/build.sh shapes               the package in master.dacpac's shape, zipped from its hand-written model.xml
+#   tests/dacpacs/build.sh references           winery and cooperage, which refer to other databases and DACPACs, with
+#                                               Microsoft.Build.Sql 2.3.0 and 1.0.0 and as a legacy project
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -139,9 +141,9 @@ ssdt() {
   cp "$work/ssdt/WideWorldImporters.dacpac" "$out/corpus/WideWorldImporters-ssdt.dacpac"
 }
 
-# Older versions write older model.xml. Microsoft.Build.Sql 1.0.0 imports NuGet's pack targets from where SDKs before .NET 10
-# kept them, so they are linked there for the build.
-versions() {
+# Microsoft.Build.Sql 1.0.0 imports NuGet's pack targets from where SDKs before .NET 10 kept them, so they are linked there for
+# its builds.
+link_pack_targets() {
   local sdk pack
   sdk="$(dotnet --list-sdks | sed -nE "s#^$(dotnet --version) \[(.*)\]#\1#p")/$(dotnet --version)"
   pack="$sdk/Sdks/NuGet.Build.Tasks.Pack/build"
@@ -149,6 +151,11 @@ versions() {
     mkdir -p "$pack"
     ln -sf "$sdk/NuGet.Build.Tasks.Pack.targets" "$pack/"
   fi
+}
+
+# Older versions write older model.xml.
+versions() {
+  link_pack_targets
   for version in 2.0.0 1.0.0; do
     local dir="$work/versions/$version"
     mkdir -p "$dir"
@@ -214,7 +221,46 @@ shapes() {
   echo "zipped master-shape/master.dacpac"
 }
 
+# The projects that refer to other databases and DACPACs. barrel and tasting are built first into projects/lib, where winery and
+# cooperage refer to them as DACPACs a team was given. winery is built with Microsoft.Build.Sql 2.3.0, and again with 1.0.0 from a
+# copy in which every project's Sdk names 1.0.0, its DSP SQL Server 2022's (1.0.0's DacFx doesn't know 2025's), and the master
+# package's version 160.2.8 (170's fails under it, SQL72025), with barrel and tasting built the same way: ProjectEquivalenceTests
+# writes the same copy, its lib from the packages in winery-1.0.0. cooperage is a legacy
+# project, built as legacy() builds mill; its reference to SSDT's own master.dacpac is under $(DacPacRootPath), which only Visual
+# Studio defines, so the build is given a folder holding the package's master.dacpac at that path. Each build copies master.dacpac
+# beside its package, and it is never kept: its licence doesn't allow it (README.md).
+references() {
+  mkdir -p "$work/projects"
+  cp -R "$out/projects/." "$work/projects/"
+  build "$work/projects/barrel" barrel "$out/projects/lib"
+  build "$work/projects/tasting" tasting "$out/projects/lib"
+  cp "$out/projects/lib/"*.dacpac "$work/projects/lib/"
+  build "$work/projects/winery" winery "$out/winery"
+  rm -f "$out/winery/master.dacpac"
+
+  link_pack_targets
+  local old="$work/old"
+  mkdir -p "$old"
+  cp -R "$work/projects/winery" "$work/projects/vault" "$work/projects/almanac" "$work/projects/barrel" "$work/projects/tasting" "$old/"
+  rm -rf "$old"/*/bin "$old"/*/obj
+  sed -i 's#Microsoft.Build.Sql/2.3.0#Microsoft.Build.Sql/1.0.0#; s#Sql170DatabaseSchemaProvider#Sql160DatabaseSchemaProvider#; s#Version="170.0.0"#Version="160.2.8"#' "$old"/*/*.sqlproj
+  # Its own lib, since 1.0.0 can't load a package 2.3.0 built for SQL Server 2025 (SQL72025); winery-1.0.0 holds the copies.
+  build "$old/barrel" barrel "$old/lib" > /dev/null
+  build "$old/tasting" tasting "$old/lib" > /dev/null
+  build "$old/winery" winery "$out/winery-1.0.0"
+  rm -f "$out/winery-1.0.0/master.dacpac"
+
+  local master
+  master="$(find "$HOME/.nuget/packages/microsoft.sqlserver.dacpacs.master/170.0.0" -name master.dacpac)"
+  mkdir -p "$work/vs/Extensions/Microsoft/SQLDB/Extensions/SqlServer/150/SqlSchemas"
+  cp "$master" "$work/vs/Extensions/Microsoft/SQLDB/Extensions/SqlServer/150/SqlSchemas/"
+  legacy_build "$work/projects/stave" stave "$work/stave"
+  legacy_build "$work/projects/cooperage" cooperage "$out/cooperage" -p:DacPacRootPath="$work/vs"
+  # legacy-on-linux.targets skips the step that copies each referenced package beside the referring one, so they are copied here.
+  cp "$work/stave/stave.dacpac" "$out/projects/lib/barrel.dacpac" "$out/projects/lib/tasting.dacpac" "$out/cooperage/"
+}
+
 mkdir -p "$out/versions"
-step="${1:?give fixtures, corpus, projects, legacy, ssdt, versions, extract, clr or shapes}"
+step="${1:?give fixtures, corpus, projects, legacy, ssdt, versions, extract, clr, shapes or references}"
 shift
 "$step" "$@"

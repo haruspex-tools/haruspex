@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+  <!-- Built into lib/barrel.dacpac, which winery and cooperage refer to as part of their own database. -->
+  <PropertyGroup>
+    <Name>barrel</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider</DSP>
+  </PropertyGroup>
+</Project>

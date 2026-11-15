@@ -16,13 +16,18 @@ your applications"), and they are rebuilt only when a test needs a new one.
 | `orchard/*.dacpac` | `projects/orchard` and the packages of its database it references, as its build leaves them: `press` (the same database, built with `QUOTED_IDENTIFIER` off) and `cellar` (referenced by `press` only). `orchard` holds every kind of item a build reads or leaves out: `Build Remove` of a file and of a pattern, `None`, `Content` inside and outside the folder and after a `Build Remove`, pre- and post-deployment scripts and a file a post-deployment script includes with `:r`, a `Build` item outside the folder named through a property, per-item `AnsiNulls` and `QuotedIdentifier` by `Update` with backslashes, and a setting from its own `Directory.Build.props` | `Microsoft.Build.Sql` 2.3.0 |
 | `mill/*.dacpac` | `projects/mill`, a legacy SSDT project as Visual Studio writes it, and `granary`, the legacy project of the same database it references: `Build` items with backslashes and per-item metadata, a `None`, a post-deployment script, and a `.sql` file it doesn't list | Microsoft.Build.Sql 2.3.0's build targets, on Linux (below) |
 | `corpus/WideWorldImporters-ssdt.dacpac` | WideWorldImporters from its own legacy SSDT project file, unchanged, so with its per-item and project settings, which the package above leaves out | the same as `mill`, for SQL Server 2016 (Sql130): its own DSP, Azure SQL Database's, refuses the storage its scripts declare |
+| `winery/*.dacpac` | `projects/winery` and every package it refers to, as its build leaves them: `vault` (another database's project, named by the SQLCMD variable `$(VaultDb)`, in a collation of its own), `almanac` (another database's project, named `almanac`), `barrel` (a DACPAC of the same database) and `tasting` (a DACPAC of another database, `$(TastingDb)`), both from `projects/lib`. It refers to `master.dacpac` by the `Microsoft.SqlServer.Dacpacs.Master` package too, which isn't kept | `Microsoft.Build.Sql` 2.3.0 |
+| `winery-1.0.0/*.dacpac` | The same, from a copy in which every project names `Microsoft.Build.Sql` 1.0.0, SQL Server 2022's provider and the master package 160.2.8, with `barrel` and `tasting` built the same way (1.0.0 can't load a package 2.3.0 built for SQL Server 2025, SQL72025) | `Microsoft.Build.Sql` 1.0.0 |
+| `cooperage/*.dacpac` | `projects/cooperage`, a legacy SSDT project as Visual Studio writes it, and the packages it refers to: `stave` (a legacy project of another database, `$(StaveDb)`), `barrel` (the same database) and `tasting` (another database, named `tasting`). It refers to SSDT's own `master.dacpac` under `$(DacPacRootPath)` too, which the build was given and which isn't kept | as `mill` |
+| `projects/lib/*.dacpac` | `projects/barrel` and `projects/tasting`, which winery and cooperage refer to by their paths, as DACPACs a team was given | `Microsoft.Build.Sql` 2.3.0 |
 | `master-shape/master.dacpac` | A package in `master.dacpac`'s shape, standing in for it: a `sys` view and an `INFORMATION_SCHEMA` view whose columns are untyped, and a system procedure with a parameter and no text. Its `model.xml` is written by hand in `projects/master-shape` from the shapes of the real package's elements, not copied from it | zipped by `build.sh shapes` |
 | `versions/orders-build-sql-<version>.dacpac` | The `orders` fixture under older versions | `Microsoft.Build.Sql` 2.0.0 (DacFx 170.2.70) and 1.0.0 (DacFx 162.5.57), SQL Server 2022's provider |
 | `versions/<name>-extract.dacpac` | `atelier` and `orders` deployed to SQL Server 2025 and extracted again | SqlPackage 170.2.70, `/a:Publish` then `/a:Extract` |
 | `versions/kiln-clr-extract.dacpac` | A CLR scalar function and procedure (`projects/kiln-clr`, compiled for .NET Framework 4.8), and a procedure that calls the function, deployed by the script `build.sh clr` writes and extracted, since a project's build in the dev container refuses a .NET Framework assembly (SQL70557) | SqlPackage 170.2.70, `/a:Extract` |
 | `versions/options-off.dacpac` | `projects/options-off`: every database option off, compatibility level 150 and a collation of its own, which is what a package writes when each differs from DacFx's default | `Microsoft.Build.Sql` 2.3.0, SQL Server 2022's provider |
 
-`harbour` also references `master.dacpac`, from the `Microsoft.SqlServer.Dacpacs.Master` package, but it is not here: its
+`harbour`, `winery` and `cooperage` also reference `master.dacpac`, from the `Microsoft.SqlServer.Dacpacs.Master` package or
+SSDT's own, but it is not here: its
 licence lets it be used to develop and test, and distributed only under terms a public repository can't meet. Its absence
 is itself tested: harbour is read with one reference missing. `master-shape/master.dacpac` stands in for it, a quick test on
 every run. Microsoft's own package is restored, never committed: the test project references
@@ -36,7 +41,7 @@ package is found beside the one that references it, as a build leaves it.
 
 ## How they were built
 
-`build.sh` builds each group in the dev container (`fixtures`, `corpus`, `projects`, `legacy`, `ssdt`, `versions`, `extract`, `clr`, `shapes`). It writes an
+`build.sh` builds each group in the dev container (`fixtures`, `corpus`, `projects`, `legacy`, `ssdt`, `versions`, `extract`, `clr`, `shapes`, `references`). It writes an
 SDK-style project for a fixture's folder of scripts; the two projects of their own keep their `.sqlproj` in `projects/`.
 `legacy` and `ssdt` build a legacy SSDT project, which Visual Studio's SSDT builds on Windows, on Linux: with Microsoft.Build.Sql's
 own copy of the same build targets, named by `SQLDBExtensionsRefPath` as the project file's own `Import` allows, and

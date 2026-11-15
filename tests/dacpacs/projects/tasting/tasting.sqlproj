@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+  <!-- Built into lib/tasting.dacpac, which winery refers to as the database $(TastingDb) and cooperage as tasting. -->
+  <PropertyGroup>
+    <Name>tasting</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider</DSP>
+  </PropertyGroup>
+</Project>
