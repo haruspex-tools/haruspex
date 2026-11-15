@@ -145,6 +145,8 @@ public static class SyntaxReader
                 column.Collation?.Value)
             {
                 IsHidden = column.IsHidden,
+                IsSparse = column.StorageOptions?.SparseOption == SparseColumnOption.Sparse,
+                IsColumnSet = column.StorageOptions?.SparseOption == SparseColumnOption.ColumnSetForAllSparseColumns,
             });
         }
 

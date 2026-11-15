@@ -1,0 +1,32 @@
+// The runs of the haberdashery fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  // Not held to every edge: this fixture is about which columns a star gives, and its scalars are the same types the values
+  // fixture covers at their edges.
+  "seedReachesEveryEdge": false,
+
+  "setups": {
+    "no orders": "DELETE FROM shop.order_line; DELETE FROM shop.orders;",
+    "no parcels": "DELETE FROM shop.parcel;"
+  },
+
+  "runs": [
+    { "name": "order_card, with a note", "procedure": "shop.order_card", "parameters": { "@id": 1 } },
+    { "name": "order_card, without a note", "procedure": "shop.order_card", "parameters": { "@id": 2 } },
+    { "name": "order_card, no such order", "procedure": "shop.order_card", "parameters": { "@id": 99 } },
+    { "name": "list_orders", "procedure": "shop.list_orders" },
+    { "name": "list_orders, none", "procedure": "shop.list_orders", "setup": "no orders" },
+    { "name": "order_lines, two lines", "procedure": "shop.order_lines", "parameters": { "@id": 1 } },
+    { "name": "order_lines, no lines", "procedure": "shop.order_lines", "parameters": { "@id": 3 } },
+    { "name": "orders_with_lines", "procedure": "shop.orders_with_lines" },
+    { "name": "current_prices", "procedure": "shop.current_prices" },
+    { "name": "list_parcels", "procedure": "shop.list_parcels" },
+    { "name": "list_parcels, none", "procedure": "shop.list_parcels", "setup": "no parcels" },
+    { "name": "picking", "procedure": "shop.picking" },
+    { "name": "picking, no orders", "procedure": "shop.picking", "setup": "no orders" },
+    { "name": "order_summary, two lines", "procedure": "shop.order_summary", "parameters": { "@id": 1 } },
+    { "name": "order_summary, an order without a note", "procedure": "shop.order_summary", "parameters": { "@id": 2 } },
+    { "name": "order_summary, no such order", "procedure": "shop.order_summary", "parameters": { "@id": 99 } },
+    { "name": "all_lines", "procedure": "shop.all_lines" }
+  ]
+}

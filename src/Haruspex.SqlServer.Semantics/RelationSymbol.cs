@@ -26,7 +26,7 @@ public abstract record RelationSymbol
     public string Name { get; }
 
     /// <summary>
-    /// Its columns' names in order, or null when binding can't list them (a query of <c>SELECT *</c> not expanded, a column
+    /// Its columns' names in order, or null when binding can't list them (a query whose <c>SELECT *</c> can't be expanded, a column
     /// without a name, two of one name, a temporary table whose columns the walk doesn't know); then any column may be one
     /// of its.
     /// </summary>

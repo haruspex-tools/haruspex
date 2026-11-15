@@ -183,11 +183,11 @@ public class BinderTests
 
     [Theory]
     [InlineData("SELECT (SELECT TOP (1) name FROM #callers AS c) AS n FROM dbo.t AS t;", "c")]
-    [InlineData("SELECT (SELECT TOP (1) name FROM (SELECT * FROM dbo.u AS u) AS d) AS n FROM dbo.t AS t;", "d")]
+    [InlineData("SELECT (SELECT TOP (1) name FROM (SELECT * FROM #callers AS c) AS d) AS n FROM dbo.t AS t;", "d")]
     [InlineData("SELECT (SELECT TOP (1) name FROM dbo.nope AS x) AS n FROM dbo.t AS t;", "x")]
     public void A_column_a_source_of_unknown_columns_may_have_is_not_looked_for_outside(string statement, string inner)
     {
-        // The outer t has name, but the inner source may have it too (a caller's #t, a SELECT * not expanded, a table not in
+        // The outer t has name, but the inner source may have it too (a caller's #t, a SELECT * over one, a table not in
         // the project), and SQL Server would read the inner one: so it is the inner source's, whatever that holds.
         var source = new Sample(statement).Resolve("name") switch
         {
@@ -313,13 +313,12 @@ public class BinderTests
     }
 
     [Fact]
-    public void A_star_is_expanded_only_where_the_names_say_so()
-    {
-        var body = new Sample("SELECT * FROM dbo.t AS t;");
+    public void A_star_is_expanded_to_its_tables_columns() =>
+        Assert.Equal(["id", "name", "code"], new Sample("SELECT * FROM dbo.t AS t;").Query().Names);
 
-        Assert.Null(body.Query().Names);
-        Assert.Equal(["id", "name", "code"], body.Query(NameEnvironment.View).Names);
-    }
+    [Fact]
+    public void A_star_over_a_temporary_table_whose_columns_are_not_known_leaves_the_names_unlisted() =>
+        Assert.Null(new Sample("SELECT * FROM #callers AS c;").Query().Names);
 
     [Fact]
     public void A_temporary_table_has_the_columns_the_walk_gives_it_and_otherwise_any()

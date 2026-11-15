@@ -20,8 +20,8 @@ public abstract record BoundQuery
 
     /// <summary>
     /// Its columns' names, one per column and null for a column without one, as SQL Server names them: an alias, <c>$action</c>,
-    /// or a column reference's last part; a set operation's are its first query's. Null when a <c>SELECT *</c> is not expanded
-    /// (stars are expanded only in a view, whose stars SQL Server binds when it creates it).
+    /// or a column reference's last part; a set operation's are its first query's. Null when a <c>SELECT *</c> can't be expanded
+    /// (<see cref="Binder.Star"/>).
     /// </summary>
     public abstract EquatableArray<string?>? Names { get; }
 

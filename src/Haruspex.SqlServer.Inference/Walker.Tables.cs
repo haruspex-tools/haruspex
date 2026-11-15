@@ -30,8 +30,8 @@ internal sealed partial class Walker
         var table = typer.WithCtes<TempTable>(select.WithCtesAndXmlNamespaces, Reading(state), scope =>
         {
             var row = typer.Outermost(select.QueryExpression, scope);
-            if (row.Star is { } star)
-                return Unknown(name, Unsupported(IrUnknownReason.UnsupportedQuery, "SELECT * is not expanded yet.", star));
+            if (row.Unlisted is { } unlisted)
+                return Unknown(name, unlisted);
             if (row.Columns.Any(c => string.IsNullOrEmpty(c.Name)) || row.Columns.GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
                 return Unknown(name, Unsupported(IrUnknownReason.UnnamedColumn, $"SELECT … INTO {name} has a column without a name, or two of one name, which SQL Server refuses.", at));
             // Through a set operation SQL Server does not copy IDENTITY (observed: Select_into_from_a_union_does_not_copy_an_identity).
@@ -57,14 +57,27 @@ internal sealed partial class Walker
     {
         var scope = ((BoundSpecification)binder.Bind(query, null, at.Names)).Scope;
         var single = query.FromClause?.TableReferences is [NamedTableReference];
-        var bound = query.SelectElements.OfType<SelectScalarExpression>()
-            .Select(e => e.Expression is ColumnReferenceExpression column ? binder.Resolve(column, scope) : null)
-            .ToList();
-        var elements = query.SelectElements.OfType<SelectScalarExpression>().ToList();
-        return [.. elements.Select((element, i) =>
+        // Each column the query gives, with what it reads when it is a column read unchanged: a star's columns are (observed:
+        // Select_star_into_copies_an_identity_from_one_table).
+        var columns = new List<(Resolution? Bound, bool Parenthesised)>();
+        foreach (var element in query.SelectElements)
+        {
+            switch (element)
+            {
+                case SelectScalarExpression scalar:
+                    columns.Add((scalar.Expression is ColumnReferenceExpression column ? binder.Resolve(column, scope) : null, scalar.Expression is ParenthesisExpression));
+                    break;
+                case SelectStarExpression star when binder.Star(star, scope) is ExpandedStar { Columns: var expanded }:
+                    columns.AddRange(expanded.Select(c => ((Resolution?)c.Column, false)));
+                    break;
+            }
+        }
+
+        var bound = columns.Select(c => c.Bound).ToList();
+        return [.. columns.Select((listed, i) =>
         {
             if (bound[i] is not { } binding)
-                return element.Expression is ParenthesisExpression ? null : false;
+                return listed.Parenthesised ? null : false;
             var identity = binding switch
             {
                 TableColumn column => column.Column.IsIdentity,
@@ -206,8 +219,8 @@ internal sealed partial class Walker
                 return rows.All(r => r.Count == count) ? rows : null;
             case SelectInsertSource { Select: { } query }:
                 var row = typer.Outermost(query, scope);
-                if (row.Star is { } star)
-                    return [[.. Enumerable.Range(0, count).Select(_ => Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "SELECT * is not expanded yet.", star)))]];
+                if (row.Unlisted is { } unlisted)
+                    return [[.. Enumerable.Range(0, count).Select(_ => Value.Unknown(unlisted))]];
                 return row.Columns.Count == count ? [[.. row.Columns.Select(c => c.Value)]] : null;
             default:
                 return [[.. Enumerable.Range(0, count).Select(_ => Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "This insert's source is not modelled yet.", at)))]];
@@ -282,13 +295,23 @@ internal sealed partial class Walker
     /// procedure cannot create one name twice, even after dropping it (error 2714 when the procedure is created, observed),
     /// so re-creation never reaches a procedure that runs; it is modelled as the new table all the same.
     /// </summary>
+    /// <remarks>
+    /// A table with a column set is not modelled: a star over it gives the set in place of its sparse columns (observed, for a
+    /// temporary table and a table variable: A_column_set_stands_for_its_sparse_columns_in_star), which the columns the walk
+    /// passes to binding can't say.
+    /// </remarks>
     /// <param name="create">The statement.</param>
     /// <param name="name">The temporary table it creates (<see cref="Binder.Temporary"/>).</param>
-    private KnownTable Created(CreateTableStatement create, LocalName name)
+    private TempTable Created(CreateTableStatement create, LocalName name)
     {
         var definition = SyntaxReader.Declared(name.Text, create.Definition, source.Within(create));
-        return new KnownTable(name, [.. definition.Columns.Select(c => Fresh(definition, c, name, c.IsIdentity, null))]);
+        return definition.Columns.Any(c => c.IsColumnSet)
+            ? WithColumnSet(name, At(create))
+            : new KnownTable(name, [.. definition.Columns.Select(c => Fresh(definition, c, name, c.IsIdentity, null))]);
     }
+
+    private static UnknownTable WithColumnSet(LocalName name, SourceLocation at) =>
+        Unknown(name, Unsupported(IrUnknownReason.UnsupportedSource, "a temporary table with a column set is not modelled yet.", at));
 
     /// <summary>
     /// A declared column of a temporary table, as created: of <c>nvarchar(max)</c>, it is traced for JSON, holding none
@@ -317,6 +340,8 @@ internal sealed partial class Walker
                 // A new column's declaration is read like CREATE TABLE's. Constraints added on existing columns are not
                 // read, which only claims less. WITH NOCHECK leaves the new columns' own checks unproved for the rows there.
                 var definition = SyntaxReader.Declared(name.Text, add.Definition, source.Within(alter));
+                if (definition.Columns.Any(c => c.IsColumnSet))
+                    return state.WithTemp(name, WithColumnSet(name, at));
                 if (add.ExistingRowsCheckEnforcement == ConstraintEnforcement.NoCheck)
                     definition = Disabled(definition, null, at);
                 return state.WithTemp(name, table with

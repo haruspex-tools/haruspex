@@ -43,8 +43,6 @@ public class ConstructTests
     [InlineData("SELECT t.id FROM dbo.t AS t FOR XML PATH;")]
     [InlineData("SELECT t.id FROM dbo.t AS t FOR JSON AUTO;")]
     [InlineData("SELECT t.id FROM dbo.t AS t FOR JSON PATH, ROOT('items');")]
-    [InlineData("SELECT * FROM dbo.t AS t;")]
-    [InlineData("SELECT t.* FROM dbo.t AS t FOR JSON PATH;")]
     public void A_query_form_not_modelled_makes_the_result_unknown(string body) =>
         AssertUnknown(Procedure(body), "results[0]", IrUnknownReason.UnsupportedQuery);
 
@@ -196,7 +194,7 @@ public class ConstructTests
 
     [Theory]
     [InlineData("SELECT (SELECT TOP (1) name FROM #callers AS c) AS n FROM dbo.t AS t;", IrUnknownReason.CallerTempTable)]
-    [InlineData("SELECT (SELECT TOP (1) name FROM (SELECT * FROM dbo.u AS u) AS d) AS n FROM dbo.t AS t;", IrUnknownReason.UnsupportedQuery)]
+    [InlineData("SELECT (SELECT TOP (1) name FROM (SELECT * FROM #callers AS c) AS d) AS n FROM dbo.t AS t;", IrUnknownReason.CallerTempTable)]
     [InlineData("SELECT (SELECT TOP (1) name FROM dbo.nope AS x) AS n FROM dbo.t AS t;", IrUnknownReason.UnresolvedTable)]
     public void A_column_an_inner_source_of_unknown_columns_may_have_is_unknown_not_the_outer_query_s(string body, IrUnknownReason reason) =>
         AssertUnknown(Procedure(body), "results[0][].n", reason);

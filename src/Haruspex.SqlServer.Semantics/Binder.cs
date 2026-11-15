@@ -144,9 +144,9 @@ public sealed partial class Binder
     }
 
     /// <summary>
-    /// A query's columns' names (<see cref="ColumnName"/>); a star's columns when stars are expanded; null when a star is not.
+    /// A query's columns' names (<see cref="ColumnName"/>), a star's being its columns'; null when a star can't be expanded.
     /// </summary>
-    private static EquatableArray<string?>? Names(QuerySpecification query, QueryScope scope)
+    private EquatableArray<string?>? Names(QuerySpecification query, QueryScope scope)
     {
         var names = new List<string?>();
         foreach (var element in query.SelectElements)
@@ -156,7 +156,7 @@ public sealed partial class Binder
                 case SelectScalarExpression scalar:
                     names.Add(ColumnName(scalar));
                     break;
-                case SelectStarExpression star when scope.Names.ExpandsStars && Star(star, scope) is { } columns:
+                case SelectStarExpression star when Star(star, scope) is ExpandedStar { Columns: var columns }:
                     names.AddRange(columns.Select(c => c.Name));
                     break;
                 case SelectStarExpression:
@@ -170,24 +170,32 @@ public sealed partial class Binder
     // ---- SELECT * -----------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// The columns <c>*</c> or <c>alias.*</c> stands for, each resolved: each source's columns in order, a table's as declared,
-    /// a relation's as it names them. Null when one of them is not known, or a table's <c>*</c> differs from its declared
-    /// columns: a hidden period column is left out of it, and a graph table adds pseudo-columns.
+    /// What <c>*</c> or <c>alias.*</c> stands for: each source's columns in order, a table's in the order declared (observed:
+    /// A_star_gives_a_tables_columns_in_column_id_order) and a relation's as it names them. A table's star leaves out a hidden
+    /// period column (observed: A_star_leaves_out_hidden_period_columns), and a table with a column set gives the set in place of
+    /// its sparse columns (observed: A_column_set_stands_for_its_sparse_columns_in_star). It is bound where the query is, against
+    /// the tables as the project defines them (decision 0047), and against a temporary table's columns as the walk knows them
+    /// at the statement.
     /// </summary>
     /// <param name="star">The star.</param>
     /// <param name="scope">The scope of the query whose select list it is in.</param>
-    public static IReadOnlyList<StarColumn>? Star(SelectStarExpression star, QueryScope scope)
+    public StarExpansion Star(SelectStarExpression star, QueryScope scope)
     {
         ArgumentNullException.ThrowIfNull(star);
         ArgumentNullException.ThrowIfNull(scope);
         IEnumerable<BoundSource> sources = scope.Sources;
+
+        // Observed: A_star_without_from_is_refused (263, when the module is created), so it never returns a row.
+        if (scope.Sources.Count == 0)
+            return Unexpanded(BindingProblemKind.UnsupportedStar, "A star needs a FROM, and SQL Server refuses one without it.", star);
         if (star.Qualifier is { } qualifier)
         {
+            var text = string.Join('.', qualifier.Identifiers.Select(i => i.Value));
             if (qualifier.Identifiers.Count != 1)
-                return null;
+                return Unexpanded(BindingProblemKind.UnsupportedStar, $"{text}.* names its source by more than one part, which is not modelled yet.", star);
             var named = scope.Sources.Where(s => qualifier.Identifiers[0].Value.Equals(s.Alias, StringComparison.OrdinalIgnoreCase)).ToList();
             if (named.Count != 1)
-                return null;
+                return Unexpanded(BindingProblemKind.UnresolvedColumn, $"{text}.* names no one source of this query.", star);
             sources = named;
         }
 
@@ -196,21 +204,40 @@ public sealed partial class Binder
         {
             switch (source.Target)
             {
-                case TableTarget { Table: var table } when !table.IsGraph && !table.Columns.Any(c => c.IsHidden):
-                    columns.AddRange(table.Columns.Select(c => new StarColumn(c.Name, new TableColumn(source, table, c))));
+                case TableTarget { Table: { IsGraph: true } table }:
+                    // Observed: A_graph_tables_star_adds_pseudo_columns_named_by_the_server ($node_id_ and a suffix SQL Server
+                    // generates when it creates the table), so their names are not in the project.
+                    return Unexpanded(BindingProblemKind.UnsupportedStar, $"{table.Name} is a graph table, whose * adds pseudo-columns named by the server when it creates the table.", star);
+                case TableTarget { Table: var table }:
+                    columns.AddRange(Starred(table).Select(c => new StarColumn(c.Column.Name, new TableColumn(source, table, c.Column))));
+                    break;
+                case RelationTarget { Relation: TableVariable { Declaration: var declared } variable }:
+                    columns.AddRange(Starred(declared).Select(c => new StarColumn(c.Column.Name, new RelationColumn(source, variable, c.Ordinal))));
                     break;
                 case RelationTarget { Relation: { Columns: { } names } relation }:
                     columns.AddRange(names.Select((n, i) => new StarColumn(n, new RelationColumn(source, relation, i))));
                     break;
-                case TableTarget:
                 case RelationTarget:
-                case UnresolvedTarget:
-                    return null;
+                    return new UnlistedStar(source);
+                case UnresolvedTarget { Problem: var problem }:
+                    return new UnexpandedStar(problem);
             }
         }
 
-        return columns;
+        return new ExpandedStar([.. columns]);
     }
+
+    /// <summary>
+    /// The columns a table's or a table variable's star gives, in order, each with its place among the declared columns: all but
+    /// a hidden one, and, when the table has a column set, all but its sparse columns, which the set stands for.
+    /// </summary>
+    private static IEnumerable<(Column Column, int Ordinal)> Starred(ITable table)
+    {
+        var columnSet = table.Columns.Any(c => c.IsColumnSet);
+        return table.Columns.Select((c, i) => (c, i)).Where(c => !c.c.IsHidden && !(columnSet && c.c.IsSparse));
+    }
+
+    private UnexpandedStar Unexpanded(BindingProblemKind kind, string detail, SelectStarExpression star) => new(Problem(kind, detail, At(star)));
 
     private static BindingProblem Problem(BindingProblemKind kind, string detail, SourceLocation at) => new(kind, detail, at);
 

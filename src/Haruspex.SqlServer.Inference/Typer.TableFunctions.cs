@@ -115,7 +115,7 @@ internal sealed partial class Typer
                 var row = Query(bound, scope);
                 return Holds(bound.Listed([]), row) is { } relation
                     ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One, Keys = Keys(query, row, scope) }
-                    : Fails("its columns cannot be listed: SELECT * is not expanded in a function, and every column needs one name of its own.");
+                    : Unlisted(function.Name.ToString(), row, at);
             },
             LocalRelationValues.Unknown);
     }

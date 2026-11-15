@@ -90,8 +90,8 @@ internal sealed partial class Typer
     /// </summary>
     private Row Combine(List<Row> rows, List<BinaryQueryExpression> operators, SourceLocation at)
     {
-        if (rows.FirstOrDefault(r => r.Star is not null) is { } starred)
-            return new Row([], starred.Star);
+        if (rows.FirstOrDefault(r => r.Unlisted is not null) is { } unlisted)
+            return new Row([], unlisted.Unlisted);
         var count = rows[0].Columns.Count;
         if (rows.Any(r => r.Columns.Count != count))
         {

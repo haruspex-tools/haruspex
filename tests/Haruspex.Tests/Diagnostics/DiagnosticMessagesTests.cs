@@ -107,7 +107,7 @@ public class DiagnosticMessagesTests
 
         (2001, () => Cli(["CREATE PROCEDURE lib.p AS SET NOCOUNT, NOEXEC ON;\nSELECT b.id FROM lib.book AS b;"])),
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),
-        (2004, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.* FROM lib.book AS b FOR JSON PATH;"])),
+        (2004, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b FOR JSON AUTO;"])),
         (2005, () => Cli(["CREATE PROCEDURE lib.p AS SELECT lib.book.id AS c FROM lib.book;"])),
         (2006, () => Cli(["CREATE PROCEDURE lib.p AS SELECT a.id, b.title FROM lib.book AS a RIGHT JOIN lib.book AS b ON b.id = a.id;"])),
         (2007, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.pages FROM lib.book AS b;"])),

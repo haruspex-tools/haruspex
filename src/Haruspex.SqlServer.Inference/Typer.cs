@@ -140,7 +140,7 @@ internal sealed partial class Typer(
         // WHERE, the joins' ON and HAVING prove columns and aggregates non-null in the rows they keep (Typer.Refinement.cs), for
         // the select list and every subquery in it; GROUP BY is not read beyond what cardinality needs.
         var columns = new List<RowColumn>();
-        SourceLocation? star = null;
+        UnknownShape? unlisted = null;
         var found = Filters(query, scope);
 
         // A cursor's row is read again when it is fetched, so its query's filters prove nothing of it (FetchRow).
@@ -155,16 +155,13 @@ internal sealed partial class Typer(
                 case SelectScalarExpression scalar:
                     columns.Add(new RowColumn(Binder.ColumnName(scalar), Expression(scalar.Expression, row), At(scalar), Origin(scalar.Expression, scope), scalar.Expression));
                     break;
-                case SelectStarExpression all when scope.Names.ExpandsStars && Expand(all, row) is { } expanded:
-                    columns.AddRange(expanded);
-                    break;
-                case SelectStarExpression:
-                    star ??= At(element);
+                case SelectStarExpression all:
+                    unlisted ??= Expand(all, row, columns);
                     break;
             }
         }
 
-        return new Row([.. columns], star, cardinality.Of(query, scope, ReadUncommitted(scope)), [.. scope.Bound.Sources]);
+        return new Row([.. columns], unlisted, cardinality.Of(query, scope, ReadUncommitted(scope)), [.. scope.Bound.Sources]);
     }
 
     /// <summary>The table column a select-list expression is, unchanged: a bare column reference without COLLATE.</summary>
@@ -175,8 +172,8 @@ internal sealed partial class Typer(
 
     internal static Shape Rowset(Row row)
     {
-        if (row.Star is { } star)
-            return Unsupported(IrUnknownReason.UnsupportedQuery, "SELECT * is not expanded yet.", star);
+        if (row.Unlisted is { } unlisted)
+            return unlisted;
         if (row.Columns.FirstOrDefault(c => string.IsNullOrEmpty(c.Name)) is { } unnamed)
             return Unsupported(IrUnknownReason.UnnamedColumn, $"The column {Text(unnamed.At)} has no name.", unnamed.At);
         if (row.Columns.Select(ReplacedKey).FirstOrDefault(r => r is not null) is { } replaced)
@@ -221,8 +218,8 @@ internal sealed partial class Typer(
             return Unsupported(IrUnknownReason.UnsupportedQuery, "FOR JSON AUTO is not modelled yet.", At(clause));
         if (options.Contains(JsonForClauseOptions.Root))
             return Unsupported(IrUnknownReason.UnsupportedQuery, "FOR JSON ... ROOT is not modelled yet.", At(clause));
-        if (row.Star is { } star)
-            return Unsupported(IrUnknownReason.UnsupportedQuery, "SELECT * is not expanded yet.", star);
+        if (row.Unlisted is { } unlisted)
+            return unlisted;
 
         var root = new JsonNode();
         foreach (var column in row.Columns)
@@ -414,6 +411,7 @@ internal sealed partial class Typer(
             BindingProblemKind.UnresolvedTable => IrUnknownReason.UnresolvedTable,
             BindingProblemKind.UnresolvedColumn => IrUnknownReason.UnresolvedColumn,
             BindingProblemKind.UnsupportedReference => IrUnknownReason.UnsupportedExpression,
+            BindingProblemKind.UnsupportedStar => IrUnknownReason.UnsupportedQuery,
         },
         problem.Detail,
         problem.At);
@@ -431,7 +429,7 @@ internal sealed partial class Typer(
         {
             var plain = subquery.QueryExpression;
             var row = Nested(plain, scope);
-            if (row is not { Star: null, Columns: [var only] })
+            if (row is not { Unlisted: null, Columns: [var only] })
                 return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"A subquery of other than one listed column is not modelled: {Text(subquery)}", at));
             if (only.Value.Shape is UnknownShape)
                 return only.Value;

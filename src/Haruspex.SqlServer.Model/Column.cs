@@ -28,6 +28,15 @@ public sealed record Column(string Name, SqlType? Type, DeclaredNullability Null
     /// <summary>Whether it is declared <c>HIDDEN</c> (a period column of a temporal table), which <c>SELECT *</c> leaves out.</summary>
     public bool IsHidden { get; init; }
 
+    /// <summary>Whether it is declared <c>SPARSE</c>: <c>SELECT *</c> leaves it out when its table has a column set (<see cref="IsColumnSet"/>).</summary>
+    public bool IsSparse { get; init; }
+
+    /// <summary>
+    /// Whether it is the table's column set (<c>xml COLUMN_SET FOR ALL_SPARSE_COLUMNS</c>), which stands for every sparse column
+    /// in <c>SELECT *</c>: the star gives the set, as xml, in place of them.
+    /// </summary>
+    public bool IsColumnSet { get; init; }
+
     /// <summary>The column's name.</summary>
     public override string ToString() => Name;
 }

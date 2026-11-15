@@ -63,7 +63,7 @@ it, claim by claim.
 
 The rest of this page is the reference: how a procedure's statements are read in order, and what each construct inside
 them gives: calls ("Calls" below), what filters and single-row queries prove ("Refinement"), writes, triggers and cursors ("DML", "Triggers", "Cursors"), `APPLY`,
-`VALUES` lists and views ("APPLY", "Views"), expressions ("Expressions", "Precision lost", "CASE, IIF, CHOOSE and NULLIF",
+`VALUES` lists and views ("APPLY", "Views"), `SELECT *` ("`SELECT *`"), expressions ("Expressions", "Precision lost", "CASE, IIF, CHOOSE and NULLIF",
 "Built-in functions", "Window functions"), table-valued functions, set operations and the other joins, `OPENJSON`, and JSON built in
 the project and traced to where it is read. The walk is `Walker.cs`, with `FlowState.cs` (the state and
 its join); what an expression or a query gives is `Typer.cs` and its parts, read in a `ReadScope.cs` (what each source a
@@ -209,7 +209,7 @@ stands, joined in by `Value.JoinConverted`, and read again until nothing changes
 member's column that is not modelled (`depth + 1`) is still of the anchor's type; only its nullability is unknown.
 
 A CTE whose query is a set operation is read as any set operation is (below, "Set operations"). Not modelled
-yet: a recursive CTE with several anchor members, `SELECT *` inside one, and `WITH XMLNAMESPACES`.
+yet: a recursive CTE with several anchor members, and `WITH XMLNAMESPACES`.
 
 ## Calls
 
@@ -1033,13 +1033,10 @@ view whose query has `FOR XML`/`FOR JSON` is `unsupported-query`; one whose quer
 key. Views are read in procedures and in functions' bodies too (a table-valued function's, and a scalar function's
 subqueries).
 
-**`SELECT *` in a view** is expanded (`Typer.Expand`): each source's columns in order, a table's as declared and a relation's as
-named, and `alias.*` for one source. SQL Server binds it when the view is created and keeps that list until the view is
-refreshed (`A_view_binds_select_star_when_it_is_created`: a column added later is not in it). The project shows each table
-as it is after deployment, so **haruspex assumes each view is bound against that**: created after its tables reached their
-final form, or refreshed since, which is what a deployment that recreates or refreshes dependent views gives. A table
-whose `*` differs from its declared columns (a `HIDDEN` period column, or a graph table's pseudo-columns) is not expanded.
-`SELECT *` in a procedure is still not expanded: the brief asked for views only.
+**`SELECT *` in a view** is expanded as anywhere else ("`SELECT *`" below). SQL Server binds it when the view is created and
+keeps that list until the view is refreshed (`A_view_binds_select_star_when_it_is_created`: a column added later is not in it);
+haruspex assumes each view is bound against its tables as the project defines them
+([decision 0047](../../docs/decisions/0047-a-star-is-bound-against-the-tables-the-project-defines.md)).
 
 **Keys pass through a view only when proved** (`Typer.ViewKeys`). A view that reads one table, with no join, `APPLY` or
 `GROUP BY`, and does not read it `FOR SYSTEM_TIME` other than `AS OF`, returns some of the table's rows, each once
@@ -1049,6 +1046,46 @@ bare columns without `COLLATE`, is a key of the view, compared in the base colum
 only claiming less: a view grouped by a whole key (`ROLLUP` and its kind would repeat it, and telling them apart is not
 worth it yet), and a view with a join that matches at most one row (proving that needs the joined side's key fixed by its
 `ON`). A view's relation also carries its query's cardinality, so a view of at most one row counts as fixed.
+
+## `SELECT *`
+
+`SELECT *` and `alias.*` are expanded wherever a query stands (`Typer.Star.cs`, with binding's `Binder.Star`): a procedure's
+result, `FOR JSON` (a key per column), a CTE, a derived table, each query of a set operation, a subquery, `SELECT … INTO`,
+`INSERT … SELECT`, a view, an inline function's query, a multi-statement function's inserts and a scalar function's body. Each
+column is read as a column reference to it would be, so it keeps its type, its facts, its origin (a view's keys pass through a
+star) and everything the query proves of it: a `WHERE`, an outer join's optional side, a fixed key. Each rule is observed in
+`SelectStarObservationTests`:
+
+- **Which columns, in what order.** Each source's in the order of the `FROM`; a table's in the order it declares them, which is
+  `column_id`'s, and `ALTER TABLE … ADD` puts a column last (`A_star_gives_a_tables_columns_in_column_id_order`); a relation's as
+  its symbol names them. `alias.*` gives its one source's.
+- **Columns a star leaves out.** A `HIDDEN` period column, from `*`, `alias.*` and a read `FOR SYSTEM_TIME`
+  (`A_star_leaves_out_hidden_period_columns`). A table with a column set gives the set, `xml`, in place of its sparse
+  columns (`A_column_set_stands_for_its_sparse_columns_in_star`), a table variable's too; without a set, a sparse column is an
+  ordinary one. A temporary table with a column set is not modelled yet (`unsupported-source`).
+- **A temporary table or a table variable** gives its columns as they are at that statement: after `ALTER TABLE … ADD`, the
+  new column too (`A_temporary_tables_star_is_its_columns_when_the_statement_runs`). `SELECT * INTO` from one table copies an
+  identity (`Select_star_into_copies_an_identity_from_one_table`).
+- **Two columns of one name.** A rowset returns both (`A_rowset_returns_both_columns_of_one_name`), and the mssql driver puts
+  them under one key whose value is an array of both (observed with mssql 11.0.2, outside the repository, which doesn't
+  depend on it); names that differ in case stay two keys. So a rowset with a repeated name is `duplicate-column`, naming it.
+  `FOR JSON` refuses them when the procedure runs (13601, `For_json_refuses_two_columns_of_one_name`), and a derived table, a
+  CTE (8156) and `SELECT … INTO` (2705) refuse them too, so each of those is unknown.
+- **When a star is bound.** A procedure, a scalar function and a multi-statement function bind it when they run
+  (`A_procedures_star_is_bound_when_it_runs`, `A_scalar_functions_star_is_bound_when_it_runs`,
+  `A_multi_statement_functions_star_is_bound_when_it_runs`); a view and an inline function when they are created
+  (`An_inline_functions_star_is_bound_when_it_is_created`); a schema-bound module can't have one
+  (`A_schema_bound_module_refuses_a_star`). Every star is bound here against the tables as the project defines them,
+  assuming a deployment that refreshes the modules bound earlier and keeps the declared column order, as SqlPackage's
+  publish does by default ([decision 0047](../../docs/decisions/0047-a-star-is-bound-against-the-tables-the-project-defines.md)).
+- **Not expanded**, each unknown with its reason: a star over a table the project doesn't define (`unresolved-table`), over a
+  caller's temporary table (`caller-temp-table`) or a relation whose own columns can't be listed (its reason), over a graph
+  table, whose star adds pseudo-columns named by the server when it creates the table
+  (`A_graph_tables_star_adds_pseudo_columns_named_by_the_server`), a star qualified by two parts, `shop.orders.*`, which
+  waits with multi-part column references, and a star without a `FROM`, which SQL Server refuses
+  (`A_star_without_from_is_refused`), both `unsupported-query`.
+
+The unit tests are `SelectStarTests`; the fixture is `tests/fixtures/haberdashery`.
 
 ## Table-valued functions
 
@@ -1081,9 +1118,8 @@ bound like a derived table: its arguments read the enclosing queries' columns, a
 - **What a call may not say.** A column list at the call is refused (317), and so is a table hint (a syntax error):
   `A_call_takes_no_column_alias_and_no_table_hint`. A column list is `unsupported-source`.
 - **Not modelled**, each unknown with a reason: a function the project does not define or defines twice, a scalar function
-  in `FROM` (`unresolved-table`), a CLR function (`external-code`), a function of another database, an inline function whose
-  query uses `SELECT *` (`unsupported-query`: a view's star is bound when it is created, and whether a
-  function's is too was not observed), and one that reads itself through others.
+  in `FROM` (`unresolved-table`), a CLR function (`external-code`), a function of another database, and one that reads
+  itself through others. An inline function's `SELECT *` is expanded as a view's is ("`SELECT *`" above).
 
 ## Set operations
 

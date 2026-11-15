@@ -123,7 +123,7 @@ internal sealed partial class Walker
         if (local is { IsVariable: true } variable)
         {
             var columns = TableVariableTargets(variable, into.IntoTableColumns);
-            return row.Star is null && columns is not null && columns.Count == row.Columns.Count
+            return row.Unlisted is null && columns is not null && columns.Count == row.Columns.Count
                 ? TableVariableWritten(state, variable, columns, [[.. row.Columns.Select(c => c.Value)]], [[.. row.Columns.Select(c => c.Expression)]], at)
                 : TableVariableWritten(state, variable, null, null, null, at);
         }
@@ -132,7 +132,7 @@ internal sealed partial class Walker
             return state;
         if (state.Temp(table) is not KnownTable known)
             return state;
-        if (row.Star is not null || (into.IntoTableColumns.Count == 0 && known.Columns.Any(c => c.Identity != false)))
+        if (row.Unlisted is not null || (into.IntoTableColumns.Count == 0 && known.Columns.Any(c => c.Identity != false)))
             return state.WithTemp(table, Unknown(table, Unsupported(IrUnknownReason.UnsupportedStatement, $"Which columns the OUTPUT at {at} writes in {table} is not modelled.", at)));
         var targets = into.IntoTableColumns.Count == 0
             ? [.. Enumerable.Range(0, known.Columns.Count)]
@@ -205,7 +205,7 @@ internal sealed partial class Walker
         if (temps.Count > 0 && Restructured(temps, declaration))
             return null;
 
-        return typer.WithCtes(select.WithCtesAndXmlNamespaces, Reading(state).Fetching(), scope => typer.Outermost(query, scope) is { Star: null } row ? row.Columns.Select(c => c.Value).ToList() : null, _ => null);
+        return typer.WithCtes(select.WithCtesAndXmlNamespaces, Reading(state).Fetching(), scope => typer.Outermost(query, scope) is { Unlisted: null } row ? row.Columns.Select(c => c.Value).ToList() : null, _ => null);
     }
 
     /// <summary>

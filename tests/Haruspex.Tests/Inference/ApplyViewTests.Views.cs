@@ -112,13 +112,12 @@ public partial class ApplyViewTests
         Assert.Empty(Rules(proc, "j"));
     }
 
-    [Theory]
-    [InlineData("CREATE TABLE dbo.h (id int NOT NULL, since datetime2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL, upto datetime2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL, PERIOD FOR SYSTEM_TIME (since, upto));")]
-    [InlineData("CREATE TABLE dbo.h (id int NOT NULL) AS NODE;")]
-    public void Select_star_over_a_table_whose_star_differs_from_its_columns_is_unknown(string table)
+    [Fact]
+    public void Select_star_in_a_view_over_a_graph_table_is_unknown()
     {
+        // A_graph_tables_star_adds_pseudo_columns_named_by_the_server. A hidden column is left out (SelectStarTests).
         var doc = Infer(
-            ("tables.sql", Tables + "\n" + table),
+            ("tables.sql", Tables + "\nCREATE TABLE dbo.h (id int NOT NULL) AS NODE;"),
             ("views.sql", "CREATE VIEW dbo.w AS SELECT * FROM dbo.h AS h;"),
             ("p.sql", "CREATE PROCEDURE dbo.p AS SELECT x.id FROM dbo.w AS x;"));
 

@@ -8,9 +8,9 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// VALUES lists, views, and the SELECT * a view binds when it is created. APPLY itself is binding's (Binder.cs) and
-// refinement's (Typer.Refinement.cs, Cardinality.cs); README.md in this folder ("APPLY", "Views") gives the rules and the
-// observations they rest on (ApplyViewObservationTests in the differential tests).
+// VALUES lists and views. APPLY itself is binding's (Binder.cs) and refinement's (Typer.Refinement.cs, Cardinality.cs);
+// README.md in this folder ("APPLY", "Views") gives the rules and the observations they rest on (ApplyViewObservationTests
+// in the differential tests). A view's SELECT * is Typer.Star.cs's, as every query's is.
 internal sealed partial class Typer
 {
     // ---- what the relations a query reads hold ------------------------------------------------------------------------
@@ -217,7 +217,7 @@ internal sealed partial class Typer
         // Its stars are expanded, as SQL Server bound them when it created the view.
         return WithCtes(
             select.WithCtesAndXmlNamespaces,
-            ReadScope.Statement(NameEnvironment.View, FlowState.Start([])),
+            ReadScope.Statement(NameEnvironment.Empty, FlowState.Start([])),
             scope =>
             {
                 if (select.QueryExpression is not { } query || ForOf(query) is not null)
@@ -226,7 +226,7 @@ internal sealed partial class Typer
                 var row = Query(bound, scope);
                 return Holds(bound.Listed(view.Columns), row) is { } relation
                     ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One, Keys = Keys(query, row, scope) }
-                    : Fails("its columns cannot be listed: a SELECT * over a source whose columns are not known, or over a table whose * differs from its columns (hidden or graph columns), or a column without a name of its own.");
+                    : Unlisted(view.Name.ToString(), row, at);
             },
             LocalRelationValues.Unknown);
     }
@@ -270,25 +270,5 @@ internal sealed partial class Typer
         }
 
         return keys;
-    }
-
-    // ---- SELECT * ---------------------------------------------------------------------------------------------------------
-
-    /// <summary>
-    /// The columns <c>*</c> or <c>alias.*</c> stands for, as binding lists them (<see cref="Binder.Star"/>), each read as a
-    /// column reference to it would be. Null when binding can't list them.
-    /// </summary>
-    private List<RowColumn>? Expand(SelectStarExpression star, ReadScope scope)
-    {
-        var at = At(star);
-        return Binder.Star(star, scope.Bound) is { } columns
-            ? [.. columns.Select(c => c.Column switch
-            {
-                TableColumn table => new RowColumn(c.Name, FromColumn(table, scope), at, table),
-                RelationColumn relation => new RowColumn(c.Name, FromLocal(relation.Source, relation.Ordinal, scope, at), at),
-                UnlistedColumn unlisted => new RowColumn(c.Name, FromLocal(unlisted.Source, -1, scope, at), at),
-                Unresolved unresolved => new RowColumn(c.Name, Value.Unknown(Unknown(unresolved.Problem)), at),
-            })]
-            : null;
     }
 }

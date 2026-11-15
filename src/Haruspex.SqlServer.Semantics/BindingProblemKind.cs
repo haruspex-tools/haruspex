@@ -19,4 +19,7 @@ public enum BindingProblemKind
 
     /// <summary>A column that no table in scope has, or more than one has.</summary>
     UnresolvedColumn,
+
+    /// <summary>A <c>SELECT *</c> the binder can't expand for certain: over a graph table, or qualified by more than one name.</summary>
+    UnsupportedStar,
 }

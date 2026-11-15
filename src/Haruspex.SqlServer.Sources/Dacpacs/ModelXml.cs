@@ -26,6 +26,7 @@ internal static class ModelXml
     public const string SqlTable = nameof(SqlTable);
     public const string SqlSimpleColumn = nameof(SqlSimpleColumn);
     public const string SqlComputedColumn = nameof(SqlComputedColumn);
+    public const string SqlColumnSet = nameof(SqlColumnSet);
     public const string SqlCheckConstraint = nameof(SqlCheckConstraint);
     public const string SqlPrimaryKeyConstraint = nameof(SqlPrimaryKeyConstraint);
     public const string SqlUniqueConstraint = nameof(SqlUniqueConstraint);
@@ -53,6 +54,7 @@ internal static class ModelXml
     public const string IsNullable = nameof(IsNullable);
     public const string IsIdentity = nameof(IsIdentity);
     public const string IsHidden = nameof(IsHidden);
+    public const string IsSparse = nameof(IsSparse);
     public const string IsPersistedNullable = nameof(IsPersistedNullable);
     public const string ReturnTableVariable = nameof(ReturnTableVariable);
     public const string DoReturnNullForNullInput = nameof(DoReturnNullForNullInput);

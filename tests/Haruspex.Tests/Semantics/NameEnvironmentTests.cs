@@ -24,7 +24,7 @@ public class NameEnvironmentTests
     [Fact]
     public void Its_equality_keeps_the_laws() =>
         EqualityLaws.Hold([
-            NameEnvironment.Empty, NameEnvironment.View, With("#lines", "id"), With("#Lines", "id"), With("#lines", "id"),
+            NameEnvironment.Empty, With("#lines", "id"), With("#Lines", "id"), With("#lines", "id"),
             With("#lines", "id", "qty"), With("#other", "id"),
         ]);
 }

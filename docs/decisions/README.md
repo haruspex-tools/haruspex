@@ -52,6 +52,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0044](0044-a-project-file-is-evaluated-in-part-and-the-rest-reported.md) | 15 Nov 2026 | A project file is evaluated in part, and the rest reported |
 | [0045](0045-a-project-s-references-are-read-from-where-its-build-takes-them.md) | 15 Nov 2026 | A project's references are read from where its build takes them |
 | [0046](0046-a-sqlcmd-variable-in-a-body-is-unknown.md) | 15 Nov 2026 | A SQLCMD variable in a body is unknown |
+| [0047](0047-a-star-is-bound-against-the-tables-the-project-defines.md) | 15 Nov 2026 | A star is bound against the tables the project defines |
 
 ## Writing a record
 

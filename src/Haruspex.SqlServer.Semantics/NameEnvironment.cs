@@ -24,35 +24,23 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     private readonly ImmutableDictionary<LocalName, EquatableArray<string>> temporaryColumns;
 
     private NameEnvironment(
-        bool expandsStars,
         ImmutableDictionary<string, PseudoTable> pseudo,
         ImmutableDictionary<string, CommonTable> ctes,
         ImmutableDictionary<LocalName, TableVariable> tableVariables,
         ImmutableDictionary<LocalName, EquatableArray<string>> temporaryColumns)
     {
-        ExpandsStars = expandsStars;
         this.pseudo = pseudo;
         this.ctes = ctes;
         this.tableVariables = tableVariables;
         this.temporaryColumns = temporaryColumns;
     }
 
-    /// <summary>No relations of the body's own, in a body whose stars are not expanded: a procedure's, a function's.</summary>
+    /// <summary>No relations of the body's own.</summary>
     public static NameEnvironment Empty { get; } = new(
-        expandsStars: false,
         ImmutableDictionary.Create<string, PseudoTable>(Names),
         ImmutableDictionary.Create<string, CommonTable>(Names),
         [],
         []);
-
-    /// <summary>
-    /// No relations of the body's own, in a view's body, whose <c>SELECT *</c> SQL Server binds when it creates the view (observed:
-    /// A_view_binds_select_star_when_it_is_created), so a star stands for the columns its sources have.
-    /// </summary>
-    public static NameEnvironment View { get; } = new(true, Empty.pseudo, Empty.ctes, Empty.tableVariables, Empty.temporaryColumns);
-
-    /// <summary>Whether <c>SELECT *</c> is expanded to its sources' columns: only in a view.</summary>
-    public bool ExpandsStars { get; }
 
     /// <summary>What the body declares for the whole of it: its parameters, variables, table variables and cursors.</summary>
     public BodyDeclarations Declarations { get; private init; } = BodyDeclarations.None;
@@ -65,7 +53,7 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
         var table = ImmutableDictionary<LocalName, TableVariable>.Empty;
         foreach (var declaration in declarations.TableVariables)
             table = table.SetItem(new LocalName(declaration.Name), new TableVariable(declaration));
-        return new(ExpandsStars, pseudo, ctes, table, temporaryColumns) { Declarations = declarations };
+        return new(pseudo, ctes, table, temporaryColumns) { Declarations = declarations };
     }
 
     /// <summary>
@@ -76,7 +64,7 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     public NameEnvironment WithTemporaryColumns(IEnumerable<KeyValuePair<LocalName, IReadOnlyList<string>>> columns)
     {
         ArgumentNullException.ThrowIfNull(columns);
-        return new(ExpandsStars, pseudo, ctes, tableVariables, ImmutableDictionary.CreateRange(columns.Select(c => KeyValuePair.Create(c.Key, (EquatableArray<string>)[.. c.Value])))) { Declarations = Declarations };
+        return new(pseudo, ctes, tableVariables, ImmutableDictionary.CreateRange(columns.Select(c => KeyValuePair.Create(c.Key, (EquatableArray<string>)[.. c.Value])))) { Declarations = Declarations };
     }
 
     /// <summary>These names with a CTE added, hiding any table of its name.</summary>
@@ -84,7 +72,7 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     public NameEnvironment WithCte(CommonTable cte)
     {
         ArgumentNullException.ThrowIfNull(cte);
-        return new(ExpandsStars, pseudo, ctes.SetItem(cte.Name, cte), tableVariables, temporaryColumns) { Declarations = Declarations };
+        return new(pseudo, ctes.SetItem(cte.Name, cte), tableVariables, temporaryColumns) { Declarations = Declarations };
     }
 
     /// <summary>These names with <c>inserted</c> or <c>deleted</c> added, for a write's <c>OUTPUT</c>.</summary>
@@ -92,7 +80,7 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     public NameEnvironment WithPseudo(PseudoTable table)
     {
         ArgumentNullException.ThrowIfNull(table);
-        return new(ExpandsStars, pseudo.SetItem(table.Name, table), ctes, tableVariables, temporaryColumns) { Declarations = Declarations };
+        return new(pseudo.SetItem(table.Name, table), ctes, tableVariables, temporaryColumns) { Declarations = Declarations };
     }
 
     /// <summary>
@@ -123,8 +111,7 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     public bool Equals(NameEnvironment? other) =>
         other is not null
         && (ReferenceEquals(this, other)
-            || (ExpandsStars == other.ExpandsStars
-                && ReferenceEquals(Declarations, other.Declarations)
+            || (ReferenceEquals(Declarations, other.Declarations)
                 && Same(pseudo, other.pseudo, (a, b) => a.Name == b.Name && Same(a.Columns, b.Columns))
                 && Same(ctes, other.ctes, ReferenceEquals)
                 && Same(tableVariables, other.tableVariables, ReferenceEquals)
@@ -137,7 +124,6 @@ public sealed class NameEnvironment : IEquatable<NameEnvironment>
     public override int GetHashCode()
     {
         var hash = new HashCode();
-        hash.Add(ExpandsStars);
         hash.Add(pseudo.Count);
         hash.Add(ctes.Count);
         hash.Add(tableVariables.Count);

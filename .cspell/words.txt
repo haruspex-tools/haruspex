@@ -51,6 +51,7 @@ quotename
 raiserror
 readcommitted
 readuncommitted
+refreshsqlmodule
 refreshview
 roundabort
 rowcount

@@ -129,7 +129,8 @@ internal sealed partial class Typer
 
         if (!symbol.IsRecursive)
         {
-            return Holds(symbol, Query(bound.Query, scope)) ?? Fails(IrUnknownReason.UnsupportedQuery, "its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
+            var row = Query(bound.Query, scope);
+            return Holds(symbol, row) ?? Unlisted(name, row, at);
         }
 
         // A recursive CTE is an anchor member, then recursive members, each joined by UNION ALL; SQL Server refuses any
@@ -151,8 +152,9 @@ internal sealed partial class Typer
         // (observed: A_recursive_ctes_column_is_not_a_constant_even_when_every_member_is_one_literal), and the join drops
         // the anchor's digits (Value.Digits), so even a member that gives the anchor's literal again takes one more pass.
         // The members are bound once (Binder.BindWith); each pass attaches the CTE's values as they stand.
-        if (Holds(symbol, Query((BoundSpecification)members[0], scope)) is not { Names: { } columns, Values: { } anchor } current)
-            return Fails(IrUnknownReason.UnsupportedQuery, "its anchor's columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.");
+        var anchorRow = Query((BoundSpecification)members[0], scope);
+        if (Holds(symbol, anchorRow) is not { Names: { } columns, Values: { } anchor } current)
+            return Unlisted(name, anchorRow, at);
         LocalRelationValues? failed = null;
         var iteration = FixedPoint.Iterate(
             anchor,
@@ -163,7 +165,7 @@ internal sealed partial class Typer
                 foreach (var member in members.Skip(1).Cast<BoundSpecification>())
                 {
                     var row = Query(member, pass);
-                    if (row.Star is not null || row.Columns.Count != next.Count)
+                    if (row.Unlisted is not null || row.Columns.Count != next.Count)
                     {
                         failed = Fails(IrUnknownReason.UnsupportedQuery, "a recursive member's columns cannot be listed against the anchor's.");
                         return Pass<EquatableArray<Value>>.Stop();
@@ -195,7 +197,7 @@ internal sealed partial class Typer
     {
         if (names is null)
             return null;
-        if (row.Star is not null || row.Columns.Count != names.Count)
+        if (row.Unlisted is not null || row.Columns.Count != names.Count)
             throw new InvalidOperationException($"Binding listed {names.Count} columns where the query reads {row.Columns.Count}.");
         return new LocalRelationValues([.. names], [.. row.Columns.Select(c => c.Value)], null);
     }
@@ -263,7 +265,7 @@ internal sealed partial class Typer
         var row = Query(derived.Query, scope);
         return Holds(derived, row) is { } relation
             ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One }
-            : LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{name}: its columns cannot be listed: SELECT * is not expanded yet, and every column needs one name of its own.", at));
+            : Unlisted(name, row, at);
     }
 
     /// <summary>

@@ -1,0 +1,111 @@
+{
+  "irVersion": "0.21",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "shop.list_parcels",
+      "name": "ListParcels",
+      "kind": "procedure",
+      "at": "procedures/list_parcels.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListParcelsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListParcelsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "shop.list_parcels",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "parcel_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "label",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "shop.parcel.label"
+            }
+          ]
+        },
+        {
+          "name": "extras",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-sql-type"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "shop.parcel.extras"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "shop.list_parcels",
+      "path": "results[0][].extras",
+      "reason": "unsupported-sql-type",
+      "detail": "The type xml is not modelled yet.",
+      "at": "tables/parcel.sql:7:5"
+    }
+  ],
+  "overrides": [],
+  "folds": {}
+}

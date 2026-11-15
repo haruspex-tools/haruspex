@@ -1,0 +1,43 @@
+column shop.order_line.line_id int at tables/order_line.sql:3:5
+column shop.order_line.order_id int at tables/order_line.sql:4:5
+column shop.order_line.qty int at tables/order_line.sql:6:5
+column shop.order_line.sku varchar(12) at tables/order_line.sql:5:5
+column shop.orders.customer nvarchar(40) at tables/orders.sql:4:5
+column shop.orders.note nvarchar(200) at tables/orders.sql:6:5
+column shop.orders.order_id int at tables/orders.sql:3:5
+column shop.orders.placed_on date at tables/orders.sql:5:5
+column shop.parcel.extras xml at tables/parcel.sql:7:5
+column shop.parcel.fragile bit at tables/parcel.sql:6:5
+column shop.parcel.label nvarchar(20) at tables/parcel.sql:5:5
+column shop.parcel.parcel_id int at tables/parcel.sql:3:5
+column shop.parcel.weight_g int at tables/parcel.sql:4:5
+column shop.price.amount decimal(9,2) at tables/price.sql:4:5
+column shop.price.sku varchar(12) at tables/price.sql:3:5
+column shop.price.valid_from datetime2 at tables/price.sql:5:5
+column shop.price.valid_to datetime2 at tables/price.sql:6:5
+function shop.lines_of at functions/lines_of.sql:2:1
+function shop.order_json at functions/order_json.sql:2:1
+key shop.order_line pk_order_line (line_id) at tables/order_line.sql:3:26
+key shop.orders pk_orders (order_id) at tables/orders.sql:3:27
+key shop.parcel pk_parcel (parcel_id) at tables/parcel.sql:3:28
+key shop.price pk_price (sku) at tables/price.sql:3:30
+named function shop.lines_of
+named function shop.order_json
+parameter shop.lines_of @order_id at functions/lines_of.sql:2:32
+parameter shop.order_card @id at procedures/order_card.sql:2:34
+parameter shop.order_json @order_id at functions/order_json.sql:2:34
+parameter shop.order_lines @id at procedures/order_lines.sql:2:35
+parameter shop.order_summary @id at procedures/order_summary.sql:2:37
+procedure shop.all_lines at procedures/all_lines.sql:2:1
+procedure shop.current_prices at procedures/current_prices.sql:2:1
+procedure shop.list_orders at procedures/list_orders.sql:2:1
+procedure shop.list_parcels at procedures/list_parcels.sql:2:1
+procedure shop.order_card at procedures/order_card.sql:2:1
+procedure shop.order_lines at procedures/order_lines.sql:2:1
+procedure shop.order_summary at procedures/order_summary.sql:2:1
+procedure shop.orders_with_lines at procedures/orders_with_lines.sql:2:1
+procedure shop.picking at procedures/picking.sql:2:1
+table shop.order_line at tables/order_line.sql:2:1
+table shop.orders at tables/orders.sql:2:1
+table shop.parcel at tables/parcel.sql:2:1
+table shop.price at tables/price.sql:2:1

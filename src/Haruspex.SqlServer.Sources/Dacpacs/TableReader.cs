@@ -120,6 +120,8 @@ internal sealed class TableReader(string package, bool extracted, ICollection<Di
         return new Column(name, TypeSpecifier.Of(column, ModelXml.TypeSpecifier), nullability, ModelXml.IsTrue(column, ModelXml.IsIdentity), null, at, ModelXml.Property(column, ModelXml.Collation))
         {
             IsHidden = ModelXml.IsTrue(column, ModelXml.IsHidden),
+            IsSparse = ModelXml.IsTrue(column, ModelXml.IsSparse),
+            IsColumnSet = ModelXml.TypeOf(column) == ModelXml.SqlColumnSet,
         };
     }
 

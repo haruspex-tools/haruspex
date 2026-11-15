@@ -124,8 +124,24 @@ Each thing a FROM can read that is not a table of the schema is a `RelationSymbo
 query, bound), a `ValuesTable`, a `ViewRelation`, a `TableFunctionCall`, an `OpenJsonCall`, a `SeriesCall`, a
 `TemporaryTable`, a `TableVariable` or a `PseudoTable`. A symbol carries its columns' names, which binding works out itself:
 a select list's aliases and column names (a set operation's from its first query), a column list, a declaration,
-`OPENJSON`'s `WITH`. A `SELECT *` is expanded only in a view, whose stars SQL Server binds when it creates the view; elsewhere
-a star leaves the relation's columns unknown, which only claims less.
+`OPENJSON`'s `WITH`, and a star's columns (below).
+
+### `SELECT *`
+
+A star is one more name to bind: `*` stands for every source of its query, `alias.*` for the one its qualifier names, and
+`Binder.Star` lists the columns it stands for as a column reference to each would resolve, so Inference reads a starred column
+exactly as a listed one, with its type, its facts and its optional side. A table gives its columns in the order it declares them,
+which is `column_id`'s, leaving out a `HIDDEN` period column and, when the table has a column set, its sparse columns, which the
+set stands for; a relation gives the columns its symbol names; a temporary table gives its columns as the walk knows them at
+that statement, through the names in force, as for any column of it. What it gives is a `StarExpansion`: an `ExpandedStar` with
+the columns, an `UnlistedStar` naming the relation whose columns can't be listed (a caller's `#t`), whose reason the reader
+finds in what that relation holds, or an `UnexpandedStar` with a binding problem (a table not in the project, a graph table,
+whose star adds pseudo-columns the server names, or a qualifier of two parts).
+
+When SQL Server binds a star depends on the module: a procedure and the functions that run statements bind it when they run, a
+view and an inline function when they are created. Every star is bound here against the tables as the project defines them,
+assuming a deployment that refreshes the modules created earlier, as SqlPackage does
+([decision 0047](../decisions/0047-a-star-is-bound-against-the-tables-the-project-defines.md)).
 
 ### The scopes of a FROM
 

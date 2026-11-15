@@ -350,7 +350,7 @@ public sealed partial class Binder
         if (view.Redefinition is not null || view.Query.QueryExpression is not { } query || ForOf(query) is not null)
             return null;
         var binder = bindings.For(view.Span);
-        var names = binder.BindWith(view.Query.WithCtesAndXmlNamespaces, NameEnvironment.View).Names;
+        var names = binder.BindWith(view.Query.WithCtesAndXmlNamespaces, NameEnvironment.Empty).Names;
         return binder.Bind(query, null, names).Listed(view.Columns);
     });
 
@@ -373,7 +373,7 @@ public sealed partial class Binder
     }
 
     /// <summary>
-    /// The columns of what a call in FROM returns: an inline function's query's (its stars not expanded), a multi-statement
+    /// The columns of what a call in FROM returns: an inline function's query's, a multi-statement
     /// or CLR function's declared table's; null for a call with a column list, which SQL Server refuses (317), and for a
     /// function that is not table-valued, is defined more than once, or isn't the project's.
     /// </summary>
