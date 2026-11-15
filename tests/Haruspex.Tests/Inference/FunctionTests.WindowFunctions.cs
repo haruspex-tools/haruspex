@@ -108,6 +108,20 @@ public partial class FunctionTests
     }
 
     [Fact]
+    public void A_function_over_a_window_named_in_a_window_clause_is_unknown()
+    {
+        // A_window_named_in_a_window_clause_brings_its_frame_to_every_function_over_it: the name's frame may be empty, and
+        // haruspex reads only the OVER clause it is given, so a function over a name is unknown however simple the name's window.
+        var doc = Procedure("""
+            SELECT FIRST_VALUE(n) OVER w AS a, SUM(n) OVER w AS b, ROW_NUMBER() OVER w AS c
+            FROM dbo.t WINDOW w AS (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING);
+            """);
+        Unknown(doc, "a");
+        Unknown(doc, "b");
+        Unknown(doc, "c");
+    }
+
+    [Fact]
     public void A_window_function_not_modelled_is_unknown()
     {
         // AVG over a window is read (NumericTests).

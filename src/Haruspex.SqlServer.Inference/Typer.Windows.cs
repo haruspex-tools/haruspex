@@ -35,6 +35,12 @@ internal sealed partial class Typer
         var name = function.Name;
         // Never null: the function table reads a call as a window only when it has OVER (FunctionTable).
         var over = call.OverClause!;
+
+        // OVER w takes the partition, order and frame of w's definition in the query's WINDOW clause, whose
+        // frame may be empty (A_window_named_in_a_window_clause_brings_its_frame_to_every_function_over_it). Only the OVER
+        // clause is read here, so a function over a name is unknown.
+        if (over.WindowName is not null)
+            return NotModelled(call, "a window named in a WINDOW clause is not modelled yet.");
         EquatableArray<IrNullReason> Framed() => rule.EmptyFrame && MayBeEmpty(over) ? [new IrNullReason(IrNullRule.EmptyFrame, At(call).ToString())] : [];
         EquatableArray<IrNullReason> Sample() => rule.TooFewValues ? [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())] : [];
 

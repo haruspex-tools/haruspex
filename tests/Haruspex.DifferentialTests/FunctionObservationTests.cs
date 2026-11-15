@@ -313,6 +313,19 @@ public class FunctionObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_window_named_in_a_window_clause_brings_its_frame_to_every_function_over_it()
+    {
+        // The name's frame holds the two rows before the current one, which the first row hasn't: FIRST_VALUE and SUM are NULL
+        // there over a column never NULL, as they are with the frame written in OVER.
+        Assert.Equal(
+            "id,f,s: 1,null,null;2,10,10;3,10,30",
+            await Select("""
+                SELECT id, FIRST_VALUE(n) OVER w AS f, SUM(n) OVER w AS s
+                FROM dbo.obs_w WINDOW w AS (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) ORDER BY id;
+                """));
+    }
+
+    [Fact]
     public async Task Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type()
     {
         // Past the edge: NULL, or the default converted to the column's type (a long string cut, 1.9 to 1); a NULL offset is NULL;
