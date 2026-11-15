@@ -134,7 +134,7 @@ public partial class SqlProjectReaderTests
     }
 
     [Fact]
-    public void A_dacpac_not_found_is_one_warning_naming_where_it_was_looked_for_and_is_recorded_without_a_hash()
+    public void A_dacpac_not_found_is_one_warning_and_one_part_the_model_lacks_naming_every_project_that_refers_to_it()
     {
         using var folder = new TempDirectory();
         const string Gone = """<ItemGroup><ArtifactReference Include="../lib/gone.dacpac" /></ItemGroup>""";
@@ -146,7 +146,7 @@ public partial class SqlProjectReaderTests
         Assert.Contains($"p.sqlproj refers to the DACPAC ../lib/gone.dacpac, of its own database, which isn't found: looked for at {Path.Combine(folder.Path, "lib", "gone.dacpac")}.", reported.Message, StringComparison.Ordinal);
         var reference = Assert.Single(read.References);
         Assert.Equal(("gone.dacpac", null), (reference.Name, reference.Found));
-        Assert.Contains(new UnreadPart("gone.dacpac", "p.sqlproj"), read.Model.Unread);
+        Assert.Equal([new UnreadPart("gone.dacpac", "p.sqlproj, q.sqlproj")], read.Model.Unread);
     }
 
     [Fact]

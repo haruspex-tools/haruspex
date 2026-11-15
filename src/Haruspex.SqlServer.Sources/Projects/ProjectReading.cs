@@ -71,7 +71,6 @@ internal sealed class ProjectReading
         var scripts = new List<ScriptFile>();
         var roots = new List<DacPackage>();
         var unread = new List<UnreadPart>();
-        var absent = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         var read = new List<string>();
         DatabaseSettings? settings = null;
         string? collation = null;
@@ -85,10 +84,8 @@ internal sealed class ProjectReading
             if (located is null && referrer is not null && reference is not null)
             {
                 Missing(next, reference, problem, referrer);
-                if (!absent.TryGetValue(next, out var referrers))
-                    absent[next] = referrers = [];
-                if (!referrers.Contains(referrer, StringComparer.OrdinalIgnoreCase))
-                    referrers.Add(referrer);
+                if (reference.Database is null)
+                    unread.Add(new UnreadPart(Path.GetFileName(next), referrer));
                 continue;
             }
 
@@ -117,10 +114,6 @@ internal sealed class ProjectReading
             }
         }
 
-        // A project of this database not found, once however many refer to it; one of another database leaves that database out.
-        if (rootReference?.Database is null)
-            unread.AddRange(absent.Select(a => new UnreadPart(Path.GetFileName(a.Key), string.Join(", ", a.Value))));
-
         // In order of their relative paths, as a folder's are, so the outcome doesn't depend on the order of the items; a script two
         // projects build is read twice, and what it defines is defined twice, as in their packages. The packages of the database
         // come after, read as a DACPAC's are.
@@ -131,7 +124,13 @@ internal sealed class ProjectReading
         foreach (var (database, package) in ofOthers ?? [])
             others?.TryAdd(database, new Other(null, null, null, package));
         diagnostics.AddRange(declarations.Diagnostics);
-        return new DatabaseRead(declarations, settings, collation, unread, rooted);
+
+        // What the database lacks, once however many refer to it, naming each.
+        var lacks = unread
+            .GroupBy(u => u.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new UnreadPart(g.First().Name, string.Join(", ", g.Select(u => u.ReferredToBy).Distinct(StringComparer.OrdinalIgnoreCase))))
+            .ToList();
+        return new DatabaseRead(declarations, settings, collation, lacks, rooted);
     }
 
     /// <summary>
