@@ -72,7 +72,8 @@ public class SqlProjectReaderTests
     {
         foreach (var (path, text) in files)
             folder.File(path, text);
-        return SqlProjectReader.Read(folder.File("p/p.sqlproj", project));
+        // An empty package cache of its own, so that no test depends on what this machine has restored.
+        return SqlProjectReader.Read(folder.File("p/p.sqlproj", project), new PackageCache(Path.Combine(folder.Path, "no-packages")));
     }
 
     private static string[] Procedures(SqlProjectReadResult read) => [.. read.Model.Procedures.Select(p => p.Name.Name).Order(StringComparer.Ordinal)];
@@ -748,6 +749,48 @@ public class SqlProjectReaderTests
         var read = Read(folder, Sdk(Target + "<ItemGroup><ProjectReference Include=\"../q/q.sqlproj\" /></ItemGroup>"));
 
         var reported = Assert.Single(read.Diagnostics);
-        Assert.Contains("The target Stamp, which 2 projects define, runs during a build", reported.Message, StringComparison.Ordinal);
+        Assert.Contains("The target Stamp, which 2 projects import or define, runs during a build", reported.Message, StringComparison.Ordinal);
+    }
+
+    // Round 2 of the review.
+
+    [Fact]
+    public void A_dash_comment_ends_at_its_line_so_an_apostrophe_or_a_block_start_in_it_hides_no_include_after_it()
+    {
+        using var folder = new TempDirectory();
+        var read = Read(
+            folder,
+            Sdk("<ItemGroup><PostDeploy Include=\"post.sql\" /></ItemGroup>"),
+            ("p/post.sql", "-- don't seed twice\n:r .\\first.sql\n-- /* not a comment's start\n:r .\\second.sql\n"),
+            ("p/first.sql", Proc("first")), ("p/second.sql", Proc("second")), ("p/kept.sql", Proc("kept")));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(["kept"], Procedures(read));
+    }
+
+    [Fact]
+    public void A_reference_not_read_yet_is_one_note_however_many_projects_make_it()
+    {
+        const string Master = "<ItemGroup><PackageReference Include=\"Microsoft.SqlServer.Dacpacs.Master\" Version=\"170.0.4\" /></ItemGroup>";
+        using var folder = new TempDirectory();
+        folder.File("q/q.sqlproj", Sdk(Master));
+        folder.File("r/r.sqlproj", Sdk(Master));
+        var read = Read(folder, Sdk(Master + "<ItemGroup><ProjectReference Include=\"../q/q.sqlproj\" /><ProjectReference Include=\"../r/r.sqlproj\" /></ItemGroup>"));
+
+        var reported = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.ReferenceNotRead, reported.Code);
+        Assert.StartsWith("p.sqlproj and 2 other projects refer to the package Microsoft.SqlServer.Dacpacs.Master", reported.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void One_script_a_doubted_item_may_take_out_is_it_and_more_are_them()
+    {
+        using var folder = new TempDirectory();
+        var one = Read(folder, Sdk("<ItemGroup><None Include=\"a.sql\" Condition=\"$(Elsewhere)\" /></ItemGroup>"), ("p/a.sql", Proc("a")), ("p/b.sql", Proc("b")));
+        using var other = new TempDirectory();
+        var two = Read(other, Sdk("<ItemGroup><None Include=\"*.sql\" Condition=\"$(Elsewhere)\" /></ItemGroup>"), ("p/a.sql", Proc("a")), ("p/b.sql", Proc("b")));
+
+        Assert.Contains("a.sql isn't read: the None Include \"a.sql\" of p.sqlproj may take it out of the build", Assert.Single(one.Diagnostics).Message, StringComparison.Ordinal);
+        Assert.Contains("a.sql, b.sql aren't read: the None Include \"*.sql\" of p.sqlproj may take them out of the build", Assert.Single(two.Diagnostics).Message, StringComparison.Ordinal);
     }
 }

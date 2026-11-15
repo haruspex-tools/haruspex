@@ -115,7 +115,13 @@ internal static class ProjectFiles
                 continue;
             unsure.UnionWith(named);
             var which = item.Spec is null ? $"No script of {name} is read" : $"{string.Join(", ", named.Select(p => Path.GetRelativePath(folder, p).Replace('\\', '/')))} {(named.Count == 1 ? "isn't" : "aren't")} read";
-            var does = item.Verb == ProjectXml.Update ? "change the settings they start with" : "take them out of the build";
+            var does = (item.Verb == ProjectXml.Update, named.Count == 1) switch
+            {
+                (true, true) => "change the settings it starts with",
+                (true, false) => "change the settings they start with",
+                (false, true) => "take it out of the build",
+                _ => "take them out of the build",
+            };
             var reported = SourceCodes.PartNotRead.At(
                 item.At,
                 $"{which}: the {item.Type} {item.Verb} \"{item.Written}\" of {name} may {does}, and whether it does isn't known: {string.Join("; ", item.Doubts.Select(d => d.Why).Distinct())}.");

@@ -31,28 +31,32 @@ internal static partial class ProjectReferences
     /// The projects of the same database <paramref name="project"/> refers to; every other reference to a database noted, and a
     /// package reference only when its package holds a DACPAC (or <paramref name="cache"/> can't say).
     /// </summary>
-    public static IReadOnlyList<ProjectItem> SameDatabase(EvaluatedProject project, PackageCache cache, ICollection<Diagnostic> diagnostics)
+    /// <param name="project">The project.</param>
+    /// <param name="cache">Where packages are looked for.</param>
+    /// <param name="diagnostics">Where a reference that isn't evaluated is reported.</param>
+    /// <param name="notes">Where a reference not read yet is kept, to be said once for every project that makes it.</param>
+    public static IReadOnlyList<ProjectItem> SameDatabase(EvaluatedProject project, PackageCache cache, ICollection<Diagnostic> diagnostics, ICollection<NotedReference> notes)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(cache);
         ArgumentNullException.ThrowIfNull(diagnostics);
         var name = Path.GetFileName(project.File.Path);
         foreach (var item in project.Doubted)
-            Doubted(item, name, cache, diagnostics);
+            Doubted(item, name, cache, diagnostics, notes);
 
         var same = new List<ProjectItem>();
         foreach (var item in project.OfType(ProjectXml.ProjectReference))
         {
             if (OtherDatabase.FirstOrDefault(m => item.Metadata.TryGetValue(m, out var v) && v.Text.Length > 0) is { } other)
-                NotRead(diagnostics, item.At, $"{name} refers to {item.Spec} as another database ({other} {item.Metadata[other].Text}), which isn't read yet: a name in it stays unknown.");
+                NotRead(notes, name, item.At, $"{item.Spec} as another database ({other} {item.Metadata[other].Text}), which isn't read yet: a name in it stays unknown.");
             else if (item.Spec.EndsWith(".sqlproj", StringComparison.OrdinalIgnoreCase))
                 same.Add(item);
         }
 
         foreach (var item in project.OfType(ProjectXml.ArtifactReference))
-            NotRead(diagnostics, item.At, $"{name} refers to the DACPAC {item.Spec}, which isn't read from a project yet: a name in it stays unknown.");
+            NotRead(notes, name, item.At, $"the DACPAC {item.Spec}, which isn't read from a project yet: a name in it stays unknown.");
         foreach (var item in project.OfType(ProjectXml.PackageReference))
-            Package(item.Spec, item.Metadata.GetValueOrDefault(ProjectXml.Version)?.Text, item.At, name, cache, diagnostics);
+            Package(item.Spec, item.Metadata.GetValueOrDefault(ProjectXml.Version)?.Text, item.At, name, cache, notes);
         return same;
     }
 
@@ -60,18 +64,18 @@ internal static partial class ProjectReferences
     /// A reference whose element isn't evaluated: said as any reference of its kind when what it names is known (none is read yet
     /// but a project of the same database), and as a part not read when what it names isn't.
     /// </summary>
-    private static void Doubted(DoubtedItem item, string name, PackageCache cache, ICollection<Diagnostic> diagnostics)
+    private static void Doubted(DoubtedItem item, string name, PackageCache cache, ICollection<Diagnostic> diagnostics, ICollection<NotedReference> notes)
     {
         switch (item.Type)
         {
             case ProjectXml.ArtifactReference when SsdtSystemPackage().Match(item.Written) is { Success: true } system:
-                NotRead(diagnostics, item.At, $"{name} refers to SSDT's own {system.Groups["name"].Value}, which isn't read from a project yet: a name in it stays unknown.");
+                NotRead(notes, name, item.At, $"SSDT's own {system.Groups["name"].Value}, which isn't read from a project yet: a name in it stays unknown.");
                 break;
             case ProjectXml.ArtifactReference when item.Spec is { } spec:
-                NotRead(diagnostics, item.At, $"{name} refers to the DACPAC {spec}, which isn't read from a project yet: a name in it stays unknown.");
+                NotRead(notes, name, item.At, $"the DACPAC {spec}, which isn't read from a project yet: a name in it stays unknown.");
                 break;
             case ProjectXml.PackageReference when item.Spec is { } spec:
-                Package(spec, null, item.At, name, cache, diagnostics);
+                Package(spec, null, item.At, name, cache, notes);
                 break;
             case ProjectXml.ProjectReference when item.Spec is { } spec && !spec.EndsWith(".sqlproj", StringComparison.OrdinalIgnoreCase):
                 break;
@@ -86,7 +90,7 @@ internal static partial class ProjectReferences
     /// the cache shows with <c>tools/*.dacpac</c>, or one the cache doesn't have, which may. The reference assemblies SSDT's newer
     /// project template refers to when built with the .NET SDK hold none, and say nothing whether restored or not.
     /// </summary>
-    private static void Package(string id, string? version, SourceLocation at, string name, PackageCache cache, ICollection<Diagnostic> diagnostics)
+    private static void Package(string id, string? version, SourceLocation at, string name, PackageCache cache, ICollection<NotedReference> notes)
     {
         if (id.StartsWith("Microsoft.NETFramework.ReferenceAssemblies", StringComparison.OrdinalIgnoreCase))
             return;
@@ -94,14 +98,14 @@ internal static partial class ProjectReferences
         switch (holds)
         {
             case true:
-                NotRead(diagnostics, at, $"{name} refers to the package {id}, whose DACPAC isn't read from a project yet: a name in it stays unknown.");
+                NotRead(notes, name, at, $"the package {id}, whose DACPAC isn't read from a project yet: a name in it stays unknown.");
                 break;
             case null:
-                NotRead(diagnostics, at, $"{name} refers to the package {id}, which isn't in the NuGet cache, so whether it holds a DACPAC isn't known; one it holds isn't read from a project yet, and a name in it stays unknown.");
+                NotRead(notes, name, at, $"the package {id}, which isn't in the NuGet cache, so whether it holds a DACPAC isn't known; one it holds isn't read from a project yet, and a name in it stays unknown.");
                 break;
         }
     }
 
-    private static void NotRead(ICollection<Diagnostic> diagnostics, SourceLocation at, string message) =>
-        diagnostics.Add(SourceCodes.ReferenceNotRead.At(at, message));
+    private static void NotRead(ICollection<NotedReference> notes, string project, SourceLocation at, string what) =>
+        notes.Add(new NotedReference(project, what, at));
 }

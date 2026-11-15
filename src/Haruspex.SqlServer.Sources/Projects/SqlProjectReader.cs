@@ -48,6 +48,7 @@ public static class SqlProjectReader
         var scripts = new List<ScriptFile>();
         var missing = new Dictionary<string, (ProjectItem Reference, string? Problem, List<string> Referrers)>(StringComparer.OrdinalIgnoreCase);
         var targets = new Dictionary<string, (SourceLocation At, int Projects)>(StringComparer.OrdinalIgnoreCase);
+        var notes = new Dictionary<string, (SourceLocation At, List<string> Projects)>(StringComparer.Ordinal);
         DatabaseSettings? settings = null;
         string? collation = null;
         for (var i = 0; i < queue.Count; i++)
@@ -72,6 +73,13 @@ public static class SqlProjectReader
                 continue;
             foreach (var target in read.Targets)
                 targets[target.Name] = targets.TryGetValue(target.Name, out var seen) ? (seen.At, seen.Projects + 1) : (target.At, 1);
+            foreach (var note in read.Notes)
+            {
+                if (!notes.TryGetValue(note.What, out var noted))
+                    notes[note.What] = noted = (note.At, []);
+                if (!noted.Projects.Contains(note.Project, StringComparer.OrdinalIgnoreCase))
+                    noted.Projects.Add(note.Project);
+            }
             if (i == 0)
             {
                 settings = read.Settings;
@@ -86,7 +94,14 @@ public static class SqlProjectReader
         {
             diagnostics.Add(SourceCodes.PartNotRead.At(
                 at,
-                $"The target {name}{(count > 1 ? $", which {count} projects define," : "")} runs during a build, and what it does isn't read: a script it adds or takes out, or a setting it changes, is not seen."));
+                $"The target {name}{(count > 1 ? $", which {count} projects import or define," : "")} runs during a build, and what it does isn't read: a script it adds or takes out, or a setting it changes, is not seen."));
+        }
+
+        // A reference not read yet, once however many projects make it (a shared .props, SSDT's own master.dacpac).
+        foreach (var (what, (at, referrers)) in notes)
+        {
+            var who = referrers.Count == 1 ? $"{referrers[0]} refers" : $"{referrers[0]} and {referrers.Count - 1} other project{(referrers.Count == 2 ? "" : "s")} refer";
+            diagnostics.Add(SourceCodes.ReferenceNotRead.At(at, $"{who} to {what}"));
         }
 
         var unread = new List<UnreadPart>();
@@ -143,8 +158,9 @@ public static class SqlProjectReader
             diagnostics.Add(problem);
         var settings = ProjectSettings.Read(project, diagnostics, out var collation);
         var scripts = ProjectFiles.Read(project, diagnostics);
-        var references = ProjectReferences.SameDatabase(project, cache, diagnostics);
-        return new ProjectRead([.. scripts], settings, collation, references, project.Targets);
+        var notes = new List<NotedReference>();
+        var references = ProjectReferences.SameDatabase(project, cache, diagnostics, notes);
+        return new ProjectRead([.. scripts], settings, collation, references, project.Targets, notes);
     }
 
     /// <summary>What differs between two reads of one project, in words; null when nothing does.</summary>
@@ -166,9 +182,11 @@ public static class SqlProjectReader
         string.Join(", ", new[] { settings.AnsiNulls ? null : "ANSI_NULLS off", settings.QuotedIdentifier ? null : "QUOTED_IDENTIFIER off" }.OfType<string>());
 
     /// <summary>What one project gives the read: its scripts, its settings (the database's, if it is the one given), and the projects of its database it refers to.</summary>
-    private sealed class ProjectRead(EquatableArray<ProjectScript> scripts, DatabaseSettings? settings, string? collation, IReadOnlyList<ProjectItem> references, IReadOnlyList<ProjectTarget> targets)
+    private sealed class ProjectRead(EquatableArray<ProjectScript> scripts, DatabaseSettings? settings, string? collation, IReadOnlyList<ProjectItem> references, IReadOnlyList<ProjectTarget> targets, IReadOnlyList<NotedReference> notes)
     {
         public IReadOnlyList<ProjectTarget> Targets { get; } = targets;
+
+        public IReadOnlyList<NotedReference> Notes { get; } = notes;
 
         public EquatableArray<ProjectScript> Scripts { get; } = scripts;
 
