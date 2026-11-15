@@ -13,6 +13,10 @@ namespace Haruspex.SqlServer.Sources.Projects;
 /// <param name="Why">What isn't evaluated, as a clause: "the property function $([System.IO.Path]::Combine(…)) isn't evaluated".</param>
 internal sealed record Doubt(SourceLocation At, string Why)
 {
+    /// <summary>The doubt of a property defined nowhere in the project or the files it imports, referred to at <paramref name="at"/>.</summary>
+    public static Doubt DefinedNowhere(SourceLocation at, string property) =>
+        new(at, $"$({property}) is defined nowhere in the project or the files it imports, so a build would take it from the environment or its command line, if from anywhere");
+
     /// <summary>The doubts of two values together, each once, in the order met.</summary>
     public static EquatableArray<Doubt> Union(IEnumerable<Doubt> first, IEnumerable<Doubt> second) => [.. first.Concat(second).Distinct()];
 

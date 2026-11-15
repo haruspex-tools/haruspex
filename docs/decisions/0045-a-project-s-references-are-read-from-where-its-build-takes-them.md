@@ -10,7 +10,9 @@ for a legacy project:
   its own project file, with the projects and packages of its own database, into a model of its own under the name a body writes:
   `$(VaultDb)` for a variable, `almanac` for a literal. One level down, as from a DACPAC.
 - **A DACPAC** (`ArtifactReference`) is its `Include`; its `HintPath` isn't used. With a database named, it is read into a model
-  of its own; without, into this database's model, with the packages of its database it refers to.
+  of its own; without, into this database's model, with the packages of its database it refers to. Such a package's reference to
+  the package a project of the database builds, named for its project file, is to that project, read from its scripts, whether or
+  not a built copy is anywhere: the build takes it so.
 - **A NuGet package's DACPAC** (`PackageReference`, in a `Microsoft.Build.Sql` project) is its `HintPath`, or else
   `tools/<name>.dacpac` in the folder the restore gave its version: the cache NuGet uses (`NUGET_PACKAGES`, or `.nuget/packages`
   in the user's home), or the project's `RestorePackagesPath`; `<name>` is its `DacpacName`, else `master` or `msdb` for
@@ -20,7 +22,9 @@ for a legacy project:
 - **Visual Studio's own system packages** (`$(DacPacRootPath)\…\SqlSchemas\master.dacpac`), when the project doesn't define
   `$(DacPacRootPath)`, are read by their file name from a `references` folder of the config file. The file found there stands
   for Visual Studio's; whether it is the version the path names (the `150` in `SqlServer\150`) isn't checked, and the IR's
-  hash records which file was read. Not found, it is a warning naming the path the project gives and the folders looked in.
+  hash records which file was read. Not found, it is a warning naming the path the project gives and the folders looked in. Only
+  the doubt its form stands for, `$(DacPacRootPath)` defined nowhere, is excused: a condition not evaluated, or anything else
+  doubted in it, is reported and the reference not read, as decision 0044 says of any reference.
 - **Any DACPAC not where its build takes it** is looked for by its file name in the config file's `references` folders, in order.
   One found nowhere is a warning ([HAR1003](../diagnostics/HAR1003.md)) naming every place looked; the IR records it without a hash.
 - **A variable is taken by its name**, never its value: a build binds a `DatabaseSqlCmdVariable` by name whether or not the project

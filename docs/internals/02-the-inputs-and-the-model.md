@@ -260,7 +260,8 @@ read one way whoever refers to it.
   records every variable's value empty, so nothing about the reference rests on a value. One that names a server too isn't read
   ([HAR1012](../diagnostics/HAR1012.md)): a body reaches it only by a four-part name, which nothing binds. A reference that
   names no database is to the project's own, and its DACPAC is read into the one model with the packages of the database it
-  refers to.
+  refers to; a reference among those to the package a project of the database builds is that project, already read from its
+  scripts.
 - **Visual Studio's `master.dacpac`.** SSDT's projects refer to it under `$(DacPacRootPath)`, which only a Visual Studio
   install defines. It is looked for by its file name in the config file's `references`, as any DACPAC not where its build
   takes it is, and the file found there stands for Visual Studio's: whether it is the version the path names (the `150` in

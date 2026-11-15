@@ -34,6 +34,9 @@ internal static partial class ProjectReferences
 {
     private const string SystemPackages = "Microsoft.SqlServer.Dacpacs";
 
+    /// <summary>The property Visual Studio's own system packages are named under, which only its install defines.</summary>
+    private const string DacPacRootPath = "DacPacRootPath";
+
     /// <summary>
     /// The system databases' packages Visual Studio's SSDT installs and its projects refer to by a path under its own folder, which
     /// only its build defines: <c>$(DacPacRootPath)\Extensions\Microsoft\SQLDB\Extensions\SqlServer\150\SqlSchemas\master.dacpac</c>.
@@ -88,7 +91,10 @@ internal static partial class ProjectReferences
     {
         switch (item.Type)
         {
-            case ProjectXml.ArtifactReference when SsdtSystemPackage().Match(item.Written) is { Success: true } system:
+            // Excused only the one doubt its form stands for, DacPacRootPath defined nowhere; a doubted condition, or anything else
+            // doubted in it, is reported as any doubted reference is.
+            case ProjectXml.ArtifactReference when SsdtSystemPackage().Match(item.Written) is { Success: true } system
+                && item.Doubts.All(d => d == Doubt.DefinedNowhere(d.At, DacPacRootPath)):
                 var file = system.Groups["name"].Value;
                 if (Database(item.Metadata, $"The ArtifactReference {item.Written} of {name}", new ServerReference(name, $"SSDT's own {file}", item.At), diagnostics, servers) is { } database)
                     into.Add(new DatabaseReference(DatabaseReferenceKind.VisualStudio, $"SSDT's own {file} at {item.Written}", null, file, database.Name, item.At));

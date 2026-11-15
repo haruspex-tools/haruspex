@@ -120,6 +120,33 @@ public partial class SqlProjectReaderTests
         Assert.All(read.References, r => Assert.Null(r.Database));
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("lib/b.dacpac")]
+    [InlineData("b/bin/Debug/b.dacpac")]
+    public void A_dacpac_that_refers_to_a_project_read_from_its_scripts_takes_that_project_built_or_not(string builtCopy)
+    {
+        // c.dacpac, of this database, refers to b.dacpac, which project b builds: the build takes b's package as b, read here from
+        // its scripts, wherever a copy of it is or isn't.
+        using var folder = new TempDirectory();
+        folder.File("b/b.sqlproj", Sdk());
+        folder.File("b/hoop.sql", "CREATE TABLE dbo.hoop (hoop_id int NOT NULL);");
+        Directory.CreateDirectory(Path.Combine(folder.Path, "lib"));
+        TestPackage.Write(Path.Combine(folder.Path, "lib", "c.dacpac"), TestPackage.Table("dbo", "rivet", "rivet_id int"), references: new TestPackage.Reference("b.dacpac"));
+        if (builtCopy.Length > 0)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(folder.Path, builtCopy))!);
+            TestPackage.Write(Path.Combine(folder.Path, builtCopy), TestPackage.Table("dbo", "hoop", "hoop_id int"));
+        }
+
+        var read = ReadWith(folder, Sdk("""<ItemGroup><ProjectReference Include="../b/b.sqlproj" /><ArtifactReference Include="../lib/c.dacpac" /></ItemGroup>"""));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Empty(read.Model.Unread);
+        Assert.Equal(["dbo.hoop", "dbo.rivet"], Tables(read.Model));
+        Assert.Equal("../b/hoop.sql", read.Model.FindTable(new ObjectName("dbo", "hoop"))!.Span.File);
+    }
+
     [Fact]
     public void A_dacpac_of_another_database_is_read_into_a_model_of_its_own()
     {
@@ -333,6 +360,34 @@ public partial class SqlProjectReaderTests
         var reported = Assert.Single(missing.Diagnostics);
         Assert.Equal(SourceCodes.ReferenceNotFound, reported.Code);
         Assert.Contains("p.sqlproj refers to SSDT's own master.dacpac at $(DacPacRootPath)\\Extensions\\Microsoft\\SQLDB\\Extensions\\SqlServer\\150\\SqlSchemas\\master.dacpac, the database master, which isn't found. Only a Visual Studio install has it", reported.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Visual_studio_s_own_master_whose_condition_isn_t_evaluated_is_reported_and_not_read()
+    {
+        using var folder = new TempDirectory();
+        var conditional = VisualStudioMaster.Replace("<ArtifactReference Include=", "<ArtifactReference Condition=\"'$(UseVsMaster)' == 'true'\" Include=", StringComparison.Ordinal);
+        var read = ReadWith(folder, Legacy(conditional), [MasterShape], ("p/a.sql", Proc("a")));
+
+        var reported = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.PartNotRead, reported.Code);
+        Assert.Contains("$(UseVsMaster)", reported.Message, StringComparison.Ordinal);
+        Assert.Empty(read.References);
+        Assert.Empty(read.Model.Databases);
+    }
+
+    [Fact]
+    public void The_msdb_package_s_dacpac_is_the_database_msdb_unless_it_names_another()
+    {
+        using var folder = new TempDirectory();
+        Copy(folder, Path.Combine("harbour", "tally.dacpac"), Path.Combine("packages", "microsoft.sqlserver.dacpacs.msdb", "170.0.0", "tools", "msdb.dacpac"));
+        var read = ReadWith(folder, Sdk("""<ItemGroup><PackageReference Include="Microsoft.SqlServer.Dacpacs.Msdb" Version="170.0.0" /></ItemGroup>"""));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(["msdb"], read.Model.Databases.Keys);
+        Assert.Equal(["ledger.entry"], Tables(read.Model.Databases["msdb"]));
+        Assert.Empty(read.Model.Tables);
+        Assert.Equal(("msdb.dacpac", "msdb"), (Assert.Single(read.References).Name, read.References[0].Database));
     }
 
     [Fact]

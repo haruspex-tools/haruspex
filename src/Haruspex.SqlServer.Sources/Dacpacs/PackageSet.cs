@@ -62,8 +62,13 @@ internal sealed class PackageSet(IReadOnlyList<string> folders, List<Diagnostic>
     /// <param name="roots">The packages of the database to start from.</param>
     /// <param name="others">Where packages of other databases go, or null.</param>
     /// <param name="quiet">Whether to leave out each package's note of what isn't modelled (for <c>master</c>).</param>
+    /// <param name="built">
+    /// The file names of the packages the database's projects, read from their scripts, would build: a reference to one of them
+    /// is to that project, already read, as a build takes it (a referenced project's package is named for its project file,
+    /// observed). Empty for a database read from packages alone.
+    /// </param>
     /// <returns>What the database lacks: a package of it referred to and not found.</returns>
-    public List<UnreadPart> ReadInto(SchemaDeclarations into, IReadOnlyList<DacPackage> roots, Dictionary<string, DacPackage>? others, bool quiet = false)
+    public List<UnreadPart> ReadInto(SchemaDeclarations into, IReadOnlyList<DacPackage> roots, Dictionary<string, DacPackage>? others, bool quiet = false, IReadOnlyCollection<string>? built = null)
     {
         var database = new List<DacPackage>(roots);
         var unread = new List<UnreadPart>();
@@ -71,7 +76,11 @@ internal sealed class PackageSet(IReadOnlyList<string> folders, List<Diagnostic>
         {
             var referrer = database[i];
             foreach (var reference in referrer.References)
+            {
+                if (reference.Database is null && built is not null && built.Contains(reference.LogicalName, StringComparer.OrdinalIgnoreCase))
+                    continue;
                 Follow(reference, referrer, database, unread, others);
+            }
         }
 
         foreach (var package in database)

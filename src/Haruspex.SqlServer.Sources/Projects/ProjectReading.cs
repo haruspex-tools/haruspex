@@ -121,7 +121,8 @@ internal sealed class ProjectReading
         var declarations = new SchemaDeclarations();
         SqlScriptFolder.ReadInto(declarations, scripts.OrderBy(s => s.Relative, StringComparer.Ordinal));
         var ofOthers = others is null ? null : new Dictionary<string, DacPackage>(StringComparer.OrdinalIgnoreCase);
-        unread.AddRange(packages.ReadInto(declarations, [.. roots.Distinct()], ofOthers));
+        var built = read.Select(p => Path.GetFileNameWithoutExtension(p) + ".dacpac").ToList();
+        unread.AddRange(packages.ReadInto(declarations, [.. roots.Distinct()], ofOthers, built: built));
         foreach (var (database, package) in ofOthers ?? [])
             others?.TryAdd(database, new Other(null, null, null, package));
         diagnostics.AddRange(declarations.Diagnostics);

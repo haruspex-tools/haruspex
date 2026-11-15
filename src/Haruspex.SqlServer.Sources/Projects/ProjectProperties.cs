@@ -125,7 +125,7 @@ internal sealed partial class ProjectProperties(string project, IReadOnlyDiction
             return value;
         return CommandLineDefaults.Contains(name)
             ? Evaluated.Sure("")
-            : new Evaluated("", [new Doubt(at, $"$({name}) is defined nowhere in the project or the files it imports, so a build would take it from the environment or its command line, if from anywhere")]);
+            : new Evaluated("", [Doubt.DefinedNowhere(at, name)]);
     }
 
     /// <summary>The reserved properties MSBuild gives every project and every file it reads, which a project can't set.</summary>
