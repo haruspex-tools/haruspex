@@ -70,8 +70,9 @@ foreach (var column in orders.Columns)
 - **A full name binds only where SQL Server binds it.** `shop.orders.order_id` names a source without an alias exposed under
   that name: an alias hides it; a one-part name in FROM is exposed under the schema it resolves to, and leaves the column
   unknown when that is the caller's to decide; a temporary table under any schema, a CTE under none; two sources under one
-  name are refused by SQL Server (1013), so the column is ambiguous; a source in a database that may or may not be the
-  current one, and a four-part name, leave it unknown. `OUTPUT` can't name its target this way (4104), so such a column is
+  name are refused by SQL Server (1013), so the column is ambiguous; a table of another database the project holds has no
+  full name, so the name passes it by, outward; a source in a database that may or may not be the current one, and a
+  four-part name, leave it unknown. `OUTPUT` can't name its target this way (4104), so such a column is
   unknown. Each rule is observed in `BindingObservationTests`, at every compatibility level from 100 to 170.
 - **A fact is never narrower than the truth.** A CHECK constraint is read only in the forms `CheckReader` understands, and
   anything else is ignored, which leaves a type wider than it could be, never narrower. A constraint that a later

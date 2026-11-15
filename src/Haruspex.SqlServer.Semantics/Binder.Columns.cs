@@ -40,7 +40,7 @@ public sealed partial class Binder
         {
             if (qualifier.Count > 0)
             {
-                var named = Named(s.Sources, qualifier);
+                var named = SourcesNamedBy(qualifier, s.Sources);
                 if (named.Count > 1)
                     return new AmbiguousColumn(Problem(BindingProblemKind.UnresolvedColumn, Repeated(qualifier), at));
                 if (named.Count == 1)
@@ -59,19 +59,37 @@ public sealed partial class Binder
                 return FromSource(unknown, name, at);
         }
 
-        // Observed: An_alias_hides_a_tables_full_name (4104).
         return new MissingColumn(Problem(BindingProblemKind.UnresolvedColumn, qualifier.Count == 2
-            ? $"No source in scope is named {FullName(qualifier)} without an alias, as a column of three parts needs: an alias hides a table's own name."
+            ? Unnamed(qualifier, scope)
             : $"No table in scope has the column {FragmentText.OneLine(column)}.", at));
+    }
+
+    /// <summary>
+    /// Why no source is named by a full name: SQL Server refuses the column (4104). An alias hides a table's own name (observed:
+    /// An_alias_hides_a_tables_full_name), which is said only when a source in scope reads a table of that name through one.
+    /// </summary>
+    private static string Unnamed(List<Identifier> qualifier, QueryScope scope)
+    {
+        var table = qualifier[1].Value;
+        for (var s = scope; s is not null; s = s.Parent)
+        {
+            if (s.Sources.Any(x => x.Syntax is NamedTableReference { Alias: not null, SchemaObject.BaseIdentifier.Value: var own } && own.Equals(table, StringComparison.OrdinalIgnoreCase)))
+                return $"No source in scope is named {FullName(qualifier)}: the table of that name has an alias, which hides its own name.";
+        }
+
+        return $"No source in scope is named {FullName(qualifier)}, as a column of three parts needs.";
     }
 
     /// <summary>
     /// The sources of one scope a qualifier of one or two parts names: by alias, or by table name when there is none
     /// (<see cref="BoundSource.Alias"/>); or by full name (<see cref="BoundSource.Exposed"/>). A source whose full name can't be
-    /// told (it names another database the project doesn't hold, or a name whose schema is the caller's) is counted when its
-    /// own name matches, so that a column is never taken from a source further out that SQL Server might not reach.
+    /// told (it names another database the project doesn't hold, which may be this one, or a name whose schema is the caller's)
+    /// is counted when its own name matches, so that a column is never taken from a source further out that SQL Server might
+    /// not reach. A table of a database the project holds through a reference is bound, and has no full name: a reference names
+    /// another database, whose tables a full name never names (observed:
+    /// A_full_name_binds_a_source_named_with_this_databases_name), so a full name passes it by, outward, as SQL Server does.
     /// </summary>
-    private static List<BoundSource> Named(IEnumerable<BoundSource> sources, List<Identifier> qualifier) => qualifier switch
+    private static List<BoundSource> SourcesNamedBy(List<Identifier> qualifier, IEnumerable<BoundSource> sources) => qualifier switch
     {
         [var alias] => [.. sources.Where(s => alias.Value.Equals(s.Alias, StringComparison.OrdinalIgnoreCase))],
         [var schema, var table] => [.. sources.Where(s => s.Exposed is { } exposed

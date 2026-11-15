@@ -63,7 +63,7 @@ public sealed partial class Binder
                 {
                     History = named.TemporalClause is { TemporalClauseType: not TemporalClauseType.AsOf },
                     Uncommitted = Uncommitted(named),
-                    Exposed = named.Alias is null ? Exposed(named.SchemaObject, adding.Names) : null,
+                    Exposed = named.Alias is null ? ExposedNameOf(named.SchemaObject, adding.Names) : null,
                 });
                 break;
             case VariableTableReference variable:
@@ -224,7 +224,7 @@ public sealed partial class Binder
     /// a name of another database: SQL Server binds a full name to it only when that database is the one the query runs in
     /// (observed: A_full_name_binds_a_source_named_with_this_databases_name), which the project can't say.
     /// </summary>
-    private ExposedName? Exposed(SchemaObjectName name, NameEnvironment names)
+    private ExposedName? ExposedNameOf(SchemaObjectName name, NameEnvironment names)
     {
         if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
             return null;

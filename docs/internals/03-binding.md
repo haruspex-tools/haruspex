@@ -106,8 +106,9 @@ every column. Once bound, it is exactly what `p.name` would be: binding is all t
 (`BindingObservationTests`), with the same outcome at every compatibility level from 100 to 170:
 
 - Only a source **without an alias** has one: an alias hides the table's own name, both `shop.product.name` and
-  `product.name` (SQL Server's error 4104). A full name an inner query hides that way is looked for outward, as any qualifier
-  is.
+  `product.name` (SQL Server's error 4104). A full name an inner query doesn't expose (its table has an alias, is the table of
+  that name in another schema, or is a CTE or derived table of that name) is looked for outward, as any qualifier is; one it
+  exposes too is the inner query's.
 - A name written with its schema is exposed so. A **one-part name** in FROM is exposed under the schema it resolves to *for the
   caller*: `FROM product` exposes `dbo.product` to a caller whose default schema is `dbo`, `shop.product` to one whose
   default schema is `shop`. Which object a one-part name reads is the same question (`SchemaNames.Resolve`), so when the
@@ -117,8 +118,9 @@ every column. Once bound, it is exactly what `p.name` would be: binding is all t
   temporary table is exposed under **any** schema (`dbo.#picked.note` and `shop.#picked.note` both bind), and a CTE under none.
 - Two sources of one query can't be exposed under one table name, even in two schemas: SQL Server refuses the FROM (error
   1013), so a full name that matches two is ambiguous, never the first.
-- A source named with a database binds a full name only when that database is the one the query runs in, which the project
-  can't say, so a column through it is unknown. A four-part name, `db.shop.product.name`, binds in the database the query runs
+- A source named with a database binds a full name only when that database is the one the query runs in. Through a
+  reference the project holds it is another database, so a full name passes it by and is looked for outward, as SQL Server
+  does; a database the project doesn't hold may be this one, so a column through it is unknown. A four-part name, `db.shop.product.name`, binds in the database the query runs
   in, but is unknown here: claiming less, and no corpus haruspex is measured on writes one.
 - `OUTPUT` can't name the table it writes by any name of its own, even when FROM lists it without an alias (4104): only
   `inserted` and `deleted` read it. A column so named is unknown, as one through its alias in FROM already was.

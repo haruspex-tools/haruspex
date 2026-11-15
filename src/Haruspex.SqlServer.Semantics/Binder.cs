@@ -195,7 +195,7 @@ public sealed partial class Binder
                 return Unexpanded(BindingProblemKind.UnsupportedStar, $"{text}.* names its database, which is not modelled yet.", star);
 
             // By alias, table name or full name, as a column's qualifier (observed: An_alias_hides_a_tables_full_name, Msg 107).
-            var named = Named(scope.Sources, [.. qualifier.Identifiers]);
+            var named = SourcesNamedBy([.. qualifier.Identifiers], scope.Sources);
             if (named.Count != 1)
                 return Unexpanded(BindingProblemKind.UnresolvedColumn, $"{text}.* names no one source of this query.", star);
             sources = named;

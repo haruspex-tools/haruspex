@@ -96,6 +96,17 @@ public partial class SelectStarTests
     }
 
     [Fact]
+    public void A_star_qualified_by_schema_and_table_on_an_outer_join_s_optional_side_is_nullable()
+    {
+        // Observed: A_full_name_star_on_an_optional_side_is_null_where_nothing_matches.
+        var doc = Procedure("SELECT o.customer, shop.order_line.* FROM shop.orders AS o LEFT JOIN shop.order_line ON shop.order_line.order_id = o.order_id;");
+
+        Assert.Equal(["customer", "line_id", "order_id", "sku", "qty"], Names(doc));
+        Assert.All(Fields(doc).Skip(1), f => Assert.True(f.Nullable));
+        Assert.False(Fields(doc)[0].Nullable);
+    }
+
+    [Fact]
     public void A_star_qualified_by_the_full_name_of_an_aliased_table_is_unknown() =>
         // Observed: An_alias_hides_a_tables_full_name (Msg 107 for the star).
         AssertUnknown(Procedure("SELECT shop.orders.* FROM shop.orders AS o;"), "results[0]", IrUnknownReason.UnresolvedColumn);

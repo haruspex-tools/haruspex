@@ -20,13 +20,13 @@ public class OtherDatabasesTests
     private static string Packages => Path.Combine(RepositoryPaths.Root, "tests", "dacpacs");
 
     /// <summary>The IR of <c>dbo.p</c>, read from app.dacpac, which refers to other.dacpac as <paramref name="database"/>.</summary>
-    private static IrDocument Read(string body, string otherElements, string database = "$(Other)", string? collation = "Latin1_General_100_CS_AS", string? more = null)
+    private static IrDocument Read(string body, string otherElements, string database = "$(Other)", string? collation = "Latin1_General_100_CS_AS", string? more = null, string here = "")
     {
         using var dir = new TempDirectory();
         TestPackage.Write(Path.Combine(dir.Path, "other.dacpac"), otherElements, collation, more is null ? [] : [new TestPackage.Reference("more.dacpac")]);
         if (more is not null)
             TestPackage.Write(Path.Combine(dir.Path, "more.dacpac"), more);
-        TestPackage.Write(Path.Combine(dir.Path, "app.dacpac"), TestPackage.Procedure("dbo", "p", body), references: new TestPackage.Reference("other.dacpac", database));
+        TestPackage.Write(Path.Combine(dir.Path, "app.dacpac"), here + TestPackage.Procedure("dbo", "p", body), references: new TestPackage.Reference("other.dacpac", database));
         return SqlProject.LoadPackage(Path.Combine(dir.Path, "app.dacpac"), []).Infer([new ObjectName("dbo", "p")]).Expected();
     }
 
@@ -49,6 +49,22 @@ public class OtherDatabasesTests
         Assert.Equal(
             "[$(Other)].dbo.entry.note",
             Assert.Single(Field(Read("SELECT e.note FROM [$(Other)].dbo.entry AS e;", Entry), "note").NullableBecause).At);
+
+    [Fact]
+    public void A_full_name_never_names_a_table_of_another_database()
+    {
+        // A reference names another database, whose tables a full name of this one never names (observed:
+        // A_full_name_binds_a_source_named_with_this_databases_name): in one scope SQL Server refuses it (4104), and from a
+        // subquery it reaches the enclosing query's table of that name.
+        var alone = Read("SELECT dbo.entry.id FROM [$(Other)].dbo.entry;", Entry);
+        var outer = Read(
+            "SELECT (SELECT TOP (1) dbo.entry.note FROM [$(Other)].dbo.entry) AS note FROM dbo.entry;",
+            Entry,
+            here: TestPackage.Table("dbo", "entry", "id int", "note varchar(5)"));
+
+        Assert.Equal(IrUnknownReason.UnresolvedColumn, Assert.Single(alone.Unknowns).Reason);
+        Assert.Equal("varchar(5)", Scalar(outer, "note").Sql);
+    }
 
     [Fact]
     public void A_variable_is_not_taken_for_a_database_of_that_literal_name() =>

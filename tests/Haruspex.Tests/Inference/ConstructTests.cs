@@ -211,6 +211,11 @@ public class ConstructTests
     }
 
     [Fact]
+    public void A_table_variable_has_no_full_name() =>
+        // Observed: A_table_variable_has_no_full_name (4104 for the bracketed form; 102 without brackets).
+        AssertUnknown(Procedure("DECLARE @v TABLE (c int NOT NULL);\nSELECT dbo.[@v].c AS c FROM @v;"), "results[0][].c", IrUnknownReason.UnresolvedColumn);
+
+    [Fact]
     public void A_column_reference_of_four_parts_is_unknown() =>
         AssertUnknown(Procedure("SELECT here.dbo.t.id AS c FROM dbo.t;"), "results[0][].c", IrUnknownReason.UnsupportedExpression);
 

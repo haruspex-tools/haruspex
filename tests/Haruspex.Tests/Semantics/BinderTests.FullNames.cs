@@ -38,8 +38,16 @@ public partial class BinderTests
         var resolution = Assert.IsType<MissingColumn>(new Sample("SELECT dbo.t.name FROM dbo.t AS x;").Resolve("dbo.t.name"));
 
         Assert.Equal(BindingProblemKind.UnresolvedColumn, resolution.Problem.Kind);
-        Assert.Equal("No source in scope is named dbo.t without an alias, as a column of three parts needs: an alias hides a table's own name.", resolution.Problem.Detail);
+        Assert.Equal("No source in scope is named dbo.t: the table of that name has an alias, which hides its own name.", resolution.Problem.Detail);
     }
+
+    [Theory]
+    [InlineData("WITH c AS (SELECT t.id FROM dbo.t AS t) SELECT dbo.c.id FROM c;", "dbo.c.id", "dbo.c")]
+    [InlineData("SELECT dbo.[@v].id FROM dbo.t;", "dbo.[@v].id", "dbo.@v")]
+    public void A_full_name_no_source_has_says_so_without_naming_an_alias(string statement, string reference, string name) =>
+        Assert.Equal(
+            $"No source in scope is named {name}, as a column of three parts needs.",
+            Assert.IsType<MissingColumn>(new Sample(statement).Resolve(reference)).Problem.Detail);
 
     [Fact]
     public void A_full_name_an_inner_query_hides_with_an_alias_is_the_enclosing_query_s()
@@ -49,6 +57,38 @@ public partial class BinderTests
         var column = Assert.IsType<TableColumn>(body.Resolve("dbo.t.code"));
 
         Assert.Null(((NamedTableReference)column.Source.Syntax).Alias);
+    }
+
+    [Fact]
+    public void A_full_name_an_inner_query_s_table_of_that_name_in_another_schema_lacks_is_the_enclosing_query_s()
+    {
+        // Observed: A_full_name_passes_an_inner_table_of_its_name_in_another_schema. The inner dbo.orders has no alias, and is
+        // exposed as orders, but not as shop.orders: the full name is the outer table's.
+        var body = new Sample("SELECT (SELECT TOP (1) shop.orders.status FROM dbo.orders) AS s FROM shop.orders;", Shop + "\nCREATE TABLE dbo.orders (order_id int NOT NULL, status varchar(10) NULL);\nGO\n");
+        var column = Assert.IsType<TableColumn>(body.Resolve("shop.orders.status"));
+
+        Assert.Equal("shop.orders", column.Table.Name.ToString());
+        Assert.Same(((BoundSpecification)body.Query()).Scope.Sources[0], column.Source);
+    }
+
+    [Fact]
+    public void A_full_name_an_inner_query_exposes_too_is_the_inner_query_s()
+    {
+        // Observed: A_full_name_both_queries_expose_is_the_inner_ones.
+        var body = new Sample("SELECT (SELECT TOP (1) shop.orders.status FROM shop.orders) AS s FROM shop.orders;", Shop);
+
+        Assert.NotSame(((BoundSpecification)body.Query()).Scope.Sources[0], Assert.IsType<TableColumn>(body.Resolve("shop.orders.status")).Source);
+    }
+
+    [Theory]
+    [InlineData("WITH t AS (SELECT 7 AS code) SELECT (SELECT MAX(dbo.t.code) FROM t) AS m FROM dbo.t;")]
+    [InlineData("SELECT (SELECT MAX(dbo.t.code) FROM (SELECT 7 AS code) AS t) AS m FROM dbo.t;")]
+    public void A_full_name_an_inner_cte_or_derived_table_of_that_name_lacks_is_the_enclosing_query_s(string statement)
+    {
+        // Observed: A_full_name_passes_an_inner_cte_or_derived_table_of_its_name: neither has a full name.
+        var body = new Sample(statement);
+
+        Assert.Same(((BoundSpecification)body.Query()).Scope.Sources[0], Assert.IsType<TableColumn>(body.Resolve("dbo.t.code")).Source);
     }
 
     [Theory]

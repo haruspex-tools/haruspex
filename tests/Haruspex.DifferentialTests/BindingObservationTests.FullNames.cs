@@ -41,6 +41,50 @@ public partial class BindingObservationTests
             "inner_id: 1;2",
             (await Shop("SELECT (SELECT TOP (1) obs_shop.obs_orders.order_id FROM obs_shop.obs_orders AS i WHERE i.order_id = 2) AS inner_id FROM obs_shop.obs_orders ORDER BY obs_shop.obs_orders.order_id;")).ToString());
 
+    [Fact]
+    public async Task A_full_name_passes_an_inner_table_of_its_name_in_another_schema() =>
+        // The inner dbo.obs_orders, without an alias, is exposed as dbo.obs_orders, so obs_shop.obs_orders.order_id is the
+        // outer table's: each outer row gives its own id, where the inner table's would be 7.
+        Assert.Equal(
+            "inner_id: 1;2",
+            (await Shop("SELECT (SELECT TOP (1) obs_shop.obs_orders.order_id FROM dbo.obs_orders) AS inner_id FROM obs_shop.obs_orders ORDER BY obs_shop.obs_orders.order_id;")).ToString());
+
+    [Fact]
+    public async Task A_full_name_both_queries_expose_is_the_inner_ones() =>
+        // The inner copy, without an alias, is exposed under the same full name, and the innermost scope wins: 1 for both rows.
+        Assert.Equal(
+            "inner_id: 1;1",
+            (await Shop("SELECT (SELECT TOP (1) obs_shop.obs_orders.order_id FROM obs_shop.obs_orders ORDER BY 1) AS inner_id FROM obs_shop.obs_orders ORDER BY obs_shop.obs_orders.order_id;")).ToString());
+
+    [Theory]
+    [InlineData("WITH obs_orders AS (SELECT 9 AS order_id) SELECT (SELECT TOP (1) obs_shop.obs_orders.order_id FROM obs_orders) AS inner_id FROM obs_shop.obs_orders ORDER BY obs_shop.obs_orders.order_id;")]
+    [InlineData("SELECT (SELECT TOP (1) obs_shop.obs_orders.order_id FROM (SELECT 9 AS order_id) AS obs_orders) AS inner_id FROM obs_shop.obs_orders ORDER BY obs_shop.obs_orders.order_id;")]
+    // A CTE or derived table of the table's name has no full name, so it doesn't hide the outer table's: no 9.
+    public async Task A_full_name_passes_an_inner_cte_or_derived_table_of_its_name(string call) =>
+        Assert.Equal("inner_id: 1;2", (await Shop(call)).ToString());
+
+    [Fact]
+    public async Task A_full_name_star_on_an_optional_side_is_null_where_nothing_matches() =>
+        Assert.Equal(
+            "order_id,order_id,status: 1,null,null;7,1,open",
+            (await Shop("SELECT d.order_id, obs_shop.obs_orders.* FROM dbo.obs_orders AS d LEFT JOIN obs_shop.obs_orders ON obs_shop.obs_orders.order_id = d.order_id - 6 ORDER BY d.order_id;", "INSERT INTO dbo.obs_orders VALUES (1, 4);")).ToString());
+
+    [Theory]
+    [InlineData("DECLARE @v TABLE (c int); INSERT INTO @v VALUES (1); SELECT dbo.[@v].c FROM @v;", " ! 4104")]
+    [InlineData("DECLARE @v TABLE (c int); INSERT INTO @v VALUES (1); SELECT [@v].c FROM @v;", "c: 1")]
+    // A table variable is exposed under its own name, bracketed, but under no full name; without brackets, dbo.@v.c doesn't parse
+    // (102).
+    public async Task A_table_variable_has_no_full_name(string call, string outcome) =>
+        Assert.Equal(outcome, (await Run([], call)).ToString());
+
+    [Fact]
+    public async Task A_full_name_passes_a_table_of_another_database_to_the_enclosing_query() =>
+        // master.sys.objects is exposed under no full name of this database, so sys.objects.name in the subquery is the outer
+        // query's, the one row named obs_t, never a name from master.
+        Assert.Equal(
+            "inner_name: obs_t",
+            (await Run([Rows], "SELECT (SELECT TOP (1) sys.objects.name FROM master.sys.objects) AS inner_name FROM sys.objects WHERE sys.objects.name = 'obs_t';")).ToString());
+
     [Theory]
     [InlineData("SELECT dbo.obs_orders.note FROM obs_orders;", "note: null")]
     [InlineData("SELECT obs_shop.obs_orders.status FROM obs_orders;", " ! 4104")]
