@@ -1463,6 +1463,11 @@ not listed is not modelled.
   `varchar(2)`) but not a decimal literal (`LEFT(s, 2.7)` is `s`'s length); neither is modelled. A length that reads a column
   or variable gives the string's length. Past the end is `''`, never NULL; a negative length is an error (536)
   (`Left_right_and_substring_are_as_long_as_a_literal_length_allows`).
+  `SUBSTRING`'s start and length must be an integer or a decimal, `LEFT`'s and `RIGHT`'s length anything that converts to
+  `int` implicitly; any other is refused when the procedure is created (8116, 206), so not modelled. Each is converted to
+  `int`, so one wider than `int` (a `bigint`, a decimal, `money`, a string) may overflow: an error by default, NULL under the
+  caller's options (`arithmetic-overflow`), as for `CHARINDEX`'s start
+  (`A_start_or_length_past_int_overflows_in_charindex_substring_left_and_right_and_one_not_a_number_is_refused`).
 - **`LEN`** (of a string) and **`DATALENGTH`** (of any scalar): `int`, `bigint` over max. `LEN` ignores trailing spaces
   (`Len_and_datalength_are_int_or_bigint_over_max_and_len_ignores_trailing_spaces`).
 - **`REPLACE`**: `varchar(8000)`, `nvarchar(4000)` if any argument is national, max only when the string searched is
@@ -1487,8 +1492,9 @@ sweep's grid.
 - **`CHAR(n)`**: `char(1)`; NULL outside 0 to 255, which a `tinyint` or a literal in range can't be; a `bigint` is converted
   to `int` first, an overflow (`Char_is_char_1_and_null_outside_0_to_255_and_overflows_past_int`). `NCHAR` is not modelled:
   under a supplementary-character collation it gives two UTF-16 units in an `nchar(1)`.
-- **`CHARINDEX`**, **`PATINDEX`**: `int`, `bigint` when the string searched is max; NULL only when an argument is; a start
-  below 1 is 1 (`Charindex_and_patindex_are_int_or_bigint_over_max_and_null_only_for_a_null_argument`).
+- **`CHARINDEX`**, **`PATINDEX`**: `int`, `bigint` when the string searched is max; NULL when an argument is; a start
+  below 1 is 1 (`Charindex_and_patindex_are_int_or_bigint_over_max_and_null_only_for_a_null_argument`), and one wider than
+  `int` may overflow, as `SUBSTRING`'s may (above).
 - **`REPLICATE(s, n)`**: the string varying, as long as `s` times a literal `n` up to 8000 bytes, or 8000 bytes otherwise, max
   staying max. **`SPACE(n)`**: `varchar` of a literal `n` (at least 1) up to 8000, or 8000. Both NULL for a negative count.
   The literal count 0 is described as `varchar(2)` whatever the string, and is not modelled
@@ -1499,8 +1505,10 @@ sweep's grid.
   second of three characters deletes two), or 8000 bytes. NULL for a start of 0 or past the end, a negative length or an empty `s`, so always
   `out-of-range`; a NULL `r` only deletes
   (`Stuff_is_as_long_as_its_strings_less_a_literal_length_and_null_for_a_start_or_length_it_cannot_use`).
-- **`QUOTENAME`**: `nvarchar(258)`; NULL past 128 characters or for a quote it doesn't read, unless given a literal of 128
-  characters or fewer alone (`Quotename_is_nvarchar_258_and_null_past_128_characters_or_for_a_quote_it_cannot_use`).
+- **`QUOTENAME`**: `nvarchar(258)`; NULL past 128 characters or for a quote it doesn't read (it reads `[ ] " ' ( ) < > { }`
+  and the backtick, a longer quote by its first character), unless the value is declared, or written, 128 characters or
+  shorter and the quote is none or a literal it reads. A declared length counts characters at most, in bytes or not
+  (`Quotename_is_nvarchar_258_and_null_past_128_characters_or_for_a_quote_it_cannot_use`).
 - **`STR(x [, length [, places]])`** of a number: `varchar(10)`, or of a literal length (at least 1), or 8000; NULL for a
   length outside 0 to 8000, so `out-of-range` unless the length and the places are literals; a number too long gives stars
   (`Str_is_varchar_of_its_literal_length_10_by_default_and_null_for_a_length_it_cannot_use`).

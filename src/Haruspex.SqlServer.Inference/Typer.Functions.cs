@@ -66,7 +66,7 @@ internal sealed partial class Typer
     /// <c>LEFT</c>, <c>RIGHT</c> and <c>SUBSTRING</c>: the string's type made varying, as long as an integer literal length when
     /// that is shorter (at least 1), max staying max; NULL when an argument is; past the end it is <c>''</c> (observed:
     /// Left_right_and_substring_are_as_long_as_a_literal_length_allows). A length the server folds (<c>1 + 1</c>) is not
-    /// modelled, one reading a column or variable is the string's length.
+    /// modelled, one reading a column or variable is the string's length. A start or a length wider than int may overflow.
     /// </summary>
     private Value Part(TSqlFragment call, ScalarExpression text, IReadOnlyList<ScalarExpression> others, ScalarExpression length, ReadScope scope)
     {
@@ -75,6 +75,15 @@ internal sealed partial class Typer
             return unknown;
         if (StringOf(values[0]) is not { } type)
             return NotModelled(call, "a string function of a value that is not a string is not modelled.");
+
+        // SUBSTRING's start and length must be an integer or a decimal; LEFT's and RIGHT's length must convert to int implicitly.
+        // SQL Server refuses any other when the procedure is created (8116, 206, 260; observed:
+        // A_start_or_length_past_int_overflows_in_charindex_substring_left_and_right_and_one_not_a_number_is_refused).
+        bool Read(ScalarType? t) => t is not null && (call is FunctionCall
+            ? t.IsInteger || t.IsDecimal
+            : ConversionChart.Of(t.Type, BuiltInType.Int) == ConversionKind.Implicit);
+        if (others.Select((e, i) => Strip(e) is NullLiteral || Read(TypeOf(values[i + 1]))).Any(ok => !ok))
+            return NotModelled(call, "SQL Server refuses a start or a length of this type.");
 
         var n = type.Length;
         if (!type.IsMax)
@@ -92,7 +101,9 @@ internal sealed partial class Typer
             }
         }
 
-        return Typed(ScalarType.CharacterString(type.IsNational, varying: true, n), Reasons(values), call);
+        // A start or a length wider than int may overflow it (FitsInt).
+        var overflows = others.Select((e, i) => !FitsInt(values[i + 1], e)).Any(o => o);
+        return Typed(ScalarType.CharacterString(type.IsNational, varying: true, n), overflows ? NullReasons.Join(Reasons(values), Overflow(call)) : Reasons(values), call);
     }
 
     /// <summary>Whether an expression reads a column, a variable or a subquery, so that the server cannot fold it.</summary>

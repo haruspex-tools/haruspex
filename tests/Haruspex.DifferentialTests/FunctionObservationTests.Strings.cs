@@ -50,6 +50,26 @@ public partial class FunctionObservationTests
     }
 
     [Fact]
+    public async Task A_start_or_length_past_int_overflows_in_charindex_substring_left_and_right_and_one_not_a_number_is_refused()
+    {
+        // A start or a length is converted to int: a bigint or a decimal past it is an error by default, and NULL under the
+        // caller's ANSI_WARNINGS and ARITHABORT off.
+        const string Calls = "DECLARE @b bigint = 5000000000, @d decimal(38,0) = 5000000000; SELECT CHARINDEX('a', 'abc', @b) AS c, SUBSTRING('abc', @b, 1) AS s1, SUBSTRING('abc', 1, @d) AS s2, LEFT('abc', @b) AS l, RIGHT('abc', @d) AS r;";
+        Assert.Equal(" ! 8115", (await Run([], Calls)).ToString());
+        Assert.Equal("c,s1,s2,l,r: null,null,null,null,null", (await Run([], "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; " + Calls)).ToString());
+        // SUBSTRING refuses a start or a length that is neither an integer nor a decimal when the procedure is created (8116);
+        // LEFT and RIGHT convert any number or string to int, and refuse a date (206).
+        string[] refused = [
+            "CREATE TABLE dbo.obs_starts (id int NOT NULL PRIMARY KEY, f float NOT NULL, m money NOT NULL, s varchar(3) NOT NULL, d decimal(5,0) NOT NULL, da date NOT NULL);",
+            "INSERT INTO dbo.obs_starts VALUES (1, 2, 2, '2', 2, '2026-01-01');",
+        ];
+        Assert.Equal(8116, (await Run(refused, "SELECT SUBSTRING('abc', f, 1) AS x FROM dbo.obs_starts;")).Error);
+        Assert.Equal(8116, (await Run(refused, "SELECT SUBSTRING('abc', 1, m) AS x FROM dbo.obs_starts;")).Error);
+        Assert.Equal(206, (await Run(refused, "SELECT LEFT('abc', da) AS x FROM dbo.obs_starts;")).Error);
+        Assert.Equal("x,y,z: bc,ab,bc", (await Run(refused, "SELECT SUBSTRING('abc', d, d) AS x, LEFT('abc', m) AS y, RIGHT('abc', s) AS z FROM dbo.obs_starts;")).ToString());
+    }
+
+    [Fact]
     public async Task Replicate_and_space_are_as_long_as_a_literal_count_allows_up_to_8000_bytes_and_null_for_a_negative_one()
     {
         // A count that isn't a literal gives 8000 bytes; max stays max; the count 0 gives varchar(2), whatever the string.
@@ -98,6 +118,11 @@ public partial class FunctionObservationTests
         Assert.Equal(
             "a,b,c,d: null,130,null,[a]",
             await Select("SELECT QUOTENAME(REPLICATE('a', 129)) AS a, LEN(QUOTENAME(REPLICATE('a', 128))) AS b, QUOTENAME('a', 'x') AS c, QUOTENAME('a') AS d;"));
+        // The quotes it reads, a longer one by its first character; a value of 128 characters fits with any of them.
+        Assert.Equal(
+            "a,b,c,d,e,f,g,h,i,j,k,l: [a],[a],\"a\",'a',(a),(a),<a>,<a>,{a},{a},`a`,[a]",
+            await Select("SELECT QUOTENAME('a', '[') AS a, QUOTENAME('a', ']') AS b, QUOTENAME('a', '\"') AS c, QUOTENAME('a', '''') AS d, QUOTENAME('a', '(') AS e, QUOTENAME('a', ')') AS f, QUOTENAME('a', '<') AS g, QUOTENAME('a', '>') AS h, QUOTENAME('a', '{') AS i, QUOTENAME('a', '}') AS j, QUOTENAME('a', '`') AS k, QUOTENAME('a', '[x') AS l;"));
+        Assert.Equal("v: 130", await Select("SELECT LEN(QUOTENAME(CAST(REPLICATE(N'a', 128) AS nvarchar(128)), '`')) AS v;"));
     }
 
     [Fact]

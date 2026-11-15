@@ -3341,11 +3341,11 @@ QUOTENAME(f) -> unknown unsupported-expression: QUOTENAME(f): QUOTENAME of a val
 QUOTENAME(r) -> unknown unsupported-expression: QUOTENAME(r): QUOTENAME of a value that is not a string is not modelled.
 QUOTENAME(f24) -> unknown unsupported-expression: QUOTENAME(f24): QUOTENAME of a value that is not a string is not modelled.
 QUOTENAME(f25) -> unknown unsupported-expression: QUOTENAME(f25): QUOTENAME of a value that is not a string is not modelled.
-QUOTENAME(c3) -> nvarchar(258) string null:out-of-range {length<=258}
-QUOTENAME(v10) -> nvarchar(258) string null:out-of-range {length<=258}
+QUOTENAME(c3) -> nvarchar(258) string {length<=258}
+QUOTENAME(v10) -> nvarchar(258) string {length<=258}
 QUOTENAME(vx) -> nvarchar(258) string null:out-of-range {length<=258}
-QUOTENAME(nc3) -> nvarchar(258) string null:out-of-range {length<=258}
-QUOTENAME(nv10) -> nvarchar(258) string null:out-of-range {length<=258}
+QUOTENAME(nc3) -> nvarchar(258) string {length<=258}
+QUOTENAME(nv10) -> nvarchar(258) string {length<=258}
 QUOTENAME(nvx) -> nvarchar(258) string null:out-of-range {length<=258}
 QUOTENAME(dt) -> unknown unsupported-expression: QUOTENAME(dt): QUOTENAME of a value that is not a string is not modelled.
 QUOTENAME(tm3) -> unknown unsupported-expression: QUOTENAME(tm3): QUOTENAME of a value that is not a string is not modelled.
@@ -3366,6 +3366,246 @@ QUOTENAME('ab') -> nvarchar(258) string {length<=258}
 QUOTENAME(N'ab') -> nvarchar(258) string {length<=258}
 QUOTENAME(1e0) -> unknown unsupported-expression: QUOTENAME(1e0): QUOTENAME of a value that is not a string is not modelled.
 QUOTENAME($1) -> unknown unsupported-expression: QUOTENAME($1): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(bt, '`') -> unknown unsupported-expression: QUOTENAME(bt, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(ti, '`') -> unknown unsupported-expression: QUOTENAME(ti, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(si, '`') -> unknown unsupported-expression: QUOTENAME(si, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(i, '`') -> unknown unsupported-expression: QUOTENAME(i, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(bi, '`') -> unknown unsupported-expression: QUOTENAME(bi, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(d52, '`') -> unknown unsupported-expression: QUOTENAME(d52, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(d380, '`') -> unknown unsupported-expression: QUOTENAME(d380, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(d3838, '`') -> unknown unsupported-expression: QUOTENAME(d3838, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(n102, '`') -> unknown unsupported-expression: QUOTENAME(n102, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(m, '`') -> unknown unsupported-expression: QUOTENAME(m, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(sm, '`') -> unknown unsupported-expression: QUOTENAME(sm, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(f, '`') -> unknown unsupported-expression: QUOTENAME(f, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(r, '`') -> unknown unsupported-expression: QUOTENAME(r, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(f24, '`') -> unknown unsupported-expression: QUOTENAME(f24, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(f25, '`') -> unknown unsupported-expression: QUOTENAME(f25, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(c3, '`') -> nvarchar(258) string {length<=258}
+QUOTENAME(v10, '`') -> nvarchar(258) string {length<=258}
+QUOTENAME(vx, '`') -> nvarchar(258) string null:out-of-range {length<=258}
+QUOTENAME(nc3, '`') -> nvarchar(258) string {length<=258}
+QUOTENAME(nv10, '`') -> nvarchar(258) string {length<=258}
+QUOTENAME(nvx, '`') -> nvarchar(258) string null:out-of-range {length<=258}
+QUOTENAME(dt, '`') -> unknown unsupported-expression: QUOTENAME(dt, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(tm3, '`') -> unknown unsupported-expression: QUOTENAME(tm3, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(dtm, '`') -> unknown unsupported-expression: QUOTENAME(dtm, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(dt23, '`') -> unknown unsupported-expression: QUOTENAME(dt23, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(sdt, '`') -> unknown unsupported-expression: QUOTENAME(sdt, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(dto3, '`') -> unknown unsupported-expression: QUOTENAME(dto3, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(u, '`') -> unknown unsupported-expression: QUOTENAME(u, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(bin4, '`') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+QUOTENAME(vb10, '`') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+QUOTENAME(x, '`') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+QUOTENAME(sv, '`') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+QUOTENAME(j, '`') -> unknown (no unknown recorded)
+QUOTENAME(1, '`') -> unknown unsupported-expression: QUOTENAME(1, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(12345, '`') -> unknown unsupported-expression: QUOTENAME(12345, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME(2.50, '`') -> unknown unsupported-expression: QUOTENAME(2.50, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME('ab', '`') -> nvarchar(258) string {length<=258}
+QUOTENAME(N'ab', '`') -> nvarchar(258) string {length<=258}
+QUOTENAME(1e0, '`') -> unknown unsupported-expression: QUOTENAME(1e0, '`'): QUOTENAME of a value that is not a string is not modelled.
+QUOTENAME($1, '`') -> unknown unsupported-expression: QUOTENAME($1, '`'): QUOTENAME of a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', bt) -> unknown unsupported-expression: CHARINDEX('a', 'abc', bt): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', ti) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX('a', 'abc', si) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX('a', 'abc', i) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX('a', 'abc', bi) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+CHARINDEX('a', 'abc', d52) -> unknown unsupported-expression: CHARINDEX('a', 'abc', d52): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', d380) -> unknown unsupported-expression: CHARINDEX('a', 'abc', d380): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', d3838) -> unknown unsupported-expression: CHARINDEX('a', 'abc', d3838): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', n102) -> unknown unsupported-expression: CHARINDEX('a', 'abc', n102): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', m) -> unknown unsupported-expression: CHARINDEX('a', 'abc', m): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', sm) -> unknown unsupported-expression: CHARINDEX('a', 'abc', sm): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', f) -> unknown unsupported-expression: CHARINDEX('a', 'abc', f): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', r) -> unknown unsupported-expression: CHARINDEX('a', 'abc', r): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', f24) -> unknown unsupported-expression: CHARINDEX('a', 'abc', f24): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', f25) -> unknown unsupported-expression: CHARINDEX('a', 'abc', f25): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', c3) -> unknown unsupported-expression: CHARINDEX('a', 'abc', c3): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', v10) -> unknown unsupported-expression: CHARINDEX('a', 'abc', v10): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', vx) -> unknown unsupported-expression: CHARINDEX('a', 'abc', vx): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', nc3) -> unknown unsupported-expression: CHARINDEX('a', 'abc', nc3): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', nv10) -> unknown unsupported-expression: CHARINDEX('a', 'abc', nv10): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', nvx) -> unknown unsupported-expression: CHARINDEX('a', 'abc', nvx): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', dt) -> unknown unsupported-expression: CHARINDEX('a', 'abc', dt): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', tm3) -> unknown unsupported-expression: CHARINDEX('a', 'abc', tm3): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', dtm) -> unknown unsupported-expression: CHARINDEX('a', 'abc', dtm): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', dt23) -> unknown unsupported-expression: CHARINDEX('a', 'abc', dt23): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', sdt) -> unknown unsupported-expression: CHARINDEX('a', 'abc', sdt): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', dto3) -> unknown unsupported-expression: CHARINDEX('a', 'abc', dto3): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', u) -> unknown unsupported-expression: CHARINDEX('a', 'abc', u): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CHARINDEX('a', 'abc', vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CHARINDEX('a', 'abc', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CHARINDEX('a', 'abc', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CHARINDEX('a', 'abc', j) -> unknown (no unknown recorded)
+CHARINDEX('a', 'abc', 1) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX('a', 'abc', 12345) -> int number/int32 {[-2147483648 2147483647]}
+CHARINDEX('a', 'abc', 2.50) -> unknown unsupported-expression: CHARINDEX('a', 'abc', 2.50): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', 'ab') -> unknown unsupported-expression: CHARINDEX('a', 'abc', 'ab'): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', N'ab') -> unknown unsupported-expression: CHARINDEX('a', 'abc', N'ab'): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', 1e0) -> unknown unsupported-expression: CHARINDEX('a', 'abc', 1e0): a position in a value that is not a string is not modelled.
+CHARINDEX('a', 'abc', $1) -> unknown unsupported-expression: CHARINDEX('a', 'abc', $1): a position in a value that is not a string is not modelled.
+SUBSTRING('abc', bt, 1) -> unknown unsupported-expression: SUBSTRING('abc', bt, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', ti, 1) -> varchar(1) string {length<=1}
+SUBSTRING('abc', si, 1) -> varchar(1) string {length<=1}
+SUBSTRING('abc', i, 1) -> varchar(1) string {length<=1}
+SUBSTRING('abc', bi, 1) -> varchar(1) string null:arithmetic-overflow {length<=1}
+SUBSTRING('abc', d52, 1) -> varchar(1) string null:arithmetic-overflow {length<=1}
+SUBSTRING('abc', d380, 1) -> varchar(1) string null:arithmetic-overflow {length<=1}
+SUBSTRING('abc', d3838, 1) -> varchar(1) string null:arithmetic-overflow {length<=1}
+SUBSTRING('abc', n102, 1) -> varchar(1) string null:arithmetic-overflow {length<=1}
+SUBSTRING('abc', m, 1) -> unknown unsupported-expression: SUBSTRING('abc', m, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', sm, 1) -> unknown unsupported-expression: SUBSTRING('abc', sm, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', f, 1) -> unknown unsupported-expression: SUBSTRING('abc', f, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', r, 1) -> unknown unsupported-expression: SUBSTRING('abc', r, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', f24, 1) -> unknown unsupported-expression: SUBSTRING('abc', f24, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', f25, 1) -> unknown unsupported-expression: SUBSTRING('abc', f25, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', c3, 1) -> unknown unsupported-expression: SUBSTRING('abc', c3, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', v10, 1) -> unknown unsupported-expression: SUBSTRING('abc', v10, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', vx, 1) -> unknown unsupported-expression: SUBSTRING('abc', vx, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', nc3, 1) -> unknown unsupported-expression: SUBSTRING('abc', nc3, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', nv10, 1) -> unknown unsupported-expression: SUBSTRING('abc', nv10, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', nvx, 1) -> unknown unsupported-expression: SUBSTRING('abc', nvx, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', dt, 1) -> unknown unsupported-expression: SUBSTRING('abc', dt, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', tm3, 1) -> unknown unsupported-expression: SUBSTRING('abc', tm3, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', dtm, 1) -> unknown unsupported-expression: SUBSTRING('abc', dtm, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', dt23, 1) -> unknown unsupported-expression: SUBSTRING('abc', dt23, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', sdt, 1) -> unknown unsupported-expression: SUBSTRING('abc', sdt, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', dto3, 1) -> unknown unsupported-expression: SUBSTRING('abc', dto3, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', u, 1) -> unknown unsupported-expression: SUBSTRING('abc', u, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', bin4, 1) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+SUBSTRING('abc', vb10, 1) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+SUBSTRING('abc', x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SUBSTRING('abc', sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+SUBSTRING('abc', j, 1) -> unknown (no unknown recorded)
+SUBSTRING('abc', 1, 1) -> varchar(1) string {length<=1}
+SUBSTRING('abc', 12345, 1) -> varchar(1) string {length<=1}
+SUBSTRING('abc', 2.50, 1) -> varchar(1) string null:arithmetic-overflow {length<=1}
+SUBSTRING('abc', 'ab', 1) -> unknown unsupported-expression: SUBSTRING('abc', 'ab', 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', N'ab', 1) -> unknown unsupported-expression: SUBSTRING('abc', N'ab', 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1e0, 1) -> unknown unsupported-expression: SUBSTRING('abc', 1e0, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', $1, 1) -> unknown unsupported-expression: SUBSTRING('abc', $1, 1): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, bt) -> unknown unsupported-expression: SUBSTRING('abc', 1, bt): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, ti) -> varchar(3) string {length<=3}
+SUBSTRING('abc', 1, si) -> varchar(3) string {length<=3}
+SUBSTRING('abc', 1, i) -> varchar(3) string {length<=3}
+SUBSTRING('abc', 1, bi) -> varchar(3) string null:arithmetic-overflow {length<=3}
+SUBSTRING('abc', 1, d52) -> varchar(3) string null:arithmetic-overflow {length<=3}
+SUBSTRING('abc', 1, d380) -> varchar(3) string null:arithmetic-overflow {length<=3}
+SUBSTRING('abc', 1, d3838) -> varchar(3) string null:arithmetic-overflow {length<=3}
+SUBSTRING('abc', 1, n102) -> varchar(3) string null:arithmetic-overflow {length<=3}
+SUBSTRING('abc', 1, m) -> unknown unsupported-expression: SUBSTRING('abc', 1, m): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, sm) -> unknown unsupported-expression: SUBSTRING('abc', 1, sm): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, f) -> unknown unsupported-expression: SUBSTRING('abc', 1, f): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, r) -> unknown unsupported-expression: SUBSTRING('abc', 1, r): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, f24) -> unknown unsupported-expression: SUBSTRING('abc', 1, f24): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, f25) -> unknown unsupported-expression: SUBSTRING('abc', 1, f25): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, c3) -> unknown unsupported-expression: SUBSTRING('abc', 1, c3): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, v10) -> unknown unsupported-expression: SUBSTRING('abc', 1, v10): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, vx) -> unknown unsupported-expression: SUBSTRING('abc', 1, vx): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, nc3) -> unknown unsupported-expression: SUBSTRING('abc', 1, nc3): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, nv10) -> unknown unsupported-expression: SUBSTRING('abc', 1, nv10): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, nvx) -> unknown unsupported-expression: SUBSTRING('abc', 1, nvx): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, dt) -> unknown unsupported-expression: SUBSTRING('abc', 1, dt): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, tm3) -> unknown unsupported-expression: SUBSTRING('abc', 1, tm3): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, dtm) -> unknown unsupported-expression: SUBSTRING('abc', 1, dtm): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, dt23) -> unknown unsupported-expression: SUBSTRING('abc', 1, dt23): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, sdt) -> unknown unsupported-expression: SUBSTRING('abc', 1, sdt): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, dto3) -> unknown unsupported-expression: SUBSTRING('abc', 1, dto3): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, u) -> unknown unsupported-expression: SUBSTRING('abc', 1, u): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+SUBSTRING('abc', 1, vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+SUBSTRING('abc', 1, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SUBSTRING('abc', 1, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+SUBSTRING('abc', 1, j) -> unknown (no unknown recorded)
+SUBSTRING('abc', 1, 1) -> varchar(1) string {length<=1}
+SUBSTRING('abc', 1, 12345) -> varchar(3) string {length<=3}
+SUBSTRING('abc', 1, 2.50) -> unknown unsupported-expression: SUBSTRING('abc', 1, 2.50): a length the server folds from constants is not modelled.
+SUBSTRING('abc', 1, 'ab') -> unknown unsupported-expression: SUBSTRING('abc', 1, 'ab'): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, N'ab') -> unknown unsupported-expression: SUBSTRING('abc', 1, N'ab'): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, 1e0) -> unknown unsupported-expression: SUBSTRING('abc', 1, 1e0): SQL Server refuses a start or a length of this type.
+SUBSTRING('abc', 1, $1) -> unknown unsupported-expression: SUBSTRING('abc', 1, $1): SQL Server refuses a start or a length of this type.
+LEFT('abc', bt) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', ti) -> varchar(3) string {length<=3}
+LEFT('abc', si) -> varchar(3) string {length<=3}
+LEFT('abc', i) -> varchar(3) string {length<=3}
+LEFT('abc', bi) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', d52) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', d380) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', d3838) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', n102) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', m) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', sm) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', f) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', r) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', f24) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', f25) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', c3) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', v10) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', vx) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', nc3) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', nv10) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', nvx) -> varchar(3) string null:arithmetic-overflow {length<=3}
+LEFT('abc', dt) -> unknown unsupported-expression: LEFT('abc', dt): SQL Server refuses a start or a length of this type.
+LEFT('abc', tm3) -> unknown unsupported-expression: LEFT('abc', tm3): SQL Server refuses a start or a length of this type.
+LEFT('abc', dtm) -> unknown unsupported-expression: LEFT('abc', dtm): SQL Server refuses a start or a length of this type.
+LEFT('abc', dt23) -> unknown unsupported-expression: LEFT('abc', dt23): SQL Server refuses a start or a length of this type.
+LEFT('abc', sdt) -> unknown unsupported-expression: LEFT('abc', sdt): SQL Server refuses a start or a length of this type.
+LEFT('abc', dto3) -> unknown unsupported-expression: LEFT('abc', dto3): SQL Server refuses a start or a length of this type.
+LEFT('abc', u) -> unknown unsupported-expression: LEFT('abc', u): SQL Server refuses a start or a length of this type.
+LEFT('abc', bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+LEFT('abc', vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+LEFT('abc', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LEFT('abc', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+LEFT('abc', j) -> unknown (no unknown recorded)
+LEFT('abc', 1) -> varchar(1) string {length<=1}
+LEFT('abc', 12345) -> varchar(3) string {length<=3}
+LEFT('abc', 2.50) -> unknown unsupported-expression: LEFT('abc', 2.50): a length the server folds from constants is not modelled.
+LEFT('abc', 'ab') -> unknown unsupported-expression: LEFT('abc', 'ab'): a length the server folds from constants is not modelled.
+LEFT('abc', N'ab') -> unknown unsupported-expression: LEFT('abc', N'ab'): a length the server folds from constants is not modelled.
+LEFT('abc', 1e0) -> unknown unsupported-expression: LEFT('abc', 1e0): a length the server folds from constants is not modelled.
+LEFT('abc', $1) -> unknown unsupported-expression: LEFT('abc', $1): a length the server folds from constants is not modelled.
+RIGHT('abc', bt) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', ti) -> varchar(3) string {length<=3}
+RIGHT('abc', si) -> varchar(3) string {length<=3}
+RIGHT('abc', i) -> varchar(3) string {length<=3}
+RIGHT('abc', bi) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', d52) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', d380) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', d3838) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', n102) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', m) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', sm) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', f) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', r) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', f24) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', f25) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', c3) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', v10) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', vx) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', nc3) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', nv10) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', nvx) -> varchar(3) string null:arithmetic-overflow {length<=3}
+RIGHT('abc', dt) -> unknown unsupported-expression: RIGHT('abc', dt): SQL Server refuses a start or a length of this type.
+RIGHT('abc', tm3) -> unknown unsupported-expression: RIGHT('abc', tm3): SQL Server refuses a start or a length of this type.
+RIGHT('abc', dtm) -> unknown unsupported-expression: RIGHT('abc', dtm): SQL Server refuses a start or a length of this type.
+RIGHT('abc', dt23) -> unknown unsupported-expression: RIGHT('abc', dt23): SQL Server refuses a start or a length of this type.
+RIGHT('abc', sdt) -> unknown unsupported-expression: RIGHT('abc', sdt): SQL Server refuses a start or a length of this type.
+RIGHT('abc', dto3) -> unknown unsupported-expression: RIGHT('abc', dto3): SQL Server refuses a start or a length of this type.
+RIGHT('abc', u) -> unknown unsupported-expression: RIGHT('abc', u): SQL Server refuses a start or a length of this type.
+RIGHT('abc', bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+RIGHT('abc', vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+RIGHT('abc', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+RIGHT('abc', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+RIGHT('abc', j) -> unknown (no unknown recorded)
+RIGHT('abc', 1) -> varchar(1) string {length<=1}
+RIGHT('abc', 12345) -> varchar(3) string {length<=3}
+RIGHT('abc', 2.50) -> unknown unsupported-expression: RIGHT('abc', 2.50): a length the server folds from constants is not modelled.
+RIGHT('abc', 'ab') -> unknown unsupported-expression: RIGHT('abc', 'ab'): a length the server folds from constants is not modelled.
+RIGHT('abc', N'ab') -> unknown unsupported-expression: RIGHT('abc', N'ab'): a length the server folds from constants is not modelled.
+RIGHT('abc', 1e0) -> unknown unsupported-expression: RIGHT('abc', 1e0): a length the server folds from constants is not modelled.
+RIGHT('abc', $1) -> unknown unsupported-expression: RIGHT('abc', $1): a length the server folds from constants is not modelled.
 STR(bt) -> unknown unsupported-expression: STR(bt): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
 STR(ti) -> varchar(10) string {length<=10}
 STR(si) -> varchar(10) string {length<=10}

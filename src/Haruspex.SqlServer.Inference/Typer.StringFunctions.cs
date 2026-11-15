@@ -22,6 +22,14 @@ internal sealed partial class Typer
         TypeOf(value) is { IsInteger: true } type ? type : null;
 
     /// <summary>
+    /// Whether a start, a length or a count converts to int without an overflow: an integer no wider than int, or a literal in
+    /// its range. A wider one past it is an error by default and NULL under the caller's options (observed:
+    /// A_start_or_length_past_int_overflows_in_charindex_substring_left_and_right_and_one_not_a_number_is_refused).
+    /// </summary>
+    private static bool FitsInt(Value value, ScalarExpression expression) =>
+        TypeOf(value) is { } type && Narrower(type, expression, BuiltInType.Int, int.MinValue, int.MaxValue);
+
+    /// <summary>
     /// <c>ASCII(s)</c> and <c>UNICODE(s)</c>: int, the code of s's first character, NULL when s is empty (observed:
     /// Ascii_and_unicode_are_int_and_null_for_an_empty_string), unless s is a literal that isn't.
     /// </summary>
@@ -57,8 +65,9 @@ internal sealed partial class Typer
     }
 
     /// <summary>
-    /// <c>CHARINDEX(find, s [, start])</c> and <c>PATINDEX(pattern, s)</c>: int, bigint when s is max; NULL only when an argument
-    /// is (observed: Charindex_and_patindex_are_int_or_bigint_over_max_and_null_only_for_a_null_argument).
+    /// <c>CHARINDEX(find, s [, start])</c> and <c>PATINDEX(pattern, s)</c>: int, bigint when s is max; NULL when an argument
+    /// is (observed: Charindex_and_patindex_are_int_or_bigint_over_max_and_null_only_for_a_null_argument), and when a start
+    /// wider than int overflows it (<see cref="FitsInt"/>).
     /// </summary>
     private Value Position(FunctionCall call, ReadScope scope)
     {
@@ -67,7 +76,8 @@ internal sealed partial class Typer
             return unknown;
         if (StringOf(values[0]) is null || StringOf(values[1]) is not { } searched || (values.Count == 3 && IntegerOf(values[2]) is null))
             return NotModelled(call, "a position in a value that is not a string is not modelled.");
-        return Typed(ScalarType.Of(searched.IsMax ? BuiltInType.BigInt : BuiltInType.Int), Reasons(values), call);
+        var because = values.Count == 3 && !FitsInt(values[2], call.Parameters[2]) ? NullReasons.Join(Reasons(values), Overflow(call)) : Reasons(values);
+        return Typed(ScalarType.Of(searched.IsMax ? BuiltInType.BigInt : BuiltInType.Int), because, call);
     }
 
     /// <summary>
@@ -157,18 +167,26 @@ internal sealed partial class Typer
 
     /// <summary>
     /// <c>QUOTENAME(s [, quote])</c>: nvarchar(258), NULL when s is longer than 128 characters or the quote isn't one it reads
-    /// (observed: Quotename_is_nvarchar_258_and_null_past_128_characters_or_for_a_quote_it_cannot_use), unless s is a literal of
-    /// 128 characters or fewer and there is no quote.
+    /// (observed: Quotename_is_nvarchar_258_and_null_past_128_characters_or_for_a_quote_it_cannot_use), unless s is declared, or
+    /// written, 128 characters or shorter and the quote is none or a literal whose first character is one it reads.
     /// </summary>
+    /// <summary>The quote characters <c>QUOTENAME</c> reads, observed in the same test.</summary>
+    private const string Quotes = "[]\"'()<>{}`";
+
     private Value QuoteName(FunctionCall call, ReadScope scope)
     {
         var (values, unknown) = Arguments(call.Parameters, scope);
         if (unknown is not null)
             return unknown;
-        if (values.Any(v => StringOf(v) is null))
+        if (values.Any(v => StringOf(v) is null) || StringOf(values[0]) is not { } text)
             return NotModelled(call, "QUOTENAME of a value that is not a string is not modelled.");
-        var fits = values.Count == 1 && LiteralOf(call.Parameters[0]) is ({ } literal and StringLiteral, _) && literal.Value.Length <= 128;
-        return Typed(new ScalarType(BuiltInType.NVarChar, 258), fits ? Reasons(values) : NullReasons.Join(Reasons(values), [OutOfRangeAt(call)]), call);
+
+        // A declared length counts characters at most, in bytes or not, so one of 128 or fewer can't hold a longer value.
+        var shortText = (!text.IsMax && text.Length <= 128)
+            || (LiteralOf(call.Parameters[0]) is ({ } literal and StringLiteral, _) && literal.Value.Length <= 128);
+        var readQuote = values.Count == 1
+            || (LiteralOf(call.Parameters[1]) is ({ } quote and StringLiteral, _) && quote.Value.Length > 0 && Quotes.Contains(quote.Value[0], StringComparison.Ordinal));
+        return Typed(new ScalarType(BuiltInType.NVarChar, 258), shortText && readQuote ? Reasons(values) : NullReasons.Join(Reasons(values), [OutOfRangeAt(call)]), call);
     }
 
     /// <summary>

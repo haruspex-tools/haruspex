@@ -95,14 +95,50 @@ public partial class FunctionTests
     }
 
     [Fact]
-    public void Quotename_is_nvarchar_258_and_out_of_range_unless_given_a_short_literal_alone()
+    public void Quotename_is_nvarchar_258_and_out_of_range_unless_its_value_fits_128_characters_and_its_quote_is_one_it_reads()
     {
-        // Quotename_is_nvarchar_258_and_null_past_128_characters_or_for_a_quote_it_cannot_use.
-        var doc = Procedure("SELECT QUOTENAME(s) AS a, QUOTENAME('t') AS b, QUOTENAME('t', '\"') AS c, QUOTENAME(n) AS d FROM dbo.t;");
-        Assert.Equal("nvarchar(258) out-of-range", Typed(doc, "a"));
+        // Quotename_is_nvarchar_258_and_null_past_128_characters_or_for_a_quote_it_cannot_use. A declared length counts
+        // characters at most, in bytes or not.
+        var doc = Procedure("""
+            SELECT QUOTENAME(s) AS a, QUOTENAME('t') AS b, QUOTENAME('t', '"') AS c, QUOTENAME(n) AS d, QUOTENAME(ns, '`') AS e,
+                   QUOTENAME(vm) AS f, QUOTENAME(s, 'x') AS g, QUOTENAME(s, c) AS h, QUOTENAME(c, '[x') AS i
+            FROM dbo.t;
+            """);
+        Assert.Equal("nvarchar(258)", Typed(doc, "a"));
         Assert.Equal("nvarchar(258)", Typed(doc, "b"));
-        Assert.Equal("nvarchar(258) out-of-range", Typed(doc, "c"));
+        Assert.Equal("nvarchar(258)", Typed(doc, "c"));
         Unknown(doc, "d");
+        Assert.Equal("nvarchar(258) nullable-column", Typed(doc, "e"));
+        Assert.Equal("nvarchar(258) nullable-column out-of-range", Typed(doc, "f"));
+        Assert.Equal("nvarchar(258) out-of-range", Typed(doc, "g"));
+        Assert.Equal("nvarchar(258) out-of-range", Typed(doc, "h"));
+        Assert.Equal("nvarchar(258)", Typed(doc, "i"));
+    }
+
+    [Fact]
+    public void A_start_or_length_wider_than_int_may_overflow_in_charindex_substring_left_and_right()
+    {
+        // A_start_or_length_past_int_overflows_in_charindex_substring_left_and_right_and_one_not_a_number_is_refused.
+        var doc = Procedure("""
+            SELECT CHARINDEX('a', s, bi) AS a, CHARINDEX('a', s, ti) AS b, SUBSTRING(s, bi, 2) AS c, SUBSTRING(s, 1, d) AS d2,
+                   LEFT(s, bi) AS e, RIGHT(s, n) AS f, LEFT(s, 3) AS g
+            FROM dbo.t;
+            """);
+        Assert.Equal("int nullable-column arithmetic-overflow", Typed(doc, "a"));
+        Assert.Equal("int", Typed(doc, "b"));
+        Assert.Equal("varchar(2) nullable-column arithmetic-overflow", Typed(doc, "c"));
+        Assert.Equal("varchar(10) arithmetic-overflow", Typed(doc, "d2"));
+        Assert.Equal("varchar(10) nullable-column arithmetic-overflow", Typed(doc, "e"));
+        Assert.Equal("varchar(10)", Typed(doc, "f"));
+        Assert.Equal("varchar(3)", Typed(doc, "g"));
+
+        // SUBSTRING refuses one that is neither an integer nor a decimal; LEFT and RIGHT convert it to int, which may overflow,
+        // and refuse a date.
+        var refused = Procedure("SELECT SUBSTRING(s, f, 1) AS a, LEFT(s, m) AS b, RIGHT(s, s) AS c, LEFT(s, da) AS d FROM dbo.t;");
+        Unknown(refused, "a");
+        Assert.Equal("varchar(10) arithmetic-overflow", Typed(refused, "b"));
+        Assert.Equal("varchar(10) arithmetic-overflow", Typed(refused, "c"));
+        Unknown(refused, "d");
     }
 
     [Fact]

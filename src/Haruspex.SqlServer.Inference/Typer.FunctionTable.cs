@@ -38,6 +38,8 @@ internal sealed partial class Typer
 
     private const string Positions = "Charindex_and_patindex_are_int_or_bigint_over_max_and_null_only_for_a_null_argument";
 
+    private const string WideStarts = "A_start_or_length_past_int_overflows_in_charindex_substring_left_and_right_and_one_not_a_number_is_refused";
+
     private const string Counts = "Replicate_and_space_are_as_long_as_a_literal_count_allows_up_to_8000_bytes_and_null_for_a_negative_one";
 
     private const string Fixed = "Translate_is_8000_bytes_unless_its_string_is_max_and_soundex_and_difference_are_fixed";
@@ -132,9 +134,9 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.Trim, (1, 2), "the string's length, varying", [], [Trims], (a, e, s) => Call(e).Parameters.Count == 2 ? a.Trim(Call(e), Call(e).Parameters[1], Call(e).Parameters[0], s) : a.Trim(Call(e), Call(e).Parameters[0], null, s)),
         Typing(ScalarFunctions.Upper, (1, 1), "the string's length, varying", [], [Trims], (a, e, s) => a.Trim(Call(e), Call(e).Parameters[0], null, s)),
         Typing(ScalarFunctions.Lower, (1, 1), "the string's length, varying", [], [Trims], (a, e, s) => a.Trim(Call(e), Call(e).Parameters[0], null, s)),
-        Typing(ScalarFunctions.Substring, (3, 3), "the string varying, as long as a literal length allows", [], [Parts], (a, e, s) => a.Part(e, Call(e).Parameters[0], [Call(e).Parameters[1], Call(e).Parameters[2]], Call(e).Parameters[2], s)),
-        Typing(ScalarFunctions.Left, (2, 2), "the string varying, as long as a literal length allows", [], [Parts], (a, e, s) => a.Part(e, ((LeftFunctionCall)e).Parameters[0], [((LeftFunctionCall)e).Parameters[1]], ((LeftFunctionCall)e).Parameters[1], s), otherForms: OtherForms.ExpressionNotModelled),
-        Typing(ScalarFunctions.Right, (2, 2), "the string varying, as long as a literal length allows", [], [Parts], (a, e, s) => a.Part(e, ((RightFunctionCall)e).Parameters[0], [((RightFunctionCall)e).Parameters[1]], ((RightFunctionCall)e).Parameters[1], s), otherForms: OtherForms.ExpressionNotModelled),
+        Typing(ScalarFunctions.Substring, (3, 3), "the string varying, as long as a literal length allows", [ArithmeticOverflow], [Parts, WideStarts], (a, e, s) => a.Part(e, Call(e).Parameters[0], [Call(e).Parameters[1], Call(e).Parameters[2]], Call(e).Parameters[2], s)),
+        Typing(ScalarFunctions.Left, (2, 2), "the string varying, as long as a literal length allows", [ArithmeticOverflow], [Parts, WideStarts], (a, e, s) => a.Part(e, ((LeftFunctionCall)e).Parameters[0], [((LeftFunctionCall)e).Parameters[1]], ((LeftFunctionCall)e).Parameters[1], s), otherForms: OtherForms.ExpressionNotModelled),
+        Typing(ScalarFunctions.Right, (2, 2), "the string varying, as long as a literal length allows", [ArithmeticOverflow], [Parts, WideStarts], (a, e, s) => a.Part(e, ((RightFunctionCall)e).Parameters[0], [((RightFunctionCall)e).Parameters[1]], ((RightFunctionCall)e).Parameters[1], s), otherForms: OtherForms.ExpressionNotModelled),
         Typing(ScalarFunctions.Len, (1, 1), "int, bigint over max", [], [Lengths], (a, e, s) => a.Length(Call(e), Call(e).Parameters[0], s, bytes: false)),
         Typing(ScalarFunctions.DataLength, (1, 1), "int, bigint over max", [], [Lengths], (a, e, s) => a.Length(Call(e), Call(e).Parameters[0], s, bytes: true)),
         Typing(ScalarFunctions.Replace, (3, 3), "varchar(8000) or nvarchar(4000), max when the string is", [], ["Replace_widens_to_8000_bytes_unless_its_string_is_max"], (a, e, s) => a.Replace(Call(e), s)),
@@ -146,7 +148,7 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.Ascii, (1, 1), "int", [OutOfRange], [Codes], (a, e, s) => a.FirstCode(Call(e), s)),
         Typing(ScalarFunctions.Unicode, (1, 1), "int", [OutOfRange], [Codes], (a, e, s) => a.FirstCode(Call(e), s)),
         Typing(ScalarFunctions.CharOf, (1, 1), "char(1)", [OutOfRange, ArithmeticOverflow], ["Char_is_char_1_and_null_outside_0_to_255_and_overflows_past_int"], (a, e, s) => a.CharOf(Call(e), s)),
-        Typing(ScalarFunctions.CharIndex, (2, 3), "int, bigint over max", [], [Positions], (a, e, s) => a.Position(Call(e), s)),
+        Typing(ScalarFunctions.CharIndex, (2, 3), "int, bigint over max", [ArithmeticOverflow], [Positions, WideStarts], (a, e, s) => a.Position(Call(e), s)),
         Typing(ScalarFunctions.PatIndex, (2, 2), "int, bigint over max", [], [Positions], (a, e, s) => a.Position(Call(e), s)),
         Typing(ScalarFunctions.Replicate, (2, 2), "the string varying, as long as a literal count allows up to 8000 bytes", [OutOfRange], [Counts], (a, e, s) => a.Replicate(Call(e), s)),
         Typing(ScalarFunctions.Space, (1, 1), "varchar of a literal count up to 8000, or 8000", [OutOfRange], [Counts], (a, e, s) => a.Space(Call(e), s)),
