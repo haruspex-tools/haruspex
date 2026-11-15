@@ -28,6 +28,8 @@ jobs:
       # Fail, rather than skip, the differential tests if SQL Server cannot be started. HARUSPEX_TEST_SQLSERVER
       # is not set, so they use Testcontainers with the runner's Docker (ubuntu-latest has it).
       HARUSPEX_REQUIRE_SQLSERVER: "1"
+      # Fail, rather than skip, the tests over the fetched corpora if one is missing; they are fetched below.
+      HARUSPEX_REQUIRE_CORPORA: "1"
     steps:
       # Actions are pinned to commit SHAs, not tags, because a tag can be moved.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -65,6 +67,16 @@ jobs:
 
       - run: npm run check
         working-directory: examples/greenhouse
+
+      # The public corpora that are fetched rather than vendored (tests/corpus/README.md), cached under a key made from
+      # their manifest, so they are fetched again only when it changes. The script checks every file against the
+      # manifest's SHA-256 even when the cache is restored, and fetches again what doesn't match, as do the tests.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/haruspex/corpora
+          key: corpora-${{ hashFiles('tests/corpus/fetched.json') }}
+
+      - run: node tests/corpus/fetch.mjs
 
       - run: dotnet test --no-build --configuration Release
 
