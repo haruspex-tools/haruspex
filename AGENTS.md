@@ -13,8 +13,9 @@ In addition:
 - **Invented fixtures only.** Do not copy SQL, names or data from any real organisation's systems into
   this repository, including from other repositories on the same machine.
 - **No new dependencies without asking.** In particular, never add DacFx (see CONTRIBUTING.md).
-- **Do not commit, push, merge, rebase or reset** unless the maintainer asks. Leave changes in the working
-  tree and list the paths you changed.
+- **Never merge into `main` and never push.** The maintainer does both. Commit on your own `feature/` branch,
+  each commit building and passing alone, with a truthful message. On `main`, do not commit: leave changes in
+  the working tree and list the paths you changed.
 - **Changes to `.claude/`, `.github/`, `AGENTS.md` and `CLAUDE.md` need the maintainer's review**
   (CODEOWNERS). Point them out explicitly.
 - **Write to the house style.** Every comment, document and message follows [docs/style.md](docs/style.md).
