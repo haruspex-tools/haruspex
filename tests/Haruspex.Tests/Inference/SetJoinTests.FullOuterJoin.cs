@@ -49,10 +49,34 @@ public partial class SetJoinTests
         // A_full_join_of_two_queries_of_at_most_one_row_can_return_two.
         Assert.Equal(IrCardinality.Many, Rows(Procedure(query)));
 
-    [Fact]
-    public void Right_join_stays_unmodelled()
+    [Theory]
+    [InlineData("RIGHT JOIN")]
+    [InlineData("RIGHT OUTER JOIN")]
+    public void A_right_join_makes_its_left_side_nullable_as_a_left_join_does_its_right(string join)
     {
-        var doc = Procedure("SELECT t.id FROM dbo.t AS t RIGHT JOIN dbo.u AS u ON u.t_id = t.id;");
-        Assert.IsType<IrUnknownType>(Field(doc, "id").Type);
+        // A_right_outer_join_is_a_left_outer_join_with_its_sides_swapped.
+        var doc = Procedure($"SELECT t.id AS t_id, t.x, u.id AS u_id, u.note FROM dbo.t AS t {join} dbo.u AS u ON u.t_id = t.id;");
+        AllTyped(doc);
+        Assert.Equal("int unmatched-row", Typed(doc, "t_id"));
+        Assert.Equal("int nullable-column unmatched-row", Typed(doc, "x"));
+        Assert.Equal("int", Typed(doc, "u_id"));
+        Assert.Equal("varchar(20) nullable-column", Typed(doc, "note"));
+    }
+
+    [Fact]
+    public void A_right_joins_on_proves_only_its_left_sides_matched_row()
+    {
+        // A_right_joins_on_never_drops_a_row_of_its_right_side: what it tests of t holds when t matched; of u, nothing.
+        var doc = Procedure("SELECT t.x, u.note FROM dbo.t AS t RIGHT JOIN dbo.u AS u ON u.t_id = t.id AND t.x IS NOT NULL AND u.note IS NOT NULL;");
+        Assert.Equal("int unmatched-row", Typed(doc, "x"));
+        Assert.Equal("varchar(20) nullable-column", Typed(doc, "note"));
+    }
+
+    [Fact]
+    public void A_where_on_the_left_side_of_a_right_join_proves_its_row()
+    {
+        var doc = Procedure("SELECT t.id AS t_id, t.x FROM dbo.t AS t RIGHT JOIN dbo.u AS u ON u.t_id = t.id WHERE t.id > 0;");
+        Assert.Equal("int", Typed(doc, "t_id"));
+        Assert.Equal("int nullable-column", Typed(doc, "x"));
     }
 }

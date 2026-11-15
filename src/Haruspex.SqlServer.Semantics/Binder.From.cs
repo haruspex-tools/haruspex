@@ -99,7 +99,7 @@ public sealed partial class Binder
 
     /// <summary>
     /// The sources of a join, an APPLY or a parenthesised join, each on the optional side it is on: a LEFT JOIN's right side,
-    /// either side of a FULL JOIN, an OUTER APPLY's right side; inside an outer join's optional side the enclosing one is kept,
+    /// a RIGHT JOIN's left side, either side of a FULL JOIN, an OUTER APPLY's right side; inside an outer join's optional side the enclosing one is kept,
     /// as for nested outer joins.
     /// </summary>
     private void AddJoined(Adding adding, TableReference reference, SourceLocation? optionalSideOf)
@@ -119,6 +119,12 @@ public sealed partial class Binder
                 // can tell that any column read from them may have no value, whatever its declaration says.
                 AddSources(inside, join.FirstTableReference, optionalSideOf);
                 AddSources(optionalSideOf is null ? asJoin : inside, join.SecondTableReference, optionalSideOf ?? At(join.SecondTableReference));
+                break;
+            case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.RightOuter } join:
+                // A left join with its sides swapped (observed: A_right_outer_join_is_a_left_outer_join_with_its_sides_swapped):
+                // the left side has no row when nothing matches.
+                AddSources(optionalSideOf is null ? asJoin : inside, join.FirstTableReference, optionalSideOf ?? At(join.FirstTableReference));
+                AddSources(inside, join.SecondTableReference, optionalSideOf);
                 break;
             case UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossApply or UnqualifiedJoinType.OuterApply } apply:
             {
@@ -151,11 +157,10 @@ public sealed partial class Binder
                 AddSources(inside, parenthesis.Join, optionalSideOf);
                 break;
 
-            // Not bound, although binding it is easy: what a RIGHT join means for nulls is not modelled yet, so its sources
-            // stay unresolved, which makes every column read from them unknown rather than wrongly non-null. Binding it comes
-            // with modelling it.
+            // Every join ScriptDom 170 has is above. One a later ScriptDom adds is unresolved until it is modelled, which makes
+            // every column read through it unknown rather than wrongly non-null.
             default:
-                AddUnresolved(adding.Sources, reference, Problem(BindingProblemKind.UnsupportedSource, $"{JoinKeyword(reference)} is not modelled yet.", At(reference)));
+                AddUnresolved(adding.Sources, reference, Problem(BindingProblemKind.UnsupportedSource, "This join is not modelled yet.", At(reference)));
                 break;
         }
     }
@@ -469,14 +474,4 @@ public sealed partial class Binder
                 break;
         }
     }
-
-    private static string JoinKeyword(TableReference join) => join switch
-    {
-        QualifiedJoin { QualifiedJoinType: QualifiedJoinType.RightOuter } => "RIGHT OUTER JOIN",
-        QualifiedJoin { QualifiedJoinType: QualifiedJoinType.FullOuter } => "FULL OUTER JOIN",
-        UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossJoin } => "CROSS JOIN",
-        UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossApply } => "CROSS APPLY",
-        UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.OuterApply } => "OUTER APPLY",
-        _ => "This join",
-    };
 }

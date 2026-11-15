@@ -74,6 +74,18 @@ public partial class RefinementTests
     }
 
     [Fact]
+    public void An_inner_joins_on_inside_a_right_joins_optional_side_keeps_the_outer_join()
+    {
+        var doc = Procedure("""
+            SELECT u.t_id, p.v FROM (dbo.u AS u JOIN dbo.pair AS p ON p.v = u.t_id)
+            RIGHT JOIN dbo.t AS t ON u.id = t.id;
+            """);
+
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "t_id"));
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(doc, "v"));
+    }
+
+    [Fact]
     public void A_condition_on_one_source_of_a_nested_optional_side_proves_only_that_sources_row()
     {
         // u matched, but p is on an outer join of its own inside u's side: it may still be null-extended.

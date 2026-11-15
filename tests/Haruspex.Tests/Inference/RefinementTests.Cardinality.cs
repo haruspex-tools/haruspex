@@ -44,6 +44,7 @@ public partial class RefinementTests
     [InlineData("SELECT p.a FROM dbo.pair AS p WHERE p.v IS NULL AND p.w = 'x';", IrCardinality.AtMostOne)]
     [InlineData("SELECT u.note FROM dbo.u AS u JOIN dbo.t AS t ON t.id = u.t_id WHERE u.id = @x;", IrCardinality.AtMostOne)]
     [InlineData("SELECT u.note FROM dbo.u AS u LEFT JOIN dbo.t AS t ON t.id = u.t_id WHERE u.id = @x;", IrCardinality.AtMostOne)]
+    [InlineData("SELECT u.note FROM dbo.t AS t RIGHT JOIN dbo.u AS u ON t.id = u.t_id WHERE u.id = @x;", IrCardinality.AtMostOne)]
     [InlineData("SELECT u.note FROM dbo.u AS u, dbo.t AS t WHERE t.id = u.t_id AND u.id = @x;", IrCardinality.AtMostOne)]
     [InlineData("SELECT t.n, COUNT(*) AS c FROM dbo.t AS t WHERE t.id = @x GROUP BY t.n;", IrCardinality.AtMostOne)]
     public void A_filter_fixing_a_whole_key_returns_at_most_one_row(string query, IrCardinality expected) =>
@@ -66,6 +67,7 @@ public partial class RefinementTests
     [InlineData("SELECT u.note FROM dbo.u AS u JOIN dbo.t AS t ON t.id = u.t_id;")]
     [InlineData("SELECT t.name FROM dbo.t AS t JOIN dbo.u AS u ON u.id = @x WHERE t.id = u.t_id OR 1 = 1;")]
     [InlineData("SELECT t.name FROM dbo.t AS t LEFT JOIN dbo.u AS u ON t.id = @x;")]
+    [InlineData("SELECT t.name FROM dbo.u AS u RIGHT JOIN dbo.t AS t ON t.id = @x;")]
     public void A_filter_that_does_not_fix_a_whole_key_in_the_keys_own_type_returns_many(string query) =>
         // A_comparison_that_converts_the_key_can_match_several_rows, A_varchar_key_under_a_sql_collation_compared_with_nvarchar_can_match_several_rows.
         Assert.Equal(IrCardinality.Many, Rows(query, "@x int, @ncode nvarchar(10)"));

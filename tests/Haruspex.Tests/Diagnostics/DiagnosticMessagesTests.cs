@@ -110,7 +110,7 @@ public class DiagnosticMessagesTests
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),
         (2004, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b FOR JSON AUTO;"])),
         (2005, () => Cli(["CREATE PROCEDURE lib.p AS SELECT here.lib.book.id AS c FROM lib.book;"])),
-        (2006, () => Cli(["CREATE PROCEDURE lib.p AS SELECT a.id, b.title FROM lib.book AS a RIGHT JOIN lib.book AS b ON b.id = a.id;"])),
+        (2006, () => Cli(["CREATE PROCEDURE lib.p AS SELECT s.value FROM STRING_SPLIT(N'a,b', N',') AS s;"])),
         (2007, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.pages FROM lib.book AS b;"])),
         (2008, () => Cli(["CREATE PROCEDURE lib.p AS SELECT x.a FROM lib.missing AS x;"])),
         (2009, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.nope AS gone FROM lib.book AS b;"])),

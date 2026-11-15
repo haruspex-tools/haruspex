@@ -440,7 +440,7 @@ UnqualifiedJoin | CROSS JOIN, APPLY | modelled | APPLY | Both sides' columns; OU
 JoinParenthesisTableReference | ( joins ) | modelled | Joins, where paths meet | The joins inside. | SELECT t.id FROM (dbo.toy AS t JOIN dbo.box AS b ON b.toy_id = t.id);
 QualifiedJoinType.Inner | INNER JOIN | modelled | Joins, where paths meet | Both sides' columns as they are. | SELECT t.id, b.qty FROM dbo.toy AS t JOIN dbo.box AS b ON b.toy_id = t.id;
 QualifiedJoinType.LeftOuter | LEFT JOIN | modelled | Joins, where paths meet | The right side's columns may be NULL. | SELECT t.id, b.qty FROM dbo.toy AS t LEFT JOIN dbo.box AS b ON b.toy_id = t.id;
-QualifiedJoinType.RightOuter | RIGHT JOIN | unknown unsupported-source | | Not modelled yet. | SELECT t.id, b.qty FROM dbo.toy AS t RIGHT JOIN dbo.box AS b ON b.toy_id = t.id;
+QualifiedJoinType.RightOuter | RIGHT JOIN | modelled | CROSS JOIN and FULL OUTER JOIN | The left side's columns may be NULL. | SELECT t.id, b.qty FROM dbo.toy AS t RIGHT JOIN dbo.box AS b ON b.toy_id = t.id;
 QualifiedJoinType.FullOuter | FULL JOIN | modelled | CROSS JOIN and FULL OUTER JOIN | Either side's columns may be NULL. | SELECT t.id, b.qty FROM dbo.toy AS t FULL JOIN dbo.box AS b ON b.toy_id = t.id;
 UnqualifiedJoinType.CrossJoin | CROSS JOIN | modelled | CROSS JOIN and FULL OUTER JOIN | Both sides' columns as they are. | SELECT t.id, b.qty FROM dbo.toy AS t CROSS JOIN dbo.box AS b;
 UnqualifiedJoinType.CrossApply | CROSS APPLY | modelled | APPLY | Both sides' columns as they are. | SELECT t.id, b.qty FROM dbo.toy AS t CROSS APPLY (SELECT qty FROM dbo.box WHERE toy_id = t.id) AS b;

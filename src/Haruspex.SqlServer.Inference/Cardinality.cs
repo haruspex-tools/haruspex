@@ -291,6 +291,12 @@ internal sealed class Cardinality(DatabaseModel model, Binder binder)
                 JoinConditions(join.SecondTableReference, scope, into);
                 into.AddRange(Conjuncts(join.SearchCondition).Select(c => new Fixing(c, Typer.Sources(join.SecondTableReference, scope))));
                 break;
+            case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.RightOuter } join:
+                // A left join mirrored: its ON fixes only its optional side, the left.
+                JoinConditions(join.FirstTableReference, scope, into);
+                JoinConditions(join.SecondTableReference, scope, into);
+                into.AddRange(Conjuncts(join.SearchCondition).Select(c => new Fixing(c, Typer.Sources(join.FirstTableReference, scope))));
+                break;
             case UnqualifiedJoin { UnqualifiedJoinType: UnqualifiedJoinType.CrossJoin } cross:
                 JoinConditions(cross.FirstTableReference, scope, into);
                 JoinConditions(cross.SecondTableReference, scope, into);

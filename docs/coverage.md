@@ -19,9 +19,9 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | Not in it, and unknown where they are called | 217 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 152 |
+| Modelled, wholly or in part | 153 |
 | Read, changing no result | 29 |
-| Unknown | 324 |
+| Unknown | 323 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -798,7 +798,7 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `( joins )` | `JoinParenthesisTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#joins-where-paths-meet) | The joins inside. |
 | `INNER JOIN` | `QualifiedJoinType.Inner` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#joins-where-paths-meet) | Both sides' columns as they are. |
 | `LEFT JOIN` | `QualifiedJoinType.LeftOuter` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#joins-where-paths-meet) | The right side's columns may be NULL. |
-| `RIGHT JOIN` | `QualifiedJoinType.RightOuter` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled yet. |
+| `RIGHT JOIN` | `QualifiedJoinType.RightOuter` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#cross-join-and-full-outer-join) | The left side's columns may be NULL. |
 | `FULL JOIN` | `QualifiedJoinType.FullOuter` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#cross-join-and-full-outer-join) | Either side's columns may be NULL. |
 | `CROSS JOIN` | `UnqualifiedJoinType.CrossJoin` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#cross-join-and-full-outer-join) | Both sides' columns as they are. |
 | `CROSS APPLY` | `UnqualifiedJoinType.CrossApply` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#apply) | Both sides' columns as they are. |

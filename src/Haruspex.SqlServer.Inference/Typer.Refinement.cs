@@ -79,6 +79,13 @@ internal sealed partial class Typer
                 Joins(join.SecondTableReference, scope, found, insideOptional: true, own);
                 Refine(join.SearchCondition, scope, found, rows: false, only: Sources(join.SecondTableReference, scope));
                 break;
+            case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.RightOuter } join:
+                // Mirrored: the left side is optional, and the ON proves only what holds of its row when it matched
+                // (observed: A_right_joins_on_never_drops_a_row_of_its_right_side).
+                Joins(join.FirstTableReference, scope, found, insideOptional: true, own);
+                Joins(join.SecondTableReference, scope, found, insideOptional, own);
+                Refine(join.SearchCondition, scope, found, rows: false, only: Sources(join.FirstTableReference, scope));
+                break;
             case QualifiedJoin { QualifiedJoinType: QualifiedJoinType.FullOuter } join:
                 // Both sides are optional, and its ON proves nothing of either: a row of one side that fails it comes back
                 // unmatched, with whatever it holds (observed: A_full_outer_joins_on_proves_nothing_of_either_side).

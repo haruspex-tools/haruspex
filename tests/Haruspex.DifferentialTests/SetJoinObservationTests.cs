@@ -232,6 +232,27 @@ public class SetJoinObservationTests(SqlServerFixture server)
             await Select("SELECT a.id AS a_id, b.id AS b_id FROM dbo.obs_a AS a FULL JOIN dbo.obs_b AS b ON b.id = a.id WHERE b.id IS NULL ORDER BY a.id;"));
     }
 
+    [Fact]
+    public async Task A_right_outer_join_is_a_left_outer_join_with_its_sides_swapped()
+    {
+        // b 4 has no a: its a columns are NULL, NOT NULL ones too. Every b comes, as from b LEFT JOIN a.
+        Assert.Equal(
+            "a_id,b_id: 2,2;null,4",
+            await Select("SELECT a.id AS a_id, b.id AS b_id FROM dbo.obs_a AS a RIGHT OUTER JOIN dbo.obs_b AS b ON b.id = a.id ORDER BY b.id;"));
+        Assert.Equal(
+            await Select("SELECT a.id AS a_id, b.id AS b_id FROM dbo.obs_b AS b LEFT JOIN dbo.obs_a AS a ON b.id = a.id ORDER BY b.id;"),
+            await Select("SELECT a.id AS a_id, b.id AS b_id FROM dbo.obs_a AS a RIGHT JOIN dbo.obs_b AS b ON b.id = a.id ORDER BY b.id;"));
+    }
+
+    [Fact]
+    public async Task A_right_joins_on_never_drops_a_row_of_its_right_side()
+    {
+        // The ON decides which a matches: a 2's x passes, so it matches b 2; b 4 matches nothing and still comes.
+        Assert.Equal(
+            "x,id: two,2;null,4",
+            await Select("SELECT a.x, b.id FROM dbo.obs_a AS a RIGHT JOIN dbo.obs_b AS b ON b.id = a.id AND a.x IS NOT NULL AND b.y IS NOT NULL ORDER BY b.id;"));
+    }
+
     // ---- OPENJSON -------------------------------------------------------------------------------------------------------
 
     [Fact]

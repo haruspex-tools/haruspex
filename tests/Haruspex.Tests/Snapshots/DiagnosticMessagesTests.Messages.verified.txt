@@ -44,7 +44,7 @@ HAR2005
 db/p1.sql:1:34: note HAR2005: lib.p results[0][].c: The column reference here.lib.book.id names its database, which is not modelled yet.
 
 HAR2006
-db/p1.sql:1:34: note HAR2006: lib.p results[0][].id: RIGHT OUTER JOIN is not modelled yet.
+db/p1.sql:1:34: note HAR2006: lib.p results[0][].value: The table source STRING_SPLIT(N'a,b', N',') AS s is not modelled yet.
 
 HAR2007
 db/tables.sql:8:5: note HAR2007: lib.p results[0][].pages: lib.book.pages is a computed column, which is not modelled yet.

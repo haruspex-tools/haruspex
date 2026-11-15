@@ -1298,7 +1298,10 @@ Bound by the binder; observed in `SetJoinObservationTests`.
   - It is never bounded by its sides: two sides of one row each that do not match give two rows, and a key tested `IS NULL`
     matches every row the other side null-extends (`A_full_join_of_two_queries_of_at_most_one_row_can_return_two`). A
     `WHERE` fixing a key of each side by `=` would bound it; that is left out, so a query with a full join is many.
-- `RIGHT JOIN` stays unbound (`unsupported-source`).
+- **`RIGHT JOIN`** is a left join with its sides swapped (`A_right_outer_join_is_a_left_outer_join_with_its_sides_swapped`): its
+  left side is optional, with `unmatched-row`, and its `ON` proves only what holds of that side's row when it matched
+  (`A_right_joins_on_never_drops_a_row_of_its_right_side`); keys bound it as they bound a left join, its `ON` fixing the
+  left side.
 
 ## OPENJSON
 
@@ -1916,7 +1919,8 @@ FULL OUTER JOIN", "OPENJSON"). For the IR:
   when either side has none and otherwise the left side's, `EXCEPT` the left side's. Its `cardinality` is `many` for a
   `UNION`, at most the left side's for `EXCEPT` and the fewer side's for `INTERSECT`; no key passes through one.
 - A `FULL OUTER JOIN` makes both sides' columns nullable with **`unmatched-row`**, at each side, removed by a `WHERE` that proves
-  the side's row, as for a left join; such a query is `many`. A `CROSS JOIN` reads both sides as they are; it is `one` when
+  the side's row, as for a left join; such a query is `many`. A `RIGHT JOIN` makes its left side's columns nullable with
+  `unmatched-row`, as a left join does its right side's. A `CROSS JOIN` reads both sides as they are; it is `one` when
   both sides are one row.
 - New null rule **`json-null-or-absent`**: a column `OPENJSON` reads, NULL where the JSON holds `null` (under a `strict` path too) or,
   under a lax path, where nothing is there. `OPENJSON` without `WITH` gives `key` (`nvarchar(4000)`, never null), `value`

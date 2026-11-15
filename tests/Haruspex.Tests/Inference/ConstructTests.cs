@@ -153,18 +153,6 @@ public class ConstructTests
 
     // ---- sources and joins --------------------------------------------------------------------------
 
-    // FULL OUTER JOIN and CROSS JOIN are modelled (SetJoinTests); RIGHT JOIN is not.
-    [Theory]
-    [InlineData("dbo.t AS t RIGHT JOIN dbo.u AS u ON u.t_id = t.id")]
-    [InlineData("dbo.t AS t RIGHT OUTER JOIN dbo.u AS u ON u.t_id = t.id")]
-    public void A_join_not_modelled_makes_columns_from_both_sides_unknown(string from)
-    {
-        var doc = Procedure($"SELECT t.id, u.name FROM {from};");
-
-        AssertUnknown(doc, "results[0][].id", IrUnknownReason.UnsupportedSource);
-        AssertUnknown(doc, "results[0][].name", IrUnknownReason.UnsupportedSource);
-    }
-
     [Theory]
     [InlineData("STRING_SPLIT(N'a,b', N',') AS s")]
     [InlineData("otherdb.dbo.t AS s")]
