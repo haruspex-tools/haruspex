@@ -137,6 +137,12 @@ internal sealed partial class Typer
     /// </summary>
     private sealed record SetNode(EquatableArray<int> Out, SetNode? Left, SetNode? Right, bool Intersect, IrCardinality Rows);
 
+    /// <summary>A UNION ALL of <paramref name="count"/> queries of one row each: every one's values come out, and it is many.</summary>
+    private static SetNode UnionAll(int count) =>
+        Enumerable.Range(1, count - 1).Aggregate(
+            new SetNode([0], null, null, false, IrCardinality.One),
+            (left, i) => Join(left, new SetNode([i], null, null, false, IrCardinality.One), BinaryQueryExpressionType.Union));
+
     private static SetNode Join(SetNode left, SetNode right, BinaryQueryExpressionType type) => type switch
     {
         BinaryQueryExpressionType.Intersect => new SetNode(left.Out, left, right, true, left.Rows != IrCardinality.Many || right.Rows != IrCardinality.Many ? IrCardinality.AtMostOne : IrCardinality.Many),
@@ -158,8 +164,12 @@ internal sealed partial class Typer
         return NullReasons.Join(left, right);
     }
 
-    /// <summary>One column of a set operation, from that column of every query (see <see cref="Combine(List{Row}, List{BinaryQueryExpression}, SourceLocation)"/>).</summary>
-    private Value SetColumn(List<RowColumn> columns, SetNode node, SourceLocation at)
+    /// <summary>
+    /// One column of a set operation, from that column of every query (see <see cref="Combine(List{Row}, List{BinaryQueryExpression}, SourceLocation)"/>),
+    /// or of a VALUES list, from that column of every row, as a UNION ALL of its rows (<see cref="UnionAll"/>).
+    /// </summary>
+    /// <param name="column">How a reason it gives names the column.</param>
+    private Value SetColumn(List<RowColumn> columns, SetNode node, SourceLocation at, string column = "This set operation's column")
     {
         static bool IsNull(RowColumn c) => c.Expression is { } e && Strip(e) is NullLiteral;
         var given = columns.Where(c => !IsNull(c)).ToList();
@@ -188,7 +198,7 @@ internal sealed partial class Typer
         // nulls come out.
         var combined = Chained([.. given.Select(c => (c.Value, c.Expression ?? new NullLiteral(), c.At))]);
         if (combined.Type is not { } type)
-            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This set operation's column: {combined.Why}", at));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{column}: {combined.Why}", at));
         var next = 0;
         var reasons = SetNulls(node, [.. columns.Select(c => IsNull(c)
             ? [new IrNullReason(IrNullRule.NullLiteral, c.At.ToString())]

@@ -104,10 +104,10 @@ internal sealed partial class Typer
     /// A VALUES list, <c>(VALUES (a, b), (c, d)) AS v (x, y)</c>: as many rows as it lists, each time it is read (for an APPLY's
     /// right side, for each outer row), so always at least one. A column holds its rows' values, null when any may be. Its
     /// type is the one of highest precedence among its rows', to which every value is converted (observed:
-    /// A_values_column_takes_the_type_of_highest_precedence_among_its_rows), which is not modelled: so a column is typed only
-    /// when its rows' values all have the same shape, whose claims then hold of each value whatever the type, or when there
-    /// is one row, or when every row is a string literal (<see cref="Literals"/>), whose common type is known. JSON passes
-    /// through as JSON (observed: Json_passes_through_a_values_list_as_json).
+    /// A_values_column_takes_the_type_of_highest_precedence_among_its_rows): rows whose values all have the same shape keep
+    /// it, whose claims then hold of each value; a column of string literals is the longest (<see cref="Literals"/>); rows of
+    /// different types are typed as a set operation's column is (<see cref="SetColumn"/>). JSON passes through as JSON
+    /// (observed: Json_passes_through_a_values_list_as_json).
     /// </summary>
     /// <param name="symbol">The list, bound.</param>
     /// <param name="scope">The scope its rows are read in: no FROM of their own, an enclosing query's or an APPLY's left input's beyond.</param>
@@ -147,13 +147,24 @@ internal sealed partial class Typer
             // only when there is one row: of several, even the same literal, it counts the type's digits (observed:
             // A_values_lists_int_column_is_a_constant_in_one_row_only).
             var first = column[0];
-            var same = column.All(v => v.IsLiveJson == first.IsLiveJson && v.Shape == first.Shape);
-            values.Add(same
-                ? column.Count == 1 ? first : column.Skip(1).Aggregate(first, (a, b) => Value.Join(a, b, at, $"{name}.{names[i]}")) with { Digits = IntDigits.OfType }
-                : Value.Unknown(Unsupported(
-                    IrUnknownReason.UnsupportedExpression,
-                    $"{name}.{names[i]}: its rows' values have different types, which SQL Server converts to the one of highest precedence; that is not modelled yet.",
-                    at)));
+            if (column.All(v => v.IsLiveJson == first.IsLiveJson && v.Shape == first.Shape))
+            {
+                values.Add(column.Count == 1 ? first : column.Skip(1).Aggregate(first, (a, b) => Value.Join(a, b, at, $"{name}.{names[i]}")) with { Digits = IntDigits.OfType });
+                continue;
+            }
+
+            // Rows of different types are typed as a UNION ALL of the rows is, by the one rule for combining types, each value
+            // converted to the type of highest precedence and a NULL adding only its null (observed:
+            // A_values_column_takes_the_type_of_highest_precedence_among_its_rows, and every pair and triple of
+            // SetTypeGridTests' grid in its values form). Live JSON beside another kind is not: whether it comes out as JSON
+            // or text depends on how it was made.
+            values.Add(column.Any(v => v.IsLiveJson)
+                ? Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{name}.{names[i]}: JSON beside values of another kind is not modelled.", at))
+                : SetColumn(
+                    [.. column.Select((v, r) => new RowColumn(names[i], v, At(table.RowValues[r].ColumnValues[i]), Expression: table.RowValues[r].ColumnValues[i]))],
+                    UnionAll(column.Count),
+                    at,
+                    $"{name}.{names[i]}"));
         }
 
         return new LocalRelationValues([.. names], [.. values], null)

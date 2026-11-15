@@ -6,7 +6,8 @@ using Haruspex.Ir;
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// The type haruspex gives a column whose values have different types (a set operation's, <c>COALESCE</c>'s, a <c>CASE</c>'s)
+/// The type haruspex gives a column whose values have different types (a set operation's, <c>COALESCE</c>'s, a <c>CASE</c>'s, a
+/// <c>VALUES</c> list's)
 /// is the one SQL Server describes, over every ordered pair of a grid of types that reaches the rules' edges: decimals past 38
 /// digits, integers, bit, money, floats, strings of each kind up to max, every date and time type, uniqueidentifier, and
 /// literals. A pair SQL Server refuses (206, an operand type clash) is unknown in haruspex, and its reason names both types.
@@ -72,7 +73,7 @@ public class SetTypeGridTests(SqlServerFixture server)
         }
     }
 
-    public static TheoryData<string> Forms { get; } = ["union", "coalesce", "case"];
+    public static TheoryData<string> Forms { get; } = ["union", "coalesce", "case", "values"];
 
     [Theory]
     [MemberData(nameof(Forms))]
@@ -156,6 +157,9 @@ public class SetTypeGridTests(SqlServerFixture server)
     {
         "union" => string.Join(" UNION ALL ", operands.Select((o, i) => $"SELECT {o}{(i == 0 ? $" AS {name}" : "")} FROM {source}")),
         "coalesce" => $"SELECT COALESCE({string.Join(", ", operands)}) AS {name} FROM {source}",
+
+        // A VALUES list's rows, one operand each, reading the table's row through APPLY.
+        "values" => $"SELECT v.{name} FROM {source} CROSS APPLY (VALUES {string.Join(", ", operands.Select(o => $"({o})"))}) AS v ({name})",
 
         // Conditions the server cannot fold, so every result counts (a CASE folded to one branch is typed by it).
         _ => $"SELECT CASE {string.Concat(operands.SkipLast(1).Select((o, i) => $"WHEN id > {i.ToString(CultureInfo.InvariantCulture)} THEN {o} "))}ELSE {operands[^1]} END AS {name} FROM {source}",

@@ -1044,13 +1044,15 @@ side is evaluated once for each row of its left input. Each rule is observed in 
 A `VALUES` list (`Typer.ValuesList`) is a relation wherever it is a table source, under `APPLY` (the unpivot and
 name-an-expression idioms) or in `FROM`. It has as many rows as it lists, every time it is read, so it always has one.
 A column's type is the one of highest precedence among its rows', to which each value is converted
-(`A_values_column_takes_the_type_of_highest_precedence_among_its_rows`: `int` and `2.5` give `numeric(2,1)`), which is not
-modelled: so a column is typed only when it has one row, or every row's value has the same shape (then each value's claims
-hold whatever the common type), and is nullable when any row's value is. A column of string literals only (the unpivot's
-label) is never null, `varchar` of the longest literal (at least 1), or `nvarchar` when any is `N'…'`
-(`A_values_column_of_string_literals_is_a_string_of_the_longest`); a `varchar` literal beyond ASCII is left out, since its
-length in bytes depends on the database's code page. String literals are not read anywhere else yet. JSON passes through it as JSON
-(`Json_passes_through_a_values_list_as_json`). Anything else is `unsupported-expression`.
+(`A_values_column_takes_the_type_of_highest_precedence_among_its_rows`: `int` and `2.5` give `numeric(2,1)`). A column whose
+rows' values all have the same shape keeps it (each value's claims hold), and is nullable when any row's value is. A column of
+string literals only (the unpivot's label) is never null, `varchar` of the longest literal (at least 1), or `nvarchar` when any
+is `N'…'` (`A_values_column_of_string_literals_is_a_string_of_the_longest`); a `varchar` literal beyond ASCII is unknown, since
+its length in bytes depends on the database's code page. Any other column is typed as a `UNION ALL` of its rows is, by the one
+rule for combining types ("Combining types" below), column by column: `(NULL), (N'text')` is `nvarchar(4)`, null by its
+`null-literal`, and a pair SQL Server refuses is unknown naming both types. `SetTypeGridTests` checks this form too, over every
+pair and triple of its grid. JSON passes through it as JSON (`Json_passes_through_a_values_list_as_json`); live JSON beside a
+value of another kind is `unsupported-expression`.
 
 ## Views
 
@@ -1216,11 +1218,11 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
 
 ## Combining types
 
-A set operation's column, `COALESCE`, and a `CASE`, `IIF` or `CHOOSE` all take one type over values of different
-types, by one rule, the server's type rule for a chain: `TypeChain.Of` for the type, `TypeChain.Clash` for pairs SQL
+A set operation's column, a `VALUES` list's, `COALESCE`, and a `CASE`, `IIF` or `CHOOSE` all take one type over values of
+different types, by one rule, the server's type rule for a chain: `TypeChain.Of` for the type, `TypeChain.Clash` for pairs SQL
 Server refuses, and `Typer.Chained` for what converting each value adds. The rule is a fold from left to
 right, not a join: it is neither associative nor commutative, so it is never used where paths meet (`Value.Join`). Observed in `SetTypeObservationTests`, and over every
-ordered pair of a grid of 33 types and 5 literals, in all three forms, in `SetTypeGridTests` (the server describes a set
+ordered pair of a grid of 33 types and 5 literals, in all four forms, in `SetTypeGridTests` (the server describes a set
 operation and `COALESCE` alike over all 1,806 ordered pairs of a wider grid, binary and `xml` included, checked once
 when the rule was written, not kept as a test; the `CASE` there had a constant condition, which the server folds to one result, so it differed only
 where folding did).
@@ -1979,9 +1981,9 @@ read; the engine rules, each observed, are above ("Decimal arithmetic",
 
 ### Combining types
 
-A set operation's column, `COALESCE`, and `CASE`, `IIF` and `CHOOSE` over values of different types are typed by one rule,
-data type precedence over every value, for every pair of the types the expressions model; the engine rules, each observed,
-are above ("Combining types"). For the IR:
+A set operation's column, a `VALUES` list's, `COALESCE`, and `CASE`, `IIF` and `CHOOSE` over values of different types are
+typed by one rule, data type precedence over every value, for every pair of the types the expressions model; the engine
+rules, each observed, are above ("Combining types"). For the IR:
 
 - The column has the SQL type SQL Server gives it. Pairs it used to leave unknown (decimals past 38 digits, a string beside a
   number, a date or a `uniqueidentifier`, `bit` beside a number, the date and time types with each other, `float` beside a
@@ -1989,6 +1991,8 @@ are above ("Combining types"). For the IR:
 - `arithmetic-overflow` also names a value converted to that type that may not fit it (`bigint` into `smallmoney`, `date` into
   `smalldatetime`, a string into a number), at the value's set operation query or at the `COALESCE` or `CASE`. Such a column
   used to be unknown.
+- A `VALUES` list's column of rows of different types, unknown before, has the type a `UNION ALL` of its rows has, with
+  the same facets, `values` and reasons to be null.
 - A set operation's facets: a query whose values convert unchanged keeps its facets, any other brings the type's, and the
   column has the looser of each, so a range or a length covers every query. Its `values` are kept only when every query's set
   still holds converted.

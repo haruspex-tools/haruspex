@@ -34,13 +34,43 @@ public partial class ApplyViewTests
         Assert.Equal((IrScalarKind.Number, "int"), (Assert.IsType<IrScalar>(Field(doc, "c").Type).Kind, Assert.IsType<IrScalar>(Field(doc, "c").Type).Sql));
     }
 
-    [Fact]
-    public void A_values_column_whose_rows_differ_in_type_is_unknown()
+    [Theory]
+    [InlineData("(t.name), (t.code)", "nvarchar(10)", new[] { IrNullRule.NullableColumn })]
+    [InlineData("(t.name), (N'zz')", "nvarchar(10)", new[] { IrNullRule.NullableColumn })]
+    [InlineData("(1), (2.5)", "numeric(2,1)", new IrNullRule[0])]
+    [InlineData("(t.id), (CAST(1 AS money))", "money", new IrNullRule[0])]
+    [InlineData("(NULL), (N'text')", "nvarchar(4)", new[] { IrNullRule.NullLiteral })]
+    public void A_values_column_whose_rows_differ_in_type_takes_the_one_of_highest_precedence(string rows, string sql, IrNullRule[] rules)
     {
-        // A_values_column_takes_the_type_of_highest_precedence_among_its_rows: the values are converted, which is not modelled.
-        var doc = Procedure("SELECT v.c FROM dbo.t AS t CROSS APPLY (VALUES (t.name), (t.code)) AS v (c);");
+        // A_values_column_takes_the_type_of_highest_precedence_among_its_rows, as a set operation's column does
+        // (SetTypeGridTests, its values form): one rule over the rows, column by column, a NULL adding only its null.
+        var doc = Procedure($"SELECT v.c FROM dbo.t AS t CROSS APPLY (VALUES {rows}) AS v (c);");
 
-        Assert.Equal(IrUnknownReason.UnsupportedExpression, Unknown(doc, "results[0][].c").Reason);
+        Typed(doc);
+        Assert.Equal(sql, Assert.IsType<IrScalar>(Field(doc, "c").Type).Sql);
+        Assert.Equal(rules, Rules(doc, "c"));
+    }
+
+    [Fact]
+    public void A_values_list_types_each_column_by_its_own_rows()
+    {
+        var doc = Procedure("SELECT v.kind, v.note FROM (VALUES ('a', NULL), ('bb', N'text')) AS v (kind, note);");
+
+        Typed(doc);
+        Assert.Equal("varchar(2)", Assert.IsType<IrScalar>(Field(doc, "kind").Type).Sql);
+        Assert.Empty(Rules(doc, "kind"));
+        Assert.Equal("nvarchar(4)", Assert.IsType<IrScalar>(Field(doc, "note").Type).Sql);
+        Assert.Equal([IrNullRule.NullLiteral], Rules(doc, "note"));
+    }
+
+    [Fact]
+    public void A_values_column_whose_rows_sql_server_refuses_to_combine_is_unknown_naming_both_types()
+    {
+        // Types_without_an_implicit_conversion_are_refused_with_an_operand_type_clash, for VALUES as for a set operation.
+        var unknown = Unknown(Procedure("SELECT v.c FROM dbo.t AS t CROSS APPLY (VALUES (t.id), (NEWID())) AS v (c);"), "results[0][].c");
+
+        Assert.Equal(IrUnknownReason.UnsupportedExpression, unknown.Reason);
+        Assert.Contains("refuses to combine int and uniqueidentifier", unknown.Detail, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -59,11 +89,10 @@ public partial class ApplyViewTests
         Assert.Equal(length, scalar.Facets?.Length?.Value);
     }
 
-    [Theory]
-    [InlineData("('caf\u00e9'), ('tea')")]
-    [InlineData("(t.name), (N'zz')")]
-    public void A_values_column_of_other_strings_is_unknown(string rows) =>
-        Assert.Equal(IrUnknownReason.UnsupportedExpression, Unknown(Procedure($"SELECT v.label FROM dbo.t AS t CROSS APPLY (VALUES {rows}) AS v (label);"), "results[0][].label").Reason);
+    [Fact]
+    public void A_values_column_with_a_varchar_literal_beyond_ascii_is_unknown() =>
+        // Its length in bytes depends on the database's code page.
+        Assert.Equal(IrUnknownReason.UnsupportedExpression, Unknown(Procedure("SELECT v.label FROM dbo.t AS t CROSS APPLY (VALUES ('caf\u00e9'), ('tea')) AS v (label);"), "results[0][].label").Reason);
 
     [Fact]
     public void A_values_list_in_from_is_modelled_too()
