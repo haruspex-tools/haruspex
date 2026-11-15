@@ -1,0 +1,442 @@
+# The built-in functions of SQL Server 2025 (17.x), by the categories of Microsoft's T-SQL reference: names only.
+# Read on 15 Nov 2026 from https://learn.microsoft.com/en-us/sql/t-sql/functions/functions?view=sql-server-ver17,
+# each category's page and the reference's table of contents (https://learn.microsoft.com/en-us/sql/toc.json?view=sql-server-ver17),
+# keeping a name where either lists it and its own page says it applies to SQL Server 2025. tests/coverage/README.md says how
+# the list was made and what it leaves out. A [heading] is a category; each line under it is a name, as the reference writes it.
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/aggregate-functions-transact-sql?view=sql-server-ver17
+[Aggregate functions]
+APPROX_COUNT_DISTINCT
+APPROX_PERCENTILE_CONT
+APPROX_PERCENTILE_DISC
+AVG
+CHECKSUM_AGG
+COUNT
+COUNT_BIG
+GROUPING
+GROUPING_ID
+PRODUCT
+MAX
+MIN
+PERCENTILE_CONT
+PERCENTILE_DISC
+STDEV
+STDEVP
+STRING_AGG
+SUM
+VAR
+VARP
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/ai-functions-transact-sql?view=sql-server-ver17
+[AI functions]
+AI_GENERATE_CHUNKS
+AI_GENERATE_EMBEDDINGS
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/analytic-functions-transact-sql?view=sql-server-ver17
+[Analytic functions]
+CUME_DIST
+FIRST_VALUE
+LAG
+LAST_VALUE
+LEAD
+PERCENT_RANK
+PERCENTILE_CONT
+PERCENTILE_DISC
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/bit-manipulation-functions-overview?view=sql-server-ver17
+[Bit manipulation functions]
+LEFT_SHIFT
+RIGHT_SHIFT
+BIT_COUNT
+GET_BIT
+SET_BIT
+
+# https://learn.microsoft.com/en-us/sql/toc.json?view=sql-server-ver17
+[Collation functions]
+COLLATIONPROPERTY
+TERTIARY_WEIGHTS
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/functions?view=sql-server-ver17#configuration-functions
+[Configuration functions]
+@@DBTS
+@@LANGID
+@@LANGUAGE
+@@LOCK_TIMEOUT
+@@MAX_CONNECTIONS
+@@MAX_PRECISION
+@@NESTLEVEL
+@@OPTIONS
+@@REMSERVER
+@@SERVERNAME
+@@SERVICENAME
+@@SPID
+@@TEXTSIZE
+@@VERSION
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/conversion-functions-transact-sql?view=sql-server-ver17
+[Conversion functions]
+CAST
+CONVERT
+PARSE
+TRY_CAST
+TRY_CONVERT
+TRY_PARSE
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/cryptographic-functions-transact-sql?view=sql-server-ver17
+[Cryptographic functions]
+ENCRYPTBYKEY
+DECRYPTBYKEY
+ENCRYPTBYPASSPHRASE
+DECRYPTBYPASSPHRASE
+KEY_ID
+KEY_GUID
+DECRYPTBYKEYAUTOASYMKEY
+KEY_NAME
+SYMKEYPROPERTY
+ENCRYPTBYASYMKEY
+DECRYPTBYASYMKEY
+ENCRYPTBYCERT
+DECRYPTBYCERT
+ASYMKEYPROPERTY
+ASYMKEY_ID
+SIGNBYASYMKEY
+VERIFYSIGNEDBYASYMKEY
+SIGNBYCERT
+VERIFYSIGNEDBYCERT
+IS_OBJECTSIGNED
+DECRYPTBYKEYAUTOCERT
+HASHBYTES
+CERTENCODED
+CERTPRIVATEKEY
+CERTPROPERTY
+CERT_ID
+CRYPT_GEN_RANDOM
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/cursor-functions-transact-sql?view=sql-server-ver17
+[Cursor functions]
+@@CURSOR_ROWS
+@@FETCH_STATUS
+CURSOR_STATUS
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/data-type-functions-transact-sql?view=sql-server-ver17
+[Data type functions]
+DATALENGTH
+IDENT_SEED
+IDENT_CURRENT
+IDENTITY
+IDENT_INCR
+SQL_VARIANT_PROPERTY
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/date-and-time-data-types-and-functions-transact-sql?view=sql-server-ver17
+[Date and time data types and functions]
+SYSDATETIME
+SYSDATETIMEOFFSET
+SYSUTCDATETIME
+CURRENT_TIMESTAMP
+GETDATE
+GETUTCDATE
+CURRENT_DATE
+DATE_BUCKET
+DATENAME
+DATEPART
+DATETRUNC
+DAY
+MONTH
+YEAR
+DATEFROMPARTS
+DATETIME2FROMPARTS
+DATETIMEFROMPARTS
+DATETIMEOFFSETFROMPARTS
+SMALLDATETIMEFROMPARTS
+TIMEFROMPARTS
+DATEDIFF
+DATEDIFF_BIG
+DATEADD
+EOMONTH
+SWITCHOFFSET
+TODATETIMEOFFSET
+@@DATEFIRST
+@@LANGUAGE
+ISDATE
+CURRENT_TIMEZONE
+CURRENT_TIMEZONE_ID
+
+# https://learn.microsoft.com/en-us/sql/toc.json?view=sql-server-ver17
+[Fuzzy string match]
+EDIT_DISTANCE
+EDIT_DISTANCE_SIMILARITY
+JARO_WINKLER_DISTANCE
+JARO_WINKLER_SIMILARITY
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/graph-functions-transact-sql?view=sql-server-ver17
+[Graph functions]
+EDGE_ID_FROM_PARTS
+GRAPH_ID_FROM_EDGE_ID
+GRAPH_ID_FROM_NODE_ID
+NODE_ID_FROM_PARTS
+OBJECT_ID_FROM_EDGE_ID
+OBJECT_ID_FROM_NODE_ID
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/json-functions-transact-sql?view=sql-server-ver17
+[JSON functions]
+ISJSON
+JSON_ARRAY
+JSON_ARRAYAGG
+JSON_MODIFY
+JSON_OBJECT
+JSON_OBJECTAGG
+JSON_PATH_EXISTS
+JSON_QUERY
+JSON_VALUE
+OPENJSON
+JSON_CONTAINS
+
+# https://learn.microsoft.com/en-us/sql/toc.json?view=sql-server-ver17
+[Logical functions]
+CHOOSE
+GREATEST
+IIF
+LEAST
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/mathematical-functions-transact-sql?view=sql-server-ver17
+[Mathematical functions]
+ABS
+SIGN
+CEILING
+FLOOR
+ROUND
+SIN
+COS
+TAN
+COT
+ASIN
+ACOS
+ATAN
+ATN2
+DEGREES
+RADIANS
+EXP
+LOG
+LOG10
+POWER
+SQRT
+SQUARE
+PI
+RAND
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/metadata-functions-transact-sql?view=sql-server-ver17
+[Metadata functions]
+SERVERPROPERTY
+DB_ID
+DB_NAME
+DATABASEPROPERTYEX
+ORIGINAL_DB_NAME
+APP_NAME
+DATABASE_PRINCIPAL_ID
+OBJECT_ID
+OBJECT_NAME
+OBJECT_SCHEMA_NAME
+SCHEMA_ID
+SCHEMA_NAME
+PARSENAME
+@@PROCID
+OBJECT_DEFINITION
+OBJECTPROPERTY
+OBJECTPROPERTYEX
+ASSEMBLYPROPERTY
+TYPE_ID
+TYPE_NAME
+TYPEPROPERTY
+COL_NAME
+COL_LENGTH
+COLUMNPROPERTY
+INDEX_COL
+INDEXKEY_PROPERTY
+INDEXPROPERTY
+STATS_DATE
+FILE_ID
+FILE_IDEX
+FILE_NAME
+FILEGROUP_ID
+FILEGROUP_NAME
+FILEGROUPPROPERTY
+FILEPROPERTY
+FULLTEXTCATALOGPROPERTY
+FULLTEXTSERVICEPROPERTY
+APPLOCK_MODE
+APPLOCK_TEST
+SCOPE_IDENTITY
+NEXT VALUE FOR
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/ranking-functions-transact-sql?view=sql-server-ver17
+[Ranking functions]
+RANK
+NTILE
+DENSE_RANK
+ROW_NUMBER
+
+# https://learn.microsoft.com/en-us/sql/relational-databases/regular-expressions/overview?view=sql-server-ver17
+[Regular expressions]
+REGEXP_LIKE
+REGEXP_REPLACE
+REGEXP_SUBSTR
+REGEXP_INSTR
+REGEXP_COUNT
+REGEXP_MATCHES
+REGEXP_SPLIT_TO_TABLE
+
+# https://learn.microsoft.com/en-us/sql/t-sql/language-elements/relational-operators-transact-sql?view=sql-server-ver17
+[Relational operators]
+GENERATE_SERIES
+OPENDATASOURCE
+OPENQUERY
+OPENROWSET
+OPENXML
+OPENJSON
+PREDICT
+STRING_SPLIT
+
+# https://learn.microsoft.com/en-us/sql/toc.json?view=sql-server-ver17
+[Replication functions]
+PUBLISHINGSERVERNAME
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/security-functions-transact-sql?view=sql-server-ver17
+[Security functions]
+CERTENCODED
+PWDCOMPARE
+CERTPRIVATEKEY
+PWDENCRYPT
+CURRENT_USER
+SCHEMA_ID
+DATABASE_PRINCIPAL_ID
+SCHEMA_NAME
+sys.fn_builtin_permissions
+SESSION_USER
+sys.fn_get_audit_file
+SUSER_ID
+sys.fn_my_permissions
+SUSER_SID
+HAS_PERMS_BY_NAME
+SUSER_SNAME
+IS_MEMBER
+SYSTEM_USER
+IS_ROLEMEMBER
+SUSER_NAME
+IS_SRVROLEMEMBER
+USER_ID
+LOGINPROPERTY
+USER_NAME
+ORIGINAL_LOGIN
+PERMISSIONS
+HAS_DBACCESS
+SESSIONPROPERTY
+USER
+
+# https://learn.microsoft.com/en-us/sql/toc.json?view=sql-server-ver17
+[String functions]
+ASCII
+BASE64_DECODE
+BASE64_ENCODE
+CHAR
+CHARINDEX
+CONCAT
+CONCAT_WS
+DIFFERENCE
+FORMAT
+LEFT
+LEN
+LOWER
+LTRIM
+NCHAR
+PATINDEX
+QUOTENAME
+REPLACE
+REPLICATE
+REVERSE
+RIGHT
+RTRIM
+SOUNDEX
+SPACE
+STR
+STRING_AGG
+STRING_ESCAPE
+STUFF
+SUBSTRING
+TRANSLATE
+TRIM
+UNICODE
+UNISTR
+UPPER
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/system-functions-transact-sql?view=sql-server-ver17
+[System functions]
+$PARTITION
+ERROR_PROCEDURE
+@@ERROR
+ERROR_SEVERITY
+@@IDENTITY
+ERROR_STATE
+@@PACK_RECEIVED
+FORMATMESSAGE
+@@ROWCOUNT
+GET_FILESTREAM_TRANSACTION_CONTEXT
+@@TRANCOUNT
+GETANSINULL
+BINARY_CHECKSUM
+HOST_ID
+CHECKSUM
+HOST_NAME
+COMPRESS
+ISNULL
+CONNECTIONPROPERTY
+ISNUMERIC
+CONTEXT_INFO
+MIN_ACTIVE_ROWVERSION
+CURRENT_REQUEST_ID
+NEWID
+CURRENT_TRANSACTION_ID
+NEWSEQUENTIALID
+DECOMPRESS
+ROWCOUNT_BIG
+ERROR_LINE
+SESSION_CONTEXT
+ERROR_MESSAGE
+ERROR_NUMBER
+XACT_STATE
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/system-statistical-functions-transact-sql?view=sql-server-ver17
+[System statistical functions]
+@@CONNECTIONS
+@@PACK_RECEIVED
+@@CPU_BUSY
+@@PACK_SENT
+fn_virtualfilestats
+@@TIMETICKS
+@@IDLE
+@@TOTAL_ERRORS
+@@IO_BUSY
+@@TOTAL_READ
+@@PACKET_ERRORS
+@@TOTAL_WRITE
+
+# https://learn.microsoft.com/en-us/sql/toc.json?view=sql-server-ver17
+[Text and image functions]
+TEXTPTR
+TEXTVALID
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/trigger-functions-transact-sql?view=sql-server-ver17
+[Trigger functions]
+COLUMNS_UPDATED
+EVENTDATA
+TRIGGER_NESTLEVEL
+UPDATE
+
+# https://learn.microsoft.com/en-us/sql/t-sql/functions/vector-functions-transact-sql?view=sql-server-ver17
+[Vector functions]
+VECTOR_DISTANCE
+VECTOR_SEARCH
+VECTOR_NORM
+VECTOR_NORMALIZE
+VECTORPROPERTY
+
+# (applicability read from each function page's Applies-to line)

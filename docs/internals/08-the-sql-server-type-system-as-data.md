@@ -227,8 +227,11 @@ of every type's least and greatest values, with `ANSI_WARNINGS` and `ARITHABORT`
 on a NULL or a value outside the claim. That found a date function given an integer claimed never NULL: the integer converts to
 `datetime`, which a large one overflows, and so does a `date` before 1753 beside it.
 
-The catalogue lists the functions haruspex reads, not every function SQL Server has: a call of one it lacks is unknown. That
-list, the entries and their codes, is what a coverage table of functions can be generated from.
+The catalogue lists the functions haruspex reads, not every function SQL Server has: a call of one it lacks is unknown. So
+[the coverage page](../coverage.md) is generated from it: every function Microsoft's reference documents for SQL Server 2025,
+by its categories, each either a row of the function table (its code, rule, reasons and observations) or what haruspex
+gives for a call of it, found by inferring one. `CoveragePageTests` fails when the catalogue gains or loses a function the
+page doesn't show, and the page lists the statements, clauses and operators ScriptDom parses the same way.
 
 ## Why data beats code here
 
@@ -242,7 +245,7 @@ one method, `Conversions.Converts`, of 80 lines. Each copy was right, as far as 
   every row back from the server, used by a fixture or not. The catalogue's own test fails on a wrong range for `smallmoney`
   or a wrong rank for `image`, planted to see, though no fixture has either.
 - **A table can be listed.** What haruspex models and what it doesn't is the catalogue less `SqlTypes`' rows, so a coverage
-  table can be generated from it rather than kept by hand.
+  table can be generated from it rather than kept by hand, as [the coverage page](../coverage.md) is for functions.
 
 What was considered instead:
 

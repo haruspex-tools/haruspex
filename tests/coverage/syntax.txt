@@ -1,0 +1,603 @@
+# What haruspex does with each construct ScriptDom parses: every statement, expression, predicate, table source, query
+# part, clause and hint type of ScriptDom 180.140.0, and every operator, join, set operator and assignment of its enums.
+# CoveragePageTests fails when ScriptDom has a type or operator with no entry here, or an entry names one it lacks, and runs
+# every example through haruspex to check its claim. tests/coverage/README.md explains the format; in short, each line is
+#
+#   Node | Syntax | Claim | Section | What | Example
+#
+# Node     a ScriptDom type (IfStatement) or an enum member (BinaryExpressionType.Add).
+# Syntax   the construct as T-SQL writes it.
+# Claim    modelled: haruspex reads it and types what it gives (the example gives no unknown).
+#          no-effect: haruspex reads it, and it changes no result (the example gives no unknown).
+#          unknown <reason>: haruspex gives an unknown with this reason (the example gives it).
+#          partly <reason>: some forms are modelled (the first example gives no unknown) and others give an unknown with
+#            this reason (the second example, after &&, gives it).
+#          not-in-a-body: the parser refuses it in a procedure's body (the example, as a body, doesn't parse).
+#          not-parsed: the parser never makes this node from a procedure's body (the example, if any, has none).
+#          within <Node>: a part of another construct, which its entry describes.
+#          A statement with no example claims what a statement the walker has no case for gives: unknown
+#          unsupported-statement; the test checks the walker has no case for it.
+# Section  a heading of src/Haruspex.SqlServer.Inference/README.md that explains it, or empty.
+# What     one sentence: how its result is typed and when it is null, or what haruspex says instead.
+# Example  a procedure body over the tables in CoverageProbe; \| writes a bar inside it.
+#
+# A [heading] starts a section of the page.
+
+[Statements that return or write rows]
+SelectStatement | SELECT | modelled | Result sets are positional | Each SELECT without INTO returns a result set, typed column by column; SELECT … INTO a temporary table creates it. | SELECT id, name FROM dbo.toy;
+InsertStatement | INSERT | modelled | DML | Writes rows, typed for a temporary table or variable it writes and for its OUTPUT; INSERT … EXEC runs the procedure into the table. | INSERT INTO dbo.box (id, toy_id, qty) VALUES (1, 1, 2);
+UpdateStatement | UPDATE | modelled | DML | Changes rows; a column it sets in a temporary table or variable takes the new value's type too. | UPDATE dbo.box SET qty = qty + 1 WHERE id = 1;
+DeleteStatement | DELETE | modelled | DML | Removes rows, which changes no column's type. | DELETE FROM dbo.box WHERE id = 1;
+MergeStatement | MERGE | modelled | DML | Each WHEN clause is the insert, update or delete it holds. | MERGE dbo.box AS b USING dbo.toy AS t ON b.toy_id = t.id WHEN MATCHED THEN UPDATE SET qty = 0 WHEN NOT MATCHED THEN INSERT (id, toy_id, qty) VALUES (t.id, t.id, 1);
+TruncateTableStatement | TRUNCATE TABLE | no-effect | DML | Removes every row and fires no trigger. | TRUNCATE TABLE dbo.box;
+ExecuteStatement | EXECUTE | partly dynamic-sql | Calls | A call of a procedure in the project returns what it returns; a string of dynamic SQL can't be read, so the results after it can't be listed. | EXEC dbo.helper; && EXEC sp_executesql N'SELECT 1 AS a';
+BulkInsertStatement | BULK INSERT | unknown unsupported-statement | | Not modelled. | BULK INSERT dbo.box FROM 'boxes.csv';
+InsertBulkStatement | INSERT BULK | unknown unsupported-statement | | Not modelled. | INSERT BULK dbo.box (id int);
+ReadTextStatement | READTEXT | unknown unsupported-statement | | Not modelled. | DECLARE @p varbinary(16); READTEXT dbo.toy.note @p 0 1;
+WriteTextStatement | WRITETEXT | unknown unsupported-statement | | Not modelled. | DECLARE @p varbinary(16); WRITETEXT dbo.toy.note @p 'x';
+UpdateTextStatement | UPDATETEXT | unknown unsupported-statement | | Not modelled. | DECLARE @p varbinary(16); UPDATETEXT dbo.toy.note @p 0 NULL 'x';
+CopyStatement | COPY INTO | unknown unsupported-statement | | Not modelled. | COPY INTO dbo.box FROM 'https://example.com/boxes.csv';
+ReceiveStatement | RECEIVE | unknown unsupported-statement | | Not modelled. | RECEIVE TOP (1) * FROM dbo.inbox;
+
+[Statements that steer the flow]
+BeginEndBlockStatement | BEGIN … END | modelled | The state | Its statements in order. | BEGIN SELECT 1 AS a; END
+BeginEndAtomicBlockStatement | BEGIN ATOMIC … END | modelled | The state | As BEGIN … END: its statements in order. | BEGIN ATOMIC WITH (TRANSACTION ISOLATION LEVEL = SNAPSHOT, LANGUAGE = N'English') SELECT 1 AS a; END
+IfStatement | IF … ELSE | modelled | Joins, where paths meet | Each branch is walked from the state before it, and where they meet their states are joined. | IF (SELECT COUNT(*) FROM dbo.toy) > 1 SELECT 1 AS a; ELSE SELECT 2 AS a;
+WhileStatement | WHILE | modelled | Joins, where paths meet | Its body is walked until another pass changes nothing; a loop that may return result sets makes them vary. | DECLARE @n int = 0; WHILE @n < 3 SET @n += 1; SELECT @n AS n;
+BreakStatement | BREAK | modelled | Joins, where paths meet | Leaves the loop, joining its state with the loop's end. | WHILE 1 = 1 BREAK; SELECT 1 AS a;
+ContinueStatement | CONTINUE | modelled | Joins, where paths meet | Goes back to the loop's head, joining its state there. | DECLARE @n int = 0; WHILE @n < 3 BEGIN SET @n += 1; CONTINUE; END SELECT @n AS n;
+ReturnStatement | RETURN | modelled | The state | Ends the procedure; its result sets are those before it. | SELECT 1 AS a; RETURN;
+TryCatchStatement | BEGIN TRY … BEGIN CATCH | modelled | The state | CATCH is reached from the state before any statement of TRY that may fail. | BEGIN TRY SELECT 1 AS a; END TRY BEGIN CATCH SELECT 2 AS b; END CATCH
+ThrowStatement | THROW | modelled | The state | Ends the call, or reaches CATCH. | SELECT 1 AS a; THROW 50000, 'stop', 1;
+RaiseErrorStatement | RAISERROR | modelled | The state | Of severity 11 or more it ends the call, or reaches CATCH; below that it is a message. | RAISERROR ('note', 10, 1); SELECT 1 AS a;
+RaiseErrorLegacyStatement | RAISERROR number 'text' | not-in-a-body | | The form SQL Server 2000 had, which the parser for compatibility level 170 refuses. | RAISERROR 50000 'old';
+GoToStatement | GOTO | unknown unsupported-statement | | Not modelled: a jump the walker doesn't follow, so the result sets after it can't be listed. | GOTO done; done: SELECT 1 AS a;
+LabelStatement | label: | unknown unsupported-statement | | Not modelled, as GOTO isn't. | done: SELECT 1 AS a;
+WaitForStatement | WAITFOR | unknown unsupported-statement | | Not modelled. | WAITFOR DELAY '00:00:01'; SELECT 1 AS a;
+
+[Statements that hold state]
+DeclareVariableStatement | DECLARE @v | modelled | The state | Declares the variable with its type, holding its initial value or NULL. | DECLARE @n int = 1; SELECT @n AS n;
+SetVariableStatement | SET @v = … | partly unsupported-statement | The state | Assigns the value, converted to the variable's type; a variable of a CLR type set by a method call isn't read. | DECLARE @n int; SET @n = 2; SELECT @n AS n; && DECLARE @g geography; SET @g.STSrid = 4326;
+DeclareTableVariableStatement | DECLARE @t TABLE | modelled | The state | Declares the table variable with its columns. | DECLARE @t TABLE (a int NOT NULL); SELECT a FROM @t;
+DeclareCursorStatement | DECLARE … CURSOR | modelled | Cursors | Declares the cursor, whose FETCH reads its query's columns. | DECLARE c CURSOR FOR SELECT id FROM dbo.toy; OPEN c; CLOSE c; DEALLOCATE c;
+OpenCursorStatement | OPEN | no-effect | Cursors | Returns nothing. | DECLARE c CURSOR FOR SELECT id FROM dbo.toy; OPEN c;
+FetchCursorStatement | FETCH | modelled | Cursors | FETCH … INTO sets its variables to the cursor's columns; FETCH without INTO returns one row of them. | DECLARE @i int; DECLARE c CURSOR FOR SELECT id FROM dbo.toy; OPEN c; FETCH NEXT FROM c INTO @i; SELECT @i AS i;
+CloseCursorStatement | CLOSE | no-effect | Cursors | Returns nothing. | DECLARE c CURSOR FOR SELECT id FROM dbo.toy; OPEN c; CLOSE c;
+DeallocateCursorStatement | DEALLOCATE | no-effect | Cursors | Returns nothing. | DECLARE c CURSOR FOR SELECT id FROM dbo.toy; DEALLOCATE c;
+CreateTableStatement | CREATE TABLE | partly unsupported-statement | A temporary table's columns | A temporary table is created with its columns; a permanent one isn't modelled. | CREATE TABLE #t (a int NOT NULL); SELECT a FROM #t; && CREATE TABLE dbo.made (a int);
+DropTableStatement | DROP TABLE | partly unsupported-statement | A temporary table's columns | Dropping temporary tables removes them; dropping a permanent one isn't modelled. | CREATE TABLE #t (a int); DROP TABLE #t; && DROP TABLE dbo.box;
+AlterTableAddTableElementStatement | ALTER TABLE … ADD | partly unsupported-statement | A temporary table's columns | A column added to a temporary table joins its columns; altering a permanent table isn't modelled. | CREATE TABLE #t (a int); ALTER TABLE #t ADD b int NULL; SELECT a, b FROM #t; && ALTER TABLE dbo.box ADD note int NULL;
+AlterTableAlterColumnStatement | ALTER TABLE … ALTER COLUMN | partly unsupported-statement | A temporary table's columns | A temporary table's column takes its new type; a permanent one isn't modelled. | CREATE TABLE #t (a int); ALTER TABLE #t ALTER COLUMN a bigint NOT NULL; SELECT a FROM #t; && ALTER TABLE dbo.box ALTER COLUMN qty bigint;
+AlterTableDropTableElementStatement | ALTER TABLE … DROP | partly unsupported-statement | A temporary table's columns | A column dropped from a temporary table leaves it; a permanent table isn't modelled. | CREATE TABLE #t (a int, b int); ALTER TABLE #t DROP COLUMN b; SELECT a FROM #t; && ALTER TABLE dbo.box DROP COLUMN qty;
+CreateIndexStatement | CREATE INDEX | partly unsupported-statement | A temporary table's columns | An index on a temporary table changes nothing; one on a permanent table isn't modelled. | CREATE TABLE #t (a int); CREATE INDEX ix ON #t (a); && CREATE INDEX ix ON dbo.box (qty);
+IndexDefinition | INDEX in CREATE TABLE | within CreateTableStatement | | |
+
+[Statements about the session and its transactions]
+PredicateSetStatement | SET option ON or OFF | partly unsupported-statement | The callers' session | An option that changes no result (NOCOUNT, XACT_ABORT) is read; one that changes what a statement gives (ANSI_WARNINGS, ARITHABORT, …) isn't modelled. | SET NOCOUNT ON; SELECT 1 AS a; && SET ANSI_WARNINGS OFF; SELECT 1 AS a;
+SetTransactionIsolationLevelStatement | SET TRANSACTION ISOLATION LEVEL | modelled | The state | Changes no shape; under READ UNCOMMITTED a key may not hold, so key claims are dropped. | SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; SELECT id FROM dbo.toy;
+BeginTransactionStatement | BEGIN TRANSACTION | no-effect | The state | Changes nothing here. | BEGIN TRANSACTION; SELECT 1 AS a; COMMIT;
+CommitTransactionStatement | COMMIT | no-effect | The state | Changes nothing here. | BEGIN TRANSACTION; COMMIT;
+SaveTransactionStatement | SAVE TRANSACTION | no-effect | The state | Changes nothing here. | BEGIN TRANSACTION; SAVE TRANSACTION s; COMMIT;
+RollbackTransactionStatement | ROLLBACK | modelled | The state | Undoes what the procedure did to its temporary tables, which become unknown after it. | BEGIN TRANSACTION; ROLLBACK; SELECT 1 AS a;
+PrintStatement | PRINT | no-effect | The state | A message, not a result set. | PRINT 'x'; SELECT 1 AS a;
+SetRowCountStatement | SET ROWCOUNT | unknown unsupported-statement | | Not modelled. | SET ROWCOUNT 1; SELECT id FROM dbo.toy;
+SetIdentityInsertStatement | SET IDENTITY_INSERT | unknown unsupported-statement | | Not modelled. | SET IDENTITY_INSERT dbo.box ON;
+SetTextSizeStatement | SET TEXTSIZE | unknown unsupported-statement | | Not modelled. | SET TEXTSIZE 10; SELECT name FROM dbo.toy;
+SetCommandStatement | SET DATEFORMAT, LANGUAGE, … | unknown unsupported-statement | | Not modelled. | SET LANGUAGE us_english; SELECT 1 AS a;
+SetStatisticsStatement | SET STATISTICS | unknown unsupported-statement | | Not modelled. | SET STATISTICS IO ON;
+SetOffsetsStatement | SET OFFSETS | unknown unsupported-statement | | Not modelled. | SET OFFSETS SELECT ON;
+SetErrorLevelStatement | SET ERRLVL | unknown unsupported-statement | | Not modelled. | SET ERRLVL 1;
+ExecuteAsStatement | EXECUTE AS | unknown unsupported-statement | | Not modelled: it changes whose schema a one-part name resolves in. | EXECUTE AS USER = 'someone'; REVERT;
+RevertStatement | REVERT | unknown unsupported-statement | | Not modelled, as EXECUTE AS isn't. | REVERT;
+SetUserStatement | SETUSER | unknown unsupported-statement | | Not modelled. | SETUSER;
+UseStatement | USE | unknown unsupported-statement | | Not modelled. | USE elsewhere;
+DbccStatement | DBCC | unknown unsupported-statement | | Not modelled. | DBCC CHECKIDENT ('dbo.box');
+CheckpointStatement | CHECKPOINT | unknown unsupported-statement | | Not modelled. | CHECKPOINT;
+UpdateStatisticsStatement | UPDATE STATISTICS | unknown unsupported-statement | | Not modelled. | UPDATE STATISTICS dbo.box;
+KillStatement | KILL | unknown unsupported-statement | | Not modelled. | KILL 99;
+ShutdownStatement | SHUTDOWN | unknown unsupported-statement | | Not modelled. | SHUTDOWN;
+LineNoStatement | LINENO | unknown unsupported-statement | | Not modelled. | LINENO 1;
+SelectStatementSnippet | | not-parsed | | Built by code that holds SQL as text, never by the parser. |
+TSqlStatementSnippet | | not-parsed | | Built by code that holds SQL as text, never by the parser. |
+
+[Statements that define objects or administer the server]
+AddSensitivityClassificationStatement
+AddSignatureStatement
+AlterApplicationRoleStatement
+AlterAssemblyStatement
+AlterAsymmetricKeyStatement
+AlterAuthorizationStatement
+AlterAvailabilityGroupStatement
+AlterBrokerPriorityStatement
+AlterCertificateStatement
+AlterColumnEncryptionKeyStatement
+AlterCredentialStatement
+AlterCryptographicProviderStatement
+AlterDatabaseAddFileGroupStatement
+AlterDatabaseAddFileStatement
+AlterDatabaseAuditSpecificationStatement
+AlterDatabaseCollateStatement
+AlterDatabaseEncryptionKeyStatement
+AlterDatabaseModifyFileGroupStatement
+AlterDatabaseModifyFileStatement
+AlterDatabaseModifyNameStatement
+AlterDatabasePerformCutoverStatement
+AlterDatabaseRebuildLogStatement
+AlterDatabaseRemoveFileGroupStatement
+AlterDatabaseRemoveFileStatement
+AlterDatabaseScopedConfigurationClearStatement
+AlterDatabaseScopedConfigurationSetStatement
+AlterDatabaseSetStatement
+AlterEndpointStatement
+AlterEventSessionStatement
+AlterExternalDataSourceStatement
+AlterExternalFunctionStatement
+AlterExternalLanguageStatement
+AlterExternalLibraryStatement
+AlterExternalModelStatement
+AlterExternalResourcePoolStatement
+AlterFederationStatement
+AlterFullTextCatalogStatement
+AlterFullTextIndexStatement
+AlterFullTextStopListStatement
+AlterIndexStatement
+AlterLoginAddDropCredentialStatement
+AlterLoginEnableDisableStatement
+AlterLoginOptionsStatement
+AlterMasterKeyStatement
+AlterMessageTypeStatement
+AlterPartitionFunctionStatement
+AlterPartitionSchemeStatement
+AlterQueueStatement
+AlterRemoteServiceBindingStatement
+AlterResourceGovernorStatement
+AlterResourcePoolStatement
+AlterRoleStatement
+AlterRouteStatement
+AlterSchemaStatement
+AlterSearchPropertyListStatement
+AlterSecurityPolicyStatement
+AlterSequenceStatement
+AlterServerAuditSpecificationStatement
+AlterServerAuditStatement
+AlterServerConfigurationSetBufferPoolExtensionStatement
+AlterServerConfigurationSetDiagnosticsLogStatement
+AlterServerConfigurationSetExternalAuthenticationStatement
+AlterServerConfigurationSetFailoverClusterPropertyStatement
+AlterServerConfigurationSetHadrClusterStatement
+AlterServerConfigurationSetSoftNumaStatement
+AlterServerConfigurationStatement
+AlterServerRoleStatement
+AlterServiceMasterKeyStatement
+AlterServiceStatement
+AlterSymmetricKeyStatement
+AlterTableAddClusterByStatement
+AlterTableAlterIndexStatement
+AlterTableAlterPartitionStatement
+AlterTableChangeTrackingModificationStatement
+AlterTableConstraintModificationStatement
+AlterTableFileTableNamespaceStatement
+AlterTableRebuildStatement
+AlterTableSetStatement
+AlterTableSwitchStatement
+AlterTableTriggerModificationStatement
+AlterUserStatement
+AlterWorkloadGroupStatement
+AlterXmlSchemaCollectionStatement
+BackupCertificateStatement
+BackupDatabaseStatement
+BackupMasterKeyStatement
+BackupServiceMasterKeyStatement
+BackupTransactionLogStatement
+BeginConversationTimerStatement
+BeginDialogStatement
+CloseMasterKeyStatement
+CloseSymmetricKeyStatement
+CreateAggregateStatement
+CreateApplicationRoleStatement
+CreateAssemblyStatement
+CreateAsymmetricKeyStatement
+CreateAvailabilityGroupStatement
+CreateBrokerPriorityStatement
+CreateCertificateStatement
+CreateColumnEncryptionKeyStatement
+CreateColumnMasterKeyStatement
+CreateColumnStoreIndexStatement
+CreateContractStatement
+CreateCredentialStatement
+CreateCryptographicProviderStatement
+CreateDatabaseAuditSpecificationStatement
+CreateDatabaseEncryptionKeyStatement
+CreateDatabaseStatement
+CreateEndpointStatement
+CreateEventNotificationStatement
+CreateEventSessionStatement
+CreateExternalDataSourceStatement
+CreateExternalFileFormatStatement
+CreateExternalFunctionStatement
+CreateExternalLanguageStatement
+CreateExternalLibraryStatement
+CreateExternalModelStatement
+CreateExternalResourcePoolStatement
+CreateExternalStreamingJobStatement
+CreateExternalStreamStatement
+CreateExternalTableStatement
+CreateFederationStatement
+CreateFullTextCatalogStatement
+CreateFullTextIndexStatement
+CreateFullTextStopListStatement
+CreateJsonIndexStatement
+CreateLoginStatement
+CreateMasterKeyStatement
+CreateMessageTypeStatement
+CreateOrAlterExternalFunctionStatement
+CreatePartitionFunctionStatement
+CreatePartitionSchemeStatement
+CreateQueueStatement
+CreateRemoteServiceBindingStatement
+CreateResourcePoolStatement
+CreateRoleStatement
+CreateRouteStatement
+CreateSearchPropertyListStatement
+CreateSecurityPolicyStatement
+CreateSelectiveXmlIndexStatement
+CreateSemanticIndexStatement
+CreateSequenceStatement
+CreateServerAuditSpecificationStatement
+CreateServerAuditStatement
+CreateServerRoleStatement
+CreateServiceStatement
+CreateSpatialIndexStatement
+CreateStatisticsStatement
+CreateSymmetricKeyStatement
+CreateSynonymStatement
+CreateTypeTableStatement
+CreateTypeUddtStatement
+CreateTypeUdtStatement
+CreateUserStatement
+CreateVectorIndexStatement
+CreateWorkloadClassifierStatement
+CreateWorkloadGroupStatement
+CreateXmlIndexStatement
+CreateXmlSchemaCollectionStatement
+DenyStatement
+DenyStatement80
+DiskStatement
+DropAggregateStatement
+DropApplicationRoleStatement
+DropAssemblyStatement
+DropAsymmetricKeyStatement
+DropAvailabilityGroupStatement
+DropBrokerPriorityStatement
+DropCertificateStatement
+DropColumnEncryptionKeyStatement
+DropColumnMasterKeyStatement
+DropContractStatement
+DropCredentialStatement
+DropCryptographicProviderStatement
+DropDatabaseAuditSpecificationStatement
+DropDatabaseEncryptionKeyStatement
+DropDatabaseStatement
+DropDefaultStatement
+DropEndpointStatement
+DropEventNotificationStatement
+DropEventSessionStatement
+DropExternalDataSourceStatement
+DropExternalFileFormatStatement
+DropExternalLanguageStatement
+DropExternalLibraryStatement
+DropExternalModelStatement
+DropExternalResourcePoolStatement
+DropExternalStreamingJobStatement
+DropExternalStreamStatement
+DropExternalTableStatement
+DropFederationStatement
+DropFullTextCatalogStatement
+DropFullTextIndexStatement
+DropFullTextStopListStatement
+DropFunctionStatement
+DropIndexStatement
+DropLoginStatement
+DropMasterKeyStatement
+DropMessageTypeStatement
+DropPartitionFunctionStatement
+DropPartitionSchemeStatement
+DropProcedureStatement
+DropQueueStatement
+DropRemoteServiceBindingStatement
+DropResourcePoolStatement
+DropRoleStatement
+DropRouteStatement
+DropRuleStatement
+DropSchemaStatement
+DropSearchPropertyListStatement
+DropSecurityPolicyStatement
+DropSensitivityClassificationStatement
+DropSequenceStatement
+DropServerAuditSpecificationStatement
+DropServerAuditStatement
+DropServerRoleStatement
+DropServiceStatement
+DropSignatureStatement
+DropStatisticsStatement
+DropSymmetricKeyStatement
+DropSynonymStatement
+DropTriggerStatement
+DropTypeStatement
+DropUserStatement
+DropViewStatement
+DropWorkloadClassifierStatement
+DropWorkloadGroupStatement
+DropXmlSchemaCollectionStatement
+EnableDisableTriggerStatement
+EndConversationStatement
+EventSessionStatement
+ExternalResourcePoolStatement
+GetConversationGroupStatement
+GrantStatement
+GrantStatement80
+KillQueryNotificationSubscriptionStatement
+KillStatsJobStatement
+MoveConversationStatement
+OpenMasterKeyStatement
+OpenSymmetricKeyStatement
+ReconfigureStatement
+RenameEntityStatement
+ResourcePoolStatement
+RestoreMasterKeyStatement
+RestoreServiceMasterKeyStatement
+RestoreStatement
+RevokeStatement
+RevokeStatement80
+SendStatement
+UseFederationStatement
+
+[Statements a procedure's body can't hold]
+CreateProcedureStatement | CREATE PROCEDURE | not-in-a-body | | Must be the only statement in its batch. | CREATE PROCEDURE dbo.inner AS SELECT 1 AS a;
+AlterProcedureStatement | ALTER PROCEDURE | not-in-a-body | | Must be the only statement in its batch. | ALTER PROCEDURE dbo.helper AS SELECT 1 AS a;
+CreateOrAlterProcedureStatement | CREATE OR ALTER PROCEDURE | not-in-a-body | | Must be the only statement in its batch. | CREATE OR ALTER PROCEDURE dbo.inner AS SELECT 1 AS a;
+CreateFunctionStatement | CREATE FUNCTION | not-in-a-body | | Must be the only statement in its batch. | CREATE FUNCTION dbo.f() RETURNS int AS BEGIN RETURN 1; END
+AlterFunctionStatement | ALTER FUNCTION | not-in-a-body | | Must be the only statement in its batch. | ALTER FUNCTION dbo.f() RETURNS int AS BEGIN RETURN 1; END
+CreateOrAlterFunctionStatement | CREATE OR ALTER FUNCTION | not-in-a-body | | Must be the only statement in its batch. | CREATE OR ALTER FUNCTION dbo.f() RETURNS int AS BEGIN RETURN 1; END
+CreateViewStatement | CREATE VIEW | not-in-a-body | | Must be the only statement in its batch. | CREATE VIEW dbo.v AS SELECT 1 AS a;
+AlterViewStatement | ALTER VIEW | not-in-a-body | | Must be the only statement in its batch. | ALTER VIEW dbo.v AS SELECT 1 AS a;
+CreateOrAlterViewStatement | CREATE OR ALTER VIEW | not-in-a-body | | Must be the only statement in its batch. | CREATE OR ALTER VIEW dbo.v AS SELECT 1 AS a;
+CreateTriggerStatement | CREATE TRIGGER | not-in-a-body | | Must be the only statement in its batch. | CREATE TRIGGER dbo.t ON dbo.box AFTER INSERT AS SELECT 1 AS a;
+AlterTriggerStatement | ALTER TRIGGER | not-in-a-body | | Must be the only statement in its batch. | ALTER TRIGGER dbo.t ON dbo.box AFTER INSERT AS SELECT 1 AS a;
+CreateOrAlterTriggerStatement | CREATE OR ALTER TRIGGER | not-in-a-body | | Must be the only statement in its batch. | CREATE OR ALTER TRIGGER dbo.t ON dbo.box AFTER INSERT AS SELECT 1 AS a;
+CreateSchemaStatement | CREATE SCHEMA | not-in-a-body | | Must be the only statement in its batch. | CREATE SCHEMA shop;
+CreateDefaultStatement | CREATE DEFAULT | not-in-a-body | | Must be the only statement in its batch. | CREATE DEFAULT dbo.zero AS 0;
+CreateRuleStatement | CREATE RULE | not-in-a-body | | Must be the only statement in its batch. | CREATE RULE dbo.positive AS @v > 0;
+
+[Queries]
+QuerySpecification | SELECT … FROM … | modelled | Result sets are positional | Its columns, typed one by one, over the rows its sources and filters give. | SELECT id FROM dbo.toy WHERE id > 1;
+BinaryQueryExpression | UNION, EXCEPT, INTERSECT | modelled | Set operations | Columns are combined by position, each of the type of highest precedence. | SELECT id FROM dbo.toy UNION SELECT toy_id FROM dbo.box;
+QueryParenthesisExpression | ( query ) | modelled | Set operations | The query inside. | (SELECT id FROM dbo.toy) UNION ALL (SELECT id FROM dbo.box);
+BinaryQueryExpressionType.Union | UNION [ALL] | modelled | Set operations | Each column's type is that of highest precedence; NULL where either side is. | SELECT id FROM dbo.toy UNION SELECT toy_id FROM dbo.box;
+BinaryQueryExpressionType.Except | EXCEPT | modelled | Set operations | The left side's rows, so its columns. | SELECT id FROM dbo.toy EXCEPT SELECT toy_id FROM dbo.box;
+BinaryQueryExpressionType.Intersect | INTERSECT | modelled | Set operations | Rows both sides hold. | SELECT id FROM dbo.toy INTERSECT SELECT toy_id FROM dbo.box;
+SelectScalarExpression | column or expression in SELECT | modelled | Result sets are positional | A column of the result, named by its alias or the column it reads. | SELECT price AS p FROM dbo.toy;
+SelectStarExpression | * and t.* | modelled | `SELECT *` | Expanded into the columns of the tables the project defines. | SELECT * FROM dbo.box;
+SelectSetVariable | SELECT @v = … | modelled | The state | Sets the variable, from the last row read or left as it was over no rows; returns nothing. | DECLARE @n int; SELECT @n = id FROM dbo.toy; SELECT @n AS n;
+WithCtesAndXmlNamespaces | WITH | modelled | CTEs | The common table expressions a query reads. | WITH c AS (SELECT id FROM dbo.toy) SELECT id FROM c;
+CommonTableExpression | name AS ( query ) | modelled | CTEs | A named query, read as a table; a recursive one has its anchor's types, and its nullability is found by reading its recursive members until nothing changes. | WITH c (n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM c WHERE n < 3) SELECT n FROM c;
+XmlNamespaces | WITH XMLNAMESPACES | unknown unsupported-query | | Not modelled. | WITH XMLNAMESPACES ('urn:toy' AS t) SELECT id FROM dbo.toy;
+FromClause | FROM | modelled | Result sets are positional | Its sources, joined. | SELECT t.id FROM dbo.toy AS t;
+WhereClause | WHERE | modelled | Refinement | Filters rows, and what it proves about a column (such as IS NOT NULL) holds after it. | SELECT price FROM dbo.toy WHERE price IS NOT NULL;
+GroupByClause | GROUP BY | modelled | Aggregates and scalar subqueries | One row per group. | SELECT toy_id, SUM(qty) AS n FROM dbo.box GROUP BY toy_id;
+HavingClause | HAVING | modelled | Refinement | Filters groups. | SELECT toy_id FROM dbo.box GROUP BY toy_id HAVING SUM(qty) > 1;
+OrderByClause | ORDER BY | no-effect | | Orders rows, which changes no column. | SELECT id FROM dbo.toy ORDER BY name;
+TopRowFilter | TOP | modelled | How many rows (`Cardinality.cs`) | Limits the rows, which changes no column; TOP (1) returns at most one. | SELECT TOP (1) id FROM dbo.toy ORDER BY id;
+OffsetClause | OFFSET … FETCH | modelled | How many rows (`Cardinality.cs`) | Skips and limits rows, which changes no column. | SELECT id FROM dbo.toy ORDER BY id OFFSET 1 ROWS FETCH NEXT 2 ROWS ONLY;
+OverClause | OVER | modelled | Window functions | Makes a function a window function. | SELECT ROW_NUMBER() OVER (ORDER BY id) AS n FROM dbo.toy;
+WindowFrameClause | ROWS or RANGE frame | modelled | Window functions | A frame that may leave out the current row may be empty, so an aggregate over it may be NULL. | SELECT SUM(qty) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) AS s FROM dbo.box;
+WindowClause | WINDOW | unknown unsupported-expression | | Not modelled: a function over a named window is unknown. | SELECT SUM(qty) OVER w AS s FROM dbo.box WINDOW w AS (ORDER BY id);
+WindowDefinition | name AS ( window ) | within WindowClause | | |
+WithinGroupClause | WITHIN GROUP | modelled | Window functions | The order PERCENTILE_CONT, PERCENTILE_DISC and STRING_AGG read. | SELECT STRING_AGG(name, ',') WITHIN GROUP (ORDER BY name) AS names FROM dbo.toy;
+TableSampleClause | TABLESAMPLE | no-effect | | Returns some of the table's rows, which changes no column. | SELECT id FROM dbo.toy TABLESAMPLE (10 PERCENT);
+OutputClause | OUTPUT | modelled | OUTPUT | Returns the rows written, typed from inserted and deleted. | DELETE FROM dbo.box OUTPUT deleted.id WHERE id = 1;
+OutputIntoClause | OUTPUT … INTO | modelled | OUTPUT | Writes the rows written into a table, returning nothing. | DECLARE @t TABLE (id int); DELETE FROM dbo.box OUTPUT deleted.id INTO @t WHERE id = 1; SELECT id FROM @t;
+JsonForClause | FOR JSON | modelled | JSON built here, traced | One column of JSON text whose shape is the query's. | SELECT id, name FROM dbo.toy FOR JSON PATH;
+JsonForClauseOption | ROOT, INCLUDE_NULL_VALUES, … | within JsonForClause | | |
+XmlForClause | FOR XML | unknown unsupported-query | | Not modelled. | SELECT id FROM dbo.toy FOR XML PATH;
+XmlForClauseOption | RAW, AUTO, PATH, … | within XmlForClause | | |
+BrowseForClause | FOR BROWSE | unknown unsupported-query | | Not modelled. | SELECT id FROM dbo.toy FOR BROWSE;
+ReadOnlyForClause | FOR READ ONLY | within DeclareCursorStatement | | |
+UpdateForClause | FOR UPDATE | within DeclareCursorStatement | | |
+
+[Grouping]
+ExpressionGroupingSpecification | GROUP BY expression | modelled | Aggregates and scalar subqueries | One row per value. | SELECT toy_id FROM dbo.box GROUP BY toy_id;
+RollupGroupingSpecification | ROLLUP | modelled | Aggregates and scalar subqueries | Adds rows whose grouped columns are NULL. | SELECT toy_id, SUM(qty) AS n FROM dbo.box GROUP BY ROLLUP (toy_id);
+CubeGroupingSpecification | CUBE | modelled | Aggregates and scalar subqueries | Adds rows whose grouped columns are NULL. | SELECT toy_id, SUM(qty) AS n FROM dbo.box GROUP BY CUBE (toy_id);
+GroupingSetsGroupingSpecification | GROUPING SETS | modelled | Aggregates and scalar subqueries | Adds rows whose grouped columns are NULL. | SELECT toy_id, SUM(qty) AS n FROM dbo.box GROUP BY GROUPING SETS ((toy_id), ());
+GrandTotalGroupingSpecification | () | modelled | Aggregates and scalar subqueries | The grand total, one row. | SELECT SUM(qty) AS n FROM dbo.box GROUP BY GROUPING SETS (());
+CompositeGroupingSpecification | ( a, b ) in a grouping set | within GroupingSetsGroupingSpecification | | |
+
+[Table sources]
+NamedTableReference | table, view or synonym | modelled | Views | Its columns, as the project defines them. | SELECT id FROM dbo.toy;
+VariableTableReference | @table | modelled | The state | The table variable's columns. | DECLARE @t TABLE (a int NOT NULL); SELECT a FROM @t;
+QueryDerivedTable | ( query ) AS t | modelled | Result sets are positional | The query's columns. | SELECT d.id FROM (SELECT id FROM dbo.toy) AS d;
+InlineDerivedTable | ( VALUES … ) AS t | modelled | `VALUES` | Each column's type is that of highest precedence over its rows. | SELECT v.a FROM (VALUES (1), (2)) AS v (a);
+QualifiedJoin | JOIN … ON | modelled | Joins, where paths meet | Both sides' columns, NULL on the side that may have no match. | SELECT t.id, b.qty FROM dbo.toy AS t LEFT JOIN dbo.box AS b ON b.toy_id = t.id;
+UnqualifiedJoin | CROSS JOIN, APPLY | modelled | APPLY | Both sides' columns; OUTER APPLY's right side may be NULL. | SELECT t.id, b.qty FROM dbo.toy AS t CROSS APPLY (SELECT qty FROM dbo.box WHERE toy_id = t.id) AS b;
+JoinParenthesisTableReference | ( joins ) | modelled | Joins, where paths meet | The joins inside. | SELECT t.id FROM (dbo.toy AS t JOIN dbo.box AS b ON b.toy_id = t.id);
+QualifiedJoinType.Inner | INNER JOIN | modelled | Joins, where paths meet | Both sides' columns as they are. | SELECT t.id, b.qty FROM dbo.toy AS t JOIN dbo.box AS b ON b.toy_id = t.id;
+QualifiedJoinType.LeftOuter | LEFT JOIN | modelled | Joins, where paths meet | The right side's columns may be NULL. | SELECT t.id, b.qty FROM dbo.toy AS t LEFT JOIN dbo.box AS b ON b.toy_id = t.id;
+QualifiedJoinType.RightOuter | RIGHT JOIN | unknown unsupported-source | | Not modelled yet. | SELECT t.id, b.qty FROM dbo.toy AS t RIGHT JOIN dbo.box AS b ON b.toy_id = t.id;
+QualifiedJoinType.FullOuter | FULL JOIN | modelled | CROSS JOIN and FULL OUTER JOIN | Either side's columns may be NULL. | SELECT t.id, b.qty FROM dbo.toy AS t FULL JOIN dbo.box AS b ON b.toy_id = t.id;
+UnqualifiedJoinType.CrossJoin | CROSS JOIN | modelled | CROSS JOIN and FULL OUTER JOIN | Both sides' columns as they are. | SELECT t.id, b.qty FROM dbo.toy AS t CROSS JOIN dbo.box AS b;
+UnqualifiedJoinType.CrossApply | CROSS APPLY | modelled | APPLY | Both sides' columns as they are. | SELECT t.id, b.qty FROM dbo.toy AS t CROSS APPLY (SELECT qty FROM dbo.box WHERE toy_id = t.id) AS b;
+UnqualifiedJoinType.OuterApply | OUTER APPLY | modelled | APPLY | The right side's columns may be NULL. | SELECT t.id, b.qty FROM dbo.toy AS t OUTER APPLY (SELECT qty FROM dbo.box WHERE toy_id = t.id) AS b;
+SchemaObjectFunctionTableReference | table-valued function | modelled | Table-valued functions | A function of the project's returns its declared or inferred columns. | SELECT a FROM dbo.rows_of() AS r;
+GlobalFunctionTableReference | STRING_SPLIT, GENERATE_SERIES | partly unsupported-source | `GENERATE_SERIES` | GENERATE_SERIES gives value, of its arguments' type; STRING_SPLIT isn't modelled. | SELECT value FROM GENERATE_SERIES(1, 3); && SELECT value FROM STRING_SPLIT('a,b', ',');
+OpenJsonTableReference | OPENJSON | modelled | OPENJSON | Its WITH columns as declared, or key, value and type. | SELECT j.a FROM OPENJSON(N'[{"a":1}]') WITH (a int) AS j;
+DataModificationTableReference | ( DELETE … OUTPUT ) AS t | unknown unsupported-statement | DML | The nested write fires its own table's triggers, which aren't followed, so the INSERT it stands in ends what haruspex can list. | DECLARE @t TABLE (id int); INSERT INTO @t (id) SELECT d.id FROM (DELETE FROM dbo.box OUTPUT deleted.id) AS d;
+PivotedTableReference | PIVOT | unknown unsupported-source | | Not modelled. | SELECT p.[1] FROM (SELECT toy_id, qty FROM dbo.box) AS s PIVOT (SUM(qty) FOR toy_id IN ([1])) AS p;
+UnpivotedTableReference | UNPIVOT | unknown unsupported-source | | Not modelled. | SELECT u.v FROM (SELECT id, qty FROM dbo.box) AS s UNPIVOT (v FOR k IN (qty)) AS u;
+OpenRowsetTableReference | OPENROWSET | unknown unsupported-source | | Not modelled. | SELECT r.a FROM OPENROWSET('MSOLEDBSQL', 'Server=elsewhere;', 'SELECT 1 AS a') AS r;
+BulkOpenRowset | OPENROWSET (BULK …) | unknown unsupported-source | | Not modelled. | SELECT r.BulkColumn FROM OPENROWSET(BULK 'toys.json', SINGLE_CLOB) AS r;
+OpenRowsetCosmos | OPENROWSET over Cosmos DB | not-parsed | | Azure Synapse's form, which SQL Server's parser doesn't make. |
+InternalOpenRowset | OPENROWSET of an internal table | not-parsed | | SQL Server's own form, which a body doesn't hold. |
+OpenQueryTableReference | OPENQUERY | unknown unsupported-source | | Not modelled. | SELECT q.a FROM OPENQUERY(elsewhere, 'SELECT 1 AS a') AS q;
+AdHocTableReference | OPENDATASOURCE(…).db.schema.table | unknown unsupported-source | | Not modelled. | SELECT a.id FROM OPENDATASOURCE('MSOLEDBSQL', 'Server=elsewhere;').shop.dbo.toy AS a;
+OpenXmlTableReference | OPENXML | unknown unsupported-source | | Not modelled. | DECLARE @h int; SELECT x.a FROM OPENXML(@h, '/r') WITH (a int) AS x;
+FullTextTableReference | CONTAINSTABLE, FREETEXTTABLE | unknown unsupported-source | | Not modelled. | SELECT f.[KEY] FROM CONTAINSTABLE(dbo.toy, name, 'bear') AS f;
+SemanticTableReference | SEMANTICKEYPHRASETABLE, … | unknown unsupported-source | | Not modelled. | SELECT s.keyphrase FROM SEMANTICKEYPHRASETABLE(dbo.toy, name) AS s;
+ChangeTableChangesTableReference | CHANGETABLE (CHANGES …) | unknown unsupported-source | | Not modelled. | SELECT c.id FROM CHANGETABLE(CHANGES dbo.toy, 0) AS c;
+ChangeTableVersionTableReference | CHANGETABLE (VERSION …) | unknown unsupported-source | | Not modelled. | SELECT c.id FROM CHANGETABLE(VERSION dbo.toy, (id), (1)) AS c;
+PredictTableReference | PREDICT | unknown unsupported-source | | Not modelled. | DECLARE @m varbinary(max); SELECT p.score FROM PREDICT(MODEL = @m, DATA = dbo.toy AS d) WITH (score float) AS p;
+VariableMethodCallTableReference | @x.nodes(…) | partly unsupported-expression | | Its rows are read; its column is xml, whose methods aren't modelled. | DECLARE @x xml = '<r/>'; SELECT 1 AS v FROM @x.nodes('/r') AS n (c); && DECLARE @x xml = '<r/>'; SELECT n.c.value('.', 'int') AS v FROM @x.nodes('/r') AS n (c);
+BuiltInFunctionTableReference | ::fn_name( … ) | unknown unsupported-source | | Not modelled. | SELECT f.name FROM ::fn_helpcollations() AS f;
+OdbcQualifiedJoinTableReference | { OJ … } | unknown unresolved-column | | Not modelled: the join inside isn't bound, so a column read through it is unresolved. | SELECT t.id FROM {OJ dbo.toy AS t LEFT OUTER JOIN dbo.box AS b ON b.toy_id = t.id};
+AIGenerateChunksTableReference | AI_GENERATE_CHUNKS | not-parsed | | The parser makes the fixed-size form, the only one, as AIGenerateFixedChunksTableReference. | SELECT c.chunk FROM AI_GENERATE_CHUNKS(SOURCE = 'some text', CHUNK_TYPE = FIXED, CHUNK_SIZE = 5) AS c;
+AIGenerateFixedChunksTableReference | AI_GENERATE_CHUNKS (… FIXED …) | unknown unsupported-source | | Not modelled. | SELECT c.chunk FROM AI_GENERATE_CHUNKS(SOURCE = 'some text', CHUNK_TYPE = FIXED, CHUNK_SIZE = 5) AS c;
+VectorSearchTableReference | VECTOR_SEARCH | unknown unsupported-source | | Not modelled. | DECLARE @v vector(3) = '[1,2,3]'; SELECT s.distance FROM VECTOR_SEARCH(TABLE = dbo.toy AS t, COLUMN = place, SIMILAR_TO = @v, METRIC = 'cosine', TOP_N = 1) AS s;
+
+[Inserts and merges]
+SelectInsertSource | INSERT … SELECT | modelled | DML | The query's rows, converted to the target's columns. | INSERT INTO dbo.box (id, toy_id, qty) SELECT id, id, 1 FROM dbo.toy;
+ValuesInsertSource | INSERT … VALUES | modelled | DML | The rows written, converted to the target's columns. | INSERT INTO dbo.box (id, toy_id, qty) VALUES (2, 1, 1);
+ExecuteInsertSource | INSERT … EXEC | modelled | `INSERT … EXEC` | The procedure's result sets, written into the table; they aren't returned. | DECLARE @t TABLE (one int); INSERT INTO @t EXEC dbo.helper; SELECT one FROM @t;
+InsertMergeAction | WHEN NOT MATCHED THEN INSERT | modelled | DML | As INSERT. | MERGE dbo.box AS b USING dbo.toy AS t ON b.toy_id = t.id WHEN NOT MATCHED THEN INSERT (id, toy_id, qty) VALUES (t.id, t.id, 1);
+UpdateMergeAction | WHEN MATCHED THEN UPDATE | modelled | DML | As UPDATE. | MERGE dbo.box AS b USING dbo.toy AS t ON b.toy_id = t.id WHEN MATCHED THEN UPDATE SET qty = 0;
+DeleteMergeAction | WHEN MATCHED THEN DELETE | modelled | DML | As DELETE. | MERGE dbo.box AS b USING dbo.toy AS t ON b.toy_id = t.id WHEN MATCHED THEN DELETE;
+
+[Expressions]
+ColumnReferenceExpression | column | modelled | Expressions | The column's type, facets and nullability, after what filters prove. | SELECT name FROM dbo.toy;
+VariableReference | @variable | modelled | The state | The value the variable holds at that point, which may be one of several. | DECLARE @n int = 1; SELECT @n AS n;
+IntegerLiteral | 1 | modelled | Literals | int, or numeric of its digits beyond int's range; never NULL. | SELECT 1 AS a;
+NumericLiteral | 2.50 | modelled | Literals | A decimal of its own digits. | SELECT 2.50 AS a;
+RealLiteral | 1e0 | modelled | Literals | float. | SELECT 1e0 AS a;
+MoneyLiteral | $1 | modelled | Literals | money. | SELECT $1 AS a;
+StringLiteral | 'text' and N'text' | modelled | Literals | varchar or nvarchar as long as the text. | SELECT 'ab' AS a, N'ab' AS b;
+NullLiteral | NULL | modelled | Literals | An int that is NULL, until something converts it. | SELECT CAST(NULL AS int) AS a;
+BinaryLiteral | 0x01 | unknown unsupported-expression | | Not modelled yet. | SELECT 0x01 AS a;
+DefaultLiteral | DEFAULT | modelled | DML | The column's default, in an INSERT or UPDATE. | INSERT INTO dbo.box (id, toy_id, qty) VALUES (3, 1, DEFAULT);
+MaxLiteral | MAX in a type's length | within CastCall | | |
+IdentifierLiteral | a name where a value goes | within FunctionCall | | |
+ParenthesisExpression | ( expression ) | modelled | Expressions | The expression inside. | SELECT (id) AS a FROM dbo.toy;
+UnaryExpression | -x, +x, ~x | partly unsupported-expression | Decimal arithmetic | A sign keeps a number's type; ~ isn't modelled. | SELECT -id AS a FROM dbo.toy; && SELECT ~id AS a FROM dbo.toy;
+BinaryExpression | x + y, x * y, … | partly unsupported-expression | Decimal arithmetic | Arithmetic and concatenation are typed; the bitwise operators aren't. | SELECT id + 1 AS a FROM dbo.toy; && SELECT id & 1 AS a FROM dbo.toy;
+ScalarSubquery | ( SELECT … ) | modelled | Aggregates and scalar subqueries | Its one column, NULL when it returns no row. | SELECT (SELECT MAX(qty) FROM dbo.box) AS a;
+SearchedCaseExpression | CASE WHEN … | modelled | CASE, IIF, CHOOSE and NULLIF | The type of highest precedence over its results; NULL without ELSE. | SELECT CASE WHEN id > 1 THEN 'big' ELSE 'small' END AS a FROM dbo.toy;
+SimpleCaseExpression | CASE x WHEN … | modelled | CASE, IIF, CHOOSE and NULLIF | As searched CASE. | SELECT CASE id WHEN 1 THEN 'one' END AS a FROM dbo.toy;
+FunctionCall | f( … ) | partly unsupported-expression | Built-in functions | A function of the catalogue is typed by its row, and one of the project's by its body; any other, and a method of a CLR type, is unknown. | SELECT ABS(id) AS a FROM dbo.toy; && SELECT hierarchyid::GetRoot().ToString() AS a;
+CastCall | CAST | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type. | SELECT CAST(id AS bigint) AS a FROM dbo.toy;
+ConvertCall | CONVERT | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type, whatever the style. | SELECT CONVERT(varchar(10), id) AS a FROM dbo.toy;
+TryCastCall | TRY_CAST | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type, NULL when the conversion fails. | SELECT TRY_CAST(name AS int) AS a FROM dbo.toy;
+TryConvertCall | TRY_CONVERT | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | As TRY_CAST. | SELECT TRY_CONVERT(int, name) AS a FROM dbo.toy;
+ParseCall | PARSE | unknown unsupported-expression | | Not modelled. | SELECT PARSE('1' AS int) AS a;
+TryParseCall | TRY_PARSE | unknown unsupported-expression | | Not modelled. | SELECT TRY_PARSE('1' AS int) AS a;
+CoalesceExpression | COALESCE | modelled | `COALESCE` and `ISNULL` | The type of highest precedence over its arguments; NULL only when all may be. | SELECT COALESCE(price, 0) AS a FROM dbo.toy;
+NullIfExpression | NULLIF | modelled | CASE, IIF, CHOOSE and NULLIF | The first argument's type, NULL when the two are equal. | SELECT NULLIF(id, 1) AS a FROM dbo.toy;
+IIfCall | IIF | modelled | CASE, IIF, CHOOSE and NULLIF | As CASE. | SELECT IIF(id > 1, 'big', 'small') AS a FROM dbo.toy;
+LeftFunctionCall | LEFT | modelled | Strings | The string varying, as long as a literal length allows. | SELECT LEFT(name, 2) AS a FROM dbo.toy;
+RightFunctionCall | RIGHT | modelled | Strings | As LEFT. | SELECT RIGHT(name, 2) AS a FROM dbo.toy;
+ParameterlessCall | CURRENT_TIMESTAMP, CURRENT_USER, … | partly unsupported-expression | Built-in functions | CURRENT_TIMESTAMP is a datetime, never NULL; the others aren't modelled. | SELECT CURRENT_TIMESTAMP AS a; && SELECT CURRENT_USER AS a;
+GlobalVariableExpression | @@ROWCOUNT, … | unknown unsupported-expression | | Not modelled yet. | SELECT @@ROWCOUNT AS a;
+AtTimeZoneCall | AT TIME ZONE | unknown unsupported-expression | | Not modelled yet. | SELECT made AT TIME ZONE 'UTC' AS a FROM dbo.toy;
+NextValueForExpression | NEXT VALUE FOR | unknown unsupported-expression | | Not modelled yet. | SELECT NEXT VALUE FOR dbo.ticket AS a;
+IdentityFunctionCall | IDENTITY( … ) in SELECT INTO | unknown unsupported-expression | | Not modelled yet. | SELECT IDENTITY(int, 1, 1) AS n INTO #t FROM dbo.toy; SELECT n FROM #t;
+PartitionFunctionCall | $PARTITION.f( … ) | unknown unsupported-expression | | Not modelled yet. | SELECT $PARTITION.by_id(id) AS a FROM dbo.toy;
+ExtractFromExpression | EXTRACT( part FROM x ) | not-parsed | | Fabric's form, which SQL Server's parser doesn't make. | SELECT EXTRACT(YEAR FROM made) AS a FROM dbo.toy;
+OdbcFunctionCall | { fn … } | unknown unsupported-expression | | Not modelled. | SELECT {fn UCASE(name)} AS a FROM dbo.toy;
+OdbcConvertSpecification | SQL_ type in { fn CONVERT } | within OdbcFunctionCall | | |
+OdbcLiteral | { d '…' } | unknown unsupported-expression | | Not modelled. | SELECT {d '2026-01-01'} AS a;
+UserDefinedTypePropertyAccess | type::property, value.property | unknown unsupported-expression | | Not modelled: the CLR types aren't. | SELECT geography::Point(1, 1, 4326).Lat AS a;
+JsonKeyValue | key : value in JSON_OBJECT | within FunctionCall | | |
+AIGenerateEmbeddingsFunctionCall | AI_GENERATE_EMBEDDINGS | unknown unsupported-expression | | Not modelled. | SELECT AI_GENERATE_EMBEDDINGS(name USE MODEL toy_model) AS a FROM dbo.toy;
+AIAnalyzeSentimentFunctionCall | AI_ANALYZE_SENTIMENT | not-parsed | | Fabric's, which SQL Server's parser doesn't make. | SELECT AI_ANALYZE_SENTIMENT(name) AS a FROM dbo.toy;
+AIClassifyFunctionCall | AI_CLASSIFY | not-parsed | | Fabric's, which SQL Server's parser doesn't make. | SELECT AI_CLASSIFY(name, 'a', 'b') AS a FROM dbo.toy;
+AIExtractFunctionCall | AI_EXTRACT | not-parsed | | Fabric's, which SQL Server's parser doesn't make. | SELECT AI_EXTRACT(name, 'colour') AS a FROM dbo.toy;
+AIFixGrammarFunctionCall | AI_FIX_GRAMMAR | not-parsed | | Fabric's, which SQL Server's parser doesn't make. | SELECT AI_FIX_GRAMMAR(name) AS a FROM dbo.toy;
+AIGenerateResponseFunctionCall | AI_GENERATE_RESPONSE | not-parsed | | Fabric's, which SQL Server's parser doesn't make. | SELECT AI_GENERATE_RESPONSE(name) AS a FROM dbo.toy;
+AISummarizeFunctionCall | AI_SUMMARIZE | not-parsed | | Fabric's, which SQL Server's parser doesn't make. | SELECT AI_SUMMARIZE(name) AS a FROM dbo.toy;
+AITranslateFunctionCall | AI_TRANSLATE | not-parsed | | Fabric's, which SQL Server's parser doesn't make. | SELECT AI_TRANSLATE(name, 'fr') AS a FROM dbo.toy;
+InvokeExternalApiFunctionCall | INVOKE_EXTERNAL_API | not-parsed | | Not SQL Server's. | SELECT INVOKE_EXTERNAL_API('https://example.com') AS a;
+ScalarExpressionSnippet | | not-parsed | | Built by code that holds SQL as text, never by the parser. |
+SourceDeclaration | an event's source | not-parsed | | Part of an event session's definition, never of a body. |
+
+[Operators]
+BinaryExpressionType.Add | + | modelled | Decimal arithmetic | The type of highest precedence, a decimal widened; a string concatenated as long as both; NULL when it overflows under the caller's options. | SELECT id + 1 AS a, name + N'!' AS b FROM dbo.toy;
+BinaryExpressionType.Subtract | - | modelled | Decimal arithmetic | As +. | SELECT id - 1 AS a FROM dbo.toy;
+BinaryExpressionType.Multiply | * | modelled | Decimal arithmetic | As +, a decimal of the digits the product needs. | SELECT price * 2 AS a FROM dbo.toy;
+BinaryExpressionType.Divide | / | modelled | Decimal arithmetic | As +; NULL when dividing by zero under the caller's options. | SELECT price / 2 AS a FROM dbo.toy;
+BinaryExpressionType.Modulo | % | modelled | Decimal arithmetic | As /. | SELECT id % 2 AS a FROM dbo.toy;
+BinaryExpressionType.Concat | \|\| | unknown unsupported-expression | | Not modelled yet. | SELECT name \|\| N'!' AS a FROM dbo.toy;
+BinaryExpressionType.BitwiseAnd | & | unknown unsupported-expression | | Not modelled yet. | SELECT id & 1 AS a FROM dbo.toy;
+BinaryExpressionType.BitwiseOr | \| | unknown unsupported-expression | | Not modelled yet. | SELECT id \| 1 AS a FROM dbo.toy;
+BinaryExpressionType.BitwiseXor | ^ | unknown unsupported-expression | | Not modelled yet. | SELECT id ^ 1 AS a FROM dbo.toy;
+BinaryExpressionType.LeftShift | << | unknown unsupported-expression | | Not modelled yet. | SELECT id << 1 AS a FROM dbo.toy;
+BinaryExpressionType.RightShift | >> | unknown unsupported-expression | | Not modelled yet. | SELECT id >> 1 AS a FROM dbo.toy;
+UnaryExpressionType.Negative | -x | modelled | Decimal arithmetic | The number's type; a tinyint becomes a smallint; NULL when it overflows under the caller's options. | SELECT -id AS a FROM dbo.toy;
+UnaryExpressionType.Positive | +x | modelled | Decimal arithmetic | The number's type. | SELECT +id AS a FROM dbo.toy;
+UnaryExpressionType.BitwiseNot | ~x | unknown unsupported-expression | | Not modelled yet. | SELECT ~id AS a FROM dbo.toy;
+AssignmentKind.Equals | SET @v = x | modelled | The state | The value, converted to the variable's type. | DECLARE @n int; SET @n = 1; SELECT @n AS n;
+AssignmentKind.AddEquals | SET @v += x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @n int = 0; SET @n += 1; SELECT @n AS n;
+AssignmentKind.SubtractEquals | SET @v -= x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @n int = 0; SET @n -= 1; SELECT @n AS n;
+AssignmentKind.MultiplyEquals | SET @v *= x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @n int = 1; SET @n *= 2; SELECT @n AS n;
+AssignmentKind.DivideEquals | SET @v /= x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @n int = 4; SET @n /= 2; SELECT @n AS n;
+AssignmentKind.ModEquals | SET @v %= x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @n int = 4; SET @n %= 3; SELECT @n AS n;
+AssignmentKind.BitwiseAndEquals | SET @v &= x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @n int = 4; SET @n &= 1; SELECT @n AS n;
+AssignmentKind.BitwiseOrEquals | SET @v \|= x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @n int = 4; SET @n \|= 1; SELECT @n AS n;
+AssignmentKind.BitwiseXorEquals | SET @v ^= x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @n int = 4; SET @n ^= 1; SELECT @n AS n;
+AssignmentKind.ConcatEquals | SET @v \|\|= x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @s nvarchar(10) = N'a'; SET @s \|\|= N'b'; SELECT @s AS s;
+
+[Predicates]
+BooleanComparisonExpression | x = y, x < y, … | modelled | Which conditions prove a column non-null | A comparison with the column as an operand proves it non-null where the condition holds (with ANSI_NULLS on). | SELECT price FROM dbo.toy WHERE price > 0;
+BooleanIsNullExpression | IS [NOT] NULL | modelled | Which conditions prove a column non-null | IS NOT NULL proves the column non-null where it holds. | SELECT price FROM dbo.toy WHERE price IS NOT NULL;
+BooleanBinaryExpression | AND, OR | modelled | Which conditions prove a column non-null | AND proves what either side does; OR what both do. | SELECT price FROM dbo.toy WHERE price > 0 AND id > 1;
+BooleanNotExpression | NOT | modelled | Which conditions prove a column non-null | By three-valued logic: NOT (c = 1) and NOT (c IS NULL) prove c non-null; NOT of an IN subquery doesn't. | SELECT price FROM dbo.toy WHERE NOT (price IS NULL);
+BooleanParenthesisExpression | ( condition ) | modelled | Which conditions prove a column non-null | The condition inside. | SELECT price FROM dbo.toy WHERE (price IS NOT NULL);
+BooleanTernaryExpression | BETWEEN | modelled | Which conditions prove a column non-null | BETWEEN proves the column non-null where it holds. | SELECT price FROM dbo.toy WHERE price BETWEEN 1 AND 2;
+InPredicate | IN | modelled | Which conditions prove a column non-null | IN a list or a subquery proves the column non-null where it holds. | SELECT code FROM dbo.toy WHERE code IN ('a', 'b');
+LikePredicate | LIKE | modelled | Which conditions prove a column non-null | LIKE proves the column non-null where it holds. | SELECT code FROM dbo.toy WHERE code LIKE 'a%';
+ExistsPredicate | EXISTS | no-effect | Which conditions prove a column non-null | Filters rows; proves nothing about a column. | SELECT id FROM dbo.toy AS t WHERE EXISTS (SELECT 1 FROM dbo.box AS b WHERE b.toy_id = t.id);
+SubqueryComparisonPredicate | x > ALL ( … ), ANY, SOME | no-effect | Which conditions prove a column non-null | Filters rows; proves nothing about a column. | SELECT price FROM dbo.toy WHERE price > ALL (SELECT qty FROM dbo.box);
+DistinctPredicate | IS [NOT] DISTINCT FROM | no-effect | Which conditions prove a column non-null | Filters rows; proves nothing about a column. Against NULL the parser writes it as IS [NOT] NULL, which keeps its sense. | SELECT price FROM dbo.toy WHERE price IS DISTINCT FROM 1;
+FullTextPredicate | CONTAINS, FREETEXT | no-effect | | Filters rows; proves nothing about a column. | SELECT id FROM dbo.toy WHERE CONTAINS(name, 'bear');
+RegexpLikePredicate | REGEXP_LIKE | no-effect | | Filters rows; proves nothing about a column. | SELECT id FROM dbo.toy WHERE REGEXP_LIKE(name, '^b');
+TSEqualCall | TSEQUAL | no-effect | | Filters rows; proves nothing about a column. | SELECT id FROM dbo.toy WHERE TSEQUAL(id, id);
+UpdateCall | UPDATE( column ) | no-effect | Triggers | In a trigger, whether a column was written; proves nothing about a column. | IF UPDATE(qty) SELECT 1 AS a;
+GraphMatchPredicate | MATCH | no-effect | | Filters rows of graph tables; proves nothing about a column. | SELECT p.id FROM dbo.person AS p, dbo.likes AS l, dbo.person AS q WHERE MATCH(p-(l)->q);
+GraphMatchExpression | a-(edge)->b | within GraphMatchPredicate | | |
+GraphMatchCompositeExpression | a-(e)->b-(f)->c | within GraphMatchPredicate | | |
+GraphMatchNodeExpression | a node in MATCH | within GraphMatchPredicate | | |
+GraphMatchLastNodePredicate | LAST_NODE( … ) = LAST_NODE( … ) | within GraphMatchPredicate | | |
+GraphMatchRecursivePredicate | SHORTEST_PATH( … ) | within GraphMatchPredicate | | |
+GraphRecursiveMatchQuantifier | {1,3} and + in SHORTEST_PATH | within GraphMatchPredicate | | |
+BooleanExpressionSnippet | | not-parsed | | Built by code that holds SQL as text, never by the parser. |
+EventDeclarationCompareFunctionParameter | an event's predicate | not-parsed | | Part of an event session's definition, never of a body. |
+
+[Comparisons]
+BooleanComparisonType.Equals | = | modelled | Which conditions prove a column non-null | With the column as an operand, proves it non-null where it holds. | SELECT price FROM dbo.toy WHERE price = 1;
+BooleanComparisonType.NotEqualToBrackets | <> | modelled | Which conditions prove a column non-null | With the column as an operand, proves it non-null where it holds. | SELECT price FROM dbo.toy WHERE price <> 1;
+BooleanComparisonType.NotEqualToExclamation | != | modelled | Which conditions prove a column non-null | With the column as an operand, proves it non-null where it holds. | SELECT price FROM dbo.toy WHERE price != 1;
+BooleanComparisonType.GreaterThan | > | modelled | Which conditions prove a column non-null | With the column as an operand, proves it non-null where it holds. | SELECT price FROM dbo.toy WHERE price > 1;
+BooleanComparisonType.LessThan | < | modelled | Which conditions prove a column non-null | With the column as an operand, proves it non-null where it holds. | SELECT price FROM dbo.toy WHERE price < 1;
+BooleanComparisonType.GreaterThanOrEqualTo | >= | modelled | Which conditions prove a column non-null | With the column as an operand, proves it non-null where it holds. | SELECT price FROM dbo.toy WHERE price >= 1;
+BooleanComparisonType.LessThanOrEqualTo | <= | modelled | Which conditions prove a column non-null | With the column as an operand, proves it non-null where it holds. | SELECT price FROM dbo.toy WHERE price <= 1;
+BooleanComparisonType.NotLessThan | !< | modelled | Which conditions prove a column non-null | With the column as an operand, proves it non-null where it holds. | SELECT price FROM dbo.toy WHERE price !< 1;
+BooleanComparisonType.NotGreaterThan | !> | modelled | Which conditions prove a column non-null | With the column as an operand, proves it non-null where it holds. | SELECT price FROM dbo.toy WHERE price !> 1;
+BooleanComparisonType.IsDistinctFrom | IS DISTINCT FROM | not-parsed | | The parser writes IS DISTINCT FROM as a DistinctPredicate, not a comparison of this kind. | SELECT price FROM dbo.toy WHERE price IS DISTINCT FROM 1;
+BooleanComparisonType.IsNotDistinctFrom | IS NOT DISTINCT FROM | not-parsed | | The parser writes IS NOT DISTINCT FROM as a DistinctPredicate, not a comparison of this kind. | SELECT price FROM dbo.toy WHERE price IS NOT DISTINCT FROM 1;
+BooleanComparisonType.NotLike | NOT LIKE | not-parsed | | The parser writes NOT LIKE as a LikePredicate, not a comparison of this kind. | SELECT code FROM dbo.toy WHERE code NOT LIKE 'a%';
+BooleanComparisonType.LeftOuterJoin | *= | not-in-a-body | | The outer join SQL Server 2000 wrote in WHERE, refused since. | SELECT t.id FROM dbo.toy AS t, dbo.box AS b WHERE t.id *= b.toy_id;
+BooleanComparisonType.RightOuterJoin | =* | not-in-a-body | | As *=. | SELECT t.id FROM dbo.toy AS t, dbo.box AS b WHERE t.id =* b.toy_id;
+BooleanBinaryExpressionType.And | AND | modelled | Which conditions prove a column non-null | Proves what either side proves. | SELECT price FROM dbo.toy WHERE price > 0 AND id > 0;
+BooleanBinaryExpressionType.Or | OR | modelled | Which conditions prove a column non-null | Proves what both sides prove. | SELECT price FROM dbo.toy WHERE price > 0 OR price < 0;
+BooleanTernaryExpressionType.Between | BETWEEN | modelled | Which conditions prove a column non-null | Proves the column non-null where it holds. | SELECT price FROM dbo.toy WHERE price BETWEEN 1 AND 2;
+BooleanTernaryExpressionType.NotBetween | NOT BETWEEN | modelled | Which conditions prove a column non-null | Proves the column non-null where it holds. | SELECT price FROM dbo.toy WHERE price NOT BETWEEN 1 AND 2;
+SubqueryComparisonPredicateType.All | ALL | no-effect | | Proves nothing about a column. | SELECT price FROM dbo.toy WHERE price > ALL (SELECT qty FROM dbo.box);
+SubqueryComparisonPredicateType.Any | ANY, SOME | no-effect | | Proves nothing about a column. | SELECT price FROM dbo.toy WHERE price > ANY (SELECT qty FROM dbo.box);
+SubqueryComparisonPredicateType.None | | not-parsed | | The parser writes a comparison with a subquery's value as a comparison, so a SubqueryComparisonPredicate is always ALL or ANY. | SELECT price FROM dbo.toy WHERE price = (SELECT MAX(qty) FROM dbo.box);
+
+[Hints]
+TableHint | WITH ( NOLOCK ), … | modelled | How many rows (`Cardinality.cs`) | Changes no column; NOLOCK reads uncommitted rows, so key claims are dropped. | SELECT id FROM dbo.toy WITH (NOLOCK);
+LiteralTableHint | WITH ( SPATIAL_WINDOW_MAX_CELLS = … ) | no-effect | | Changes no result. | SELECT id FROM dbo.toy WITH (SPATIAL_WINDOW_MAX_CELLS = 10);
+IndexTableHint | WITH ( INDEX ( … ) ), WITH ( INDEX = … ) | no-effect | | Changes no result. | SELECT id FROM dbo.toy WITH (INDEX (1));
+ForceSeekTableHint | WITH ( FORCESEEK ( … ) ) | no-effect | | Changes no result. | SELECT id FROM dbo.toy WITH (FORCESEEK (1 (id)));
+OptimizerHint | OPTION ( RECOMPILE ), … | no-effect | | Changes no result. | SELECT id FROM dbo.toy OPTION (RECOMPILE);
+LiteralOptimizerHint | OPTION ( MAXDOP 1 ), … | no-effect | | Changes no result. | SELECT id FROM dbo.toy OPTION (MAXDOP 1);
+OptimizeForOptimizerHint | OPTION ( OPTIMIZE FOR … ) | no-effect | | Changes no result. | DECLARE @n int = 1; SELECT id FROM dbo.toy WHERE id = @n OPTION (OPTIMIZE FOR (@n = 1));
+TableHintsOptimizerHint | OPTION ( TABLE HINT … ) | no-effect | | Changes no result. | SELECT id FROM dbo.toy AS t OPTION (TABLE HINT (t, NOLOCK));
+UseHintList | OPTION ( USE HINT … ) | no-effect | | Changes no result. | SELECT id FROM dbo.toy OPTION (USE HINT ('DISABLE_OPTIMIZER_ROWGOAL'));

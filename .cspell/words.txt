@@ -33,6 +33,7 @@ hierarchyid
 isnull
 keyset
 ltrim
+msoledbsql
 nchar
 nestlevel
 nocount
@@ -46,6 +47,7 @@ openjson
 opendatasource
 openquery
 openrowset
+openxml
 parseonly
 quotename
 raiserror
@@ -67,6 +69,7 @@ smalldatetimefromparts
 smallint
 smallmoney
 spid
+sqlaudit
 stdev
 stdevp
 sysdatetime
@@ -81,6 +84,7 @@ unpivot
 varbinary
 varchar
 varp
+virtualfilestats
 xact
 xmlnamespaces
 arrayagg

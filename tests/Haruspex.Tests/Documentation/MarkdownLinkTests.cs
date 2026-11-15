@@ -135,7 +135,7 @@ public partial class MarkdownLinkTests
     /// A heading's anchor as GitHub makes it: the rendered text (a link's text, not its target; code and emphasis
     /// unmarked), in lower case, keeping letters, digits, spaces, hyphens and underscores, with each space a hyphen.
     /// </summary>
-    private static string Slug(string heading)
+    internal static string Slug(string heading)
     {
         var text = InlineLink().Replace(heading, m => m.Groups["text"].Value).Trim();
         var slug = new StringBuilder();
