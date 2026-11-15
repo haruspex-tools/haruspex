@@ -201,6 +201,39 @@ public static class ScalarFunctions
     /// <summary><c>LOG10</c>.</summary>
     public static readonly BuiltInFunction Log10 = new("log10", FunctionForm.Scalar);
 
+    /// <summary><c>SIN</c>.</summary>
+    public static readonly BuiltInFunction Sin = new("sin", FunctionForm.Scalar);
+
+    /// <summary><c>COS</c>.</summary>
+    public static readonly BuiltInFunction Cos = new("cos", FunctionForm.Scalar);
+
+    /// <summary><c>TAN</c>.</summary>
+    public static readonly BuiltInFunction Tan = new("tan", FunctionForm.Scalar);
+
+    /// <summary><c>COT</c>.</summary>
+    public static readonly BuiltInFunction Cot = new("cot", FunctionForm.Scalar);
+
+    /// <summary><c>ASIN</c>.</summary>
+    public static readonly BuiltInFunction Asin = new("asin", FunctionForm.Scalar);
+
+    /// <summary><c>ACOS</c>.</summary>
+    public static readonly BuiltInFunction Acos = new("acos", FunctionForm.Scalar);
+
+    /// <summary><c>ATAN</c>.</summary>
+    public static readonly BuiltInFunction Atan = new("atan", FunctionForm.Scalar);
+
+    /// <summary><c>ATN2</c>.</summary>
+    public static readonly BuiltInFunction Atn2 = new("atn2", FunctionForm.Scalar);
+
+    /// <summary><c>DEGREES</c>.</summary>
+    public static readonly BuiltInFunction Degrees = new("degrees", FunctionForm.Scalar);
+
+    /// <summary><c>RADIANS</c>.</summary>
+    public static readonly BuiltInFunction Radians = new("radians", FunctionForm.Scalar);
+
+    /// <summary><c>PI</c>.</summary>
+    public static readonly BuiltInFunction Pi = new("pi", FunctionForm.Scalar);
+
     /// <summary><c>CAST</c>.</summary>
     public static readonly BuiltInFunction Cast = new("cast", FunctionForm.Scalar);
 
@@ -228,6 +261,12 @@ public static class ScalarFunctions
     /// <summary><c>CHOOSE</c>.</summary>
     public static readonly BuiltInFunction Choose = new("choose", FunctionForm.Scalar);
 
+    /// <summary><c>GREATEST</c>.</summary>
+    public static readonly BuiltInFunction Greatest = new("greatest", FunctionForm.Scalar);
+
+    /// <summary><c>LEAST</c>.</summary>
+    public static readonly BuiltInFunction Least = new("least", FunctionForm.Scalar);
+
     /// <summary><c>JSON_VALUE</c>.</summary>
     public static readonly BuiltInFunction JsonValue = new("json_value", FunctionForm.Scalar);
 
@@ -240,6 +279,12 @@ public static class ScalarFunctions
     /// <summary><c>JSON_ARRAY</c>.</summary>
     public static readonly BuiltInFunction JsonArray = new("json_array", FunctionForm.Scalar);
 
+    /// <summary><c>ISJSON</c>.</summary>
+    public static readonly BuiltInFunction IsJson = new("isjson", FunctionForm.Scalar);
+
+    /// <summary><c>NEWID</c>.</summary>
+    public static readonly BuiltInFunction NewId = new("newid", FunctionForm.Scalar);
+
     /// <summary>Every one, in the order above.</summary>
-    public static IReadOnlyList<BuiltInFunction> All { get; } = [DateDiff, DateDiffBig, DateAdd, DatePart, Year, Month, Day, DateName, EndOfMonth, DateFromParts, DateTimeFromParts, SmallDateTimeFromParts, DateTime2FromParts, TimeFromParts, DateTimeOffsetFromParts, DateTruncate, DateBucket, SwitchOffset, ToDateTimeOffset, IsDate, GetDate, GetUtcDate, SysDateTime, SysUtcDateTime, SysDateTimeOffset, CurrentTimestamp, LTrim, RTrim, Trim, Upper, Lower, Substring, Left, Right, Len, DataLength, Replace, StringEscape, FormatMessage, Concat, ConcatWithSeparator, Ascii, Unicode, CharOf, CharIndex, PatIndex, Replicate, Space, Reverse, Stuff, QuoteName, Str, Translate, Soundex, Difference, Round, Floor, Ceiling, Abs, Sign, Power, Square, Sqrt, Exp, Log, Log10, Cast, Convert, TryCast, TryConvert, IsNull, Coalesce, NullIf, Iif, Choose, JsonValue, JsonQuery, JsonObject, JsonArray];
+    public static IReadOnlyList<BuiltInFunction> All { get; } = [DateDiff, DateDiffBig, DateAdd, DatePart, Year, Month, Day, DateName, EndOfMonth, DateFromParts, DateTimeFromParts, SmallDateTimeFromParts, DateTime2FromParts, TimeFromParts, DateTimeOffsetFromParts, DateTruncate, DateBucket, SwitchOffset, ToDateTimeOffset, IsDate, GetDate, GetUtcDate, SysDateTime, SysUtcDateTime, SysDateTimeOffset, CurrentTimestamp, LTrim, RTrim, Trim, Upper, Lower, Substring, Left, Right, Len, DataLength, Replace, StringEscape, FormatMessage, Concat, ConcatWithSeparator, Ascii, Unicode, CharOf, CharIndex, PatIndex, Replicate, Space, Reverse, Stuff, QuoteName, Str, Translate, Soundex, Difference, Round, Floor, Ceiling, Abs, Sign, Power, Square, Sqrt, Exp, Log, Log10, Sin, Cos, Tan, Cot, Asin, Acos, Atan, Atn2, Degrees, Radians, Pi, Cast, Convert, TryCast, TryConvert, IsNull, Coalesce, NullIf, Iif, Choose, Greatest, Least, JsonValue, JsonQuery, JsonObject, JsonArray, IsJson, NewId];
 }

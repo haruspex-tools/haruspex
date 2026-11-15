@@ -15,8 +15,8 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | What | Count |
 |---|---:|
 | Built-in functions the reference documents | 340 |
-| In the catalogue | 106 |
-| Not in it, and unknown where they are called | 232 |
+| In the catalogue | 121 |
+| Not in it, and unknown where they are called | 217 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
 | Modelled, wholly or in part | 152 |
@@ -270,11 +270,11 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### JSON functions
 
-7 of 11 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/json-functions-transact-sql?view=sql-server-ver17).
+8 of 11 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/json-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
-| `ISJSON` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `ISJSON` | `scalar.isjson` | int |  | [Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
 | `JSON_ARRAY` | `scalar.json_array` | an array or tuple of its values, never null |  | [An_aggregate_over_no_rows_is_null_not_empty](../tests/Haruspex.DifferentialTests/JsonConstructorObservationTests.cs) |
 | `JSON_ARRAYAGG` | `aggregate.json_arrayagg` | an array of its values, null over no rows | `empty-aggregate` | [Json_arrayagg_follows_its_order_by](../tests/Haruspex.DifferentialTests/JsonConstructorObservationTests.cs) |
 | `JSON_MODIFY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
@@ -288,18 +288,18 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Logical functions
 
-2 of 4 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/toc.json?view=sql-server-ver17).
+4 of 4 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/toc.json?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
 | `CHOOSE` | `scalar.choose` | the type of highest precedence over its results | `out-of-range`, `arithmetic-overflow`, `precision-loss` | [Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results](../tests/Haruspex.DifferentialTests/CaseObservationTests.cs), [Case_without_else_choose_out_of_range_and_nullif_of_equal_values_are_null](../tests/Haruspex.DifferentialTests/CaseObservationTests.cs), [Each_function_that_converts_a_decimal_or_averages_one_is_null_when_it_rounds_under_both_others_off](../tests/Haruspex.DifferentialTests/PrecisionLossObservationTests.cs) |
-| `GREATEST` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `GREATEST` | `scalar.greatest` | the values' type, when of one kind |  | [Greatest_and_least_skip_nulls_and_cap_a_max_string_at_8000_bytes_which_a_longer_value_fails](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
 | `IIF` | `scalar.iif` | the type of highest precedence over its results | `arithmetic-overflow`, `precision-loss` | [Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results](../tests/Haruspex.DifferentialTests/CaseObservationTests.cs), [Each_function_that_converts_a_decimal_or_averages_one_is_null_when_it_rounds_under_both_others_off](../tests/Haruspex.DifferentialTests/PrecisionLossObservationTests.cs) |
-| `LEAST` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `LEAST` | `scalar.least` | the values' type, when of one kind |  | [Greatest_and_least_skip_nulls_and_cap_a_max_string_at_8000_bytes_which_a_longer_value_fails](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
 
 ### Mathematical functions
 
-11 of 23 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/mathematical-functions-transact-sql?view=sql-server-ver17).
+22 of 23 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/mathematical-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
@@ -308,23 +308,23 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `CEILING` | `scalar.ceiling` | the argument's type, widened, a decimal of no places | `arithmetic-overflow` | [Round_floor_ceiling_abs_and_sign_are_typed_by_their_argument](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs), [Floor_ceiling_abs_and_sign_overflow_only_where_the_type_cannot_hold_the_result](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs) |
 | `FLOOR` | `scalar.floor` | the argument's type, widened, a decimal of no places | `arithmetic-overflow` | [Round_floor_ceiling_abs_and_sign_are_typed_by_their_argument](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs), [Floor_ceiling_abs_and_sign_overflow_only_where_the_type_cannot_hold_the_result](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs) |
 | `ROUND` | `scalar.round` | the argument's type, widened | `arithmetic-overflow` | [Round_floor_ceiling_abs_and_sign_are_typed_by_their_argument](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs), [Round_overflows_when_it_carries_into_a_digit_its_type_lacks_unless_it_truncates](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs) |
-| `SIN` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `COS` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `TAN` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `COT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ASIN` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ACOS` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ATAN` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ATN2` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `DEGREES` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `RADIANS` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `SIN` | `scalar.sin` | float |  | [The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
+| `COS` | `scalar.cos` | float |  | [The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
+| `TAN` | `scalar.tan` | float |  | [The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
+| `COT` | `scalar.cot` | float | `domain-error`, `arithmetic-overflow` | [The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
+| `ASIN` | `scalar.asin` | float | `domain-error` | [The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
+| `ACOS` | `scalar.acos` | float | `domain-error` | [The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
+| `ATAN` | `scalar.atan` | float |  | [The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
+| `ATN2` | `scalar.atn2` | float | `domain-error` | [The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
+| `DEGREES` | `scalar.degrees` | int, bigint or float, as the argument | `arithmetic-overflow` | [Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
+| `RADIANS` | `scalar.radians` | int, bigint or float, as the argument |  | [Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
 | `EXP` | `scalar.exp` | float | `arithmetic-overflow` | [Power_is_typed_by_its_first_argument_and_the_others_are_float](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs), [A_math_function_outside_its_domain_is_an_error_by_default_and_null_under_the_callers_options](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs) |
 | `LOG` | `scalar.log` | float | `domain-error` | [Power_is_typed_by_its_first_argument_and_the_others_are_float](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs), [A_math_function_outside_its_domain_is_an_error_by_default_and_null_under_the_callers_options](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs) |
 | `LOG10` | `scalar.log10` | float | `domain-error` | [Power_is_typed_by_its_first_argument_and_the_others_are_float](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs), [A_math_function_outside_its_domain_is_an_error_by_default_and_null_under_the_callers_options](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs) |
 | `POWER` | `scalar.power` | the first argument's type, a decimal of 38 digits | `arithmetic-overflow`, `domain-error` | [Power_is_typed_by_its_first_argument_and_the_others_are_float](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs), [Power_computes_in_float_and_overflows_or_divides_by_zero_as_its_type_allows](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs) |
 | `SQRT` | `scalar.sqrt` | float | `domain-error` | [Power_is_typed_by_its_first_argument_and_the_others_are_float](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs), [A_math_function_outside_its_domain_is_an_error_by_default_and_null_under_the_callers_options](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs) |
 | `SQUARE` | `scalar.square` | float | `arithmetic-overflow` | [Power_is_typed_by_its_first_argument_and_the_others_are_float](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs), [A_math_function_outside_its_domain_is_an_error_by_default_and_null_under_the_callers_options](../tests/Haruspex.DifferentialTests/NumericObservationTests.cs) |
-| `PI` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `PI` | `scalar.pi` | float, never null |  | [The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
 | `RAND` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 
 ### Metadata functions
@@ -501,7 +501,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### System functions
 
-2 of 33 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/system-functions-transact-sql?view=sql-server-ver17).
+3 of 33 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/system-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
@@ -528,7 +528,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `CONTEXT_INFO` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `MIN_ACTIVE_ROWVERSION` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `CURRENT_REQUEST_ID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `NEWID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `NEWID` | `scalar.newid` | uniqueidentifier, never null |  | [Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
 | `CURRENT_TRANSACTION_ID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `NEWSEQUENTIALID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `DECOMPRESS` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |

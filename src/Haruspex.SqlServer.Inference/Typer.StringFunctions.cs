@@ -5,7 +5,7 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// The string functions that read characters or codes, or build a string from a count: ASCII to DIFFERENCE. Each is typed for
+// The string functions that read characters or codes, or build a string from a count: ASCII to DIFFERENCE, and ISJSON. Each is typed for
 // string arguments (and integer counts, codes and positions) only; the server converts other values to strings first, at
 // lengths of its own, which is not modelled. README.md in this folder ("Strings") gives the rules, observed in
 // FunctionObservationTests.Strings.cs.
@@ -221,5 +221,19 @@ internal sealed partial class Typer
         if (values.Any(v => StringOf(v) is null))
             return NotModelled(call, "SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.");
         return Typed(type, Reasons(values), call);
+    }
+
+    /// <summary>
+    /// <c>ISJSON(s [, kind])</c> of a string or JSON: int, NULL when s is (observed:
+    /// Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null). The kind is a keyword, not a value.
+    /// </summary>
+    private Value IsJson(FunctionCall call, ReadScope scope)
+    {
+        var value = Expression(call.Parameters[0], scope);
+        if (!value.IsLiveJson && value.Shape is UnknownShape)
+            return value;
+        if (!value.IsLiveJson && StringOf(value) is null)
+            return NotModelled(call, "ISJSON of a value that is not a string is not modelled.");
+        return Typed(ScalarType.Of(BuiltInType.Int), value.NullableBecause, call);
     }
 }

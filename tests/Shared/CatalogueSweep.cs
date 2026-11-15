@@ -54,6 +54,8 @@ internal static class CatalogueSweep
         "STRING_ESCAPE({0}, 'json')", "FORMATMESSAGE({0}, 1)", "JSON_VALUE({0}, '$.a')", "JSON_QUERY({0})",
         "ROUND({0}, 1)", "ROUND({0}, 0, 1)", "FLOOR({0})", "CEILING({0})", "ABS({0})", "SIGN({0})", "POWER({0}, 2)", "SQUARE({0})",
         "SQRT({0})", "EXP({0})", "LOG({0})", "LOG({0}, 2)", "LOG10({0})",
+        "SIN({0})", "COS({0})", "TAN({0})", "COT({0})", "ASIN({0})", "ACOS({0})", "ATAN({0})", "ATN2({0}, 1)", "DEGREES({0})",
+        "RADIANS({0})", "PI()", "GREATEST({0}, {0})", "LEAST({0}, 1)", "GREATEST({0}, v10)", "ISJSON({0})", "NEWID()",
         "ASCII({0})", "UNICODE({0})", "CHAR({0})", "CHARINDEX('a', {0})", "CHARINDEX({0}, 'abc', 2)", "PATINDEX('%a%', {0})",
         "REPLICATE({0}, 3)", "REPLICATE('ab', {0})", "SPACE({0})", "REVERSE({0})", "STUFF({0}, 1, 1, 'x')", "STUFF('abc', 2, 1, {0})",
         "STUFF({0}, 2, 5, N'xyz')", "STUFF({0}, id, 1, 'x')", "QUOTENAME({0})", "STR({0})", "STR({0}, 5, 2)", "TRANSLATE({0}, 'a', 'b')",

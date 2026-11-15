@@ -174,6 +174,24 @@ internal sealed partial class Typer
 
     private Value Log(NumberCall n) => Typed(ScalarType.Of(BuiltInType.Float), With(n, false, domain: true), n.Call);
 
+    // SIN, COS, TAN and ATAN give a float of any number. ASIN and ACOS outside -1 to 1, COT of 0 and ATN2 of 0 and 0 are outside
+    // their domain, which a bit can't be for ASIN and ACOS, though it can for COT (0); COT of a float near 0 may pass float's range (observed:
+    // The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options).
+    private Value Trigonometric(NumberCall n, bool domain, bool overflow = false, bool bitInDomain = false) =>
+        Typed(ScalarType.Of(BuiltInType.Float), With(n, overflow && n.Type.Type == BuiltInType.Float, domain && !(bitInDomain && n.Type.IsBit)), n.Call);
+
+    // DEGREES and RADIANS keep an integer's type, int below bigint, and give a float of a float, a real or a bit; DEGREES of an
+    // int, a bigint or a float may overflow. A decimal or money widens its places, which is not modelled (observed:
+    // Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow).
+    private Value Angle(NumberCall n, bool degrees)
+    {
+        if (n.Type.IsDecimal || n.Type.IsMoney)
+            return NotModelled(n.Call, "DEGREES and RADIANS of a decimal or money are not modelled.");
+        var result = n.Type.IsApproximate || n.Type.IsBit ? ScalarType.Of(BuiltInType.Float)
+            : n.Type.Type == BuiltInType.BigInt ? ScalarType.Of(BuiltInType.BigInt) : ScalarType.Of(BuiltInType.Int);
+        return Typed(result, With(n, degrees && n.Type.Type.IsAnyOf(BuiltInType.Int, BuiltInType.BigInt, BuiltInType.Float)), n.Call);
+    }
+
     /// <summary>
     /// Whether <c>ROUND(x, n [, f])</c> may overflow: it truncates when f is a literal other than 0, which cannot; otherwise it
     /// may carry into a digit x's type lacks (ROUND(9.5, 0) is 10.0, observed:

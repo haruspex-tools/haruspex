@@ -54,6 +54,14 @@ internal sealed partial class Typer
 
     private const string Domains = "A_math_function_outside_its_domain_is_an_error_by_default_and_null_under_the_callers_options";
 
+    private const string Trigonometry = "The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options";
+
+    private const string Angles = "Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow";
+
+    private const string Extremes = "Greatest_and_least_skip_nulls_and_cap_a_max_string_at_8000_bytes_which_a_longer_value_fails";
+
+    private const string Tests = "Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null";
+
     private const string Choices = "Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results";
 
     private const string Coalescing = "Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments";
@@ -163,6 +171,18 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.Log, (1, 2), "float", [DomainError], [Floats, Domains], (a, e, s) => a.Numeric(Call(e), s, a.Log)),
         Typing(ScalarFunctions.Log10, (1, 1), "float", [DomainError], [Floats, Domains], (a, e, s) => a.Numeric(Call(e), s, a.Log)),
 
+        Typing(ScalarFunctions.Sin, (1, 1), "float", [], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: false))),
+        Typing(ScalarFunctions.Cos, (1, 1), "float", [], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: false))),
+        Typing(ScalarFunctions.Tan, (1, 1), "float", [], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: false))),
+        Typing(ScalarFunctions.Cot, (1, 1), "float", [DomainError, ArithmeticOverflow], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: true, overflow: true))),
+        Typing(ScalarFunctions.Asin, (1, 1), "float", [DomainError], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: true, bitInDomain: true))),
+        Typing(ScalarFunctions.Acos, (1, 1), "float", [DomainError], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: true, bitInDomain: true))),
+        Typing(ScalarFunctions.Atan, (1, 1), "float", [], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: false))),
+        Typing(ScalarFunctions.Atn2, (2, 2), "float", [DomainError], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: true))),
+        Typing(ScalarFunctions.Degrees, (1, 1), "int, bigint or float, as the argument", [ArithmeticOverflow], [Angles], (a, e, s) => a.Numeric(Call(e), s, n => a.Angle(n, degrees: true))),
+        Typing(ScalarFunctions.Radians, (1, 1), "int, bigint or float, as the argument", [], [Angles], (a, e, s) => a.Numeric(Call(e), s, n => a.Angle(n, degrees: false))),
+        Typing(ScalarFunctions.Pi, (0, 0), "float, never null", [], [Trigonometry], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Float), [], e)),
+
         // ---- conversions and choices ----
         Typing(ScalarFunctions.Cast, null, "the target type", [ArithmeticOverflow, IrNullRule.PrecisionLoss, IrNullRule.NullLiteral], ["Cast_and_convert_are_of_the_target_type_whatever_the_style", "The_conversion_chart_is_what_the_server_allows_implicitly_explicitly_or_not_at_all", LostPrecision], (a, e, s) => a.Cast(((CastCall)e).DataType, ((CastCall)e).Parameter, e, s)),
         Typing(ScalarFunctions.Convert, null, "the target type, whatever the style", [ArithmeticOverflow, IrNullRule.PrecisionLoss, IrNullRule.NullLiteral], ["Cast_and_convert_are_of_the_target_type_whatever_the_style", LostPrecision], (a, e, s) => a.Cast(((ConvertCall)e).DataType, ((ConvertCall)e).Parameter, e, s, styled: ((ConvertCall)e).Style is not null)),
@@ -174,11 +194,17 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.Iif, null, "the type of highest precedence over its results", [ArithmeticOverflow, IrNullRule.PrecisionLoss], [Choices, LostPrecision], (a, e, s) => a.Iif((IIfCall)e, s)),
         Typing(ScalarFunctions.Choose, (2, null), "the type of highest precedence over its results", [OutOfRange, ArithmeticOverflow, IrNullRule.PrecisionLoss], [Choices, "Case_without_else_choose_out_of_range_and_nullif_of_equal_values_are_null", LostPrecision], (a, e, s) => a.Choose(Call(e), s), otherForms: OtherForms.ExpressionNotModelled),
 
+        Typing(ScalarFunctions.Greatest, (1, null), "the values' type, when of one kind", [], [Extremes], (a, e, s) => a.Extreme(Call(e), s)),
+        Typing(ScalarFunctions.Least, (1, null), "the values' type, when of one kind", [], [Extremes], (a, e, s) => a.Extreme(Call(e), s)),
+
         // ---- JSON ----
         Typing(ScalarFunctions.JsonValue, (2, 2), "nvarchar(4000), or what JSON built here holds", [JsonNullOrAbsent], ["Json_value_is_nvarchar_4000_and_null_for_a_json_null_a_missing_path_an_object_or_a_long_string", "Json_value_over_json_built_here_gives_its_scalars_as_text", Refusals], (a, e, s) => a.RefusedJsonDocument(Call(e), s) ?? a.TracedJsonValue(Call(e), s) ?? a.JsonValue(Call(e))),
         Typing(ScalarFunctions.JsonQuery, (1, 1), "the JSON it is given, as JSON", [JsonNullOrAbsent], ["Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken"], (a, e, s) => a.JsonQuery(Call(e), s), readsOnlyItsArguments: false, otherForms: OtherForms.ExpressionNotModelled),
         Typing(ScalarFunctions.JsonObject, null, "an object of its keys, never null", [], ["Json_object_writes_a_repeated_literal_key_twice"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonObject), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.JsonArray, null, "an array or tuple of its values, never null", [], ["An_aggregate_over_no_rows_is_null_not_empty"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonArray), readsOnlyItsArguments: false),
+
+        Typing(ScalarFunctions.IsJson, (1, 2), "int", [], [Tests], (a, e, s) => a.IsJson(Call(e), s)),
+        Typing(ScalarFunctions.NewId, (0, 0), "uniqueidentifier, never null", [], [Tests], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.UniqueIdentifier), [], e), readsOnlyItsArguments: false),
 
         // ---- aggregates ----
         AggregateRow(AggregateFunctions.Count, (1, 1), "int", [CountOverflow], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off", OneRow], (a, e, s) => a.Count(Call(e), s, big: false)),

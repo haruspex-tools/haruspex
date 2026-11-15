@@ -738,6 +738,14 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   the server says otherwise, so these are nullable for **`domain-error`** (IR 0.15), a rule of its own because the cause is
   not an overflow. `SQRT` of a `tinyint` or a `bit` cannot be. No bound proves an argument positive yet (a `CHECK (x > 0)`
   would), which is left for a corpus that needs it.
+- **`SIN`**, **`COS`**, **`TAN`**, **`ATAN`**, **`ASIN`**, **`ACOS`**, **`COT`**, **`ATN2`** of a number or a `bit`: `float`. `ASIN`
+  and `ACOS` outside -1 to 1, `COT` of 0 (a `bit` too) and `ATN2` of 0 and 0 are error 3623, NULL under the caller's options
+  (`domain-error`); `COT` of a `float` near 0 may pass float's range. **`PI()`**: `float`, never null
+  (`The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options`).
+- **`DEGREES`** and **`RADIANS`**: an integer's type, `int` below `bigint`; `float` of a `float`, a `real` or a `bit`.
+  `DEGREES` of an `int`, a `bigint` or a `float` may overflow (8115); `RADIANS` of an integer truncates (`RADIANS(100)` is 1).
+  Of a `decimal` or `money` they widen the places (`decimal(38,18)`), which is not modelled
+  (`Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow`).
 
 ## CASE, IIF, CHOOSE and NULLIF
 
@@ -1398,10 +1406,21 @@ column is never traced: someone else may write it. Every rule is observed in `Js
 
 Each is a row of the function table, `Typer.FunctionTable.cs`, the one path a call is typed by, keyed by the
 catalogue of functions in Semantics (`BuiltInFunctions`); [the guide](../../docs/internals/08-the-sql-server-type-system-as-data.md#functions)
-says how. `Typer.Functions.cs` holds their typing methods. Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
+says how. `Typer.Functions.cs`, `Typer.DateFunctions.cs`, `Typer.StringFunctions.cs` and `Typer.Extremes.cs` hold their typing
+methods, with the numeric ones in `Typer.Numeric.cs`. Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
 runs and `DescribedTypeTests` check them on data. Each is null when an argument it reads is (its reasons), unless said
 otherwise; a value it computes has its type's facets only (`LOWER` of a `CHECK`ed column has no set). An argument of a type
 not listed is not modelled.
+
+- **`GREATEST`** and **`LEAST`** of values of one kind: strings varying (fixed only when every value is of one fixed-length
+  type), as long as the longest, `nvarchar` if any is, max taken as 8000 bytes, a longer value an error (8152) under any
+  options; integers as the widest; `float` and `real` as `float` if any is; any other kind when every value is of one type.
+  NULLs are skipped, so it is NULL only when every value may be. Values of different kinds take the type of highest
+  precedence by a rule of their own (an integer literal beside a decimal counts its own digits), which is not modelled
+  (`Greatest_and_least_skip_nulls_and_cap_a_max_string_at_8000_bytes_which_a_longer_value_fails`).
+- **`ISJSON(s [, kind])`** of a string or JSON: `int`, NULL when `s` is. **`NEWID()`**: `uniqueidentifier`, never null, and a
+  new value at each call, so it is not read twice as one value
+  (`Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null`).
 
 ### Dates
 

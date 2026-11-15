@@ -2204,6 +2204,568 @@ LOG10('ab') -> unknown unsupported-expression: LOG10('ab'): an argument of this 
 LOG10(N'ab') -> unknown unsupported-expression: LOG10(N'ab'): an argument of this type is not modelled.
 LOG10(1e0) -> float number/float null:domain-error
 LOG10($1) -> float number/float null:domain-error
+SIN(bt) -> float number/float
+SIN(ti) -> float number/float
+SIN(si) -> float number/float
+SIN(i) -> float number/float
+SIN(bi) -> float number/float
+SIN(d52) -> float number/float
+SIN(d380) -> float number/float
+SIN(d3838) -> float number/float
+SIN(n102) -> float number/float
+SIN(m) -> float number/float
+SIN(sm) -> float number/float
+SIN(f) -> float number/float
+SIN(r) -> float number/float
+SIN(f24) -> float number/float
+SIN(f25) -> float number/float
+SIN(c3) -> unknown unsupported-expression: SIN(c3): an argument of this type is not modelled.
+SIN(v10) -> unknown unsupported-expression: SIN(v10): an argument of this type is not modelled.
+SIN(vx) -> unknown unsupported-expression: SIN(vx): an argument of this type is not modelled.
+SIN(nc3) -> unknown unsupported-expression: SIN(nc3): an argument of this type is not modelled.
+SIN(nv10) -> unknown unsupported-expression: SIN(nv10): an argument of this type is not modelled.
+SIN(nvx) -> unknown unsupported-expression: SIN(nvx): an argument of this type is not modelled.
+SIN(dt) -> unknown unsupported-expression: SIN(dt): an argument of this type is not modelled.
+SIN(tm3) -> unknown unsupported-expression: SIN(tm3): an argument of this type is not modelled.
+SIN(dtm) -> unknown unsupported-expression: SIN(dtm): an argument of this type is not modelled.
+SIN(dt23) -> unknown unsupported-expression: SIN(dt23): an argument of this type is not modelled.
+SIN(sdt) -> unknown unsupported-expression: SIN(sdt): an argument of this type is not modelled.
+SIN(dto3) -> unknown unsupported-expression: SIN(dto3): an argument of this type is not modelled.
+SIN(u) -> unknown unsupported-expression: SIN(u): an argument of this type is not modelled.
+SIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+SIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+SIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+SIN(j) -> unknown (no unknown recorded)
+SIN(1) -> float number/float
+SIN(12345) -> float number/float
+SIN(2.50) -> float number/float
+SIN('ab') -> unknown unsupported-expression: SIN('ab'): an argument of this type is not modelled.
+SIN(N'ab') -> unknown unsupported-expression: SIN(N'ab'): an argument of this type is not modelled.
+SIN(1e0) -> float number/float
+SIN($1) -> float number/float
+COS(bt) -> float number/float
+COS(ti) -> float number/float
+COS(si) -> float number/float
+COS(i) -> float number/float
+COS(bi) -> float number/float
+COS(d52) -> float number/float
+COS(d380) -> float number/float
+COS(d3838) -> float number/float
+COS(n102) -> float number/float
+COS(m) -> float number/float
+COS(sm) -> float number/float
+COS(f) -> float number/float
+COS(r) -> float number/float
+COS(f24) -> float number/float
+COS(f25) -> float number/float
+COS(c3) -> unknown unsupported-expression: COS(c3): an argument of this type is not modelled.
+COS(v10) -> unknown unsupported-expression: COS(v10): an argument of this type is not modelled.
+COS(vx) -> unknown unsupported-expression: COS(vx): an argument of this type is not modelled.
+COS(nc3) -> unknown unsupported-expression: COS(nc3): an argument of this type is not modelled.
+COS(nv10) -> unknown unsupported-expression: COS(nv10): an argument of this type is not modelled.
+COS(nvx) -> unknown unsupported-expression: COS(nvx): an argument of this type is not modelled.
+COS(dt) -> unknown unsupported-expression: COS(dt): an argument of this type is not modelled.
+COS(tm3) -> unknown unsupported-expression: COS(tm3): an argument of this type is not modelled.
+COS(dtm) -> unknown unsupported-expression: COS(dtm): an argument of this type is not modelled.
+COS(dt23) -> unknown unsupported-expression: COS(dt23): an argument of this type is not modelled.
+COS(sdt) -> unknown unsupported-expression: COS(sdt): an argument of this type is not modelled.
+COS(dto3) -> unknown unsupported-expression: COS(dto3): an argument of this type is not modelled.
+COS(u) -> unknown unsupported-expression: COS(u): an argument of this type is not modelled.
+COS(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COS(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COS(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COS(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COS(j) -> unknown (no unknown recorded)
+COS(1) -> float number/float
+COS(12345) -> float number/float
+COS(2.50) -> float number/float
+COS('ab') -> unknown unsupported-expression: COS('ab'): an argument of this type is not modelled.
+COS(N'ab') -> unknown unsupported-expression: COS(N'ab'): an argument of this type is not modelled.
+COS(1e0) -> float number/float
+COS($1) -> float number/float
+TAN(bt) -> float number/float
+TAN(ti) -> float number/float
+TAN(si) -> float number/float
+TAN(i) -> float number/float
+TAN(bi) -> float number/float
+TAN(d52) -> float number/float
+TAN(d380) -> float number/float
+TAN(d3838) -> float number/float
+TAN(n102) -> float number/float
+TAN(m) -> float number/float
+TAN(sm) -> float number/float
+TAN(f) -> float number/float
+TAN(r) -> float number/float
+TAN(f24) -> float number/float
+TAN(f25) -> float number/float
+TAN(c3) -> unknown unsupported-expression: TAN(c3): an argument of this type is not modelled.
+TAN(v10) -> unknown unsupported-expression: TAN(v10): an argument of this type is not modelled.
+TAN(vx) -> unknown unsupported-expression: TAN(vx): an argument of this type is not modelled.
+TAN(nc3) -> unknown unsupported-expression: TAN(nc3): an argument of this type is not modelled.
+TAN(nv10) -> unknown unsupported-expression: TAN(nv10): an argument of this type is not modelled.
+TAN(nvx) -> unknown unsupported-expression: TAN(nvx): an argument of this type is not modelled.
+TAN(dt) -> unknown unsupported-expression: TAN(dt): an argument of this type is not modelled.
+TAN(tm3) -> unknown unsupported-expression: TAN(tm3): an argument of this type is not modelled.
+TAN(dtm) -> unknown unsupported-expression: TAN(dtm): an argument of this type is not modelled.
+TAN(dt23) -> unknown unsupported-expression: TAN(dt23): an argument of this type is not modelled.
+TAN(sdt) -> unknown unsupported-expression: TAN(sdt): an argument of this type is not modelled.
+TAN(dto3) -> unknown unsupported-expression: TAN(dto3): an argument of this type is not modelled.
+TAN(u) -> unknown unsupported-expression: TAN(u): an argument of this type is not modelled.
+TAN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+TAN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+TAN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+TAN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+TAN(j) -> unknown (no unknown recorded)
+TAN(1) -> float number/float
+TAN(12345) -> float number/float
+TAN(2.50) -> float number/float
+TAN('ab') -> unknown unsupported-expression: TAN('ab'): an argument of this type is not modelled.
+TAN(N'ab') -> unknown unsupported-expression: TAN(N'ab'): an argument of this type is not modelled.
+TAN(1e0) -> float number/float
+TAN($1) -> float number/float
+COT(bt) -> float number/float null:domain-error
+COT(ti) -> float number/float null:domain-error
+COT(si) -> float number/float null:domain-error
+COT(i) -> float number/float null:domain-error
+COT(bi) -> float number/float null:domain-error
+COT(d52) -> float number/float null:domain-error
+COT(d380) -> float number/float null:domain-error
+COT(d3838) -> float number/float null:domain-error
+COT(n102) -> float number/float null:domain-error
+COT(m) -> float number/float null:domain-error
+COT(sm) -> float number/float null:domain-error
+COT(f) -> float number/float null:arithmetic-overflow,domain-error
+COT(r) -> float number/float null:domain-error
+COT(f24) -> float number/float null:domain-error
+COT(f25) -> float number/float null:arithmetic-overflow,domain-error
+COT(c3) -> unknown unsupported-expression: COT(c3): an argument of this type is not modelled.
+COT(v10) -> unknown unsupported-expression: COT(v10): an argument of this type is not modelled.
+COT(vx) -> unknown unsupported-expression: COT(vx): an argument of this type is not modelled.
+COT(nc3) -> unknown unsupported-expression: COT(nc3): an argument of this type is not modelled.
+COT(nv10) -> unknown unsupported-expression: COT(nv10): an argument of this type is not modelled.
+COT(nvx) -> unknown unsupported-expression: COT(nvx): an argument of this type is not modelled.
+COT(dt) -> unknown unsupported-expression: COT(dt): an argument of this type is not modelled.
+COT(tm3) -> unknown unsupported-expression: COT(tm3): an argument of this type is not modelled.
+COT(dtm) -> unknown unsupported-expression: COT(dtm): an argument of this type is not modelled.
+COT(dt23) -> unknown unsupported-expression: COT(dt23): an argument of this type is not modelled.
+COT(sdt) -> unknown unsupported-expression: COT(sdt): an argument of this type is not modelled.
+COT(dto3) -> unknown unsupported-expression: COT(dto3): an argument of this type is not modelled.
+COT(u) -> unknown unsupported-expression: COT(u): an argument of this type is not modelled.
+COT(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+COT(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COT(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COT(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+COT(j) -> unknown (no unknown recorded)
+COT(1) -> float number/float null:domain-error
+COT(12345) -> float number/float null:domain-error
+COT(2.50) -> float number/float null:domain-error
+COT('ab') -> unknown unsupported-expression: COT('ab'): an argument of this type is not modelled.
+COT(N'ab') -> unknown unsupported-expression: COT(N'ab'): an argument of this type is not modelled.
+COT(1e0) -> float number/float null:arithmetic-overflow,domain-error
+COT($1) -> float number/float null:domain-error
+ASIN(bt) -> float number/float
+ASIN(ti) -> float number/float null:domain-error
+ASIN(si) -> float number/float null:domain-error
+ASIN(i) -> float number/float null:domain-error
+ASIN(bi) -> float number/float null:domain-error
+ASIN(d52) -> float number/float null:domain-error
+ASIN(d380) -> float number/float null:domain-error
+ASIN(d3838) -> float number/float null:domain-error
+ASIN(n102) -> float number/float null:domain-error
+ASIN(m) -> float number/float null:domain-error
+ASIN(sm) -> float number/float null:domain-error
+ASIN(f) -> float number/float null:domain-error
+ASIN(r) -> float number/float null:domain-error
+ASIN(f24) -> float number/float null:domain-error
+ASIN(f25) -> float number/float null:domain-error
+ASIN(c3) -> unknown unsupported-expression: ASIN(c3): an argument of this type is not modelled.
+ASIN(v10) -> unknown unsupported-expression: ASIN(v10): an argument of this type is not modelled.
+ASIN(vx) -> unknown unsupported-expression: ASIN(vx): an argument of this type is not modelled.
+ASIN(nc3) -> unknown unsupported-expression: ASIN(nc3): an argument of this type is not modelled.
+ASIN(nv10) -> unknown unsupported-expression: ASIN(nv10): an argument of this type is not modelled.
+ASIN(nvx) -> unknown unsupported-expression: ASIN(nvx): an argument of this type is not modelled.
+ASIN(dt) -> unknown unsupported-expression: ASIN(dt): an argument of this type is not modelled.
+ASIN(tm3) -> unknown unsupported-expression: ASIN(tm3): an argument of this type is not modelled.
+ASIN(dtm) -> unknown unsupported-expression: ASIN(dtm): an argument of this type is not modelled.
+ASIN(dt23) -> unknown unsupported-expression: ASIN(dt23): an argument of this type is not modelled.
+ASIN(sdt) -> unknown unsupported-expression: ASIN(sdt): an argument of this type is not modelled.
+ASIN(dto3) -> unknown unsupported-expression: ASIN(dto3): an argument of this type is not modelled.
+ASIN(u) -> unknown unsupported-expression: ASIN(u): an argument of this type is not modelled.
+ASIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ASIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ASIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ASIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ASIN(j) -> unknown (no unknown recorded)
+ASIN(1) -> float number/float null:domain-error
+ASIN(12345) -> float number/float null:domain-error
+ASIN(2.50) -> float number/float null:domain-error
+ASIN('ab') -> unknown unsupported-expression: ASIN('ab'): an argument of this type is not modelled.
+ASIN(N'ab') -> unknown unsupported-expression: ASIN(N'ab'): an argument of this type is not modelled.
+ASIN(1e0) -> float number/float null:domain-error
+ASIN($1) -> float number/float null:domain-error
+ACOS(bt) -> float number/float
+ACOS(ti) -> float number/float null:domain-error
+ACOS(si) -> float number/float null:domain-error
+ACOS(i) -> float number/float null:domain-error
+ACOS(bi) -> float number/float null:domain-error
+ACOS(d52) -> float number/float null:domain-error
+ACOS(d380) -> float number/float null:domain-error
+ACOS(d3838) -> float number/float null:domain-error
+ACOS(n102) -> float number/float null:domain-error
+ACOS(m) -> float number/float null:domain-error
+ACOS(sm) -> float number/float null:domain-error
+ACOS(f) -> float number/float null:domain-error
+ACOS(r) -> float number/float null:domain-error
+ACOS(f24) -> float number/float null:domain-error
+ACOS(f25) -> float number/float null:domain-error
+ACOS(c3) -> unknown unsupported-expression: ACOS(c3): an argument of this type is not modelled.
+ACOS(v10) -> unknown unsupported-expression: ACOS(v10): an argument of this type is not modelled.
+ACOS(vx) -> unknown unsupported-expression: ACOS(vx): an argument of this type is not modelled.
+ACOS(nc3) -> unknown unsupported-expression: ACOS(nc3): an argument of this type is not modelled.
+ACOS(nv10) -> unknown unsupported-expression: ACOS(nv10): an argument of this type is not modelled.
+ACOS(nvx) -> unknown unsupported-expression: ACOS(nvx): an argument of this type is not modelled.
+ACOS(dt) -> unknown unsupported-expression: ACOS(dt): an argument of this type is not modelled.
+ACOS(tm3) -> unknown unsupported-expression: ACOS(tm3): an argument of this type is not modelled.
+ACOS(dtm) -> unknown unsupported-expression: ACOS(dtm): an argument of this type is not modelled.
+ACOS(dt23) -> unknown unsupported-expression: ACOS(dt23): an argument of this type is not modelled.
+ACOS(sdt) -> unknown unsupported-expression: ACOS(sdt): an argument of this type is not modelled.
+ACOS(dto3) -> unknown unsupported-expression: ACOS(dto3): an argument of this type is not modelled.
+ACOS(u) -> unknown unsupported-expression: ACOS(u): an argument of this type is not modelled.
+ACOS(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ACOS(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ACOS(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ACOS(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ACOS(j) -> unknown (no unknown recorded)
+ACOS(1) -> float number/float null:domain-error
+ACOS(12345) -> float number/float null:domain-error
+ACOS(2.50) -> float number/float null:domain-error
+ACOS('ab') -> unknown unsupported-expression: ACOS('ab'): an argument of this type is not modelled.
+ACOS(N'ab') -> unknown unsupported-expression: ACOS(N'ab'): an argument of this type is not modelled.
+ACOS(1e0) -> float number/float null:domain-error
+ACOS($1) -> float number/float null:domain-error
+ATAN(bt) -> float number/float
+ATAN(ti) -> float number/float
+ATAN(si) -> float number/float
+ATAN(i) -> float number/float
+ATAN(bi) -> float number/float
+ATAN(d52) -> float number/float
+ATAN(d380) -> float number/float
+ATAN(d3838) -> float number/float
+ATAN(n102) -> float number/float
+ATAN(m) -> float number/float
+ATAN(sm) -> float number/float
+ATAN(f) -> float number/float
+ATAN(r) -> float number/float
+ATAN(f24) -> float number/float
+ATAN(f25) -> float number/float
+ATAN(c3) -> unknown unsupported-expression: ATAN(c3): an argument of this type is not modelled.
+ATAN(v10) -> unknown unsupported-expression: ATAN(v10): an argument of this type is not modelled.
+ATAN(vx) -> unknown unsupported-expression: ATAN(vx): an argument of this type is not modelled.
+ATAN(nc3) -> unknown unsupported-expression: ATAN(nc3): an argument of this type is not modelled.
+ATAN(nv10) -> unknown unsupported-expression: ATAN(nv10): an argument of this type is not modelled.
+ATAN(nvx) -> unknown unsupported-expression: ATAN(nvx): an argument of this type is not modelled.
+ATAN(dt) -> unknown unsupported-expression: ATAN(dt): an argument of this type is not modelled.
+ATAN(tm3) -> unknown unsupported-expression: ATAN(tm3): an argument of this type is not modelled.
+ATAN(dtm) -> unknown unsupported-expression: ATAN(dtm): an argument of this type is not modelled.
+ATAN(dt23) -> unknown unsupported-expression: ATAN(dt23): an argument of this type is not modelled.
+ATAN(sdt) -> unknown unsupported-expression: ATAN(sdt): an argument of this type is not modelled.
+ATAN(dto3) -> unknown unsupported-expression: ATAN(dto3): an argument of this type is not modelled.
+ATAN(u) -> unknown unsupported-expression: ATAN(u): an argument of this type is not modelled.
+ATAN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ATAN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ATAN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ATAN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ATAN(j) -> unknown (no unknown recorded)
+ATAN(1) -> float number/float
+ATAN(12345) -> float number/float
+ATAN(2.50) -> float number/float
+ATAN('ab') -> unknown unsupported-expression: ATAN('ab'): an argument of this type is not modelled.
+ATAN(N'ab') -> unknown unsupported-expression: ATAN(N'ab'): an argument of this type is not modelled.
+ATAN(1e0) -> float number/float
+ATAN($1) -> float number/float
+ATN2(bt, 1) -> float number/float null:domain-error
+ATN2(ti, 1) -> float number/float null:domain-error
+ATN2(si, 1) -> float number/float null:domain-error
+ATN2(i, 1) -> float number/float null:domain-error
+ATN2(bi, 1) -> float number/float null:domain-error
+ATN2(d52, 1) -> float number/float null:domain-error
+ATN2(d380, 1) -> float number/float null:domain-error
+ATN2(d3838, 1) -> float number/float null:domain-error
+ATN2(n102, 1) -> float number/float null:domain-error
+ATN2(m, 1) -> float number/float null:domain-error
+ATN2(sm, 1) -> float number/float null:domain-error
+ATN2(f, 1) -> float number/float null:domain-error
+ATN2(r, 1) -> float number/float null:domain-error
+ATN2(f24, 1) -> float number/float null:domain-error
+ATN2(f25, 1) -> float number/float null:domain-error
+ATN2(c3, 1) -> unknown unsupported-expression: ATN2(c3, 1): an argument of this type is not modelled.
+ATN2(v10, 1) -> unknown unsupported-expression: ATN2(v10, 1): an argument of this type is not modelled.
+ATN2(vx, 1) -> unknown unsupported-expression: ATN2(vx, 1): an argument of this type is not modelled.
+ATN2(nc3, 1) -> unknown unsupported-expression: ATN2(nc3, 1): an argument of this type is not modelled.
+ATN2(nv10, 1) -> unknown unsupported-expression: ATN2(nv10, 1): an argument of this type is not modelled.
+ATN2(nvx, 1) -> unknown unsupported-expression: ATN2(nvx, 1): an argument of this type is not modelled.
+ATN2(dt, 1) -> unknown unsupported-expression: ATN2(dt, 1): an argument of this type is not modelled.
+ATN2(tm3, 1) -> unknown unsupported-expression: ATN2(tm3, 1): an argument of this type is not modelled.
+ATN2(dtm, 1) -> unknown unsupported-expression: ATN2(dtm, 1): an argument of this type is not modelled.
+ATN2(dt23, 1) -> unknown unsupported-expression: ATN2(dt23, 1): an argument of this type is not modelled.
+ATN2(sdt, 1) -> unknown unsupported-expression: ATN2(sdt, 1): an argument of this type is not modelled.
+ATN2(dto3, 1) -> unknown unsupported-expression: ATN2(dto3, 1): an argument of this type is not modelled.
+ATN2(u, 1) -> unknown unsupported-expression: ATN2(u, 1): an argument of this type is not modelled.
+ATN2(bin4, 1) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ATN2(vb10, 1) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ATN2(x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ATN2(sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ATN2(j, 1) -> unknown (no unknown recorded)
+ATN2(1, 1) -> float number/float null:domain-error
+ATN2(12345, 1) -> float number/float null:domain-error
+ATN2(2.50, 1) -> float number/float null:domain-error
+ATN2('ab', 1) -> unknown unsupported-expression: ATN2('ab', 1): an argument of this type is not modelled.
+ATN2(N'ab', 1) -> unknown unsupported-expression: ATN2(N'ab', 1): an argument of this type is not modelled.
+ATN2(1e0, 1) -> float number/float null:domain-error
+ATN2($1, 1) -> float number/float null:domain-error
+DEGREES(bt) -> float number/float
+DEGREES(ti) -> int number/int32 {[-2147483648 2147483647]}
+DEGREES(si) -> int number/int32 {[-2147483648 2147483647]}
+DEGREES(i) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+DEGREES(bi) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
+DEGREES(d52) -> unknown unsupported-expression: DEGREES(d52): DEGREES and RADIANS of a decimal or money are not modelled.
+DEGREES(d380) -> unknown unsupported-expression: DEGREES(d380): DEGREES and RADIANS of a decimal or money are not modelled.
+DEGREES(d3838) -> unknown unsupported-expression: DEGREES(d3838): DEGREES and RADIANS of a decimal or money are not modelled.
+DEGREES(n102) -> unknown unsupported-expression: DEGREES(n102): DEGREES and RADIANS of a decimal or money are not modelled.
+DEGREES(m) -> unknown unsupported-expression: DEGREES(m): DEGREES and RADIANS of a decimal or money are not modelled.
+DEGREES(sm) -> unknown unsupported-expression: DEGREES(sm): DEGREES and RADIANS of a decimal or money are not modelled.
+DEGREES(f) -> float number/float null:arithmetic-overflow
+DEGREES(r) -> float number/float
+DEGREES(f24) -> float number/float
+DEGREES(f25) -> float number/float null:arithmetic-overflow
+DEGREES(c3) -> unknown unsupported-expression: DEGREES(c3): an argument of this type is not modelled.
+DEGREES(v10) -> unknown unsupported-expression: DEGREES(v10): an argument of this type is not modelled.
+DEGREES(vx) -> unknown unsupported-expression: DEGREES(vx): an argument of this type is not modelled.
+DEGREES(nc3) -> unknown unsupported-expression: DEGREES(nc3): an argument of this type is not modelled.
+DEGREES(nv10) -> unknown unsupported-expression: DEGREES(nv10): an argument of this type is not modelled.
+DEGREES(nvx) -> unknown unsupported-expression: DEGREES(nvx): an argument of this type is not modelled.
+DEGREES(dt) -> unknown unsupported-expression: DEGREES(dt): an argument of this type is not modelled.
+DEGREES(tm3) -> unknown unsupported-expression: DEGREES(tm3): an argument of this type is not modelled.
+DEGREES(dtm) -> unknown unsupported-expression: DEGREES(dtm): an argument of this type is not modelled.
+DEGREES(dt23) -> unknown unsupported-expression: DEGREES(dt23): an argument of this type is not modelled.
+DEGREES(sdt) -> unknown unsupported-expression: DEGREES(sdt): an argument of this type is not modelled.
+DEGREES(dto3) -> unknown unsupported-expression: DEGREES(dto3): an argument of this type is not modelled.
+DEGREES(u) -> unknown unsupported-expression: DEGREES(u): an argument of this type is not modelled.
+DEGREES(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+DEGREES(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+DEGREES(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DEGREES(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+DEGREES(j) -> unknown (no unknown recorded)
+DEGREES(1) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+DEGREES(12345) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
+DEGREES(2.50) -> unknown unsupported-expression: DEGREES(2.50): DEGREES and RADIANS of a decimal or money are not modelled.
+DEGREES('ab') -> unknown unsupported-expression: DEGREES('ab'): an argument of this type is not modelled.
+DEGREES(N'ab') -> unknown unsupported-expression: DEGREES(N'ab'): an argument of this type is not modelled.
+DEGREES(1e0) -> float number/float null:arithmetic-overflow
+DEGREES($1) -> unknown unsupported-expression: DEGREES($1): DEGREES and RADIANS of a decimal or money are not modelled.
+RADIANS(bt) -> float number/float
+RADIANS(ti) -> int number/int32 {[-2147483648 2147483647]}
+RADIANS(si) -> int number/int32 {[-2147483648 2147483647]}
+RADIANS(i) -> int number/int32 {[-2147483648 2147483647]}
+RADIANS(bi) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+RADIANS(d52) -> unknown unsupported-expression: RADIANS(d52): DEGREES and RADIANS of a decimal or money are not modelled.
+RADIANS(d380) -> unknown unsupported-expression: RADIANS(d380): DEGREES and RADIANS of a decimal or money are not modelled.
+RADIANS(d3838) -> unknown unsupported-expression: RADIANS(d3838): DEGREES and RADIANS of a decimal or money are not modelled.
+RADIANS(n102) -> unknown unsupported-expression: RADIANS(n102): DEGREES and RADIANS of a decimal or money are not modelled.
+RADIANS(m) -> unknown unsupported-expression: RADIANS(m): DEGREES and RADIANS of a decimal or money are not modelled.
+RADIANS(sm) -> unknown unsupported-expression: RADIANS(sm): DEGREES and RADIANS of a decimal or money are not modelled.
+RADIANS(f) -> float number/float
+RADIANS(r) -> float number/float
+RADIANS(f24) -> float number/float
+RADIANS(f25) -> float number/float
+RADIANS(c3) -> unknown unsupported-expression: RADIANS(c3): an argument of this type is not modelled.
+RADIANS(v10) -> unknown unsupported-expression: RADIANS(v10): an argument of this type is not modelled.
+RADIANS(vx) -> unknown unsupported-expression: RADIANS(vx): an argument of this type is not modelled.
+RADIANS(nc3) -> unknown unsupported-expression: RADIANS(nc3): an argument of this type is not modelled.
+RADIANS(nv10) -> unknown unsupported-expression: RADIANS(nv10): an argument of this type is not modelled.
+RADIANS(nvx) -> unknown unsupported-expression: RADIANS(nvx): an argument of this type is not modelled.
+RADIANS(dt) -> unknown unsupported-expression: RADIANS(dt): an argument of this type is not modelled.
+RADIANS(tm3) -> unknown unsupported-expression: RADIANS(tm3): an argument of this type is not modelled.
+RADIANS(dtm) -> unknown unsupported-expression: RADIANS(dtm): an argument of this type is not modelled.
+RADIANS(dt23) -> unknown unsupported-expression: RADIANS(dt23): an argument of this type is not modelled.
+RADIANS(sdt) -> unknown unsupported-expression: RADIANS(sdt): an argument of this type is not modelled.
+RADIANS(dto3) -> unknown unsupported-expression: RADIANS(dto3): an argument of this type is not modelled.
+RADIANS(u) -> unknown unsupported-expression: RADIANS(u): an argument of this type is not modelled.
+RADIANS(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+RADIANS(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+RADIANS(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+RADIANS(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+RADIANS(j) -> unknown (no unknown recorded)
+RADIANS(1) -> int number/int32 {[-2147483648 2147483647]}
+RADIANS(12345) -> int number/int32 {[-2147483648 2147483647]}
+RADIANS(2.50) -> unknown unsupported-expression: RADIANS(2.50): DEGREES and RADIANS of a decimal or money are not modelled.
+RADIANS('ab') -> unknown unsupported-expression: RADIANS('ab'): an argument of this type is not modelled.
+RADIANS(N'ab') -> unknown unsupported-expression: RADIANS(N'ab'): an argument of this type is not modelled.
+RADIANS(1e0) -> float number/float
+RADIANS($1) -> unknown unsupported-expression: RADIANS($1): DEGREES and RADIANS of a decimal or money are not modelled.
+PI() -> float number/float
+GREATEST(bt, bt) -> bit boolean
+GREATEST(ti, ti) -> tinyint number/uint8 {[0 255]}
+GREATEST(si, si) -> smallint number/int16 {[-32768 32767]}
+GREATEST(i, i) -> int number/int32 {[-2147483648 2147483647]}
+GREATEST(bi, bi) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+GREATEST(d52, d52) -> decimal(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
+GREATEST(d380, d380) -> decimal(38,0) number/decimal {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+GREATEST(d3838, d3838) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+GREATEST(n102, n102) -> numeric(10,2) number/decimal {digits=10,2 [-99999999.99 99999999.99]}
+GREATEST(m, m) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+GREATEST(sm, sm) -> smallmoney number/decimal {digits=10,4 [-214748.3648 214748.3647]}
+GREATEST(f, f) -> float number/float
+GREATEST(r, r) -> real number/float
+GREATEST(f24, f24) -> real number/float
+GREATEST(f25, f25) -> float number/float
+GREATEST(c3, c3) -> char(3) string {length=3}
+GREATEST(v10, v10) -> varchar(10) string {length<=10}
+GREATEST(vx, vx) -> varchar(8000) string {length<=8000}
+GREATEST(nc3, nc3) -> nchar(3) string {length=3}
+GREATEST(nv10, nv10) -> nvarchar(10) string {length<=10}
+GREATEST(nvx, nvx) -> nvarchar(4000) string {length<=4000}
+GREATEST(dt, dt) -> date date
+GREATEST(tm3, tm3) -> time(3) time
+GREATEST(dtm, dtm) -> datetime datetime/local
+GREATEST(dt23, dt23) -> datetime2(3) datetime/local
+GREATEST(sdt, sdt) -> smalldatetime datetime/local
+GREATEST(dto3, dto3) -> datetimeoffset(3) datetime/offset
+GREATEST(u, u) -> uniqueidentifier uuid
+GREATEST(bin4, bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+GREATEST(vb10, vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+GREATEST(x, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+GREATEST(sv, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+GREATEST(j, j) -> unknown (no unknown recorded)
+GREATEST(1, 1) -> int number/int32 {[-2147483648 2147483647]}
+GREATEST(12345, 12345) -> int number/int32 {[-2147483648 2147483647]}
+GREATEST(2.50, 2.50) -> numeric(3,2) number/decimal {digits=3,2 [-9.99 9.99]}
+GREATEST('ab', 'ab') -> varchar(2) string {length<=2}
+GREATEST(N'ab', N'ab') -> nvarchar(2) string {length<=2}
+GREATEST(1e0, 1e0) -> float number/float
+GREATEST($1, $1) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+LEAST(bt, 1) -> unknown unsupported-expression: LEAST(bt, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(ti, 1) -> int number/int32 {[-2147483648 2147483647]}
+LEAST(si, 1) -> int number/int32 {[-2147483648 2147483647]}
+LEAST(i, 1) -> int number/int32 {[-2147483648 2147483647]}
+LEAST(bi, 1) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+LEAST(d52, 1) -> unknown unsupported-expression: LEAST(d52, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(d380, 1) -> unknown unsupported-expression: LEAST(d380, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(d3838, 1) -> unknown unsupported-expression: LEAST(d3838, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(n102, 1) -> unknown unsupported-expression: LEAST(n102, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(m, 1) -> unknown unsupported-expression: LEAST(m, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(sm, 1) -> unknown unsupported-expression: LEAST(sm, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(f, 1) -> unknown unsupported-expression: LEAST(f, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(r, 1) -> unknown unsupported-expression: LEAST(r, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(f24, 1) -> unknown unsupported-expression: LEAST(f24, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(f25, 1) -> unknown unsupported-expression: LEAST(f25, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(c3, 1) -> unknown unsupported-expression: LEAST(c3, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(v10, 1) -> unknown unsupported-expression: LEAST(v10, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(vx, 1) -> unknown unsupported-expression: LEAST(vx, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(nc3, 1) -> unknown unsupported-expression: LEAST(nc3, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(nv10, 1) -> unknown unsupported-expression: LEAST(nv10, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(nvx, 1) -> unknown unsupported-expression: LEAST(nvx, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(dt, 1) -> unknown unsupported-expression: LEAST(dt, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(tm3, 1) -> unknown unsupported-expression: LEAST(tm3, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(dtm, 1) -> unknown unsupported-expression: LEAST(dtm, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(dt23, 1) -> unknown unsupported-expression: LEAST(dt23, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(sdt, 1) -> unknown unsupported-expression: LEAST(sdt, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(dto3, 1) -> unknown unsupported-expression: LEAST(dto3, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(u, 1) -> unknown unsupported-expression: LEAST(u, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(bin4, 1) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+LEAST(vb10, 1) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+LEAST(x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LEAST(sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+LEAST(j, 1) -> unknown (no unknown recorded)
+LEAST(1, 1) -> int number/int32 {[-2147483648 2147483647]}
+LEAST(12345, 1) -> int number/int32 {[-2147483648 2147483647]}
+LEAST(2.50, 1) -> unknown unsupported-expression: LEAST(2.50, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST('ab', 1) -> unknown unsupported-expression: LEAST('ab', 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(N'ab', 1) -> unknown unsupported-expression: LEAST(N'ab', 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST(1e0, 1) -> unknown unsupported-expression: LEAST(1e0, 1): GREATEST or LEAST of values of different kinds is not modelled.
+LEAST($1, 1) -> unknown unsupported-expression: LEAST($1, 1): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(bt, v10) -> unknown unsupported-expression: GREATEST(bt, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(ti, v10) -> unknown unsupported-expression: GREATEST(ti, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(si, v10) -> unknown unsupported-expression: GREATEST(si, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(i, v10) -> unknown unsupported-expression: GREATEST(i, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(bi, v10) -> unknown unsupported-expression: GREATEST(bi, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(d52, v10) -> unknown unsupported-expression: GREATEST(d52, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(d380, v10) -> unknown unsupported-expression: GREATEST(d380, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(d3838, v10) -> unknown unsupported-expression: GREATEST(d3838, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(n102, v10) -> unknown unsupported-expression: GREATEST(n102, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(m, v10) -> unknown unsupported-expression: GREATEST(m, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(sm, v10) -> unknown unsupported-expression: GREATEST(sm, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(f, v10) -> unknown unsupported-expression: GREATEST(f, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(r, v10) -> unknown unsupported-expression: GREATEST(r, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(f24, v10) -> unknown unsupported-expression: GREATEST(f24, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(f25, v10) -> unknown unsupported-expression: GREATEST(f25, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(c3, v10) -> varchar(10) string {length<=10}
+GREATEST(v10, v10) -> varchar(10) string {length<=10}
+GREATEST(vx, v10) -> varchar(8000) string {length<=8000}
+GREATEST(nc3, v10) -> nvarchar(10) string {length<=10}
+GREATEST(nv10, v10) -> nvarchar(10) string {length<=10}
+GREATEST(nvx, v10) -> nvarchar(4000) string {length<=4000}
+GREATEST(dt, v10) -> unknown unsupported-expression: GREATEST(dt, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(tm3, v10) -> unknown unsupported-expression: GREATEST(tm3, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(dtm, v10) -> unknown unsupported-expression: GREATEST(dtm, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(dt23, v10) -> unknown unsupported-expression: GREATEST(dt23, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(sdt, v10) -> unknown unsupported-expression: GREATEST(sdt, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(dto3, v10) -> unknown unsupported-expression: GREATEST(dto3, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(u, v10) -> unknown unsupported-expression: GREATEST(u, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(bin4, v10) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+GREATEST(vb10, v10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+GREATEST(x, v10) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+GREATEST(sv, v10) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+GREATEST(j, v10) -> unknown (no unknown recorded)
+GREATEST(1, v10) -> unknown unsupported-expression: GREATEST(1, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(12345, v10) -> unknown unsupported-expression: GREATEST(12345, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST(2.50, v10) -> unknown unsupported-expression: GREATEST(2.50, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST('ab', v10) -> varchar(10) string {length<=10}
+GREATEST(N'ab', v10) -> nvarchar(10) string {length<=10}
+GREATEST(1e0, v10) -> unknown unsupported-expression: GREATEST(1e0, v10): GREATEST or LEAST of values of different kinds is not modelled.
+GREATEST($1, v10) -> unknown unsupported-expression: GREATEST($1, v10): GREATEST or LEAST of values of different kinds is not modelled.
+ISJSON(bt) -> unknown unsupported-expression: ISJSON(bt): ISJSON of a value that is not a string is not modelled.
+ISJSON(ti) -> unknown unsupported-expression: ISJSON(ti): ISJSON of a value that is not a string is not modelled.
+ISJSON(si) -> unknown unsupported-expression: ISJSON(si): ISJSON of a value that is not a string is not modelled.
+ISJSON(i) -> unknown unsupported-expression: ISJSON(i): ISJSON of a value that is not a string is not modelled.
+ISJSON(bi) -> unknown unsupported-expression: ISJSON(bi): ISJSON of a value that is not a string is not modelled.
+ISJSON(d52) -> unknown unsupported-expression: ISJSON(d52): ISJSON of a value that is not a string is not modelled.
+ISJSON(d380) -> unknown unsupported-expression: ISJSON(d380): ISJSON of a value that is not a string is not modelled.
+ISJSON(d3838) -> unknown unsupported-expression: ISJSON(d3838): ISJSON of a value that is not a string is not modelled.
+ISJSON(n102) -> unknown unsupported-expression: ISJSON(n102): ISJSON of a value that is not a string is not modelled.
+ISJSON(m) -> unknown unsupported-expression: ISJSON(m): ISJSON of a value that is not a string is not modelled.
+ISJSON(sm) -> unknown unsupported-expression: ISJSON(sm): ISJSON of a value that is not a string is not modelled.
+ISJSON(f) -> unknown unsupported-expression: ISJSON(f): ISJSON of a value that is not a string is not modelled.
+ISJSON(r) -> unknown unsupported-expression: ISJSON(r): ISJSON of a value that is not a string is not modelled.
+ISJSON(f24) -> unknown unsupported-expression: ISJSON(f24): ISJSON of a value that is not a string is not modelled.
+ISJSON(f25) -> unknown unsupported-expression: ISJSON(f25): ISJSON of a value that is not a string is not modelled.
+ISJSON(c3) -> int number/int32 {[-2147483648 2147483647]}
+ISJSON(v10) -> int number/int32 {[-2147483648 2147483647]}
+ISJSON(vx) -> int number/int32 {[-2147483648 2147483647]}
+ISJSON(nc3) -> int number/int32 {[-2147483648 2147483647]}
+ISJSON(nv10) -> int number/int32 {[-2147483648 2147483647]}
+ISJSON(nvx) -> int number/int32 {[-2147483648 2147483647]}
+ISJSON(dt) -> unknown unsupported-expression: ISJSON(dt): ISJSON of a value that is not a string is not modelled.
+ISJSON(tm3) -> unknown unsupported-expression: ISJSON(tm3): ISJSON of a value that is not a string is not modelled.
+ISJSON(dtm) -> unknown unsupported-expression: ISJSON(dtm): ISJSON of a value that is not a string is not modelled.
+ISJSON(dt23) -> unknown unsupported-expression: ISJSON(dt23): ISJSON of a value that is not a string is not modelled.
+ISJSON(sdt) -> unknown unsupported-expression: ISJSON(sdt): ISJSON of a value that is not a string is not modelled.
+ISJSON(dto3) -> unknown unsupported-expression: ISJSON(dto3): ISJSON of a value that is not a string is not modelled.
+ISJSON(u) -> unknown unsupported-expression: ISJSON(u): ISJSON of a value that is not a string is not modelled.
+ISJSON(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISJSON(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISJSON(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISJSON(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISJSON(j) -> int number/int32 {[-2147483648 2147483647]}
+ISJSON(1) -> unknown unsupported-expression: ISJSON(1): ISJSON of a value that is not a string is not modelled.
+ISJSON(12345) -> unknown unsupported-expression: ISJSON(12345): ISJSON of a value that is not a string is not modelled.
+ISJSON(2.50) -> unknown unsupported-expression: ISJSON(2.50): ISJSON of a value that is not a string is not modelled.
+ISJSON('ab') -> int number/int32 {[-2147483648 2147483647]}
+ISJSON(N'ab') -> int number/int32 {[-2147483648 2147483647]}
+ISJSON(1e0) -> unknown unsupported-expression: ISJSON(1e0): ISJSON of a value that is not a string is not modelled.
+ISJSON($1) -> unknown unsupported-expression: ISJSON($1): ISJSON of a value that is not a string is not modelled.
+NEWID() -> uniqueidentifier uuid
 ASCII(bt) -> unknown unsupported-expression: ASCII(bt): a code of a value that is not a string is not modelled.
 ASCII(ti) -> unknown unsupported-expression: ASCII(ti): a code of a value that is not a string is not modelled.
 ASCII(si) -> unknown unsupported-expression: ASCII(si): a code of a value that is not a string is not modelled.
