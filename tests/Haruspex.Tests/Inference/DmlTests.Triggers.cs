@@ -19,6 +19,20 @@ public partial class DmlTests
     }
 
     [Fact]
+    public void An_insert_that_nests_a_write_ends_what_can_be_listed()
+    {
+        // Observed: A_write_nested_in_an_insert_fires_its_tables_triggers. The walker reads only the outer write, so the
+        // nested one's triggers would be missed.
+        var doc = Doc(
+            ("trigger", "CREATE TRIGGER dbo.item_gone ON dbo.item AFTER DELETE AS SELECT N'fired' AS what;"),
+            ("p", "CREATE PROCEDURE dbo.p AS DECLARE @t TABLE (id int); INSERT INTO @t (id) SELECT d.id FROM (DELETE FROM dbo.item OUTPUT deleted.id) AS d; SELECT 1 AS a;"));
+
+        var unknown = ResultsUnknown(doc);
+        Assert.Equal(IrUnknownReason.UnsupportedStatement, unknown.Reason);
+        Assert.Contains("nested", unknown.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_trigger_that_returns_nothing_adds_nothing()
     {
         var doc = Doc(

@@ -231,6 +231,21 @@ internal sealed partial class Walker
         return false;
     }
 
+    /// <summary>Whether an INSERT's rows come from a write nested in it: <c>FROM (DELETE … OUTPUT …) AS d</c>.</summary>
+    private static bool NestsAWrite(InsertStatement insert)
+    {
+        var nested = new NestedWrites();
+        insert.InsertSpecification.InsertSource.Accept(nested);
+        return nested.Found;
+    }
+
+    private sealed class NestedWrites : TSqlFragmentVisitor
+    {
+        public bool Found { get; private set; }
+
+        public override void Visit(DataModificationTableReference node) => Found = true;
+    }
+
     private sealed class Restructures : TSqlFragmentVisitor
     {
         public HashSet<LocalName> Altered { get; } = [];

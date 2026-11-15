@@ -186,6 +186,21 @@ public class DmlObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_write_nested_in_an_insert_fires_its_tables_triggers()
+    {
+        // INSERT … SELECT … FROM (DELETE … OUTPUT …) AS d: the DELETE is a write of its own, and its table's trigger returns its
+        // result set as a DELETE alone would.
+        string[] setup = [
+            Item, Seed,
+            "CREATE TRIGGER dbo.obs_item_gone ON dbo.obs_item AFTER DELETE AS SELECT N'fired' AS what;",
+        ];
+
+        Assert.Equal(
+            "what: fired | a: 1",
+            (await Run(setup, "DECLARE @t TABLE (id int); INSERT INTO @t (id) SELECT d.id FROM (DELETE FROM dbo.obs_item OUTPUT deleted.id) AS d; SELECT 1 AS a;")).ToString());
+    }
+
+    [Fact]
     public async Task A_write_through_a_synonym_fires_the_triggers_of_its_table()
     {
         string[] setup = [

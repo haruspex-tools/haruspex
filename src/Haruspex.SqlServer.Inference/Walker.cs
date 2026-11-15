@@ -274,6 +274,14 @@ internal sealed partial class Walker
                 return Outcome.Ends;
             case SelectStatement select:
                 return Continue(Select(select, state));
+            // INSERT … SELECT … FROM (DELETE … OUTPUT …) AS d: the nested write fires its own table's triggers, which may return
+            // result sets (observed: A_write_nested_in_an_insert_fires_its_tables_triggers). Only the outer write is walked.
+            case InsertStatement nesting when NestsAWrite(nesting):
+                blocker ??= new UnknownShape(
+                    IrUnknownReason.UnsupportedStatement,
+                    "An INSERT whose rows come from a write nested in it is not modelled yet, so the procedure's result sets cannot be listed.",
+                    At(nesting));
+                return Outcome.Ends;
             case InsertStatement { InsertSpecification.InsertSource: ExecuteInsertSource } insert:
                 return InsertExecute(insert, state);
             case InsertStatement insert:

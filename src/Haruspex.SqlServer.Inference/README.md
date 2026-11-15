@@ -335,6 +335,9 @@ it on the stack of calls.
   a temporary table, a table variable, or a permanent object, resolved by the binder's rule for table names
   (`Binder.ResolveWritten`). A target of another form (`OPENROWSET`, `OPENQUERY`) is not modelled and makes the results
   unknown.
+- **A write nested in an `INSERT`** (`INSERT … SELECT … FROM (DELETE … OUTPUT …) AS d`) is a write of its own, whose table's
+  triggers fire as for the write alone (`A_write_nested_in_an_insert_fires_its_tables_triggers`). Only the outer write is
+  walked, so such an `INSERT` makes the results after it unknown (`unsupported-statement`).
 
 ### OUTPUT
 
