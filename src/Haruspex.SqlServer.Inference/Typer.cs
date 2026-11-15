@@ -331,6 +331,7 @@ internal sealed partial class Typer(
         StringLiteral literal when SqlcmdVariableReference.FirstIn(literal.Value) is { } variable => Replaced(literal, variable),
         StringLiteral literal => FromString(literal),
         NumericLiteral literal => FromNumeric(literal),
+        BinaryLiteral literal => FromBinary(literal),
         RealLiteral literal => Typed(ScalarType.Of(BuiltInType.Float), [], literal),
         MoneyLiteral literal => Typed(ScalarType.Of(BuiltInType.Money), [], literal),
         NullLiteral literal => Typed(ScalarType.Of(BuiltInType.Int), [new IrNullReason(IrNullRule.NullLiteral, At(literal).ToString())], literal),

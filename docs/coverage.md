@@ -852,7 +852,7 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `$1` | `MoneyLiteral` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#literals) | money. |
 | `'text' and N'text'` | `StringLiteral` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#literals) | varchar or nvarchar as long as the text. |
 | `NULL` | `NullLiteral` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#literals) | An int that is NULL, until something converts it. |
-| `0x01` | `BinaryLiteral` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
+| `0x01` | `BinaryLiteral` | unknown, [`unsupported-sql-type`](diagnostics/HAR2007.md) | Read as varbinary of its bytes, a type not modelled yet. |
 | `DEFAULT` | `DefaultLiteral` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | The column's default, in an INSERT or UPDATE. |
 | `MAX in a type's length` | `MaxLiteral` | part of `CastCall` |  |
 | `a name where a value goes` | `IdentifierLiteral` | part of `FunctionCall` |  |

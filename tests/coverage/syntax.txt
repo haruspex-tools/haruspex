@@ -488,7 +488,7 @@ RealLiteral | 1e0 | modelled | Literals | float. | SELECT 1e0 AS a;
 MoneyLiteral | $1 | modelled | Literals | money. | SELECT $1 AS a;
 StringLiteral | 'text' and N'text' | modelled | Literals | varchar or nvarchar as long as the text. | SELECT 'ab' AS a, N'ab' AS b;
 NullLiteral | NULL | modelled | Literals | An int that is NULL, until something converts it. | SELECT CAST(NULL AS int) AS a;
-BinaryLiteral | 0x01 | unknown unsupported-expression | | Not modelled yet. | SELECT 0x01 AS a;
+BinaryLiteral | 0x01 | unknown unsupported-sql-type | Literals | Read as varbinary of its bytes, a type not modelled yet. | SELECT 0x01 AS a;
 DefaultLiteral | DEFAULT | modelled | DML | The column's default, in an INSERT or UPDATE. | INSERT INTO dbo.box (id, toy_id, qty) VALUES (3, 1, DEFAULT);
 MaxLiteral | MAX in a type's length | within CastCall | | |
 IdentifierLiteral | a name where a value goes | within FunctionCall | | |

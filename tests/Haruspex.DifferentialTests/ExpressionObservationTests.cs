@@ -40,6 +40,18 @@ public class ExpressionObservationTests(SqlServerFixture server)
             await Describe("SELECT 2.5 AS a, 0.5 AS b, 1.234 AS c, 100.00 AS d, 0.05 AS e, 007.10 AS f, 2147483648 AS g, 2147483647 AS h, 'abc' AS i, N'ab' AS j, '' AS k, -2147483648 AS l, -(2147483648) AS m, -2147483649 AS n, -(-2147483648) AS o, - -2147483648 AS p"));
     }
 
+    [Fact]
+    public async Task A_binary_literal_is_varbinary_of_its_bytes()
+    {
+        // Two hex digits a byte, an odd one padded with a leading zero (0xA1B is 0x0A1B); 0x holds no byte but is varbinary(1);
+        // past 8000 bytes, varbinary(max). The x may be upper case.
+        var bytes8000 = "0x" + new string('0', 16000);
+        Assert.Equal(
+            "b varbinary(2), e varbinary(1), odd varbinary(2), upper varbinary(1), most varbinary(8000), past varbinary(max)",
+            await Describe($"SELECT 0x0A1B AS b, 0x AS e, 0xA1B AS odd, 0X0a AS upper, {bytes8000} AS most, {bytes8000}00 AS past"));
+        Assert.Equal("e,odd,never: 0,0x0A1B,0", (await Run("SELECT DATALENGTH(0x) AS e, CONVERT(varchar(10), 0xA1B, 1) AS odd, CASE WHEN 0x IS NULL THEN 1 ELSE 0 END AS never;")).ToString());
+    }
+
     // ---- COALESCE and ISNULL -----------------------------------------------------------------------------------------
 
     [Fact]

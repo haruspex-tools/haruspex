@@ -466,7 +466,10 @@ read, except where it is that value unchanged (a conversion to its own type, `IS
 `'abc'` is `varchar(3)`, `N'ab'` `nvarchar(2)`, `''` `varchar(1)`; an integer within `int` is `int`, a larger one
 `numeric(digits,0)`, except that `-2147483648` (int's least value, through parentheses too) is `int`; a literal signed twice
 (`-(-2147483648)`, `numeric(38,0)` on the server) is not modelled; `2.50` is `numeric(3,2)`: the scale counts the digits after the point, trailing zeros too, and the
-precision adds those before it, less leading zeros (`A_literals_type_is_its_own_digits_or_characters`). None is ever null. A
+precision adds those before it, less leading zeros (`A_literals_type_is_its_own_digits_or_characters`). `0x0A1B` is
+`varbinary(2)`, two hex digits a byte, an odd one padded with a leading zero; `0x`, which holds no byte, is `varbinary(1)`, and
+one past 8000 bytes `varbinary(max)` (`A_binary_literal_is_varbinary_of_its_bytes`); the binary types aren't in the IR yet, so
+its value is unknown by its type (`unsupported-sql-type`), as a binary column's is. None is ever null. A
 `varchar` literal beyond ASCII, or one with `COLLATE`, is not typed: its length in bytes depends on the code page.
 
 ### SQLCMD variables

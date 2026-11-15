@@ -60,6 +60,19 @@ internal sealed partial class Typer
         return new Value(SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.Numeric, Precision: precision, Scale: scale), At(literal)), []);
     }
 
+    /// <summary>
+    /// A binary literal, <c>0x0A1B</c>: varbinary of its bytes, two hex digits each, an odd digit padded to a byte with a
+    /// leading zero; <c>0x</c>, which holds none, is varbinary(1), and past 8000 bytes it is varbinary(max) (observed:
+    /// A_binary_literal_is_varbinary_of_its_bytes). Never null. The binary types have no kind in the IR yet, so its value is
+    /// unknown by that type (<see cref="IrUnknownReason.UnsupportedSqlType"/>), as a binary column's is.
+    /// </summary>
+    private Value FromBinary(BinaryLiteral literal)
+    {
+        var bytes = (literal.Value.Length - "0x".Length + 1) / 2;
+        var length = bytes > 8000 ? -1 : Math.Max(1, bytes);
+        return new Value(SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.VarBinary, length), At(literal)), []);
+    }
+
     /// <summary>The scalar type of a value, when it is a built-in scalar.</summary>
     private static ScalarType? TypeOf(Value value)
     {
