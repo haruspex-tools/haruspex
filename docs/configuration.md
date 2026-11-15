@@ -102,7 +102,8 @@ Each project of the same database it refers to (a `ProjectReference` naming no o
 
 A DACPAC not where its build takes it, such as one in a package not restored, or Visual Studio's own `master.dacpac`
 (`$(DacPacRootPath)\…\SqlSchemas\master.dacpac`, which only a Visual Studio install has), is looked for by its file name in each
-folder `references` lists. One found nowhere is a warning ([HAR1003](diagnostics/HAR1003.md)) naming where it was looked for. The
+folder `references` lists. A `master.dacpac` found there stands for Visual Studio's: haruspex doesn't check that it is the version
+the path names (the `150` in `SqlServer\150`), and the IR records the hash of the file it read. One found nowhere is a warning ([HAR1003](diagnostics/HAR1003.md)) naming where it was looked for. The
 IR records each package read, with its SHA-256, in `source.references`, and no `source.package`: the project's own scripts aren't
 hashed.
 

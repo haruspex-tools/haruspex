@@ -46,33 +46,35 @@ internal static partial class ProjectReferences
     /// <summary>The references of <paramref name="project"/> that add to a database's schema, in the order its elements give them.</summary>
     /// <param name="project">The project.</param>
     /// <param name="cache">Where packages are looked for.</param>
-    /// <param name="diagnostics">Where a reference that isn't evaluated, or isn't read, is reported.</param>
-    public static IReadOnlyList<DatabaseReference> Read(EvaluatedProject project, PackageCache cache, ICollection<Diagnostic> diagnostics)
+    /// <param name="diagnostics">Where a reference that isn't evaluated is reported.</param>
+    /// <param name="servers">Where a reference to a database on another server is kept, to be said once for every project that makes it.</param>
+    public static IReadOnlyList<DatabaseReference> Read(EvaluatedProject project, PackageCache cache, ICollection<Diagnostic> diagnostics, ICollection<ServerReference> servers)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(cache);
         ArgumentNullException.ThrowIfNull(diagnostics);
+        ArgumentNullException.ThrowIfNull(servers);
         var name = Path.GetFileName(project.File.Path);
         var references = new List<DatabaseReference>();
         foreach (var item in project.Doubted)
-            Doubted(item, name, project.Format.IsSdkStyle, diagnostics, references);
+            Doubted(item, name, project.Format.IsSdkStyle, diagnostics, servers, references);
 
         foreach (var item in project.OfType(ProjectXml.ProjectReference).Where(i => i.Spec.EndsWith(".sqlproj", StringComparison.OrdinalIgnoreCase)))
         {
-            if (Database(item.Metadata, $"The ProjectReference {item.Spec} of {name}", $"{name} refers to the project {item.Spec}", item.At, diagnostics) is { } database)
+            if (Database(item.Metadata, $"The ProjectReference {item.Spec} of {name}", new ServerReference(name, $"the project {item.Spec}", item.At), diagnostics, servers) is { } database)
                 references.Add(new DatabaseReference(DatabaseReferenceKind.Project, $"the project {item.Spec}", item.FullPath, Path.GetFileName(item.Spec), database.Name, item.At));
         }
 
         foreach (var item in project.OfType(ProjectXml.ArtifactReference))
         {
-            if (Database(item.Metadata, $"The ArtifactReference {item.Spec} of {name}", $"{name} refers to the DACPAC {item.Spec}", item.At, diagnostics) is { } database)
+            if (Database(item.Metadata, $"The ArtifactReference {item.Spec} of {name}", new ServerReference(name, $"the DACPAC {item.Spec}", item.At), diagnostics, servers) is { } database)
                 references.Add(new DatabaseReference(DatabaseReferenceKind.Artifact, $"the DACPAC {item.Spec}", item.FullPath, Path.GetFileName(item.Spec.Replace('\\', '/')), database.Name, item.At));
         }
 
         if (project.Format.IsSdkStyle)
         {
             foreach (var item in project.OfType(ProjectXml.PackageReference))
-                Package(item, project, cache, name, diagnostics, references);
+                Package(item, project, cache, name, diagnostics, servers, references);
         }
 
         return references;
@@ -82,14 +84,14 @@ internal static partial class ProjectReferences
     /// A reference whose element isn't evaluated: Visual Studio's own system database, read by its file name; one to a project that
     /// isn't a database project, or to a package from a legacy project, passed over; any other, reported as not read.
     /// </summary>
-    private static void Doubted(DoubtedItem item, string name, bool sdk, ICollection<Diagnostic> diagnostics, List<DatabaseReference> into)
+    private static void Doubted(DoubtedItem item, string name, bool sdk, ICollection<Diagnostic> diagnostics, ICollection<ServerReference> servers, List<DatabaseReference> into)
     {
         switch (item.Type)
         {
             case ProjectXml.ArtifactReference when SsdtSystemPackage().Match(item.Written) is { Success: true } system:
                 var file = system.Groups["name"].Value;
-                if (Database(item.Metadata, $"The ArtifactReference {item.Written} of {name}", $"{name} refers to SSDT's own {file}", item.At, diagnostics) is { } database)
-                    into.Add(new DatabaseReference(DatabaseReferenceKind.VisualStudio, $"SSDT's own {file}", null, file, database.Name, item.At));
+                if (Database(item.Metadata, $"The ArtifactReference {item.Written} of {name}", new ServerReference(name, $"SSDT's own {file}", item.At), diagnostics, servers) is { } database)
+                    into.Add(new DatabaseReference(DatabaseReferenceKind.VisualStudio, $"SSDT's own {file} at {item.Written}", null, file, database.Name, item.At));
                 break;
             case ProjectXml.ProjectReference when item.Spec is { } spec && !spec.EndsWith(".sqlproj", StringComparison.OrdinalIgnoreCase):
                 break;
@@ -105,7 +107,7 @@ internal static partial class ProjectReferences
     /// it by. Null altogether, with why, when it isn't read: its metadata isn't evaluated, it names its database both ways, or it
     /// names a server.
     /// </summary>
-    private static Named? Database(IReadOnlyDictionary<string, Evaluated> metadata, string what, string who, SourceLocation at, ICollection<Diagnostic> diagnostics, string? otherwise = null)
+    private static Named? Database(IReadOnlyDictionary<string, Evaluated> metadata, string what, ServerReference referred, ICollection<Diagnostic> diagnostics, ICollection<ServerReference> servers, string? otherwise = null)
     {
         Evaluated Of(string name) => metadata.GetValueOrDefault(name) ?? Evaluated.Sure("");
         var variable = Of(ProjectXml.DatabaseSqlCmdVariable);
@@ -120,16 +122,14 @@ internal static partial class ProjectReferences
 
         if (variable.Text.Length > 0 && literal.Text.Length > 0)
         {
-            Doubt.Report(diagnostics, what, [new Doubt(at, $"it names its database both by {ProjectXml.DatabaseSqlCmdVariable} and by {ProjectXml.DatabaseVariableLiteralValue}, and which a build takes isn't observed")]);
+            Doubt.Report(diagnostics, what, [new Doubt(referred.At, $"it names its database both by {ProjectXml.DatabaseSqlCmdVariable} and by {ProjectXml.DatabaseVariableLiteralValue}, and which a build takes isn't observed")]);
             return null;
         }
 
         var database = variable.Text.Length > 0 ? $"$({variable.Text})" : literal.Text.Length > 0 ? literal.Text : otherwise;
         if (server.Text.Length > 0)
         {
-            var note = SourceCodes.OtherServer.At(at, $"{who}, the database {database} on the server $({server.Text}), which isn't read: a name in it, which a body writes in four parts, stays unknown.");
-            if (!diagnostics.Contains(note))
-                diagnostics.Add(note);
+            servers.Add(referred with { What = $"{referred.What}, the database {database} on the server $({server.Text}), which isn't read: a name in it, which a body writes in four parts, stays unknown." });
             return null;
         }
 
@@ -137,7 +137,7 @@ internal static partial class ProjectReferences
     }
 
     /// <summary>A package's DACPAC, where its build takes it from, added to <paramref name="into"/>; nothing when the build makes no reference of it.</summary>
-    private static void Package(ProjectItem item, EvaluatedProject project, PackageCache cache, string name, ICollection<Diagnostic> diagnostics, List<DatabaseReference> into)
+    private static void Package(ProjectItem item, EvaluatedProject project, PackageCache cache, string name, ICollection<Diagnostic> diagnostics, ICollection<ServerReference> servers, List<DatabaseReference> into)
     {
         var id = item.Spec;
         if (id.StartsWith("Microsoft.NETFramework.ReferenceAssemblies", StringComparison.OrdinalIgnoreCase))
@@ -157,7 +157,7 @@ internal static partial class ProjectReferences
         var msdb = system && id.EndsWith("msdb", StringComparison.OrdinalIgnoreCase);
         var master = system && id.EndsWith(DacpacReader.Master, StringComparison.OrdinalIgnoreCase);
         var dacpac = (Of(ProjectXml.DacpacName).Text is { Length: > 0 } named ? named : system ? (msdb ? "msdb" : DacpacReader.Master) : id) + ".dacpac";
-        if (Database(item.Metadata, what, $"{name} refers to the package {id}", item.At, diagnostics, master ? DacpacReader.Master : msdb ? "msdb" : null) is not { } database)
+        if (Database(item.Metadata, what, new ServerReference(name, $"the package {id}", item.At), diagnostics, servers, master ? DacpacReader.Master : msdb ? "msdb" : null) is not { } database)
             return;
 
         var version = Of(ProjectXml.Version).Text;

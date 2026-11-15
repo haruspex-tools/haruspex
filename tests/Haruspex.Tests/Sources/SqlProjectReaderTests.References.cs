@@ -332,7 +332,7 @@ public partial class SqlProjectReaderTests
         Assert.True(found.Model.Databases.ContainsKey("master"));
         var reported = Assert.Single(missing.Diagnostics);
         Assert.Equal(SourceCodes.ReferenceNotFound, reported.Code);
-        Assert.Contains("p.sqlproj refers to SSDT's own master.dacpac, the database master, which isn't found. Only a Visual Studio install has it", reported.Message, StringComparison.Ordinal);
+        Assert.Contains("p.sqlproj refers to SSDT's own master.dacpac at $(DacPacRootPath)\\Extensions\\Microsoft\\SQLDB\\Extensions\\SqlServer\\150\\SqlSchemas\\master.dacpac, the database master, which isn't found. Only a Visual Studio install has it", reported.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -358,6 +358,57 @@ public partial class SqlProjectReaderTests
         Assert.StartsWith("p.sqlproj refers to the project ..\\vault\\vault.sqlproj, the database $(VaultDb) on the server $(Annexe), which isn't read", reported.Message, StringComparison.Ordinal);
         Assert.Empty(read.Model.Databases);
         Assert.Equal(["p.sqlproj"], read.Projects.Select(Path.GetFileName));
+    }
+
+    [Fact]
+    public void A_reference_to_another_server_many_projects_make_is_one_note_saying_how_many()
+    {
+        const string Annexe = """<ItemGroup><ProjectReference Include="..\vault\vault.sqlproj" DatabaseSqlCmdVariable="VaultDb" ServerSqlCmdVariable="Annexe" /></ItemGroup>""";
+        using var folder = new TempDirectory();
+        VaultProject(folder);
+        folder.File("q/q.sqlproj", Sdk(Annexe));
+        var read = ReadWith(folder, Sdk(Annexe + """<ItemGroup><ProjectReference Include="../q/q.sqlproj" /></ItemGroup>"""));
+
+        var reported = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.OtherServer, reported.Code);
+        Assert.StartsWith("p.sqlproj and 1 other project refer to the project ..\\vault\\vault.sqlproj, the database $(VaultDb) on the server $(Annexe)", reported.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_dacpac_of_the_same_database_two_projects_refer_to_is_read_once_with_its_own_references()
+    {
+        using var folder = new TempDirectory();
+        Copy(folder, Path.Combine("harbour", "crane.dacpac"), Path.Combine("lib", "crane.dacpac"));
+        Copy(folder, Path.Combine("harbour", "quay.dacpac"), Path.Combine("lib", "quay.dacpac"));
+        const string Crane = """<ItemGroup><ArtifactReference Include="..\lib\crane.dacpac" /></ItemGroup>""";
+        folder.File("q/q.sqlproj", Sdk(Crane));
+        var read = ReadWith(folder, Sdk(Crane + """<ItemGroup><ProjectReference Include="../q/q.sqlproj" /></ItemGroup>"""));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(["crane.dacpac", "quay.dacpac"], read.References.Select(r => r.Name));
+        Assert.Single(read.Model.Tables, t => t.Name == new ObjectName("dock", "crane"));
+    }
+
+    [Theory]
+    [InlineData("""<ArtifactReference Include="$(Nowhere)\tally.dacpac" DatabaseVariableLiteralValue="tally" />""")]
+    [InlineData("""<ArtifactReference Include="../lib/tally.dacpac" DatabaseSqlCmdVariable="$(Nowhere)" />""")]
+    [InlineData("""<ArtifactReference Include="../lib/tally.dacpac" DatabaseVariableLiteralValue="tally" Condition="'$(Nowhere)' == 'yes'" />""")]
+    [InlineData("""<ProjectReference Include="../vault/vault.sqlproj" DatabaseVariableLiteralValue="$(Nowhere)" />""")]
+    [InlineData("""<PackageReference Include="Microsoft.SqlServer.Dacpacs.Master" Version="$(Nowhere)" />""")]
+    public void A_reference_with_something_not_evaluated_is_reported_once_and_not_read(string reference)
+    {
+        using var folder = new TempDirectory();
+        Copy(folder, Path.Combine("harbour", "tally.dacpac"), Path.Combine("lib", "tally.dacpac"));
+        Restored(folder);
+        VaultProject(folder);
+        var read = ReadWith(folder, Sdk($"<ItemGroup>{reference}</ItemGroup>"));
+
+        var reported = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.PartNotRead, reported.Code);
+        Assert.Contains("isn't read: ", reported.Message, StringComparison.Ordinal);
+        Assert.Empty(read.References);
+        Assert.Empty(read.Model.Databases);
+        Assert.Empty(read.Model.Tables);
     }
 
     [Fact]

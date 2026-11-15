@@ -37,9 +37,15 @@ that can't exist (found reading a package built on Windows, 14 Nov 2026).
 of another database, or `master.dacpac`, is now read too, with the packages of its own database, into a model of its own that
 the model holds under the name a body writes the database by; its references to a third database are recorded, not read.
 
-**Amended** (15 Nov 2026, [decision 0045](0045-a-project-s-references-are-read-from-where-its-build-takes-them.md)). A project
-file's references are found the same way, from where its build takes each and then in the `references` folders; and a reference
-to a database on another server is noted and not read, from a package as from a project.
+**Amended** (15 Nov 2026, [decision 0045](0045-a-project-s-references-are-read-from-where-its-build-takes-them.md)). A DACPAC a
+project file refers to is looked for in this order, the first file found winning:
+1. where the project's build takes it from: an `ArtifactReference`'s `Include`; a package's `HintPath`, or `tools/<name>.dacpac` in
+   the folder its restore gave the version the project names;
+2. by its file name in each folder of the config file's `references`, in order.
+
+A project has no equivalent of a package's recorded path, the last place above for a package: the path a project gives is the one
+its build uses, already first. A package a project refers to is then read as above, its own references found as a package's are.
+A reference to a database on another server is noted and not read, from a package as from a project.
 
 **See also:** [The inputs and the model](../internals/02-the-inputs-and-the-model.md), "A DACPAC becomes the same model"; `ReferenceFinder`,
 `DacpacReader`; [HAR1003](../diagnostics/HAR1003.md).

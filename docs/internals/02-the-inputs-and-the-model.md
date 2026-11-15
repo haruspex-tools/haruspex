@@ -263,7 +263,8 @@ read one way whoever refers to it.
   refers to.
 - **Visual Studio's `master.dacpac`.** SSDT's projects refer to it under `$(DacPacRootPath)`, which only a Visual Studio
   install defines. It is looked for by its file name in the config file's `references`, as any DACPAC not where its build
-  takes it is. So is a package that isn't restored. One found nowhere is a warning saying where it was looked for
+  takes it is, and the file found there stands for Visual Studio's: whether it is the version the path names (the `150` in
+  `SqlServer\150`) isn't checked, and the IR's hash says which file was read. So is a package that isn't restored. One found nowhere is a warning saying where it was looked for
   ([HAR1003](../diagnostics/HAR1003.md)), and is recorded in the IR without a hash.
 
 The IR's `source.references` then lists the packages a project read, with their hashes, as a DACPAC's does; a project of

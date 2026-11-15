@@ -26,6 +26,7 @@ internal sealed class ProjectReading
     private readonly Dictionary<string, (DatabaseReference Reference, string? Problem, List<string> Referrers)> missing = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, (SourceLocation At, int Projects)> targets = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<(string Where, string? Database), DacPackage?> found = [];
+    private readonly List<ServerReference> servers = [];
 
     /// <summary>The DACPACs the read opens, and every reference to one it meets.</summary>
     private readonly PackageSet packages;
@@ -193,7 +194,7 @@ internal sealed class ProjectReading
     private static string Remedy(DatabaseReference reference) => reference.Kind switch
     {
         DatabaseReferenceKind.Package => $"Restore the project, or name a folder holding {reference.FileName} in \"references\" in the config file.",
-        DatabaseReferenceKind.VisualStudio => $"Only a Visual Studio install has it: name a folder holding {reference.FileName} in \"references\" in the config file.",
+        DatabaseReferenceKind.VisualStudio => $"Only a Visual Studio install has it: name a folder holding a {reference.FileName} in \"references\" in the config file, which is read in its place, whatever version it is.",
         DatabaseReferenceKind.Artifact or DatabaseReferenceKind.Project => $"Put it there, or name a folder holding {reference.FileName} in \"references\" in the config file.",
         _ => throw new ArgumentOutOfRangeException(nameof(reference)),
     };
@@ -207,9 +208,16 @@ internal sealed class ProjectReading
             known.Referrers.Add(referrer);
     }
 
-    /// <summary>What is said once for the whole read: each target, and each project not found.</summary>
+    /// <summary>What is said once for the whole read: each target, each project not found, and each reference to another server.</summary>
     private void Report()
     {
+        foreach (var made in servers.GroupBy(r => r.What, StringComparer.Ordinal))
+        {
+            var by = made.Select(r => r.Project).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var who = by.Count == 1 ? $"{by[0]} refers" : $"{by[0]} and {by.Count - 1} other project{(by.Count == 2 ? "" : "s")} refer";
+            diagnostics.Add(SourceCodes.OtherServer.At(made.First().At, $"{who} to {made.Key}"));
+        }
+
         foreach (var (name, (at, count)) in targets)
         {
             diagnostics.Add(SourceCodes.PartNotRead.At(
@@ -239,11 +247,11 @@ internal sealed class ProjectReading
             return null;
         }
 
-        if (Read(file, new Dictionary<string, string>(), diagnostics) is not { } debug)
+        if (Read(file, new Dictionary<string, string>(), diagnostics, servers) is not { } debug)
             return null;
         foreach (var target in debug.Targets)
             targets[target.Name] = targets.TryGetValue(target.Name, out var seen) ? (seen.At, seen.Projects + 1) : (target.At, 1);
-        var release = Read(file, new Dictionary<string, string> { [ProjectXml.Configuration] = ProjectXml.Release }, []);
+        var release = Read(file, new Dictionary<string, string> { [ProjectXml.Configuration] = ProjectXml.Release }, [], []);
         if (release is not null && Difference(debug, release) is { } differs)
         {
             diagnostics.Add(SourceCodes.PartNotRead.At(
@@ -254,15 +262,18 @@ internal sealed class ProjectReading
         return debug;
     }
 
-    /// <summary>One project, evaluated with <paramref name="globals"/>, and what it gives the read.</summary>
-    private ProjectRead? Read(ProjectFile file, IReadOnlyDictionary<string, string> globals, List<Diagnostic> into)
+    /// <summary>
+    /// One project, evaluated with <paramref name="globals"/>, and what it gives the read; what it finds reported in
+    /// <paramref name="into"/>, and its references to another server kept in <paramref name="noted"/>.
+    /// </summary>
+    private ProjectRead? Read(ProjectFile file, IReadOnlyDictionary<string, string> globals, List<Diagnostic> into, List<ServerReference> noted)
     {
         if (ProjectEvaluator.Evaluate(file, folder, globals, into) is not { } project)
             return null;
         into.AddRange(project.Problems);
         var settings = ProjectSettings.Read(project, into, out var collation);
         var scripts = ProjectFiles.Read(project, into);
-        var references = ProjectReferences.Read(project, cache, into);
+        var references = ProjectReferences.Read(project, cache, into, noted);
         return new ProjectRead([.. scripts], settings, collation, references, project.Targets);
     }
 
