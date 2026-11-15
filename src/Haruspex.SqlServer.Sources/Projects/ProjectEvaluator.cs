@@ -54,6 +54,7 @@ internal sealed class ProjectEvaluator
     private readonly HashSet<string> imported = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<ProjectItem> items = [];
     private readonly List<DoubtedItem> doubted = [];
+    private readonly List<ProjectTarget> targets = [];
     private readonly Dictionary<string, Dictionary<string, Evaluated>> definitions = new(StringComparer.OrdinalIgnoreCase);
     private bool targetsImported;
 
@@ -95,7 +96,7 @@ internal sealed class ProjectEvaluator
         if (format.IsSdkStyle)
             evaluator.SdkTargets();
         evaluator.Items();
-        return new EvaluatedProject(project, format, evaluator.properties, evaluator.items, evaluator.doubted, evaluator.problems);
+        return new EvaluatedProject(project, format, evaluator.properties, evaluator.items, evaluator.doubted, evaluator.targets, evaluator.problems);
     }
 
     /// <summary>
@@ -187,9 +188,7 @@ internal sealed class ProjectEvaluator
                         Walk(file, branch.Elements(), [.. forced, choose]);
                     break;
                 case ProjectXml.Target when element.HasElements:
-                    problems.Add(SourceCodes.PartNotRead.At(
-                        file.At(element),
-                        $"The target {(string?)element.Attribute("Name")} runs during a build, and what it does isn't read: a script it adds or takes out, or a setting it changes, is not seen."));
+                    targets.Add(new ProjectTarget((string?)element.Attribute("Name") ?? "", file.At(element)));
                     break;
             }
         }
@@ -347,6 +346,9 @@ internal sealed class ProjectEvaluator
         }
     }
 
+    /// <summary>The pattern of the SDK's own <c>Build</c> item.</summary>
+    private const string DefaultPattern = "**/*.sql";
+
     /// <summary>The SDK's own <c>Build</c> item: every <c>.sql</c> file under the project's folder, less <c>DefaultSqlItemExcludes</c>.</summary>
     private void DefaultItems(Step step)
     {
@@ -354,7 +356,7 @@ internal sealed class ProjectEvaluator
         var enabled = properties[ProjectXml.EnableDefaultSqlItems] ?? Evaluated.Sure("");
         if (!enabled.IsSure)
         {
-            doubted.Add(new DoubtedItem(ProjectXml.Build, at, enabled.Doubts));
+            doubted.Add(new DoubtedItem(ProjectXml.Build, ProjectXml.Include, DefaultPattern, DefaultPattern, at, enabled.Doubts));
             return;
         }
 
@@ -363,11 +365,11 @@ internal sealed class ProjectEvaluator
         var excludes = properties[ProjectXml.DefaultSqlItemExcludes] ?? Evaluated.Sure("");
         if (!excludes.IsSure)
         {
-            doubted.Add(new DoubtedItem(ProjectXml.Build, at, excludes.Doubts));
+            doubted.Add(new DoubtedItem(ProjectXml.Build, ProjectXml.Include, DefaultPattern, DefaultPattern, at, excludes.Doubts));
             return;
         }
 
-        Include(ProjectXml.Build, "**/*.sql", excludes.Text, at, null, step.File);
+        Include(ProjectXml.Build, DefaultPattern, excludes.Text, at, null, step.File);
     }
 
     /// <summary>
@@ -397,12 +399,14 @@ internal sealed class ProjectEvaluator
         var include = (string?)element.Attribute(ProjectXml.Include);
         var remove = (string?)element.Attribute(ProjectXml.Remove);
         var update = (string?)element.Attribute(ProjectXml.Update);
-        var spec = properties.Expand(include ?? remove ?? update ?? "", file, at);
+        var written = include ?? remove ?? update ?? "";
+        var spec = properties.Expand(written, file, at);
         var exclude = properties.Expand((string?)element.Attribute(ProjectXml.Exclude) ?? "", file, at);
         doubts = Doubt.Union(doubts, spec.Doubts.Concat(exclude.Doubts));
         if (doubts.Count > 0)
         {
-            doubted.Add(new DoubtedItem(type, at, doubts));
+            var verb = include is not null ? ProjectXml.Include : remove is not null ? ProjectXml.Remove : ProjectXml.Update;
+            doubted.Add(new DoubtedItem(type, verb, written, spec.IsSure ? spec.Text : null, at, doubts));
             return;
         }
 
@@ -424,15 +428,15 @@ internal sealed class ProjectEvaluator
     /// <summary>Adds an item for each path or name <paramref name="specs"/> lists, a pattern for each file it names less <paramref name="excludes"/>.</summary>
     private void Include(string type, string specs, string excludes, SourceLocation at, XElement? element, ProjectFile file)
     {
-        var left = Specs(excludes).ToList();
-        foreach (var spec in Specs(specs))
+        var left = ItemSpecs.Of(excludes);
+        foreach (var spec in ItemSpecs.Of(specs))
         {
             var added = new List<ProjectItem>();
             if (!FileTypes.Contains(type))
                 added.Add(new ProjectItem(type, spec, null, at));
             else if (Glob.IsPattern(spec))
-                added.AddRange(Glob.Of(Folder, spec).Files().Where(f => !left.Any(x => Names(x, f))).Select(f => new ProjectItem(type, Path.GetRelativePath(Folder, f), f, at)));
-            else if (!left.Any(x => Names(x, DiskPath.Full(Folder, spec))))
+                added.AddRange(Glob.Of(Folder, spec).Files().Where(f => !left.Any(x => ItemSpecs.Names(Folder, x, f))).Select(f => new ProjectItem(type, Path.GetRelativePath(Folder, f), f, at)));
+            else if (!left.Any(x => ItemSpecs.Names(Folder, x, DiskPath.Full(Folder, spec))))
                 added.Add(new ProjectItem(type, spec, DiskPath.IsRootedElsewhere(spec) ? null : DiskPath.Full(Folder, spec), at));
 
             foreach (var item in added)
@@ -452,13 +456,7 @@ internal sealed class ProjectEvaluator
 
     /// <summary>Whether <paramref name="item"/> is one <paramref name="specs"/> names: by pattern or path for a file, by name otherwise, ignoring case.</summary>
     private bool Matches(ProjectItem item, string specs) =>
-        Specs(specs).Any(spec => item.FullPath is { } path ? Names(spec, path) : item.Spec.Equals(spec, StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>Whether the path or pattern <paramref name="spec"/> names the file at <paramref name="path"/>, ignoring case.</summary>
-    private bool Names(string spec, string path) =>
-        Glob.IsPattern(spec) ? Glob.Of(Folder, spec).Matches(path) : DiskPath.Full(Folder, spec).Equals(path, StringComparison.OrdinalIgnoreCase);
-
-    private static string[] Specs(string text) => text.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        item.FullPath is { } path ? ItemSpecs.AnyNames(Folder, specs, path) : ItemSpecs.Of(specs).Any(spec => item.Spec.Equals(spec, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// An item element's metadata into <paramref name="into"/>: its attributes other than how it applies, and its child elements,

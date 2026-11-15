@@ -415,5 +415,12 @@ internal static class Generate
 
     /// <summary>The diagnostic with its SQL location's file under the folder it was read from, as the user names it (<see cref="SqlProject.FolderOf"/>).</summary>
     private static Diagnostic Rooted(Diagnostic diagnostic, SqlProject project) =>
-        diagnostic.At is SourceLocation at ? diagnostic with { At = at with { File = Path.Join(project.FolderOf(at.File), at.File) } } : diagnostic;
+        diagnostic.At is SourceLocation at ? diagnostic with { At = at with { File = Joined(project.FolderOf(at.File), at.File) } } : diagnostic;
+
+    /// <summary>
+    /// A location's file under its folder, as one path: a file of a project beside the one given (<c>../press/press.sqlproj</c>) is
+    /// named where it is, not through the folder it is relative to.
+    /// </summary>
+    private static string Joined(string folder, string file) =>
+        file.StartsWith("../", StringComparison.Ordinal) ? Path.GetFullPath(Path.Join(folder, file)) : Path.Join(folder, file);
 }

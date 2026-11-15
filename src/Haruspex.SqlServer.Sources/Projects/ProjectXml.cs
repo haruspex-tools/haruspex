@@ -61,6 +61,7 @@ internal static class ProjectXml
     public const string DatabaseVariableLiteralValue = "DatabaseVariableLiteralValue";
     public const string DatabaseSqlCmdVariable = "DatabaseSqlCmdVariable";
     public const string ServerSqlCmdVariable = "ServerSqlCmdVariable";
+    public const string Version = "Version";
 
     // The properties: the database's settings, and those of the SDK's default items.
     public const string DSP = "DSP";

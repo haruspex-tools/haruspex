@@ -229,7 +229,9 @@ reach the parse and the model, so a script built with `QUOTED_IDENTIFIER` off re
 
 Every value carries what wasn't evaluated in it, a `Doubt`: a property function, a property defined nowhere, a condition beyond
 the ones evaluated, a `Choose`. A doubt travels with every value it touches, through properties, conditions and items, and is
-reported once, where it is, only when it reaches what is read: a script, a script's settings, the database's. That keeps two
+reported once, where it is, only when it reaches what is read: a script, a script's settings, the database's. An item that may take a
+script out of the build, or change its settings, and isn't evaluated leaves out every script it may touch: what the build reads
+then isn't known, so nothing it might not read is typed. That keeps two
 things true at once. Nothing read is a guess, since what a doubt reaches isn't read. And a project beside a shared
 `Directory.Build.props` full of C# settings reads without a word, since none of those reach anything a database build reads.
 

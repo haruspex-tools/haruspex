@@ -22,7 +22,8 @@ namespace Haruspex.SqlServer.Sources.Projects;
 /// <b>References.</b> Each project of the same database a project refers to is read from its own <c>.sqlproj</c>, its scripts with
 /// its own settings, transitively, each once: the database is the sum of them, as it is of a DACPAC's packages. The database's
 /// settings are the given project's. A referenced project not found is one warning, and the model says what it lacks
-/// (<see cref="DatabaseModel.Unread"/>); an object two projects define is reported as a folder's would be.
+/// (<see cref="DatabaseModel.Unread"/>), naming every project that refers to it; an object two projects define is reported as a
+/// folder's would be. A target, which isn't read, is reported once by its name, however many projects define it.
 /// </para>
 /// <para>
 /// <b>Configuration.</b> A project is read as <c>dotnet build</c> builds it, as <c>Debug</c> unless it says otherwise, and read
@@ -33,7 +34,10 @@ public static class SqlProjectReader
 {
     /// <summary>Reads the project at <paramref name="path"/> and every project of its database it refers to.</summary>
     /// <param name="path">The <c>.sqlproj</c>.</param>
-    public static SqlProjectReadResult Read(string path)
+    public static SqlProjectReadResult Read(string path) => Read(path, PackageCache.Default);
+
+    /// <summary>Reads the project at <paramref name="path"/>, finding the packages it refers to in <paramref name="cache"/>.</summary>
+    internal static SqlProjectReadResult Read(string path, PackageCache cache)
     {
         ArgumentNullException.ThrowIfNull(path);
         var root = Path.GetFullPath(path);
@@ -42,7 +46,8 @@ public static class SqlProjectReader
         var queue = new List<(string Path, string? Referrer, ProjectItem? Reference)> { (root, null, null) };
         var projects = new List<string>();
         var scripts = new List<ScriptFile>();
-        var unread = new List<UnreadPart>();
+        var missing = new Dictionary<string, (ProjectItem Reference, string? Problem, List<string> Referrers)>(StringComparer.OrdinalIgnoreCase);
+        var targets = new Dictionary<string, (SourceLocation At, int Projects)>(StringComparer.OrdinalIgnoreCase);
         DatabaseSettings? settings = null;
         string? collation = null;
         for (var i = 0; i < queue.Count; i++)
@@ -53,17 +58,20 @@ public static class SqlProjectReader
                 continue;
             if (located is null && referrer is not null && reference is not null)
             {
-                diagnostics.Add(SourceCodes.ProjectNotFound.At(
-                    reference.At,
-                    $"{referrer} refers to {reference.Spec}, a project of the same database, which {problem ?? "isn't found"}: what it defines is missing."));
-                unread.Add(new UnreadPart(Path.GetFileName(next), referrer));
+                // Once for the project, however many refer to it, naming each.
+                if (!missing.TryGetValue(next, out var known))
+                    missing[next] = known = (reference, problem, []);
+                if (!known.Referrers.Contains(referrer, StringComparer.OrdinalIgnoreCase))
+                    known.Referrers.Add(referrer);
                 continue;
             }
 
             located ??= next;
             projects.Add(located);
-            if (Project(located, folder, diagnostics) is not { } read)
+            if (Project(located, folder, cache, diagnostics) is not { } read)
                 continue;
+            foreach (var target in read.Targets)
+                targets[target.Name] = targets.TryGetValue(target.Name, out var seen) ? (seen.At, seen.Projects + 1) : (target.At, 1);
             if (i == 0)
             {
                 settings = read.Settings;
@@ -72,6 +80,23 @@ public static class SqlProjectReader
 
             scripts.AddRange(read.Scripts.Select(s => new ScriptFile(s.Path, Path.GetRelativePath(folder, s.Path).Replace('\\', '/'), s.Settings)));
             queue.AddRange(read.References.Select(r => (r.FullPath ?? r.Spec, (string?)Path.GetFileName(located), (ProjectItem?)r)));
+        }
+
+        foreach (var (name, (at, count)) in targets)
+        {
+            diagnostics.Add(SourceCodes.PartNotRead.At(
+                at,
+                $"The target {name}{(count > 1 ? $", which {count} projects define," : "")} runs during a build, and what it does isn't read: a script it adds or takes out, or a setting it changes, is not seen."));
+        }
+
+        var unread = new List<UnreadPart>();
+        foreach (var (absent, (reference, problem, referrers)) in missing)
+        {
+            var who = string.Join(", ", referrers);
+            diagnostics.Add(SourceCodes.ProjectNotFound.At(
+                reference.At,
+                $"{who} {(referrers.Count == 1 ? "refers" : "refer")} to {reference.Spec}, a project of the same database, which {problem ?? "isn't found"}: what it defines is missing."));
+            unread.Add(new UnreadPart(Path.GetFileName(absent), who));
         }
 
         // In order of their relative paths, as a folder's are, so the outcome doesn't depend on the order of the items; a script two
@@ -87,7 +112,7 @@ public static class SqlProjectReader
     /// One project, read as <c>Debug</c> and compared with a read as <c>Release</c>; null, with why, when it can't be read as a
     /// project at all.
     /// </summary>
-    private static ProjectRead? Project(string path, string folder, List<Diagnostic> diagnostics)
+    private static ProjectRead? Project(string path, string folder, PackageCache cache, List<Diagnostic> diagnostics)
     {
         var shown = Path.GetRelativePath(folder, path).Replace('\\', '/');
         if (ProjectFile.Load(path, shown, out var problem) is not { } file)
@@ -96,9 +121,9 @@ public static class SqlProjectReader
             return null;
         }
 
-        if (Read(file, folder, new Dictionary<string, string>(), diagnostics) is not { } debug)
+        if (Read(file, folder, new Dictionary<string, string>(), cache, diagnostics) is not { } debug)
             return null;
-        var release = Read(file, folder, new Dictionary<string, string> { [ProjectXml.Configuration] = ProjectXml.Release }, []);
+        var release = Read(file, folder, new Dictionary<string, string> { [ProjectXml.Configuration] = ProjectXml.Release }, cache, []);
         if (release is not null && Difference(debug, release) is { } differs)
         {
             diagnostics.Add(SourceCodes.PartNotRead.At(
@@ -110,7 +135,7 @@ public static class SqlProjectReader
     }
 
     /// <summary>One project, evaluated with <paramref name="globals"/>, and what it gives the read.</summary>
-    private static ProjectRead? Read(ProjectFile file, string folder, IReadOnlyDictionary<string, string> globals, List<Diagnostic> diagnostics)
+    private static ProjectRead? Read(ProjectFile file, string folder, IReadOnlyDictionary<string, string> globals, PackageCache cache, List<Diagnostic> diagnostics)
     {
         if (ProjectEvaluator.Evaluate(file, folder, globals, diagnostics) is not { } project)
             return null;
@@ -118,8 +143,8 @@ public static class SqlProjectReader
             diagnostics.Add(problem);
         var settings = ProjectSettings.Read(project, diagnostics, out var collation);
         var scripts = ProjectFiles.Read(project, diagnostics);
-        var references = ProjectReferences.SameDatabase(project, diagnostics);
-        return new ProjectRead([.. scripts], settings, collation, references);
+        var references = ProjectReferences.SameDatabase(project, cache, diagnostics);
+        return new ProjectRead([.. scripts], settings, collation, references, project.Targets);
     }
 
     /// <summary>What differs between two reads of one project, in words; null when nothing does.</summary>
@@ -141,8 +166,10 @@ public static class SqlProjectReader
         string.Join(", ", new[] { settings.AnsiNulls ? null : "ANSI_NULLS off", settings.QuotedIdentifier ? null : "QUOTED_IDENTIFIER off" }.OfType<string>());
 
     /// <summary>What one project gives the read: its scripts, its settings (the database's, if it is the one given), and the projects of its database it refers to.</summary>
-    private sealed class ProjectRead(EquatableArray<ProjectScript> scripts, DatabaseSettings? settings, string? collation, IReadOnlyList<ProjectItem> references)
+    private sealed class ProjectRead(EquatableArray<ProjectScript> scripts, DatabaseSettings? settings, string? collation, IReadOnlyList<ProjectItem> references, IReadOnlyList<ProjectTarget> targets)
     {
+        public IReadOnlyList<ProjectTarget> Targets { get; } = targets;
+
         public EquatableArray<ProjectScript> Scripts { get; } = scripts;
 
         public DatabaseSettings? Settings { get; } = settings;

@@ -30,7 +30,10 @@ public class SqlProjectReaderTests
         </Project>
         """;
 
-    /// <summary>A legacy project as Visual Studio writes it, its items <paramref name="items"/>.</summary>
+    /// <summary>
+    /// A legacy project as Visual Studio's newer template writes it, with the lines for a build by the .NET SDK
+    /// (<c>NetCoreBuild</c>), its items <paramref name="items"/>. <c>mill</c>, in <c>tests/dacpacs/projects</c>, holds the older one.
+    /// </summary>
     private static string Legacy(string items, string properties = "") => $"""
         <?xml version="1.0" encoding="utf-8"?>
         <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
@@ -50,8 +53,12 @@ public class SqlProjectReaderTests
             <SSDTExists Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets')">True</SSDTExists>
             <VisualStudioVersion Condition="'$(SSDTExists)' == ''">11.0</VisualStudioVersion>
           </PropertyGroup>
-          <Import Condition="'$(SQLDBExtensionsRefPath)' != ''" Project="$(SQLDBExtensionsRefPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
-          <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+          <Import Condition="'$(NetCoreBuild)' == 'true'" Project="$(NETCoreTargetsPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+          <Import Condition="'$(NetCoreBuild)' != 'true' AND '$(SQLDBExtensionsRefPath)' != ''" Project="$(SQLDBExtensionsRefPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+          <Import Condition="'$(NetCoreBuild)' != 'true' AND '$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+          <ItemGroup>
+            <PackageReference Condition="'$(NetCoreBuild)' == 'true'" Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="All" />
+          </ItemGroup>
           <ItemGroup>
             {items}
           </ItemGroup>
@@ -345,7 +352,6 @@ public class SqlProjectReaderTests
         { "a condition it can't evaluate", "<Build Include=\"a.sql\" Condition=\"$([MSBuild]::IsOSPlatform('Windows'))\" />", "isn't evaluated" },
         { "a condition function it doesn't know", "<Build Include=\"a.sql\" Condition=\"Exists('a.sql') And IsWindows()\" />", "the condition function IsWindows() isn't evaluated" },
         { "metadata batching", "<Build Include=\"a.sql\" Condition=\"'%(Extension)' == '.sql'\" />", "the metadata %(Extension) isn't evaluated" },
-        { "a Remove it can't evaluate", "<Build Remove=\"$(Elsewhere)\" />", "$(Elsewhere) is defined nowhere in the project" },
     };
 
     [Theory]
@@ -377,7 +383,7 @@ public class SqlProjectReaderTests
     }
 
     [Fact]
-    public void A_choose_doubts_what_it_sets_and_nothing_else()
+    public void A_choose_doubts_what_it_sets_and_nothing_else_and_a_script_it_may_take_out_isn_t_read()
     {
         using var folder = new TempDirectory();
         var read = Read(folder, Sdk("""
@@ -388,8 +394,9 @@ public class SqlProjectReaderTests
             """), ("p/a.sql", Proc("a")), ("p/b.sql", Proc("b")));
 
         Assert.Equal(2, read.Diagnostics.Count(d => d.Message.Contains("Choose isn't evaluated", StringComparison.Ordinal)));
+        Assert.Contains(read.Diagnostics, d => d.Message.StartsWith("a.sql isn't read: the None Include", StringComparison.Ordinal));
         Assert.Null(read.Model.DefaultCollation);
-        Assert.Equal(["a", "b"], Procedures(read));
+        Assert.Equal(["b"], Procedures(read));
     }
 
     [Fact]
@@ -550,5 +557,197 @@ public class SqlProjectReaderTests
         var fromProject = SqlProject.LoadProject(Path.Combine(folder.Path, "p", "p.sqlproj"), collation: null);
         var fromFolder = SqlProject.Load(scripts.Path, fromProject.DefaultCollation);
         Assert.Equal(IrJsonWriter.Write(fromFolder.Infer(fromFolder.Procedures).Expected()), IrJsonWriter.Write(fromProject.Infer(fromProject.Procedures).Expected()));
+    }
+
+    // Round 1 of the review.
+
+    public static TheoryData<string, string, string> DoubtedTakeOuts { get; } = new()
+    {
+        { "<Build Remove=\"$(NotDefinedAnywhere)gone.sql\" />", "No script of p.sqlproj is read: the Build Remove", "" },
+        { "<PostDeploy Include=\"$(DeployFolder)post.sql\" />", "No script of p.sqlproj is read: the PostDeploy Include", "" },
+        { "<None Include=\"gone.sql\" Condition=\"$([System.OperatingSystem]::IsWindows())\" />", "gone.sql isn't read: the None Include", "kept" },
+        { "<Build Update=\"gone.sql\" Condition=\"'$(Quoting)' == 'off'\" QuotedIdentifier=\"Off\" />", "gone.sql isn't read: the Build Update", "kept" },
+    };
+
+    [Theory]
+    [MemberData(nameof(DoubtedTakeOuts))]
+    public void A_script_a_doubted_item_may_take_out_or_change_isn_t_read_and_that_is_said(string item, string said, string read)
+    {
+        using var folder = new TempDirectory();
+        var result = Read(folder, Sdk($"<ItemGroup>{item}</ItemGroup>"), ("p/gone.sql", Proc("gone")), ("p/kept.sql", Proc("kept")), ("p/post.sql", "PRINT 1;"));
+
+        Assert.Equal(read.Length == 0 ? [] : [read], Procedures(result));
+        var reported = Assert.Single(result.Diagnostics);
+        Assert.Equal(SourceCodes.PartNotRead, reported.Code);
+        Assert.StartsWith(said, reported.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_doubted_none_in_a_legacy_project_takes_nothing_out_and_says_nothing()
+    {
+        using var folder = new TempDirectory();
+        var read = Read(folder, Legacy("<Build Include=\"a.sql\" /><None Include=\"$(Elsewhere)a.sql\" />"), ("p/a.sql", Proc("a")));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(["a"], Procedures(read));
+    }
+
+    [Fact]
+    public void An_include_with_r_in_a_comment_or_a_string_takes_nothing_out_as_the_build_observed()
+    {
+        using var folder = new TempDirectory();
+        var read = Read(
+            folder,
+            Sdk("<ItemGroup><PostDeploy Include=\"deploy\\post.sql\" /></ItemGroup>"),
+            ("p/deploy/post.sql", "/*\n:r .\\in_block.sql\n/* nested */\n:r .\\in_nested.sql\n*/\n-- :r .\\in_dash.sql\nPRINT '\n:r .\\in_string.sql\n';\nGO\n:r .\\real.sql\n"),
+            ("p/deploy/in_block.sql", Proc("in_block")), ("p/deploy/in_nested.sql", Proc("in_nested")), ("p/deploy/in_dash.sql", Proc("in_dash")),
+            ("p/deploy/in_string.sql", Proc("in_string")), ("p/deploy/real.sql", Proc("real")));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(["in_block", "in_dash", "in_nested", "in_string"], Procedures(read));
+    }
+
+    [Fact]
+    public void Visual_studio_s_master_reference_is_one_note_like_any_reference_to_master()
+    {
+        using var folder = new TempDirectory();
+        var read = Read(folder, Legacy("""
+            <Build Include="a.sql" />
+            <ArtifactReference Include="$(DacPacRootPath)\Extensions\Microsoft\SQLDB\Extensions\SqlServer\150\SqlSchemas\master.dacpac">
+              <HintPath>$(DacPacRootPath)\Extensions\Microsoft\SQLDB\Extensions\SqlServer\150\SqlSchemas\master.dacpac</HintPath>
+              <SuppressMissingDependenciesErrors>False</SuppressMissingDependenciesErrors>
+              <DatabaseVariableLiteralValue>master</DatabaseVariableLiteralValue>
+            </ArtifactReference>
+            """), ("p/a.sql", Proc("a")));
+
+        var reported = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.ReferenceNotRead, reported.Code);
+        Assert.Contains("SSDT's own master.dacpac", reported.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_package_reference_is_noted_only_when_its_package_holds_a_dacpac_or_isn_t_in_the_cache()
+    {
+        using var cache = new TempDirectory();
+        cache.File("rules.package/1.0.0/lib/netstandard2.1/Rules.dll", "");
+        cache.File("shared.schema/2.0.0/tools/shared.dacpac", "");
+        using var folder = new TempDirectory();
+        folder.File("p/p.sqlproj", Sdk("""
+            <ItemGroup>
+              <PackageReference Include="Rules.Package" Version="1.0.0" />
+              <PackageReference Include="Shared.Schema" Version="2.0.0" />
+              <PackageReference Include="Not.Restored" Version="3.0.0" />
+              <PackageReference Include="Microsoft.SqlServer.Dacpacs.Master" Version="170.0.4" />
+            </ItemGroup>
+            """));
+        var read = SqlProjectReader.Read(Path.Combine(folder.Path, "p", "p.sqlproj"), new PackageCache(cache.Path));
+
+        Assert.All(read.Diagnostics, d => Assert.Equal(SourceCodes.ReferenceNotRead, d.Code));
+        Assert.Equal(3, read.Diagnostics.Count);
+        Assert.DoesNotContain(read.Diagnostics, d => d.Message.Contains("Rules.Package", StringComparison.Ordinal));
+        Assert.Contains(read.Diagnostics, d => d.Message.Contains("Not.Restored, which isn't in the NuGet cache", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_missing_project_is_reported_once_naming_every_project_that_refers_to_it()
+    {
+        using var folder = new TempDirectory();
+        folder.File("b/b.sqlproj", Sdk("<ItemGroup><ProjectReference Include=\"../gone/gone.sqlproj\" /></ItemGroup>"));
+        folder.File("c/c.sqlproj", Sdk("<ItemGroup><ProjectReference Include=\"..\\GONE\\Gone.sqlproj\" /></ItemGroup>"));
+        var read = Read(folder, Sdk("<ItemGroup><ProjectReference Include=\"../b/b.sqlproj\" /><ProjectReference Include=\"../c/c.sqlproj\" /><ProjectReference Include=\"../gone/gone.sqlproj\" /></ItemGroup>"));
+
+        var reported = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.ProjectNotFound, reported.Code);
+        Assert.StartsWith("p.sqlproj, b.sqlproj, c.sqlproj refer to", reported.Message, StringComparison.Ordinal);
+        Assert.Equal([new UnreadPart("gone.sqlproj", "p.sqlproj, b.sqlproj, c.sqlproj")], read.Model.Unread);
+    }
+
+    [Fact]
+    public void A_problem_in_a_referenced_project_is_printed_where_that_project_is()
+    {
+        using var folder = new TempDirectory();
+        folder.File("q/q.sqlproj", Sdk("<ItemGroup><Build Include=\"missing.sql\" /></ItemGroup>"));
+        folder.File("p/p.sqlproj", Sdk("<ItemGroup><ProjectReference Include=\"../q/q.sqlproj\" /></ItemGroup>"));
+        folder.File("p/a.sql", "CREATE PROCEDURE dbo.a AS SELECT 1 AS one;");
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        HaruspexCli.Run(["generate", "p/p.sqlproj", "--include", "*.*", "--out", "out"], output, error, folder.Path);
+
+        Assert.Contains($"{Path.Combine(folder.Path, "q", "q.sqlproj")}:", error.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("..", error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_link_that_loops_back_is_walked_once_and_a_link_to_a_folder_elsewhere_is_read()
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+        using var folder = new TempDirectory();
+        folder.File("p/real.sql", Proc("real"));
+        folder.File("shared/linked.sql", Proc("linked"));
+        Directory.CreateSymbolicLink(Path.Combine(folder.Path, "p", "loop"), Path.Combine(folder.Path, "p"));
+        Directory.CreateSymbolicLink(Path.Combine(folder.Path, "p", "elsewhere"), Path.Combine(folder.Path, "shared"));
+        var read = Read(folder, Sdk());
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(["linked", "real"], Procedures(read));
+    }
+
+    [Fact]
+    public void A_script_the_default_items_already_hold_included_again_is_said_and_read_once()
+    {
+        using var folder = new TempDirectory();
+        var read = Read(folder, Sdk("<ItemGroup><Build Include=\"dup.sql\" /></ItemGroup>"), ("p/dup.sql", Proc("dup")));
+
+        Assert.Equal(["dup"], Procedures(read));
+        Assert.Contains("NETSDK1022", Assert.Single(read.Diagnostics).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Item_metadata_false_is_off_and_true_is_on()
+    {
+        using var folder = new TempDirectory();
+        var read = Read(folder, Legacy("<Build Include=\"off.sql\" QuotedIdentifier=\"False\" AnsiNulls=\"FALSE\" /><Build Include=\"on.sql\" QuotedIdentifier=\"true\" />", "<QuotedIdentifier>False</QuotedIdentifier>"),
+            ("p/off.sql", Proc("off_quoted", "SELECT \"ripe\" AS state;")), ("p/on.sql", Proc("on_quoted", "SELECT \"ripe\" AS state;")));
+
+        Assert.True(QuotedIdentifierOff(read, "off_quoted"));
+        Assert.True(read.Model.FindProcedure(new ObjectName("dbo", "off_quoted"))!.AnsiNullsOff);
+        Assert.False(QuotedIdentifierOff(read, "on_quoted"));
+    }
+
+    [Fact]
+    public void Exists_is_true_for_a_file_that_is_there_and_false_for_one_that_isn_t()
+    {
+        using var folder = new TempDirectory();
+        var read = Read(
+            folder,
+            Legacy("<Build Include=\"a.sql\" Condition=\"Exists('a.sql')\" /><Build Include=\"b.sql\" Condition=\"Exists('no_such.sql')\" /><Build Include=\"c.sql\" Condition=\"!Exists('NO_SUCH\\c.sql')\" />"),
+            ("p/a.sql", Proc("a")), ("p/b.sql", Proc("b")), ("p/c.sql", Proc("c")));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(["a", "c"], Procedures(read));
+    }
+
+    [Fact]
+    public void Microsoft_build_sql_2_3_0_takes_a_preplan_script_out_and_says_nothing()
+    {
+        using var folder = new TempDirectory();
+        var read = Read(folder, Sdk("<ItemGroup><PrePlan Include=\"plan.sql\" /></ItemGroup>"), ("p/plan.sql", Proc("planned")), ("p/a.sql", Proc("a")));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(["a"], Procedures(read));
+    }
+
+    [Fact]
+    public void A_target_is_reported_once_however_many_projects_define_it()
+    {
+        const string Target = "<Target Name=\"Stamp\" AfterTargets=\"Build\"><Message Text=\"built\" /></Target>";
+        using var folder = new TempDirectory();
+        folder.File("q/q.sqlproj", Sdk(Target));
+        var read = Read(folder, Sdk(Target + "<ItemGroup><ProjectReference Include=\"../q/q.sqlproj\" /></ItemGroup>"));
+
+        var reported = Assert.Single(read.Diagnostics);
+        Assert.Contains("The target Stamp, which 2 projects define, runs during a build", reported.Message, StringComparison.Ordinal);
     }
 }

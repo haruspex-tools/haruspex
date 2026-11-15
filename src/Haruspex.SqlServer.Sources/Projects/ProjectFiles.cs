@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Haruspex.Diagnostics;
 
 namespace Haruspex.SqlServer.Sources.Projects;
@@ -23,14 +22,16 @@ namespace Haruspex.SqlServer.Sources.Projects;
 /// metadata with it off).
 /// </para>
 /// </remarks>
-internal static partial class ProjectFiles
+internal static class ProjectFiles
 {
-    /// <summary>The item types the SDK takes out of <c>Build</c>, whose doubted elements make the scripts unknown.</summary>
-    private static readonly string[] ReadTypes =
+    /// <summary>The item types a <c>Microsoft.Build.Sql</c> build takes out of <c>Build</c> (<c>PrePlan</c> by the versions that do).</summary>
+    private static readonly string[] TakeOut =
     [
-        ProjectXml.Build, ProjectXml.None, ProjectXml.PreDeploy, ProjectXml.PostDeploy, ProjectXml.PrePlan,
-        ProjectXml.BuildExtensionConfiguration, ProjectXml.DeploymentExtensionConfiguration,
+        ProjectXml.None, ProjectXml.PreDeploy, ProjectXml.PostDeploy, ProjectXml.BuildExtensionConfiguration, ProjectXml.DeploymentExtensionConfiguration,
     ];
+
+    /// <summary>The deployment scripts, whose <c>:r</c> includes the build takes out too.</summary>
+    private static readonly string[] Deployment = [ProjectXml.PreDeploy, ProjectXml.PostDeploy];
 
     /// <summary>The scripts of <paramref name="project"/>'s build, in its items' order, each once; what isn't read is reported.</summary>
     public static IReadOnlyList<ProjectScript> Read(EvaluatedProject project, ICollection<Diagnostic> diagnostics)
@@ -38,11 +39,9 @@ internal static partial class ProjectFiles
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(diagnostics);
         var name = Path.GetFileName(project.File.Path);
-        foreach (var item in project.Doubted.Where(d => ReadTypes.Contains(d.Type, StringComparer.OrdinalIgnoreCase)))
-            Doubt.Report(diagnostics, $"The {item.Type} item of {name}, so which scripts are built,", item.Doubts);
-
         var defaults = Defaults(project, diagnostics);
         var taken = TakenOut(project, diagnostics);
+        var unsure = Unsure(project, taken, diagnostics);
         var scripts = new List<ProjectScript>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var item in project.OfType(ProjectXml.Build))
@@ -53,7 +52,13 @@ internal static partial class ProjectFiles
                 continue;
             }
 
-            if (taken.Contains(full) || !seen.Add(full))
+            if (!seen.Add(full))
+            {
+                Duplicate(project, item, diagnostics);
+                continue;
+            }
+
+            if (taken.Contains(full) || unsure.Contains(full))
                 continue;
             if (DiskPath.Locate(full, item.Spec, out var problem) is not { } found)
             {
@@ -73,6 +78,67 @@ internal static partial class ProjectFiles
         }
 
         return scripts;
+    }
+
+    /// <summary>
+    /// The scripts of <c>Build</c> that a doubted item may take out, or whose settings it may change, each reported: a doubted
+    /// <c>Build Remove</c> or <c>Build Update</c>, and for a <c>Microsoft.Build.Sql</c> project a doubted <c>None</c>, deployment
+    /// script or <c>PrePlan</c> (where the version takes one out). When what the item names is known (only whether it applies is
+    /// doubted), those are the scripts it names, and a deployment script's <c>:r</c> includes; when it isn't, every script of the
+    /// project, since it could name any. None of them is read: a script the build may not read is never typed. A doubted
+    /// <c>Build</c> include adds nothing, and says so.
+    /// </summary>
+    private static HashSet<string> Unsure(EvaluatedProject project, HashSet<string> taken, ICollection<Diagnostic> diagnostics)
+    {
+        var name = Path.GetFileName(project.File.Path);
+        var folder = project.File.Folder;
+        var built = project.OfType(ProjectXml.Build).Select(i => i.FullPath).OfType<string>().Where(p => !taken.Contains(p)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var unsure = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in project.Doubted)
+        {
+            var isBuild = item.Type.Equals(ProjectXml.Build, StringComparison.OrdinalIgnoreCase);
+            if (isBuild && item.Verb == ProjectXml.Include)
+            {
+                Doubt.Report(diagnostics, $"The Build item {item.Written} of {name}, so the scripts it may add,", item.Doubts);
+                continue;
+            }
+
+            var takesOut = isBuild || (project.Format.IsSdkStyle && item.Verb == ProjectXml.Include
+                && (TakeOut.Contains(item.Type, StringComparer.OrdinalIgnoreCase) || (item.Type.Equals(ProjectXml.PrePlan, StringComparison.OrdinalIgnoreCase) && TakesOutPrePlan(project) != false)));
+            if (!takesOut)
+                continue;
+            var named = item.Spec is not { } spec
+                ? built
+                : [.. built.Where(p => ItemSpecs.AnyNames(folder, spec, p)).Concat(Deployment.Contains(item.Type, StringComparer.OrdinalIgnoreCase) ? Includes(ItemSpecs.Files(folder, spec)) : [])
+                    .Where(p => built.Contains(p, StringComparer.OrdinalIgnoreCase)).Distinct(StringComparer.OrdinalIgnoreCase)];
+            if (named.Count == 0)
+                continue;
+            unsure.UnionWith(named);
+            var which = item.Spec is null ? $"No script of {name} is read" : $"{string.Join(", ", named.Select(p => Path.GetRelativePath(folder, p).Replace('\\', '/')))} {(named.Count == 1 ? "isn't" : "aren't")} read";
+            var does = item.Verb == ProjectXml.Update ? "change the settings they start with" : "take them out of the build";
+            var reported = SourceCodes.PartNotRead.At(
+                item.At,
+                $"{which}: the {item.Type} {item.Verb} \"{item.Written}\" of {name} may {does}, and whether it does isn't known: {string.Join("; ", item.Doubts.Select(d => d.Why).Distinct())}.");
+            if (!diagnostics.Contains(reported))
+                diagnostics.Add(reported);
+        }
+
+        return unsure;
+    }
+
+    /// <summary>
+    /// A script the project's <c>Build</c> holds twice: a <c>Microsoft.Build.Sql</c> build with its default items stops at it
+    /// (NETSDK1022, observed), so it is said; the script is read once.
+    /// </summary>
+    private static void Duplicate(EvaluatedProject project, ProjectItem item, ICollection<Diagnostic> diagnostics)
+    {
+        if (!project.Format.IsSdkStyle || project.Properties[ProjectXml.EnableDefaultSqlItems] is not { Text: var enabled } || !enabled.Equals("true", StringComparison.OrdinalIgnoreCase))
+            return;
+        var reported = SourceCodes.PartNotRead.At(
+            item.At,
+            $"{Path.GetFileName(project.File.Path)} includes {item.Spec} in Build, which its default items already hold: a build stops there (NETSDK1022, duplicate items). It is read once.");
+        if (!diagnostics.Contains(reported))
+            diagnostics.Add(reported);
     }
 
     /// <summary>The settings a script of the project starts with when its item doesn't say: the project's own; null for one doubted.</summary>
@@ -128,18 +194,18 @@ internal static partial class ProjectFiles
         foreach (var script in project.OfType(ProjectXml.PreDeploy).Concat(project.OfType(ProjectXml.PostDeploy)))
         {
             if (script.FullPath is { } path)
-                Included(path, script, taken, diagnostics);
+                taken.UnionWith(Includes([path], script, diagnostics));
         }
 
         var preplan = project.OfType(ProjectXml.PrePlan).Select(i => i.FullPath).OfType<string>().ToList();
         if (preplan.Count > 0)
         {
-            switch (Version.TryParse(version.Split('-')[0], out var given) ? given : null)
+            switch (TakesOutPrePlan(project))
             {
-                case { } v when v >= new Version(2, 3, 0):
+                case true:
                     taken.UnionWith(preplan);
                     break;
-                case { } v when v <= new Version(2, 0, 0):
+                case false:
                     break;
                 default:
                     diagnostics.Add(SourceCodes.PartNotRead.At(
@@ -153,27 +219,42 @@ internal static partial class ProjectFiles
         return taken;
     }
 
-    /// <summary>Each file <paramref name="path"/> includes with <c>:r</c>, and each they include, added to <paramref name="taken"/>.</summary>
-    private static void Included(string path, ProjectItem from, HashSet<string> taken, ICollection<Diagnostic> diagnostics)
+    /// <summary>
+    /// Whether the project's SDK takes a <c>PrePlan</c> script out of <c>Build</c>: from 2.3.0 it does, to 2.0.0 it doesn't (both
+    /// observed); null for a version between, or none named, which wasn't observed.
+    /// </summary>
+    private static bool? TakesOutPrePlan(EvaluatedProject project) =>
+        Version.TryParse((project.Format.SdkVersion ?? "").Split('-')[0], out var version)
+            ? version >= new Version(2, 3, 0) ? true : version <= new Version(2, 0, 0) ? false : null
+            : null;
+
+    /// <summary>
+    /// Every file <paramref name="scripts"/> include with <c>:r</c>, and every file those include, as full paths; an include through a
+    /// SQLCMD variable, which isn't evaluated, is reported when <paramref name="from"/> is given.
+    /// </summary>
+    private static HashSet<string> Includes(IEnumerable<string> scripts, ProjectItem? from = null, ICollection<Diagnostic>? diagnostics = null)
     {
-        if (DiskPath.Locate(path, from.Spec, out _) is not { } found)
-            return;
-        foreach (Match include in Include().Matches(File.ReadAllText(found)))
+        var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var pending = new Queue<string>(scripts);
+        while (pending.TryDequeue(out var script))
         {
-            var written = include.Groups["path"].Value.Trim().Trim('"');
-            if (written.Contains("$(", StringComparison.Ordinal))
-            {
-                diagnostics.Add(SourceCodes.PartNotRead.At(from.At, $"{from.Spec} includes {written} with :r through a SQLCMD variable, which isn't evaluated, so whether a build leaves that script out isn't known."));
+            if (DiskPath.Locate(script, script, out _) is not { } file)
                 continue;
+            foreach (var written in SqlcmdIncludes.Of(File.ReadAllText(file)))
+            {
+                if (written.Contains("$(", StringComparison.Ordinal))
+                {
+                    if (from is not null)
+                        diagnostics?.Add(SourceCodes.PartNotRead.At(from.At, $"{from.Spec} includes {written} with :r through a SQLCMD variable, which isn't evaluated, so whether a build leaves that script out isn't known."));
+                    continue;
+                }
+
+                var included = DiskPath.Full(Path.GetDirectoryName(file) ?? ".", written);
+                if (found.Add(included))
+                    pending.Enqueue(included);
             }
-
-            var included = DiskPath.Full(Path.GetDirectoryName(found) ?? ".", written);
-            if (taken.Add(included))
-                Included(included, from, taken, diagnostics);
         }
-    }
 
-    /// <summary>A sqlcmd <c>:r</c> line: the command at the start of a line, then the path, quoted or not.</summary>
-    [GeneratedRegex(@"^[ \t]*:r[ \t]+(?<path>[^\r\n]+?)[ \t]*$", RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-    private static partial Regex Include();
+        return found;
+    }
 }

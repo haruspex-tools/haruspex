@@ -51,7 +51,7 @@ internal sealed partial class CodeReferences
         "TrustServerCertificate",
 
         // MSBuild's items and properties.
-        "AnalysisLevel", "IsPackable", "SQLDBExtensionsRefPath",
+        "AnalysisLevel", "IsPackable", "SQLDBExtensionsRefPath", "NetCoreBuild",
 
         // JavaScript, in the emitter's documentation.
         "Date", "Infinity",

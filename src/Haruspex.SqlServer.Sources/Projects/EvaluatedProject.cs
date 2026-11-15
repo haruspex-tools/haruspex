@@ -11,9 +11,16 @@ namespace Haruspex.SqlServer.Sources.Projects;
 /// <param name="Properties">Its properties, at the end of the first pass.</param>
 /// <param name="Items">Its items, at the end of the second, in order.</param>
 /// <param name="Doubted">The item elements not applied because something in them isn't evaluated.</param>
-/// <param name="Problems">What can't be confined to a value or an item: an import not read, a target.</param>
+/// <param name="Targets">Its targets with something in them, which run during a build and aren't read.</param>
+/// <param name="Problems">What can't be confined to a value or an item: an import not read.</param>
 internal sealed class EvaluatedProject(
-    ProjectFile File, ProjectFormat Format, ProjectProperties Properties, IReadOnlyList<ProjectItem> Items, IReadOnlyList<DoubtedItem> Doubted, IReadOnlyList<Diagnostic> Problems)
+    ProjectFile File,
+    ProjectFormat Format,
+    ProjectProperties Properties,
+    IReadOnlyList<ProjectItem> Items,
+    IReadOnlyList<DoubtedItem> Doubted,
+    IReadOnlyList<ProjectTarget> Targets,
+    IReadOnlyList<Diagnostic> Problems)
 {
     /// <summary>The project file.</summary>
     public ProjectFile File { get; } = File;
@@ -29,6 +36,9 @@ internal sealed class EvaluatedProject(
 
     /// <summary>The item elements not applied.</summary>
     public IReadOnlyList<DoubtedItem> Doubted { get; } = Doubted;
+
+    /// <summary>Its targets with something in them.</summary>
+    public IReadOnlyList<ProjectTarget> Targets { get; } = Targets;
 
     /// <summary>What can't be confined to a value or an item.</summary>
     public IReadOnlyList<Diagnostic> Problems { get; } = Problems;

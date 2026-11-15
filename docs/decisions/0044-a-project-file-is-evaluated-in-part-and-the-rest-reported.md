@@ -17,18 +17,26 @@ project's build reads:
   files are recognised by their names and stood for by what they do that the database's build reads: for
   `Microsoft.Build.Sql`, the default `Build` item `**/*.sql` less `$(DefaultSqlItemExcludes)` and the output folders, and the
   `Build Remove` of `None`, the deployment scripts and (from 2.3.0) `PrePlan`, as its `Sdk.props` and `Sdk.targets` say in 1.0.0,
-  2.0.0 and 2.3.0, and the files a deployment script includes with `:r`, which its build takes out as it runs.
+  2.0.0 and 2.3.0, and the files a deployment script includes with `:r`, which its build takes out as it runs: a line that starts
+  with `:r`, not one in a comment or a string (observed). Visual Studio's newer template, with its lines for a build by the .NET
+  SDK (`NetCoreBuild`, and a `PackageReference` to `Microsoft.NETFramework.ReferenceAssemblies`), is recognised too, and so is
+  its reference to SSDT's own `master.dacpac` under `$(DacPacRootPath)`, a reference to `master` like any other.
 - **The configuration.** A project is read as `Debug`, as `dotnet build` builds it, and again as `Release`; where the two
   differ in a script, a setting or a reference, that is a warning naming the difference.
-- **Paths** are read with either slash, and a name matches ignoring case everywhere.
+- **Paths** are read with either slash, and a name matches ignoring case everywhere. A folder linked from the project's is walked
+  as the build walks it, each once: a link back to a folder already walked isn't entered again.
 
 Whatever isn't evaluated is a doubt on what it touches: a property function (`$([System.IO.Path]::Combine(…))`), an item list
 (`@(Build)`), metadata batching (`%(Extension)`), a property defined nowhere in the project or its imports, a condition beyond
 the ones above, `Choose`, `KeepMetadata` and its kind. A doubt is reported once ([HAR1008](../diagnostics/HAR1008.md)) when it
 reaches what the reader reads: which scripts are built, the settings a script starts with, the database's settings, or a
-reference; and that is not read. A doubt that reaches nothing read says nothing. An import that isn't found or evaluated, and a
-target with something in it, are reported whatever they touch, since what they do could be anything. A project of another SDK
-is refused ([HAR1010](../diagnostics/HAR1010.md)).
+reference; and that is not read. A doubt that reaches nothing read says nothing. A doubted item that may take a script out of
+the build (a `Build Remove`, and for `Microsoft.Build.Sql` a `None`, a deployment script or a `PrePlan`) or change the settings
+it starts with (a `Build Update`) leaves out every script it may touch: the ones it names, with a deployment script's `:r`
+includes, when only whether it applies is doubted; every script of the project when what it names is doubted too, since it
+could name any. The warning names them, or says that no script of the project is read. An import that isn't found or evaluated, and a
+target with something in it, are reported whatever they touch, since what they do could be anything. A target is reported once by
+its name, however many projects define it. A project of another SDK is refused ([HAR1010](../diagnostics/HAR1010.md)).
 
 **Context.** A real application of about 115 legacy SSDT projects, read as folders, gets no collation, so none of the value
 sets its packages make enums. Its project files carry the collation, and say which of the files beside them are built. A
