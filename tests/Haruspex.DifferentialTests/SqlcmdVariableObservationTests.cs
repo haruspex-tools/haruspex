@@ -50,7 +50,7 @@ public class SqlcmdVariableObservationTests(SqlServerFixture server)
         var observed = await Run(Deployed(WhoAmI, value), "dbo.obs_whoami");
 
         // The literal is the value, not the nine characters written: any length, the empty one too; and a value holding a
-        // quotation mark ends the string, so '$(Region)' became '1'+1+'', an int, and the procedure fails converting 'x1'.
+        // quotation mark ends the string, so '$(Region)' became '1'+1+'', the int 2, in both columns.
         var row = Assert.Single(Assert.Single(observed).Rows);
         if (value.Contains('\'', StringComparison.Ordinal))
         {

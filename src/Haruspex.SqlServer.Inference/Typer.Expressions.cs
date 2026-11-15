@@ -411,13 +411,12 @@ internal sealed partial class Typer
 
     /// <summary>
     /// What a value adds to a string built by CONCAT: a string its length (bytes for varchar, characters for nvarchar), an int
-    /// 12 and a bit 1 (observed), the NULL literal nothing; null for anything else, whose length is not modelled.
+    /// 12 and a bit 1 (observed), the NULL literal (no value) nothing; null for anything else, whose length is not modelled.
     /// </summary>
-    private (ScalarType Type, int Length)? Piece(ScalarExpression expression, ReadScope scope)
+    private static (ScalarType Type, int Length)? Piece(Value? value)
     {
-        if (Strip(expression) is NullLiteral)
+        if (value is null)
             return (new ScalarType(BuiltInType.VarChar, 0), 0);
-        var value = Expression(expression, scope);
         return TypeOf(value) switch
         {
             { IsString: true } s => (s, s.Length),
@@ -438,7 +437,12 @@ internal sealed partial class Typer
         var arguments = call.Parameters.ToList();
         if (arguments.Count < (separated ? 3 : 2))
             return NotModelled(call, "too few arguments.");
-        var pieces = arguments.Select(a => Piece(a, scope)).ToList();
+        // An argument already unknown makes the whole unknown for its own reason, as it does an operand of +, so the note says
+        // why (a column not found, a SQLCMD variable) rather than that a length isn't modelled.
+        var values = arguments.Select(a => Strip(a) is NullLiteral ? null : Expression(a, scope)).ToList();
+        if (values.FirstOrDefault(v => v?.Shape is UnknownShape) is { } unknown)
+            return unknown;
+        var pieces = values.Select(Piece).ToList();
         if (pieces.Any(p => p is null))
             return NotModelled(call, "an argument whose length as a string is not modelled yet.");
 

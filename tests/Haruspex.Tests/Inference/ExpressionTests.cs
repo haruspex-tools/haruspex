@@ -292,6 +292,16 @@ public class ExpressionTests
     }
 
     [Fact]
+    public void Concat_of_an_unknown_argument_is_unknown_for_that_argument_s_reason()
+    {
+        // Its own reason, not "length not modelled": t.missing can't be found, and that is what the note should say.
+        var doc = Procedure("SELECT CONCAT(t.short, t.missing) AS a, CONCAT_WS('-', t.missing, t.label) AS b FROM dbo.t AS t;");
+
+        Assert.Equal("unknown: unresolved-column", Sql(doc, "a"));
+        Assert.Equal("unknown: unresolved-column", Sql(doc, "b"));
+    }
+
+    [Fact]
     public void Concat_stops_at_8000_bytes_unless_an_argument_is_max()
     {
         var doc = Procedure("""

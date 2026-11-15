@@ -560,7 +560,8 @@ modelled.
   if any argument or the separator is; as long as their arguments together plus the separator between each two, NULL
   counting nothing; max if any is, otherwise cut at 8000 bytes (4000 characters for `nvarchar`), which the value is too
   (`Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null`). A string argument counts its length, an
-  `int` 12 and a `bit` 1; an argument of another type is not modelled.
+  `int` 12 and a `bit` 1; an argument of another type is not modelled, and one already unknown makes the call unknown for
+  its own reason (`Concat_of_an_unknown_argument_is_unknown_for_that_argument_s_reason`).
 - **String `+`** is described the same way, except that two fixed-length operands give a fixed-length string, `nchar` if
   either is (`Fixed_length_strings_plus_is_fixed_length`), and is null when an operand is. A `+` with the `NULL` literal is
   always NULL under the default setting and is not modelled. With

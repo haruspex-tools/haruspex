@@ -87,6 +87,15 @@ public class SqlcmdVariableTests
     }
 
     [Fact]
+    public void Concat_of_a_literal_holding_a_variable_is_unknown_for_that_reason()
+    {
+        var doc = Procedure("SELECT CONCAT('kiosk-', '$(Region)') AS host, CONCAT_WS('-', 'kiosk', '$(Region)') AS joined;");
+
+        Assert.Equal(IrUnknownReason.SqlcmdVariable, ReasonOf(doc, "host"));
+        Assert.Equal(IrUnknownReason.SqlcmdVariable, ReasonOf(doc, "joined"));
+    }
+
+    [Fact]
     public void A_case_of_literals_one_holding_a_variable_has_no_value_set()
     {
         var doc = Procedure("SELECT CASE WHEN s.stall_id = 1 THEN '$(Region)' ELSE 'south' END AS region FROM kiosk.stall AS s;");
