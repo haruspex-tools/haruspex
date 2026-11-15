@@ -108,10 +108,15 @@ uddt
 subpatterns
 
 # Products, tools and their names (sqldb: SSDT's MSBuild property SQLDBExtensionsRefPath; netsdk: the .NET SDK's error codes, NETSDK1022;
-# msdb: SQL Server's system database msdb, which has a DACPAC package of its own, as master has)
+# msdb: SQL Server's system database msdb, which has a DACPAC package of its own, as master has; graphile, hasura, kysely, pgtyped,
+# sqlc, codegen (of kysely-codegen): the other tools the README names for the cases haruspex doesn't fit)
+codegen
 dacfx
 dacpac
 dacpacs
+graphile
+hasura
+kysely
 msdb
 mscorlib
 netsdk
@@ -121,6 +126,7 @@ sarif
 setvar
 shellcheck
 slnx
+sqlc
 sqlclient
 sqldb
 sqlproj
@@ -132,6 +138,7 @@ zizmor
 zizmorcore
 nologo
 optout
+pgtyped
 scriban
 
 # Words of the subject that the dictionary lacks

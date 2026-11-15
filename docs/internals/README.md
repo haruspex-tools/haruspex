@@ -84,7 +84,7 @@ to check when it is one of these:
 
 Types and members are found by reflection over haruspex's assemblies, and for the differential tests from their source. A
 name alone may also be a test, a project or layer (`Ir`, `Sources`), or a name a committed Zod snapshot or a worked
-example's Zod holds, but never a member: write a member after its type (`Conversions.Converts`), since a type renamed while a property keeps its
+example's Zod holds, or a SQL name a fixture defines (a schema, or an object with its schema, such as `Sales.Orders`), but never a member: write a member after its type (`Conversions.Converts`), since a type renamed while a property keeps its
 old name would otherwise go unnoticed. In a Mermaid diagram, every word in PascalCase with two capitals or more
 (`IrBuilder`) is a name, checked the same way. A name that is not
 haruspex's (a .NET type, an MSBuild property) is listed in `CodeReferences.Outside`, which says why each is there; a
@@ -105,6 +105,10 @@ with no config file. The blocks after it, up to the next example, show what that
   project as `db/project.sql`, with paths shown from that folder. Words after the mark are the run's arguments; with none,
   the run takes its settings from the config file, or types every procedure to `out` when there is none. A
   `jsonc haruspex-config` block before it is the config file, `haruspex.json`, of the runs after it in the same example.
+
+An example may instead be written over one of the vendored corpora, named after the mark (`sql haruspex-example AdventureWorks`):
+it is read beside the corpus's scripts, so it can use the sample's own tables, and only the procedures it defines are inferred.
+The project's README shows haruspex this way, and `ShowcaseTests` holds each such example to a fixture that runs it on SQL Server.
 
 When an example's output changes, the test prints what haruspex now gives. Read it as a claim about SQL Server, as you would
 a snapshot, before pasting it in: the example teaches whatever it shows.

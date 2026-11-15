@@ -47,6 +47,17 @@ public class CorpusFiguresTests
 
     [Theory]
     [MemberData(nameof(CorpusNames))]
+    public void The_readme_quotes_each_corpus_s_figure(string name)
+    {
+        // As the style guide's, the README's figures are the page's headlines, copied, and held to it here.
+        var run = Corpus.Runs.Single(r => r.Corpus.Name == name);
+        var headline = CorpusFiguresPage.Headline(name, CorpusFigures.Count(run.Document));
+
+        Assert.Contains(headline, File.ReadAllText(Path.Combine(RepositoryPaths.Root, "README.md")), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [MemberData(nameof(CorpusNames))]
     public void Every_script_of_a_corpus_is_read_or_left_out_with_a_reason(string name)
     {
         var corpus = Corpus.All.Single(c => c.Name == name);

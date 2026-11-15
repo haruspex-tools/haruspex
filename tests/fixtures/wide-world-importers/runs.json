@@ -1,0 +1,10 @@
+{
+  // The facets of decimal(18, 2) and decimal(18, 3) reach far past any price, so the seed is not held to every edge.
+  "seedReachesEveryEdge": false,
+
+  "runs": [
+    { "name": "GetOrder, with lines", "procedure": "Website.GetOrder", "parameters": { "@OrderID": 1 } },
+    { "name": "GetOrder, with no lines", "procedure": "Website.GetOrder", "parameters": { "@OrderID": 2 } },
+    { "name": "GetOrder, no such order", "procedure": "Website.GetOrder", "parameters": { "@OrderID": 999 } }
+  ]
+}

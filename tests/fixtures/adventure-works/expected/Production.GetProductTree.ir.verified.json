@@ -1,0 +1,309 @@
+{
+  "irVersion": "0.21",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "Production.GetProductTree",
+      "name": "GetProductTree",
+      "kind": "procedure",
+      "at": "procedures/GetProductTree.sql:1:1",
+      "parameters": [
+        {
+          "name": "@ProductID",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "GetProductTreeRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/GetProductTree.sql:6:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GetComponentsNode": {
+      "kind": "object",
+      "recursive": true,
+      "identity": {
+        "function": "Production.GetComponents",
+        "path": "<Production.GetComponents>"
+      },
+      "fields": [
+        {
+          "name": "quantity",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(8,2)",
+            "digits": {
+              "precision": 8,
+              "scale": 2,
+              "from": {
+                "type": "decimal(8,2)"
+              }
+            },
+            "min": {
+              "value": 1,
+              "inclusive": true,
+              "from": {
+                "check": "Production.CK_BillOfMaterials_PerAssemblyQty"
+              }
+            },
+            "max": {
+              "value": 999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(8,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "unit",
+          "type": {
+            "kind": "string",
+            "sql": "nchar(3)",
+            "length": {
+              "value": 3,
+              "unit": "utf16",
+              "from": {
+                "type": "nchar(3)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "product",
+          "type": {
+            "ref": "GetComponentsNodeProduct"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "components",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetComponentsNode"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "functions/GetComponents.sql:5:12"
+            }
+          ]
+        }
+      ]
+    },
+    "GetComponentsNodeProduct": {
+      "kind": "object",
+      "identity": {
+        "function": "Production.GetComponents",
+        "path": "<Production.GetComponents>.product"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(50)",
+            "maxLength": {
+              "value": 50,
+              "unit": "utf16",
+              "from": {
+                "type": "dbo.Name"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "number",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(25)",
+            "maxLength": {
+              "value": 25,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(25)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "standardCost",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "check": "Production.CK_Product_StandardCost"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "GetProductTreeRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "Production.GetProductTree",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(50)",
+            "maxLength": {
+              "value": 50,
+              "unit": "utf16",
+              "from": {
+                "type": "dbo.Name"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "number",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(25)",
+            "maxLength": {
+              "value": 25,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(25)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "components",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetComponentsNode"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "functions/GetComponents.sql:5:12"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}
