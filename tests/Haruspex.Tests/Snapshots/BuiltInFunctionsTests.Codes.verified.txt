@@ -13,6 +13,11 @@ scalar.smalldatetimefromparts
 scalar.datetime2fromparts
 scalar.timefromparts
 scalar.datetimeoffsetfromparts
+scalar.datetrunc
+scalar.date_bucket
+scalar.switchoffset
+scalar.todatetimeoffset
+scalar.isdate
 scalar.getdate
 scalar.getutcdate
 scalar.sysdatetime

@@ -678,6 +678,286 @@ DATETIMEOFFSETFROMPARTS('ab', 1, 1, 0, 0, 0, 0, 0, 0, 3) -> unknown unsupported-
 DATETIMEOFFSETFROMPARTS(N'ab', 1, 1, 0, 0, 0, 0, 0, 0, 3) -> unknown unsupported-expression: DATETIMEOFFSETFROMPARTS(N'ab', 1, 1, 0, 0, 0, 0, 0, 0, 3): a part that is not an int is not modelled.
 DATETIMEOFFSETFROMPARTS(1e0, 1, 1, 0, 0, 0, 0, 0, 0, 3) -> unknown unsupported-expression: DATETIMEOFFSETFROMPARTS(1e0, 1, 1, 0, 0, 0, 0, 0, 0, 3): a part that is not an int is not modelled.
 DATETIMEOFFSETFROMPARTS($1, 1, 1, 0, 0, 0, 0, 0, 0, 3) -> unknown unsupported-expression: DATETIMEOFFSETFROMPARTS($1, 1, 1, 0, 0, 0, 0, 0, 0, 3): a part that is not an int is not modelled.
+DATETRUNC(month, bt) -> unknown unsupported-expression: DATETRUNC(month, bt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, ti) -> unknown unsupported-expression: DATETRUNC(month, ti): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, si) -> unknown unsupported-expression: DATETRUNC(month, si): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, i) -> unknown unsupported-expression: DATETRUNC(month, i): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, bi) -> unknown unsupported-expression: DATETRUNC(month, bi): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, d52) -> unknown unsupported-expression: DATETRUNC(month, d52): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, d380) -> unknown unsupported-expression: DATETRUNC(month, d380): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, d3838) -> unknown unsupported-expression: DATETRUNC(month, d3838): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, n102) -> unknown unsupported-expression: DATETRUNC(month, n102): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, m) -> unknown unsupported-expression: DATETRUNC(month, m): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, sm) -> unknown unsupported-expression: DATETRUNC(month, sm): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, f) -> unknown unsupported-expression: DATETRUNC(month, f): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, r) -> unknown unsupported-expression: DATETRUNC(month, r): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, f24) -> unknown unsupported-expression: DATETRUNC(month, f24): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, f25) -> unknown unsupported-expression: DATETRUNC(month, f25): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, c3) -> unknown unsupported-expression: DATETRUNC(month, c3): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, v10) -> unknown unsupported-expression: DATETRUNC(month, v10): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, vx) -> unknown unsupported-expression: DATETRUNC(month, vx): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, nc3) -> unknown unsupported-expression: DATETRUNC(month, nc3): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, nv10) -> unknown unsupported-expression: DATETRUNC(month, nv10): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, nvx) -> unknown unsupported-expression: DATETRUNC(month, nvx): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, dt) -> date date
+DATETRUNC(month, tm3) -> time(3) time
+DATETRUNC(month, dtm) -> datetime datetime/local
+DATETRUNC(month, dt23) -> datetime2(3) datetime/local
+DATETRUNC(month, sdt) -> smalldatetime datetime/local
+DATETRUNC(month, dto3) -> datetimeoffset(3) datetime/offset
+DATETRUNC(month, u) -> unknown unsupported-expression: DATETRUNC(month, u): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+DATETRUNC(month, vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+DATETRUNC(month, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATETRUNC(month, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+DATETRUNC(month, j) -> unknown (no unknown recorded)
+DATETRUNC(month, 1) -> unknown unsupported-expression: DATETRUNC(month, 1): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, 12345) -> unknown unsupported-expression: DATETRUNC(month, 12345): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, 2.50) -> unknown unsupported-expression: DATETRUNC(month, 2.50): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, 'ab') -> unknown unsupported-expression: DATETRUNC(month, 'ab'): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, N'ab') -> unknown unsupported-expression: DATETRUNC(month, N'ab'): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, 1e0) -> unknown unsupported-expression: DATETRUNC(month, 1e0): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATETRUNC(month, $1) -> unknown unsupported-expression: DATETRUNC(month, $1): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, bt) -> unknown unsupported-expression: DATE_BUCKET(week, 2, bt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, ti) -> unknown unsupported-expression: DATE_BUCKET(week, 2, ti): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, si) -> unknown unsupported-expression: DATE_BUCKET(week, 2, si): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, i) -> unknown unsupported-expression: DATE_BUCKET(week, 2, i): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, bi) -> unknown unsupported-expression: DATE_BUCKET(week, 2, bi): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, d52) -> unknown unsupported-expression: DATE_BUCKET(week, 2, d52): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, d380) -> unknown unsupported-expression: DATE_BUCKET(week, 2, d380): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, d3838) -> unknown unsupported-expression: DATE_BUCKET(week, 2, d3838): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, n102) -> unknown unsupported-expression: DATE_BUCKET(week, 2, n102): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, m) -> unknown unsupported-expression: DATE_BUCKET(week, 2, m): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, sm) -> unknown unsupported-expression: DATE_BUCKET(week, 2, sm): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, f) -> unknown unsupported-expression: DATE_BUCKET(week, 2, f): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, r) -> unknown unsupported-expression: DATE_BUCKET(week, 2, r): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, f24) -> unknown unsupported-expression: DATE_BUCKET(week, 2, f24): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, f25) -> unknown unsupported-expression: DATE_BUCKET(week, 2, f25): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, c3) -> unknown unsupported-expression: DATE_BUCKET(week, 2, c3): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, v10) -> unknown unsupported-expression: DATE_BUCKET(week, 2, v10): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, vx) -> unknown unsupported-expression: DATE_BUCKET(week, 2, vx): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, nc3) -> unknown unsupported-expression: DATE_BUCKET(week, 2, nc3): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, nv10) -> unknown unsupported-expression: DATE_BUCKET(week, 2, nv10): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, nvx) -> unknown unsupported-expression: DATE_BUCKET(week, 2, nvx): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, dt) -> date date
+DATE_BUCKET(week, 2, tm3) -> time(3) time
+DATE_BUCKET(week, 2, dtm) -> datetime datetime/local
+DATE_BUCKET(week, 2, dt23) -> datetime2(3) datetime/local
+DATE_BUCKET(week, 2, sdt) -> smalldatetime datetime/local
+DATE_BUCKET(week, 2, dto3) -> datetimeoffset(3) datetime/offset
+DATE_BUCKET(week, 2, u) -> unknown unsupported-expression: DATE_BUCKET(week, 2, u): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+DATE_BUCKET(week, 2, vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+DATE_BUCKET(week, 2, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATE_BUCKET(week, 2, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+DATE_BUCKET(week, 2, j) -> unknown (no unknown recorded)
+DATE_BUCKET(week, 2, 1) -> unknown unsupported-expression: DATE_BUCKET(week, 2, 1): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, 12345) -> unknown unsupported-expression: DATE_BUCKET(week, 2, 12345): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, 2.50) -> unknown unsupported-expression: DATE_BUCKET(week, 2, 2.50): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, 'ab') -> unknown unsupported-expression: DATE_BUCKET(week, 2, 'ab'): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, N'ab') -> unknown unsupported-expression: DATE_BUCKET(week, 2, N'ab'): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, 1e0) -> unknown unsupported-expression: DATE_BUCKET(week, 2, 1e0): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(week, 2, $1) -> unknown unsupported-expression: DATE_BUCKET(week, 2, $1): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, bt, dt) -> unknown unsupported-expression: DATE_BUCKET(day, bt, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, ti, dt) -> date date
+DATE_BUCKET(day, si, dt) -> date date
+DATE_BUCKET(day, i, dt) -> date date
+DATE_BUCKET(day, bi, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, d52, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, d380, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, d3838, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, n102, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, m, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, sm, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, f, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, r, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, f24, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, f25, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, c3, dt) -> unknown unsupported-expression: DATE_BUCKET(day, c3, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, v10, dt) -> unknown unsupported-expression: DATE_BUCKET(day, v10, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, vx, dt) -> unknown unsupported-expression: DATE_BUCKET(day, vx, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, nc3, dt) -> unknown unsupported-expression: DATE_BUCKET(day, nc3, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, nv10, dt) -> unknown unsupported-expression: DATE_BUCKET(day, nv10, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, nvx, dt) -> unknown unsupported-expression: DATE_BUCKET(day, nvx, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, dt, dt) -> unknown unsupported-expression: DATE_BUCKET(day, dt, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, tm3, dt) -> unknown unsupported-expression: DATE_BUCKET(day, tm3, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, dtm, dt) -> unknown unsupported-expression: DATE_BUCKET(day, dtm, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, dt23, dt) -> unknown unsupported-expression: DATE_BUCKET(day, dt23, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, sdt, dt) -> unknown unsupported-expression: DATE_BUCKET(day, sdt, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, dto3, dt) -> unknown unsupported-expression: DATE_BUCKET(day, dto3, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, u, dt) -> unknown unsupported-expression: DATE_BUCKET(day, u, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, bin4, dt) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+DATE_BUCKET(day, vb10, dt) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+DATE_BUCKET(day, x, dt) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATE_BUCKET(day, sv, dt) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+DATE_BUCKET(day, j, dt) -> unknown (no unknown recorded)
+DATE_BUCKET(day, 1, dt) -> date date
+DATE_BUCKET(day, 12345, dt) -> date date
+DATE_BUCKET(day, 2.50, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, 'ab', dt) -> unknown unsupported-expression: DATE_BUCKET(day, 'ab', dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, N'ab', dt) -> unknown unsupported-expression: DATE_BUCKET(day, N'ab', dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
+DATE_BUCKET(day, 1e0, dt) -> date date null:arithmetic-overflow
+DATE_BUCKET(day, $1, dt) -> date date null:arithmetic-overflow
+SWITCHOFFSET(bt, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(bt, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(ti, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(ti, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(si, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(si, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(i, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(i, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(bi, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(bi, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(d52, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(d52, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(d380, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(d380, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(d3838, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(d3838, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(n102, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(n102, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(m, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(m, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(sm, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(sm, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(f, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(f, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(r, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(r, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(f24, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(f24, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(f25, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(f25, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(c3, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(c3, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(v10, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(v10, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(vx, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(vx, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(nc3, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(nc3, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(nv10, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(nv10, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(nvx, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(nvx, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(dt, '+01:00') -> datetimeoffset(7) datetime/offset
+SWITCHOFFSET(tm3, '+01:00') -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dtm, '+01:00') -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dt23, '+01:00') -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(sdt, '+01:00') -> datetimeoffset(0) datetime/offset
+SWITCHOFFSET(dto3, '+01:00') -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(u, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(u, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(bin4, '+01:00') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+SWITCHOFFSET(vb10, '+01:00') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+SWITCHOFFSET(x, '+01:00') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SWITCHOFFSET(sv, '+01:00') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+SWITCHOFFSET(j, '+01:00') -> unknown (no unknown recorded)
+SWITCHOFFSET(1, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(1, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(12345, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(12345, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(2.50, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(2.50, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET('ab', '+01:00') -> unknown unsupported-expression: SWITCHOFFSET('ab', '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(N'ab', '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(N'ab', '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(1e0, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(1e0, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET($1, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET($1, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(dto3, bt) -> unknown unsupported-expression: SWITCHOFFSET(dto3, bt): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(dto3, ti) -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dto3, si) -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dto3, i) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, bi) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, d52) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, d380) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, d3838) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, n102) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, m) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, sm) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, f) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, r) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, f24) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, f25) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, c3) -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dto3, v10) -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dto3, vx) -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dto3, nc3) -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dto3, nv10) -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dto3, nvx) -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dto3, dt) -> unknown unsupported-expression: SWITCHOFFSET(dto3, dt): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(dto3, tm3) -> unknown unsupported-expression: SWITCHOFFSET(dto3, tm3): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(dto3, dtm) -> unknown unsupported-expression: SWITCHOFFSET(dto3, dtm): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(dto3, dt23) -> unknown unsupported-expression: SWITCHOFFSET(dto3, dt23): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(dto3, sdt) -> unknown unsupported-expression: SWITCHOFFSET(dto3, sdt): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(dto3, dto3) -> unknown unsupported-expression: SWITCHOFFSET(dto3, dto3): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(dto3, u) -> unknown unsupported-expression: SWITCHOFFSET(dto3, u): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+SWITCHOFFSET(dto3, bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+SWITCHOFFSET(dto3, vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+SWITCHOFFSET(dto3, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SWITCHOFFSET(dto3, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+SWITCHOFFSET(dto3, j) -> unknown (no unknown recorded)
+SWITCHOFFSET(dto3, 1) -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dto3, 12345) -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dto3, 2.50) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, 'ab') -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dto3, N'ab') -> datetimeoffset(3) datetime/offset
+SWITCHOFFSET(dto3, 1e0) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+SWITCHOFFSET(dto3, $1) -> datetimeoffset(3) datetime/offset null:arithmetic-overflow
+TODATETIMEOFFSET(bt, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(bt, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(ti, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(ti, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(si, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(si, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(i, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(i, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(bi, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(bi, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(d52, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(d52, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(d380, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(d380, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(d3838, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(d3838, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(n102, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(n102, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(m, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(m, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(sm, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(sm, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(f, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(f, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(r, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(r, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(f24, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(f24, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(f25, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(f25, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(c3, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(c3, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(v10, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(v10, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(vx, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(vx, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(nc3, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(nc3, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(nv10, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(nv10, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(nvx, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(nvx, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(dt, '-05:00') -> datetimeoffset(7) datetime/offset
+TODATETIMEOFFSET(tm3, '-05:00') -> datetimeoffset(3) datetime/offset
+TODATETIMEOFFSET(dtm, '-05:00') -> datetimeoffset(3) datetime/offset
+TODATETIMEOFFSET(dt23, '-05:00') -> datetimeoffset(3) datetime/offset
+TODATETIMEOFFSET(sdt, '-05:00') -> datetimeoffset(0) datetime/offset
+TODATETIMEOFFSET(dto3, '-05:00') -> datetimeoffset(3) datetime/offset
+TODATETIMEOFFSET(u, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(u, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(bin4, '-05:00') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+TODATETIMEOFFSET(vb10, '-05:00') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+TODATETIMEOFFSET(x, '-05:00') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+TODATETIMEOFFSET(sv, '-05:00') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+TODATETIMEOFFSET(j, '-05:00') -> unknown (no unknown recorded)
+TODATETIMEOFFSET(1, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(1, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(12345, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(12345, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(2.50, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(2.50, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET('ab', '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET('ab', '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(N'ab', '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(N'ab', '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET(1e0, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(1e0, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+TODATETIMEOFFSET($1, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET($1, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+ISDATE(bt) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(ti) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(si) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(i) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(bi) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(d52) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(d380) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(d3838) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(n102) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(m) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(sm) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(f) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(r) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(f24) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(f25) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(c3) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(v10) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(vx) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(nc3) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(nv10) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(nvx) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(dt) -> unknown unsupported-expression: ISDATE(dt): ISDATE of a value of this type is not modelled.
+ISDATE(tm3) -> unknown unsupported-expression: ISDATE(tm3): ISDATE of a value of this type is not modelled.
+ISDATE(dtm) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(dt23) -> unknown unsupported-expression: ISDATE(dt23): ISDATE of a value of this type is not modelled.
+ISDATE(sdt) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(dto3) -> unknown unsupported-expression: ISDATE(dto3): ISDATE of a value of this type is not modelled.
+ISDATE(u) -> unknown unsupported-expression: ISDATE(u): ISDATE of a value of this type is not modelled.
+ISDATE(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+ISDATE(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISDATE(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISDATE(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+ISDATE(j) -> unknown (no unknown recorded)
+ISDATE(1) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(12345) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(2.50) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE('ab') -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(N'ab') -> int number/int32 {[-2147483648 2147483647]}
+ISDATE(1e0) -> int number/int32 {[-2147483648 2147483647]}
+ISDATE($1) -> int number/int32 {[-2147483648 2147483647]}
 GETDATE() -> datetime datetime/local
 GETUTCDATE() -> datetime datetime/local
 SYSDATETIME() -> datetime2(7) datetime/local

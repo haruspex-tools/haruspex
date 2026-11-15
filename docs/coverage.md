@@ -15,8 +15,8 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | What | Count |
 |---|---:|
 | Built-in functions the reference documents | 340 |
-| In the catalogue | 101 |
-| Not in it, and unknown where they are called | 237 |
+| In the catalogue | 106 |
+| Not in it, and unknown where they are called | 232 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
 | Modelled, wholly or in part | 152 |
@@ -208,7 +208,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Date and time data types and functions
 
-21 of 31 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/date-and-time-data-types-and-functions-transact-sql?view=sql-server-ver17).
+26 of 31 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/date-and-time-data-types-and-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
@@ -219,10 +219,10 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `GETDATE` | `scalar.getdate` | datetime, never null |  | [The_current_date_and_time_functions_are_never_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `GETUTCDATE` | `scalar.getutcdate` | datetime, never null |  | [The_current_date_and_time_functions_are_never_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `CURRENT_DATE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `DATE_BUCKET` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `DATE_BUCKET` | `scalar.date_bucket` | the date's type | `arithmetic-overflow` | [Datetrunc_and_date_bucket_keep_the_dates_type_and_are_null_only_for_a_null_date_or_width](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Dates.cs) |
 | `DATENAME` | `scalar.datename` | nvarchar(30) | `arithmetic-overflow` | [A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [A_date_function_is_null_when_an_argument_is_but_eomonth_ignores_a_null_offset](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `DATEPART` | `scalar.datepart` | int | `arithmetic-overflow` | [A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [A_date_function_is_null_when_an_argument_is_but_eomonth_ignores_a_null_offset](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
-| `DATETRUNC` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `DATETRUNC` | `scalar.datetrunc` | the date's type |  | [Datetrunc_and_date_bucket_keep_the_dates_type_and_are_null_only_for_a_null_date_or_width](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Dates.cs) |
 | `DAY` | `scalar.day` | int | `arithmetic-overflow` | [A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `MONTH` | `scalar.month` | int | `arithmetic-overflow` | [A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `YEAR` | `scalar.year` | int | `arithmetic-overflow` | [A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [A_date_function_is_null_when_an_argument_is_but_eomonth_ignores_a_null_offset](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
@@ -236,11 +236,11 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `DATEDIFF_BIG` | `scalar.datediff_big` | bigint | `arithmetic-overflow` | [A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [A_date_function_is_null_when_an_argument_is_but_eomonth_ignores_a_null_offset](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `DATEADD` | `scalar.dateadd` | the date's type, datetime for a string or an integer | `arithmetic-overflow` | [A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [A_date_function_is_null_when_an_argument_is_but_eomonth_ignores_a_null_offset](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `EOMONTH` | `scalar.eomonth` | date |  | [Date_functions_are_typed_by_their_kind_and_dateadd_by_its_dates_type](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [A_date_function_is_null_when_an_argument_is_but_eomonth_ignores_a_null_offset](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs), [Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
-| `SWITCHOFFSET` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `TODATETIMEOFFSET` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `SWITCHOFFSET` | `scalar.switchoffset` | datetimeoffset of the date's fractional digits | `arithmetic-overflow` | [Switchoffset_and_todatetimeoffset_are_datetimeoffset_of_the_dates_fractional_digits](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Dates.cs) |
+| `TODATETIMEOFFSET` | `scalar.todatetimeoffset` | datetimeoffset of the date's fractional digits | `arithmetic-overflow` | [Switchoffset_and_todatetimeoffset_are_datetimeoffset_of_the_dates_fractional_digits](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Dates.cs) |
 | `@@DATEFIRST` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `@@LANGUAGE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ISDATE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `ISDATE` | `scalar.isdate` | int, never null |  | [Isdate_is_an_int_never_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Dates.cs) |
 | `CURRENT_TIMEZONE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `CURRENT_TIMEZONE_ID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 

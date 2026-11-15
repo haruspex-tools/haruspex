@@ -1421,6 +1421,18 @@ not listed is not modelled.
   has `arithmetic-overflow`, unlike `+` on a `datetime`.
 - **`SYSDATETIME`**, `SYSUTCDATETIME` (`datetime2(7)`), **`GETDATE`**, `GETUTCDATE`, `CURRENT_TIMESTAMP` (`datetime`) and
   `SYSDATETIMEOFFSET` (`datetimeoffset(7)`) are never null (`The_current_date_and_time_functions_are_never_null`).
+- **`DATETRUNC(part, d)`** and **`DATE_BUCKET(part, width, d [, origin])`** of a date or time type: `d`'s type; NULL when `d` or
+  the width is, while a NULL origin is the default origin. The width is converted to `int`, so a wider number may overflow
+  (`arithmetic-overflow`); a part the type lacks is an error (9810)
+  (`Datetrunc_and_date_bucket_keep_the_dates_type_and_are_null_only_for_a_null_date_or_width`).
+- **`SWITCHOFFSET(d, offset)`** and **`TODATETIMEOFFSET(d, offset)`** of a date or time type: `datetimeoffset` of `d`'s
+  fractional digits, 7 for a `date`, 3 for a `datetime`, 0 for a `smalldatetime`; NULL when either is. A number of minutes
+  is converted to `smallint`, so a wider one may overflow; an offset it can't read, or one past the range, is an error
+  (9812, 9813) (`Switchoffset_and_todatetimeoffset_are_datetimeoffset_of_the_dates_fractional_digits`).
+- **`ISDATE(x)`** of a string, a number, a `bit`, a `datetime` or a `smalldatetime`: `int`, never null; `ISDATE(NULL)` is 0
+  (`Isdate_is_an_int_never_null`). Which strings read as dates depends on the session's language and `DATEFORMAT`; the type
+  and the nullability don't.
+- A string given as the date to any of these is converted at a precision of its own (`datetime2(7)`), and is not modelled.
 
 ### Strings
 

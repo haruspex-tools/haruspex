@@ -48,6 +48,21 @@ public static class ScalarFunctions
     /// <summary><c>DATETIMEOFFSETFROMPARTS</c>.</summary>
     public static readonly BuiltInFunction DateTimeOffsetFromParts = new("datetimeoffsetfromparts", FunctionForm.Scalar);
 
+    /// <summary><c>DATETRUNC</c>.</summary>
+    public static readonly BuiltInFunction DateTruncate = new("datetrunc", FunctionForm.Scalar);
+
+    /// <summary><c>DATE_BUCKET</c>.</summary>
+    public static readonly BuiltInFunction DateBucket = new("date_bucket", FunctionForm.Scalar);
+
+    /// <summary><c>SWITCHOFFSET</c>.</summary>
+    public static readonly BuiltInFunction SwitchOffset = new("switchoffset", FunctionForm.Scalar);
+
+    /// <summary><c>TODATETIMEOFFSET</c>.</summary>
+    public static readonly BuiltInFunction ToDateTimeOffset = new("todatetimeoffset", FunctionForm.Scalar);
+
+    /// <summary><c>ISDATE</c>.</summary>
+    public static readonly BuiltInFunction IsDate = new("isdate", FunctionForm.Scalar);
+
     /// <summary><c>GETDATE</c>.</summary>
     public static readonly BuiltInFunction GetDate = new("getdate", FunctionForm.Scalar);
 
@@ -226,5 +241,5 @@ public static class ScalarFunctions
     public static readonly BuiltInFunction JsonArray = new("json_array", FunctionForm.Scalar);
 
     /// <summary>Every one, in the order above.</summary>
-    public static IReadOnlyList<BuiltInFunction> All { get; } = [DateDiff, DateDiffBig, DateAdd, DatePart, Year, Month, Day, DateName, EndOfMonth, DateFromParts, DateTimeFromParts, SmallDateTimeFromParts, DateTime2FromParts, TimeFromParts, DateTimeOffsetFromParts, GetDate, GetUtcDate, SysDateTime, SysUtcDateTime, SysDateTimeOffset, CurrentTimestamp, LTrim, RTrim, Trim, Upper, Lower, Substring, Left, Right, Len, DataLength, Replace, StringEscape, FormatMessage, Concat, ConcatWithSeparator, Ascii, Unicode, CharOf, CharIndex, PatIndex, Replicate, Space, Reverse, Stuff, QuoteName, Str, Translate, Soundex, Difference, Round, Floor, Ceiling, Abs, Sign, Power, Square, Sqrt, Exp, Log, Log10, Cast, Convert, TryCast, TryConvert, IsNull, Coalesce, NullIf, Iif, Choose, JsonValue, JsonQuery, JsonObject, JsonArray];
+    public static IReadOnlyList<BuiltInFunction> All { get; } = [DateDiff, DateDiffBig, DateAdd, DatePart, Year, Month, Day, DateName, EndOfMonth, DateFromParts, DateTimeFromParts, SmallDateTimeFromParts, DateTime2FromParts, TimeFromParts, DateTimeOffsetFromParts, DateTruncate, DateBucket, SwitchOffset, ToDateTimeOffset, IsDate, GetDate, GetUtcDate, SysDateTime, SysUtcDateTime, SysDateTimeOffset, CurrentTimestamp, LTrim, RTrim, Trim, Upper, Lower, Substring, Left, Right, Len, DataLength, Replace, StringEscape, FormatMessage, Concat, ConcatWithSeparator, Ascii, Unicode, CharOf, CharIndex, PatIndex, Replicate, Space, Reverse, Stuff, QuoteName, Str, Translate, Soundex, Difference, Round, Floor, Ceiling, Abs, Sign, Power, Square, Sqrt, Exp, Log, Log10, Cast, Convert, TryCast, TryConvert, IsNull, Coalesce, NullIf, Iif, Choose, JsonValue, JsonQuery, JsonObject, JsonArray];
 }

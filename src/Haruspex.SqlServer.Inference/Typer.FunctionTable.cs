@@ -20,6 +20,10 @@ internal sealed partial class Typer
 
     private const string DateNulls = "A_date_function_is_null_when_an_argument_is_but_eomonth_ignores_a_null_offset";
 
+    private const string Rounded = "Datetrunc_and_date_bucket_keep_the_dates_type_and_are_null_only_for_a_null_date_or_width";
+
+    private const string Offsets = "Switchoffset_and_todatetimeoffset_are_datetimeoffset_of_the_dates_fractional_digits";
+
     private const string Now = "The_current_date_and_time_functions_are_never_null";
 
     private const string Trims = "Trimming_and_case_keep_the_strings_length_and_make_a_fixed_length_string_varying";
@@ -100,6 +104,11 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.DateTime2FromParts, (8, 8), "datetime2 of the precision given", [], [DateKinds, DateNulls], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.DateTime2), s, precision: true)),
         Typing(ScalarFunctions.TimeFromParts, (5, 5), "time of the precision given", [], [DateKinds, DateNulls], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.Time), s, precision: true)),
         Typing(ScalarFunctions.DateTimeOffsetFromParts, (10, 10), "datetimeoffset of the precision given", [], [DateKinds], (a, e, s) => a.FromParts(Call(e), ScalarType.Of(BuiltInType.DateTimeOffset), s, precision: true)),
+        Typing(ScalarFunctions.DateTruncate, (2, 2), "the date's type", [], [Rounded], (a, e, s) => a.DateRounded(Call(e), s, bucket: false)),
+        Typing(ScalarFunctions.DateBucket, (3, 4), "the date's type", [ArithmeticOverflow], [Rounded], (a, e, s) => a.DateRounded(Call(e), s, bucket: true)),
+        Typing(ScalarFunctions.SwitchOffset, (2, 2), "datetimeoffset of the date's fractional digits", [ArithmeticOverflow], [Offsets], (a, e, s) => a.AtOffset(Call(e), s)),
+        Typing(ScalarFunctions.ToDateTimeOffset, (2, 2), "datetimeoffset of the date's fractional digits", [ArithmeticOverflow], [Offsets], (a, e, s) => a.AtOffset(Call(e), s)),
+        Typing(ScalarFunctions.IsDate, (1, 1), "int, never null", [], ["Isdate_is_an_int_never_null"], (a, e, s) => a.IsDate(Call(e), s)),
         Typing(ScalarFunctions.GetDate, (0, 0), "datetime, never null", [], [Now], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.DateTime), [], e), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.GetUtcDate, (0, 0), "datetime, never null", [], [Now], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.DateTime), [], e), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.SysDateTime, (0, 0), "datetime2(7), never null", [], [Now], (a, e, s) => a.Typed(new ScalarType(BuiltInType.DateTime2, Precision: 7), [], e), readsOnlyItsArguments: false),
