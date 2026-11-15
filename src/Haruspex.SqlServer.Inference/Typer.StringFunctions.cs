@@ -165,14 +165,14 @@ internal sealed partial class Typer
         return Typed(ScalarType.CharacterString(national, varying: true, length), NullReasons.Join(Reasons(values.Take(3)), [OutOfRangeAt(call)]), call);
     }
 
+    /// <summary>The quote characters <c>QUOTENAME</c> reads, observed in the test <see cref="QuoteName"/> cites.</summary>
+    private const string Quotes = "[]\"'()<>{}`";
+
     /// <summary>
     /// <c>QUOTENAME(s [, quote])</c>: nvarchar(258), NULL when s is longer than 128 characters or the quote isn't one it reads
     /// (observed: Quotename_is_nvarchar_258_and_null_past_128_characters_or_for_a_quote_it_cannot_use), unless s is declared, or
     /// written, 128 characters or shorter and the quote is none or a literal whose first character is one it reads.
     /// </summary>
-    /// <summary>The quote characters <c>QUOTENAME</c> reads, observed in the same test.</summary>
-    private const string Quotes = "[]\"'()<>{}`";
-
     private Value QuoteName(FunctionCall call, ReadScope scope)
     {
         var (values, unknown) = Arguments(call.Parameters, scope);
