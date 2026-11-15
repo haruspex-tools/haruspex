@@ -224,6 +224,10 @@ walks the callee and solves recursion. Every engine rule here is observed and ke
   caller's track at every position the caller's paths are at (`ResultTrack.Then`), exactly as a `SELECT` would be, and a
   call inside a branch or after a `RETURN` gets `not-run` like any result. `EXEC`, `EXECUTE`, `EXEC @rc = …`, named and
   positional arguments are all the same.
+- **`WITH RESULT SETS` changes them.** Its declared columns rename the callee's and convert its values (1000 into
+  `varchar(3)` is `*`), and `NONE` refuses a callee that returns a result set (11535)
+  (`With_result_sets_renames_and_converts_the_callees_columns_or_refuses_them`). Neither is modelled yet, so a call with
+  either makes the results after it unknown (`unsupported-statement`); `UNDEFINED` is as no clause.
 - **The callee is walked again at each call**, from the caller's temporary tables at that point (`CallContext`), so what it
   reads of them is the caller's (a callee read alone gives `caller-temp-table`), and its writes stay: `INSERT` and `UPDATE`
   widen a column as in the caller, `ALTER TABLE … ADD` adds one, `DROP TABLE` drops it

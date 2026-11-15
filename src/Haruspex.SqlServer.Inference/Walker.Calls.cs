@@ -54,6 +54,18 @@ internal sealed partial class Walker
             return Continue(Assigned(execute.ExecuteSpecification, Forgotten(state, why, At(execute))));
         }
 
+        // WITH RESULT SETS (…) renames the callee's columns and converts its values, and NONE refuses a callee that returns a
+        // result set (observed: With_result_sets_renames_and_converts_the_callees_columns_or_refuses_them). Neither is
+        // modelled; UNDEFINED is as no clause.
+        if (execute.Options.OfType<ResultSetsExecuteOption>().Any(o => o.ResultSetsOptionKind != ResultSetsOptionKind.Undefined))
+        {
+            blocker ??= new UnknownShape(
+                IrUnknownReason.UnsupportedStatement,
+                "EXEC … WITH RESULT SETS is not modelled yet, so the procedure's result sets cannot be listed.",
+                At(execute));
+            return Outcome.Ends;
+        }
+
         if (called.After is not { } after)
             return Outcome.Ends;
         if (called.Received.Positions.Count > 0)

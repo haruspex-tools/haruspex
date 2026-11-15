@@ -32,6 +32,24 @@ public class ExecObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task With_result_sets_renames_and_converts_the_callees_columns_or_refuses_them()
+    {
+        // WITH RESULT SETS gives the callee's rows the columns it declares, their names and types, converting each value:
+        // 1000 into varchar(3) is *, into tinyint error 8114. NONE refuses a callee that returns a result set (11535).
+        // UNDEFINED is as no clause.
+        string[] setup = [
+            "CREATE TABLE dbo.obs_k (id int NOT NULL);",
+            "INSERT INTO dbo.obs_k VALUES (7), (1000);",
+            "CREATE PROCEDURE dbo.obs_one AS SELECT id AS one FROM dbo.obs_k ORDER BY id;",
+        ];
+
+        Assert.Equal("renamed: 7;*", (await Run(setup, "EXEC dbo.obs_one WITH RESULT SETS ((renamed varchar(3) NULL))")).ToString());
+        Assert.Equal(" ! 8114", (await Run(setup, "EXEC dbo.obs_one WITH RESULT SETS ((renamed tinyint NOT NULL))")).ToString());
+        Assert.Equal(" ! 11535", (await Run(setup, "EXEC dbo.obs_one WITH RESULT SETS NONE")).ToString());
+        Assert.Equal("one: 7;1000", (await Run(setup, "EXEC dbo.obs_one WITH RESULT SETS UNDEFINED")).ToString());
+    }
+
+    [Fact]
     public async Task The_return_code_is_never_null()
     {
         // EXEC @rc = p: a RETURN without a value, no RETURN at all, and RETURN NULL (a warning) all give 0. So the variable is
