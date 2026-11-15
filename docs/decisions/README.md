@@ -51,6 +51,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0043](0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md) | 14 Nov 2026 | A value set is canonical by a fold observed from the server |
 | [0044](0044-a-project-file-is-evaluated-in-part-and-the-rest-reported.md) | 15 Nov 2026 | A project file is evaluated in part, and the rest reported |
 | [0045](0045-a-project-s-references-are-read-from-where-its-build-takes-them.md) | 15 Nov 2026 | A project's references are read from where its build takes them |
+| [0046](0046-a-sqlcmd-variable-in-a-body-is-unknown.md) | 15 Nov 2026 | A SQLCMD variable in a body is unknown |
 
 ## Writing a record
 

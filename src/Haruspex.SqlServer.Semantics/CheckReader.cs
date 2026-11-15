@@ -1,6 +1,7 @@
 using Haruspex.Collections;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics.Collations;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Semantics;
@@ -361,7 +362,13 @@ public static class CheckReader
             return literal.Value;
         }
 
-        private static Literal? Literal(ScalarExpression expression) => Unwrap(expression) as Literal;
+        /// <summary>
+        /// A literal, through parentheses; null for anything else, and for one holding a SQLCMD variable, which a deployment replaces
+        /// with its value, so that a set or a bound built from it would be the written text's, not what the server enforces
+        /// (decision 0046; observed in SqlcmdVariableObservationTests).
+        /// </summary>
+        private static Literal? Literal(ScalarExpression expression) =>
+            Unwrap(expression) is Literal literal && !SqlcmdVariableReference.IsIn(literal) ? literal : null;
 
         private static ScalarExpression Unwrap(ScalarExpression expression)
         {

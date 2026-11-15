@@ -3,6 +3,7 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -166,13 +167,14 @@ internal sealed partial class Typer
     /// A VALUES column whose every row is a string literal (the label of the unpivot idiom): never null, of type varchar of
     /// the longest literal, at least 1, or nvarchar when any is <c>N'…'</c> (observed:
     /// A_values_column_of_string_literals_is_a_string_of_the_longest). A varchar literal's length counts bytes of the
-    /// database's code page, which the project does not show, so one with a character beyond ASCII is left out. Null when the
-    /// column is anything else. Only VALUES reads string literals so far.
+    /// database's code page, which the project does not show, so one with a character beyond ASCII is left out, and so is one
+    /// holding a SQLCMD variable, whose text is not its value. Null when the column is anything else. Only VALUES reads string
+    /// literals so far.
     /// </summary>
     private static Value? Literals(List<ScalarExpression> column, Diagnostics.SourceLocation at)
     {
         var literals = column.Select(Strip).OfType<StringLiteral>().ToList();
-        if (literals.Count != column.Count || literals.Any(l => l.Collation is not null || (!l.IsNational && l.Value.Any(c => c > '\u007f'))))
+        if (literals.Count != column.Count || literals.Any(l => l.Collation is not null || SqlcmdVariableReference.IsIn(l) || (!l.IsNational && l.Value.Any(c => c > '\u007f'))))
             return null;
         var national = literals.Any(l => l.IsNational);
         var length = Math.Max(1, literals.Max(l => l.Value.Length));

@@ -22,12 +22,13 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.20";
+    public const string CurrentVersion = "0.21";
 
     /// <summary>
-    /// The versions a reader reads, as decision 0024 says: the current one only. 0.20 added the match <c>canonical</c>, which a
-    /// value set read under a known collation now has where 0.19 said <c>collation</c>, so a 0.19 file claims less than a 0.20 file
-    /// of the same source: read as 0.20 it would be a weaker claim under the newer label, which 0024's first reason refuses.
+    /// The versions a reader reads, as decision 0024 says: the current one only. 0.21 added the reason
+    /// <see cref="IrUnknownReason.SqlcmdVariable"/>: where a literal holds a SQLCMD variable, a 0.20 file claims the written text's
+    /// length, value and type, which a deployment replacing the variable breaks. Nothing in a 0.20 file says whether its source had
+    /// one, so read as 0.21 any of them might carry that claim under the newer label, which 0024's first reason refuses.
     /// </summary>
     public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion];
 

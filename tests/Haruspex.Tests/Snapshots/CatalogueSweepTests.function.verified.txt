@@ -1952,10 +1952,10 @@ CONCAT(dt23, 'x') -> unknown unsupported-expression: CONCAT(dt23, 'x'): an argum
 CONCAT(sdt, 'x') -> unknown unsupported-expression: CONCAT(sdt, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT(dto3, 'x') -> unknown unsupported-expression: CONCAT(dto3, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT(u, 'x') -> unknown unsupported-expression: CONCAT(u, 'x'): an argument whose length as a string is not modelled yet.
-CONCAT(bin4, 'x') -> unknown unsupported-expression: CONCAT(bin4, 'x'): an argument whose length as a string is not modelled yet.
-CONCAT(vb10, 'x') -> unknown unsupported-expression: CONCAT(vb10, 'x'): an argument whose length as a string is not modelled yet.
-CONCAT(x, 'x') -> unknown unsupported-expression: CONCAT(x, 'x'): an argument whose length as a string is not modelled yet.
-CONCAT(sv, 'x') -> unknown unsupported-expression: CONCAT(sv, 'x'): an argument whose length as a string is not modelled yet.
+CONCAT(bin4, 'x') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CONCAT(vb10, 'x') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CONCAT(x, 'x') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CONCAT(sv, 'x') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CONCAT(j, 'x') -> unknown unsupported-expression: CONCAT(j, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT(1, 'x') -> varchar(13) string {length<=13}
 CONCAT(12345, 'x') -> varchar(13) string {length<=13}
@@ -1992,10 +1992,10 @@ CONCAT_WS(',', dt23, 'x') -> unknown unsupported-expression: CONCAT_WS(',', dt23
 CONCAT_WS(',', sdt, 'x') -> unknown unsupported-expression: CONCAT_WS(',', sdt, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT_WS(',', dto3, 'x') -> unknown unsupported-expression: CONCAT_WS(',', dto3, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT_WS(',', u, 'x') -> unknown unsupported-expression: CONCAT_WS(',', u, 'x'): an argument whose length as a string is not modelled yet.
-CONCAT_WS(',', bin4, 'x') -> unknown unsupported-expression: CONCAT_WS(',', bin4, 'x'): an argument whose length as a string is not modelled yet.
-CONCAT_WS(',', vb10, 'x') -> unknown unsupported-expression: CONCAT_WS(',', vb10, 'x'): an argument whose length as a string is not modelled yet.
-CONCAT_WS(',', x, 'x') -> unknown unsupported-expression: CONCAT_WS(',', x, 'x'): an argument whose length as a string is not modelled yet.
-CONCAT_WS(',', sv, 'x') -> unknown unsupported-expression: CONCAT_WS(',', sv, 'x'): an argument whose length as a string is not modelled yet.
+CONCAT_WS(',', bin4, 'x') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+CONCAT_WS(',', vb10, 'x') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+CONCAT_WS(',', x, 'x') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CONCAT_WS(',', sv, 'x') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CONCAT_WS(',', j, 'x') -> unknown unsupported-expression: CONCAT_WS(',', j, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT_WS(',', 1, 'x') -> varchar(14) string {length<=14}
 CONCAT_WS(',', 12345, 'x') -> varchar(14) string {length<=14}

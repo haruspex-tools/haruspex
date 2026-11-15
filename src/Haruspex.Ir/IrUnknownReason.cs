@@ -96,4 +96,11 @@ public enum IrUnknownReason
     /// a placeholder in its place, since the server gives no one the text (0.19). What it returns can only be declared.
     /// </summary>
     EncryptedDefinition,
+
+    /// <summary>
+    /// A literal or a name holding a SQLCMD variable, <c>$(Region)</c>, that a deployment replaces with the variable's value before
+    /// the server sees the text (0.21). The value may have any length, the empty one too, and may even end the string, so nothing
+    /// drawn from the written text holds: not its length, its value, nor its type.
+    /// </summary>
+    SqlcmdVariable,
 }

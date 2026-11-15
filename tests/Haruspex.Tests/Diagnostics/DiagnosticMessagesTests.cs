@@ -121,6 +121,7 @@ public class DiagnosticMessagesTests
         (2015, () => Cli(["CREATE PROCEDURE lib.p @x int AS WHILE @x > 0 BEGIN SELECT b.id FROM lib.book AS b; SET @x = 0; END"])),
         (2021, () => Cli(["CREATE TRIGGER lib.book_seen ON lib.book AFTER UPDATE AS SELECT i.id FROM inserted AS i;", "CREATE PROCEDURE lib.p AS UPDATE lib.book SET note = NULL;"])),
         (2022, () => Cli(["CREATE PROCEDURE lib.p AS DECLARE c CURSOR LOCAL FOR SELECT b.id FROM lib.book AS b; OPEN c; FETCH NEXT FROM c; CLOSE c; DEALLOCATE c;"])),
+        (2023, () => Cli(["CREATE PROCEDURE lib.p AS SELECT '$(Region)' AS region;"])),
         (2101, () => Cli(["CREATE PROCEDURE lib.p AS INSERT INTO audit.trail (id) VALUES (1);"])),
 
         (3001, () => Cli([GetBook], $"{{ {Plain}, \"procedures\": {{ \"lib.get_book\": {{ \"results\": {{ \"rowset\": \"schemas\" }}, \"why\": \"w\" }} }} }}", arrange: f => Directory.CreateDirectory(Path.Combine(f.Path, "schemas")))),

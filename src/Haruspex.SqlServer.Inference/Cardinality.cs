@@ -3,6 +3,7 @@ using System.Globalization;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -369,6 +370,8 @@ internal sealed class Cardinality(DatabaseModel model, Binder binder)
             NullLiteral => KeyValue.Null,
             IntegerLiteral literal => new KeyValue(long.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n <= int.MaxValue ? BuiltInType.Int : BuiltInType.Numeric),
             NumericLiteral => new KeyValue(BuiltInType.Numeric),
+            // A literal holding a SQLCMD variable is its value once deployed, which may not even be a string (decision 0046).
+            StringLiteral literal when SqlcmdVariableReference.IsIn(literal) => null,
             StringLiteral literal => new KeyValue(literal.IsNational ? BuiltInType.NVarChar : BuiltInType.VarChar),
             VariableReference variable => Binder.Resolve(variable, scope.Names) switch
             {

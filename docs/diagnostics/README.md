@@ -51,6 +51,7 @@ reason.
 | [HAR2020](HAR2020.md) | note | A procedure name more than one schema has (retired) |
 | [HAR2021](HAR2021.md) | note | A trigger that may return result sets |
 | [HAR2022](HAR2022.md) | note | A result set with a hidden column |
+| [HAR2023](HAR2023.md) | note | A SQLCMD variable a deployment replaces |
 | [HAR2101](HAR2101.md) | warning | A write to an object the project doesn't define |
 
 ## Reading the config file

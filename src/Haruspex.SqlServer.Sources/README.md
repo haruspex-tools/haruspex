@@ -26,7 +26,8 @@ declares, applying nothing (`ScriptReader`); and the passes that settle what is 
 Files are read in order of their relative path, so the result doesn't depend on the file system. Each file is UTF-8 unless
 a byte order mark says otherwise (SSMS writes UTF-16), and is parsed with the SQL Server 2025 grammar. A script written for
 sqlcmd is read as the server would receive it: each `:setvar` defines a variable and each `$(name)` is replaced by its value
-first (`SqlcmdVariables`). `SqlScriptFolder.Read` can also be given which of a folder's scripts to read, such as the ones a
+first (`SqlcmdVariables`). A `$(name)` the script doesn't set is left as written, and inference reads a literal holding one as
+unknown, since a deployment sets it ([decision 0046](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)). `SqlScriptFolder.Read` can also be given which of a folder's scripts to read, such as the ones a
 project file builds.
 
 A DACPAC is read by `DacpacReader` into the same `SchemaDeclarations`, so the passes and the model are one for both:
@@ -131,7 +132,7 @@ Console.WriteLine($"{project.Projects.Count} projects, {project.References.Count
   ([decision 0004](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0004-scriptdom-is-the-only-sql-dependency.md)).
 - **No other sqlcmd commands.** `:r`, which includes another file, is not followed, so a script that uses it fails to parse
   rather than being read as a different script from the one that runs. Variables defined outside a script (sqlcmd's `-v`,
-  the environment, a project's own variables) are not known.
+  the environment, a project's own variables, a publish's values) are not known, so what they hold stays unknown.
 - **One database.** `USE` is not followed: every object the scripts define is read into one model, whichever database a
   script has switched to by then.
 - **Not all of MSBuild.** A project file is evaluated as far as decision 0044 says: no property functions, no `Choose`, no

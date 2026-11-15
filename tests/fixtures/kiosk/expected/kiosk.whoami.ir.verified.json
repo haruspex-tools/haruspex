@@ -1,0 +1,147 @@
+{
+  "irVersion": "0.21",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "kiosk.whoami",
+      "name": "Whoami",
+      "kind": "procedure",
+      "at": "procedures/whoami.sql:2:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "WhoamiRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "WhoamiRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kiosk.whoami",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "region",
+          "type": {
+            "kind": "unknown",
+            "reason": "sqlcmd-variable"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/whoami.sql:4:8"
+            }
+          ]
+        },
+        {
+          "name": "region_n",
+          "type": {
+            "kind": "unknown",
+            "reason": "sqlcmd-variable"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/whoami.sql:5:8"
+            }
+          ]
+        },
+        {
+          "name": "host",
+          "type": {
+            "kind": "unknown",
+            "reason": "sqlcmd-variable"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/whoami.sql:6:8"
+            }
+          ]
+        },
+        {
+          "name": "region_length",
+          "type": {
+            "kind": "unknown",
+            "reason": "sqlcmd-variable"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/whoami.sql:7:12"
+            }
+          ]
+        },
+        {
+          "name": "fallback",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(6)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "kiosk.whoami",
+      "path": "results[0][].host",
+      "reason": "sqlcmd-variable",
+      "detail": "The literal 'kiosk-$(Region)' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's.",
+      "at": "procedures/whoami.sql:6:8"
+    },
+    {
+      "object": "kiosk.whoami",
+      "path": "results[0][].region",
+      "reason": "sqlcmd-variable",
+      "detail": "The literal '$(Region)' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's.",
+      "at": "procedures/whoami.sql:4:8"
+    },
+    {
+      "object": "kiosk.whoami",
+      "path": "results[0][].region_length",
+      "reason": "sqlcmd-variable",
+      "detail": "The literal '$(Region)' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's.",
+      "at": "procedures/whoami.sql:7:12"
+    },
+    {
+      "object": "kiosk.whoami",
+      "path": "results[0][].region_n",
+      "reason": "sqlcmd-variable",
+      "detail": "The literal N'$(Region)' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's.",
+      "at": "procedures/whoami.sql:5:8"
+    }
+  ],
+  "overrides": [],
+  "folds": {}
+}

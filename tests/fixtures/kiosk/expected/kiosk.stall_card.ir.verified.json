@@ -1,0 +1,125 @@
+{
+  "irVersion": "0.21",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "kiosk.stall_card",
+      "name": "StallCard",
+      "kind": "procedure",
+      "at": "procedures/stall_card.sql:3:1",
+      "parameters": [
+        {
+          "name": "@stall_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "StallCardRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/stall_card.sql:5:1"
+            }
+          ],
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "StallCardRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kiosk.stall_card",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "labelled",
+          "type": {
+            "kind": "unknown",
+            "reason": "sqlcmd-variable"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/stall_card.sql:6:20"
+            }
+          ]
+        },
+        {
+          "name": "origin",
+          "type": {
+            "kind": "unknown",
+            "reason": "sqlcmd-variable"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/stall_card.sql:7:19"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "kiosk.stall_card",
+      "path": "results[0].labelled",
+      "reason": "sqlcmd-variable",
+      "detail": "The key '$(Label)' of json_object holds the SQLCMD variable $(Label), which a deployment replaces with its value, so the object's keys are not known.",
+      "at": "procedures/stall_card.sql:6:20"
+    },
+    {
+      "object": "kiosk.stall_card",
+      "path": "results[0].origin",
+      "reason": "sqlcmd-variable",
+      "detail": "The literal '{\"region\":\"$(Region)\"}' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's.",
+      "at": "procedures/stall_card.sql:7:19"
+    }
+  ],
+  "overrides": [],
+  "folds": {}
+}

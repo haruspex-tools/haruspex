@@ -455,6 +455,20 @@ read, except where it is that value unchanged (a conversion to its own type, `IS
 precision adds those before it, less leading zeros (`A_literals_type_is_its_own_digits_or_characters`). None is ever null. A
 `varchar` literal beyond ASCII, or one with `COLLATE`, is not typed: its length in bytes depends on the code page.
 
+### SQLCMD variables
+
+A string literal holding a SQLCMD variable, `'$(Region)'`, is unknown with the reason `sqlcmd-variable`: a deployment puts the
+variable's value in its place as text before the server parses it, so the value may be empty, of any length, or not a string at all
+([decision 0046](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)).
+`Typer.LiteralOf`, through which every rule that reads a literal's text finds it (a value set from a CASE, a UNION or VALUES, a JSON
+document, a conversion that fits, a number's digits), doesn't return one, and the few that read a literal directly check for one:
+`json_object`'s keys, `JSON_VALUE`'s refusal of a document that isn't JSON, a VALUES column of literals, and a key compared with a
+constant (`Cardinality`). A result column whose name holds one, an alias `[$(Label)]`, leaves the result's keys unknown
+(`Typer.ReplacedKey`); Semantics' `CheckReader` builds no set or bound from one in a CHECK. A JSON path holding one needs no check: a
+document traced here holds no key spelt with a variable, so the path finds nothing and the value is read as absent. The unit
+tests are `SqlcmdVariableTests`; `SqlcmdVariableObservationTests` deploys such text with values of each kind and holds the claims
+to them; the fixture is `kiosk`.
+
 ### What may make an expression NULL besides its operands
 
 - **Overflow** (`arithmetic-overflow`). Integer arithmetic past its type, a conversion that does not fit (a decimal into
@@ -546,7 +560,8 @@ modelled.
   if any argument or the separator is; as long as their arguments together plus the separator between each two, NULL
   counting nothing; max if any is, otherwise cut at 8000 bytes (4000 characters for `nvarchar`), which the value is too
   (`Concat_is_as_long_as_its_arguments_together_up_to_8000_bytes_and_never_null`). A string argument counts its length, an
-  `int` 12 and a `bit` 1; an argument of another type is not modelled.
+  `int` 12 and a `bit` 1; an argument of another type is not modelled, and one already unknown makes the call unknown for
+  its own reason (`Concat_of_an_unknown_argument_is_unknown_for_that_argument_s_reason`).
 - **String `+`** is described the same way, except that two fixed-length operands give a fixed-length string, `nchar` if
   either is (`Fixed_length_strings_plus_is_fixed_length`), and is null when an operand is. A `+` with the `NULL` literal is
   always NULL under the default setting and is not modelled. With

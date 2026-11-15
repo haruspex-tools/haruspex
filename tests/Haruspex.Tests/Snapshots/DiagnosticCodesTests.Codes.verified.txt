@@ -31,6 +31,7 @@ HAR2019 N A procedure that isn't in the project (retired) [Haruspex.SqlServer.In
 HAR2020 N A procedure name more than one schema has (retired) [Haruspex.SqlServer.Inference.InferenceCodes.AmbiguousProcedure]
 HAR2021 N A trigger that may return result sets [Haruspex.SqlServer.Inference.InferenceCodes.TriggerResults]
 HAR2022 N A result set with a hidden column [Haruspex.SqlServer.Inference.InferenceCodes.HiddenColumn]
+HAR2023 N A SQLCMD variable a deployment replaces [Haruspex.SqlServer.Inference.InferenceCodes.SqlcmdVariable]
 HAR2101 W A write to an object the project doesn't define [Haruspex.SqlServer.Inference.InferenceCodes.UndefinedWriteTarget]
 HAR3001 E A config file can't be read [Haruspex.Config.ConfigCodes.Unreadable]
 HAR3002 E The config file isn't JSON [Haruspex.Config.ConfigCodes.NotJson]

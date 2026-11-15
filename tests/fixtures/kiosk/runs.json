@@ -1,0 +1,13 @@
+// The runs of the kiosk fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what each
+// key means.
+{
+  "seedReachesEveryEdge": false,
+
+  "runs": [
+    { "name": "whoami", "procedure": "kiosk.whoami" },
+    { "name": "list_stalls", "procedure": "kiosk.list_stalls" },
+    { "name": "stall_card, a region's own", "procedure": "kiosk.stall_card", "parameters": { "@stall_id": 1 } },
+    { "name": "stall_card, no such stall", "procedure": "kiosk.stall_card", "parameters": { "@stall_id": 99 } },
+    { "name": "labels", "procedure": "kiosk.labels" }
+  ]
+}

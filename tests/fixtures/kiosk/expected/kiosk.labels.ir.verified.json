@@ -1,0 +1,38 @@
+{
+  "irVersion": "0.21",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "kiosk.labels",
+      "name": "Labels",
+      "kind": "procedure",
+      "at": "procedures/labels.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "unknown",
+            "reason": "sqlcmd-variable"
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {},
+  "unknowns": [
+    {
+      "object": "kiosk.labels",
+      "path": "results[0]",
+      "reason": "sqlcmd-variable",
+      "detail": "The column name '$(Label)' holds the SQLCMD variable $(Label), which a deployment replaces with its value, so the result's keys are not known.",
+      "at": "procedures/labels.sql:5:20"
+    }
+  ],
+  "overrides": [],
+  "folds": {}
+}

@@ -187,6 +187,7 @@ split into parts along the constructs it covers. The families today:
 | The callers' session | `SessionTests` | `SessionObservationTests` | `tests/fixtures/meters` | "The callers' session" |
 | Precision lost | `PrecisionLossTests` | `PrecisionLossObservationTests`, `PrecisionLossGridTests` | `tests/fixtures/assays` | "Precision lost" |
 | Canonical value sets | `CanonicalValueSetTests` | `CanonicalValueSetObservationTests`, `CollationFoldGridTests` | `tests/fixtures/tannery` | [decision 0043](docs/decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md) |
+| SQLCMD variables | `SqlcmdVariableTests` | `SqlcmdVariableObservationTests` | `tests/fixtures/kiosk` | [decision 0046](docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md) |
 | Binding | `BinderTests`, in `tests/Haruspex.Tests/Semantics` | `BindingObservationTests` | `tests/fixtures/scopes` | the Semantics README's "How data flows through it" |
 
 Eleven classes are named otherwise, for what they cover across families: `ConstructTests` (queries, results and sources

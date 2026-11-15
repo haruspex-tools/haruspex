@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using Haruspex.SqlServer.Syntax;
 
 namespace Haruspex.SqlServer.Sources;
 
@@ -121,7 +122,7 @@ internal static partial class SqlcmdVariables
     /// <summary>The value of the <c>$(name)</c> at <paramref name="start"/>, and where it ends, when the variable is defined.</summary>
     private static (string Value, int End)? Reference(string script, int start, Dictionary<string, string> values)
     {
-        var match = VariableReference().Match(script, start);
+        var match = SqlcmdVariableReference.At(script, start);
         return match.Success && values.TryGetValue(match.Groups["name"].Value, out var value)
             ? (value, start + match.Length)
             : null;
@@ -130,9 +131,6 @@ internal static partial class SqlcmdVariables
     // A name has no space, quotation mark or parenthesis. A quoted value has no quotation mark inside it.
     [GeneratedRegex("""^[ \t]*:setvar[ \t]+(?<name>[^\s"()$]+)(?:[ \t]+(?:"(?<quoted>[^"]*)"|(?<bare>[^\s"]+)))?[ \t]*\r?$""", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex SetvarLine();
-
-    [GeneratedRegex("""\G\$\((?<name>[^\s"()$]+)\)""", RegexOptions.CultureInvariant)]
-    private static partial Regex VariableReference();
 
     /// <summary>Where in the script a character is, which decides whether a command or a variable there counts.</summary>
     private enum Lexical

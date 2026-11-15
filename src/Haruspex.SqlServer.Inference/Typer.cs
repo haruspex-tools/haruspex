@@ -179,6 +179,8 @@ internal sealed partial class Typer(
             return Unsupported(IrUnknownReason.UnsupportedQuery, "SELECT * is not expanded yet.", star);
         if (row.Columns.FirstOrDefault(c => string.IsNullOrEmpty(c.Name)) is { } unnamed)
             return Unsupported(IrUnknownReason.UnnamedColumn, $"The column {Text(unnamed.At)} has no name.", unnamed.At);
+        if (row.Columns.Select(ReplacedKey).FirstOrDefault(r => r is not null) is { } replaced)
+            return replaced;
 
         // Drivers key a row by column name, and the mssql driver turns a repeated name into an array, so a
         // repeated name changes the row's shape.
@@ -229,6 +231,8 @@ internal sealed partial class Typer(
             // anything; it is reported rather than modelled.
             if (string.IsNullOrEmpty(column.Name))
                 return Unsupported(IrUnknownReason.UnnamedColumn, $"The column {Text(column.At)} has no name, which FOR JSON rejects.", column.At);
+            if (ReplacedKey(column) is { } replaced)
+                return replaced;
 
             var path = column.Name.Split('.');
             if (path.Any(p => p.Length == 0))
@@ -270,6 +274,16 @@ internal sealed partial class Typer(
             return shape;
         return subquery ? new ArrayShape(shape, [], MinItems: 1, MaxItems: row.Rows == IrCardinality.Many ? null : 1) : new ArrayShape(shape, []);
     }
+
+    /// <summary>
+    /// Why a column's name is not its key: it holds a SQLCMD variable, <c>[$(Label)]</c>, which a deployment replaces with its
+    /// value as it does in a literal, so the result's keys are not known (decision 0046; observed in SqlcmdVariableObservationTests).
+    /// Null for any other name.
+    /// </summary>
+    private static UnknownShape? ReplacedKey(RowColumn column) =>
+        column.Name is { } name && SqlcmdVariableReference.FirstIn(name) is { } variable
+            ? Unsupported(IrUnknownReason.SqlcmdVariable, $"The column name '{name}' holds the SQLCMD variable {variable}, which a deployment replaces with its value, so the result's keys are not known.", column.At)
+            : null;
 
     private static UnknownShape KeyConflict(RowColumn column) =>
         new(IrUnknownReason.DuplicateColumn, $"The alias '{column.Name}' clashes with another key in the same JSON object.", column.At);
@@ -317,6 +331,7 @@ internal sealed partial class Typer(
         FunctionCall call when FunctionSummaries.Callee(call) is { } callee => CallFunction(call, callee, scope),
         VariableReference variable => Branched(variable, Variable(variable, scope), scope),
         IntegerLiteral literal => Integer(literal),
+        StringLiteral literal when SqlcmdVariableReference.FirstIn(literal.Value) is { } variable => Replaced(literal, variable),
         StringLiteral literal => FromString(literal),
         NumericLiteral literal => FromNumeric(literal),
         RealLiteral literal => Typed(ScalarType.Of(BuiltInType.Float), [], literal),
@@ -578,6 +593,8 @@ internal sealed partial class Typer(
             // Keys are compared by case, as JSON compares them: 'a' and 'A' are two keys (observed).
             if (pair.JsonKeyName is not StringLiteral key)
                 return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The key {Text(pair.JsonKeyName)} of json_object is not a literal, so the object's keys are data.", At(pair.JsonKeyName)));
+            if (SqlcmdVariableReference.FirstIn(key.Value) is { } variable)
+                return Value.Unknown(Unsupported(IrUnknownReason.SqlcmdVariable, $"The key {Text(key)} of json_object holds the SQLCMD variable {variable}, which a deployment replaces with its value, so the object's keys are not known.", At(key)));
             if (!keys.Add(key.Value))
                 return Value.Unknown(Unsupported(IrUnknownReason.DuplicateColumn, $"The key '{key.Value}' is used more than once in json_object, which writes it twice.", At(pair.JsonKeyName)));
 

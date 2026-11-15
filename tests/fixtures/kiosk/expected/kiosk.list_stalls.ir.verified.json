@@ -1,0 +1,133 @@
+{
+  "irVersion": "0.21",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "kiosk.list_stalls",
+      "name": "ListStalls",
+      "kind": "procedure",
+      "at": "procedures/list_stalls.sql:3:1",
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListStallsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListStallsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "kiosk.list_stalls",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "stall_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "region",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "kind",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(10)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "food",
+                "craft"
+              ],
+              "from": [
+                {
+                  "check": "kiosk.ck_stall_kind"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "reach",
+          "type": {
+            "kind": "unknown",
+            "reason": "sqlcmd-variable"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/list_stalls.sql:8:61"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "kiosk.list_stalls",
+      "path": "results[0][].reach",
+      "reason": "sqlcmd-variable",
+      "detail": "The literal '$(Region)' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's.",
+      "at": "procedures/list_stalls.sql:8:61"
+    }
+  ],
+  "overrides": [],
+  "folds": {}
+}

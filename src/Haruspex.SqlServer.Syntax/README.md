@@ -35,6 +35,9 @@ var procedure = ModuleReader.Procedure(definition, "procedures/get_order.sql");
 - **One reading.** A table declared in a body is read by the same code as one declared in the schema, so the schema's rules
   (which columns are never null, what a CHECK constraint allows) apply to both unchanged.
 - **Declarations as written.** It reads what the syntax says and nothing it implies.
+- **One form of a SQLCMD variable.** `SqlcmdVariableReference` is the one definition of `$(name)`: Sources replaces a script's
+  own `:setvar` variables by it, and Semantics and Inference find by it the literals and names whose text a deployment replaces
+  ([decision 0046](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)).
 - **Only code stays ScriptDom's.** What it reads into the model keeps ScriptDom's types only for bodies and expressions; a
   name, a type, a parameter, a function's kind and its options become the model's own values.
 
