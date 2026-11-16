@@ -38,6 +38,6 @@ export const SessionBoardResult2RowSchema = z.object({
 })
 export type SessionBoardResult2Row = z.infer<typeof SessionBoardResult2RowSchema>
 
-/** rink.session_board: returns 2 result sets: JSON, [] when no rows match; JSON, [] when no rows match. */
-export const SessionBoardSchema = z.tuple([z.array(SessionBoardResult1RowSchema), z.array(SessionBoardResult2RowSchema)])
+/** rink.session_board: returns 2 result sets: JSON, null when no rows match; JSON, null when no rows match. */
+export const SessionBoardSchema = z.tuple([z.array(SessionBoardResult1RowSchema).min(1).nullable(), z.array(SessionBoardResult2RowSchema).min(1).nullable()])
 export type SessionBoard = z.infer<typeof SessionBoardSchema>

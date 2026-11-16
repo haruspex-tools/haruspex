@@ -335,6 +335,50 @@ public sealed class SqlServerFixture : IAsyncLifetime
         }
     }
 
+    /// <summary>
+    /// The database alone, as for a <see cref="WriteSession"/>, for the mssql driver in Node, which connects by itself and
+    /// rolls back what it does (<see cref="DriverSession"/>). Its connection is the write session's, as the driver's config.
+    /// </summary>
+    public async Task<DriverSession> DriverAsync(CancellationToken token)
+    {
+        var pass = await gate.EnterWriteAsync(token).ConfigureAwait(false);
+        try
+        {
+            return new DriverSession(MssqlConfig(WriteConnectionString), pass);
+        }
+        catch
+        {
+            pass.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// A connection string as the mssql driver's config, in JSON. The driver can read a connection string too, but not every
+    /// spelling SqlClient's builder writes, so the parts are handed over one by one. Only SQL logins: the test servers
+    /// (a container, or the developer's own, CONTRIBUTING.md) use one.
+    /// </summary>
+    private static string MssqlConfig(string connectionString)
+    {
+        var builder = new SqlConnectionStringBuilder(connectionString);
+        var source = builder.DataSource.StartsWith("tcp:", StringComparison.OrdinalIgnoreCase) ? builder.DataSource[4..] : builder.DataSource;
+        var comma = source.IndexOf(',', StringComparison.Ordinal);
+        return System.Text.Json.JsonSerializer.Serialize(new
+        {
+            server = comma < 0 ? source : source[..comma],
+            port = comma < 0 ? 1433 : int.Parse(source[(comma + 1)..], System.Globalization.CultureInfo.InvariantCulture),
+            user = builder.UserID,
+            password = builder.Password,
+            database = builder.InitialCatalog,
+            options = new
+            {
+                encrypt = builder.Encrypt != SqlConnectionEncryptOption.Optional,
+                trustServerCertificate = builder.TrustServerCertificate,
+                appName = "haruspex-tests-driver",
+            },
+        });
+    }
+
     /// <summary>Validates a run's output against the IR (<see cref="IrValidator"/>).</summary>
     public async Task<ValidationReport> ValidateAsync(ProcedureRun run)
     {

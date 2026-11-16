@@ -93,19 +93,11 @@ public class ZodAcceptanceTests(SqlServerFixture server)
         set ??= new ObservedResultSet(result.Encoding == IrEncoding.Json ? ["json"] : [], []);
         if (result.Encoding == IrEncoding.Json)
         {
-            // No row: the reader convention in the IR's README.
+            // No row reads as null, whatever the result's type: the reader convention in the IR's README, and what the mssql
+            // driver hands over (DriverJsonObservationTests).
             if (set.Rows.Count == 0)
             {
-                if (result.Type is IrArray)
-                {
-                    json.WriteStartArray();
-                    json.WriteEndArray();
-                }
-                else
-                {
-                    json.WriteNullValue();
-                }
-
+                json.WriteNullValue();
                 return;
             }
 

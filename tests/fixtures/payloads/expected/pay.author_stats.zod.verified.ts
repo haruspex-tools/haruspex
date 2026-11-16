@@ -9,6 +9,6 @@ export const AuthorStatsRowSchema = z.object({
 })
 export type AuthorStatsRow = z.infer<typeof AuthorStatsRowSchema>
 
-/** pay.author_stats: returns JSON, [] when no rows match. */
-export const AuthorStatsSchema = z.array(AuthorStatsRowSchema)
+/** pay.author_stats: returns JSON, null when no rows match. */
+export const AuthorStatsSchema = z.array(AuthorStatsRowSchema).min(1).nullable()
 export type AuthorStats = z.infer<typeof AuthorStatsSchema>

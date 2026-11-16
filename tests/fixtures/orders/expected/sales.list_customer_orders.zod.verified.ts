@@ -32,6 +32,6 @@ export const ListCustomerOrdersRowSchema = z.object({
 })
 export type ListCustomerOrdersRow = z.infer<typeof ListCustomerOrdersRowSchema>
 
-/** sales.list_customer_orders: returns JSON, [] when no rows match. */
-export const ListCustomerOrdersSchema = z.array(ListCustomerOrdersRowSchema)
+/** sales.list_customer_orders: returns JSON, null when no rows match. */
+export const ListCustomerOrdersSchema = z.array(ListCustomerOrdersRowSchema).min(1).nullable()
 export type ListCustomerOrders = z.infer<typeof ListCustomerOrdersSchema>

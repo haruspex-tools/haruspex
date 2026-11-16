@@ -54,6 +54,6 @@ export const KitSheetsResult2RowSchema = z.object({
 })
 export type KitSheetsResult2Row = z.infer<typeof KitSheetsResult2RowSchema>
 
-/** kit.kit_sheets: returns 2 result sets: JSON, [] when no rows match; rows. */
-export const KitSheetsSchema = z.tuple([z.array(KitSheetsResult1RowSchema), z.array(KitSheetsResult2RowSchema)])
+/** kit.kit_sheets: returns 2 result sets: JSON, null when no rows match; rows. */
+export const KitSheetsSchema = z.tuple([z.array(KitSheetsResult1RowSchema).min(1).nullable(), z.array(KitSheetsResult2RowSchema)])
 export type KitSheets = z.infer<typeof KitSheetsSchema>

@@ -393,23 +393,24 @@ which constraints it trusts, is in [its README](../Haruspex.SqlServer.Inference/
 - **Encoding.** A result is a `rowset`, whose type is an array of row objects, or `json`, a JSON document the caller parses.
 - **A result can be absent.** A JSON result may arrive with no value at all: `mayBeAbsent: true` with the reason `no-rows`
   (SQL Server's top-level `FOR JSON` over no rows returns no row, observed). A rowset with no rows is an empty result set,
-  always present. **Reader convention:** a reader that finds no value for a result that may be absent yields `[]` when the
-  result's type is an array, and `null` otherwise. Emitters rely on it: a single-object result is nullable, an array result
-  is not.
+  always present. **Reader convention:** a reader that finds no value for a JSON result that may be absent yields `null`,
+  whatever the result's type, which is what the mssql driver hands an application for it
+  ([decision 0048](../../docs/decisions/0048-an-absent-json-result-reads-as-null.md)). Emitters rely on it: a JSON result
+  that may be absent is nullable, an array as much as an object.
 - **A result can be missing.** A result whose statement may not run is not there at all, not empty, and a result after it
   arrives in its place (observed). Results are listed by position: `results[k]` is everything a successful path can return
   k-th, a `union` of the whole results when paths differ (a rowset is then a union of arrays: every row of one result set
   comes from one statement). A position some path does not reach has `not-run` in `absentBecause`, at each statement that
   can return it there, and so does every position after it: the result sets a client receives are always the first ones
-  listed. **Reader convention:** a reader pads the missing ones as absent, `[]` for a rowset or an array result and `null`
-  otherwise.
+  listed. **Reader convention:** a reader pads the missing ones as absent, `[]` for a rowset and `null` for a JSON result.
 - **The IR describes calls that succeed.** A path that ends in an error the caller sees describes no call that returns, and
   is left out.
 - **A result says how many rows it returns** (`cardinality`): `one`, `atMostOne` or `many`, counting a rowset's rows, or a
   JSON result's objects (its array's items, or its one object without the array). It is how many the query returns when it
   runs; whether the result set may be missing is `absentBecause`. `many` claims nothing. A generated client can return one
-  row, or a row or null, rather than a list. Emitters bound an array result by it, except one that may be absent, which
-  reads as `[]` and is only bounded above.
+  row, or a row or null, rather than a list. Emitters bound an array result by it. A rowset that may be absent reads as
+  `[]`, so it is only bounded above. A JSON array never reads as `[]`: `FOR JSON` over no rows returns no row, which reads
+  as `null`, so an array that arrives has between one item and as many as `cardinality` allows.
 - **One object without a proof of one row.** A JSON result written as one object (SQL Server's `WITHOUT_ARRAY_WRAPPER`) is
   claimed as one object even where `cardinality` is `many`. The claim can't be silently wrong: several rows produce
   `{...},{...}`, which is not valid JSON, so parsing fails loudly before any schema is applied.
@@ -452,7 +453,10 @@ from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/READM
 such as `'$(Region)'`, or a key holding one, which a deployment replaces with the variable's value before SQL Server sees the
 text ([decision 0046](../../docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)). A 0.20 document claimed the written
 text's length, value and type there, from every kind of source, and nothing in it says whether its source had such a literal,
-so this reader reads 0.21 only. Within 0.21, `out-of-range` was widened from a choice by an index out of range to any argument
+so this reader reads 0.21 only. Within 0.21, the reader convention for an absent JSON array changed from `[]` to `null`,
+as the mssql driver hands it over ([decision 0048](../../docs/decisions/0048-an-absent-json-result-reads-as-null.md)). No
+document changed, nor what one means: the convention is what a reader makes of a result that isn't there. So the version
+didn't move. Also within 0.21, `out-of-range` was widened from a choice by an index out of range to any argument
 outside the range a construct reads, as a string function's code, position, count or length; its name and its sense, null
 because of an argument the construct can't use, are as they were, so a 0.21 document stays valid and a reader needs no change.
 So, within 0.21, is the fact source `engine` on a `min` and `max`: a range the engine fixes, such as `ASCII`'s 0 to 255, where it

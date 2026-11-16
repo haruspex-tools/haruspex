@@ -50,6 +50,6 @@ export const MemberNamesResult2RowSchema = z.object({
 })
 export type MemberNamesResult2Row = z.infer<typeof MemberNamesResult2RowSchema>
 
-/** gym.member_names: returns 2 result sets: rows; JSON, [] when no rows match. */
-export const MemberNamesSchema = z.tuple([z.array(MemberNamesResult1RowSchema), z.array(MemberNamesResult2RowSchema)])
+/** gym.member_names: returns 2 result sets: rows; JSON, null when no rows match. */
+export const MemberNamesSchema = z.tuple([z.array(MemberNamesResult1RowSchema), z.array(MemberNamesResult2RowSchema).min(1).nullable()])
 export type MemberNames = z.infer<typeof MemberNamesSchema>

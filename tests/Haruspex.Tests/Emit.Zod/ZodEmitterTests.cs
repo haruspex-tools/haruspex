@@ -116,12 +116,12 @@ public class ZodEmitterTests
     }
 
     [Fact]
-    public void An_absent_array_result_reads_as_an_empty_array()
+    public void An_absent_array_result_reads_as_null_too()
     {
         var ts = ZodEmitter.Emit(Absent(new IrArray(new IrRef("PRow")))).Expected();
 
-        Assert.Contains("export const PSchema = z.array(PRowSchema)\n", ts, StringComparison.Ordinal);
-        Assert.Contains("[] when no rows match", ts, StringComparison.Ordinal);
+        Assert.Contains("export const PSchema = z.array(PRowSchema).min(1).nullable()\n", ts, StringComparison.Ordinal);
+        Assert.Contains("null when no rows match", ts, StringComparison.Ordinal);
     }
 
     [Theory]

@@ -28,13 +28,16 @@ internal static class EmitCheckPackage
     }
 
     /// <summary>
-    /// Runs <c>npm ci</c> unless <c>node_modules</c> is there. Two test processes may get here together, so the
-    /// check and the install happen under a lock file that only one process can hold.
+    /// Runs <c>npm ci</c> unless <c>node_modules</c> is there and was installed since <c>package-lock.json</c> last changed,
+    /// which npm's record of the install (<c>node_modules/.package-lock.json</c>) says: a package added to the lock file
+    /// reaches a checkout installed before it. Two test processes may get here together, so the check and the install
+    /// happen under a lock file that only one process can hold.
     /// </summary>
     public static void EnsureInstalled(string directory)
     {
         using var lockFile = Lock(Path.Combine(directory, "node_modules.lock"));
-        if (Directory.Exists(Path.Combine(directory, "node_modules")))
+        var installed = new FileInfo(Path.Combine(directory, "node_modules", ".package-lock.json"));
+        if (installed.Exists && installed.LastWriteTimeUtc >= File.GetLastWriteTimeUtc(Path.Combine(directory, "package-lock.json")))
             return;
         var npm = OperatingSystem.IsWindows() ? "npm.cmd" : "npm";
         Assert.True(
@@ -59,7 +62,11 @@ internal static class EmitCheckPackage
     }
 
     /// <summary>Runs a program to completion, with its output; false when it can't start, times out or fails.</summary>
-    public static bool TryRun(string file, string[] args, string workingDirectory, out string output, out string why)
+    public static bool TryRun(string file, string[] args, string workingDirectory, out string output, out string why) =>
+        TryRun(file, args, workingDirectory, new Dictionary<string, string>(), out output, out why);
+
+    /// <summary>As <c>TryRun</c>, with variables added to the program's environment, such as a secret kept off its command line.</summary>
+    public static bool TryRun(string file, string[] args, string workingDirectory, IReadOnlyDictionary<string, string> environment, out string output, out string why)
     {
         var start = new ProcessStartInfo(file)
         {
@@ -70,6 +77,8 @@ internal static class EmitCheckPackage
         };
         foreach (var arg in args)
             start.ArgumentList.Add(arg);
+        foreach (var (name, value) in environment)
+            start.Environment[name] = value;
 
         Process process;
         try

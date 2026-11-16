@@ -8,7 +8,7 @@ namespace Haruspex.Ir;
 /// <param name="AbsentBecause">
 /// Why the result can arrive with no value at all. A top-level <c>FOR JSON</c> query that matches no rows
 /// returns no row, not an empty array or object. Readers follow one convention, stated in README.md: an
-/// absent array result reads as <c>[]</c>, and any other absent result as <c>null</c>.
+/// absent JSON result reads as <c>null</c>, whatever its type, and an absent rowset as <c>[]</c>.
 /// </param>
 public sealed record IrResult(IrEncoding Encoding, IrType Type, EquatableArray<IrNullReason> AbsentBecause)
 {
