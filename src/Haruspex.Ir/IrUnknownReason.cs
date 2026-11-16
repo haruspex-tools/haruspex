@@ -103,4 +103,10 @@ public enum IrUnknownReason
     /// drawn from the written text holds: not its length, its value, nor its type.
     /// </summary>
     SqlcmdVariable,
+
+    /// <summary>
+    /// A query file's parameter whose type its uses don't decide (0.22): nothing in the file says what it is, or two uses say
+    /// different things. A declaration in the file decides it instead.
+    /// </summary>
+    UndecidedParameter,
 }

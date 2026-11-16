@@ -35,6 +35,12 @@ public sealed record HaruspexConfig
     /// </summary>
     public string? Collation { get; init; }
 
+    /// <summary>
+    /// The application's query files (<c>queries</c>): folders, files and patterns relative to <see cref="Directory"/>, in the order
+    /// written; empty when the file names none. <see cref="QuerySelection"/> finds the files.
+    /// </summary>
+    public EquatableArray<QueryPattern> Queries { get; init; } = [];
+
     /// <summary>The folder to write to, resolved against <see cref="Directory"/>, or null when the file doesn't say.</summary>
     public string? Out { get; init; }
 
@@ -80,8 +86,11 @@ public sealed record HaruspexConfig
     /// </summary>
     public JsonLocation? NamingLocation(string schema) => Schema(schema) is { } settings ? settings.Naming?.At ?? NamingAt ?? settings.At : NamingAt;
 
-    /// <summary>Whether any schema has an include, without which nothing is selected.</summary>
-    public bool SelectsAnything => Schemas.Any(s => s.Include is not null);
+    /// <summary>Whether any schema has an include, without which no procedure is selected.</summary>
+    public bool SelectsProcedures => Schemas.Any(s => s.Include is not null);
+
+    /// <summary>Whether anything is selected: a schema's procedures, or query files.</summary>
+    public bool SelectsAnything => SelectsProcedures || Queries.Count > 0;
 
     /// <summary>The settings of the schema named <paramref name="schema"/> (ignoring case, as SQL Server does), or null.</summary>
     public SchemaSettings? Schema(string schema) => Schemas.FirstOrDefault(s => string.Equals(s.Name, schema, StringComparison.OrdinalIgnoreCase));

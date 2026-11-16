@@ -77,6 +77,16 @@ through references is read once into the one model; another database's package i
 names the package and the object, with a line in the object's own text (`sales.dacpac/[sales].[get_order]:3:5`). The guide's
 chapter 2 says why each is so, and `DacpacEquivalenceTests` proves a package of each fixture reads as its folder does.
 
+## Query files
+
+A query file of the application is read apart from the project, by `QueryFileReader`, into a `QueryFile` that is read against
+the project's model rather than added to it. It is one batch, as `sp_executesql` runs it: one that `GO` splits, or that holds no
+statement, is refused (HAR1014). Its text is kept with LF line endings, parsed so, and parsed with `QUOTED_IDENTIFIER` on, as
+every client library sets it; no SQLCMD variable is replaced, since the application sends the text as it is. A line comment
+`-- @param @name type` declares a parameter's type, read as a `DECLARE` of it reads, and one that can't be taken is refused
+with why (HAR1015): it doesn't read, it names a parameter twice, or it names a variable the file declares itself or doesn't use
+([decision 0059](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0059-a-query-file-s-parameters-are-typed-from-their-uses.md)).
+
 ## Example
 
 ```csharp
@@ -90,6 +100,8 @@ Console.WriteLine($"{package.Package?.Name} {package.Package?.Sha256}, {package.
 
 var project = SqlProjectReader.Read("Sales/Sales.sqlproj", ["../Shared/bin/Release"]);
 Console.WriteLine($"{project.Projects.Count} projects, {project.References.Count} packages, {project.Model.Settings?.Collation}");
+
+var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql");   // an Outcome<QueryFile>
 ```
 
 ## What it guarantees

@@ -149,8 +149,12 @@ internal sealed class ConfigApplying
             }
 
             var file = config.File.Length == 0 ? HaruspexConfig.FileName : Path.GetFileName(config.File);
-            problems.Add(ConfigCodes.ResultsToDeclare.At(config.Location,
-                $"{obj.Id}: its result sets are unknown: {why.Detail} ({why.At}) Declare them in {file} under procedures[\"{obj.Id}\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it."));
+
+            // A query file's results aren't declared in the config file yet; what it runs can be declared where it is a procedure.
+            var declare = obj.Kind == IrObjectKind.Query
+                ? "A query file's results can't be declared: write it so that they can be inferred, or declare the results of the procedure it runs."
+                : $"Declare them in {file} under procedures[\"{obj.Id}\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it.";
+            problems.Add(ConfigCodes.ResultsToDeclare.At(config.Location, $"{obj.Id}: its result sets are unknown: {why.Detail} ({why.At}) {declare}"));
         }
     }
 
@@ -169,8 +173,11 @@ internal sealed class ConfigApplying
             foreach (var call in unknowns.Where(u => u.Object == obj.Id && u.Path != "results" && ConfigApplication.Unknowable.Contains(u.Reason)).GroupBy(u => u.Detail, StringComparer.Ordinal))
             {
                 var paths = call.Select(u => u.Path).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+                var type = obj.Kind == IrObjectKind.Query
+                    ? "A query file's paths can't be overridden yet."
+                    : "To type the value, override its path under \"paths\" with \"type\" and \"import\".";
                 problems.Add(ConfigCodes.UnknownAfterCall.At(config.Location,
-                    $"{obj.Id}: {string.Join(", ", paths)} {(paths.Count == 1 ? "is" : "are")} unknown: {call.Key} A declaration can't type {(paths.Count == 1 ? "it" : "them")}: after a call that is not followed, temporary tables are unknown even when its results are declared. To type the value, override its path under \"paths\" with \"type\" and \"import\"."));
+                    $"{obj.Id}: {string.Join(", ", paths)} {(paths.Count == 1 ? "is" : "are")} unknown: {call.Key} A declaration can't type {(paths.Count == 1 ? "it" : "them")}: after a call that is not followed, temporary tables are unknown even when its results are declared. {type}"));
             }
         }
     }

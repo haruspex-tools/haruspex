@@ -58,4 +58,16 @@ public static class SourceCodes
     /// aren't read from the definition, so it is passed over, and a name in it is unresolved, as a package's FileTable is.
     /// </summary>
     public static DiagnosticCode ColumnsNotListed { get; } = new(1013, DiagnosticSeverity.Note, "A table whose definition lists no columns isn't read");
+
+    /// <summary>
+    /// A query file that isn't one batch: it holds no statement, or <c>GO</c> splits it into several, where <c>sp_executesql</c>
+    /// runs one batch and <c>GO</c> is no part of SQL.
+    /// </summary>
+    public static DiagnosticCode QueryNotOneBatch { get; } = new(1014, DiagnosticSeverity.Error, "A query file isn't one batch");
+
+    /// <summary>
+    /// A parameter's declaration comment in a query file (<c>-- @param @order_id int</c>) that can't be taken: it doesn't read, it
+    /// names a parameter twice, or it names a variable the file declares itself or doesn't use.
+    /// </summary>
+    public static DiagnosticCode BadParameterDeclaration { get; } = new(1015, DiagnosticSeverity.Error, "A query file's parameter declaration can't be taken");
 }

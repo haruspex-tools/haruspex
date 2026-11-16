@@ -30,12 +30,12 @@ public class IrWireNamesTests
 
     [Fact]
     public void Object_kinds_keep_their_names() => Assert.Equal(
-        ["procedure"],
+        ["procedure", "query"],
         Names<IrObjectKind>(IrWireNames.Of));
 
     [Fact]
     public void Type_owners_keep_their_names() => Assert.Equal(
-        ["procedure", "function"],
+        ["procedure", "function", "query"],
         Names<IrTypeOwner>(IrWireNames.Of));
 
     [Fact]
@@ -60,7 +60,7 @@ public class IrWireNamesTests
 
     [Fact]
     public void Unknown_reasons_keep_their_names() => Assert.Equal(
-        ["unsupported-statement", "external-code", "redefined", "unsupported-query", "unsupported-expression", "unsupported-source", "unsupported-sql-type", "unresolved-table", "unresolved-column", "unnamed-column", "duplicate-column", "unresolved-recursion", "json-shape-unknown", "caller-temp-table", "varying-results", "dynamic-sql", "procedure-variable", "system-procedure", "missing-procedure", "ambiguous-procedure", "trigger-results", "hidden-column", "encrypted-definition", "sqlcmd-variable"],
+        ["unsupported-statement", "external-code", "redefined", "unsupported-query", "unsupported-expression", "unsupported-source", "unsupported-sql-type", "unresolved-table", "unresolved-column", "unnamed-column", "duplicate-column", "unresolved-recursion", "json-shape-unknown", "caller-temp-table", "varying-results", "dynamic-sql", "procedure-variable", "system-procedure", "missing-procedure", "ambiguous-procedure", "trigger-results", "hidden-column", "encrypted-definition", "sqlcmd-variable", "undecided-parameter"],
         Names<IrUnknownReason>(IrWireNames.Of));
 
     [Fact]

@@ -60,7 +60,10 @@ internal static class ModuleRun
         public SqlProject Project { get; } = project;
     }
 
-    /// <summary>The procedures to type, and those the file's own selection names (for its overrides), when they differ.</summary>
+    /// <summary>
+    /// The procedures to type, and those the file's own selection names (for its overrides), when they differ; the project holds
+    /// the query files read with them.
+    /// </summary>
     private sealed class Selection(Loaded loaded, EquatableArray<ObjectName> procedures, IReadOnlyCollection<ObjectName>? byFile)
     {
         public Loaded Loaded { get; } = loaded;
@@ -143,13 +146,13 @@ internal static class ModuleRun
             ? new Succeeded<ObjectPattern>(pattern)
             : Refused<ObjectPattern>(CliCodes.BadInclude, $"invalid --include pattern: {problem}");
 
-    /// <summary>Nothing is selected without an include: typing every procedure is asked for, never the default.</summary>
+    /// <summary>Nothing is selected without an include or query files: typing every procedure is asked for, never the default.</summary>
     private static Outcome<bool> Selects(Settings settings, EquatableArray<ObjectPattern> include) =>
         include.Count > 0 || settings.Config.SelectsAnything
             ? new Succeeded<bool>(true)
             : Refused<bool>(CliCodes.NothingSelected, settings.Path is null
-                ? "nothing is selected: give --include, or a config file whose \"schemas\" include procedures. Use '*.*' to type every procedure."
-                : $"nothing is selected: give --include, or a schema with \"include\" in {DiagnosticFormatter.PathAsShown(settings.Path)}, such as \"schemas\": {{ \"dbo\": {{ \"include\": [\"*\"] }} }}.");
+                ? "nothing is selected: give --include, or a config file whose \"schemas\" include procedures or whose \"queries\" names query files. Use '*.*' to type every procedure."
+                : $"nothing is selected: give --include, or a schema with \"include\" or \"queries\" in {DiagnosticFormatter.PathAsShown(settings.Path)}, such as \"schemas\": {{ \"dbo\": {{ \"include\": [\"*\"] }} }}.");
 
     /// <summary>
     /// The project, read from the source folder, project file or DACPAC; its diagnostics, with their files under the folder each was
@@ -174,10 +177,32 @@ internal static class ModuleRun
     }
 
     /// <summary>
-    /// The procedures to type. A pattern or a schema that matches nothing is an error, not silence: a typo would otherwise
-    /// drop an interface from the generated code without anyone noticing.
+    /// The procedures to type, and the query files. A pattern or a schema that matches nothing is an error, not silence: a typo
+    /// would otherwise drop an interface from the generated code without anyone noticing. Each is reported, the query files'
+    /// problems and the procedures' together.
     /// </summary>
-    private static Outcome<Selection> Select(Loaded loaded)
+    private static Outcome<Selection> Select(Loaded loaded) =>
+        Outcome.Combine(SelectProcedures(loaded), Queries(loaded.Plan.Config))
+            .Select(both => new Selection(new Loaded(loaded.Plan, loaded.Project.WithQueries(loaded.Plan.Config.Directory, both.Second)), both.First.Procedures, both.First.ByFile));
+
+    /// <summary>
+    /// The application's query files the config file names, each read; a file that doesn't read is reported where it is, under the
+    /// config file's folder, and the run fails, as for a script of the project.
+    /// </summary>
+    private static Outcome<IReadOnlyList<QueryFile>> Queries(HaruspexConfig config)
+    {
+        var read = QuerySelection.Select(config)
+            .Then(found => Outcome.All(found.Select(file => QueryFileReader.Read(file.Path, file.Relative))).Select(files => (IReadOnlyList<QueryFile>)files));
+        Diagnostic Under(Diagnostic d) => d.At is SourceLocation at ? d with { At = at with { File = Path.Join(config.Directory, at.File) } } : d;
+        return read switch
+        {
+            Succeeded<IReadOnlyList<QueryFile>> succeeded => new Succeeded<IReadOnlyList<QueryFile>>(succeeded.Value, [.. succeeded.Diagnostics.Select(Under)]),
+            Failed<IReadOnlyList<QueryFile>> failed => new Failed<IReadOnlyList<QueryFile>>([.. failed.Diagnostics.Select(Under)]),
+        };
+    }
+
+    /// <summary>The procedures to type.</summary>
+    private static Outcome<Selection> SelectProcedures(Loaded loaded)
     {
         var plan = loaded.Plan;
         var project = loaded.Project;

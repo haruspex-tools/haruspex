@@ -36,15 +36,17 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
     /// <summary>Which object has had which node's unknowns listed.</summary>
     private readonly HashSet<(string Object, string Node)> listedNodes = [];
 
-    public IrDocument Build(IReadOnlyList<(Procedure Source, ProcedureAnalysis Analysis)> procedures, SessionOptions session)
+    /// <summary>The document of the procedures and query files analysed, under the callers' session.</summary>
+    public IrDocument Build(IReadOnlyList<(Procedure Source, ProcedureAnalysis Analysis)> procedures, IReadOnlyList<(QueryFile Source, ProcedureAnalysis Analysis)> queries, SessionOptions session)
     {
-        var ordered = procedures.OrderBy(p => p.Source.Name.ToString(), StringComparer.Ordinal).ToList();
+        var analysed = procedures.Select(p => (Id: p.Source.Name.ToString(), Kind: IrObjectKind.Procedure, Owner: IrTypeOwner.Procedure, p.Source.Span, Text: (string?)null, p.Analysis))
+            .Concat(queries.Select(q => (Id: q.Source.Path, Kind: IrObjectKind.Query, Owner: IrTypeOwner.Query, q.Source.Span, Text: (string?)q.Source.Text, q.Analysis)));
+        var ordered = analysed.OrderBy(o => o.Id, StringComparer.Ordinal).ToList();
 
         var objects = new List<IrObject>();
-        foreach (var (source, analysis) in ordered)
+        foreach (var (id, kind, ownerKind, at, text, analysis) in ordered)
         {
-            var id = source.Name.ToString();
-            var owner = new Owner(IrTypeOwner.Procedure, id);
+            var owner = new Owner(ownerKind, id);
 
             var parameters = analysis.Parameters
                 .Select(p => new IrParameter(p.Name, Convert(p.Type, owner, id, $"parameters.{p.Name}"), p.HasDefault, p.IsOutput))
@@ -64,8 +66,7 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
                 unknowns.Add(new IrUnknown(id, "results", why.Reason, why.Detail, why.At.ToString()));
             }
 
-            var at = source.Span;
-            objects.Add(new IrObject(id, id, IrObjectKind.Procedure, at.ToString(), [.. parameters], results is null ? null : [.. results]));
+            objects.Add(new IrObject(id, id, kind, at.ToString(), [.. parameters], results is null ? null : [.. results]) { Text = text });
         }
 
         return MarkRecursive(new IrDocument(new IrSource("tsql") { Session = Session(session) }, [.. objects], types, [.. unknowns]));

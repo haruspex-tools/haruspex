@@ -63,6 +63,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0056](0056-a-function-throws-three-kinds-of-failure.md) | 16 Nov 2026 | A function throws three kinds of failure |
 | [0057](0057-parameter-keys-are-their-declared-names.md) | 16 Nov 2026 | Parameter keys are their declared names |
 | [0058](0058-the-functions-are-a-file-of-their-own-named-for-their-driver.md) | 16 Nov 2026 | The functions are a file of their own, named for their driver |
+| [0059](0059-a-query-file-s-parameters-are-typed-from-their-uses.md) | 16 Nov 2026 | A query file's parameters are typed from their uses |
 
 ## Writing a record
 

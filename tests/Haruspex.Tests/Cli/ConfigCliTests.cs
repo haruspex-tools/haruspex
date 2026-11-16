@@ -314,7 +314,7 @@ public class ConfigCliTests
         var (exitCode, _, error) = Run(copy.Path, "generate", "--out", Path.Combine(copy.Path, "out"));
 
         Assert.Equal(2, exitCode);
-        Assert.Equal($"haruspex: error HAR6007: nothing is selected: give --include, or a schema with \"include\" in {DiagnosticFormatter.PathAsShown(Path.Combine(copy.Path, "haruspex.json"))}, such as \"schemas\": {{ \"dbo\": {{ \"include\": [\"*\"] }} }}.\n", error);
+        Assert.Equal($"haruspex: error HAR6007: nothing is selected: give --include, or a schema with \"include\" or \"queries\" in {DiagnosticFormatter.PathAsShown(Path.Combine(copy.Path, "haruspex.json"))}, such as \"schemas\": {{ \"dbo\": {{ \"include\": [\"*\"] }} }}.\n", error);
     }
 
     // TypeScript's reserved words are the emitter's knowledge, which the CLI hands to the config (ReservedWords), so a reserved

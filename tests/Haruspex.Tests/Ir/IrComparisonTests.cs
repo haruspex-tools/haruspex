@@ -154,6 +154,16 @@ public class IrComparisonTests
     }
 
     [Fact]
+    public void A_query_whose_text_changes_is_reported_though_its_types_do_not()
+    {
+        // The text is what the query's function sends, so a check must fail when it changes, as when a type does.
+        var before = IrSamples.Everything;
+        var after = before with { Objects = [.. before.Objects.Select(o => o.Kind == IrObjectKind.Query ? o with { Text = o.Text + "-- reordered\n" } : o)] };
+
+        Assert.Equal(["sql/find_orders.sql: the text it runs changed"], Changes(before, after));
+    }
+
+    [Fact]
     public void Results_that_become_unknown_are_reported_as_one_change()
     {
         var before = Infer(ListOrders);

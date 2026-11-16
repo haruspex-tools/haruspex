@@ -31,6 +31,12 @@ db/db.sqlproj:5:15: note HAR1012: db.sqlproj refers to the project ..\archive\ar
 HAR1013
 db/p1.sql:1:1: note HAR1013: lib.scan is made from a query, whose columns are the query's; haruspex doesn't read them, so a name in it is unresolved.
 
+HAR1014
+sql/q.sql:1:1: error HAR1014: sql/q.sql isn't one batch: GO splits it into 2 batches; GO is no part of SQL, but a client's separator, and a query file is run as one batch.
+
+HAR1015
+sql/q.sql:1:1: error HAR1015: -- @param @client_id int: the file doesn't use @client_id, so it isn't a parameter; check its spelling.
+
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
 
@@ -82,6 +88,9 @@ db/p1.sql:1:94: note HAR2022: lib.p results: FETCH without INTO at p1.sql:1:94 r
 HAR2023
 db/p1.sql:1:34: note HAR2023: lib.p results[0][].region: The literal '$(Region)' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's.
 
+HAR2024
+sql/q.sql:1:8: note HAR2024: sql/q.sql parameters.@label: Nothing decides the type of @label: it is never compared with a column or a literal, in arithmetic with one, a count of rows, assigned to a column, or passed to a procedure or function. Declare it in the file: -- @param @label <type>.
+
 HAR2101
 db/p1.sql:1:27: warning HAR2101: audit.trail is written here but is not defined in the project, so a trigger on it, which could return result sets of its own, cannot be seen. SQL Server allows results from triggers unless the server's 'disallow results from triggers' option is on, which it is not by default.
 
@@ -95,7 +104,7 @@ HAR3003
 haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
 
 HAR3004
-haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, references, collation, out, schemas, objects, emit, serverOnly, naming, procedures, session, check.
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check.
 
 HAR3005
 haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".
@@ -147,6 +156,9 @@ haruspex.json:1:133: error HAR3020: procedures["lib.get_book"].paths["[].note"]:
 
 HAR3021
 haruspex.json:1:92: error HAR3021: references[0]: "no/such/folder" is not a folder, so no referenced DACPAC can be found in it.
+
+HAR3022
+haruspex.json:1:88: error HAR3022: queries: "../shared/sql" reaches outside the folder of the config file; a query file belongs to the module whose folder holds it, so name only files below this one.
 
 HAR3101
 haruspex.json:1:127: error HAR3101: procedures["lib.p"].results.rowset: a rowset is declared by the schema of one row: an object with "properties", one for each column.
@@ -216,6 +228,9 @@ haruspex: error HAR4005: --include 'lib.list_*' matches no procedure. Correct it
 
 HAR4006
 haruspex: error HAR4006: --include 'lib.get_book' matches only procedures that schemas.lib.exclude leaves out, so it selects nothing.
+
+HAR4007
+haruspex.json:1:88: error HAR4007: queries: "sql/**/*.query" names no query file of this module. Correct it, or remove it.
 
 HAR4101
 haruspex.json:1:93: error HAR4101: procedures["lib.lost_book"]: there is no procedure lib.lost_book in the project.
@@ -320,7 +335,7 @@ HAR6006
 haruspex: error HAR6006: invalid --include pattern: 'a.b.c' is not a two-part name such as sales.get_order, sales.* or *.list_*.
 
 HAR6007
-haruspex: error HAR6007: nothing is selected: give --include, or a config file whose "schemas" include procedures. Use '*.*' to type every procedure.
+haruspex: error HAR6007: nothing is selected: give --include, or a config file whose "schemas" include procedures or whose "queries" names query files. Use '*.*' to type every procedure.
 
 HAR6008
 haruspex: error HAR6008: cannot write to out: …
@@ -335,7 +350,7 @@ HAR6011
 haruspex: error HAR6011: nothing to compare with: out/haruspex.ir.json and out/haruspex.zod.ts aren't there. Run haruspex generate, read what it writes, and commit it.
 
 HAR6012
-out/haruspex.ir.json: error HAR6012: this file is IR 0.9, and this haruspex writes IR 0.21, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to out/haruspex.zod.ts before committing it, and commit both.
+out/haruspex.ir.json: error HAR6012: this file is IR 0.9, and this haruspex writes IR 0.22, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to out/haruspex.zod.ts before committing it, and commit both.
 
 HAR6013
 out/haruspex.ir.json: error HAR6013: this file can't be read as IR: $.source is missing. Run haruspex generate to write it again.

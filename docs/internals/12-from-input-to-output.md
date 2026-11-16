@@ -30,8 +30,9 @@ flowchart LR
   or the nearest above it), then settles the folder to read, the folder to write and the `--include` patterns, the
   command line over the config file.
 - **ReadProject** reads every `.sql` file into the model.
-- **Select** picks the procedures to type.
-- **Infer** infers their results and applies the config file: overrides, declared results, names.
+- **Select** picks the procedures to type, and finds and reads the query files `queries` names (`QuerySelection`,
+  `QueryFileReader`), reporting what is wrong with both at once.
+- **Infer** infers their results, the query files' too, and applies the config file: overrides, declared results, names.
 - **Emit** writes what the config file's `emit` names, in memory: the Zod module, a JSON Schema document, or both.
 - **Write** puts the IR and each emitted file in place.
 - **Noted** lists each unknown in what was written.

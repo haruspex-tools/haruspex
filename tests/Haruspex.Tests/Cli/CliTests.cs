@@ -8,7 +8,7 @@ using Haruspex.Tests.Sources;
 
 namespace Haruspex.Tests.Cli;
 
-public class CliTests
+public partial class CliTests
 {
     /// <summary>Runs the CLI from an empty folder, so no haruspex.json above the test binaries can be found.</summary>
     private static (int ExitCode, string Output, string Error) Run(params string[] args)
@@ -209,7 +209,7 @@ public class CliTests
 
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);
-        Assert.Equal("haruspex: error HAR6007: nothing is selected: give --include, or a config file whose \"schemas\" include procedures. Use '*.*' to type every procedure.\n", error.ReplaceLineEndings("\n"));
+        Assert.Equal("haruspex: error HAR6007: nothing is selected: give --include, or a config file whose \"schemas\" include procedures or whose \"queries\" names query files. Use '*.*' to type every procedure.\n", error.ReplaceLineEndings("\n"));
     }
 
     [Fact]

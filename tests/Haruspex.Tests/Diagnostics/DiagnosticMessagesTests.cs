@@ -93,6 +93,9 @@ public class DiagnosticMessagesTests
     /// <summary>A run with <paramref name="sql"/> and a config file of the standard settings and <paramref name="more"/>.</summary>
     private static string[] Config(string more, params string[] sql) => Cli(sql.Length == 0 ? [GetBook] : sql, $"{{ {Plain}{(more.Length == 0 ? "" : ", " + more)} }}");
 
+    /// <summary>A run whose config file names the query file <c>sql/q.sql</c>, which holds <paramref name="query"/>, beside the standard settings.</summary>
+    private static string[] Query(string query) => Cli([GetBook], $"{{ {Plain}, \"queries\": \"sql\" }}", arrange: f => f.File("sql/q.sql", query));
+
     /// <summary>A run whose config file declares the results of <c>lib.p</c> as <paramref name="results"/>.</summary>
     private static string[] Declares(string results) =>
         Config($"\"procedures\": {{ \"lib.p\": {{ \"results\": {results}, \"why\": \"its SQL is built as it runs\" }} }}",
@@ -128,6 +131,8 @@ public class DiagnosticMessagesTests
         (1010, () => Project("", sdk: "MSBuild.Sdk.SqlProj/3.0.0")),
         (1012, () => Project("<ItemGroup><ProjectReference Include=\"..\\archive\\archive.sqlproj\"><DatabaseSqlCmdVariable>Archive</DatabaseSqlCmdVariable><ServerSqlCmdVariable>Annexe</ServerSqlCmdVariable></ProjectReference></ItemGroup>")),
         (1013, () => Cli(["CREATE TABLE lib.scan WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT b.id, b.title FROM lib.book AS b;", GetBook])),
+        (1014, () => Query("SELECT 1 AS one;\nGO\nSELECT 2 AS two;\n")),
+        (1015, () => Query("-- @param @client_id int\nSELECT b.title FROM lib.book AS b WHERE b.id = @customer_id;\n")),
 
         (2001, () => Cli(["CREATE PROCEDURE lib.p AS SET NOCOUNT, NOEXEC ON;\nSELECT b.id FROM lib.book AS b;"])),
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),
@@ -146,6 +151,7 @@ public class DiagnosticMessagesTests
         (2021, () => Cli(["CREATE TRIGGER lib.book_seen ON lib.book AFTER UPDATE AS SELECT i.id FROM inserted AS i;", "CREATE PROCEDURE lib.p AS UPDATE lib.book SET note = NULL;"])),
         (2022, () => Cli(["CREATE PROCEDURE lib.p AS DECLARE c CURSOR LOCAL FOR SELECT b.id FROM lib.book AS b; OPEN c; FETCH NEXT FROM c; CLOSE c; DEALLOCATE c;"])),
         (2023, () => Cli(["CREATE PROCEDURE lib.p AS SELECT '$(Region)' AS region;"])),
+        (2024, () => Query("SELECT @label AS label;")),
         (2101, () => Cli(["CREATE PROCEDURE lib.p AS INSERT INTO audit.trail (id) VALUES (1);"])),
 
         (3001, () => Cli([GetBook], $"{{ {Plain}, \"procedures\": {{ \"lib.get_book\": {{ \"results\": {{ \"rowset\": \"schemas\" }}, \"why\": \"w\" }} }} }}", arrange: f => Directory.CreateDirectory(Path.Combine(f.Path, "schemas")))),
@@ -170,6 +176,7 @@ public class DiagnosticMessagesTests
         (3020, () => Override("[].note", "{ }")),
 
         (3021, () => Config("\"references\": [\"no/such/folder\"]")),
+        (3022, () => Config("\"queries\": \"../shared/sql\"")),
         (3101, () => Declares("{ \"rowset\": { \"type\": \"string\" } }")),
         (3102, () => Declares("{ \"rowset\": { \"type\": \"object\", \"properties\": { \"a\": { \"type\": \"integer\" }, \"b\": { \"type\": \"integer\" } }, \"required\": [\"a\"] } }")),
         (3103, () => Declares("{ \"rowset\": { \"type\": \"object\", \"properties\": { \"a\": { \"type\": \"array\", \"items\": { \"type\": \"integer\" } } } } }")),
@@ -194,6 +201,7 @@ public class DiagnosticMessagesTests
         (4004, () => Cli([GetBook], "{ \"source\": \"db\", \"out\": \"out\", \"schemas\": { \"lib\": { \"include\": [\"get_*\"], \"exclude\": [\"get_*\"] } } }")),
         (4005, () => Cli([GetBook], args: ["db", "--include", "lib.list_*", "--out", "out"])),
         (4006, () => Cli([GetBook], "{ \"source\": \"db\", \"out\": \"out\", \"schemas\": { \"lib\": { \"include\": [\"*\"], \"exclude\": [\"get_*\"] } } }", ["--include", "lib.get_book"])),
+        (4007, () => Config("\"queries\": \"sql/**/*.query\"")),
         (4101, () => Config("\"procedures\": { \"lib.lost_book\": { \"name\": \"LostBook\" } }")),
         (4102, () => Cli([GetBook, "CREATE PROCEDURE lib.purge AS DELETE FROM lib.book;"], "{ \"source\": \"db\", \"out\": \"out\", \"schemas\": { \"lib\": { \"include\": [\"get_*\"] } }, \"procedures\": { \"lib.purge\": { \"name\": \"Purge\" } } }")),
         (4103, () => Config("\"procedures\": { \"lib.get_book\": { \"name\": \"Books\" }, \"LIB.GET_BOOK\": { \"name\": \"Volumes\" } }")),

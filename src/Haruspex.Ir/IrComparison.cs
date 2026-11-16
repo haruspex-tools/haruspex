@@ -89,6 +89,10 @@ public static class IrComparison
                 Add(IrChangeKind.ObjectRenamed, [], was.Name, now.Name);
             if (was.Kind != now.Kind)
                 Add(IrChangeKind.ObjectKindChanged, [], IrWireNames.Of(was.Kind), IrWireNames.Of(now.Kind));
+
+            // What a query sends is part of its contract: an edited file the committed module doesn't run is a change.
+            if (was.Text != now.Text)
+                Add(IrChangeKind.TextChanged, []);
             Parameters(was.Parameters, now.Parameters);
             Results(was.Results, now.Results);
         }

@@ -21,6 +21,8 @@ flowchart LR
     run --> project["SqlProject"]
     project -->|Sources| model["DatabaseModel"]
     project -->|Config| selected["the selected procedures"]
+    configFile -->|"Config, Sources"| queries["the query files"]
+    queries --> infer
     model --> infer["IrInference.Infer"]
     selected --> infer
     infer --> apply["ConfigApplication.Apply"]
@@ -112,7 +114,7 @@ db/procedures/list_orders.sql:12:9: note HAR2013: sales.list_orders results[0][]
 
 An error stops the run. A warning, such as a call whose results only a declaration in the config file could give, and a
 note, one for each unknown in the output with where it is and why, don't. A run that succeeds prints one line to standard
-output: how many procedures it typed, how many unknowns there are, and where it wrote.
+output: how many procedures it typed (and query files, when there are any), how many unknowns there are, and where it wrote.
 
 ## What it guarantees
 

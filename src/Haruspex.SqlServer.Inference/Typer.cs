@@ -30,14 +30,22 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="uncommittedReads">
 /// Whether the body (a view's, a function's) is read uncommitted where it is used, so that no key of what it reads holds.
 /// </param>
+/// <param name="uses">
+/// Where a query file's walk with its parameters undeclared keeps what their uses say of their types (<see cref="ParameterUses"/>):
+/// each query read is handed to it in its scope. Null for every other read, which records nothing.
+/// </param>
 internal sealed partial class Typer(
     DatabaseModel model,
     SourceSpan source,
     Summaries summaries,
     EquatableMap<LocalName, Value>? parameters = null,
     bool ansiNullsOff = false,
-    bool uncommittedReads = false)
+    bool uncommittedReads = false,
+    ParameterUses? uses = null)
 {
+    /// <summary>Where a query file's parameters' uses are kept, while its parameters are being typed; null otherwise.</summary>
+    private readonly ParameterUses? uses = uses;
+
     private readonly DatabaseModel model = model;
     private readonly Binder binder = summaries.Bindings.For(source);
 
@@ -137,6 +145,7 @@ internal sealed partial class Typer(
     {
         var query = bound.Query;
         var scope = Attach(enclosing.In(bound.Scope));
+        uses?.Specification(query, scope, this);
 
         // WHERE, the joins' ON and HAVING prove columns and aggregates non-null in the rows they keep (Typer.Refinement.cs), for
         // the select list and every subquery in it; GROUP BY is not read beyond what cardinality needs.

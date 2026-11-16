@@ -25,6 +25,8 @@ reason.
 | [HAR1011](HAR1011.md) | note | A project's reference isn't read yet (retired) |
 | [HAR1012](HAR1012.md) | note | A reference to a database on another server isn't read |
 | [HAR1013](HAR1013.md) | note | A table whose definition lists no columns isn't read |
+| [HAR1014](HAR1014.md) | error | A query file isn't one batch |
+| [HAR1015](HAR1015.md) | error | A query file's parameter declaration can't be taken |
 
 ## Inference
 
@@ -53,6 +55,7 @@ reason.
 | [HAR2021](HAR2021.md) | note | A trigger that may return result sets |
 | [HAR2022](HAR2022.md) | note | A result set with a hidden column |
 | [HAR2023](HAR2023.md) | note | A SQLCMD variable a deployment replaces |
+| [HAR2024](HAR2024.md) | note | A query file's parameter its uses don't decide |
 | [HAR2101](HAR2101.md) | warning | A write to an object the project doesn't define |
 
 ## Reading the config file
@@ -80,6 +83,7 @@ reason.
 | [HAR3019](HAR3019.md) | error | A name isn't a valid identifier |
 | [HAR3020](HAR3020.md) | error | An override says nothing |
 | [HAR3021](HAR3021.md) | error | A references folder isn't there |
+| [HAR3022](HAR3022.md) | error | A queries entry outside the config file's folder |
 | [HAR3101](HAR3101.md) | error | A rowset isn't declared by one row's schema |
 | [HAR3102](HAR3102.md) | error | A rowset's required leaves a column out |
 | [HAR3103](HAR3103.md) | error | A rowset's column isn't a scalar |
@@ -108,6 +112,7 @@ reason.
 | [HAR4004](HAR4004.md) | error | A schema selects nothing |
 | [HAR4005](HAR4005.md) | error | An --include matches nothing |
 | [HAR4006](HAR4006.md) | error | An --include selects only excluded procedures |
+| [HAR4007](HAR4007.md) | error | A queries entry names no query file |
 | [HAR4101](HAR4101.md) | error | An override of a procedure the project doesn't have |
 | [HAR4102](HAR4102.md) | error | An override of a procedure that isn't selected |
 | [HAR4103](HAR4103.md) | error | Two overrides of one procedure |

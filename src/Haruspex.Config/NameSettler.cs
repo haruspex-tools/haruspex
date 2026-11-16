@@ -39,12 +39,21 @@ internal sealed class NameSettler(
 
     private string ConfigFile => config.File;
 
+    /// <summary>The ids of the document's query files, which are paths, named from their files' names rather than split as SQL names.</summary>
+    private readonly HashSet<string> queries = new(StringComparer.Ordinal);
+
+    private bool IsQuery(string id) => queries.Contains(id);
+
+    /// <summary>What an object is called in a problem: <c>the procedure sales.get_order</c>, <c>the query file queries/get_order.sql</c>.</summary>
+    private string Described(string id) => IsQuery(id) ? $"the query file {id}" : $"the procedure {id}";
+
     /// <summary>
     /// Where the naming of the object <paramref name="id"/> is set, for a problem with its name: the setting that decides it,
     /// else the file as a whole.
     /// </summary>
     private DiagnosticLocation? NamingOf(string id) =>
-        TrySplit(id, out var schema, out _) && config.NamingLocation(schema) is { } at ? at : config.Location;
+        IsQuery(id) ? (DiagnosticLocation?)config.NamingAt ?? config.Location
+        : TrySplit(id, out var schema, out _) && config.NamingLocation(schema) is { } at ? at : config.Location;
 
     /// <summary>What holds a name: the object it belongs to, a description for errors, whether it is a type, and the setting to change.</summary>
     private sealed record Holder(string Owner, string Description, bool IsType, JsonLocation? At);
@@ -54,9 +63,9 @@ internal sealed class NameSettler(
     /// block (where a prefix or a replacement would go), or else the top-level naming.
     /// </summary>
     private JsonLocation? SettingFor(string id) =>
-        procedureNames.TryGetValue(id, out var given) && given.At is not null
-            ? given.At
-            : TrySplit(id, out var schema, out _) ? config.Schema(schema)?.At ?? config.NamingAt : null;
+        procedureNames.TryGetValue(id, out var given) && given.At is not null ? given.At
+        : IsQuery(id) ? config.NamingAt ?? (config.Queries.Count > 0 ? config.Queries[0].At : null)
+        : TrySplit(id, out var schema, out _) ? config.Schema(schema)?.At ?? config.NamingAt : null;
 
     private readonly HashSet<string> reportedClashes = new(StringComparer.Ordinal);
 
@@ -64,6 +73,7 @@ internal sealed class NameSettler(
     public IrDocument? Settle(IrDocument document, IReadOnlyList<IrResult>?[] results)
     {
         var errors = problems.Count(p => p.IsError);
+        queries.UnionWith(document.Objects.Where(o => o.Kind == IrObjectKind.Query).Select(o => o.Id));
         var objects = new List<IrObject>();
         var ordered = document.Objects.Select((o, i) => (Object: o, Results: results[i])).OrderBy(o => o.Object.Id, StringComparer.Ordinal).ToList();
         var settledNames = new List<(IrObject Object, IReadOnlyList<IrResult>? Results, string Name)>();
@@ -75,7 +85,7 @@ internal sealed class NameSettler(
             // A procedure whose own name clashes is not walked: its types' names build on that name, so each would
             // clash too, and one error says it all.
             var name = ProcedureName(obj.Id);
-            if (name is null || !Claim(name, new Holder(obj.Id, $"the procedure {obj.Id}", false, SettingFor(obj.Id))))
+            if (name is null || !Claim(name, new Holder(obj.Id, Described(obj.Id), false, SettingFor(obj.Id))))
                 continue;
             foreach (var ((owner, path), (pathName, at)) in pathNames.Where(p => p.Key.Object == obj.Id).OrderBy(p => p.Key.Path, StringComparer.Ordinal))
                 Claim(pathName, new Holder(owner, $"the type at {path} in {owner}", true, at));
@@ -126,12 +136,15 @@ internal sealed class NameSettler(
         }
 
         if (generated is null)
-            problems.Add(ConfigCodes.ProcedureUnnamed.At(NamingOf(id), $"the procedure {id} cannot be named: {why}"));
+            problems.Add(ConfigCodes.ProcedureUnnamed.At(NamingOf(id), $"{Described(id)} cannot be named: {why}"));
         return generated;
     }
 
     private string? Generated(string id, out string? why)
     {
+        // A query file is named from its file's name, by the top-level rules: it has no schema.
+        if (IsQuery(id))
+            return config.Naming.Name(Stem(id), config.Reserved, out why);
         if (!TrySplit(id, out var schema, out var name))
         {
             why = $"'{id}' is not a two-part name.";
@@ -292,19 +305,45 @@ internal sealed class NameSettler(
         if (!reportedClashes.Add(name))
             return;
 
-        var sameSchema = TrySplit(first.Owner, out var a, out _) && TrySplit(second.Owner, out var b, out _) && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
-        var ways = new List<string>
-        {
-            sameSchema
-                ? "add a naming \"replace\" rule that tells their names apart (such as { \"pattern\": \"#$\", \"with\": \"Row\" })"
-                : "give one of their schemas a \"prefix\" in \"schemas\"",
-            first.IsType || second.IsType
-                ? "give one its own name with an override in \"procedures\" (\"name\" for a procedure, \"paths\": { \"<path>\": { \"name\": … } } for a type in its results)"
-                : "give one of them its own name with a \"name\" override in \"procedures\"",
-        };
+        var sameSchema = !IsQuery(first.Owner) && !IsQuery(second.Owner)
+            && TrySplit(first.Owner, out var a, out _) && TrySplit(second.Owner, out var b, out _) && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+        var ways = IsQuery(first.Owner) || IsQuery(second.Owner) ? Ways(first, second) : SqlNames(first, second, sameSchema);
         var noFile = ConfigFile.Length == 0 ? " These settings go in a haruspex.json beside the project, which it doesn't have yet." : "";
         problems.Add(ConfigCodes.NamesClash.At((DiagnosticLocation?)second.At ?? (DiagnosticLocation?)first.At ?? config.Location,
             $"\"{name}\" would name both {first.Description} and {second.Description}. Generated names must not clash: {string.Join(", or ", ways)}.{noFile}"));
+    }
+
+    /// <summary>The ways to part two names from SQL: a prefix for two schemas, a replacement rule within one, or an override.</summary>
+    private static List<string> SqlNames(Holder first, Holder second, bool sameSchema) =>
+    [
+        sameSchema
+            ? "add a naming \"replace\" rule that tells their names apart (such as { \"pattern\": \"#$\", \"with\": \"Row\" })"
+            : "give one of their schemas a \"prefix\" in \"schemas\"",
+        first.IsType || second.IsType
+            ? "give one its own name with an override in \"procedures\" (\"name\" for a procedure, \"paths\": { \"<path>\": { \"name\": … } } for a type in its results)"
+            : "give one of them its own name with a \"name\" override in \"procedures\"",
+    ];
+
+    /// <summary>
+    /// The ways to part a query file's name from another's: a query file is named by its file, which is renamed, and a procedure
+    /// beside it by an override; neither is renamed by haruspex (decision 0059).
+    /// </summary>
+    private List<string> Ways(Holder first, Holder second)
+    {
+        var ways = new List<string> { "rename the query file" };
+        if (new[] { first, second }.Any(h => !IsQuery(h.Owner) && !h.IsType))
+            ways.Add("give the procedure its own name with a \"name\" override in \"procedures\", or leave it out of \"schemas\"");
+        if (first.IsType || second.IsType)
+            ways.Add("give the type its own name with a \"paths\" override of its procedure in \"procedures\"");
+        return ways;
+    }
+
+    /// <summary>A query file's name without its folder and extension: <c>getOrderCard</c> for <c>queries/getOrderCard.sql</c>.</summary>
+    private static string Stem(string path)
+    {
+        var name = path[(path.LastIndexOf('/') + 1)..];
+        var dot = name.LastIndexOf('.');
+        return dot > 0 ? name[..dot] : name;
     }
 
     private IrType Rename(IrType type) =>

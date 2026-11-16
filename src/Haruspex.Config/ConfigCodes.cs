@@ -78,6 +78,12 @@ public static class ConfigCodes
     /// </summary>
     public static DiagnosticCode NoSuchFolder { get; } = new(3021, Error, "A references folder isn't there");
 
+    /// <summary>
+    /// An entry of <c>queries</c> that reaches outside the config file's folder: a query file belongs to the module whose folder
+    /// holds it, so that each file has one module.
+    /// </summary>
+    public static DiagnosticCode QueriesOutside { get; } = new(3022, Error, "A queries entry outside the config file's folder");
+
     /// <summary>A rowset declared by something other than the schema of one row, an object with properties.</summary>
     public static DiagnosticCode RowsetShape { get; } = new(3101, Error, "A rowset isn't declared by one row's schema");
 
@@ -146,6 +152,12 @@ public static class ConfigCodes
 
     /// <summary>A command line <c>--include</c> whose every match the config file's excludes leave out.</summary>
     public static DiagnosticCode CommandLineIncludeExcluded { get; } = new(4006, Error, "An --include selects only excluded procedures");
+
+    /// <summary>
+    /// An entry of <c>queries</c> that names no query file of this module: a typo would otherwise drop the functions of the files it
+    /// meant without anyone noticing. A file below a folder with a config file of its own is that module's, not this one's.
+    /// </summary>
+    public static DiagnosticCode QueriesMatchNothing { get; } = new(4007, Error, "A queries entry names no query file");
 
     /// <summary>An override of a procedure the project doesn't have.</summary>
     public static DiagnosticCode NoSuchProcedure { get; } = new(4101, Error, "An override of a procedure the project doesn't have");

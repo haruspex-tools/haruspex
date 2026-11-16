@@ -3,6 +3,7 @@
   "$schema": "../../../../schemas/haruspex.schema.json",
   "source": "database",
   "collation": "Latin1_General_100_CI_AS",
+  "queries": ["sql", "reports/**/*.sql"],
   "out": "generated",
   "objects": "strip",
   "emit": ["zod", "json-schema"],

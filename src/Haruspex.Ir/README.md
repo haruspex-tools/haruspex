@@ -1,7 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.21
+# Haruspex.Ir: the IR format, version 0.22
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.21: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
+version 0.22: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
 guide's chapter [The IR as a contract](../../docs/internals/10-the-ir-as-a-contract.md). What SQL Server's constructs give in
@@ -97,7 +97,8 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as `"0.21"` and a document that this page and the schema allow;
+- must write `irVersion` as `"0.22"` and a document that this page and the schema allow;
+- must write `text` on an object exactly when its kind is `query`;
 - must write a flag and its reasons together: `nullable`, `itemsNullable`, `valuesNullable` and `mayBeAbsent` are `true`
   exactly when the matching list of reasons (`nullableBecause`, …) is there, with at least one reason;
 - must write every `ref` as the name of a type in `types`, and every `values.fold` as the name of a fold in `folds`;
@@ -107,9 +108,12 @@ of program handle one.
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further;
+- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further,
+  except that it may read a 0.21 document as 0.22 when it holds no query, no type a query owns and no `undecided-parameter`, and
+  must refuse one that holds any of them;
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
-  missing required property, a value of the wrong JSON type, a count that is negative or past 2,147,483,647, a number in a
+  missing required property, an object of kind `query` without `text` or of another kind with it, a value of the wrong JSON
+  type, a count that is negative or past 2,147,483,647, a number in a
   facet that is not plain decimal text, a union of fewer than two variants, a flag that disagrees with its reasons, a
   `ref` that names no type, a value set's `fold` that names no fold, and a `fold` on a set whose match isn't `canonical` or none
   on one whose match is;
@@ -134,7 +138,7 @@ object, and a `ref` that names no type.
 
 ```jsonc
 {
-  "irVersion": "0.21",                // versioned separately from the tool; a reader checks it first
+  "irVersion": "0.22",                // versioned separately from the tool; a reader checks it first
   "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file, the references for a folder
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
@@ -187,7 +191,15 @@ object, and a `ref` that names no type.
 ```
 
 Every property shown is required unless this page says it may be left out. An object's `results` is `null`, not `[]`, when
-its result sets can't be listed: an empty list claims it returns none. `at` is a source location, `path:line:column`
+its result sets can't be listed: an empty list claims it returns none.
+
+An object's `kind` is `procedure` or (0.22) `query`. A **query** is a file of the application holding one batch of SQL, which is
+run with its parameters rather than called by a name: its `id` is the file's path, relative to the folder of the config file it
+belongs to, with `/` between folders (`queries/get_order_card.sql`); `text` holds what it runs, the file's text with LF line
+endings, and only a query has `text`. Its `parameters` are the variables its text uses without declaring, in the order of their
+first use, each `hasDefault` and `output` false; each one's type is what a call declares it as, by its `sql`, and is the
+`undecided-parameter` unknown where the file's uses don't decide it. A query's results are written as a procedure's are, and
+its types' identity names it as `{ "query": "queries/get_order_card.sql", "path": … }`. `at` is a source location, `path:line:column`
 relative to the source root, or for a null reason the column it applies to (`schema.table.column`).
 
 `source.package` and `source.sha256` (0.19) name the package the source was read from, such as a DACPAC, by its file name
@@ -317,6 +329,7 @@ reader must refuse a `reason` not in this list.
 | `hidden-column` | a result set with a column the server marks hidden, which some drivers list and others don't |
 | `encrypted-definition` | (0.19) a module created `WITH ENCRYPTION` whose definition the source doesn't hold, such as a DACPAC extracted from a database |
 | `sqlcmd-variable` | (0.21) a literal or a name holding a SQLCMD variable, `$(Region)`, which a deployment replaces with its value, so nothing drawn from the written text holds |
+| `undecided-parameter` | (0.22) a query's parameter whose uses don't decide its type: none does, or two decide differently; a declaration in the file decides it instead |
 
 An override is `{ "object", "path", "setting", "via"?, "why"? }`: a claim the config file made rather than inference, kept so
 that what the database proves and what a person asserts stay apart. `setting` is `not-null` (declared never null), `type`
@@ -340,7 +353,8 @@ its name. A target may reserve some identifiers for itself, and its emitter must
 ## Names and identity
 
 The IR keeps SQL names as the canonical identity: each object's `id`, and each object type's `identity`, the object
-(`procedure`, or `function` for a recursive function's types) and the path that own it. Generated names (`name`, and
+(`procedure`, `query` (0.22), or `function` for a recursive function's types) and the path that own it. A query's identity is
+its file's path, since a file has no name in the database. Generated names (`name`, and
 the keys of `types`) come from the config file's naming rules and overrides, applied by Haruspex.Config after
 inference; an emitter uses them as they are and never reads the config file. Two types can share an identity: the
 variants of a union share a path.
@@ -450,6 +464,12 @@ when the claims change. Another writer need not write the same bytes, but must w
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
 reads only its own version, or one whose every document means the same in it ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
+
+**0.22** (16 Nov 2026, query files). The object kind `query`, a file of the application holding one batch, identified by its path,
+with `text`, what it runs; the type owner `query`; and the unknown reason `undecided-parameter`, for a query's parameter whose uses
+don't decide its type ([decision 0059](../../docs/decisions/0059-a-query-file-s-parameters-are-typed-from-their-uses.md)). Only a query
+file gives any of them, and nothing inferred of a procedure changed, so this reader reads 0.21 too, refusing a 0.21 file that holds a
+query, a type one owns or the new reason.
 
 **0.21** (15 Nov 2026, SQLCMD variables in bodies). The unknown reason `sqlcmd-variable`: a literal holding a SQLCMD variable,
 such as `'$(Region)'`, or a key holding one, which a deployment replaces with the variable's value before SQL Server sees the

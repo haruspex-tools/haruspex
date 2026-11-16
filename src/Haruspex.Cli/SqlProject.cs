@@ -40,6 +40,21 @@ internal sealed class SqlProject
         Procedures = [.. model.Procedures.Select(p => p.Name).OrderBy(n => n.ToString(), StringComparer.Ordinal)];
     }
 
+    /// <summary>The application's query files, read against the project and inferred with its procedures; none until <see cref="WithQueries"/>.</summary>
+    public IReadOnlyList<QueryFile> Queries { get; private init; } = [];
+
+    /// <summary>
+    /// The project with the application's query files, whose locations are relative to <paramref name="directory"/>, the config
+    /// file's folder, rather than to the project's.
+    /// </summary>
+    /// <param name="directory">The folder the files' paths are relative to.</param>
+    /// <param name="queries">The files, read.</param>
+    public SqlProject WithQueries(string directory, IReadOnlyList<QueryFile> queries)
+    {
+        var paths = queries.Select(q => q.Path).ToHashSet(StringComparer.Ordinal);
+        return new SqlProject(model, Diagnostics, file => paths.Contains(file) ? directory : folderOf(file), recorded) { Queries = queries };
+    }
+
     /// <summary>Errors found while reading the project. Results inferred despite them are not trustworthy.</summary>
     public IReadOnlyList<Diagnostic> Diagnostics { get; }
 
@@ -154,7 +169,7 @@ internal sealed class SqlProject
     /// <returns>The document, with what inference could not check; or, when the default rules can't name them all (two names clash), why.</returns>
     public Outcome<IrDocument> Infer(IReadOnlyList<ObjectName> selected) => Infer(selected, HaruspexConfig.None("."));
 
-    /// <summary>Infers the IR for the given procedures, and applies the config file's overrides and naming to it.</summary>
+    /// <summary>Infers the IR for the given procedures and the query files, and applies the config file's overrides and naming to it.</summary>
     /// <param name="selected">The procedures to infer.</param>
     /// <param name="config">The config.</param>
     /// <param name="selectedByFile">See <see cref="ConfigApplication.Apply"/>.</param>
@@ -180,7 +195,7 @@ internal sealed class SqlProject
                 declarations.TryAdd(name, new DeclaredResults(declared.Results, declared.IrTypes, declared.Why));
         }
 
-        var inferred = IrInference.Infer(model, selected, declarations, config.Session).Select(d => d with { Source = recorded(d.Source) });
+        var inferred = IrInference.Infer(model, selected, declarations, config.Session, Queries).Select(d => d with { Source = recorded(d.Source) });
         var others = declarations.Keys
             .Select(name => model.FindProcedure(name)?.Name)
             .OfType<ObjectName>()

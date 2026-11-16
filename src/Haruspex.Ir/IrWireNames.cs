@@ -42,6 +42,7 @@ public static class IrWireNames
     public static string Of(IrObjectKind value) => value switch
     {
         IrObjectKind.Procedure => "procedure",
+        IrObjectKind.Query => "query",
     };
 
     /// <summary>The kind of object a named type belongs to (the key in <c>identity</c>).</summary>
@@ -49,6 +50,7 @@ public static class IrWireNames
     {
         IrTypeOwner.Procedure => "procedure",
         IrTypeOwner.Function => "function",
+        IrTypeOwner.Query => "query",
     };
 
     /// <summary>How a result set arrives (<c>encoding</c>).</summary>
@@ -135,6 +137,7 @@ public static class IrWireNames
         IrUnknownReason.HiddenColumn => "hidden-column",
         IrUnknownReason.EncryptedDefinition => "encrypted-definition",
         IrUnknownReason.SqlcmdVariable => "sqlcmd-variable",
+        IrUnknownReason.UndecidedParameter => "undecided-parameter",
     };
 
     /// <summary>What an override sets (<c>setting</c>).</summary>

@@ -234,6 +234,7 @@ split into parts along the constructs it covers. The families today:
 | `SELECT *` | `SelectStarTests` | `SelectStarObservationTests` | `tests/fixtures/haberdashery` | "`SELECT *`", [decision 0047](docs/decisions/0047-a-star-is-bound-against-the-tables-the-project-defines.md) |
 | Parameters | `ParameterTests` | `ParameterObservationTests` | `tests/fixtures/till` | "Parameters" |
 | Binding | `BinderTests`, in `tests/Haruspex.Tests/Semantics` | `BindingObservationTests` | `tests/fixtures/scopes` | the Semantics README's "How data flows through it" |
+| Query files | `QueryFileTests` | `QueryParameterObservationTests` | the invented shop in `InferQuery.Shop` (`tests/Shared`) | "Query files", [decision 0059](docs/decisions/0059-a-query-file-s-parameters-are-typed-from-their-uses.md) |
 
 Eleven classes are named otherwise, for what they cover across families: `ConstructTests` (queries, results and sources
 in general, with `FOR JSON`'s rules in `ForJsonObservationTests` and `tests/fixtures/orders`), `FactFlowTests` (facts a

@@ -11,4 +11,7 @@ public enum IrTypeOwner
     /// results reach it.
     /// </summary>
     Function,
+
+    /// <summary>A query file in the document's objects (0.22): the type is part of its results.</summary>
+    Query,
 }

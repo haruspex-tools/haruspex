@@ -47,6 +47,19 @@ internal static class IrSamples
                     new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("LineRow")), []),
                 ]),
             new IrObject("sales.run_report", "RunReport", IrObjectKind.Procedure, "procedures/run_report.sql:1:1", [], null),
+            new IrObject(
+                "sql/find_orders.sql",
+                "FindOrders",
+                IrObjectKind.Query,
+                "sql/find_orders.sql:1:1",
+                [
+                    new IrParameter("@customer_id", Int, HasDefault: false, IsOutput: false),
+                    new IrParameter("@since", new IrUnknownType(IrUnknownReason.UndecidedParameter), HasDefault: false, IsOutput: false),
+                ],
+                [new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("FindOrdersRow")), [])])
+            {
+                Text = "select order_id from sales.orders\nwhere customer_id = @customer_id and (@since is null or @since < 1);\n",
+            },
         ],
         new Dictionary<string, IrObjectType>(StringComparer.Ordinal)
         {
@@ -106,10 +119,15 @@ internal static class IrSamples
                 Recursive = true,
             },
             ["Bare"] = new([]),
+            ["FindOrdersRow"] = new([new IrField("order_id", Int, IrPresence.Always, [])])
+            {
+                Identity = new IrTypeIdentity(IrTypeOwner.Query, "sql/find_orders.sql", "results[0][]"),
+            },
         },
         [
             new IrUnknown("sales.get_order", "results[0].odd", IrUnknownReason.UnsupportedExpression, "An expression that is not modelled yet.", "procedures/get_order.sql:5:9"),
             new IrUnknown("sales.run_report", "results", IrUnknownReason.DynamicSql, "Dynamic SQL.", "procedures/run_report.sql:2:5"),
+            new IrUnknown("sql/find_orders.sql", "parameters.@since", IrUnknownReason.UndecidedParameter, "Its uses don't decide its type.", "sql/find_orders.sql:2:42"),
         ])
     {
         Folds = new Dictionary<string, IrFold>

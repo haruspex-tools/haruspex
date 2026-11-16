@@ -101,17 +101,18 @@ public static class IrJsonSchema
             ("package", Text("Its file name, as the referring package names it.")),
             ("sha256", Sha256("The SHA-256 of the package read for it; left out when none was found.")),
             ("database", Text("Left out for the same database; otherwise the other database, by name or SQLCMD variable, as the reference names it.")))),
-        ("object", Closed(
-            "A typed database object.",
+        ("object", RunsText(Closed(
+            "A typed object: a procedure of the database, or a query file of the application.",
             ["id", "name", "kind", "at", "parameters", "results"],
-            ("id", Text("Its name in the database: its identity.")),
+            ("id", Text("Its identity: a procedure's name in the database, or a query file's path relative to its config file's folder.")),
             ("name", Text("The name settled for generated code.")),
             ("kind", Vocabulary<IrObjectKind>(IrWireNames.Of)),
             ("at", Text("Where it is defined, as path:line:column.")),
+            ("text", Text("What a query runs, as one batch, with LF line endings; only a query has it, and a query always does.")),
             ("parameters", ArrayOf(Ref("parameter"))),
             ("results", Node(
                 ("description", "Its result sets in order, or null when they cannot be listed."),
-                ("anyOf", new JsonArray(Node(("type", "null")), ArrayOf(Ref("result")))))))),
+                ("anyOf", new JsonArray(Node(("type", "null")), ArrayOf(Ref("result"))))))))),
         ("parameter", Closed(
             "A declared parameter.",
             ["name", "type", "hasDefault", "output"],
@@ -334,6 +335,23 @@ public static class IrJsonSchema
         var canonical = Node(("type", "object"), ("properties", Node(("match", canonicalMatch), ("fold", true))), ("required", Names("match", "fold")));
         var other = Node(("type", "object"), ("properties", Node(("match", Node(("not", canonicalMatch.DeepClone()))))), ("required", Names("match")), ("not", Having("fold")));
         schema.Add("anyOf", new JsonArray(canonical, other));
+        return schema;
+    }
+
+    /// <summary>An object's schema with <c>text</c> required of a query and refused on any other kind.</summary>
+    private static JsonObject RunsText(JsonObject schema)
+    {
+        var kind = IrWireNames.Of(IrObjectKind.Query);
+        var query = Node(
+            ("type", "object"),
+            ("properties", Node(("kind", Node(("const", kind))), ("text", true))),
+            ("required", Names("kind", "text")));
+        var other = Node(
+            ("type", "object"),
+            ("properties", Node(("kind", Node(("not", Node(("const", kind))))))),
+            ("required", Names("kind")),
+            ("not", Having("text")));
+        schema.Add("anyOf", new JsonArray(query, other));
         return schema;
     }
 

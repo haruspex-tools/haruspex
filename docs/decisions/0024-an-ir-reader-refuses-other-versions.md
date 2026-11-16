@@ -51,5 +51,11 @@ earlier version typed by its written text, though a deployment replaces it. A 0.
 server guarantees, and a 0.20 file doesn't say whether its source had one, so reading any of them as 0.21 could carry that claim
 under the newer label, the first reason above.
 
+**Amended a sixth time** (16 Nov 2026, IR 0.22, [decision 0059](0059-a-query-file-s-parameters-are-typed-from-their-uses.md)).
+The 0.22 reader reads 0.21 too, by the first amendment's test, as 0.19's read 0.18. 0.22 added query files: the object kind
+`query` with the text it runs, the type owner `query` and the unknown reason `undecided-parameter`, which only a query file gives.
+Nothing inferred of a procedure changed, so every 0.21 file is a 0.22 file with no query in it, and means the same. A file
+labelled 0.21 that holds a query, a type a query owns or that reason is refused, by its path, since 0.21 could hold none of them.
+
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "A version the reader doesn't read";
 [`tests/ir-versions`](../../tests/ir-versions/README.md).

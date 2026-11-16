@@ -116,6 +116,9 @@ public static class ConfigReader
                         }
 
                         break;
+                    case "queries":
+                        config = config with { Queries = [.. Queries(member.Value, path)] };
+                        break;
                     case "out":
                         if (NonEmpty(member.Value, path) is { } output)
                             config = config with { Out = Path.GetFullPath(Path.Combine(directory, output)) };
@@ -157,7 +160,7 @@ public static class ConfigReader
 
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, references, collation, out, schemas, objects, emit, serverOnly, naming, procedures, session, check");
+                        Unknown(member, path, "$schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check");
                         break;
                 }
             }
@@ -355,6 +358,46 @@ public static class ConfigReader
             }
 
             return folders;
+        }
+
+        /// <summary>
+        /// The query files' entries: one, or an array of them, each a folder, a file or a pattern relative to the config file's
+        /// folder and inside it, since a query file belongs to the module whose folder holds it.
+        /// </summary>
+        private List<QueryPattern> Queries(JsonValue value, string path)
+        {
+            const string Expected = "must name the application's query files: a folder, a file or a pattern such as \"queries/**/*.sql\", or an array of them.";
+            var entries = value switch
+            {
+                JsonStringValue => [(value, path)],
+                JsonArrayValue array when array.Items.Count > 0 => array.Items.Select((item, i) => (item, Index(path, i))).ToList(),
+                _ => null,
+            };
+            if (entries is null)
+            {
+                Report(ConfigCodes.WrongKind, value, path, Expected);
+                return [];
+            }
+
+            var patterns = new List<QueryPattern>();
+            foreach (var (item, itemPath) in entries)
+            {
+                if (NonEmpty(item, itemPath) is not { } text)
+                    continue;
+                var entry = text.Replace('\\', '/');
+                if (Path.IsPathRooted(entry) || entry.Split('/').Contains(".."))
+                {
+                    Report(ConfigCodes.QueriesOutside, item, itemPath, $"\"{text}\" reaches outside the folder of the config file; a query file belongs to the module whose folder holds it, so name only files below this one.");
+                    continue;
+                }
+
+                // "./queries" is "queries", and "." the config file's folder itself.
+                while (entry.StartsWith("./", StringComparison.Ordinal))
+                    entry = entry[2..];
+                patterns.Add(new QueryPattern(entry.TrimEnd('/') is "" or "." ? "." : entry.TrimEnd('/'), At(item, itemPath)));
+            }
+
+            return patterns;
         }
 
         private List<NamePatternEntry> Patterns(JsonValue value, string path, bool requireOne)

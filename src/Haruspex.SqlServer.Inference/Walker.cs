@@ -30,6 +30,9 @@ internal sealed partial class Walker
     /// <summary>What each expression and query of the body gives, read in the state a statement starts from.</summary>
     private readonly Typer typer;
 
+    /// <summary>Where a query file's parameters' uses are kept, while its parameters are being typed; null otherwise.</summary>
+    private readonly ParameterUses? uses;
+
     /// <param name="model">The model the body's references resolve in.</param>
     /// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
     /// <param name="summaries">What each object the body calls or reads does or holds.</param>
@@ -42,6 +45,10 @@ internal sealed partial class Walker
     /// <param name="uncommittedReads">
     /// Whether the body (a function's) is read uncommitted where it is used, so that no key of what it reads holds.
     /// </param>
+    /// <param name="uses">
+    /// Where a query file's walk with its parameters undeclared keeps what their uses say of their types: each statement and each
+    /// query read is handed to it, in its scope. Null for every other walk.
+    /// </param>
     public Walker(
         DatabaseModel model,
         SourceSpan source,
@@ -49,12 +56,14 @@ internal sealed partial class Walker
         EquatableMap<LocalName, Value>? parameters = null,
         CallContext? context = null,
         bool ansiNullsOff = false,
-        bool uncommittedReads = false)
+        bool uncommittedReads = false,
+        ParameterUses? uses = null)
     {
         this.model = model;
         binder = summaries.Bindings.For(source);
         this.source = source;
-        typer = new Typer(model, source, summaries, parameters, ansiNullsOff, uncommittedReads);
+        this.uses = uses;
+        typer = new Typer(model, source, summaries, parameters, ansiNullsOff, uncommittedReads, uses);
         this.summaries = summaries;
         followsCalls = context is not null;
         this.context = context ?? CallContext.Top;
@@ -128,7 +137,11 @@ internal sealed partial class Walker
     /// <param name="returnTable">
     /// A multi-statement function's return table, a table variable its body fills; null for a procedure.
     /// </param>
-    public Walked Walk(IReadOnlyList<Parameter> parameters, StatementList statements, DeclaredTable? returnTable = null)
+    /// <param name="undecided">
+    /// A query file's parameters whose types nothing decides, each with why: it holds an unknown value of that reason, where any
+    /// other parameter holds a value of its declared type.
+    /// </param>
+    public Walked Walk(IReadOnlyList<Parameter> parameters, StatementList statements, DeclaredTable? returnTable = null, IReadOnlyDictionary<LocalName, UnknownShape>? undecided = null)
     {
         // Declarations are compiled, not run, so binding reads them from the whole body first (BodyDeclarations).
         var declarations = binder.Declarations(parameters, statements, returnTable);
@@ -136,7 +149,8 @@ internal sealed partial class Walker
         foreach (var parameter in declarations.Parameters)
         {
             var name = new LocalName(parameter.Name);
-            variableShapes[name] = typer.DeclaredShape(parameter.Type, parameter.At, name, out var live);
+            var live = false;
+            variableShapes[name] = undecided?.GetValueOrDefault(name) ?? typer.DeclaredShape(parameter.Type, parameter.At, name, out live);
             start.Add(new(name, Value.Computed(variableShapes[name], Because(IrNullRule.Parameter, name, variableShapes[name]), live)));
         }
 
@@ -215,6 +229,7 @@ internal sealed partial class Walker
                 catchEntries.Peek().Add(state);
             escapes?.Add(state);
 
+            uses?.Statement(statement, Reading(state), typer);
             var outcome = Statement(statement, state);
             breaks = FlowState.Join(breaks, outcome.Breaks, At(statement));
             continues = FlowState.Join(continues, outcome.Continues, At(statement));

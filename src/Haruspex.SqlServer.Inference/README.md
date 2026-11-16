@@ -105,6 +105,38 @@ fixture is `tests/fixtures/till`. A table-valued parameter is unknown (`unsuppor
 a `json` one is JSON text whose shape isn't typed yet. Nothing a body proves narrows a parameter: a guard says what the
 procedure does with a value, not what a caller may send.
 
+## Query files
+
+A query file is a batch of the application's, sent through `sp_executesql` rather than called by name, and inferred as a
+procedure's body is (`QueryFiles`), against the same model, beside the procedures. Its parameters are the variables it uses
+without declaring (`BatchVariables.Undeclared`, in Syntax), in the order it first uses them; each takes the type its file
+declares (`-- @param @order_id int`, read by `QueryFileReader` in Sources), or else the type its uses decide, or else is unknown
+with the reason `undecided-parameter` ([decision 0059](../../docs/decisions/0059-a-query-file-s-parameters-are-typed-from-their-uses.md)).
+Two walks make it: one with every such variable undeclared, in which the walker hands each statement, and the typer each query
+it reads, to `ParameterUses` in the scope it is read in, so a column is typed where it is bound (a CTE, a derived table, a
+temporary table); and the walk of what runs, with the parameters typed, which gives the results. A parameter accepts NULL, as a
+procedure's does.
+
+A use decides a type only with the parameter itself as an operand, by the rule SQL Server's `sp_describe_undeclared_parameters`
+applies there (`ParameterRules`), each observed in `QueryParameterObservationTests` against the server's own answer:
+
+| Use | Type |
+|---|---|
+| `=`, `<>`, `!=`, an `IN` list, with a column or a literal | the operand's, facets and all: `nvarchar(80)`, `decimal(10,2)`, `datetime2(3)` |
+| `<`, `>`, their kin and `BETWEEN`, with a column or a literal | an integer, bit, money, float, `date`, `datetime` the operand's; a decimal `decimal(38,19)`; a string `varchar(8000)` or `nvarchar(4000)`, max staying max; a `time`, `datetime2` or `datetimeoffset` with 7 places |
+| `LIKE`, either side | `varchar(8000)` or `nvarchar(4000)`, by the other side's kind |
+| arithmetic that is a whole select-list column or `ORDER BY` key, with a column or a literal | an integer, money or float the operand's (an integer under `&`, `\|`, `^` too); a decimal `decimal(38,19)`; a string under `+` `varchar(8000)` or `nvarchar(4000)`; a `datetime` or `smalldatetime` under `+` its own |
+| the count of `TOP`, `OFFSET` or `FETCH` | `bigint` |
+| a value of `INSERT … VALUES` with its columns listed, or of `UPDATE … SET` | the column's |
+| an argument of a procedure (by name or place), a scalar function or a table-valued function of the project | the parameter's declared type |
+
+Every other use decides nothing: a use inside a larger expression, which the server types from the expression's context
+(`o.total = @x * 2` is `decimal(38,19)` there, from `total`); a `bit` in arithmetic, which the server makes `datetime`; a binary
+string, which isn't modelled; a test of NULL, where the server falls back on `int`; and a use in a query the walk doesn't read,
+such as a subquery under `EXISTS`. Uses that decide one type decide it even where the server refuses to answer, as it does for a
+parameter used twice (error 11508): each alone has the server's answer, and the type is what the call declares, so the walk of
+what runs is true of every call. Uses that decide two types leave the parameter unknown, naming each.
+
 ## The callers' session
 
 Some values are NULL or an error depending on `SET` options of the session that calls the procedure, which it runs under

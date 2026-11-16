@@ -6,7 +6,7 @@ using Haruspex.SqlServer.Semantics.Collations;
 
 namespace Haruspex.SqlServer.Inference;
 
-/// <summary>Infers the IR for procedures of a model.</summary>
+/// <summary>Infers the IR for procedures of a model, and for query files read against it.</summary>
 public static class IrInference
 {
     /// <summary>Infers the IR for the given procedures of <paramref name="model"/>.</summary>
@@ -26,11 +26,20 @@ public static class IrInference
     /// triggers (which could return result sets) are not in the project. Inference always gives a document, since what it
     /// can't type is an unknown in it, so it returns a success, and says so in its type.
     /// </returns>
+    /// <param name="queries">
+    /// The application's query files to infer beside the procedures, each read against <paramref name="model"/>; none when null.
+    /// </param>
     /// <exception cref="ArgumentException">A name is not a procedure of the model: a fault of the caller, which selected it.</exception>
-    public static Succeeded<IrDocument> Infer(DatabaseModel model, IReadOnlyList<ObjectName> procedures, IReadOnlyDictionary<ObjectName, DeclaredResults>? declarations = null, SessionOptions? session = null)
+    public static Succeeded<IrDocument> Infer(
+        DatabaseModel model,
+        IReadOnlyList<ObjectName> procedures,
+        IReadOnlyDictionary<ObjectName, DeclaredResults>? declarations = null,
+        SessionOptions? session = null,
+        IReadOnlyList<QueryFile>? queries = null)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(procedures);
+        queries ??= [];
         declarations ??= new Dictionary<ObjectName, DeclaredResults>();
         session ??= SessionOptions.NotKnown;
         var warnings = new List<Diagnostic>();
@@ -41,12 +50,15 @@ public static class IrInference
                 ?? throw new ArgumentException($"No procedure named {name} in the project.", nameof(procedures)))
             .Select(procedure => (procedure, summaries.Analyse(procedure)))
             .ToList();
-        var document = new IrBuilder(summaries.Nodes).Build(analysed, session);
+        var files = new QueryFiles(model, summaries);
+        var queried = queries.Select(query => (query, files.Analyse(query))).ToList();
+        var document = new IrBuilder(summaries.Nodes).Build(analysed, queried, session);
 
         // A caller's results that include a callee's declared results rest on that declaration, so the claim is listed.
-        var claims = analysed
-            .Where(a => a.Item2.Results is not null)
-            .SelectMany(a => a.Item2.Declared.Select(callee => (Object: a.procedure.Name.ToString(), Callee: callee)))
+        var claims = analysed.Select(a => (Object: a.procedure.Name.ToString(), Analysis: a.Item2))
+            .Concat(queried.Select(q => (Object: q.query.Path, Analysis: q.Item2)))
+            .Where(a => a.Analysis.Results is not null)
+            .SelectMany(a => a.Analysis.Declared.Select(callee => (a.Object, Callee: callee)))
             .Select(c => new IrOverride(c.Object, "results", IrOverrideSetting.Results, declarations[c.Callee].Why) { Via = c.Callee.ToString() })
             .ToList();
         var folds = IrDocumentFolds.Named(document).ToEquatableMap(name => name, name => SqlTypes.Fold(CollationFold.Named(name)));

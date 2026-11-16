@@ -1,7 +1,7 @@
 # Haruspex.Config
 
-The config file, `haruspex.json`: reading it, selecting procedures, and applying overrides and naming to the IR that
-inference produced. The format is documented for users in [docs/configuration.md](../../docs/configuration.md) and
+The config file, `haruspex.json`: reading it, selecting procedures and finding query files, and applying overrides and naming
+to the IR that inference produced. The format is documented for users in [docs/configuration.md](../../docs/configuration.md) and
 published as a JSON Schema in [schemas/haruspex.schema.json](../../schemas/haruspex.schema.json).
 
 ## How data flows through it
@@ -14,6 +14,7 @@ flowchart LR
     file["haruspex.json"] --> reader["ConfigReader"]
     reader --> config["HaruspexConfig"]
     config --> selection["ProcedureSelection: which procedures are the interface"]
+    config --> queries["QuerySelection: which query files are this module's"]
     config --> declared["DeclaredSchema: declared results, as IR results"]
     config --> session["SessionOptions: the callers' session, handed to inference"]
     inferred["IrDocument from inference"] --> apply["ConfigApplication.Apply"]
@@ -29,11 +30,12 @@ flowchart LR
 | `ConfigReader.cs` | Finds the file (walking up) and checks every setting; an unknown key is an error, never ignored. The same checks as the JSON Schema, plus what a schema can't say (a pattern, a path or a regular expression that doesn't parse, a reserved word). |
 | `ConfigReader.cs`, the `session` block | The options the callers' connections set, read into the model's `SessionOptions` and handed to inference with the declared results, since the rules that depend on them are inference's ([decision 0038](../../docs/decisions/0038-the-callers-session-is-declared.md)). Only the options a rule reads are settings; one left out is not known. |
 | `NamePattern.cs`, `ObjectPattern.cs`, `ProcedureSelection.cs` | Selection per schema (`schemas["sales"].include`, matching names only), and the CLI's one-off `--include schema.pattern`. A pattern or a schema key that matches nothing is reported. |
+| `QueryPattern.cs`, `QuerySelection.cs`, `QueryFileFound.cs` | The query files `queries` names: folders, files and patterns below the config file's folder, each file this module's only when no `haruspex.json` lies between, so that each file has one module. An entry that names none is reported. |
 | `DeclaredSchema.cs` | A procedure's declared results (`results`): the JSON Schema of each, inline or in a file, translated into IR results. A keyword it doesn't read is a warning and is not checked, so a declared type is never narrower than its schema. |
 | `ResultsComparison.cs` | A declaration of results that inference can infer is compared with them: an error where they differ, a warning where they agree. |
 | `OverrideApplier.cs` | Path overrides as transformations of the IR. Each claim is listed in the IR's `overrides`; a path that doesn't exist is an error, an override the inference agrees with a warning. |
 | `NamingRules.cs` | `replace`, then the schema's `prefix`, then `case`; a schema's `naming` merges over the top level's. |
-| `NameSettler.cs` | Settles every name, replacing inference's provisional keys. Clashes between objects are errors; a number is added only between two types of one object. |
+| `NameSettler.cs` | Settles every name, replacing inference's provisional keys: a procedure's from its own name and its schema's rules, a query file's from its file's name and the top-level rules. Clashes between objects are errors, a query file and a procedure alike; a number is added only between two types of one object. |
 | `ConfigApplication.cs` | The order: overrides and declared results first (their paths are in terms of the inferred document), then names. It also warns of a selected procedure whose results only a declaration could give, naming the statement. |
 | `ConfigApplying.cs` | One application, as named steps over the state they share (`ConfigApplying.Apply`): each procedure's overrides, the warnings for what only a declaration or a path override can type, then the names. |
 

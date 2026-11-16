@@ -148,6 +148,8 @@ public static class IrJsonWriter
         json.WriteString("name", obj.Name);
         json.WriteString("kind", IrWireNames.Of(obj.Kind));
         json.WriteString("at", obj.At);
+        if (obj.Text is { } text)
+            json.WriteString("text", text);
 
         json.WriteStartArray("parameters");
         foreach (var parameter in obj.Parameters)

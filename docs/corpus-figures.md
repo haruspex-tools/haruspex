@@ -9,7 +9,7 @@ correctness: whether each claim holds is what the differential tests observe, on
 
 The databases are Microsoft's samples, from [microsoft/sql-server-samples](https://github.com/microsoft/sql-server-samples) at commit
 `8fe3fd0c9a825fef3ae6d601e97537b612d7b214` under the MIT licence, vendored in `tests/corpus/` ([how and why](../tests/corpus/README.md)).
-Every procedure in every schema is inferred, with no config file, into IR version 0.21. More public
+Every procedure in every schema is inferred, with no config file, into IR version 0.22. More public
 corpora are fetched rather than vendored; [the harvest](corpus-harvest.md) gives their figures, and ranks what every
 corpus shows haruspex missing.
 

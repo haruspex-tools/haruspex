@@ -29,6 +29,11 @@ functions, views and DML triggers with their parameters and bodies; synonyms; an
 `ALTER INDEX … DISABLE`). Everything else, data and permissions and the rest of what indexes do, is passed over: it can't
 change what a table's columns are or what a procedure returns.
 
+An application's own query files are the other input. They aren't part of the database, so they aren't read into the model:
+each is a `QueryFile` (`QueryFileReader`), one batch read as the application sends it, with no SQLCMD variable replaced, and
+inferred against the model as a procedure's body is. What it holds besides the SQL is the parameters' declarations in its
+comments, and nothing else of the file's is read; the inference reference's "Query files" says how its parameters are typed.
+
 ## A script becomes the model, in three steps
 
 ```mermaid

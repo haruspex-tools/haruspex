@@ -15,6 +15,7 @@ otherwise silently do nothing.
   "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac
   "references": ["../shared/bin/Release"],  // more folders to find the DACPACs a .dacpac or .sqlproj refers to in
   "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "Value sets"
+  "queries": "sql",                         // the application's query files: a folder, files or patterns; see "Query files"
   "out": "src/db",                          // where haruspex.ir.json and what "emit" names go
 
   "emit": ["zod"],                          // and "json-schema", "mssql"; see "What is written"
@@ -145,7 +146,7 @@ allowed (`"RDF."`). Its block holds:
 - `naming`: the schema's own naming rules, merged over the top-level ones: its `case` replaces the top-level case, and
   its `replace` rules run after the top-level ones.
 
-**Nothing is selected unless its schema has a block with `include`**: typing every procedure is something you ask for
+**No procedure is selected unless its schema has a block with `include`**: typing every procedure is something you ask for
 (`"include": ["*"]` per schema), never the default. Whatever matches nothing is an error: a schema key that names no
 schema of the project, an include that selects nothing in its schema (a typo would otherwise drop an interface without
 anyone noticing), an exclude that removes nothing its include selected, an exclude in a block without an include, and a
@@ -154,6 +155,49 @@ exclude leaves out is an error too: a run that would type nothing fails rather t
 
 A block is an object so that settings can be added to it later (one output module per schema is planned) without
 breaking a file written today.
+
+## Query files: `queries`
+
+An application that keeps queries in `.sql` files of its own, rather than in procedures, names them in `queries`: a folder (every
+`.sql` file below it), a file, or a pattern, relative to the config file (`*` is any characters but `/`, `**` any folders, `?` one
+character), or an array of them. Each file is typed with the procedures, against the same project, and is one object of the
+module, named from its file by the naming rules: `get_order_card.sql` is named GetOrderCard, and under `"case": "camel"`
+`getOrderCard.sql` keeps its name, getOrderCard. Its id in the IR is its path relative to the config file's folder.
+
+```jsonc
+{
+  "source": "database",
+  "out": "src/db",
+  "queries": ["sql", "reports/**/*.sql"],
+  "schemas": { "sales": { "include": ["get_*"] } }   // optional: query files alone are a selection too
+}
+```
+
+A query file is one batch, run through `sp_executesql` as it is written, with no `GO`
+([HAR1014](diagnostics/HAR1014.md)). Its parameters are the variables it uses without declaring. Each is typed from its uses,
+as SQL Server's own `sp_describe_undeclared_parameters` types it: compared with a column, `where o.order_id = @order_id`, it takes
+the column's type, `int`; passed to a procedure, the procedure's parameter's type; and so on
+([the rules](../src/Haruspex.SqlServer.Inference/README.md#query-files)). Where nothing in the file decides a parameter's type,
+or two uses decide differently, it is unknown ([HAR2024](diagnostics/HAR2024.md)), and a comment in the file declares it, one
+to a line, with the type written as `DECLARE` writes it:
+
+```sql
+-- @param @label nvarchar(40)
+-- @param @since datetime2(0)
+SELECT @label AS label, o.order_id
+FROM sales.orders AS o
+WHERE o.placed >= @since;
+```
+
+A declaration that can't be taken, one that names a variable the file doesn't use, say, is an error
+([HAR1015](diagnostics/HAR1015.md)). [Decision 0059](decisions/0059-a-query-file-s-parameters-are-typed-from-their-uses.md) says
+why parameters are typed this way.
+
+**A query file belongs to the module whose config file's folder holds it.** An entry can't reach above the config file
+([HAR3022](diagnostics/HAR3022.md)), and a folder below with a `haruspex.json` of its own is that module's, so its files are
+passed over; an entry that names no file of this module is an error ([HAR4007](diagnostics/HAR4007.md)), as an include that
+selects nothing is. A query file's name and a procedure's share the module's names: one that clashes is an error naming both
+([HAR4303](diagnostics/HAR4303.md)), and neither is renamed for the other.
 
 ## Overrides
 

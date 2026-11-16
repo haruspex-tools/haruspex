@@ -83,6 +83,9 @@ public static class InferenceCodes
     /// <summary>Retired: an unknown for <see cref="IrUnknownReason.AmbiguousProcedure"/> is reported as HAR4204 or HAR4205.</summary>
     public static DiagnosticCode AmbiguousProcedure { get; } = Retire(2020, "A procedure name more than one schema has");
 
+    /// <summary>A query file's parameter whose type its uses don't decide, which a declaration in the file decides instead.</summary>
+    public static DiagnosticCode UndecidedParameter { get; } = Unknown(2024, "A query file's parameter its uses don't decide");
+
     /// <summary>
     /// The code of the note an unknown with <paramref name="reason"/> is reported with; null for a reason only a declaration
     /// can resolve (code outside the project, an encrypted definition, dynamic SQL, a procedure chosen when it runs, a system procedure, one outside
@@ -116,6 +119,7 @@ public static class InferenceCodes
         IrUnknownReason.HiddenColumn => HiddenColumn,
         IrUnknownReason.EncryptedDefinition => null,
         IrUnknownReason.SqlcmdVariable => SqlcmdVariable,
+        IrUnknownReason.UndecidedParameter => UndecidedParameter,
     };
 
     private static DiagnosticCode Unknown(int number, string title) => new(number, DiagnosticSeverity.Note, title);

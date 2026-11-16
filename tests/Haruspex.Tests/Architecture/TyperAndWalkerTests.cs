@@ -27,6 +27,7 @@ public class TyperAndWalkerTests
         [typeof(SqlServer.Semantics.Binder)] = "Binds through Bindings, a memo whose answer to each question is a function of the question (decision 0033).",
         [typeof(Summaries)] = "Memo tables of summaries, each answer a function of the object and the way it is read; recursion is settled inside a question, never across two.",
         [typeof(DatabaseModel)] = "The schema, built before inference and only read during it.",
+        [typeof(ParameterUses)] = "Where a query file's first walk keeps what its parameters' uses say: the typer only adds to it and never reads it, so no read depends on what it holds.",
         [typeof(FunctionTyping)] = "A row of the static function table, whose rule is a delegate; each is made once, by a factory that returns it, from a lambda that captures only values that can't change (The_function_tables_rules_capture_only_values_that_cannot_change), and is handed the typer and the scope.",
     };
 

@@ -154,7 +154,7 @@ The version is read first, before anything else in the file. A file of any versi
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.21 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.21 and 0.22 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -202,6 +202,12 @@ variable's value, and gave such a literal the reason `sqlcmd-variable`. So a 0.2
 guarantees, and nothing in it says whether it does: it doesn't record which literals its source held. Read as 0.21, any 0.20
 file might carry that claim under a label that promises the bug is fixed, so the 0.21 reader refuses it
 ([decision 0046](../decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)).
+
+Version 0.22 started the exception again, on the first test. It added what a query file gives: the object kind `query`, the
+text a query runs, the type owner `query`, and the reason `undecided-parameter`, for a parameter whose uses don't decide its type.
+Nothing inferred of a procedure changed, so every 0.21 file is a 0.22 file with no query in it, and means the same, and the 0.22
+reader reads it. A file labelled 0.21 that holds a query, a type a query owns or that reason is refused, since 0.21 could hold
+none of them.
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims

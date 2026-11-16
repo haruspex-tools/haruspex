@@ -45,8 +45,9 @@ internal static class Check
         var file = module.Config.File.Length == 0 ? HaruspexConfig.FileName : Path.GetFileName(module.Config.File);
         foreach (var obj in module.Document.Objects.Where(o => o.Results is null).OrderBy(o => o.Id, StringComparer.Ordinal))
         {
-            yield return At(module, obj, CliCodes.ResultsUnknown,
-                $"{obj.Id}: its result sets are unknown, and check passes a selected procedure only when they are known or declared. Declare them in {file} under procedures[\"{obj.Id}\"].results, as \"none\" or a JSON Schema, or leave the procedure out of the selection.");
+            yield return At(module, obj, CliCodes.ResultsUnknown, obj.Kind == IrObjectKind.Query
+                ? $"{obj.Id}: its result sets are unknown, and check passes a query file only when they are known. Write it so that they can be inferred, or leave it out of \"queries\"."
+                : $"{obj.Id}: its result sets are unknown, and check passes a selected procedure only when they are known or declared. Declare them in {file} under procedures[\"{obj.Id}\"].results, as \"none\" or a JSON Schema, or leave the procedure out of the selection.");
         }
 
         var unknowns = module.Document.Unknowns.Count;
@@ -170,9 +171,8 @@ internal static class Check
 
     private static int Passed(EmittedModule module, TextWriter output)
     {
-        var procedures = module.Document.Objects.Count;
         output.WriteLine(
-            $"haruspex: {procedures} {(procedures == 1 ? "procedure" : "procedures")}, {module.Document.Unknowns.Count} unknown(s). {DiagnosticFormatter.PathAsShown(module.Out)} is up to date.");
+            $"haruspex: {Generate.Counted(module.Document)}, {module.Document.Unknowns.Count} unknown(s). {DiagnosticFormatter.PathAsShown(module.Out)} is up to date.");
         return HaruspexCli.ExitCodes.Success;
     }
 

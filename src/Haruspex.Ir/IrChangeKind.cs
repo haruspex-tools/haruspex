@@ -19,6 +19,9 @@ public enum IrChangeKind
     /// <summary>The kind of object changed.</summary>
     ObjectKindChanged,
 
+    /// <summary>The text a query runs changed, which its generated function sends.</summary>
+    TextChanged,
+
     /// <summary>A parameter only the later document has.</summary>
     ParameterAdded,
 

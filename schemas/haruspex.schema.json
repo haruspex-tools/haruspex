@@ -25,6 +25,13 @@
       "type": "string",
       "pattern": "^[A-Za-z0-9_]+$"
     },
+    "queries": {
+      "description": "The application's query files, each typed with the procedures and given a function: a folder (every .sql file below it), a file, or a pattern (* any characters but /, ** any folders, ? one character), relative to this file and inside its folder, or an array of them. A file below a folder with a haruspex.json of its own is that module's.",
+      "anyOf": [
+        { "$ref": "#/$defs/queryEntry" },
+        { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/queryEntry" } }
+      ]
+    },
     "out": {
       "description": "The folder to write haruspex.ir.json and what \"emit\" names to. --out overrides it.",
       "type": "string",
@@ -117,6 +124,12 @@
     }
   },
   "$defs": {
+    "queryEntry": {
+      "description": "A folder, a file or a pattern of query files, relative to this file, never above its folder.",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!(.*[/\\\\])?\\.\\.([/\\\\]|$)).+$"
+    },
     "pattern": {
       "type": "string",
       "minLength": 1

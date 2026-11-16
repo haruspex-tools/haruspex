@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json",
   "title": "haruspex.ir.json",
-  "description": "An IR file of version 0.21: the shapes haruspex inferred for a set of database objects. The format is described in src/Haruspex.Ir/README.md.",
+  "description": "An IR file of version 0.22: the shapes haruspex inferred for a set of database objects. The format is described in src/Haruspex.Ir/README.md.",
   "type": "object",
   "properties": {
     "irVersion": {
       "description": "The IR's version, which a reader checks before anything else.",
-      "const": "0.21"
+      "const": "0.22"
     },
     "source": {
       "description": "Where the shapes were inferred from.",
@@ -124,11 +124,11 @@
       "additionalProperties": false
     },
     "object": {
-      "description": "A typed database object.",
+      "description": "A typed object: a procedure of the database, or a query file of the application.",
       "type": "object",
       "properties": {
         "id": {
-          "description": "Its name in the database: its identity.",
+          "description": "Its identity: a procedure's name in the database, or a query file's path relative to its config file's folder.",
           "type": "string"
         },
         "name": {
@@ -137,11 +137,16 @@
         },
         "kind": {
           "enum": [
-            "procedure"
+            "procedure",
+            "query"
           ]
         },
         "at": {
           "description": "Where it is defined, as path:line:column.",
+          "type": "string"
+        },
+        "text": {
+          "description": "What a query runs, as one batch, with LF line endings; only a query has it, and a query always does.",
           "type": "string"
         },
         "parameters": {
@@ -173,7 +178,44 @@
         "parameters",
         "results"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "query"
+            },
+            "text": true
+          },
+          "required": [
+            "kind",
+            "text"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "not": {
+                "const": "query"
+              }
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "not": {
+            "type": "object",
+            "properties": {
+              "text": true
+            },
+            "required": [
+              "text"
+            ]
+          }
+        }
+      ]
     },
     "parameter": {
       "description": "A declared parameter.",
@@ -313,6 +355,10 @@
           "description": "The function the type belongs to.",
           "type": "string"
         },
+        "query": {
+          "description": "The query the type belongs to.",
+          "type": "string"
+        },
         "path": {
           "description": "The path to the type, in the IR's path syntax.",
           "type": "string"
@@ -340,6 +386,15 @@
           },
           "required": [
             "function"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "query": true
+          },
+          "required": [
+            "query"
           ]
         }
       ]
@@ -1143,7 +1198,8 @@
             "trigger-results",
             "hidden-column",
             "encrypted-definition",
-            "sqlcmd-variable"
+            "sqlcmd-variable",
+            "undecided-parameter"
           ]
         }
       },
@@ -1190,7 +1246,8 @@
             "trigger-results",
             "hidden-column",
             "encrypted-definition",
-            "sqlcmd-variable"
+            "sqlcmd-variable",
+            "undecided-parameter"
           ]
         },
         "detail": {

@@ -9,7 +9,7 @@ namespace Haruspex.Ir;
 /// value. So a document read back from its file equals the one written, and that is the round trip the format promises.
 /// </remarks>
 /// <param name="Source">Where the shapes were inferred from.</param>
-/// <param name="Objects">The objects typed: procedures, in this version.</param>
+/// <param name="Objects">The objects typed: procedures and query files.</param>
 /// <param name="Types">The named object types, referenced from <see cref="IrRef"/>.</param>
 /// <param name="Unknowns">Everything that could not be typed, with the reason.</param>
 public sealed record IrDocument(
@@ -22,15 +22,16 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.21";
+    public const string CurrentVersion = "0.22";
 
     /// <summary>
-    /// The versions a reader reads, as decision 0024 says: the current one only. 0.21 added the reason
-    /// <see cref="IrUnknownReason.SqlcmdVariable"/>: where a literal holds a SQLCMD variable, a 0.20 file claims the written text's
-    /// length, value and type, which a deployment replacing the variable breaks. Nothing in a 0.20 file says whether its source had
-    /// one, so read as 0.21 any of them might carry that claim under the newer label, which 0024's first reason refuses.
+    /// The versions a reader reads, as decision 0024 says: the current one, and 0.21. 0.22 added query files (the object kind
+    /// <see cref="IrObjectKind.Query"/>, its <see cref="IrObject.Text"/>, the type owner <see cref="IrTypeOwner.Query"/> and the
+    /// reason <see cref="IrUnknownReason.UndecidedParameter"/>), which only a query file gives; nothing inferred of a procedure
+    /// changed, so every 0.21 file is a 0.22 file with no query in it, and means the same. A file labelled 0.21 that holds a
+    /// query is refused (<c>IrJsonReader</c>).
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = ["0.21", CurrentVersion];
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override

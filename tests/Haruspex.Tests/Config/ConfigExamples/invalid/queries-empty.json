@@ -1,0 +1,5 @@
+{
+  "$schema": "../../../../schemas/haruspex.schema.json",
+  "source": "database",
+  "queries": []
+}

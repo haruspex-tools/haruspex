@@ -178,7 +178,7 @@ The IR says what is known (the parameter's type, and the length a value sent to 
 
 ```json haruspex-ir
 {
-  "irVersion": "0.21",
+  "irVersion": "0.22",
   "source": {
     "dialect": "tsql"
   },

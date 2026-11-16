@@ -14,6 +14,9 @@ records whether it is `HIDDEN`, `SPARSE` or the table's column set, and a table 
 what `SELECT *` returns. Every
 object knows where it was read (`SourceSpan`).
 
+Beside the schema, a `QueryFile` is a query file of an application: one batch it runs through `sp_executesql`, with its text and
+the parameters its comments declare. It isn't part of a database, so no model holds one; it is read against one.
+
 ## How data flows through it
 
 A `DatabaseModel` is built once and only read after that. Everything in it is a declaration as written.
