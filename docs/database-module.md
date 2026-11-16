@@ -60,9 +60,12 @@ The schema checks:
 - **lengths**, in the units the type counts: UTF-16 code units for `nvarchar`, bytes for a `varchar` in a UTF-8 collation;
 - **ranges and places**: an integer type's range, and a decimal's precision and scale;
 - **dates and times**, as an ISO 8601 string of exactly the form the type holds (`2026-11-16` for a `date`,
-  `2026-11-16T08:30:00` for a `datetime2(0)`), never a JavaScript `Date`, whose meaning would depend on the time zone of the
-  process and the driver's `useUTC` setting. A `Date` read from a rowset is sent back as its `toISOString()` without the `Z`,
-  cut to the digits its type holds ([decision 0055](decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md));
+  `2026-11-16T08:30:00` for a `datetime2(0)`), never a JavaScript `Date`, which the schema refuses because its meaning would
+  depend on the time zone of the process and the driver's `useUTC` setting. To send back a `Date` a rowset handed over, the
+  application converts it itself. With the driver's default `useUTC`, such a `Date` holds the stored clock time in its UTC
+  fields, so the string is its `toISOString()` without the `Z`, cut to what the type holds (`.slice(0, 10)` for a `date`,
+  `.slice(0, 19)` to the second); a `datetimeoffset` takes `toISOString()` as it is. With `useUTC` off, that recipe sends a
+  shifted time ([decision 0055](decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md));
 - **`bigint`**, as a safe integer, a JavaScript `bigint`, or the string of digits a rowset hands over.
 
 Each value is then sent with the driver's type for the declared one: `nvarchar(40)` as `sql.NVarChar(40)`, a decimal with its
@@ -74,12 +77,12 @@ left out, and it is then not sent at all, so that its default applies.
 A function fails in one of three ways, each thrown
 ([decision 0056](decisions/0056-a-function-throws-three-kinds-of-failure.md)):
 
-- **The parameters were wrong.** A `ParameterError`, whose `name` is HaruspexParameterError and `kind` is `parameters`, thrown
+- **The parameters were wrong.** A `ParameterError`, whose `name` is `'HaruspexParameterError'` and `kind` is `'parameters'`, thrown
   before the connection is touched. Its message names the procedure and each failing parameter, and `issues` lists them.
   Nothing was sent, so the fault is in the calling code.
 - **The database raised an error.** mssql's own `RequestError`, passed through unchanged, with its `number`, `state`,
   `class`, `procName` and `lineNumber`, so existing handling of the driver's errors keeps working.
-- **What came back broke the contract.** A `ResultError`, whose `name` is HaruspexResultError and `kind` is `result`, naming
+- **What came back broke the contract.** A `ResultError`, whose `name` is `'HaruspexResultError'` and `kind` is `'result'`, naming
   the procedure, the part (`the results` or `the OUTPUT parameters`) and each issue's path. The database and the application
   are deployed out of step, which no retry fixes: it calls for a deployment, not a second attempt.
 
