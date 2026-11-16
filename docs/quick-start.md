@@ -181,8 +181,8 @@ after it. Data that breaks a claim fails at the boundary, loudly, rather than so
 - **Calling procedures:** [the database module](database-module.md) says what a function returns, how it fails and where it
   runs, and [the example application](../examples/greenhouse/README.md) calls its procedures through the functions,
   compiled in CI.
-- **Your own database:** the README's [quick start](../README.md#quick-start) puts the settings in a `haruspex.json` beside the
-  project, and [the configuration reference](configuration.md) lists every setting.
+- **Your own database:** put a `haruspex.json` beside its project, as [the configuration reference](configuration.md) shows,
+  and run `generate` from that folder, as [the command line](../src/Haruspex.Cli/README.md) says.
 - **A `FOR JSON` procedure:** the README's [two examples](../README.md#two-examples-on-microsofts-samples) show nested objects,
   arrays and a recursive tree, and the function for one of them.
 - **Everything else:** [the documentation's index](README.md) says what each page is for.

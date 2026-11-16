@@ -36,13 +36,13 @@ A call fails in one of three ways, told apart by the error's `name`
 
 | What went wrong | What is thrown | What it means |
 |---|---|---|
-| The parameters | `'HaruspexParameterError'`, before the connection is touched | The calling code is wrong; nothing was sent. |
+| The parameters | an error named `'HaruspexParameterError'`, before the connection is touched | The calling code is wrong; nothing was sent. |
 | The database raised an error | mssql's own `RequestError`, unchanged | Handled as the driver's errors are today. |
-| The result broke its schema | `'HaruspexResultError'`, naming the procedure and where | The database and the application are deployed out of step. |
+| The result broke its schema | an error named `'HaruspexResultError'`, naming the procedure and where | The database and the application are deployed out of step. |
 
-The functions belong on the server, and the schemas and types, in their own file, may go to the browser.
-[The database module](docs/database-module.md) has the detail: dates, return shapes, handling each failure, and
-`serverOnly` for Next.js.
+The functions belong on the server, since they take the connection and its credentials; the schemas and types, in their own
+file, may go to the browser. [The database module](docs/database-module.md) has the detail: dates, return shapes, handling
+each failure, and `serverOnly` for Next.js.
 
 ## Two examples on Microsoft's samples
 
@@ -230,7 +230,7 @@ from its alias type `Name`, and `unit` is exactly three characters because `ncha
 ## Other ways to use it
 
 - **The types and parsers alone**, for a team that calls the driver itself: leave `"mssql"` out of `emit`, and parse each
-  result with its schema, `GetOrderSchema.parse(response.recordset?.[0] ?? null)`
+  result with its schema, `GetOrderSchema.parse(response.recordset?.[0] ?? null)` with the driver's `parseJSON` on
   ([how to read each kind of result](docs/database-module.md#calling-the-driver-yourself)).
 - **Other languages**: `"json-schema"` in `emit` writes the same claims as one JSON Schema document, for any language with a
   validator ([the JSON Schema emitter](src/Haruspex.Emit.JsonSchema/README.md)).
