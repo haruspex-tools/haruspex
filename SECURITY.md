@@ -22,14 +22,17 @@ As a static analyser, haruspex reads a database's source and writes code, and th
 - **It reads source files only.** `haruspex generate` reads its config file (`haruspex.json`) and the JSON Schema files it
   names; the source it is given (a folder of `.sql` files, a `.sqlproj` with the scripts, MSBuild files and DACPACs its build
   would read, or a DACPAC with the packages it refers to); and, to find a referenced DACPAC, the folders the config file lists
-  and the NuGet package folders (`NUGET_PACKAGES`, or `.nuget/packages` in your home folder).
+  and the NuGet package folders (`NUGET_PACKAGES`, `.nuget/packages` in your home folder, or the project's
+  `RestorePackagesPath`).
 - **It never connects to a database**, and makes no network connection of any kind. It needs no credentials and reads no
   data ([decision 0001](docs/decisions/0001-infer-from-source-never-a-live-database.md)).
 - **It runs nothing it reads.** No SQL is executed, a project file is evaluated by haruspex itself without MSBuild (so no
   task or property function in it runs), and no process is started.
 - **It writes only to its output folder**, `out` in the config file or `--out`: the two files `haruspex.ir.json` and
   `haruspex.zod.ts`, each first written to a temporary file beside it and then moved into place. It creates the folder if it
-  isn't there, and writes nothing when a run fails.
+  isn't there, and writes nothing when the input, the command line or the config file has an error. A run stopped while it
+  writes can leave its temporary files in that folder, as [the command line's README](src/Haruspex.Cli/README.md#what-it-guarantees)
+  says.
 
 The tests are another matter: the differential tests deploy fixtures to a SQL Server you name, as
 [CONTRIBUTING.md](CONTRIBUTING.md#differential-tests-against-sql-server) explains, and some tests run Node.js and npm. None of

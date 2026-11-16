@@ -53,7 +53,7 @@ otherwise silently do nothing.
 
 The command line overrides the file for one run: the source argument (a folder, a `.sqlproj` or a `.dacpac`) replaces `source`, `--out` replaces `out`, and
 `--include schema.pattern` replaces the schemas' includes (each schema's `exclude` still applies, and overrides of
-procedures the run leaves out are skipped). Without a file, `--include` and `--out` are required.
+procedures the run leaves out are skipped). Without a file, the source argument, `--include` and `--out` are required.
 
 ## Reading a DACPAC: `source` and `references`
 
@@ -184,7 +184,9 @@ with is a warning**, so the file shrinks as the SQL improves. Generation goes ah
 ## Declared results: `results`
 
 Some procedures' result sets can't be known from the project: dynamic SQL (`EXEC (@sql)`, `sp_executesql`), a procedure named
-in a variable, a system procedure, a CLR procedure, one in another database. Their results are unknown, and so are those of
+in a variable, a system procedure, a CLR procedure, one in another database or not in the project, a call without a schema
+that names a procedure in more than one (which one runs depends on the caller's default schema), and a module created
+`WITH ENCRYPTION`, whose text the project doesn't hold. Their results are unknown, and so are those of
 every procedure that calls them, with a reason naming the statement. `generate` warns about each selected procedure whose
 results are unknown for one of these reasons, naming the statement and what to declare; it still writes its output, and
 exits as before (the `check` command will fail it).
@@ -241,7 +243,8 @@ exits as before (the `check` command will fail it).
 - `"strict"`: `z.strictObject`, for projects that deploy the application first or together with the database, and want
   an unexpected key to fail loudly.
 
-This is the one deliberate exception to "claim everything it does guarantee": `FOR JSON` produces exactly the known
+This is the one deliberate exception to haruspex's rule that the generated code claims everything the engine guarantees
+([decision 0005](decisions/0005-claim-everything-the-engine-guarantees.md)): `FOR JSON` produces exactly the known
 keys, so strict is the accurate schema, and strip is the default for deployment safety. It applies to results only.
 
 ## The callers' session: `session`

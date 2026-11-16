@@ -56,6 +56,7 @@ A few words have a fixed meaning everywhere in the documentation.
 | IR | The intermediate representation, `haruspex.ir.json`: every claim and unknown, with its reasons, from which the Zod is generated. |
 | override, declaration | A claim a person makes in `haruspex.json`, about a value or a procedure's results, with a required reason; the generated code still checks it. |
 | observed | Established by running SQL Server in a test, not by reading its documentation. |
+| ScriptDom | Microsoft's parser for T-SQL, the one SQL library haruspex uses; [What haruspex models](coverage.md) lists its constructs by its names. |
 | fixture, corpus | An invented database the tests use to check one thing; and a public database, written by others, used to measure coverage. |
 
 ## Every page
@@ -65,6 +66,7 @@ A few words have a fixed meaning everywhere in the documentation.
 | [README](../README.md) | What haruspex is, two examples on Microsoft's samples, what it guarantees, how to install and run it, and who it is not for. |
 | [Five minutes with AdventureWorks](quick-start.md) | A first run, from a fresh clone, that a test runs as written. |
 | [The command line](../src/Haruspex.Cli/README.md) | `haruspex generate`: its arguments and options, what it prints, and its exit codes. |
+| [The generated code](../src/Haruspex.Emit.Zod/README.md) | What the Zod module holds, and how each SQL type arrives: in JSON, and in a row as the mssql driver delivers it. |
 | [Configuration](configuration.md) | Every setting of `haruspex.json`, held to its [JSON Schema](../schemas/haruspex.schema.json) by a test. |
 | [Diagnostics](diagnostics/README.md) | Every code haruspex reports, with a page each: what it means, why, and what to do. |
 | [What haruspex models](coverage.md) | Every T-SQL construct and built-in function, and what haruspex does with each; written by a test. |
