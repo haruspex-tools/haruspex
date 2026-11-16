@@ -58,9 +58,10 @@ internal static class ModuleSet
             worst = Math.Max(worst, exitCode);
         }
 
+        var modules = $"{requests.Count} module{(requests.Count == 1 ? "" : "s")}";
         output.WriteLine(failed.Count == 0
-            ? $"haruspex: {requests.Count} modules, none failed."
-            : $"haruspex: {requests.Count} modules; {failed.Count} failed: {string.Join(", ", failed)}.");
+            ? $"haruspex: {modules}, none failed."
+            : $"haruspex: {modules}; {failed.Count} failed: {string.Join(", ", failed)}.");
         return worst;
     }
 

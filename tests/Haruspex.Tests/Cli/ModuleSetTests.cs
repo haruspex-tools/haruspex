@@ -99,6 +99,7 @@ public class ModuleSetTests
         Assert.Equal(0, exitCode);
         Assert.EndsWith("haruspex: 2 modules, none failed.\n", output, StringComparison.Ordinal);
         Assert.False(Directory.Exists(Path.Combine(folder.Path, "generated")));
+        Assert.EndsWith("haruspex: 1 module, none failed.\n", Run(folder, "generate", "--all", "plugins/orders").Output, StringComparison.Ordinal);
     }
 
     [Fact]
