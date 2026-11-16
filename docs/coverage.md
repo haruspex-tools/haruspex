@@ -615,7 +615,7 @@ Each construct as ScriptDom names it. What a modelled construct gives is explain
 | `SET c = x in UPDATE` | `AssignmentSetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | The column, in a temporary table or variable, takes the value's type too. |
 | `SET c.WRITE( … ) in UPDATE` | `FunctionCallSetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | The column keeps its type and its nulls, but only its type's facets and no JSON it held; on a permanent table it changes no column's type. |
 | `TRUNCATE TABLE` | `TruncateTableStatement` | read, changing no result | Removes every row and fires no trigger. |
-| `EXECUTE` | `ExecuteStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#calls) in part; otherwise unknown, `dynamic-sql` | A call of a procedure in the project returns what it returns, unless WITH RESULT SETS changes it (below); a string of dynamic SQL can't be read, so the results after it can't be listed. |
+| `EXECUTE` | `ExecuteStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#calls) in part; otherwise unknown, `dynamic-sql` | A call of a procedure in the project returns what it returns, unless WITH RESULT SETS changes it (below), and one of SQL Server's own the catalogue lists what it lists; a string of dynamic SQL can't be read, so the results after it can't be listed. |
 | `BULK INSERT` | `BulkInsertStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `INSERT BULK` | `InsertBulkStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `READTEXT` | `ReadTextStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |

@@ -291,12 +291,23 @@ reason of its own, unless the config file declares them (below):
 |---|---|
 | `EXEC (@sql)`, `EXEC (N'…')`, `sp_executesql` | `dynamic-sql` |
 | `EXEC @name` | `procedure-variable` |
-| A name starting `sp_` or `xp_` | `system-procedure`. SQL Server runs its own procedure of that name if it has one, whatever schema is written and whatever the database defines (`A_system_procedures_name_runs_the_system_procedure_whatever_the_project_defines`), and which it has is not known here, so even a procedure of the project named so is not followed. No catalogue of system procedures' shapes is built in |
+| A name starting `sp_` or `xp_` | `system-procedure`. SQL Server runs its own procedure of that name if it has one, whatever schema is written and whatever the database defines (`A_system_procedures_name_runs_the_system_procedure_whatever_the_project_defines`), and which it has is not known here, so even a procedure of the project named so is not followed. One the catalogue lists is followed instead (below) |
 | Another database, a linked server (`AT`), `OPENDATASOURCE`, a synonym, or no such procedure | `missing-procedure` |
 | An unqualified name that more than one schema has | `ambiguous-procedure` |
 | A CLR procedure | `external-code` |
 | A procedure created `WITH ENCRYPTION` whose text the source lacks, as in a DACPAC extracted from a database | `encrypted-definition`. The placeholder such a package holds would claim the procedure returns nothing, so its body is never read (`An_encrypted_procedure_whose_text_the_source_lacks_has_unknown_results_with_their_own_reason`) |
 | A procedure changed after its definition | `redefined` |
+
+**The catalogue of system procedures** (Semantics' `SystemProcedures`, data with an observation test per entry in
+`ExecObservationTests`) lists those whose calls are followed, by name whatever the schema written: what each returns, its
+return code and its parameters, which `Each_system_procedure_of_the_catalogue_has_the_parameters_it_lists` checks against
+`sys.all_parameters`. `sp_getapplock` and `sp_releaseapplock` return no result set and an `int`
+(`Sp_getapplock_and_sp_releaseapplock_return_no_result_set_and_an_int`), so a call of either adds nothing to the caller's results
+and changes none of its tables; its return code is never null, as any procedure's. `sp_invoke_external_rest_endpoint` (SQL
+Server 2025) is disabled on the server haruspex is tested against (`Sp_invoke_external_rest_endpoint_is_disabled_on_the_test_server`),
+so what a call returns isn't observed: its documentation lists no result set, but its results stay `system-procedure`, saying
+why, until a server shows them; a declaration in the config file stands in for them, as for any call. An argument passed
+`OUTPUT` (its `@response`) holds its variable's declared type, as for any callee.
 
 Under `INSERT … EXEC` such a call's result sets go into the table, so only the temporary tables become unknown: dynamic SQL
 can create, write, alter or drop any of them (`Dynamic_sql_can_change_its_callers_temporary_tables`), and so can anything

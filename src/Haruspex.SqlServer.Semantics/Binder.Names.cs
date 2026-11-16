@@ -102,6 +102,10 @@ public sealed partial class Binder
             return new UnknowableCall(UnknowableCallKind.DynamicSql, null, $"{text} runs dynamic SQL, a string built when the procedure runs, so its result sets are not known.", at);
         if (own.StartsWith("sp_", StringComparison.OrdinalIgnoreCase) || own.StartsWith("xp_", StringComparison.OrdinalIgnoreCase))
         {
+            // One the catalogue lists is SQL Server's own whatever the schema written, as above.
+            if (SystemProcedures.Find(own) is { } known)
+                return new SystemProcedureCall(known, at);
+
             var system = new ObjectName(name.SchemaIdentifier?.Value ?? "sys", own);
             var also = Model.FindProcedure(system) is not null ? $" The project's {system} has that name, but SQL Server runs its own procedure of that name instead, if it has one." : "";
             return new UnknowableCall(UnknowableCallKind.SystemProcedure, system, $"{text} runs {system}, which may be a system procedure, whose results are SQL Server's own.{also}", at);

@@ -25,7 +25,9 @@ flowchart LR
 - **Binding.** `Binder` binds the references in one procedure or function body to the objects they mean: the table sources
   of a `FROM` clause, with their aliases, scopes and joins (inner, outer and `APPLY`, with which side may be missing), each
   column reference to the column it reads, and each `EXEC` to the procedure it runs or the reason its results can't be
-  known (dynamic SQL, `EXEC @name`, a procedure outside the project). A source that is not a table of the schema reads a
+  known (dynamic SQL, `EXEC @name`, a procedure outside the project). One of SQL Server's own procedures that the catalogue
+  `SystemProcedures` lists (data: what each returns, its return code and its parameters) binds to its entry
+  (`SystemProcedureCall`). A source that is not a table of the schema reads a
   `RelationSymbol`: a CTE, a derived table (bound with its query, so the whole is a tree, `BoundQuery`), a `VALUES` list, a
   view, a table-valued function's call, a `#temp` table, a table variable, each with its columns' names. The names a body
   defines (`NameEnvironment`) are an argument, and each query is bound once for each set of them (`Bindings`).

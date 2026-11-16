@@ -171,6 +171,7 @@ internal sealed partial class Walker
         {
             ProcedureCall { Procedure: var callee } => (summaries.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted), at), (ObjectName?)callee.Name),
             UnknowableCall unknowable => (new Walked(null, [], new UnknownShape(Reason(unknowable.Kind), unknowable.Detail, at), []), unknowable.Name),
+            SystemProcedureCall { Procedure: var system } => (SystemCalled(system, state, needEscapes, Text(execute), at), (ObjectName?)system.Name),
         };
 
         if (walked.Blocker is { } why)
@@ -204,6 +205,19 @@ internal sealed partial class Walker
         return walked.End is { } end
             ? new Called(Returned(state, end, own, at), end.Results, null)
             : new Called(null, ResultTrack.None, null);
+    }
+
+    /// <summary>
+    /// What a call of one of SQL Server's own procedures the catalogue lists does (<see cref="SystemProcedures"/>): it changes none
+    /// of the caller's tables and returns no result set, or its result sets are unknown, saying why. It may fail, leaving the
+    /// state as it was.
+    /// </summary>
+    private static Walked SystemCalled(SystemProcedure system, FlowState state, bool needEscapes, string call, SourceLocation at)
+    {
+        if (system.ResultsUnknownBecause is { } unknown)
+            return new Walked(null, [], new UnknownShape(IrUnknownReason.SystemProcedure, $"{call} runs {system.Name}, whose result sets are not known: {unknown}.", at), []);
+        var unchanged = state.WithResults(ResultTrack.None);
+        return new Walked(unchanged, needEscapes ? [unchanged] : [], null, []);
     }
 
     /// <summary>States an error inside a call may leave it from: they reach this procedure's CATCH, or leave it too.</summary>

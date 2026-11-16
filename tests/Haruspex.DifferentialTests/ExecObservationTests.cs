@@ -1,4 +1,5 @@
 using Haruspex.DifferentialTests.Server;
+using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.DifferentialTests;
 
@@ -248,4 +249,51 @@ public class ExecObservationTests(SqlServerFixture server)
         Assert.Equal("who: mine", (await Run(setup, "EXEC sp_obs_own")).ToString());
         Assert.Equal("who: mine", (await Run(setup, "EXEC dbo.sp_obs_own")).ToString());
     }
+
+    // ---- the catalogue of system procedures -----------------------------------------------------------------------------
+
+    public static TheoryData<string> SystemProcedureNames { get; } = [.. SystemProcedures.All.Select(p => p.Name.Name)];
+
+    [Theory]
+    [MemberData(nameof(SystemProcedureNames))]
+    public async Task Each_system_procedure_of_the_catalogue_has_the_parameters_it_lists(string name)
+    {
+        // Each parameter's name, its type as T-SQL writes it, and whether it is OUTPUT, from sys.all_parameters.
+        var entry = Assert.Single(SystemProcedures.All, p => p.Name.Name == name);
+        var expected = string.Join(";", entry.Parameters.Select(p => $"{p.Name},{p.Type},{(p.IsOutput ? 1 : 0)}"));
+        Assert.Equal($"p: {expected}", (await Run([], $"""
+            SELECT p.name + ',' + CASE WHEN t.name = 'sysname' THEN t.name
+                                       WHEN t.name IN ('nvarchar', 'varchar', 'nchar', 'char') THEN t.name + '(' + IIF(p.max_length = -1, 'max', CAST(p.max_length / IIF(t.name LIKE 'n%', 2, 1) AS varchar(5))) + ')'
+                                       ELSE t.name END + ',' + CAST(p.is_output AS char(1)) AS p
+            FROM sys.all_parameters AS p JOIN sys.types AS t ON t.user_type_id = p.user_type_id
+            WHERE p.object_id = OBJECT_ID(N'sys.{name}') ORDER BY p.parameter_id;
+            """)).ToString().Replace(" | ", ";", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Sp_getapplock_and_sp_releaseapplock_return_no_result_set_and_an_int()
+    {
+        // Granted and released: 0 each, and no result set but the SELECT. Released when not held, or given an argument it
+        // refuses: -999, with a message (1223) but no error that ends the call. The schema written doesn't matter.
+        Assert.Equal(
+            "taken,released,again,refused: 0,0,-999,-999 ~ 1223",
+            (await Run([], """
+                DECLARE @taken int, @released int, @again int, @refused int;
+                EXEC @taken = sys.sp_getapplock @Resource = N'shop.nightly', @LockMode = N'Exclusive', @LockOwner = N'Session';
+                EXEC @released = sp_releaseapplock @Resource = N'shop.nightly', @LockOwner = N'Session';
+                EXEC @again = dbo.sp_releaseapplock @Resource = N'shop.nightly', @LockOwner = N'Session';
+                EXEC @refused = sys.sp_getapplock @Resource = N'shop.nightly', @LockMode = N'Bogus', @LockOwner = N'Session';
+                SELECT @taken AS taken, @released AS released, @again AS again, @refused AS refused;
+                """, errorsAsMessages: true)).ToString());
+    }
+
+    [Fact]
+    public async Task Sp_invoke_external_rest_endpoint_is_disabled_on_the_test_server() =>
+        // 'external rest endpoint enabled' is 0, its default on SQL Server 2025, so a call fails (31643) and what one returns
+        // can't be observed here: the catalogue leaves its result sets unknown. When this fails, the server allows it, and the
+        // entry can be observed.
+        Assert.Equal(" ! 31643", (await Run([], """
+            DECLARE @response nvarchar(max);
+            EXEC sys.sp_invoke_external_rest_endpoint @url = N'https://example.invalid/shop', @method = N'GET', @response = @response OUTPUT;
+            """)).ToString());
 }
