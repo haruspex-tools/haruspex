@@ -42,4 +42,5 @@ value as `FOR JSON` writes it gives one meaning to every schema in the document,
 driver.
 
 **In the code:** `JsonSchemaPlanner` (the definitions and their order), `JsonSchemaLowering` (the document's description),
-and `Scalars` (each kind's JSON form).
+`Scalars` (each kind's JSON form), and the differential test `JsonSchemaAcceptanceTests`, which writes each observed row in
+that form and validates it.

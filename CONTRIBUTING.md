@@ -78,7 +78,9 @@ the emit check compiles with no longer has. The example application, `examples/g
 against the module committed beside it (`ExampleAppTests`). The same package holds
 `tests/emit-check/src/multiple-of.mjs`, the evidence that Zod checks a decimal's step without floating-point false
 failures, `tests/emit-check/src/accept.mjs`, through which the differential tests run real output into the generated schemas,
-and `tests/emit-check/src/driver.mjs`, through which they call the database with the pinned mssql driver. CI sets
+`tests/emit-check/src/accept-json-schema.mjs`, through which they validate the same output against the generated JSON Schema
+with Ajv, `tests/emit-check/src/meta-schema.mjs`, which checks every generated JSON Schema against the draft 2020-12
+meta-schema, and `tests/emit-check/src/driver.mjs`, through which they call the database with the pinned mssql driver. CI sets
 `HARUSPEX_REQUIRE_NODE=1`, which turns a missing Node into a failure rather than a skip.
 
 ### Differential tests against SQL Server
@@ -300,6 +302,7 @@ the maintainer's agreement.
 | `xunit.v3` | Apache-2.0 | tests | The test framework; runs on Microsoft.Testing.Platform (opted into in `global.json`). |
 | `typescript` (npm) | Apache-2.0 | emit-check, examples | Compiles the generated Zod, to prove it type-checks. |
 | `zod` (npm) | MIT | emit-check, examples | The library the generated code targets, pinned so the check is repeatable. |
+| `ajv`, `ajv-formats` (npm) | MIT | emit-check | Validates real output against the generated JSON Schema, and each generated document against the draft 2020-12 meta-schema, as the differential acceptance test of the second emitter; `ajv-formats` asserts `format`, which draft 2020-12 leaves an annotation. The most used JSON Schema validator, in the package the Zod acceptance test already runs in. |
 | `mssql` (npm) | MIT | emit-check, examples | The SQL Server driver most Node applications call procedures through: the differential tests observe what it hands over and parse that with the generated schemas, and the example application calls it. |
 | `@types/mssql` (npm) | MIT | examples | `mssql`'s type declarations, which it doesn't ship, so that the example application compiles against the driver. |
 | `eslint`, `@eslint/js` (npm) | MIT | emit-lint | Lints the generated Zod with ESLint's recommended rules, as a team that lints its own code would. |
@@ -324,6 +327,10 @@ not reference SqlClient.
 `mssql` and `@types/mssql` are development dependencies of the emit check and the example, and nothing in them is shipped.
 The 75 npm packages `mssql` brings (76 with its types) are MIT, BSD-3-Clause, ISC or 0BSD; most are tedious's support for
 signing in with Microsoft Entra ID (`@azure/identity` and its libraries), which the tests never use.
+
+`ajv` and `ajv-formats` are development dependencies of the emit check too, and nothing in them is shipped. They bring four
+packages: `fast-deep-equal`, `json-schema-traverse` and `require-from-string`, under the MIT licence, and `fast-uri`, under
+BSD-3-Clause.
 
 The prose check's packages run only in development and CI, and nothing in them is shipped. Most of the 259 npm
 packages they bring are MIT, ISC, BSD or Apache-2.0; the others are permissive too (MIT-0, CC0, Unlicense,

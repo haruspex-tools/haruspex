@@ -252,6 +252,13 @@ What differs is what each target is:
 | A union | the first variant that accepts, which a stripping object can take wrongly, so variants exclude each other's keys | `anyOf`: validation keeps nothing, so no variant can take another's value |
 | Identical shapes | merged, the second name an alias | each name a definition, since a definition costs nothing and a reference is how JSON Schema shares |
 
+The first row is a choice, not a limit. For a `FOR JSON` result both describe the same document. For a rowset, the Zod module
+describes what the mssql driver hands a TypeScript application, because that is the code it is imported into, and the JSON
+Schema describes JSON, because JSON is all a JSON Schema validates. A rowset isn't JSON until something writes it as JSON, and
+each language's driver hands it over in its own types, so the JSON Schema takes the one form that belongs to no driver: the one
+SQL Server itself writes. The tests hold each to its own: `ZodAcceptanceTests` parses rows as the driver delivers them, and
+`JsonSchemaAcceptanceTests` validates the same rows written as `FOR JSON` writes them.
+
 And what each can't say, which its output widens and notes:
 
 | The IR says | Zod | JSON Schema |

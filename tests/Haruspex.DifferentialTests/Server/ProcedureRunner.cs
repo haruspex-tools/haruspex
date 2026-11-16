@@ -50,7 +50,7 @@ internal static class ProcedureRunner
             var rows = new List<IReadOnlyList<object?>>();
             while (await reader.ReadAsync().ConfigureAwait(false))
                 rows.Add([.. Enumerable.Range(0, reader.FieldCount).Select(i => Read(reader, i))]);
-            sets.Add(new ObservedResultSet(columns, rows));
+            sets.Add(new ObservedResultSet(columns, rows) { ColumnTypes = [.. Enumerable.Range(0, reader.FieldCount).Select(reader.GetDataTypeName)] });
         }
         while (await reader.NextResultAsync().ConfigureAwait(false));
 

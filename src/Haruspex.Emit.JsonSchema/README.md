@@ -178,6 +178,13 @@ Every value is described as JSON, as SQL Server's `FOR JSON` writes it, a rowset
 ([decision 0051](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)).
 So a `bigint` is a JSON integer in a rowset as in a JSON result, and a date a string, whatever a driver makes of them.
 
+**For rowsets, the two emitters describe different things, on purpose.** The Zod module describes what the mssql driver hands a
+TypeScript application: a `Date` for a date, a string for a `bigint`. The JSON Schema describes JSON. A rowset isn't JSON until
+something writes it as JSON, and every driver hands it over in its own language's types (a Python driver gives a date object
+and a `Decimal`), so a schema of one driver's values would fit no other. `FOR JSON`'s form is SQL Server's own, the same
+whatever reads it, and already what a JSON result is; a service that writes rows as JSON writes them in that form, or validates
+what its driver gives against the Zod's rules in its own language. For `FOR JSON` results the two describe the same document.
+
 **What it can't say, it widens and says so.** A fact JSON Schema can't hold exactly is left wider, and a note in the
 `description` says what was left out, never silently; a fact many notes rest on is stated once, in the document's own
 `description`:
@@ -201,7 +208,9 @@ So a `bigint` is a JSON integer in a rowset as in a JSON result, and a date a st
 Objects allow other keys by default, so a database deployed ahead of its consumers can add a column without failing them
 ([decision 0008](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0008-objects-strip-unknown-keys-by-default.md));
 `JsonSchemaObjects.Strict` gives `"additionalProperties": false`. The output is deterministic, with stable ordering and LF
-line endings, so a CI check can compare it byte for byte.
+line endings, so a CI check can compare it byte for byte. Every document the fixtures give is checked against the draft 2020-12 meta-schema
+(`JsonSchemaMetaSchemaTests`), and every row the differential tests get from SQL Server is validated against it, with Ajv and
+its formats asserted (`JsonSchemaAcceptanceTests`).
 
 ## What it deliberately doesn't do
 

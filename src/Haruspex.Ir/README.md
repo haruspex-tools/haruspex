@@ -30,7 +30,7 @@ flowchart LR
     document --> writer["IrJsonWriter"]
     writer --> json["haruspex.ir.json"]
     json --> reader["IrJsonReader"]
-    reader --> emitters["emitters: Zod"]
+    reader --> emitters["emitters: Zod, JSON Schema"]
     schema["IrJsonSchema"] --> published["haruspex.ir.schema.json"]
     document --> typeGraph["IrTypeGraph: references, cycles, order"]
     typeGraph --> emitters
