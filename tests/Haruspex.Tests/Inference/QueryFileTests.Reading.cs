@@ -47,6 +47,18 @@ public partial class QueryFileTests
             ["q.sql:1:8: error HAR1016: @x is used before the DECLARE of it, which SQL Server refuses (error 137); declare it first, or rename one of them."],
             Refused("SELECT @x AS v; DECLARE @x int = 1; SELECT @x AS w;\n"));
 
+    [Theory]
+    [InlineData("SELECT 1 AS one;\nRETURN 5;\n", 2)]
+    [InlineData("IF 1 = 0 BEGIN\n  RETURN NULL;\nEND\nSELECT 1 AS one;\n", 2)]
+    public void A_return_with_a_value_is_refused_since_the_server_refuses_it_in_such_a_batch(string text, int line) =>
+        Assert.Equal(
+            [$"q.sql:{line}:{(line == 2 && text.StartsWith("IF", StringComparison.Ordinal) ? 3 : 1)}: error HAR1017: a batch run through sp_executesql may RETURN, but SQL Server refuses RETURN with a value there (error 178), so every call would fail; write RETURN alone."],
+            Refused(text));
+
+    [Fact]
+    public void A_bare_return_is_read() =>
+        Assert.Equal(["@id int"], InferQuery.Infer(Shop, "SELECT 1 AS one FROM shop.customers AS c WHERE c.customer_id = @id; RETURN;").Parameters());
+
     [Fact]
     public void A_comment_that_only_mentions_a_parameter_is_not_a_declaration() =>
         Assert.Equal(

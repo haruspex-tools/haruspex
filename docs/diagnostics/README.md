@@ -28,6 +28,7 @@ reason.
 | [HAR1014](HAR1014.md) | error | A query file isn't one batch |
 | [HAR1015](HAR1015.md) | error | A query file's parameter declaration can't be taken |
 | [HAR1016](HAR1016.md) | error | A query file uses a variable before declaring it |
+| [HAR1017](HAR1017.md) | error | A query file returns a value |
 
 ## Inference
 

@@ -144,7 +144,7 @@ internal sealed class NameSettler(
     {
         // A query file is named from its file's name, by the top-level rules: it has no schema.
         if (IsQuery(id))
-            return config.Naming.Name(Stem(id), config.Reserved, out why);
+            return config.Naming.Name(Stem(id), config.Reserved, out why, otherwise: "rename the query file");
         if (!TrySplit(id, out var schema, out var name))
         {
             why = $"'{id}' is not a two-part name.";

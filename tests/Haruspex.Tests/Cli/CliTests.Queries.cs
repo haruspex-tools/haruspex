@@ -70,6 +70,17 @@ public partial class CliTests
     }
 
     [Fact]
+    public void A_query_file_the_rules_name_as_a_reserved_word_is_told_to_rename_the_file()
+    {
+        using var folder = Shop("\"queries\": \"sql\", \"naming\": { \"case\": \"camel\" }", ("sql/delete.sql", "SELECT 1 AS one;"));
+
+        var (exitCode, _, error) = RunIn(folder.Path, "generate");
+
+        Assert.Equal(2, exitCode);
+        Assert.EndsWith("the query file sql/delete.sql cannot be named: the rules give 'delete', which is a reserved word in TypeScript. Rename the query file.\n", CliOutput.Shown(error, folder.Path), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_query_file_that_does_not_read_is_reported_where_it_is_and_nothing_is_written()
     {
         using var folder = Shop("\"queries\": \"sql\"", ("sql/broken.sql", "SELECT 1 AS one;\nGO\nSELECT 2 AS two;\n"));

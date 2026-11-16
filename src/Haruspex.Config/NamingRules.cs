@@ -42,8 +42,13 @@ public sealed record NamingRules(EquatableArray<NamingReplacement> Replace, Nami
     /// <param name="name">The object's name within its schema.</param>
     /// <param name="reserved">The words the generated code's language keeps, which the name must not be.</param>
     /// <param name="error">Why the rules give no valid name, when they don't.</param>
-    public string? Name(string name, ReservedWords reserved, out string? error)
+    /// <param name="otherwise">
+    /// What else gives the object a name, in the error: a procedure takes one in <c>procedures</c>; a query file is renamed.
+    /// </param>
+    public string? Name(string name, ReservedWords reserved, out string? error, string otherwise = "give it a name in \"procedures\"")
     {
+        ArgumentNullException.ThrowIfNull(otherwise);
+        var instead = char.ToUpperInvariant(otherwise[0]) + otherwise[1..] + ".";
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(reserved);
         var text = name;
@@ -67,7 +72,7 @@ public sealed record NamingRules(EquatableArray<NamingReplacement> Replace, Nami
             if (!IrIdentifiers.IsIdentifier(result))
             {
                 error = $"\"case\": \"preserve\" gives '{result}', which is not a valid identifier (an ASCII letter, _ or $, then letters, digits, _ or $). "
-                    + "Add a replacement, or give it a name in \"procedures\".";
+                    + $"Add a replacement, or {otherwise}.";
                 return null;
             }
         }
@@ -76,7 +81,7 @@ public sealed record NamingRules(EquatableArray<NamingReplacement> Replace, Nami
             var words = Words(text);
             if (words.Count == 0)
             {
-                error = $"'{text}' has no letters or digits to make a name from. Give it a name in \"procedures\".";
+                error = $"'{text}' has no letters or digits to make a name from. {instead}";
                 return null;
             }
 
@@ -85,7 +90,7 @@ public sealed record NamingRules(EquatableArray<NamingReplacement> Replace, Nami
 
         if (reserved.Contains(result))
         {
-            error = $"the rules give '{result}', which is a reserved word in {reserved.Language}. Give it a name in \"procedures\".";
+            error = $"the rules give '{result}', which is a reserved word in {reserved.Language}. {instead}";
             return null;
         }
 

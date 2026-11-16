@@ -66,6 +66,12 @@ public static partial class QueryFileReader
                 $"{early.Name} is used before the DECLARE of it, which SQL Server refuses (error 137); declare it first, or rename one of them."));
         }
 
+        foreach (var returned in Returns(statements))
+        {
+            problems.Add(SourceCodes.QueryReturnsValue.At(new SourceLocation(relative, returned.StartLine, returned.StartColumn),
+                "a batch run through sp_executesql may RETURN, but SQL Server refuses RETURN with a value there (error 178), so every call would fail; write RETURN alone."));
+        }
+
         var declared = Declarations(script, relative, statements, problems);
         if (problems.Count > 0)
             return new Failed<QueryFile>([.. problems]);
@@ -133,6 +139,25 @@ public static partial class QueryFileReader
             && string.Equals(element.VariableName.Value, name, StringComparison.Ordinal)
                 ? SyntaxReader.Type(dataType)
                 : null;
+    }
+
+    /// <summary>Each <c>RETURN</c> with a value in the batch, at any depth, in the order of the text.</summary>
+    private static List<ReturnStatement> Returns(StatementList statements)
+    {
+        var finder = new ReturnFinder();
+        statements.Accept(finder);
+        return finder.Found;
+    }
+
+    private sealed class ReturnFinder : TSqlFragmentVisitor
+    {
+        public List<ReturnStatement> Found { get; } = [];
+
+        public override void Visit(ReturnStatement node)
+        {
+            if (node.Expression is not null)
+                Found.Add(node);
+        }
     }
 
     /// <summary>A comment that is a declaration, or meant as one: <c>@param</c> as a word of its own at its start.</summary>

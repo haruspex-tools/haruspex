@@ -13,6 +13,7 @@ HAR1013 N A table whose definition lists no columns isn't read [Haruspex.SqlServ
 HAR1014 E A query file isn't one batch [Haruspex.SqlServer.Sources.SourceCodes.QueryNotOneBatch]
 HAR1015 E A query file's parameter declaration can't be taken [Haruspex.SqlServer.Sources.SourceCodes.BadParameterDeclaration]
 HAR1016 E A query file uses a variable before declaring it [Haruspex.SqlServer.Sources.SourceCodes.UsedBeforeDeclared]
+HAR1017 E A query file returns a value [Haruspex.SqlServer.Sources.SourceCodes.QueryReturnsValue]
 HAR2001 N A statement that isn't modelled yet [Haruspex.SqlServer.Inference.InferenceCodes.UnsupportedStatement]
 HAR2002 N Results from code outside the project (retired) [Haruspex.SqlServer.Inference.InferenceCodes.ExternalCode]
 HAR2003 N An object whose definition depends on the order of scripts [Haruspex.SqlServer.Inference.InferenceCodes.Redefined]

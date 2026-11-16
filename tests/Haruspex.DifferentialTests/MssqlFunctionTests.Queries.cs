@@ -69,13 +69,19 @@ public partial class MssqlFunctionTests
     [Fact]
     public async Task A_query_file_can_not_return_a_value_so_it_hands_back_no_return_code()
     {
-        // A batch run through sp_executesql may RETURN, but not with a value (error 178), so the code is always 0.
-        var module = Queries(("sql/stop.sql", "SELECT 1 AS one; RETURN;"), ("sql/stop_with.sql", "SELECT 1 AS one; RETURN 5;"));
+        // A batch run through sp_executesql may RETURN, but not with a value (error 178), so the code is always 0; the reader
+        // refuses a file with one (HAR1017), so the server's refusal is observed through the driver directly.
+        var module = Queries(("sql/stop.sql", "SELECT 1 AS one; RETURN;"));
+        var response = Assert.Single(await RunQueries(module, new GeneratedFunctions.Call("bare", "stop")));
+        var valued = Assert.Single(await MssqlDriver.RunAsync(
+            server,
+            null,
+            [],
+            [new("valued", ParseJson: false, Procedure: "sys.sp_executesql", Parameters: new Dictionary<string, object?> { ["stmt"] = new MssqlDriver.Typed("NVarChar", "SELECT 1 AS one; RETURN 5;", ["MAX"]) })],
+            TestContext.Current.CancellationToken));
 
-        var responses = await RunQueries(module, new GeneratedFunctions.Call("bare", "stop"), new GeneratedFunctions.Call("valued", "stopWith"));
-
-        Assert.Equal("""[{"one":1}]""", JsonSerializer.Serialize(responses[0].Value));
-        Assert.Equal(178, responses[1].Error!.Number);
+        Assert.Equal("""[{"one":1}]""", JsonSerializer.Serialize(response.Value));
+        Assert.Equal(178, valued.Error!.Number);
     }
 
     [Fact]

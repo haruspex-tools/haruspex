@@ -76,4 +76,10 @@ public static class SourceCodes
     /// though a body's declarations otherwise hold for the whole of it.
     /// </summary>
     public static DiagnosticCode UsedBeforeDeclared { get; } = new(1016, DiagnosticSeverity.Error, "A query file uses a variable before declaring it");
+
+    /// <summary>
+    /// A query file with a <c>RETURN</c> that has a value, which SQL Server refuses in a batch run through <c>sp_executesql</c>
+    /// (error 178, observed), so every call of its function would fail.
+    /// </summary>
+    public static DiagnosticCode QueryReturnsValue { get; } = new(1017, DiagnosticSeverity.Error, "A query file returns a value");
 }

@@ -1,4 +1,5 @@
 using Haruspex.Emit.Mssql;
+using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 
 namespace Haruspex.Tests.Emit.Mssql;
@@ -68,6 +69,22 @@ public partial class MssqlEmitterTests
             $"The function of sql/Q.sql must declare {name} to sp_executesql, which has a parameter of that name itself; rename it in the file.",
             refusal.Message);
     }
+
+    [Theory]
+    [InlineData("sql", "is a name the module uses for itself")]
+    [InlineData("delete", "is a reserved word")]
+    public void A_query_file_whose_function_can_not_take_its_name_is_told_to_rename_the_file(string name, string why)
+    {
+        var refusal = Assert.Single(MssqlEmitter.Emit(Document(Query(name, [], "SELECT 1 AS one;", Rows)), new MssqlOptions { IsReserved = TypeScriptNames.IsReserved }).Diagnostics);
+
+        Assert.Equal($"The function of sql/{name}.sql would be named {name}, which {why}; rename the query file.", refusal.Message);
+    }
+
+    [Fact]
+    public void Two_query_files_whose_functions_would_share_a_name_are_told_to_rename_a_file() =>
+        Assert.Equal(
+            "The function of sql/getX.sql would be named getX, which is the function of sql/GetX.sql too; rename the query file.",
+            Assert.Single(MssqlEmitter.Emit(Document(Query("GetX", [], "SELECT 1 AS one;", Rows), Query("getX", [], "SELECT 1 AS one;", Rows))).Diagnostics).Message);
 
     [Fact]
     public void A_query_file_and_a_procedure_whose_functions_would_share_a_name_are_refused_naming_both()

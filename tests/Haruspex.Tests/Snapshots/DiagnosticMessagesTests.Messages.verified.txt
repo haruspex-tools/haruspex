@@ -40,6 +40,9 @@ sql/q.sql:1:1: error HAR1015: -- @param @client_id int: the file doesn't use @cl
 HAR1016
 sql/q.sql:1:8: error HAR1016: @x is used before the DECLARE of it, which SQL Server refuses (error 137); declare it first, or rename one of them.
 
+HAR1017
+sql/q.sql:1:18: error HAR1017: a batch run through sp_executesql may RETURN, but SQL Server refuses RETURN with a value there (error 178), so every call would fail; write RETURN alone.
+
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
 

@@ -137,8 +137,8 @@ stops the run until the file declares it ([HAR5202](diagnostics/HAR5202.md)). Ev
 What can fail is what a procedure's call can, with a query file's path where a procedure's name would be: a `ParameterError`'s
 and a `ResultError`'s `procedure`, and their messages, name the file (`sql/get_order_card.sql: @order_id: …`). The database's
 error is mssql's `RequestError`. A query file has no `OUTPUT` parameters and no return code: a batch run through `sp_executesql` may
-`RETURN`, but SQL Server refuses `RETURN` with a value there (error 178), so the code is always 0, and a query file of one result
-set returns that result itself. The text is part of the module, so
+`RETURN`, but SQL Server refuses `RETURN` with a value there (error 178), so haruspex refuses such a file when it reads it
+([HAR1017](diagnostics/HAR1017.md)), the code is always 0, and a query file of one result set returns that result itself. The text is part of the module, so
 `haruspex check` fails when a query file has changed since the module was generated.
 
 ## Calling the driver yourself

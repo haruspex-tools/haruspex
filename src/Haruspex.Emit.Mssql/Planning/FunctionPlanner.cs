@@ -27,14 +27,14 @@ internal static class FunctionPlanner
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(options);
         // Procedures and query files share the module's names (decision 0059's merge of the two): a clash between them is refused.
-        var procedures = document.Objects.OrderBy(o => o.Id, StringComparer.Ordinal).ToList();
-        var imported = procedures.SelectMany(Imports).ToHashSet(StringComparer.Ordinal);
+        var objects = document.Objects.OrderBy(o => o.Id, StringComparer.Ordinal).ToList();
+        var imported = objects.SelectMany(Imports).ToHashSet(StringComparer.Ordinal);
         var bound = new Dictionary<string, IrObject>(StringComparer.Ordinal);
         var refusals = new List<Diagnostic>();
         var functions = new List<MssqlFunction>();
-        foreach (var procedure in procedures)
+        foreach (var obj in objects)
         {
-            var name = FunctionName(procedure.Name);
+            var name = FunctionName(obj.Name);
             var other = bound.GetValueOrDefault(name);
             var why = options.IsReserved(name) ? "is a reserved word"
                 : ModuleNames.Contains(name, StringComparer.Ordinal) ? "is a name the module uses for itself"
@@ -43,20 +43,25 @@ internal static class FunctionPlanner
                 : null;
             if (why is not null)
             {
-                var rename = procedure.Kind == IrObjectKind.Query || other?.Kind == IrObjectKind.Query
-                    ? "rename the procedure in the config file, or the query file"
-                    : "rename the procedure in the config file";
-                refusals.Add(MssqlCodes.FunctionNameTaken.At(null, $"The function of {procedure.Id} would be named {name}, which {why}; {rename}."));
+                // Only what is involved is renamed: a query file by its file, a procedure in the config file.
+                var kinds = new[] { obj, other }.OfType<IrObject>().Select(o => o.Kind).Distinct().ToList();
+                var rename = kinds switch
+                {
+                    [IrObjectKind.Query] => "rename the query file",
+                    [IrObjectKind.Procedure] => "rename the procedure in the config file",
+                    _ => "rename the procedure in the config file, or the query file",
+                };
+                refusals.Add(MssqlCodes.FunctionNameTaken.At(null, $"The function of {obj.Id} would be named {name}, which {why}; {rename}."));
                 continue;
             }
 
-            bound[name] = procedure;
-            (string Text, string Declaration)? batch = procedure.Kind == IrObjectKind.Query ? Batch(procedure, refusals) : null;
+            bound[name] = obj;
+            (string Text, string Declaration)? batch = obj.Kind == IrObjectKind.Query ? Batch(obj, refusals) : null;
             functions.Add(new MssqlFunction(
                 name,
-                procedure,
-                [.. procedure.Parameters.Select(Bind)],
-                procedure.Results is { } results ? [.. results.Select(r => r.Encoding)] : null)
+                obj,
+                [.. obj.Parameters.Select(Bind)],
+                obj.Results is { } results ? [.. results.Select(r => r.Encoding)] : null)
             {
                 Batch = batch,
             });
