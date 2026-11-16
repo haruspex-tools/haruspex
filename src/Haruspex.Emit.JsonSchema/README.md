@@ -181,7 +181,7 @@ So a `bigint` is a JSON integer in a rowset as in a JSON result, and a date a st
 **For rowsets, the two emitters describe different things, on purpose.** The Zod module describes what the mssql driver hands a
 TypeScript application: a `Date` for a date, a string for a `bigint`. The JSON Schema describes JSON. A rowset isn't JSON until
 something writes it as JSON, and every driver hands it over in its own language's types (a Python driver gives a date object
-and a `Decimal`), so a schema of one driver's values would fit no other. `FOR JSON`'s form is SQL Server's own, the same
+and an exact decimal), so a schema of one driver's values would fit no other. `FOR JSON`'s form is SQL Server's own, the same
 whatever reads it, and already what a JSON result is; a service that writes rows as JSON writes them in that form, or validates
 what its driver gives against the Zod's rules in its own language. For `FOR JSON` results the two describe the same document.
 
