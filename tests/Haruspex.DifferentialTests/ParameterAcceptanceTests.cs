@@ -68,6 +68,10 @@ public class ParameterAcceptanceTests(SqlServerFixture server)
         Of("bigint", "BigInt", "9007199254740993", Expected.Kept),
         Of("bigint", "BigInt", "-9223372036854775808", Expected.Kept),
         Of("bigint", "BigInt", "9223372036854775808", Expected.Changed),
+
+        // Refused, not thrown: the range's check reads the digits only once the string has them.
+        Of("bigint", "BigInt", "1.5", Expected.Changed),
+        Of("bigint", "BigInt", "1e3", Expected.Changed),
         Of("float", "Float", 1e300, Expected.Kept),
         Of("float", "Float", new MssqlDriver.JsValue("NaN"), Expected.Changed),
         Of("bit", "Bit", true, Expected.Kept),
@@ -175,7 +179,7 @@ public class ParameterAcceptanceTests(SqlServerFixture server)
         return type switch
         {
             "nchar" or "char" => kept.TrimEnd(' ') == text.TrimEnd(' '),
-            "decimal" or "money" or "smallmoney" or "tinyint" or "smallint" or "int" =>
+            "decimal" or "money" or "smallmoney" or "tinyint" or "smallint" or "int" or "bigint" =>
                 decimal.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) && decimal.Parse(kept, NumberStyles.Float, CultureInfo.InvariantCulture) == d,
             "float" => double.Parse(kept, CultureInfo.InvariantCulture) == double.Parse(text, CultureInfo.InvariantCulture),
             "uniqueidentifier" => Guid.TryParse(text, out var g) && Guid.Parse(kept, CultureInfo.InvariantCulture) == g,

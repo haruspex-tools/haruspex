@@ -115,8 +115,10 @@ internal abstract record ZodExpression
     public sealed record UnitsAtMost(int Units) : ZodExpression;
 
     /// <summary>
-    /// A predicate on a string of decimal digits, <c>(value) =&gt; BigInt(value) &gt;= …n &amp;&amp; BigInt(value) &lt;= …n</c>, for
-    /// <c>.refine</c> after a pattern that makes it an integer: the integer lies between two others, compared exactly.
+    /// A predicate on a string, <c>(value) =&gt; /^-?\d+$/.test(value) &amp;&amp; BigInt(value) &gt;= …n &amp;&amp; BigInt(value) &lt;= …n</c>, for
+    /// <c>.refine</c>: the string is an integer between two others, compared exactly. It tests the digits itself, although a
+    /// <c>.regex</c> before it has too, because Zod 4.6.7 runs a refinement after a failed check, and <c>BigInt("1.5")</c> throws
+    /// where a schema must refuse.
     /// </summary>
     /// <param name="Least">The least value, as decimal text.</param>
     /// <param name="Greatest">The greatest value, as decimal text.</param>

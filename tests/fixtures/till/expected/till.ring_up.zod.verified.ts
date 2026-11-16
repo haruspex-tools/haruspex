@@ -16,7 +16,7 @@ export type RingUpRow = z.infer<typeof RingUpRowSchema>
 export const RingUpParamsSchema = z.strictObject({
   product_id: z.int32().nullable(),
   quantity: z.int().min(-32768).max(32767).nullable(),
-  basket_id: z.union([z.int(), z.bigint().min(-9223372036854775808n).max(9223372036854775807n), z.string().regex(/^-?\d{1,19}$/).refine((value) => BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" })]).nullable(),
+  basket_id: z.union([z.int(), z.bigint().min(-9223372036854775808n).max(9223372036854775807n), z.string().regex(/^-?\d{1,19}$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" })]).nullable(),
   discount: z.int().min(0).max(255).nullable().optional(),
   gift: z.boolean().nullable().optional(),
   token: z.guid().nullable().optional(),

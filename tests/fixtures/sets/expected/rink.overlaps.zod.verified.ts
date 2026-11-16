@@ -36,7 +36,7 @@ export type OverlapsResult4Row = z.infer<typeof OverlapsResult4RowSchema>
 
 /** rink.overlaps: its parameters, checked before anything is sent. */
 export const OverlapsParamsSchema = z.strictObject({
-  min: z.union([z.int(), z.bigint().min(-9223372036854775808n).max(9223372036854775807n), z.string().regex(/^-?\d{1,19}$/).refine((value) => BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" })]).nullable(),
+  min: z.union([z.int(), z.bigint().min(-9223372036854775808n).max(9223372036854775807n), z.string().regex(/^-?\d{1,19}$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" })]).nullable(),
 })
 export type OverlapsParams = z.infer<typeof OverlapsParamsSchema>
 
