@@ -53,7 +53,7 @@ otherwise silently do nothing.
 
 The command line overrides the file for one run: the source argument (a folder, a `.sqlproj` or a `.dacpac`) replaces `source`, `--out` replaces `out`, and
 `--include schema.pattern` replaces the schemas' includes (each schema's `exclude` still applies, and overrides of
-procedures the run leaves out are skipped). Without a file, `--include` and `--out` are required.
+procedures the run leaves out are skipped). Without a file, the source argument, `--include` and `--out` are required.
 
 ## Reading a DACPAC: `source` and `references`
 
@@ -153,8 +153,9 @@ breaking a file written today.
 
 ## Overrides
 
-An override corrects or completes what was inferred, for one procedure (keyed by its two-part name, which must be
-selected; only `results`, below, may be given for any procedure). Overrides are applied to the IR after inference, never inside it, and every one stays **checked at
+An override corrects or completes what was inferred, for one procedure. Overrides live in `procedures`, keyed by the
+procedure's two-part name (`sales.get_order`, with T-SQL brackets around a part that holds a dot), which must be selected;
+only `results`, below, may be given for any procedure. Overrides are applied to the IR after inference, never inside it, and every one stays **checked at
 runtime**: the generated validator still checks every value, so a wrong override fails loudly on real data; it is never
 a silent cast. The IR lists every claim an override made under `overrides`, with its reason.
 
@@ -183,7 +184,9 @@ with is a warning**, so the file shrinks as the SQL improves. Generation goes ah
 ## Declared results: `results`
 
 Some procedures' result sets can't be known from the project: dynamic SQL (`EXEC (@sql)`, `sp_executesql`), a procedure named
-in a variable, a system procedure, a CLR procedure, one in another database. Their results are unknown, and so are those of
+in a variable, a system procedure, a CLR procedure, one in another database or not in the project, a call without a schema
+that names a procedure in more than one (which one runs depends on the caller's default schema), and a module created
+`WITH ENCRYPTION`, whose text the project doesn't hold. Their results are unknown, and so are those of
 every procedure that calls them, with a reason naming the statement. `generate` warns about each selected procedure whose
 results are unknown for one of these reasons, naming the statement and what to declare; it still writes its output, and
 exits as before (the `check` command will fail it).
@@ -240,7 +243,8 @@ exits as before (the `check` command will fail it).
 - `"strict"`: `z.strictObject`, for projects that deploy the application first or together with the database, and want
   an unexpected key to fail loudly.
 
-This is the one deliberate exception to "claim everything it does guarantee": `FOR JSON` produces exactly the known
+This is the one deliberate exception to haruspex's rule that the generated code claims everything the engine guarantees
+([decision 0005](decisions/0005-claim-everything-the-engine-guarantees.md)): `FOR JSON` produces exactly the known
 keys, so strict is the accurate schema, and strip is the default for deployment safety. It applies to results only.
 
 ## The callers' session: `session`
@@ -290,8 +294,9 @@ returns; haruspex then leaves its results unknown. Other options that change no 
 
 Generated names come from each object's own name, **never its schema**, by declarative rules applied in this order:
 
-1. `replace`: regular expressions over the name, in order, each replacing every match (`$1` names a group); the
-   top-level rules first, then the schema's own. `#$` is the end of the name. Expressions run without backtracking, so
+1. `replace`: rules of the form `{ "pattern": "…", "with": "…" }`, run over the name in order, each replacing every match
+   of the regular expression `pattern` with `with` (`$1` names a group, and `""` removes the match); the top-level rules
+   first, then the schema's own. `#$` is the end of the name. Expressions run without backtracking, so
    backreferences and lookarounds are not available.
 2. `prefix`: the schema's prefix, if any, goes in front as words of its own: `"prefix": "Audit"` makes
    `audit.get_order` `AuditGetOrder`.
@@ -322,4 +327,5 @@ haruspex.json:22:7: warning HAR4110: procedures["sales.get_order"].paths.id: "nu
 haruspex.json: error HAR4303: "GetOrder" would name both the procedure audit.get_order and the procedure sales.get_order. Generated names must not clash: give one of their schemas a "prefix" in "schemas", …
 ```
 
-Errors exit with code 2, as command line mistakes do; nothing is written.
+Errors in the config file exit with code 2, as command line mistakes do, and nothing is written; [the command
+line](../src/Haruspex.Cli/README.md#what-it-guarantees) lists every exit code.

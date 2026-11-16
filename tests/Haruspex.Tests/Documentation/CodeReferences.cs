@@ -169,17 +169,28 @@ internal sealed partial class CodeReferences
         }
 
         // Generated names are real when haruspex generates them: in a committed snapshot (a test's own, or a fixture's
-        // expected output), or in a worked example's output, which WorkedExampleTests holds to what haruspex gives.
-        var modules = Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "tests", "Haruspex.Tests", "Snapshots"), "*.verified.ts")
+        // expected output), or in a module the documentation shows, which WorkedExampleTests (a worked example's output)
+        // or QuickStartTests (the five-minute start's) holds to what haruspex gives. A name is a schema or type the module
+        // exports; in a module the documentation shows, it may also be a key of an object the module declares (a column's
+        // or a JSON key's name as the SQL writes it), which the page beside it explains. Keys are taken only from those
+        // modules, so a stale name can't resolve by matching a column of some fixture no page shows.
+        var snapshots = Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "tests", "Haruspex.Tests", "Snapshots"), "*.verified.ts")
             .Concat(Fixture.All.SelectMany(f => Directory.EnumerateFiles(f.Expected, "*.verified.ts")))
-            .Select(File.ReadAllText)
-            .Concat(MarkdownText.Documentation
-                .SelectMany(f => MarkdownText.FencedBlocks(File.ReadAllText(Path.Combine(RepositoryPaths.Root, f))))
-                .Where(b => b.Words.Contains(WorkedExample.ZodMark))
-                .Select(b => b.Text));
-        foreach (var module in modules)
+            .Select(File.ReadAllText);
+        var shown = MarkdownText.Documentation
+            .SelectMany(f => MarkdownText.FencedBlocks(File.ReadAllText(Path.Combine(RepositoryPaths.Root, f))))
+            .Where(b => b.Words.Contains(WorkedExample.ZodMark) || QuickStartTests.IsModule(b))
+            .Select(b => b.Text)
+            .ToList();
+        foreach (var module in snapshots.Concat(shown))
         {
             foreach (Match m in GeneratedName().Matches(module))
+                generated.Add(m.Groups["name"].Value);
+        }
+
+        foreach (var module in shown)
+        {
+            foreach (Match m in GeneratedKey().Matches(module))
                 generated.Add(m.Groups["name"].Value);
         }
 
@@ -345,4 +356,8 @@ internal sealed partial class CodeReferences
 
     [GeneratedRegex(@"\bexport\s+(?:const|type)\s+(?<name>[A-Za-z_]\w*)")]
     private static partial Regex GeneratedName();
+
+    /// <summary>A key of a generated object, one to a line: <c>  orderDate: z.iso.date(),</c>.</summary>
+    [GeneratedRegex(@"^[ ]+(?<name>[A-Za-z_]\w*): ", RegexOptions.Multiline)]
+    private static partial Regex GeneratedKey();
 }

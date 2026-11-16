@@ -4,9 +4,9 @@ The code is split into layers so that each can be tested alone, reused alone and
 others, published alone as a NuGet package from this repository. Each project under `src/` is one layer.
 
 ```
-.sql files, .dacpac ──► Sources ──► Model ──► Semantics ──► Inference ──► IR ──► Config ──► IR ──► emitters (Zod, …)
-                                              (binding)                         (overrides,       (names settled)
-                                                                                  naming)
+.sql files, .sqlproj, .dacpac ──► Sources ──► Model ──► Semantics ──► Inference ──► IR ──► Config ──► IR ──► emitters (Zod, …)
+                                                        (binding)                         (overrides,       (names settled)
+                                                                                            naming)
               Syntax (ScriptDom's declarations read into the model) is shared by Sources, Semantics and Inference.
               Diagnostics (codes, messages, locations and the outcome of a step) is used by every layer but Collections and the IR.
               Collections (lists that compare by value) is used by the layers whose records hold them.
@@ -21,7 +21,7 @@ others, published alone as a NuGet package from this repository. Each project un
 | `Haruspex.Diagnostics` | diagnostics: a stable code, a message and where (a place in a source file, a value in a JSON document, a file); the outcome of a step, a value or why there is none | anything else | Collections | may |
 | `Haruspex.SqlServer.Model` | the schema as data: tables, columns, types, collations, keys, CHECK constraints, alias and CLR types, procedures, functions, views and triggers (their bodies and expressions as ScriptDom fragments, nothing else of ScriptDom), synonyms | where the schema came from; how a declaration is parsed; what any reference in a body points to | Collections, Diagnostics; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
 | `Haruspex.SqlServer.Syntax` | reading what ScriptDom parsed (a name, a type, a table definition, a procedure, function, view, trigger or synonym) into the model's values, wherever it is written: in a script or in a body | files; which object a reference means; types of expressions, the IR | Collections, Diagnostics, Model; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
-| `Haruspex.SqlServer.Sources` | reading a folder of `.sql` files, or a DACPAC's `model.xml` with the DACPACs it refers to, into the model | name resolution, types of expressions, the IR | Collections, Diagnostics, Model, Syntax; `Microsoft.SqlServer.TransactSql.ScriptDom` | may |
+| `Haruspex.SqlServer.Sources` | reading a folder of `.sql` files, a database project's `.sqlproj` as its build would, or a DACPAC's `model.xml`, with the projects and DACPACs they refer to, into the model | name resolution, types of expressions, the IR | Collections, Diagnostics, Model, Syntax; `Microsoft.SqlServer.TransactSql.ScriptDom` | may |
 | `Haruspex.SqlServer.Semantics` | binding a body's references to model objects (scopes, aliases, ambiguity), and interpreting the schema (which columns are never null; what types, alias types and CHECK constraints guarantee about values); SQL Server's built-in types, conversions and functions, as catalogues | result shapes, nullability inference, the IR | Collections, Diagnostics, Model, Syntax; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
 | `Haruspex.SqlServer.Inference` | shapes, nullability, presence and JSON structure, from bound bodies into the IR | files, zips, XML; the emitters; the config file | Collections, Diagnostics, Model, Syntax, Semantics, Ir; `Microsoft.SqlServer.TransactSql.ScriptDom` | never |
 | `Haruspex.Ir` | the IR model and its deterministic JSON | SQL of any dialect | Collections | may |
@@ -70,6 +70,25 @@ Why these lines:
   hands them to `IrInference.Infer` as `DeclaredResults`, as it hands it the model, and Inference never reads the config
   file. A procedure's own declaration is applied by Config to the document, like any override, and checked there against
   what is inferred. A referenced DACPAC, later, is the same kind of input: facts about objects outside the project.
+
+## Each layer's README
+
+Each project has a README that is its layer's chapter in brief: what it is for, its main types, an example, what it
+guarantees and what it deliberately doesn't do.
+
+- [`Haruspex.Collections`](../src/Haruspex.Collections/README.md)
+- [`Haruspex.Diagnostics`](../src/Haruspex.Diagnostics/README.md)
+- [`Haruspex.SqlServer.Model`](../src/Haruspex.SqlServer.Model/README.md)
+- [`Haruspex.SqlServer.Syntax`](../src/Haruspex.SqlServer.Syntax/README.md)
+- [`Haruspex.SqlServer.Sources`](../src/Haruspex.SqlServer.Sources/README.md)
+- [`Haruspex.SqlServer.Semantics`](../src/Haruspex.SqlServer.Semantics/README.md)
+- [`Haruspex.SqlServer.Inference`](../src/Haruspex.SqlServer.Inference/README.md)
+- [`Haruspex.Ir`](../src/Haruspex.Ir/README.md), which also describes the IR's format
+- [`Haruspex.Config`](../src/Haruspex.Config/README.md)
+- [`Haruspex.Emit.Zod`](../src/Haruspex.Emit.Zod/README.md)
+- [`Haruspex.Cli`](../src/Haruspex.Cli/README.md)
+
+The analyser that checks haruspex's own code at build time is not a layer, and has [a README of its own](../analysers/README.md).
 
 ## Enforced by a test
 
