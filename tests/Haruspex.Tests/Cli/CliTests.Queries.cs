@@ -92,7 +92,7 @@ public partial class CliTests
 
         Assert.Equal(0, exitCode);
         Assert.StartsWith(
-            "sql/label.sql:1:8: note HAR2024: sql/label.sql parameters.@label: Nothing decides the type of @label:",
+            "sql/label.sql:1:8: note HAR2024: sql/label.sql parameters.@label: No use of @label decides its type:",
             CliOutput.Shown(error, folder.Path),
             StringComparison.Ordinal);
     }

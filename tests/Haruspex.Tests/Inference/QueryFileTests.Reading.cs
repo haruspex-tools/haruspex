@@ -42,6 +42,12 @@ public partial class QueryFileTests
             Refused("-- @param @id int\n-- @param @ID bigint\nSELECT @id AS id;\n"));
 
     [Fact]
+    public void A_variable_used_before_its_declare_is_refused_as_the_server_refuses_it() =>
+        Assert.Equal(
+            ["q.sql:1:8: error HAR1016: @x is used before the DECLARE of it, which SQL Server refuses (error 137); declare it first, or rename one of them."],
+            Refused("SELECT @x AS v; DECLARE @x int = 1; SELECT @x AS w;\n"));
+
+    [Fact]
     public void A_comment_that_only_mentions_a_parameter_is_not_a_declaration() =>
         Assert.Equal(
             ["@id int"],

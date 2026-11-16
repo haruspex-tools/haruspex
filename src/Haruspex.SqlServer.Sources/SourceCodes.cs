@@ -70,4 +70,10 @@ public static class SourceCodes
     /// names a parameter twice, or it names a variable the file declares itself or doesn't use.
     /// </summary>
     public static DiagnosticCode BadParameterDeclaration { get; } = new(1015, DiagnosticSeverity.Error, "A query file's parameter declaration can't be taken");
+
+    /// <summary>
+    /// A query file that uses a variable before its <c>DECLARE</c>: SQL Server refuses the batch (error 137), so the file can't run,
+    /// though a body's declarations otherwise hold for the whole of it.
+    /// </summary>
+    public static DiagnosticCode UsedBeforeDeclared { get; } = new(1016, DiagnosticSeverity.Error, "A query file uses a variable before declaring it");
 }

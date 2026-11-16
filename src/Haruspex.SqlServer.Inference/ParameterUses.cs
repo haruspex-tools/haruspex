@@ -31,7 +31,11 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="binder">How the file's names are bound.</param>
 internal sealed class ParameterUses(DatabaseModel model, SourceSpan source, Binder binder)
 {
-    private readonly Dictionary<SourceLocation, ParameterUse> found = [];
+    /// <summary>
+    /// Each use, once, by where the parameter is and how it is used there: one place may be several uses, as <c>@p IN (1, 2.5)</c>
+    /// compares <c>@p</c> with each value, and each must agree for the type to be decided.
+    /// </summary>
+    private readonly Dictionary<(SourceLocation At, string How), ParameterUse> found = [];
 
     /// <summary>One use that decides a parameter's type: the parameter, the type it takes there, how it is used, and where.</summary>
     internal sealed record ParameterUse(LocalName Name, ScalarType Type, string How, SourceLocation At);
@@ -59,7 +63,7 @@ internal sealed class ParameterUses(DatabaseModel model, SourceSpan source, Bind
         foreach (var element in query.OrderByClause?.OrderByElements ?? [])
             Arithmetic(element.Expression, scope, typer);
 
-        Count(query.TopRowFilter?.Expression, "TOP", scope);
+        Count(query.TopRowFilter?.Expression, "TOP", scope, query.TopRowFilter?.Percent == true);
         Count(query.OffsetClause?.OffsetExpression, "OFFSET", scope);
         Count(query.OffsetClause?.FetchExpression, "FETCH", scope);
         Calls(query, scope);
@@ -213,11 +217,14 @@ internal sealed class ParameterUses(DatabaseModel model, SourceSpan source, Bind
         }
     }
 
-    /// <summary>A parameter that is a count of rows: TOP's, OFFSET's or FETCH's, which the server takes as <c>bigint</c>.</summary>
-    private void Count(ScalarExpression? expression, string clause, ReadScope scope)
+    /// <summary>
+    /// A parameter that is a count of rows: TOP's, OFFSET's or FETCH's, which the server takes as <c>bigint</c>; or TOP's
+    /// <c>PERCENT</c>, which it takes as <c>float</c> (observed).
+    /// </summary>
+    private void Count(ScalarExpression? expression, string clause, ReadScope scope, bool percent = false)
     {
         if (Parameter(expression, scope) is { } parameter)
-            Add(parameter, ParameterRules.RowCount, $"the count of {clause}");
+            Add(parameter, percent ? ParameterRules.Percent : ParameterRules.RowCount, $"the {(percent ? "percentage" : "count")} of {clause}");
     }
 
     /// <summary>A parameter assigned to a column, as UPDATE's SET does: the column's type.</summary>
@@ -287,7 +294,7 @@ internal sealed class ParameterUses(DatabaseModel model, SourceSpan source, Bind
     private void Add(Used parameter, ScalarType type, string how)
     {
         var at = source.At(parameter.At);
-        found.TryAdd(at, new ParameterUse(parameter.Name, type, how, at));
+        found.TryAdd((at, how), new ParameterUse(parameter.Name, type, how, at));
     }
 
     // ---- what an operand is ------------------------------------------------------------------------------------------

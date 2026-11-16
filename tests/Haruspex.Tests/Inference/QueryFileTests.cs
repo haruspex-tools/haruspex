@@ -76,6 +76,17 @@ public partial class QueryFileTests
     }
 
     [Fact]
+    public void Top_percent_takes_float() =>
+        Assert.Equal(["@p float"], Parameters("SELECT TOP (@p) PERCENT c.name FROM shop.customers AS c;"));
+
+    [Theory]
+    [InlineData("@p IN ('a', 'bb')")]
+    [InlineData("@p BETWEEN 1 AND 2.5")]
+    [InlineData("@p BETWEEN c.flags AND c.customer_id")]
+    public void Operands_of_one_use_that_give_different_types_leave_the_parameter_unknown(string condition) =>
+        Assert.Equal(["@p unknown"], Parameters($"SELECT 1 AS one FROM shop.customers AS c WHERE {condition};"));
+
+    [Fact]
     public void Top_offset_and_fetch_take_bigint() =>
         Assert.Equal(
             ["@n bigint", "@skip bigint", "@take bigint"],

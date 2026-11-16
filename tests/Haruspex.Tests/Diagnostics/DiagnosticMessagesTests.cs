@@ -133,6 +133,7 @@ public class DiagnosticMessagesTests
         (1013, () => Cli(["CREATE TABLE lib.scan WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT b.id, b.title FROM lib.book AS b;", GetBook])),
         (1014, () => Query("SELECT 1 AS one;\nGO\nSELECT 2 AS two;\n")),
         (1015, () => Query("-- @param @client_id int\nSELECT b.title FROM lib.book AS b WHERE b.id = @customer_id;\n")),
+        (1016, () => Query("SELECT @x AS v; DECLARE @x int = 1;")),
 
         (2001, () => Cli(["CREATE PROCEDURE lib.p AS SET NOCOUNT, NOEXEC ON;\nSELECT b.id FROM lib.book AS b;"])),
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),

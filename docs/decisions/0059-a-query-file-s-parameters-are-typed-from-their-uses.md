@@ -8,8 +8,11 @@ the type its uses decide, each by the rule SQL Server's own `sp_describe_undecla
 that decides one decides the same; else it is unknown, with the reason `undecided-parameter`, saying which uses disagreed or that
 none decided. A use decides only with the parameter itself as an operand: compared with a column or a literal, in arithmetic
 with one as a whole select-list column or `ORDER BY` key, a count of `TOP`, `OFFSET` or `FETCH`, assigned to a column by
-`INSERT … VALUES` or `UPDATE … SET`, or passed to a procedure's or function's parameter. Every parameter accepts NULL, as a procedure's
-does.
+`INSERT … VALUES` or `UPDATE … SET`, or passed to a procedure's or function's parameter. Each operand of a use is a use of its
+own, so `@p IN (1, 2.5)` decides nothing unless both values give one type. Every parameter accepts NULL, as a procedure's does.
+A query file is named from its file's name by the config file's top-level naming rules, having no schema; a name that clashes with
+another object's, a procedure's or a query file's, is an error naming both, and neither is renamed, so that adding a file never
+renames anything already generated.
 
 **Context.** Many teams keep their queries in `.sql` files of the application rather than in procedures, and send them through
 `sp_executesql`, which needs each parameter declared with a type. T-SQL gives a batch no place to declare its parameters, and a

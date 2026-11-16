@@ -27,6 +27,7 @@ reason.
 | [HAR1013](HAR1013.md) | note | A table whose definition lists no columns isn't read |
 | [HAR1014](HAR1014.md) | error | A query file isn't one batch |
 | [HAR1015](HAR1015.md) | error | A query file's parameter declaration can't be taken |
+| [HAR1016](HAR1016.md) | error | A query file uses a variable before declaring it |
 
 ## Inference
 

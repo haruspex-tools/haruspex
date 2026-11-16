@@ -96,8 +96,7 @@ internal sealed class QueryFiles(DatabaseModel model, Summaries summaries)
         var declare = $"Declare it in the file: -- @param {name} <type>.";
         if (uses.Count == 0)
         {
-            return $"Nothing decides the type of {name}: it is never compared with a column or a literal, in arithmetic with one, a count of rows, " +
-                $"assigned to a column, or passed to a procedure or function. {declare}";
+            return $"No use of {name} decides its type: none is one that haruspex infers a type from. {declare}";
         }
 
         var each = uses.GroupBy(u => u.Type).Select(g => $"{g.Key} where it is {g.First().How} ({g.First().At})");

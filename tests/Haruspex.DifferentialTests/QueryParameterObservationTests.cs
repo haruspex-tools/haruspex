@@ -6,7 +6,7 @@ namespace Haruspex.DifferentialTests;
 /// <summary>
 /// What SQL Server's own <c>sp_describe_undeclared_parameters</c> says a query file's undeclared parameters are, use by use, and
 /// that haruspex says the same or says it doesn't know (decision 0059): each rule of <c>ParameterRules</c> is observed here,
-/// and the grid at the end holds every single use haruspex decides to the server's answer. The queries read the invented shop
+/// each case below with its server's answer. The queries read the invented shop
 /// the unit tests read (<c>InferQuery.Shop</c>), created in a session of its own under a schema no fixture has, and rolled back.
 /// </summary>
 public class QueryParameterObservationTests(SqlServerFixture server)
@@ -148,6 +148,35 @@ public class QueryParameterObservationTests(SqlServerFixture server)
         Assert.Equal(["@p decimal(38,19)"], (await Described(query)).Parameters);
         Assert.Equal(["@p unknown"], Inferred(query));
     }
+
+    [Fact]
+    public async Task Top_percent_takes_float() =>
+        await Both("SELECT TOP (@p) PERCENT c.name FROM shop.customers AS c;", "@p float");
+
+    [Theory]
+    [InlineData("@p IN ('a', 'bb')", "varchar(8000)")]
+    [InlineData("@p IN (1.5, 2.25)", "decimal(38,19)")]
+    [InlineData("@p IN (N'a', N'bb')", "nvarchar(4000)")]
+    [InlineData("@p IN (c.tier, c.email)", "varchar(8000)")]
+    [InlineData("@p IN (1, 3000000000)", "decimal(38,19)")]
+    [InlineData("@p BETWEEN 1 AND 2.5", "decimal(38,19)")]
+    [InlineData("@p BETWEEN 1 AND 3000000000", "decimal(38,19)")]
+    [InlineData("@p BETWEEN c.flags AND c.customer_id", "int")]
+    [InlineData("@p BETWEEN c.tier AND c.name", "nvarchar(4000)")]
+    public async Task Where_the_operands_of_one_use_give_different_types_haruspex_leaves_the_parameter_unknown(string condition, string type)
+    {
+        // The server combines the operands' types by rules not observed here, so differing operands decide nothing.
+        var query = $"SELECT 1 AS one FROM shop.customers AS c WHERE {condition};";
+
+        Assert.Equal(["@p " + type], (await Described(query)).Parameters);
+        Assert.Equal(["@p unknown"], Inferred(query));
+    }
+
+    [Theory]
+    [InlineData("@p IN ('a', 'b')", "varchar(1)")]
+    [InlineData("@p IN (1, 2)", "int")]
+    public async Task Where_the_operands_of_one_use_give_one_type_that_type_decides(string condition, string type) =>
+        await Both($"SELECT 1 AS one FROM shop.customers AS c WHERE {condition};", "@p " + type);
 
     [Fact]
     public async Task Top_offset_and_fetch_take_bigint() =>

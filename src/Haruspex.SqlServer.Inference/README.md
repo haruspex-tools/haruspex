@@ -126,11 +126,13 @@ applies there (`ParameterRules`), each observed in `QueryParameterObservationTes
 | `<`, `>`, their kin and `BETWEEN`, with a column or a literal | an integer, bit, money, float, `date`, `datetime` the operand's; a decimal `decimal(38,19)`; a string `varchar(8000)` or `nvarchar(4000)`, max staying max; a `time`, `datetime2` or `datetimeoffset` with 7 places |
 | `LIKE`, either side | `varchar(8000)` or `nvarchar(4000)`, by the other side's kind |
 | arithmetic that is a whole select-list column or `ORDER BY` key, with a column or a literal | an integer, money or float the operand's (an integer under `&`, `\|`, `^` too); a decimal `decimal(38,19)`; a string under `+` `varchar(8000)` or `nvarchar(4000)`; a `datetime` or `smalldatetime` under `+` its own |
-| the count of `TOP`, `OFFSET` or `FETCH` | `bigint` |
+| the count of `TOP`, `OFFSET` or `FETCH` | `bigint`; `TOP … PERCENT` `float` |
 | a value of `INSERT … VALUES` with its columns listed, or of `UPDATE … SET` | the column's |
 | an argument of a procedure (by name or place), a scalar function or a table-valued function of the project | the parameter's declared type |
 
-Every other use decides nothing: a use inside a larger expression, which the server types from the expression's context
+Each operand of a use is a use of its own, so `@p IN ('a', 'bb')` or `@p BETWEEN 1 AND 2.5` decides nothing unless its operands
+give one type: the server combines them by rules not observed here (`varchar(8000)`, `decimal(38,19)`). Every other use decides
+nothing: a use inside a larger expression, which the server types from the expression's context
 (`o.total = @x * 2` is `decimal(38,19)` there, from `total`); a `bit` in arithmetic, which the server makes `datetime`; a binary
 string, which isn't modelled; a test of NULL, where the server falls back on `int`; and a use in a query the walk doesn't read,
 such as a subquery under `EXISTS`. Uses that decide one type decide it even where the server refuses to answer, as it does for a

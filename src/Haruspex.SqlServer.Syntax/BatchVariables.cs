@@ -3,9 +3,11 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 namespace Haruspex.SqlServer.Syntax;
 
 /// <summary>
-/// The variables a batch uses without declaring: in a batch run through <c>sp_executesql</c>, its parameters. SQL Server compiles
-/// a batch's declarations rather than running them, so a variable declared anywhere in it, at any depth, is declared for the
-/// whole of it; what is left is what the call must declare. Names compare ignoring case, as the server compares them.
+/// The variables a batch uses without declaring: in a batch run through <c>sp_executesql</c>, its parameters. SQL Server compiles a
+/// batch's declarations rather than running them, so a variable declared at any depth, in a branch never taken too, is declared
+/// for the rest of the batch; but only for the rest of it, in the order of the text: a use before the <c>DECLARE</c> is refused
+/// (error 137), and with the name passed as a parameter too, the <c>DECLARE</c> is (error 134) (observed). What is never declared
+/// is what the call must declare. Names compare ignoring case, as the server compares them.
 /// </summary>
 public static class BatchVariables
 {
@@ -27,6 +29,21 @@ public static class BatchVariables
             .Select(v => new BatchParameter(v.Name, v))];
     }
 
+    /// <summary>
+    /// Each use of a variable that comes, in the text, before the batch's first <c>DECLARE</c> of it, which SQL Server refuses;
+    /// in the order of the text.
+    /// </summary>
+    /// <param name="statements">The batch.</param>
+    public static IReadOnlyList<VariableReference> UsedBeforeDeclared(StatementList statements)
+    {
+        ArgumentNullException.ThrowIfNull(statements);
+        var found = new Collector();
+        statements.Accept(found);
+        return [.. found.Used
+            .Where(v => found.FirstDeclared.TryGetValue(v.Name, out var declared) && v.StartOffset < declared)
+            .OrderBy(v => v.StartOffset)];
+    }
+
     /// <summary>The names the batch declares with <c>DECLARE</c>, scalar and table variables alike, ignoring case.</summary>
     /// <param name="statements">The batch.</param>
     public static IReadOnlySet<string> Declared(StatementList statements)
@@ -43,9 +60,19 @@ public static class BatchVariables
 
         public List<VariableReference> Used { get; } = [];
 
-        public override void Visit(DeclareVariableElement node) => Declared.Add(node.VariableName.Value);
+        /// <summary>Where, in the text, each name is first declared.</summary>
+        public Dictionary<string, int> FirstDeclared { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-        public override void Visit(DeclareTableVariableBody node) => Declared.Add(node.VariableName.Value);
+        public override void Visit(DeclareVariableElement node) => Declare(node.VariableName.Value, node.StartOffset);
+
+        public override void Visit(DeclareTableVariableBody node) => Declare(node.VariableName.Value, node.StartOffset);
+
+        private void Declare(string name, int at)
+        {
+            Declared.Add(name);
+            if (!FirstDeclared.TryGetValue(name, out var first) || at < first)
+                FirstDeclared[name] = at;
+        }
 
         public override void Visit(VariableReference node) => Used.Add(node);
 

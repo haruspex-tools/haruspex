@@ -81,7 +81,7 @@ chapter 2 says why each is so, and `DacpacEquivalenceTests` proves a package of 
 
 A query file of the application is read apart from the project, by `QueryFileReader`, into a `QueryFile` that is read against
 the project's model rather than added to it. It is one batch, as `sp_executesql` runs it: one that `GO` splits, or that holds no
-statement, is refused (HAR1014). Its text is kept with LF line endings, parsed so, and parsed with `QUOTED_IDENTIFIER` on, as
+statement, is refused (HAR1014), and so is one that uses a variable before its `DECLARE` (HAR1016), which the server refuses. Its text is kept with LF line endings, parsed so, and parsed with `QUOTED_IDENTIFIER` on, as
 every client library sets it; no SQLCMD variable is replaced, since the application sends the text as it is. A line comment
 `-- @param @name type` declares a parameter's type, read as a `DECLARE` of it reads, and one that can't be taken is refused
 with why (HAR1015): it doesn't read, it names a parameter twice, or it names a variable the file declares itself or doesn't use

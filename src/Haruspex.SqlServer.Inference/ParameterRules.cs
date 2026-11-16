@@ -26,6 +26,9 @@ internal static class ParameterRules
     /// <summary>A count of rows, of TOP, OFFSET or FETCH: <c>bigint</c> (observed).</summary>
     public static ScalarType RowCount { get; } = ScalarType.Of(BuiltInType.BigInt);
 
+    /// <summary>A percentage of rows, of TOP … PERCENT: <c>float</c> (observed).</summary>
+    public static ScalarType Percent { get; } = ScalarType.Of(BuiltInType.Float);
+
     /// <summary>The widest decimal the server gives where a decimal's digits are not the operand's: <c>decimal(38,19)</c> (observed).</summary>
     private static readonly ScalarType WideDecimal = new(BuiltInType.Decimal, Precision: 38, Scale: 19);
 

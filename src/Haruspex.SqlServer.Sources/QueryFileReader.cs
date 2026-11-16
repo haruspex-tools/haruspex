@@ -60,6 +60,12 @@ public static partial class QueryFileReader
             statements.Statements.Add(statement);
 
         var problems = new List<Diagnostic>();
+        foreach (var early in BatchVariables.UsedBeforeDeclared(statements))
+        {
+            problems.Add(SourceCodes.UsedBeforeDeclared.At(new SourceLocation(relative, early.StartLine, early.StartColumn),
+                $"{early.Name} is used before the DECLARE of it, which SQL Server refuses (error 137); declare it first, or rename one of them."));
+        }
+
         var declared = Declarations(script, relative, statements, problems);
         if (problems.Count > 0)
             return new Failed<QueryFile>([.. problems]);
