@@ -190,8 +190,8 @@ also covers names, overrides and declared results.
 parses each result with the schema before using it. A wrong claim, such as one in an override a person wrote, fails there,
 loudly, rather than deep in the code. SQL Server splits `FOR JSON` output over rows of about 2,000 characters, and the
 [mssql](https://www.npmjs.com/package/mssql) driver joins them back into one row. With the driver's `parseJSON` option on,
-as most applications that use `FOR JSON` set it, that row is the parsed document, or `null` when no rows matched, which the
-schema reads as it is:
+as many applications set it, that row is the parsed document, or `null` when no rows matched, which the schema reads as it
+is:
 
 ```ts
 import sql from 'mssql'
@@ -200,7 +200,7 @@ import { GetOrderSchema, type GetOrder } from './db/haruspex.zod'
 // pool was made with { ...config, parseJSON: true }.
 export async function getOrder(pool: sql.ConnectionPool, orderId: number): Promise<GetOrder> {
   const result = await pool.request().input('OrderID', sql.Int, orderId).execute('Website.GetOrder')
-  return GetOrderSchema.parse(result.recordset[0])
+  return GetOrderSchema.parse(result.recordset?.[0] ?? null)
 }
 ```
 
@@ -208,13 +208,15 @@ Without `parseJSON`, the row holds the text, under the name SQL Server gives the
 empty when no rows matched:
 
 ```ts
-const text: string = result.recordset[0]['JSON_F52E2B61-18A1-11d1-B105-00805F49916B']
+const text: string = result.recordset?.[0]?.['JSON_F52E2B61-18A1-11d1-B105-00805F49916B'] ?? ''
 return GetOrderSchema.parse(text === '' ? null : JSON.parse(text))
 ```
 
-Either way, a `FOR JSON` result with no rows is `null`, a list as much as one object, and its type says so. Rows from a
-plain `SELECT` are `result.recordset` as they are. A procedure with several result sets has one schema, a tuple: it parses
-an array holding each of `result.recordsets`, read as above.
+Either way, a `FOR JSON` result with no rows is `null`, a list as much as one object, and its type says so. A result set
+whose statement didn't run, in a branch or after a `RETURN`, isn't sent at all, so `result.recordset` is then `undefined`:
+that is what `?.` and `?? null` are for, and a schema whose summary says "when it does not run" needs them. Rows from a plain
+`SELECT` are `result.recordset`, or `[]` when it didn't run. A procedure with several result sets has one schema, a tuple:
+it parses an array holding each of `result.recordsets`, read as above.
 
 [`examples/greenhouse`](examples/greenhouse/README.md) is a small application that does this with a module haruspex wrote,
 compiled in CI.

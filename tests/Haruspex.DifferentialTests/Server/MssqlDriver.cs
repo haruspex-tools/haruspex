@@ -66,8 +66,12 @@ internal static class MssqlDriver
         IReadOnlyDictionary<string, object?>? Parameters = null,
         Check? Check = null);
 
-    /// <summary>The schema a call's results are parsed with, and each result set's encoding, <c>json</c> or <c>rowset</c>.</summary>
-    public sealed record Check(string Schema, IReadOnlyList<string> Results);
+    /// <summary>
+    /// The schema a call's results are parsed with, each result set's encoding, <c>json</c> or <c>rowset</c>, and how the
+    /// application reads a JSON result set: the body of a JavaScript function of <c>result</c>, an object whose
+    /// <c>recordset</c> is that result set, or undefined when it did not arrive.
+    /// </summary>
+    public sealed record Check(string Schema, IReadOnlyList<string> Results, string ReadJson);
 
 #pragma warning disable CA1812 // Made by the JSON reader, from what the script wrote, never by code.
 

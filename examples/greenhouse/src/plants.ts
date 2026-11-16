@@ -27,7 +27,7 @@ export async function listPlants(pool: sql.ConnectionPool): Promise<ListPlantsRo
  */
 export async function getPlant(pool: sql.ConnectionPool, plantId: number): Promise<GetPlant> {
   const result = await pool.request().input('plant_id', sql.Int, plantId).execute('garden.get_plant')
-  return GetPlantSchema.parse(result.recordset[0])
+  return GetPlantSchema.parse(result.recordset?.[0] ?? null)
 }
 
 /** The types are the application's own from here on: no haruspex type appears in its code. */

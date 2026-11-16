@@ -10,8 +10,11 @@
 //
 // Everything runs in one transaction, which is rolled back at the end, so the setup may create tables and procedures (the
 // tests hold the database alone while it runs). Each call runs with the driver's parseJSON setting as it says: the
-// driver reads it from the pool's config at each request. A call with "check": { "schema", "results" } also reads its
-// result sets as an application would (below, and the project's README) and parses them with that schema of the module.
+// driver reads it from the pool's config at each request. A call with "check": { "schema", "results", "readJson" } also
+// reads its result sets as an application would and parses them with that schema of the module. A rowset is its
+// recordset, or [] when its statement did not run; a JSON result is read by readJson, the body of a function of `result`
+// (an object holding that result set as its `recordset`), which the test takes from the project's README, so that what is
+// proved is the code a reader pastes.
 //
 // It writes observed.json beside: { "calls": [{ "name", "recordsets": [{ "columns", "rows" }], "error", "check" }] }.
 // The connection is given in HARUSPEX_DRIVER_CONFIG, the mssql config as JSON, never on the command line.
@@ -19,19 +22,6 @@ import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import sql from 'mssql'
-
-// The name SQL Server gives the one column of a top-level FOR JSON result set, which the driver recognises it by.
-const jsonColumn = 'JSON_F52E2B61-18A1-11d1-B105-00805F49916B'
-
-// A result set as the application reads it. With parseJSON on, the driver hands over a JSON result as one row, the
-// parsed document or null; without it, as one row holding the text, '' when the query matched no rows. A result set that
-// did not arrive (its statement did not run) reads as no rows, or as null for JSON: the IR's reader convention.
-const read = (recordset, encoding, parseJSON) => {
-  if (encoding === 'rowset') return recordset ?? []
-  if (parseJSON) return recordset?.[0] ?? null
-  const text = recordset?.[0]?.[jsonColumn]
-  return text ? JSON.parse(text) : null
-}
 
 const folder = process.argv[2]
 const { module, setup, calls } = JSON.parse(await readFile(path.join(folder, 'driver.json'), 'utf8'))
@@ -63,12 +53,19 @@ try {
     if (result) {
       entry.recordsets = result.recordsets.map((recordset) => ({ columns: Object.keys(recordset.columns), rows: [...recordset] }))
       if (call.check) {
-        const { schema, results } = call.check
-        const values = results.map((encoding, k) => read(result.recordsets[k], encoding, call.parseJson))
-        const parsed = schemas[schema].safeParse(values.length === 1 ? values[0] : values)
-        entry.check = parsed.success
-          ? { success: true, issues: [] }
-          : { success: false, issues: parsed.error.issues.slice(0, 10).map((i) => `${i.path.join('.')}: ${i.message}`) }
+        const { schema, results, readJson } = call.check
+        const json = new Function('result', readJson)
+        try {
+          const values = results.map((encoding, k) =>
+            encoding === 'rowset' ? (result.recordsets[k] ?? []) : json({ recordset: result.recordsets[k] }))
+          const parsed = schemas[schema].safeParse(values.length === 1 ? values[0] : values)
+          entry.check = parsed.success
+            ? { success: true, issues: [] }
+            : { success: false, issues: parsed.error.issues.slice(0, 10).map((i) => `${i.path.join('.')}: ${i.message}`) }
+        } catch (error) {
+          // The application's own read threw, before any schema saw the value.
+          entry.check = { success: false, issues: [`reading the result threw ${error.message}`] }
+        }
       }
     }
 

@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
@@ -7,11 +8,12 @@ namespace Haruspex.DifferentialTests;
 /// <summary>
 /// The generated Zod meets the mssql driver: procedures returning each form of JSON are created, inferred and emitted, then
 /// called through the driver as an application calls them, with <c>parseJSON</c> on and off, and what the application reads
-/// is parsed with the schema emitted for each. What it reads is what the project's README shows: with <c>parseJSON</c>, a
-/// JSON result's one row (<c>recordset[0]</c>, null when no rows matched); without it, that row's text, parsed, or null when
-/// it is empty. <c>MssqlDriverObservationTests</c> holds what the driver hands over; this holds the schemas to it.
+/// is parsed with the schema emitted for each. A JSON result is read with the project's README's own code, taken from it
+/// (<see cref="ReadmeReads"/>), so that the code a reader pastes is what is proved: with <c>parseJSON</c>, the result set's
+/// one row, null when no rows matched or when the result set didn't arrive; without it, that row's text, parsed, or null.
+/// <c>MssqlDriverObservationTests</c> holds what the driver hands over; this holds the schemas, and the README, to it.
 /// </summary>
-public class MssqlDriverAcceptanceTests(SqlServerFixture server)
+public partial class MssqlDriverAcceptanceTests(SqlServerFixture server)
 {
     private const string Schema = "CREATE SCHEMA shop;";
 
@@ -101,6 +103,28 @@ public class MssqlDriverAcceptanceTests(SqlServerFixture server)
 
     private static readonly bool[] ParseJsonModes = [true, false];
 
+    /// <summary>
+    /// The README's reads of <c>Website.GetOrder</c>'s FOR JSON result, in its section on validating results at the seam, as
+    /// bodies of a JavaScript function of <c>result</c>: with <c>parseJSON</c>, what it hands the schema; without, its line
+    /// taking the text (its type annotation dropped), then what it hands the schema.
+    /// </summary>
+    private static (string ParseJson, string Text) ReadmeReads()
+    {
+        var readme = File.ReadAllText(Path.Combine(RepositoryPaths.Root, "README.md"));
+        var parsed = ParsedInReadme().Matches(readme);
+        var text = TextInReadme().Match(readme);
+        Assert.True(
+            parsed.Count == 2 && text.Success,
+            "README.md doesn't read GetOrder's result in the two forms this test runs: a line `const text: string = …` and two lines `return GetOrderSchema.parse(…)`.");
+        return ($"return {parsed[0].Groups[1].Value}", $"const text = {text.Groups[1].Value}\nreturn {parsed[1].Groups[1].Value}");
+    }
+
+    [GeneratedRegex(@"^\s*return GetOrderSchema\.parse\((.+)\)$", RegexOptions.Multiline)]
+    private static partial Regex ParsedInReadme();
+
+    [GeneratedRegex(@"^const text: string = (.+)$", RegexOptions.Multiline)]
+    private static partial Regex TextInReadme();
+
     [Fact]
     public async Task The_generated_zod_accepts_what_the_driver_hands_over_with_parse_json_on_and_off()
     {
@@ -108,6 +132,7 @@ public class MssqlDriverAcceptanceTests(SqlServerFixture server)
             "shop.*",
             [("schema.sql", Schema), ("stock_item.sql", StockItem), .. Procedures.Select(p => ($"{p.Key}.sql", p.Value))]);
         var module = ZodEmitter.Emit(document).Expected();
+        var (readParsed, readText) = ReadmeReads();
 
         // Every second item has no colour, which FOR JSON leaves out. Another fixture may have made the schema already.
         string[] setup =
@@ -126,7 +151,10 @@ public class MssqlDriverAcceptanceTests(SqlServerFixture server)
                 parseJson,
                 Procedure: procedure.Id,
                 Parameters: c.Arguments,
-                Check: new(procedure.Name + "Schema", [.. procedure.Results!.Select(r => r.Encoding == IrEncoding.Json ? "json" : "rowset")]));
+                Check: new(
+                    procedure.Name + "Schema",
+                    [.. procedure.Results!.Select(r => r.Encoding == IrEncoding.Json ? "json" : "rowset")],
+                    parseJson ? readParsed : readText));
         })).ToList();
 
         var responses = await MssqlDriver.RunAsync(server, module, setup, calls, TestContext.Current.CancellationToken);
