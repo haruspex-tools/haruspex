@@ -39,10 +39,22 @@ internal static class EmitCheckPackage
         var installed = new FileInfo(Path.Combine(directory, "node_modules", ".package-lock.json"));
         if (installed.Exists && installed.LastWriteTimeUtc >= File.GetLastWriteTimeUtc(Path.Combine(directory, "package-lock.json")))
             return;
-        var npm = OperatingSystem.IsWindows() ? "npm.cmd" : "npm";
         Assert.True(
-            TryRun(npm, ["ci", "--ignore-scripts", "--no-audit", "--no-fund"], directory, out var output, out var why),
+            TryRun(Npm(), ["ci", "--ignore-scripts", "--no-audit", "--no-fund"], directory, out var output, out var why),
             $"npm ci failed in {directory}: {why}\n{output}");
+    }
+
+    /// <summary>
+    /// npm, as a program to start: on Windows, <c>npm.cmd</c> by its full path. Started by its bare name, cmd works out the folder
+    /// the script reads its own files from (<c>%~dp0</c>) from the working folder rather than from where it was found on the
+    /// <c>PATH</c>, so npm looked for itself in the package's <c>node_modules</c> and failed (observed on Windows, 7w).
+    /// </summary>
+    private static string Npm()
+    {
+        if (!OperatingSystem.IsWindows())
+            return "npm";
+        var folders = (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+        return folders.Select(folder => Path.Combine(folder.Trim('"'), "npm.cmd")).FirstOrDefault(File.Exists) ?? "npm.cmd";
     }
 
     private static FileStream Lock(string path)
