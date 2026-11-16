@@ -154,8 +154,9 @@ export type ProductLabel = z.infer<typeof ProductLabelSchema>
 
 The fact is kept in the value itself, not beside it, so nothing has to remember to undo it. It holds exactly as long as the
 value: an assignment replaces the value, and a join with a path that didn't pass the guard (a loop's head after another pass,
-a `CATCH` reached from before the guard) joins it away. That is the dataflow analyst's *conditional constant propagation* in
-miniature: the edges out of a branch carry different facts.
+a `CATCH` reached from before the guard) joins it away. The literature calls this *control sensitivity by assertions*, or
+branch refinement: each edge out of a branch carries the fact its condition asserts there, applied to the state by the meet,
+which keeps the analysis path-insensitive everywhere else.
 
 A guard can also prove what a statement did. `SELECT @name = …, @note = … FROM … WHERE …` may read no row, and then assigns
 nothing, so after it each variable is joined with what it held before. But every row it reads assigns every variable it
@@ -298,5 +299,8 @@ Without a widening, the iteration's answer is the least fixed point.
 
 - Anders Møller and Michael I. Schwartzbach, *Static Program Analysis*, chapters 5 and 6: dataflow analysis, the
   fixed-point algorithms, and widening and narrowing.
+- Anders Møller and Michael I. Schwartzbach, *Static Program Analysis*, the chapter on path sensitivity and relational
+  analysis, "Control sensitivity using assertions": a branch's condition refining the state on each of its edges, which
+  "What a guard proves" applies.
 - Patrick Cousot and Radhia Cousot, "Abstract interpretation: a unified lattice model for static analysis of programs by
   construction or approximation of fixpoints" (POPL 1977): where Kleene iteration and widening come from.

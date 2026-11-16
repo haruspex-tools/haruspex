@@ -429,7 +429,7 @@ internal sealed partial class Walker
             catchEntries.Pop();
         }
 
-        var caught = FlowState.Join(entries, at) is { } entry ? Walk(attempt.CatchStatements.Statements, entry.Uncounted()) : Outcome.Ends;
+        var caught = FlowState.Join(entries, at) is { } entry ? Walk(attempt.CatchStatements.Statements, entry.Uncounted().Caught()) : Outcome.Ends;
         return Join(tried, caught, at);
     }
 
@@ -480,52 +480,6 @@ internal sealed partial class Walker
         return state;
     }
 
-    /// <summary>
-    /// The state on one arm of an <c>IF</c>: each variable its condition proves non-null there (<see cref="Typer.Proves"/>)
-    /// narrowed to its value without NULL. So after <c>IF @x IS NULL RETURN</c>, whose arm ends, the rest of the body has
-    /// <c>@x</c> non-null. The fact lives in the value, so it lasts exactly as long as the value does: an assignment replaces it,
-    /// and where paths meet (the end of the IF, a CATCH, a loop's head) it is joined with what the other paths hold. The guide's
-    /// chapter 6, "What a guard proves", explains it.
-    /// </summary>
-    private FlowState Narrowed(FlowState state, BooleanExpression condition, bool held)
-    {
-        var proved = typer.Proves(condition, held, Reading(state));
-        var narrowed = state;
-
-        // A SELECT proved to have read a row holds what it assigned (PossibleAssignment): by @@ROWCOUNT tested straight after
-        // it, or by a witness, NULL until the SELECT, proved not NULL now.
-        var rows = ProvesRows(condition, held);
-        foreach (var possible in state.Possible.Where(p => (p.Counted && rows) || p.Witnesses.Any(proved.Proved)))
-        {
-            foreach (var (name, value) in possible.Values)
-                narrowed = narrowed.WithVariable(name, value);
-        }
-
-        // A row an EXISTS on this arm proves was there (FoundRow).
-        if (typer.Finds(condition, held, Reading(state)) is { } found)
-            narrowed = narrowed.WithFound(found);
-
-        foreach (var (name, value) in narrowed.Variables)
-        {
-            if (value.Shape is not UnknownShape && value.NullableBecause.Count > 0 && proved.Proved(name))
-                narrowed = narrowed.WithVariable(name, value.WithNullableBecause([]));
-        }
-
-        return narrowed;
-    }
-
-    /// <summary>
-    /// Whether a statement other than a write <c>Modify</c> reads may change a permanent table's rows: a call, which may write
-    /// anything, or <c>TRUNCATE</c> of a permanent table. A write's own target is read where it is bound (<c>Modify</c>).
-    /// </summary>
-    private static bool MayWrite(TSqlStatement statement) => statement switch
-    {
-        ExecuteStatement => true,
-        InsertStatement { InsertSpecification.InsertSource: ExecuteInsertSource } => true,
-        TruncateTableStatement truncate => Binder.Temporary(truncate.TableName) is null,
-        _ => false,
-    };
-
     // ---- SELECT ---------------------------------------------------------------------------------------------------
 
     private FlowState Select(SelectStatement select, FlowState state)
@@ -574,10 +528,7 @@ internal sealed partial class Walker
             state = Assign(state, name, value, once, At(assignment), expression);
         }
 
-        // Its witnesses: the variables it assigns that were NULL on every path before it.
-        return once || read.Count == 0
-            ? state
-            : state.WithPossible(new PossibleAssignment([.. read], [.. read.Select(r => r.Key).Distinct().Where(before.Unassigned.Contains)], Counted: true));
+        return once ? state : Remembered(before, state, read);
     }
 
     // ---- the results ----------------------------------------------------------------------------------------------

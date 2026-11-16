@@ -149,6 +149,15 @@ internal sealed record FlowState
         ? this
         : new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, new SessionFacts(rolledBack ? 0 : Transactions, Isolation, []));
 
+    /// <summary>
+    /// The state a CATCH starts from: the error that reached it may have rolled the transaction back (a deadlock victim's does,
+    /// 1205, as Microsoft documents), releasing every lock, so no row is held any more and none of the body's transactions is
+    /// known to be open. That only claims less where the transaction survived.
+    /// </summary>
+    public FlowState Caught() => Found.Count == 0 && Transactions == 0
+        ? this
+        : new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, new SessionFacts(0, Isolation, [.. Found.Select(f => f.Raced)]));
+
     /// <summary>This state with a row an existence guard found.</summary>
     public FlowState WithFound(FoundRow found) =>
         new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, Session with { Found = [.. Found, found] });

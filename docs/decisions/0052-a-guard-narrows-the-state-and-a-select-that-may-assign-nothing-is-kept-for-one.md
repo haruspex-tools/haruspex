@@ -27,7 +27,8 @@ transaction's snapshot (`SNAPSHOT` isolation, for a read at that level with no t
 row is held; when it isn't, nothing is claimed and the reason a subquery of it may be NULL is the race, `read-twice` at the
 guard, as for `COALESCE`'s second read. The fact ends at a write that may reach a permanent table, a call, a `TRUNCATE` or a
 `ROLLBACK` (the body's own removal is no race), and at an assignment to a variable the guard compared with; the end of the
-outermost transaction, on any path, makes it raced. A caller's transaction or isolation level is not seen: declaring them is
+outermost transaction, on any path, makes it raced, and so does reaching a `CATCH`, whose error may have rolled the
+transaction back. A caller's transaction or isolation level is not seen: declaring them is
 a later row.
 
 **Context.** Bodies check their inputs and their reads before using them, and haruspex threw the check away: after

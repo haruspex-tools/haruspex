@@ -255,7 +255,9 @@ whose WHERE is only equalities the guard also tested (`Cardinality.Guard`) is th
   (`A_read_of_a_row_an_existence_guard_found_states_the_race_where_nothing_holds_the_row`).
 
 A `COMMIT` that ends the body's outermost transaction makes a held row raced, and where paths meet a row held on one only is
-raced; an inner `COMMIT` of nested transactions keeps it. A write that may reach a permanent table, a call, a `TRUNCATE` or a
+raced; an inner `COMMIT` of nested transactions keeps it. A `CATCH` starts with every row raced and no transaction of the
+body's known to be open, since the error that reached it may have rolled the transaction back (a deadlock victim's does);
+that only claims less where it didn't (`A_catch_may_follow_an_error_that_rolled_the_transaction_back_so_its_reads_are_raced`). A write that may reach a permanent table, a call, a `TRUNCATE` or a
 `ROLLBACK` ends the fact altogether, since then the body itself may have removed the row, which is not a race; so does an
 assignment to a variable the guard compared with. A transaction the caller began, or an isolation level the caller set, is
 not seen, which only claims less.

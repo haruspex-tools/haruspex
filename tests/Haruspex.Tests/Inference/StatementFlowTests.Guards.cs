@@ -277,6 +277,28 @@ public partial class StatementFlowTests
         Assert.Equal([rule], Rules(doc, "code"));
     }
 
+    [Fact]
+    public void A_catch_may_follow_an_error_that_rolled_the_transaction_back_so_its_reads_are_raced()
+    {
+        // Some errors roll the transaction back as they reach CATCH (a deadlock victim's, 1205), releasing the guard's lock,
+        // so a read in CATCH is raced; one after the TRY is joined with it.
+        var doc = Procedure("""
+            DECLARE @code int = 0;
+            BEGIN TRAN;
+            IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @id) RETURN;
+            BEGIN TRY
+                SET @code = @id / @other;
+            END TRY
+            BEGIN CATCH
+                SET @code = (SELECT t.code FROM dbo.t AS t WHERE t.id = @id);
+            END CATCH
+            SELECT @code AS code;
+            WHILE @@TRANCOUNT > 0 COMMIT;
+            """, "@id int, @other int");
+
+        Assert.Contains(IrNullRule.ReadTwice, Rules(doc, "code"));
+    }
+
     [Theory]
     [InlineData("DELETE FROM dbo.u WHERE u.id = @other;")]
     [InlineData("UPDATE dbo.t SET code = 0 WHERE id = @other;")]
