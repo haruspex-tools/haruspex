@@ -481,6 +481,10 @@ public class DmlObservationTests(SqlServerFixture server)
                 SELECT type_name(c.system_type_id) + '(' + IIF(c.max_length = -1, 'max', '?') + ')' AS t FROM tempdb.sys.columns AS c WHERE c.object_id = object_id('tempdb..#s') AND c.name = 'c';
                 """)).ToString());
 
+        // A NULL expression and a NULL length cut the value to its first offset characters: '' from 0, whatever it held.
+        Assert.Equal("n: 0", (await Run([], "SELECT CAST('abcdef' AS varchar(max)) AS c INTO #w; UPDATE #w SET c.WRITE(NULL, 0, NULL); SELECT LEN(c) AS n FROM #w;")).ToString());
+        Assert.Equal("n: 0", (await Run([], "SELECT CAST('abcdef' AS varchar(max)) AS c INTO #w; UPDATE #w SET c.WRITE('', 0, NULL); SELECT LEN(c) AS n FROM #w;")).ToString());
+
         // On a NULL it is an error (5302), so a column NULL before is still NULL after, never set; on a type that is not max, an
         // error when the procedure is created (258).
         Assert.Equal(5302, (await Run([], "CREATE TABLE #t (c nvarchar(max) NULL); INSERT #t VALUES (NULL); UPDATE #t SET c.WRITE(N'x', 0, 1);")).Error);

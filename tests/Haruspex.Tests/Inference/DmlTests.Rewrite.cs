@@ -42,6 +42,27 @@ public partial class DmlTests
     }
 
     [Fact]
+    public void Write_drops_what_a_check_constraint_proved_of_a_column_select_into_copied()
+    {
+        // The table's CHECK proves at least 3 characters, and the copy keeps that until .WRITE('', 0, NULL) cuts every value to
+        // '' (observed in the same test as the rest).
+        var doc = Doc(
+            ("memo", "CREATE TABLE dbo.memo (id int NOT NULL PRIMARY KEY, body varchar(max) NOT NULL CHECK (len(body) >= 3));"),
+            ("p", """
+                CREATE PROCEDURE dbo.p AS
+                SELECT m.id, m.body INTO #t FROM dbo.memo AS m;
+                SELECT t.body FROM #t AS t;
+                UPDATE #t SET body.WRITE('', 0, NULL);
+                SELECT t.body FROM #t AS t;
+                """));
+
+        Assert.NotNull(Assert.IsType<IrScalar>(Field(doc, "body", result: 0).Type).Facets?.MinLength);
+        var after = Field(doc, "body", result: 1);
+        Assert.False(after.Nullable);
+        Assert.Null(Assert.IsType<IrScalar>(after.Type).Facets?.MinLength);
+    }
+
+    [Fact]
     public void Write_makes_json_text_a_string_that_may_not_be_json()
     {
         var doc = Doc(("p", """
