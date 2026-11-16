@@ -192,7 +192,8 @@ the point are joined. Each join claims only what holds on every path:
 | Result sets | per position, everything either path returned there; the numbers of results so far, both |
 | No path (every one ended) | the other side, unchanged |
 
-- **`IF`** joins its two branches (no `ELSE` is a branch that does nothing). Conditions are not read.
+- **`IF`** joins its two branches (no `ELSE` is a branch that does nothing). Each branch starts knowing what its condition
+  proves there ("Guards", below).
 - **`WHILE`** walks its body from the state at its head, which joins the state before the loop with the end of every
   pass and every `CONTINUE`, until a pass changes nothing (at most 20; each join only goes up). It ends at its head or
   at a `BREAK`. A body that returns a result set makes the results unknown (`varying-results`): how many it returns
@@ -201,6 +202,77 @@ the point are joined. Each join claims only what holds on every path:
   the state after the last, since a result set cut short by an error still arrives with the rows sent before it
   (`A_result_cut_short_by_an_error_in_try_still_arrives_with_the_rows_sent_before_it`).
 - **`RETURN`** ends a path successfully; its state joins the end of the procedure.
+
+## Guards
+
+An `IF` whose condition is TRUE takes its first branch, and otherwise (FALSE or UNKNOWN) its `ELSE`, or nothing. So each
+branch starts from the state before the `IF` narrowed by what its condition proves there (`Walker.Narrowed`): a variable or
+parameter the condition could not take that truth value with, were it NULL, is not NULL on that branch. The proof is a
+`CASE` branch's ("CASE, IIF, CHOOSE and NULLIF"), by the three-valued logic of "Refinement", read in a statement's scope, so
+only variables and parameters are proved (`Typer.Proves`). When one branch ends the path, as a **guard** does, the other's
+state is what the rest of the body starts from:
+
+```sql
+if @order_id is null return;        -- or THROW, RAISERROR of severity 11 or more, BEGIN … RETURN END
+select @order_id as order_id;       -- never NULL
+```
+
+`RAISERROR` of severity 10 or below is a message, and the path goes on; one of 11 or more lets the procedure carry on but the
+call fails, so it describes no call that succeeds (`A_null_test_that_returns_or_throws_lets_only_a_value_past_it`). A severity
+in a variable may be 10, so it proves nothing.
+
+The fact lives in the value, so it lasts exactly as long as the value does, with nothing to undo it: an assignment replaces
+the value (`A_guard_proves_nothing_of_another_variable_or_past_a_later_assignment`), and where paths meet it is joined with
+what the other paths hold. So a guard inside a loop holds on its pass only, since the loop's head joins the value the body
+assigns after it (`A_guard_inside_a_loop_holds_only_on_that_pass`), and a `THROW` that a `CATCH` in the procedure swallows
+proves nothing after the `TRY`, since `CATCH` starts from the state before the guard
+(`A_throw_caught_in_the_same_procedure_lets_the_null_past`). `SET @p = COALESCE(@p, 0)` needs no guard: it assigns a value
+never NULL (`A_parameter_set_to_coalesce_with_a_value_last_is_never_null_after_it`).
+
+**A SELECT that may assign nothing.** `SELECT @a = …, @b = … FROM …` over a query that may read no row joins each variable
+with what it held. What it assigns when it reads a row is kept beside the state (`PossibleAssignment`), and a guard that
+proves it read one puts those values back ([decision 0053](../../docs/decisions/0053-a-guard-narrows-the-state-and-a-select-that-may-assign-nothing-is-kept-for-one.md)):
+
+- **`@@ROWCOUNT` tested straight after it**: `if @@rowcount = 0 return` (or `< 1`, `NOT (… > 0)`, an `ELSE` that returns),
+  since every row read assigns every variable listed (`Rowcount_right_after_a_select_that_assigns_counts_its_rows`). Any
+  statement between, an `IF`'s own test included, resets `@@ROWCOUNT`, so then it proves nothing
+  (`Any_statement_between_resets_rowcount_so_the_test_proves_nothing`; `FlowState.Uncounted`).
+- **A variable it assigns that was NULL on every path before it** (`FlowState.Unassigned`: declared, and assigned on no path
+  since), proved not NULL: only the SELECT can have put a value there. A variable that may have held a value proves nothing
+  (`A_variable_null_before_a_select_and_not_after_it_proves_the_select_assigned_them_all`).
+
+Each value put back is the SELECT's, so a column that may be NULL still may be. What the SELECT may have assigned ends when any
+of its variables is assigned again, and where paths meet unless every path keeps it, so a loop's later passes never use what an
+earlier pass knew.
+
+**A row an existence guard found.** `IF NOT EXISTS (SELECT … FROM shop.orders WHERE order_id = @order_id) RETURN` proves
+the row was there when the guard ran (`Typer.Finds`; `IF EXISTS (…)` proves it on its first branch). Whether a later read
+still finds it depends on what holds it, all observed with a second session deleting the row between the two statements
+(`StatementFlowObservationTests.ExistenceGuards.cs`, each test in a database of its own, `SqlServerFixture.ScratchAsync`):
+
+| Between the guard and the read | The read |
+|---|---|
+| nothing: read committed, read committed snapshot, a locking hint or `SERIALIZABLE` without a transaction, a transaction without a hint, snapshot isolation without a transaction | may find nothing: another session's delete lands in between (`A_row_an_existence_guard_saw_may_be_gone_when_a_later_statement_reads_it`) |
+| a transaction the body began, still open, and the guard read with `UPDLOCK`, `HOLDLOCK`, `SERIALIZABLE`, `REPEATABLEREAD` or `XLOCK`, or at `SERIALIZABLE` or `REPEATABLE READ` with no hint but those and `READPAST`; a hint that lowers the level (`NOLOCK`, `READCOMMITTED`) gives up the lock (`A_hint_on_the_guard_that_lowers_the_level_holds_no_lock_for_the_read`) | finds the row: the guard's lock lasts until the outermost transaction ends, so the delete waits (`A_lock_the_guard_holds_to_the_end_of_an_open_transaction_keeps_the_row_for_the_read`) |
+| a transaction the body began at `SNAPSHOT`, still open, the guard and the read at `SNAPSHOT` with no table hint; a guard read with `READCOMMITTEDLOCK` can see a row committed after the snapshot began, which the read then doesn't (`A_guard_that_reads_past_the_snapshot_can_see_a_row_the_snapshot_read_does_not`) | finds the row: both read the transaction's one snapshot (`Snapshot_isolation_in_an_open_transaction_reads_the_row_the_guard_saw`); with `READCOMMITTEDLOCK`, or the level set back first, it may not |
+
+So the walk keeps each row a guard found (`FoundRow`, in `FlowState.Found`), with whether it is held, and the body's own
+transactions and isolation level beside it (`FlowState.Transactions`, `FlowState.Isolation`). A read of the guard's table
+whose WHERE is only equalities the guard also tested (`Cardinality.Guard`) is then:
+
+- **held**: a keyed read returns exactly one row, so a scalar subquery of it is never empty, a `SELECT @v = …` always assigns,
+  and a result set has one row (`A_keyed_read_of_a_row_an_open_transaction_holds_for_it_finds_it`);
+- **not held**: no claim, but the reason a subquery of it may be NULL is the race, `read-twice` at the guard, as for
+  `COALESCE`'s second read, rather than `empty-subquery`
+  (`A_read_of_a_row_an_existence_guard_found_states_the_race_where_nothing_holds_the_row`).
+
+A `COMMIT` that ends the body's outermost transaction makes a held row raced, and where paths meet a row held on one only is
+raced; an inner `COMMIT` of nested transactions keeps it. A `CATCH` starts with every row raced and no transaction of the
+body's known to be open: whether every error that reaches one leaves the transaction open with its locks is not observed
+(a deadlock victim's was seen to), so it claims less (`A_catch_may_follow_an_error_that_rolled_the_transaction_back_so_its_reads_are_raced`). A write that may reach a permanent table, a call, a `TRUNCATE` or a
+`ROLLBACK` ends the fact altogether, since then the body itself may have removed the row, which is not a race; so does an
+assignment to a variable the guard compared with. A transaction the caller began, or an isolation level the caller set, is
+not seen, which only claims less.
 
 ## Result sets are positional
 
@@ -1020,6 +1092,15 @@ themselves: what a query proved is what its row holds.
 - A scalar subquery is its one column's value, with its type and facets, and `empty-subquery` unless its query returns
   exactly one row (`A_scalar_subquery_of_an_aggregate_without_group_by_always_has_a_value_for_count`). A `FOR JSON` subquery
   is NULL over no rows, so an array it builds has at least one item, and at most one where its query returns at most one.
+- `SELECT @v = …` over a query of exactly one row ("How many rows", below: an aggregate without `GROUP BY` or `HAVING`, no
+  `FROM` and no filter, an inline function whose body is one) assigns exactly once, so the variable holds the value
+  assigned and nothing it held before (`A_select_assigning_from_an_aggregate_without_group_by_assigns_even_over_no_rows`,
+  `A_select_assigning_from_an_inline_function_whose_body_is_one_row_assigns_even_over_no_rows`,
+  `A_select_assigning_with_no_from_assigns_unless_a_where_filters_its_row_out`; `Walker.SetVariables`). That the row is
+  there is apart from what it holds: `select @open = count_big(*) from shop.orders where status = 'open'` assigns `@open`
+  never null, while `SUM` over no rows assigns NULL, for its own reason (`empty-aggregate`), not for one that the
+  assignment may not happen. Any other query may assign once per row or not at all, and the variable is joined with what it
+  held. A select list of assignments is an aggregate query as one of columns is.
 
 ### How many rows (`Cardinality.cs`)
 
@@ -1693,11 +1774,11 @@ constructs this front end gives each reason for:
 | `all-fields-null` | a nested object `FOR JSON PATH` builds from dotted aliases, left out when every value in it is null |
 | `empty-aggregate` | an aggregate without `GROUP BY`, NULL over no rows: `MIN`, `MAX`, `SUM`, `AVG`, the statistical aggregates, `STRING_AGG`, `json_arrayagg` and `json_objectagg` |
 | `function-result` | a scalar user function typed from its declared return type |
-| `parameter` | a function's or procedure's parameter, which a caller may pass as NULL |
+| `parameter` | a function's or procedure's parameter, which a caller may pass as NULL, until a guard proves it ("Guards") |
 | `null-input` | a call of a function declared `WITH RETURNS NULL ON NULL INPUT` with an argument that may be null |
 | `no-rows` | a top-level `FOR JSON` result over no rows, which returns no row at all |
 | `not-run` | a result inside a branch, or after a `RETURN` that may be taken |
-| `variable` | a variable until a value never null is assigned on every path |
+| `variable` | a variable until a value never null is assigned on every path, or a guard proves it ("Guards") |
 | `count-overflow` | `COUNT` (an `int`) under a caller's `ANSI_WARNINGS` and `ARITHABORT` off; never when either is declared on |
 | `arithmetic-overflow` | arithmetic, `SUM`, `AVG`, numeric functions and conversions that can overflow or divide by zero, under the same session options |
 | `precision-loss` | a decimal rounded to fewer places by a conversion (`OPENJSON … WITH`'s too), an assignment, a common type, arithmetic whose scale is cut, or `AVG`, under a caller's `NUMERIC_ROUNDABORT` on with `ANSI_WARNINGS` and `ARITHABORT` off, and under `TRY_CAST` with `NUMERIC_ROUNDABORT` on |
@@ -1915,7 +1996,8 @@ sound, is above; the engine rules are observed and kept as tests in
   variable's own CHECK is named by its table: `{ "check": "#totals.ck_amount" }`, and its nullable columns as
   `#totals.amount`.
 - A variable has its declared type, with the type's facets, and is nullable (`variable`) until a value that is never
-  null is assigned on every path. A procedure's parameter read in its body is nullable (`parameter`).
+  null is assigned on every path. A procedure's parameter read in its body is nullable (`parameter`). Either is never null
+  where a guard proves it, until it is assigned again ("Guards" above).
 - A `#t` the procedure does not create on every path before it reads it is the caller's, if any: unknown,
   `caller-temp-table`. Results that cannot be lined up by position are unknown, `varying-results`.
 

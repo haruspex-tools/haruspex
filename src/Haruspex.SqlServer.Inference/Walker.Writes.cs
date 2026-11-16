@@ -46,7 +46,9 @@ internal sealed partial class Walker
             return Outcome.Ends;
         }
 
-        var after = write(target);
+        // A write that may reach a permanent table may remove a row an existence guard found (FoundRow); one to a temporary
+        // table or table variable fires no trigger.
+        var after = target.Objects.Count > 0 ? write(target).Written() : write(target);
 
         // A temporary table changed underneath a CTE is not followed, so what it holds is not known.
         foreach (var name in target.Temps.Where(t => after.Temp(t) is KnownTable))

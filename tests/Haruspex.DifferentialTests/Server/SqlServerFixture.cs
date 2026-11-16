@@ -379,6 +379,21 @@ public sealed class SqlServerFixture : IAsyncLifetime
         });
     }
 
+    /// <summary>
+    /// A database of the calling test's own, created now and dropped when it is disposed, whose writes are committed: for
+    /// observing what one session sees of another's commits, which the shared database can't show, since every session in
+    /// it is alone and rolled back. It has the shared database's prefix, so one a killed run leaves behind is dropped after
+    /// a day as that one is (<see cref="DropLeftoversAsync"/>); it is outside the gate, since nothing else reads it.
+    /// </summary>
+    public async Task<ScratchDatabase> ScratchAsync()
+    {
+        Require();
+        var name = DatabasePrefix + Guid.NewGuid().ToString("N");
+        await ExecuteOnMasterAsync($"CREATE DATABASE {Quote(name)};").ConfigureAwait(false);
+        var connection = new SqlConnectionStringBuilder(server) { InitialCatalog = name, Pooling = false, ApplicationName = "haruspex-tests-scratch" };
+        return new ScratchDatabase(connection.ConnectionString, () => DropAsync(name));
+    }
+
     /// <summary>Validates a run's output against the IR (<see cref="IrValidator"/>).</summary>
     public async Task<ValidationReport> ValidateAsync(ProcedureRun run)
     {

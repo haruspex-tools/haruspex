@@ -20,7 +20,7 @@ namespace Haruspex.SqlServer.Inference;
 /// </remarks>
 /// <param name="model">The model whose tables' keys and column types are read.</param>
 /// <param name="binder">The binder of the body being read, which says which source a column reads.</param>
-internal sealed class Cardinality(DatabaseModel model, Binder binder)
+internal sealed partial class Cardinality(DatabaseModel model, Binder binder)
 {
     private readonly DatabaseModel model = model;
     private readonly Binder binder = binder;
@@ -55,6 +55,10 @@ internal sealed class Cardinality(DatabaseModel model, Binder binder)
             // ROLLUP, CUBE and GROUPING SETS add super-aggregate rows (observed:
             // Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null).
             rows = !Typer.SuperAggregate(query) && Keyed(query, scope, readUncommitted) ? IrCardinality.AtMostOne : IrCardinality.Many;
+
+            // A keyed read of a row an existence guard found, and holds for it still, finds it: exactly one row (FoundRow).
+            if (rows == IrCardinality.AtMostOne && Guard(query, scope) is { Held: true })
+                rows = IrCardinality.One;
         }
 
         return Limited(Limited(rows, query.TopRowFilter), query.OffsetClause);
@@ -100,8 +104,17 @@ internal sealed class Cardinality(DatabaseModel model, Binder binder)
     private bool HasAggregate(QuerySpecification query, ReadScope scope)
     {
         var finder = new AggregateFinder();
-        foreach (var element in query.SelectElements.OfType<SelectScalarExpression>())
-            element.Expression.Accept(finder);
+        // A select list of assignments (SELECT @v = COUNT(*) …) is an aggregate query as much as one of columns.
+        foreach (var element in query.SelectElements)
+        {
+            var expression = element switch
+            {
+                SelectScalarExpression scalar => scalar.Expression,
+                SelectSetVariable assignment => assignment.Expression,
+                _ => null,
+            };
+            expression?.Accept(finder);
+        }
         return finder.Found.Any(call =>
         {
             if (call.Parameters is [ColumnReferenceExpression { ColumnType: ColumnType.Wildcard }])

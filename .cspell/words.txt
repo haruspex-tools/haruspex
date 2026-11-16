@@ -35,6 +35,7 @@ getdate
 getutcdate
 hashbytes
 hierarchyid
+holdlock
 isdate
 isjson
 isnull
@@ -60,10 +61,13 @@ patindex
 quotename
 raiserror
 readcommitted
+readcommittedlock
+readpast
 readuncommitted
 refreshsqlmodule
 refreshview
 releaseapplock
+repeatableread
 roundabort
 rowcount
 rowset
@@ -91,7 +95,10 @@ timefromparts
 tinyint
 tinyints
 todatetimeoffset
+tran
+trancount
 unpivot
+updlock
 varbinary
 varchar
 varp

@@ -152,7 +152,7 @@ internal sealed partial class Walker
 
         var tableVariables = declarations.TableVariables.ToDictionary(t => new LocalName(t.Name), typer.TableVariableValues);
         names = NameEnvironment.Empty.WithDeclarations(declarations);
-        var initial = FlowState.Start(start).WithTemps(context.Temps).WithReadUncommitted(context.ReadUncommitted);
+        var initial = FlowState.Start(start, declarations.Variables.Select(v => v.Name)).WithTemps(context.Temps).WithReadUncommitted(context.ReadUncommitted);
 
         // What each variable and table variable column of nvarchar(max) holds as JSON: nothing yet. A parameter is
         // the caller's, so it is not traced.
@@ -198,6 +198,16 @@ internal sealed partial class Walker
             if (state is null || blocker is not null)
                 break;
 
+            // A call or TRUNCATE may change a permanent table's rows, which ends what every existence guard found (FoundRow): the
+            // row may be gone, by the body's own doing rather than another session's. A write does the same in Modify.
+            if (MayWrite(statement))
+                state = state.Written();
+
+            // Every statement resets @@ROWCOUNT but the IF that tests it, which must come straight after the SELECT it counts
+            // (observed: Any_statement_between_resets_rowcount_so_the_test_proves_nothing).
+            if (statement is not IfStatement)
+                state = state.Uncounted();
+
             // Any statement inside TRY may fail before it changes anything (a statement's effects are rolled back with it),
             // and its CATCH then starts from the state before it. Any statement at all may fail with an error that leaves the
             // procedure, to a CATCH of a caller's.
@@ -225,16 +235,19 @@ internal sealed partial class Walker
             // The isolation level changes no result's shape, only whether a key holds (Cardinality.cs); it lasts until the
             // procedure returns (observed: A_procedures_isolation_level_holds_in_the_procedures_it_calls_and_ends_when_it_returns).
             case SetTransactionIsolationLevelStatement isolation:
-                return Continue(state.WithReadUncommitted(isolation.Level == IsolationLevel.ReadUncommitted));
+                return Continue(state.WithReadUncommitted(isolation.Level == IsolationLevel.ReadUncommitted).WithIsolation(isolation.Level));
             case PrintStatement:
             case DeclareTableVariableStatement:
-            // A transaction's start and end change nothing here; only a rollback undoes what the procedure did.
+            // A transaction changes what a row an existence guard found is held by (FoundRow), and a rollback undoes what the
+            // procedure did to its temporary tables.
             case BeginTransactionStatement:
+                return Continue(state.Begun());
             case CommitTransactionStatement:
+                return Continue(state.Committed());
             case SaveTransactionStatement:
                 return Continue(state);
             case RollbackTransactionStatement:
-                return Continue(RolledBack(state, at));
+                return Continue(RolledBack(state, at).Written(rolledBack: true));
             case DeclareVariableStatement declare:
                 foreach (var element in declare.Declarations.Where(d => d.Value is not null))
                     state = Assign(state, names.Declarations.Declared(element).Name, typer.Expression(element.Value, Reading(state)), definitely: true, at, element.Value);
@@ -244,7 +257,16 @@ internal sealed partial class Walker
             case BeginEndBlockStatement block:
                 return Walk(block.StatementList.Statements, state);
             case IfStatement branch:
-                return Join(Walk([branch.ThenStatement], state), branch.ElseStatement is null ? Continue(state) : Walk([branch.ElseStatement], state), at);
+            {
+                // Each arm starts knowing what its condition proves: a guard whose arm ends leaves the rest of the body the other's.
+                // The IF's own test resets @@ROWCOUNT, so nothing inside it is counted.
+                var otherwise = Narrowed(state, branch.Predicate, held: false).Uncounted();
+                return Join(
+                    Walk([branch.ThenStatement], Narrowed(state, branch.Predicate, held: true).Uncounted()),
+                    branch.ElseStatement is null ? Continue(otherwise) : Walk([branch.ElseStatement], otherwise),
+                    at);
+            }
+
             case WhileStatement loop:
                 return While(loop, state);
             case BreakStatement:
@@ -407,7 +429,7 @@ internal sealed partial class Walker
             catchEntries.Pop();
         }
 
-        var caught = FlowState.Join(entries, at) is { } entry ? Walk(attempt.CatchStatements.Statements, entry) : Outcome.Ends;
+        var caught = FlowState.Join(entries, at) is { } entry ? Walk(attempt.CatchStatements.Statements, entry.Uncounted().Caught()) : Outcome.Ends;
         return Join(tried, caught, at);
     }
 
@@ -445,6 +467,7 @@ internal sealed partial class Walker
     {
         if (!variableShapes.TryGetValue(name, out var shape) || !state.Variables.TryGetValue(name, out var old))
             return state;
+        state = state.Assigned(name);
         var because = shape is UnknownShape unknown ? NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]) : Converting(value, shape, at, summaries.Session, expression);
         var assigned = Value.Computed(shape, because, old.IsLiveJson);
         state = state.WithVariable(name, definitely ? assigned : Value.Join(old, assigned, at, name.Text));
@@ -473,8 +496,12 @@ internal sealed partial class Walker
     }
 
     /// <summary>
-    /// <c>SELECT @a = …, @b = …</c>. Without FROM, WHERE, GROUP BY, HAVING or TOP it assigns exactly once; otherwise it may
-    /// assign once per row or not at all (observed: a SELECT that matches nothing leaves the variable as it was).
+    /// <c>SELECT @a = …, @b = …</c>. A query that always returns exactly one row assigns exactly once: one without FROM or a
+    /// filter, an aggregate without GROUP BY or HAVING, or one over an inline function whose body is one (<see cref="Cardinality"/>;
+    /// observed: A_select_assigning_from_an_aggregate_without_group_by_assigns_even_over_no_rows,
+    /// A_select_assigning_from_an_inline_function_whose_body_is_one_row_assigns_even_over_no_rows). Any other may assign once
+    /// per row or not at all (observed: a SELECT that matches nothing leaves the variable as it was). Whether the row is there
+    /// is apart from whether its value is null: SUM over no rows is assigned, and is NULL.
     /// </summary>
     /// <param name="query">The SELECT's query.</param>
     /// <param name="state">The state the assignments change.</param>
@@ -482,17 +509,26 @@ internal sealed partial class Walker
     /// <param name="unknown">Whether its WITH is not modelled, so every value is unknown.</param>
     private FlowState SetVariables(QuerySpecification query, FlowState state, ReadScope at, bool unknown = false)
     {
-        var once = query is { FromClause: null, WhereClause: null, GroupByClause: null, HavingClause: null, TopRowFilter: null };
-        var scope = typer.Enter(query, at).Assigning(query);
+        var entered = typer.Enter(query, at);
+        var once = !unknown && typer.Rows(query, entered) == IrCardinality.One;
+        var scope = entered.Assigning(query);
+        var before = state;
+        var read = new List<KeyValuePair<LocalName, Value>>();
         foreach (var assignment in query.SelectElements.Cast<SelectSetVariable>())
         {
             var value = unknown
                 ? Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "WITH XMLNAMESPACES is not modelled yet.", At(assignment)))
                 : typer.AssignedValue(assignment.AssignmentKind, assignment.Expression, scope, assignment);
-            state = Assign(state, Resolved(assignment.Variable).Name, value, once, At(assignment), unknown ? null : assignment.Expression);
+            var name = Resolved(assignment.Variable).Name;
+            var expression = unknown ? null : assignment.Expression;
+
+            // What the variable holds if the SELECT reads a row, kept for a guard that proves it did.
+            if (!once && Assign(state, name, value, definitely: true, At(assignment), expression).Variables.TryGetValue(name, out var assigned))
+                read.Add(new(name, assigned));
+            state = Assign(state, name, value, once, At(assignment), expression);
         }
 
-        return state;
+        return once ? state : Remembered(before, state, read);
     }
 
     // ---- the results ----------------------------------------------------------------------------------------------
