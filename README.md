@@ -1,11 +1,8 @@
 # haruspex
 
-**Types across the database boundary.**
-Today: SQL Server database projects to TypeScript ([Zod](https://zod.dev)): every procedure's results, `FOR JSON` included.
-Parameters next.
-
-**Pre-release.** The command line, the generated code and the IR, the intermediate representation that holds what haruspex
-inferred, will change without notice. Don't depend on it yet.
+A tool that carries a SQL Server database's types into TypeScript by static analysis. It reads a database project's source,
+infers what each stored procedure returns, `FOR JSON` documents included, and generates [Zod](https://zod.dev) schemas and
+types for application code to use. It is pre-release: see [Status and roadmap](#status-and-roadmap).
 
 ## The problem
 
@@ -15,10 +12,8 @@ query as a single `nvarchar(max)` column, however deep the document inside it. S
 checks them against the SQL, and they drift as the procedures change, until a field that "can't be null" is null in
 production.
 
-This tool reads a database project's source (a folder of `.sql` files, an SSDT `.sqlproj` or a DACPAC) and infers what each
-procedure returns, `FOR JSON` payloads included, then writes Zod schemas and TypeScript types for it. It never connects to a
-database: everything is inferred from the source, so it needs no credentials and no data. And it follows one rule: **never
-claim more than the engine guarantees.**
+The tool works from the source alone (a folder of `.sql` files, an SSDT `.sqlproj` or a DACPAC). It never connects to a
+database, so it needs no credentials and no data. And it follows one rule: **never claim more than the engine guarantees.**
 
 ## Two examples on Microsoft's samples
 
@@ -221,9 +216,13 @@ it parses an array holding each of `result.recordsets`, read as above.
 [`examples/greenhouse`](examples/greenhouse/README.md) is a small application that does this with a module haruspex wrote,
 compiled in CI.
 
-## What is planned
+## Status and roadmap
 
-None of these exists yet. Each is a job the generated types and the IR are designed to make possible:
+**Pre-release.** The command line, the generated code and the IR, the intermediate representation that holds what haruspex
+inferred, will change without notice. Don't depend on it yet.
+
+Today haruspex types what the procedures of a SQL Server database project return, for TypeScript through Zod. None of the
+following exists yet; each is a job the generated types and the IR are designed to make possible:
 
 - **Catching drift in CI.** `haruspex check` will fail a build when a procedure's results no longer match the committed
   module, so a change to the SQL is seen before it reaches an application.
@@ -232,7 +231,7 @@ None of these exists yet. Each is a job the generated types and the IR are desig
   were removed.
 - **Asking why a field is typed as it is.** `haruspex explain` will show the reasons behind each claim and each unknown.
 - **Typing other languages**, through JSON Schema emitted from the same IR.
-- **Parameters**: strict schemas for what a procedure is sent, not only what it returns.
+- **Parameters**, next: strict schemas for what a procedure is sent, not only what it returns.
 
 ## What it guarantees, and what it can't see
 
