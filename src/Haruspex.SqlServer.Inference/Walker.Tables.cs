@@ -1,5 +1,6 @@
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 using static Haruspex.SqlServer.Inference.Typer;
@@ -265,6 +266,22 @@ internal sealed partial class Walker
         var columns = table?.Columns.ToList();
         foreach (var clause in clauses)
         {
+            if (clause is FunctionCallSetClause mutation && Binder.MutatedColumn(mutation) is { } mutated)
+            {
+                if (target is { IsVariable: true } changed && new ColumnSlot(changed, mutated) is var slotKey && state.Json.TryGetValue(slotKey, out var held))
+                    state = state.WithJson(slotKey, JsonSlot.Join(held, Rewritten(mutation, slotKey.ToString())));
+                if (table is null || columns is null)
+                    continue;
+                var m = IndexOf(table, mutated);
+                if (m < 0)
+                    return state.WithTemp(table.Name, Unknown(table.Name, Unsupported(IrUnknownReason.UnresolvedColumn, $"The update changes {mutated}, which {table.Name} does not have.", At(mutation))));
+                var where = $"{table.Name}.{columns[m].Name}";
+                columns[m] = columns[m].Declaration is null
+                    ? columns[m] with { Value = Rewritten(columns[m].Value, where, At(mutation)) }
+                    : columns[m].Json is { } slot ? columns[m] with { Json = JsonSlot.Join(slot, Rewritten(mutation, where)) } : columns[m];
+                continue;
+            }
+
             if (clause is not AssignmentSetClause set)
                 return table is null ? state : state.WithTemp(table.Name, Unknown(table.Name, Unsupported(IrUnknownReason.UnsupportedStatement, $"The update {Text(clause)} is not modelled yet.", At(clause))));
 
@@ -296,6 +313,24 @@ internal sealed partial class Walker
 
         return table is null || columns is null ? state : state.WithTemp(table.Name, table with { Columns = [.. columns] });
     }
+
+    /// <summary>
+    /// A column after <c>SET c.WRITE(…)</c> changes part of each value in place (observed:
+    /// Write_changes_part_of_a_value_in_place_keeping_its_type_and_fails_on_null): of its type still, which must be a max type
+    /// (258), and null exactly where it was, since a NULL is an error (5302); but its content is any string of the type, so
+    /// only the type's facets hold, and text that held JSON built here is a string that may not.
+    /// </summary>
+    private static Value Rewritten(Value column, string where, SourceLocation at) => column.Shape switch
+    {
+        ScalarShape scalar => column with { Shape = scalar.WithFacets(ScalarFacets.TypeOnly(scalar.Type.Facets)) },
+        JsonTextShape => column with { Shape = SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, -1), at) },
+        UnknownShape => column,
+        _ => Value.Unknown(Unsupported(IrUnknownReason.UnsupportedStatement, $"{where} is changed in place by .WRITE, which is not modelled for what it holds.", at)),
+    };
+
+    /// <summary>What a place that held JSON built here holds after <c>SET c.WRITE(…)</c>: text that may not be JSON.</summary>
+    private JsonSlot Rewritten(FunctionCallSetClause mutation, string where) =>
+        JsonSlot.Text(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{where} is changed in place by {Text(mutation)}, which is not JSON built here.", At(mutation)));
 
     /// <summary>
     /// What a MERGE does: each action writes as the statement it holds does, an INSERT its row (<see cref="Inserted"/>), an

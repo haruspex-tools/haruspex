@@ -454,4 +454,36 @@ public class DmlObservationTests(SqlServerFixture server)
         Assert.Equal("id,ROWSTAT: ", (await Run(setup, "EXEC dbo.obs_branch_cursor 1")).ToString());
         Assert.Equal(16916, (await Run(setup, "EXEC dbo.obs_branch_cursor 0")).Error);
     }
+
+    // ---- .WRITE ---------------------------------------------------------------------------------------------------------
+
+    [Fact]
+    public async Task Write_changes_part_of_a_value_in_place_keeping_its_type_and_fails_on_null()
+    {
+        // On a temporary table, a table variable and a column SELECT … INTO made: part of the value is replaced, a NULL
+        // expression cuts it at the offset, a NULL offset appends; a variable set beside it is set.
+        Assert.Equal(
+            "id,c: 1,aZZ;2,ham;3,Zbc | v: 1 | t: nvarchar(max)",
+            (await Run([], """
+                SET NOCOUNT ON;
+                CREATE TABLE #t (id int NOT NULL, c nvarchar(max) NULL);
+                INSERT #t VALUES (1, N'abcdef');
+                UPDATE #t SET c.WRITE(N'ZZ', 1, 2);
+                UPDATE #t SET c.WRITE(NULL, 3, 0);
+                DECLARE @t TABLE (id int NOT NULL, c nvarchar(max) NULL);
+                INSERT @t VALUES (2, N'jam');
+                UPDATE @t SET c.WRITE(N'h', 0, 1);
+                SELECT 3 AS id, CAST(N'abc' AS nvarchar(max)) AS c INTO #s;
+                DECLARE @v int;
+                UPDATE #s SET c.WRITE(N'Z', 0, 1), @v = 1;
+                SELECT id, c FROM #t UNION ALL SELECT id, c FROM @t UNION ALL SELECT id, c FROM #s ORDER BY id;
+                SELECT @v AS v;
+                SELECT type_name(c.system_type_id) + '(' + IIF(c.max_length = -1, 'max', '?') + ')' AS t FROM tempdb.sys.columns AS c WHERE c.object_id = object_id('tempdb..#s') AND c.name = 'c';
+                """)).ToString());
+
+        // On a NULL it is an error (5302), so a column NULL before is still NULL after, never set; on a type that is not max, an
+        // error when the procedure is created (258).
+        Assert.Equal(5302, (await Run([], "CREATE TABLE #t (c nvarchar(max) NULL); INSERT #t VALUES (NULL); UPDATE #t SET c.WRITE(N'x', 0, 1);")).Error);
+        Assert.Equal(258, (await Run([], "CREATE TABLE #u (c nvarchar(10) NULL); INSERT #u VALUES (N'a'); UPDATE #u SET c.WRITE(N'x', 0, 1);")).Error);
+    }
 }

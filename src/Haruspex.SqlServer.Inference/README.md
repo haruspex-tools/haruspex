@@ -349,6 +349,11 @@ it on the stack of calls.
   a temporary table, a table variable, or a permanent object, resolved by the binder's rule for table names
   (`Binder.ResolveWritten`). A target of another form (`OPENROWSET`, `OPENQUERY`) is not modelled and makes the results
   unknown.
+- **`SET c.WRITE(…)`** changes part of a value in place (`Write_changes_part_of_a_value_in_place_keeping_its_type_and_fails_on_null`):
+  the column keeps its type, which must be a max type (258), and is null exactly where it was, since a NULL is an error
+  (5302). So of the body's own tables (`Walker.Rewritten`), a declared column is unchanged, a column `SELECT … INTO` made keeps
+  its type and nulls but only its type's facets (text that held JSON built here becomes `nvarchar(max)`), and JSON a column
+  held is no longer known. On any table, every other `SET` clause of the statement is read, so a variable set beside it may be set.
 - **`MERGE`** writes as the statements its actions hold do: a `WHEN … THEN INSERT` its row, a `THEN UPDATE` its `SET`
   clauses, a `THEN DELETE` nothing a column may hold. Each action writes rows of its own and every write only joins into what
   a column may hold, so the order they are read in doesn't matter. Their values are read over the target and the source, each
