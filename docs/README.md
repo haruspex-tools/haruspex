@@ -52,7 +52,7 @@ A few words have a fixed meaning everywhere in the documentation.
 | shape | What a result, field or value looks like: its type, whether it may be null or absent, and its facets. |
 | facet | A fact about a value beyond its type: a length, a range, a number of decimal places, or a value set. |
 | value set | The closed set of values a string or number can take, from a `CHECK` constraint. It is generated as an enum only where the value that arrives is proven to be exactly one of them, and as a note otherwise. |
-| JSON text, live JSON | A string that holds JSON, as `FOR JSON` returns it in a row; and JSON that a document embeds as JSON rather than as a string, such as a `FOR JSON` subquery or `JSON_QUERY`. |
+| JSON text, live JSON | A string that holds JSON, such as a JSON column, or a `FOR JSON` subquery's output in a column of a row; and JSON that a document embeds as JSON rather than as a string, such as a `FOR JSON` subquery inside `FOR JSON`, or `JSON_QUERY`. |
 | IR | The intermediate representation, `haruspex.ir.json`: every claim and unknown, with its reasons, from which the Zod is generated. |
 | override, declaration | A claim a person makes in `haruspex.json`, about a value or a procedure's results, with a required reason; the generated code still checks it. |
 | observed | Established by running SQL Server in a test, not by reading its documentation. |
