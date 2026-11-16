@@ -8,6 +8,7 @@
     "check": "tsc --noEmit -p ."
   },
   "devDependencies": {
+    "mssql": "12.7.14",
     "typescript": "7.0.2",
     "zod": "4.6.7"
   }

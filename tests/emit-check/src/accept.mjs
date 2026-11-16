@@ -5,7 +5,7 @@
 //
 // cases.json is { "module": "<file>.zod.ts", "cases": [{ "run", "schema", "value" }] }. A value is what a caller
 // would hand the schema: a FOR JSON result's text exactly as SQL Server wrote it (so JSON.parse rounds its numbers
-// as it would in an application), [] or null for an absent result (the IR's reader convention), and rows as the
+// as it would in an application), null for an absent one (the IR's reader convention), and rows as the
 // mssql driver delivers them, with dates as { "$date": "…" } turned into Date objects here.
 //
 // A schema must also keep every key of the output: z.object strips the keys it doesn't know, and every key SQL Server

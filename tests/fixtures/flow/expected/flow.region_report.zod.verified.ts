@@ -31,6 +31,6 @@ export const RegionReportRowSchema = z.object({
 })
 export type RegionReportRow = z.infer<typeof RegionReportRowSchema>
 
-/** flow.region_report: returns JSON, [] when no rows match. */
-export const RegionReportSchema = z.array(RegionReportRowSchema)
+/** flow.region_report: returns JSON, null when no rows match. */
+export const RegionReportSchema = z.array(RegionReportRowSchema).min(1).nullable()
 export type RegionReport = z.infer<typeof RegionReportSchema>

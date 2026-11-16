@@ -22,6 +22,6 @@ export const CustomerTreeRowSchema = z.object({
 })
 export type CustomerTreeRow = z.infer<typeof CustomerTreeRowSchema>
 
-/** mart.customer_tree: returns JSON, [] when no rows match. */
-export const CustomerTreeSchema = z.array(CustomerTreeRowSchema)
+/** mart.customer_tree: returns JSON, null when no rows match. */
+export const CustomerTreeSchema = z.array(CustomerTreeRowSchema).min(1).nullable()
 export type CustomerTree = z.infer<typeof CustomerTreeSchema>

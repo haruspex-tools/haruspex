@@ -129,8 +129,15 @@ succeeds drops a key the output had (a union whose subset variant read a superse
 pinned zod (`tests/emit-check/src/accept.mjs`). The validator checks the IR; this checks the emitter turned the
 IR into schemas that accept what SQL Server returns. JSON results are handed over as SQL Server's text, so
 `JSON.parse` rounds their numbers as an application's would; rows as the mssql driver delivers them (bigint as
-a string, dates as `Date`). It needs Node, like the emit check, and `HARUSPEX_REQUIRE_NODE=1` makes its absence a
-failure.
+a string, dates as `Date`). A JSON result with no row is handed over as `null`, an array as much as an object, as the
+driver does. It needs Node, like the emit check, and `HARUSPEX_REQUIRE_NODE=1` makes its absence a failure.
+
+The driver itself is called too, through `tests/emit-check/src/driver.mjs` with the mssql version that package pins.
+`MssqlDriverObservationTests` records what it hands an application for each form of JSON, with its `parseJSON` option on and
+off, and `MssqlDriverAcceptanceTests` creates procedures returning each form, then parses what an application reads from the
+driver with the schemas emitted for them ([decision 0048](../../docs/decisions/0048-an-absent-json-result-reads-as-null.md)).
+The script connects by itself, so it holds the database alone (`SqlServerFixture.DriverAsync`, a write session's place at the
+gate) and runs everything in a transaction it rolls back.
 
 A failure names the procedure, the path with array indexes, the claim and the value:
 
