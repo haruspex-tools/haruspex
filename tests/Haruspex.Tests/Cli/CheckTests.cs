@@ -63,6 +63,42 @@ public class CheckTests
         Assert.Equal("haruspex: 1 procedure, 0 unknown(s). generated is up to date.\n", output);
     }
 
+    private const string EmitsBoth = """{ "source": "db", "out": "generated", "emit": ["zod", "json-schema"], "schemas": { "shop": { "include": ["*"] } } }""";
+
+    [Fact]
+    public void Check_compares_every_file_emit_names_and_says_which_differs()
+    {
+        using var folder = Generated(config: EmitsBoth);
+        var schema = Path.Combine(folder.Path, "generated", HaruspexCli.JsonSchemaFileName);
+        File.WriteAllText(schema, File.ReadAllText(schema).Replace("SQL type int.", "Edited.", StringComparison.Ordinal));
+
+        var (exitCode, _, error) = Run(folder, "check");
+
+        Assert.Equal(1, exitCode);
+        Assert.StartsWith($"generated/{HaruspexCli.JsonSchemaFileName}: error HAR6015: line ", error, StringComparison.Ordinal);
+        Assert.Single(error.TrimEnd('\n').Split('\n'));
+    }
+
+    [Fact]
+    public void Check_fails_when_a_file_emit_names_is_not_committed()
+    {
+        using var folder = Generated(config: EmitsBoth);
+        File.Delete(Path.Combine(folder.Path, "generated", HaruspexCli.JsonSchemaFileName));
+
+        var (exitCode, _, error) = Run(folder, "check");
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains($"error HAR6011: nothing to compare with: generated/{HaruspexCli.JsonSchemaFileName} isn't there.", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Check_passes_when_every_file_emit_names_is_as_committed()
+    {
+        using var folder = Generated(config: EmitsBoth);
+
+        Assert.Equal(0, Run(folder, "check").ExitCode);
+    }
+
     [Fact]
     public void Check_passes_when_only_locations_moved_since_they_are_not_claims()
     {

@@ -216,13 +216,21 @@ it parses an array holding each of `result.recordsets`, read as above.
 [`examples/greenhouse`](examples/greenhouse/README.md) is a small application that does this with a module haruspex wrote,
 compiled in CI.
 
+**It types other languages, through JSON Schema.** With `"emit": ["zod", "json-schema"]` in `haruspex.json`, `generate` also
+writes `haruspex.jsonschema.json`, one JSON Schema (draft 2020-12) document from the same IR, so a service in Python, C#, Go or
+anything with a JSON Schema validator checks the same results. Each procedure's results are the definition under its name,
+`#/$defs/GetOrder`, with every value described as `FOR JSON` writes it (a rowset's rows as `FOR JSON PATH, INCLUDE_NULL_VALUES`
+would write them). It claims what the Zod claims wherever JSON Schema can
+say it; what it can't, such as a collation's case-insensitive value set, is a note in the description rather than a
+check ([the JSON Schema emitter](src/Haruspex.Emit.JsonSchema/README.md)).
+
 ## Status and roadmap
 
 **Pre-release.** The command line, the generated code and the IR, the intermediate representation that holds what haruspex
 inferred, will change without notice. Don't depend on it yet.
 
-Today haruspex types what the procedures of a SQL Server database project return, for TypeScript through Zod, and catches
-drift in CI: `haruspex check` fails a build when a change to the SQL would change what a committed module says, naming each
+Today haruspex types what the procedures of a SQL Server database project return, for TypeScript through Zod and for any
+language through JSON Schema, and catches drift in CI: `haruspex check` fails a build when a change to the SQL would change what a committed module says, naming each
 change where it is (`shop.list_orders results[0][].note: became nullable`). Until it is published as a package, a CI job runs
 it from a copy of its source, pinned to a commit, and one step checks every module in the repository:
 
@@ -242,7 +250,6 @@ None of the following exists yet; each is a job the generated types and the IR a
 - **Seeing what a change does to every caller**, from the database's side: each consuming application's modules checked
   against a change to the database before it is deployed, as `check` does for one repository today.
 - **Asking why a field is typed as it is.** `haruspex explain` will show the reasons behind each claim and each unknown.
-- **Typing other languages**, through JSON Schema emitted from the same IR.
 - **Parameters**, next: strict schemas for what a procedure is sent, not only what it returns.
 
 ## What it guarantees, and what it can't see

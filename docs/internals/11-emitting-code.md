@@ -1,10 +1,11 @@
 # Emitting code
 
 The IR says what each procedure returns; an emitter says it again in a language an application can use. For Zod that means a
-TypeScript module of schemas and types, written so that a developer reading it can't tell a program wrote it. This chapter is
-about how a program writes code in another language: why haruspex's Zod emitter works in three stages (plan, lower and
-print) rather than with string templates or a syntax tree of TypeScript, why the walks over the IR's types are gathered
-into one graph that every reader asks, and why the code it writes looks as it does.
+TypeScript module of schemas and types, written so that a developer reading it can't tell a program wrote it; for JSON Schema,
+one document of definitions that any language's validator can check a result against. This chapter is about how a program
+writes code in another language: why haruspex's emitters work in three stages (plan, lower and print) rather than with string
+templates or a syntax tree of the target, why the walks over the IR's types are gathered into one graph that every reader asks,
+why the code it writes looks as it does, and what two targets share and what each can't say.
 
 ## Writing code is compiling
 
@@ -223,6 +224,107 @@ nearest double still bounds every value that arrives.
 of ESLint and typescript-eslint, any warning failing (`EmitCheckTests`); and the example application, which imports a
 generated module and uses its schemas and types as a team would, is compiled in CI (`ExampleAppTests`).
 
+## Two targets from one IR
+
+The second emitter, `JsonSchemaEmitter`, writes the same IR as a JSON Schema document (draft 2020-12). It is the test the
+design set the IR: if the IR were shaped like Zod, a second target would need things only Zod's emitter computes. It needed
+none. Everything it reads is the IR's, and two rules the Zod emitter had kept to itself turned out to be the IR's and moved
+there, so both emitters ask one place: the bound one step inside an exclusive one (`IrBound.InsideAt`), and how many items an
+array result has as the reader conventions read it (`IrResult.FewestItems`, `IrResult.MostItems`).
+
+What the two share:
+
+- **The three stages.** `JsonSchemaPlanner` decides what the document defines and refuses what it can't write (one name for
+  two definitions, `JsonSchemaCodes`); `JsonSchemaLowering` and `TypeLowering` build a model of schemas, records that compare
+  by value; `JsonSchemaPrinter` alone knows JSON's syntax and writes keywords in one fixed order.
+- **The IR's walks.** Places come from `IrPath` and type identities, so a schema of an unknown says why in the IR's own sentence,
+  and a field the config file overrode says so with its reason.
+- **Notes and shared facts.** A fact the target can't hold is widened and the schema's description says so, in one sentence; a
+  fact many notes rest on is stated once, in the document's own description.
+- **The names**, settled once by the config file, so `GetOrder` is the Zod module's export and the JSON Schema's definition.
+
+What differs is what each target is:
+
+| | Zod | JSON Schema |
+|---|---|---|
+| What a value is | what the mssql driver hands over: in a rowset, a date is a `Date` and a `bigint` a string | JSON, as `FOR JSON` writes it, a rowset's rows as `FOR JSON PATH, INCLUDE_NULL_VALUES` writes them ([decision 0051](../decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)) |
+| Order and recursion | declared before use; a getter for a reference back into a cycle | no order; `$ref` |
+| A union | the first variant that accepts, which a stripping object can take wrongly, so variants exclude each other's keys | `anyOf`, each object variant refusing the keys only the others have: validation keeps nothing, so which variant accepts doesn't matter, but an object that allows other keys would otherwise accept a mix of two |
+| Identical shapes | merged, the second name an alias | each name a definition, since a definition costs nothing and a reference is how JSON Schema shares |
+
+The first row is a choice, not a limit. For a `FOR JSON` result both describe the same document. For a rowset, the Zod module
+describes what the mssql driver hands a TypeScript application, because that is the code it is imported into, and the JSON
+Schema describes JSON, because JSON is all a JSON Schema validates. A rowset isn't JSON until something writes it as JSON, and
+each language's driver hands it over in its own types, so the JSON Schema takes the one form that belongs to no driver: the one
+SQL Server itself writes. The tests hold each to its own: `ZodAcceptanceTests` parses rows as the driver delivers them, and
+`JsonSchemaAcceptanceTests` validates the same rows as SQL Server's `FOR JSON PATH, INCLUDE_NULL_VALUES` writes them.
+
+And what each can't say, which its output widens and notes:
+
+| The IR says | Zod | JSON Schema |
+|---|---|---|
+| a value set that holds up to a collation's fold (`canonical`) | said: the value is mapped to its item first | a note on a plain string: a validator can't fold |
+| a decimal's places | `.multipleOf`, which Zod tests with a tolerance shown never to reject a true value | a note: most validators test `multipleOf` in binary floating point, and 0.07 is no multiple of 0.01 there |
+| a length in UTF-16 code units or bytes | exact for UTF-16, as JavaScript counts | a bound on code points, which JSON Schema counts, exact only in a single-byte collation |
+| a `bigint` past 2^53 | a string in a rowset, a double in JSON | exact in the file, a double in most validators |
+| JSON text of known content | parsed and checked | `contentSchema`, which a validator checks only when asked |
+| the application's own schema, declared by the config file | imported and used | `{}`: a document can't refer to a TypeScript module |
+
+The same procedure as above, as the JSON Schema describes its rows:
+
+```sql haruspex-example
+CREATE TABLE garden.plant
+(
+    plant_id  int          NOT NULL PRIMARY KEY,
+    name      nvarchar(60) NOT NULL,
+    kind      nvarchar(10) NOT NULL CHECK (kind IN (N'herb', N'shrub', N'tree')),
+    planted   date         NULL
+);
+GO
+CREATE PROCEDURE garden.list_plants
+AS
+SELECT p.plant_id, p.name, p.kind, p.planted
+FROM garden.plant AS p
+ORDER BY p.name;
+```
+
+```json haruspex-jsonschema ListPlantsRow
+{
+  "description": "The type at results[0][] in garden.list_plants.",
+  "type": "object",
+  "properties": {
+    "plant_id": {
+      "description": "SQL type int.",
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "name": {
+      "description": "SQL type nvarchar(60).",
+      "type": "string",
+      "maxLength": 60
+    },
+    "kind": {
+      "description": "SQL type nvarchar(10). Facts: values from the check example.sql:5:37. One of \"herb\", \"shrub\", \"tree\", as the database compares strings.",
+      "type": "string",
+      "maxLength": 10
+    },
+    "planted": {
+      "description": "SQL type date. May be null: nullable-column (garden.plant.planted).",
+      "type": ["string", "null"],
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    }
+  },
+  "required": ["plant_id", "name", "kind", "planted"]
+}
+```
+
+Every check the Zod makes is here, in JSON Schema's words: `int`'s range as `minimum` and `maximum` where Zod has `z.int32()`,
+a date as a string of its `format` and `pattern` where the driver hands Zod a `Date`, and the collation's value set as the same
+note. What the description adds is the origins the Zod leaves to the IR: the SQL type, the constraint a fact came from, and why
+a value may be null.
+
 ## Reading further
 
 - Andrew W. Appel, *Modern Compiler Implementation in ML* (Cambridge, 1998): intermediate representations and lowering.
@@ -232,3 +334,5 @@ generated module and uses its schemas and types as a team would, is compiled in 
   components in one depth-first search.
 - Thomas H. Cormen and others, *Introduction to Algorithms*, the chapter on elementary graph algorithms: topological order from
   the finishing times of a depth-first search.
+- *JSON Schema: A Media Type for Describing JSON Documents* and its companion *JSON Schema Validation*, draft 2020-12: the
+  keywords, and which of them (`format`, `contentSchema`) are annotations unless a validator is asked to assert them.

@@ -49,7 +49,7 @@ Then, in about ten minutes:
 | 8 | [The SQL Server type system, as data](08-the-sql-server-type-system-as-data.md) | SQL Server's built-in types as one catalogue, with their families, precedence, digits and ranges; the conversion chart, and the table of conversions that keep every value; the built-in functions as entries with stable codes, typed through one table; why data beats code here, and how each row, and every type through every operator, is observed against the server. |
 | 9 | [Observing the engine](09-observing-the-engine.md) | Why every rule about SQL Server is observed in a differential test; how a fixture is laid out and found; how the harness checks every claim against real output and shows the seed reached every case; and how the runs are kept honest. |
 | 10 | [The IR as a contract](10-the-ir-as-a-contract.md) | Why there is an intermediate format between front end and emitter, why it has a version of its own, why its schema is generated, why reading it back must give exactly what was written, why a reader refuses a version it doesn't read, and why its names belong to no dialect. |
-| 11 | [Emitting code](11-emitting-code.md) | Why the Zod emitter plans, lowers to a model of Zod expressions and prints, rather than writing text as it goes or building TypeScript's syntax tree; why every walk over the IR's types asks one graph; and the code it writes: notes above the property with shared facts once in the header, no check said twice, identical shapes declared once, and numbers as JavaScript reads them. |
+| 11 | [Emitting code](11-emitting-code.md) | Why the Zod emitter plans, lowers to a model of Zod expressions and prints, rather than writing text as it goes or building TypeScript's syntax tree; why every walk over the IR's types asks one graph; and the code it writes: notes above the property with shared facts once in the header, no check said twice, identical shapes declared once, and numbers as JavaScript reads them; and the second target, JSON Schema: what the two emitters share, and what each can't say. |
 | 12 | [From input to output (the CLI)](12-from-input-to-output.md) | A run as a pipeline of named steps; results against exceptions, and the railway that composes them; why independent problems are all reported (the applicative side) while a step that needs a missing value isn't run (no cascades), as a compiler's error recovery does; stable codes; and writing two files without half an output. |
 
 Each project's README is its layer's chapter in brief: what the layer is for, its main types, an example, what it
@@ -101,6 +101,8 @@ with no config file. The blocks after it, up to the next example, show what that
   header, which names the IR's version.
 - `json haruspex-ir`: the IR, compared as JSON; with a third word, only that top-level property
   (`json haruspex-ir unknowns`).
+- `json haruspex-jsonschema`: the JSON Schema document, compared as JSON; with a third word, only that definition of its
+  `$defs` (`json haruspex-jsonschema GetOrder`).
 - `text haruspex-run`: what `haruspex generate` prints, standard error then standard output, run in a folder holding the
   project as `db/project.sql`, with paths shown from that folder. Words after the mark are the run's arguments; with none,
   the run takes its settings from the config file, or types every procedure to `out` when there is none. A

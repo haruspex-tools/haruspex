@@ -15,8 +15,9 @@ otherwise silently do nothing.
   "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac
   "references": ["../shared/bin/Release"],  // more folders to find the DACPACs a .dacpac or .sqlproj refers to in
   "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "Value sets"
-  "out": "src/db",                          // where haruspex.ir.json and haruspex.zod.ts go
+  "out": "src/db",                          // where haruspex.ir.json and what "emit" names go
 
+  "emit": ["zod"],                          // or ["json-schema"], or both; see "What is written"
   "objects": "strip",                       // or "strict"
 
   "session": { "ansiWarnings": true },      // what the callers' connections set; see "The callers' session"
@@ -238,12 +239,34 @@ exits as before (the `check` command will fail it).
 - **Declared results are checked at runtime**, like everything else: the generated validator rejects output that doesn't
   fit the declaration, so a wrong one fails loudly on real data.
 
+## What is written: `emit`
+
+`generate` writes the IR, `haruspex.ir.json`, to the output folder, and beside it what `emit` names, each made from the IR
+alone:
+
+- `"zod"`, the default: `haruspex.zod.ts`, a TypeScript module of Zod schemas and their types
+  ([the Zod emitter](../src/Haruspex.Emit.Zod/README.md)).
+- `"json-schema"`: `haruspex.jsonschema.json`, one JSON Schema document (draft 2020-12), for any language with a JSON Schema
+  validator. Each procedure's results are the definition under its name in `$defs`, `#/$defs/GetOrder`, the same name the Zod
+  module exports; every value is described as SQL Server's `FOR JSON` writes it, a rowset's rows as an array of objects as
+  `FOR JSON PATH, INCLUDE_NULL_VALUES` writes them
+  ([the JSON Schema emitter](../src/Haruspex.Emit.JsonSchema/README.md),
+  [decision 0051](decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)).
+
+```jsonc
+"emit": ["zod", "json-schema"]   // both, each from the same IR
+```
+
+`emit` lists at least one, each once. `check` compares each file it names with what is committed, and fails when one is
+missing. A file of an emitter taken off the list is left where it is, not deleted: remove it yourself.
+
 ## Results policy: `objects`
 
-- `"strip"`, the default: `z.object`. Types are still exact, but keys a type doesn't list are removed when parsing, so
-  a column the database gains before the application redeploys doesn't break the running application.
-- `"strict"`: `z.strictObject`, for projects that deploy the application first or together with the database, and want
-  an unexpected key to fail loudly.
+- `"strip"`, the default: `z.object`, and JSON Schema objects that allow other keys. Types are still exact, but keys a type
+  doesn't list are removed when parsing, or allowed when validating, so a column the database gains before the application
+  redeploys doesn't break the running application.
+- `"strict"`: `z.strictObject`, and JSON Schema objects that allow no other keys, for projects that deploy the application first or together
+  with the database, and want an unexpected key to fail loudly.
 
 This is the one deliberate exception to haruspex's rule that the generated code claims everything the engine guarantees
 ([decision 0005](decisions/0005-claim-everything-the-engine-guarantees.md)): `FOR JSON` produces exactly the known

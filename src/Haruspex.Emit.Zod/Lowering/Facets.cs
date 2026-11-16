@@ -237,30 +237,11 @@ internal static class Facets
 
         // The nearest value inside the bound at the type's step; without a known scale, the bound itself, inclusive,
         // which is weaker but still true.
-        return code.Then(inclusive, new Number(scale is { } s && Step(bound.Value, s, lower ? 1 : -1) is { } inside ? inside : bound.Value));
+        return code.Then(inclusive, new Number(scale is { } s && bound.InsideAt(s, lower) is { } inside ? inside : bound.Value));
     }
 
     private static bool IsSafeInteger(string text) =>
         BigInteger.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n) && BigInteger.Abs(n) < SafeInteger;
-
-    /// <summary><paramref name="text"/> moved by one step of <c>10^-scale</c>, exactly; null when it has more decimal places than <paramref name="scale"/>.</summary>
-    private static string? Step(string text, int scale, int direction)
-    {
-        var negative = text.StartsWith('-');
-        var body = negative ? text[1..] : text;
-        var point = body.IndexOf('.', StringComparison.Ordinal);
-        var fraction = point < 0 ? "" : body[(point + 1)..];
-        if (fraction.Length > scale)
-            return null;
-        var digits = (point < 0 ? body : body[..point]) + fraction.PadRight(scale, '0');
-        var unscaled = (BigInteger.Parse(digits, NumberStyles.None, CultureInfo.InvariantCulture) * (negative ? -1 : 1)) + direction;
-
-        var magnitude = BigInteger.Abs(unscaled).ToString(CultureInfo.InvariantCulture).PadLeft(scale + 1, '0');
-        var result = scale == 0 ? magnitude : magnitude[..^scale] + "." + magnitude[^scale..];
-        if (scale > 0)
-            result = result.TrimEnd('0').TrimEnd('.');
-        return unscaled.Sign < 0 ? "-" + result : result;
-    }
 
     private static Number Count(int value) => new(value.ToString(CultureInfo.InvariantCulture));
 

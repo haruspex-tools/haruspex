@@ -19,57 +19,66 @@ internal static class Generate
         return Report(run, output, error);
     }
 
-    /// <summary>The written output: where each file went, and the project it was read from, which roots its locations.</summary>
-    private sealed class Written(IrDocument document, string irPath, string zodPath, SqlProject project)
+    /// <summary>The written output: where each file went, the IR first, and the project it was read from, which roots its locations.</summary>
+    private sealed class Written(IrDocument document, IReadOnlyList<string> paths, SqlProject project)
     {
         public IrDocument Document { get; } = document;
 
-        public string IrPath { get; } = irPath;
-
-        public string ZodPath { get; } = zodPath;
+        public IReadOnlyList<string> Paths { get; } = paths;
 
         public SqlProject Project { get; } = project;
     }
 
+    /// <summary>One file of a run's output, on its way into place: its text, a temporary name to write it to, and a name to keep what it replaces under.</summary>
+    private sealed record Staged(string Path, string Text, string Temporary, string Backup);
+
     /// <summary>
-    /// Both files, written to the output folder so that a run never leaves a new file beside an old one: each is written in
-    /// full to a temporary name in the folder itself (so that putting it in place is a rename within one file system), then
-    /// both are put in place, the IR first; if the module can't be, the IR is put back as it was, or removed when there was
-    /// none, and no temporary file is left. Two files can't be replaced as one, so a process killed between the two renames
-    /// can still leave a new IR beside the old module (and the hidden temporary and backup files beside them), and so can a
-    /// file system that refuses to put the IR back, which the message then says, keeping the old IR's backup. The folder is created here, after every
-    /// other step has succeeded, so a run that fails before writing creates nothing.
+    /// Every file, the IR first and then what the emitters gave, written to the output folder so that a run never leaves a new file
+    /// beside an old one: each is written in full to a temporary name in the folder itself (so that putting it in place is a rename
+    /// within one file system), then each is put in place in turn, keeping the one it replaces; if one can't be, those already in
+    /// place are put back as they were, or removed when there was none, and no temporary file is left. Files can't be replaced as
+    /// one, so a process killed between two renames can still leave a new file beside an old one (and the hidden temporary and
+    /// backup files beside them), and so can a file system that refuses to put one back, which the message then says, keeping that
+    /// file's backup. The folder is created here, after every other step has succeeded, so a run that fails before writing creates
+    /// nothing.
     /// </summary>
     private static Outcome<Written> Write(EmittedModule module)
     {
         var folder = module.Out;
-        var irPath = module.IrPath;
-        var zodPath = module.ZodPath;
         var run = Guid.NewGuid().ToString("N");
-        var irTemporary = Path.Join(folder, $".{HaruspexCli.IrFileName}.{run}.tmp");
-        var zodTemporary = Path.Join(folder, $".{HaruspexCli.ZodFileName}.{run}.tmp");
-        var irBackup = Path.Join(folder, $".{HaruspexCli.IrFileName}.{run}.old");
-        var keepBackup = false;
+        var staged = new[] { (Path: module.IrPath, Text: IrJsonWriter.Write(module.Document)) }
+            .Concat(module.Files.Select(f => (Path: module.PathOf(f), f.Text)))
+            .Select(o => new Staged(o.Path, o.Text, Path.Join(folder, $".{Path.GetFileName(o.Path)}.{run}.tmp"), Path.Join(folder, $".{Path.GetFileName(o.Path)}.{run}.old")))
+            .ToList();
+        var kept = new HashSet<string>(StringComparer.Ordinal);
         try
         {
             Directory.CreateDirectory(folder);
 
             // File.WriteAllText writes UTF-8 without a byte order mark.
-            File.WriteAllText(irTemporary, IrJsonWriter.Write(module.Document));
-            File.WriteAllText(zodTemporary, module.Zod);
-            var hadIr = PutInPlace(irTemporary, irPath, irBackup);
+            foreach (var file in staged)
+                File.WriteAllText(file.Temporary, file.Text);
+            var placed = new List<(Staged File, bool Had)>();
             try
             {
-                PutInPlace(zodTemporary, zodPath, backup: null);
+                foreach (var file in staged)
+                    placed.Add((file, PutInPlace(file.Temporary, file.Path, file.Backup)));
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
-                if (PutBack(hadIr, irBackup, irPath) is { } failure)
+                var stuck = placed.AsEnumerable().Reverse()
+                    .Select(p => (p.File, p.Had, Failure: PutBack(p.Had, p.File.Backup, p.File.Path)))
+                    .Where(p => p.Failure is not null)
+                    .ToList();
+                if (stuck.Count > 0)
                 {
-                    // The new IR stands beside the old module, so the old IR, the backup, is the one copy left: it is kept.
-                    keepBackup = hadIr;
+                    // Each new file left beside the old ones has its old one, the backup, as the one copy left: it is kept.
+                    foreach (var p in stuck.Where(p => p.Had))
+                        kept.Add(p.File.Backup);
+                    var fresh = stuck.Select(p => DiagnosticFormatter.PathAsShown(p.File.Path)).ToList();
+                    var backups = stuck.Where(p => p.Had).Select(p => DiagnosticFormatter.PathAsShown(p.File.Backup)).ToList();
                     return ModuleRun.Refused<Written>(CliCodes.CannotWrite,
-                        $"cannot write to {DiagnosticFormatter.PathAsShown(folder)}: {e.Message} The IR written before it could not be put back ({failure}), so {DiagnosticFormatter.PathAsShown(irPath)} is new and {DiagnosticFormatter.PathAsShown(zodPath)} is not{(hadIr ? $"; the old IR is kept at {DiagnosticFormatter.PathAsShown(irBackup)}" : "")}.");
+                        $"cannot write to {DiagnosticFormatter.PathAsShown(folder)}: {e.Message} Files written before it could not be put back ({string.Join("; ", stuck.Select(p => p.Failure))}), so {EnglishList.Of(fresh)} {(fresh.Count == 1 ? "is" : "are")} new and the others are not{(backups.Count > 0 ? $"; the old {(backups.Count == 1 ? "one is" : "ones are")} kept at {EnglishList.Of(backups)}" : "")}.");
                 }
 
                 throw;
@@ -81,15 +90,15 @@ internal static class Generate
         }
         finally
         {
-            foreach (var temporary in keepBackup ? [irTemporary, zodTemporary] : new[] { irTemporary, zodTemporary, irBackup })
+            foreach (var temporary in staged.SelectMany(f => new[] { f.Temporary, f.Backup }).Where(f => !kept.Contains(f)))
                 Remove(temporary);
         }
 
-        return new Succeeded<Written>(new Written(module.Document, irPath, zodPath, module.Project));
+        return new Succeeded<Written>(new Written(module.Document, [.. staged.Select(f => f.Path)], module.Project));
     }
 
     /// <summary>
-    /// Puts the IR back as it was after the module could not be put in place: the old one from its backup, or none when there
+    /// Puts a file back as it was after a later one could not be put in place: the old one from its backup, or none when there
     /// was none. Null when it is back; otherwise what the file system said.
     /// </summary>
     private static string? PutBack(bool hadIr, string backup, string path)
@@ -157,7 +166,7 @@ internal static class Generate
     {
         var procedures = written.Document.Objects.Count;
         output.WriteLine(
-            $"haruspex: {procedures} {(procedures == 1 ? "procedure" : "procedures")}, {written.Document.Unknowns.Count} unknown(s). Wrote {DiagnosticFormatter.PathAsShown(written.IrPath)} and {DiagnosticFormatter.PathAsShown(written.ZodPath)}.");
+            $"haruspex: {procedures} {(procedures == 1 ? "procedure" : "procedures")}, {written.Document.Unknowns.Count} unknown(s). Wrote {EnglishList.Of([.. written.Paths.Select(DiagnosticFormatter.PathAsShown)])}.");
         return HaruspexCli.ExitCodes.Success;
     }
 

@@ -9,7 +9,7 @@ namespace Haruspex.SqlServer.Inference;
 /// A row an existence guard found: <c>IF NOT EXISTS (SELECT … FROM t WHERE k = @k) RETURN</c> proves a row of <c>t</c> with
 /// <c>k = @k</c> was there when the guard ran. Whether it is still there when a later statement reads it is what
 /// <see cref="Held"/> says. A later read of it is a query of the same table filtered by nothing but equalities among
-/// these (<c>Cardinality.Guard</c>). Docs: decision 0052, "A row an existence guard found".
+/// these (<c>Cardinality.Guard</c>). Docs: decision 0053, "A row an existence guard found".
 /// </summary>
 /// <remarks>
 /// Another session may delete the row between the two statements, under read committed, read committed snapshot, or snapshot

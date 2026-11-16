@@ -15,7 +15,7 @@ namespace Haruspex.SqlServer.Inference;
 /// Every row a SELECT reads assigns every variable it lists, so one row read is enough (observed:
 /// Rowcount_right_after_a_select_that_assigns_counts_its_rows). A witness proves the read only because it was NULL on every
 /// path before the SELECT and nothing but the SELECT has assigned it since: a value in it then came from the SELECT
-/// (observed: A_variable_null_before_a_select_and_not_after_it_proves_the_select_assigned_them_all). Docs: decision 0052.
+/// (observed: A_variable_null_before_a_select_and_not_after_it_proves_the_select_assigned_them_all). Docs: decision 0053.
 /// </remarks>
 /// <param name="Values">Each variable the SELECT assigns, with the value it holds when the SELECT read a row.</param>
 /// <param name="Witnesses">Those of its variables that held NULL on every path before it (<see cref="FlowState.Unassigned"/>).</param>

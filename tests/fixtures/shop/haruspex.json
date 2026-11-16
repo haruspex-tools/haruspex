@@ -1,5 +1,5 @@
-// The config file of an invented shop, used end to end by ConfigCliTests: selection, overrides, strict objects and
-// naming. Comments and trailing commas are allowed, as in tsconfig.json.
+// The config file of an invented shop, used end to end by ConfigCliTests: selection, overrides, strict objects, both
+// emitters and naming. Comments and trailing commas are allowed, as in tsconfig.json.
 {
   "$schema": "../../../schemas/haruspex.schema.json",
   "source": "database",
@@ -7,6 +7,9 @@
 
   // The application deploys together with the database, so an unexpected key should fail loudly.
   "objects": "strict",
+
+  // A service in another language validates the same results, so a JSON Schema is written beside the Zod.
+  "emit": ["zod", "json-schema"],
 
   // Naming for every schema: a trailing # marks a procedure returning one row.
   "naming": {

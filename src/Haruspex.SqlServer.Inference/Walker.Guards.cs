@@ -6,7 +6,7 @@ namespace Haruspex.SqlServer.Inference;
 
 // What a guard proves, as the walk carries it: an IF's arms narrowed by their condition, what a SELECT that may assign nothing
 // would have assigned, and what may end a row an existence guard found. README.md in this folder, "Guards", gives the rules,
-// and decision 0052 why the facts are kept in the state this way; the conditions themselves are read in Typer.Guards.cs.
+// and decision 0053 why the facts are kept in the state this way; the conditions themselves are read in Typer.Guards.cs.
 internal sealed partial class Walker
 {
     /// <summary>

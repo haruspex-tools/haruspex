@@ -165,7 +165,7 @@ reads a row, beside the joined values (`FlowState.Possible`), and two guards pro
 after it, and a test that one of its variables is not NULL when that variable was NULL on every path before it
 (`FlowState.Unassigned`, a fact that holds only if it holds on every path, so its join is an intersection). Each ends when
 anything could change it: an assignment to one of the variables, a statement that resets `@@ROWCOUNT`, or a join with a path
-that does not hold it ([decision 0052](../decisions/0052-a-guard-narrows-the-state-and-a-select-that-may-assign-nothing-is-kept-for-one.md)).
+that does not hold it ([decision 0053](../decisions/0053-a-guard-narrows-the-state-and-a-select-that-may-assign-nothing-is-kept-for-one.md)).
 
 In the example, `@product_id` is never NULL after the `THROW`; `@@ROWCOUNT` straight after the `SELECT` proves it read a row,
 so `@name` holds a product's name, never NULL, and `@note` its note, NULL when the note is.

@@ -124,6 +124,10 @@ public static class ConfigReader
                         if (Choice(member.Value, path, "strip", "strict") is { } objects)
                             config = config with { Objects = objects == "strict" ? ObjectsPolicy.Strict : ObjectsPolicy.Strip };
                         break;
+                    case "emit":
+                        if (Emitters(member.Value, path) is { } emitters)
+                            config = config with { Emitters = emitters };
+                        break;
                     case "naming":
                         var naming = Naming(member.Value, path);
                         config = config with { Naming = new NamingRules(naming.Replace, naming.Case ?? NamingCase.Pascal), NamingAt = naming.At };
@@ -138,7 +142,7 @@ public static class ConfigReader
                         config = config with { CheckUnknowns = Check(member.Value, path) };
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, references, collation, out, schemas, objects, naming, procedures, session, check");
+                        Unknown(member, path, "$schema, source, references, collation, out, schemas, objects, emit, naming, procedures, session, check");
                         break;
                 }
             }
@@ -168,6 +172,50 @@ public static class ConfigReader
             }
 
             return session;
+        }
+
+        /// <summary>
+        /// What is written beside the IR: at least one emitter, each named once, kept in the file's order. Null, leaving the
+        /// default, when the value is wrong, which is reported.
+        /// </summary>
+        private EquatableArray<Emitter>? Emitters(JsonValue value, string path)
+        {
+            const string Expected = "must be an array of what to write beside the IR: \"zod\", \"json-schema\" or both.";
+            if (value is not JsonArrayValue array)
+            {
+                Report(ConfigCodes.WrongKind, value, path, Expected);
+                return null;
+            }
+
+            if (array.Items.Count == 0)
+            {
+                Report(ConfigCodes.WrongKind, value, path, "must name at least one emitter; with none, generate would write the IR alone. Use [\"zod\"], the default, or leave it out.");
+                return null;
+            }
+
+            var emitters = new List<Emitter>();
+            var valid = true;
+            for (var i = 0; i < array.Items.Count; i++)
+            {
+                var item = array.Items[i];
+                switch (Choice(item, Index(path, i), "zod", "json-schema"))
+                {
+                    case null:
+                        valid = false;
+                        break;
+                    case var name when emitters.Contains(Of(name)):
+                        Report(ConfigCodes.WrongKind, item, Index(path, i), $"names \"{name}\" again; each emitter is listed once.");
+                        valid = false;
+                        break;
+                    case var name:
+                        emitters.Add(Of(name));
+                        break;
+                }
+            }
+
+            return valid ? [.. emitters] : null;
+
+            static Emitter Of(string name) => name == "zod" ? Emitter.Zod : Emitter.JsonSchema;
         }
 
         /// <summary>What <c>haruspex check</c> does beyond comparing: today, whether an unknown fails it.</summary>

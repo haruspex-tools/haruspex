@@ -1,4 +1,5 @@
 using Haruspex.Cli;
+using Haruspex.Emit.JsonSchema;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.Tests.Snapshotting;
@@ -7,7 +8,7 @@ namespace Haruspex.Tests.Fixtures;
 
 /// <summary>
 /// What haruspex must produce from each fixture, kept in the fixture's <c>expected/</c> folder: for a fixture checked per
-/// procedure, one snapshot of the IR and one of the Zod per procedure; for a project for the CLI, the two files
+/// procedure, one snapshot each of the IR, the Zod and the JSON Schema per procedure; for a project for the CLI, the files
 /// <c>haruspex generate</c> writes with its config. A snapshot is a claim about what SQL Server returns, so a change to one
 /// is reviewed against the engine's behaviour, never accepted unread.
 /// </summary>
@@ -15,9 +16,16 @@ public class FixtureSnapshotTests
 {
     private static readonly IReadOnlyList<Fixture> Fixtures = [.. Fixture.All.Where(f => !f.IsProject)];
 
-    /// <summary>The two files <c>haruspex generate</c> writes, which a project fixture's <c>expected/</c> holds.</summary>
-    private static readonly (string Written, string Snapshot, string Extension)[] ProjectOutputs =
-        [("haruspex.ir.json", "haruspex.ir", "json"), ("haruspex.zod.ts", "haruspex.zod", "ts")];
+    /// <summary>The files <c>haruspex generate</c> writes with a project fixture's config, which its <c>expected/</c> holds: the IR and what it emits.</summary>
+    private static IEnumerable<(string Written, string Snapshot, string Extension)> ProjectOutputs(Fixture project) =>
+        ConfigReader.Read(project.Config!).Expected().Emitters.Select(emitter => emitter switch
+        {
+            Emitter.Zod => (HaruspexCli.ZodFileName, "haruspex.zod", "ts"),
+            Emitter.JsonSchema => (HaruspexCli.JsonSchemaFileName, "haruspex.jsonschema", "json"),
+        }).Prepend((HaruspexCli.IrFileName, "haruspex.ir", "json"));
+
+    /// <summary>What each of a procedure's snapshots ends with: its IR, its Zod and its JSON Schema.</summary>
+    private static readonly string[] SnapshotSuffixes = [".ir.verified.json", ".zod.verified.ts", ".jsonschema.verified.json"];
 
     /// <summary>Every fixture procedure, with its fixture. Procedure ids are unique across fixtures.</summary>
     private static readonly Dictionary<string, Fixture> FixtureOf =
@@ -34,7 +42,7 @@ public class FixtureSnapshotTests
     [MemberData(nameof(FixtureNames))]
     public void The_fixture_loads_without_diagnostics(string fixture) => Assert.Empty(Fixture.Named(fixture).Project.Diagnostics);
 
-    // Each procedure has its two snapshots, and each snapshot a procedure: a renamed or deleted procedure leaves no
+    // Each procedure has its three snapshots, and each snapshot a procedure: a renamed or deleted procedure leaves no
     // reviewed file behind that nothing checks.
     [Theory]
     [MemberData(nameof(FixtureNames))]
@@ -44,7 +52,8 @@ public class FixtureSnapshotTests
         var procedures = Fixture.Named(fixture).Project.Procedures.Select(p => p.ToString()).Order(StringComparer.Ordinal).ToList();
         Assert.Equal(procedures, Snapshots(expected, ".ir.verified.json"));
         Assert.Equal(procedures, Snapshots(expected, ".zod.verified.ts"));
-        Assert.DoesNotContain(Reviewed(expected), f => !f.EndsWith(".ir.verified.json", StringComparison.Ordinal) && !f.EndsWith(".zod.verified.ts", StringComparison.Ordinal));
+        Assert.Equal(procedures, Snapshots(expected, ".jsonschema.verified.json"));
+        Assert.DoesNotContain(Reviewed(expected), f => !SnapshotSuffixes.Any(suffix => f.EndsWith(suffix, StringComparison.Ordinal)));
     }
 
     // A project is run as a user runs it, through the CLI in its folder with its config, and its expected/ holds what that
@@ -61,10 +70,10 @@ public class FixtureSnapshotTests
         var exitCode = HaruspexCli.Run(["generate", "--out", outDir.Path], output, error, project.Folder);
 
         Assert.True(exitCode == 0, error.ToString());
-        foreach (var (written, snapshot, extension) in ProjectOutputs)
+        foreach (var (written, snapshot, extension) in ProjectOutputs(project))
             Snapshot.Match(File.ReadAllText(Path.Combine(outDir.Path, written)), project.Expected, snapshot, extension);
         Assert.Equal(
-            ProjectOutputs.Select(o => $"{o.Snapshot}.verified.{o.Extension}").Order(StringComparer.Ordinal),
+            ProjectOutputs(project).Select(o => $"{o.Snapshot}.verified.{o.Extension}").Order(StringComparer.Ordinal),
             Reviewed(project.Expected));
     }
 
@@ -81,6 +90,12 @@ public class FixtureSnapshotTests
     [MemberData(nameof(Procedures))]
     public void Each_procedure_emits_the_reviewed_zod(string procedure) =>
         Snapshot.Match(ZodEmitter.Emit(IrJsonReader.Read(IrJsonWriter.Write(Infer(procedure)))).Expected(), FixtureOf[procedure].Expected, $"{procedure}.zod", "ts");
+
+    // The JSON Schema is emitted from the IR as its file gives it back, as the Zod is.
+    [Theory]
+    [MemberData(nameof(Procedures))]
+    public void Each_procedure_emits_the_reviewed_json_schema(string procedure) =>
+        Snapshot.Match(JsonSchemaEmitter.Emit(IrJsonReader.Read(IrJsonWriter.Write(Infer(procedure)))).Expected(), FixtureOf[procedure].Expected, $"{procedure}.jsonschema", "json");
 
     /// <summary>The names of the files in a fixture's <c>expected/</c>, leaving out any received file a failing run wrote.</summary>
     private static List<string> Reviewed(string folder) =>

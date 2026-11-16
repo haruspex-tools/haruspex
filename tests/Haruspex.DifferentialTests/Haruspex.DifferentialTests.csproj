@@ -29,5 +29,6 @@
     <!-- The Zod acceptance check runs every seeded output through the generated schemas. -->
     <ProjectReference Include="..\..\src\Haruspex.Config\Haruspex.Config.csproj" />
     <ProjectReference Include="..\..\src\Haruspex.Emit.Zod\Haruspex.Emit.Zod.csproj" />
+    <ProjectReference Include="..\..\src\Haruspex.Emit.JsonSchema\Haruspex.Emit.JsonSchema.csproj" />
   </ItemGroup>
 </Project>

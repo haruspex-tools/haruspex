@@ -60,6 +60,13 @@ internal sealed class Fixture
             .Order(StringComparer.Ordinal)
             .Select(ir => (ir, ir[..^IrSnapshot.Length] + ".zod.verified.ts"));
 
+    /// <summary>
+    /// The committed IR files in <see cref="Expected"/>, each with the JSON Schema snapshot generated from it, as
+    /// <see cref="Snapshots"/> pairs each with its Zod.
+    /// </summary>
+    public IEnumerable<(string Ir, string JsonSchema)> JsonSchemaSnapshots =>
+        Snapshots.Select(s => (s.Ir, s.Ir[..^IrSnapshot.Length] + ".jsonschema.verified.json"));
+
     /// <summary>The fixture's <c>haruspex.json</c>, or null when it has none.</summary>
     public string? Config => File.Exists(Path.Combine(Folder, HaruspexConfig.FileName)) ? Path.Combine(Folder, HaruspexConfig.FileName) : null;
 

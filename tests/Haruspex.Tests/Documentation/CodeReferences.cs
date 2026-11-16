@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Haruspex.Cli;
 using Haruspex.Collections;
 using Haruspex.Diagnostics;
+using Haruspex.Emit.JsonSchema;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
@@ -95,6 +96,7 @@ internal sealed partial class CodeReferences
         typeof(IrDocument).Assembly,
         typeof(HaruspexConfig).Assembly,
         typeof(ZodEmitter).Assembly,
+        typeof(JsonSchemaEmitter).Assembly,
         typeof(SqlProject).Assembly,
         typeof(CodeReferences).Assembly,
         Architecture.AnalyserBuild.Assembly,

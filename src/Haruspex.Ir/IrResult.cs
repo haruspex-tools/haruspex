@@ -21,4 +21,26 @@ public sealed record IrResult(IrEncoding Encoding, IrType Type, EquatableArray<I
     /// <see cref="AbsentBecause"/>, not this. <see cref="IrCardinality.Many"/> claims nothing.
     /// </summary>
     public IrCardinality Cardinality { get; init; } = IrCardinality.Many;
+
+    /// <summary>
+    /// The fewest items an array result has when it is read by the reader conventions in README.md ("Results"), or null when
+    /// none is proved or the result is not an array: one for a JSON array, since <c>FOR JSON</c> over no rows returns no row,
+    /// which reads as null rather than <c>[]</c>; one for a rowset that returns one row and is never absent, since an absent
+    /// rowset reads as <c>[]</c>; and never fewer than the array's own <see cref="IrArray.MinItems"/>. A union of arrays is not
+    /// bounded, which only claims less.
+    /// </summary>
+    public int? FewestItems => Type is IrArray array
+        ? Tighter(array.MinItems, Encoding == IrEncoding.Json || (Cardinality == IrCardinality.One && !MayBeAbsent) ? 1 : null, Math.Max)
+        : null;
+
+    /// <summary>
+    /// The most items an array result has, or null when it is unbounded or the result is not an array: one when the query returns
+    /// at most one row, and never more than the array's own <see cref="IrArray.MaxItems"/>.
+    /// </summary>
+    public int? MostItems => Type is IrArray array
+        ? Tighter(array.MaxItems, Cardinality is IrCardinality.One or IrCardinality.AtMostOne ? 1 : null, Math.Min)
+        : null;
+
+    private static int? Tighter(int? own, int? fromRows, Func<int, int, int> pick) =>
+        own is { } a && fromRows is { } b ? pick(a, b) : own ?? fromRows;
 }

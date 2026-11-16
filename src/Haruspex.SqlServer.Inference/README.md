@@ -219,7 +219,7 @@ never NULL (`A_parameter_set_to_coalesce_with_a_value_last_is_never_null_after_i
 
 **A SELECT that may assign nothing.** `SELECT @a = …, @b = … FROM …` over a query that may read no row joins each variable
 with what it held. What it assigns when it reads a row is kept beside the state (`PossibleAssignment`), and a guard that
-proves it read one puts those values back ([decision 0052](../../docs/decisions/0052-a-guard-narrows-the-state-and-a-select-that-may-assign-nothing-is-kept-for-one.md)):
+proves it read one puts those values back ([decision 0053](../../docs/decisions/0053-a-guard-narrows-the-state-and-a-select-that-may-assign-nothing-is-kept-for-one.md)):
 
 - **`@@ROWCOUNT` tested straight after it**: `if @@rowcount = 0 return` (or `< 1`, `NOT (… > 0)`, an `ELSE` that returns),
   since every row read assigns every variable listed (`Rowcount_right_after_a_select_that_assigns_counts_its_rows`). Any

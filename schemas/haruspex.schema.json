@@ -26,7 +26,7 @@
       "pattern": "^[A-Za-z0-9_]+$"
     },
     "out": {
-      "description": "The folder to write haruspex.ir.json and haruspex.zod.ts to. --out overrides it.",
+      "description": "The folder to write haruspex.ir.json and what \"emit\" names to. --out overrides it.",
       "type": "string",
       "minLength": 1
     },
@@ -41,11 +41,22 @@
       }
     },
     "objects": {
-      "description": "How result objects treat keys their type doesn't list. \"strip\" (the default) removes them when parsing (z.object), so a column the database adds before the application redeploys doesn't break it. \"strict\" fails on them (z.strictObject), for applications that deploy first or together with the database.",
+      "description": "How result objects treat keys their type doesn't list. \"strip\" (the default) removes them when parsing (z.object) and allows them in the JSON Schema, so a column the database adds before the application redeploys doesn't break it. \"strict\" fails on them (z.strictObject, and \"additionalProperties\": false), for applications that deploy first or together with the database.",
       "enum": [
         "strip",
         "strict"
       ]
+    },
+    "emit": {
+      "description": "What generate writes beside haruspex.ir.json, each from the IR alone: \"zod\", haruspex.zod.ts, a module of Zod schemas and TypeScript types; \"json-schema\", haruspex.jsonschema.json, one JSON Schema (2020-12) document with each procedure's results in $defs under its name; or both. check compares each. [\"zod\"] by default.",
+      "type": "array",
+      "items": {
+        "enum": [
+          "zod",
+          "json-schema"
+        ]
+      },
+      "minItems": 1
     },
     "naming": {
       "$ref": "#/$defs/naming"

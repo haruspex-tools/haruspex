@@ -1,4 +1,6 @@
 using System.Data;
+using System.Data.Common;
+using System.Globalization;
 using Haruspex.DifferentialTests.Validation;
 using Microsoft.Data.SqlClient;
 
@@ -50,11 +52,29 @@ internal static class ProcedureRunner
             var rows = new List<IReadOnlyList<object?>>();
             while (await reader.ReadAsync().ConfigureAwait(false))
                 rows.Add([.. Enumerable.Range(0, reader.FieldCount).Select(i => Read(reader, i))]);
-            sets.Add(new ObservedResultSet(columns, rows));
+            var schema = await reader.GetColumnSchemaAsync().ConfigureAwait(false);
+            sets.Add(new ObservedResultSet(columns, rows) { ColumnTypes = [.. schema.Select(SqlTypeText)] });
         }
         while (await reader.NextResultAsync().ConfigureAwait(false));
 
         return sets;
+    }
+
+    /// <summary>
+    /// A column's SQL type as it would be written, with its precision, scale or length (<c>decimal(19,2)</c>, <c>time(7)</c>,
+    /// <c>nvarchar(40)</c>), from what the driver reports of it; the type's name alone for the types that take none.
+    /// </summary>
+    private static string SqlTypeText(DbColumn column)
+    {
+        var name = column.DataTypeName ?? throw new InvalidOperationException($"The column {column.ColumnName} has no type name.");
+        return name switch
+        {
+            "decimal" or "numeric" => $"{name}({column.NumericPrecision},{column.NumericScale})",
+            "time" or "datetime2" or "datetimeoffset" => $"{name}({column.NumericScale})",
+            "char" or "varchar" or "nchar" or "nvarchar" or "binary" or "varbinary" =>
+                $"{name}({(column.ColumnSize is null or int.MaxValue or -1 ? "max" : column.ColumnSize.Value.ToString(CultureInfo.InvariantCulture))})",
+            _ => name,
+        };
     }
 
     private static object? Read(SqlDataReader reader, int i)

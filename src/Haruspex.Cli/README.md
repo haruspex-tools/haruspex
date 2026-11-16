@@ -25,9 +25,11 @@ flowchart LR
     selected --> infer
     infer --> apply["ConfigApplication.Apply"]
     apply --> zod["ZodEmitter.Emit"]
+    apply --> jsonSchema["JsonSchemaEmitter.Emit"]
     zod --> emitted["EmittedModule"]
+    jsonSchema --> emitted
     emitted --> generate["Generate"]
-    generate --> files["haruspex.ir.json, haruspex.zod.ts"]
+    generate --> files["haruspex.ir.json, haruspex.zod.ts, haruspex.jsonschema.json"]
     emitted --> check["Check"]
     committed["the committed files"] --> check
     check --> compare["IrComparison.Compare"]
@@ -52,8 +54,9 @@ haruspex check --all                                 # every haruspex.json below
 haruspex generate -c plugins/orders/haruspex.json -c plugins/returns/haruspex.json
 ```
 
-`generate` writes `haruspex.ir.json` and `haruspex.zod.ts` to the output folder. `check` infers the same way, writes nothing,
-and compares with the two files committed there. Both take:
+`generate` writes `haruspex.ir.json` to the output folder, and beside it what the config file's `emit` names: `haruspex.zod.ts`,
+the default, `haruspex.jsonschema.json`, or both ([the configuration page](../../docs/configuration.md#what-is-written-emit)).
+`check` infers the same way, writes nothing, and compares with the files committed there. Both take:
 
 | Argument or option | What it is |
 |---|---|
@@ -108,12 +111,13 @@ output: how many procedures it typed, how many unknowns there are, and where it 
   earlier step failed to give is not run, so one mistake doesn't bring others with it; the price is that a problem only a
   later step can see (a pattern that matches no procedure, say) waits until the run gets that far.
 - **No half output.** When the SQL, the command line or the config file has an error, or the module can't be emitted,
-  nothing is written, and the output folder isn't even created. When the run succeeds, both files are written in full to
-  temporary names in the output folder and then renamed into place, the IR first; if the module can't be put in place,
-  the IR is put back as it was (or removed, if there was none), no temporary file is left, and the exit code is 1. Two
-  files can't be replaced as one, so a new IR can still be left beside the old module in two cases: a process killed
-  between the two renames, which can also leave the hidden temporary files (`.haruspex.ir.json.….tmp`, `….old`) in the
-  folder; and a file system that refuses to put the IR back, which the error then says, keeping the old IR beside it.
+  nothing is written, and the output folder isn't even created. When the run succeeds, every file (the IR and what `emit`
+  names) is written in full to a temporary name in the output folder and then renamed into place, the IR first; if one can't
+  be put in place, those before it are put back as they were (or removed, if there were none), no temporary file is left,
+  and the exit code is 1. Several files can't be replaced as one, so a new file can still be left beside an old one in two
+  cases: a process killed between two renames, which can also leave the hidden temporary files (`.haruspex.ir.json.….tmp`,
+  `….old`) in the folder; and a file system that refuses to put one back, which the error then says, keeping the old file
+  beside it.
 - **The same input gives the same bytes**, on every platform, so a CI check can compare the output with what is committed.
 - **`check` writes nothing, and fails on any change of claim**, said as the change: a field added or removed, a value that
   became nullable, a type that changed, a value set that grew. What only says where a claim came from (a location, a reason,
