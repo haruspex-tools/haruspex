@@ -133,6 +133,7 @@ internal static class ZodPrinter
                 range.Greatest is { } greatest ? "value <= " + DoubleQuoted(greatest) : null,
             }.OfType<string>()),
             ZodExpression.UnitsAtMost units => "(value) => value.length <= " + units.Units.ToString(CultureInfo.InvariantCulture),
+            ZodExpression.IntegerTextRange integers => "(value) => BigInt(value) >= " + integers.Least + "n && BigInt(value) <= " + integers.Greatest + "n",
             ZodExpression.PowerOfTen power => power.Exponent == 0 ? "1" : "1e" + power.Exponent.ToString(CultureInfo.InvariantCulture),
             ZodExpression.ArrayLiteral array => "[" + List(array.Items) + "]",
             ZodExpression.ObjectLiteral obj => "{ " + string.Join(", ", obj.Properties.Select(p => Key(p.Key) + ": " + Expression(p.Value))) + " }",

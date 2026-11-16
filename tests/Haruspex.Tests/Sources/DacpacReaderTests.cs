@@ -29,6 +29,8 @@ public class DacpacReaderTests
 
     private static readonly Lazy<DacpacReadResult> Harbour = new(() => DacpacReader.Read(Path.Combine(Packages, "harbour", "harbour.dacpac")));
 
+    private static readonly Lazy<DacpacReadResult> WideWorldImporters = new(() => DacpacReader.Read(Path.Combine(Packages, "corpus", "WideWorldImporters-ssdt.dacpac")));
+
     private static ObjectName Studio(string name) => new("studio", name);
 
     private static Table Kiln(DacpacReadResult read) => read.Model.FindTable(Studio("kiln"))!;
@@ -492,5 +494,14 @@ public class DacpacReaderTests
         Assert.Equal(99, read.References.Count);
         Assert.Empty(read.Diagnostics);
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), $"took {clock.Elapsed}");
+    }
+
+    [Fact]
+    public void A_readonly_parameter_is_read_from_its_package_as_a_script_declares_it()
+    {
+        var parameters = WideWorldImporters.Value.Model.FindProcedure(new ObjectName("Website", "InsertCustomerOrders"))!.Parameters;
+
+        Assert.All(parameters.Where(p => p.Name is "@Orders" or "@OrderLines"), p => Assert.True(p.IsReadOnly));
+        Assert.All(parameters.Where(p => p.Name is not ("@Orders" or "@OrderLines")), p => Assert.False(p.IsReadOnly));
     }
 }

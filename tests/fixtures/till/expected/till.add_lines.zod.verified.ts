@@ -13,7 +13,7 @@ export type AddLinesRow = z.infer<typeof AddLinesRowSchema>
 /** till.add_lines: its parameters, checked before anything is sent. */
 export const AddLinesParamsSchema = z.strictObject({
   /** Not known (unsupported-sql-type); the IR's unknowns say why. */
-  lines: z.unknown(),
+  lines: z.unknown().optional(),
   /** JSON text, sent as it is: what it should hold isn't typed yet. */
   extras: z.string().nullable().optional(),
 })

@@ -16,7 +16,7 @@
             "kind": "unknown",
             "reason": "unsupported-sql-type"
           },
-          "hasDefault": false,
+          "hasDefault": true,
           "output": false
         },
         {

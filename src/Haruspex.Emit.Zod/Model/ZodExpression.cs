@@ -114,6 +114,14 @@ internal abstract record ZodExpression
     /// <param name="Units">The most code units.</param>
     public sealed record UnitsAtMost(int Units) : ZodExpression;
 
+    /// <summary>
+    /// A predicate on a string of decimal digits, <c>(value) =&gt; BigInt(value) &gt;= …n &amp;&amp; BigInt(value) &lt;= …n</c>, for
+    /// <c>.refine</c> after a pattern that makes it an integer: the integer lies between two others, compared exactly.
+    /// </summary>
+    /// <param name="Least">The least value, as decimal text.</param>
+    /// <param name="Greatest">The greatest value, as decimal text.</param>
+    public sealed record IntegerTextRange(string Least, string Greatest) : ZodExpression;
+
     /// <summary>A number argument that is a power of ten, such as a decimal's step: <c>1</c>, <c>1e-2</c>.</summary>
     /// <param name="Exponent">The power, zero or less for a step.</param>
     public sealed record PowerOfTen(int Exponent) : ZodExpression;

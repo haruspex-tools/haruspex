@@ -15,6 +15,14 @@ as text, for SQL Server to convert. Each type has its form:
 A JavaScript `Date` is not accepted. The rules are read from the type the IR keeps for the parameter (`sql`), since the IR has no
 facet for a date's range or a second's fraction.
 
+**A date read from a rowset and sent back.** The module's rowset results hand dates and times over as `Date`, as the driver
+does. With its default `useUTC`, such a `Date` holds the stored clock time in its UTC fields, so the string to send is its
+`toISOString()` without the `Z`, cut to what the type holds: `.slice(0, 10)` for a `date`, `.slice(0, 19)` for a time to the
+second, `.slice(0, 23)` with milliseconds (`datetime`, whose milliseconds always end in 0, 3 or 7, or `datetime2(3)`). A
+`datetimeoffset` takes `toISOString()` as it is, the same instant at `+00:00`. `toISOString()` alone is refused by the other
+types because its `Z` says the value is an instant in UTC, which a type without an offset drops without an error: the
+application says which clock time it means, rather than the driver's setting deciding it.
+
 **Context.** Observed on 16 Nov 2026 with mssql 12.7.14 (tedious 20.3.9) on SQL Server 2025 RTM-CU10
 (`ParameterObservationTests`):
 - the driver's own date types read a string as a JavaScript `Date`, in the process's time zone, and send it in UTC (its

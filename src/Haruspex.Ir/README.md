@@ -462,7 +462,11 @@ didn't move. Also within 0.21, `out-of-range` was widened from a choice by an in
 outside the range a construct reads, as a string function's code, position, count or length; its name and its sense, null
 because of an argument the construct can't use, are as they were, so a 0.21 document stays valid and a reader needs no change.
 So, within 0.21, is the fact source `engine` on a `min` and `max`: a range the engine fixes, such as `ASCII`'s 0 to 255, where it
-was a closed set's only; the schema already allowed it.
+was a closed set's only; the schema already allowed it. And within 0.21, a parameter's type carries its declared type's facts
+(`maxLength`, `length`, `digits`, `min`, `max`), where a 0.21 document had left them out
+([decision 0054](../../docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)), and a table-valued parameter has
+`hasDefault`, since a caller may leave it out. The schema already allowed both, and a document without them claims less, never
+something false, so a reader needs no change and the version didn't move.
 
 **0.20** (14 Nov 2026, canonical value sets). The value match `canonical`, its set's `fold`, and the document's `folds`: a set of
 strings a `char` or `varchar` column's CHECK gives, under a collation whose comparison is proven, is exact once a value is

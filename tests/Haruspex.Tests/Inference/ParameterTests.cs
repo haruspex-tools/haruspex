@@ -86,4 +86,17 @@ public class ParameterTests
         Assert.IsType<IrUnknownType>(Assert.Single(doc.Objects[0].Parameters).Type);
         Assert.Contains(doc.Unknowns, u => u.Path == "parameters.@ids");
     }
+
+    [Fact]
+    public void A_table_valued_parameter_may_be_left_out()
+    {
+        // A caller that leaves one out sends an empty table (ParameterObservationTests): READONLY is its default.
+        using var dir = new TempDirectory();
+        dir.File("t.sql", "CREATE TYPE dbo.ids AS TABLE (id int NOT NULL);");
+        dir.File("p.sql", "CREATE PROCEDURE dbo.p @ids dbo.ids READONLY, @n int AS SELECT 1 AS one;");
+        var project = SqlProject.Load(dir.Path);
+        var doc = project.Infer(project.Select([ObjectPattern.Parse("dbo.p")]).Procedures, HaruspexConfig.None(".")).Expected();
+
+        Assert.Equal([true, false], doc.Objects[0].Parameters.Select(p => p.HasDefault));
+    }
 }

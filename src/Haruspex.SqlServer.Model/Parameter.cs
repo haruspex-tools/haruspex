@@ -11,6 +11,12 @@ namespace Haruspex.SqlServer.Model;
 /// <param name="At">Where it is declared.</param>
 public sealed record Parameter(string Name, SqlType? Type, bool IsOutput, ScalarExpression? Default, SourceLocation At)
 {
+    /// <summary>
+    /// Whether it is declared <c>READONLY</c>, which a table-valued parameter must be and no other may be. A caller may leave
+    /// one out, and the procedure then reads an empty table.
+    /// </summary>
+    public bool IsReadOnly { get; init; }
+
     /// <summary>The parameter's name.</summary>
     public override string ToString() => Name;
 }

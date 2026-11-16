@@ -61,10 +61,7 @@ internal static class ParameterLowering
     private static ZodExpression Value(IrType type, TypeLowering types) => type switch
     {
         IrScalar { Kind: IrScalarKind.String } scalar => Text(scalar),
-        IrScalar { Kind: IrScalarKind.Number, Format: IrFormat.Int64 } => Z("union", new ArrayLiteral([
-            Z("int"),
-            Z("bigint").Then("min", new BigIntLiteral(long.MinValue.ToString(CultureInfo.InvariantCulture))).Then("max", new BigIntLiteral(long.MaxValue.ToString(CultureInfo.InvariantCulture))),
-        ])),
+        IrScalar { Kind: IrScalarKind.Number, Format: IrFormat.Int64 } => BigInt(),
         IrScalar { Kind: IrScalarKind.Number } scalar => Number(scalar),
         IrScalar { Kind: IrScalarKind.Date or IrScalarKind.Time or IrScalarKind.Datetime } scalar => DateTimes.Of(scalar),
 
@@ -75,6 +72,23 @@ internal static class ParameterLowering
         // A table-valued parameter, or a type not modelled: z.unknown(), with the IR's reason.
         _ => types.Type(type, IrEncoding.Json),
     };
+
+    /// <summary>
+    /// A <c>bigint</c>: a safe integer, a JavaScript <c>bigint</c>, or a string of its digits, which is how a rowset result hands
+    /// one over, so a value read can be sent back. A number past 2^53 is rounded before the driver sees it, so it can't be
+    /// one; the driver sends a <c>bigint</c> or a string exactly.
+    /// </summary>
+    private static ZodExpression BigInt()
+    {
+        var least = long.MinValue.ToString(CultureInfo.InvariantCulture);
+        var greatest = long.MaxValue.ToString(CultureInfo.InvariantCulture);
+        return Z("union", new ArrayLiteral([
+            Z("int"),
+            Z("bigint").Then("min", new BigIntLiteral(least)).Then("max", new BigIntLiteral(greatest)),
+            Z("string").Then("regex", new Pattern(@"-?\d{1,19}"))
+                .Then("refine", new IntegerTextRange(least, greatest), new ObjectLiteral([new ZodProperty("error", new Text("Outside the range of bigint"))])),
+        ]));
+    }
 
     /// <summary>
     /// A string, at most its length: a longer one is cut short. A fixed length is a maximum too, since a shorter value is padded.

@@ -26,7 +26,7 @@ internal static class ZodNotes
         // An object schema's properties each carry their own notes, written above the property.
         ZodExpression.ObjectSchema => [],
         ZodExpression.Name or ZodExpression.Number or ZodExpression.Text or ZodExpression.Boolean or ZodExpression.PaddedValues or ZodExpression.PowerOfTen or ZodExpression.Canonical
-            or ZodExpression.BigIntLiteral or ZodExpression.Pattern or ZodExpression.TextRange or ZodExpression.UnitsAtMost => [],
+            or ZodExpression.BigIntLiteral or ZodExpression.Pattern or ZodExpression.TextRange or ZodExpression.UnitsAtMost or ZodExpression.IntegerTextRange => [],
         _ => throw new ArgumentOutOfRangeException(nameof(expression), expression, "An expression outside the model's closed set."),
     };
 }

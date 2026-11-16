@@ -110,11 +110,13 @@ public class ZodParametersTests
         Assert.Matches(@"/\*\* real is binary floating point[^\n]*nearest[^\n]*\*/\n  v: z\.number\(\)\.nullable\(\),", Emitted(Parameter(new IrScalar(IrScalarKind.Number, IrFormat.Float, "real"))));
 
     [Fact]
-    public void A_bigint_is_a_safe_integer_or_a_bigint_in_its_range() =>
+    public void A_bigint_is_a_safe_integer_a_bigint_or_a_string_of_its_digits_in_its_range() =>
 
-        // A number past 2^53 is already rounded before the driver sees it, so a wider value is a JavaScript bigint.
+        // A number past 2^53 is already rounded before the driver sees it, so a wider value is a JavaScript bigint, or the string
+        // a rowset hands over.
         Assert.Equal(
-            "z.union([z.int(), z.bigint().min(-9223372036854775808n).max(9223372036854775807n)])",
+            "z.union([z.int(), z.bigint().min(-9223372036854775808n).max(9223372036854775807n), " +
+            "z.string().regex(/^-?\\d{1,19}$/).refine((value) => BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: \"Outside the range of bigint\" })])",
             Schema(new IrScalar(IrScalarKind.Number, IrFormat.Int64, "bigint")));
 
     [Theory]

@@ -253,6 +253,23 @@ public class ParameterObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_table_valued_parameter_left_out_is_an_empty_table()
+    {
+        // The till fixture's table type and procedure, deployed: a type created in the run's own transaction deadlocks the call
+        // that reads it.
+        var calls = await MssqlDriver.RunAsync(
+            server,
+            null,
+            [],
+            [new("left out", ParseJson: false, Procedure: "till.add_lines")],
+            TestContext.Current.CancellationToken);
+
+        var response = Assert.Single(calls);
+        Assert.Null(response.Error);
+        Assert.Empty(Assert.Single(response.Recordsets).Rows);
+    }
+
+    [Fact]
     public async Task A_parameter_name_the_procedure_does_not_have_is_refused()
     {
         var calls = await MssqlDriver.RunAsync(

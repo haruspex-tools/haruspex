@@ -84,7 +84,8 @@ internal sealed partial class Typer(
         .. procedure.Parameters.Select(p => new ParameterShape(
             p.Name,
             SqlTypes.ToParameterShape(model, p.Type, p.At),
-            HasDefault: p.Default is not null,
+            // A table-valued parameter left out is an empty table (ParameterObservationTests), so READONLY is a default.
+            HasDefault: p.Default is not null || p.IsReadOnly,
             IsOutput: p.IsOutput)),
     ];
 

@@ -141,7 +141,7 @@ internal static class ModuleTextReader
         return new Trigger(name, span, ElementName.Object(ModelXml.Named(parent)), ModelXml.Property(element, ModelXml.SqlTriggerType) == "3", events, body);
     }
 
-    /// <summary>A parameter from its element: its type, whether it is OUTPUT, and its default parsed from its script.</summary>
+    /// <summary>A parameter from its element: its type, whether it is OUTPUT or READONLY, and its default parsed from its script.</summary>
     private static Parameter Parameter(XElement parameter, SourceSpan within, ICollection<Diagnostic> diagnostics)
     {
         ScalarExpression? @default = null;
@@ -153,6 +153,9 @@ internal static class ModuleTextReader
                 diagnostics.Add(new Diagnostic(SourceCodes.ParseError, error.Message, within.Start));
         }
 
-        return new Parameter(ElementName.Last(ModelXml.Named(parameter)), TypeSpecifier.Of(parameter, ModelXml.Type), ModelXml.IsTrue(parameter, ModelXml.IsOutput), @default, within.Start);
+        return new Parameter(ElementName.Last(ModelXml.Named(parameter)), TypeSpecifier.Of(parameter, ModelXml.Type), ModelXml.IsTrue(parameter, ModelXml.IsOutput), @default, within.Start)
+        {
+            IsReadOnly = ModelXml.IsTrue(parameter, ModelXml.IsReadOnly),
+        };
     }
 }

@@ -114,7 +114,7 @@ public static class ModuleReader
     public static EquatableArray<Parameter> Parameters(IEnumerable<ProcedureParameter> parameters, SourceSpan within)
     {
         ArgumentNullException.ThrowIfNull(parameters);
-        return [.. parameters.Select(p => new Parameter(p.VariableName.Value, SyntaxReader.Type(p.DataType), p.Modifier == ParameterModifier.Output, p.Value, within.At(p)))];
+        return [.. parameters.Select(p => new Parameter(p.VariableName.Value, SyntaxReader.Type(p.DataType), p.Modifier == ParameterModifier.Output, p.Value, within.At(p)) { IsReadOnly = p.Modifier == ParameterModifier.ReadOnly })];
     }
 
     /// <summary>What a definition runs: its statements, a CLR method, or nothing when it has neither.</summary>

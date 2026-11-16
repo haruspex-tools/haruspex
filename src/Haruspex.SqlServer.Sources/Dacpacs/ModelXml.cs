@@ -79,6 +79,7 @@ internal static class ModelXml
     public const string OnDeleteAction = nameof(OnDeleteAction);
     public const string OnUpdateAction = nameof(OnUpdateAction);
     public const string IsOutput = nameof(IsOutput);
+    public const string IsReadOnly = nameof(IsReadOnly);
     public const string IsEncrypted = nameof(IsEncrypted);
     public const string IsAnsiNullsOn = nameof(IsAnsiNullsOn);
     public const string IsQuotedIdentifierOn = nameof(IsQuotedIdentifierOn);
