@@ -40,7 +40,7 @@ internal static class DiskPath
     }
 
     /// <summary>
-    /// Whether this platform's file systems usually ignore case (Windows's NTFS, macOS's APFS), so that a path in any case that
+    /// Whether this platform's file systems usually ignore case (NTFS on Windows, and macOS's own), so that a path in any case that
     /// exists says nothing about how its names are written on disk.
     /// </summary>
     private static readonly bool CaseIgnored = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS();
