@@ -1,0 +1,271 @@
+{
+  "irVersion": "0.21",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "till.price_band",
+      "name": "PriceBand",
+      "kind": "procedure",
+      "at": "procedures/price_band.sql:2:1",
+      "parameters": [
+        {
+          "name": "@lowest",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": -9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@highest",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": -9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@rate",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "money",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "money"
+              }
+            },
+            "min": {
+              "value": -922337203685477.5808,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            },
+            "max": {
+              "value": 922337203685477.5807,
+              "inclusive": true,
+              "from": {
+                "type": "money"
+              }
+            }
+          },
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@fee",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "smallmoney",
+            "digits": {
+              "precision": 10,
+              "scale": 4,
+              "from": {
+                "type": "smallmoney"
+              }
+            },
+            "min": {
+              "value": -214748.3648,
+              "inclusive": true,
+              "from": {
+                "type": "smallmoney"
+              }
+            },
+            "max": {
+              "value": 214748.3647,
+              "inclusive": true,
+              "from": {
+                "type": "smallmoney"
+              }
+            }
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PriceBandRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "PriceBandRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "till.price_band",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": -9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "charged",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,4)",
+            "digits": {
+              "precision": 19,
+              "scale": 4,
+              "from": {
+                "type": "decimal(19,4)"
+              }
+            },
+            "min": {
+              "value": -999999999999999.9999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,4)"
+              }
+            },
+            "max": {
+              "value": 999999999999999.9999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@rate"
+            },
+            {
+              "rule": "parameter",
+              "at": "@fee"
+            },
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/price_band.sql:8:31"
+            },
+            {
+              "rule": "precision-loss",
+              "at": "procedures/price_band.sql:8:31"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

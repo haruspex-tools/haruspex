@@ -15,7 +15,21 @@
           "type": {
             "kind": "number",
             "format": "int64",
-            "sql": "bigint"
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
           },
           "hasDefault": false,
           "output": false

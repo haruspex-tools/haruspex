@@ -14,7 +14,14 @@
           "name": "@procedure",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(128)"
+            "sql": "nvarchar(128)",
+            "maxLength": {
+              "value": 128,
+              "unit": "utf16",
+              "from": {
+                "type": "sysname"
+              }
+            }
           },
           "hasDefault": false,
           "output": false
@@ -23,7 +30,14 @@
           "name": "@message",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(4000)"
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            }
           },
           "hasDefault": false,
           "output": false

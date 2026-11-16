@@ -14,7 +14,14 @@
           "name": "@channel",
           "type": {
             "kind": "string",
-            "sql": "varchar(6)"
+            "sql": "varchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(6)"
+              }
+            }
           },
           "hasDefault": true,
           "output": false

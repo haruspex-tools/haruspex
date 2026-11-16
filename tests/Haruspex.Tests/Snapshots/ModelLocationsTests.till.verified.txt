@@ -1,0 +1,36 @@
+column till.product.label varchar(20) at tables/product.sql:5:5
+column till.product.name nvarchar(40) at tables/product.sql:4:5
+column till.product.price decimal(9,2) at tables/product.sql:6:5
+column till.product.product_id int at tables/product.sql:2:5
+column till.product.sku char(8) at tables/product.sql:3:5
+key till.product unnamed (product_id) at tables/product.sql:2:29
+parameter till.add_lines @extras at procedures/add_lines.sql:4:5
+parameter till.add_lines @lines at procedures/add_lines.sql:3:5
+parameter till.find_products @label at procedures/find_products.sql:5:5
+parameter till.find_products @name at procedures/find_products.sql:3:5
+parameter till.find_products @sku at procedures/find_products.sql:4:5
+parameter till.price_band @fee at procedures/price_band.sql:6:5
+parameter till.price_band @highest at procedures/price_band.sql:4:5
+parameter till.price_band @lowest at procedures/price_band.sql:3:5
+parameter till.price_band @rate at procedures/price_band.sql:5:5
+parameter till.ring_up @basket_id at procedures/ring_up.sql:5:5
+parameter till.ring_up @discount at procedures/ring_up.sql:6:5
+parameter till.ring_up @gift at procedures/ring_up.sql:7:5
+parameter till.ring_up @product_id at procedures/ring_up.sql:3:5
+parameter till.ring_up @quantity at procedures/ring_up.sql:4:5
+parameter till.ring_up @ratio at procedures/ring_up.sql:10:5
+parameter till.ring_up @sale_id at procedures/ring_up.sql:11:5
+parameter till.ring_up @token at procedures/ring_up.sql:8:5
+parameter till.ring_up @weight at procedures/ring_up.sql:9:5
+parameter till.shift_times @day at procedures/shift_times.sql:3:5
+parameter till.shift_times @logged_at at procedures/shift_times.sql:5:5
+parameter till.shift_times @opened_at at procedures/shift_times.sql:4:5
+parameter till.shift_times @rota_slot at procedures/shift_times.sql:6:5
+parameter till.shift_times @stamped_at at procedures/shift_times.sql:8:5
+parameter till.shift_times @till_time at procedures/shift_times.sql:7:5
+procedure till.add_lines at procedures/add_lines.sql:2:1
+procedure till.find_products at procedures/find_products.sql:2:1
+procedure till.price_band at procedures/price_band.sql:2:1
+procedure till.ring_up at procedures/ring_up.sql:2:1
+procedure till.shift_times at procedures/shift_times.sql:2:1
+table till.product at tables/product.sql:1:1

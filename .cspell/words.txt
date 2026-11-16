@@ -244,8 +244,11 @@ elkjs
 jdkato
 jsdom
 
-# The mssql driver's names: its result sets (recordset, recordsets) and its error code for JSON it can't parse (EJSON)
+# The mssql driver's names: its result sets (recordset, recordsets), its error code for JSON it can't parse (EJSON), for a
+# value its check of a type refuses (EPARAM), and for the server's error (EREQUEST)
 EJSON
+EPARAM
+EREQUEST
 recordset
 recordsets
 

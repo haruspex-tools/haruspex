@@ -93,6 +93,18 @@ A path that raises an error to the caller describes no call that returns, so it 
 - A missing table is not caught by a `CATCH` in the same procedure (`A_missing_table_is_not_caught_by_catch_in_the_same_procedure`):
   it fails the call. Treating it as reaching `CATCH` anyway only adds states to the join, which claims less.
 
+## Parameters
+
+A procedure's parameter is its declared type with that type's facts (`SqlTypes.ToParameterShape`): a length, a decimal's
+digits and range, an integer's range, in the database's default collation, which a parameter takes as a column without
+`COLLATE` does. SQL Server converts what a caller sends to the declared type, so the facts hold inside the body; and since
+the conversion cuts a string short or rounds a decimal without an error, they are the rule a client checks a value against
+before sending it ([decision 0054](../../docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)). What the
+server and the mssql driver do with a value outside them is observed, type by type, in `ParameterObservationTests`; the
+fixture is `tests/fixtures/till`. A table-valued parameter is unknown (`unsupported-sql-type`) until table types are read, and
+a `json` one is JSON text whose shape isn't typed yet. Nothing a body proves narrows a parameter: a guard says what the
+procedure does with a value, not what a caller may send.
+
 ## The callers' session
 
 Some values are NULL or an error depending on `SET` options of the session that calls the procedure, which it runs under

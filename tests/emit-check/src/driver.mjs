@@ -6,7 +6,12 @@
 //
 //   { "module": "<file>.zod.ts" or null,
 //     "setup": ["<batch>", …],
-//     "calls": [{ "name", "parseJson", "batch" or "procedure" with "parameters", and optionally "check" }] }
+//     "calls": [{ "name", "parseJson", "batch" or "procedure" with "parameters", and optionally "timeZone" and "check" }] }
+//
+// A parameter's value is sent as it is, for the driver to choose its type, or given as { "type", "args", "value" } to send it
+// with one of the driver's types, sql[type](...args) with "MAX" for sql.MAX, as a generated function does; a value JSON can't hold is written
+// { "js": "NaN" }. A call with a "timeZone" runs with the process's TZ set to it, which is where the driver turns a Date into
+// the server's date and time.
 //
 // Everything runs in one transaction, which is rolled back at the end, so the setup may create tables and procedures (the
 // tests hold the database alone while it runs). Each call runs with the driver's parseJSON setting as it says: the
@@ -27,6 +32,10 @@ const folder = process.argv[2]
 const { module, setup, calls } = JSON.parse(await readFile(path.join(folder, 'driver.json'), 'utf8'))
 const schemas = module ? await import(pathToFileURL(path.resolve(folder, module)).href) : {}
 
+// The values JSON can't hold, by name.
+const special = (value) => (value !== null && typeof value === 'object' && 'js' in value ? { NaN, Infinity }[value.js] : value)
+const zone = process.env.TZ
+
 const pool = await new sql.ConnectionPool(JSON.parse(process.env.HARUSPEX_DRIVER_CONFIG)).connect()
 const transaction = new sql.Transaction(pool)
 await transaction.begin()
@@ -36,18 +45,26 @@ try {
 
   for (const call of calls) {
     pool.config.parseJSON = call.parseJson
+    process.env.TZ = call.timeZone ?? zone
     const request = new sql.Request(transaction)
     const entry = { name: call.name, recordsets: [], error: null, check: null }
     let result
     try {
       if (call.procedure) {
-        for (const [name, value] of Object.entries(call.parameters ?? {})) request.input(name, value)
+        for (const [name, value] of Object.entries(call.parameters ?? {})) {
+          if (value !== null && typeof value === 'object' && 'type' in value) {
+            const type = value.args ? sql[value.type](...value.args.map((a) => (a === 'MAX' ? sql.MAX : a))) : sql[value.type]
+            request.input(name, type, special(value.value))
+          } else {
+            request.input(name, value)
+          }
+        }
         result = await request.execute(call.procedure)
       } else {
         result = await request.query(call.batch)
       }
     } catch (error) {
-      entry.error = { code: error.code ?? null, message: error.message }
+      entry.error = { code: error.code ?? null, number: typeof error.number === 'number' ? error.number : null, message: error.message }
     }
 
     if (result) {
@@ -72,7 +89,11 @@ try {
     observed.push(entry)
   }
 } finally {
-  await transaction.rollback()
+  // An error that breaks the stream (a value longer than the length it was sent with) aborts the transaction, and the
+  // server has rolled it back already.
+  await transaction.rollback().catch((error) => {
+    if (error.code !== 'EABORT') throw error
+  })
   await pool.close()
 }
 

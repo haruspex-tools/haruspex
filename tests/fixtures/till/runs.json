@@ -1,0 +1,39 @@
+// The runs of the till fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what each
+// key means.
+{
+  // Not held to every edge: its point is the parameters, whose edges ParameterObservationTests sends to the server one by
+  // one.
+  "seedReachesEveryEdge": false,
+
+  "runs": [
+    { "name": "find_products, by name", "procedure": "till.find_products", "parameters": { "@name": "Tea" } },
+    { "name": "find_products, by name, code and label", "procedure": "till.find_products", "parameters": { "@name": "Tea", "@sku": "TEA-0001", "@label": "tea" } },
+    { "name": "price_band, from a price", "procedure": "till.price_band", "parameters": { "@lowest": 2.25 } },
+    { "name": "price_band, a band with a rate and a fee", "procedure": "till.price_band", "parameters": { "@lowest": 1, "@highest": 5, "@rate": 1.2345, "@fee": 0.5 } },
+    { "name": "shift_times, the day and the opening", "procedure": "till.shift_times", "parameters": { "@day": "2026-11-16", "@opened_at": "2026-11-16T08:30:00" } },
+    {
+      "name": "shift_times, every type",
+      "procedure": "till.shift_times",
+      "parameters": {
+        "@day": "2026-11-16", "@opened_at": "2026-11-16T08:30:00", "@logged_at": "2026-11-16T08:30:00.997",
+        "@rota_slot": "2026-11-16T09:00:00", "@till_time": "08:30:00.125", "@stamped_at": "2026-11-16T08:30:00.1234567+05:30"
+      }
+    },
+    { "name": "price_band, a null rate", "procedure": "till.price_band", "parameters": { "@lowest": 1, "@rate": null } },
+    { "name": "shift_times, nulls", "procedure": "till.shift_times", "parameters": { "@day": null, "@opened_at": null } },
+    { "name": "ring_up, nulls", "procedure": "till.ring_up", "parameters": { "@product_id": 1, "@quantity": 1, "@basket_id": null, "@discount": null, "@gift": null } },
+    { "name": "ring_up, the least", "procedure": "till.ring_up", "parameters": { "@product_id": 1, "@quantity": 2, "@basket_id": 9007199254740993 } },
+    {
+      "name": "ring_up, everything",
+      "procedure": "till.ring_up",
+      "parameters": {
+        "@product_id": 3, "@quantity": -1, "@basket_id": -9223372036854775808, "@discount": 255, "@gift": true,
+        "@token": "0f8fad5b-d9cb-469f-a165-70867728950e", "@weight": 0.5, "@ratio": 1e300
+      }
+    }
+  ],
+
+  "notRun": {
+    "till.add_lines": "Its table-valued parameter is one runs.json can't give."
+  }
+}

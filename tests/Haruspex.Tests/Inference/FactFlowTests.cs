@@ -98,11 +98,13 @@ public class FactFlowTests
         Assert.IsType<IrJsonText>(Field(Procedure("SELECT (SELECT t.score FROM dbo.t AS t FOR JSON PATH) AS j;"), "PRow", "j").Type);
 
     [Fact]
-    public void A_parameter_of_an_alias_type_has_its_kind_but_no_facets()
+    public void A_parameter_of_an_alias_type_has_its_base_type_s_facts()
     {
+        // A parameter keeps what its declared type holds (ParameterTests), through an alias as for a column; the alias's
+        // NOT NULL is a column's rule and says nothing of what a caller may send.
         var parameters = Procedure("SELECT t.id FROM dbo.t AS t;").Objects[0].Parameters;
 
-        Assert.All(parameters, p => Assert.Null(Assert.IsType<IrScalar>(p.Type).Facets));
+        Assert.Equal([8, 128], parameters.Select(p => Assert.IsType<IrScalar>(p.Type).Facets!.Length!.Value));
         Assert.Equal(["nvarchar(8)", "nvarchar(128)"], parameters.Select(p => ((IrScalar)p.Type).Sql));
     }
 }

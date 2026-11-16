@@ -57,14 +57,26 @@ internal static class MssqlDriver
     }
 
     /// <summary>One call: a batch, or a procedure with its arguments, with the driver's parseJSON on or off.</summary>
+    /// <param name="Parameters">The arguments: each a value the driver chooses a type for, or a <see cref="Typed"/> one.</param>
     /// <param name="Check">Whether to read its result sets as an application would and parse them with a schema of the module.</param>
+    /// <param name="TimeZone">The time zone the driver runs in for this call (its process's <c>TZ</c>), or null for the machine's.</param>
     public sealed record Call(
         string Name,
         bool ParseJson,
         string? Batch = null,
         string? Procedure = null,
         IReadOnlyDictionary<string, object?>? Parameters = null,
-        Check? Check = null);
+        Check? Check = null,
+        string? TimeZone = null);
+
+    /// <summary>
+    /// An argument sent with one of the driver's types, <c>sql[Type](...Args)</c>, as a generated function sends it: an argument
+    /// <c>"MAX"</c> is <c>sql.MAX</c>. A value JSON can't hold is a <see cref="JsValue"/>.
+    /// </summary>
+    public sealed record Typed(string Type, object? Value, IReadOnlyList<object>? Args = null);
+
+    /// <summary>A JavaScript value JSON can't hold, by name (<c>NaN</c> or <c>Infinity</c>), which the script reads as <c>{ "js": … }</c>.</summary>
+    public sealed record JsValue(string Js);
 
     /// <summary>
     /// The schema a call's results are parsed with, each result set's encoding, <c>json</c> or <c>rowset</c>, and how the
@@ -81,8 +93,11 @@ internal static class MssqlDriver
     /// <summary>One result set as the driver hands it over: its columns' names and its rows (an object, or what the driver parsed).</summary>
     public sealed record Recordset(IReadOnlyList<string> Columns, IReadOnlyList<JsonElement> Rows);
 
-    /// <summary>An error the driver threw, with its code (<c>EJSON</c> for JSON it could not parse).</summary>
-    public sealed record Error(string? Code, string Message);
+    /// <summary>
+    /// An error the driver threw, with its code (<c>EJSON</c> for JSON it could not parse, <c>EPARAM</c> for a value its own
+    /// check of a type refused, <c>EREQUEST</c> for the server's error) and, for the server's, its number.
+    /// </summary>
+    public sealed record Error(string? Code, int? Number, string Message);
 
     /// <summary>Whether the schema accepted what the application read, and its first issues when not.</summary>
     public sealed record CheckOutcome(bool Success, IReadOnlyList<string> Issues);

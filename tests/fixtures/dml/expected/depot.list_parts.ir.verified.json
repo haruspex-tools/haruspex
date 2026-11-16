@@ -14,7 +14,14 @@
           "name": "@code",
           "type": {
             "kind": "string",
-            "sql": "varchar(20)"
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
           },
           "hasDefault": true,
           "output": false

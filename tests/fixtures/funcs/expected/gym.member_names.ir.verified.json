@@ -14,7 +14,14 @@
           "name": "@format",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(100)"
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
           },
           "hasDefault": true,
           "output": false

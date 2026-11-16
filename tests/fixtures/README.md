@@ -77,7 +77,8 @@ JSON, with comments and trailing commas allowed (as in `haruspex.json`), so each
 | `notRun` | Procedures deliberately not run, each with the reason (`Every_procedure_is_run_or_excluded_with_a_reason`). |
 
 **A parameter's type comes from the procedure.** The file gives each argument as JSON: a number, a string, `true` or
-`false`, `null`, or a date as `"2026-11-03"`. The reader converts it to what the procedure declares (`tinyint`, `bigint`,
+`false`, `null`, or a date and time in ISO 8601 (`"2026-11-03"`, `"2026-11-03T08:30:00.125"`, `"08:30:00"`, or with an offset,
+`"…+05:30"`) and a GUID as a string. The reader converts it to what the procedure declares (`tinyint`, `bigint`,
 `date` and the rest), as an `EXEC` would, so the call sends the declared type without the file repeating it. A key, setup,
 procedure or parameter the reader doesn't know fails every run, rather than being ignored.
 

@@ -168,7 +168,7 @@ DECLARE @sql nvarchar(max) = N'SELECT p.product_id, p.name FROM shop.product AS 
 EXEC sp_executesql @sql;
 ```
 
-The IR says what is known (the parameter's type) and lists the unknown, with its reason and location:
+The IR says what is known (the parameter's type, and the length a value sent to it keeps) and lists the unknown, with its reason and location:
 
 ```json haruspex-ir
 {
@@ -187,7 +187,14 @@ The IR says what is known (the parameter's type) and lists the unknown, with its
           "name": "@where",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(400)"
+            "sql": "nvarchar(400)",
+            "maxLength": {
+              "value": 400,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(400)"
+              }
+            }
           },
           "hasDefault": false,
           "output": false

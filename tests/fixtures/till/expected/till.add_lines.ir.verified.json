@@ -1,0 +1,112 @@
+{
+  "irVersion": "0.21",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "till.add_lines",
+      "name": "AddLines",
+      "kind": "procedure",
+      "at": "procedures/add_lines.sql:2:1",
+      "parameters": [
+        {
+          "name": "@lines",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-sql-type"
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@extras",
+          "type": {
+            "kind": "json-text"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "AddLinesRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "AddLinesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "till.add_lines",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "product_id",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-source"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/add_lines.sql:6:8"
+            }
+          ]
+        },
+        {
+          "name": "quantity",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-source"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/add_lines.sql:6:22"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "till.add_lines",
+      "path": "parameters.@lines",
+      "reason": "unsupported-sql-type",
+      "detail": "The type line_list is not modelled yet.",
+      "at": "procedures/add_lines.sql:3:5"
+    },
+    {
+      "object": "till.add_lines",
+      "path": "results[0][].product_id",
+      "reason": "unsupported-source",
+      "detail": "The table variable @lines is not modelled here.",
+      "at": "procedures/add_lines.sql:6:8"
+    },
+    {
+      "object": "till.add_lines",
+      "path": "results[0][].quantity",
+      "reason": "unsupported-source",
+      "detail": "The table variable @lines is not modelled here.",
+      "at": "procedures/add_lines.sql:6:22"
+    }
+  ],
+  "overrides": [],
+  "folds": {}
+}

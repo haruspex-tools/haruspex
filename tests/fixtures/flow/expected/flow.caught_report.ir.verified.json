@@ -15,7 +15,21 @@
           "type": {
             "kind": "number",
             "format": "uint8",
-            "sql": "tinyint"
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
           },
           "hasDefault": true,
           "output": false

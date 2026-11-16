@@ -14,7 +14,14 @@
           "name": "@email",
           "type": {
             "kind": "string",
-            "sql": "varchar(80)"
+            "sql": "varchar(80)",
+            "maxLength": {
+              "value": 80,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(80)"
+              }
+            }
           },
           "hasDefault": false,
           "output": false

@@ -14,7 +14,14 @@
           "name": "@name",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(60)"
+            "sql": "nvarchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(60)"
+              }
+            }
           },
           "hasDefault": true,
           "output": false
@@ -23,7 +30,14 @@
           "name": "@author",
           "type": {
             "kind": "string",
-            "sql": "nvarchar(60)"
+            "sql": "nvarchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(60)"
+              }
+            }
           },
           "hasDefault": true,
           "output": false
@@ -32,7 +46,14 @@
           "name": "@genre",
           "type": {
             "kind": "string",
-            "sql": "varchar(10)"
+            "sql": "varchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(10)"
+              }
+            }
           },
           "hasDefault": true,
           "output": false

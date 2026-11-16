@@ -1,0 +1,195 @@
+{
+  "irVersion": "0.21",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "till.shift_times",
+      "name": "ShiftTimes",
+      "kind": "procedure",
+      "at": "procedures/shift_times.sql:2:1",
+      "parameters": [
+        {
+          "name": "@day",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@opened_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@logged_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime"
+          },
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@rota_slot",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "smalldatetime"
+          },
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@till_time",
+          "type": {
+            "kind": "time",
+            "sql": "time(3)"
+          },
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@stamped_at",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(7)"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ShiftTimesRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ShiftTimesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "till.shift_times",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "day",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@day"
+            }
+          ]
+        },
+        {
+          "name": "opened_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@opened_at"
+            }
+          ]
+        },
+        {
+          "name": "logged_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@logged_at"
+            }
+          ]
+        },
+        {
+          "name": "rota_slot",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "smalldatetime"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@rota_slot"
+            }
+          ]
+        },
+        {
+          "name": "till_time",
+          "type": {
+            "kind": "time",
+            "sql": "time(3)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@till_time"
+            }
+          ]
+        },
+        {
+          "name": "stamped_at",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(7)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@stamped_at"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

@@ -384,8 +384,10 @@ Every count (a length, `digits`, `minItems`, `maxItems`) is a whole number from 
 
 Facets travel with a value only while it passes through unchanged: a column reference, under aliases, through
 joins, nesting and the JSON constructors. Through any expression they are dropped, which leaves the type wider and still
-true. Parameters carry no facets: a parameter's type converts what the caller sends (a string too long is cut short), so
-its facets describe the value after conversion, not what a caller may pass. Where SQL Server's front end finds them, and
+true. A parameter's facets are its declared type's: what SQL Server keeps of a value a caller sends, which it converts to
+that type, cutting a string short or rounding a decimal without an error. So they hold inside the body, and they are also the
+rule a client checks a value against before sending it
+([decision 0054](../../docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)). Where SQL Server's front end finds them, and
 which constraints it trusts, is in [its README](../Haruspex.SqlServer.Inference/README.md#facets-from-types-and-constraints).
 
 ## Results

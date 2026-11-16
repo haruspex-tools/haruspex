@@ -15,7 +15,21 @@
           "type": {
             "kind": "number",
             "format": "int16",
-            "sql": "smallint"
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
           },
           "hasDefault": false,
           "output": false

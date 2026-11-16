@@ -83,7 +83,7 @@ internal sealed partial class Typer(
     [
         .. procedure.Parameters.Select(p => new ParameterShape(
             p.Name,
-            SqlTypes.ToShape(model, p.Type, p.At),
+            SqlTypes.ToParameterShape(model, p.Type, p.At),
             HasDefault: p.Default is not null,
             IsOutput: p.IsOutput)),
     ];

@@ -13,12 +13,7 @@ namespace Haruspex.SqlServer.Inference;
 /// </remarks>
 internal static class SqlTypes
 {
-    /// <summary>A parameter's or variable's type: its kind, with an alias resolved, but no facets.</summary>
-    /// <remarks>
-    /// A parameter's facets describe the value after SQL Server has converted what the caller sent (a string too long
-    /// for <c>nvarchar(20)</c> is cut short without an error), not what a caller may send, so they are left for the
-    /// generated client module to state as an input rule.
-    /// </remarks>
+    /// <summary>A function's declared return type: its kind, with an alias resolved, but no facets.</summary>
     public static Shape ToShape(DatabaseModel model, SqlType? type, SourceLocation at) =>
         SchemaRules.ResolveType(model, type) is { } resolved
             ? ToShape(new ColumnFacts(resolved), resolved, at, withFacets: false)
@@ -32,6 +27,22 @@ internal static class SqlTypes
     public static Shape ToConvertedShape(DatabaseModel model, SqlType? type, SourceLocation at) =>
         SchemaRules.ResolveType(model, type) is { } resolved
             ? ToShape(SchemaRules.TypeFacts(resolved, collation: null), resolved, at, withFacets: true)
+            : Unsupported(type, at);
+
+    /// <summary>
+    /// A procedure's parameter: its declared type, with that type's facts, in the database's default collation, which a parameter
+    /// takes as a column without <c>COLLATE</c> does.
+    /// </summary>
+    /// <remarks>
+    /// The facts are what SQL Server keeps of a value sent to the parameter: a string longer than <c>nvarchar(20)</c> is cut
+    /// short and a decimal of more places is rounded, without an error (<c>ParameterObservationTests</c>). So they are true of the
+    /// value inside the body, and they are the rule a client checks a value against before sending it, which the generated
+    /// client module states (<c>docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md</c>). A guard in the body
+    /// proves nothing about what a caller may send, so nothing narrower is claimed here.
+    /// </remarks>
+    public static Shape ToParameterShape(DatabaseModel model, SqlType? type, SourceLocation at) =>
+        SchemaRules.ResolveType(model, type) is { } resolved
+            ? ToShape(SchemaRules.TypeFacts(resolved, model.DefaultCollation), resolved, at, withFacets: true)
             : Unsupported(type, at);
 
     /// <summary>A column's type, with every fact Semantics proved about its values.</summary>

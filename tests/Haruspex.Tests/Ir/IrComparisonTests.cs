@@ -193,6 +193,10 @@ public class IrComparisonTests
             [
                 "shop.get_order parameters[\"@order_id\"]: type changed from number (int32) to number (int64)",
                 "shop.get_order parameters[\"@order_id\"]: SQL type changed from int to bigint",
+
+                // A parameter keeps its type's range, which a client checks a value against before sending it.
+                "shop.get_order parameters[\"@order_id\"]: lower bound changed from at least -2147483648 to at least -9223372036854775808",
+                "shop.get_order parameters[\"@order_id\"]: upper bound changed from at most 2147483647 to at most 9223372036854775807",
                 "shop.get_order parameters[\"@order_id\"]: now has a default",
             ],
             Changes(before, after));
