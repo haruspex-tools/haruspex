@@ -36,12 +36,12 @@ internal sealed partial class Typer
         // Never null: the function table reads a call as a window only when it has OVER (FunctionTable).
         var over = call.OverClause!;
 
-        // OVER w takes the partition, order and frame of w's definition in the query's WINDOW clause, whose
-        // frame may be empty (A_window_named_in_a_window_clause_brings_its_frame_to_every_function_over_it). Only the OVER
-        // clause is read here, so a function over a name is unknown.
-        if (over.WindowName is not null)
-            return NotModelled(call, "a window named in a WINDOW clause is not modelled yet.");
-        EquatableArray<IrNullReason> Framed() => rule.EmptyFrame && MayBeEmpty(over) ? [new IrNullReason(IrNullRule.EmptyFrame, At(call).ToString())] : [];
+        // OVER w takes the partition, order and frame of w's definition in the query's WINDOW clause, whose frame may be empty
+        // (A_window_named_in_a_window_clause_brings_its_frame_to_every_function_over_it); NamedWindows follows the names.
+        var window = NamedWindows.Resolve(scope.Query, over);
+        if (window.Refused is { } refused)
+            return NotModelled(call, refused);
+        EquatableArray<IrNullReason> Framed() => rule.EmptyFrame && MayBeEmpty(window.Frame) ? [new IrNullReason(IrNullRule.EmptyFrame, At(call).ToString())] : [];
         EquatableArray<IrNullReason> Sample() => rule.TooFewValues ? [new IrNullReason(IrNullRule.TooFewValues, At(call).ToString())] : [];
 
         switch (rule.Result)
@@ -129,9 +129,9 @@ internal sealed partial class Typer
     /// starting after it or ending before it (<c>ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING</c>). Without a frame, the whole
     /// partition (without ORDER BY) or the rows up to the current one's peers (with it) are read, the current row among them.
     /// </summary>
-    private static bool MayBeEmpty(OverClause over)
+    private static bool MayBeEmpty(WindowFrameClause? frame)
     {
-        if (over.WindowFrameClause is not { } frame)
+        if (frame is null)
             return false;
         var startsByCurrent = frame.Top.WindowDelimiterType is WindowDelimiterType.UnboundedPreceding or WindowDelimiterType.ValuePreceding or WindowDelimiterType.CurrentRow;
         var endsByCurrent = frame.Bottom is null

@@ -19,9 +19,9 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | Not in it, and unknown where they are called | 217 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 160 |
+| Modelled, wholly or in part | 161 |
 | Read, changing no result | 29 |
-| Unknown | 316 |
+| Unknown | 315 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -760,7 +760,7 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `OFFSET … FETCH` | `OffsetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#how-many-rows-cardinalitycs) | Skips and limits rows, which changes no column. |
 | `OVER` | `OverClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#window-functions) | Makes a function a window function. |
 | `ROWS or RANGE frame` | `WindowFrameClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#window-functions) | A frame that may leave out the current row may be empty, so an aggregate over it may be NULL. |
-| `WINDOW` | `WindowClause` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: a function over a named window is unknown. |
+| `WINDOW` | `WindowClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#window-functions) | A function over a named window takes its definition, through windows defined on others. |
 | `name AS ( window )` | `WindowDefinition` | part of `WindowClause` |  |
 | `WITHIN GROUP` | `WithinGroupClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#window-functions) | The order PERCENTILE_CONT, PERCENTILE_DISC and STRING_AGG read. |
 | `TABLESAMPLE` | `TableSampleClause` | read, changing no result | Returns some of the table's rows, which changes no column. |

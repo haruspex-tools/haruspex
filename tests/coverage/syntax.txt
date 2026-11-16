@@ -408,7 +408,7 @@ TopRowFilter | TOP | modelled | How many rows (`Cardinality.cs`) | Limits the ro
 OffsetClause | OFFSET … FETCH | modelled | How many rows (`Cardinality.cs`) | Skips and limits rows, which changes no column. | SELECT id FROM dbo.toy ORDER BY id OFFSET 1 ROWS FETCH NEXT 2 ROWS ONLY;
 OverClause | OVER | modelled | Window functions | Makes a function a window function. | SELECT ROW_NUMBER() OVER (ORDER BY id) AS n FROM dbo.toy;
 WindowFrameClause | ROWS or RANGE frame | modelled | Window functions | A frame that may leave out the current row may be empty, so an aggregate over it may be NULL. | SELECT SUM(qty) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) AS s FROM dbo.box;
-WindowClause | WINDOW | unknown unsupported-expression | | Not modelled: a function over a named window is unknown. | SELECT SUM(qty) OVER w AS s FROM dbo.box WINDOW w AS (ORDER BY id);
+WindowClause | WINDOW | modelled | Window functions | A function over a named window takes its definition, through windows defined on others. | SELECT SUM(qty) OVER w AS s FROM dbo.box WINDOW w AS (ORDER BY id);
 WindowDefinition | name AS ( window ) | within WindowClause | | |
 WithinGroupClause | WITHIN GROUP | modelled | Window functions | The order PERCENTILE_CONT, PERCENTILE_DISC and STRING_AGG read. | SELECT STRING_AGG(name, ',') WITHIN GROUP (ORDER BY name) AS names FROM dbo.toy;
 TableSampleClause | TABLESAMPLE | no-effect | | Returns some of the table's rows, which changes no column. | SELECT id FROM dbo.toy TABLESAMPLE (10 PERCENT);

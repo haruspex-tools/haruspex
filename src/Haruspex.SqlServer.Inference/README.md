@@ -1634,9 +1634,13 @@ holds the current row. Observed in `FunctionObservationTests`.
   (`Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type`).
 - **`PERCENTILE_CONT`** (`float`, over a number or a `bit`) and **`PERCENTILE_DISC`** (its argument's type and facets): NULLs are skipped,
   so NULL only when every value in the partition is (the argument's reasons).
-- **A window named in a `WINDOW` clause** (`OVER w`) is not modelled: its definition, frame included, is the name's, which
-  may be empty where the `OVER` clause shows no frame, so a function over it is unknown. ScriptDom doesn't parse `OVER (w …)`
-  at all (`A_window_named_in_a_window_clause_brings_its_frame_to_every_function_over_it`).
+- **A window named in a `WINDOW` clause** (`OVER w`, SQL Server 2022) is the name's definition, frame included, which may be
+  empty where the `OVER` clause shows no frame (`A_window_named_in_a_window_clause_brings_its_frame_to_every_function_over_it`).
+  A window may be defined on another (`w2 AS (w1 ROWS …)`, written before or after it) and `OVER (w …)` may add to the one it
+  names; each element (partition, order, frame) comes from the one place along the chain that gives it
+  (`A_window_defined_on_another_named_window_takes_the_elements_of_both`). Semantics' `NamedWindows` follows the names, ignoring
+  case as for other identifiers. The server refuses a name not defined (5362), a cycle (5365) and an element given twice
+  (4123) when the procedure is created, so each is unknown.
 - A window function inside `COALESCE` still counts as a call read twice (`read-twice`): that it is computed once per row, as
   an aggregate is, is likely but not observed.
 

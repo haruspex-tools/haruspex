@@ -326,6 +326,27 @@ public partial class FunctionObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_window_defined_on_another_named_window_takes_the_elements_of_both()
+    {
+        // w2 takes w1's order and adds a frame; w3 is w2, defined before it; OVER (w1 ROWS …) adds a frame too; w4 partitions and
+        // OVER adds its order. Each frame that leaves out the current row is empty on the first row. Names ignore case.
+        Assert.Equal(
+            "id,a,b,c,d,e: 1,null,null,null,10,10;2,10,10,10,20,20;3,10,10,10,30,30",
+            await Select("""
+                SELECT id, FIRST_VALUE(n) OVER w2 AS a, FIRST_VALUE(n) OVER W3 AS b, FIRST_VALUE(n) OVER (w1 ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) AS c,
+                       SUM(n) OVER (w4 ORDER BY id) AS d, LAST_VALUE(n) OVER w1 AS e
+                FROM dbo.obs_w
+                WINDOW w3 AS (w2), w1 AS (ORDER BY id), w2 AS (w1 ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING), w4 AS (PARTITION BY id)
+                ORDER BY id;
+                """));
+
+        // A name not defined (5362), a cycle (5365), and an element given twice (4123) are refused when the procedure is created.
+        Assert.Equal(" ! 5362", (await Run([Rows], "SELECT SUM(n) OVER x AS a FROM dbo.obs_w WINDOW w AS (ORDER BY id);")).ToString());
+        Assert.Equal(" ! 5365", (await Run([Rows], "SELECT SUM(n) OVER w1 AS a FROM dbo.obs_w WINDOW w1 AS (w2), w2 AS (w1);")).ToString());
+        Assert.Equal(" ! 4123", (await Run([Rows], "SELECT SUM(n) OVER (w ORDER BY id) AS a FROM dbo.obs_w WINDOW w AS (ORDER BY g);")).ToString());
+    }
+
+    [Fact]
     public async Task Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type()
     {
         // Past the edge: NULL, or the default converted to the column's type (a long string cut, 1.9 to 1); a NULL offset is NULL;

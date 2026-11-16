@@ -108,17 +108,46 @@ public partial class FunctionTests
     }
 
     [Fact]
-    public void A_function_over_a_window_named_in_a_window_clause_is_unknown()
+    public void A_function_over_a_window_named_in_a_window_clause_takes_its_frame()
     {
-        // A_window_named_in_a_window_clause_brings_its_frame_to_every_function_over_it: the name's frame may be empty, and
-        // haruspex reads only the OVER clause it is given, so a function over a name is unknown however simple the name's window.
+        // A_window_named_in_a_window_clause_brings_its_frame_to_every_function_over_it: the name's frame may be empty.
         var doc = Procedure("""
-            SELECT FIRST_VALUE(n) OVER w AS a, SUM(n) OVER w AS b, ROW_NUMBER() OVER w AS c
+            SELECT FIRST_VALUE(n) OVER w AS a, SUM(n) OVER w AS b, ROW_NUMBER() OVER w AS c, SUM(n) OVER W AS d
             FROM dbo.t WINDOW w AS (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING);
             """);
-        Unknown(doc, "a");
-        Unknown(doc, "b");
-        Unknown(doc, "c");
+        Assert.Equal("int empty-frame", Typed(doc, "a"));
+        Assert.Equal("int arithmetic-overflow empty-frame", Typed(doc, "b"));
+        Assert.Equal("bigint", Typed(doc, "c"));
+        Assert.Equal("int arithmetic-overflow empty-frame", Typed(doc, "d"));
+    }
+
+    [Fact]
+    public void A_window_defined_on_another_named_window_takes_the_elements_of_both()
+    {
+        // A_window_defined_on_another_named_window_takes_the_elements_of_both: the frame may come from the window named, from
+        // the one defined on it (written before it or after), or from OVER itself.
+        var doc = Procedure("""
+            SELECT FIRST_VALUE(n) OVER w2 AS a, FIRST_VALUE(n) OVER w3 AS b, FIRST_VALUE(n) OVER (w1 ROWS BETWEEN 1 FOLLOWING AND 2 FOLLOWING) AS c,
+                   FIRST_VALUE(n) OVER w1 AS d, FIRST_VALUE(n) OVER (w4 ORDER BY id) AS e
+            FROM dbo.t
+            WINDOW w3 AS (w2), w1 AS (ORDER BY id), w2 AS (w1 ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING), w4 AS (PARTITION BY g);
+            """);
+        Assert.Equal("int empty-frame", Typed(doc, "a"));
+        Assert.Equal("int empty-frame", Typed(doc, "b"));
+        Assert.Equal("int empty-frame", Typed(doc, "c"));
+        Assert.Equal("int", Typed(doc, "d"));
+        Assert.Equal("int", Typed(doc, "e"));
+    }
+
+    [Theory]
+    [InlineData("OVER x WINDOW w AS (ORDER BY id)", "doesn't define (5362)")]
+    [InlineData("OVER w1 WINDOW w1 AS (w2), w2 AS (W1)", "defined on itself (5365)")]
+    [InlineData("OVER (w ORDER BY id) WINDOW w AS (ORDER BY g)", "given again where 'w' gives it (4123)")]
+    [InlineData("OVER w2 WINDOW w1 AS (ORDER BY id ROWS BETWEEN 1 PRECEDING AND CURRENT ROW), w2 AS (w1 ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING)", "given again where 'w1' gives it (4123)")]
+    public void A_named_window_sql_server_refuses_is_unknown(string window, string why)
+    {
+        var doc = Procedure($"SELECT SUM(n) {window.Replace(" WINDOW", " AS a FROM dbo.t WINDOW", StringComparison.Ordinal)};");
+        Assert.Contains(why, Assert.Single(doc.Unknowns).Detail, StringComparison.Ordinal);
     }
 
     [Fact]
