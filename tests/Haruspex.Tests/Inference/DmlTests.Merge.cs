@@ -42,6 +42,25 @@ public partial class DmlTests
     }
 
     [Fact]
+    public void A_merge_action_reads_the_target_through_its_alias()
+    {
+        // A_merge_action_reads_the_target_through_its_alias: t names the target's row in an action, as #hourly does.
+        var doc = Doc(("p", """
+            CREATE PROCEDURE dbo.p AS
+            DECLARE @x int = 0, @y nvarchar(10) = N'y';
+            SELECT i.id AS hr, i.qty AS n INTO #hourly FROM dbo.item AS i WHERE i.qty > 0;
+            MERGE #hourly AS t USING dbo.item AS s ON t.hr = s.id WHEN MATCHED THEN UPDATE SET n = t.n + 1, @x = t.hr;
+            MERGE dbo.item AS t USING dbo.note AS s ON t.id = s.id WHEN MATCHED THEN UPDATE SET @y = t.label, qty = t.qty;
+            SELECT h.n, @x AS x, @y AS y FROM #hourly AS h;
+            """));
+
+        Assert.Empty(doc.Unknowns);
+        Assert.Equal([IrNullRule.ArithmeticOverflow], Rules(Field(doc, "n")));
+        Assert.False(Field(doc, "x").Nullable);
+        Assert.Equal([IrNullRule.NullableColumn], Rules(Field(doc, "y")));
+    }
+
+    [Fact]
     public void Merge_into_a_declared_temporary_table_leaves_it_as_declared()
     {
         var doc = Doc(("p", """

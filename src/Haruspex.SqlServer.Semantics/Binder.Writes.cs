@@ -29,7 +29,8 @@ public sealed partial class Binder
     /// condition. An action reads only the rows it has: a column of the target in <c>WHEN NOT MATCHED [BY TARGET]</c>, or of
     /// the source in <c>WHEN NOT MATCHED BY SOURCE</c>, is refused (observed: A_merge_action_reads_only_the_rows_it_has), so
     /// a column read is never of a row the action lacks. What <c>ON</c> and each <c>WHEN … AND</c> prove isn't read, which
-    /// only claims less.
+    /// only claims less. The target is named by its alias, which ScriptDom keeps on the merge rather than on the target
+    /// (<see cref="MergeSpecification.TableAlias"/>; observed: A_merge_action_reads_the_target_through_its_alias).
     /// </summary>
     /// <param name="merge">The merge.</param>
     /// <param name="names">The names in force, its WITH's included.</param>
@@ -38,8 +39,16 @@ public sealed partial class Binder
         ArgumentNullException.ThrowIfNull(merge);
         ArgumentNullException.ThrowIfNull(names);
         return bindings.Once(merge, null, names, () =>
-            Specification(new QuerySpecification { FromClause = new FromClause { TableReferences = { merge.Target, merge.TableReference } } }, null, names));
+            Specification(new QuerySpecification { FromClause = new FromClause { TableReferences = { Aliased(merge.Target, merge.TableAlias), merge.TableReference } } }, null, names));
     }
+
+    /// <summary>A MERGE's target with its alias on it, as a FROM source carries one: a table's or a table variable's.</summary>
+    private static TableReference Aliased(TableReference target, Identifier? alias) => (target, alias) switch
+    {
+        (NamedTableReference { Alias: null } named, { }) => Like(new NamedTableReference { SchemaObject = named.SchemaObject, Alias = alias }, named),
+        (VariableTableReference { Alias: null } variable, { }) => Like(new VariableTableReference { Variable = variable.Variable, Alias = alias }, variable),
+        _ => target,
+    };
 
     /// <summary>
     /// A write's <c>OUTPUT</c> (or <c>OUTPUT … INTO</c>), bound as the select list of a query over the write's FROM (and a

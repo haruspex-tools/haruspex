@@ -352,7 +352,8 @@ it on the stack of calls.
 - **`MERGE`** writes as the statements its actions hold do: a `WHEN … THEN INSERT` its row, a `THEN UPDATE` its `SET`
   clauses, a `THEN DELETE` nothing a column may hold. Each action writes rows of its own and every write only joins into what
   a column may hold, so the order they are read in doesn't matter. Their values are read over the target and the source, each
-  row as it is: an action reads only the rows it has, since a column of the target in `WHEN NOT MATCHED [BY TARGET]`, or of
+  row as it is, the target by its alias if it has one (`A_merge_action_reads_the_target_through_its_alias`): an action reads
+  only the rows it has, since a column of the target in `WHEN NOT MATCHED [BY TARGET]`, or of
   the source in `WHEN NOT MATCHED BY SOURCE`, is refused (`A_merge_action_reads_only_the_rows_it_has`, Msg 4104); what `ON`
   and each `WHEN … AND` prove isn't read, which only claims less. So into a temporary table or a table variable, as into a
   permanent one, and a variable an `UPDATE` action sets (`SET @v = s.n`) may be set, whatever the target

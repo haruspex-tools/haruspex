@@ -122,6 +122,17 @@ public class DmlObservationTests(SqlServerFixture server)
         Assert.Equal("v: null", (await Run([Item, Seed], "DECLARE @v nvarchar(10) = N'x'; WITH XMLNAMESPACES ('urn:shop' AS s) UPDATE dbo.obs_item SET @v = label WHERE id = 2; SELECT ISNULL(@v, N'null') AS v;")).ToString());
 
     [Fact]
+    public async Task A_merge_action_reads_the_target_through_its_alias() =>
+        // MERGE #t AS t: an action reads the target's row as t, which OUTPUT can't name (4104, as for an UPDATE's alias).
+        Assert.Equal("hr,n,x: 1,11,1", (await Run([], """
+            DECLARE @x int = 0;
+            CREATE TABLE #obs_hourly (hr int NOT NULL, n int NULL);
+            INSERT INTO #obs_hourly VALUES (1, 10);
+            MERGE #obs_hourly AS t USING (VALUES (1)) AS s (hr) ON t.hr = s.hr WHEN MATCHED THEN UPDATE SET n = t.n + 1, @x = t.hr;
+            SELECT h.hr, h.n, @x AS x FROM #obs_hourly AS h;
+            """)).ToString());
+
+    [Fact]
     public async Task A_merge_action_reads_only_the_rows_it_has()
     {
         // WHEN NOT MATCHED [BY TARGET] has no target row and WHEN NOT MATCHED BY SOURCE no source row: a column of the other is
