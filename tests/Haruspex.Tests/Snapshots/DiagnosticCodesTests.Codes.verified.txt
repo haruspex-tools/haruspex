@@ -120,3 +120,5 @@ HAR6014 E What the module claims would change [Haruspex.Cli.CliCodes.ClaimChange
 HAR6015 E The committed module isn't what haruspex writes [Haruspex.Cli.CliCodes.ModuleDiffers]
 HAR6016 E A selected procedure's result sets are unknown [Haruspex.Cli.CliCodes.ResultsUnknown]
 HAR6017 E Unknowns the config file fails [Haruspex.Cli.CliCodes.UnknownsFail]
+HAR6018 E No config file below the folder [Haruspex.Cli.CliCodes.NoConfigFound]
+HAR6019 E Options that can't go together [Haruspex.Cli.CliCodes.OptionsApart]

@@ -9,7 +9,7 @@ output of [Haruspex.Emit.Zod](https://github.com/sharpblue/haruspex/blob/main/sr
 
 ## How data flows through it
 
-`HaruspexCli` parses the command line. `ModuleRun` runs the steps both commands share, each returning an outcome, up to the
+`HaruspexCli` parses the command line, and `ModuleSet` runs the command once for each module it covers. `ModuleRun` runs the steps both commands share, each returning an outcome, up to the
 module in memory (`EmittedModule`); `Generate` writes it, and `Check` compares it with what is committed, claim by claim
 (`IrComparison`, in the IR's layer). `SqlProject` composes the layers that read and infer.
 
@@ -45,12 +45,22 @@ haruspex generate Sales/Sales.sqlproj --include 'sales.*' --out src/db       # a
 
 ```sh
 haruspex check                                       # in CI: fail if the committed module would change
+haruspex check --all                                 # every haruspex.json below the working directory, each a module
+haruspex generate -c plugins/orders/haruspex.json -c plugins/returns/haruspex.json
 ```
 
 `generate` writes `haruspex.ir.json` and `haruspex.zod.ts` to the output folder. `check` infers the same way, writes nothing,
 and compares with the two files committed there. Both take the same arguments: the source argument (a folder, a `.sqlproj` or
 a `.dacpac`), `--include` and `--out` override the config file for one run, and `--config` names a config file instead of
 searching for one.
+
+**Several modules.** An application whose plugins each have their own interface to the database has a `haruspex.json` for
+each, and each is a module of its own: its own selection, names, output and committed contract. `--config` may be repeated,
+and `--all` runs every `haruspex.json` below a folder (the working directory, or the one it names), leaving out folders whose
+name starts with a dot and `node_modules`, in path order. Each module runs as a run of its own would, under a line naming its
+config file, and the run ends with one line saying which failed; its exit code is the worst of theirs. A source,
+`--include` and `--out` are one module's, so they can't be given with several. With one config file, nothing is added to what
+a run prints.
 
 A check that fails says what changed, one line for each change, at the procedure it is in:
 
@@ -98,7 +108,8 @@ output: how many procedures it typed, how many unknowns there are, and where it 
   another version, and a selected procedure whose result sets are unknown and not declared. Unknowns are notes, and pass,
   unless the config file says `"check": { "unknowns": "fail" }`
   ([decision 0050](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0050-check-compares-claims-not-files.md)).
-- **The exit codes are fixed**, so scripts and CI can rely on them (`ExitCodeTests` holds each row):
+- **The exit codes are fixed**, so scripts and CI can rely on them (`ExitCodeTests` holds each row). A run over several
+  modules exits with the highest of theirs (`ModuleSetTests`):
 
 | Code | Meaning |
 |---|---|

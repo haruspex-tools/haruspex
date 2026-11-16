@@ -160,3 +160,5 @@ reason.
 | [HAR6015](HAR6015.md) | error | The committed module isn't what haruspex writes |
 | [HAR6016](HAR6016.md) | error | A selected procedure's result sets are unknown |
 | [HAR6017](HAR6017.md) | error | Unknowns the config file fails |
+| [HAR6018](HAR6018.md) | error | No config file below the folder |
+| [HAR6019](HAR6019.md) | error | Options that can't go together |

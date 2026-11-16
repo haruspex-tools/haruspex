@@ -65,6 +65,15 @@ internal static class CliCodes
     /// <summary>The module has unknowns, and the config file's <c>check.unknowns</c> is <c>fail</c>.</summary>
     public static DiagnosticCode UnknownsFail { get; } = new(6017, DiagnosticSeverity.Error, "Unknowns the config file fails");
 
+    /// <summary><c>--all</c> finds no config file below its folder, or the folder isn't there.</summary>
+    public static DiagnosticCode NoConfigFound { get; } = new(6018, DiagnosticSeverity.Error, "No config file below the folder");
+
+    /// <summary>
+    /// Options that can't go together: <c>--all</c> and <c>--config</c>, or a source, <c>--include</c> or <c>--out</c>, which are for one
+    /// module, with several.
+    /// </summary>
+    public static DiagnosticCode OptionsApart { get; } = new(6019, DiagnosticSeverity.Error, "Options that can't go together");
+
     /// <summary>
     /// The codes with which <c>check</c> fails: what it found differs from what is committed, or can't be compared with it, or is
     /// incomplete. Each makes the exit code 1, not 2: the command line and the config file may be right.

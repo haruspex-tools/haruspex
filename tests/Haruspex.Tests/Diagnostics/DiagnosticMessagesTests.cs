@@ -245,6 +245,8 @@ public class DiagnosticMessagesTests
         (6014, () => Checked([GetBook], f => f.File("db/p1.sql", GetBook.Replace("b.note, ", "", StringComparison.Ordinal)))),
         (6015, () => Checked([GetBook], f => File.AppendAllText(Path.Combine(f.Path, "out", "haruspex.zod.ts"), "// edited\n"))),
         (6016, () => Checked(["CREATE PROCEDURE lib.p @sql nvarchar(max) AS EXEC sp_executesql @sql;"], _ => { })),
+        (6018, () => Cli([GetBook], args: ["--all", "db"])),
+        (6019, () => Cli([GetBook], args: ["--all", "--out", "out"])),
         (6017, () => Checked(["CREATE PROCEDURE lib.p AS SELECT json_query(b.extra) AS extra FROM lib.book AS b FOR JSON PATH;"], _ => { }, "\"check\": { \"unknowns\": \"fail\" }")),
     ];
 

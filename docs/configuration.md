@@ -1,10 +1,10 @@
 # Configuration: `haruspex.json`
 
 A project's settings live in `haruspex.json`. `haruspex generate` and `haruspex check` look for it in the working directory
-and then in each folder above it, or uses the file `--config` names. Paths in it are relative to the file. It is JSON with
-comments and trailing commas, as `tsconfig.json` is. Its JSON Schema is published at
-[`schemas/haruspex.schema.json`](../schemas/haruspex.schema.json); name it in `$schema` and editors complete and check
-the file as you type.
+and then in each folder above it, or use the files `--config` names, or every one below a folder with `--all`: each file is a
+module of its own. Paths in it are relative to the file. It is JSON with comments and trailing commas, as `tsconfig.json` is.
+Its JSON Schema is published at [`schemas/haruspex.schema.json`](../schemas/haruspex.schema.json); name it in `$schema` and
+editors complete and check the file as you type.
 
 **An unknown key is an error**, with its path and line. It is never ignored, because a misspelt setting would
 otherwise silently do nothing.

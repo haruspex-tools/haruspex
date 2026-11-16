@@ -343,3 +343,9 @@ db/p1.sql:1:1: error HAR6016: lib.p: its result sets are unknown, and check pass
 HAR6017
 haruspex.json: error HAR6017: 1 unknown in the module, each said above, and "check": { "unknowns": "fail" } fails the check on any. Type each (an override, declared results), or set it to "report".
 
+HAR6018
+haruspex: error HAR6018: --all: no haruspex.json below db. Give the folder that holds the modules' config files.
+
+HAR6019
+haruspex: error HAR6019: a source, --include and --out are for one module; with several config files, each says its own source, selection and out.
+
