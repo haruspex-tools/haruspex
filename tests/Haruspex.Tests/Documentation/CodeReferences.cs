@@ -170,18 +170,27 @@ internal sealed partial class CodeReferences
 
         // Generated names are real when haruspex generates them: in a committed snapshot (a test's own, or a fixture's
         // expected output), or in a module the documentation shows, which WorkedExampleTests (a worked example's output)
-        // or QuickStartTests (the five-minute start's) holds to what haruspex gives. A name is a schema's or a type's, or a
-        // key of an object the module declares, which is a column's or a JSON key's name as the SQL writes it.
-        var modules = Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "tests", "Haruspex.Tests", "Snapshots"), "*.verified.ts")
+        // or QuickStartTests (the five-minute start's) holds to what haruspex gives. A name is a schema or type the module
+        // exports; in a module the documentation shows, it may also be a key of an object the module declares (a column's
+        // or a JSON key's name as the SQL writes it), which the page beside it explains. Keys are taken only from those
+        // modules, so a stale name can't resolve by matching a column of some fixture no page shows.
+        var snapshots = Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "tests", "Haruspex.Tests", "Snapshots"), "*.verified.ts")
             .Concat(Fixture.All.SelectMany(f => Directory.EnumerateFiles(f.Expected, "*.verified.ts")))
-            .Select(File.ReadAllText)
-            .Concat(MarkdownText.Documentation
-                .SelectMany(f => MarkdownText.FencedBlocks(File.ReadAllText(Path.Combine(RepositoryPaths.Root, f))))
-                .Where(b => b.Words.Contains(WorkedExample.ZodMark) || QuickStartTests.IsModule(b))
-                .Select(b => b.Text));
-        foreach (var module in modules)
+            .Select(File.ReadAllText);
+        var shown = MarkdownText.Documentation
+            .SelectMany(f => MarkdownText.FencedBlocks(File.ReadAllText(Path.Combine(RepositoryPaths.Root, f))))
+            .Where(b => b.Words.Contains(WorkedExample.ZodMark) || QuickStartTests.IsModule(b))
+            .Select(b => b.Text)
+            .ToList();
+        foreach (var module in snapshots.Concat(shown))
         {
-            foreach (var m in GeneratedName().Matches(module).Concat(GeneratedKey().Matches(module)))
+            foreach (Match m in GeneratedName().Matches(module))
+                generated.Add(m.Groups["name"].Value);
+        }
+
+        foreach (var module in shown)
+        {
+            foreach (Match m in GeneratedKey().Matches(module))
                 generated.Add(m.Groups["name"].Value);
         }
 

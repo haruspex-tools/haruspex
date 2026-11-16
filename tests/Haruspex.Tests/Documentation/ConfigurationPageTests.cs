@@ -14,8 +14,9 @@ namespace Haruspex.Tests.Documentation;
 /// <remarks>
 /// A setting is documented when its name is written as code in the page's prose, outside the examples, alone or as the key of
 /// a value (<c>`objects`</c>, <c>`"values": "exact"`</c>), so that a reader searching the page for it finds what it does. A
-/// setting the page shows is a key in one of its <c>jsonc</c> examples, or a name in code in a heading, which is where the page
-/// says which setting a section is about. An example may be a fragment of a file, such as one <c>"procedures"</c> member; it
+/// setting the page shows is a key in one of its <c>jsonc</c> examples, a key of a member written as code in its prose
+/// (<c>`"nullable": false`</c>), which a reader copies, or a name in code in a heading, which is where the page says which
+/// setting a section is about. An example may be a fragment of a file, such as one <c>"procedures"</c> member; it
 /// is checked as the file that holds only it.
 /// </remarks>
 public partial class ConfigurationPageTests
@@ -67,12 +68,34 @@ public partial class ConfigurationPageTests
         Assert.True(unknown.Count == 0, $"Headings name settings the schema doesn't have:\n{string.Join("\n", unknown)}");
     }
 
+    [Fact]
+    public void Every_setting_the_page_s_prose_writes_as_a_member_is_in_the_schema()
+    {
+        var settings = Settings(SchemaDocument().RootElement, "#").Select(s => s.Name).ToHashSet(StringComparer.Ordinal);
+        var unknown = MarkdownText.InlineCode(Markdown)
+            .Select(c => (c.Line, Key: MemberKey(c.Code)))
+            .Where(c => c.Key is not null && !settings.Contains(c.Key))
+            .Select(c => $"{Page}:{c.Line.ToString(CultureInfo.InvariantCulture)}: {c.Key}")
+            .ToList();
+
+        Assert.True(unknown.Count == 0, $"The page's prose writes settings the schema doesn't have:\n{string.Join("\n", unknown)}");
+    }
+
+    [Theory]
+    [InlineData("\"nullable\": false", "nullable")]
+    [InlineData("nullable: false", "nullable")]
+    [InlineData("\"values\": \"exact\"", "values")]
+    [InlineData("sales.dacpac/[sales].[get_order]:3:5", null)]
+    [InlineData("results[1][].id", null)]
+    public void Code_written_as_a_member_names_its_key(string code, string? key) => Assert.Equal(key, MemberKey(code));
+
     [Theory]
     [InlineData("`objects`", "objects", true)]
     [InlineData("`\"values\": \"exact\"`", "values", true)]
     [InlineData("`nullable: false`", "nullable", true)]
     [InlineData("`mayBeAbsent`", "absent", false)]
     [InlineData("`$schema`", "schema", false)]
+    [InlineData("`source.references`", "references", false)]
     public void A_setting_is_named_in_code_only_as_a_whole_word(string code, string setting, bool named) =>
         Assert.Equal(named, Names(code.Trim('`'), setting));
 
@@ -120,9 +143,15 @@ public partial class ConfigurationPageTests
         }
     }
 
-    /// <summary>Whether code written in prose names the setting: as a word of its own, not part of a longer name.</summary>
+    /// <summary>
+    /// Whether code written in prose names the setting: as a word of its own, not part of a longer name, nor a property in a
+    /// dotted path such as the IR's <c>source.references</c>, which is not the setting.
+    /// </summary>
     private static bool Names(string code, string setting) =>
-        Regex.IsMatch(code, $@"(?<![A-Za-z0-9_$]){Regex.Escape(setting)}(?![A-Za-z0-9_])", RegexOptions.None, TimeSpan.FromSeconds(1));
+        Regex.IsMatch(code, $@"(?<![A-Za-z0-9_$.]){Regex.Escape(setting)}(?![A-Za-z0-9_])", RegexOptions.None, TimeSpan.FromSeconds(1));
+
+    /// <summary>The key of code written as a member of a config file (<c>"nullable": false</c>, <c>nullable: false</c>), or null.</summary>
+    private static string? MemberKey(string code) => Member().Match(code) is { Success: true } m ? m.Groups["key"].Value : null;
 
     /// <summary>An example as a document: a whole file, or a fragment of one (members without their braces) inside braces.</summary>
     private static JsonDocument Parse(string text)
@@ -139,6 +168,9 @@ public partial class ConfigurationPageTests
 
     private static JsonDocument SchemaDocument() =>
         JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryPaths.Root, "schemas", "haruspex.schema.json")));
+
+    [GeneratedRegex(@"^""?(?<key>[A-Za-z$][A-Za-z0-9]*)""?:\s")]
+    private static partial Regex Member();
 
     [GeneratedRegex(@"^#{1,6}\s")]
     private static partial Regex Heading();

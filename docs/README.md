@@ -54,10 +54,10 @@ A few words have a fixed meaning everywhere in the documentation.
 | value set | The closed set of values a string or number can take, from a `CHECK` constraint. It is generated as an enum only where the value that arrives is proven to be exactly one of them, and as a note otherwise. |
 | JSON text, live JSON | A string that holds JSON, such as a JSON column, or a `FOR JSON` subquery's output in a column of a row; and JSON that a document embeds as JSON rather than as a string, such as a `FOR JSON` subquery inside `FOR JSON`, or `JSON_QUERY`. |
 | IR | The intermediate representation, `haruspex.ir.json`: every claim and unknown, with its reasons, from which the Zod is generated. |
-| override, declaration | A claim a person makes in `haruspex.json`, about a value or a procedure's results, with a required reason; the generated code still checks it. |
+| override, declaration | What a person writes in `haruspex.json` to correct or complete what was inferred: a name, a claim about a value, the application's own type for a value, or a procedure's results. A value declared never null, a value set declared exact, or declared results need a reason (`why`); the generated code still checks every one. |
 | observed | Established by running SQL Server in a test, not by reading its documentation. |
 | ScriptDom | Microsoft's parser for T-SQL, the one SQL library haruspex uses; [What haruspex models](coverage.md) lists its constructs by its names. |
-| fixture, corpus | An invented database the tests use to check one thing; and a public database, written by others, used to measure coverage. |
+| fixture, corpus | A database the tests use to check one thing, invented except for two that copy tables from Microsoft's samples to run the README's examples; and a public database, written by others, used to measure coverage. |
 
 ## Every page
 

@@ -2,7 +2,8 @@
 
 From a fresh clone to a Zod schema for one of AdventureWorks' stored procedures, and a script that parses rows with it. The
 repository keeps a copy of Microsoft's AdventureWorks install script in [`tests/corpus`](../tests/corpus/README.md), so this
-needs no database, no credentials and no download beyond the clone and zod. A test (`QuickStartTests`) runs these steps as
+needs no database and no credentials. The only downloads are the clone, haruspex's own packages from NuGet, which the first
+build fetches, and zod. A test (`QuickStartTests`) runs these steps as
 written, so what this page shows is what haruspex does today.
 
 You need git, the [.NET 10 SDK](https://dotnet.microsoft.com/download) and, for the last step, Node.js 22.18 or later, which
@@ -16,7 +17,8 @@ cd haruspex
 dotnet run --project src/Haruspex.Cli -- generate tests/corpus/sql-server-samples/samples/databases/adventure-works/oltp-install-script --include dbo.uspGetBillOfMaterials --out out
 ```
 
-No package is published yet, so `dotnet run` builds haruspex first, which takes a minute the first time. Then it reads every
+No package of haruspex is published yet, so `dotnet run` restores its packages and builds it first, which takes a few
+minutes the first time and seconds after that. Then it reads every
 `.sql` file in the folder (here one, `instawdb.sql`), infers the procedure `--include` names, and writes two files to `out`,
 a folder git ignores: `out/haruspex.ir.json`, the IR, which records what haruspex inferred and why; and `out/haruspex.zod.ts`,
 the module an application imports. It prints one line saying so.
@@ -61,9 +63,9 @@ Each line has its reason in the SQL:
   comparison of that column with a value (`= @StartProductID`, or `= cte.[ComponentID]` in the recursive step), and a
   comparison with NULL is never true.
 - **`ComponentDesc` is at most 50 characters**, from the sample's alias type `Name`, which is `nvarchar(50)`.
-- **`TotalQuantity`, `StandardCost` and `ListPrice`** are a `SUM` of a decimal and two `money` columns. The driver delivers
-  them as JavaScript numbers, so only their decimal places are checked; the note in the module's header says why their bounds
-  aren't.
+- **`TotalQuantity`** is a `SUM` of a `decimal(8,2)` column, and **`StandardCost` and `ListPrice`** are `money` columns. The
+  driver delivers all three as JavaScript numbers, so only their decimal places are checked; the note in the module's header
+  says why their bounds aren't.
 - **`BOMLevel` is a `smallint`**, so it stays within that type's range.
 - **`RecursionLevel` may be null.** The recursive step adds 1 to it, and whether an `int` overflow is an error or NULL depends
   on `SET` options of the session that calls the procedure, which the source doesn't show. The IR says so: the value's

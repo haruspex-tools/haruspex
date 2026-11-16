@@ -5,7 +5,7 @@
 feature, and nothing has a promised response time. It is also pre-release, so the command line, the generated code and the
 IR may change without notice.
 
-Help is still welcome, in both directions:
+Help is still welcome:
 
 - **A question or a bug:** open an issue on GitHub. A bug report is most useful with a small, invented database project that
   shows it, the command run and what it printed. Please don't post a real organisation's SQL.
