@@ -19,17 +19,44 @@ public partial class FunctionTests
     }
 
     [Fact]
-    public void Degrees_and_radians_keep_an_integers_type_or_a_floats_and_leave_a_decimal_unknown()
+    public void Degrees_and_radians_keep_an_integers_type_or_a_floats()
     {
         // Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow.
-        var doc = Procedure("SELECT DEGREES(ti) AS a, DEGREES(n) AS b, RADIANS(bi) AS c, DEGREES(f) AS d2, RADIANS(r) AS e, DEGREES(d) AS f2 FROM dbo.t;");
+        var doc = Procedure("SELECT DEGREES(ti) AS a, DEGREES(n) AS b, RADIANS(bi) AS c, DEGREES(f) AS d2, RADIANS(r) AS e FROM dbo.t;");
         Assert.Equal("int", Typed(doc, "a"));
         Assert.Equal("int arithmetic-overflow", Typed(doc, "b"));
         Assert.Equal("bigint nullable-column", Typed(doc, "c"));
         Assert.Equal("float arithmetic-overflow", Typed(doc, "d2"));
         Assert.Equal("float nullable-column", Typed(doc, "e"));
-        Unknown(doc, "f2");
     }
+
+    [Theory]
+    [InlineData("DEGREES", "decimal(9,2)", "decimal(38,18)")]
+    [InlineData("RADIANS", "decimal(9,2)", "decimal(38,18)")]
+    [InlineData("DEGREES", "numeric(5,1)", "numeric(38,18)")]
+    [InlineData("DEGREES", "decimal(18,0)", "decimal(38,18)")]
+    [InlineData("DEGREES", "decimal(19,0)", "decimal(38,18) arithmetic-overflow")]
+    [InlineData("DEGREES", "decimal(36,20)", "decimal(38,20)")]
+    [InlineData("DEGREES", "decimal(37,20)", "decimal(38,20) arithmetic-overflow")]
+    [InlineData("DEGREES", "decimal(38,38)", "decimal(38,38) arithmetic-overflow")]
+    [InlineData("RADIANS", "decimal(38,38)", "decimal(38,38)")]
+    [InlineData("RADIANS", "decimal(21,0)", "decimal(38,18)")]
+    [InlineData("RADIANS", "decimal(22,0)", "decimal(38,18) arithmetic-overflow")]
+    [InlineData("DEGREES", "money", "money arithmetic-overflow")]
+    [InlineData("RADIANS", "money", "money")]
+    [InlineData("DEGREES", "smallmoney", "money")]
+    public void Degrees_and_radians_of_a_decimal_widen_it_and_of_money_give_money(string function, string type, string expected)
+    {
+        // Degrees_and_radians_of_a_decimal_widen_it_to_38_digits_and_of_money_give_money_and_either_may_overflow: scale s or 18,
+        // whichever is more, never NULL for NUMERIC_ROUNDABORT, and an overflow where the result has too few integer digits.
+        var doc = Procedure($"DECLARE @t TABLE (x {type} NOT NULL);\nSELECT {function}(t.x) AS a FROM @t AS t;");
+        Assert.Equal(expected, Typed(doc, "a"));
+    }
+
+    [Fact]
+    public void Degrees_of_a_decimal_literal_is_numeric() =>
+        // Observed: a literal with places is numeric, and so is what DEGREES and RADIANS give of it.
+        Assert.Equal("numeric(38,18)", Typed(Procedure("SELECT DEGREES(1.5) AS a;"), "a"));
 
     [Fact]
     public void Greatest_and_least_of_one_kind_are_null_only_when_every_value_may_be()

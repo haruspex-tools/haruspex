@@ -60,6 +60,7 @@ internal sealed partial class Typer
     private const string Trigonometry = "The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options";
 
     private const string Angles = "Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow";
+    private const string DecimalAngles = "Degrees_and_radians_of_a_decimal_widen_it_to_38_digits_and_of_money_give_money_and_either_may_overflow";
 
     private const string Extremes = "Greatest_and_least_skip_nulls_and_cap_a_max_string_at_8000_bytes_which_a_longer_value_fails";
 
@@ -184,8 +185,8 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.Acos, (1, 1), "float", [DomainError], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: true, bitInDomain: true))),
         Typing(ScalarFunctions.Atan, (1, 1), "float", [], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: false))),
         Typing(ScalarFunctions.Atn2, (2, 2), "float", [DomainError], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: true))),
-        Typing(ScalarFunctions.Degrees, (1, 1), "int, bigint or float, as the argument", [ArithmeticOverflow], [Angles], (a, e, s) => a.Numeric(Call(e), s, n => a.Angle(n, degrees: true))),
-        Typing(ScalarFunctions.Radians, (1, 1), "int, bigint or float, as the argument", [], [Angles], (a, e, s) => a.Numeric(Call(e), s, n => a.Angle(n, degrees: false))),
+        Typing(ScalarFunctions.Degrees, (1, 1), "int, bigint or float, as the argument; decimal(38, s or 18) of a decimal; money of money", [ArithmeticOverflow], [Angles, DecimalAngles], (a, e, s) => a.Numeric(Call(e), s, n => a.Angle(n, degrees: true))),
+        Typing(ScalarFunctions.Radians, (1, 1), "int, bigint or float, as the argument; decimal(38, s or 18) of a decimal; money of money", [ArithmeticOverflow], [Angles, DecimalAngles], (a, e, s) => a.Numeric(Call(e), s, n => a.Angle(n, degrees: false))),
         Typing(ScalarFunctions.Pi, (0, 0), "float, never null", [], [Trigonometry], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Float), [], e)),
 
         // ---- conversions and choices ----

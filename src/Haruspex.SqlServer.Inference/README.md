@@ -910,8 +910,14 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   (`The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options`).
 - **`DEGREES`** and **`RADIANS`**: an integer's type, `int` below `bigint`; `float` of a `float`, a `real` or a `bit`.
   `DEGREES` of an `int`, a `bigint` or a `float` may overflow (8115); `RADIANS` of an integer truncates (`RADIANS(100)` is 1).
-  Of a `decimal` or `money` they widen the places (`decimal(38,18)`), which is not modelled
-  (`Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow`).
+  (`Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow`). Of a `decimal` or `numeric` of scale s,
+  its own type of precision 38 and scale s or 18, whichever is more (`decimal(5,2)` gives `decimal(38,18)`, `decimal(38,20)`
+  gives `decimal(38,20)`); of `money` or `smallmoney`, `money`. The value is computed through `float` and rounded to the
+  result's places, which no option makes an error, `NUMERIC_ROUNDABORT` included, so the widening is never `precision-loss`.
+  A decimal result keeps 38 less its scale integer digits, so `DEGREES`, which multiplies by about 57.3, overflows where those
+  are fewer than the argument's and two more (`decimal(19,0)`, not `decimal(18,0)`), and `RADIANS`, which divides, where
+  they are fewer than the argument's less one (`decimal(22,0)`, not `decimal(21,0)`); `DEGREES` of `money` may overflow, of
+  `smallmoney` not (`Degrees_and_radians_of_a_decimal_widen_it_to_38_digits_and_of_money_give_money_and_either_may_overflow`).
 
 ## CASE, IIF, CHOOSE and NULLIF
 
