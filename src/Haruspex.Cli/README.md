@@ -54,8 +54,9 @@ haruspex check --all                                 # every haruspex.json below
 haruspex generate -c plugins/orders/haruspex.json -c plugins/returns/haruspex.json
 ```
 
-`generate` writes `haruspex.ir.json` to the output folder, and beside it what the config file's `emit` names: `haruspex.zod.ts`,
-the default, `haruspex.jsonschema.json`, or both ([the configuration page](../../docs/configuration.md#what-is-written-emit)).
+`generate` writes `haruspex.ir.json` to the output folder, and beside it what the config file's `emit` names: `haruspex.zod.ts`
+(the default), `haruspex.jsonschema.json` and `haruspex.mssql.ts`, the database module's functions
+([the configuration page](../../docs/configuration.md#what-is-written-emit)).
 `check` infers the same way, writes nothing, and compares with the files committed there. Both take:
 
 | Argument or option | What it is |
@@ -85,6 +86,19 @@ db/procedures.sql:1:1: error HAR6014: shop.list_orders results[0][].customer: be
 db/procedures.sql:1:1: error HAR6014: shop.list_orders results[0][].status: value set grew: added "closed"
 haruspex: 2 change(s) from what is committed. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
 ```
+
+In CI, until haruspex is published as a package, a job runs it from a copy of its source pinned to a commit, and one step
+checks every module in the repository:
+
+```yaml
+- uses: actions/checkout@v7                      # haruspex itself, into .haruspex, which check --all doesn't look in
+  with: { repository: sharpblue/haruspex, ref: <commit>, path: .haruspex }
+- uses: actions/setup-dotnet@v6
+  with: { global-json-file: .haruspex/global.json }
+- run: dotnet run --project .haruspex/src/Haruspex.Cli -- check --all   # every haruspex.json below; exit code 1 on a change
+```
+
+Pin the two actions by commit too, as haruspex's own workflow does.
 
 Everything it finds goes to standard error, one line each, in the form compilers write and editors and CI annotate, with
 the problem's code, whose page in [docs/diagnostics](https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/README.md)

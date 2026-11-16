@@ -1,26 +1,44 @@
 # haruspex
 
-A tool that carries a SQL Server database's types into TypeScript by static analysis. It reads a database project's source,
-infers what each stored procedure returns, `FOR JSON` documents included, and generates [Zod](https://zod.dev) schemas and
-types for application code to use. It is pre-release: see [Status and roadmap](#status-and-roadmap).
+A tool that carries a SQL Server database's types into TypeScript by static analysis. It reads a database project's source
+and infers what each stored procedure takes and returns, `FOR JSON` documents included. From that it writes
+[Zod](https://zod.dev) schemas and types, and a function for each procedure that checks what goes in before calling it and
+what comes back before returning it. It is pre-release: see [Status and roadmap](#status-and-roadmap).
+
+```ts
+import { getOrder } from './db/haruspex.mssql'
+
+const { result: order } = await getOrder(pool, { OrderID: 42 })   // the order, typed and checked, or null
+```
 
 ## The problem
 
-Many applications reach their database through stored procedures, and nothing at that boundary is typed. A procedure's
-result reaches the application as rows the driver can't describe, or as one string of JSON: SQL Server reports a `FOR JSON`
-query as a single `nvarchar(max)` column, however deep the document inside it. So developers write the types by hand. Nothing
-checks them against the SQL, and they drift as the procedures change, until a field that "can't be null" is null in
-production.
+Many applications reach their database through stored procedures, and nothing at that boundary is typed. A result arrives
+as rows the driver can't describe, or as one string of JSON, however deep the `FOR JSON` document inside it. So developers
+write the types by hand, and they drift until a field that "can't be null" is null in production. The way in is no safer:
+SQL Server cuts a string too long for its parameter, and rounds a decimal with too many places, without an error.
 
 The tool works from the source alone (a folder of `.sql` files, an SSDT `.sqlproj` or a DACPAC). It never connects to a
 database, so it needs no credentials and no data. And it follows one rule: **never claim more than the engine guarantees.**
 
+## What an application gets
+
+With `"emit": ["zod", "mssql"]` in `haruspex.json`, `haruspex generate` writes the database module: `haruspex.zod.ts`, a schema
+and a type for each procedure's parameters and results, and `haruspex.mssql.ts`, a function for each procedure over the
+[mssql](https://www.npmjs.com/package/mssql) driver. A function takes a connection it doesn't own and the parameters by their
+declared names, checks them against their declared types before anything is sent, so a value the database would silently
+cut or round is caught first ([decision 0054](docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)),
+and returns what comes back checked and typed as `{ result, output, returnValue }`.
+
+The functions belong on the server, since they take the connection and its credentials; the schemas and types, in their own
+file, may go to the browser. [The database module](docs/database-module.md) has the detail: dates, return shapes and
+`serverOnly` for Next.js.
+
 ## Two examples on Microsoft's samples
 
-Each example below is written for this page over the real tables of one of Microsoft's sample databases, which the
-repository keeps in [`tests/corpus`](tests/corpus/README.md). A test infers each over the whole sample and fails if the Zod
-shown here differs from what haruspex writes, and the differential tests run each on SQL Server and check every value that
-comes back against the claims.
+Each example is written for this page over the real tables of a Microsoft sample kept in
+[`tests/corpus`](tests/corpus/README.md). A test fails if the code shown differs from what haruspex writes, and the
+differential tests call each through its generated function on SQL Server and check what comes back against the claims.
 
 ### An order with its lines, from WideWorldImporters
 
@@ -105,6 +123,21 @@ it is there, and is absent for an order with none, because a `FOR JSON` subquery
 salesperson is always there: the join is on a foreign key that is never NULL. The whole result is one object or null, because
 the filter is on the primary key and `WITHOUT_ARRAY_WRAPPER` writes a single object.
 
+And its function, after the helpers every module of functions begins with:
+
+```ts haruspex-mssql
+/** Calls Website.GetOrder. */
+export async function getOrder(db: Queryable, params: types.GetOrderParams): Promise<{ result: types.GetOrder; returnValue: number }> {
+  const p = await checked(GetOrderParamsSchema, params, (issues) => new ParameterError('Website.GetOrder', issues))
+  const request = db.request()
+  request.input('OrderID', sql.Int, p.OrderID)
+  const response = await request.execute('Website.GetOrder')
+  const sets = response.recordsets as unknown as readonly unknown[]
+  const result = await checked(GetOrderSchema, readJson(sets[0]), (issues) => new ResultError('Website.GetOrder', 'the results', issues))
+  return { result, returnValue: response.returnValue }
+}
+```
+
 ### A bill of materials as a tree, from AdventureWorks
 
 A function that calls itself builds a tree of any depth, and haruspex types it as a recursive schema:
@@ -181,118 +214,20 @@ export const GetProductTreeSchema = GetProductTreeRowSchema.nullable()
 export type GetProductTree = z.infer<typeof GetProductTreeSchema>
 ```
 
-The schema knows what the database declares: `quantity` is at least 1 and `standardCost` at least 0 from the sample's
-`CHECK` constraints, `name` is at most 50 characters from its alias type `Name`, and `unit` is exactly three characters
-because `nchar(3)` arrives padded. A part with no components has no `components` key.
+`quantity` is at least 1 and `standardCost` at least 0 from the sample's `CHECK` constraints, `name` is at most 50 characters
+from its alias type `Name`, and `unit` is exactly three characters because `nchar(3)` arrives padded.
 
-## What it does for you today
+## Other ways to use it
 
-**It types an application's reads of procedures.** `haruspex generate` writes a module with a Zod schema and a type for each
-procedure's results: rowsets as the [mssql](https://www.npmjs.com/package/mssql) driver returns them, and `FOR JSON` text as
-the document inside it. It takes the database's source, as a folder of scripts, a `.sqlproj` or a DACPAC, and a
-`haruspex.json` beside it saying which procedures are the application's interface; [the configuration](docs/configuration.md)
-also covers names, overrides and declared results.
-
-**It calls the procedures, checking what goes in and what comes back.** With `"emit": ["zod", "mssql"]` in `haruspex.json`,
-`generate` also writes `haruspex.mssql.ts`, a function for each procedure, over the mssql driver:
-
-```ts
-import { getOrder } from './db/haruspex.mssql'
-
-const { result } = await getOrder(pool, { OrderID: 42 })   // a pool or a transaction, and the procedure's own parameter names
-```
-
-A function checks its parameters before anything is sent, with a strict schema of each one's declared type (`GetOrderParamsSchema`
-in the Zod module), because SQL Server cuts a longer string short and rounds a decimal of more places without an error: for
-those the check is the only one there is ([decision 0054](docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)).
-A date or time is an ISO 8601 string of the form its type holds, never a `Date`, whose meaning would depend on the server's
-time zone ([decision 0055](docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)). It then checks each result
-set, and the `OUTPUT` parameters, with their schemas, and returns `{ result, output, returnValue }`. A failure is one of three,
-told apart by name: the parameters were wrong (a HaruspexParameterError, nothing sent), the database raised an error (mssql's own
-`RequestError`, as it is), or the result broke its schema (a HaruspexResultError: the database and the application are deployed
-out of step) ([decision 0056](docs/decisions/0056-a-function-throws-three-kinds-of-failure.md)). The functions take a
-connection, so they belong on the server; the types and schemas, in their own file, may go anywhere
-([the configuration](docs/configuration.md#what-is-written-emit)).
-
-**It validates results at the seam, at run time.** The types are only as good as the data that arrives, so the application
-parses each result with the schema before using it: the functions do it for you, and an application that calls the driver
-itself does it as below. A wrong claim, such as one in an override a person wrote, fails there,
-loudly, rather than deep in the code. SQL Server splits `FOR JSON` output over rows of about 2,000 characters, and the
-[mssql](https://www.npmjs.com/package/mssql) driver joins them back into one row. With the driver's `parseJSON` option on,
-as many applications set it, that row is the parsed document, or `null` when no rows matched, which the schema reads as it
-is:
-
-```ts
-import sql from 'mssql'
-import { GetOrderSchema, type GetOrder } from './db/haruspex.zod'
-
-// pool was made with { ...config, parseJSON: true }.
-export async function getOrder(pool: sql.ConnectionPool, orderId: number): Promise<GetOrder> {
-  const result = await pool.request().input('OrderID', sql.Int, orderId).execute('Website.GetOrder')
-  return GetOrderSchema.parse(result.recordset?.[0] ?? null)
-}
-```
-
-Without `parseJSON`, the row holds the text, under the name SQL Server gives the column of `FOR JSON` output, and the text is
-empty when no rows matched:
-
-```ts
-const text: string = result.recordset?.[0]?.['JSON_F52E2B61-18A1-11d1-B105-00805F49916B'] ?? ''
-return GetOrderSchema.parse(text === '' ? null : JSON.parse(text))
-```
-
-Either way, a `FOR JSON` result with no rows is `null`, a list as much as one object, and its type says so. A result set
-whose statement didn't run, in a branch or after a `RETURN`, isn't sent at all, so `result.recordset` is then `undefined`:
-that is what `?.` and `?? null` are for, and a schema whose summary says "when it does not run" needs them. Rows from a plain
-`SELECT` are `result.recordset`, or `[]` when it didn't run. A procedure with several result sets has one schema, a tuple:
-it parses an array holding each of `result.recordsets`, read as above.
-
-[`examples/greenhouse`](examples/greenhouse/README.md) is a small application that calls its procedures through the functions
-haruspex wrote for it, compiled in CI.
-
-**It types other languages, through JSON Schema.** With `"emit": ["zod", "json-schema"]` in `haruspex.json`, `generate` also
-writes `haruspex.jsonschema.json`, one JSON Schema (draft 2020-12) document from the same IR, so a service in Python, C#, Go or
-anything with a JSON Schema validator checks the same results. Each procedure's results are the definition under its name,
-`#/$defs/GetOrder`, with every value described as `FOR JSON` writes it (a rowset's rows as `FOR JSON PATH, INCLUDE_NULL_VALUES`
-would write them). It claims what the Zod claims wherever JSON Schema can
-say it; what it can't, such as a collation's case-insensitive value set, is a note in the description rather than a
-check ([the JSON Schema emitter](src/Haruspex.Emit.JsonSchema/README.md)).
-
-## Status and roadmap
-
-**Pre-release.** The command line, the generated code and the IR, the intermediate representation that holds what haruspex
-inferred, will change without notice. Don't depend on it yet.
-
-Today haruspex types what the procedures of a SQL Server database project are sent and return, for TypeScript through Zod and
-for any language through JSON Schema, writes a function that calls each through the mssql driver, and catches drift in CI: `haruspex check` fails a build when a change to the SQL would change what a committed module says, naming each
-change where it is (`shop.list_orders results[0][].note: became nullable`). Until it is published as a package, a CI job runs
-it from a copy of its source, pinned to a commit, and one step checks every module in the repository:
-
-```yaml
-- uses: actions/checkout@v7                      # haruspex itself, into .haruspex, which check --all doesn't look in
-  with: { repository: sharpblue/haruspex, ref: <commit>, path: .haruspex }
-- uses: actions/setup-dotnet@v6
-  with: { global-json-file: .haruspex/global.json }
-- run: dotnet run --project .haruspex/src/Haruspex.Cli -- check --all   # every haruspex.json below; exit code 1 on a change
-```
-
-Pin the two actions by commit too, as haruspex's own workflow does.
-
-None of the following exists yet; each is a job the generated types and the IR are designed to make possible:
-
-- **Checking hand-written schemas** against what a procedure can return, for a team that keeps its own types.
-- **Seeing what a change does to every caller**, from the database's side: each consuming application's modules checked
-  against a change to the database before it is deployed, as `check` does for one repository today.
-- **Asking why a field is typed as it is.** `haruspex explain` will show the reasons behind each claim and each unknown.
-
-Parameters, once next on this list, are typed now: each procedure's are a strict schema of what may be sent, which its
-function checks before the call, so a misspelt name or a value SQL Server would silently change fails in the application
-instead:
-
-```ts
-await ringUp(pool, { product_id: 1, quantity: 2, basket_id: '9007199254740993' })   // a bigint as the string a row hands over
-await ringUp(pool, { product_id: 1, quantity: 40000, basket_id: 3 })   // a ParameterError: @quantity is a smallint
-```
+- **The types and parsers alone**, for a team that calls the driver itself: leave `"mssql"` out of `emit`, and parse each
+  result with its schema, `GetOrderSchema.parse(response.recordset?.[0] ?? null)` with the driver's `parseJSON` on
+  ([how to read each kind of result](docs/database-module.md#calling-the-driver-yourself)).
+- **Other languages**: `"json-schema"` in `emit` writes the same claims as one JSON Schema document, for any language with a
+  validator ([the JSON Schema emitter](src/Haruspex.Emit.JsonSchema/README.md)).
+- **Drift caught in CI**: `haruspex check` fails a build when a change to the SQL would change what a committed module says,
+  naming each change (`shop.list_orders results[0][].note: became nullable`).
+- **Several modules**: plugins or sub-applications each have a `haruspex.json` of their own, sharing nothing, and
+  `check --all` checks them all in one step ([the command line](src/Haruspex.Cli/README.md), with a CI job to copy).
 
 ## What it guarantees, and what it can't see
 
@@ -300,25 +235,44 @@ Every claim haruspex makes holds for every execution: a field it calls non-null 
 exceeded. That makes its types an over-approximation, sometimes looser than intuition (`COUNT(*)` is nullable, because past
 2,147,483,647 rows it returns NULL under session options the caller controls). When it can't prove a shape it says the shape
 is **unknown, with a reason**, and never guesses. It can't see what isn't in the source: dynamic SQL, `EXEC @procedure`, CLR
-procedures, system procedures, and objects outside the project unless their DACPACs are given; a config file can declare the
-results of any of them, and the generated code still checks them. Nor can it see the session that calls a procedure, whose
-`SET` options decide whether some values can be NULL, so it assumes nothing unless `session` in `haruspex.json` declares them
+and system procedures, and objects outside the project unless their DACPACs are given; a config file can declare their
+results. Nor can it see the caller's session `SET` options, unless `session` in `haruspex.json` declares them
 ([decision 0038](docs/decisions/0038-the-callers-session-is-declared.md)).
 
-On the two samples above, with every procedure inferred and no config file, a test writes [the figures](docs/corpus-figures.md):
+The more the database declares, the more the types say: a `CHECK` constraint becomes a value set or a range, and a key a
+query filters on in full means at most one row. Overrides in `haruspex.json` are for what a database doesn't declare.
+
+At run time the generated functions check both ends, so a wrong parameter or a result that no longer matches its schema
+fails loudly, with an error saying which, rather than reaching the application's code; database errors stay the driver's.
+[When a call fails](docs/database-module.md#when-a-call-fails) says how to tell them apart.
+
+On the two samples above, a test writes [the figures](docs/corpus-figures.md):
 
 - **Typed 32 of 38 fields in AdventureWorks.**
 - **Typed 170 of 175 fields in WideWorldImporters; the results of 28 of its 129 procedures can't be described, so they have no fields to count.**
 
-[The harvest](docs/corpus-harvest.md) gives the same figures for more public databases, and ranks what they show haruspex
-missing.
+[The harvest](docs/corpus-harvest.md) measures more databases; [what haruspex models](docs/coverage.md) lists every construct.
 
-[What haruspex models](docs/coverage.md) lists every T-SQL construct and built-in function, with what haruspex does with each.
+## Status and roadmap
+
+**Pre-release.** The command line, the generated code and the IR (the record of what haruspex inferred) will change without
+notice. Don't depend on it yet.
+
+Next, in this order:
+
+1. **Query files**: queries kept in the application's own `.sql` files, typed against the database project as procedures
+   are, each with a function, its parameters' types inferred from how the query uses them.
+2. **Packages**, rather than building from source.
+
+Possible later, with no date: checking hand-written schemas against a procedure, checking each consuming application before
+a database change is deployed, and `haruspex explain`. Not planned: connecting to a database
+([decision 0001](docs/decisions/0001-infer-from-source-never-a-live-database.md)), building SQL at run time, or an API over
+the database.
 
 ## Install
 
-It is a command-line tool. No package is published yet; packages for the usual package managers are planned. Until
-then, build it from source, which needs the [.NET 10 SDK](https://dotnet.microsoft.com/download):
+It is a command-line tool, not yet published as a package. Build it from source, which needs the
+[.NET 10 SDK](https://dotnet.microsoft.com/download):
 
 ```sh
 git clone https://github.com/sharpblue/haruspex.git
@@ -326,40 +280,15 @@ cd haruspex
 dotnet build
 ```
 
-The module it generates imports [Zod 4](https://zod.dev), which the application installs itself. The tests compile every
-generated module with zod 4.6.7 and TypeScript 7.0.2 in strict mode, so those versions are known to work.
+The application installs [Zod 4](https://zod.dev) and [mssql](https://www.npmjs.com/package/mssql) itself. The tests compile
+every generated module in strict mode with zod 4.6.7, mssql 12.7.14 and TypeScript 7.0.2.
 
 ## Quick start
 
-[Five minutes with AdventureWorks](docs/quick-start.md) goes from a fresh clone to a schema for one of the sample's
-procedures, and a script that parses rows with it. [The documentation's index](docs/README.md) says what every other page is
-for, with where to start to use haruspex, to judge whether to trust it, or to contribute.
-
-The repository's example application has a database project and a config file. From the repository's root:
-
-```sh
-cd examples/greenhouse
-dotnet run --project ../../src/Haruspex.Cli -- generate
-```
-
-This reads `database/` with the settings in `haruspex.json`, and writes `src/db/haruspex.ir.json` (the inferred shapes) and
-`src/db/haruspex.zod.ts` (the schemas and types). For your own database, put a `haruspex.json` beside its project:
-
-```jsonc
-{
-  "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
-  "source": "database",
-  "out": "src/db",
-  "schemas": { "Website": { "include": ["Get*"] } }
-}
-```
-
-and run `generate` from that folder, with the path to your clone of haruspex. `source` is the folder of scripts, the `.sqlproj`
-or the `.dacpac`.
-
-```sh
-dotnet run --project path/to/haruspex/src/Haruspex.Cli -- generate
-```
+[Five minutes with AdventureWorks](docs/quick-start.md) goes from a fresh clone to the schemas and the function for one of
+the sample's procedures. [The example application](examples/greenhouse/README.md) calls its procedures through the
+functions haruspex wrote for it, and [the configuration](docs/configuration.md) shows a `haruspex.json` for your own
+database. [The documentation's index](docs/README.md) says what every other page is for.
 
 ## How it is built
 
