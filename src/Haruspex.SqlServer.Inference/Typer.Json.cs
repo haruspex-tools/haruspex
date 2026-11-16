@@ -1,3 +1,5 @@
+using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -46,4 +48,69 @@ internal sealed partial class Typer
         FunctionCall { CallTarget: null } call => IsConstructor(call) && call.ReturnType is not { Count: > 0 },
         _ => false,
     };
+
+    // ---- CAST and CONVERT of JSON -------------------------------------------------------------------------------------------
+    //
+    // Observed on SQL Server 2025 RTM-CU10 and kept as tests (JsonTracingObservationTests, "conversions"): live JSON converted
+    // to its own type, or to json, is still JSON, which FOR JSON and the constructors nest unescaped; converted to any other
+    // type, or with a style (even 0) to a string type, it is text, which they escape. So a FOR JSON subquery (nvarchar(max)) cast to nvarchar(max) stays JSON, while a json
+    // value cast to nvarchar(max) becomes text holding it, and either cast to nvarchar(4000) is text cut short. JSON text built
+    // WITHOUT_ARRAY_WRAPPER cast to json is JSON again.
+
+    /// <summary>
+    /// <c>CAST(x AS json)</c> and its forms, where x is JSON built here: live JSON of the same shape, null when x is. Live JSON
+    /// stays live, and JSON text with known content is made live, as json_query makes it. Anything else is not modelled yet.
+    /// </summary>
+    private Value JsonCast(ScalarExpression operand, TSqlFragment call, ReadScope scope)
+    {
+        var value = Expression(operand, scope);
+        if (value.Shape is UnknownShape || value.IsLiveJson)
+            return value;
+        if (value.Shape is JsonTextShape { Content: { } content })
+            return content is UnknownShape unknown ? Value.Unknown(unknown) : new Value(content, value.NullableBecause, IsLiveJson: true);
+        return NotModelled(call, "a conversion to this type is not modelled yet.");
+    }
+
+    /// <summary>
+    /// Live JSON converted to a type other than json: unchanged when the type is its own and no style is given; text holding it when the type is
+    /// <c>nvarchar(max)</c>, which holds any JSON unchanged; a string of the type, cut or padded, for any other string type
+    /// (and <c>varchar(max)</c>, whose code page may replace a character with <c>?</c>, so its content is not claimed); not
+    /// modelled for any other type, or when its own type is not known and may be the target's.
+    /// </summary>
+    /// <param name="shape">The target type's shape.</param>
+    /// <param name="styled">Whether CONVERT is given a style, which leaves the text as it is but makes it text.</param>
+    private Value FromLiveJson(Value value, ScalarExpression operand, ScalarType to, Shape shape, TSqlFragment call, bool styled)
+    {
+        if (!to.IsString)
+            return NotModelled(call, "a conversion of JSON is not modelled yet.");
+        var own = styled ? null : LiveJsonType(operand);
+        if (own?.Text == to.Text)
+            return value;
+
+        // Live JSON is nvarchar(max) (built), nvarchar(4000) (json_query over a shorter string, observed with
+        // sp_describe_first_result_set) or json, so only the first two can be its own type when it isn't known.
+        if (!styled && own is null && to.Type == BuiltInType.NVarChar && (to.IsMax || to.Length == 4000))
+            return NotModelled(call, "whether converted JSON stays JSON depends on its own type, which isn't known here.");
+        return SqlTypes.IsNVarCharMax((ScalarShape)shape)
+            ? new Value(new JsonTextShape(value.Shape), value.NullableBecause)
+            : Value.Computed(shape, value.NullableBecause);
+    }
+
+    /// <summary>
+    /// The SQL type of live JSON, read from the expression that makes it: <c>nvarchar(max)</c> when built here as text
+    /// (<see cref="BuiltAsText"/>), json for a constructor <c>RETURNING json</c>, the target of a conversion; null for anything
+    /// else, json_query among them (its type follows its argument's).
+    /// </summary>
+    private ScalarType? LiveJsonType(ScalarExpression expression) => Strip(expression) switch
+    {
+        var built when BuiltAsText(built) => new ScalarType(BuiltInType.NVarChar, -1),
+        FunctionCall { CallTarget: null } call when IsConstructor(call) => ScalarType.Of(BuiltInType.Json),
+        CastCall cast => TargetType(cast.DataType),
+        ConvertCall convert => TargetType(convert.DataType),
+        TryCastCall cast => TargetType(cast.DataType),
+        TryConvertCall convert => TargetType(convert.DataType),
+        _ => null,
+    };
+
+    private ScalarType? TargetType(DataTypeReference target) => SchemaRules.ResolveType(model, SyntaxReader.Type(target))?.Scalar;
 }

@@ -863,8 +863,8 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `CASE WHEN …` | `SearchedCaseExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#case-iif-choose-and-nullif) | The type of highest precedence over its results; NULL without ELSE. |
 | `CASE x WHEN …` | `SimpleCaseExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#case-iif-choose-and-nullif) | As searched CASE. |
 | `f( … )` | `FunctionCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#built-in-functions) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A function of the catalogue is typed by its row, and one of the project's (called by its schema) by its body; any other, and a method of a CLR type, is unknown. |
-| `CAST` | `CastCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type. |
-| `CONVERT` | `ConvertCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type, whatever the style. |
+| `CAST` | `CastCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type; JSON built here stays JSON as its own type or `json`, and is text as any other string type. |
+| `CONVERT` | `ConvertCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type, whatever the style; JSON built here as CAST, but text whenever a style is given. |
 | `TRY_CAST` | `TryCastCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type, NULL when the conversion fails. |
 | `TRY_CONVERT` | `TryConvertCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | As TRY_CAST. |
 | `PARSE` | `ParseCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled. |

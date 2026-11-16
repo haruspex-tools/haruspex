@@ -549,8 +549,29 @@ A conversion the server refuses (`CAST` of a `date` to `int`, error 529; `Conver
 has it, observed in `The_conversion_chart_is_what_the_server_allows_implicitly_explicitly_or_not_at_all`) is unknown: a
 procedure with it can't be created. A literal is checked by its value instead (`ISNULL(@d, 0)` into `decimal(10,2)` fits). An assignment to a variable converts
 the same way, so a value assigned to a narrower variable has `arithmetic-overflow` too; so does a table-valued function's
-argument ("Table-valued functions" below). A conversion of JSON, or to a type that is not modelled (binary, `xml`), is not
-modelled.
+argument ("Table-valued functions" below). A conversion to a type that is not modelled (binary, `xml`) is not modelled.
+
+**JSON built here** converts by rules of its own (`Typer.JsonCast`, `Typer.FromLiveJson`), observed in
+`Converted_json_stays_json_only_as_its_own_type_or_json` and
+`A_conversion_cuts_or_pads_json_as_any_string_and_varchar_replaces_what_its_code_page_lacks`. The server marks live JSON by its
+type: converted to that same type, or to `json`, it is still JSON, which `FOR JSON` and the constructors nest unescaped;
+converted to any other type, or with any style (even 0), it is text, which they escape. Built JSON (a `FOR JSON` subquery, a
+constructor) is `nvarchar(max)`, a constructor `RETURNING json` is `json`, and `json_query` follows its argument
+(`nvarchar(4000)` over a literal). So:
+
+| Converted to | Gives |
+|---|---|
+| `json` | live JSON of the same shape; JSON text with known content (`WITHOUT_ARRAY_WRAPPER`) made live, as `json_query` makes it |
+| its own type, no style | the same live JSON (`CAST((SELECT … FOR JSON PATH) AS nvarchar(max))`) |
+| `nvarchar(max)` from another type, or with a style | `json-text` with its content, which holds any JSON unchanged |
+| any other string type | a string of that type: cut short past its length without an error, `nchar` padded, `varchar` writing `?` for a character its code page lacks |
+| a type that is not a string | not modelled |
+
+Each is null when the JSON is. When live JSON's own type isn't known (`json_query`, a `CASE`), a conversion to `nvarchar(max)`
+or `nvarchar(4000)`, which it may be, is unknown; to any other string type it is a string of that type. **`varchar(max)` holds
+any JSON whose characters its code page has**, but its content isn't claimed: JSON text here is `nvarchar(max)` throughout
+(`Typer.TypeOf`, the joins), so a `varchar(max)` JSON text would need its type carried beside its content; and which
+characters the code page has depends on the database's collation. It is a string of `varchar(max)`.
 
 ### `COALESCE` and `ISNULL`
 
@@ -1420,6 +1441,7 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   procedure's results.
 - **Paths** read: `lax` or `strict`, `$`, keys (quoted or not) and indexes into a tuple. A wildcard, an index into an array of
   unknown length, a record's key or a recursive node is not read, and the general rule holds.
+- **Conversions** of JSON built here keep it, or its text, as "Conversions" above says.
 - **Not traced**, each claiming no more than before: a stored column; `varchar(max)` and shorter types; a `#table` column
   `SELECT … INTO` makes from live JSON that is not syntactically a `FOR JSON` subquery or constructor (a view's column, say,
   whose SQL type is not recorded: it may be `json`); a column `SELECT … INTO` made, later written with live JSON; `OPENJSON`'s

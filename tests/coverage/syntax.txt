@@ -499,8 +499,8 @@ ScalarSubquery | ( SELECT … ) | modelled | Aggregates and scalar subqueries | 
 SearchedCaseExpression | CASE WHEN … | modelled | CASE, IIF, CHOOSE and NULLIF | The type of highest precedence over its results; NULL without ELSE. | SELECT CASE WHEN id > 1 THEN 'big' ELSE 'small' END AS a FROM dbo.toy;
 SimpleCaseExpression | CASE x WHEN … | modelled | CASE, IIF, CHOOSE and NULLIF | As searched CASE. | SELECT CASE id WHEN 1 THEN 'one' END AS a FROM dbo.toy;
 FunctionCall | f( … ) | partly unsupported-expression | Built-in functions | A function of the catalogue is typed by its row, and one of the project's (called by its schema) by its body; any other, and a method of a CLR type, is unknown. | SELECT ABS(id) AS a FROM dbo.toy; && SELECT hierarchyid::GetRoot().ToString() AS a;
-CastCall | CAST | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type. | SELECT CAST(id AS bigint) AS a FROM dbo.toy;
-ConvertCall | CONVERT | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type, whatever the style. | SELECT CONVERT(varchar(10), id) AS a FROM dbo.toy;
+CastCall | CAST | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type; JSON built here stays JSON as its own type or `json`, and is text as any other string type. | SELECT CAST(id AS bigint) AS a FROM dbo.toy;
+ConvertCall | CONVERT | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type, whatever the style; JSON built here as CAST, but text whenever a style is given. | SELECT CONVERT(varchar(10), id) AS a FROM dbo.toy;
 TryCastCall | TRY_CAST | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type, NULL when the conversion fails. | SELECT TRY_CAST(name AS int) AS a FROM dbo.toy;
 TryConvertCall | TRY_CONVERT | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | As TRY_CAST. | SELECT TRY_CONVERT(int, name) AS a FROM dbo.toy;
 ParseCall | PARSE | unknown unsupported-expression | | Not modelled. | SELECT PARSE('1' AS int) AS a;

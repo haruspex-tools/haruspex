@@ -373,12 +373,16 @@ internal sealed partial class Typer
     /// whatever they are (observed: Under_try_cast_a_loss_of_precision_is_null_whenever_numeric_roundabort_is_on). A string
     /// type without a length is 30 long here, where a declaration's is 1 (observed:
     /// A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration). A conversion to x's own type changes
-    /// nothing, so the value keeps its facts. The format a style gives is not claimed.
+    /// nothing, so the value keeps its facts. The format a style gives is not claimed. JSON built here converts by rules of
+    /// its own (<see cref="JsonCast"/>, <see cref="FromLiveJson"/>).
     /// </summary>
     private Value Cast(DataTypeReference target, ScalarExpression operand, TSqlFragment call, ReadScope scope, bool styled = false, bool attempt = false)
     {
         var type = SyntaxReader.Type(target);
-        var to = SqlTypes.Modelled(SchemaRules.ResolveType(model, type)?.Scalar);
+        var resolved = SchemaRules.ResolveType(model, type)?.Scalar;
+        if (resolved?.Type == BuiltInType.Json && Strip(operand) is not NullLiteral)
+            return JsonCast(operand, call, scope);
+        var to = SqlTypes.Modelled(resolved);
         if (to is { IsString: true } && type is { Kind: SqlTypeKind.BuiltIn, Arguments.Count: 0 })
             to = to with { Length = BuiltInType.LengthInConversion };
         var shape = to is null ? null : SqlTypes.ToConvertedShape(to, At(call));
@@ -392,8 +396,10 @@ internal sealed partial class Typer
             return new Value(shape, [new IrNullReason(IrNullRule.NullLiteral, At(operand).ToString())]) { Digits = to.Type == BuiltInType.Int ? IntDigits.Literal(1) : IntDigits.OfType };
 
         var value = Expression(operand, scope);
-        if (value.Shape is UnknownShape || value.IsLiveJson)
-            return value.Shape is UnknownShape ? value : NotModelled(call, "a conversion of JSON is not modelled yet.");
+        if (value.Shape is UnknownShape)
+            return value;
+        if (value.IsLiveJson)
+            return FromLiveJson(value, operand, to, shape, call, styled);
 
         var from = OperandOf(value, operand);
 
