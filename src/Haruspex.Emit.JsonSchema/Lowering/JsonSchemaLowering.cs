@@ -134,8 +134,8 @@ internal static class JsonSchemaLowering
         {
             null => unknowns.Results(results),
             [] => new SchemaNote("Returns no result sets."),
-            [var single] => new SchemaNote($"Returns {Describe(single)}."),
-            var many => new SchemaNote($"Returns {many.Count} result sets: {string.Join("; ", many.Select(Describe))}."),
+            [var single] => new SchemaNote($"Returns {IrResultText.Describe(single)}."),
+            var many => new SchemaNote($"Returns {many.Count} result sets: {string.Join("; ", many.Select(IrResultText.Describe))}."),
         };
         return schema.With(Keyword.Title, new SchemaValue.Text(obj.Id)) with { Notes = [summary, .. types.Declared(results), .. schema.Notes] };
     }
@@ -158,34 +158,4 @@ internal static class JsonSchemaLowering
     }
 
     private static IEnumerable<SchemaNote> Notes(SchemaNote? note) => note is null ? [] : [note];
-
-    /// <summary>
-    /// What a result is, and what it reads as when absent: a FOR JSON query that matched no rows, or a statement that did not run
-    /// (in a branch, or after a RETURN), whose result set is then missing altogether; or a result the config file declares may be
-    /// absent, the declaration its reason.
-    /// </summary>
-    private static string Describe(IrResult result)
-    {
-        var noRows = result.AbsentBecause.Any(r => r.Rule == IrNullRule.NoRows);
-        var notRun = result.AbsentBecause.Any(r => r.Rule == IrNullRule.NotRun);
-        var when = (noRows, notRun) switch
-        {
-            (true, true) => "when no rows match or it does not run",
-            (true, false) => "when no rows match",
-            (false, true) => "when it does not run",
-            _ => null,
-        };
-        var what = result.Encoding == IrEncoding.Rowset ? "rows" : "JSON";
-        var absent = result.Encoding == IrEncoding.Rowset ? "[]" : "null";
-
-        // A result the config file declares may be absent says so, but not why: the declaration is the reason.
-        var declared = result.AbsentBecause.Any(r => r.Rule == IrNullRule.Declared);
-        return (when, declared) switch
-        {
-            (null, false) => what,
-            (null, true) => $"{what}, {absent} when absent, as the config file declares",
-            (_, false) => $"{what}, {absent} {when}",
-            (_, true) => $"{what}, {absent} {when}, or when absent, as the config file declares",
-        };
-    }
 }

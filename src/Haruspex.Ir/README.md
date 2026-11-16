@@ -416,6 +416,9 @@ which constraints it trusts, is in [its README](../Haruspex.SqlServer.Inference/
 - **One object without a proof of one row.** A JSON result written as one object (SQL Server's `WITHOUT_ARRAY_WRAPPER`) is
   claimed as one object even where `cardinality` is `many`. The claim can't be silently wrong: several rows produce
   `{...},{...}`, which is not valid JSON, so parsing fails loudly before any schema is applied.
+- **A result in words.** `IrResultText.Describe` says what a result is and what it reads as when absent, and why (`no-rows`,
+  `not-run`, or `declared`, the config file's declaration): "JSON, null when no rows match". Every emitter's summary of a
+  procedure uses it, so they say the same of the same result.
 
 ## Decisions
 
