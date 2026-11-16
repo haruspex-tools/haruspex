@@ -493,8 +493,8 @@ DefaultLiteral | DEFAULT | modelled | DML | The column's default, in an INSERT o
 MaxLiteral | MAX in a type's length | within CastCall | | |
 IdentifierLiteral | a name where a value goes | within FunctionCall | | |
 ParenthesisExpression | ( expression ) | modelled | Expressions | The expression inside. | SELECT (id) AS a FROM dbo.toy;
-UnaryExpression | -x, +x, ~x | modelled | Decimal arithmetic | A sign keeps a number's type; ~ an integer's or a bit's. | SELECT -id AS a, ~id AS b FROM dbo.toy;
-BinaryExpression | x + y, x * y, … | modelled | Decimal arithmetic | Arithmetic, concatenation and the bitwise operators are typed. | SELECT id + 1 AS a, id & 1 AS b FROM dbo.toy;
+UnaryExpression | -x, +x, ~x | partly unsupported-expression | Decimal arithmetic | A sign keeps a number's type; ~ an integer's or a bit's; a literal signed twice isn't modelled. | SELECT -id AS a, ~id AS b FROM dbo.toy; && SELECT -(-1) AS a FROM dbo.toy;
+BinaryExpression | x + y, x * y, … | partly unsupported-expression | Decimal arithmetic | Arithmetic, concatenation and the bitwise operators are typed; an operand that is the NULL literal isn't modelled. | SELECT id + 1 AS a, id & 1 AS b FROM dbo.toy; && SELECT NULL + 1 AS a FROM dbo.toy;
 ScalarSubquery | ( SELECT … ) | modelled | Aggregates and scalar subqueries | Its one column, NULL when it returns no row. | SELECT (SELECT MAX(qty) FROM dbo.box) AS a;
 SearchedCaseExpression | CASE WHEN … | modelled | CASE, IIF, CHOOSE and NULLIF | The type of highest precedence over its results; NULL without ELSE. | SELECT CASE WHEN id > 1 THEN 'big' ELSE 'small' END AS a FROM dbo.toy;
 SimpleCaseExpression | CASE x WHEN … | modelled | CASE, IIF, CHOOSE and NULLIF | As searched CASE. | SELECT CASE id WHEN 1 THEN 'one' END AS a FROM dbo.toy;

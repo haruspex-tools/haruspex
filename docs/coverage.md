@@ -857,8 +857,8 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `MAX in a type's length` | `MaxLiteral` | part of `CastCall` |  |
 | `a name where a value goes` | `IdentifierLiteral` | part of `FunctionCall` |  |
 | `( expression )` | `ParenthesisExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#expressions) | The expression inside. |
-| `-x, +x, ~x` | `UnaryExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | A sign keeps a number's type; ~ an integer's or a bit's. |
-| `x + y, x * y, …` | `BinaryExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | Arithmetic, concatenation and the bitwise operators are typed. |
+| `-x, +x, ~x` | `UnaryExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A sign keeps a number's type; ~ an integer's or a bit's; a literal signed twice isn't modelled. |
+| `x + y, x * y, …` | `BinaryExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Arithmetic, concatenation and the bitwise operators are typed; an operand that is the NULL literal isn't modelled. |
 | `( SELECT … )` | `ScalarSubquery` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#aggregates-and-scalar-subqueries) | Its one column, NULL when it returns no row. |
 | `CASE WHEN …` | `SearchedCaseExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#case-iif-choose-and-nullif) | The type of highest precedence over its results; NULL without ELSE. |
 | `CASE x WHEN …` | `SimpleCaseExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#case-iif-choose-and-nullif) | As searched CASE. |
