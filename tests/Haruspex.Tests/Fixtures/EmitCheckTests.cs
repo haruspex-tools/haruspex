@@ -1,12 +1,13 @@
 using Haruspex.Cli;
+using Haruspex.Emit.Mssql;
 using Haruspex.Emit.Zod;
 
 namespace Haruspex.Tests.Fixtures;
 
 /// <summary>
-/// Compiles the Zod generated from every procedure of every fixture with <c>tsc --noEmit</c> (strict, see its
-/// <c>tsconfig.json</c>), against the zod and TypeScript versions pinned in <c>tests/emit-check/package-lock.json</c>, and
-/// lints it with the recommended rules pinned in <c>tests/emit-lint</c>. <c>src/usage.ts</c> and
+/// Compiles the Zod generated from every procedure of every fixture, and the functions that use it, with <c>tsc --noEmit</c>
+/// (strict, see its <c>tsconfig.json</c>), against the zod, mssql and TypeScript versions pinned in
+/// <c>tests/emit-check/package-lock.json</c>, and lints them with the recommended rules pinned in <c>tests/emit-lint</c>. <c>src/usage.ts</c> and
 /// <c>src/checks-usage.ts</c> there also check the inferred types: that an omitted key is optional, a kept null is
 /// nullable, and a value set is a union of literals; <c>src/shop-usage.ts</c> checks what the shop fixture's config file
 /// changes.
@@ -52,9 +53,14 @@ public class EmitCheckTests
             Directory.Delete(generated, recursive: true);
         Directory.CreateDirectory(generated);
 
-        // Every fixture's procedures, as the snapshot tests and the differential tests infer them, in <name>.zod.ts.
+        // Every fixture's procedures, as the snapshot tests and the differential tests infer them, in <name>.zod.ts, and their
+        // functions, which import it, in <name>.mssql.ts.
         foreach (var fixture in Fixture.All.Where(f => !f.IsProject))
+        {
             File.WriteAllText(Path.Combine(generated, $"{fixture.Name}.zod.ts"), ZodEmitter.Emit(fixture.Ir).Expected());
+            var options = new MssqlOptions { SchemaModule = $"./{fixture.Name}.zod", IsReserved = TypeScriptNames.IsReserved };
+            File.WriteAllText(Path.Combine(generated, $"{fixture.Name}.mssql.ts"), MssqlEmitter.Emit(fixture.Ir, options).Expected());
+        }
 
         // A project fixture through the CLI, with its config file: the shop's strict objects, overrides and an import
         // that tsconfig.json maps to src/shop-types.ts.

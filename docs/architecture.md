@@ -4,7 +4,7 @@ The code is split into layers so that each can be tested alone, reused alone and
 others, published alone as a NuGet package from this repository. Each project under `src/` is one layer.
 
 ```
-.sql files, .sqlproj, .dacpac ──► Sources ──► Model ──► Semantics ──► Inference ──► IR ──► Config ──► IR ──► emitters (Zod, JSON Schema)
+.sql files, .sqlproj, .dacpac ──► Sources ──► Model ──► Semantics ──► Inference ──► IR ──► Config ──► IR ──► emitters (Zod, JSON Schema, mssql)
                                                         (binding)                         (overrides,       (names settled)
                                                                                             naming)
               Syntax (ScriptDom's declarations read into the model) is shared by Sources, Semantics and Inference.
@@ -28,6 +28,7 @@ others, published alone as a NuGet package from this repository. Each project un
 | `Haruspex.Config` | the config file: selection patterns, overrides as transformations of the IR, naming rules, emitter settings | SQL syntax | Collections, Diagnostics, Model, Ir | may |
 | `Haruspex.Emit.Zod` | the IR and its own target | SQL, the model, the config file | Collections, Diagnostics, Ir | may |
 | `Haruspex.Emit.JsonSchema` | the IR and its own target | SQL, the model, the config file | Collections, Diagnostics, Ir | may |
+| `Haruspex.Emit.Mssql` | the IR, its own target (functions over the mssql driver) and the names a schema module declares | SQL, the model, the config file, the other emitters | Collections, Diagnostics, Ir | may |
 | `Haruspex.Cli` | composing all of the above | inference or emission logic of its own | every layer; `System.CommandLine` | may |
 
 This table is the one copy: `ArchitectureTests` reads it (below), and every other mention of the layers points here. In
@@ -57,7 +58,10 @@ Why these lines:
   walker's, which `TyperAndWalkerTests` reads the compiled code for; summaries are reached through one root (`Summaries`)
   passed to each body read ([the guide](internals/04-abstract-interpretation.md),
   [decision 0035](decisions/0035-the-typer-apart-from-the-walker.md)).
-- **Emitters see only the IR.** If an emitter needs something, the IR must carry it. The IR keeps each value's SQL type as
+- **Emitters see only the IR, and not each other.** If an emitter needs something, the IR must carry it. The mssql emitter's
+  functions import what a schema module declares, by the names `SchemaModuleNames` gives, which the Zod emitter declares; the
+  two meet in the generated TypeScript, where the emit check compiles them together, not in a reference between the layers, so
+  a second schema emitter can serve the same functions. The IR keeps each value's SQL type as
   written (`IrScalar.Sql`), and the Zod emitter reads it in one place: a date and time parameter's fraction and range, which
   the IR has no fact for (`DateTimes`, [decision 0055](decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)). It
   reads a type's name from a closed list, never a statement.
@@ -90,6 +94,7 @@ guarantees and what it deliberately doesn't do.
 - [`Haruspex.Config`](../src/Haruspex.Config/README.md)
 - [`Haruspex.Emit.Zod`](../src/Haruspex.Emit.Zod/README.md)
 - [`Haruspex.Emit.JsonSchema`](../src/Haruspex.Emit.JsonSchema/README.md)
+- [`Haruspex.Emit.Mssql`](../src/Haruspex.Emit.Mssql/README.md)
 - [`Haruspex.Cli`](../src/Haruspex.Cli/README.md)
 
 The analyser that checks haruspex's own code at build time is not a layer, and has [a README of its own](../analysers/README.md).

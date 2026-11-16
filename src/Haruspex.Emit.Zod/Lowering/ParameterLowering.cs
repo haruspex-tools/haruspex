@@ -34,6 +34,26 @@ internal static class ParameterLowering
         return new ZodDeclaration(ZodModule.ParametersOf(obj.Name), $"{obj.Id}: its parameters, checked before anything is sent.", new ObjectSchema([.. properties], Strict: true));
     }
 
+    /// <summary>
+    /// The declaration of what <paramref name="obj"/>'s <c>OUTPUT</c> parameters hold when it ends, or null when it has none: each
+    /// as the mssql driver hands it over, which is as it hands a column of a row over (a <c>bigint</c> as a string, a date as a
+    /// <c>Date</c>; observed), and NULL whatever the procedure does, since nothing proves it assigns one. One with a default may
+    /// be left unbound by the caller, and then it doesn't come back.
+    /// </summary>
+    public static ZodDeclaration? OutputDeclaration(IrObject obj, TypeLowering types)
+    {
+        var outputs = obj.Parameters.Where(p => p.IsOutput).ToList();
+        if (outputs.Count == 0)
+            return null;
+        var properties = outputs.Select(p =>
+        {
+            var value = types.Type(p.Type, IrEncoding.Rowset);
+            value = p.Type is IrUnknownType ? value : value.Then("nullable");
+            return new ZodProperty(Key(p), p.HasDefault ? value.Then("optional") : value);
+        });
+        return new ZodDeclaration(ZodModule.OutputOf(obj.Name), $"{obj.Id}: what its OUTPUT parameters hold when it ends.", new ObjectSchema([.. properties], Strict: false));
+    }
+
     /// <summary>The parameter's key: its name without the <c>@</c> that every T-SQL parameter's name starts with.</summary>
     public static string Key(IrParameter parameter) => parameter.Name.StartsWith('@') ? parameter.Name[1..] : parameter.Name;
 

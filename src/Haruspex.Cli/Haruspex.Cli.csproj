@@ -26,6 +26,7 @@
     <ProjectReference Include="..\Haruspex.Config\Haruspex.Config.csproj" />
     <ProjectReference Include="..\Haruspex.Emit.Zod\Haruspex.Emit.Zod.csproj" />
     <ProjectReference Include="..\Haruspex.Emit.JsonSchema\Haruspex.Emit.JsonSchema.csproj" />
+    <ProjectReference Include="..\Haruspex.Emit.Mssql\Haruspex.Emit.Mssql.csproj" />
   </ItemGroup>
   <!-- An application's types are internal (CA1515); the tests reach the CLI and SqlProject, the composition of the
        layers, through these. -->

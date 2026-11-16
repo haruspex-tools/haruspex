@@ -72,18 +72,30 @@ internal static class ZodPlanner
 
     /// <summary>
     /// A procedure with parameters declares their schema under its name and <c>Params</c> (<see cref="ZodModule.ParametersOf"/>),
-    /// which the config's naming never sees: so a procedure or type that already has that name is refused, as a clash the
-    /// config would have refused, naming both.
+    /// and one with <c>OUTPUT</c> parameters what they hold under its name and <c>Output</c> (<see cref="ZodModule.OutputOf"/>),
+    /// names the config's naming never sees: so a procedure or type that already has one is refused, as a clash the config would
+    /// have refused, naming both.
     /// </summary>
     private static void ParameterNames(IrDocument document, List<Diagnostic> refusals)
     {
         var taken = document.Objects.Select(o => o.Name).Concat(document.Types.Keys).ToHashSet(StringComparer.Ordinal);
-        foreach (var obj in document.Objects.Where(o => o.Parameters.Count > 0).OrderBy(o => o.Id, StringComparer.Ordinal))
+        foreach (var obj in document.Objects.OrderBy(o => o.Id, StringComparer.Ordinal))
         {
-            var name = ZodModule.ParametersOf(obj.Name);
-            if (taken.Contains(name))
-                refusals.Add(ZodCodes.ParametersNameTaken.At(null, $"The parameters of {obj.Id} are declared as {name}, which is also the name of another procedure or type; rename one of them in the config file."));
+            foreach (var (name, what) in ParameterDeclarations(obj))
+            {
+                if (taken.Contains(name))
+                    refusals.Add(ZodCodes.ParametersNameTaken.At(null, $"The {what} of {obj.Id} are declared as {name}, which is also the name of another procedure or type; rename one of them in the config file."));
+            }
         }
+    }
+
+    /// <summary>The names <paramref name="obj"/>'s parameters' declarations take, with what each holds.</summary>
+    private static IEnumerable<(string Name, string What)> ParameterDeclarations(IrObject obj)
+    {
+        if (obj.Parameters.Count > 0)
+            yield return (ZodModule.ParametersOf(obj.Name), "parameters");
+        if (obj.Parameters.Any(p => p.IsOutput))
+            yield return (ZodModule.OutputOf(obj.Name), "OUTPUT parameters' values");
     }
 
     /// <summary>
@@ -115,7 +127,7 @@ internal static class ZodPlanner
             names.Add(import.Name);
         }
 
-        var defined = document.Objects.Select(o => o.Name).Concat(document.Objects.Where(o => o.Parameters.Count > 0).Select(o => ZodModule.ParametersOf(o.Name))).Concat(document.Types.Keys)
+        var defined = document.Objects.Select(o => o.Name).Concat(document.Objects.SelectMany(o => ParameterDeclarations(o).Select(d => d.Name))).Concat(document.Types.Keys)
             .SelectMany(n => new[] { n, ZodModule.SchemaOf(n) }).Append(ZodModule.ZodName).Append(ZodModule.JsonTextHelperName).Concat(ZodModule.CanonicalNames).ToHashSet(StringComparer.Ordinal);
         foreach (var name in modules.Keys.Where(defined.Contains).Order(StringComparer.Ordinal))
             refusals.Add(ZodCodes.ImportClashes.At(null, $"The imported name '{name}' is also a name this module defines or uses."));

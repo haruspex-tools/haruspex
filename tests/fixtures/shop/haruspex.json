@@ -8,8 +8,10 @@
   // The application deploys together with the database, so an unexpected key should fail loudly.
   "objects": "strict",
 
-  // A service in another language validates the same results, so a JSON Schema is written beside the Zod.
-  "emit": ["zod", "json-schema"],
+  // A service in another language validates the same results, so a JSON Schema is written beside the Zod; and the
+  // application calls the procedures through the generated functions, on the server only (a Next.js application).
+  "emit": ["zod", "json-schema", "mssql"],
+  "serverOnly": true,
 
   // Naming for every schema: a trailing # marks a procedure returning one row.
   "naming": {

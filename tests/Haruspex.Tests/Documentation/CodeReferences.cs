@@ -59,6 +59,9 @@ internal sealed partial class CodeReferences
         // JavaScript, in the emitter's documentation.
         "Date", "Infinity",
 
+        // The mssql driver's types, which the functions take and pass through.
+        "ConnectionPool", "Transaction", "RequestError",
+
         // Names from before the split into layers, in the table of what each type became (docs/architecture.md).
         "Haruspex.SqlServer", "Catalog", "TableModel", "ColumnModel", "SqlProject.Changed",
 
@@ -97,6 +100,7 @@ internal sealed partial class CodeReferences
         typeof(HaruspexConfig).Assembly,
         typeof(ZodEmitter).Assembly,
         typeof(JsonSchemaEmitter).Assembly,
+        typeof(Haruspex.Emit.Mssql.MssqlEmitter).Assembly,
         typeof(SqlProject).Assembly,
         typeof(CodeReferences).Assembly,
         Architecture.AnalyserBuild.Assembly,
@@ -356,7 +360,7 @@ internal sealed partial class CodeReferences
     [GeneratedRegex(@"(?<![\w.])(?![A-Z]+s\b)(?=[A-Z][a-z0-9]*[A-Z])(?=[A-Za-z0-9]*[a-z])[A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)*(?![\w])")]
     private static partial Regex DiagramName();
 
-    [GeneratedRegex(@"\bexport\s+(?:const|type)\s+(?<name>[A-Za-z_]\w*)")]
+    [GeneratedRegex(@"\bexport\s+(?:const|type|interface|class|async\s+function)\s+(?<name>[A-Za-z_]\w*)")]
     private static partial Regex GeneratedName();
 
     /// <summary>A key of a generated object, one to a line: <c>  orderDate: z.iso.date(),</c>.</summary>

@@ -155,6 +155,27 @@ public class ZodParametersTests
     }
 
     [Fact]
+    public void Output_parameters_have_a_schema_of_what_they_hold_as_the_driver_hands_it_over()
+    {
+        // A bigint comes back as a string and a date as a Date, as in a row; one with a default the caller may leave unbound,
+        // and then it doesn't come back.
+        var ts = Emitted(
+            Parameter(new IrScalar(IrScalarKind.Number, IrFormat.Int64, "bigint"), output: true, name: "@total"),
+            Parameter(new IrScalar(IrScalarKind.Date, null, "date"), hasDefault: true, output: true, name: "@until"),
+            Parameter(new IrScalar(IrScalarKind.Boolean, null, "bit"), name: "@is_open"));
+
+        Assert.Contains(
+            "\nexport const POutputSchema = z.object({\n  total: z.string().nullable(),\n  until: z.date().nullable().optional(),\n})\n" +
+            "export type POutput = z.infer<typeof POutputSchema>\n",
+            ts,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_procedure_without_output_parameters_has_no_output_schema() =>
+        Assert.DoesNotContain("Output", Emitted(Parameter(new IrScalar(IrScalarKind.Boolean, null, "bit"))), StringComparison.Ordinal);
+
+    [Fact]
     public void The_parameters_schema_comes_before_the_results_schema() =>
         Assert.Matches(@"PParamsSchema = [\s\S]*PSchema = ", Emitted(Parameter(new IrScalar(IrScalarKind.Boolean, null, "bit"))));
 

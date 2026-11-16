@@ -88,6 +88,9 @@ public static class ConfigReader
             if (Object(value, "") is not { } root)
                 return config;
 
+            // serverOnly is about the functions' file, which "emit" may name after it.
+            JsonValue? serverOnlyAt = null;
+
             foreach (var member in root.Members)
             {
                 var path = Child("", member.Name);
@@ -141,12 +144,26 @@ public static class ConfigReader
                     case "check":
                         config = config with { CheckUnknowns = Check(member.Value, path) };
                         break;
+                    case "serverOnly":
+                        if (member.Value is JsonOtherValue { Kind: JsonTokenType.True or JsonTokenType.False } serverOnly)
+                        {
+                            config = config with { ServerOnly = serverOnly.Kind == JsonTokenType.True };
+                            serverOnlyAt = member.Value;
+                        }
+                        else
+                        {
+                            Report(ConfigCodes.WrongKind, member.Value, path, "must be true or false.");
+                        }
+
+                        break;
                     default:
-                        Unknown(member, path, "$schema, source, references, collation, out, schemas, objects, emit, naming, procedures, session, check");
+                        Unknown(member, path, "$schema, source, references, collation, out, schemas, objects, emit, serverOnly, naming, procedures, session, check");
                         break;
                 }
             }
 
+            if (serverOnlyAt is not null && !config.Emitters.Contains(Emitter.Mssql))
+                Report(ConfigCodes.NeedsAnother, serverOnlyAt, "serverOnly", "is about the functions' file, which \"emit\" writes when it names \"mssql\"; it names none here.");
             return config;
         }
 
@@ -180,7 +197,7 @@ public static class ConfigReader
         /// </summary>
         private EquatableArray<Emitter>? Emitters(JsonValue value, string path)
         {
-            const string Expected = "must be an array of what to write beside the IR: \"zod\", \"json-schema\" or both.";
+            const string Expected = "must be an array of what to write beside the IR: any of \"zod\", \"json-schema\" and \"mssql\".";
             if (value is not JsonArrayValue array)
             {
                 Report(ConfigCodes.WrongKind, value, path, Expected);
@@ -198,7 +215,7 @@ public static class ConfigReader
             for (var i = 0; i < array.Items.Count; i++)
             {
                 var item = array.Items[i];
-                switch (Choice(item, Index(path, i), "zod", "json-schema"))
+                switch (Choice(item, Index(path, i), "zod", "json-schema", "mssql"))
                 {
                     case null:
                         valid = false;
@@ -213,9 +230,21 @@ public static class ConfigReader
                 }
             }
 
+            // The functions import the Zod module's schemas, so they can't be written without it.
+            if (valid && emitters.Contains(Emitter.Mssql) && !emitters.Contains(Emitter.Zod))
+            {
+                Report(ConfigCodes.NeedsAnother, value, path, "names \"mssql\" without \"zod\": the functions import the Zod module's schemas, so name both.");
+                valid = false;
+            }
+
             return valid ? [.. emitters] : null;
 
-            static Emitter Of(string name) => name == "zod" ? Emitter.Zod : Emitter.JsonSchema;
+            static Emitter Of(string name) => name switch
+            {
+                "zod" => Emitter.Zod,
+                "json-schema" => Emitter.JsonSchema,
+                _ => Emitter.Mssql,
+            };
         }
 
         /// <summary>What <c>haruspex check</c> does beyond comparing: today, whether an unknown fails it.</summary>

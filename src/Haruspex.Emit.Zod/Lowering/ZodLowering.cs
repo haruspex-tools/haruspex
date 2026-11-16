@@ -27,8 +27,13 @@ internal static class ZodLowering
                 ZodPlanEntry.NamedType named when declaredAs[named.Name] != named.Name => [Alias(named.Name, declaredAs[named.Name])],
                 ZodPlanEntry.NamedType named => [ObjectType(named, plan, types)],
 
-                // What a caller sends, then what comes back.
-                ZodPlanEntry.Procedure procedure => new[] { ParameterLowering.Declaration(procedure.Object, types), Procedure(procedure.Object, types) }.OfType<ZodDeclaration>(),
+                // What a caller sends, then what comes back: the results, and the OUTPUT parameters.
+                ZodPlanEntry.Procedure procedure => new[]
+                {
+                    ParameterLowering.Declaration(procedure.Object, types),
+                    Procedure(procedure.Object, types),
+                    ParameterLowering.OutputDeclaration(procedure.Object, types),
+                }.OfType<ZodDeclaration>(),
             }),
         ];
         return new ZodModule([.. Header(plan.Document.Source, declarations)], plan.Imports, plan.UsesJsonText, [.. declarations], plan.Document.Folds);

@@ -2,6 +2,7 @@ using Haruspex.Collections;
 using Haruspex.Config;
 using Haruspex.Diagnostics;
 using Haruspex.Emit.JsonSchema;
+using Haruspex.Emit.Mssql;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
@@ -214,6 +215,10 @@ internal static class ModuleRun
                 .Select(text => new EmittedFile(HaruspexCli.ZodFileName, text)),
             Emitter.JsonSchema => JsonSchemaEmitter.Emit(document, new JsonSchemaOptions { Objects = strict ? JsonSchemaObjects.Strict : JsonSchemaObjects.Strip })
                 .Select(text => new EmittedFile(HaruspexCli.JsonSchemaFileName, text)),
+
+            // TypeScript's reserved words are the Zod emitter's knowledge, handed to this one as they are to the config's naming.
+            Emitter.Mssql => MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = HaruspexCli.ZodModuleSpecifier, ServerOnly = plan.Config.ServerOnly, IsReserved = TypeScriptNames.IsReserved })
+                .Select(text => new EmittedFile(HaruspexCli.MssqlFileName, text)),
         });
         return Located(Outcome.All(files), plan.Config.Location).Select(emitted => new EmittedModule(plan.Config, plan.Out, project, document, emitted));
     }

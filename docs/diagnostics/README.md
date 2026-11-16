@@ -140,6 +140,7 @@ reason.
 | [HAR5005](HAR5005.md) | error | A type read both as rows and as JSON |
 | [HAR5006](HAR5006.md) | error | A procedure's parameters' name is taken |
 | [HAR5101](HAR5101.md) | error | One name for two definitions |
+| [HAR5201](HAR5201.md) | error | A procedure's function can't take its name |
 
 ## The command line and files
 

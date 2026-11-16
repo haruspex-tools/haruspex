@@ -1,33 +1,25 @@
-// An application's own code, using the module haruspex generated for its database (src/db/haruspex.zod.ts). Each
-// procedure has a schema, to check what the database returns at runtime, and a type, for the code that uses it. It calls
-// the database through the mssql driver, as most Node applications on SQL Server do.
+// An application's own code, using the database module haruspex generated for its database: src/db/haruspex.zod.ts, with a
+// schema and a type for each procedure, and src/db/haruspex.mssql.ts, with a function for each, which calls it through the
+// mssql driver and checks what goes in and what comes back. The functions belong on the server, which holds the pool.
 import sql from 'mssql'
-import { GetPlantSchema, ListPlantsSchema, type GetPlant, type GetPlantWaterLogItem, type ListPlantsRow } from './db/haruspex.zod'
+import { getPlant, listPlants } from './db/haruspex.mssql'
+import type { GetPlant, GetPlantWaterLogItem, ListPlantsRow } from './db/haruspex.zod'
 
 /**
- * The application's pool. With `parseJSON` on, the driver joins the rows SQL Server splits a FOR JSON result over and
- * parses them, so each such procedure's document arrives as one row; it is set once, here, for every call.
+ * The application's pool. With `parseJSON` on, the driver joins the rows SQL Server splits a FOR JSON result over and parses
+ * them; the functions read a FOR JSON result the same with it off.
  */
 export function connect(config: sql.config): Promise<sql.ConnectionPool> {
   return new sql.ConnectionPool({ ...config, parseJSON: true }).connect()
 }
 
 /**
- * garden.list_plants returns rows. The driver's types don't know what they hold until the schema has checked them; a
- * `date` column arrives as a `Date`.
+ * garden.list_plants returns rows, checked by its schema before the function returns them. A `date` column arrives as a
+ * `Date`, as the driver delivers it.
  */
-export async function listPlants(pool: sql.ConnectionPool): Promise<ListPlantsRow[]> {
-  const result = await pool.request().execute('garden.list_plants')
-  return ListPlantsSchema.parse(result.recordset)
-}
-
-/**
- * garden.get_plant returns FOR JSON: one row holding the document, parsed by the driver, or null when no plant has the id.
- * The schema checks it: an ISO date and time for each entry in its water log, a positive amount with two decimal places.
- */
-export async function getPlant(pool: sql.ConnectionPool, plantId: number): Promise<GetPlant> {
-  const result = await pool.request().input('plant_id', sql.Int, plantId).execute('garden.get_plant')
-  return GetPlantSchema.parse(result.recordset?.[0] ?? null)
+export async function plants(pool: sql.ConnectionPool): Promise<ListPlantsRow[]> {
+  const { result } = await listPlants(pool)
+  return result
 }
 
 /** The types are the application's own from here on: no haruspex type appears in its code. */
@@ -42,11 +34,26 @@ export function label(plant: ListPlantsRow): string {
 }
 
 export async function report(pool: sql.ConnectionPool): Promise<void> {
-  const basil = await getPlant(pool, 1)
-  // getPlant may find no plant, so the compiler insists on the case where it is null.
+  // A procedure's parameters are an object of its declared names, checked before anything is sent.
+  const { result: basil } = await getPlant(pool, { plant_id: 1 })
+  // garden.get_plant may find no plant (FOR JSON over no rows), so the compiler insists on the case where it is null.
   if (basil === null) return
   // @ts-expect-error A plant's id is a number: the compiler catches code that treats it as anything else.
   const wrong: string = basil.id
   void wrong
   console.log(`${basil.name}: ${litresGiven(basil).toString()} litres`)
+}
+
+/**
+ * The three ways a call fails, told apart by name, without importing anything from the module: wrong parameters (nothing was
+ * sent), the database's own error (mssql's RequestError, as it is), and a result its schema refused (the database and the
+ * application are deployed out of step).
+ */
+export async function plantOrNothing(pool: sql.ConnectionPool, id: number): Promise<GetPlant> {
+  try {
+    return (await getPlant(pool, { plant_id: id })).result
+  } catch (error) {
+    if (error instanceof Error && error.name === 'HaruspexParameterError') return null
+    throw error
+  }
 }

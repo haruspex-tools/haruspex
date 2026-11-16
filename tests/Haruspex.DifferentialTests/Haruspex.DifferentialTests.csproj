@@ -30,5 +30,6 @@
     <ProjectReference Include="..\..\src\Haruspex.Config\Haruspex.Config.csproj" />
     <ProjectReference Include="..\..\src\Haruspex.Emit.Zod\Haruspex.Emit.Zod.csproj" />
     <ProjectReference Include="..\..\src\Haruspex.Emit.JsonSchema\Haruspex.Emit.JsonSchema.csproj" />
+    <ProjectReference Include="..\..\src\Haruspex.Emit.Mssql\Haruspex.Emit.Mssql.csproj" />
   </ItemGroup>
 </Project>
