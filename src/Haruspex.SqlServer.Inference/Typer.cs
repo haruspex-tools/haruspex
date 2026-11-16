@@ -161,7 +161,11 @@ internal sealed partial class Typer(
             }
         }
 
-        return new Row([.. columns], unlisted, cardinality.Of(query, scope, ReadUncommitted(scope)), [.. scope.Bound.Sources]);
+        var rows = cardinality.Of(query, scope, ReadUncommitted(scope));
+        return new Row([.. columns], unlisted, rows, [.. scope.Bound.Sources])
+        {
+            Raced = rows != IrCardinality.One && cardinality.Guard(query, scope) is { Held: false, Found.At: var guard } ? guard : null,
+        };
     }
 
     /// <summary>How many rows a statement's own query returns, read in its scope as <see cref="Enter"/> gave it.</summary>
@@ -460,7 +464,7 @@ internal sealed partial class Typer(
             // An_int_constant_counts_its_own_digits_beside_a_decimal).
             return row.Rows == IrCardinality.One
                 ? only.Value with { Digits = IntDigits.OfType }
-                : only.Value with { Digits = IntDigits.OfType, NullableBecause = [.. only.Value.NullableBecause, new IrNullReason(IrNullRule.EmptySubquery, at.ToString())] };
+                : only.Value with { Digits = IntDigits.OfType, NullableBecause = [.. only.Value.NullableBecause, Empty(row, at)] };
         }
 
         var query = subquery.QueryExpression;
@@ -475,11 +479,20 @@ internal sealed partial class Typer(
         var shape = ForJson(forJson, json, subquery: true);
         if (shape is UnknownShape unknown)
             return Value.Unknown(unknown);
-        EquatableArray<IrNullReason> empty = forJson.Rows == IrCardinality.One ? [] : [new IrNullReason(IrNullRule.EmptySubquery, at.ToString())];
+        EquatableArray<IrNullReason> empty = forJson.Rows == IrCardinality.One ? [] : [Empty(forJson, at)];
         return json.Options.Any(o => o.OptionKind == JsonForClauseOptions.WithoutArrayWrapper)
             ? new Value(new JsonTextShape(shape), empty)
             : new Value(shape, empty, IsLiveJson: true);
     }
+
+    /// <summary>
+    /// Why a scalar subquery that may return no row is NULL: <c>empty-subquery</c>; or, for a read of a row an existence guard
+    /// found and nothing holds, <c>read-twice</c> at the guard, since only another session can have deleted it between the two
+    /// reads (observed: A_row_an_existence_guard_saw_may_be_gone_when_a_later_statement_reads_it), as COALESCE's second read.
+    /// </summary>
+    private static IrNullReason Empty(Row row, SourceLocation at) => row.Raced is { } guard
+        ? new IrNullReason(IrNullRule.ReadTwice, guard.ToString())
+        : new IrNullReason(IrNullRule.EmptySubquery, at.ToString());
 
     private Value JsonQuery(FunctionCall call, ReadScope scope)
     {

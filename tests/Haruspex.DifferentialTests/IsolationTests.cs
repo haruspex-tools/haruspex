@@ -142,6 +142,9 @@ public class IsolationTests(SqlServerFixture server)
             Path.Combine("Server", "DatabaseSession.cs"),
             Path.Combine("Server", "ReadSession.cs"),
             Path.Combine("Server", "WriteSession.cs"),
+
+            // A database of one test's own, never the shared one, for observations that need two sessions' commits.
+            Path.Combine("Server", "ScratchDatabase.cs"),
         ];
 
         var offenders = Directory.EnumerateFiles(project, "*.cs", SearchOption.AllDirectories)

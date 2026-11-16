@@ -38,6 +38,9 @@
     { "name": "sale_card, with a note", "procedure": "flow.sale_card", "parameters": { "@sale_id": 13 } },
     { "name": "sale_card, without a note", "procedure": "flow.sale_card", "parameters": { "@sale_id": 12 } },
     { "name": "sale_card, no such sale", "procedure": "flow.sale_card", "parameters": { "@sale_id": 99 } },
-    { "name": "sale_card, the only sale on its channel", "procedure": "flow.sale_card", "parameters": { "@sale_id": 12 }, "setup": "one sale" }
+    { "name": "sale_card, the only sale on its channel", "procedure": "flow.sale_card", "parameters": { "@sale_id": 12 }, "setup": "one sale" },
+    { "name": "sale_receipt, with a note", "procedure": "flow.sale_receipt", "parameters": { "@sale_id": 13 } },
+    { "name": "sale_receipt, without a note", "procedure": "flow.sale_receipt", "parameters": { "@sale_id": 12 } },
+    { "name": "sale_receipt, no such sale", "procedure": "flow.sale_receipt", "parameters": { "@sale_id": 99 } }
   ]
 }

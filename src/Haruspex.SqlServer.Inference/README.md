@@ -233,13 +233,32 @@ Each value put back is the SELECT's, so a column that may be NULL still may be. 
 of its variables is assigned again, and where paths meet unless every path keeps it, so a loop's later passes never use what an
 earlier pass knew.
 
-**What a guard does not prove.** `IF NOT EXISTS (SELECT … FROM shop.orders WHERE order_id = @order_id) RETURN` proves the row
-was there when the guard ran, not when a later statement reads it: under read committed each statement reads the rows
-committed when it runs, and the guard's locks end with its statement, so another session may delete the row in between,
-and a later keyed read of it may find none. Microsoft documents this of read committed; it is not observed here, since it
-needs a second session committing between the two statements, which the differential tests don't run. So the subquery keeps
-`empty-subquery` (`An_existence_guard_proves_nothing_of_a_later_read_of_the_row`), as `COALESCE` keeps `read-twice` for the
-same race. A variable can't change that way: only the body assigns it.
+**A row an existence guard found.** `IF NOT EXISTS (SELECT … FROM shop.orders WHERE order_id = @order_id) RETURN` proves
+the row was there when the guard ran (`Typer.Finds`; `IF EXISTS (…)` proves it on its first branch). Whether a later read
+still finds it depends on what holds it, all observed with a second session deleting the row between the two statements
+(`StatementFlowObservationTests.ExistenceGuards.cs`, each test in a database of its own, `SqlServerFixture.ScratchAsync`):
+
+| Between the guard and the read | The read |
+|---|---|
+| nothing: read committed, read committed snapshot, a locking hint or `SERIALIZABLE` without a transaction, a transaction without a hint, snapshot isolation without a transaction | may find nothing: another session's delete lands in between (`A_row_an_existence_guard_saw_may_be_gone_when_a_later_statement_reads_it`) |
+| a transaction the body began, still open, and the guard read with `UPDLOCK`, `HOLDLOCK`, `SERIALIZABLE`, `REPEATABLEREAD` or `XLOCK`, or at `SERIALIZABLE` or `REPEATABLE READ` | finds the row: the guard's lock lasts until the outermost transaction ends, so the delete waits (`A_lock_the_guard_holds_to_the_end_of_an_open_transaction_keeps_the_row_for_the_read`) |
+| a transaction the body began at `SNAPSHOT`, still open, the read at `SNAPSHOT` with no table hint | finds the row: both read the transaction's one snapshot (`Snapshot_isolation_in_an_open_transaction_reads_the_row_the_guard_saw`); with `READCOMMITTEDLOCK`, or the level set back first, it may not |
+
+So the walk keeps each row a guard found (`FoundRow`, in `FlowState.Found`), with whether it is held, and the body's own
+transactions and isolation level beside it (`FlowState.Transactions`, `FlowState.Isolation`). A read of the guard's table
+whose WHERE is only equalities the guard also tested (`Cardinality.Guard`) is then:
+
+- **held**: a keyed read returns exactly one row, so a scalar subquery of it is never empty, a `SELECT @v = …` always assigns,
+  and a result set has one row (`A_keyed_read_of_a_row_an_open_transaction_holds_for_it_finds_it`);
+- **not held**: no claim, but the reason a subquery of it may be NULL is the race, `read-twice` at the guard, as for
+  `COALESCE`'s second read, rather than `empty-subquery`
+  (`A_read_of_a_row_an_existence_guard_found_states_the_race_where_nothing_holds_the_row`).
+
+A `COMMIT` that ends the body's outermost transaction makes a held row raced, and where paths meet a row held on one only is
+raced; an inner `COMMIT` of nested transactions keeps it. A write that may reach a permanent table, a call, a `TRUNCATE` or a
+`ROLLBACK` ends the fact altogether, since then the body itself may have removed the row, which is not a race; so does an
+assignment to a variable the guard compared with. A transaction the caller began, or an isolation level the caller set, is
+not seen, which only claims less.
 
 ## Result sets are positional
 

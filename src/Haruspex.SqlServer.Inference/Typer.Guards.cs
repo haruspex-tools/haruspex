@@ -16,6 +16,52 @@ internal sealed partial class Typer
         Facts.None.With(held ? Branch([], condition, scope) : Branch([condition], null, scope));
 
     /// <summary>
+    /// The row an <c>IF</c>'s arm proves exists: <c>EXISTS (SELECT … FROM t WHERE …)</c> TRUE on it, or <c>NOT EXISTS</c> not
+    /// TRUE, where the subquery reads one table filtered by its WHERE alone and doesn't aggregate (an aggregate's one row is
+    /// there whatever matches). Whether it stays for a later read is whether the guard's transaction holds it (<see cref="FoundRow"/>):
+    /// a lock the guard keeps, by a locking hint or the isolation level, or the transaction's snapshot, while a transaction the
+    /// body began is open (observed: A_lock_the_guard_holds_to_the_end_of_an_open_transaction_keeps_the_row_for_the_read,
+    /// Snapshot_isolation_in_an_open_transaction_reads_the_row_the_guard_saw). Null when the arm proves no such row.
+    /// </summary>
+    internal FoundRow? Finds(BooleanExpression condition, bool held, ReadScope scope)
+    {
+        if (Exists(condition, held) is not { Subquery.QueryExpression: QuerySpecification query } exists
+            || query is not { TopRowFilter: null, OffsetClause: null }
+            || MayAggregateWithoutGrouping(query))
+        {
+            return null;
+        }
+
+        var entered = Enter(query, scope);
+        if (cardinality.Read(query, entered, every: false) is not var (source, table, equalities) || equalities.Count == 0)
+            return null;
+
+        var state = scope.State;
+        var locks = (source.Syntax is NamedTableReference { TableHints: var hints } && hints.Any(h => HoldsLock(h.HintKind)))
+            || state.Isolation is IsolationLevel.Serializable or IsolationLevel.RepeatableRead;
+        var snapshot = !locks && state.Isolation == IsolationLevel.Snapshot;
+        var open = state.Transactions > 0 && (locks || snapshot);
+        return new FoundRow(table.Name, equalities, At(exists), open, open && snapshot);
+    }
+
+    /// <summary>Whether a table hint was observed to hold the guard's lock on the row until its transaction ends.</summary>
+    private static bool HoldsLock(TableHintKind hint) =>
+        hint is TableHintKind.UpdLock or TableHintKind.HoldLock or TableHintKind.Serializable or TableHintKind.RepeatableRead or TableHintKind.XLock;
+
+    /// <summary>The EXISTS an arm proves TRUE: <paramref name="held"/> is whether the arm needs the condition TRUE or not TRUE.</summary>
+    private static ExistsPredicate? Exists(BooleanExpression condition, bool held) => condition switch
+    {
+        BooleanParenthesisExpression parenthesis => Exists(parenthesis.Expression, held),
+        BooleanNotExpression not => Exists(not.Expression, !held),
+        ExistsPredicate exists when held => exists,
+        BooleanBinaryExpression { BinaryExpressionType: BooleanBinaryExpressionType.And } both when held =>
+            Exists(both.FirstExpression, held) ?? Exists(both.SecondExpression, held),
+        BooleanBinaryExpression { BinaryExpressionType: BooleanBinaryExpressionType.Or } either when !held =>
+            Exists(either.FirstExpression, held) ?? Exists(either.SecondExpression, held),
+        _ => null,
+    };
+
+    /// <summary>
     /// Whether an <c>IF</c>'s arm is taken only when <c>@@ROWCOUNT</c> is not 0: were it 0, the condition could not take the
     /// truth value the arm needs (TRUE for <paramref name="held"/>, FALSE or UNKNOWN otherwise). <c>@@ROWCOUNT</c> is never
     /// NULL or below 0, so a comparison of it with an integer literal is TRUE or FALSE at 0; anything else in the condition

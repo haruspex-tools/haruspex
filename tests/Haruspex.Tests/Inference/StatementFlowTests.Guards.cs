@@ -207,16 +207,145 @@ public partial class StatementFlowTests
         Assert.Contains(IrNullRule.Variable, Rules(doc, "n"));
     }
 
-    [Fact]
-    public void An_existence_guard_proves_nothing_of_a_later_read_of_the_row()
+    /// <summary>
+    /// A procedure whose existence guard on <c>dbo.t</c> runs after <paramref name="before"/> with <paramref name="hint"/>, then
+    /// <paramref name="between"/>, then two keyed reads of the row: a scalar subquery of a NOT NULL column, and a FOR JSON one.
+    /// </summary>
+    private static IrDocument Guarded(string before, string hint, string between = "", string read = "", string guard = "") =>
+        Procedure($"""
+            {before}
+            {(guard.Length > 0 ? guard : $"IF NOT EXISTS (SELECT 1 FROM dbo.t AS t {hint} WHERE t.id = @id) RETURN;")}
+            {between}
+            SELECT (SELECT t.code FROM dbo.t AS t {read} WHERE t.id = @id) AS code,
+                (SELECT t.id, t.name FROM dbo.t AS t {read} WHERE t.id = @id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS card;
+            WHILE @@TRANCOUNT > 0 COMMIT;
+            """, "@id int, @other int");
+
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("", "WITH (UPDLOCK, HOLDLOCK)")]
+    [InlineData("BEGIN TRAN;", "")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;", "")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SNAPSHOT;", "")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL READ COMMITTED; BEGIN TRAN;", "")]
+    public void A_read_of_a_row_an_existence_guard_found_states_the_race_where_nothing_holds_the_row(string before, string hint)
     {
-        // Each statement reads committed rows when it runs, and the guard's lock on the row is gone when it ends, so another
-        // session may delete the row before the read, which then finds none: the read keeps empty-subquery.
+        // A_row_an_existence_guard_saw_may_be_gone_when_a_later_statement_reads_it: another session may delete the row between
+        // the guard and the read, so the read may find none, and says why at the guard (read-twice), as COALESCE's second read.
+        var doc = Guarded(before, hint);
+
+        Assert.Equal([IrNullRule.ReadTwice], Rules(doc, "code"));
+        Assert.Equal([IrNullRule.ReadTwice], Rules(doc, "card"));
+        Assert.Contains(":3:", Field(doc, "card").NullableBecause[0].At, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "")]
+    [InlineData("BEGIN TRAN;", "WITH (HOLDLOCK)", "")]
+    [InlineData("BEGIN TRAN;", "WITH (SERIALIZABLE)", "")]
+    [InlineData("BEGIN TRAN;", "WITH (UPDLOCK)", "")]
+    [InlineData("BEGIN TRAN;", "WITH (REPEATABLEREAD)", "")]
+    [InlineData("BEGIN TRAN;", "WITH (XLOCK)", "")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; BEGIN TRAN;", "", "")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ; BEGIN TRAN;", "", "")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;", "", "")]
+    [InlineData("BEGIN TRAN; BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "COMMIT;")]
+    [InlineData("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "INSERT INTO #seen (id) VALUES (@id);")]
+    public void A_keyed_read_of_a_row_an_open_transaction_holds_for_it_finds_it(string before, string hint, string between)
+    {
+        // A_lock_the_guard_holds_to_the_end_of_an_open_transaction_keeps_the_row_for_the_read,
+        // Snapshot_isolation_in_an_open_transaction_reads_the_row_the_guard_saw: the read finds exactly the guard's row. A write
+        // to a temporary table fires no trigger and changes no permanent row.
+        var doc = Guarded($"CREATE TABLE #seen (id int NULL); {before}", hint, between);
+
+        Assert.Equal([], Rules(doc, "code"));
+        Assert.Equal([], Rules(doc, "card"));
+    }
+
+    [Theory]
+    [InlineData("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "COMMIT;", "", IrNullRule.ReadTwice)]
+    [InlineData("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "IF @other = 1 COMMIT;", "", IrNullRule.ReadTwice)]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;", "", "", "WITH (READCOMMITTEDLOCK)", IrNullRule.ReadTwice)]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;", "", "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;", "", IrNullRule.ReadTwice)]
+    [InlineData("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "ROLLBACK;", "", IrNullRule.EmptySubquery)]
+    public void A_hold_ends_with_its_transaction_or_at_a_read_the_snapshot_does_not_cover(string before, string hint, string between, string read, IrNullRule rule)
+    {
+        // Committed (on some path) before the read, or a snapshot read at another level or with a hint: the race is back. A
+        // rollback may undo what made the row, so it ends the fact altogether.
+        var doc = Guarded(before, hint, between, read);
+
+        Assert.Equal([rule], Rules(doc, "code"));
+    }
+
+    [Theory]
+    [InlineData("DELETE FROM dbo.u WHERE u.id = @other;")]
+    [InlineData("UPDATE dbo.t SET code = 0 WHERE id = @other;")]
+    [InlineData("EXEC dbo.p2;")]
+    [InlineData("SET @id = @other;")]
+    public void A_write_a_call_or_an_assignment_after_the_guard_ends_what_it_found(string between)
+    {
+        // The body's own write may remove the row, and a call may write anything: not a race, so plain empty-subquery.
+        var doc = Infer(
+            ("tables.sql", Tables),
+            ("p2.sql", "CREATE PROCEDURE dbo.p2 AS SET NOCOUNT ON;"),
+            ("p.sql", $"""
+                CREATE PROCEDURE dbo.p @id int, @other int AS
+                BEGIN TRAN;
+                IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @id) RETURN;
+                {between}
+                SELECT (SELECT t.code FROM dbo.t AS t WHERE t.id = @id) AS code;
+                COMMIT;
+                """));
+
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "code"));
+    }
+
+    [Theory]
+    [InlineData("IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @other) RETURN;")]
+    [InlineData("IF NOT EXISTS (SELECT 1 FROM dbo.u AS u WITH (UPDLOCK, HOLDLOCK) WHERE u.id = @id) RETURN;")]
+    [InlineData("IF NOT EXISTS (SELECT COUNT(*) FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @id) RETURN;")]
+    [InlineData("IF EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @id) RETURN;")]
+    [InlineData("IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @id OR t.code = 0) RETURN;")]
+    public void A_guard_that_proves_no_row_of_the_read_proves_nothing_of_it(string guard)
+    {
+        // Another key, another table, an aggregate (its one row is there whatever matches), the wrong arm, and an OR.
+        var doc = Guarded("BEGIN TRAN;", "", guard: guard);
+
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "code"));
+    }
+
+    [Fact]
+    public void A_guard_with_more_filters_than_the_read_proves_its_row_and_a_read_with_more_proves_nothing()
+    {
+        // The guard's row passes every one of the read's conditions only when each is one of the guard's.
+        var stricter = Guarded("BEGIN TRAN;", "", guard: "IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK) WHERE t.id = @id AND t.status = 'open') RETURN;");
+
+        Assert.Equal([], Rules(stricter, "code"));
+
+        var filtered = Procedure("""
+            BEGIN TRAN;
+            IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK) WHERE t.id = @id) RETURN;
+            SELECT (SELECT t.code FROM dbo.t AS t WHERE t.id = @id AND t.status = 'open') AS code;
+            COMMIT;
+            """, "@id int");
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(filtered, "code"));
+    }
+
+    [Fact]
+    public void A_held_row_makes_a_keyed_result_and_a_select_that_assigns_from_it_one_row()
+    {
+        // The same claim reaches every keyed read: a result set of exactly one row, and an assignment that always happens.
         var doc = Procedure("""
-            IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WHERE t.id = @id) RETURN;
-            SELECT (SELECT t.id, t.name FROM dbo.t AS t WHERE t.id = @id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS card;
+            DECLARE @code int;
+            BEGIN TRAN;
+            IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @id) RETURN;
+            SELECT @code = t.code FROM dbo.t AS t WHERE t.id = @id;
+            SELECT t.name FROM dbo.t AS t WHERE t.id = @id;
+            SELECT @code AS code;
+            COMMIT;
             """, "@id int");
 
-        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "card"));
+        Assert.Equal(IrCardinality.One, Results(doc)[0].Cardinality);
+        Assert.Equal([], Rules(Field(doc, "code", result: 1)));
     }
 }

@@ -198,6 +198,11 @@ internal sealed partial class Walker
             if (state is null || blocker is not null)
                 break;
 
+            // A call or TRUNCATE may change a permanent table's rows, which ends what every existence guard found (FoundRow): the
+            // row may be gone, by the body's own doing rather than another session's. A write does the same in Modify.
+            if (MayWrite(statement))
+                state = state.Written();
+
             // Every statement resets @@ROWCOUNT but the IF that tests it, which must come straight after the SELECT it counts
             // (observed: Any_statement_between_resets_rowcount_so_the_test_proves_nothing).
             if (statement is not IfStatement)
@@ -230,16 +235,19 @@ internal sealed partial class Walker
             // The isolation level changes no result's shape, only whether a key holds (Cardinality.cs); it lasts until the
             // procedure returns (observed: A_procedures_isolation_level_holds_in_the_procedures_it_calls_and_ends_when_it_returns).
             case SetTransactionIsolationLevelStatement isolation:
-                return Continue(state.WithReadUncommitted(isolation.Level == IsolationLevel.ReadUncommitted));
+                return Continue(state.WithReadUncommitted(isolation.Level == IsolationLevel.ReadUncommitted).WithIsolation(isolation.Level));
             case PrintStatement:
             case DeclareTableVariableStatement:
-            // A transaction's start and end change nothing here; only a rollback undoes what the procedure did.
+            // A transaction changes what a row an existence guard found is held by (FoundRow), and a rollback undoes what the
+            // procedure did to its temporary tables.
             case BeginTransactionStatement:
+                return Continue(state.Begun());
             case CommitTransactionStatement:
+                return Continue(state.Committed());
             case SaveTransactionStatement:
                 return Continue(state);
             case RollbackTransactionStatement:
-                return Continue(RolledBack(state, at));
+                return Continue(RolledBack(state, at).Written(rolledBack: true));
             case DeclareVariableStatement declare:
                 foreach (var element in declare.Declarations.Where(d => d.Value is not null))
                     state = Assign(state, names.Declarations.Declared(element).Name, typer.Expression(element.Value, Reading(state)), definitely: true, at, element.Value);
@@ -493,6 +501,10 @@ internal sealed partial class Walker
                 narrowed = narrowed.WithVariable(name, value);
         }
 
+        // A row an EXISTS on this arm proves was there (FoundRow).
+        if (typer.Finds(condition, held, Reading(state)) is { } found)
+            narrowed = narrowed.WithFound(found);
+
         foreach (var (name, value) in narrowed.Variables)
         {
             if (value.Shape is not UnknownShape && value.NullableBecause.Count > 0 && proved.Proved(name))
@@ -501,6 +513,18 @@ internal sealed partial class Walker
 
         return narrowed;
     }
+
+    /// <summary>
+    /// Whether a statement other than a write <c>Modify</c> reads may change a permanent table's rows: a call, which may write
+    /// anything, or <c>TRUNCATE</c> of a permanent table. A write's own target is read where it is bound (<c>Modify</c>).
+    /// </summary>
+    private static bool MayWrite(TSqlStatement statement) => statement switch
+    {
+        ExecuteStatement => true,
+        InsertStatement { InsertSpecification.InsertSource: ExecuteInsertSource } => true,
+        TruncateTableStatement truncate => Binder.Temporary(truncate.TableName) is null,
+        _ => false,
+    };
 
     // ---- SELECT ---------------------------------------------------------------------------------------------------
 
