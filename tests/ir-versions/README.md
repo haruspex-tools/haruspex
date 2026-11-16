@@ -32,7 +32,7 @@ Each file is named for its version (`0.15.ir.json`) and holds the IR of the inve
 | 0.19 | `06fae1b` |
 | 0.20 | `d89c6f1` |
 | 0.21 | `d6be159` |
-| 0.22 | this branch's commit "IR 0.22: query files" (its hash is added once it is merged) |
+| 0.22 | `6aff87d` |
 
 **When the version changes**, add the new version's file here, written by the new version, and a row for it. The test fails
 until there is one, so that every version the format has ever had is kept. The previous current file then becomes one the
