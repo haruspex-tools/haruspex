@@ -7,7 +7,7 @@ namespace Haruspex.SqlServer.Sources;
 
 /// <summary>
 /// Reads one parsed script into what the folder's scripts declare: each definition it makes, each statement that changes
-/// one later, and each statement that may disable a constraint. It applies nothing; the passes after every script is read
+/// one later, and each statement that may disable or drop a constraint. It applies nothing; the passes after every script is read
 /// (<see cref="DefinitionsInEffect"/>, <see cref="ConstraintTrust"/>) settle what the model says.
 /// </summary>
 /// <remarks>
@@ -40,7 +40,7 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     {
         ArgumentNullException.ThrowIfNull(script);
         ReadEnforcement(script);
-        ReadIndexDisables(script);
+        ReadKeyDisables(script);
         foreach (var statement in script.Batches.SelectMany(b => b.Statements))
             Read(statement);
     }
@@ -252,13 +252,41 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     }
 
     /// <summary>
-    /// Every <c>ALTER INDEX … DISABLE</c> in the script, at any depth, as for NOCHECK: whether a statement in a body or under IF
-    /// runs is not knowable. A disabled unique index enforces nothing, so rows written meanwhile may share a key.
+    /// Every statement in the script that may stop a key being enforced (<see cref="KeyDisable"/>), at any depth, as for
+    /// NOCHECK: <c>ALTER INDEX … DISABLE</c>, <c>ALTER TABLE … DROP CONSTRAINT</c> and <c>DROP INDEX</c>, since whether a
+    /// statement in a body or under IF runs is not knowable. A disabled key enforces nothing and a dropped one is gone, so rows
+    /// written meanwhile may share a key. A top-level <c>DROP CONSTRAINT</c> also changes the table (<see cref="OnlyTightens"/>).
     /// </summary>
-    private void ReadIndexDisables(TSqlScript script)
+    private void ReadKeyDisables(TSqlScript script)
     {
         foreach (var alter in Everywhere<AlterIndexStatement>(script).Where(a => a.AlterIndexType == AlterIndexType.Disable))
-            into.IndexDisables.Add(new IndexDisable(SyntaxReader.Name(alter.OnName), alter.OnName.SchemaIdentifier is not null, alter.All ? null : alter.Name?.Value, At(alter)));
+            into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(alter.OnName), alter.OnName.SchemaIdentifier is not null, alter.All ? null : alter.Name?.Value, At(alter)));
+        foreach (var drop in Everywhere<AlterTableDropTableElementStatement>(script))
+        {
+            foreach (var element in drop.AlterTableDropTableElements.Where(e => e.TableElementType == TableElementType.Constraint))
+                into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(drop.SchemaObjectName), drop.SchemaObjectName.SchemaIdentifier is not null, element.Name.Value, At(drop)));
+        }
+
+        foreach (var drop in Everywhere<DropIndexStatement>(script))
+        {
+            foreach (var clause in drop.DropIndexClauses)
+            {
+                switch (clause)
+                {
+                    case DropIndexClause on:
+                        into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(on.Object), on.Object.SchemaIdentifier is not null, on.Index.Value, At(drop)));
+                        break;
+                    case BackwardsCompatibleDropIndexClause old:
+                        // DROP INDEX table.index, or schema.table.index: the index is the name's last part.
+                        var table = new SchemaObjectName();
+                        if (old.Index.SchemaIdentifier is { } schema)
+                            table.Identifiers.Add(schema);
+                        table.Identifiers.Add(old.Index.BaseIdentifier);
+                        into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(table), old.Index.SchemaIdentifier is not null, old.Index.ChildIdentifier.Value, At(drop)));
+                        break;
+                }
+            }
+        }
     }
 
     /// <summary>Every fragment of a kind in the script, at any depth, in the order they are written.</summary>

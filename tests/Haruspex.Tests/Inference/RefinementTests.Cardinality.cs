@@ -111,6 +111,28 @@ public partial class RefinementTests
         Assert.Equal(expected, doc.Objects.Single(o => o.Id == "dbo.p").Results!.Single().Cardinality);
     }
 
+    [Theory]
+    [InlineData("CREATE PROCEDURE dbo.fix AS ALTER TABLE dbo.k DROP CONSTRAINT uq_k_code;", IrCardinality.Many)]
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP CONSTRAINT IF EXISTS uq_k_code;", IrCardinality.Many)]
+    [InlineData("IF 1 = 1 ALTER TABLE k DROP CONSTRAINT uq_k_code;", IrCardinality.Many)]
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP CONSTRAINT uq_k_other;", IrCardinality.AtMostOne)]
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.other DROP CONSTRAINT uq_k_code;", IrCardinality.AtMostOne)]
+    [InlineData("CREATE PROCEDURE dbo.fix AS DROP INDEX uq_k_code ON dbo.k;", IrCardinality.Many)]
+    [InlineData("CREATE PROCEDURE dbo.fix AS DROP INDEX dbo.k.uq_k_code;", IrCardinality.Many)]
+    [InlineData("CREATE PROCEDURE dbo.fix AS DROP INDEX uq_k_other ON dbo.k;", IrCardinality.AtMostOne)]
+    public void A_key_a_statement_anywhere_may_drop_is_no_key(string drop, IrCardinality expected)
+    {
+        // A_dropped_key_holds_no_longer_and_its_primary_keys_columns_stay_not_null: as for ALTER INDEX … DISABLE, wherever it is,
+        // since whether it runs isn't knowable, and by the same naming rule. The key is added by ALTER TABLE (K7) or declared.
+        var doc = Infer(
+            ("k.sql", "CREATE TABLE dbo.k (id int NOT NULL, code int NOT NULL, other int NOT NULL CONSTRAINT uq_k_other UNIQUE);\nGO\nCREATE TABLE dbo.other (id int NOT NULL);"),
+            ("alter.sql", "ALTER TABLE dbo.k ADD CONSTRAINT uq_k_code UNIQUE (code);"),
+            ("drop.sql", drop),
+            ("p.sql", "CREATE PROCEDURE dbo.p @x int AS SELECT k.id FROM dbo.k AS k WHERE k.code = @x;"));
+
+        Assert.Equal(expected, doc.Objects.Single(o => o.Id == "dbo.p").Results!.Single().Cardinality);
+    }
+
     [Fact]
     public void A_primary_key_added_by_alter_table_makes_its_column_never_null()
     {

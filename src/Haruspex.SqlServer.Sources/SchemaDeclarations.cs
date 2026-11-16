@@ -56,8 +56,8 @@ internal sealed class SchemaDeclarations
     /// <summary>Every <c>ALTER TABLE … NOCHECK CONSTRAINT</c> and <c>… WITH CHECK CHECK CONSTRAINT</c>, wherever it is, in the order read.</summary>
     public List<Enforcement> Enforcement { get; } = [];
 
-    /// <summary>Every <c>ALTER INDEX … DISABLE</c>, wherever it is.</summary>
-    public List<IndexDisable> IndexDisables { get; } = [];
+    /// <summary>Every <c>ALTER INDEX … DISABLE</c>, <c>ALTER TABLE … DROP CONSTRAINT</c> and <c>DROP INDEX</c>, wherever it is.</summary>
+    public List<KeyDisable> KeyDisables { get; } = [];
 
     /// <summary>Adds a definition, or reports a second one of the same name, keeping the first.</summary>
     public void Define<T>(Dictionary<ObjectName, T> into, ObjectName name, T definition, SourceLocation at)
@@ -72,7 +72,7 @@ internal sealed class SchemaDeclarations
     /// <param name="unread">What the source refers to but couldn't read (<see cref="DatabaseModel.Unread"/>).</param>
     /// <param name="databases">The other databases the source holds the schema of (<see cref="DatabaseModel.Databases"/>).</param>
     public DatabaseModel ToModel(DatabaseSettings? settings = null, IEnumerable<UnreadPart>? unread = null, IReadOnlyDictionary<string, DatabaseModel>? databases = null) => new(
-        [.. Tables.Values.Select(t => ConstraintTrust.Trusted(AddedKey.Into(t, AddedKeys), Enforcement, IndexDisables))],
+        [.. Tables.Values.Select(t => ConstraintTrust.Trusted(AddedKey.Into(t, AddedKeys), Enforcement, KeyDisables))],
         UserTypes.Values,
         DefinitionsInEffect.Modules(Procedures, ProcedureChanges, (procedure, why) => procedure with { Redefinition = why }),
         DefinitionsInEffect.Modules(Functions, FunctionChanges, (function, why) => function with { Redefinition = why }),
