@@ -60,6 +60,7 @@ internal static class MssqlDriver
     /// <param name="Parameters">The arguments: each a value the driver chooses a type for, or a <see cref="Typed"/> one.</param>
     /// <param name="Check">Whether to read its result sets as an application would and parse them with a schema of the module.</param>
     /// <param name="TimeZone">The time zone the driver runs in for this call (its process's <c>TZ</c>), or null for the machine's.</param>
+    /// <param name="Accepts">A schema of the module to parse the parameters' values with, as an object by name, or null.</param>
     public sealed record Call(
         string Name,
         bool ParseJson,
@@ -67,7 +68,8 @@ internal static class MssqlDriver
         string? Procedure = null,
         IReadOnlyDictionary<string, object?>? Parameters = null,
         Check? Check = null,
-        string? TimeZone = null);
+        string? TimeZone = null,
+        string? Accepts = null);
 
     /// <summary>
     /// An argument sent with one of the driver's types, <c>sql[Type](...Args)</c>, as a generated function sends it: an argument
@@ -78,6 +80,9 @@ internal static class MssqlDriver
     /// <summary>A JavaScript value JSON can't hold, by name (<c>NaN</c> or <c>Infinity</c>), which the script reads as <c>{ "js": … }</c>.</summary>
     public sealed record JsValue(string Js);
 
+    /// <summary>A JavaScript <c>bigint</c>, from its decimal digits, which the script reads as <c>{ "bigInt": … }</c>.</summary>
+    public sealed record BigIntValue(string BigInt);
+
     /// <summary>
     /// The schema a call's results are parsed with, each result set's encoding, <c>json</c> or <c>rowset</c>, and how the
     /// application reads a JSON result set: the body of a JavaScript function of <c>result</c>, an object whose
@@ -87,8 +92,11 @@ internal static class MssqlDriver
 
 #pragma warning disable CA1812 // Made by the JSON reader, from what the script wrote, never by code.
 
-    /// <summary>What the driver handed over for a call: its result sets, or the error it threw, and the check's outcome.</summary>
-    public sealed record Response(string Name, IReadOnlyList<Recordset> Recordsets, Error? Error, CheckOutcome? Check);
+    /// <summary>
+    /// What the driver handed over for a call: its result sets, or the error it threw, the check's outcome, and whether the
+    /// schema the call names accepted its parameters.
+    /// </summary>
+    public sealed record Response(string Name, IReadOnlyList<Recordset> Recordsets, Error? Error, CheckOutcome? Check, bool? Accepted = null);
 
     /// <summary>One result set as the driver hands it over: its columns' names and its rows (an object, or what the driver parsed).</summary>
     public sealed record Recordset(IReadOnlyList<string> Columns, IReadOnlyList<JsonElement> Rows);

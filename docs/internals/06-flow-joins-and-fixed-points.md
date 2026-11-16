@@ -62,6 +62,12 @@ export const RestockNoteRowSchema = z.object({
 })
 export type RestockNoteRow = z.infer<typeof RestockNoteRowSchema>
 
+/** shop.restock_note: its parameters, checked before anything is sent. */
+export const RestockNoteParamsSchema = z.strictObject({
+  product_id: z.int32().nullable(),
+})
+export type RestockNoteParams = z.infer<typeof RestockNoteParamsSchema>
+
 /** shop.restock_note: returns rows. */
 export const RestockNoteSchema = z.array(RestockNoteRowSchema).length(1)
 export type RestockNote = z.infer<typeof RestockNoteSchema>

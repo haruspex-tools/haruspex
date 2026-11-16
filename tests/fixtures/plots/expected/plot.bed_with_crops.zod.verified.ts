@@ -10,6 +10,12 @@ export const BedWithCropsRowSchema = z.object({
 })
 export type BedWithCropsRow = z.infer<typeof BedWithCropsRowSchema>
 
+/** plot.bed_with_crops: its parameters, checked before anything is sent. */
+export const BedWithCropsParamsSchema = z.strictObject({
+  bed_id: z.int32().nullable(),
+})
+export type BedWithCropsParams = z.infer<typeof BedWithCropsParamsSchema>
+
 /** plot.bed_with_crops: returns rows. */
 export const BedWithCropsSchema = z.array(BedWithCropsRowSchema)
 export type BedWithCrops = z.infer<typeof BedWithCropsSchema>

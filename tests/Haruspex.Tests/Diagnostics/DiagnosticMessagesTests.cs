@@ -226,6 +226,10 @@ public class DiagnosticMessagesTests
             new() { ["Shared"] = Row(Number) },
             Rows("s.rows", "Shared"),
             new IrObject("s.json", "json", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, new IrRef("Shared"), [])])))),
+        (5006, () => Emitted(Document(
+            new() { ["GetOrderParams"] = Row(Number) },
+            Rows("shop.list_orders", "GetOrderParams"),
+            new IrObject("shop.get_order", "GetOrder", IrObjectKind.Procedure, "p.sql:1:1", [new IrParameter("@order_id", Number, false, false)], [])))),
         (5101, () => JsonSchemaEmitter.Emit(Document(
             new() { ["GetBasket"] = Row(Number) },
             new IrObject("shop.get_basket", "GetBasket", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, new IrRef("GetBasket"), [])]))).Diagnostics.Select(d => d.ToString())),

@@ -18,6 +18,12 @@ export const SeriesResult3RowSchema = z.object({
 })
 export type SeriesResult3Row = z.infer<typeof SeriesResult3RowSchema>
 
+/** gym.series: its parameters, checked before anything is sent. */
+export const SeriesParamsSchema = z.strictObject({
+  upto: z.int32().nullable(),
+})
+export type SeriesParams = z.infer<typeof SeriesParamsSchema>
+
 /** gym.series: returns 3 result sets: rows; rows; rows. */
 export const SeriesSchema = z.tuple([z.array(SeriesResult1RowSchema), z.array(SeriesResult2RowSchema), z.array(SeriesResult3RowSchema)])
 export type Series = z.infer<typeof SeriesSchema>

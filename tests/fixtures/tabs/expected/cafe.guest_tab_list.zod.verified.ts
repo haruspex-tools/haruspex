@@ -15,6 +15,12 @@ export const GuestTabListRowSchema = z.object({
 })
 export type GuestTabListRow = z.infer<typeof GuestTabListRowSchema>
 
+/** cafe.guest_tab_list: its parameters, checked before anything is sent. */
+export const GuestTabListParamsSchema = z.strictObject({
+  guest_id: z.int32().nullable(),
+})
+export type GuestTabListParams = z.infer<typeof GuestTabListParamsSchema>
+
 /** cafe.guest_tab_list: returns rows. */
 export const GuestTabListSchema = z.array(GuestTabListRowSchema)
 export type GuestTabList = z.infer<typeof GuestTabListSchema>

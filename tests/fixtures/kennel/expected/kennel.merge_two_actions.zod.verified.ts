@@ -10,6 +10,12 @@ export const MergeTwoActionsRowSchema = z.object({
 })
 export type MergeTwoActionsRow = z.infer<typeof MergeTwoActionsRowSchema>
 
+/** kennel.merge_two_actions: its parameters, checked before anything is sent. */
+export const MergeTwoActionsParamsSchema = z.strictObject({
+  owner_id: z.int32().nullable(),
+})
+export type MergeTwoActionsParams = z.infer<typeof MergeTwoActionsParamsSchema>
+
 /** kennel.merge_two_actions: returns rows. */
 export const MergeTwoActionsSchema = z.array(MergeTwoActionsRowSchema)
 export type MergeTwoActions = z.infer<typeof MergeTwoActionsSchema>

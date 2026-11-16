@@ -13,6 +13,12 @@ export const RunningTotalsRowSchema = z.object({
 })
 export type RunningTotalsRow = z.infer<typeof RunningTotalsRowSchema>
 
+/** meter.running_totals: its parameters, checked before anything is sent. */
+export const RunningTotalsParamsSchema = z.strictObject({
+  meter_id: z.int32().nullable(),
+})
+export type RunningTotalsParams = z.infer<typeof RunningTotalsParamsSchema>
+
 /** meter.running_totals: returns rows. */
 export const RunningTotalsSchema = z.array(RunningTotalsRowSchema)
 export type RunningTotals = z.infer<typeof RunningTotalsSchema>

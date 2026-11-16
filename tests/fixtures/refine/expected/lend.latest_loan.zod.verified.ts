@@ -10,6 +10,12 @@ export const LatestLoanRowSchema = z.object({
 })
 export type LatestLoanRow = z.infer<typeof LatestLoanRowSchema>
 
+/** lend.latest_loan: its parameters, checked before anything is sent. */
+export const LatestLoanParamsSchema = z.strictObject({
+  member_id: z.int32().nullable(),
+})
+export type LatestLoanParams = z.infer<typeof LatestLoanParamsSchema>
+
 /** lend.latest_loan: returns rows. */
 export const LatestLoanSchema = z.array(LatestLoanRowSchema).max(1)
 export type LatestLoan = z.infer<typeof LatestLoanSchema>

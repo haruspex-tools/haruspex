@@ -9,6 +9,12 @@ export const HarvestDatesRowSchema = z.object({
 })
 export type HarvestDatesRow = z.infer<typeof HarvestDatesRowSchema>
 
+/** plot.harvest_dates: its parameters, checked before anything is sent. */
+export const HarvestDatesParamsSchema = z.strictObject({
+  bed_id: z.int32().nullable(),
+})
+export type HarvestDatesParams = z.infer<typeof HarvestDatesParamsSchema>
+
 /** plot.harvest_dates: returns rows. */
 export const HarvestDatesSchema = z.array(HarvestDatesRowSchema)
 export type HarvestDates = z.infer<typeof HarvestDatesSchema>

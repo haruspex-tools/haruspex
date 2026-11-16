@@ -16,6 +16,12 @@ export const SearchWithOvensResult2RowSchema = z.object({
 })
 export type SearchWithOvensResult2Row = z.infer<typeof SearchWithOvensResult2RowSchema>
 
+/** calls.search_with_ovens: its parameters, checked before anything is sent. */
+export const SearchWithOvensParamsSchema = z.strictObject({
+  product: z.string().refine((value) => value.length <= 30, { error: "More than 30 UTF-16 code units, which nvarchar(30) would cut short" }).nullable(),
+})
+export type SearchWithOvensParams = z.infer<typeof SearchWithOvensParamsSchema>
+
 /** calls.search_with_ovens: returns 2 result sets: rows; rows. */
 export const SearchWithOvensSchema = z.tuple([z.array(SearchWithOvensResult1RowSchema), z.array(SearchWithOvensResult2RowSchema)])
 export type SearchWithOvens = z.infer<typeof SearchWithOvensSchema>

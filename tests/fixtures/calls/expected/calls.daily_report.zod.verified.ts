@@ -17,6 +17,13 @@ export const DailyReportResult2RowSchema = z.object({
 })
 export type DailyReportResult2Row = z.infer<typeof DailyReportResult2RowSchema>
 
+/** calls.daily_report: its parameters, checked before anything is sent. */
+export const DailyReportParamsSchema = z.strictObject({
+  day: z.iso.date().nullable().optional(),
+  placeholder: z.boolean().nullable().optional(),
+})
+export type DailyReportParams = z.infer<typeof DailyReportParamsSchema>
+
 /** calls.daily_report: returns 2 result sets: rows; rows. */
 export const DailyReportSchema = z.tuple([z.array(DailyReportResult1RowSchema), z.array(DailyReportResult2RowSchema)])
 export type DailyReport = z.infer<typeof DailyReportSchema>

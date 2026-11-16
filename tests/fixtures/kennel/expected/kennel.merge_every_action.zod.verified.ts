@@ -10,6 +10,12 @@ export const MergeEveryActionRowSchema = z.object({
 })
 export type MergeEveryActionRow = z.infer<typeof MergeEveryActionRowSchema>
 
+/** kennel.merge_every_action: its parameters, checked before anything is sent. */
+export const MergeEveryActionParamsSchema = z.strictObject({
+  owner_id: z.int32().nullable(),
+})
+export type MergeEveryActionParams = z.infer<typeof MergeEveryActionParamsSchema>
+
 /** kennel.merge_every_action: returns rows. */
 export const MergeEveryActionSchema = z.array(MergeEveryActionRowSchema)
 export type MergeEveryAction = z.infer<typeof MergeEveryActionSchema>

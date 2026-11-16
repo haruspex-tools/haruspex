@@ -34,6 +34,12 @@ export const OverlapsResult4RowSchema = z.object({
 })
 export type OverlapsResult4Row = z.infer<typeof OverlapsResult4RowSchema>
 
+/** rink.overlaps: its parameters, checked before anything is sent. */
+export const OverlapsParamsSchema = z.strictObject({
+  min: z.union([z.int(), z.bigint().min(-9223372036854775808n).max(9223372036854775807n)]).nullable(),
+})
+export type OverlapsParams = z.infer<typeof OverlapsParamsSchema>
+
 /** rink.overlaps: returns 4 result sets: rows; rows; rows; rows. */
 export const OverlapsSchema = z.tuple([z.array(OverlapsResult1RowSchema), z.array(OverlapsResult2RowSchema), z.array(OverlapsResult3RowSchema), z.array(OverlapsResult4RowSchema).max(1)])
 export type Overlaps = z.infer<typeof OverlapsSchema>

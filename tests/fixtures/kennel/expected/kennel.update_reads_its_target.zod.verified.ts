@@ -10,6 +10,12 @@ export const UpdateReadsItsTargetRowSchema = z.object({
 })
 export type UpdateReadsItsTargetRow = z.infer<typeof UpdateReadsItsTargetRowSchema>
 
+/** kennel.update_reads_its_target: its parameters, checked before anything is sent. */
+export const UpdateReadsItsTargetParamsSchema = z.strictObject({
+  owner_id: z.int32().nullable(),
+})
+export type UpdateReadsItsTargetParams = z.infer<typeof UpdateReadsItsTargetParamsSchema>
+
 /** kennel.update_reads_its_target: returns rows. */
 export const UpdateReadsItsTargetSchema = z.array(UpdateReadsItsTargetRowSchema)
 export type UpdateReadsItsTarget = z.infer<typeof UpdateReadsItsTargetSchema>

@@ -12,6 +12,17 @@ export const ShiftTimesRowSchema = z.object({
 })
 export type ShiftTimesRow = z.infer<typeof ShiftTimesRowSchema>
 
+/** till.shift_times: its parameters, checked before anything is sent. */
+export const ShiftTimesParamsSchema = z.strictObject({
+  day: z.iso.date().nullable(),
+  opened_at: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/).nullable(),
+  logged_at: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d(\d[037]?)?)?$/).refine((value) => value >= "1753-01-01", { error: "Before 1753-01-01, the earliest datetime" }).nullable().optional(),
+  rota_slot: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/).refine((value) => value >= "1900-01-01" && value <= "2079-06-06T23:59:00", { error: "Outside 1900-01-01 to 2079-06-06T23:59:00, the range of smalldatetime" }).nullable().optional(),
+  till_time: z.iso.time().regex(/^\d{2}:\d{2}:\d{2}(\.\d{1,3})?$/).nullable().optional(),
+  stamped_at: z.iso.datetime({ offset: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,7})?(Z|[+-]\d{2}:\d{2})$/).nullable().optional(),
+})
+export type ShiftTimesParams = z.infer<typeof ShiftTimesParamsSchema>
+
 /** till.shift_times: returns rows. */
 export const ShiftTimesSchema = z.array(ShiftTimesRowSchema).length(1)
 export type ShiftTimes = z.infer<typeof ShiftTimesSchema>

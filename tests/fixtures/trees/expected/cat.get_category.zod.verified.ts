@@ -29,6 +29,12 @@ export const GetCategoryRowSchema = z.object({
 })
 export type GetCategoryRow = z.infer<typeof GetCategoryRowSchema>
 
+/** cat.get_category: its parameters, checked before anything is sent. */
+export const GetCategoryParamsSchema = z.strictObject({
+  category_id: z.int32().nullable(),
+})
+export type GetCategoryParams = z.infer<typeof GetCategoryParamsSchema>
+
 /** cat.get_category: returns JSON, null when no rows match. */
 export const GetCategorySchema = GetCategoryRowSchema.nullable()
 export type GetCategory = z.infer<typeof GetCategorySchema>

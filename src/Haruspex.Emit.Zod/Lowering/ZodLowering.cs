@@ -8,8 +8,9 @@ namespace Haruspex.Emit.Zod.Lowering;
 
 /// <summary>
 /// The second stage: the plan's every entry as a declaration, built from Zod expressions (<see cref="ZodModule"/>). What
-/// each IR type becomes is <see cref="TypeLowering"/>'s; this decides what a procedure's results and a named object type
-/// become, and what the reader of the module is told about them.
+/// each IR type becomes is <see cref="TypeLowering"/>'s, and what a procedure's parameters become
+/// <see cref="ParameterLowering"/>'s; this decides what a procedure's results and a named object type become, and what the
+/// reader of the module is told about them.
 /// </summary>
 internal static class ZodLowering
 {
@@ -21,11 +22,13 @@ internal static class ZodLowering
         var types = new TypeLowering(plan.Document.Types, name => declaredAs[name]);
         List<ZodDeclaration> declarations =
         [
-            .. plan.Entries.Select(entry => entry switch
+            .. plan.Entries.SelectMany(entry => entry switch
             {
-                ZodPlanEntry.NamedType named when declaredAs[named.Name] != named.Name => Alias(named.Name, declaredAs[named.Name]),
-                ZodPlanEntry.NamedType named => ObjectType(named, plan, types),
-                ZodPlanEntry.Procedure procedure => Procedure(procedure.Object, types),
+                ZodPlanEntry.NamedType named when declaredAs[named.Name] != named.Name => [Alias(named.Name, declaredAs[named.Name])],
+                ZodPlanEntry.NamedType named => [ObjectType(named, plan, types)],
+
+                // What a caller sends, then what comes back.
+                ZodPlanEntry.Procedure procedure => new[] { ParameterLowering.Declaration(procedure.Object, types), Procedure(procedure.Object, types) }.OfType<ZodDeclaration>(),
             }),
         ];
         return new ZodModule([.. Header(plan.Document.Source, declarations)], plan.Imports, plan.UsesJsonText, [.. declarations], plan.Document.Folds);

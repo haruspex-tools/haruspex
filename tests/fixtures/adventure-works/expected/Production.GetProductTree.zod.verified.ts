@@ -31,6 +31,12 @@ export const GetProductTreeRowSchema = z.object({
 })
 export type GetProductTreeRow = z.infer<typeof GetProductTreeRowSchema>
 
+/** Production.GetProductTree: its parameters, checked before anything is sent. */
+export const GetProductTreeParamsSchema = z.strictObject({
+  ProductID: z.int32().nullable(),
+})
+export type GetProductTreeParams = z.infer<typeof GetProductTreeParamsSchema>
+
 /** Production.GetProductTree: returns JSON, null when no rows match. */
 export const GetProductTreeSchema = GetProductTreeRowSchema.nullable()
 export type GetProductTree = z.infer<typeof GetProductTreeSchema>

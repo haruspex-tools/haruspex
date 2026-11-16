@@ -2,7 +2,8 @@
 
 An invented shop till, for procedures' parameters: one procedure for each group of types a generated client must check
 before it sends a value, so that what SQL Server keeps of each is held to the IR's facts (`ParameterTests`,
-`ParameterObservationTests`). No part of it comes from a real system.
+`ParameterObservationTests`) and the generated parameter schemas check exactly that (`ParameterAcceptanceTests`). No part of
+it comes from a real system.
 
 | Procedure | Covers |
 |---|---|

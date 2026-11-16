@@ -9,6 +9,12 @@ export const UpdateReturnsRowSchema = z.object({
 })
 export type UpdateReturnsRow = z.infer<typeof UpdateReturnsRowSchema>
 
+/** lib.update_returns: its parameters, checked before anything is sent. */
+export const UpdateReturnsParamsSchema = z.strictObject({
+  member_id: z.int32().nullable(),
+})
+export type UpdateReturnsParams = z.infer<typeof UpdateReturnsParamsSchema>
+
 /** lib.update_returns: returns rows. */
 export const UpdateReturnsSchema = z.array(UpdateReturnsRowSchema)
 export type UpdateReturns = z.infer<typeof UpdateReturnsSchema>

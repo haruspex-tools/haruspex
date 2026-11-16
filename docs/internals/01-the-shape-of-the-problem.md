@@ -63,6 +63,12 @@ export const GetCategoryRowSchema = z.object({
 })
 export type GetCategoryRow = z.infer<typeof GetCategoryRowSchema>
 
+/** shop.get_category: its parameters, checked before anything is sent. */
+export const GetCategoryParamsSchema = z.strictObject({
+  category_id: z.int32().nullable(),
+})
+export type GetCategoryParams = z.infer<typeof GetCategoryParamsSchema>
+
 /** shop.get_category: returns JSON, null when no rows match. */
 export const GetCategorySchema = GetCategoryRowSchema.nullable()
 export type GetCategory = z.infer<typeof GetCategorySchema>
@@ -221,6 +227,12 @@ The IR says what is known (the parameter's type, and the length a value sent to 
 The generated Zod says the same, in its own terms:
 
 ```ts haruspex-zod
+/** shop.search_products: its parameters, checked before anything is sent. */
+export const SearchProductsParamsSchema = z.strictObject({
+  where: z.string().refine((value) => value.length <= 400, { error: "More than 400 UTF-16 code units, which nvarchar(400) would cut short" }).nullable(),
+})
+export type SearchProductsParams = z.infer<typeof SearchProductsParamsSchema>
+
 /** shop.search_products: its result sets cannot be listed; see the unknowns in the IR. */
 export const SearchProductsSchema = z.unknown()
 export type SearchProducts = z.infer<typeof SearchProductsSchema>

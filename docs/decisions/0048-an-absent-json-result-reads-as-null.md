@@ -8,7 +8,7 @@ document is an array or one object. So a JSON array that may be absent is `.null
 one item (`.min(1)`, or `.length(1)` when the query returns at most one row). There is no setting for the driver's mode and
 no second export: without `parseJSON`, the application turns the row's text into the same value in one line, which the
 README shows. Rowsets are unchanged: an absent one still reads as `[]`. The IR's reader convention says the same, so the
-client module and its runtime package, which will reassemble JSON too, follow one rule.
+database module and its runtime package, which will reassemble JSON too, follow one rule.
 
 **Context.** Observed on 16 Nov 2026 with mssql 12.7.14 (tedious 20.3.9) on SQL Server 2025 RTM-CU10
 (`MssqlDriverObservationTests`). The driver recognises a top-level `FOR JSON` result set by the one column SQL Server names

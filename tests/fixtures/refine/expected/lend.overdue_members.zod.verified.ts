@@ -14,6 +14,12 @@ export const OverdueMembersRowSchema = z.object({
 })
 export type OverdueMembersRow = z.infer<typeof OverdueMembersRowSchema>
 
+/** lend.overdue_members: its parameters, checked before anything is sent. */
+export const OverdueMembersParamsSchema = z.strictObject({
+  today: z.iso.date().nullable(),
+})
+export type OverdueMembersParams = z.infer<typeof OverdueMembersParamsSchema>
+
 /** lend.overdue_members: returns rows. */
 export const OverdueMembersSchema = z.array(OverdueMembersRowSchema)
 export type OverdueMembers = z.infer<typeof OverdueMembersSchema>

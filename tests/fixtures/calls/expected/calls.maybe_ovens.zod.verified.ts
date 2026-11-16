@@ -8,6 +8,12 @@ export const MaybeOvensRowSchema = z.object({
 })
 export type MaybeOvensRow = z.infer<typeof MaybeOvensRowSchema>
 
+/** calls.maybe_ovens: its parameters, checked before anything is sent. */
+export const MaybeOvensParamsSchema = z.strictObject({
+  show: z.boolean().nullable(),
+})
+export type MaybeOvensParams = z.infer<typeof MaybeOvensParamsSchema>
+
 /** calls.maybe_ovens: returns rows, [] when it does not run. */
 export const MaybeOvensSchema = z.array(MaybeOvensRowSchema)
 export type MaybeOvens = z.infer<typeof MaybeOvensSchema>

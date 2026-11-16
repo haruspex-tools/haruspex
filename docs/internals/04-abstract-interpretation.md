@@ -124,6 +124,13 @@ export const SalePriceRowSchema = z.object({
 })
 export type SalePriceRow = z.infer<typeof SalePriceRowSchema>
 
+/** shop.sale_price: its parameters, checked before anything is sent. */
+export const SalePriceParamsSchema = z.strictObject({
+  product_id: z.int32().nullable(),
+  member: z.boolean().nullable(),
+})
+export type SalePriceParams = z.infer<typeof SalePriceParamsSchema>
+
 /** shop.sale_price: returns rows. */
 export const SalePriceSchema = z.array(SalePriceRowSchema).max(1)
 export type SalePrice = z.infer<typeof SalePriceSchema>

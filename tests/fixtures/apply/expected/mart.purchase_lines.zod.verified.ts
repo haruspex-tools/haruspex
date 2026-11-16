@@ -19,6 +19,12 @@ export const PurchaseLinesRowSchema = z.object({
 })
 export type PurchaseLinesRow = z.infer<typeof PurchaseLinesRowSchema>
 
+/** mart.purchase_lines: its parameters, checked before anything is sent. */
+export const PurchaseLinesParamsSchema = z.strictObject({
+  purchase_id: z.int32().nullable(),
+})
+export type PurchaseLinesParams = z.infer<typeof PurchaseLinesParamsSchema>
+
 /** mart.purchase_lines: returns rows. */
 export const PurchaseLinesSchema = z.array(PurchaseLinesRowSchema)
 export type PurchaseLines = z.infer<typeof PurchaseLinesSchema>

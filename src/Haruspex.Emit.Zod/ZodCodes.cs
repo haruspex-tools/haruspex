@@ -22,4 +22,7 @@ public static class ZodCodes
 
     /// <summary>A named type that one result reads as rows and another as JSON, whose scalars arrive differently in each.</summary>
     public static DiagnosticCode TwoEncodings { get; } = new(5005, DiagnosticSeverity.Error, "A type read both as rows and as JSON");
+
+    /// <summary>A procedure whose parameters' schema would take a name the module already declares.</summary>
+    public static DiagnosticCode ParametersNameTaken { get; } = new(5006, DiagnosticSeverity.Error, "A procedure's parameters' name is taken");
 }

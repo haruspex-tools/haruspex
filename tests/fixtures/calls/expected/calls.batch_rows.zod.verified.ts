@@ -16,6 +16,12 @@ export const BatchRowsResult2RowSchema = z.object({
 })
 export type BatchRowsResult2Row = z.infer<typeof BatchRowsResult2RowSchema>
 
+/** calls.batch_rows: its parameters, checked before anything is sent. */
+export const BatchRowsParamsSchema = z.strictObject({
+  oven: z.int32().nullable().optional(),
+})
+export type BatchRowsParams = z.infer<typeof BatchRowsParamsSchema>
+
 /** calls.batch_rows: returns 2 result sets: rows; rows. */
 export const BatchRowsSchema = z.tuple([z.array(BatchRowsResult1RowSchema), z.array(BatchRowsResult2RowSchema).max(1)])
 export type BatchRows = z.infer<typeof BatchRowsSchema>

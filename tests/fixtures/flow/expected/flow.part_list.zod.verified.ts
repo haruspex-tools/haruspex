@@ -20,6 +20,12 @@ export const PartListRowSchema = z.object({
 })
 export type PartListRow = z.infer<typeof PartListRowSchema>
 
+/** flow.part_list: its parameters, checked before anything is sent. */
+export const PartListParamsSchema = z.strictObject({
+  with_units: z.boolean().nullable().optional(),
+})
+export type PartListParams = z.infer<typeof PartListParamsSchema>
+
 /** flow.part_list: returns rows. */
 export const PartListSchema = z.array(PartListRowSchema)
 export type PartList = z.infer<typeof PartListSchema>

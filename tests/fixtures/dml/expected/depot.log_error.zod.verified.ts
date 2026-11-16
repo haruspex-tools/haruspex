@@ -2,6 +2,13 @@
 // Rowset results follow the default type mapping of the mssql (tedious) driver.
 import { z } from 'zod'
 
+/** depot.log_error: its parameters, checked before anything is sent. */
+export const LogErrorParamsSchema = z.strictObject({
+  procedure: z.string().refine((value) => value.length <= 128, { error: "More than 128 UTF-16 code units, which nvarchar(128) would cut short" }).nullable(),
+  message: z.string().refine((value) => value.length <= 4000, { error: "More than 4000 UTF-16 code units, which nvarchar(4000) would cut short" }).nullable(),
+})
+export type LogErrorParams = z.infer<typeof LogErrorParamsSchema>
+
 /** depot.log_error: returns no result sets. */
 export const LogErrorSchema = z.tuple([])
 export type LogError = z.infer<typeof LogErrorSchema>

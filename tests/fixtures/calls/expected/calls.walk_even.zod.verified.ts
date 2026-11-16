@@ -14,6 +14,12 @@ export const WalkEvenRow2Schema = z.object({
 })
 export type WalkEvenRow2 = z.infer<typeof WalkEvenRow2Schema>
 
+/** calls.walk_even: its parameters, checked before anything is sent. */
+export const WalkEvenParamsSchema = z.strictObject({
+  n: z.int32().nullable(),
+})
+export type WalkEvenParams = z.infer<typeof WalkEvenParamsSchema>
+
 /** calls.walk_even: returns rows. */
 export const WalkEvenSchema = z.union([z.array(WalkEvenRowSchema.extend({ note: z.never().optional() })), z.array(WalkEvenRow2Schema.extend({ label: z.never().optional() }))])
 export type WalkEven = z.infer<typeof WalkEvenSchema>

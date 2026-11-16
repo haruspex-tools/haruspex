@@ -50,6 +50,12 @@ export const GetSampleRowSchema = z.object({
 })
 export type GetSampleRow = z.infer<typeof GetSampleRowSchema>
 
+/** vals.get_sample: its parameters, checked before anything is sent. */
+export const GetSampleParamsSchema = z.strictObject({
+  sample_id: z.int32().nullable(),
+})
+export type GetSampleParams = z.infer<typeof GetSampleParamsSchema>
+
 /** vals.get_sample: returns JSON, null when no rows match. */
 export const GetSampleSchema = GetSampleRowSchema.nullable()
 export type GetSample = z.infer<typeof GetSampleSchema>

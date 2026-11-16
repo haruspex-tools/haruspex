@@ -10,6 +10,12 @@ export const UpdateThroughACteRowSchema = z.object({
 })
 export type UpdateThroughACteRow = z.infer<typeof UpdateThroughACteRowSchema>
 
+/** lib.update_through_a_cte: its parameters, checked before anything is sent. */
+export const UpdateThroughACteParamsSchema = z.strictObject({
+  member_id: z.int32().nullable(),
+})
+export type UpdateThroughACteParams = z.infer<typeof UpdateThroughACteParamsSchema>
+
 /** lib.update_through_a_cte: returns rows. */
 export const UpdateThroughACteSchema = z.array(UpdateThroughACteRowSchema)
 export type UpdateThroughACte = z.infer<typeof UpdateThroughACteSchema>

@@ -38,6 +38,12 @@ export const AccountStatsResult2RowSchema = z.object({
 })
 export type AccountStatsResult2Row = z.infer<typeof AccountStatsResult2RowSchema>
 
+/** ledger.account_stats: its parameters, checked before anything is sent. */
+export const AccountStatsParamsSchema = z.strictObject({
+  account_id: z.int32().nullable(),
+})
+export type AccountStatsParams = z.infer<typeof AccountStatsParamsSchema>
+
 /** ledger.account_stats: returns 2 result sets: rows; rows. */
 export const AccountStatsSchema = z.tuple([z.array(AccountStatsResult1RowSchema), z.array(AccountStatsResult2RowSchema).length(1)])
 export type AccountStats = z.infer<typeof AccountStatsSchema>

@@ -9,6 +9,12 @@ export const MergeJoinedSourceRowSchema = z.object({
 })
 export type MergeJoinedSourceRow = z.infer<typeof MergeJoinedSourceRowSchema>
 
+/** kennel.merge_joined_source: its parameters, checked before anything is sent. */
+export const MergeJoinedSourceParamsSchema = z.strictObject({
+  owner_id: z.int32().nullable(),
+})
+export type MergeJoinedSourceParams = z.infer<typeof MergeJoinedSourceParamsSchema>
+
 /** kennel.merge_joined_source: returns rows. */
 export const MergeJoinedSourceSchema = z.array(MergeJoinedSourceRowSchema)
 export type MergeJoinedSource = z.infer<typeof MergeJoinedSourceSchema>

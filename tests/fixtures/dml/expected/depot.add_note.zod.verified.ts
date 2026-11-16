@@ -2,6 +2,13 @@
 // Rowset results follow the default type mapping of the mssql (tedious) driver.
 import { z } from 'zod'
 
+/** depot.add_note: its parameters, checked before anything is sent. */
+export const AddNoteParamsSchema = z.strictObject({
+  note_id: z.int32().nullable(),
+  text: z.string().refine((value) => value.length <= 100, { error: "More than 100 UTF-16 code units, which nvarchar(100) would cut short" }).nullable(),
+})
+export type AddNoteParams = z.infer<typeof AddNoteParamsSchema>
+
 /** depot.add_note: its result sets cannot be listed; see the unknowns in the IR. */
 export const AddNoteSchema = z.unknown()
 export type AddNote = z.infer<typeof AddNoteSchema>

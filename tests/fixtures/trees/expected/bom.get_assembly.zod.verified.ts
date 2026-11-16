@@ -39,6 +39,12 @@ export const GetAssemblyRowSchema = z.object({
 })
 export type GetAssemblyRow = z.infer<typeof GetAssemblyRowSchema>
 
+/** bom.get_assembly: its parameters, checked before anything is sent. */
+export const GetAssemblyParamsSchema = z.strictObject({
+  part_id: z.int32().nullable(),
+})
+export type GetAssemblyParams = z.infer<typeof GetAssemblyParamsSchema>
+
 /** bom.get_assembly: returns JSON, null when no rows match. */
 export const GetAssemblySchema = GetAssemblyRowSchema.nullable()
 export type GetAssembly = z.infer<typeof GetAssemblySchema>

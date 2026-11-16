@@ -88,6 +88,12 @@ export const GetOrderRowSchema = z.object({
 })
 export type GetOrderRow = z.infer<typeof GetOrderRowSchema>
 
+/** Website.GetOrder: its parameters, checked before anything is sent. */
+export const GetOrderParamsSchema = z.strictObject({
+  OrderID: z.int32().nullable(),
+})
+export type GetOrderParams = z.infer<typeof GetOrderParamsSchema>
+
 /** Website.GetOrder: returns JSON, null when no rows match. */
 export const GetOrderSchema = GetOrderRowSchema.nullable()
 export type GetOrder = z.infer<typeof GetOrderSchema>
@@ -163,6 +169,12 @@ export const GetProductTreeRowSchema = z.object({
   components: z.array(GetComponentsNodeSchema).min(1).optional(),
 })
 export type GetProductTreeRow = z.infer<typeof GetProductTreeRowSchema>
+
+/** Production.GetProductTree: its parameters, checked before anything is sent. */
+export const GetProductTreeParamsSchema = z.strictObject({
+  ProductID: z.int32().nullable(),
+})
+export type GetProductTreeParams = z.infer<typeof GetProductTreeParamsSchema>
 
 /** Production.GetProductTree: returns JSON, null when no rows match. */
 export const GetProductTreeSchema = GetProductTreeRowSchema.nullable()

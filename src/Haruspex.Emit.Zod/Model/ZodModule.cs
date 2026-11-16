@@ -33,4 +33,13 @@ internal sealed record ZodModule(
 
     /// <summary>The name of the schema of the type <paramref name="name"/>.</summary>
     public static string SchemaOf(string name) => name + SchemaSuffix;
+
+    /// <summary>
+    /// What follows a procedure's name in the name of its parameters' type: <c>GetOrder</c> and <c>GetOrderParams</c>, whose
+    /// schema is <c>GetOrderParamsSchema</c>.
+    /// </summary>
+    public const string ParametersSuffix = "Params";
+
+    /// <summary>The name of the type of the parameters of the procedure named <paramref name="name"/>.</summary>
+    public static string ParametersOf(string name) => name + ParametersSuffix;
 }

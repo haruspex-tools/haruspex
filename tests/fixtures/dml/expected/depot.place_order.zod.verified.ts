@@ -26,6 +26,14 @@ export const PlaceOrderResult2RowSchema = z.object({
 })
 export type PlaceOrderResult2Row = z.infer<typeof PlaceOrderResult2RowSchema>
 
+/** depot.place_order: its parameters, checked before anything is sent. */
+export const PlaceOrderParamsSchema = z.strictObject({
+  part_id: z.int32().nullable(),
+  qty: z.int32().nullable(),
+  note: z.string().refine((value) => value.length <= 200, { error: "More than 200 UTF-16 code units, which nvarchar(200) would cut short" }).nullable().optional(),
+})
+export type PlaceOrderParams = z.infer<typeof PlaceOrderParamsSchema>
+
 /** depot.place_order: returns 2 result sets: rows; rows. */
 export const PlaceOrderSchema = z.tuple([z.array(PlaceOrderResult1RowSchema), z.array(PlaceOrderResult2RowSchema)])
 export type PlaceOrder = z.infer<typeof PlaceOrderSchema>

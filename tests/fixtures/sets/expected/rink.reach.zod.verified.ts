@@ -23,6 +23,13 @@ export const ReachResult2RowSchema = z.object({
 })
 export type ReachResult2Row = z.infer<typeof ReachResult2RowSchema>
 
+/** rink.reach: its parameters, checked before anything is sent. */
+export const ReachParamsSchema = z.strictObject({
+  person_id: z.int32().nullable(),
+  session_id: z.int32().nullable(),
+})
+export type ReachParams = z.infer<typeof ReachParamsSchema>
+
 /** rink.reach: returns 2 result sets: rows; rows. */
 export const ReachSchema = z.tuple([z.array(ReachResult1RowSchema), z.array(ReachResult2RowSchema)])
 export type Reach = z.infer<typeof ReachSchema>

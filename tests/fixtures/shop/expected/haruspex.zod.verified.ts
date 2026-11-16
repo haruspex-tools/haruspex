@@ -10,6 +10,13 @@ export const BasketLineRowRowSchema = z.strictObject({
 })
 export type BasketLineRowRow = z.infer<typeof BasketLineRowRowSchema>
 
+/** shop.basket_line#: its parameters, checked before anything is sent. */
+export const BasketLineRowParamsSchema = z.strictObject({
+  basket_id: z.int32().nullable(),
+  line_no: z.int32().nullable(),
+})
+export type BasketLineRowParams = z.infer<typeof BasketLineRowParamsSchema>
+
 /** shop.basket_line#: returns JSON, null when no rows match. */
 export const BasketLineRowSchema = BasketLineRowRowSchema.nullable()
 export type BasketLineRow = z.infer<typeof BasketLineRowSchema>
@@ -27,6 +34,12 @@ export const BasketRowSchema = z.strictObject({
   lines: z.array(BasketItemSchema).min(1).optional(),
 })
 export type BasketRow = z.infer<typeof BasketRowSchema>
+
+/** shop.get_basket: its parameters, checked before anything is sent. */
+export const BasketParamsSchema = z.strictObject({
+  basket_id: z.int32().nullable(),
+})
+export type BasketParams = z.infer<typeof BasketParamsSchema>
 
 /** shop.get_basket: returns JSON, null when no rows match. */
 export const BasketSchema = BasketRowSchema.nullable()

@@ -37,8 +37,8 @@ internal static class SqlTypes
     /// The facts are what SQL Server keeps of a value sent to the parameter: a string longer than <c>nvarchar(20)</c> is cut
     /// short and a decimal of more places is rounded, without an error (<c>ParameterObservationTests</c>). So they are true of the
     /// value inside the body, and they are the rule a client checks a value against before sending it, which the generated
-    /// client module states (<c>docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md</c>). A guard in the body
-    /// proves nothing about what a caller may send, so nothing narrower is claimed here.
+    /// database module states (<c>docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md</c>). A guard in the
+    /// body proves nothing about what a caller may send, so nothing narrower is claimed here.
     /// </remarks>
     public static Shape ToParameterShape(DatabaseModel model, SqlType? type, SourceLocation at) =>
         SchemaRules.ResolveType(model, type) is { } resolved

@@ -31,6 +31,13 @@ export const RegionReportRowSchema = z.object({
 })
 export type RegionReportRow = z.infer<typeof RegionReportRowSchema>
 
+/** flow.region_report: its parameters, checked before anything is sent. */
+export const RegionReportParamsSchema = z.strictObject({
+  /** varchar(6) counts bytes and its collation isn't declared, so a value of fewer than 6 characters may still be cut short, and a character its code page lacks is replaced. */
+  channel: z.string().refine((value) => value.length <= 6, { error: "More than 6 UTF-16 code units, which varchar(6) would cut short" }).nullable().optional(),
+})
+export type RegionReportParams = z.infer<typeof RegionReportParamsSchema>
+
 /** flow.region_report: returns JSON, null when no rows match. */
 export const RegionReportSchema = z.array(RegionReportRowSchema).min(1).nullable()
 export type RegionReport = z.infer<typeof RegionReportSchema>

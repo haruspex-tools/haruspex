@@ -21,6 +21,12 @@ export const PickOrderLinesRowSchema = z.object({
 })
 export type PickOrderLinesRow = z.infer<typeof PickOrderLinesRowSchema>
 
+/** depot.pick_order_lines: its parameters, checked before anything is sent. */
+export const PickOrderLinesParamsSchema = z.strictObject({
+  order_id: z.int32().nullable(),
+})
+export type PickOrderLinesParams = z.infer<typeof PickOrderLinesParamsSchema>
+
 /** depot.pick_order_lines: returns rows. */
 export const PickOrderLinesSchema = z.array(PickOrderLinesRowSchema)
 export type PickOrderLines = z.infer<typeof PickOrderLinesSchema>

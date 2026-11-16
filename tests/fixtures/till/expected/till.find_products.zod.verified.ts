@@ -16,6 +16,16 @@ export const FindProductsRowSchema = z.object({
 })
 export type FindProductsRow = z.infer<typeof FindProductsRowSchema>
 
+/** till.find_products: its parameters, checked before anything is sent. */
+export const FindProductsParamsSchema = z.strictObject({
+  name: z.string().refine((value) => value.length <= 40, { error: "More than 40 UTF-16 code units, which nvarchar(40) would cut short" }).nullable(),
+  /** char(8) counts bytes and its collation isn't declared, so a value of fewer than 8 characters may still be cut short, and a character its code page lacks is replaced. */
+  sku: z.string().refine((value) => value.length <= 8, { error: "More than 8 UTF-16 code units, which char(8) would cut short" }).nullable().optional(),
+  /** varchar(20) counts bytes and its collation isn't declared, so a value of fewer than 20 characters may still be cut short, and a character its code page lacks is replaced. */
+  label: z.string().refine((value) => value.length <= 20, { error: "More than 20 UTF-16 code units, which varchar(20) would cut short" }).nullable().optional(),
+})
+export type FindProductsParams = z.infer<typeof FindProductsParamsSchema>
+
 /** till.find_products: returns rows. */
 export const FindProductsSchema = z.array(FindProductsRowSchema)
 export type FindProducts = z.infer<typeof FindProductsSchema>

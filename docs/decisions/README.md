@@ -58,6 +58,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0051](0051-one-json-schema-document-per-module-every-value-as-json.md) | 16 Nov 2026 | One JSON Schema document per module, every value as JSON writes it |
 | [0052](0052-a-decimal-s-places-are-a-note-not-multiple-of.md) | 16 Nov 2026 | A decimal's places are a note in JSON Schema, not `multipleOf` |
 | [0054](0054-a-parameter-is-checked-against-its-declared-type.md) | 16 Nov 2026 | A parameter is checked against its declared type |
+| [0055](0055-dates-and-times-are-sent-as-iso-8601-strings.md) | 16 Nov 2026 | Dates and times are sent as ISO 8601 strings |
 
 ## Writing a record
 

@@ -26,6 +26,12 @@ export const BillOfMaterialsRowSchema = z.object({
 })
 export type BillOfMaterialsRow = z.infer<typeof BillOfMaterialsRowSchema>
 
+/** flow.bill_of_materials: its parameters, checked before anything is sent. */
+export const BillOfMaterialsParamsSchema = z.strictObject({
+  assembly: z.int32().nullable(),
+})
+export type BillOfMaterialsParams = z.infer<typeof BillOfMaterialsParamsSchema>
+
 /** flow.bill_of_materials: returns JSON, null when no rows match. */
 export const BillOfMaterialsSchema = z.array(BillOfMaterialsRowSchema).min(1).nullable()
 export type BillOfMaterials = z.infer<typeof BillOfMaterialsSchema>

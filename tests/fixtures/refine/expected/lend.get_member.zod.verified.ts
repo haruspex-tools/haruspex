@@ -28,6 +28,12 @@ export const GetMemberRowSchema = z.object({
 })
 export type GetMemberRow = z.infer<typeof GetMemberRowSchema>
 
+/** lend.get_member: its parameters, checked before anything is sent. */
+export const GetMemberParamsSchema = z.strictObject({
+  member_id: z.int32().nullable(),
+})
+export type GetMemberParams = z.infer<typeof GetMemberParamsSchema>
+
 /** lend.get_member: returns JSON, null when no rows match. */
 export const GetMemberSchema = GetMemberRowSchema.nullable()
 export type GetMember = z.infer<typeof GetMemberSchema>

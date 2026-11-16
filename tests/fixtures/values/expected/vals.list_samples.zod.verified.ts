@@ -50,6 +50,12 @@ export const ListSamplesRowSchema = z.object({
 })
 export type ListSamplesRow = z.infer<typeof ListSamplesRowSchema>
 
+/** vals.list_samples: its parameters, checked before anything is sent. */
+export const ListSamplesParamsSchema = z.strictObject({
+  sample_id: z.int32().nullable().optional(),
+})
+export type ListSamplesParams = z.infer<typeof ListSamplesParamsSchema>
+
 /** vals.list_samples: returns JSON, null when no rows match. */
 export const ListSamplesSchema = z.array(ListSamplesRowSchema).min(1).nullable()
 export type ListSamples = z.infer<typeof ListSamplesSchema>

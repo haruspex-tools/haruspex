@@ -292,6 +292,9 @@ haruspex.json: error HAR5004: The imported name 'z' is also a name this module d
 HAR5005
 haruspex: error HAR5005: The type Shared is read both as rows and as JSON, so one schema can't check it.
 
+HAR5006
+haruspex: error HAR5006: The parameters of shop.get_order are declared as GetOrderParams, which is also the name of another procedure or type; rename one of them in the config file.
+
 HAR5101
 haruspex: error HAR5101: The IR name 'GetBasket' names a type and the procedure shop.get_basket, which one $defs can't hold.
 

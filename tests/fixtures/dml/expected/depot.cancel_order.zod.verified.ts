@@ -28,6 +28,12 @@ export const CancelOrderResult2RowSchema = z.object({
 })
 export type CancelOrderResult2Row = z.infer<typeof CancelOrderResult2RowSchema>
 
+/** depot.cancel_order: its parameters, checked before anything is sent. */
+export const CancelOrderParamsSchema = z.strictObject({
+  order_id: z.int32().nullable(),
+})
+export type CancelOrderParams = z.infer<typeof CancelOrderParamsSchema>
+
 /** depot.cancel_order: returns 2 result sets: rows; rows. */
 export const CancelOrderSchema = z.tuple([z.array(CancelOrderResult1RowSchema), z.array(CancelOrderResult2RowSchema).length(1)])
 export type CancelOrder = z.infer<typeof CancelOrderSchema>

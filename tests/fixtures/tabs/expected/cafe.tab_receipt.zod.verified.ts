@@ -31,6 +31,12 @@ export const TabReceiptRowSchema = z.object({
 })
 export type TabReceiptRow = z.infer<typeof TabReceiptRowSchema>
 
+/** cafe.tab_receipt: its parameters, checked before anything is sent. */
+export const TabReceiptParamsSchema = z.strictObject({
+  tab_id: z.int32().nullable(),
+})
+export type TabReceiptParams = z.infer<typeof TabReceiptParamsSchema>
+
 /** cafe.tab_receipt: returns JSON, null when no rows match. */
 export const TabReceiptSchema = TabReceiptRowSchema.nullable()
 export type TabReceipt = z.infer<typeof TabReceiptSchema>

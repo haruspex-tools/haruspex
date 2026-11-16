@@ -13,6 +13,12 @@ export const CursorRowRowSchema = z.object({
 })
 export type CursorRowRow = z.infer<typeof CursorRowRowSchema>
 
+/** kennel.cursor_row: its parameters, checked before anything is sent. */
+export const CursorRowParamsSchema = z.strictObject({
+  dog_id: z.int32().nullable(),
+})
+export type CursorRowParams = z.infer<typeof CursorRowParamsSchema>
+
 /** kennel.cursor_row: returns rows. */
 export const CursorRowSchema = z.array(CursorRowRowSchema).length(1)
 export type CursorRow = z.infer<typeof CursorRowSchema>

@@ -8,6 +8,12 @@ export const StaffMovesRowSchema = z.object({
 })
 export type StaffMovesRow = z.infer<typeof StaffMovesRowSchema>
 
+/** flow.staff_moves: its parameters, checked before anything is sent. */
+export const StaffMovesParamsSchema = z.strictObject({
+  assign: z.boolean().nullable().optional(),
+})
+export type StaffMovesParams = z.infer<typeof StaffMovesParamsSchema>
+
 /** flow.staff_moves: returns rows. */
 export const StaffMovesSchema = z.array(StaffMovesRowSchema)
 export type StaffMoves = z.infer<typeof StaffMovesSchema>

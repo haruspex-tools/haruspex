@@ -39,6 +39,12 @@ export const GetAuthorRowSchema = z.object({
 })
 export type GetAuthorRow = z.infer<typeof GetAuthorRowSchema>
 
+/** pay.get_author: its parameters, checked before anything is sent. */
+export const GetAuthorParamsSchema = z.strictObject({
+  author_id: z.int32().nullable(),
+})
+export type GetAuthorParams = z.infer<typeof GetAuthorParamsSchema>
+
 /** pay.get_author: returns JSON, null when no rows match. */
 export const GetAuthorSchema = GetAuthorRowSchema.nullable()
 export type GetAuthor = z.infer<typeof GetAuthorSchema>

@@ -10,6 +10,12 @@ export const MergeReturnsRowSchema = z.object({
 })
 export type MergeReturnsRow = z.infer<typeof MergeReturnsRowSchema>
 
+/** lib.merge_returns: its parameters, checked before anything is sent. */
+export const MergeReturnsParamsSchema = z.strictObject({
+  member_id: z.int32().nullable(),
+})
+export type MergeReturnsParams = z.infer<typeof MergeReturnsParamsSchema>
+
 /** lib.merge_returns: returns rows. */
 export const MergeReturnsSchema = z.array(MergeReturnsRowSchema)
 export type MergeReturns = z.infer<typeof MergeReturnsSchema>

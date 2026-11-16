@@ -46,6 +46,12 @@ export const VatCardRowSchema = z.object({
 })
 export type VatCardRow = z.infer<typeof VatCardRowSchema>
 
+/** dye.vat_card: its parameters, checked before anything is sent. */
+export const VatCardParamsSchema = z.strictObject({
+  vat_id: z.int32().nullable(),
+})
+export type VatCardParams = z.infer<typeof VatCardParamsSchema>
+
 /** dye.vat_card: returns JSON, null when no rows match. */
 export const VatCardSchema = VatCardRowSchema.nullable()
 export type VatCard = z.infer<typeof VatCardSchema>

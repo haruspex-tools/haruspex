@@ -30,6 +30,12 @@ export const TabSummaryRowSchema = z.object({
 })
 export type TabSummaryRow = z.infer<typeof TabSummaryRowSchema>
 
+/** cafe.tab_summary: its parameters, checked before anything is sent. */
+export const TabSummaryParamsSchema = z.strictObject({
+  tab_id: z.int32().nullable(),
+})
+export type TabSummaryParams = z.infer<typeof TabSummaryParamsSchema>
+
 /** cafe.tab_summary: returns rows. */
 export const TabSummarySchema = z.array(TabSummaryRowSchema).max(1)
 export type TabSummary = z.infer<typeof TabSummarySchema>

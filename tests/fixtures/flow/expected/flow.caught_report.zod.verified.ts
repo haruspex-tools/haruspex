@@ -39,6 +39,12 @@ export type CaughtReportResult2Row2 = z.infer<typeof CaughtReportResult2Row2Sche
 export const CaughtReportResult3RowSchema = CaughtReportResult1Row2Schema
 export type CaughtReportResult3Row = z.infer<typeof CaughtReportResult3RowSchema>
 
+/** flow.caught_report: its parameters, checked before anything is sent. */
+export const CaughtReportParamsSchema = z.strictObject({
+  fail_at: z.int().min(0).max(255).nullable().optional(),
+})
+export type CaughtReportParams = z.infer<typeof CaughtReportParamsSchema>
+
 /** flow.caught_report: returns 3 result sets: rows; rows, [] when it does not run; rows, [] when it does not run. */
 export const CaughtReportSchema = z.tuple([z.union([z.array(CaughtReportResult1Row2Schema.extend({ sale_id: z.never().optional(), amount: z.never().optional() })), z.array(CaughtReportResult1RowSchema.extend({ part_id: z.never().optional(), name: z.never().optional(), unit: z.never().optional() }))]), z.union([z.array(CaughtReportResult1Row2Schema.extend({ region_id: z.never().optional() })), z.array(CaughtReportResult2RowSchema.extend({ part_id: z.never().optional(), unit: z.never().optional() }))]), z.array(CaughtReportResult1Row2Schema)])
 export type CaughtReport = z.infer<typeof CaughtReportSchema>

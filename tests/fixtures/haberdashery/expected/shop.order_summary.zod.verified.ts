@@ -39,6 +39,12 @@ export const OrderSummaryResult2RowSchema = z.object({
 })
 export type OrderSummaryResult2Row = z.infer<typeof OrderSummaryResult2RowSchema>
 
+/** shop.order_summary: its parameters, checked before anything is sent. */
+export const OrderSummaryParamsSchema = z.strictObject({
+  id: z.int32().nullable(),
+})
+export type OrderSummaryParams = z.infer<typeof OrderSummaryParamsSchema>
+
 /** shop.order_summary: returns 2 result sets: rows; rows. */
 export const OrderSummarySchema = z.tuple([z.array(OrderSummaryResult1RowSchema).length(1), z.array(OrderSummaryResult2RowSchema)])
 export type OrderSummary = z.infer<typeof OrderSummarySchema>

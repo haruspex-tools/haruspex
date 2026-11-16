@@ -41,6 +41,13 @@ export const SalesByModeResult2RowSchema = z.object({
 })
 export type SalesByModeResult2Row = z.infer<typeof SalesByModeResult2RowSchema>
 
+/** flow.sales_by_mode: its parameters, checked before anything is sent. */
+export const SalesByModeParamsSchema = z.strictObject({
+  mode: z.int().min(0).max(255).nullable(),
+  region: z.int32().nullable().optional(),
+})
+export type SalesByModeParams = z.infer<typeof SalesByModeParamsSchema>
+
 /** flow.sales_by_mode: returns 2 result sets: rows, [] when it does not run; JSON, null when no rows match or it does not run. */
 export const SalesByModeSchema = z.tuple([z.union([z.array(SalesByModeResult1Row3Schema.extend({ sale_id: z.never().optional(), amount: z.never().optional() })), z.array(SalesByModeResult1RowSchema.extend({ region_id: z.never().optional(), name: z.never().optional(), code: z.never().optional() })), z.array(SalesByModeResult1Row2Schema.extend({ sale_id: z.never().optional(), amount: z.never().optional(), code: z.never().optional() }))]), SalesByModeResult2RowSchema.nullable()])
 export type SalesByMode = z.infer<typeof SalesByModeSchema>

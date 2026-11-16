@@ -22,6 +22,15 @@ export const SearchTitlesRowSchema = z.object({
 })
 export type SearchTitlesRow = z.infer<typeof SearchTitlesRowSchema>
 
+/** lend.search_titles: its parameters, checked before anything is sent. */
+export const SearchTitlesParamsSchema = z.strictObject({
+  name: z.string().refine((value) => value.length <= 60, { error: "More than 60 UTF-16 code units, which nvarchar(60) would cut short" }).nullable().optional(),
+  author: z.string().refine((value) => value.length <= 60, { error: "More than 60 UTF-16 code units, which nvarchar(60) would cut short" }).nullable().optional(),
+  /** varchar(10) counts bytes and its collation isn't declared, so a value of fewer than 10 characters may still be cut short, and a character its code page lacks is replaced. */
+  genre: z.string().refine((value) => value.length <= 10, { error: "More than 10 UTF-16 code units, which varchar(10) would cut short" }).nullable().optional(),
+})
+export type SearchTitlesParams = z.infer<typeof SearchTitlesParamsSchema>
+
 /** lend.search_titles: returns rows. */
 export const SearchTitlesSchema = z.array(SearchTitlesRowSchema)
 export type SearchTitles = z.infer<typeof SearchTitlesSchema>

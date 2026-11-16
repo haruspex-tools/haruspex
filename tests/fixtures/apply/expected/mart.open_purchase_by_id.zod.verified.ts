@@ -9,6 +9,12 @@ export const OpenPurchaseByIdRowSchema = z.object({
 })
 export type OpenPurchaseByIdRow = z.infer<typeof OpenPurchaseByIdRowSchema>
 
+/** mart.open_purchase_by_id: its parameters, checked before anything is sent. */
+export const OpenPurchaseByIdParamsSchema = z.strictObject({
+  purchase_id: z.int32().nullable(),
+})
+export type OpenPurchaseByIdParams = z.infer<typeof OpenPurchaseByIdParamsSchema>
+
 /** mart.open_purchase_by_id: returns rows. */
 export const OpenPurchaseByIdSchema = z.array(OpenPurchaseByIdRowSchema).max(1)
 export type OpenPurchaseById = z.infer<typeof OpenPurchaseByIdSchema>

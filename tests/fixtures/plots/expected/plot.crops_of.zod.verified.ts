@@ -9,6 +9,12 @@ export const CropsOfRowSchema = z.object({
 })
 export type CropsOfRow = z.infer<typeof CropsOfRowSchema>
 
+/** plot.crops_of: its parameters, checked before anything is sent. */
+export const CropsOfParamsSchema = z.strictObject({
+  bed_id: z.int32().nullable(),
+})
+export type CropsOfParams = z.infer<typeof CropsOfParamsSchema>
+
 /** plot.crops_of: returns rows. */
 export const CropsOfSchema = z.array(CropsOfRowSchema)
 export type CropsOf = z.infer<typeof CropsOfSchema>

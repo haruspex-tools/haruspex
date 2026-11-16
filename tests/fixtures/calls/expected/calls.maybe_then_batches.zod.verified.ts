@@ -18,6 +18,12 @@ export type MaybeThenBatchesResult1Row2 = z.infer<typeof MaybeThenBatchesResult1
 export const MaybeThenBatchesResult2RowSchema = MaybeThenBatchesResult1Row2Schema
 export type MaybeThenBatchesResult2Row = z.infer<typeof MaybeThenBatchesResult2RowSchema>
 
+/** calls.maybe_then_batches: its parameters, checked before anything is sent. */
+export const MaybeThenBatchesParamsSchema = z.strictObject({
+  show: z.boolean().nullable(),
+})
+export type MaybeThenBatchesParams = z.infer<typeof MaybeThenBatchesParamsSchema>
+
 /** calls.maybe_then_batches: returns 2 result sets: rows; rows, [] when it does not run. */
 export const MaybeThenBatchesSchema = z.tuple([z.union([z.array(MaybeThenBatchesResult1RowSchema.extend({ batch_id: z.never().optional(), product: z.never().optional() })), z.array(MaybeThenBatchesResult1Row2Schema.extend({ oven_id: z.never().optional(), label: z.never().optional() }))]), z.array(MaybeThenBatchesResult1Row2Schema)])
 export type MaybeThenBatches = z.infer<typeof MaybeThenBatchesSchema>

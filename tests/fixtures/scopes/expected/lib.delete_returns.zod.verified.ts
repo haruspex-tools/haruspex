@@ -9,6 +9,12 @@ export const DeleteReturnsRowSchema = z.object({
 })
 export type DeleteReturnsRow = z.infer<typeof DeleteReturnsRowSchema>
 
+/** lib.delete_returns: its parameters, checked before anything is sent. */
+export const DeleteReturnsParamsSchema = z.strictObject({
+  member_id: z.int32().nullable(),
+})
+export type DeleteReturnsParams = z.infer<typeof DeleteReturnsParamsSchema>
+
 /** lib.delete_returns: returns rows. */
 export const DeleteReturnsSchema = z.array(DeleteReturnsRowSchema)
 export type DeleteReturns = z.infer<typeof DeleteReturnsSchema>

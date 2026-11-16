@@ -21,6 +21,12 @@ export const GetPurchaseRowSchema = z.object({
 })
 export type GetPurchaseRow = z.infer<typeof GetPurchaseRowSchema>
 
+/** mart.get_purchase: its parameters, checked before anything is sent. */
+export const GetPurchaseParamsSchema = z.strictObject({
+  purchase_id: z.int32().nullable(),
+})
+export type GetPurchaseParams = z.infer<typeof GetPurchaseParamsSchema>
+
 /** mart.get_purchase: returns rows. */
 export const GetPurchaseSchema = z.array(GetPurchaseRowSchema).max(1)
 export type GetPurchase = z.infer<typeof GetPurchaseSchema>

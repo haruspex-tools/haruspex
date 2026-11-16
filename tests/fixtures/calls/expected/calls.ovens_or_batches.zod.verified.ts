@@ -20,6 +20,13 @@ export type OvensOrBatchesResult1Row2 = z.infer<typeof OvensOrBatchesResult1Row2
 export const OvensOrBatchesResult2RowSchema = OvensOrBatchesResult1RowSchema
 export type OvensOrBatchesResult2Row = z.infer<typeof OvensOrBatchesResult2RowSchema>
 
+/** calls.ovens_or_batches: its parameters, checked before anything is sent. */
+export const OvensOrBatchesParamsSchema = z.strictObject({
+  ovens: z.boolean().nullable(),
+  oven: z.int32().nullable().optional(),
+})
+export type OvensOrBatchesParams = z.infer<typeof OvensOrBatchesParamsSchema>
+
 /** calls.ovens_or_batches: returns 2 result sets: rows; rows, [] when it does not run. */
 export const OvensOrBatchesSchema = z.tuple([z.union([z.array(OvensOrBatchesResult1RowSchema.extend({ batch_id: z.never().optional(), product: z.never().optional(), weight_g: z.never().optional() })), z.array(OvensOrBatchesResult1Row2Schema.extend({ oven_id: z.never().optional(), label: z.never().optional(), rack_count: z.never().optional() }))]), z.array(OvensOrBatchesResult1RowSchema).max(1)])
 export type OvensOrBatches = z.infer<typeof OvensOrBatchesSchema>

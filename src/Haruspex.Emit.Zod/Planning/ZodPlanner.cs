@@ -25,6 +25,7 @@ internal static class ZodPlanner
         var imports = Imports(document, refusals);
         var usesJsonText = Nodes(document).Any(t => t is IrJsonText { Content: not null });
         var entries = Entries(document, graph, refusals);
+        ParameterNames(document, refusals);
         return Outcome.Of(new ZodPlan(document, graph, options, imports, usesJsonText, entries), refusals);
     }
 
@@ -70,6 +71,22 @@ internal static class ZodPlanner
     }
 
     /// <summary>
+    /// A procedure with parameters declares their schema under its name and <c>Params</c> (<see cref="ZodModule.ParametersOf"/>),
+    /// which the config's naming never sees: so a procedure or type that already has that name is refused, as a clash the
+    /// config would have refused, naming both.
+    /// </summary>
+    private static void ParameterNames(IrDocument document, List<Diagnostic> refusals)
+    {
+        var taken = document.Objects.Select(o => o.Name).Concat(document.Types.Keys).ToHashSet(StringComparer.Ordinal);
+        foreach (var obj in document.Objects.Where(o => o.Parameters.Count > 0).OrderBy(o => o.Id, StringComparer.Ordinal))
+        {
+            var name = ZodModule.ParametersOf(obj.Name);
+            if (taken.Contains(name))
+                refusals.Add(ZodCodes.ParametersNameTaken.At(null, $"The parameters of {obj.Id} are declared as {name}, which is also the name of another procedure or type; rename one of them in the config file."));
+        }
+    }
+
+    /// <summary>
     /// One import per module the config file pointed a value at (<see cref="IrImport"/>), modules and names sorted so the
     /// output is stable. An imported name must be an identifier, come from one module only, and not be one this module
     /// defines, or two declarations would clash.
@@ -98,7 +115,7 @@ internal static class ZodPlanner
             names.Add(import.Name);
         }
 
-        var defined = document.Objects.Select(o => o.Name).Concat(document.Types.Keys)
+        var defined = document.Objects.Select(o => o.Name).Concat(document.Objects.Where(o => o.Parameters.Count > 0).Select(o => ZodModule.ParametersOf(o.Name))).Concat(document.Types.Keys)
             .SelectMany(n => new[] { n, ZodModule.SchemaOf(n) }).Append(ZodModule.ZodName).Append(ZodModule.JsonTextHelperName).Concat(ZodModule.CanonicalNames).ToHashSet(StringComparer.Ordinal);
         foreach (var name in modules.Keys.Where(defined.Contains).Order(StringComparer.Ordinal))
             refusals.Add(ZodCodes.ImportClashes.At(null, $"The imported name '{name}' is also a name this module defines or uses."));

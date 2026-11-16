@@ -87,6 +87,33 @@ internal abstract record ZodExpression
     /// <param name="Items">The items, in the IR's (ordinal) order.</param>
     public sealed record Canonical(string Fold, EquatableArray<string> Items) : ZodExpression;
 
+    /// <summary>A JavaScript <c>bigint</c> argument, written with its <c>n</c>: <c>9223372036854775807n</c>.</summary>
+    /// <param name="Value">The integer, as decimal text.</param>
+    public sealed record BigIntLiteral(string Value) : ZodExpression;
+
+    /// <summary>
+    /// A regular expression argument matching the whole of a string: <c>/^…$/</c>. The emitter writes its patterns itself, from
+    /// a closed set; nothing from the IR is put in one unescaped.
+    /// </summary>
+    /// <param name="Source">The pattern between <c>^</c> and <c>$</c>, as a regular expression literal writes it.</param>
+    public sealed record Pattern(string Source) : ZodExpression;
+
+    /// <summary>
+    /// A predicate on a string, <c>(value) =&gt; value &gt;= "…" &amp;&amp; value &lt;= "…"</c>, for <c>.refine</c>: the string lies between
+    /// two others in code-unit order, which for ISO 8601 strings of one form is the order in time.
+    /// </summary>
+    /// <param name="Least">The least value, or null for none.</param>
+    /// <param name="Greatest">The greatest value, or null for none.</param>
+    public sealed record TextRange(string? Least, string? Greatest) : ZodExpression;
+
+    /// <summary>
+    /// A predicate on a string, <c>(value) =&gt; value.length &lt;= n</c>, for <c>.refine</c>: at most <paramref name="Units"/> UTF-16
+    /// code units, as JavaScript's <c>length</c> and SQL Server's <c>nvarchar</c> count them. Zod's own <c>.max</c> counts code points
+    /// (4.6.7), so a character outside the Basic Multilingual Plane counts once there and twice here.
+    /// </summary>
+    /// <param name="Units">The most code units.</param>
+    public sealed record UnitsAtMost(int Units) : ZodExpression;
+
     /// <summary>A number argument that is a power of ten, such as a decimal's step: <c>1</c>, <c>1e-2</c>.</summary>
     /// <param name="Exponent">The power, zero or less for a step.</param>
     public sealed record PowerOfTen(int Exponent) : ZodExpression;

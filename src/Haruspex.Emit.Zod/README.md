@@ -1,7 +1,8 @@
 # Haruspex.Emit.Zod
 
 Writes a [haruspex IR](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.Ir/README.md) document as one TypeScript
-module of [Zod 4](https://zod.dev) schemas: a schema and an inferred type for every named object type and every procedure.
+module of [Zod 4](https://zod.dev) schemas: a schema and an inferred type for every named object type, every procedure's
+results and every procedure's parameters.
 It reads only the IR and knows nothing about SQL, which is what keeps it one emitter among several rather than the shape of
 the IR.
 
@@ -19,7 +20,7 @@ flowchart LR
     document --> plan["ZodPlanner: a ZodPlan"]
     typeGraph --> plan
     options["ZodOptions: strip or strict objects"] --> plan
-    plan --> lower["ZodLowering and TypeLowering: a ZodModule"]
+    plan --> lower["ZodLowering, TypeLowering and ParameterLowering: a ZodModule"]
     lower --> print["ZodPrinter"]
     print --> module["one TypeScript module"]
 ```
@@ -68,6 +69,18 @@ What a value looks like depends on how it arrives, and the module follows what a
   `z.int32()` rather than an `int`'s own bounds, and a union without a variant another one already accepts.
 - **It passes a linter.** A number a double can't hold is written as the double JavaScript reads it as, which is the check
   it always was, and the tests lint every fixture's module with the recommended rules of ESLint and typescript-eslint.
+
+**A procedure's parameters** are a strict schema of what may be sent (`GetOrderParamsSchema`, and its type `GetOrderParams`),
+declared before its results' schema, whatever the `objects` setting: a key it doesn't know is an error
+([decision 0009](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0009-parameters-are-strict.md)). Each value is
+checked against its declared type's facts, because SQL Server cuts a longer string short and rounds a decimal of more places
+without an error
+([decision 0054](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)):
+a length in UTF-16 code units, an integer's and a decimal's range, a decimal's places. A date or time is an ISO 8601 string
+of exactly the form its type holds, never a `Date`
+([decision 0055](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)).
+Every parameter accepts `null`, since a procedure can't declare one `NOT NULL`; one with a default, or an `OUTPUT` one, may be
+left out. A table-valued parameter is `z.unknown()` for now, and a `json` one a string.
 
 Objects strip unknown keys by default (`z.object`), so a database deployed ahead of its consumers can add a field without
 breaking them

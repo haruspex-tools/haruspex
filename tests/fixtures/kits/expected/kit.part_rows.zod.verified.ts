@@ -39,6 +39,12 @@ export const PartRowsResult4RowSchema = z.object({
 })
 export type PartRowsResult4Row = z.infer<typeof PartRowsResult4RowSchema>
 
+/** kit.part_rows: its parameters, checked before anything is sent. */
+export const PartRowsParamsSchema = z.strictObject({
+  kit_id: z.int32().nullable(),
+})
+export type PartRowsParams = z.infer<typeof PartRowsParamsSchema>
+
 /** kit.part_rows: returns 4 result sets: rows; JSON, null when no rows match; rows; JSON, null when no rows match. */
 export const PartRowsSchema = z.tuple([z.array(PartRowsResult1RowSchema), z.array(PartRowsResult2RowSchema).min(1).nullable(), z.array(PartRowsResult3RowSchema), z.array(PartRowsResult4RowSchema).min(1).nullable()])
 export type PartRows = z.infer<typeof PartRowsSchema>

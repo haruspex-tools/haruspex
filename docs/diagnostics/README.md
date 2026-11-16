@@ -138,6 +138,7 @@ reason.
 | [HAR5003](HAR5003.md) | error | A name is imported from two modules |
 | [HAR5004](HAR5004.md) | error | An imported name the module also declares |
 | [HAR5005](HAR5005.md) | error | A type read both as rows and as JSON |
+| [HAR5006](HAR5006.md) | error | A procedure's parameters' name is taken |
 | [HAR5101](HAR5101.md) | error | One name for two definitions |
 
 ## The command line and files

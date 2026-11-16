@@ -9,6 +9,13 @@ export const FullNameReturnRowSchema = z.object({
 })
 export type FullNameReturnRow = z.infer<typeof FullNameReturnRowSchema>
 
+/** lib.full_name_return: its parameters, checked before anything is sent. */
+export const FullNameReturnParamsSchema = z.strictObject({
+  loan_id: z.int32().nullable(),
+  returned_on: z.iso.date().nullable(),
+})
+export type FullNameReturnParams = z.infer<typeof FullNameReturnParamsSchema>
+
 /** lib.full_name_return: returns rows. */
 export const FullNameReturnSchema = z.array(FullNameReturnRowSchema)
 export type FullNameReturn = z.infer<typeof FullNameReturnSchema>

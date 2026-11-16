@@ -14,6 +14,12 @@ export const NotesOrNamesRow2Schema = z.object({
 })
 export type NotesOrNamesRow2 = z.infer<typeof NotesOrNamesRow2Schema>
 
+/** flow.notes_or_names: its parameters, checked before anything is sent. */
+export const NotesOrNamesParamsSchema = z.strictObject({
+  notes: z.boolean().nullable().optional(),
+})
+export type NotesOrNamesParams = z.infer<typeof NotesOrNamesParamsSchema>
+
 /** flow.notes_or_names: returns JSON, null when no rows match. */
 export const NotesOrNamesSchema = z.union([z.array(NotesOrNamesRowSchema.extend({ name: z.never().optional() })), z.array(NotesOrNamesRow2Schema.extend({ note: z.never().optional() }))]).nullable()
 export type NotesOrNames = z.infer<typeof NotesOrNamesSchema>

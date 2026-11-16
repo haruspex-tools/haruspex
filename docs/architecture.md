@@ -57,7 +57,10 @@ Why these lines:
   walker's, which `TyperAndWalkerTests` reads the compiled code for; summaries are reached through one root (`Summaries`)
   passed to each body read ([the guide](internals/04-abstract-interpretation.md),
   [decision 0035](decisions/0035-the-typer-apart-from-the-walker.md)).
-- **Emitters see only the IR.** If an emitter needs something, the IR must carry it.
+- **Emitters see only the IR.** If an emitter needs something, the IR must carry it. The IR keeps each value's SQL type as
+  written (`IrScalar.Sql`), and the Zod emitter reads it in one place: a date and time parameter's fraction and range, which
+  the IR has no fact for (`DateTimes`, [decision 0055](decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)). It
+  reads a type's name from a closed list, never a statement.
 - **Config transforms the IR; it never reaches into inference.** Overrides and naming apply to the document inference
   produced, so they work the same however it was produced, and an emitter never needs to know they existed. Inference
   leaves names unsettled (each object's id, each type keyed by its identity); Config settles them. The emitter is

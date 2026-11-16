@@ -26,6 +26,12 @@ export const GetOrderRowSchema = z.object({
 })
 export type GetOrderRow = z.infer<typeof GetOrderRowSchema>
 
+/** depot.get_order: its parameters, checked before anything is sent. */
+export const GetOrderParamsSchema = z.strictObject({
+  order_id: z.int32().nullable(),
+})
+export type GetOrderParams = z.infer<typeof GetOrderParamsSchema>
+
 /** depot.get_order: returns JSON, null when no rows match. */
 export const GetOrderSchema = GetOrderRowSchema.nullable()
 export type GetOrder = z.infer<typeof GetOrderSchema>

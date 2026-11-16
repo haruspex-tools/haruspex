@@ -14,6 +14,12 @@ export const CopiesAtRowSchema = z.object({
 })
 export type CopiesAtRow = z.infer<typeof CopiesAtRowSchema>
 
+/** lend.copies_at: its parameters, checked before anything is sent. */
+export const CopiesAtParamsSchema = z.strictObject({
+  branch_id: z.int32().nullable(),
+})
+export type CopiesAtParams = z.infer<typeof CopiesAtParamsSchema>
+
 /** lend.copies_at: returns rows. */
 export const CopiesAtSchema = z.array(CopiesAtRowSchema)
 export type CopiesAt = z.infer<typeof CopiesAtSchema>

@@ -220,6 +220,18 @@ file would make every team that lints its code configure an exception for harusp
 a claim JavaScript can't check. Writing no bound at all where a double can't hold it would throw a true check away: the
 nearest double still bounds every value that arrives.
 
+**Parameters are the other way round.** A result's schema reads what arrives; a procedure's parameters' schema
+(`GetOrderParamsSchema`) is a rule for what may be sent, so its lowering is a stage of its own, `ParameterLowering`, beside
+`TypeLowering`, sharing the checks of numbers. It is strict, since an unknown key in what a client sends is always a mistake
+([decision 0009](../decisions/0009-parameters-are-strict.md)), and every check is there because SQL Server would change a
+value outside it without an error: cut a string short, round a decimal, a time's fraction or a `datetime`
+([decision 0054](../decisions/0054-a-parameter-is-checked-against-its-declared-type.md)). Two choices follow from that. A
+length is `value.length`, the UTF-16 code units SQL Server counts, not Zod's `.max`, which counts code points. A date or time
+is an ISO 8601 string of exactly the form its type holds, read from the type the IR keeps (`DateTimes`), the one place the
+emitter reads a SQL type's name, because the IR has no fact for a second's fraction
+([decision 0055](../decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)). `ParameterAcceptanceTests` sends values
+of each type to the server through the driver, and holds the schema to it: what it accepts arrives as it was sent.
+
 **The tools agree.** The tests compile every fixture's module with `tsc` under `strict`, and lint it with the recommended rules
 of ESLint and typescript-eslint, any warning failing (`EmitCheckTests`); and the example application, which imports a
 generated module and uses its schemas and types as a team would, is compiled in CI (`ExampleAppTests`).

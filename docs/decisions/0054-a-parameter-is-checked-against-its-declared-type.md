@@ -5,8 +5,8 @@
 **Decision.** A procedure's parameter keeps its declared type's facts in the IR (a length, digits, a range), in the
 database's default collation, as a column of that type would. They are true of the value inside the body, since SQL Server
 converts what a caller sends to the declared type. And they are the rule a client checks a value against before sending
-it, because SQL Server doesn't refuse a value that breaks them: it cuts it short or rounds it. The generated client module
-states that rule as a strict schema for each procedure's parameters.
+it, because SQL Server doesn't refuse a value that breaks them: it cuts it short or rounds it. The generated database
+module states that rule as a strict schema for each procedure's parameters.
 
 **Context.** Observed on 16 Nov 2026 with mssql 12.7.14 (tedious 20.3.9) on SQL Server 2025 RTM-CU10
 (`ParameterObservationTests`):

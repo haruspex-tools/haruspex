@@ -11,6 +11,12 @@ export const StallCardRowSchema = z.object({
 })
 export type StallCardRow = z.infer<typeof StallCardRowSchema>
 
+/** kiosk.stall_card: its parameters, checked before anything is sent. */
+export const StallCardParamsSchema = z.strictObject({
+  stall_id: z.int32().nullable(),
+})
+export type StallCardParams = z.infer<typeof StallCardParamsSchema>
+
 /** kiosk.stall_card: returns JSON, null when no rows match. */
 export const StallCardSchema = StallCardRowSchema.nullable()
 export type StallCard = z.infer<typeof StallCardSchema>

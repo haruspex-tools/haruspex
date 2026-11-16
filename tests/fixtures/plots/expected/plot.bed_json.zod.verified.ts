@@ -26,6 +26,12 @@ export const BedJsonRowSchema = z.object({
 })
 export type BedJsonRow = z.infer<typeof BedJsonRowSchema>
 
+/** plot.bed_json: its parameters, checked before anything is sent. */
+export const BedJsonParamsSchema = z.strictObject({
+  bed_id: z.int32().nullable(),
+})
+export type BedJsonParams = z.infer<typeof BedJsonParamsSchema>
+
 /** plot.bed_json: returns JSON, null when no rows match. */
 export const BedJsonSchema = BedJsonRowSchema.nullable()
 export type BedJson = z.infer<typeof BedJsonSchema>

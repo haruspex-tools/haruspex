@@ -9,6 +9,12 @@ export const ChainUpRowSchema = z.object({
 })
 export type ChainUpRow = z.infer<typeof ChainUpRowSchema>
 
+/** flow.chain_up: its parameters, checked before anything is sent. */
+export const ChainUpParamsSchema = z.strictObject({
+  employee: z.int32().nullable(),
+})
+export type ChainUpParams = z.infer<typeof ChainUpParamsSchema>
+
 /** flow.chain_up: returns rows. */
 export const ChainUpSchema = z.array(ChainUpRowSchema)
 export type ChainUp = z.infer<typeof ChainUpSchema>

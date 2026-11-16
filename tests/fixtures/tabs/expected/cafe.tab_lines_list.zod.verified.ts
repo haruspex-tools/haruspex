@@ -25,6 +25,12 @@ export const TabLinesListResult2RowSchema = z.object({
 })
 export type TabLinesListResult2Row = z.infer<typeof TabLinesListResult2RowSchema>
 
+/** cafe.tab_lines_list: its parameters, checked before anything is sent. */
+export const TabLinesListParamsSchema = z.strictObject({
+  tab_id: z.int32().nullable(),
+})
+export type TabLinesListParams = z.infer<typeof TabLinesListParamsSchema>
+
 /** cafe.tab_lines_list: returns 2 result sets: rows; rows. */
 export const TabLinesListSchema = z.tuple([z.array(TabLinesListResult1RowSchema), z.array(TabLinesListResult2RowSchema).max(1)])
 export type TabLinesList = z.infer<typeof TabLinesListSchema>

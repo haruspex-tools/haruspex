@@ -20,6 +20,13 @@ export const StatusTotalsRowSchema = z.object({
 })
 export type StatusTotalsRow = z.infer<typeof StatusTotalsRowSchema>
 
+/** desk.status_totals: its parameters, checked before anything is sent. */
+export const StatusTotalsParamsSchema = z.strictObject({
+  /** char(1) counts bytes and its collation isn't declared, so a value of fewer than 1 characters may still be cut short, and a character its code page lacks is replaced. */
+  status: z.string().refine((value) => value.length <= 1, { error: "More than 1 UTF-16 code units, which char(1) would cut short" }).nullable().optional(),
+})
+export type StatusTotalsParams = z.infer<typeof StatusTotalsParamsSchema>
+
 /** desk.status_totals: returns rows. */
 export const StatusTotalsSchema = z.array(StatusTotalsRowSchema)
 export type StatusTotals = z.infer<typeof StatusTotalsSchema>

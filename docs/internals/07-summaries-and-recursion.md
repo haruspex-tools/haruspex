@@ -300,6 +300,12 @@ export const ProductHeaderRowSchema = z.object({
 })
 export type ProductHeaderRow = z.infer<typeof ProductHeaderRowSchema>
 
+/** shop.product_header: its parameters, checked before anything is sent. */
+export const ProductHeaderParamsSchema = z.strictObject({
+  product_id: z.int32().nullable(),
+})
+export type ProductHeaderParams = z.infer<typeof ProductHeaderParamsSchema>
+
 /** shop.product_header: returns rows. */
 export const ProductHeaderSchema = z.array(ProductHeaderRowSchema).max(1)
 export type ProductHeader = z.infer<typeof ProductHeaderSchema>
@@ -313,6 +319,13 @@ export const ProductPageResult2RowSchema = z.object({
   rating: z.int().min(1).max(5),
 })
 export type ProductPageResult2Row = z.infer<typeof ProductPageResult2RowSchema>
+
+/** shop.product_page: its parameters, checked before anything is sent. */
+export const ProductPageParamsSchema = z.strictObject({
+  product_id: z.int32().nullable(),
+  with_reviews: z.boolean().nullable(),
+})
+export type ProductPageParams = z.infer<typeof ProductPageParamsSchema>
 
 /** shop.product_page: returns 2 result sets: rows; rows, [] when it does not run. */
 export const ProductPageSchema = z.tuple([z.array(ProductHeaderRowSchema).max(1), z.array(ProductPageResult2RowSchema)])

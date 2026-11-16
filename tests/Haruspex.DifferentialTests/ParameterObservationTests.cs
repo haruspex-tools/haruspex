@@ -7,7 +7,8 @@ namespace Haruspex.DifferentialTests;
 /// What SQL Server keeps of a value sent to a procedure's parameter through the mssql driver (the version
 /// <c>tests/emit-check</c> pins, 12.7.14), for each type: where it cuts a value short or rounds it without an error, where the
 /// driver or the server refuses it, and how a date and time arrives. A parameter's facts in the IR, and the checks a client
-/// makes of a value before sending it, rest on these (decision 0054).
+/// makes of a value before sending it, rest on these (decisions 0054 and 0055); <c>ParameterAcceptanceTests</c> holds the
+/// generated schemas to the server value by value.
 /// </summary>
 public class ParameterObservationTests(SqlServerFixture server)
 {

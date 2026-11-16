@@ -125,6 +125,14 @@ internal static class ZodPrinter
             ZodExpression.Canonical canonical => ZodModule.ZodName + ".preprocess(canonicalOf(folds[" + DoubleQuoted(canonical.Fold) + "], " + Items(canonical.Items) + "), "
                 + ZodModule.ZodName + ".enum(" + Items(canonical.Items) + "))",
             ZodExpression.PaddedValues padded => "/^(?:" + string.Join("|", padded.Values.Select(RegexEscape)) + ")\\u0020*$/",
+            ZodExpression.BigIntLiteral big => big.Value + "n",
+            ZodExpression.Pattern pattern => "/^" + pattern.Source + "$/",
+            ZodExpression.TextRange range => "(value) => " + string.Join(" && ", new[]
+            {
+                range.Least is { } least ? "value >= " + DoubleQuoted(least) : null,
+                range.Greatest is { } greatest ? "value <= " + DoubleQuoted(greatest) : null,
+            }.OfType<string>()),
+            ZodExpression.UnitsAtMost units => "(value) => value.length <= " + units.Units.ToString(CultureInfo.InvariantCulture),
             ZodExpression.PowerOfTen power => power.Exponent == 0 ? "1" : "1e" + power.Exponent.ToString(CultureInfo.InvariantCulture),
             ZodExpression.ArrayLiteral array => "[" + List(array.Items) + "]",
             ZodExpression.ObjectLiteral obj => "{ " + string.Join(", ", obj.Properties.Select(p => Key(p.Key) + ": " + Expression(p.Value))) + " }",

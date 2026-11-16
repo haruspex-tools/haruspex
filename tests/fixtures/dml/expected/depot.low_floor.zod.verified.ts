@@ -8,6 +8,12 @@ export const LowFloorRowSchema = z.object({
 })
 export type LowFloorRow = z.infer<typeof LowFloorRowSchema>
 
+/** depot.low_floor: its parameters, checked before anything is sent. */
+export const LowFloorParamsSchema = z.strictObject({
+  start: z.int32().nullable().optional(),
+})
+export type LowFloorParams = z.infer<typeof LowFloorParamsSchema>
+
 /** depot.low_floor: returns rows. */
 export const LowFloorSchema = z.array(LowFloorRowSchema).length(1)
 export type LowFloor = z.infer<typeof LowFloorSchema>

@@ -38,6 +38,12 @@ export const MeterCardRowSchema = z.object({
 })
 export type MeterCardRow = z.infer<typeof MeterCardRowSchema>
 
+/** meter.meter_card: its parameters, checked before anything is sent. */
+export const MeterCardParamsSchema = z.strictObject({
+  meter_id: z.int32().nullable(),
+})
+export type MeterCardParams = z.infer<typeof MeterCardParamsSchema>
+
 /** meter.meter_card: returns rows. */
 export const MeterCardSchema = z.array(MeterCardRowSchema).length(1)
 export type MeterCard = z.infer<typeof MeterCardSchema>

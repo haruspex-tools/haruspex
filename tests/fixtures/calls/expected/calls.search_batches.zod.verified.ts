@@ -9,6 +9,12 @@ export const SearchBatchesRowSchema = z.object({
 })
 export type SearchBatchesRow = z.infer<typeof SearchBatchesRowSchema>
 
+/** calls.search_batches: its parameters, checked before anything is sent. */
+export const SearchBatchesParamsSchema = z.strictObject({
+  product: z.string().refine((value) => value.length <= 30, { error: "More than 30 UTF-16 code units, which nvarchar(30) would cut short" }).nullable(),
+})
+export type SearchBatchesParams = z.infer<typeof SearchBatchesParamsSchema>
+
 /** calls.search_batches: returns rows. */
 export const SearchBatchesSchema = z.array(SearchBatchesRowSchema)
 export type SearchBatches = z.infer<typeof SearchBatchesSchema>

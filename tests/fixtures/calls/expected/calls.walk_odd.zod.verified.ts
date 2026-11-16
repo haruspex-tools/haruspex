@@ -14,6 +14,12 @@ export const WalkOddRow2Schema = z.object({
 })
 export type WalkOddRow2 = z.infer<typeof WalkOddRow2Schema>
 
+/** calls.walk_odd: its parameters, checked before anything is sent. */
+export const WalkOddParamsSchema = z.strictObject({
+  n: z.int32().nullable(),
+})
+export type WalkOddParams = z.infer<typeof WalkOddParamsSchema>
+
 /** calls.walk_odd: returns rows. */
 export const WalkOddSchema = z.union([z.array(WalkOddRowSchema.extend({ label: z.never().optional() })), z.array(WalkOddRow2Schema.extend({ note: z.never().optional() }))])
 export type WalkOdd = z.infer<typeof WalkOddSchema>

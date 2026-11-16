@@ -7,6 +7,12 @@ export const ArchiveOrdersRowSchema = z.object({
 })
 export type ArchiveOrdersRow = z.infer<typeof ArchiveOrdersRowSchema>
 
+/** sales.archive_orders: its parameters, checked before anything is sent. */
+export const ArchiveOrdersParamsSchema = z.strictObject({
+  before: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/).nullable(),
+})
+export type ArchiveOrdersParams = z.infer<typeof ArchiveOrdersParamsSchema>
+
 /** sales.archive_orders: returns rows. */
 export const ArchiveOrdersSchema = z.array(ArchiveOrdersRowSchema)
 export type ArchiveOrders = z.infer<typeof ArchiveOrdersSchema>

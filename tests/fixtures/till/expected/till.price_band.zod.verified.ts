@@ -4,6 +4,8 @@
 // The notes on properties below rest on these facts:
 // - The mssql driver builds a decimal or money of more than 15 digits as a double, which may land just past the type's
 //   bounds.
+// - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 exactly,
+//   and keeps the digits of any decimal of up to 15 significant digits.
 import { z } from 'zod'
 
 export const PriceBandRowSchema = z.object({
@@ -13,6 +15,19 @@ export const PriceBandRowSchema = z.object({
   charged: z.number().multipleOf(1e-4).nullable(),
 })
 export type PriceBandRow = z.infer<typeof PriceBandRowSchema>
+
+/** till.price_band: its parameters, checked before anything is sent. */
+export const PriceBandParamsSchema = z.strictObject({
+  lowest: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2).nullable(),
+  highest: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2).nullable().optional(),
+  /**
+   * money has 19 digits, more than a JavaScript number keeps, so a value of more than 15 digits is sent as the nearest double.
+   * money runs from -922337203685477.5808 to 922337203685477.5807, which JavaScript reads as the nearest doubles.
+   */
+  rate: z.number().min(-922337203685477.6).max(922337203685477.6).multipleOf(1e-4).nullable().optional(),
+  fee: z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4).nullable().optional(),
+})
+export type PriceBandParams = z.infer<typeof PriceBandParamsSchema>
 
 /** till.price_band: returns rows. */
 export const PriceBandSchema = z.array(PriceBandRowSchema)

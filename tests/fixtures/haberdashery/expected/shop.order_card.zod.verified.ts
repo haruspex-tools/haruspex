@@ -10,6 +10,12 @@ export const OrderCardRowSchema = z.object({
 })
 export type OrderCardRow = z.infer<typeof OrderCardRowSchema>
 
+/** shop.order_card: its parameters, checked before anything is sent. */
+export const OrderCardParamsSchema = z.strictObject({
+  id: z.int32().nullable(),
+})
+export type OrderCardParams = z.infer<typeof OrderCardParamsSchema>
+
 /** shop.order_card: returns JSON, null when no rows match. */
 export const OrderCardSchema = OrderCardRowSchema.nullable()
 export type OrderCard = z.infer<typeof OrderCardSchema>

@@ -15,6 +15,12 @@ export const LoanTotalsResult2RowSchema = z.object({
 })
 export type LoanTotalsResult2Row = z.infer<typeof LoanTotalsResult2RowSchema>
 
+/** lend.loan_totals: its parameters, checked before anything is sent. */
+export const LoanTotalsParamsSchema = z.strictObject({
+  member_id: z.int32().nullable(),
+})
+export type LoanTotalsParams = z.infer<typeof LoanTotalsParamsSchema>
+
 /** lend.loan_totals: returns 2 result sets: rows; rows. */
 export const LoanTotalsSchema = z.tuple([z.array(LoanTotalsResult1RowSchema), z.array(LoanTotalsResult2RowSchema)])
 export type LoanTotals = z.infer<typeof LoanTotalsSchema>

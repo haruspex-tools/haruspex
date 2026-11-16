@@ -17,6 +17,12 @@ export type DirtyTabResult1Row = z.infer<typeof DirtyTabResult1RowSchema>
 export const DirtyTabResult2RowSchema = DirtyTabResult1RowSchema
 export type DirtyTabResult2Row = z.infer<typeof DirtyTabResult2RowSchema>
 
+/** cafe.dirty_tab: its parameters, checked before anything is sent. */
+export const DirtyTabParamsSchema = z.strictObject({
+  tab_id: z.int32().nullable(),
+})
+export type DirtyTabParams = z.infer<typeof DirtyTabParamsSchema>
+
 /** cafe.dirty_tab: returns 2 result sets: rows; rows. */
 export const DirtyTabSchema = z.tuple([z.array(DirtyTabResult1RowSchema), z.array(DirtyTabResult1RowSchema)])
 export type DirtyTab = z.infer<typeof DirtyTabSchema>

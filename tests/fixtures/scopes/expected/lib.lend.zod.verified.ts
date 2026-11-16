@@ -11,6 +11,14 @@ export const LendRowSchema = z.object({
 })
 export type LendRow = z.infer<typeof LendRowSchema>
 
+/** lib.lend: its parameters, checked before anything is sent. */
+export const LendParamsSchema = z.strictObject({
+  member_id: z.int32().nullable(),
+  book_id: z.int32().nullable(),
+  returned_on: z.iso.date().nullable(),
+})
+export type LendParams = z.infer<typeof LendParamsSchema>
+
 /** lib.lend: returns rows. */
 export const LendSchema = z.array(LendRowSchema)
 export type Lend = z.infer<typeof LendSchema>

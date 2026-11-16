@@ -45,6 +45,12 @@ export const GetKitRowSchema = z.object({
 })
 export type GetKitRow = z.infer<typeof GetKitRowSchema>
 
+/** kit.get_kit: its parameters, checked before anything is sent. */
+export const GetKitParamsSchema = z.strictObject({
+  kit_id: z.int32().nullable(),
+})
+export type GetKitParams = z.infer<typeof GetKitParamsSchema>
+
 /** kit.get_kit: returns JSON. */
 export const GetKitSchema = GetKitRowSchema
 export type GetKit = z.infer<typeof GetKitSchema>

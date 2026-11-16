@@ -16,6 +16,13 @@ export const CopyAtRowSchema = z.object({
 })
 export type CopyAtRow = z.infer<typeof CopyAtRowSchema>
 
+/** lend.copy_at: its parameters, checked before anything is sent. */
+export const CopyAtParamsSchema = z.strictObject({
+  branch_id: z.int32().nullable(),
+  copy_no: z.int32().nullable(),
+})
+export type CopyAtParams = z.infer<typeof CopyAtParamsSchema>
+
 /** lend.copy_at: returns rows. */
 export const CopyAtSchema = z.array(CopyAtRowSchema).max(1)
 export type CopyAt = z.infer<typeof CopyAtSchema>

@@ -17,6 +17,13 @@ export const ListPartsRowSchema = z.object({
 })
 export type ListPartsRow = z.infer<typeof ListPartsRowSchema>
 
+/** depot.list_parts: its parameters, checked before anything is sent. */
+export const ListPartsParamsSchema = z.strictObject({
+  /** varchar(20) counts bytes and its collation isn't declared, so a value of fewer than 20 characters may still be cut short, and a character its code page lacks is replaced. */
+  code: z.string().refine((value) => value.length <= 20, { error: "More than 20 UTF-16 code units, which varchar(20) would cut short" }).nullable().optional(),
+})
+export type ListPartsParams = z.infer<typeof ListPartsParamsSchema>
+
 /** depot.list_parts: returns rows. */
 export const ListPartsSchema = z.array(ListPartsRowSchema)
 export type ListParts = z.infer<typeof ListPartsSchema>

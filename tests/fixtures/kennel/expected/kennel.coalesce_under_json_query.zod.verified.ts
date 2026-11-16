@@ -18,6 +18,12 @@ export const CoalesceUnderJsonQueryRowSchema = z.object({
 })
 export type CoalesceUnderJsonQueryRow = z.infer<typeof CoalesceUnderJsonQueryRowSchema>
 
+/** kennel.coalesce_under_json_query: its parameters, checked before anything is sent. */
+export const CoalesceUnderJsonQueryParamsSchema = z.strictObject({
+  owner_id: z.int32().nullable(),
+})
+export type CoalesceUnderJsonQueryParams = z.infer<typeof CoalesceUnderJsonQueryParamsSchema>
+
 /** kennel.coalesce_under_json_query: returns JSON. */
 export const CoalesceUnderJsonQuerySchema = CoalesceUnderJsonQueryRowSchema
 export type CoalesceUnderJsonQuery = z.infer<typeof CoalesceUnderJsonQuerySchema>

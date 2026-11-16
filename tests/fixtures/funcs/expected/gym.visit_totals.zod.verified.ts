@@ -30,6 +30,12 @@ export const VisitTotalsResult2RowSchema = z.object({
 })
 export type VisitTotalsResult2Row = z.infer<typeof VisitTotalsResult2RowSchema>
 
+/** gym.visit_totals: its parameters, checked before anything is sent. */
+export const VisitTotalsParamsSchema = z.strictObject({
+  member_id: z.int32().nullable(),
+})
+export type VisitTotalsParams = z.infer<typeof VisitTotalsParamsSchema>
+
 /** gym.visit_totals: returns 2 result sets: rows; rows. */
 export const VisitTotalsSchema = z.tuple([z.array(VisitTotalsResult1RowSchema), z.array(VisitTotalsResult2RowSchema).length(1)])
 export type VisitTotals = z.infer<typeof VisitTotalsSchema>

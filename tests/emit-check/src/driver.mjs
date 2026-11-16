@@ -10,8 +10,9 @@
 //
 // A parameter's value is sent as it is, for the driver to choose its type, or given as { "type", "args", "value" } to send it
 // with one of the driver's types, sql[type](...args) with "MAX" for sql.MAX, as a generated function does; a value JSON can't hold is written
-// { "js": "NaN" }. A call with a "timeZone" runs with the process's TZ set to it, which is where the driver turns a Date into
-// the server's date and time.
+// { "js": "NaN" }, and a bigint { "bigInt": "<digits>" }. A call with a "timeZone" runs with the process's TZ set to it, which
+// is where the driver turns a Date into the server's date and time. A call with "accepts": "<schema>" also parses its
+// parameters' values, as an object by name, with that schema of the module, and writes whether it accepted them.
 //
 // Everything runs in one transaction, which is rolled back at the end, so the setup may create tables and procedures (the
 // tests hold the database alone while it runs). Each call runs with the driver's parseJSON setting as it says: the
@@ -21,7 +22,7 @@
 // (an object holding that result set as its `recordset`), which the test takes from the project's README, so that what is
 // proved is the code a reader pastes.
 //
-// It writes observed.json beside: { "calls": [{ "name", "recordsets": [{ "columns", "rows" }], "error", "check" }] }.
+// It writes observed.json beside: { "calls": [{ "name", "recordsets": [{ "columns", "rows" }], "error", "check", "accepted" }] }.
 // The connection is given in HARUSPEX_DRIVER_CONFIG, the mssql config as JSON, never on the command line.
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -33,7 +34,9 @@ const { module, setup, calls } = JSON.parse(await readFile(path.join(folder, 'dr
 const schemas = module ? await import(pathToFileURL(path.resolve(folder, module)).href) : {}
 
 // The values JSON can't hold, by name.
-const special = (value) => (value !== null && typeof value === 'object' && 'js' in value ? { NaN, Infinity }[value.js] : value)
+const special = (value) =>
+  value !== null && typeof value === 'object' ? ('js' in value ? { NaN, Infinity }[value.js] : BigInt(value.bigInt)) : value
+const plain = (value) => (value !== null && typeof value === 'object' && 'type' in value ? value.value : value)
 const zone = process.env.TZ
 
 const pool = await new sql.ConnectionPool(JSON.parse(process.env.HARUSPEX_DRIVER_CONFIG)).connect()
@@ -47,7 +50,11 @@ try {
     pool.config.parseJSON = call.parseJson
     process.env.TZ = call.timeZone ?? zone
     const request = new sql.Request(transaction)
-    const entry = { name: call.name, recordsets: [], error: null, check: null }
+    const entry = { name: call.name, recordsets: [], error: null, check: null, accepted: null }
+    if (call.accepts) {
+      const values = Object.fromEntries(Object.entries(call.parameters ?? {}).map(([name, value]) => [name, special(plain(value))]))
+      entry.accepted = schemas[call.accepts].safeParse(values).success
+    }
     let result
     try {
       if (call.procedure) {

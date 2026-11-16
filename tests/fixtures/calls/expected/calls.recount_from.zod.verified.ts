@@ -7,6 +7,12 @@ export const RecountFromRowSchema = z.object({
 })
 export type RecountFromRow = z.infer<typeof RecountFromRowSchema>
 
+/** calls.recount_from: its parameters, checked before anything is sent. */
+export const RecountFromParamsSchema = z.strictObject({
+  n: z.int32().nullable(),
+})
+export type RecountFromParams = z.infer<typeof RecountFromParamsSchema>
+
 /** calls.recount_from: returns rows. */
 export const RecountFromSchema = z.array(RecountFromRowSchema)
 export type RecountFrom = z.infer<typeof RecountFromSchema>

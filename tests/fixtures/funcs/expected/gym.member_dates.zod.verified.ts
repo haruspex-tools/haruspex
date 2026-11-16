@@ -34,6 +34,12 @@ export const MemberDatesRowSchema = z.object({
 })
 export type MemberDatesRow = z.infer<typeof MemberDatesRowSchema>
 
+/** gym.member_dates: its parameters, checked before anything is sent. */
+export const MemberDatesParamsSchema = z.strictObject({
+  offset: z.int32().nullable().optional(),
+})
+export type MemberDatesParams = z.infer<typeof MemberDatesParamsSchema>
+
 /** gym.member_dates: returns rows. */
 export const MemberDatesSchema = z.array(MemberDatesRowSchema)
 export type MemberDates = z.infer<typeof MemberDatesSchema>

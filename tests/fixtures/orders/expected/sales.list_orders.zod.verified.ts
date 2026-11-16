@@ -22,6 +22,12 @@ export const ListOrdersRowSchema = z.object({
 })
 export type ListOrdersRow = z.infer<typeof ListOrdersRowSchema>
 
+/** sales.list_orders: its parameters, checked before anything is sent. */
+export const ListOrdersParamsSchema = z.strictObject({
+  customer_id: z.int32().nullable().optional(),
+})
+export type ListOrdersParams = z.infer<typeof ListOrdersParamsSchema>
+
 /** sales.list_orders: returns rows. */
 export const ListOrdersSchema = z.array(ListOrdersRowSchema)
 export type ListOrders = z.infer<typeof ListOrdersSchema>

@@ -10,6 +10,12 @@ export const TempTableFromABranchRowSchema = z.object({
 })
 export type TempTableFromABranchRow = z.infer<typeof TempTableFromABranchRowSchema>
 
+/** lib.temp_table_from_a_branch: its parameters, checked before anything is sent. */
+export const TempTableFromABranchParamsSchema = z.strictObject({
+  pages: z.int().min(-32768).max(32767).nullable(),
+})
+export type TempTableFromABranchParams = z.infer<typeof TempTableFromABranchParamsSchema>
+
 /** lib.temp_table_from_a_branch: returns rows. */
 export const TempTableFromABranchSchema = z.array(TempTableFromABranchRowSchema)
 export type TempTableFromABranch = z.infer<typeof TempTableFromABranchSchema>

@@ -70,6 +70,12 @@ export const JobCardRowSchema = z.object({
 })
 export type JobCardRow = z.infer<typeof JobCardRowSchema>
 
+/** desk.job_card: its parameters, checked before anything is sent. */
+export const JobCardParamsSchema = z.strictObject({
+  job_id: z.int32().nullable(),
+})
+export type JobCardParams = z.infer<typeof JobCardParamsSchema>
+
 /** desk.job_card: returns JSON, null when no rows match. */
 export const JobCardSchema = JobCardRowSchema.nullable()
 export type JobCard = z.infer<typeof JobCardSchema>

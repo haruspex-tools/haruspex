@@ -52,6 +52,13 @@ export const UspGetBillOfMaterialsRowSchema = z.object({
 })
 export type UspGetBillOfMaterialsRow = z.infer<typeof UspGetBillOfMaterialsRowSchema>
 
+/** dbo.uspGetBillOfMaterials: its parameters, checked before anything is sent. */
+export const UspGetBillOfMaterialsParamsSchema = z.strictObject({
+  StartProductID: z.int32().nullable(),
+  CheckDate: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d(\d[037]?)?)?$/).refine((value) => value >= "1753-01-01", { error: "Before 1753-01-01, the earliest datetime" }).nullable(),
+})
+export type UspGetBillOfMaterialsParams = z.infer<typeof UspGetBillOfMaterialsParamsSchema>
+
 /** dbo.uspGetBillOfMaterials: returns rows. */
 export const UspGetBillOfMaterialsSchema = z.array(UspGetBillOfMaterialsRowSchema)
 export type UspGetBillOfMaterials = z.infer<typeof UspGetBillOfMaterialsSchema>
@@ -71,6 +78,10 @@ Each line has its reason in the SQL:
   on `SET` options of the session that calls the procedure, which the source doesn't show. The IR says so: the value's
   `nullableBecause` is `arithmetic-overflow`. Declare what your callers set, in
   [`session`](configuration.md#the-callers-session-session), and it is typed as never null.
+- **The parameters are checked before anything is sent.** `UspGetBillOfMaterialsParamsSchema` is strict, so a misspelt name
+  fails. `CheckDate` is a `datetime`, so it takes an ISO 8601 string with only the fractions of a second that type holds,
+  from 1753: SQL Server would round any other without an error
+  ([decision 0055](decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)).
 
 ## Parse rows with it
 

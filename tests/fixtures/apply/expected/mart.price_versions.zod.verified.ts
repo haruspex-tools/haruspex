@@ -25,6 +25,12 @@ export const PriceVersionsResult5RowSchema = z.object({
 })
 export type PriceVersionsResult5Row = z.infer<typeof PriceVersionsResult5RowSchema>
 
+/** mart.price_versions: its parameters, checked before anything is sent. */
+export const PriceVersionsParamsSchema = z.strictObject({
+  product_id: z.int32().nullable(),
+})
+export type PriceVersionsParams = z.infer<typeof PriceVersionsParamsSchema>
+
 /** mart.price_versions: returns 5 result sets: rows; rows; rows; rows; rows. */
 export const PriceVersionsSchema = z.tuple([z.array(PriceVersionsResult1RowSchema), z.array(PriceVersionsResult1RowSchema), z.array(PriceVersionsResult1RowSchema), z.array(PriceVersionsResult1RowSchema), z.array(PriceVersionsResult5RowSchema)])
 export type PriceVersions = z.infer<typeof PriceVersionsSchema>

@@ -15,6 +15,12 @@ export const ArchiveOrdersRowSchema = z.object({
 })
 export type ArchiveOrdersRow = z.infer<typeof ArchiveOrdersRowSchema>
 
+/** sales.archive_orders: its parameters, checked before anything is sent. */
+export const ArchiveOrdersParamsSchema = z.strictObject({
+  before: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/).nullable(),
+})
+export type ArchiveOrdersParams = z.infer<typeof ArchiveOrdersParamsSchema>
+
 /** sales.archive_orders: returns rows. */
 export const ArchiveOrdersSchema = z.array(ArchiveOrdersRowSchema)
 export type ArchiveOrders = z.infer<typeof ArchiveOrdersSchema>
@@ -67,6 +73,12 @@ export const GetOrderRowSchema = z.object({
   lines: z.array(GetOrderLineSchema).min(1).optional(),
 })
 export type GetOrderRow = z.infer<typeof GetOrderRowSchema>
+
+/** sales.get_order: its parameters, checked before anything is sent. */
+export const GetOrderParamsSchema = z.strictObject({
+  order_id: z.int32().nullable(),
+})
+export type GetOrderParams = z.infer<typeof GetOrderParamsSchema>
 
 /** sales.get_order: returns JSON, null when no rows match. */
 export const GetOrderSchema = GetOrderRowSchema.nullable()
@@ -127,6 +139,12 @@ export const ListOrdersRowSchema = z.object({
   salesperson_hired_on: z.date().nullable(),
 })
 export type ListOrdersRow = z.infer<typeof ListOrdersRowSchema>
+
+/** sales.list_orders: its parameters, checked before anything is sent. */
+export const ListOrdersParamsSchema = z.strictObject({
+  customer_id: z.int32().nullable().optional(),
+})
+export type ListOrdersParams = z.infer<typeof ListOrdersParamsSchema>
 
 /** sales.list_orders: returns rows. */
 export const ListOrdersSchema = z.array(ListOrdersRowSchema)

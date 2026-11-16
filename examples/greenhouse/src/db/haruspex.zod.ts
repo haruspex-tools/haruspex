@@ -21,6 +21,12 @@ export const GetPlantRowSchema = z.object({
 })
 export type GetPlantRow = z.infer<typeof GetPlantRowSchema>
 
+/** garden.get_plant: its parameters, checked before anything is sent. */
+export const GetPlantParamsSchema = z.strictObject({
+  plant_id: z.int32().nullable(),
+})
+export type GetPlantParams = z.infer<typeof GetPlantParamsSchema>
+
 /** garden.get_plant: returns JSON, null when no rows match. */
 export const GetPlantSchema = GetPlantRowSchema.nullable()
 export type GetPlant = z.infer<typeof GetPlantSchema>

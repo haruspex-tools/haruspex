@@ -61,6 +61,12 @@ export const KitBadgesRowSchema = z.object({
 })
 export type KitBadgesRow = z.infer<typeof KitBadgesRowSchema>
 
+/** kit.kit_badges: its parameters, checked before anything is sent. */
+export const KitBadgesParamsSchema = z.strictObject({
+  kit_id: z.int32().nullable(),
+})
+export type KitBadgesParams = z.infer<typeof KitBadgesParamsSchema>
+
 /** kit.kit_badges: returns JSON. */
 export const KitBadgesSchema = KitBadgesRowSchema
 export type KitBadges = z.infer<typeof KitBadgesSchema>

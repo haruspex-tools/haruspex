@@ -16,6 +16,12 @@ export const OrderLinesRowSchema = z.object({
 })
 export type OrderLinesRow = z.infer<typeof OrderLinesRowSchema>
 
+/** shop.order_lines: its parameters, checked before anything is sent. */
+export const OrderLinesParamsSchema = z.strictObject({
+  id: z.int32().nullable(),
+})
+export type OrderLinesParams = z.infer<typeof OrderLinesParamsSchema>
+
 /** shop.order_lines: returns rows. */
 export const OrderLinesSchema = z.array(OrderLinesRowSchema)
 export type OrderLines = z.infer<typeof OrderLinesSchema>

@@ -12,6 +12,23 @@ export const RingUpRowSchema = z.object({
 })
 export type RingUpRow = z.infer<typeof RingUpRowSchema>
 
+/** till.ring_up: its parameters, checked before anything is sent. */
+export const RingUpParamsSchema = z.strictObject({
+  product_id: z.int32().nullable(),
+  quantity: z.int().min(-32768).max(32767).nullable(),
+  basket_id: z.union([z.int(), z.bigint().min(-9223372036854775808n).max(9223372036854775807n)]).nullable(),
+  discount: z.int().min(0).max(255).nullable().optional(),
+  gift: z.boolean().nullable().optional(),
+  token: z.guid().nullable().optional(),
+  /** real is binary floating point, so a value is sent as the nearest one it holds. */
+  weight: z.number().nullable().optional(),
+  /** float is binary floating point, so a value is sent as the nearest one it holds. */
+  ratio: z.number().nullable().optional(),
+  /** An OUTPUT parameter: it may be left out, and what it holds when the procedure ends comes back with the results. */
+  sale_id: z.int32().nullable().optional(),
+})
+export type RingUpParams = z.infer<typeof RingUpParamsSchema>
+
 /** till.ring_up: returns rows. */
 export const RingUpSchema = z.array(RingUpRowSchema).length(1)
 export type RingUp = z.infer<typeof RingUpSchema>
