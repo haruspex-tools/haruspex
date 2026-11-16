@@ -1008,6 +1008,15 @@ themselves: what a query proved is what its row holds.
 - A scalar subquery is its one column's value, with its type and facets, and `empty-subquery` unless its query returns
   exactly one row (`A_scalar_subquery_of_an_aggregate_without_group_by_always_has_a_value_for_count`). A `FOR JSON` subquery
   is NULL over no rows, so an array it builds has at least one item, and at most one where its query returns at most one.
+- `SELECT @v = …` over a query of exactly one row ("How many rows", below: an aggregate without `GROUP BY` or `HAVING`, no
+  `FROM` and no filter, an inline function whose body is one) assigns exactly once, so the variable holds the value
+  assigned and nothing it held before (`A_select_assigning_from_an_aggregate_without_group_by_assigns_even_over_no_rows`,
+  `A_select_assigning_from_an_inline_function_whose_body_is_one_row_assigns_even_over_no_rows`,
+  `A_select_assigning_with_no_from_assigns_unless_a_where_filters_its_row_out`; `Walker.SetVariables`). That the row is
+  there is apart from what it holds: `select @open = count_big(*) from shop.orders where status = 'open'` assigns `@open`
+  never null, while `SUM` over no rows assigns NULL, for its own reason (`empty-aggregate`), not for one that the
+  assignment may not happen. Any other query may assign once per row or not at all, and the variable is joined with what it
+  held. A select list of assignments is an aggregate query as one of columns is.
 
 ### How many rows (`Cardinality.cs`)
 

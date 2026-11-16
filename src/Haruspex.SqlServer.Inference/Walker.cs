@@ -473,8 +473,12 @@ internal sealed partial class Walker
     }
 
     /// <summary>
-    /// <c>SELECT @a = …, @b = …</c>. Without FROM, WHERE, GROUP BY, HAVING or TOP it assigns exactly once; otherwise it may
-    /// assign once per row or not at all (observed: a SELECT that matches nothing leaves the variable as it was).
+    /// <c>SELECT @a = …, @b = …</c>. A query that always returns exactly one row assigns exactly once: one without FROM or a
+    /// filter, an aggregate without GROUP BY or HAVING, or one over an inline function whose body is one (<see cref="Cardinality"/>;
+    /// observed: A_select_assigning_from_an_aggregate_without_group_by_assigns_even_over_no_rows,
+    /// A_select_assigning_from_an_inline_function_whose_body_is_one_row_assigns_even_over_no_rows). Any other may assign once
+    /// per row or not at all (observed: a SELECT that matches nothing leaves the variable as it was). Whether the row is there
+    /// is apart from whether its value is null: SUM over no rows is assigned, and is NULL.
     /// </summary>
     /// <param name="query">The SELECT's query.</param>
     /// <param name="state">The state the assignments change.</param>
@@ -482,8 +486,9 @@ internal sealed partial class Walker
     /// <param name="unknown">Whether its WITH is not modelled, so every value is unknown.</param>
     private FlowState SetVariables(QuerySpecification query, FlowState state, ReadScope at, bool unknown = false)
     {
-        var once = query is { FromClause: null, WhereClause: null, GroupByClause: null, HavingClause: null, TopRowFilter: null };
-        var scope = typer.Enter(query, at).Assigning(query);
+        var entered = typer.Enter(query, at);
+        var once = !unknown && typer.Rows(query, entered) == IrCardinality.One;
+        var scope = entered.Assigning(query);
         foreach (var assignment in query.SelectElements.Cast<SelectSetVariable>())
         {
             var value = unknown

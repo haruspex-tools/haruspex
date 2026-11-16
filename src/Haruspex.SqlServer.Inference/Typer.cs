@@ -164,6 +164,9 @@ internal sealed partial class Typer(
         return new Row([.. columns], unlisted, cardinality.Of(query, scope, ReadUncommitted(scope)), [.. scope.Bound.Sources]);
     }
 
+    /// <summary>How many rows a statement's own query returns, read in its scope as <see cref="Enter"/> gave it.</summary>
+    internal IrCardinality Rows(QuerySpecification query, ReadScope entered) => cardinality.Of(query, entered, ReadUncommitted(entered));
+
     /// <summary>The table column a select-list expression is, unchanged: a bare column reference without COLLATE.</summary>
     private TableColumn? Origin(ScalarExpression expression, ReadScope scope) =>
         expression is ColumnReferenceExpression { Collation: null, ColumnType: ColumnType.Regular } column && binder.Resolve(column, scope.Bound) is TableColumn bound

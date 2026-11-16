@@ -100,8 +100,17 @@ internal sealed class Cardinality(DatabaseModel model, Binder binder)
     private bool HasAggregate(QuerySpecification query, ReadScope scope)
     {
         var finder = new AggregateFinder();
-        foreach (var element in query.SelectElements.OfType<SelectScalarExpression>())
-            element.Expression.Accept(finder);
+        // A select list of assignments (SELECT @v = COUNT(*) …) is an aggregate query as much as one of columns.
+        foreach (var element in query.SelectElements)
+        {
+            var expression = element switch
+            {
+                SelectScalarExpression scalar => scalar.Expression,
+                SelectSetVariable assignment => assignment.Expression,
+                _ => null,
+            };
+            expression?.Accept(finder);
+        }
         return finder.Found.Any(call =>
         {
             if (call.Parameters is [ColumnReferenceExpression { ColumnType: ColumnType.Wildcard }])

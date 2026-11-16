@@ -9,7 +9,7 @@ namespace Haruspex.DifferentialTests;
 /// TOP, OFFSET … FETCH and a unique key allow. Each test creates what it needs in a write session, rolled back, alone in
 /// the test database while it lasts. Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
-public class RefinementObservationTests(SqlServerFixture server)
+public partial class RefinementObservationTests(SqlServerFixture server)
 {
     private Task<CallOutcome> Run(string[] setup, string call) => ObservedCall.Run(server, setup, call);
 
