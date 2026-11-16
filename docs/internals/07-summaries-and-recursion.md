@@ -175,8 +175,8 @@ export const CategoryTreeRowSchema = z.object({
 })
 export type CategoryTreeRow = z.infer<typeof CategoryTreeRowSchema>
 
-/** shop.category_tree: returns JSON, [] when no rows match. */
-export const CategoryTreeSchema = z.array(CategoryTreeRowSchema)
+/** shop.category_tree: returns JSON, null when no rows match. */
+export const CategoryTreeSchema = z.array(CategoryTreeRowSchema).min(1).nullable()
 export type CategoryTree = z.infer<typeof CategoryTreeSchema>
 ```
 

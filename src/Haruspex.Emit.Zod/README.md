@@ -56,6 +56,9 @@ What a value looks like depends on how it arrives, and the module follows what a
   `Date`: a `date` has no time zone, and `new Date('2026-11-09')` is UTC midnight, the previous day west of Greenwich.
 - **In a rowset**, the types follow the default mapping of the [mssql](https://www.npmjs.com/package/mssql) (tedious)
   driver: dates and times as `Date`, `bigint` as a string.
+- **A procedure's `FOR JSON` result** is the document, as the mssql driver hands it over with its `parseJSON` option: `null`
+  when no rows matched, an array as much as an object, and an array that arrives has at least one item
+  ([decision 0048](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0048-an-absent-json-result-reads-as-null.md)).
 - **JSON that arrives as text** (a `FOR JSON` result that wasn't embedded) stays a `string`, since that is what arrives,
   and the check parses it and validates its content against the inner schema.
 - **Recursive types** (a tree built by a function that calls itself) use Zod 4's getter form, so the inferred type needs

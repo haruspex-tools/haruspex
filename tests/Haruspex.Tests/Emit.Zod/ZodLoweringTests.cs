@@ -132,8 +132,31 @@ public class ZodLoweringTests
     {
         var declaration = Procedure(Lower(Document([], new IrResult(IrEncoding.Json, Flag, [NoRows]), new IrResult(IrEncoding.Json, new IrArray(Flag), [NoRows]))));
 
-        Assert.Equal("s.p: returns 2 result sets: JSON, null when no rows match; JSON, [] when no rows match.", declaration.Summary);
-        Assert.Equal(Z("tuple", new ArrayLiteral([Z("boolean").Then("nullable"), Z("array", Z("boolean"))])), declaration.Schema);
+        Assert.Equal("s.p: returns 2 result sets: JSON, null when no rows match; JSON, null when no rows match.", declaration.Summary);
+        Assert.Equal(Z("tuple", new ArrayLiteral([Z("boolean").Then("nullable"), Z("array", Z("boolean")).Then("min", new Number("1")).Then("nullable")])), declaration.Schema);
+    }
+
+    [Fact]
+    public void An_absent_json_array_reads_as_null_as_the_mssql_driver_hands_it_over() =>
+        Assert.Equal(
+            new ZodDeclaration("P", "s.p: returns JSON, null when no rows match.", Z("array", Z("boolean")).Then("min", new Number("1")).Then("nullable")),
+            Procedure(Lower(Document([], new IrResult(IrEncoding.Json, new IrArray(Flag), [NoRows])))));
+
+    [Theory]
+    [InlineData(IrCardinality.One, false, "length", false)]
+    [InlineData(IrCardinality.One, true, "length", true)]
+    [InlineData(IrCardinality.AtMostOne, false, "length", false)]
+    [InlineData(IrCardinality.AtMostOne, true, "length", true)]
+    [InlineData(IrCardinality.Many, false, "min", false)]
+    [InlineData(IrCardinality.Many, true, "min", true)]
+    public void A_json_array_that_arrives_has_between_one_item_and_its_cardinality(IrCardinality cardinality, bool mayBeAbsent, string check, bool nullable)
+    {
+        // FOR JSON over no rows returns no row, which reads as null, so an array that arrives has an item for each of at least
+        // one row.
+        var result = new IrResult(IrEncoding.Json, new IrArray(Flag), mayBeAbsent ? [NoRows] : []) { Cardinality = cardinality };
+        var bounded = Z("array", Z("boolean")).Then(check, new Number("1"));
+
+        Assert.Equal(nullable ? bounded.Then("nullable") : bounded, Procedure(Lower(Document([], result))).Schema);
     }
 
     [Theory]

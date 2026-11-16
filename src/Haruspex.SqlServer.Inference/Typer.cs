@@ -208,8 +208,9 @@ internal sealed partial class Typer(
     /// </summary>
     /// <param name="subquery">
     /// Whether it is a subquery's value, which is NULL over no rows (observed), so that an array it builds has at least one
-    /// item, and at most one when the query returns at most one row. A result's bounds are its cardinality instead, since
-    /// a result that may be absent reads as [] (the IR's reader convention).
+    /// item, and at most one when the query returns at most one row. A result's bounds are its cardinality instead, which
+    /// emitters apply: a result with no row reads as null (the IR's reader convention), so an array that arrives has at
+    /// least one item there too.
     /// </param>
     private Shape ForJson(Row row, JsonForClause clause, bool subquery)
     {

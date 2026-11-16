@@ -14,6 +14,6 @@ export const BatchFeedResult2RowSchema = z.object({
 })
 export type BatchFeedResult2Row = z.infer<typeof BatchFeedResult2RowSchema>
 
-/** calls.batch_feed: returns 2 result sets: JSON, [] when no rows match; JSON, [] when no rows match. */
-export const BatchFeedSchema = z.tuple([z.array(BatchFeedResult1RowSchema), z.array(BatchFeedResult2RowSchema)])
+/** calls.batch_feed: returns 2 result sets: JSON, null when no rows match; JSON, null when no rows match. */
+export const BatchFeedSchema = z.tuple([z.array(BatchFeedResult1RowSchema).min(1).nullable(), z.array(BatchFeedResult2RowSchema).min(1).nullable()])
 export type BatchFeed = z.infer<typeof BatchFeedSchema>

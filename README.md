@@ -188,18 +188,33 @@ also covers names, overrides and declared results.
 
 **It validates results at the seam, at run time.** The types are only as good as the data that arrives, so the application
 parses each result with the schema before using it. A wrong claim, such as one in an override a person wrote, fails there,
-loudly, rather than deep in the code. SQL Server splits `FOR JSON` text over rows of about 2,000 characters, so join the first
-column of every row the driver returns before parsing it; no row at all means no match, which the schema reads as `null`:
+loudly, rather than deep in the code. SQL Server splits `FOR JSON` output over rows of about 2,000 characters, and the
+[mssql](https://www.npmjs.com/package/mssql) driver joins them back into one row. With the driver's `parseJSON` option on,
+as most applications that use `FOR JSON` set it, that row is the parsed document, or `null` when no rows matched, which the
+schema reads as it is:
 
 ```ts
+import sql from 'mssql'
 import { GetOrderSchema, type GetOrder } from './db/haruspex.zod'
 
-/** Website.GetOrder's FOR JSON text, or null when no order has the id. */
-export function readOrder(json: string | null): GetOrder {
-  // json is the rows' text joined, or null when the procedure returned no row.
-  return GetOrderSchema.parse(json === null ? null : JSON.parse(json))
+// pool was made with { ...config, parseJSON: true }.
+export async function getOrder(pool: sql.ConnectionPool, orderId: number): Promise<GetOrder> {
+  const result = await pool.request().input('OrderID', sql.Int, orderId).execute('Website.GetOrder')
+  return GetOrderSchema.parse(result.recordset[0])
 }
 ```
+
+Without `parseJSON`, the row holds the text, under the name SQL Server gives the column of `FOR JSON` output, and the text is
+empty when no rows matched:
+
+```ts
+const text: string = result.recordset[0]['JSON_F52E2B61-18A1-11d1-B105-00805F49916B']
+return GetOrderSchema.parse(text === '' ? null : JSON.parse(text))
+```
+
+Either way, a `FOR JSON` result with no rows is `null`, a list as much as one object, and its type says so. Rows from a
+plain `SELECT` are `result.recordset` as they are. A procedure with several result sets has one schema, a tuple: it parses
+an array holding each of `result.recordsets`, read as above.
 
 [`examples/greenhouse`](examples/greenhouse/README.md) is a small application that does this with a module haruspex wrote,
 compiled in CI.

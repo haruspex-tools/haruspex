@@ -11,6 +11,6 @@ export const OrgChartRowSchema = z.object({
 })
 export type OrgChartRow = z.infer<typeof OrgChartRowSchema>
 
-/** flow.org_chart: returns JSON, [] when no rows match. */
-export const OrgChartSchema = z.array(OrgChartRowSchema)
+/** flow.org_chart: returns JSON, null when no rows match. */
+export const OrgChartSchema = z.array(OrgChartRowSchema).min(1).nullable()
 export type OrgChart = z.infer<typeof OrgChartSchema>

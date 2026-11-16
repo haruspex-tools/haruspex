@@ -4,14 +4,16 @@
 import type {
   GetOrder,
   GetOrderRow,
+  ListCustomerOrders,
   ListCustomerOrdersRow,
   ListCustomersRow,
   ListOrdersRow,
 } from '../generated/orders.zod'
 
-// A top-level FOR JSON query that matches no rows returns no row at all; the reader convention makes that
-// null for a single-object result (and [] for a list).
+// A top-level FOR JSON query that matches no rows returns no row at all, which the mssql driver hands over as
+// null, for a single object and a list alike (the IR's reader convention).
 export const noOrder: GetOrder = null
+export const noCustomerOrders: ListCustomerOrders = null
 
 // FOR JSON without INCLUDE_NULL_VALUES leaves a null key out, so every nullable key may be absent...
 export const minimalOrder: GetOrderRow = {
