@@ -1753,6 +1753,9 @@ README):
   `INCLUDE_NULL_VALUES` an object whose values are all null is left out, so it is `omittedWhenNull` with the
   reason `all-fields-null` when every field in it can be null. With `INCLUDE_NULL_VALUES` it is always
   written, its keys null, however deeply nested: `{"a":{"b":{"y":null}}}`. Both observed (see "Scalars in JSON").
+  An object's keys come from adjacent columns; a key reused after another column, or both a value and an object, is refused
+  (13601), so it is `duplicate-column`. Keys are compared exactly, whatever the collation: `a` and `A`, or `b.x` and `B.x`,
+  are two keys, two objects (`For_json_keys_that_differ_only_in_case_are_two_keys`).
 
 ### Scalars in JSON
 
