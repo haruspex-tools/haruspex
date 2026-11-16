@@ -130,6 +130,20 @@ public class IrComparisonTests
     }
 
     [Fact]
+    public void A_wider_varchar_is_reported_in_bytes_whose_encoding_the_collation_left_unknown()
+    {
+        var before = Infer(ListOrders);
+        var after = Infer(ListOrders, Orders.Replace("status varchar(10)", "status varchar(12)", StringComparison.Ordinal));
+
+        Assert.Equal(
+            [
+                "shop.list_orders results[0][].status: SQL type changed from varchar(10) to varchar(12)",
+                "shop.list_orders results[0][].status: length changed from at most 10 bytes to at most 12 bytes",
+            ],
+            Changes(before, after));
+    }
+
+    [Fact]
     public void A_procedure_added_or_removed_is_reported_by_its_id()
     {
         var before = Infer(ListOrders);

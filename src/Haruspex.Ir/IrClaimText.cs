@@ -33,11 +33,20 @@ internal static class IrClaimText
         return Type(type) + sql + (nullable ? ", nullable" : "");
     }
 
-    /// <summary>A length: <c>at most 50</c>, <c>exactly 10</c>, with the unit when it is bytes; <c>none</c> when there is none.</summary>
+    /// <summary>
+    /// A length: <c>at most 50</c>, <c>exactly 10</c>, with the unit when it is bytes and their encoding when it is known
+    /// (<c>at most 20 bytes (utf8)</c>); <c>none</c> when there is none.
+    /// </summary>
     public static string Length(IrLength? length) => length is null
         ? "none"
-        : (length.IsFixed ? "exactly " : "at most ") + Count(length.Value)
-            + (length.Unit == IrLengthUnit.Bytes ? $" bytes ({IrWireNames.Of(length.Encoding)})" : "");
+        : (length.IsFixed ? "exactly " : "at most ") + Count(length.Value) + Unit(length);
+
+    private static string Unit(IrLength length) => (length.Unit, length.Encoding) switch
+    {
+        (IrLengthUnit.Utf16, _) => "",
+        (IrLengthUnit.Bytes, IrByteEncoding.Unknown) => " bytes",
+        (IrLengthUnit.Bytes, var encoding) => $" bytes ({IrWireNames.Of(encoding)})",
+    };
 
     /// <summary>A minimum length: <c>at least 1</c>, or <c>none</c>.</summary>
     public static string MinLength(IrMinLength? length) => length is null ? "none" : "at least " + Count(length.Value);
