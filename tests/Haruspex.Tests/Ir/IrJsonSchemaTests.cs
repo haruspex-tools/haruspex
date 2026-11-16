@@ -58,6 +58,8 @@ public class IrJsonSchemaTests
         (typeof(IrResult), nameof(IrResult.MayBeAbsent), "result", "mayBeAbsent"),
         (typeof(IrResult), nameof(IrResult.AbsentBecause), "result", "absentBecause"),
         (typeof(IrResult), nameof(IrResult.Cardinality), "result", "cardinality"),
+        (typeof(IrResult), nameof(IrResult.FewestItems), "result", null), // derived from the type, cardinality and absence; not written
+        (typeof(IrResult), nameof(IrResult.MostItems), "result", null), // derived from the type and cardinality; not written
         (typeof(IrObjectType), nameof(IrObjectType.Fields), "objectType", "fields"),
         (typeof(IrObjectType), nameof(IrObjectType.Identity), "objectType", "identity"),
         (typeof(IrObjectType), nameof(IrObjectType.Recursive), "objectType", "recursive"),

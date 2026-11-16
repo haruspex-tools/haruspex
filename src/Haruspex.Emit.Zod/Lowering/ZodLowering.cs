@@ -172,26 +172,17 @@ internal static class ZodLowering
     }
 
     /// <summary>
-    /// A result of rows, a rowset or FOR JSON's array, bounded by its cardinality: it has no more rows than that, and exactly
-    /// one when it is one and arrives. An absent rowset reads as [], so one that may be absent is only bounded above. FOR
-    /// JSON over no rows returns no row at all, which reads as null, so a JSON array that arrives has an item for each of at
-    /// least one row. Each bound is written once, the tighter of the cardinality's and the array's own (a declared result's
-    /// <c>minItems</c>, say). A union of arrays is not bounded, which only claims less.
+    /// A result of rows, a rowset or FOR JSON's array, bounded as the result says it is read (<see cref="IrResult.FewestItems"/>
+    /// and <see cref="IrResult.MostItems"/>), each bound written once.
     /// </summary>
     private static ZodExpression Rows(IrArray array, IrResult result, TypeLowering types)
     {
-        var json = result.Encoding == IrEncoding.Json;
-        int? fewest = json || (result.Cardinality == IrCardinality.One && !result.MayBeAbsent) ? 1 : null;
-        int? most = result.Cardinality is IrCardinality.One or IrCardinality.AtMostOne ? 1 : null;
-        var min = array.MinItems is { } ownMin && fewest is { } least ? Math.Max(ownMin, least) : array.MinItems ?? fewest;
-        var max = array.MaxItems is { } ownMax && most is { } greatest ? Math.Min(ownMax, greatest) : array.MaxItems ?? most;
-
         var schema = types.Type(array with { MinItems = null, MaxItems = null }, result.Encoding);
-        if (min is { } exactly && max == exactly)
+        if (result.FewestItems is { } exactly && result.MostItems == exactly)
             return schema.Then("length", Count(exactly));
-        if (min is { } low)
+        if (result.FewestItems is { } low)
             schema = schema.Then("min", Count(low));
-        return max is { } high ? schema.Then("max", Count(high)) : schema;
+        return result.MostItems is { } high ? schema.Then("max", Count(high)) : schema;
     }
 
     private static Number Count(int count) => new(count.ToString(CultureInfo.InvariantCulture));
