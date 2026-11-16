@@ -295,9 +295,11 @@ haruspex relies on about SQL Server is observed on a real server by a test, and 
 - **Databases other than SQL Server.** For PostgreSQL, pgtyped, sqlc or Kysely with `kysely-codegen`.
 - **Code that builds its SQL at run time.** A typed query builder such as Kysely types it where it is built.
 - **Databases with no project and no DACPAC.** Extract a DACPAC first, with SqlPackage's `/Action:Extract`.
-- **Anyone who needs a supported tool.** This is a personal open-source project with no support commitment.
+- **Anyone who needs a supported tool.** This is a personal open-source project with
+  [no support commitment](SUPPORT.md).
 - **Anyone who won't use code written by AI.** Better to know before you start.
 
 ## Licence
 
-[Apache 2.0](LICENSE). Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
+[Apache 2.0](LICENSE). Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). Report a vulnerability
+privately, as [SECURITY.md](SECURITY.md) says.
