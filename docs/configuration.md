@@ -153,8 +153,9 @@ breaking a file written today.
 
 ## Overrides
 
-An override corrects or completes what was inferred, for one procedure (keyed by its two-part name, which must be
-selected; only `results`, below, may be given for any procedure). Overrides are applied to the IR after inference, never inside it, and every one stays **checked at
+An override corrects or completes what was inferred, for one procedure. Overrides live in `procedures`, keyed by the
+procedure's two-part name (`sales.get_order`, with T-SQL brackets around a part that holds a dot), which must be selected;
+only `results`, below, may be given for any procedure. Overrides are applied to the IR after inference, never inside it, and every one stays **checked at
 runtime**: the generated validator still checks every value, so a wrong override fails loudly on real data; it is never
 a silent cast. The IR lists every claim an override made under `overrides`, with its reason.
 
@@ -290,8 +291,9 @@ returns; haruspex then leaves its results unknown. Other options that change no 
 
 Generated names come from each object's own name, **never its schema**, by declarative rules applied in this order:
 
-1. `replace`: regular expressions over the name, in order, each replacing every match (`$1` names a group); the
-   top-level rules first, then the schema's own. `#$` is the end of the name. Expressions run without backtracking, so
+1. `replace`: rules of the form `{ "pattern": "…", "with": "…" }`, run over the name in order, each replacing every match
+   of the regular expression `pattern` with `with` (`$1` names a group, and `""` removes the match); the top-level rules
+   first, then the schema's own. `#$` is the end of the name. Expressions run without backtracking, so
    backreferences and lookarounds are not available.
 2. `prefix`: the schema's prefix, if any, goes in front as words of its own: `"prefix": "Audit"` makes
    `audit.get_order` `AuditGetOrder`.
