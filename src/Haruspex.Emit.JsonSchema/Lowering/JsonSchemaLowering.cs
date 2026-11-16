@@ -161,7 +161,8 @@ internal static class JsonSchemaLowering
 
     /// <summary>
     /// What a result is, and what it reads as when absent: a FOR JSON query that matched no rows, or a statement that did not run
-    /// (in a branch, or after a RETURN), whose result set is then missing altogether.
+    /// (in a branch, or after a RETURN), whose result set is then missing altogether; or a result the config file declares may be
+    /// absent, the declaration its reason.
     /// </summary>
     private static string Describe(IrResult result)
     {
@@ -175,6 +176,16 @@ internal static class JsonSchemaLowering
             _ => null,
         };
         var what = result.Encoding == IrEncoding.Rowset ? "rows" : "JSON";
-        return when is null ? what : $"{what}, {(result.Encoding == IrEncoding.Rowset ? "[]" : "null")} {when}";
+        var absent = result.Encoding == IrEncoding.Rowset ? "[]" : "null";
+
+        // A result the config file declares may be absent says so, but not why: the declaration is the reason.
+        var declared = result.AbsentBecause.Any(r => r.Rule == IrNullRule.Declared);
+        return (when, declared) switch
+        {
+            (null, false) => what,
+            (null, true) => $"{what}, {absent} when absent, as the config file declares",
+            (_, false) => $"{what}, {absent} {when}",
+            (_, true) => $"{what}, {absent} {when}, or when absent, as the config file declares",
+        };
     }
 }

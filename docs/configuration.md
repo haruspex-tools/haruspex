@@ -214,7 +214,8 @@ exits as before (the `check` command will fail it).
 - `"none"`, one result, or an array of them in the order the procedure returns them. A result is `{ "rowset": schema }`, the
   JSON Schema of **one row** (an object whose `properties` are its columns, each a scalar and always there), or
   `{ "json": schema }`, the JSON Schema of the document `FOR JSON` writes, with `"mayBeAbsent": true` when it may match no
-  rows (FOR JSON then returns no row at all). A schema is written inline, or as the path of a file holding it, relative to
+  rows (FOR JSON then returns no row at all); the generated schema then accepts `null`, and its summary names the declaration as
+  the reason ("null when absent, as the config file declares"). A schema is written inline, or as the path of a file holding it, relative to
   this file; a problem in a file is reported in that file, with its line.
 - **The schema keywords read:** `type` (one type, with `"null"` when it may be null), `properties` and `required`, `items`,
   `minItems` and `maxItems`, `additionalProperties` (alone, for an object whose keys are data), `$ref` to the schema's own

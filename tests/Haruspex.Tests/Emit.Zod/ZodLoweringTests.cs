@@ -192,4 +192,11 @@ public class ZodLoweringTests
         Assert.Equal(
             "s.p: returns rows, [] when it does not run.",
             Procedure(Lower(Document([], new IrResult(IrEncoding.Rowset, new IrArray(Flag), [new IrNullReason(IrNullRule.NotRun, "p.sql:3:1")])))).Summary);
+
+    [Fact]
+    public void A_result_the_config_declares_may_be_absent_names_the_declaration_as_its_reason() =>
+        // The config file says the result may be absent, not why, so its summary names the declaration.
+        Assert.Equal(
+            "s.p: returns JSON, null when absent, as the config file declares.",
+            Procedure(Lower(Document([], new IrResult(IrEncoding.Json, new IrArray(Flag), [new IrNullReason(IrNullRule.Declared, "s.p")])))).Summary);
 }
