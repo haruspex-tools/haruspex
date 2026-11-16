@@ -20,6 +20,7 @@
     { "name": "sales_by_mode, returns early", "procedure": "flow.sales_by_mode", "parameters": { "@mode": 3 } },
     { "name": "part_list", "procedure": "flow.part_list" },
     { "name": "part_list, units cleared", "procedure": "flow.part_list", "parameters": { "@with_units": false } },
+    { "name": "part_counts", "procedure": "flow.part_counts" },
     { "name": "org_chart", "procedure": "flow.org_chart" },
     { "name": "org_chart, no employees", "procedure": "flow.org_chart", "setup": "no employees" },
     { "name": "staff_moves", "procedure": "flow.staff_moves" },

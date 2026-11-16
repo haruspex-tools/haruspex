@@ -19,20 +19,34 @@ internal sealed partial class Walker
     /// </summary>
     private FlowState SelectInto(SelectStatement select, FlowState state)
     {
-        var at = At(select);
         if (Binder.Temporary(select.Into) is not { } name)
         {
             Blocked(select);
             return state;
         }
 
+        return MadeFrom(select, name, state, "SELECT … INTO");
+    }
+
+    /// <summary>
+    /// A temporary table made from a query, by <c>SELECT … INTO</c> or <c>CREATE TABLE … AS SELECT</c>, which make the same columns
+    /// from the same query: their types, nullability and IDENTITY (observed:
+    /// A_temporary_table_made_from_a_query_has_the_columns_select_into_makes).
+    /// </summary>
+    /// <param name="select">The query, with its WITH.</param>
+    /// <param name="name">The table it makes.</param>
+    /// <param name="state">The state before it.</param>
+    /// <param name="how">The statement, for a message.</param>
+    private FlowState MadeFrom(SelectStatement select, LocalName name, FlowState state, string how)
+    {
+        var at = At(select);
         var table = typer.WithCtes<TempTable>(select.WithCtesAndXmlNamespaces, Reading(state), scope =>
         {
             var row = typer.Outermost(select.QueryExpression, scope);
             if (row.Unlisted is { } unlisted)
                 return Unknown(name, unlisted);
             if (row.Columns.Any(c => string.IsNullOrEmpty(c.Name)) || row.Columns.GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
-                return Unknown(name, Unsupported(IrUnknownReason.UnnamedColumn, $"SELECT … INTO {name} has a column without a name, or two of one name, which SQL Server refuses.", at));
+                return Unknown(name, Unsupported(IrUnknownReason.UnnamedColumn, $"{how} {name} has a column without a name, or two of one name, which SQL Server refuses.", at));
             // Through a set operation SQL Server does not copy IDENTITY (observed: Select_into_from_a_union_does_not_copy_an_identity).
             var identity = select.QueryExpression is QuerySpecification query ? Identities(query, scope) : new bool?[row.Columns.Count];
             // Never null: a column without a name was refused above.

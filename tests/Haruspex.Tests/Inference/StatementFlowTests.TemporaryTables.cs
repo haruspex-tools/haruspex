@@ -16,17 +16,44 @@ public partial class StatementFlowTests
         Assert.Equal("#t.b is a computed column, which is not modelled yet.", unknown.Detail);
     }
 
-    [Theory]
-    [InlineData("CREATE TABLE #t WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT 1 AS a;")]
-    [InlineData("CREATE TABLE #t AS EDGE;")]
-    public void A_temporary_table_created_without_a_column_list_is_unknown(string create)
+    [Fact]
+    public void A_temporary_graph_table_is_unknown()
     {
-        // Observed: A_temporary_table_made_from_a_query_has_the_columns_the_query_gives, which the walk doesn't read from the query yet;
-        // and A_temporary_table_cannot_be_a_graph_table (Msg 13914 when it runs).
-        var unknown = Unknown(Procedure($"{create}\nSELECT t.a FROM #t AS t;"), "results[0][].a");
+        // Observed: A_temporary_table_cannot_be_a_graph_table (Msg 13914 when it runs). It lists no columns.
+        var unknown = Unknown(Procedure("CREATE TABLE #t AS EDGE;\nSELECT t.a FROM #t AS t;"), "results[0][].a");
 
         Assert.Equal(IrUnknownReason.UnsupportedSource, unknown.Reason);
         Assert.Contains("without a column list", unknown.Detail, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("ROUND_ROBIN")]
+    [InlineData("HASH(id)")]
+    public void Create_table_as_select_makes_the_table_select_into_makes(string distribution)
+    {
+        // Observed: A_temporary_table_made_from_a_query_has_the_columns_the_query_gives, and _the_columns_select_into_makes: the
+        // same types, nullability and facets, with their origins, as Select_into_takes_the_selects_types_nullability_and_facets_with_their_origins.
+        var doc = Procedure($"""
+            CREATE TABLE #t WITH (DISTRIBUTION = {distribution}) AS SELECT t.id, t.name, t.status, u.name AS u_name FROM dbo.t AS t LEFT JOIN dbo.u AS u ON u.t_id = t.id;
+            SELECT x.id, x.name, x.status, x.u_name FROM #t AS x;
+            """);
+
+        Assert.Empty(doc.Unknowns);
+        Assert.False(Field(doc, "id").Nullable);
+        Assert.Equal([new IrNullReason(IrNullRule.NullableColumn, "dbo.t.name")], Field(doc, "name").NullableBecause);
+        Assert.Equal([IrNullRule.UnmatchedRow], Rules(Field(doc, "u_name")));
+        var values = Scalar(Field(doc, "status")).Facets!.Values!;
+        Assert.Equal(["open", "shut"], values.Items.Select(v => v.Text));
+        Assert.Equal([new IrFactSource(IrFactSourceKind.Check, "dbo.ck_t_status")], values.From);
+    }
+
+    [Fact]
+    public void Create_table_as_select_with_a_column_without_a_name_is_unknown_as_select_into_is()
+    {
+        var unknown = Unknown(Procedure("CREATE TABLE #t WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT 1 AS a, 2;\nSELECT t.a FROM #t AS t;"), "results[0][].a");
+
+        Assert.Equal(IrUnknownReason.UnnamedColumn, unknown.Reason);
+        Assert.Contains("CREATE TABLE … AS SELECT #t", unknown.Detail, StringComparison.Ordinal);
     }
 
     [Fact]

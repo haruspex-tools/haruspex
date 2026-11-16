@@ -92,6 +92,26 @@ public partial class ExecTests
     }
 
     [Fact]
+    public void Insert_exec_without_a_column_list_skips_an_identity_column_create_table_as_select_copied()
+    {
+        // Observed: A_temporary_table_made_from_a_query_has_the_columns_select_into_makes, IDENTITY included.
+        var doc = Infer(
+            ("q", "CREATE PROCEDURE dbo.q AS SELECT i.qty FROM dbo.item AS i;"),
+            ("p", """
+                CREATE PROCEDURE dbo.p AS
+                DECLARE @v int = 1;
+                CREATE TABLE #x WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT i.id, @v AS n FROM dbo.item AS i;
+                INSERT INTO #x EXEC dbo.q;
+                SELECT x.id, x.n FROM #x AS x;
+                """));
+
+        // The callee's qty, which may be null, goes into n; id is the identity, never null.
+        Assert.Empty(doc.Unknowns);
+        Assert.False(Field(doc, "id").Nullable);
+        Assert.True(Field(doc, "n").Nullable);
+    }
+
+    [Fact]
     public void Insert_exec_without_a_column_list_skips_a_declared_identity_column()
     {
         var doc = Infer(

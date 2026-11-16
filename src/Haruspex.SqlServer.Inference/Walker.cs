@@ -332,6 +332,8 @@ internal sealed partial class Walker
                 return Continue(state);
             case FetchCursorStatement fetch:
                 return Fetch(fetch, state);
+            case CreateTableStatement { SelectStatement: { } query } create when Binder.Temporary(create.SchemaObjectName) is { } made:
+                return Continue(MadeFrom(query, made, state, "CREATE TABLE … AS SELECT"));
             case CreateTableStatement create when Binder.Temporary(create.SchemaObjectName) is { } created:
                 return Continue(state.WithTemp(created, Created(create, created)));
             case DropTableStatement drop when drop.Objects.Select(Binder.Temporary).ToList() is var dropped && dropped.All(n => n is not null):

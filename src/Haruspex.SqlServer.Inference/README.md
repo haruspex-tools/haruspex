@@ -152,7 +152,10 @@ always its declaration: nothing a statement does changes what its columns may ho
   constraint withdraws them. A write never changes a declared column: the engine refuses a null where `NOT NULL` is
   declared, and converts every value to the declared type. A column of an alias type is unknown, because tempdb does
   not have the database's alias types (`A_temporary_table_cannot_use_the_databases_alias_types_but_a_table_variable_can`).
-- **Made by `SELECT … INTO`**: each column holds what the select gave it, with its facets and origins (a column read
+- **Made by `SELECT … INTO`**, or by `CREATE TABLE #t WITH (DISTRIBUTION = …) AS SELECT`, which SQL Server 2025 takes with a
+  `WITH` naming a distribution (`ROUND_ROBIN` or `HASH`; without one it is a syntax error) and which makes the same columns from
+  the same query, types, nullability and `IDENTITY` (`A_temporary_table_made_from_a_query_has_the_columns_select_into_makes`;
+  `Walker.MadeFrom` reads both): each column holds what the select gave it, with its facets and origins (a column read
   unchanged keeps `nullable-column` at its base column, and its CHECK's facets). SQL Server decides such a column's
   nullability by its own reading of the select, which haruspex does not reproduce
   (`Select_into_a_column_from_a_not_null_column_refuses_null_but_others_take_it`; a column from a variable takes null
@@ -169,10 +172,9 @@ always its declaration: nothing a statement does changes what its columns may ho
   (`A_temporary_table_a_procedure_creates_hides_the_callers_of_the_same_name`). A procedure that creates one name
   twice, even after a drop or in two branches, is refused when it is created (error 2714,
   `A_procedure_cannot_create_a_temporary_table_twice_even_after_dropping_it`), so re-creation never runs; it is
-  modelled as the new table all the same. One created without a column list is unknown (`unsupported-source`): made from
-  a query, `CREATE TABLE #t WITH (…) AS SELECT`, it has the query's columns
-  (`A_temporary_table_made_from_a_query_has_the_columns_the_query_gives`), which aren't read from it yet; `AS EDGE` fails when it runs
-  (`A_temporary_table_cannot_be_a_graph_table`).
+  modelled as the new table all the same. One made from a query (`AS SELECT`) is read as `SELECT … INTO` above; `AS EDGE`,
+  which lists no columns either, fails when it runs (`A_temporary_table_cannot_be_a_graph_table`), and is unknown
+  (`unsupported-source`).
 - `ROLLBACK` undoes what was done to temporary tables in the transaction (`A_rollback_undoes_a_temporary_tables_creation`),
   which the caller may have begun, so after one every temporary table the procedure touched is unknown.
 - Writes to permanent tables, `OUTPUT`, `WITH` before a write, and cursors are read too (below, "DML", "Triggers" and

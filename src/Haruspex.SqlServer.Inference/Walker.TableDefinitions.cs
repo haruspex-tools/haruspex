@@ -27,8 +27,8 @@ internal sealed partial class Walker
     /// <param name="name">The temporary table it creates (<see cref="Binder.Temporary"/>).</param>
     private TempTable Created(CreateTableStatement create, LocalName name)
     {
-        // CREATE TABLE #t … AS SELECT has its query's columns (observed: A_temporary_table_made_from_a_query_has_the_columns_the_query_gives),
-        // not read here yet; AS EDGE fails when it runs (A_temporary_table_cannot_be_a_graph_table). Neither lists its columns.
+        // CREATE TABLE #t … AS SELECT is made from its query as SELECT … INTO is (MadeFrom); AS EDGE fails when it runs
+        // (A_temporary_table_cannot_be_a_graph_table), and lists no columns.
         if (create.Definition is null)
             return Unknown(name, Unsupported(IrUnknownReason.UnsupportedSource, "a temporary table created without a column list is not modelled yet.", At(create)));
 
