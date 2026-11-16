@@ -241,8 +241,8 @@ still finds it depends on what holds it, all observed with a second session dele
 | Between the guard and the read | The read |
 |---|---|
 | nothing: read committed, read committed snapshot, a locking hint or `SERIALIZABLE` without a transaction, a transaction without a hint, snapshot isolation without a transaction | may find nothing: another session's delete lands in between (`A_row_an_existence_guard_saw_may_be_gone_when_a_later_statement_reads_it`) |
-| a transaction the body began, still open, and the guard read with `UPDLOCK`, `HOLDLOCK`, `SERIALIZABLE`, `REPEATABLEREAD` or `XLOCK`, or at `SERIALIZABLE` or `REPEATABLE READ` | finds the row: the guard's lock lasts until the outermost transaction ends, so the delete waits (`A_lock_the_guard_holds_to_the_end_of_an_open_transaction_keeps_the_row_for_the_read`) |
-| a transaction the body began at `SNAPSHOT`, still open, the read at `SNAPSHOT` with no table hint | finds the row: both read the transaction's one snapshot (`Snapshot_isolation_in_an_open_transaction_reads_the_row_the_guard_saw`); with `READCOMMITTEDLOCK`, or the level set back first, it may not |
+| a transaction the body began, still open, and the guard read with `UPDLOCK`, `HOLDLOCK`, `SERIALIZABLE`, `REPEATABLEREAD` or `XLOCK`, or at `SERIALIZABLE` or `REPEATABLE READ` with no hint but those and `READPAST`; a hint that lowers the level (`NOLOCK`, `READCOMMITTED`) gives up the lock (`A_hint_on_the_guard_that_lowers_the_level_holds_no_lock_for_the_read`) | finds the row: the guard's lock lasts until the outermost transaction ends, so the delete waits (`A_lock_the_guard_holds_to_the_end_of_an_open_transaction_keeps_the_row_for_the_read`) |
+| a transaction the body began at `SNAPSHOT`, still open, the guard and the read at `SNAPSHOT` with no table hint; a guard read with `READCOMMITTEDLOCK` can see a row committed after the snapshot began, which the read then doesn't (`A_guard_that_reads_past_the_snapshot_can_see_a_row_the_snapshot_read_does_not`) | finds the row: both read the transaction's one snapshot (`Snapshot_isolation_in_an_open_transaction_reads_the_row_the_guard_saw`); with `READCOMMITTEDLOCK`, or the level set back first, it may not |
 
 So the walk keeps each row a guard found (`FoundRow`, in `FlowState.Found`), with whether it is held, and the body's own
 transactions and isolation level beside it (`FlowState.Transactions`, `FlowState.Isolation`). A read of the guard's table
@@ -256,8 +256,8 @@ whose WHERE is only equalities the guard also tested (`Cardinality.Guard`) is th
 
 A `COMMIT` that ends the body's outermost transaction makes a held row raced, and where paths meet a row held on one only is
 raced; an inner `COMMIT` of nested transactions keeps it. A `CATCH` starts with every row raced and no transaction of the
-body's known to be open, since the error that reached it may have rolled the transaction back (a deadlock victim's does);
-that only claims less where it didn't (`A_catch_may_follow_an_error_that_rolled_the_transaction_back_so_its_reads_are_raced`). A write that may reach a permanent table, a call, a `TRUNCATE` or a
+body's known to be open: whether every error that reaches one leaves the transaction open with its locks is not observed
+(a deadlock victim's was seen to), so it claims less (`A_catch_may_follow_an_error_that_rolled_the_transaction_back_so_its_reads_are_raced`). A write that may reach a permanent table, a call, a `TRUNCATE` or a
 `ROLLBACK` ends the fact altogether, since then the body itself may have removed the row, which is not a race; so does an
 assignment to a variable the guard compared with. A transaction the caller began, or an isolation level the caller set, is
 not seen, which only claims less.

@@ -228,10 +228,17 @@ public partial class StatementFlowTests
     [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;", "")]
     [InlineData("SET TRANSACTION ISOLATION LEVEL SNAPSHOT;", "")]
     [InlineData("SET TRANSACTION ISOLATION LEVEL READ COMMITTED; BEGIN TRAN;", "")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; BEGIN TRAN;", "WITH (READCOMMITTED)")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; BEGIN TRAN;", "WITH (NOLOCK)")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ; BEGIN TRAN;", "WITH (NOLOCK)")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;", "WITH (READCOMMITTEDLOCK)")]
     public void A_read_of_a_row_an_existence_guard_found_states_the_race_where_nothing_holds_the_row(string before, string hint)
     {
         // A_row_an_existence_guard_saw_may_be_gone_when_a_later_statement_reads_it: another session may delete the row between
         // the guard and the read, so the read may find none, and says why at the guard (read-twice), as COALESCE's second read.
+        // A hint on the guard that lowers the level gives up its lock
+        // (A_hint_on_the_guard_that_lowers_the_level_holds_no_lock_for_the_read), and one that reads past the snapshot may see
+        // a row the snapshot read doesn't (A_guard_that_reads_past_the_snapshot_can_see_a_row_the_snapshot_read_does_not).
         var doc = Guarded(before, hint);
 
         Assert.Equal([IrNullRule.ReadTwice], Rules(doc, "code"));
@@ -249,6 +256,8 @@ public partial class StatementFlowTests
     [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; BEGIN TRAN;", "", "")]
     [InlineData("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ; BEGIN TRAN;", "", "")]
     [InlineData("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;", "", "")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ; BEGIN TRAN;", "WITH (READPAST)", "")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; BEGIN TRAN;", "WITH (UPDLOCK)", "")]
     [InlineData("BEGIN TRAN; BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "COMMIT;")]
     [InlineData("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "INSERT INTO #seen (id) VALUES (@id);")]
     public void A_keyed_read_of_a_row_an_open_transaction_holds_for_it_finds_it(string before, string hint, string between)
@@ -280,8 +289,8 @@ public partial class StatementFlowTests
     [Fact]
     public void A_catch_may_follow_an_error_that_rolled_the_transaction_back_so_its_reads_are_raced()
     {
-        // Some errors roll the transaction back as they reach CATCH (a deadlock victim's, 1205), releasing the guard's lock,
-        // so a read in CATCH is raced; one after the TRY is joined with it.
+        // Whether every error that reaches CATCH leaves the transaction and the guard's lock in place is not observed, so a
+        // read in CATCH is raced; one after the TRY is joined with it.
         var doc = Procedure("""
             DECLARE @code int = 0;
             BEGIN TRAN;

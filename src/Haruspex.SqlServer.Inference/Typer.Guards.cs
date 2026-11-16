@@ -36,10 +36,14 @@ internal sealed partial class Typer
         if (cardinality.Read(query, entered, every: false) is not var (source, table, equalities) || equalities.Count == 0)
             return null;
 
+        // A table hint overrides the level for its table, so the level holds the row only for a guard whose hints keep its
+        // lock (observed: A_hint_on_the_guard_that_lowers_the_level_holds_no_lock_for_the_read), and the snapshot only for a
+        // guard that reads it, with no hint (A_guard_that_reads_past_the_snapshot_can_see_a_row_the_snapshot_read_does_not).
         var state = scope.State;
-        var locks = (source.Syntax is NamedTableReference { TableHints: var hints } && hints.Any(h => HoldsLock(h.HintKind)))
-            || state.Isolation is IsolationLevel.Serializable or IsolationLevel.RepeatableRead;
-        var snapshot = !locks && state.Isolation == IsolationLevel.Snapshot;
+        List<TableHintKind> hints = source.Syntax is NamedTableReference named ? [.. named.TableHints.Select(h => h.HintKind)] : [];
+        var locks = hints.Any(HoldsLock)
+            || (state.Isolation is IsolationLevel.Serializable or IsolationLevel.RepeatableRead && hints.All(KeepsLevelsLock));
+        var snapshot = !locks && state.Isolation == IsolationLevel.Snapshot && hints.Count == 0;
         var open = state.Transactions > 0 && (locks || snapshot);
         return new FoundRow(table.Name, equalities, At(exists), open, open && snapshot);
     }
@@ -47,6 +51,12 @@ internal sealed partial class Typer
     /// <summary>Whether a table hint was observed to hold the guard's lock on the row until its transaction ends.</summary>
     private static bool HoldsLock(TableHintKind hint) =>
         hint is TableHintKind.UpdLock or TableHintKind.HoldLock or TableHintKind.Serializable or TableHintKind.RepeatableRead or TableHintKind.XLock;
+
+    /// <summary>
+    /// Whether a table hint leaves the lock the level takes on the row it reads: one that holds a lock itself, or READPAST, which
+    /// only skips rows other sessions have locked (observed in A_lock_the_guard_holds_to_the_end_of_an_open_transaction_keeps_the_row_for_the_read).
+    /// </summary>
+    private static bool KeepsLevelsLock(TableHintKind hint) => HoldsLock(hint) || hint == TableHintKind.ReadPast;
 
     /// <summary>The EXISTS an arm proves TRUE: <paramref name="held"/> is whether the arm needs the condition TRUE or not TRUE.</summary>
     private static ExistsPredicate? Exists(BooleanExpression condition, bool held) => condition switch

@@ -21,14 +21,15 @@ witness proved not NULL. An assignment to any of its variables ends it, and so d
 **A row an existence guard found** (added the same day, after Richard chose it). `IF NOT EXISTS (SELECT … FROM t WHERE k =
 @k) RETURN` leaves a `FoundRow` in `FlowState.Found`: the table, the guard's equalities, and whether the row is **held** for
 later reads, which needs a transaction the body began and still has open, and either a lock the guard keeps (a hint of
-`UPDLOCK`, `HOLDLOCK`, `SERIALIZABLE`, `REPEATABLEREAD` or `XLOCK`, or the `SERIALIZABLE` or `REPEATABLE READ` level) or the
-transaction's snapshot (`SNAPSHOT` isolation, for a read at that level with no table hint). `FlowState.Transactions` and
+`UPDLOCK`, `HOLDLOCK`, `SERIALIZABLE`, `REPEATABLEREAD` or `XLOCK`, or the `SERIALIZABLE` or `REPEATABLE READ` level for a guard
+with no hint that lowers it) or the transaction's snapshot (`SNAPSHOT` isolation, for a guard and a read at that level with no
+table hint). `FlowState.Transactions` and
 `FlowState.Isolation` carry what that needs. A keyed read whose WHERE is only equalities the guard tested is one row when the
 row is held; when it isn't, nothing is claimed and the reason a subquery of it may be NULL is the race, `read-twice` at the
 guard, as for `COALESCE`'s second read. The fact ends at a write that may reach a permanent table, a call, a `TRUNCATE` or a
 `ROLLBACK` (the body's own removal is no race), and at an assignment to a variable the guard compared with; the end of the
-outermost transaction, on any path, makes it raced, and so does reaching a `CATCH`, whose error may have rolled the
-transaction back. A caller's transaction or isolation level is not seen: declaring them is
+outermost transaction, on any path, makes it raced, and so does reaching a `CATCH`, since whether every error that
+reaches one leaves the transaction and its locks in place is not observed. A caller's transaction or isolation level is not seen: declaring them is
 a later row.
 
 **Context.** Bodies check their inputs and their reads before using them, and haruspex threw the check away: after

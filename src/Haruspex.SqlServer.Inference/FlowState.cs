@@ -150,9 +150,10 @@ internal sealed record FlowState
         : new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, new SessionFacts(rolledBack ? 0 : Transactions, Isolation, []));
 
     /// <summary>
-    /// The state a CATCH starts from: the error that reached it may have rolled the transaction back (a deadlock victim's does,
-    /// 1205, as Microsoft documents), releasing every lock, so no row is held any more and none of the body's transactions is
-    /// known to be open. That only claims less where the transaction survived.
+    /// The state a CATCH starts from: no row held any more, and none of the body's transactions known to be open. Whether every
+    /// error that reaches a CATCH leaves the transaction open with its locks is not observed (a deadlock victim's was seen to,
+    /// unable to commit but still holding them), and a severe one may end it, so a CATCH claims less, which costs a claim only in
+    /// reads inside a CATCH.
     /// </summary>
     public FlowState Caught() => Found.Count == 0 && Transactions == 0
         ? this

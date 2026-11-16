@@ -62,6 +62,7 @@ quotename
 raiserror
 readcommitted
 readcommittedlock
+readpast
 readuncommitted
 refreshsqlmodule
 refreshview

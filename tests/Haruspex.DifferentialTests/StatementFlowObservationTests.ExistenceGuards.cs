@@ -84,14 +84,79 @@ public partial class StatementFlowObservationTests
     [InlineData("BEGIN TRAN;", "WITH (XLOCK)", "")]
     [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; BEGIN TRAN;", "", "")]
     [InlineData("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ; BEGIN TRAN;", "", "")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ; BEGIN TRAN;", "WITH (READPAST)", "")]
     [InlineData("BEGIN TRAN; BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "COMMIT;")]
     public async Task A_lock_the_guard_holds_to_the_end_of_an_open_transaction_keeps_the_row_for_the_read(string before, string hint, string between)
     {
         // The guard's lock on the row lasts until the transaction ends, so the delete waits for it and the read finds the
-        // row. An inner COMMIT of a nested transaction ends nothing: the outer one still holds the lock.
+        // row. An inner COMMIT of a nested transaction ends nothing: the outer one still holds the lock. READPAST only skips
+        // rows other sessions have locked, so it keeps the level's lock on the row it reads.
         await using var scratch = await server.ScratchAsync();
 
         Assert.Equal("2026-11-16, delete waited", await Raced(scratch, before, hint, between));
+    }
+
+    [Theory]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; BEGIN TRAN;", "WITH (READCOMMITTED)")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; BEGIN TRAN;", "WITH (NOLOCK)")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ; BEGIN TRAN;", "WITH (NOLOCK)")]
+    public async Task A_hint_on_the_guard_that_lowers_the_level_holds_no_lock_for_the_read(string before, string hint)
+    {
+        // A table hint overrides the session's level for that table, so a guard read with one that takes no lock, or gives
+        // it up at once, leaves the row free to be deleted however high the level is.
+        await using var scratch = await server.ScratchAsync();
+
+        Assert.Equal("null, delete did not wait", await Raced(scratch, before, hint));
+    }
+
+    /// <summary>
+    /// A snapshot transaction whose snapshot starts at a first read of another table, then waits while another session inserts
+    /// and commits the row, then runs the guard with <paramref name="hint"/> and reads the row: what the read found, or that
+    /// the guard returned.
+    /// </summary>
+    private static async Task<string> InsertedAfterTheSnapshot(ScratchDatabase scratch, string hint)
+    {
+        var token = TestContext.Current.CancellationToken;
+        await scratch.ExecuteAsync("""
+            DROP TABLE IF EXISTS dbo.obs_order;
+            DROP TABLE IF EXISTS dbo.obs_other;
+            CREATE TABLE dbo.obs_order (order_id int NOT NULL PRIMARY KEY, placed_on date NOT NULL);
+            CREATE TABLE dbo.obs_other (i int NOT NULL);
+            """, token);
+        await scratch.ExecuteAsync($"""
+            CREATE OR ALTER PROCEDURE dbo.obs_card @id int AS
+            SET NOCOUNT ON;
+            SET TRANSACTION ISOLATION LEVEL SNAPSHOT;
+            BEGIN TRAN;
+            DECLARE @n int = (SELECT COUNT(*) FROM dbo.obs_other);
+            WAITFOR DELAY '00:00:01.500';
+            IF NOT EXISTS (SELECT 1 FROM dbo.obs_order {hint} WHERE order_id = @id) BEGIN COMMIT; RETURN; END
+            SELECT (SELECT o.placed_on FROM dbo.obs_order AS o WHERE o.order_id = @id) AS placed_on;
+            COMMIT;
+            """, token);
+
+        await using var guard = await scratch.OpenAsync(token);
+        await using var call = new SqlCommand("EXEC dbo.obs_card 1;", guard);
+        var reading = call.ExecuteReaderAsync(token);
+        await Task.Delay(TimeSpan.FromMilliseconds(400), token);
+        await scratch.ExecuteAsync("INSERT INTO dbo.obs_order VALUES (1, '2026-11-16');", token);
+
+        await using var reader = await reading;
+        if (!await reader.ReadAsync(token))
+            return "returned";
+        return await reader.IsDBNullAsync(0, token) ? "null" : reader.GetDateTime(0).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    [Fact]
+    public async Task A_guard_that_reads_past_the_snapshot_can_see_a_row_the_snapshot_read_does_not()
+    {
+        // The snapshot began before the insert. A guard with no hint reads the snapshot, doesn't see the row and returns; one
+        // with READCOMMITTEDLOCK reads what is committed now, sees it, and the read, at snapshot, then finds nothing.
+        await using var scratch = await server.ScratchAsync();
+        await scratch.ExecuteAsync("ALTER DATABASE CURRENT SET ALLOW_SNAPSHOT_ISOLATION ON;", TestContext.Current.CancellationToken);
+
+        Assert.Equal("returned", await InsertedAfterTheSnapshot(scratch, ""));
+        Assert.Equal("null", await InsertedAfterTheSnapshot(scratch, "WITH (READCOMMITTEDLOCK)"));
     }
 
     [Fact]
