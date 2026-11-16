@@ -393,6 +393,21 @@ public class JsonSchemaEmitterTests
     }
 
     [Fact]
+    public void A_claim_the_config_file_made_rather_than_inference_says_so_with_its_reason()
+    {
+        var document = OneResult(IrEncoding.Rowset, Field("customer", new IrScalar(IrScalarKind.String, null, null)));
+        document = document with
+        {
+            Types = new Dictionary<string, IrObjectType> { ["ListBasketsRow"] = document.Types["ListBasketsRow"] with { Identity = new IrTypeIdentity(IrTypeOwner.Procedure, "shop.list_baskets", "results[0][]") } },
+            Overrides = [new IrOverride("shop.list_baskets", "results[0][].customer", IrOverrideSetting.NotNull, "every basket has a customer")],
+        };
+
+        var customer = Definition(Emit(document), "ListBasketsRow")["properties"]!["customer"]!;
+
+        Assert.Equal("Declared by the config file (not-null): every basket has a customer.", Description(customer));
+    }
+
+    [Fact]
     public void A_named_type_says_where_it_comes_from()
     {
         var document = OneResult(IrEncoding.Rowset, Field("id", new IrScalar(IrScalarKind.Boolean, null, null)));

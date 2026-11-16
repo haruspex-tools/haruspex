@@ -32,8 +32,8 @@ flowchart LR
 - **ReadProject** reads every `.sql` file into the model.
 - **Select** picks the procedures to type.
 - **Infer** infers their results and applies the config file: overrides, declared results, names.
-- **Emit** writes the Zod module, in memory.
-- **Write** puts both files in place.
+- **Emit** writes what the config file's `emit` names, in memory: the Zod module, a JSON Schema document, or both.
+- **Write** puts the IR and each emitted file in place.
 - **Noted** lists each unknown in what was written.
 
 `haruspex check` takes the dotted path after **Emit**: it notes the unknowns, then compares the module with what is committed
@@ -205,17 +205,17 @@ haruspex: error HAR6006: invalid --include pattern: 'a.b.c' is not a two-part na
 
 ## Writing without half an output
 
-The last step writes two files, and a run must never leave one new beside one old: an application compiled against a new
-module and an old IR, or the reverse, would be checked against a contract that isn't the one in force. No file system
-replaces two files as one, so `Generate.Write` comes as close as a rename allows. Both files are written in full to
-temporary names in the output folder itself, so that putting each in place is a rename within one file system: POSIX
-promises such a rename is atomic, so a reader sees the old file or the new one, never part of either; Windows makes no
-such promise for the replacing call .NET uses there, so on Windows the guarantee is only that each file is written in full
-before it is put in place. Then the IR is put in place, keeping the old one aside, and the module after it; if the module
-can't be, the IR is put back as it was. Two cases can still leave them out of step, and the CLI's README names both: a
-process killed between the two renames, and a file system that refuses to put the IR back, when the error says so and
-keeps the old IR's backup. A run that fails earlier writes nothing, and doesn't even create the folder, since the folder
-is made in `Generate.Write`, after every other step has succeeded.
+The last step writes the IR and every file emitted from it, and a run must never leave one new beside one old: an application
+compiled against a new module and an old IR, or a JSON Schema from one run beside a module from another, would be checked
+against a contract that isn't the one in force. No file system replaces several files as one, so `Generate.Write` comes as close
+as a rename allows. Every file is written in full to a temporary name in the output folder itself, so that putting each in place
+is a rename within one file system: POSIX promises such a rename is atomic, so a reader sees the old file or the new one, never
+part of either; Windows makes no such promise for the replacing call .NET uses there, so on Windows the guarantee is only that
+each file is written in full before it is put in place. Then each is put in place in turn, the IR first, keeping the old one
+aside; if one can't be, those already in place are put back as they were. Two cases can still leave them out of step, and the
+CLI's README names both: a process killed between two renames, and a file system that refuses to put one back, when the error
+says so and keeps that file's backup. A run that fails earlier writes nothing, and doesn't even create the folder, since the
+folder is made in `Generate.Write`, after every other step has succeeded.
 
 ## Checking without writing
 

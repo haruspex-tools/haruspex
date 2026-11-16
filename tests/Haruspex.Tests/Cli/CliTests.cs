@@ -1,5 +1,6 @@
 using Haruspex.Cli;
 using Haruspex.Diagnostics;
+using Haruspex.Emit.JsonSchema;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.Tests.Snapshotting;
@@ -312,6 +313,71 @@ public class CliTests
 
         Assert.Equal(1, exitCode);
         Assert.Equal(["haruspex.zod.ts"], Directory.EnumerateFileSystemEntries(outDir.Path).Select(Path.GetFileName));
+    }
+
+    /// <summary>A project of one procedure, with a config file that emits what <paramref name="emit"/> names, its objects strict.</summary>
+    private static TempDirectory Emitting(string emit)
+    {
+        var folder = new TempDirectory();
+        folder.File("db/tables.sql", "CREATE TABLE shop.basket (id int NOT NULL PRIMARY KEY, note nvarchar(40) NULL);");
+        folder.File("db/procedures.sql", "CREATE PROCEDURE shop.list_baskets AS SELECT b.id, b.note FROM shop.basket AS b;");
+        folder.File("haruspex.json", $$"""{ "source": "db", "out": "out", "objects": "strict", "emit": {{emit}}, "schemas": { "shop": { "include": ["*"] } } }""");
+        return folder;
+    }
+
+    private static List<string> Files(string folder) =>
+        [.. Directory.EnumerateFileSystemEntries(folder).Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal)];
+
+    [Fact]
+    public void Generate_writes_what_emit_names_beside_the_ir_and_nothing_else()
+    {
+        using var folder = Emitting("""["json-schema"]""");
+
+        var (exitCode, output, error) = RunIn(folder.Path, "generate");
+
+        Assert.True(exitCode == 0, error);
+        Assert.Equal("haruspex: 1 procedure, 0 unknown(s). Wrote out/haruspex.ir.json and out/haruspex.jsonschema.json.\n", CliOutput.Shown(output, folder.Path));
+        Assert.Equal(["haruspex.ir.json", "haruspex.jsonschema.json"], Files(Path.Combine(folder.Path, "out")));
+
+        // The emitter's own output for the IR written, with the config file's objects.
+        var ir = IrJsonReader.Read(File.ReadAllText(Path.Combine(folder.Path, "out", HaruspexCli.IrFileName)));
+        Assert.Equal(
+            JsonSchemaEmitter.Emit(ir, new JsonSchemaOptions { Objects = JsonSchemaObjects.Strict }).Expected(),
+            File.ReadAllText(Path.Combine(folder.Path, "out", HaruspexCli.JsonSchemaFileName)));
+    }
+
+    [Fact]
+    public void Generate_writes_every_file_emit_names_the_same_bytes_each_time()
+    {
+        using var folder = Emitting("""["zod", "json-schema"]""");
+
+        var (exitCode, output, error) = RunIn(folder.Path, "generate");
+        var first = Files(Path.Combine(folder.Path, "out")).ToDictionary(f => f, f => File.ReadAllText(Path.Combine(folder.Path, "out", f)));
+        Assert.Equal(0, RunIn(folder.Path, "generate").ExitCode);
+
+        Assert.True(exitCode == 0, error);
+        Assert.Equal("haruspex: 1 procedure, 0 unknown(s). Wrote out/haruspex.ir.json, out/haruspex.zod.ts and out/haruspex.jsonschema.json.\n", CliOutput.Shown(output, folder.Path));
+        Assert.Equal(["haruspex.ir.json", "haruspex.jsonschema.json", "haruspex.zod.ts"], first.Keys);
+        Assert.All(first, f => Assert.Equal(f.Value, File.ReadAllText(Path.Combine(folder.Path, "out", f.Key))));
+    }
+
+    [Fact]
+    public void A_write_that_fails_on_the_last_file_puts_every_earlier_one_back_as_it_was()
+    {
+        using var folder = Emitting("""["zod", "json-schema"]""");
+        var outDir = Path.Combine(folder.Path, "out");
+        Directory.CreateDirectory(outDir);
+        File.WriteAllText(Path.Combine(outDir, HaruspexCli.IrFileName), "the old IR\n");
+        File.WriteAllText(Path.Combine(outDir, HaruspexCli.ZodFileName), "the old module\n");
+        Directory.CreateDirectory(Path.Combine(outDir, HaruspexCli.JsonSchemaFileName)); // a folder where the schema would go
+
+        var (exitCode, _, error) = RunIn(folder.Path, "generate");
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("haruspex: error HAR6008: cannot write to ", error, StringComparison.Ordinal);
+        Assert.Equal("the old IR\n", File.ReadAllText(Path.Combine(outDir, HaruspexCli.IrFileName)));
+        Assert.Equal("the old module\n", File.ReadAllText(Path.Combine(outDir, HaruspexCli.ZodFileName)));
+        Assert.Equal(["haruspex.ir.json", "haruspex.jsonschema.json", "haruspex.zod.ts"], Files(outDir));
     }
 
     [Fact]

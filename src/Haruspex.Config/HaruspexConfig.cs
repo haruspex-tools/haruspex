@@ -53,6 +53,12 @@ public sealed record HaruspexConfig
     /// <summary>How result objects treat keys their type does not list.</summary>
     public ObjectsPolicy Objects { get; init; } = ObjectsPolicy.Strip;
 
+    /// <summary>
+    /// What is written beside the IR (<c>emit</c>), in the order the file names them, each once: the Zod module unless the file
+    /// says otherwise.
+    /// </summary>
+    public EquatableArray<Emitter> Emitters { get; init; } = [Emitter.Zod];
+
     /// <summary>The naming rules every schema starts from (the top-level <c>naming</c>).</summary>
     public NamingRules Naming { get; init; } = NamingRules.Default;
 

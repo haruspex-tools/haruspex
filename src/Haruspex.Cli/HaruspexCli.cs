@@ -26,6 +26,7 @@ internal static class HaruspexCli
 
     public const string IrFileName = "haruspex.ir.json";
     public const string ZodFileName = "haruspex.zod.ts";
+    public const string JsonSchemaFileName = "haruspex.jsonschema.json";
 
     public static int Run(string[] args, TextWriter output, TextWriter error) =>
         Run(args, output, error, Directory.GetCurrentDirectory());
@@ -66,12 +67,12 @@ internal static class HaruspexCli
         {
             Module(
                 "generate",
-                "Infer the result shapes of procedures, and write the IR and a Zod module.",
+                "Infer the result shapes of procedures, and write the IR and what the config file's \"emit\" names: a Zod module by default, a JSON Schema document too or instead.",
                 request => ModuleSet.Run(request, Generate.Run, output, error),
                 workingDirectory),
             Module(
                 "check",
-                $"Infer as generate does, write nothing, and fail if {IrFileName} and {ZodFileName} in the output folder claim something else, saying what changed.",
+                $"Infer as generate does, write nothing, and fail if {IrFileName} and the files emitted beside it in the output folder claim something else, saying what changed.",
                 request => ModuleSet.Run(request, Check.Run, output, error),
                 workingDirectory),
         };
@@ -101,7 +102,7 @@ internal static class HaruspexCli
         };
         var outDirectory = new Option<string?>("--out", "-o")
         {
-            Description = $"The folder of {IrFileName} and {ZodFileName}. Overrides \"out\" in the config file.",
+            Description = $"The folder of {IrFileName} and the files emitted beside it. Overrides \"out\" in the config file.",
         };
 
         var command = new Command(name, description)

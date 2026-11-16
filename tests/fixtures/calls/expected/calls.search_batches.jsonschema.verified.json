@@ -4,7 +4,7 @@
   "$defs": {
     "SearchBatches": {
       "title": "calls.search_batches",
-      "description": "Returns rows.",
+      "description": "Returns rows. Declared by the config file (results): the search runs as dynamic SQL, with the product pattern as a parameter.",
       "type": "array",
       "items": {
         "$ref": "#/$defs/SearchBatchesRow"

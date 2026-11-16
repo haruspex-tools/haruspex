@@ -32,6 +32,9 @@ if (emitted is Succeeded<string> { Value: var schema })
     File.WriteAllText("haruspex.jsonschema.json", schema);
 ```
 
+From the command line, `"emit": ["zod", "json-schema"]` in `haruspex.json` writes it beside the Zod module
+([the configuration page](https://github.com/sharpblue/haruspex/blob/main/docs/configuration.md#what-is-written-emit)).
+
 A procedure's schema is the definition under its generated name, the name the Zod module exports it by, and its `title` is
 its name in the database. Here a basket, its lines nested by `FOR JSON`, and its status in a binary collation, where SQL Server
 ignores only trailing spaces:

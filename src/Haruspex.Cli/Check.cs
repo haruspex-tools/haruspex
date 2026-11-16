@@ -58,25 +58,29 @@ internal static class Check
     }
 
     /// <summary>
-    /// The module's differences from what is committed: each change of claim at its procedure; otherwise a module whose text
-    /// differs, line endings aside (git may convert them on checkout). Nothing to compare with is one error saying why.
+    /// The module's differences from what is committed: each change of claim at its procedure; otherwise each emitted file whose
+    /// text differs, line endings aside (git may convert them on checkout). Nothing to compare with is one error saying why.
     /// </summary>
     private static IEnumerable<Diagnostic> Differences(EmittedModule module) => Committed(module) switch
     {
-        Failed<(IrDocument Ir, string Zod)> failed => failed.Diagnostics,
-        Succeeded<(IrDocument Ir, string Zod)> { Value: var committed } => Differences(module, committed.Ir, committed.Zod),
+        Failed<(IrDocument Ir, IReadOnlyList<string> Files)> failed => failed.Diagnostics,
+        Succeeded<(IrDocument Ir, IReadOnlyList<string> Files)> { Value: var committed } => Differences(module, committed.Ir, committed.Files),
     };
 
-    private static IEnumerable<Diagnostic> Differences(EmittedModule module, IrDocument committed, string zod)
+    /// <param name="files">The committed text of each of the module's files, in <see cref="EmittedModule.Files"/>' order.</param>
+    private static IEnumerable<Diagnostic> Differences(EmittedModule module, IrDocument committed, IReadOnlyList<string> files)
     {
         var changes = IrComparison.Compare(committed, module.Document);
         if (changes.Count > 0)
             return changes.Select(change => At(module, Object(change, committed, module.Document), CliCodes.ClaimChanged, change.ToString()));
 
-        return FirstDifference(zod.Replace("\r\n", "\n", StringComparison.Ordinal), module.Zod) is not { } line
-            ? []
-            : [CliCodes.ModuleDiffers.At(new FileLocation(module.ZodPath),
-                $"line {line.Number} is {line.Committed} where haruspex now writes {line.Now}, though no claim the IR makes has changed. A comment written from a reason (why a value is unknown, why a result may be absent) changes so; so does a module another version of haruspex wrote, or one edited. Run haruspex generate, and read the change to the module before committing it.")];
+        return
+        [
+            .. module.Files.Zip(files).SelectMany(pair => FirstDifference(pair.Second.Replace("\r\n", "\n", StringComparison.Ordinal), pair.First.Text) is { } line
+                ? [CliCodes.ModuleDiffers.At(new FileLocation(module.PathOf(pair.First)),
+                    $"line {line.Number} is {line.Committed} where haruspex now writes {line.Now}, though no claim the IR makes has changed. A comment written from a reason (why a value is unknown, why a result may be absent) changes so; so does a module another version of haruspex wrote, or one edited. Run haruspex generate, and read the change to the module before committing it.")]
+                : Array.Empty<Diagnostic>()),
+        ];
     }
 
     /// <summary>The first line where the committed module and the one haruspex writes differ, each cut short and quoted; null when none does.</summary>
@@ -106,14 +110,17 @@ internal static class Check
     /// <summary>The most of a line a message quotes.</summary>
     private const int LineShown = 100;
 
-    /// <summary>The committed IR and module; or why there are none to compare with: missing, of another version, or not readable as IR.</summary>
-    private static Outcome<(IrDocument Ir, string Zod)> Committed(EmittedModule module)
+    /// <summary>
+    /// The committed IR and each of the module's files, in their order; or why there are none to compare with: missing, of another
+    /// version, or not readable as IR.
+    /// </summary>
+    private static Outcome<(IrDocument Ir, IReadOnlyList<string> Files)> Committed(EmittedModule module)
     {
-        var missing = new[] { module.IrPath, module.ZodPath }.Where(path => !File.Exists(path)).ToList();
+        var missing = module.Files.Select(module.PathOf).Prepend(module.IrPath).Where(path => !File.Exists(path)).ToList();
         if (missing.Count > 0)
         {
-            return ModuleRun.Refused<(IrDocument, string)>(CliCodes.NothingCommitted,
-                $"nothing to compare with: {string.Join(" and ", missing.Select(DiagnosticFormatter.PathAsShown))} {(missing.Count == 1 ? "isn't" : "aren't")} there. Run haruspex generate, read what it writes, and commit it.");
+            return ModuleRun.Refused<(IrDocument, IReadOnlyList<string>)>(CliCodes.NothingCommitted,
+                $"nothing to compare with: {EnglishList.Of([.. missing.Select(DiagnosticFormatter.PathAsShown)])} {(missing.Count == 1 ? "isn't" : "aren't")} there. Run haruspex generate, read what it writes, and commit it.");
         }
 
         var at = new FileLocation(module.IrPath);
@@ -122,19 +129,21 @@ internal static class Check
             var text = File.ReadAllText(module.IrPath);
             if (IrJsonReader.VersionOf(text) is { } version && !IrDocument.ReadableVersions.Contains(version, StringComparer.Ordinal))
             {
-                return new Failed<(IrDocument, string)>([CliCodes.CommittedOtherVersion.At(at,
-                    $"this file is IR {version}, and this haruspex writes IR {IrDocument.CurrentVersion}, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to {DiagnosticFormatter.PathAsShown(module.ZodPath)} before committing it, and commit both.")]);
+                var emitted = EnglishList.Of([.. module.Files.Select(f => DiagnosticFormatter.PathAsShown(module.PathOf(f)))]);
+                var commit = module.Files.Count == 1 ? "both" : "them all";
+                return new Failed<(IrDocument, IReadOnlyList<string>)>([CliCodes.CommittedOtherVersion.At(at,
+                    $"this file is IR {version}, and this haruspex writes IR {IrDocument.CurrentVersion}, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to {emitted} before committing it, and commit {commit}.")]);
             }
 
-            return new Succeeded<(IrDocument, string)>((IrJsonReader.Read(text), File.ReadAllText(module.ZodPath)));
+            return new Succeeded<(IrDocument, IReadOnlyList<string>)>((IrJsonReader.Read(text), [.. module.Files.Select(f => File.ReadAllText(module.PathOf(f)))]));
         }
         catch (IrFormatException e)
         {
-            return new Failed<(IrDocument, string)>([CliCodes.CommittedUnreadable.At(at, $"this file can't be read as IR: {e.Message} Run haruspex generate to write it again.")]);
+            return new Failed<(IrDocument, IReadOnlyList<string>)>([CliCodes.CommittedUnreadable.At(at, $"this file can't be read as IR: {e.Message} Run haruspex generate to write it again.")]);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            return new Failed<(IrDocument, string)>([CliCodes.CommittedUnreadable.At(at, $"this file can't be read: {e.Message}")]);
+            return new Failed<(IrDocument, IReadOnlyList<string>)>([CliCodes.CommittedUnreadable.At(at, $"this file can't be read: {e.Message}")]);
         }
     }
 

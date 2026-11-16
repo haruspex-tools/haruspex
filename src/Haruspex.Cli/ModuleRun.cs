@@ -1,6 +1,7 @@
 using Haruspex.Collections;
 using Haruspex.Config;
 using Haruspex.Diagnostics;
+using Haruspex.Emit.JsonSchema;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
@@ -199,17 +200,22 @@ internal static class ModuleRun
     }
 
     /// <summary>
-    /// The Zod module. The emitter knows no config file; what it refuses is a name or an import the file's settings made, so
-    /// it is reported against the file.
+    /// What each emitter the config file names gives (<see cref="HaruspexConfig.Emitters"/>), in its order. An emitter knows no
+    /// config file, so its settings are mapped across here; what it refuses is a name or an import the file's settings made, so it
+    /// is reported against the file.
     /// </summary>
     private static Outcome<EmittedModule> Emit((Plan Plan, SqlProject Project, IrDocument Document) inferred)
     {
         var (plan, project, document) = inferred;
-        var emitted = ZodEmitter.Emit(document, new ZodOptions
+        var strict = plan.Config.Objects == ObjectsPolicy.Strict;
+        var files = plan.Config.Emitters.Select(emitter => emitter switch
         {
-            Objects = plan.Config.Objects == ObjectsPolicy.Strict ? ZodObjects.Strict : ZodObjects.Strip,
+            Emitter.Zod => ZodEmitter.Emit(document, new ZodOptions { Objects = strict ? ZodObjects.Strict : ZodObjects.Strip })
+                .Select(text => new EmittedFile(HaruspexCli.ZodFileName, text)),
+            Emitter.JsonSchema => JsonSchemaEmitter.Emit(document, new JsonSchemaOptions { Objects = strict ? JsonSchemaObjects.Strict : JsonSchemaObjects.Strip })
+                .Select(text => new EmittedFile(HaruspexCli.JsonSchemaFileName, text)),
         });
-        return Located(emitted, plan.Config.Location).Select(zod => new EmittedModule(plan.Config, plan.Out, project, document, zod));
+        return Located(Outcome.All(files), plan.Config.Location).Select(emitted => new EmittedModule(plan.Config, plan.Out, project, document, emitted));
     }
 
     /// <summary>

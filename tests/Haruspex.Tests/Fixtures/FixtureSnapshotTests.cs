@@ -16,9 +16,13 @@ public class FixtureSnapshotTests
 {
     private static readonly IReadOnlyList<Fixture> Fixtures = [.. Fixture.All.Where(f => !f.IsProject)];
 
-    /// <summary>The two files <c>haruspex generate</c> writes, which a project fixture's <c>expected/</c> holds.</summary>
-    private static readonly (string Written, string Snapshot, string Extension)[] ProjectOutputs =
-        [("haruspex.ir.json", "haruspex.ir", "json"), ("haruspex.zod.ts", "haruspex.zod", "ts")];
+    /// <summary>The files <c>haruspex generate</c> writes with a project fixture's config, which its <c>expected/</c> holds: the IR and what it emits.</summary>
+    private static IEnumerable<(string Written, string Snapshot, string Extension)> ProjectOutputs(Fixture project) =>
+        ConfigReader.Read(project.Config!).Expected().Emitters.Select(emitter => emitter switch
+        {
+            Emitter.Zod => (HaruspexCli.ZodFileName, "haruspex.zod", "ts"),
+            Emitter.JsonSchema => (HaruspexCli.JsonSchemaFileName, "haruspex.jsonschema", "json"),
+        }).Prepend((HaruspexCli.IrFileName, "haruspex.ir", "json"));
 
     /// <summary>What each of a procedure's snapshots ends with: its IR, its Zod and its JSON Schema.</summary>
     private static readonly string[] SnapshotSuffixes = [".ir.verified.json", ".zod.verified.ts", ".jsonschema.verified.json"];
@@ -66,10 +70,10 @@ public class FixtureSnapshotTests
         var exitCode = HaruspexCli.Run(["generate", "--out", outDir.Path], output, error, project.Folder);
 
         Assert.True(exitCode == 0, error.ToString());
-        foreach (var (written, snapshot, extension) in ProjectOutputs)
+        foreach (var (written, snapshot, extension) in ProjectOutputs(project))
             Snapshot.Match(File.ReadAllText(Path.Combine(outDir.Path, written)), project.Expected, snapshot, extension);
         Assert.Equal(
-            ProjectOutputs.Select(o => $"{o.Snapshot}.verified.{o.Extension}").Order(StringComparer.Ordinal),
+            ProjectOutputs(project).Select(o => $"{o.Snapshot}.verified.{o.Extension}").Order(StringComparer.Ordinal),
             Reviewed(project.Expected));
     }
 

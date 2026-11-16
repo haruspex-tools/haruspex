@@ -12,7 +12,7 @@ namespace Haruspex.Tests.Emit.JsonSchema;
 public class JsonSchemaThroughTheFileTests
 {
     public static TheoryData<string> Snapshots { get; } =
-        [.. Fixture.All.SelectMany(f => f.JsonSchemaSnapshots).Where(s => File.Exists(s.JsonSchema)).Select(s => Path.GetRelativePath(RepositoryPaths.Fixtures, s.Ir))];
+        [.. Fixture.All.SelectMany(f => f.JsonSchemaSnapshots).Select(s => Path.GetRelativePath(RepositoryPaths.Fixtures, s.Ir))];
 
     [Theory]
     [MemberData(nameof(Snapshots))]
@@ -25,6 +25,10 @@ public class JsonSchemaThroughTheFileTests
 
         Assert.Equal(File.ReadAllText(schema), emitted);
     }
+
+    [Fact]
+    public void Every_committed_ir_file_has_its_json_schema_beside_it() =>
+        Assert.All(Fixture.All.SelectMany(f => f.JsonSchemaSnapshots), s => Assert.True(File.Exists(s.JsonSchema), $"{s.Ir} has no {Path.GetFileName(s.JsonSchema)} beside it."));
 
     /// <summary>The emitter's settings as the CLI takes them from a project's config file; the defaults otherwise.</summary>
     private static JsonSchemaOptions Options(Fixture fixture) =>

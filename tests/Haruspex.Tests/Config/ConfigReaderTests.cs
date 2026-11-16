@@ -112,6 +112,13 @@ public class ConfigReaderTests
         Assert.Null(config.Out);
     }
 
+    [Theory]
+    [InlineData("""{}""", new[] { Emitter.Zod })]
+    [InlineData("""{ "emit": ["json-schema"] }""", new[] { Emitter.JsonSchema })]
+    [InlineData("""{ "emit": ["json-schema", "zod"] }""", new[] { Emitter.JsonSchema, Emitter.Zod })]
+    public void What_is_emitted_is_the_zod_unless_the_file_names_its_emitters(string text, Emitter[] emitters) =>
+        Assert.Equal(emitters, Read(text).Expected().Emitters);
+
     [Fact]
     public void A_byte_order_mark_is_allowed()
     {
@@ -151,14 +158,20 @@ public class ConfigReaderTests
     {
         // The file as a whole, and its settings' types.
         { "[]", "haruspex.json:1:1: error HAR3005: must be an object." },
-        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, references, collation, out, schemas, objects, naming, procedures, session, check." },
-        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, references, collation, out, schemas, objects, naming, procedures, session, check." },
+        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, references, collation, out, schemas, objects, emit, naming, procedures, session, check." },
+        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, references, collation, out, schemas, objects, emit, naming, procedures, session, check." },
         { """{ "$schema": 1 }""", "haruspex.json:1:14: error HAR3005: $schema: must be a string." },
         { """{ "source": "" }""", "haruspex.json:1:13: error HAR3005: source: must not be empty." },
         { """{ "out": 3 }""", "haruspex.json:1:10: error HAR3005: out: must be a string." },
         { """{ "references": "lib" }""", "haruspex.json:1:17: error HAR3005: references: must be an array of folders to look for referenced DACPACs in, such as \"../shared/bin/Release\"." },
         { """{ "references": ["no/such/folder"] }""", "haruspex.json:1:18: error HAR3021: references[0]: \"no/such/folder\" is not a folder, so no referenced DACPAC can be found in it." },
         { """{ "objects": "loose" }""", "haruspex.json:1:14: error HAR3005: objects: must be \"strip\" or \"strict\", not \"loose\"." },
+
+        // What generate writes beside the IR.
+        { """{ "emit": "zod" }""", "haruspex.json:1:11: error HAR3005: emit: must be an array of what to write beside the IR: \"zod\", \"json-schema\" or both." },
+        { """{ "emit": [] }""", "haruspex.json:1:11: error HAR3005: emit: must name at least one emitter; with none, generate would write the IR alone. Use [\"zod\"], the default, or leave it out." },
+        { """{ "emit": ["typescript"] }""", "haruspex.json:1:12: error HAR3005: emit[0]: must be \"zod\" or \"json-schema\", not \"typescript\"." },
+        { """{ "emit": ["zod", "zod"] }""", "haruspex.json:1:19: error HAR3005: emit[1]: names \"zod\" again; each emitter is listed once." },
 
         // What check does beyond comparing.
         { """{ "check": { "unknowns": "warn" } }""", "haruspex.json:1:26: error HAR3005: check.unknowns: must be \"report\" or \"fail\", not \"warn\"." },

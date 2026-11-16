@@ -4,7 +4,7 @@
   "$defs": {
     "SearchWithOvens": {
       "title": "calls.search_with_ovens",
-      "description": "Returns 2 result sets: rows; rows.",
+      "description": "Returns 2 result sets: rows; rows. Declared by the config file (results, through calls.search_batches): the search runs as dynamic SQL, with the product pattern as a parameter.",
       "type": "array",
       "prefixItems": [
         {

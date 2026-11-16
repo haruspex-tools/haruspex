@@ -5,6 +5,7 @@
   "collation": "Latin1_General_100_CI_AS",
   "out": "generated",
   "objects": "strip",
+  "emit": ["zod", "json-schema"],
   "check": { "unknowns": "fail" },
   "session": { "ansiWarnings": true, "arithAbort": true, "concatNullYieldsNull": true, "numericRoundAbort": false },
   "naming": {

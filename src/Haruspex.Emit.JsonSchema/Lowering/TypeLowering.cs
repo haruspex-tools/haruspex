@@ -9,7 +9,8 @@ namespace Haruspex.Emit.JsonSchema.Lowering;
 /// text. Named object types are referenced by <c>$ref</c>, so recursion needs nothing more.
 /// </summary>
 /// <param name="unknowns">What the document says about each unknown, for the note on its schema.</param>
-internal sealed class TypeLowering(UnknownDetails unknowns)
+/// <param name="declared">The claims the config file made, for the note on the field each is at.</param>
+internal sealed class TypeLowering(UnknownDetails unknowns, DeclaredClaims declared)
 {
     /// <summary>The schema of a value of <paramref name="type"/> that is not null.</summary>
     /// <param name="place">Where the value is, for an unknown's note; null when the type has no place in the IR (built by hand).</param>
@@ -35,11 +36,16 @@ internal sealed class TypeLowering(UnknownDetails unknowns)
     /// </summary>
     public Schema Field(IrField field, Place? place)
     {
-        var value = Type(field.Type, place?.Then(new IrPathKey(field.Name)));
-        return field.Presence == IrPresence.OmittedWhenNull
+        var at = place?.Then(new IrPathKey(field.Name));
+        var value = Type(field.Type, at);
+        var schema = field.Presence == IrPresence.OmittedWhenNull
             ? value.Noted(Notes(Origins.Nulls("Left out when null", field.NullableBecause)))
             : Nullable(value, field.NullableBecause);
+        return schema.Noted(declared.At(at));
     }
+
+    /// <summary>The notes of the claims the config file made at <paramref name="place"/>, such as a procedure's declared results.</summary>
+    public IEnumerable<SchemaNote> Declared(Place place) => declared.At(place);
 
     /// <summary>Whether a field's key is always there: in a rowset, and in JSON when its value is never null.</summary>
     public static bool IsRequired(IrField field) => field.Presence == IrPresence.Always || !field.Nullable;

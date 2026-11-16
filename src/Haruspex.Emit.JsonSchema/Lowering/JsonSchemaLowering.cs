@@ -16,7 +16,7 @@ internal static class JsonSchemaLowering
     {
         ArgumentNullException.ThrowIfNull(plan);
         var unknowns = new UnknownDetails(plan.Document);
-        var types = new TypeLowering(unknowns);
+        var types = new TypeLowering(unknowns, new DeclaredClaims(plan.Document));
         List<SchemaProperty> definitions =
         [
             .. plan.Entries.Select(entry => entry switch
@@ -137,7 +137,7 @@ internal static class JsonSchemaLowering
             [var single] => new SchemaNote($"Returns {Describe(single)}."),
             var many => new SchemaNote($"Returns {many.Count} result sets: {string.Join("; ", many.Select(Describe))}."),
         };
-        return schema.With(Keyword.Title, new SchemaValue.Text(obj.Id)) with { Notes = [summary, .. schema.Notes] };
+        return schema.With(Keyword.Title, new SchemaValue.Text(obj.Id)) with { Notes = [summary, .. types.Declared(results), .. schema.Notes] };
     }
 
     /// <summary>
