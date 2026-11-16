@@ -131,6 +131,7 @@ public partial class JsonTracingTests
         Assert.Equal(IrScalarKind.Number, Assert.IsType<IrScalar>(Field(doc, "n").Type).Kind);
         Assert.Contains("loop", Unknown(doc, "x").Detail, StringComparison.Ordinal);
     }
+
     [Fact]
     public void A_variable_assigned_coalesce_over_json_holds_its_content_whether_or_not_the_server_folds_it()
     {
