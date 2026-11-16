@@ -8,7 +8,9 @@ namespace Haruspex.Tests.Documentation;
 /// The project README's showcase: an example over each of Microsoft's vendored samples, written for the README over the
 /// sample's own tables. <see cref="WorkedExampleTests"/> holds each to what haruspex infers over the whole sample. These tests
 /// hold each to a real server too: its SQL is a fixture the differential tests deploy, seed and call, and that fixture's
-/// snapshot is the README's Zod, so the fixture's copy of the sample's tables types the example as the sample does.
+/// snapshot is the README's Zod, so the fixture's copy of the sample's tables types the example as the sample does. The
+/// function the README shows beside the Zod is called on the server too, as every fixture's procedures are
+/// (<c>GeneratedFunctionTests</c>).
 /// </summary>
 public partial class ShowcaseTests
 {
@@ -27,6 +29,10 @@ public partial class ShowcaseTests
     [Fact]
     public void The_readme_shows_an_example_over_each_vendored_sample() =>
         Assert.Equal(SampleCorpus.All.Select(c => c.Name).Order(StringComparer.Ordinal), Showcase.Select(e => e.Over).Order(StringComparer.Ordinal));
+
+    [Fact]
+    public void The_readme_shows_the_function_generated_for_a_showcase_example_beside_its_zod() =>
+        Assert.Contains(Showcase, e => e.Outputs.Any(o => o.Kind == WorkedExample.OutputKind.Mssql) && e.Outputs.Any(o => o.Kind == WorkedExample.OutputKind.Zod));
 
     [Theory]
     [MemberData(nameof(Examples))]

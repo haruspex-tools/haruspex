@@ -8,10 +8,11 @@ namespace Haruspex.DifferentialTests;
 /// <summary>
 /// The generated Zod meets the mssql driver: procedures returning each form of JSON are created, inferred and emitted, then
 /// called through the driver as an application calls them, with <c>parseJSON</c> on and off, and what the application reads
-/// is parsed with the schema emitted for each. A JSON result is read with the project's README's own code, taken from it
-/// (<see cref="ReadmeReads"/>), so that the code a reader pastes is what is proved: with <c>parseJSON</c>, the result set's
+/// is parsed with the schema emitted for each. A JSON result is read with the code the documentation gives an application
+/// that calls the driver itself, taken from its page (<see cref="PageReads"/>), so that the code a reader pastes is what is
+/// proved: with <c>parseJSON</c>, the result set's
 /// one row, null when no rows matched or when the result set didn't arrive; without it, that row's text, parsed, or null.
-/// <c>MssqlDriverObservationTests</c> holds what the driver hands over; this holds the schemas, and the README, to it.
+/// <c>MssqlDriverObservationTests</c> holds what the driver hands over; this holds the schemas, and the page, to it.
 /// </summary>
 public partial class MssqlDriverAcceptanceTests(SqlServerFixture server)
 {
@@ -103,27 +104,30 @@ public partial class MssqlDriverAcceptanceTests(SqlServerFixture server)
 
     private static readonly bool[] ParseJsonModes = [true, false];
 
+    /// <summary>The page that shows an application calling the driver itself, with the reads this test runs.</summary>
+    private const string Page = "docs/database-module.md";
+
     /// <summary>
-    /// The README's reads of <c>Website.GetOrder</c>'s FOR JSON result, in its section on validating results at the seam, as
+    /// The page's reads of <c>Website.GetOrder</c>'s FOR JSON result, in its section on calling the driver yourself, as
     /// bodies of a JavaScript function of <c>result</c>: with <c>parseJSON</c>, what it hands the schema; without, its line
     /// taking the text (its type annotation dropped), then what it hands the schema.
     /// </summary>
-    private static (string ParseJson, string Text) ReadmeReads()
+    private static (string ParseJson, string Text) PageReads()
     {
-        var readme = File.ReadAllText(Path.Combine(RepositoryPaths.Root, "README.md"));
-        var parsed = ParsedInReadme().Matches(readme);
-        var text = TextInReadme().Match(readme);
+        var page = File.ReadAllText(Path.Combine(RepositoryPaths.Root, Page));
+        var parsed = ParsedOnPage().Matches(page);
+        var text = TextOnPage().Match(page);
         Assert.True(
             parsed.Count == 2 && text.Success,
-            "README.md doesn't read GetOrder's result in the two forms this test runs: a line `const text: string = …` and two lines `return GetOrderSchema.parse(…)`.");
+            $"{Page} doesn't read GetOrder's result in the two forms this test runs: a line `const text: string = …` and two lines `return GetOrderSchema.parse(…)`.");
         return ($"return {parsed[0].Groups[1].Value}", $"const text = {text.Groups[1].Value}\nreturn {parsed[1].Groups[1].Value}");
     }
 
     [GeneratedRegex(@"^\s*return GetOrderSchema\.parse\((.+)\)$", RegexOptions.Multiline)]
-    private static partial Regex ParsedInReadme();
+    private static partial Regex ParsedOnPage();
 
     [GeneratedRegex(@"^const text: string = (.+)$", RegexOptions.Multiline)]
-    private static partial Regex TextInReadme();
+    private static partial Regex TextOnPage();
 
     [Fact]
     public async Task The_generated_zod_accepts_what_the_driver_hands_over_with_parse_json_on_and_off()
@@ -132,7 +136,7 @@ public partial class MssqlDriverAcceptanceTests(SqlServerFixture server)
             "shop.*",
             [("schema.sql", Schema), ("stock_item.sql", StockItem), .. Procedures.Select(p => ($"{p.Key}.sql", p.Value))]);
         var module = ZodEmitter.Emit(document).Expected();
-        var (readParsed, readText) = ReadmeReads();
+        var (readParsed, readText) = PageReads();
 
         // Every second item has no colour, which FOR JSON leaves out. Another fixture may have made the schema already.
         string[] setup =

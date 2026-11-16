@@ -54,8 +54,9 @@ haruspex check --all                                 # every haruspex.json below
 haruspex generate -c plugins/orders/haruspex.json -c plugins/returns/haruspex.json
 ```
 
-`generate` writes `haruspex.ir.json` to the output folder, and beside it what the config file's `emit` names: `haruspex.zod.ts`,
-the default, `haruspex.jsonschema.json`, or both ([the configuration page](../../docs/configuration.md#what-is-written-emit)).
+`generate` writes `haruspex.ir.json` to the output folder, and beside it what the config file's `emit` names: `haruspex.zod.ts`
+(the default), `haruspex.jsonschema.json` and `haruspex.mssql.ts`, the database module's functions
+([the configuration page](../../docs/configuration.md#what-is-written-emit)).
 `check` infers the same way, writes nothing, and compares with the files committed there. Both take:
 
 | Argument or option | What it is |
