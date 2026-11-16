@@ -33,7 +33,7 @@ model of expressions to lower: a function's code is the same for every procedure
 
 ```csharp
 var document = IrJsonReader.Read(File.ReadAllText("haruspex.ir.json"));
-if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zod" }) is Succeeded<string> { Value: var module })
+if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zod.js" }) is Succeeded<string> { Value: var module })
     File.WriteAllText("haruspex.mssql.ts", module);
 ```
 

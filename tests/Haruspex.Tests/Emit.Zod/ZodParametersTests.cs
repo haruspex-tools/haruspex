@@ -78,7 +78,7 @@ public class ZodParametersTests
 
     [Theory]
     [InlineData(IrByteEncoding.SingleByte, "code page")]
-    [InlineData(IrByteEncoding.Utf8, "UTF-8")]
+    [InlineData(IrByteEncoding.DoubleByte, "error 8016")]
     [InlineData(IrByteEncoding.Unknown, "isn't declared")]
     public void A_length_in_bytes_is_checked_in_characters_and_says_what_more_the_server_may_change(IrByteEncoding encoding, string says)
     {
@@ -86,6 +86,12 @@ public class ZodParametersTests
 
         Assert.Matches($@"/\*\* [^\n]*{Regex.Escape(says)}[^\n]*\*/\n  v: z\.string\(\)\.refine\(\(value\) => value\.length <= 20, [^\n]*\)\.nullable\(\),", ts);
     }
+
+    [Fact]
+    public void A_length_in_bytes_of_utf8_is_checked_in_bytes_exactly() =>
+        Assert.Equal(
+            "z.string().refine((value) => new TextEncoder().encode(value).length <= 20, { error: \"More than 20 bytes of UTF-8, which nvarchar would cut short\" })",
+            Schema(Text(20, IrLengthUnit.Bytes, encoding: IrByteEncoding.Utf8)));
 
     [Fact]
     public void A_string_of_no_length_is_any_string() =>
@@ -121,12 +127,12 @@ public class ZodParametersTests
 
     [Theory]
     [InlineData("date", IrScalarKind.Date, null, "z.iso.date()")]
-    [InlineData("time(0)", IrScalarKind.Time, null, @"z.iso.time().regex(/^\d{2}:\d{2}:\d{2}$/)")]
-    [InlineData("time(3)", IrScalarKind.Time, null, @"z.iso.time().regex(/^\d{2}:\d{2}:\d{2}(\.\d{1,3})?$/)")]
-    [InlineData("datetime2(7)", IrScalarKind.Datetime, IrFormat.Local, @"z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,7})?$/)")]
-    [InlineData("datetimeoffset(0)", IrScalarKind.Datetime, IrFormat.Offset, @"z.iso.datetime({ offset: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/)")]
-    [InlineData("datetime", IrScalarKind.Datetime, IrFormat.Local, @"z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d(\d[037]?)?)?$/).refine((value) => value >= ""1753-01-01"", { error: ""Before 1753-01-01, the earliest datetime"" })")]
-    [InlineData("smalldatetime", IrScalarKind.Datetime, IrFormat.Local, @"z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/).refine((value) => value >= ""1900-01-01"" && value <= ""2079-06-06T23:59:00"", { error: ""Outside 1900-01-01 to 2079-06-06T23:59:00, the range of smalldatetime"" })")]
+    [InlineData("time(0)", IrScalarKind.Time, null, @"z.iso.time().regex(/^\d{2}:\d{2}:\d{2}$/, { error: ""Expected a time(0) such as 08:30:00, in whole seconds"" })")]
+    [InlineData("time(3)", IrScalarKind.Time, null, @"z.iso.time().regex(/^\d{2}:\d{2}:\d{2}(\.\d{1,3})?$/, { error: ""Expected a time(3) such as 08:30:00, with at most 3 digits of a second"" })")]
+    [InlineData("datetime2(7)", IrScalarKind.Datetime, IrFormat.Local, @"z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,7})?$/, { error: ""Expected a datetime2(7) such as 2026-11-16T08:30:00, with at most 7 digits of a second and no offset"" })")]
+    [InlineData("datetimeoffset(0)", IrScalarKind.Datetime, IrFormat.Offset, @"z.iso.datetime({ offset: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/, { error: ""Expected a datetimeoffset(0) such as 2026-11-16T08:30:00+05:30, in whole seconds and an offset"" })")]
+    [InlineData("datetime", IrScalarKind.Datetime, IrFormat.Local, @"z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d(\d[037]?)?)?$/, { error: ""Expected a datetime such as 2026-11-16T08:30:00.997, with no offset, in thousandths of a second that end in 0, 3 or 7"" }).refine((value) => value >= ""1753-01-01"", { error: ""Before 1753-01-01, the earliest datetime"" })")]
+    [InlineData("smalldatetime", IrScalarKind.Datetime, IrFormat.Local, @"z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/, { error: ""Expected a smalldatetime such as 2026-11-16T08:30:00, in whole minutes, with no offset"" }).refine((value) => value >= ""1900-01-01"" && value <= ""2079-06-06T23:59:00"", { error: ""Outside 1900-01-01 to 2079-06-06T23:59:00, the range of smalldatetime"" })")]
     public void A_date_and_time_is_an_iso_string_of_the_form_and_range_its_type_holds_exactly(string sql, IrScalarKind kind, IrFormat? format, string schema) =>
         Assert.Equal(schema, Schema(new IrScalar(kind, format, sql)));
 

@@ -22,7 +22,7 @@ export type StatusTotalsRow = z.infer<typeof StatusTotalsRowSchema>
 
 /** desk.status_totals: its parameters, checked before anything is sent. */
 export const StatusTotalsParamsSchema = z.strictObject({
-  /** char(1) counts bytes and its collation isn't declared, so a value of fewer than 1 characters may still be cut short, and a character its code page lacks is replaced. */
+  /** char(1) counts bytes and its collation isn't declared, so a value of 1 characters or fewer may take more; its function sends it as char(1), and the server refuses it (error 8016), where sent otherwise it is cut short. A character its code page lacks is replaced. */
   status: z.string().refine((value) => value.length <= 1, { error: "More than 1 UTF-16 code units, which char(1) would cut short" }).nullable().optional(),
 })
 export type StatusTotalsParams = z.infer<typeof StatusTotalsParamsSchema>

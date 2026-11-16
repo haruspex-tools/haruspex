@@ -3,7 +3,7 @@
 // goes in and what comes back. They belong on the server, which holds the connection and its credentials.
 import 'server-only'
 import sql from 'mssql'
-import type * as types from './haruspex.zod'
+import type * as types from './haruspex.zod.js'
 import {
   AdminSalesSchema,
   BasketLineRowParamsSchema,
@@ -11,7 +11,7 @@ import {
   BasketParamsSchema,
   BasketSchema,
   ListProductsSchema,
-} from './haruspex.zod'
+} from './haruspex.zod.js'
 
 /** Anything that makes an mssql request: a ConnectionPool, a Transaction, or a test double. */
 export interface Queryable {

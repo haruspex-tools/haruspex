@@ -177,6 +177,12 @@ public partial class MssqlEmitterTests
     }
 
     [Fact]
+    public void The_schemas_are_imported_by_the_file_they_compile_to_by_default() =>
+
+        // An ECMAScript module needs the .js, which TypeScript maps to the .ts under every module resolution.
+        Assert.Contains("} from './haruspex.zod.js'\n", Emitted(Procedure("P", [], Rows)), StringComparison.Ordinal);
+
+    [Fact]
     public void Server_only_is_imported_first_when_asked_and_never_otherwise()
     {
         var document = Document(Procedure("P", [], Rows));

@@ -7,10 +7,10 @@ namespace Haruspex.Emit.Mssql;
 public sealed record MssqlOptions
 {
     /// <summary>
-    /// The module the functions import their schemas and types from, as an import specifier: <c>./haruspex.zod</c>, the Zod module
+    /// The module the functions import their schemas and types from, as an import specifier: <c>./haruspex.zod.js</c>, the Zod module
     /// the CLI writes beside them. It must declare the names <see cref="SchemaModuleNames"/> gives.
     /// </summary>
-    public string SchemaModule { get; init; } = "./haruspex.zod";
+    public string SchemaModule { get; init; } = "./haruspex.zod.js";
 
     /// <summary>
     /// Whether the module starts with <c>import 'server-only'</c>, which makes a Next.js build fail where browser code imports it.

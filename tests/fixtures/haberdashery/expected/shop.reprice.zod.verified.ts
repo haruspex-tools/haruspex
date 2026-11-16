@@ -24,7 +24,7 @@ export type RepriceResult2Row = z.infer<typeof RepriceResult2RowSchema>
 
 /** shop.reprice: its parameters, checked before anything is sent. */
 export const RepriceParamsSchema = z.strictObject({
-  /** varchar(12) counts bytes and its collation isn't declared, so a value of fewer than 12 characters may still be cut short, and a character its code page lacks is replaced. */
+  /** varchar(12) counts bytes and its collation isn't declared, so a value of 12 characters or fewer may take more; its function sends it as varchar(12), and the server refuses it (error 8016), where sent otherwise it is cut short. A character its code page lacks is replaced. */
   sku: z.string().refine((value) => value.length <= 12, { error: "More than 12 UTF-16 code units, which varchar(12) would cut short" }).nullable(),
 })
 export type RepriceParams = z.infer<typeof RepriceParamsSchema>

@@ -24,6 +24,11 @@ public class EmitCheckTests
         Assert.True(
             EmitCheckPackage.TryRun("node", [Path.Combine("node_modules", "typescript", "bin", "tsc"), "--noEmit", "-p", "."], RepositoryPaths.EmitCheck, out var tscOutput, out var tscWhy),
             $"tsc rejected the generated Zod ({tscWhy}):\n{tscOutput}");
+
+        // And as a Node project of ECMAScript modules compiles them, where an import must name its file.
+        Assert.True(
+            EmitCheckPackage.TryRun("node", [Path.Combine("node_modules", "typescript", "bin", "tsc"), "--noEmit", "-p", "tsconfig.nodenext.json"], RepositoryPaths.EmitCheck, out var nodeOutput, out var nodeWhy),
+            $"tsc rejected the generated modules under nodenext ({nodeWhy}):\n{nodeOutput}");
     }
 
     /// <summary>
@@ -58,7 +63,7 @@ public class EmitCheckTests
         foreach (var fixture in Fixture.All.Where(f => !f.IsProject))
         {
             File.WriteAllText(Path.Combine(generated, $"{fixture.Name}.zod.ts"), ZodEmitter.Emit(fixture.Ir).Expected());
-            var options = new MssqlOptions { SchemaModule = $"./{fixture.Name}.zod", IsReserved = TypeScriptNames.IsReserved };
+            var options = new MssqlOptions { SchemaModule = $"./{fixture.Name}.zod.js", IsReserved = TypeScriptNames.IsReserved };
             File.WriteAllText(Path.Combine(generated, $"{fixture.Name}.mssql.ts"), MssqlEmitter.Emit(fixture.Ir, options).Expected());
         }
 

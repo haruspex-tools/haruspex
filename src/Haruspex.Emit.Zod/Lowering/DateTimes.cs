@@ -37,18 +37,23 @@ internal static partial class DateTimes
         var type = scalar.Sql is { } sql ? Spelling().Match(sql) : Match.Empty;
         var name = type.Success ? type.Groups["name"].Value : null;
         var scale = type.Groups["scale"].Success ? int.Parse(type.Groups["scale"].Value, CultureInfo.InvariantCulture) : (int?)null;
+        // Each form has its own error, which says what was expected: a caller who sent toISOString()'s output reads that, rather
+        // than the pattern.
         return (name, scale) switch
         {
             ("date", null) => Iso("date"),
-            ("time", { } n) => Iso("time").Then("regex", new Pattern(Clock + Fraction(n))),
-            ("datetime2", { } n) => Local().Then("regex", new Pattern(Day + "T" + Clock + Fraction(n))),
-            ("datetimeoffset", { } n) => Iso("datetime", Option("offset")).Then("regex", new Pattern(Day + "T" + Clock + Fraction(n) + @"(Z|[+-]\d{2}:\d{2})")),
+            ("time", { } n) => Iso("time").Then("regex", new Pattern(Clock + Fraction(n)), Error($"Expected a time({Count(n)}) such as 08:30:00, {Seconds(n)}")),
+            ("datetime2", { } n) => Local().Then("regex", new Pattern(Day + "T" + Clock + Fraction(n)), Error($"Expected a datetime2({Count(n)}) such as 2026-11-16T08:30:00, {Seconds(n)} and no offset")),
+            ("datetimeoffset", { } n) => Iso("datetime", Option("offset")).Then(
+                "regex",
+                new Pattern(Day + "T" + Clock + Fraction(n) + @"(Z|[+-]\d{2}:\d{2})"),
+                Error($"Expected a datetimeoffset({Count(n)}) such as 2026-11-16T08:30:00+05:30, {Seconds(n)} and an offset")),
 
             // Three-hundredths of a second, which are .xx0, .xx3 and .xx7 written to three places; and 9999-12-31T23:59:59.997, the
             // greatest datetime, is the greatest value of this form, so only the least needs a check.
-            ("datetime", null) => Local().Then("regex", new Pattern(Day + "T" + Clock + @"(\.\d(\d[037]?)?)?"))
+            ("datetime", null) => Local().Then("regex", new Pattern(Day + "T" + Clock + @"(\.\d(\d[037]?)?)?"), Error("Expected a datetime such as 2026-11-16T08:30:00.997, with no offset, in thousandths of a second that end in 0, 3 or 7"))
                 .Then("refine", new TextRange("1753-01-01", null), Error("Before 1753-01-01, the earliest datetime")),
-            ("smalldatetime", null) => Local().Then("regex", new Pattern(Day + @"T\d{2}:\d{2}:00"))
+            ("smalldatetime", null) => Local().Then("regex", new Pattern(Day + @"T\d{2}:\d{2}:00"), Error("Expected a smalldatetime such as 2026-11-16T08:30:00, in whole minutes, with no offset"))
                 .Then("refine", new TextRange("1900-01-01", "2079-06-06T23:59:00"), Error("Outside 1900-01-01 to 2079-06-06T23:59:00, the range of smalldatetime")),
             _ => Unknown(scalar),
         };
@@ -67,6 +72,11 @@ internal static partial class DateTimes
             ? format
             : new Noted(format, new ZodNote($"{scalar.Sql ?? "Its type"} isn't a type this module knows the precision of, so a finer fraction may be rounded without an error."));
     }
+
+    /// <summary>What a type of <paramref name="scale"/> takes of a second, said: whole seconds, or at most so many digits.</summary>
+    private static string Seconds(int scale) => scale == 0 ? "in whole seconds" : $"with at most {Count(scale)} digits of a second";
+
+    private static string Count(int value) => value.ToString(CultureInfo.InvariantCulture);
 
     /// <summary>Up to <paramref name="scale"/> digits of a second, or none.</summary>
     private static string Fraction(int scale) => scale == 0 ? "" : $@"(\.\d{{1,{scale.ToString(CultureInfo.InvariantCulture)}}})?";

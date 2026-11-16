@@ -2,12 +2,12 @@
 // The database module's functions: one for each procedure, which calls it through the mssql driver, checking what
 // goes in and what comes back. They belong on the server, which holds the connection and its credentials.
 import sql from 'mssql'
-import type * as types from './haruspex.zod'
+import type * as types from './haruspex.zod.js'
 import {
   GetPlantParamsSchema,
   GetPlantSchema,
   ListPlantsSchema,
-} from './haruspex.zod'
+} from './haruspex.zod.js'
 
 /** Anything that makes an mssql request: a ConnectionPool, a Transaction, or a test double. */
 export interface Queryable {

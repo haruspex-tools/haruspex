@@ -124,6 +124,13 @@ internal abstract record ZodExpression
     /// <param name="Greatest">The greatest value, as decimal text.</param>
     public sealed record IntegerTextRange(string Least, string Greatest) : ZodExpression;
 
+    /// <summary>
+    /// A predicate on a string, <c>(value) =&gt; new TextEncoder().encode(value).length &lt;= n</c>, for <c>.refine</c>: at most
+    /// <paramref name="Bytes"/> bytes of UTF-8, as a <c>varchar(n)</c> in a UTF-8 collation counts them.
+    /// </summary>
+    /// <param name="Bytes">The most bytes.</param>
+    public sealed record Utf8BytesAtMost(int Bytes) : ZodExpression;
+
     /// <summary>A number argument that is a power of ten, such as a decimal's step: <c>1</c>, <c>1e-2</c>.</summary>
     /// <param name="Exponent">The power, zero or less for a step.</param>
     public sealed record PowerOfTen(int Exponent) : ZodExpression;

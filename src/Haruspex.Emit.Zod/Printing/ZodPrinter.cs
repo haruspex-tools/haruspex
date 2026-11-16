@@ -132,6 +132,7 @@ internal static class ZodPrinter
                 range.Least is { } least ? "value >= " + DoubleQuoted(least) : null,
                 range.Greatest is { } greatest ? "value <= " + DoubleQuoted(greatest) : null,
             }.OfType<string>()),
+            ZodExpression.Utf8BytesAtMost bytes => "(value) => new TextEncoder().encode(value).length <= " + bytes.Bytes.ToString(CultureInfo.InvariantCulture),
             ZodExpression.UnitsAtMost units => "(value) => value.length <= " + units.Units.ToString(CultureInfo.InvariantCulture),
             ZodExpression.IntegerTextRange integers => "(value) => /^-?\\d+$/.test(value) && BigInt(value) >= " + integers.Least + "n && BigInt(value) <= " + integers.Greatest + "n",
             ZodExpression.PowerOfTen power => power.Exponent == 0 ? "1" : "1e" + power.Exponent.ToString(CultureInfo.InvariantCulture),

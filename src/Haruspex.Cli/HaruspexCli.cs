@@ -35,10 +35,11 @@ internal static class HaruspexCli
     public const string MssqlFileName = "haruspex.mssql.ts";
 
     /// <summary>
-    /// How the functions file imports the Zod module beside it: without an extension, as a bundler and TypeScript's own resolution
-    /// find it (Next.js, Vite, <c>moduleResolution: "bundler"</c>).
+    /// How the functions file imports the Zod module beside it: with the <c>.js</c> of the file it compiles to, which an ECMAScript
+    /// module needs and TypeScript maps to the <c>.ts</c> under every module resolution (<c>nodenext</c>, <c>node16</c> and
+    /// <c>bundler</c>), as bundlers do; an import without an extension resolves under a bundler only.
     /// </summary>
-    public const string ZodModuleSpecifier = "./haruspex.zod";
+    public const string ZodModuleSpecifier = "./haruspex.zod.js";
 
     public static int Run(string[] args, TextWriter output, TextWriter error) =>
         Run(args, output, error, Directory.GetCurrentDirectory());
