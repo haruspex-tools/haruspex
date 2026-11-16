@@ -38,10 +38,10 @@ public partial class StatementFlowObservationTests
 
         await using var guard = await scratch.OpenAsync(token);
         await using var deleter = await scratch.OpenAsync(token);
-        var session = await SessionOf(guard, token);
+        var session = await ScratchDatabase.SessionOfAsync(guard, token);
         await using var call = new SqlCommand("EXEC dbo.obs_card 1;", guard);
         var reading = call.ExecuteScalarAsync(token);
-        await InItsWait(deleter, session, reading, token);
+        await ScratchDatabase.InItsWaitforAsync(deleter, session, reading, token);
 
         var clock = Stopwatch.StartNew();
         await using (var delete = new SqlCommand("DELETE FROM dbo.obs_order WHERE order_id = 1;", deleter))
@@ -50,36 +50,6 @@ public partial class StatementFlowObservationTests
 
         var found = await reading;
         return $"{(found is DateTime d ? d.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) : "null")}, delete {(waited ? "waited" : "did not wait")}";
-    }
-
-    /// <summary>The session a connection runs in, to watch it from another.</summary>
-    private static async Task<short> SessionOf(SqlConnection connection, CancellationToken token)
-    {
-        await using var spid = new SqlCommand("SELECT @@SPID;", connection);
-        return (short)await spid.ExecuteScalarAsync(token);
-    }
-
-    /// <summary>
-    /// Waits until <paramref name="session"/> is in the procedure's <c>WAITFOR DELAY</c>, watched from <paramref name="watcher"/>:
-    /// the statements before it (the guard, or a snapshot's first read) have then run and taken whatever locks they keep. A fixed wait was not
-    /// enough: on a slow runner the other session's write landed before the guard ran, which then found no row and returned
-    /// with its transaction open (error 266). Reading another session's request needs VIEW SERVER STATE, which the test login
-    /// has. Fails, saying so, if the call ends first or the wait never comes.
-    /// </summary>
-    private static async Task InItsWait(SqlConnection watcher, short session, Task call, CancellationToken token)
-    {
-        await using var request = new SqlCommand("SELECT wait_type FROM sys.dm_exec_requests WHERE session_id = @session;", watcher);
-        request.Parameters.Add(new SqlParameter("@session", System.Data.SqlDbType.SmallInt) { Value = session });
-        var clock = Stopwatch.StartNew();
-        while (clock.Elapsed < TimeSpan.FromSeconds(30))
-        {
-            Assert.False(call.IsCompleted, "The procedure ended before it was seen in its WAITFOR: a guard that found no row returns before it.");
-            if (await request.ExecuteScalarAsync(token) is "WAITFOR")
-                return;
-            await Task.Delay(TimeSpan.FromMilliseconds(10), token);
-        }
-
-        Assert.Fail($"Session {session} didn't reach the procedure's WAITFOR within 30 seconds.");
     }
 
     [Fact]
@@ -168,10 +138,10 @@ public partial class StatementFlowObservationTests
 
         await using var guard = await scratch.OpenAsync(token);
         await using var inserter = await scratch.OpenAsync(token);
-        var session = await SessionOf(guard, token);
+        var session = await ScratchDatabase.SessionOfAsync(guard, token);
         await using var call = new SqlCommand("EXEC dbo.obs_card 1;", guard);
         var reading = call.ExecuteReaderAsync(token);
-        await InItsWait(inserter, session, reading, token);
+        await ScratchDatabase.InItsWaitforAsync(inserter, session, reading, token);
         await using (var insert = new SqlCommand("INSERT INTO dbo.obs_order VALUES (1, '2026-11-16');", inserter))
             await insert.ExecuteNonQueryAsync(token);
 
