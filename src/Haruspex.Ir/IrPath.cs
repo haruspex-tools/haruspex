@@ -144,5 +144,6 @@ public static class IrPath
         }
     }
 
-    private static string Quote(string key) => "\"" + JsonEncodedText.Encode(key, JavaScriptEncoder.UnsafeRelaxedJsonEscaping) + "\"";
+    /// <summary>A text as a JSON string, for a key in a path or a value in a message.</summary>
+    internal static string Quote(string key) => "\"" + JsonEncodedText.Encode(key, JavaScriptEncoder.UnsafeRelaxedJsonEscaping) + "\"";
 }
