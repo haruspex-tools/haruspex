@@ -40,7 +40,8 @@ public class CheckTests
         using var output = new StringWriter();
         using var error = new StringWriter();
         var exitCode = HaruspexCli.Run(args, output, error, folder.Path);
-        return (exitCode, output.ToString(), error.ToString().Replace(folder.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal));
+        // Paths as on every platform: the formatter joins a file to its folder with the platform's separator.
+        return (exitCode, output.ToString(), error.ToString().Replace(folder.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal).Replace('\\', '/'));
     }
 
     /// <summary>Every file under the output folder with its bytes, to show that a check wrote nothing.</summary>
@@ -125,7 +126,7 @@ public class CheckTests
         var (exitCode, _, error) = Run(folder, "check");
 
         Assert.Equal(1, exitCode);
-        Assert.Contains($"error HAR6011: nothing to compare with: {Path.Join("generated", HaruspexCli.ZodFileName)} isn't there.", error, StringComparison.Ordinal);
+        Assert.Contains($"error HAR6011: nothing to compare with: generated/{HaruspexCli.ZodFileName} isn't there.", error, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -138,7 +139,7 @@ public class CheckTests
         var (exitCode, _, error) = Run(folder, "check");
 
         Assert.Equal(1, exitCode);
-        Assert.Contains($"{Path.Join("generated", HaruspexCli.IrFileName)}: error HAR6012: this file is IR 0.9, and this haruspex writes IR {IrDocument.CurrentVersion}", error, StringComparison.Ordinal);
+        Assert.Contains($"generated/{HaruspexCli.IrFileName}: error HAR6012: this file is IR 0.9, and this haruspex writes IR {IrDocument.CurrentVersion}", error, StringComparison.Ordinal);
     }
 
     [Fact]

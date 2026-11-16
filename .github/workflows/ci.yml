@@ -15,19 +15,21 @@ concurrency:
 
 jobs:
   build-and-test:
-    name: Build and test
-    # Linux only for now; the Windows, Linux and macOS matrix comes in a later change.
-    runs-on: ubuntu-latest
-    # Includes pulling the SQL Server image (about 1.5 GB) for the differential tests.
-    timeout-minutes: 20
+    name: Build and test (${{ matrix.os }})
+    # Built and unit-tested on each platform haruspex runs on, since its output must be the same bytes on each. The
+    # differential tests need SQL Server's container, whose image is Linux and x64 only, so they run on Linux alone.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    # Includes pulling the SQL Server image (about 1.5 GB) on Linux; Windows builds slowest.
+    timeout-minutes: 30
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       DOTNET_NOLOGO: "1"
       # Fail, rather than skip, the test that type-checks the generated Zod if Node is missing.
       HARUSPEX_REQUIRE_NODE: "1"
-      # Fail, rather than skip, the differential tests if SQL Server cannot be started. HARUSPEX_TEST_SQLSERVER
-      # is not set, so they use Testcontainers with the runner's Docker (ubuntu-latest has it).
-      HARUSPEX_REQUIRE_SQLSERVER: "1"
       # Fail, rather than skip, the tests over the fetched corpora if one is missing; they are fetched below.
       HARUSPEX_REQUIRE_CORPORA: "1"
     steps:
@@ -50,8 +52,10 @@ jobs:
       - run: dotnet build --no-restore --configuration Release
 
       # The build already fails on a style rule; this also catches what only the formatter sees (whitespace in
-      # files the build does not analyse the same way, such as linked sources), and says which file to fix.
+      # files the build does not analyse the same way, such as linked sources), and says which file to fix. The
+      # files are the same on every platform (.gitattributes keeps them LF), so once is enough.
       - run: dotnet format --no-restore --verify-no-changes
+        if: runner.os == 'Linux'
 
       - run: npm ci --ignore-scripts --no-audit --no-fund
         working-directory: tests/emit-check
@@ -74,11 +78,76 @@ jobs:
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/haruspex/corpora
-          key: corpora-${{ hashFiles('tests/corpus/fetched.json') }}
+          key: corpora-${{ runner.os }}-${{ hashFiles('tests/corpus/fetched.json') }}
 
       - run: node tests/corpus/fetch.mjs
 
+      # Every test project. HARUSPEX_REQUIRE_SQLSERVER fails, rather than skips, the differential tests if SQL Server
+      # cannot be started. HARUSPEX_TEST_SQLSERVER is not set, so they use Testcontainers with the runner's Docker.
       - run: dotnet test --no-build --configuration Release
+        if: runner.os == 'Linux'
+        env:
+          HARUSPEX_REQUIRE_SQLSERVER: "1"
+
+      # The unit tests alone: Windows runners' Docker runs Windows containers, and macOS runners have none.
+      - run: dotnet test --no-build --configuration Release --project tests/Haruspex.Tests/Haruspex.Tests.csproj
+        if: runner.os != 'Linux'
+
+  native:
+    name: Native binary (${{ matrix.rid }})
+    # The command line compiled ahead of time for each platform, so that a change which breaks trimming or Native AOT fails
+    # here rather than at a release. Each binary then checks the example's committed module, which runs every step from
+    # reading the project to comparing the IR, and is kept as an artifact of the run. Not a release: nothing is published.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: windows-latest
+            rid: win-x64
+          - os: macos-latest
+            rid: osx-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      # Native AOT links with the platform's toolchain: clang on Linux (and zlib's headers), Xcode on macOS and the C++
+      # build tools on Windows, which those runners have already.
+      - run: sudo apt-get update -q && sudo apt-get install -y -q clang zlib1g-dev
+        if: runner.os == 'Linux'
+
+      # The AOT compiler comes as a package per platform, whose version is the SDK's (global.json pins it). The committed
+      # lock files don't list it, since an ordinary build doesn't need it, so this one restore isn't locked
+      # (src/Haruspex.Cli/Haruspex.Cli.csproj says more). Trim and AOT warnings are errors, as every warning is.
+      - run: >-
+          dotnet publish src/Haruspex.Cli --configuration Release --runtime "${{ matrix.rid }}"
+          -p:HaruspexNativeAot=true -p:RestoreLockedMode=false --output publish
+
+      - run: ../../publish/haruspex check
+        working-directory: examples/greenhouse
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: haruspex-${{ matrix.rid }}
+          path: |
+            publish/haruspex
+            publish/haruspex.exe
+          if-no-files-found: error
+          retention-days: 30
 
   workflows:
     name: Lint the workflows
