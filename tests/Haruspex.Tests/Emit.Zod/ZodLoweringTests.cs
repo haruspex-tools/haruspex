@@ -1,3 +1,4 @@
+using System.Globalization;
 using Haruspex.Emit.Zod;
 using Haruspex.Emit.Zod.Lowering;
 using Haruspex.Emit.Zod.Model;
@@ -157,6 +158,18 @@ public class ZodLoweringTests
         var bounded = Z("array", Z("boolean")).Then(check, new Number("1"));
 
         Assert.Equal(nullable ? bounded.Then("nullable") : bounded, Procedure(Lower(Document([], result))).Schema);
+    }
+
+    [Theory]
+    [InlineData(0, null, "min", 1)]
+    [InlineData(2, null, "min", 2)]
+    [InlineData(1, 1, "length", 1)]
+    public void A_json_array_bounded_by_itself_and_by_its_cardinality_has_each_bound_written_once(int ownMin, int? ownMax, string check, int bound)
+    {
+        // A declared result's minItems, as the config's JSON Schema gives it.
+        var result = new IrResult(IrEncoding.Json, new IrArray(Flag) { MinItems = ownMin, MaxItems = ownMax }, []);
+
+        Assert.Equal(Z("array", Z("boolean")).Then(check, new Number(bound.ToString(CultureInfo.InvariantCulture))), Procedure(Lower(Document([], result))).Schema);
     }
 
     [Theory]
