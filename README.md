@@ -26,23 +26,13 @@ database, so it needs no credentials and no data. And it follows one rule: **nev
 With `"emit": ["zod", "mssql"]` in `haruspex.json`, `haruspex generate` writes the database module: `haruspex.zod.ts`, a schema
 and a type for each procedure's parameters and results, and `haruspex.mssql.ts`, a function for each procedure over the
 [mssql](https://www.npmjs.com/package/mssql) driver. A function takes a connection it doesn't own and the parameters by their
-declared names. It checks them with a strict schema of their declared types before
-anything is sent, so a misspelt name, a string too long or a decimal with too many places fails in the application rather
-than being changed by the database ([decision 0054](docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)).
-Then it checks what comes back, and returns it typed as `{ result, output, returnValue }`.
-
-A call fails in one of three ways, told apart by the error's `name`
-([decision 0056](docs/decisions/0056-a-function-throws-three-kinds-of-failure.md)):
-
-| What went wrong | What is thrown | What it means |
-|---|---|---|
-| The parameters | an error named `'HaruspexParameterError'`, before the connection is touched | The calling code is wrong; nothing was sent. |
-| The database raised an error | mssql's own `RequestError`, unchanged | Handled as the driver's errors are today. |
-| The result broke its schema | an error named `'HaruspexResultError'`, naming the procedure and where | The database and the application are deployed out of step. |
+declared names, checks them against their declared types before anything is sent, so a value the database would silently
+cut or round is caught first ([decision 0054](docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)),
+and returns what comes back checked and typed as `{ result, output, returnValue }`.
 
 The functions belong on the server, since they take the connection and its credentials; the schemas and types, in their own
-file, may go to the browser. [The database module](docs/database-module.md) has the detail: dates, return shapes, handling
-each failure, and `serverOnly` for Next.js.
+file, may go to the browser. [The database module](docs/database-module.md) has the detail: dates, return shapes and
+`serverOnly` for Next.js.
 
 ## Two examples on Microsoft's samples
 
@@ -251,6 +241,10 @@ results. Nor can it see the caller's session `SET` options, unless `session` in 
 
 The more the database declares, the more the types say: a `CHECK` constraint becomes a value set or a range, and a key a
 query filters on in full means at most one row. Overrides in `haruspex.json` are for what a database doesn't declare.
+
+At run time the generated functions check both ends, so a wrong parameter or a result that no longer matches its schema
+fails loudly, with an error saying which, rather than reaching the application's code; database errors stay the driver's.
+[When a call fails](docs/database-module.md#when-a-call-fails) says how to tell them apart.
 
 On the two samples above, a test writes [the figures](docs/corpus-figures.md):
 
