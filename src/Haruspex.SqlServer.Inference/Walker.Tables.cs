@@ -247,7 +247,7 @@ internal sealed partial class Walker
 
         return typer.WithCtes(update.WithCtesAndXmlNamespaces, Reading(state), statement =>
             Set(spec.SetClauses, written, typer.Attach(statement.In(binder.BindUpdate(spec, statement.Names).Scope)), state, At(update)),
-            why => target is { IsTemporary: true } temporary ? state.WithTemp(temporary, Unknown(temporary, why)) : state);
+            why => Unread(spec.SetClauses, target, why, state, At(update)));
     }
 
     /// <summary>
@@ -325,7 +325,7 @@ internal sealed partial class Walker
             }
 
             return after;
-        }, why => Unread(spec, written.Direct, why, state, at));
+        }, why => Unread([.. spec.ActionClauses.Select(c => c.Action).OfType<UpdateMergeAction>().SelectMany(u => u.SetClauses)], written.Direct, why, state, at));
     }
 
     /// <summary>
@@ -355,17 +355,18 @@ internal sealed partial class Walker
     }
 
     /// <summary>
-    /// A MERGE whose values can't be read: the temporary table it writes is unknown, a table variable's traced columns are, and
-    /// so is each variable an UPDATE of it sets.
+    /// An UPDATE or a MERGE whose values can't be read (a WITH that isn't modelled): the temporary table it writes is unknown, a
+    /// table variable's traced columns are, and each variable its SET clauses set may be set to a value not known (observed:
+    /// An_update_under_with_xmlnamespaces_sets_its_variables).
     /// </summary>
-    private FlowState Unread(MergeSpecification spec, LocalName? target, UnknownShape why, FlowState state, SourceLocation at)
+    /// <param name="clauses">Its SET clauses: an UPDATE's, or those of a MERGE's UPDATE actions.</param>
+    private FlowState Unread(IEnumerable<SetClause> clauses, LocalName? target, UnknownShape why, FlowState state, SourceLocation at)
     {
         if (target is { IsTemporary: true } temporary)
             state = state.WithTemp(temporary, Unknown(temporary, why));
         else if (target is { IsVariable: true } variable)
             state = TableVariableWritten(state, variable, null, null, null, at);
-        var set = spec.ActionClauses.Select(c => c.Action).OfType<UpdateMergeAction>().SelectMany(u => u.SetClauses).OfType<AssignmentSetClause>();
-        foreach (var assignment in set.Where(a => a.Variable is not null))
+        foreach (var assignment in clauses.OfType<AssignmentSetClause>().Where(a => a.Variable is not null))
             state = Assign(state, Resolved(assignment.Variable).Name, Value.Unknown(why), definitely: false, At(assignment));
         return state;
     }

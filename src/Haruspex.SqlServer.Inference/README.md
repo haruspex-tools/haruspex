@@ -216,7 +216,10 @@ stands, joined in by `Value.JoinConverted`, and read again until nothing changes
 member's column that is not modelled (`depth + 1`) is still of the anchor's type; only its nullability is unknown.
 
 A CTE whose query is a set operation is read as any set operation is (below, "Set operations"). Not modelled
-yet: a recursive CTE with several anchor members, and `WITH XMLNAMESPACES`.
+yet: a recursive CTE with several anchor members, and `WITH XMLNAMESPACES`. Before a write, `WITH XMLNAMESPACES` changes
+nothing it writes (`An_update_under_with_xmlnamespaces_sets_its_variables`), but what the write's values are isn't read: the
+temporary table it writes is unknown, and a variable its `SET` sets may be set to a value not known, as one an assignment
+`SELECT` under it sets is.
 
 ## Calls
 

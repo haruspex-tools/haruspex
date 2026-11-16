@@ -72,6 +72,24 @@ public partial class DmlTests
         Assert.Equal(["INSERT", "UPDATE"], Assert.IsType<IrScalar>(Field(doc, "what").Type).Facets!.Values!.Items.Select(v => v.Text));
     }
 
+    [Theory]
+    [InlineData("WITH XMLNAMESPACES ('urn:shop' AS s) UPDATE dbo.item SET @v = label;")]
+    [InlineData("WITH XMLNAMESPACES ('urn:shop' AS s) MERGE dbo.item AS t USING dbo.note AS s ON t.id = s.id WHEN MATCHED THEN UPDATE SET @v = s.text;")]
+    public void A_variable_a_write_sets_under_a_with_not_modelled_may_be_null(string write)
+    {
+        // An_update_under_with_xmlnamespaces_sets_its_variables: the WITH isn't modelled, so what the write sets isn't read;
+        // a variable it sets keeps its declared type, as any assignment does, and may now be null (`unknown`), rather than
+        // being left as it was.
+        var doc = Doc(("p", $"""
+            CREATE PROCEDURE dbo.p AS
+            DECLARE @v nvarchar(20) = N'x';
+            {write}
+            SELECT @v AS v;
+            """));
+
+        Assert.Equal([IrNullRule.Unknown], Rules(Field(doc, "v")));
+    }
+
     [Fact]
     public void A_variable_a_merge_sets_may_be_set_to_any_value_it_reads()
     {

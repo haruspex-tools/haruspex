@@ -117,6 +117,11 @@ public class DmlObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task An_update_under_with_xmlnamespaces_sets_its_variables() =>
+        // WITH XMLNAMESPACES before a write changes nothing it writes: the variable is set, here to the row's NULL.
+        Assert.Equal("v: null", (await Run([Item, Seed], "DECLARE @v nvarchar(10) = N'x'; WITH XMLNAMESPACES ('urn:shop' AS s) UPDATE dbo.obs_item SET @v = label WHERE id = 2; SELECT ISNULL(@v, N'null') AS v;")).ToString());
+
+    [Fact]
     public async Task A_merge_action_reads_only_the_rows_it_has()
     {
         // WHEN NOT MATCHED [BY TARGET] has no target row and WHEN NOT MATCHED BY SOURCE no source row: a column of the other is
