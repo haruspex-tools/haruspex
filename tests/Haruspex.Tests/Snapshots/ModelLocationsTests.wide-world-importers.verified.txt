@@ -1,0 +1,85 @@
+column Application.People.CustomFields nvarchar(MAX) at tables/People.sql:21:5
+column Application.People.EmailAddress nvarchar(256) at tables/People.sql:19:5
+column Application.People.FaxNumber nvarchar(20) at tables/People.sql:18:5
+column Application.People.FullName nvarchar(50) at tables/People.sql:6:5
+column Application.People.HashedPassword varbinary(MAX) at tables/People.sql:12:5
+column Application.People.IsEmployee bit at tables/People.sql:14:5
+column Application.People.IsExternalLogonProvider bit at tables/People.sql:11:5
+column Application.People.IsPermittedToLogon bit at tables/People.sql:9:5
+column Application.People.IsSalesperson bit at tables/People.sql:15:5
+column Application.People.IsSystemUser bit at tables/People.sql:13:5
+column Application.People.LastEditedBy int at tables/People.sql:23:5
+column Application.People.LogonName nvarchar(256) at tables/People.sql:10:5
+column Application.People.OtherLanguages computed at tables/People.sql:22:5
+column Application.People.PersonID int at tables/People.sql:5:5
+column Application.People.PhoneNumber nvarchar(20) at tables/People.sql:17:5
+column Application.People.Photo varbinary(MAX) at tables/People.sql:20:5
+column Application.People.PreferredName nvarchar(50) at tables/People.sql:7:5
+column Application.People.SearchName computed at tables/People.sql:8:5
+column Application.People.UserPreferences nvarchar(MAX) at tables/People.sql:16:5
+column Application.People.ValidFrom datetime2(7) at tables/People.sql:24:5
+column Application.People.ValidTo datetime2(7) at tables/People.sql:25:5
+column Sales.OrderLines.Description nvarchar(100) at tables/OrderLines.sql:9:5
+column Sales.OrderLines.LastEditedBy int at tables/OrderLines.sql:16:5
+column Sales.OrderLines.LastEditedWhen datetime2(7) at tables/OrderLines.sql:17:5
+column Sales.OrderLines.OrderID int at tables/OrderLines.sql:7:5
+column Sales.OrderLines.OrderLineID int at tables/OrderLines.sql:6:5
+column Sales.OrderLines.PackageTypeID int at tables/OrderLines.sql:10:5
+column Sales.OrderLines.PickedQuantity int at tables/OrderLines.sql:14:5
+column Sales.OrderLines.PickingCompletedWhen datetime2(7) at tables/OrderLines.sql:15:5
+column Sales.OrderLines.Quantity int at tables/OrderLines.sql:11:5
+column Sales.OrderLines.StockItemID int at tables/OrderLines.sql:8:5
+column Sales.OrderLines.TaxRate decimal(18,3) at tables/OrderLines.sql:13:5
+column Sales.OrderLines.UnitPrice decimal(18,2) at tables/OrderLines.sql:12:5
+column Sales.Orders.BackorderOrderID int at tables/Orders.sql:10:5
+column Sales.Orders.Comments nvarchar(MAX) at tables/Orders.sql:15:5
+column Sales.Orders.ContactPersonID int at tables/Orders.sql:9:5
+column Sales.Orders.CustomerID int at tables/Orders.sql:6:5
+column Sales.Orders.CustomerPurchaseOrderNumber nvarchar(20) at tables/Orders.sql:13:5
+column Sales.Orders.DeliveryInstructions nvarchar(MAX) at tables/Orders.sql:16:5
+column Sales.Orders.ExpectedDeliveryDate date at tables/Orders.sql:12:5
+column Sales.Orders.InternalComments nvarchar(MAX) at tables/Orders.sql:17:5
+column Sales.Orders.IsUndersupplyBackordered bit at tables/Orders.sql:14:5
+column Sales.Orders.LastEditedBy int at tables/Orders.sql:19:5
+column Sales.Orders.LastEditedWhen datetime2(7) at tables/Orders.sql:20:5
+column Sales.Orders.OrderDate date at tables/Orders.sql:11:5
+column Sales.Orders.OrderID int at tables/Orders.sql:5:5
+column Sales.Orders.PickedByPersonID int at tables/Orders.sql:8:5
+column Sales.Orders.PickingCompletedWhen datetime2(7) at tables/Orders.sql:18:5
+column Sales.Orders.SalespersonPersonID int at tables/Orders.sql:7:5
+column Warehouse.StockItems.Barcode nvarchar(50) at tables/StockItems.sql:17:5
+column Warehouse.StockItems.Brand nvarchar(50) at tables/StockItems.sql:12:5
+column Warehouse.StockItems.ColorID int at tables/StockItems.sql:9:5
+column Warehouse.StockItems.CustomFields nvarchar(MAX) at tables/StockItems.sql:25:5
+column Warehouse.StockItems.InternalComments nvarchar(MAX) at tables/StockItems.sql:23:5
+column Warehouse.StockItems.IsChillerStock bit at tables/StockItems.sql:16:5
+column Warehouse.StockItems.LastEditedBy int at tables/StockItems.sql:28:5
+column Warehouse.StockItems.LeadTimeDays int at tables/StockItems.sql:14:5
+column Warehouse.StockItems.MarketingComments nvarchar(MAX) at tables/StockItems.sql:22:5
+column Warehouse.StockItems.OuterPackageID int at tables/StockItems.sql:11:5
+column Warehouse.StockItems.Photo varbinary(MAX) at tables/StockItems.sql:24:5
+column Warehouse.StockItems.QuantityPerOuter int at tables/StockItems.sql:15:5
+column Warehouse.StockItems.RecommendedRetailPrice decimal(18,2) at tables/StockItems.sql:20:5
+column Warehouse.StockItems.SearchDetails computed at tables/StockItems.sql:27:5
+column Warehouse.StockItems.Size nvarchar(20) at tables/StockItems.sql:13:5
+column Warehouse.StockItems.StockItemID int at tables/StockItems.sql:6:5
+column Warehouse.StockItems.StockItemName nvarchar(100) at tables/StockItems.sql:7:5
+column Warehouse.StockItems.SupplierID int at tables/StockItems.sql:8:5
+column Warehouse.StockItems.Tags computed at tables/StockItems.sql:26:5
+column Warehouse.StockItems.TaxRate decimal(18,3) at tables/StockItems.sql:18:5
+column Warehouse.StockItems.TypicalWeightPerUnit decimal(18,3) at tables/StockItems.sql:21:5
+column Warehouse.StockItems.UnitPackageID int at tables/StockItems.sql:10:5
+column Warehouse.StockItems.UnitPrice decimal(18,2) at tables/StockItems.sql:19:5
+column Warehouse.StockItems.ValidFrom datetime2(7) at tables/StockItems.sql:29:5
+column Warehouse.StockItems.ValidTo datetime2(7) at tables/StockItems.sql:30:5
+key Application.People PK_Application_People (PersonID) at tables/People.sql:26:5
+key Sales.OrderLines PK_Sales_OrderLines (OrderLineID) at tables/OrderLines.sql:18:5
+key Sales.Orders PK_Sales_Orders (OrderID) at tables/Orders.sql:21:5
+key Warehouse.StockItems PK_Warehouse_StockItems (StockItemID) at tables/StockItems.sql:31:5
+key Warehouse.StockItems UQ_Warehouse_StockItems_StockItemName (StockItemName) at tables/StockItems.sql:33:5
+parameter Website.GetOrder @OrderID at procedures/GetOrder.sql:2:5
+procedure Website.GetOrder at procedures/GetOrder.sql:1:1
+table Application.People at tables/People.sql:4:1
+table Sales.OrderLines at tables/OrderLines.sql:5:1
+table Sales.Orders at tables/Orders.sql:4:1
+table Warehouse.StockItems at tables/StockItems.sql:5:1

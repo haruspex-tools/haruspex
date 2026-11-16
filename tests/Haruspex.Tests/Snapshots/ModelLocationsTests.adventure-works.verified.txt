@@ -1,0 +1,57 @@
+check Production.BillOfMaterials CK_BillOfMaterials_BOMLevel at tables/BillOfMaterials.sql:17:5
+check Production.BillOfMaterials CK_BillOfMaterials_EndDate at tables/BillOfMaterials.sql:15:5
+check Production.BillOfMaterials CK_BillOfMaterials_PerAssemblyQty at tables/BillOfMaterials.sql:20:5
+check Production.BillOfMaterials CK_BillOfMaterials_ProductAssemblyID at tables/BillOfMaterials.sql:16:5
+check Production.Product CK_Product_Class at tables/Product.sql:37:5
+check Production.Product CK_Product_DaysToManufacture at tables/Product.sql:35:5
+check Production.Product CK_Product_ListPrice at tables/Product.sql:33:5
+check Production.Product CK_Product_ProductLine at tables/Product.sql:36:5
+check Production.Product CK_Product_ReorderPoint at tables/Product.sql:31:5
+check Production.Product CK_Product_SafetyStockLevel at tables/Product.sql:30:5
+check Production.Product CK_Product_SellEndDate at tables/Product.sql:39:5
+check Production.Product CK_Product_StandardCost at tables/Product.sql:32:5
+check Production.Product CK_Product_Style at tables/Product.sql:38:5
+check Production.Product CK_Product_Weight at tables/Product.sql:34:5
+column Production.BillOfMaterials.BOMLevel smallint at tables/BillOfMaterials.sql:12:5
+column Production.BillOfMaterials.BillOfMaterialsID int at tables/BillOfMaterials.sql:6:5
+column Production.BillOfMaterials.ComponentID int at tables/BillOfMaterials.sql:8:5
+column Production.BillOfMaterials.EndDate datetime at tables/BillOfMaterials.sql:10:5
+column Production.BillOfMaterials.ModifiedDate datetime at tables/BillOfMaterials.sql:14:5
+column Production.BillOfMaterials.PerAssemblyQty decimal(8,2) at tables/BillOfMaterials.sql:13:5
+column Production.BillOfMaterials.ProductAssemblyID int at tables/BillOfMaterials.sql:7:5
+column Production.BillOfMaterials.StartDate datetime at tables/BillOfMaterials.sql:9:5
+column Production.BillOfMaterials.UnitMeasureCode nchar(3) at tables/BillOfMaterials.sql:11:5
+column Production.Product.Class nchar(2) at tables/Product.sql:21:5
+column Production.Product.Color nvarchar(15) at tables/Product.sql:10:5
+column Production.Product.DaysToManufacture int at tables/Product.sql:19:5
+column Production.Product.DiscontinuedDate datetime at tables/Product.sql:27:5
+column Production.Product.FinishedGoodsFlag Flag at tables/Product.sql:9:5
+column Production.Product.ListPrice money at tables/Product.sql:14:5
+column Production.Product.MakeFlag Flag at tables/Product.sql:8:5
+column Production.Product.ModifiedDate datetime at tables/Product.sql:29:5
+column Production.Product.Name Name at tables/Product.sql:6:5
+column Production.Product.ProductID int at tables/Product.sql:5:5
+column Production.Product.ProductLine nchar(2) at tables/Product.sql:20:5
+column Production.Product.ProductModelID int at tables/Product.sql:24:5
+column Production.Product.ProductNumber nvarchar(25) at tables/Product.sql:7:5
+column Production.Product.ProductSubcategoryID int at tables/Product.sql:23:5
+column Production.Product.ReorderPoint smallint at tables/Product.sql:12:5
+column Production.Product.SafetyStockLevel smallint at tables/Product.sql:11:5
+column Production.Product.SellEndDate datetime at tables/Product.sql:26:5
+column Production.Product.SellStartDate datetime at tables/Product.sql:25:5
+column Production.Product.Size nvarchar(5) at tables/Product.sql:15:5
+column Production.Product.SizeUnitMeasureCode nchar(3) at tables/Product.sql:16:5
+column Production.Product.StandardCost money at tables/Product.sql:13:5
+column Production.Product.Style nchar(2) at tables/Product.sql:22:5
+column Production.Product.Weight decimal(8,2) at tables/Product.sql:18:5
+column Production.Product.WeightUnitMeasureCode nchar(3) at tables/Product.sql:17:5
+column Production.Product.rowguid uniqueidentifier at tables/Product.sql:28:5
+function Production.GetComponents at functions/GetComponents.sql:1:1
+named function Production.GetComponents
+parameter Production.GetComponents @ProductAssemblyID at functions/GetComponents.sql:1:42
+parameter Production.GetProductTree @ProductID at procedures/GetProductTree.sql:2:5
+procedure Production.GetProductTree at procedures/GetProductTree.sql:1:1
+table Production.BillOfMaterials at tables/BillOfMaterials.sql:5:1
+table Production.Product at tables/Product.sql:4:1
+type dbo.Flag bit at tables/schemas.sql:5:1
+type dbo.Name nvarchar(50) at tables/schemas.sql:7:1

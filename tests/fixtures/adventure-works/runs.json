@@ -1,0 +1,10 @@
+{
+  // The facets of money and decimal(8, 2) reach far past any cost or quantity, so the seed is not held to every edge.
+  "seedReachesEveryEdge": false,
+
+  "runs": [
+    { "name": "GetProductTree, three levels", "procedure": "Production.GetProductTree", "parameters": { "@ProductID": 1 } },
+    { "name": "GetProductTree, no components", "procedure": "Production.GetProductTree", "parameters": { "@ProductID": 5 } },
+    { "name": "GetProductTree, no such product", "procedure": "Production.GetProductTree", "parameters": { "@ProductID": 999 } }
+  ]
+}

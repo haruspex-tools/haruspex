@@ -1,0 +1,343 @@
+{
+  "irVersion": "0.21",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "Website.GetOrder",
+      "name": "GetOrder",
+      "kind": "procedure",
+      "at": "procedures/GetOrder.sql:1:1",
+      "parameters": [
+        {
+          "name": "@OrderID",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "GetOrderRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/GetOrder.sql:6:1"
+            }
+          ],
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GetOrderLine": {
+      "kind": "object",
+      "identity": {
+        "procedure": "Website.GetOrder",
+        "path": "results[0].lines[]"
+      },
+      "fields": [
+        {
+          "name": "description",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "unitPrice",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(18,2)",
+            "digits": {
+              "precision": 18,
+              "scale": 2,
+              "from": {
+                "type": "decimal(18,2)"
+              }
+            },
+            "min": {
+              "value": -9999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(18,2)"
+              }
+            },
+            "max": {
+              "value": 9999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(18,2)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "Sales.OrderLines.UnitPrice"
+            }
+          ]
+        },
+        {
+          "name": "stockItem",
+          "type": {
+            "ref": "GetOrderLineStockItem"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "GetOrderLineStockItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "Website.GetOrder",
+        "path": "results[0].lines[].stockItem"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "brand",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(50)",
+            "maxLength": {
+              "value": 50,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(50)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "Warehouse.StockItems.Brand"
+            }
+          ]
+        },
+        {
+          "name": "chilled",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "GetOrderRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "Website.GetOrder",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "orderDate",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "expectedDelivery",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "purchaseOrderNumber",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "Sales.Orders.CustomerPurchaseOrderNumber"
+            }
+          ]
+        },
+        {
+          "name": "salesperson",
+          "type": {
+            "ref": "GetOrderSalesperson"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "lines",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetOrderLine"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/GetOrder.sql:12:8"
+            }
+          ]
+        }
+      ]
+    },
+    "GetOrderSalesperson": {
+      "kind": "object",
+      "identity": {
+        "procedure": "Website.GetOrder",
+        "path": "results[0].salesperson"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(50)",
+            "maxLength": {
+              "value": 50,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(50)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "email",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(256)",
+            "maxLength": {
+              "value": 256,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(256)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "Application.People.EmailAddress"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

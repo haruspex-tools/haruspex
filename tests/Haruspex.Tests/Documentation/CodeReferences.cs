@@ -31,7 +31,9 @@ namespace Haruspex.Tests.Documentation;
 /// tests; for the differential tests, which this project does not reference, from their source), and each later part is
 /// a member or nested type of the part before it. A name alone may also be a test method, a project, layer or
 /// namespace of haruspex, or a name in a committed Zod snapshot or a worked example's Zod, since the documentation shows generated
-/// names, but never a member written alone, which would hide a renamed type that left a property of its old name. Anything else must be in <see cref="Outside"/>, which says why each is there.
+/// names, but never a member written alone, which would hide a renamed type that left a property of its old name. A schema, or a
+/// table, view, function or procedure as <c>Schema.Name</c>, that a fixture defines is a name too. Anything else must be in
+/// <see cref="Outside"/>, which says why each is there.
 /// Text in capitals (<c>FOR JSON</c>, <c>WITHOUT_ARRAY_WRAPPER</c>) is SQL, not a name, and is not checked.
 /// </para>
 /// </remarks>
@@ -107,6 +109,13 @@ internal sealed partial class CodeReferences
     private readonly Dictionary<string, List<string>> sourceTypes = new(StringComparer.Ordinal);
     private readonly HashSet<string> methods = new(StringComparer.Ordinal);
     private readonly HashSet<string> generated = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The SQL names the fixtures define: each table, view, function and procedure as <c>Schema.Name</c>, and each schema. Most
+    /// fixtures name their objects in lower case, which this check passes over, but the showcase's fixtures keep Microsoft's
+    /// names (<c>Sales.Orders</c>), which look like a type and a member, so their READMEs' names are checked against them.
+    /// </summary>
+    private readonly HashSet<string> sqlNames = new(StringComparer.Ordinal);
     private readonly HashSet<string> csharpFiles = new(StringComparer.Ordinal);
 
     /// <summary>
@@ -173,6 +182,16 @@ internal sealed partial class CodeReferences
             foreach (Match m in GeneratedName().Matches(module))
                 generated.Add(m.Groups["name"].Value);
         }
+
+        foreach (var fixture in Fixture.All)
+        {
+            var model = SqlScriptFolder.Read(fixture.Database).Model;
+            foreach (var name in model.Tables.Select(t => t.Name).Concat(model.Views.Select(v => v.Name)).Concat(model.Functions.Select(f => f.Name)).Concat(model.Procedures.Select(p => p.Name)))
+            {
+                sqlNames.Add(name.Schema);
+                sqlNames.Add(name.Schema + "." + name.Name);
+            }
+        }
     }
 
     /// <summary>Whether <paramref name="code"/> is a reference this convention checks.</summary>
@@ -233,7 +252,7 @@ internal sealed partial class CodeReferences
     private string? NameProblem(string code)
     {
         var parts = code.Split('.');
-        if (Outside.Contains(code) || namespaces.Contains(code) || readerWords.Contains(code) || (parts.Length > 1 && OutsideNamespaces.Contains(parts[0])))
+        if (Outside.Contains(code) || namespaces.Contains(code) || readerWords.Contains(code) || sqlNames.Contains(code) || (parts.Length > 1 && OutsideNamespaces.Contains(parts[0])))
             return null;
         if (types.TryGetValue(parts[0], out var candidates))
             return MemberProblem(candidates, parts);

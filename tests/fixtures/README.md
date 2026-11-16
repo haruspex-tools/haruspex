@@ -1,8 +1,10 @@
 # Fixtures
 
-A fixture is an invented database that the tests read, run and hold haruspex to. Each is one folder here, holding
-everything about it: what haruspex reads, what it must produce, and how the differential tests deploy and call it. No
-part of any fixture comes from a real system.
+A fixture is a database that the tests read, run and hold haruspex to. Each is one folder here, holding everything about
+it: what haruspex reads, what it must produce, and how the differential tests deploy and call it. Fixtures are invented, and
+no part of one comes from a real system, with one exception: two fixtures, `wide-world-importers` and `adventure-works`,
+take their tables from Microsoft's sample databases, vendored in [`tests/corpus`](../corpus/README.md) under the MIT licence,
+whose notice each keeps beside it. They hold the examples in [the project's README](../../README.md) to a real server.
 
 The tests find the fixtures by listing this folder (`Fixture.All`, in `tests/Shared`), never from a list of names, so
 the snapshot, emit-check, seed, coverage and acceptance tests can't disagree about which fixtures exist. Why it is built
