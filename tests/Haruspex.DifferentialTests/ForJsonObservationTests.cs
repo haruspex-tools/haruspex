@@ -1,4 +1,5 @@
 using Haruspex.DifferentialTests.Server;
+using Microsoft.Data.SqlClient;
 
 namespace Haruspex.DifferentialTests;
 
@@ -165,4 +166,18 @@ public class ForJsonObservationTests(SqlServerFixture server)
     [MemberData(nameof(Scalars))]
     public async Task For_json_writes_each_type_exactly_so(string expression, string expected) =>
         Assert.Equal($$"""{"v":{{expected}}}""", await Json($"SELECT {expression} AS v FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;"));
+
+    // ---- keys -----------------------------------------------------------------------------------------------------------
+
+    [Fact]
+    public async Task For_json_keys_that_differ_only_in_case_are_two_keys()
+    {
+        // Compared exactly, whatever the collation (tempdb's and the test database's are case-insensitive): two keys, and
+        // two nested objects for dotted aliases. The same key twice is an error (13601).
+        Assert.Equal(
+            """[{"a":1,"A":2,"b":{"x":3},"B":{"x":4},"é":5,"É":6}]""",
+            await Json("SELECT 1 AS a, 2 AS A, 3 AS [b.x], 4 AS [B.x], 5 AS [é], 6 AS [É] FOR JSON PATH;"));
+        var e = await Assert.ThrowsAsync<SqlException>(() => Json("SELECT 1 AS [a.x], 2 AS [a.x] FOR JSON PATH;"));
+        Assert.Equal(13601, e.Number);
+    }
 }

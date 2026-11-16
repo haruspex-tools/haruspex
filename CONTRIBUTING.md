@@ -213,7 +213,7 @@ split into parts along the constructs it covers. The families today:
 | Refinement | `RefinementTests` | `RefinementObservationTests` | `tests/fixtures/refine` | "Refinement" |
 | Writes | `DmlTests` | `DmlObservationTests` | `tests/fixtures/dml` | "DML", "Triggers", "Cursors" |
 | APPLY and views | `ApplyViewTests` | `ApplyViewObservationTests` | `tests/fixtures/apply` | "APPLY", "Views" |
-| Expressions | `ExpressionTests` | `ExpressionObservationTests` | `tests/fixtures/tabs` | "Expressions" |
+| Expressions | `ExpressionTests` | `ExpressionObservationTests`, `BitwiseGridTests` | `tests/fixtures/tabs` | "Expressions" |
 | Numbers | `NumericTests` | `NumericObservationTests`, `ArithmeticGridTests` | `tests/fixtures/ledger` | "Decimal arithmetic", "Numeric functions" |
 | CASE and its kin | `CaseTests` | `CaseObservationTests` | `tests/fixtures/cases` | "CASE, IIF, CHOOSE and NULLIF", "COALESCE and ISNULL over JSON" |
 | Built-in functions | `FunctionTests` | `FunctionObservationTests` | `tests/fixtures/funcs` | "Built-in functions", "Window functions" |

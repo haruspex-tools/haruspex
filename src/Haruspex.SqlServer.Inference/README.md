@@ -291,12 +291,23 @@ reason of its own, unless the config file declares them (below):
 |---|---|
 | `EXEC (@sql)`, `EXEC (N'…')`, `sp_executesql` | `dynamic-sql` |
 | `EXEC @name` | `procedure-variable` |
-| A name starting `sp_` or `xp_` | `system-procedure`. SQL Server runs its own procedure of that name if it has one, whatever schema is written and whatever the database defines (`A_system_procedures_name_runs_the_system_procedure_whatever_the_project_defines`), and which it has is not known here, so even a procedure of the project named so is not followed. No catalogue of system procedures' shapes is built in |
+| A name starting `sp_` or `xp_` | `system-procedure`. SQL Server runs its own procedure of that name if it has one, whatever schema is written and whatever the database defines (`A_system_procedures_name_runs_the_system_procedure_whatever_the_project_defines`), and which it has is not known here, so even a procedure of the project named so is not followed. One the catalogue lists is followed instead (below) |
 | Another database, a linked server (`AT`), `OPENDATASOURCE`, a synonym, or no such procedure | `missing-procedure` |
 | An unqualified name that more than one schema has | `ambiguous-procedure` |
 | A CLR procedure | `external-code` |
 | A procedure created `WITH ENCRYPTION` whose text the source lacks, as in a DACPAC extracted from a database | `encrypted-definition`. The placeholder such a package holds would claim the procedure returns nothing, so its body is never read (`An_encrypted_procedure_whose_text_the_source_lacks_has_unknown_results_with_their_own_reason`) |
 | A procedure changed after its definition | `redefined` |
+
+**The catalogue of system procedures** (Semantics' `SystemProcedures`, data with an observation test per entry in
+`ExecObservationTests`) lists those whose calls are followed, by name whatever the schema written: what each returns, its
+return code and its parameters, which `Each_system_procedure_of_the_catalogue_has_the_parameters_it_lists` checks against
+`sys.all_parameters`. `sp_getapplock` and `sp_releaseapplock` return no result set and an `int`
+(`Sp_getapplock_and_sp_releaseapplock_return_no_result_set_and_an_int`), so a call of either adds nothing to the caller's results
+and changes none of its tables; its return code is never null, as any procedure's. `sp_invoke_external_rest_endpoint` (SQL
+Server 2025) is disabled on the server haruspex is tested against (`Sp_invoke_external_rest_endpoint_is_disabled_on_the_test_server`),
+so what a call returns isn't observed: its documentation lists no result set, but its results stay `system-procedure`, saying
+why, until a server shows them; a declaration in the config file stands in for them, as for any call. An argument passed
+`OUTPUT` (its `@response`) holds its variable's declared type, as for any callee.
 
 Under `INSERT … EXEC` such a call's result sets go into the table, so only the temporary tables become unknown: dynamic SQL
 can create, write, alter or drop any of them (`Dynamic_sql_can_change_its_callers_temporary_tables`), and so can anything
@@ -349,6 +360,11 @@ it on the stack of calls.
   a temporary table, a table variable, or a permanent object, resolved by the binder's rule for table names
   (`Binder.ResolveWritten`). A target of another form (`OPENROWSET`, `OPENQUERY`) is not modelled and makes the results
   unknown.
+- **`SET c.WRITE(…)`** changes part of a value in place (`Write_changes_part_of_a_value_in_place_keeping_its_type_and_fails_on_null`):
+  the column keeps its type, which must be a max type (258), and is null exactly where it was, since a NULL is an error
+  (5302). So of the body's own tables (`Walker.Rewritten`), a declared column is unchanged, a column `SELECT … INTO` made keeps
+  its type and nulls but only its type's facets (text that held JSON built here becomes `nvarchar(max)`), and JSON a column
+  held is no longer known. On any table, every other `SET` clause of the statement is read, so a variable set beside it may be set.
 - **`MERGE`** writes as the statements its actions hold do: a `WHEN … THEN INSERT` its row, a `THEN UPDATE` its `SET`
   clauses, a `THEN DELETE` nothing a column may hold. Each action writes rows of its own and every write only joins into what
   a column may hold, so the order they are read in doesn't matter. Their values are read over the target and the source, each
@@ -549,8 +565,29 @@ A conversion the server refuses (`CAST` of a `date` to `int`, error 529; `Conver
 has it, observed in `The_conversion_chart_is_what_the_server_allows_implicitly_explicitly_or_not_at_all`) is unknown: a
 procedure with it can't be created. A literal is checked by its value instead (`ISNULL(@d, 0)` into `decimal(10,2)` fits). An assignment to a variable converts
 the same way, so a value assigned to a narrower variable has `arithmetic-overflow` too; so does a table-valued function's
-argument ("Table-valued functions" below). A conversion of JSON, or to a type that is not modelled (binary, `xml`), is not
-modelled.
+argument ("Table-valued functions" below). A conversion to a type that is not modelled (binary, `xml`) is not modelled.
+
+**JSON built here** converts by rules of its own (`Typer.JsonCast`, `Typer.FromLiveJson`), observed in
+`Converted_json_stays_json_only_as_its_own_type_or_json` and
+`A_conversion_cuts_or_pads_json_as_any_string_and_varchar_replaces_what_its_code_page_lacks`. The server marks live JSON by its
+type: converted to that same type, or to `json`, it is still JSON, which `FOR JSON` and the constructors nest unescaped;
+converted to any other type, or with any style (even 0), it is text, which they escape. Built JSON (a `FOR JSON` subquery, a
+constructor) is `nvarchar(max)`, a constructor `RETURNING json` is `json`, and `json_query` follows its argument
+(`nvarchar(4000)` over a literal). So:
+
+| Converted to | Gives |
+|---|---|
+| `json` | live JSON of the same shape; JSON text with known content (`WITHOUT_ARRAY_WRAPPER`) made live, as `json_query` makes it. The `json` type parses the text again and writes a float as a number of 10 places (`1.5e-11` as `0.0000000000`, and one of `1e38` or more is refused, 1007), as a constructor `RETURNING json` does (`Json_converted_to_json_rewrites_a_float_as_a_decimal_of_ten_places`); the shape holds because a float in JSON claims no facets |
+| its own type, no style | the same live JSON (`CAST((SELECT … FOR JSON PATH) AS nvarchar(max))`) |
+| `nvarchar(max)` from another type, or with a style | `json-text` with its content, which holds any JSON unchanged |
+| any other string type | a string of that type: cut short past its length without an error, `nchar` padded, `varchar` writing `?` for a character its code page lacks |
+| a type that is not a string | not modelled |
+
+Each is null when the JSON is. When live JSON's own type isn't known (`json_query`, a `CASE`), a conversion to `nvarchar(max)`
+or `nvarchar(4000)`, which it may be, is unknown; to any other string type it is a string of that type. **`varchar(max)` holds
+any JSON whose characters its code page has**, but its content isn't claimed: JSON text here is `nvarchar(max)` throughout
+(`Typer.TypeOf`, the joins), so a `varchar(max)` JSON text would need its type carried beside its content; and which
+characters the code page has depends on the database's collation. It is a string of `varchar(max)`.
 
 ### `COALESCE` and `ISNULL`
 
@@ -599,6 +636,31 @@ modelled.
   null only when both sides may be, and never null when either side is never null. On is SQL Server's default, tedious's
   documented one and SqlClient's (observed), and off is deprecated; a procedure that sets it, either way, is unknown, as before (`Walker.IsHarmless`). `+` of a string and a number is
   arithmetic, which may fail, and is not modelled.
+
+### Bitwise operators, shifts and the concatenation operator
+
+`Typing/Bitwise.cs` holds the rules, `Typer.Bitwise.cs` applies them. Each type was observed with
+`sp_describe_first_result_set` over every pair of 25 types (`BitwiseGridTests`, which checks haruspex against the server's
+description, or its refusal, through the whole pipeline), and the values in
+`Bitwise_operators_shifts_and_concatenation_are_null_when_an_operand_is_and_never_overflow`.
+
+| Operator | Operands | Type |
+|---|---|---|
+| `&`, `\|`, `^` | two integers; a `bit` beside an integer or a `bit`; a string beside either | the wider integer; the integer; the integer or `bit` |
+| `<<`, `>>` (SQL Server 2022) | two integers | the left one's |
+| `~` | an integer or a `bit` | its own |
+| `\|\|` (SQL Server 2025) | a string beside a string, a number, a date or time, or a GUID | a varying string, national when either is, max when either is, else as long as both up to 8000 bytes (4000 characters) |
+
+Every other pair the server refuses (402, 8117): a decimal, money, a float, a date or a GUID beside a bitwise operator, two
+strings, a `bit` beside `||`, two values that are not strings beside `||`. So it is unknown, naming the pair. For `||` a value
+that is not a string counts the length of its longest text: `tinyint` 4, `smallint` 6, `int` 12, `bigint` 24, `decimal` and
+`numeric` 41, `money` 40, `float` and `real` 23, a date, a time or a GUID 40, whatever its precision or fractional digits
+(where `CONCAT` counts its own, which isn't modelled beyond `int` and `bit`).
+
+Each is null when an operand is, `||` too with `CONCAT_NULL_YIELDS_NULL` off, where `+` keeps the string. None overflows: a
+shift past the type's width gives 0, a negative one shifts the other way, `>>` fills with zeros, and `||` cuts at 8000 bytes
+without an error. A string beside an integer is converted to the integer's type, which may overflow as a `CAST` may (NULL
+under the caller's options, `arithmetic-overflow`; 244 by default), or fail if it isn't a number (245, an error either way).
 
 ### Decimal arithmetic
 
@@ -1420,6 +1482,7 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   procedure's results.
 - **Paths** read: `lax` or `strict`, `$`, keys (quoted or not) and indexes into a tuple. A wildcard, an index into an array of
   unknown length, a record's key or a recursive node is not read, and the general rule holds.
+- **Conversions** of JSON built here keep it, or its text, as "Conversions" above says.
 - **Not traced**, each claiming no more than before: a stored column; `varchar(max)` and shorter types; a `#table` column
   `SELECT … INTO` makes from live JSON that is not syntactically a `FOR JSON` subquery or constructor (a view's column, say,
   whose SQL type is not recorded: it may be `json`); a column `SELECT … INTO` made, later written with live JSON; `OPENJSON`'s
@@ -1587,9 +1650,13 @@ holds the current row. Observed in `FunctionObservationTests`.
   (`Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type`).
 - **`PERCENTILE_CONT`** (`float`, over a number or a `bit`) and **`PERCENTILE_DISC`** (its argument's type and facets): NULLs are skipped,
   so NULL only when every value in the partition is (the argument's reasons).
-- **A window named in a `WINDOW` clause** (`OVER w`) is not modelled: its definition, frame included, is the name's, which
-  may be empty where the `OVER` clause shows no frame, so a function over it is unknown. ScriptDom doesn't parse `OVER (w …)`
-  at all (`A_window_named_in_a_window_clause_brings_its_frame_to_every_function_over_it`).
+- **A window named in a `WINDOW` clause** (`OVER w`, SQL Server 2022) is the name's definition, frame included, which may be
+  empty where the `OVER` clause shows no frame (`A_window_named_in_a_window_clause_brings_its_frame_to_every_function_over_it`).
+  A window may be defined on another (`w2 AS (w1 ROWS …)`, written before or after it) and `OVER (w …)` may add to the one it
+  names; each element (partition, order, frame) comes from the one place along the chain that gives it
+  (`A_window_defined_on_another_named_window_takes_the_elements_of_both`). Semantics' `NamedWindows` follows the names, ignoring
+  case as for other identifiers. The server refuses a name not defined (5362), a cycle (5365) and an element given twice
+  (4123) when the procedure is created, so each is unknown.
 - A window function inside `COALESCE` still counts as a call read twice (`read-twice`): that it is computed once per row, as
   an aggregate is, is likely but not observed.
 
@@ -1739,6 +1806,9 @@ README):
   `INCLUDE_NULL_VALUES` an object whose values are all null is left out, so it is `omittedWhenNull` with the
   reason `all-fields-null` when every field in it can be null. With `INCLUDE_NULL_VALUES` it is always
   written, its keys null, however deeply nested: `{"a":{"b":{"y":null}}}`. Both observed (see "Scalars in JSON").
+  An object's keys come from adjacent columns; a key reused after another column, or both a value and an object, is refused
+  (13601), so it is `duplicate-column`. Keys are compared exactly, whatever the collation: `a` and `A`, or `b.x` and `B.x`,
+  are two keys, two objects (`For_json_keys_that_differ_only_in_case_are_two_keys`).
 
 ### Scalars in JSON
 

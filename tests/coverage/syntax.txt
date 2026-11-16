@@ -31,9 +31,9 @@ UpdateStatement | UPDATE | modelled | DML | Changes rows; a column it sets in a 
 DeleteStatement | DELETE | modelled | DML | Removes rows, which changes no column's type. | DELETE FROM dbo.box WHERE id = 1;
 MergeStatement | MERGE | modelled | DML | Each WHEN clause is the insert, update or delete it holds, into a temporary table or table variable too. | MERGE dbo.box AS b USING dbo.toy AS t ON b.toy_id = t.id WHEN MATCHED THEN UPDATE SET qty = 0 WHEN NOT MATCHED THEN INSERT (id, toy_id, qty) VALUES (t.id, t.id, 1);
 AssignmentSetClause | SET c = x in UPDATE | modelled | DML | The column, in a temporary table or variable, takes the value's type too. | UPDATE dbo.box SET qty = 1;
-FunctionCallSetClause | SET c.WRITE( … ) in UPDATE | partly unsupported-statement | DML | Read in an UPDATE of a permanent table, which changes no column's type; on a temporary table or variable, whose column it changes, not modelled yet. | UPDATE dbo.toy SET note.WRITE(N'x', 0, 1) WHERE id = 1; && CREATE TABLE #t (c nvarchar(max) NULL); UPDATE #t SET c.WRITE(N'x', 0, 1); SELECT c FROM #t;
+FunctionCallSetClause | SET c.WRITE( … ) in UPDATE | modelled | DML | The column keeps its type and its nulls, but only its type's facets and no JSON it held; on a permanent table it changes no column's type. | UPDATE dbo.toy SET note.WRITE(N'x', 0, 1) WHERE id = 1; CREATE TABLE #t (c nvarchar(max) NULL); UPDATE #t SET c.WRITE(N'x', 0, 1); SELECT c FROM #t;
 TruncateTableStatement | TRUNCATE TABLE | no-effect | DML | Removes every row and fires no trigger. | TRUNCATE TABLE dbo.box;
-ExecuteStatement | EXECUTE | partly dynamic-sql | Calls | A call of a procedure in the project returns what it returns, unless WITH RESULT SETS changes it (below); a string of dynamic SQL can't be read, so the results after it can't be listed. | EXEC dbo.helper; && EXEC sp_executesql N'SELECT 1 AS a';
+ExecuteStatement | EXECUTE | partly dynamic-sql | Calls | A call of a procedure in the project returns what it returns, unless WITH RESULT SETS changes it (below), and one of SQL Server's own the catalogue lists what it lists; a string of dynamic SQL can't be read, so the results after it can't be listed. | EXEC dbo.helper; && EXEC sp_executesql N'SELECT 1 AS a';
 BulkInsertStatement | BULK INSERT | unknown unsupported-statement | | Not modelled. | BULK INSERT dbo.box FROM 'boxes.csv';
 InsertBulkStatement | INSERT BULK | unknown unsupported-statement | | Not modelled. | INSERT BULK dbo.box (id int);
 ReadTextStatement | READTEXT | unknown unsupported-statement | | Not modelled. | DECLARE @p varbinary(16); READTEXT dbo.toy.note @p 0 1;
@@ -408,7 +408,7 @@ TopRowFilter | TOP | modelled | How many rows (`Cardinality.cs`) | Limits the ro
 OffsetClause | OFFSET … FETCH | modelled | How many rows (`Cardinality.cs`) | Skips and limits rows, which changes no column. | SELECT id FROM dbo.toy ORDER BY id OFFSET 1 ROWS FETCH NEXT 2 ROWS ONLY;
 OverClause | OVER | modelled | Window functions | Makes a function a window function. | SELECT ROW_NUMBER() OVER (ORDER BY id) AS n FROM dbo.toy;
 WindowFrameClause | ROWS or RANGE frame | modelled | Window functions | A frame that may leave out the current row may be empty, so an aggregate over it may be NULL. | SELECT SUM(qty) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) AS s FROM dbo.box;
-WindowClause | WINDOW | unknown unsupported-expression | | Not modelled: a function over a named window is unknown. | SELECT SUM(qty) OVER w AS s FROM dbo.box WINDOW w AS (ORDER BY id);
+WindowClause | WINDOW | modelled | Window functions | A function over a named window takes its definition, through windows defined on others. | SELECT SUM(qty) OVER w AS s FROM dbo.box WINDOW w AS (ORDER BY id);
 WindowDefinition | name AS ( window ) | within WindowClause | | |
 WithinGroupClause | WITHIN GROUP | modelled | Window functions | The order PERCENTILE_CONT, PERCENTILE_DISC and STRING_AGG read. | SELECT STRING_AGG(name, ',') WITHIN GROUP (ORDER BY name) AS names FROM dbo.toy;
 TableSampleClause | TABLESAMPLE | no-effect | | Returns some of the table's rows, which changes no column. | SELECT id FROM dbo.toy TABLESAMPLE (10 PERCENT);
@@ -493,14 +493,14 @@ DefaultLiteral | DEFAULT | modelled | DML | The column's default, in an INSERT o
 MaxLiteral | MAX in a type's length | within CastCall | | |
 IdentifierLiteral | a name where a value goes | within FunctionCall | | |
 ParenthesisExpression | ( expression ) | modelled | Expressions | The expression inside. | SELECT (id) AS a FROM dbo.toy;
-UnaryExpression | -x, +x, ~x | partly unsupported-expression | Decimal arithmetic | A sign keeps a number's type; ~ isn't modelled. | SELECT -id AS a FROM dbo.toy; && SELECT ~id AS a FROM dbo.toy;
-BinaryExpression | x + y, x * y, … | partly unsupported-expression | Decimal arithmetic | Arithmetic and concatenation are typed; the bitwise operators aren't. | SELECT id + 1 AS a FROM dbo.toy; && SELECT id & 1 AS a FROM dbo.toy;
+UnaryExpression | -x, +x, ~x | partly unsupported-expression | Decimal arithmetic | A sign keeps a number's type; ~ an integer's or a bit's; a literal signed twice isn't modelled. | SELECT -id AS a, ~id AS b FROM dbo.toy; && SELECT -(-1) AS a FROM dbo.toy;
+BinaryExpression | x + y, x * y, … | partly unsupported-expression | Decimal arithmetic | Arithmetic, concatenation and the bitwise operators are typed; an operand that is the NULL literal isn't modelled. | SELECT id + 1 AS a, id & 1 AS b FROM dbo.toy; && SELECT NULL + 1 AS a FROM dbo.toy;
 ScalarSubquery | ( SELECT … ) | modelled | Aggregates and scalar subqueries | Its one column, NULL when it returns no row. | SELECT (SELECT MAX(qty) FROM dbo.box) AS a;
 SearchedCaseExpression | CASE WHEN … | modelled | CASE, IIF, CHOOSE and NULLIF | The type of highest precedence over its results; NULL without ELSE. | SELECT CASE WHEN id > 1 THEN 'big' ELSE 'small' END AS a FROM dbo.toy;
 SimpleCaseExpression | CASE x WHEN … | modelled | CASE, IIF, CHOOSE and NULLIF | As searched CASE. | SELECT CASE id WHEN 1 THEN 'one' END AS a FROM dbo.toy;
 FunctionCall | f( … ) | partly unsupported-expression | Built-in functions | A function of the catalogue is typed by its row, and one of the project's (called by its schema) by its body; any other, and a method of a CLR type, is unknown. | SELECT ABS(id) AS a FROM dbo.toy; && SELECT hierarchyid::GetRoot().ToString() AS a;
-CastCall | CAST | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type. | SELECT CAST(id AS bigint) AS a FROM dbo.toy;
-ConvertCall | CONVERT | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type, whatever the style. | SELECT CONVERT(varchar(10), id) AS a FROM dbo.toy;
+CastCall | CAST | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type; JSON built here stays JSON as its own type or `json`, and is text as any other string type. | SELECT CAST(id AS bigint) AS a FROM dbo.toy;
+ConvertCall | CONVERT | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type, whatever the style; JSON built here as CAST, but text whenever a style is given. | SELECT CONVERT(varchar(10), id) AS a FROM dbo.toy;
 TryCastCall | TRY_CAST | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | Of the target type, NULL when the conversion fails. | SELECT TRY_CAST(name AS int) AS a FROM dbo.toy;
 TryConvertCall | TRY_CONVERT | modelled | Conversions: `CAST`, `CONVERT`, assignments and arguments | As TRY_CAST. | SELECT TRY_CONVERT(int, name) AS a FROM dbo.toy;
 ParseCall | PARSE | unknown unsupported-expression | | Not modelled. | SELECT PARSE('1' AS int) AS a;
@@ -543,15 +543,15 @@ BinaryExpressionType.Subtract | - | modelled | Decimal arithmetic | As +. | SELE
 BinaryExpressionType.Multiply | * | modelled | Decimal arithmetic | As +, a decimal of the digits the product needs. | SELECT price * 2 AS a FROM dbo.toy;
 BinaryExpressionType.Divide | / | modelled | Decimal arithmetic | As +; NULL when dividing by zero under the caller's options. | SELECT price / 2 AS a FROM dbo.toy;
 BinaryExpressionType.Modulo | % | modelled | Decimal arithmetic | As /. | SELECT id % 2 AS a FROM dbo.toy;
-BinaryExpressionType.Concat | \|\| | unknown unsupported-expression | | Not modelled yet. | SELECT name \|\| N'!' AS a FROM dbo.toy;
-BinaryExpressionType.BitwiseAnd | & | unknown unsupported-expression | | Not modelled yet. | SELECT id & 1 AS a FROM dbo.toy;
-BinaryExpressionType.BitwiseOr | \| | unknown unsupported-expression | | Not modelled yet. | SELECT id \| 1 AS a FROM dbo.toy;
-BinaryExpressionType.BitwiseXor | ^ | unknown unsupported-expression | | Not modelled yet. | SELECT id ^ 1 AS a FROM dbo.toy;
-BinaryExpressionType.LeftShift | << | unknown unsupported-expression | | Not modelled yet. | SELECT id << 1 AS a FROM dbo.toy;
-BinaryExpressionType.RightShift | >> | unknown unsupported-expression | | Not modelled yet. | SELECT id >> 1 AS a FROM dbo.toy;
+BinaryExpressionType.Concat | \|\| | modelled | Bitwise operators, shifts and the concatenation operator | A varying string as long as both, up to 8000 bytes; NULL when either is, whatever CONCAT_NULL_YIELDS_NULL says. | SELECT name \|\| N'!' AS a FROM dbo.toy;
+BinaryExpressionType.BitwiseAnd | & | modelled | Bitwise operators, shifts and the concatenation operator | The wider integer; a bit beside an integer the integer; a string converted to the other's type. | SELECT id & 1 AS a FROM dbo.toy;
+BinaryExpressionType.BitwiseOr | \| | modelled | Bitwise operators, shifts and the concatenation operator | As &. | SELECT id \| 1 AS a FROM dbo.toy;
+BinaryExpressionType.BitwiseXor | ^ | modelled | Bitwise operators, shifts and the concatenation operator | As &. | SELECT id ^ 1 AS a FROM dbo.toy;
+BinaryExpressionType.LeftShift | << | modelled | Bitwise operators, shifts and the concatenation operator | The left integer's type; never overflows. | SELECT id << 1 AS a FROM dbo.toy;
+BinaryExpressionType.RightShift | >> | modelled | Bitwise operators, shifts and the concatenation operator | As <<. | SELECT id >> 1 AS a FROM dbo.toy;
 UnaryExpressionType.Negative | -x | modelled | Decimal arithmetic | The number's type; a tinyint becomes a smallint; NULL when it overflows under the caller's options. | SELECT -id AS a FROM dbo.toy;
 UnaryExpressionType.Positive | +x | modelled | Decimal arithmetic | The number's type. | SELECT +id AS a FROM dbo.toy;
-UnaryExpressionType.BitwiseNot | ~x | unknown unsupported-expression | | Not modelled yet. | SELECT ~id AS a FROM dbo.toy;
+UnaryExpressionType.BitwiseNot | ~x | modelled | Bitwise operators, shifts and the concatenation operator | Its integer's or bit's type. | SELECT ~id AS a FROM dbo.toy;
 AssignmentKind.Equals | SET @v = x | modelled | The state | The value, converted to the variable's type. | DECLARE @n int; SET @n = 1; SELECT @n AS n;
 AssignmentKind.AddEquals | SET @v += x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @n int = 0; SET @n += 1; SELECT @n AS n;
 AssignmentKind.SubtractEquals | SET @v -= x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @n int = 0; SET @n -= 1; SELECT @n AS n;

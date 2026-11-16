@@ -19,9 +19,9 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | Not in it, and unknown where they are called | 217 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 153 |
+| Modelled, wholly or in part | 161 |
 | Read, changing no result | 29 |
-| Unknown | 323 |
+| Unknown | 315 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -613,9 +613,9 @@ Each construct as ScriptDom names it. What a modelled construct gives is explain
 | `DELETE` | `DeleteStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | Removes rows, which changes no column's type. |
 | `MERGE` | `MergeStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | Each WHEN clause is the insert, update or delete it holds, into a temporary table or table variable too. |
 | `SET c = x in UPDATE` | `AssignmentSetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | The column, in a temporary table or variable, takes the value's type too. |
-| `SET c.WRITE( … ) in UPDATE` | `FunctionCallSetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) in part; otherwise unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Read in an UPDATE of a permanent table, which changes no column's type; on a temporary table or variable, whose column it changes, not modelled yet. |
+| `SET c.WRITE( … ) in UPDATE` | `FunctionCallSetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | The column keeps its type and its nulls, but only its type's facets and no JSON it held; on a permanent table it changes no column's type. |
 | `TRUNCATE TABLE` | `TruncateTableStatement` | read, changing no result | Removes every row and fires no trigger. |
-| `EXECUTE` | `ExecuteStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#calls) in part; otherwise unknown, `dynamic-sql` | A call of a procedure in the project returns what it returns, unless WITH RESULT SETS changes it (below); a string of dynamic SQL can't be read, so the results after it can't be listed. |
+| `EXECUTE` | `ExecuteStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#calls) in part; otherwise unknown, `dynamic-sql` | A call of a procedure in the project returns what it returns, unless WITH RESULT SETS changes it (below), and one of SQL Server's own the catalogue lists what it lists; a string of dynamic SQL can't be read, so the results after it can't be listed. |
 | `BULK INSERT` | `BulkInsertStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `INSERT BULK` | `InsertBulkStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `READTEXT` | `ReadTextStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
@@ -760,7 +760,7 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `OFFSET … FETCH` | `OffsetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#how-many-rows-cardinalitycs) | Skips and limits rows, which changes no column. |
 | `OVER` | `OverClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#window-functions) | Makes a function a window function. |
 | `ROWS or RANGE frame` | `WindowFrameClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#window-functions) | A frame that may leave out the current row may be empty, so an aggregate over it may be NULL. |
-| `WINDOW` | `WindowClause` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: a function over a named window is unknown. |
+| `WINDOW` | `WindowClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#window-functions) | A function over a named window takes its definition, through windows defined on others. |
 | `name AS ( window )` | `WindowDefinition` | part of `WindowClause` |  |
 | `WITHIN GROUP` | `WithinGroupClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#window-functions) | The order PERCENTILE_CONT, PERCENTILE_DISC and STRING_AGG read. |
 | `TABLESAMPLE` | `TableSampleClause` | read, changing no result | Returns some of the table's rows, which changes no column. |
@@ -857,14 +857,14 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `MAX in a type's length` | `MaxLiteral` | part of `CastCall` |  |
 | `a name where a value goes` | `IdentifierLiteral` | part of `FunctionCall` |  |
 | `( expression )` | `ParenthesisExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#expressions) | The expression inside. |
-| `-x, +x, ~x` | `UnaryExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A sign keeps a number's type; ~ isn't modelled. |
-| `x + y, x * y, …` | `BinaryExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Arithmetic and concatenation are typed; the bitwise operators aren't. |
+| `-x, +x, ~x` | `UnaryExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A sign keeps a number's type; ~ an integer's or a bit's; a literal signed twice isn't modelled. |
+| `x + y, x * y, …` | `BinaryExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Arithmetic, concatenation and the bitwise operators are typed; an operand that is the NULL literal isn't modelled. |
 | `( SELECT … )` | `ScalarSubquery` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#aggregates-and-scalar-subqueries) | Its one column, NULL when it returns no row. |
 | `CASE WHEN …` | `SearchedCaseExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#case-iif-choose-and-nullif) | The type of highest precedence over its results; NULL without ELSE. |
 | `CASE x WHEN …` | `SimpleCaseExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#case-iif-choose-and-nullif) | As searched CASE. |
 | `f( … )` | `FunctionCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#built-in-functions) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A function of the catalogue is typed by its row, and one of the project's (called by its schema) by its body; any other, and a method of a CLR type, is unknown. |
-| `CAST` | `CastCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type. |
-| `CONVERT` | `ConvertCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type, whatever the style. |
+| `CAST` | `CastCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type; JSON built here stays JSON as its own type or `json`, and is text as any other string type. |
+| `CONVERT` | `ConvertCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type, whatever the style; JSON built here as CAST, but text whenever a style is given. |
 | `TRY_CAST` | `TryCastCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | Of the target type, NULL when the conversion fails. |
 | `TRY_CONVERT` | `TryConvertCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#conversions-cast-convert-assignments-and-arguments) | As TRY_CAST. |
 | `PARSE` | `ParseCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled. |
@@ -910,15 +910,15 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `*` | `BinaryExpressionType.Multiply` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | As +, a decimal of the digits the product needs. |
 | `/` | `BinaryExpressionType.Divide` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | As +; NULL when dividing by zero under the caller's options. |
 | `%` | `BinaryExpressionType.Modulo` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | As /. |
-| `\|\|` | `BinaryExpressionType.Concat` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
-| `&` | `BinaryExpressionType.BitwiseAnd` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
-| `\|` | `BinaryExpressionType.BitwiseOr` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
-| `^` | `BinaryExpressionType.BitwiseXor` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
-| `<<` | `BinaryExpressionType.LeftShift` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
-| `>>` | `BinaryExpressionType.RightShift` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
+| `\|\|` | `BinaryExpressionType.Concat` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | A varying string as long as both, up to 8000 bytes; NULL when either is, whatever CONCAT_NULL_YIELDS_NULL says. |
+| `&` | `BinaryExpressionType.BitwiseAnd` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | The wider integer; a bit beside an integer the integer; a string converted to the other's type. |
+| `\|` | `BinaryExpressionType.BitwiseOr` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | As &. |
+| `^` | `BinaryExpressionType.BitwiseXor` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | As &. |
+| `<<` | `BinaryExpressionType.LeftShift` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | The left integer's type; never overflows. |
+| `>>` | `BinaryExpressionType.RightShift` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | As <<. |
 | `-x` | `UnaryExpressionType.Negative` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | The number's type; a tinyint becomes a smallint; NULL when it overflows under the caller's options. |
 | `+x` | `UnaryExpressionType.Positive` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | The number's type. |
-| `~x` | `UnaryExpressionType.BitwiseNot` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
+| `~x` | `UnaryExpressionType.BitwiseNot` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | Its integer's or bit's type. |
 | `SET @v = x` | `AssignmentKind.Equals` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#the-state) | The value, converted to the variable's type. |
 | `SET @v += x` | `AssignmentKind.AddEquals` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#the-state) | The variable keeps its declared type; the value isn't followed, so it may be NULL. |
 | `SET @v -= x` | `AssignmentKind.SubtractEquals` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#the-state) | The variable keeps its declared type; the value isn't followed, so it may be NULL. |

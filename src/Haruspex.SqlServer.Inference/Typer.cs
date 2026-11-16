@@ -257,22 +257,23 @@ internal sealed partial class Typer(
             foreach (var key in path[..^1])
             {
                 // Keys of one nested object must come from adjacent columns. Anything else (a key reused after
-                // another column, a key that is both a value and an object, or the same key spelt in another
-                // case) either fails in SQL Server or writes duplicate keys, so it is not modelled.
+                // another column, or a key that is both a value and an object) fails in SQL Server (13601), so it is
+                // not modelled. Keys are compared exactly, whatever the collation: `id` and `ID`, or `a.x` and `A.y`,
+                // are two keys, two objects (observed: For_json_keys_that_differ_only_in_case_are_two_keys).
                 if (node.Entries.Count > 0 && node.Entries[^1] is { Child: { } child } last && last.Key.Equals(key, StringComparison.Ordinal))
                 {
                     node = child;
                     continue;
                 }
 
-                if (node.Entries.Any(e => e.Key.Equals(key, StringComparison.OrdinalIgnoreCase)))
+                if (node.Entries.Any(e => e.Key.Equals(key, StringComparison.Ordinal)))
                     return KeyConflict(column);
                 var nested = new JsonNode();
                 node.Entries.Add((key, nested, null, column.At));
                 node = nested;
             }
 
-            if (node.Entries.Any(e => e.Key.Equals(path[^1], StringComparison.OrdinalIgnoreCase)))
+            if (node.Entries.Any(e => e.Key.Equals(path[^1], StringComparison.Ordinal)))
                 return KeyConflict(column);
             node.Entries.Add((path[^1], null, column, column.At));
         }

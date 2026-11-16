@@ -83,10 +83,20 @@ public class ConstructTests
     [Theory]
     [InlineData("t.id AS a, t.code AS [a.b]")]
     [InlineData("t.id AS [a.x], t.code AS b, t.name AS [a.y]")]
-    [InlineData("t.id AS a, t.code AS A")]
-    [InlineData("t.id AS [a.x], t.code AS [A.y]")]
+    [InlineData("t.id AS [a.x], t.code AS [a.x]")]
     public void Clashing_for_json_keys_make_the_result_unknown(string columns) =>
         AssertUnknown(Procedure($"SELECT {columns} FROM dbo.t AS t FOR JSON PATH;"), "results[0]", IrUnknownReason.DuplicateColumn);
+
+    [Fact]
+    public void For_json_keys_that_differ_only_in_case_are_two_keys()
+    {
+        // Observed: For_json_keys_that_differ_only_in_case_are_two_keys ([{"a":1,"A":2,"b":{"x":3},"B":{"x":4}}]).
+        var doc = Procedure("SELECT t.id AS a, t.code AS A, t.id AS [b.x], t.code AS [B.x] FROM dbo.t AS t FOR JSON PATH;");
+
+        Assert.Empty(doc.Unknowns);
+        Assert.Equal(["a", "A", "b", "B"], RowFields(doc).Select(f => f.Name));
+        Assert.All(RowFields(doc).Skip(2), f => Assert.Equal(["x"], doc.Types[Assert.IsType<IrRef>(f.Type).Name].Fields.Select(g => g.Name)));
+    }
 
     [Fact]
     public void Adjacent_dotted_aliases_nest_in_one_object()

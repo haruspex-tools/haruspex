@@ -1010,7 +1010,7 @@ CAST(bin4 AS binary(4)) -> unknown unsupported-expression: CAST(bin4 AS binary(4
 CAST(bin4 AS varbinary(10)) -> unknown unsupported-expression: CAST(bin4 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(bin4 AS xml) -> unknown unsupported-expression: CAST(bin4 AS xml): a conversion to this type is not modelled yet.
 CAST(bin4 AS sql_variant) -> unknown unsupported-expression: CAST(bin4 AS sql_variant): a conversion to this type is not modelled yet.
-CAST(bin4 AS json) -> unknown unsupported-expression: CAST(bin4 AS json): a conversion to this type is not modelled yet.
+CAST(bin4 AS json) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 CAST(bin4 AS varchar) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 CAST(bin4 AS nvarchar) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
 CAST(vb10 AS bit) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
@@ -1045,7 +1045,7 @@ CAST(vb10 AS binary(4)) -> unknown unsupported-expression: CAST(vb10 AS binary(4
 CAST(vb10 AS varbinary(10)) -> unknown unsupported-expression: CAST(vb10 AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(vb10 AS xml) -> unknown unsupported-expression: CAST(vb10 AS xml): a conversion to this type is not modelled yet.
 CAST(vb10 AS sql_variant) -> unknown unsupported-expression: CAST(vb10 AS sql_variant): a conversion to this type is not modelled yet.
-CAST(vb10 AS json) -> unknown unsupported-expression: CAST(vb10 AS json): a conversion to this type is not modelled yet.
+CAST(vb10 AS json) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 CAST(vb10 AS varchar) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 CAST(vb10 AS nvarchar) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
 CAST(x AS bit) -> unknown unsupported-sql-type: The type xml is not modelled yet.
@@ -1080,7 +1080,7 @@ CAST(x AS binary(4)) -> unknown unsupported-expression: CAST(x AS binary(4)): a 
 CAST(x AS varbinary(10)) -> unknown unsupported-expression: CAST(x AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(x AS xml) -> unknown unsupported-expression: CAST(x AS xml): a conversion to this type is not modelled yet.
 CAST(x AS sql_variant) -> unknown unsupported-expression: CAST(x AS sql_variant): a conversion to this type is not modelled yet.
-CAST(x AS json) -> unknown unsupported-expression: CAST(x AS json): a conversion to this type is not modelled yet.
+CAST(x AS json) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 CAST(x AS varchar) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 CAST(x AS nvarchar) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 CAST(sv AS bit) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -1115,7 +1115,7 @@ CAST(sv AS binary(4)) -> unknown unsupported-expression: CAST(sv AS binary(4)): 
 CAST(sv AS varbinary(10)) -> unknown unsupported-expression: CAST(sv AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(sv AS xml) -> unknown unsupported-expression: CAST(sv AS xml): a conversion to this type is not modelled yet.
 CAST(sv AS sql_variant) -> unknown unsupported-expression: CAST(sv AS sql_variant): a conversion to this type is not modelled yet.
-CAST(sv AS json) -> unknown unsupported-expression: CAST(sv AS json): a conversion to this type is not modelled yet.
+CAST(sv AS json) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS varchar) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS nvarchar) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(j AS bit) -> unknown (no unknown recorded)
@@ -1150,7 +1150,7 @@ CAST(j AS binary(4)) -> unknown unsupported-expression: CAST(j AS binary(4)): a 
 CAST(j AS varbinary(10)) -> unknown unsupported-expression: CAST(j AS varbinary(10)): a conversion to this type is not modelled yet.
 CAST(j AS xml) -> unknown unsupported-expression: CAST(j AS xml): a conversion to this type is not modelled yet.
 CAST(j AS sql_variant) -> unknown unsupported-expression: CAST(j AS sql_variant): a conversion to this type is not modelled yet.
-CAST(j AS json) -> unknown unsupported-expression: CAST(j AS json): a conversion to this type is not modelled yet.
+CAST(j AS json) -> unknown (no unknown recorded)
 CAST(j AS varchar) -> unknown (no unknown recorded)
 CAST(j AS nvarchar) -> unknown (no unknown recorded)
 CAST(1 AS bit) -> bit boolean

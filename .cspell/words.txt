@@ -30,6 +30,7 @@ fixeddrives
 fmtonly
 formatmessage
 fromparts
+getapplock
 getdate
 getutcdate
 hashbytes
@@ -62,6 +63,7 @@ readcommitted
 readuncommitted
 refreshsqlmodule
 refreshview
+releaseapplock
 roundabort
 rowcount
 rowset

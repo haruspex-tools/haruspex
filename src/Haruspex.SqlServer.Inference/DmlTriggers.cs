@@ -228,6 +228,8 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
                     EncryptedBody => $"calls {callee.Name} at {at}, which is encrypted, and the source holds a placeholder, not its text",
                     ClrBody or NoBody => $"calls {callee.Name} at {at}, a CLR procedure",
                 };
+            case SystemProcedureCall:
+                return null; // writes no table of the database (SystemProcedures)
             case UnknowableCall unknowable:
                 return $"calls what is not followed at {at}: {unknowable.Detail}";
             default:

@@ -253,4 +253,64 @@ public class JsonTracingObservationTests(SqlServerFixture server)
                 """));
         Assert.Equal(13608, await Error("DECLARE @j nvarchar(max) = json_object('a': 1); SELECT json_value(@j, 'strict $.b');"));
     }
+
+    // ---- conversions ------------------------------------------------------------------------------------------------
+
+    [Theory]
+    // Built JSON is nvarchar(max): converted to that, however, or to json, it is still JSON.
+    [InlineData("CAST((SELECT 1 AS id FOR JSON PATH) AS nvarchar(max))", """{"j":[{"id":1}]}""")]
+    [InlineData("CONVERT(nvarchar(max), (SELECT 1 AS id FOR JSON PATH))", """{"j":[{"id":1}]}""")]
+    [InlineData("TRY_CAST((SELECT 1 AS id FOR JSON PATH) AS nvarchar(max))", """{"j":[{"id":1}]}""")]
+    [InlineData("CAST(CAST((SELECT 1 AS id FOR JSON PATH) AS nvarchar(max)) AS nvarchar(max))", """{"j":[{"id":1}]}""")]
+    [InlineData("CAST(json_object('id': 1) AS nvarchar(max))", """{"j":{"id":1}}""")]
+    [InlineData("CAST((SELECT 1 AS id FOR JSON PATH) AS json)", """{"j":[{"id":1}]}""")]
+    [InlineData("CAST(CAST((SELECT 1 AS id FOR JSON PATH) AS json) AS json)", """{"j":[{"id":1}]}""")]
+    [InlineData("CAST((SELECT 1 AS id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS json)", """{"j":{"id":1}}""")]
+    [InlineData("CONVERT(json, (SELECT 1 AS id FOR JSON PATH), 1)", """{"j":[{"id":1}]}""")]
+    // json converted to nvarchar(max), anything converted with a style (even 0) to a string type, and anything to another
+    // string type, is text, escaped.
+    [InlineData("CONVERT(nvarchar(max), (SELECT 1 AS id FOR JSON PATH), 0)", """{"j":"[{\"id\":1}]"}""")]
+    [InlineData("TRY_CONVERT(nvarchar(max), (SELECT 1 AS id FOR JSON PATH), 1)", """{"j":"[{\"id\":1}]"}""")]
+    [InlineData("CAST(CAST((SELECT 1 AS id FOR JSON PATH) AS json) AS nvarchar(max))", """{"j":"[{\"id\":1}]"}""")]
+    [InlineData("CAST(json_object('id': 1 RETURNING json) AS nvarchar(max))", """{"j":"{\"id\":1}"}""")]
+    [InlineData("CAST((SELECT 1 AS id FOR JSON PATH) AS nvarchar(4000))", """{"j":"[{\"id\":1}]"}""")]
+    [InlineData("CAST((SELECT 1 AS id FOR JSON PATH) AS varchar(max))", """{"j":"[{\"id\":1}]"}""")]
+    [InlineData("CAST((SELECT 1 AS id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS nvarchar(max))", """{"j":"{\"id\":1}"}""")]
+    // json_query's type follows its argument's: nvarchar(4000) over a literal, so it is JSON as that and text as nvarchar(max).
+    [InlineData("CAST(json_query(N'{\"id\":1}') AS nvarchar(4000))", """{"j":{"id":1}}""")]
+    [InlineData("CAST(json_query(N'{\"id\":1}') AS nvarchar(max))", """{"j":"{\"id\":1}"}""")]
+    public async Task Converted_json_stays_json_only_as_its_own_type_or_json(string conversion, string expected)
+    {
+        Assert.Equal($"j: {expected}", await Select($"SELECT (SELECT {conversion} AS j FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS j;"));
+        Assert.Equal($"j: {expected}", await Select($"SELECT json_object('j': {conversion}) AS j;"));
+    }
+
+    [Fact]
+    public async Task A_conversion_cuts_or_pads_json_as_any_string_and_varchar_replaces_what_its_code_page_lacks()
+    {
+        // As text in a rowset: nvarchar(max) holds it whole, a shorter type cuts it without an error, nchar pads it, and
+        // varchar writes ? for a character the database's code page lacks. A style changes nothing. An empty subquery is NULL whatever the type.
+        Assert.Equal(
+            """m,c,p,v,e: [{"id":1,"n":"é☃"}],[{"id":1,",[{"id":1}]    ,[{"id":1,"n":"é?"}],null""",
+            await Select("""
+                SELECT CAST((SELECT 1 AS id, N'é☃' AS n FOR JSON PATH) AS nvarchar(max)) AS m,
+                       CAST((SELECT 1 AS id, N'é☃' AS n FOR JSON PATH) AS nvarchar(10)) AS c,
+                       CONVERT(nchar(14), (SELECT 1 AS id FOR JSON PATH), 1) AS p,
+                       CAST((SELECT 1 AS id, N'é☃' AS n FOR JSON PATH) AS varchar(max)) AS v,
+                       CAST((SELECT 1 AS id WHERE 1 = 0 FOR JSON PATH) AS nvarchar(max)) AS e;
+                """));
+    }
+
+    [Fact]
+    public async Task Json_converted_to_json_rewrites_a_float_as_a_decimal_of_ten_places()
+    {
+        // The json type parses the text again: a float becomes a number of 10 places (1.5e-11 is 0.0000000000), a decimal,
+        // money or bigint stays exactly as written, and a float of 1e38 or more is refused (1007). A constructor RETURNING
+        // json does the same. A float in JSON claims only that it is a number, so its content still holds.
+        Assert.Equal(
+            """j: {"f":0.0000000000,"d":12.25}""",
+            await Select("SELECT CAST((SELECT CAST('1.5e-11' AS float) AS f, CAST(12.25 AS decimal(9,2)) AS d FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS json) AS j;"));
+        Assert.Equal("""j: {"f":0.0000000000}""", await Select("SELECT json_object('f': CAST('1.5e-11' AS float) RETURNING json) AS j;"));
+        Assert.Equal(1007, await Error("SELECT CAST((SELECT CAST('1e38' AS float) AS f FOR JSON PATH) AS json) AS j;"));
+    }
 }

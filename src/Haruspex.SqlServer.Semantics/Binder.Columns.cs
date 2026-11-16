@@ -158,6 +158,17 @@ public sealed partial class Binder
         return [.. listed.Select(c => columns.ToList().FindIndex(n => n.Equals(WrittenColumn(c), StringComparison.OrdinalIgnoreCase)))];
     }
 
+    /// <summary>
+    /// The name of the column <c>SET c.WRITE(…)</c> changes in place: its call target's last part; null when the target is not
+    /// a column, which the parser doesn't make.
+    /// </summary>
+    /// <param name="clause">The SET clause.</param>
+    public static string? MutatedColumn(FunctionCallSetClause clause)
+    {
+        ArgumentNullException.ThrowIfNull(clause);
+        return clause.MutatorFunction.CallTarget is MultiPartIdentifierCallTarget { MultiPartIdentifier.Identifiers: [.., var last] } ? last.Value : null;
+    }
+
     /// <summary>The name of a column a write sets (<c>SET t.a = …</c>) or lists: its last part.</summary>
     /// <param name="column">The column as written.</param>
     public static string WrittenColumn(ColumnReferenceExpression column)

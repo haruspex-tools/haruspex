@@ -243,6 +243,38 @@ public class ExpressionObservationTests(SqlServerFixture server)
         // when an operand may be holds under either.
         Assert.Equal("x: a", (await Run("SET CONCAT_NULL_YIELDS_NULL OFF; SELECT 'a' + NULL AS x;")).ToString());
 
+    // ---- bitwise operators, shifts and || ----------------------------------------------------------------------------
+
+    [Fact]
+    public async Task Bitwise_operators_shifts_and_concatenation_are_null_when_an_operand_is_and_never_overflow()
+    {
+        // A shift past the type's width gives 0, a negative one shifts the other way, >> fills with zeros and << into the sign
+        // bit is negative: no error and no NULL. ~ flips every bit of its type.
+        Assert.Equal(
+            "t8,t1,i31,i32,r1,r2,l3,r3,b63,nt,ns,ni,nb,nbt: 0,254,-2147483648,0,4,2147483644,0,16,-9223372036854775808,255,-1,-1,-1,False",
+            (await Run("""
+                SELECT CAST(1 AS tinyint) << 8 AS t8, CAST(255 AS tinyint) << 1 AS t1, 1 << 31 AS i31, 1 << 32 AS i32, 8 >> 1 AS r1, -8 >> 1 AS r2,
+                       1 << -1 AS l3, 8 >> -1 AS r3, CAST(1 AS bigint) << 63 AS b63,
+                       ~CAST(0 AS tinyint) AS nt, ~CAST(0 AS smallint) AS ns, ~0 AS ni, ~CAST(0 AS bigint) AS nb, ~CAST(1 AS bit) AS nbt;
+                """)).ToString());
+
+        // Each is NULL when an operand is; || even with CONCAT_NULL_YIELDS_NULL off, where + keeps the string. || cuts at 8000
+        // bytes without an error.
+        Assert.Equal(
+            "a,o,s,n,c,b,plus,l8,l4: null,null,null,null,null,null,a,8000,4000",
+            (await Run("""
+                SET CONCAT_NULL_YIELDS_NULL OFF;
+                DECLARE @i int = NULL, @s nvarchar(5) = NULL, @v varchar(8000) = REPLICATE('a', 8000), @w nvarchar(4000) = REPLICATE(N'b', 4000);
+                SELECT @i & 1 AS a, 1 | @i AS o, 1 << @i AS s, ~@i AS n, N'a' || @s AS c, @s || 1 AS b, N'a' + @s AS plus, LEN(@v || 'x') AS l8, LEN(@w || N'y') AS l4;
+                """)).ToString());
+
+        // A string beside an integer is converted to its type: past it, an overflow, NULL under the caller's options (244 by
+        // default); not a number, an error either way (245).
+        Assert.Equal("x: null", (await Run("SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; SELECT '300' & CAST(1 AS tinyint) AS x;")).ToString());
+        Assert.Equal(244, (await Run("SELECT '300' & CAST(1 AS tinyint) AS x;")).Error);
+        Assert.Equal(245, (await Run("SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; SELECT 'x' & 1 AS x;")).Error);
+    }
+
     // ---- arithmetic and SUM -----------------------------------------------------------------------------------------
 
     [Fact]

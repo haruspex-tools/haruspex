@@ -19,7 +19,7 @@ the rows at the top are where work types the most. **Places** adds the four colu
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters | Places | Corpora |
 |---|---:|---:|---:|---:|---:|---:|
 | `unsupported-sql-type` | 27 | 0 | 0 | 143 | 170 | 6 |
-| `unsupported-expression` | 145 | 0 | 0 | 0 | 145 | 3 |
+| `unsupported-expression` | 108 | 0 | 0 | 0 | 108 | 2 |
 | `dynamic-sql` | 5 | 0 | 88 | 0 | 93 | 5 |
 | `unnamed-column` | 0 | 64 | 0 | 0 | 64 | 4 |
 | `unsupported-statement` | 16 | 0 | 19 | 0 | 35 | 6 |
@@ -215,7 +215,7 @@ The manifest names each.
 
 ### Chinook
 
-**Typed 0 of 37 fields in Chinook; the results of 10 of its 80 procedures can't be described, so they have no fields to count.** 0 of the 37 procedures that return fields are fully typed.
+**Typed 37 of 37 fields in Chinook; the results of 10 of its 80 procedures can't be described, so they have no fields to count.** 37 of the 37 procedures that return fields are fully typed.
 
 From [its repository](https://github.com/cwoodruff/ChinookDatabase) at commit `8065767da634391889b31be1593d2b814e92c371`, under `MIT` (`LICENSE`, fetched with it). The Chinook music store sample, as Chris Woodruff's SSDT project: small create, read, update and delete procedures, many returning `SELECT *` as JSON. Its schema derives from Luis Rocha's Chinook database, also under MIT.
 
@@ -231,9 +231,9 @@ From [its repository](https://github.com/cwoodruff/ChinookDatabase) at commit `8
 | Procedures whose result sets can't be listed | 0 |
 | Procedures that return no result set | 33 |
 | Procedures whose known results have no fields | 0 |
-| Procedures that return fields, fully typed | 0 |
+| Procedures that return fields, fully typed | 37 |
 | Fields | 37 |
-| Fields typed | 0 |
+| Fields typed | 37 |
 | Fields typed as JSON text whose content isn't known | 0 |
 | Results | 47 |
 | Results of unknown shape | 10 |
@@ -243,7 +243,6 @@ From [its repository](https://github.com/cwoodruff/ChinookDatabase) at commit `8
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
 | `unnamed-column` | 0 | 10 | 0 | 0 |
-| `unsupported-expression` | 37 | 0 | 0 | 0 |
 
 ### Ed-Fi OneRoster
 
