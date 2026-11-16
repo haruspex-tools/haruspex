@@ -206,4 +206,17 @@ public partial class StatementFlowTests
 
         Assert.Contains(IrNullRule.Variable, Rules(doc, "n"));
     }
+
+    [Fact]
+    public void An_existence_guard_proves_nothing_of_a_later_read_of_the_row()
+    {
+        // Each statement reads committed rows when it runs, and the guard's lock on the row is gone when it ends, so another
+        // session may delete the row before the read, which then finds none: the read keeps empty-subquery.
+        var doc = Procedure("""
+            IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WHERE t.id = @id) RETURN;
+            SELECT (SELECT t.id, t.name FROM dbo.t AS t WHERE t.id = @id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS card;
+            """, "@id int");
+
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "card"));
+    }
 }

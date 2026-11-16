@@ -233,6 +233,14 @@ Each value put back is the SELECT's, so a column that may be NULL still may be. 
 of its variables is assigned again, and where paths meet unless every path keeps it, so a loop's later passes never use what an
 earlier pass knew.
 
+**What a guard does not prove.** `IF NOT EXISTS (SELECT … FROM shop.orders WHERE order_id = @order_id) RETURN` proves the row
+was there when the guard ran, not when a later statement reads it: under read committed each statement reads the rows
+committed when it runs, and the guard's locks end with its statement, so another session may delete the row in between,
+and a later keyed read of it may find none. Microsoft documents this of read committed; it is not observed here, since it
+needs a second session committing between the two statements, which the differential tests don't run. So the subquery keeps
+`empty-subquery` (`An_existence_guard_proves_nothing_of_a_later_read_of_the_row`), as `COALESCE` keeps `read-twice` for the
+same race. A variable can't change that way: only the body assigns it.
+
 ## Result sets are positional
 
 A branch that is not taken returns no result set at all, so a result after it arrives at its position
@@ -1733,11 +1741,11 @@ constructs this front end gives each reason for:
 | `all-fields-null` | a nested object `FOR JSON PATH` builds from dotted aliases, left out when every value in it is null |
 | `empty-aggregate` | an aggregate without `GROUP BY`, NULL over no rows: `MIN`, `MAX`, `SUM`, `AVG`, the statistical aggregates, `STRING_AGG`, `json_arrayagg` and `json_objectagg` |
 | `function-result` | a scalar user function typed from its declared return type |
-| `parameter` | a function's or procedure's parameter, which a caller may pass as NULL |
+| `parameter` | a function's or procedure's parameter, which a caller may pass as NULL, until a guard proves it ("Guards") |
 | `null-input` | a call of a function declared `WITH RETURNS NULL ON NULL INPUT` with an argument that may be null |
 | `no-rows` | a top-level `FOR JSON` result over no rows, which returns no row at all |
 | `not-run` | a result inside a branch, or after a `RETURN` that may be taken |
-| `variable` | a variable until a value never null is assigned on every path |
+| `variable` | a variable until a value never null is assigned on every path, or a guard proves it ("Guards") |
 | `count-overflow` | `COUNT` (an `int`) under a caller's `ANSI_WARNINGS` and `ARITHABORT` off; never when either is declared on |
 | `arithmetic-overflow` | arithmetic, `SUM`, `AVG`, numeric functions and conversions that can overflow or divide by zero, under the same session options |
 | `precision-loss` | a decimal rounded to fewer places by a conversion (`OPENJSON … WITH`'s too), an assignment, a common type, arithmetic whose scale is cut, or `AVG`, under a caller's `NUMERIC_ROUNDABORT` on with `ANSI_WARNINGS` and `ARITHABORT` off, and under `TRY_CAST` with `NUMERIC_ROUNDABORT` on |
@@ -1955,7 +1963,8 @@ sound, is above; the engine rules are observed and kept as tests in
   variable's own CHECK is named by its table: `{ "check": "#totals.ck_amount" }`, and its nullable columns as
   `#totals.amount`.
 - A variable has its declared type, with the type's facets, and is nullable (`variable`) until a value that is never
-  null is assigned on every path. A procedure's parameter read in its body is nullable (`parameter`).
+  null is assigned on every path. A procedure's parameter read in its body is nullable (`parameter`). Either is never null
+  where a guard proves it, until it is assigned again ("Guards" above).
 - A `#t` the procedure does not create on every path before it reads it is the caller's, if any: unknown,
   `caller-temp-table`. Results that cannot be lined up by position are unknown, `varying-results`.
 
