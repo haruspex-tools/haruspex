@@ -26,7 +26,7 @@ export type SearchTitlesRow = z.infer<typeof SearchTitlesRowSchema>
 export const SearchTitlesParamsSchema = z.strictObject({
   name: z.string().refine((value) => value.length <= 60, { error: "More than 60 UTF-16 code units, which nvarchar(60) would cut short" }).nullable().optional(),
   author: z.string().refine((value) => value.length <= 60, { error: "More than 60 UTF-16 code units, which nvarchar(60) would cut short" }).nullable().optional(),
-  /** varchar(10) counts bytes and its collation isn't declared, so a value of fewer than 10 characters may still be cut short, and a character its code page lacks is replaced. */
+  /** varchar(10) counts bytes and its collation isn't declared, so a value of 10 characters or fewer may take more; its function sends it as varchar(10), and the server refuses it (error 8016), where sent otherwise it is cut short. A character its code page lacks is replaced. */
   genre: z.string().refine((value) => value.length <= 10, { error: "More than 10 UTF-16 code units, which varchar(10) would cut short" }).nullable().optional(),
 })
 export type SearchTitlesParams = z.infer<typeof SearchTitlesParamsSchema>

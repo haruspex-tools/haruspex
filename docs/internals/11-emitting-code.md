@@ -232,6 +232,16 @@ emitter reads a SQL type's name, because the IR has no fact for a second's fract
 ([decision 0055](../decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)). `ParameterAcceptanceTests` sends values
 of each type to the server through the driver, and holds the schema to it: what it accepts arrives as it was sent.
 
+**Functions are a layer of their own.** The database module's functions, one for each procedure over the mssql driver, are
+written by `Haruspex.Emit.Mssql` into a file beside the Zod module, which they import. They meet the schemas only in the
+generated TypeScript, by the names `SchemaModuleNames` gives, and check values through Standard Schema rather than Zod's own
+methods, so a second schema emitter could serve the same functions; the emit check compiles the two files together, which is
+where a disagreement would show. Two stages there, a plan (`FunctionPlanner`) and a printer, since a function's code is the same
+for every procedure but for its names, its bindings (`DriverTypes`, from the IR's kinds and facets, never from a type's
+spelling) and how each result set is read. Each module writes its own error classes and helpers, only those its functions use,
+since a linter reports one nothing calls, and only TypeScript a type stripper erases, so Node runs it as it is
+([decision 0058](../decisions/0058-the-functions-are-a-file-of-their-own-named-for-their-driver.md)).
+
 **The tools agree.** The tests compile every fixture's module with `tsc` under `strict`, and lint it with the recommended rules
 of ESLint and typescript-eslint, any warning failing (`EmitCheckTests`); and the example application, which imports a
 generated module and uses its schemas and types as a team would, is compiled in CI (`ExampleAppTests`).

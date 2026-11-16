@@ -14,6 +14,7 @@
     <Project Path="src/Haruspex.Config/Haruspex.Config.csproj" />
     <Project Path="src/Haruspex.Emit.Zod/Haruspex.Emit.Zod.csproj" />
     <Project Path="src/Haruspex.Emit.JsonSchema/Haruspex.Emit.JsonSchema.csproj" />
+    <Project Path="src/Haruspex.Emit.Mssql/Haruspex.Emit.Mssql.csproj" />
     <Project Path="src/Haruspex.Cli/Haruspex.Cli.csproj" />
   </Folder>
   <Folder Name="/tests/">

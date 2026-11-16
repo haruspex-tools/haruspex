@@ -252,10 +252,12 @@ jdkato
 jsdom
 
 # The mssql driver's names: its result sets (recordset, recordsets), its error code for JSON it can't parse (EJSON), for a
-# value its check of a type refuses (EPARAM), and for the server's error (EREQUEST)
+# value its check of a type refuses (EPARAM), and for the server's error (EREQUEST); and the property of its error that names
+# the procedure that raised it (procName)
 EJSON
 EPARAM
 EREQUEST
+procName
 recordset
 recordsets
 

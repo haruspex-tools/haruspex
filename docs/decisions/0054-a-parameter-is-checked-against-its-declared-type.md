@@ -31,6 +31,13 @@ arrives as it was sent, and a value outside them doesn't.
   ends the call when a parameter is NULL means NULL is never useful, and the schema may say so. That is the guards' work,
   not this record's.
 
+**A length in bytes.** `varchar(n)` and `char(n)` count bytes of their collation's code page. In a single-byte code page
+a character is a byte, so the check in UTF-16 code units is exact; in UTF-8 the schema counts the bytes themselves (with
+a TextEncoder). In a double-byte code page, or one the config doesn't declare, a value of `n` characters may take more
+bytes, which no check here can count: the generated function sends it with its declared length, as `sql.VarChar(n)`, so
+the server refuses it (error 8016) rather than cutting it short, as it does to such a value sent as `max`. The
+property's note says so.
+
 **Reason.** The facts are already proven, cost nothing to carry, and give every emitter the same rule. The client can then
 refuse a value with an error that names the procedure and the parameter, before any connection is touched, instead of
 sending one SQL Server would silently change.

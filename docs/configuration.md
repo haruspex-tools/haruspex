@@ -17,7 +17,8 @@ otherwise silently do nothing.
   "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "Value sets"
   "out": "src/db",                          // where haruspex.ir.json and what "emit" names go
 
-  "emit": ["zod"],                          // or ["json-schema"], or both; see "What is written"
+  "emit": ["zod"],                          // and "json-schema", "mssql"; see "What is written"
+  "serverOnly": false,                      // true: the functions import 'server-only'; see "What is written"
   "objects": "strip",                       // or "strict"
 
   "session": { "ansiWarnings": true },      // what the callers' connections set; see "The callers' session"
@@ -254,9 +255,23 @@ alone:
   ([the JSON Schema emitter](../src/Haruspex.Emit.JsonSchema/README.md),
   [decision 0051](decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)).
 
+- `"mssql"`: `haruspex.mssql.ts`, the database module's functions, one for each procedure, which check its parameters, call it
+  through the mssql driver and check what comes back ([the mssql emitter](../src/Haruspex.Emit.Mssql/README.md)). They import
+  the schemas and types from `haruspex.zod.ts`, so `"mssql"` needs `"zod"` beside it.
+
 ```jsonc
 "emit": ["zod", "json-schema"]   // both, each from the same IR
 ```
+
+```jsonc
+"emit": ["zod", "mssql"]   // the schemas, and the functions that use them
+```
+
+**The functions belong on the server.** They take a connection, and a connection holds the database's credentials; and the
+database module is two files so that the schemas and types, which a browser may use, stay apart from the functions, which it
+must not. In a Next.js application they are for route handlers, server actions and server components. `"serverOnly": true`
+starts `haruspex.mssql.ts` with `import 'server-only'`, so that a build fails where client code imports it (install the
+`server-only` package); it needs `"mssql"` in `emit`, and is off by default, since haruspex assumes no framework.
 
 `emit` lists at least one, each once. `check` compares each file it names with what is committed, and fails when one is
 missing. A file of an emitter taken off the list is left where it is, not deleted: remove it yourself.

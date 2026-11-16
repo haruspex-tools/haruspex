@@ -48,15 +48,20 @@
       ]
     },
     "emit": {
-      "description": "What generate writes beside haruspex.ir.json, each from the IR alone: \"zod\", haruspex.zod.ts, a module of Zod schemas and TypeScript types; \"json-schema\", haruspex.jsonschema.json, one JSON Schema (2020-12) document with each procedure's results in $defs under its name; or both. check compares each. [\"zod\"] by default.",
+      "description": "What generate writes beside haruspex.ir.json, each from the IR alone: \"zod\", haruspex.zod.ts, a module of Zod schemas and TypeScript types; \"json-schema\", haruspex.jsonschema.json, one JSON Schema (2020-12) document with each procedure's results in $defs under its name; \"mssql\", haruspex.mssql.ts, a function for each procedure that calls it through the mssql driver, importing the Zod module's schemas, so it needs \"zod\" beside it. check compares each. [\"zod\"] by default.",
       "type": "array",
       "items": {
         "enum": [
           "zod",
-          "json-schema"
+          "json-schema",
+          "mssql"
         ]
       },
       "minItems": 1
+    },
+    "serverOnly": {
+      "description": "Whether haruspex.mssql.ts starts with import 'server-only', so that a Next.js build fails where browser code imports the functions. Needs \"mssql\" in emit. false by default: haruspex assumes no framework.",
+      "type": "boolean"
     },
     "naming": {
       "$ref": "#/$defs/naming"

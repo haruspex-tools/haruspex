@@ -15,11 +15,11 @@ export type ShiftTimesRow = z.infer<typeof ShiftTimesRowSchema>
 /** till.shift_times: its parameters, checked before anything is sent. */
 export const ShiftTimesParamsSchema = z.strictObject({
   day: z.iso.date().nullable(),
-  opened_at: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/).nullable(),
-  logged_at: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d(\d[037]?)?)?$/).refine((value) => value >= "1753-01-01", { error: "Before 1753-01-01, the earliest datetime" }).nullable().optional(),
-  rota_slot: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/).refine((value) => value >= "1900-01-01" && value <= "2079-06-06T23:59:00", { error: "Outside 1900-01-01 to 2079-06-06T23:59:00, the range of smalldatetime" }).nullable().optional(),
-  till_time: z.iso.time().regex(/^\d{2}:\d{2}:\d{2}(\.\d{1,3})?$/).nullable().optional(),
-  stamped_at: z.iso.datetime({ offset: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,7})?(Z|[+-]\d{2}:\d{2})$/).nullable().optional(),
+  opened_at: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/, { error: "Expected a datetime2(0) such as 2026-11-16T08:30:00, in whole seconds and no offset" }).nullable(),
+  logged_at: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d(\d[037]?)?)?$/, { error: "Expected a datetime such as 2026-11-16T08:30:00.997, with no offset, in thousandths of a second that end in 0, 3 or 7" }).refine((value) => value >= "1753-01-01", { error: "Before 1753-01-01, the earliest datetime" }).nullable().optional(),
+  rota_slot: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/, { error: "Expected a smalldatetime such as 2026-11-16T08:30:00, in whole minutes, with no offset" }).refine((value) => value >= "1900-01-01" && value <= "2079-06-06T23:59:00", { error: "Outside 1900-01-01 to 2079-06-06T23:59:00, the range of smalldatetime" }).nullable().optional(),
+  till_time: z.iso.time().regex(/^\d{2}:\d{2}:\d{2}(\.\d{1,3})?$/, { error: "Expected a time(3) such as 08:30:00, with at most 3 digits of a second" }).nullable().optional(),
+  stamped_at: z.iso.datetime({ offset: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,7})?(Z|[+-]\d{2}:\d{2})$/, { error: "Expected a datetimeoffset(7) such as 2026-11-16T08:30:00+05:30, with at most 7 digits of a second and an offset" }).nullable().optional(),
 })
 export type ShiftTimesParams = z.infer<typeof ShiftTimesParamsSchema>
 

@@ -60,6 +60,9 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0053](0053-a-guard-narrows-the-state-and-a-select-that-may-assign-nothing-is-kept-for-one.md) | 16 Nov 2026 | A guard narrows the state, and a SELECT that may assign nothing is kept for one |
 | [0054](0054-a-parameter-is-checked-against-its-declared-type.md) | 16 Nov 2026 | A parameter is checked against its declared type |
 | [0055](0055-dates-and-times-are-sent-as-iso-8601-strings.md) | 16 Nov 2026 | Dates and times are sent as ISO 8601 strings |
+| [0056](0056-a-function-throws-three-kinds-of-failure.md) | 16 Nov 2026 | A function throws three kinds of failure |
+| [0057](0057-parameter-keys-are-their-declared-names.md) | 16 Nov 2026 | Parameter keys are their declared names |
+| [0058](0058-the-functions-are-a-file-of-their-own-named-for-their-driver.md) | 16 Nov 2026 | The functions are a file of their own, named for their driver |
 
 ## Writing a record
 

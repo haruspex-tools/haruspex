@@ -42,4 +42,13 @@ internal sealed record ZodModule(
 
     /// <summary>The name of the type of the parameters of the procedure named <paramref name="name"/>.</summary>
     public static string ParametersOf(string name) => name + ParametersSuffix;
+
+    /// <summary>
+    /// What follows a procedure's name in the name of the type of what its <c>OUTPUT</c> parameters hold when it ends:
+    /// <c>RingUp</c> and <c>RingUpOutput</c>.
+    /// </summary>
+    public const string OutputSuffix = "Output";
+
+    /// <summary>The name of the type of what the <c>OUTPUT</c> parameters of the procedure named <paramref name="name"/> hold.</summary>
+    public static string OutputOf(string name) => name + OutputSuffix;
 }

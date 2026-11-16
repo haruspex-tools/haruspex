@@ -193,8 +193,30 @@ the document inside it. It takes the database's source, as a folder of scripts, 
 `haruspex.json` beside it saying which procedures are the application's interface; [the configuration](docs/configuration.md)
 also covers names, overrides and declared results.
 
+**It calls the procedures, checking what goes in and what comes back.** With `"emit": ["zod", "mssql"]` in `haruspex.json`,
+`generate` also writes `haruspex.mssql.ts`, a function for each procedure, over the mssql driver:
+
+```ts
+import { getOrder } from './db/haruspex.mssql'
+
+const { result } = await getOrder(pool, { OrderID: 42 })   // a pool or a transaction, and the procedure's own parameter names
+```
+
+A function checks its parameters before anything is sent, with a strict schema of each one's declared type (`GetOrderParamsSchema`
+in the Zod module), because SQL Server cuts a longer string short and rounds a decimal of more places without an error: for
+those the check is the only one there is ([decision 0054](docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)).
+A date or time is an ISO 8601 string of the form its type holds, never a `Date`, whose meaning would depend on the server's
+time zone ([decision 0055](docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)). It then checks each result
+set, and the `OUTPUT` parameters, with their schemas, and returns `{ result, output, returnValue }`. A failure is one of three,
+told apart by name: the parameters were wrong (a HaruspexParameterError, nothing sent), the database raised an error (mssql's own
+`RequestError`, as it is), or the result broke its schema (a HaruspexResultError: the database and the application are deployed
+out of step) ([decision 0056](docs/decisions/0056-a-function-throws-three-kinds-of-failure.md)). The functions take a
+connection, so they belong on the server; the types and schemas, in their own file, may go anywhere
+([the configuration](docs/configuration.md#what-is-written-emit)).
+
 **It validates results at the seam, at run time.** The types are only as good as the data that arrives, so the application
-parses each result with the schema before using it. A wrong claim, such as one in an override a person wrote, fails there,
+parses each result with the schema before using it: the functions do it for you, and an application that calls the driver
+itself does it as below. A wrong claim, such as one in an override a person wrote, fails there,
 loudly, rather than deep in the code. SQL Server splits `FOR JSON` output over rows of about 2,000 characters, and the
 [mssql](https://www.npmjs.com/package/mssql) driver joins them back into one row. With the driver's `parseJSON` option on,
 as many applications set it, that row is the parsed document, or `null` when no rows matched, which the schema reads as it
@@ -225,8 +247,8 @@ that is what `?.` and `?? null` are for, and a schema whose summary says "when i
 `SELECT` are `result.recordset`, or `[]` when it didn't run. A procedure with several result sets has one schema, a tuple:
 it parses an array holding each of `result.recordsets`, read as above.
 
-[`examples/greenhouse`](examples/greenhouse/README.md) is a small application that does this with a module haruspex wrote,
-compiled in CI.
+[`examples/greenhouse`](examples/greenhouse/README.md) is a small application that calls its procedures through the functions
+haruspex wrote for it, compiled in CI.
 
 **It types other languages, through JSON Schema.** With `"emit": ["zod", "json-schema"]` in `haruspex.json`, `generate` also
 writes `haruspex.jsonschema.json`, one JSON Schema (draft 2020-12) document from the same IR, so a service in Python, C#, Go or
@@ -241,8 +263,8 @@ check ([the JSON Schema emitter](src/Haruspex.Emit.JsonSchema/README.md)).
 **Pre-release.** The command line, the generated code and the IR, the intermediate representation that holds what haruspex
 inferred, will change without notice. Don't depend on it yet.
 
-Today haruspex types what the procedures of a SQL Server database project return, for TypeScript through Zod and for any
-language through JSON Schema, and catches drift in CI: `haruspex check` fails a build when a change to the SQL would change what a committed module says, naming each
+Today haruspex types what the procedures of a SQL Server database project are sent and return, for TypeScript through Zod and
+for any language through JSON Schema, writes a function that calls each through the mssql driver, and catches drift in CI: `haruspex check` fails a build when a change to the SQL would change what a committed module says, naming each
 change where it is (`shop.list_orders results[0][].note: became nullable`). Until it is published as a package, a CI job runs
 it from a copy of its source, pinned to a commit, and one step checks every module in the repository:
 
@@ -262,7 +284,15 @@ None of the following exists yet; each is a job the generated types and the IR a
 - **Seeing what a change does to every caller**, from the database's side: each consuming application's modules checked
   against a change to the database before it is deployed, as `check` does for one repository today.
 - **Asking why a field is typed as it is.** `haruspex explain` will show the reasons behind each claim and each unknown.
-- **Parameters**, next: strict schemas for what a procedure is sent, not only what it returns.
+
+Parameters, once next on this list, are typed now: each procedure's are a strict schema of what may be sent, which its
+function checks before the call, so a misspelt name or a value SQL Server would silently change fails in the application
+instead:
+
+```ts
+await ringUp(pool, { product_id: 1, quantity: 2, basket_id: '9007199254740993' })   // a bigint as the string a row hands over
+await ringUp(pool, { product_id: 1, quantity: 40000, basket_id: 3 })   // a ParameterError: @quantity is a smallint
+```
 
 ## What it guarantees, and what it can't see
 

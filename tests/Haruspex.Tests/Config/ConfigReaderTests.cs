@@ -116,8 +116,16 @@ public class ConfigReaderTests
     [InlineData("""{}""", new[] { Emitter.Zod })]
     [InlineData("""{ "emit": ["json-schema"] }""", new[] { Emitter.JsonSchema })]
     [InlineData("""{ "emit": ["json-schema", "zod"] }""", new[] { Emitter.JsonSchema, Emitter.Zod })]
+    [InlineData("""{ "emit": ["zod", "mssql"] }""", new[] { Emitter.Zod, Emitter.Mssql })]
     public void What_is_emitted_is_the_zod_unless_the_file_names_its_emitters(string text, Emitter[] emitters) =>
         Assert.Equal(emitters, Read(text).Expected().Emitters);
+
+    [Theory]
+    [InlineData("""{ "emit": ["zod", "mssql"] }""", false)]
+    [InlineData("""{ "emit": ["zod", "mssql"], "serverOnly": true }""", true)]
+    [InlineData("""{ "serverOnly": false, "emit": ["zod", "mssql"] }""", false)]
+    public void The_functions_import_server_only_when_the_file_asks(string text, bool serverOnly) =>
+        Assert.Equal(serverOnly, Read(text).Expected().ServerOnly);
 
     [Fact]
     public void A_byte_order_mark_is_allowed()
@@ -158,8 +166,8 @@ public class ConfigReaderTests
     {
         // The file as a whole, and its settings' types.
         { "[]", "haruspex.json:1:1: error HAR3005: must be an object." },
-        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, references, collation, out, schemas, objects, emit, naming, procedures, session, check." },
-        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, references, collation, out, schemas, objects, emit, naming, procedures, session, check." },
+        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, references, collation, out, schemas, objects, emit, serverOnly, naming, procedures, session, check." },
+        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, references, collation, out, schemas, objects, emit, serverOnly, naming, procedures, session, check." },
         { """{ "$schema": 1 }""", "haruspex.json:1:14: error HAR3005: $schema: must be a string." },
         { """{ "source": "" }""", "haruspex.json:1:13: error HAR3005: source: must not be empty." },
         { """{ "out": 3 }""", "haruspex.json:1:10: error HAR3005: out: must be a string." },
@@ -168,9 +176,12 @@ public class ConfigReaderTests
         { """{ "objects": "loose" }""", "haruspex.json:1:14: error HAR3005: objects: must be \"strip\" or \"strict\", not \"loose\"." },
 
         // What generate writes beside the IR.
-        { """{ "emit": "zod" }""", "haruspex.json:1:11: error HAR3005: emit: must be an array of what to write beside the IR: \"zod\", \"json-schema\" or both." },
+        { """{ "emit": "zod" }""", "haruspex.json:1:11: error HAR3005: emit: must be an array of what to write beside the IR: any of \"zod\", \"json-schema\" and \"mssql\"." },
         { """{ "emit": [] }""", "haruspex.json:1:11: error HAR3005: emit: must name at least one emitter; with none, generate would write the IR alone. Use [\"zod\"], the default, or leave it out." },
-        { """{ "emit": ["typescript"] }""", "haruspex.json:1:12: error HAR3005: emit[0]: must be \"zod\" or \"json-schema\", not \"typescript\"." },
+        { """{ "emit": ["typescript"] }""", "haruspex.json:1:12: error HAR3005: emit[0]: must be \"zod\" or \"json-schema\" or \"mssql\", not \"typescript\"." },
+        { """{ "emit": ["mssql"] }""", "haruspex.json:1:11: error HAR3012: emit: names \"mssql\" without \"zod\": the functions import the Zod module's schemas, so name both." },
+        { """{ "serverOnly": true }""", "haruspex.json:1:17: error HAR3012: serverOnly: is about the functions' file, which \"emit\" writes when it names \"mssql\"; it names none here." },
+        { """{ "serverOnly": "yes", "emit": ["zod", "mssql"] }""", "haruspex.json:1:17: error HAR3005: serverOnly: must be true or false." },
         { """{ "emit": ["zod", "zod"] }""", "haruspex.json:1:19: error HAR3005: emit[1]: names \"zod\" again; each emitter is listed once." },
 
         // What check does beyond comparing.

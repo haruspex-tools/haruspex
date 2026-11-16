@@ -32,3 +32,9 @@ export type RingUpParams = z.infer<typeof RingUpParamsSchema>
 /** till.ring_up: returns rows. */
 export const RingUpSchema = z.array(RingUpRowSchema).length(1)
 export type RingUp = z.infer<typeof RingUpSchema>
+
+/** till.ring_up: what its OUTPUT parameters hold when it ends. */
+export const RingUpOutputSchema = z.object({
+  sale_id: z.int32().nullable().optional(),
+})
+export type RingUpOutput = z.infer<typeof RingUpOutputSchema>

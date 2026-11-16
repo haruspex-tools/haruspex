@@ -1,8 +1,10 @@
-// The example's config: every procedure in the garden schema, written to src/db for the application to import.
+// The example's config: every procedure in the garden schema, written to src/db for the application to import, with the
+// functions that call them.
 {
   "$schema": "../../schemas/haruspex.schema.json",
   "source": "database",
   "out": "src/db",
+  "emit": ["zod", "mssql"],
   "schemas": {
     "garden": { "include": ["*"] },
   },

@@ -2,9 +2,10 @@
 
 A small TypeScript application for an invented greenhouse, which keeps its plants and a log of their watering in SQL
 Server. It shows what a team does with haruspex's output: `haruspex generate`, run in this folder, reads the database
-project in `database` with the settings in `haruspex.json`, and writes `src/db/haruspex.zod.ts`. The application's own code,
-`src/plants.ts`, calls the procedures through the [mssql](https://www.npmjs.com/package/mssql) driver, and imports the
-schemas to check what the database returns and the types to write the code that uses it.
+project in `database` with the settings in `haruspex.json`, and writes the database module: `src/db/haruspex.zod.ts`, a schema
+and a type for each procedure, and `src/db/haruspex.mssql.ts`, a function for each, which calls it through the
+[mssql](https://www.npmjs.com/package/mssql) driver. The application's own code, `src/plants.ts`, calls the functions, and
+uses the types to write the code that handles what they return.
 
 ```sh
 dotnet run --project ../../src/Haruspex.Cli -- generate
@@ -14,15 +15,19 @@ npm run check
 
 The module is committed, as a team would commit it, and a test (`ExampleAppTests`) checks that it is what haruspex writes
 today and that the application compiles against it, with the TypeScript, zod and mssql versions in `package-lock.json`. The
-application is only compiled, never run: there is no database here to call. The differential tests call procedures through
-the same driver and parse what it hands over with the schemas haruspex writes (`MssqlDriverAcceptanceTests`).
+application is only compiled, never run: there is no database here to call. The differential tests call every fixture's
+procedures through the functions haruspex generates, on a real server, with the same driver (`GeneratedFunctionTests`).
 
 What to look at:
 
-- The pool is made with `parseJSON: true`, so the driver joins the rows SQL Server splits `FOR JSON` output over and parses
-  them. `garden.get_plant` returns `FOR JSON`, so its document is the one row, `recordset[0]`, or `null` when no plant has
-  the id, and the application checks it with the schema the module exports for it. A plant never watered has no `water_log`
-  key at all, and the type says so (`water_log?`).
+- `getPlant(pool, { plant_id: 1 })`: a function takes the pool (or a transaction) and the procedure's parameters by their
+  declared names, checks them before anything is sent, and checks what comes back with the procedure's schema. It returns
+  `{ result, returnValue }`. The functions belong on the server, which holds the pool and its credentials.
+- `garden.get_plant` returns `FOR JSON`, so its `result` is the document, or `null` when no plant has the id; the pool's
+  `parseJSON` makes no difference to it. A plant never watered has no `water_log` key at all, and the type says so
+  (`water_log?`).
+- `plantOrNothing` tells a failure apart by its name, HaruspexParameterError, without importing anything; the database's
+  own errors are mssql's `RequestError`, passed through as they are.
 - `garden.list_plants` returns rows, which the mssql driver delivers with `date` columns as `Date`, so `planted` is a
   `Date | null`.
 - `kind` is limited by a CHECK constraint, but it is an `nvarchar` column, which the database compares under its collation:

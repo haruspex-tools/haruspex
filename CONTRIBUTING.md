@@ -80,7 +80,8 @@ against the module committed beside it (`ExampleAppTests`). The same package hol
 failures, `tests/emit-check/src/accept.mjs`, through which the differential tests run real output into the generated schemas,
 `tests/emit-check/src/accept-json-schema.mjs`, through which they validate the same output against the generated JSON Schema
 with Ajv, `tests/emit-check/src/meta-schema.mjs`, which checks every generated JSON Schema against the draft 2020-12
-meta-schema, and `tests/emit-check/src/driver.mjs`, through which they call the database with the pinned mssql driver. CI sets
+meta-schema, and `tests/emit-check/src/driver.mjs`, through which they call the database with the pinned mssql driver, and
+`tests/emit-check/src/functions.mjs`, through which they call it through the generated functions. CI sets
 `HARUSPEX_REQUIRE_NODE=1`, which turns a missing Node into a failure rather than a skip.
 
 ### Differential tests against SQL Server
@@ -304,8 +305,8 @@ the maintainer's agreement.
 | `typescript` (npm) | Apache-2.0 | emit-check, examples | Compiles the generated Zod, to prove it type-checks. |
 | `zod` (npm) | MIT | emit-check, examples | The library the generated code targets, pinned so the check is repeatable. |
 | `ajv`, `ajv-formats` (npm) | MIT | emit-check | Validates real output against the generated JSON Schema, and each generated document against the draft 2020-12 meta-schema, as the differential acceptance test of the second emitter; `ajv-formats` asserts `format`, which draft 2020-12 leaves an annotation. The most used JSON Schema validator, in the package the Zod acceptance test already runs in. |
-| `mssql` (npm) | MIT | emit-check, examples | The SQL Server driver most Node applications call procedures through: the differential tests observe what it hands over and parse that with the generated schemas, and the example application calls it. |
-| `@types/mssql` (npm) | MIT | examples | `mssql`'s type declarations, which it doesn't ship, so that the example application compiles against the driver. |
+| `mssql` (npm) | MIT | emit-check, examples | The SQL Server driver most Node applications call procedures through: the differential tests observe what it hands over, parse that with the generated schemas, and call every fixture's procedures through the generated functions over it, and the example application calls it. |
+| `@types/mssql` (npm) | MIT | emit-check, examples | `mssql`'s type declarations, which it doesn't ship, so that the generated functions and the example application compile against the driver. |
 | `eslint`, `@eslint/js` (npm) | MIT | emit-lint | Lints the generated Zod with ESLint's recommended rules, as a team that lints its own code would. |
 | `typescript-eslint` (npm) | MIT | emit-lint | The recommended rules for TypeScript, and the parser ESLint needs to read it. |
 | `typescript` 6 (npm) | Apache-2.0 | emit-lint | typescript-eslint's parser, which needs the compiler's JavaScript API (below 6.1). |
@@ -325,7 +326,8 @@ and test your applications", which is all the tests do; like DacFx's, they ask a
 indemnify Microsoft. So it must never reach anything haruspex ships: the shipped projects under `src/` must
 not reference SqlClient.
 
-`mssql` and `@types/mssql` are development dependencies of the emit check and the example, and nothing in them is shipped.
+`mssql` and `@types/mssql` are development dependencies of the emit check and the example, and nothing in them is shipped; the
+generated functions import `mssql`, which an application that uses them installs itself.
 The 75 npm packages `mssql` brings (76 with its types) are MIT, BSD-3-Clause, ISC or 0BSD; most are tedious's support for
 signing in with Microsoft Entra ID (`@azure/identity` and its libraries), which the tests never use.
 

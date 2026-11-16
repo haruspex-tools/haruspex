@@ -55,7 +55,7 @@ export type UspGetBillOfMaterialsRow = z.infer<typeof UspGetBillOfMaterialsRowSc
 /** dbo.uspGetBillOfMaterials: its parameters, checked before anything is sent. */
 export const UspGetBillOfMaterialsParamsSchema = z.strictObject({
   StartProductID: z.int32().nullable(),
-  CheckDate: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d(\d[037]?)?)?$/).refine((value) => value >= "1753-01-01", { error: "Before 1753-01-01, the earliest datetime" }).nullable(),
+  CheckDate: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d(\d[037]?)?)?$/, { error: "Expected a datetime such as 2026-11-16T08:30:00.997, with no offset, in thousandths of a second that end in 0, 3 or 7" }).refine((value) => value >= "1753-01-01", { error: "Before 1753-01-01, the earliest datetime" }).nullable(),
 })
 export type UspGetBillOfMaterialsParams = z.infer<typeof UspGetBillOfMaterialsParamsSchema>
 

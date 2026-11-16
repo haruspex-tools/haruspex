@@ -28,6 +28,19 @@ internal static class HaruspexCli
     public const string ZodFileName = "haruspex.zod.ts";
     public const string JsonSchemaFileName = "haruspex.jsonschema.json";
 
+    /// <summary>
+    /// The name of the database module's functions file, written beside the Zod module, whose schemas it imports by the specifier
+    /// <see cref="ZodModuleSpecifier"/>.
+    /// </summary>
+    public const string MssqlFileName = "haruspex.mssql.ts";
+
+    /// <summary>
+    /// How the functions file imports the Zod module beside it: with the <c>.js</c> of the file it compiles to, which an ECMAScript
+    /// module needs and TypeScript maps to the <c>.ts</c> under every module resolution (<c>nodenext</c>, <c>node16</c> and
+    /// <c>bundler</c>), as bundlers do; an import without an extension resolves under a bundler only.
+    /// </summary>
+    public const string ZodModuleSpecifier = "./haruspex.zod.js";
+
     public static int Run(string[] args, TextWriter output, TextWriter error) =>
         Run(args, output, error, Directory.GetCurrentDirectory());
 

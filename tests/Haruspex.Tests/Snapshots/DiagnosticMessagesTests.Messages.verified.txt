@@ -95,7 +95,7 @@ HAR3003
 haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
 
 HAR3004
-haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, references, collation, out, schemas, objects, emit, naming, procedures, session, check.
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, references, collation, out, schemas, objects, emit, serverOnly, naming, procedures, session, check.
 
 HAR3005
 haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".
@@ -297,6 +297,9 @@ haruspex: error HAR5006: The parameters of shop.get_order are declared as GetOrd
 
 HAR5101
 haruspex: error HAR5101: The IR name 'GetBasket' names a type and the procedure shop.get_basket, which one $defs can't hold.
+
+HAR5201
+haruspex: error HAR5201: The function of shop.delete would be named delete, which is a reserved word; rename the procedure in the config file.
 
 HAR6001
 haruspex: error HAR6001: Unrecognized command or argument 'blue'.

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Emits the database module's functions, which call each procedure through the mssql driver, from the haruspex IR.</Description>
+  </PropertyGroup>
+  <!-- An emitter reads only the IR, and reports what it refuses as diagnostics. It must never reference a front end, nor another emitter. -->
+  <ItemGroup>
+    <!-- The stages (plan, print) are internal; their unit tests reach them. -->
+    <InternalsVisibleTo Include="Haruspex.Tests" />
+    <ProjectReference Include="..\Haruspex.Collections\Haruspex.Collections.csproj" />
+    <ProjectReference Include="..\Haruspex.Diagnostics\Haruspex.Diagnostics.csproj" />
+    <ProjectReference Include="..\Haruspex.Ir\Haruspex.Ir.csproj" />
+  </ItemGroup>
+</Project>

@@ -34,6 +34,26 @@ internal static class ParameterLowering
         return new ZodDeclaration(ZodModule.ParametersOf(obj.Name), $"{obj.Id}: its parameters, checked before anything is sent.", new ObjectSchema([.. properties], Strict: true));
     }
 
+    /// <summary>
+    /// The declaration of what <paramref name="obj"/>'s <c>OUTPUT</c> parameters hold when it ends, or null when it has none: each
+    /// as the mssql driver hands it over, which is as it hands a column of a row over (a <c>bigint</c> as a string, a date as a
+    /// <c>Date</c>; observed), and NULL whatever the procedure does, since nothing proves it assigns one. One with a default may
+    /// be left unbound by the caller, and then it doesn't come back.
+    /// </summary>
+    public static ZodDeclaration? OutputDeclaration(IrObject obj, TypeLowering types)
+    {
+        var outputs = obj.Parameters.Where(p => p.IsOutput).ToList();
+        if (outputs.Count == 0)
+            return null;
+        var properties = outputs.Select(p =>
+        {
+            var value = types.Type(p.Type, IrEncoding.Rowset);
+            value = p.Type is IrUnknownType ? value : value.Then("nullable");
+            return new ZodProperty(Key(p), p.HasDefault ? value.Then("optional") : value);
+        });
+        return new ZodDeclaration(ZodModule.OutputOf(obj.Name), $"{obj.Id}: what its OUTPUT parameters hold when it ends.", new ObjectSchema([.. properties], Strict: false));
+    }
+
     /// <summary>The parameter's key: its name without the <c>@</c> that every T-SQL parameter's name starts with.</summary>
     public static string Key(IrParameter parameter) => parameter.Name.StartsWith('@') ? parameter.Name[1..] : parameter.Name;
 
@@ -86,15 +106,16 @@ internal static class ParameterLowering
             Z("int"),
             Z("bigint").Then("min", new BigIntLiteral(least)).Then("max", new BigIntLiteral(greatest)),
             Z("string").Then("regex", new Pattern(@"-?\d{1,19}"))
-                .Then("refine", new IntegerTextRange(least, greatest), new ObjectLiteral([new ZodProperty("error", new Text("Outside the range of bigint"))])),
+                .Then("refine", new IntegerTextRange(least, greatest), Error("Outside the range of bigint")),
         ]));
     }
 
     /// <summary>
     /// A string, at most its length: a longer one is cut short. A fixed length is a maximum too, since a shorter value is padded.
-    /// A length in UTF-16 code units is exact, as JavaScript's <c>length</c> counts them; one in bytes is checked in code units, of
-    /// which a character takes no more than it takes bytes, so the check is necessary but, outside a single-byte code page, not
-    /// enough, and the note says what more the server may change.
+    /// A length in UTF-16 code units is exact, as JavaScript's <c>length</c> counts them, and so is one in bytes of UTF-8, which a
+    /// <c>TextEncoder</c> counts. One in bytes of another code page is checked in code units, of which a character takes no more
+    /// than it takes bytes: necessary but, outside a single-byte code page, not enough, and the note says what the server does with
+    /// a value of more bytes, which the function's binding of the declared length turns from a silent cut into an error.
     /// </summary>
     /// <remarks>
     /// Not <c>.max(n)</c>: Zod 4.6.7 counts a string's length in code points, so a character outside the Basic Multilingual Plane
@@ -105,22 +126,23 @@ internal static class ParameterLowering
     {
         if (scalar.Facets?.Length is not { } length)
             return Z("string");
-        var count = length.Value.ToString(CultureInfo.InvariantCulture);
-        var code = Z("string").Then("refine", new UnitsAtMost(length.Value), new ObjectLiteral([new ZodProperty("error", new Text($"More than {count} UTF-16 code units, which {scalar.Sql ?? "the string"} would cut short"))]));
-        if (length.Unit == IrLengthUnit.Utf16)
-            return code;
+        var sql = scalar.Sql ?? "the string";
+        var n = length.Value.ToString(CultureInfo.InvariantCulture);
+        if (length is { Unit: IrLengthUnit.Bytes, Encoding: IrByteEncoding.Utf8 })
+            return Z("string").Then("refine", new Utf8BytesAtMost(length.Value), Error($"More than {n} bytes of UTF-8, which {sql} would cut short"));
 
-        var sql = scalar.Sql ?? "The string";
-        var n = count;
-        var note = length.Encoding switch
+        var code = Z("string").Then("refine", new UnitsAtMost(length.Value), Error($"More than {n} UTF-16 code units, which {sql} would cut short"));
+        var note = (length.Unit, length.Encoding) switch
         {
-            IrByteEncoding.SingleByte => $"{sql} holds only its collation's code page, and replaces any other character without an error.",
-            IrByteEncoding.Utf8 => $"{sql} counts bytes of UTF-8, up to four a character, so a value of fewer than {n} characters may still be cut short.",
-            IrByteEncoding.DoubleByte => $"{sql} counts bytes of a double-byte code page, so a value of fewer than {n} characters may still be cut short, and a character the code page lacks is replaced.",
-            _ => $"{sql} counts bytes and its collation isn't declared, so a value of fewer than {n} characters may still be cut short, and a character its code page lacks is replaced.",
+            (IrLengthUnit.Utf16, _) => null,
+            (_, IrByteEncoding.SingleByte) => $"{sql} holds only its collation's code page, and replaces any other character without an error.",
+            (_, IrByteEncoding.DoubleByte) => $"{sql} counts bytes of a double-byte code page, so a value of {n} characters or fewer may take more; its function sends it as {sql}, and the server refuses it (error 8016), where sent otherwise it is cut short. A character the code page lacks is replaced.",
+            _ => $"{sql} counts bytes and its collation isn't declared, so a value of {n} characters or fewer may take more; its function sends it as {sql}, and the server refuses it (error 8016), where sent otherwise it is cut short. A character its code page lacks is replaced.",
         };
-        return new Noted(code, new ZodNote(note));
+        return note is null ? code : new Noted(code, new ZodNote(note));
     }
+
+    private static ObjectLiteral Error(string message) => new([new ZodProperty("error", new Text(message))]);
 
     /// <summary>
     /// A number, held to its type's range and places as a number in JSON is (<see cref="Facets.Number"/>): a value of more places

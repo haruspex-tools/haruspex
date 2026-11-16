@@ -17,7 +17,7 @@ export type MemberByEmailRow = z.infer<typeof MemberByEmailRowSchema>
 
 /** lend.member_by_email: its parameters, checked before anything is sent. */
 export const MemberByEmailParamsSchema = z.strictObject({
-  /** varchar(80) counts bytes and its collation isn't declared, so a value of fewer than 80 characters may still be cut short, and a character its code page lacks is replaced. */
+  /** varchar(80) counts bytes and its collation isn't declared, so a value of 80 characters or fewer may take more; its function sends it as varchar(80), and the server refuses it (error 8016), where sent otherwise it is cut short. A character its code page lacks is replaced. */
   email: z.string().refine((value) => value.length <= 80, { error: "More than 80 UTF-16 code units, which varchar(80) would cut short" }).nullable(),
 })
 export type MemberByEmailParams = z.infer<typeof MemberByEmailParamsSchema>

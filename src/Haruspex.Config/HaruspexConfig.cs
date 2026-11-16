@@ -59,6 +59,12 @@ public sealed record HaruspexConfig
     /// </summary>
     public EquatableArray<Emitter> Emitters { get; init; } = [Emitter.Zod];
 
+    /// <summary>
+    /// Whether the functions file starts with <c>import 'server-only'</c> (<c>serverOnly</c>), for a Next.js application, whose
+    /// build then fails where browser code imports it. Off by default: haruspex assumes no framework.
+    /// </summary>
+    public bool ServerOnly { get; init; }
+
     /// <summary>The naming rules every schema starts from (the top-level <c>naming</c>).</summary>
     public NamingRules Naming { get; init; } = NamingRules.Default;
 

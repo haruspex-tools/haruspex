@@ -8,4 +8,10 @@ public enum Emitter
 
     /// <summary>A JSON Schema document, <c>haruspex.jsonschema.json</c>.</summary>
     JsonSchema,
+
+    /// <summary>
+    /// The database module's functions over the mssql driver, <c>haruspex.mssql.ts</c>, which import the Zod module's schemas,
+    /// so it needs <see cref="Zod"/> beside it.
+    /// </summary>
+    Mssql,
 }

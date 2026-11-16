@@ -1,0 +1,11 @@
+{
+  // The generated modules again, as a Node project of ECMAScript modules compiles them ("type": "module", module and
+  // moduleResolution nodenext), where an import must name the file it loads: the functions' import of their schemas
+  // resolves here only with its ".js".
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext"
+  },
+  "include": ["generated/*.ts"]
+}

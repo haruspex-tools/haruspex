@@ -4,12 +4,13 @@
     "module": "preserve",
     "moduleResolution": "bundler",
     "strict": true,
+    "erasableSyntaxOnly": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "skipLibCheck": false,
     "types": [],
-    "paths": { "@shop/types": ["./src/shop-types.ts"] }
+    "paths": { "@shop/types": ["./src/shop-types.ts"], "server-only": ["./src/server-only.ts"] }
   },
   "include": ["generated/**/*.ts", "src/**/*.ts"]
 }
