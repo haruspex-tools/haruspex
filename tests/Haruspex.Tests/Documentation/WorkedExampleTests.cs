@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Haruspex.Cli;
+using Haruspex.Emit.JsonSchema;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Sources;
@@ -47,6 +48,7 @@ public class WorkedExampleTests
             {
                 WorkedExample.OutputKind.Zod => (Text(output.Text), Text(WorkedExample.ZodShown(ZodEmitter.Emit(Infer(example)).Expected(), output.Text))),
                 WorkedExample.OutputKind.Ir => (Json(JsonNode.Parse(output.Text)), Json(IrShown(Infer(example), output.Property))),
+                WorkedExample.OutputKind.JsonSchema => (Json(JsonNode.Parse(output.Text)), Json(JsonSchemaShown(Infer(example), output.Property))),
                 WorkedExample.OutputKind.Run => (Text(output.Text), Text(Run(example.Sql, output))),
                 WorkedExample.OutputKind.Check => (Text(output.Text), Text(Check(output.Before!, example.Sql, output))),
             };
@@ -118,6 +120,10 @@ public class WorkedExampleTests
             []
             ```
 
+            ```json haruspex-jsonschema GetT
+            {}
+            ```
+
             ```sql
             -- not an example
             ```
@@ -128,7 +134,7 @@ public class WorkedExampleTests
         Assert.Empty(problems);
         Assert.Equal((1, "CREATE TABLE dbo.t (id int NOT NULL);"), (example.Line, example.Sql));
         Assert.Equal(
-            [(WorkedExample.OutputKind.Zod, null, 7), (WorkedExample.OutputKind.Ir, "unknowns", 11)],
+            [(WorkedExample.OutputKind.Zod, null, 7), (WorkedExample.OutputKind.Ir, "unknowns", 11), (WorkedExample.OutputKind.JsonSchema, "GetT", 15)],
             example.Outputs.Select(o => (o.Kind, o.Property, o.Line)));
     }
 
@@ -291,6 +297,13 @@ public class WorkedExampleTests
     {
         var node = JsonNode.Parse(IrJsonWriter.Write(document))!;
         return property is null ? node : node[property];
+    }
+
+    /// <summary>The JSON Schema document, or the one definition of it the block shows.</summary>
+    private static JsonNode? JsonSchemaShown(IrDocument document, string? definition)
+    {
+        var node = JsonNode.Parse(JsonSchemaEmitter.Emit(document).Expected())!;
+        return definition is null ? node : node["$defs"]?[definition];
     }
 
     private static string Text(string text) => text.Replace("\r\n", "\n", StringComparison.Ordinal).TrimEnd();

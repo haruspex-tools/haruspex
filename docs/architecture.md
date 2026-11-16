@@ -4,7 +4,7 @@ The code is split into layers so that each can be tested alone, reused alone and
 others, published alone as a NuGet package from this repository. Each project under `src/` is one layer.
 
 ```
-.sql files, .sqlproj, .dacpac ──► Sources ──► Model ──► Semantics ──► Inference ──► IR ──► Config ──► IR ──► emitters (Zod, …)
+.sql files, .sqlproj, .dacpac ──► Sources ──► Model ──► Semantics ──► Inference ──► IR ──► Config ──► IR ──► emitters (Zod, JSON Schema)
                                                         (binding)                         (overrides,       (names settled)
                                                                                             naming)
               Syntax (ScriptDom's declarations read into the model) is shared by Sources, Semantics and Inference.
@@ -27,7 +27,7 @@ others, published alone as a NuGet package from this repository. Each project un
 | `Haruspex.Ir` | the IR model and its deterministic JSON | SQL of any dialect | Collections | may |
 | `Haruspex.Config` | the config file: selection patterns, overrides as transformations of the IR, naming rules, emitter settings | SQL syntax | Collections, Diagnostics, Model, Ir | may |
 | `Haruspex.Emit.Zod` | the IR and its own target | SQL, the model, the config file | Collections, Diagnostics, Ir | may |
-| `Haruspex.Emit.JsonSchema` (planned) | the IR and its own target | SQL, the model, the config file | Collections, Ir | may |
+| `Haruspex.Emit.JsonSchema` | the IR and its own target | SQL, the model, the config file | Collections, Diagnostics, Ir | may |
 | `Haruspex.Cli` | composing all of the above | inference or emission logic of its own | every layer; `System.CommandLine` | may |
 
 This table is the one copy: `ArchitectureTests` reads it (below), and every other mention of the layers points here. In
@@ -86,6 +86,7 @@ guarantees and what it deliberately doesn't do.
 - [`Haruspex.Ir`](../src/Haruspex.Ir/README.md), which also describes the IR's format
 - [`Haruspex.Config`](../src/Haruspex.Config/README.md)
 - [`Haruspex.Emit.Zod`](../src/Haruspex.Emit.Zod/README.md)
+- [`Haruspex.Emit.JsonSchema`](../src/Haruspex.Emit.JsonSchema/README.md)
 - [`Haruspex.Cli`](../src/Haruspex.Cli/README.md)
 
 The analyser that checks haruspex's own code at build time is not a layer, and has [a README of its own](../analysers/README.md).
@@ -114,7 +115,7 @@ regenerate, and the decision would live in a C# array that few readers open. The
 loudly on a cell it can't read.
 
 Adding a layer means adding its row here. A layer decided on but without code yet is marked `(planned)` after its name
-(`Haruspex.Emit.JsonSchema` today), so its project may be missing; when its code arrives the mark is removed, and the
+(none is today), so its project may be missing; when its code arrives the mark is removed, and the
 project must then exist. Dependency direction erodes one convenient reference at a time, which is why it is checked
 rather than only written down.
 

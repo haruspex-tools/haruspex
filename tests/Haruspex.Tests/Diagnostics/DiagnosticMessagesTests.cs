@@ -1,5 +1,6 @@
 using System.Text;
 using Haruspex.Cli;
+using Haruspex.Emit.JsonSchema;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.Tests.Snapshotting;
@@ -225,6 +226,9 @@ public class DiagnosticMessagesTests
             new() { ["Shared"] = Row(Number) },
             Rows("s.rows", "Shared"),
             new IrObject("s.json", "json", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, new IrRef("Shared"), [])])))),
+        (5101, () => JsonSchemaEmitter.Emit(Document(
+            new() { ["GetBasket"] = Row(Number) },
+            new IrObject("shop.get_basket", "GetBasket", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, new IrRef("GetBasket"), [])]))).Diagnostics.Select(d => d.ToString())),
 
         (6001, () => Cli([GetBook], args: ["--colour", "blue"])),
         (6002, () => Cli([GetBook], args: ["db", "--config", "nowhere.json", "--include", "*.*", "--out", "out"])),

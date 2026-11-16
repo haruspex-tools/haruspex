@@ -55,6 +55,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0047](0047-a-star-is-bound-against-the-tables-the-project-defines.md) | 15 Nov 2026 | A star is bound against the tables the project defines |
 | [0048](0048-an-absent-json-result-reads-as-null.md) | 16 Nov 2026 | An absent JSON result reads as null, as the mssql driver hands it over |
 | [0050](0050-check-compares-claims-not-files.md) | 16 Nov 2026 | `check` compares claims, not files, and fails when there is nothing to compare |
+| [0051](0051-one-json-schema-document-per-module-every-value-as-json.md) | 16 Nov 2026 | One JSON Schema document per module, every value as JSON writes it |
 
 ## Writing a record
 

@@ -292,6 +292,9 @@ haruspex.json: error HAR5004: The imported name 'z' is also a name this module d
 HAR5005
 haruspex: error HAR5005: The type Shared is read both as rows and as JSON, so one schema can't check it.
 
+HAR5101
+haruspex: error HAR5101: The IR name 'GetBasket' names a type and the procedure shop.get_basket, which one $defs can't hold.
+
 HAR6001
 haruspex: error HAR6001: Unrecognized command or argument 'blue'.
 

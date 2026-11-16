@@ -101,6 +101,8 @@ with no config file. The blocks after it, up to the next example, show what that
   header, which names the IR's version.
 - `json haruspex-ir`: the IR, compared as JSON; with a third word, only that top-level property
   (`json haruspex-ir unknowns`).
+- `json haruspex-jsonschema`: the JSON Schema document, compared as JSON; with a third word, only that definition of its
+  `$defs` (`json haruspex-jsonschema GetOrder`).
 - `text haruspex-run`: what `haruspex generate` prints, standard error then standard output, run in a folder holding the
   project as `db/project.sql`, with paths shown from that folder. Words after the mark are the run's arguments; with none,
   the run takes its settings from the config file, or types every procedure to `out` when there is none. A

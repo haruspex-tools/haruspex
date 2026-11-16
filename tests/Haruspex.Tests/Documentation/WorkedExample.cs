@@ -10,7 +10,9 @@ namespace Haruspex.Tests.Documentation;
 /// <remarks>
 /// An example is a fenced block whose info string is <c>sql haruspex-example</c>. The blocks after it, up to the next
 /// example, may show its output: <c>ts haruspex-zod</c> for the Zod module, and <c>json haruspex-ir</c> for the IR, the
-/// whole document or, with a third word, one of its top-level properties (<c>json haruspex-ir unknowns</c>). They may also
+/// whole document or, with a third word, one of its top-level properties (<c>json haruspex-ir unknowns</c>), and
+/// <c>json haruspex-jsonschema</c> for the JSON Schema document, whole or, with a third word, one of its definitions
+/// (<c>json haruspex-jsonschema GetOrder</c>). They may also
 /// show a run of <c>haruspex generate</c>: <c>text haruspex-run</c> for what it prints, with the run's arguments after the
 /// mark if any, and <c>jsonc haruspex-config</c> for the config file of the runs after it, up to the next. And a run of
 /// <c>haruspex check</c>, <c>text haruspex-check</c>: what it prints when the example before is generated and committed, and
@@ -33,6 +35,7 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
     public const string ExampleMark = "haruspex-example";
     public const string ZodMark = "haruspex-zod";
     public const string IrMark = "haruspex-ir";
+    public const string JsonSchemaMark = "haruspex-jsonschema";
     public const string ConfigMark = "haruspex-config";
     public const string RunMark = "haruspex-run";
     public const string CheckMark = "haruspex-check";
@@ -57,7 +60,7 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
                     current = new WorkedExample(file, block.Line, block.Text, []) { Over = block.Words.Skip(2).FirstOrDefault() };
                     config = null;
                     break;
-                case ZodMark or IrMark or ConfigMark or RunMark or CheckMark when current is null:
+                case ZodMark or IrMark or JsonSchemaMark or ConfigMark or RunMark or CheckMark when current is null:
                     problems.Add($"{at}: a {mark} block with no {ExampleMark} block before it");
                     break;
                 case ZodMark:
@@ -65,6 +68,9 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
                     break;
                 case IrMark:
                     current = current with { Outputs = [.. current.Outputs, new Output(OutputKind.Ir, block.Words.Skip(2).FirstOrDefault(), block.Line, block.Text)] };
+                    break;
+                case JsonSchemaMark:
+                    current = current with { Outputs = [.. current.Outputs, new Output(OutputKind.JsonSchema, block.Words.Skip(2).FirstOrDefault(), block.Line, block.Text)] };
                     break;
                 case ConfigMark:
                     config = block.Text;
@@ -110,9 +116,11 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
         return string.Join('\n', lines.Skip(import + 1).SkipWhile(l => l.Length == 0));
     }
 
-    /// <summary>What the IR or the Zod should be, and where the documentation says so.</summary>
+    /// <summary>What the IR, the Zod or the JSON Schema should be, and where the documentation says so.</summary>
     /// <param name="Kind">Which output.</param>
-    /// <param name="Property">For the IR, the top-level property shown, or null for the whole document.</param>
+    /// <param name="Property">
+    /// For the IR, the top-level property shown, and for the JSON Schema, the definition shown; null for the whole document.
+    /// </param>
     /// <param name="Line">The line of the block's opening fence.</param>
     /// <param name="Text">The block's text.</param>
     public sealed record Output(OutputKind Kind, string? Property, int Line, string Text)
@@ -132,6 +140,7 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
     {
         Ir,
         Zod,
+        JsonSchema,
         Run,
         Check,
     }
