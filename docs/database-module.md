@@ -1,7 +1,7 @@
 # The database module
 
 What `"emit": ["zod", "mssql"]` writes, and how an application uses it: calling a procedure, what a call returns, how its
-parameters are checked, how it fails, and where it runs. The last section is for an application that calls the
+parameters are checked, how it fails, where it runs, and the functions of the application's own query files. The last section is for an application that calls the
 [mssql](https://www.npmjs.com/package/mssql) driver itself, with the schemas alone. [The configuration](configuration.md#what-is-written-emit)
 says how to ask for each file, and the [example application](../examples/greenhouse/README.md) uses both, compiled in CI.
 
@@ -9,9 +9,9 @@ says how to ask for each file, and the [example application](../examples/greenho
 
 `haruspex generate` writes the database module as two files beside the IR:
 
-- `haruspex.zod.ts`, a [Zod](https://zod.dev) schema and a type for each procedure's parameters and results. It imports Zod
+- `haruspex.zod.ts`, a [Zod](https://zod.dev) schema and a type for each procedure's and query file's parameters and results. It imports Zod
   alone, so browser code may import it too.
-- `haruspex.mssql.ts`, a function for each procedure, which calls it through the mssql driver. It imports the schemas from
+- `haruspex.mssql.ts`, a function for each procedure and query file, which runs it through the mssql driver. It imports the schemas from
   the file beside it, and the driver.
 
 A function is named after its procedure, with a lower-case first word: `Website.GetOrder` is `getOrder`. The functions' file
@@ -109,6 +109,31 @@ An application whose plugins or sub-applications each need their own interface t
 `haruspex.json`. Each is a module of its own, with its own procedures, names, files and committed contract. No module imports
 another, so a procedure two modules select is typed in each, and two modules may each have a `getOrder`.
 [The command line](../src/Haruspex.Cli/README.md) says how `generate` and `check` run several at once.
+
+## Query files
+
+A query file the config file names in `queries` ([the configuration](configuration.md#query-files-queries)) has a function as a
+procedure has, named for the file by the same rules: `sql/get_order_card.sql` is `getOrderCard`. Procedures and query files share
+the module's names, so one that would take another's is an error naming both ([HAR4303](diagnostics/HAR4303.md),
+[HAR5201](diagnostics/HAR5201.md)). It is called the same way, and returns the same shape:
+
+```ts
+import { getOrderCard } from './db/haruspex.mssql'
+
+const { result: card } = await getOrderCard(pool, { order_id: 42 })
+```
+
+The function sends the file's text, as it is written, through `sp_executesql`, declaring each parameter with the type haruspex
+inferred for it, or the one a comment in the file declares (`-- @param @label nvarchar(40)`), so the query runs with the types
+it was typed with. Each value is checked and sent as a procedure's is, and the server converts it to that declared type, so a date
+sent as its ISO 8601 string is a `date` in the query, not text. A parameter whose type nothing decides can't be declared, and
+stops the run until the file declares it ([HAR5202](diagnostics/HAR5202.md)). Every parameter accepts `null`.
+
+What can fail is what a procedure's call can, with a query file's path where a procedure's name would be: a `ParameterError`'s
+and a `ResultError`'s `procedure`, and their messages, name the file (`sql/get_order_card.sql: @order_id: …`). The database's
+error is mssql's `RequestError`. A query file has no `OUTPUT` parameters, and its `returnValue` is always 0: a batch run through
+`sp_executesql` may `RETURN`, but SQL Server refuses `RETURN` with a value there (error 178). The text is part of the module, so
+`haruspex check` fails when a query file has changed since the module was generated.
 
 ## Calling the driver yourself
 

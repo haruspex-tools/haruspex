@@ -298,8 +298,8 @@ alone:
   ([the JSON Schema emitter](../src/Haruspex.Emit.JsonSchema/README.md),
   [decision 0051](decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)).
 
-- `"mssql"`: `haruspex.mssql.ts`, the database module's functions, one for each procedure, which check its parameters, call it
-  through the mssql driver and check what comes back ([the mssql emitter](../src/Haruspex.Emit.Mssql/README.md)). They import
+- `"mssql"`: `haruspex.mssql.ts`, the database module's functions, one for each procedure and query file, which check its
+  parameters, run it through the mssql driver and check what comes back ([the mssql emitter](../src/Haruspex.Emit.Mssql/README.md)). They import
   the schemas and types from `haruspex.zod.ts`, so `"mssql"` needs `"zod"` beside it.
 
 ```jsonc

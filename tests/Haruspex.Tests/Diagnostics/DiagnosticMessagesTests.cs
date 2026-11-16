@@ -246,6 +246,7 @@ public class DiagnosticMessagesTests
         (5201, () => MssqlEmitter.Emit(
             Document([], new IrObject("shop.delete", "Delete", IrObjectKind.Procedure, "p.sql:1:1", [], [])),
             new MssqlOptions { IsReserved = TypeScriptNames.IsReserved }).Diagnostics.Select(d => d.ToString())),
+        (5202, () => Cli([GetBook], $"{{ {Plain}, \"queries\": \"sql\", \"emit\": [\"zod\", \"mssql\"] }}", arrange: f => f.File("sql/label.sql", "SELECT @label AS label;"))),
 
         (6001, () => Cli([GetBook], args: ["--colour", "blue"])),
         (6002, () => Cli([GetBook], args: ["db", "--config", "nowhere.json", "--include", "*.*", "--out", "out"])),

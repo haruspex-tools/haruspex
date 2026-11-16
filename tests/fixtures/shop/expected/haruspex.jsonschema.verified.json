@@ -48,6 +48,70 @@
         }
       ]
     },
+    "BasketCard": {
+      "title": "queries/basket_card.sql",
+      "description": "Returns JSON, null when no rows match. Null when absent: no-rows (queries/basket_card.sql:3:1).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BasketCardRow"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "BasketCardLine": {
+      "description": "The type at results[0].lines[] in queries/basket_card.sql.",
+      "type": "object",
+      "properties": {
+        "line_no": {
+          "description": "SQL type int.",
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "quantity": {
+          "description": "SQL type int.",
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "line_no",
+        "quantity"
+      ],
+      "additionalProperties": false
+    },
+    "BasketCardRow": {
+      "description": "The type at results[0] in queries/basket_card.sql.",
+      "type": "object",
+      "properties": {
+        "label": {
+          "description": "SQL type nvarchar(40). Left out when null: parameter (@label).",
+          "type": "string",
+          "maxLength": 40
+        },
+        "basket_id": {
+          "description": "SQL type int.",
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "lines": {
+          "description": "Left out when null: empty-subquery (queries/basket_card.sql:6:5).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BasketCardLine"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "basket_id"
+      ],
+      "additionalProperties": false
+    },
     "BasketItem": {
       "description": "The type at results[0].lines[] in shop.get_basket.",
       "type": "object",
@@ -200,6 +264,49 @@
         "name",
         "status",
         "attributes",
+        "price"
+      ],
+      "additionalProperties": false
+    },
+    "ProductsUnder": {
+      "title": "queries/products_under.sql",
+      "description": "Returns rows.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ProductsUnderRow"
+      }
+    },
+    "ProductsUnderRow": {
+      "description": "The type at results[0][] in queries/products_under.sql.",
+      "type": "object",
+      "properties": {
+        "product_id": {
+          "description": "SQL type int.",
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "sku": {
+          "description": "SQL type varchar(12).",
+          "type": "string",
+          "maxLength": 12
+        },
+        "name": {
+          "description": "SQL type nvarchar(80).",
+          "type": "string",
+          "maxLength": 80
+        },
+        "price": {
+          "description": "SQL type decimal(9,2). At most 2 decimal places, which multipleOf would check inexactly.",
+          "type": "number",
+          "minimum": -9999999.99,
+          "maximum": 9999999.99
+        }
+      },
+      "required": [
+        "product_id",
+        "sku",
+        "name",
         "price"
       ],
       "additionalProperties": false

@@ -40,6 +40,10 @@ A call fails in one of three ways, told apart by the error's `name`
 | The database raised an error | mssql's own `RequestError`, unchanged | Handled as the driver's errors are today. |
 | The result broke its schema | an error named `'HaruspexResultError'`, naming the procedure and where | The database and the application are deployed out of step. |
 
+Queries the application keeps in its own `.sql` files get the same: `"queries": "sql"` in `haruspex.json` types each file
+against the database project, with its parameters' types inferred from how it uses them (`where o.order_id = @order_id` makes
+`@order_id` the column's type), and gives it a function named for the file, which sends it through `sp_executesql`.
+
 The functions belong on the server, since they take the connection and its credentials; the schemas and types, in their own
 file, may go to the browser. [The database module](docs/database-module.md) has the detail: dates, return shapes, handling
 each failure, and `serverOnly` for Next.js.
@@ -264,11 +268,11 @@ On the two samples above, a test writes [the figures](docs/corpus-figures.md):
 **Pre-release.** The command line, the generated code and the IR (the record of what haruspex inferred) will change without
 notice. Don't depend on it yet.
 
-Next, in this order:
+Available now, as well as procedures: **query files**, queries kept in the application's own `.sql` files, typed against the
+database project as procedures are, each with a function, its parameters' types inferred from how the query uses them
+([the configuration](docs/configuration.md#query-files-queries)).
 
-1. **Query files**: queries kept in the application's own `.sql` files, typed against the database project as procedures
-   are, each with a function, its parameters' types inferred from how the query uses them.
-2. **Packages**, rather than building from source.
+Next: **packages**, rather than building from source.
 
 Possible later, with no date: checking hand-written schemas against a procedure, checking each consuming application before
 a database change is deployed, and `haruspex explain`. Not planned: connecting to a database

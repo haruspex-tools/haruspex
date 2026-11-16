@@ -71,6 +71,54 @@
           "cardinality": "many"
         }
       ]
+    },
+    {
+      "id": "queries/thirsty_plants.sql",
+      "name": "ThirstyPlants",
+      "kind": "query",
+      "at": "queries/thirsty_plants.sql:1:1",
+      "text": "-- The plants not watered since a given time, the longest unwatered first; only those of one kind when @kind is given.\n-- @since is compared with an aggregate, from which its type isn't inferred, so it is declared:\n-- @param @since datetime2(0)\nSELECT p.plant_id, p.name, MAX(w.watered_at) AS last_watered\nFROM garden.plant AS p\nLEFT JOIN garden.water_log AS w ON w.plant_id = p.plant_id\nWHERE p.kind = @kind OR @kind IS NULL\nGROUP BY p.plant_id, p.name\nHAVING MAX(w.watered_at) < @since OR MAX(w.watered_at) IS NULL\nORDER BY MAX(w.watered_at), p.name;\n",
+      "parameters": [
+        {
+          "name": "@kind",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@since",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ThirstyPlantsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
     }
   ],
   "types": {
@@ -308,6 +356,71 @@
             {
               "rule": "nullable-column",
               "at": "garden.plant.planted"
+            }
+          ]
+        }
+      ]
+    },
+    "ThirstyPlantsRow": {
+      "kind": "object",
+      "identity": {
+        "query": "queries/thirsty_plants.sql",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "plant_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(60)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "last_watered",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unmatched-row",
+              "at": "queries/thirsty_plants.sql:6:11"
             }
           ]
         }

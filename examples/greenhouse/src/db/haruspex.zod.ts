@@ -43,3 +43,21 @@ export type ListPlantsRow = z.infer<typeof ListPlantsRowSchema>
 /** garden.list_plants: returns rows. */
 export const ListPlantsSchema = z.array(ListPlantsRowSchema)
 export type ListPlants = z.infer<typeof ListPlantsSchema>
+
+export const ThirstyPlantsRowSchema = z.object({
+  plant_id: z.int32(),
+  name: z.string().max(60),
+  last_watered: z.date().nullable(),
+})
+export type ThirstyPlantsRow = z.infer<typeof ThirstyPlantsRowSchema>
+
+/** queries/thirsty_plants.sql: its parameters, checked before anything is sent. */
+export const ThirstyPlantsParamsSchema = z.strictObject({
+  kind: z.string().refine((value) => value.length <= 10, { error: "More than 10 UTF-16 code units, which nvarchar(10) would cut short" }).nullable(),
+  since: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/, { error: "Expected a datetime2(0) such as 2026-11-16T08:30:00, in whole seconds and no offset" }).nullable(),
+})
+export type ThirstyPlantsParams = z.infer<typeof ThirstyPlantsParamsSchema>
+
+/** queries/thirsty_plants.sql: returns rows. */
+export const ThirstyPlantsSchema = z.array(ThirstyPlantsRowSchema)
+export type ThirstyPlants = z.infer<typeof ThirstyPlantsSchema>

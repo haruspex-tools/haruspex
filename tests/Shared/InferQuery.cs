@@ -1,4 +1,6 @@
+using Haruspex.Cli;
 using Haruspex.Diagnostics;
+using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.SqlServer.Sources;
@@ -43,6 +45,25 @@ internal static class InferQuery
         Assert.True(read.Diagnostics.Count == 0, string.Join("\n", read.Diagnostics));
         return QueryFileReader.Parse(query.ReplaceLineEndings("\n"), path)
             .Then(file => IrInference.Infer(read.Model, [], queries: [file]));
+    }
+
+    /// <summary>
+    /// The module of the query files <paramref name="queries"/> (each a path below <c>sql/</c> and its text), read against a folder
+    /// holding <paramref name="schema"/>, as <c>haruspex generate</c> makes it with a config file of <c>"queries": "sql"</c>: each
+    /// named from its file. The test fails on any problem.
+    /// </summary>
+    public static IrDocument Module(string schema, params (string Path, string Sql)[] queries)
+    {
+        using var dir = new TempDirectory();
+        dir.File("db/schema.sql", schema);
+        foreach (var (path, sql) in queries)
+            dir.File(path, sql);
+        dir.File(HaruspexConfig.FileName, "{ \"source\": \"db\", \"out\": \"out\", \"queries\": \"sql\" }");
+        var config = ConfigReader.Read(Path.Combine(dir.Path, HaruspexConfig.FileName), new ReservedWords(TypeScriptNames.Language, TypeScriptNames.IsReserved)).Expected();
+        var files = QuerySelection.Select(config).Expected().Select(f => QueryFileReader.Read(f.Path, f.Relative).Expected()).ToList();
+        var project = SqlProject.Load(Path.Combine(dir.Path, "db"));
+        Assert.True(project.Diagnostics.Count == 0, string.Join("\n", project.Diagnostics));
+        return project.WithQueries(dir.Path, files).Infer([], config).Expected();
     }
 
     /// <summary>The query's one object.</summary>

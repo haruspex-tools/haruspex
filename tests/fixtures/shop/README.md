@@ -7,6 +7,14 @@ schema, strict objects, every emitter (`zod`, `json-schema` and `mssql`, the fun
 naming rule `#` → `Row`. `ConfigCliTests` runs it end to end through the CLI, `FixtureSnapshotTests` holds that output to `expected/`, and `EmitCheckTests` compiles
 the result with `tsc`, with `@shop/types` mapped to `tests/emit-check/src/shop-types.ts`.
 
+Its `queries` folder holds two query files of the application, which the config file names (`"queries": "queries"`): each is
+typed with the procedures, named from its file by the same rules, and given a function beside theirs.
+
+| Query file | Name | Parameters |
+|---|---|---|
+| `queries/products_under.sql` | `ProductsUnder` | `@max_price decimal(38,19)` (compared with `<=`), `@status varchar(8)`, `@skip` and `@take` `bigint` (`OFFSET … FETCH`) |
+| `queries/basket_card.sql` | `BasketCard` | `@label nvarchar(40)` (declared, since nothing decides it), `@basket_id int` |
+
 It is not deployed by the differential tests (its `json` column needs nothing they don't already cover); the overrides
 are proven runtime-checked there on the `checks` fixture instead (`OverrideAcceptanceTests`).
 

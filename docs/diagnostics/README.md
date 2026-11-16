@@ -146,6 +146,7 @@ reason.
 | [HAR5006](HAR5006.md) | error | A procedure's parameters' name is taken |
 | [HAR5101](HAR5101.md) | error | One name for two definitions |
 | [HAR5201](HAR5201.md) | error | A procedure's function can't take its name |
+| [HAR5202](HAR5202.md) | error | A query file's parameter can't be declared |
 
 ## The command line and files
 

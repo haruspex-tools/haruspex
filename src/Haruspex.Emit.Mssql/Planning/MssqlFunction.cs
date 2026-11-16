@@ -3,13 +3,19 @@ using Haruspex.Ir;
 
 namespace Haruspex.Emit.Mssql.Planning;
 
-/// <summary>One procedure's function, decided before anything is written: what it is named, sends and reads.</summary>
-/// <param name="Name">The function's name: the procedure's settled name with a lower-case first word (<c>getOrder</c>).</param>
-/// <param name="Procedure">The procedure.</param>
+/// <summary>One procedure's or query file's function, decided before anything is written: what it is named, sends and reads.</summary>
+/// <param name="Name">The function's name: the object's settled name with a lower-case first word (<c>getOrder</c>).</param>
+/// <param name="Procedure">The procedure or query file.</param>
 /// <param name="Bindings">Its parameters, in declared order.</param>
 /// <param name="Results">How each result set is read, in order; null when its results can't be listed, and the function hands over every result set as it arrives.</param>
 internal sealed record MssqlFunction(string Name, IrObject Procedure, EquatableArray<Binding> Bindings, EquatableArray<IrEncoding>? Results)
 {
+    /// <summary>
+    /// For a query file, what <c>sp_executesql</c> is sent: the text to run, and the declaration of its parameters
+    /// (<c>@order_id int, @note nvarchar(40)</c>), empty when it has none; null for a procedure, which is executed by its name.
+    /// </summary>
+    public (string Text, string Declaration)? Batch { get; init; }
+
     /// <summary>Whether the procedure has <c>OUTPUT</c> parameters, whose values come back.</summary>
     public bool HasOutput => Bindings.Any(b => b.IsOutput);
 }

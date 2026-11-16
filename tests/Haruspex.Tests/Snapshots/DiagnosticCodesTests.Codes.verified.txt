@@ -111,6 +111,7 @@ HAR5005 E A type read both as rows and as JSON [Haruspex.Emit.Zod.ZodCodes.TwoEn
 HAR5006 E A procedure's parameters' name is taken [Haruspex.Emit.Zod.ZodCodes.ParametersNameTaken]
 HAR5101 E One name for two definitions [Haruspex.Emit.JsonSchema.JsonSchemaCodes.NamedTwice]
 HAR5201 E A procedure's function can't take its name [Haruspex.Emit.Mssql.MssqlCodes.FunctionNameTaken]
+HAR5202 E A query file's parameter can't be declared [Haruspex.Emit.Mssql.MssqlCodes.QueryParameterCannotBeDeclared]
 HAR6001 E The command line doesn't parse [Haruspex.Cli.CliCodes.BadCommandLine]
 HAR6002 E The config file isn't there [Haruspex.Cli.CliCodes.ConfigNotFound]
 HAR6003 E No source is given [Haruspex.Cli.CliCodes.NoSource]

@@ -5,6 +5,9 @@
   "source": "database",
   "out": "generated",
 
+  // Queries the application keeps in its own files, typed with the procedures and given functions beside theirs.
+  "queries": "queries",
+
   // The application deploys together with the database, so an unexpected key should fail loudly.
   "objects": "strict",
 

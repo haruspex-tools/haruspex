@@ -2,9 +2,9 @@
 
 A small TypeScript application for an invented greenhouse, which keeps its plants and a log of their watering in SQL
 Server. It shows what a team does with haruspex's output: `haruspex generate`, run in this folder, reads the database
-project in `database` with the settings in `haruspex.json`, and writes the database module: `src/db/haruspex.zod.ts`, a schema
-and a type for each procedure, and `src/db/haruspex.mssql.ts`, a function for each, which calls it through the
-[mssql](https://www.npmjs.com/package/mssql) driver. The application's own code, `src/plants.ts`, calls the functions, and
+project in `database`, and the application's own query file in `queries`, with the settings in `haruspex.json`, and writes the
+database module: `src/db/haruspex.zod.ts`, a schema and a type for each procedure and query file, and `src/db/haruspex.mssql.ts`,
+a function for each, which runs it through the [mssql](https://www.npmjs.com/package/mssql) driver. The application's own code, `src/plants.ts`, calls the functions, and
 uses the types to write the code that handles what they return.
 
 ```sh
@@ -26,6 +26,10 @@ What to look at:
 - `garden.get_plant` returns `FOR JSON`, so its `result` is the document, or `null` when no plant has the id; the pool's
   `parseJSON` makes no difference to it. A plant never watered has no `water_log` key at all, and the type says so
   (`water_log?`).
+- `queries/thirsty_plants.sql` is a query the application keeps in its own file, and `thirstyPlants` its function, named
+  from the file. Its parameters are the variables it uses without declaring: `@kind`, compared with `p.kind`, takes that
+  column's type, `nvarchar(10)`; `@since` is compared with an aggregate, from which no type is inferred, so a comment in the file
+  declares it (`-- @param @since datetime2(0)`). The function sends the file's text through `sp_executesql` with those types.
 - `plantOrNothing` tells a failure apart by its name, HaruspexParameterError, without importing anything; the database's
   own errors are mssql's `RequestError`, passed through as they are.
 - `garden.list_plants` returns rows, which the mssql driver delivers with `date` columns as `Date`, so `planted` is a

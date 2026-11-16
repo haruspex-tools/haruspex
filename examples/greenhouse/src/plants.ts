@@ -2,8 +2,8 @@
 // schema and a type for each procedure, and src/db/haruspex.mssql.ts, with a function for each, which calls it through the
 // mssql driver and checks what goes in and what comes back. The functions belong on the server, which holds the pool.
 import sql from 'mssql'
-import { getPlant, listPlants } from './db/haruspex.mssql'
-import type { GetPlant, GetPlantWaterLogItem, ListPlantsRow } from './db/haruspex.zod'
+import { getPlant, listPlants, thirstyPlants } from './db/haruspex.mssql'
+import type { GetPlant, GetPlantWaterLogItem, ListPlantsRow, ThirstyPlantsRow } from './db/haruspex.zod'
 
 /**
  * The application's pool. With `parseJSON` on, the driver joins the rows SQL Server splits a FOR JSON result over and parses
@@ -42,6 +42,17 @@ export async function report(pool: sql.ConnectionPool): Promise<void> {
   const wrong: string = basil.id
   void wrong
   console.log(`${basil.name}: ${litresGiven(basil).toString()} litres`)
+}
+
+/**
+ * The application's own query, queries/thirsty_plants.sql, has a function as a procedure has: its parameters are what the file
+ * uses without declaring, @kind typed from the column it is compared with (nvarchar(10)) and @since from the comment that declares
+ * it (datetime2(0), sent as an ISO 8601 string), and its rows are checked by its schema.
+ */
+export async function thirsty(pool: sql.ConnectionPool, since: Date): Promise<ThirstyPlantsRow[]> {
+  // A Date from the driver holds the stored clock time in its UTC fields: the string is its ISO form without the Z, to the second.
+  const { result } = await thirstyPlants(pool, { kind: null, since: since.toISOString().slice(0, 19) })
+  return result
 }
 
 /**

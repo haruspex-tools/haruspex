@@ -1,8 +1,8 @@
 # Haruspex.Emit.Mssql
 
 Writes the database module's functions from a [haruspex IR](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.Ir/README.md)
-document: one TypeScript function for each procedure, which calls it through the [mssql](https://www.npmjs.com/package/mssql)
-driver, the driver most Node applications reach SQL Server with. A function checks its parameters with the procedure's
+document: one TypeScript function for each procedure and query file, which runs it through the
+[mssql](https://www.npmjs.com/package/mssql) driver, the driver most Node applications reach SQL Server with. A function checks its parameters with the procedure's
 parameters schema, binds each with the driver's type, executes, and checks each result set and the `OUTPUT` parameters with
 their schemas:
 
@@ -56,6 +56,11 @@ if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zo
 - **One shape of return for every procedure**: `result` for one result set, `result1`, `result2` and so on for several,
   `output` for the `OUTPUT` parameters, and `returnValue`, the return code. A `FOR JSON` result is read as decision 0048 fixes,
   whether the pool parses JSON or not.
+- **A query file's function runs its text through `sp_executesql`**: the text as the IR holds it, and each parameter declared
+  by its name and its type's `sql`, so the query runs with the types it was inferred with, and each value is bound beside them
+  by name, converted by the server to its declared type. A parameter with no type to declare, or named `@stmt` or `@params`
+  (`sp_executesql`'s own), is refused (HAR5202). Its failures name its path where a procedure's would name the procedure, and
+  its `returnValue` is always 0, since the server refuses `RETURN` with a value in such a batch (error 178, observed).
 - **It checks through Standard Schema**, the interface Zod, Valibot and ArkType implement, never through Zod's own methods, so
   the functions are the same whichever validator wrote the schemas, by the names `SchemaModuleNames` gives.
 - **It is self-contained.** Its errors and helpers are written into it, so a module needs no package of haruspex's at run time,

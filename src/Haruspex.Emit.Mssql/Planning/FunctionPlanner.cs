@@ -15,39 +15,79 @@ internal static class FunctionPlanner
     /// </summary>
     public static IReadOnlyList<string> ModuleNames { get; } = ["sql", "types", "Queryable", "Issue", "ParameterError", "ResultError", "Checks", "checked", "where", "forJson", "readJson", "readRows"];
 
-    /// <summary>Every procedure's function, by id; or every refusal.</summary>
+    /// <summary>
+    /// The names <c>sp_executesql</c> gives its own parameters, which a query file's parameters, passed to it by name beside them,
+    /// may not take (compared as the server compares a variable's name, ignoring case).
+    /// </summary>
+    private static readonly string[] ExecuteSqlOwn = ["@stmt", "@params"];
+
+    /// <summary>Every procedure's and query file's function, by id; or every refusal.</summary>
     public static Outcome<IReadOnlyList<MssqlFunction>> Plan(IrDocument document, MssqlOptions options)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(options);
-        var procedures = document.Objects.Where(o => o.Kind == IrObjectKind.Procedure).OrderBy(o => o.Id, StringComparer.Ordinal).ToList();
+        // Procedures and query files share the module's names (decision 0059's merge of the two): a clash between them is refused.
+        var procedures = document.Objects.OrderBy(o => o.Id, StringComparer.Ordinal).ToList();
         var imported = procedures.SelectMany(Imports).ToHashSet(StringComparer.Ordinal);
-        var bound = new Dictionary<string, string>(StringComparer.Ordinal);
+        var bound = new Dictionary<string, IrObject>(StringComparer.Ordinal);
         var refusals = new List<Diagnostic>();
         var functions = new List<MssqlFunction>();
         foreach (var procedure in procedures)
         {
             var name = FunctionName(procedure.Name);
+            var other = bound.GetValueOrDefault(name);
             var why = options.IsReserved(name) ? "is a reserved word"
                 : ModuleNames.Contains(name, StringComparer.Ordinal) ? "is a name the module uses for itself"
                 : imported.Contains(name) ? "is a name the module imports"
-                : bound.TryGetValue(name, out var other) ? $"is the function of {other} too"
+                : other is not null ? $"is the function of {other.Id} too"
                 : null;
             if (why is not null)
             {
-                refusals.Add(MssqlCodes.FunctionNameTaken.At(null, $"The function of {procedure.Id} would be named {name}, which {why}; rename the procedure in the config file."));
+                var rename = procedure.Kind == IrObjectKind.Query || other?.Kind == IrObjectKind.Query
+                    ? "rename the procedure in the config file, or the query file"
+                    : "rename the procedure in the config file";
+                refusals.Add(MssqlCodes.FunctionNameTaken.At(null, $"The function of {procedure.Id} would be named {name}, which {why}; {rename}."));
                 continue;
             }
 
-            bound[name] = procedure.Id;
+            bound[name] = procedure;
+            (string Text, string Declaration)? batch = procedure.Kind == IrObjectKind.Query ? Batch(procedure, refusals) : null;
             functions.Add(new MssqlFunction(
                 name,
                 procedure,
                 [.. procedure.Parameters.Select(Bind)],
-                procedure.Results is { } results ? [.. results.Select(r => r.Encoding)] : null));
+                procedure.Results is { } results ? [.. results.Select(r => r.Encoding)] : null)
+            {
+                Batch = batch,
+            });
         }
 
         return Outcome.Of<IReadOnlyList<MssqlFunction>>(functions, refusals);
+    }
+
+    /// <summary>
+    /// What a query file's function sends <c>sp_executesql</c>: its text, and each parameter declared by its name and its type's
+    /// SQL (the type the inference walked the text with, so what was inferred is what runs). A parameter of no type to declare, or
+    /// named as <c>sp_executesql</c>'s own, is refused, since the call can't be made.
+    /// </summary>
+    private static (string Text, string Declaration) Batch(IrObject query, List<Diagnostic> refusals)
+    {
+        var declarations = new List<string>();
+        foreach (var parameter in query.Parameters)
+        {
+            var sql = parameter.Type is IrScalar { Sql: { } declared } ? declared : null;
+            var why = ExecuteSqlOwn.Contains(parameter.Name, StringComparer.OrdinalIgnoreCase) ? "which has a parameter of that name itself; rename it in the file"
+                : parameter.Type is IrUnknownType { Reason: var reason } ? $"and its type isn't known ({IrWireNames.Of(reason)}); declare it in the file, as -- @param {parameter.Name} <type>"
+                : sql is null ? $"and its type isn't one a declaration can name; declare it in the file as a scalar type, as -- @param {parameter.Name} nvarchar(max)"
+                : null;
+            if (why is not null)
+                refusals.Add(MssqlCodes.QueryParameterCannotBeDeclared.At(null, $"The function of {query.Id} must declare {parameter.Name} to sp_executesql, {why}."));
+            else
+                declarations.Add(parameter.Name + " " + sql);
+        }
+
+        // A query's object holds its text: the reader refuses one without (IrJsonReader).
+        return (query.Text ?? throw new ArgumentException($"The query {query.Id} has no text.", nameof(query)), string.Join(", ", declarations));
     }
 
     /// <summary>

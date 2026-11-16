@@ -8,7 +8,7 @@ namespace Haruspex.DifferentialTests;
 /// The generated functions on the server, through the mssql driver: what they send, what they return, and the three kinds of
 /// failure a caller tells apart (decision 0056). Each procedure is invented here and created in the run's own transaction.
 /// </summary>
-public class MssqlFunctionTests(SqlServerFixture server)
+public partial class MssqlFunctionTests(SqlServerFixture server)
 {
     private const string Schema = "IF SCHEMA_ID(N'outlet') IS NULL EXEC (N'CREATE SCHEMA outlet');";
 

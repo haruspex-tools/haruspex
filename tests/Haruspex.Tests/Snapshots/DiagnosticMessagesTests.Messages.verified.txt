@@ -316,6 +316,9 @@ haruspex: error HAR5101: The IR name 'GetBasket' names a type and the procedure 
 HAR5201
 haruspex: error HAR5201: The function of shop.delete would be named delete, which is a reserved word; rename the procedure in the config file.
 
+HAR5202
+haruspex.json: error HAR5202: The function of sql/label.sql must declare @label to sp_executesql, and its type isn't known (undecided-parameter); declare it in the file, as -- @param @label <type>.
+
 HAR6001
 haruspex: error HAR6001: Unrecognized command or argument 'blue'.
 

@@ -81,7 +81,7 @@ public class ConfigCliTests
 
         Assert.Equal("", error);
         Assert.Equal(0, exitCode);
-        Assert.Contains("haruspex: 4 procedures, 0 unknown(s).", output, StringComparison.Ordinal);
+        Assert.Contains("haruspex: 4 procedures, 2 query files, 0 unknown(s).", output, StringComparison.Ordinal);
 
         // What it writes is the shop's expected output, which FixtureSnapshotTests checks for every project fixture.
         Assert.True(File.Exists(Path.Combine(outDir.Path, "haruspex.ir.json")));
