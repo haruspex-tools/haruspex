@@ -91,7 +91,7 @@ internal static class HaruspexCli
         };
         var all = new Option<string?>("--all", "-a")
         {
-            Description = $"Every {HaruspexConfig.FileName} below the folder given, or below the working directory, each a module run and reported apart. Folders whose name starts with a dot, and node_modules, are left out.",
+            Description = $"Every {HaruspexConfig.FileName} below the folder given, or below the working directory, each a module run and reported apart. Folders whose name starts with a dot, node_modules, and another repository or worktree nested below (a folder with .git) are left out.",
             Arity = ArgumentArity.ZeroOrOne,
         };
         var include = new Option<string[]>("--include", "-i")

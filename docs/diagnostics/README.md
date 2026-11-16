@@ -162,3 +162,4 @@ reason.
 | [HAR6017](HAR6017.md) | error | Unknowns the config file fails |
 | [HAR6018](HAR6018.md) | error | No config file below the folder |
 | [HAR6019](HAR6019.md) | error | Options that can't go together |
+| [HAR6020](HAR6020.md) | error | Two modules write to one folder |

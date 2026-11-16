@@ -213,6 +213,15 @@ internal static class ModuleRun
     }
 
     /// <summary>
+    /// The output folder <paramref name="request"/> writes or checks, as the run would settle it (the command line's <c>--out</c>
+    /// over the config file's <c>out</c>), or null when it can't be settled, which the run itself then reports.
+    /// </summary>
+    public static string? OutOf(RunRequest request) =>
+        ReadConfig(request) is Succeeded<Settings> { Value: var settings } && Out(request, settings) is Succeeded<string> { Value: var folder }
+            ? folder
+            : null;
+
+    /// <summary>
     /// Each unknown in <paramref name="document"/>, as a note with its reason's code, where it is and why, so that none is
     /// silent. One that only a declaration can resolve is reported by the config layer instead, with what to declare, and is not
     /// said twice (<see cref="InferenceCodes.Of"/>).

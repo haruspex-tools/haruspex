@@ -223,11 +223,18 @@ inferred, will change without notice. Don't depend on it yet.
 
 Today haruspex types what the procedures of a SQL Server database project return, for TypeScript through Zod, and catches
 drift in CI: `haruspex check` fails a build when a change to the SQL would change what a committed module says, naming each
-change where it is (`shop.list_orders results[0][].note: became nullable`). One step checks every module in a repository:
+change where it is (`shop.list_orders results[0][].note: became nullable`). Until it is published as a package, a CI job runs
+it from a copy of its source, pinned to a commit, and one step checks every module in the repository:
 
 ```yaml
-- run: dotnet run --project path/to/haruspex/src/Haruspex.Cli -- check --all   # every haruspex.json below; exit code 1 on a change
+- uses: actions/checkout@v7                      # haruspex itself, into .haruspex, which check --all doesn't look in
+  with: { repository: sharpblue/haruspex, ref: <commit>, path: .haruspex }
+- uses: actions/setup-dotnet@v6
+  with: { global-json-file: .haruspex/global.json }
+- run: dotnet run --project .haruspex/src/Haruspex.Cli -- check --all   # every haruspex.json below; exit code 1 on a change
 ```
+
+Pin the two actions by commit too, as haruspex's own workflow does.
 
 None of the following exists yet; each is a job the generated types and the IR are designed to make possible:
 

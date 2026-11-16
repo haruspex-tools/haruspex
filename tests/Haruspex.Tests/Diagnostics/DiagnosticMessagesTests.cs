@@ -43,7 +43,7 @@ public class DiagnosticMessagesTests
         using var output = new StringWriter();
         using var error = new StringWriter();
         HaruspexCli.Run(["generate", .. args ?? (config is null ? ["db", "--include", "*.*", "--out", "out"] : [])], output, error, folder.Path);
-        return error.ToString().ReplaceLineEndings("\n").Replace(folder.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal).TrimEnd('\n').Split('\n');
+        return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
     /// <summary>
@@ -64,7 +64,7 @@ public class DiagnosticMessagesTests
         change(folder);
         error.GetStringBuilder().Clear();
         HaruspexCli.Run(["check"], output, error, folder.Path);
-        return error.ToString().ReplaceLineEndings("\n").Replace(folder.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal).TrimEnd('\n').Split('\n');
+        return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
     /// <summary>
@@ -247,6 +247,11 @@ public class DiagnosticMessagesTests
         (6016, () => Checked(["CREATE PROCEDURE lib.p @sql nvarchar(max) AS EXEC sp_executesql @sql;"], _ => { })),
         (6018, () => Cli([GetBook], args: ["--all", "db"])),
         (6019, () => Cli([GetBook], args: ["--all", "--out", "out"])),
+        (6020, () => Cli([GetBook], args: ["-c", "a/haruspex.json", "-c", "b/haruspex.json"], arrange: f =>
+        {
+            f.File("a/haruspex.json", "{ \"source\": \"../db\", \"out\": \"../out\", \"schemas\": { \"lib\": { \"include\": [\"*\"] } } }");
+            f.File("b/haruspex.json", "{ \"source\": \"../db\", \"out\": \"../out\", \"schemas\": { \"lib\": { \"include\": [\"*\"] } } }");
+        })),
         (6017, () => Checked(["CREATE PROCEDURE lib.p AS SELECT json_query(b.extra) AS extra FROM lib.book AS b FOR JSON PATH;"], _ => { }, "\"check\": { \"unknowns\": \"fail\" }")),
     ];
 

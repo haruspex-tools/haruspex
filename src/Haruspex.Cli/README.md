@@ -54,13 +54,14 @@ and compares with the two files committed there. Both take the same arguments: t
 a `.dacpac`), `--include` and `--out` override the config file for one run, and `--config` names a config file instead of
 searching for one.
 
-**Several modules.** An application whose plugins each have their own interface to the database has a `haruspex.json` for
-each, and each is a module of its own: its own selection, names, output and committed contract. `--config` may be repeated,
-and `--all` runs every `haruspex.json` below a folder (the working directory, or the one it names), leaving out folders whose
-name starts with a dot and `node_modules`, in path order. Each module runs as a run of its own would, under a line naming its
-config file, and the run ends with one line saying which failed; its exit code is the worst of theirs. A source,
-`--include` and `--out` are one module's, so they can't be given with several. With one config file, nothing is added to what
-a run prints.
+**Several modules.** An application whose plugins each have their own interface to the database has a `haruspex.json`
+for each, and each is a module of its own: its own selection, names, output and committed contract. `--config` may be
+repeated, and `--all` runs every `haruspex.json` below a folder (the working directory, or the one it names), in path
+order, leaving out folders whose name starts with a dot, `node_modules`, and a repository or worktree nested below (a
+folder holding `.git`), whose modules are another checkout's. Each module runs as a run of its own would, under a line
+naming its config file, and the run ends with one line saying which failed; its exit code is the worst of theirs. A
+source, `--include` and `--out` are one module's, so they can't be given with several, and two modules may not share an
+`out`. With one config file, nothing is added to what a run prints.
 
 A check that fails says what changed, one line for each change, at the procedure it is in:
 
@@ -104,7 +105,8 @@ output: how many procedures it typed, how many unknowns there are, and where it 
 - **`check` writes nothing, and fails on any change of claim**, said as the change: a field added or removed, a value that
   became nullable, a type that changed, a value set that grew. What only says where a claim came from (a location, a reason,
   a DACPAC's hash) isn't compared, so moving a procedure down its file passes. A module that differs though the IR claims the
-  same fails too (another version of haruspex wrote it, or a hand edited it), as does nothing committed, a committed IR of
+  same fails too, quoting the first line that differs (a comment giving a reason that changed, a module another version of
+  haruspex wrote, a hand edit), as does nothing committed, a committed IR of
   another version, and a selected procedure whose result sets are unknown and not declared. Unknowns are notes, and pass,
   unless the config file says `"check": { "unknowns": "fail" }`
   ([decision 0050](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0050-check-compares-claims-not-files.md)).

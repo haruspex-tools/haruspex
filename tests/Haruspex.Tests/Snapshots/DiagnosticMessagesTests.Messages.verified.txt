@@ -335,7 +335,7 @@ HAR6014
 db/p1.sql:1:1: error HAR6014: lib.get_book results[0][].note: removed (string, nvarchar(200), nullable)
 
 HAR6015
-out/haruspex.zod.ts: error HAR6015: this module isn't what haruspex writes for the IR beside it, though the IR claims the same: another version of haruspex wrote it, or it was edited. Run haruspex generate, and read the change to the module before committing it.
+out/haruspex.zod.ts: error HAR6015: line 28 is `// edited` where haruspex now writes nothing (the module ends before), though no claim the IR makes has changed. A comment written from a reason (why a value is unknown, why a result may be absent) changes so; so does a module another version of haruspex wrote, or one edited. Run haruspex generate, and read the change to the module before committing it.
 
 HAR6016
 db/p1.sql:1:1: error HAR6016: lib.p: its result sets are unknown, and check passes a selected procedure only when they are known or declared. Declare them in haruspex.json under procedures["lib.p"].results, as "none" or a JSON Schema, or leave the procedure out of the selection.
@@ -348,4 +348,7 @@ haruspex: error HAR6018: --all: no haruspex.json below db. Give the folder that 
 
 HAR6019
 haruspex: error HAR6019: a source, --include and --out are for one module; with several config files, each says its own source, selection and out.
+
+HAR6020
+haruspex: error HAR6020: a/haruspex.json and b/haruspex.json both write to out, so one module would overwrite the other's. Give each module its own "out".
 

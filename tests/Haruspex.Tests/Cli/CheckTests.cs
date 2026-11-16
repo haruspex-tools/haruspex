@@ -40,8 +40,7 @@ public class CheckTests
         using var output = new StringWriter();
         using var error = new StringWriter();
         var exitCode = HaruspexCli.Run(args, output, error, folder.Path);
-        // Paths as on every platform: the formatter joins a file to its folder with the platform's separator.
-        return (exitCode, output.ToString(), error.ToString().Replace(folder.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal).Replace('\\', '/'));
+        return (exitCode, CliOutput.Shown(output.ToString(), folder.Path), CliOutput.Shown(error.ToString(), folder.Path));
     }
 
     /// <summary>Every file under the output folder with its bytes, to show that a check wrote nothing.</summary>
@@ -61,7 +60,7 @@ public class CheckTests
 
         Assert.Equal(0, exitCode);
         Assert.Equal("", error);
-        Assert.Equal($"haruspex: 1 procedure, 0 unknown(s). {Path.Join(folder.Path, "generated")} is up to date.\n", output.ReplaceLineEndings("\n"));
+        Assert.Equal("haruspex: 1 procedure, 0 unknown(s). generated is up to date.\n", output);
     }
 
     [Fact]
@@ -165,7 +164,22 @@ public class CheckTests
         var (exitCode, _, error) = Run(folder, "check");
 
         Assert.Equal(1, exitCode);
-        Assert.Contains("error HAR6015:", error, StringComparison.Ordinal);
+        Assert.Contains("error HAR6015: line ", error, StringComparison.Ordinal);
+        Assert.Contains("is `// edited by hand` where haruspex now writes nothing (the module ends before)", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_reason_the_module_comments_on_that_changes_fails_the_check_with_the_line_that_changed()
+    {
+        using var folder = Generated(ListOrders.Replace("o.status", "o.gone AS status", StringComparison.Ordinal));
+        folder.File("db/procedures.sql", ListOrders.Replace("o.status", "dbo.gone(1) AS status", StringComparison.Ordinal));
+
+        var (exitCode, _, error) = Run(folder, "check");
+
+        Assert.Equal(1, exitCode);
+        Assert.DoesNotContain("HAR6014", error, StringComparison.Ordinal);
+        Assert.Contains("error HAR6015: line ", error, StringComparison.Ordinal);
+        Assert.DoesNotContain("another version of haruspex wrote it", error, StringComparison.Ordinal);
     }
 
     [Fact]

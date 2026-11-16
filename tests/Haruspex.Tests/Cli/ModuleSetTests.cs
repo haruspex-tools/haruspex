@@ -39,8 +39,7 @@ public class ModuleSetTests
         return (exitCode, Shown(output, folder), Shown(error, folder));
     }
 
-    private static string Shown(StringWriter writer, TempDirectory folder) =>
-        writer.ToString().ReplaceLineEndings("\n").Replace(folder.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal).Replace('\\', '/');
+    private static string Shown(StringWriter writer, TempDirectory folder) => CliOutput.Shown(writer.ToString(), folder.Path);
 
     [Fact]
     public void Generate_with_two_config_files_writes_each_module_beside_its_config()
@@ -86,6 +85,36 @@ public class ModuleSetTests
                 "haruspex: 2 modules, none failed.",
             ],
             output.TrimEnd('\n').Split('\n'));
+    }
+
+    [Fact]
+    public void All_leaves_out_a_repository_and_a_worktree_nested_below_since_they_are_other_checkouts()
+    {
+        using var folder = Application();
+        folder.File("plugins/vendored/.git/HEAD", "ref: refs/heads/main\n");
+        folder.File("plugins/vendored/haruspex.json", "{ not even JSON");
+        folder.File("plugins/worktree/.git", "a worktree's pointer to its repository\n");
+        folder.File("plugins/worktree/haruspex.json", "{ not even JSON");
+
+        var (exitCode, output, _) = Run(folder, "generate", "--all");
+
+        Assert.Equal(0, exitCode);
+        Assert.EndsWith("haruspex: 2 modules, none failed.\n", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Two_modules_that_write_to_one_folder_are_refused_before_either_runs()
+    {
+        using var folder = Application();
+        folder.File("plugins/returns/haruspex.json", """{ "source": "../../db", "out": "../orders/generated", "schemas": { "shop": { "include": ["list_returns"] } } }""");
+
+        var (exitCode, _, error) = Run(folder, "generate", "--all");
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal(
+            "haruspex: error HAR6020: plugins/orders/haruspex.json and plugins/returns/haruspex.json both write to plugins/orders/generated, so one module would overwrite the other's. Give each module its own \"out\".\n",
+            error);
+        Assert.False(Directory.Exists(Path.Combine(folder.Path, "plugins", "orders", "generated")));
     }
 
     [Fact]

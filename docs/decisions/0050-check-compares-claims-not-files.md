@@ -15,7 +15,9 @@ committed in the output folder, in two ways:
 
 It fails, with exit code 1, when a claim differs, each change one error naming the object, the path and how it changed
 (`shop.list_orders results[0][].note: became nullable`), at the procedure's place in the SQL; when the module differs though
-no claim does, which a module written by another version of haruspex, or edited by hand, gives; when a selected procedure's
+no claim does, quoting the first line that differs: the module's comments give the reasons a value is unknown or a result may
+be absent, which aren't compared as claims but which a reader acts on, and a module written by another version of haruspex, or
+edited by hand, differs too; when a selected procedure's
 result sets can't be listed and the config file doesn't declare them; and, when the config file asks for it
 (`"check": { "unknowns": "fail" }`), when the module has an unknown. An unknown is otherwise a note, as in `generate`.
 

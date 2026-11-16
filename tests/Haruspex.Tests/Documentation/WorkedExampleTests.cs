@@ -232,7 +232,7 @@ public class WorkedExampleTests
         using var output = new StringWriter();
         using var error = new StringWriter();
         HaruspexCli.Run(["generate", .. arguments], output, error, folder.Path);
-        return (error.ToString() + output).Replace(folder.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal);
+        return CliOutput.Shown(error.ToString() + output, folder.Path);
     }
 
     /// <summary>
@@ -253,7 +253,7 @@ public class WorkedExampleTests
         error.GetStringBuilder().Clear();
         folder.File("db/project.sql", sql);
         HaruspexCli.Run(["check", .. arguments], output, error, folder.Path);
-        return (error.ToString() + output).Replace(folder.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal);
+        return CliOutput.Shown(error.ToString() + output, folder.Path);
     }
 
     /// <summary>

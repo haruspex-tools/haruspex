@@ -16,6 +16,12 @@ internal static class ModuleSet
     /// <summary>Folders <c>--all</c> doesn't look in: another package's files, and hidden folders such as <c>.git</c>.</summary>
     private const string Packages = "node_modules";
 
+    /// <summary>What marks a folder as the top of a repository or a worktree of its own: <c>.git</c>, a folder or a file.</summary>
+    private const string Repository = ".git";
+
+    /// <summary>Whether this platform's file systems usually ignore case, so that two output folders differing only in case are one.</summary>
+    private static readonly bool CaseIgnored = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS();
+
     /// <summary>
     /// What <c>--all</c> passes over: hidden and system folders, links to folders (which could lead back above), and the attributes
     /// the platform marks them with. Folders whose name starts with a dot, and <c>node_modules</c>, are left out by name.
@@ -49,8 +55,7 @@ internal static class ModuleSet
         var worst = HaruspexCli.ExitCodes.Success;
         foreach (var module in requests)
         {
-            // Several modules always have their config files: --all found them, or --config named them.
-            var name = Path.GetRelativePath(module.WorkingDirectory, module.Resolve(module.Config ?? HaruspexConfig.FileName)).Replace('\\', '/');
+            var name = Name(module);
             error.WriteLine($"haruspex: module {name}");
             var exitCode = command(module, output, error);
             if (exitCode != HaruspexCli.ExitCodes.Success)
@@ -83,9 +88,43 @@ internal static class ModuleSet
         var configs = request.All is { } all
             ? Below(request, all)
             : new Succeeded<EquatableArray<string?>>(request.Configs.Count > 0 ? [.. request.Configs] : [null]);
-        return configs.Select(found => (EquatableArray<RunRequest>)[.. found.Select(config =>
-            new RunRequest(request.Directory, config, request.Include, request.Out, request.WorkingDirectory))]);
+        return configs
+            .Select(found => (EquatableArray<RunRequest>)[.. found.Select(config =>
+                new RunRequest(request.Directory, config, request.Include, request.Out, request.WorkingDirectory))])
+            .Then(Apart);
     }
+
+    /// <summary>
+    /// The modules, when no two write to one folder; otherwise each pair that would, refused before any runs: the second would
+    /// overwrite the first's module, and a check would compare both with one pair of files. A module whose folder can't be
+    /// settled is left to its own run to report.
+    /// </summary>
+    private static Outcome<EquatableArray<RunRequest>> Apart(EquatableArray<RunRequest> requests)
+    {
+        var first = new Dictionary<string, RunRequest>(CaseIgnored ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+        var shared = new List<Diagnostic>();
+        foreach (var module in requests)
+        {
+            if (ModuleRun.OutOf(module) is not { } folder)
+                continue;
+            if (first.TryGetValue(folder, out var earlier))
+            {
+                shared.Add(CliCodes.SharedOut.At(null,
+                    $"{Name(earlier)} and {Name(module)} both write to {DiagnosticFormatter.PathAsShown(folder)}, so one module would overwrite the other's. Give each module its own \"out\"."));
+            }
+            else
+            {
+                first.Add(folder, module);
+            }
+        }
+
+        return shared.Count == 0 ? new Succeeded<EquatableArray<RunRequest>>(requests) : new Failed<EquatableArray<RunRequest>>([.. shared]);
+    }
+
+    /// <summary>A module's config file, from the working directory, as its line and the last line name it.</summary>
+    private static string Name(RunRequest module) =>
+        // Several modules always have their config files: --all found them, or --config named them.
+        DiagnosticFormatter.PathAsShown(Path.GetRelativePath(module.WorkingDirectory, module.Resolve(module.Config ?? HaruspexConfig.FileName)));
 
     /// <summary>Every config file below the folder <c>--all</c> names (<paramref name="all"/>, as given), or why there is none.</summary>
     private static Outcome<EquatableArray<string?>> Below(ModulesRequest request, string all)
@@ -103,7 +142,8 @@ internal static class ModuleSet
 
     /// <summary>
     /// The config file in <paramref name="folder"/>, if any, then those below it, a folder at a time in ordinal order of names, so
-    /// that the modules run, and are reported, in the same order on every machine.
+    /// that the modules run, and are reported, in the same order on every machine. It doesn't go into a folder below that is the
+    /// top of a repository or worktree of its own.
     /// </summary>
     private static IEnumerable<string> Find(string folder)
     {
@@ -113,8 +153,10 @@ internal static class ModuleSet
 
         foreach (var below in Directory.EnumerateDirectories(folder, "*", Folders).Order(StringComparer.Ordinal))
         {
+            // A repository or worktree nested below, such as a submodule or a worktree kept inside the checkout, is another
+            // checkout's modules, at another commit: they are its own to check.
             var name = Path.GetFileName(below);
-            if (name.StartsWith('.') || name == Packages)
+            if (name.StartsWith('.') || name == Packages || Path.Exists(Path.Join(below, Repository)))
                 continue;
             foreach (var found in Find(below))
                 yield return found;

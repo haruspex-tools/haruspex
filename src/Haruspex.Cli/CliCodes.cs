@@ -74,6 +74,9 @@ internal static class CliCodes
     /// </summary>
     public static DiagnosticCode OptionsApart { get; } = new(6019, DiagnosticSeverity.Error, "Options that can't go together");
 
+    /// <summary>Two modules of one run write to the same output folder.</summary>
+    public static DiagnosticCode SharedOut { get; } = new(6020, DiagnosticSeverity.Error, "Two modules write to one folder");
+
     /// <summary>
     /// The codes with which <c>check</c> fails: what it found differs from what is committed, or can't be compared with it, or is
     /// incomplete. Each makes the exit code 1, not 2: the command line and the config file may be right.

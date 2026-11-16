@@ -157,7 +157,7 @@ internal static class Generate
     {
         var procedures = written.Document.Objects.Count;
         output.WriteLine(
-            $"haruspex: {procedures} {(procedures == 1 ? "procedure" : "procedures")}, {written.Document.Unknowns.Count} unknown(s). Wrote {written.IrPath} and {written.ZodPath}.");
+            $"haruspex: {procedures} {(procedures == 1 ? "procedure" : "procedures")}, {written.Document.Unknowns.Count} unknown(s). Wrote {DiagnosticFormatter.PathAsShown(written.IrPath)} and {DiagnosticFormatter.PathAsShown(written.ZodPath)}.");
         return HaruspexCli.ExitCodes.Success;
     }
 

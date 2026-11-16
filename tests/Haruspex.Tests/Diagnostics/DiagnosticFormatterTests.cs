@@ -34,6 +34,17 @@ public class DiagnosticFormatterTests
             DiagnosticFormatter.Format(new Diagnostic(Broken, "it is broken.", new FileLocation("haruspex.json"))));
 
     [Fact]
+    public void A_path_is_written_with_slashes_on_windows_and_as_it_is_elsewhere_where_a_backslash_is_a_name_s()
+    {
+        var written = DiagnosticFormatter.Format(new Diagnostic(Broken, "it is broken.", new SourceLocation("procedures\\get_order.sql", 7, 5)), "db");
+
+        Assert.Equal(
+            OperatingSystem.IsWindows() ? "db/procedures/get_order.sql:7:5: error HAR9001: it is broken." : "db/procedures\\get_order.sql:7:5: error HAR9001: it is broken.",
+            written);
+        Assert.Equal(OperatingSystem.IsWindows() ? "out/haruspex.ir.json" : "out\\haruspex.ir.json", DiagnosticFormatter.PathAsShown("out\\haruspex.ir.json"));
+    }
+
+    [Fact]
     public void A_diagnostic_without_a_place_is_written_as_the_tool_s_own() =>
         Assert.Equal("haruspex: note HAR9003: it is unknown.", DiagnosticFormatter.Format(new Diagnostic(Unknown, "it is unknown.", null)));
 

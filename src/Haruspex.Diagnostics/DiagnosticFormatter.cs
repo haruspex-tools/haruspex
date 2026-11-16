@@ -30,11 +30,23 @@ public static class DiagnosticFormatter
         var head = $"{Word(diagnostic.Severity)} {diagnostic.Code}";
         return diagnostic.At switch
         {
-            SourceLocation at => string.Create(CultureInfo.InvariantCulture, $"{Path.Join(sourceRoot, at.File)}:{at.Line}:{at.Column}: {head}: {diagnostic.Message}"),
-            JsonLocation at => string.Create(CultureInfo.InvariantCulture, $"{at.File}:{at.Line}:{at.Column}: {head}: {(at.Path.Length == 0 ? "" : at.Path + ": ")}{diagnostic.Message}"),
-            FileLocation at => $"{at.File}: {head}: {diagnostic.Message}",
+            SourceLocation at => string.Create(CultureInfo.InvariantCulture, $"{PathAsShown(Path.Join(sourceRoot, at.File))}:{at.Line}:{at.Column}: {head}: {diagnostic.Message}"),
+            JsonLocation at => string.Create(CultureInfo.InvariantCulture, $"{PathAsShown(at.File)}:{at.Line}:{at.Column}: {head}: {(at.Path.Length == 0 ? "" : at.Path + ": ")}{diagnostic.Message}"),
+            FileLocation at => $"{PathAsShown(at.File)}: {head}: {diagnostic.Message}",
             null => $"haruspex: {head}: {diagnostic.Message}",
         };
+    }
+
+    /// <summary>
+    /// A path as haruspex prints it: with <c>/</c> between its names on every platform, so that a diagnostic or a summary reads the
+    /// same on Windows as elsewhere, as the IR's own locations do. Only Windows writes <c>\</c> as a separator; elsewhere it is a
+    /// character a name may hold, and is kept.
+    /// </summary>
+    /// <param name="path">A path as the platform writes it.</param>
+    public static string PathAsShown(string path)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+        return OperatingSystem.IsWindows() ? path.Replace('\\', '/') : path;
     }
 
     private static string Word(DiagnosticSeverity severity) => severity switch

@@ -73,11 +73,38 @@ internal static class Check
         if (changes.Count > 0)
             return changes.Select(change => At(module, Object(change, committed, module.Document), CliCodes.ClaimChanged, change.ToString()));
 
-        return zod.Replace("\r\n", "\n", StringComparison.Ordinal) == module.Zod
+        return FirstDifference(zod.Replace("\r\n", "\n", StringComparison.Ordinal), module.Zod) is not { } line
             ? []
             : [CliCodes.ModuleDiffers.At(new FileLocation(module.ZodPath),
-                "this module isn't what haruspex writes for the IR beside it, though the IR claims the same: another version of haruspex wrote it, or it was edited. Run haruspex generate, and read the change to the module before committing it.")];
+                $"line {line.Number} is {line.Committed} where haruspex now writes {line.Now}, though no claim the IR makes has changed. A comment written from a reason (why a value is unknown, why a result may be absent) changes so; so does a module another version of haruspex wrote, or one edited. Run haruspex generate, and read the change to the module before committing it.")];
     }
+
+    /// <summary>The first line where the committed module and the one haruspex writes differ, each cut short and quoted; null when none does.</summary>
+    private static (int Number, string Committed, string Now)? FirstDifference(string committed, string now)
+    {
+        // Each module ends with a line break, which ends its last line rather than beginning one more.
+        var was = committed.TrimEnd('\n').Split('\n');
+        var written = now.TrimEnd('\n').Split('\n');
+        for (var i = 0; i < Math.Max(was.Length, written.Length); i++)
+        {
+            var before = i < was.Length ? was[i] : null;
+            var after = i < written.Length ? written[i] : null;
+            if (before != after)
+                return (i + 1, Quoted(before), Quoted(after));
+        }
+
+        return null;
+
+        static string Quoted(string? line) => line switch
+        {
+            null => "nothing (the module ends before)",
+            { Length: > LineShown } => $"`{line[..LineShown]}…`",
+            _ => $"`{line}`",
+        };
+    }
+
+    /// <summary>The most of a line a message quotes.</summary>
+    private const int LineShown = 100;
 
     /// <summary>The committed IR and module; or why there are none to compare with: missing, of another version, or not readable as IR.</summary>
     private static Outcome<(IrDocument Ir, string Zod)> Committed(EmittedModule module)
@@ -86,7 +113,7 @@ internal static class Check
         if (missing.Count > 0)
         {
             return ModuleRun.Refused<(IrDocument, string)>(CliCodes.NothingCommitted,
-                $"nothing to compare with: {string.Join(" and ", missing)} {(missing.Count == 1 ? "isn't" : "aren't")} there. Run haruspex generate, read what it writes, and commit it.");
+                $"nothing to compare with: {string.Join(" and ", missing.Select(DiagnosticFormatter.PathAsShown))} {(missing.Count == 1 ? "isn't" : "aren't")} there. Run haruspex generate, read what it writes, and commit it.");
         }
 
         var at = new FileLocation(module.IrPath);
@@ -96,7 +123,7 @@ internal static class Check
             if (IrJsonReader.VersionOf(text) is { } version && !IrDocument.ReadableVersions.Contains(version, StringComparer.Ordinal))
             {
                 return new Failed<(IrDocument, string)>([CliCodes.CommittedOtherVersion.At(at,
-                    $"this file is IR {version}, and this haruspex writes IR {IrDocument.CurrentVersion}, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to {module.ZodPath} before committing it, and commit both.")]);
+                    $"this file is IR {version}, and this haruspex writes IR {IrDocument.CurrentVersion}, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to {DiagnosticFormatter.PathAsShown(module.ZodPath)} before committing it, and commit both.")]);
             }
 
             return new Succeeded<(IrDocument, string)>((IrJsonReader.Read(text), File.ReadAllText(module.ZodPath)));
@@ -136,7 +163,7 @@ internal static class Check
     {
         var procedures = module.Document.Objects.Count;
         output.WriteLine(
-            $"haruspex: {procedures} {(procedures == 1 ? "procedure" : "procedures")}, {module.Document.Unknowns.Count} unknown(s). {module.Out} is up to date.");
+            $"haruspex: {procedures} {(procedures == 1 ? "procedure" : "procedures")}, {module.Document.Unknowns.Count} unknown(s). {DiagnosticFormatter.PathAsShown(module.Out)} is up to date.");
         return HaruspexCli.ExitCodes.Success;
     }
 

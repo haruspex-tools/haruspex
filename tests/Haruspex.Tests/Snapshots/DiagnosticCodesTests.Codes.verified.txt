@@ -122,3 +122,4 @@ HAR6016 E A selected procedure's result sets are unknown [Haruspex.Cli.CliCodes.
 HAR6017 E Unknowns the config file fails [Haruspex.Cli.CliCodes.UnknownsFail]
 HAR6018 E No config file below the folder [Haruspex.Cli.CliCodes.NoConfigFound]
 HAR6019 E Options that can't go together [Haruspex.Cli.CliCodes.OptionsApart]
+HAR6020 E Two modules write to one folder [Haruspex.Cli.CliCodes.SharedOut]

@@ -133,9 +133,12 @@ jobs:
       # The AOT compiler comes as a package per platform, whose version is the SDK's (global.json pins it). The committed
       # lock files don't list it, since an ordinary build doesn't need it, so this one restore isn't locked
       # (src/Haruspex.Cli/Haruspex.Cli.csproj says more). Trim and AOT warnings are errors, as every warning is.
+      # The platform comes in through the environment, so that no expression is expanded into the script.
       - run: >-
-          dotnet publish src/Haruspex.Cli --configuration Release --runtime "${{ matrix.rid }}"
+          dotnet publish src/Haruspex.Cli --configuration Release --runtime "$RID"
           -p:HaruspexNativeAot=true -p:RestoreLockedMode=false --output publish
+        env:
+          RID: ${{ matrix.rid }}
 
       - run: ../../publish/haruspex check
         working-directory: examples/greenhouse
