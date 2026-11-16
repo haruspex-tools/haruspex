@@ -263,7 +263,9 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
             into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(alter.OnName), alter.OnName.SchemaIdentifier is not null, alter.All ? null : alter.Name?.Value, At(alter)));
         foreach (var drop in Everywhere<AlterTableDropTableElementStatement>(script))
         {
-            foreach (var element in drop.AlterTableDropTableElements.Where(e => e.TableElementType == TableElementType.Constraint))
+            // DROP name, without CONSTRAINT, drops a constraint too (the keyword is optional; observed), and ScriptDom gives it no
+            // type. A column, index or period is named as one.
+            foreach (var element in drop.AlterTableDropTableElements.Where(e => e.TableElementType is TableElementType.Constraint or TableElementType.NotSpecified))
                 into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(drop.SchemaObjectName), drop.SchemaObjectName.SchemaIdentifier is not null, element.Name.Value, At(drop)));
         }
 

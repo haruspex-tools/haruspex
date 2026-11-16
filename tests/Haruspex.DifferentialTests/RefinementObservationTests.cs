@@ -313,12 +313,18 @@ public partial class RefinementObservationTests(SqlServerFixture server)
     [Fact]
     public async Task A_dropped_key_holds_no_longer_and_its_primary_keys_columns_stay_not_null()
     {
-        // Dropped in a procedure, as anywhere a statement may run, by ALTER TABLE … DROP CONSTRAINT or DROP INDEX … ON, a key
-        // takes duplicates. The column a primary key made NOT NULL (it declares neither) stays NOT NULL.
+        // Dropped in a procedure, as anywhere a statement may run, by ALTER TABLE … DROP CONSTRAINT (the keyword is optional:
+        // DROP name drops it too) or DROP INDEX … ON, a key takes duplicates. The column a primary key made NOT NULL (it declares
+        // neither) stays NOT NULL.
         string[] setup = [
             "CREATE TABLE dbo.obs_dropped (id int CONSTRAINT pk_obs_dropped PRIMARY KEY, code int NULL, INDEX ux_obs_dropped UNIQUE (code));",
             "CREATE PROCEDURE dbo.obs_drop_keys AS BEGIN ALTER TABLE dbo.obs_dropped DROP CONSTRAINT pk_obs_dropped; DROP INDEX ux_obs_dropped ON dbo.obs_dropped; END",
         ];
+        string[] without = [
+            "CREATE TABLE dbo.obs_dropped (id int NOT NULL CONSTRAINT uq_obs_dropped UNIQUE);",
+            "CREATE PROCEDURE dbo.obs_drop_keys AS ALTER TABLE dbo.obs_dropped DROP uq_obs_dropped;",
+        ];
+        Assert.Equal("n: 2", (await Run(without, "EXEC dbo.obs_drop_keys; INSERT INTO dbo.obs_dropped VALUES (1), (1); SELECT COUNT(*) AS n FROM dbo.obs_dropped;")).ToString());
         Assert.Equal(
             "n,id_nullable: 4,0",
             (await Run(setup, """
