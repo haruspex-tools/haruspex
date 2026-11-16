@@ -248,6 +248,9 @@ cd haruspex
 dotnet build
 ```
 
+The module it generates imports [Zod 4](https://zod.dev), which the application installs itself. The tests compile every
+generated module with zod 4.6.7 and TypeScript 7.0.2 in strict mode, so those versions are known to work.
+
 ## Quick start
 
 [Five minutes with AdventureWorks](docs/quick-start.md) goes from a fresh clone to a schema for one of the sample's

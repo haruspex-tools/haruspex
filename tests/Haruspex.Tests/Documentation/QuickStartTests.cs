@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 using Haruspex.Cli;
 
 namespace Haruspex.Tests.Documentation;
@@ -14,7 +13,8 @@ namespace Haruspex.Tests.Documentation;
 /// holds the command, <c>ts haruspex-start module</c> the module it writes, <c>ts haruspex-start check.ts</c> the script, and
 /// <c>text haruspex-start output</c> what the script prints. The command is run from the repository's root as the page says,
 /// with only <c>--out</c> moved to a folder of the test's own. The script is run with the zod that <c>tests/emit-check</c>
-/// pins, which the page tells the reader to install, so a new zod that prints its errors otherwise fails here first.
+/// pins, which the page tells the reader to install (<c>NamedVersionsTests</c>), so a new zod that prints its errors
+/// otherwise fails here first.
 /// </remarks>
 public class QuickStartTests
 {
@@ -30,15 +30,6 @@ public class QuickStartTests
         var shown = Block("module").Text;
 
         Assert.Equal(Text(shown), Text(WorkedExample.ZodShown(Generate(), shown)));
-    }
-
-    [Fact]
-    public void The_quick_start_installs_the_zod_the_emit_check_pins()
-    {
-        using var package = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryPaths.EmitCheck, "package.json")));
-        var pinned = package.RootElement.GetProperty("devDependencies").GetProperty("zod").GetString();
-
-        Assert.Contains(Blocks, b => b.Words.Count > 0 && b.Words[0] == "sh" && b.Text.Contains($"npm install zod@{pinned}", StringComparison.Ordinal));
     }
 
     [Fact]

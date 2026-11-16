@@ -324,4 +324,5 @@ haruspex.json:22:7: warning HAR4110: procedures["sales.get_order"].paths.id: "nu
 haruspex.json: error HAR4303: "GetOrder" would name both the procedure audit.get_order and the procedure sales.get_order. Generated names must not clash: give one of their schemas a "prefix" in "schemas", …
 ```
 
-Errors exit with code 2, as command line mistakes do; nothing is written.
+Errors in the config file exit with code 2, as command line mistakes do, and nothing is written; [the command
+line](../src/Haruspex.Cli/README.md#what-it-guarantees) lists every exit code.

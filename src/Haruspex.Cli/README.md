@@ -1,6 +1,6 @@
 # Haruspex.Cli
 
-The `haruspex` command. It composes the layers: it reads a folder of `.sql` files or a DACPAC with
+The `haruspex` command. It composes the layers: it reads a folder of `.sql` files, a `.sqlproj` or a DACPAC with
 [Haruspex.SqlServer.Sources](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md), infers
 with [Haruspex.SqlServer.Inference](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Inference/README.md),
 applies [`haruspex.json`](https://github.com/sharpblue/haruspex/blob/main/docs/configuration.md) with
@@ -29,6 +29,9 @@ flowchart LR
 ```
 
 ## Example
+
+No package is published yet, so there is no `haruspex` on the `PATH`: until there is, run it from a clone of the repository
+as `dotnet run --project src/Haruspex.Cli -- generate …`, which builds it first. With the command installed:
 
 ```sh
 haruspex generate                                    # settings from haruspex.json, found by walking up

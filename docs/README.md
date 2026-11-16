@@ -13,8 +13,9 @@ is, what it does today and what it can't see; read it first whichever path you t
    module, as a team would commit it.
 3. [The configuration reference](configuration.md): `haruspex.json`, which says which procedures to type, how to name the
    generated code, and how to correct or declare what can't be inferred.
-4. [The diagnostics](diagnostics/README.md), when haruspex reports a problem: each code has a page saying what it means and
-   what to do.
+4. [The command line](../src/Haruspex.Cli/README.md), for `generate`'s options, what it prints and its exit codes; and
+   [the diagnostics](diagnostics/README.md), when it reports a problem: each code has a page saying what it means and what
+   to do.
 5. [What haruspex models](coverage.md), to see before you start whether your procedures use something it reads as unknown.
 
 ### To decide whether to trust it
@@ -40,12 +41,30 @@ is, what it does today and what it can't see; read it first whichever path you t
 3. [The architecture](architecture.md): the layers, what each may know, and the README of each project.
 4. [The house style](style.md), for anything a reader reads, and [the agent conventions](../AGENTS.md) for coding agents.
 
+## Words the pages use
+
+A few words have a fixed meaning everywhere in the documentation.
+
+| Word | Meaning |
+|---|---|
+| claim | Something haruspex states about a value, such as "never null" or "at most 50 characters", which must hold for every execution. |
+| unknown | What haruspex says when it can't prove a shape, always with a reason; never a guess. The generated code accepts any value there. |
+| shape | What a result, field or value looks like: its type, whether it may be null or absent, and its facets. |
+| facet | A fact about a value beyond its type: a length, a range, a number of decimal places, or a value set. |
+| value set | The closed set of values a string or number can take, from a `CHECK` constraint. It is generated as an enum only where the value that arrives is proven to be exactly one of them, and as a note otherwise. |
+| JSON text, live JSON | A string that holds JSON, as `FOR JSON` returns it in a row; and JSON that a document embeds as JSON rather than as a string, such as a `FOR JSON` subquery or `JSON_QUERY`. |
+| IR | The intermediate representation, `haruspex.ir.json`: every claim and unknown, with its reasons, from which the Zod is generated. |
+| override, declaration | A claim a person makes in `haruspex.json`, about a value or a procedure's results, with a required reason; the generated code still checks it. |
+| observed | Established by running SQL Server in a test, not by reading its documentation. |
+| fixture, corpus | An invented database the tests use to check one thing; and a public database, written by others, used to measure coverage. |
+
 ## Every page
 
 | Page | What it is for |
 |---|---|
 | [README](../README.md) | What haruspex is, two examples on Microsoft's samples, what it guarantees, how to install and run it, and who it is not for. |
 | [Five minutes with AdventureWorks](quick-start.md) | A first run, from a fresh clone, that a test runs as written. |
+| [The command line](../src/Haruspex.Cli/README.md) | `haruspex generate`: its arguments and options, what it prints, and its exit codes. |
 | [Configuration](configuration.md) | Every setting of `haruspex.json`, held to its [JSON Schema](../schemas/haruspex.schema.json) by a test. |
 | [Diagnostics](diagnostics/README.md) | Every code haruspex reports, with a page each: what it means, why, and what to do. |
 | [What haruspex models](coverage.md) | Every T-SQL construct and built-in function, and what haruspex does with each; written by a test. |
