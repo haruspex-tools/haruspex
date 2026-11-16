@@ -50,6 +50,20 @@
     "naming": {
       "$ref": "#/$defs/naming"
     },
+    "check": {
+      "description": "What haruspex check does beyond comparing the module with what is committed.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "unknowns": {
+          "description": "\"report\" (the default): each unknown in the module is a note, and the check passes with them. \"fail\": any unknown fails the check, for a module that must be typed throughout.",
+          "enum": [
+            "report",
+            "fail"
+          ]
+        }
+      }
+    },
     "session": {
       "description": "The SET options the callers' connections set: the driver's at login, or what the application sets after. Each is true for ON or false for OFF; leave out one that isn't known, which claims only what holds whatever it is. A database's defaults apply only to a connection that sets nothing, and current drivers set these at login, so declare the driver's, not the database's.",
       "type": "object",

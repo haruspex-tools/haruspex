@@ -134,8 +134,8 @@ internal sealed class ConfigApplying
     }
 
     /// <summary>
-    /// A selected procedure whose results are unknowable and not declared: generation goes ahead (a <c>check</c> command, which
-    /// is planned, will fail it), but the statement is named, with what to declare.
+    /// A selected procedure whose results are unknowable and not declared: generation goes ahead (<c>haruspex check</c> fails it,
+    /// HAR6016), but the statement is named, with what to declare.
     /// </summary>
     private void WarnOfResultsToDeclare()
     {

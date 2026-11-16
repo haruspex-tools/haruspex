@@ -211,6 +211,8 @@ cormen
 oppen
 wadler
 wlaschin
+falleri
+rémy
 
 # A conference and a journal the guide cites papers from
 OOPSLA
@@ -243,3 +245,6 @@ jsdom
 EJSON
 recordset
 recordsets
+
+# The GitHub account haruspex lives under, as a workflow names its repository (sharpblue/haruspex)
+sharpblue

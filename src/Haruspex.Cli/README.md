@@ -9,23 +9,29 @@ output of [Haruspex.Emit.Zod](https://github.com/sharpblue/haruspex/blob/main/sr
 
 ## How data flows through it
 
-`HaruspexCli` parses the command line; `Generate` runs the command as named steps, each returning an outcome; `SqlProject`
-composes the layers that read and infer.
+`HaruspexCli` parses the command line, and `ModuleSet` runs the command once for each module it covers. `ModuleRun` runs the steps both commands share, each returning an outcome, up to the
+module in memory (`EmittedModule`); `Generate` writes it, and `Check` compares it with what is committed, claim by claim
+(`IrComparison`, in the IR's layer). `SqlProject` composes the layers that read and infer.
 
 ```mermaid
 flowchart LR
     args["command line"] --> cli["HaruspexCli"]
-    cli --> generate["Generate"]
-    configFile["haruspex.json"] --> generate
-    generate --> project["SqlProject"]
+    cli --> run["ModuleRun"]
+    configFile["haruspex.json"] --> run
+    run --> project["SqlProject"]
     project -->|Sources| model["DatabaseModel"]
     project -->|Config| selected["the selected procedures"]
     model --> infer["IrInference.Infer"]
     selected --> infer
     infer --> apply["ConfigApplication.Apply"]
-    apply --> ir["haruspex.ir.json"]
     apply --> zod["ZodEmitter.Emit"]
-    zod --> module["haruspex.zod.ts"]
+    zod --> emitted["EmittedModule"]
+    emitted --> generate["Generate"]
+    generate --> files["haruspex.ir.json, haruspex.zod.ts"]
+    emitted --> check["Check"]
+    committed["the committed files"] --> check
+    check --> compare["IrComparison.Compare"]
+    compare --> changes["what changed, or exit 0"]
 ```
 
 ## Example
@@ -40,17 +46,42 @@ haruspex generate bin/Release/Sales.dacpac --include 'sales.*' --out src/db   # 
 haruspex generate Sales/Sales.sqlproj --include 'sales.*' --out src/db       # a project file, read as its build reads it
 ```
 
-`generate` writes `haruspex.ir.json` and `haruspex.zod.ts` to the output folder. It takes:
+```sh
+haruspex check                                       # in CI: fail if the committed module would change
+haruspex check --all                                 # every haruspex.json below the working directory, each a module
+haruspex generate -c plugins/orders/haruspex.json -c plugins/returns/haruspex.json
+```
+
+`generate` writes `haruspex.ir.json` and `haruspex.zod.ts` to the output folder. `check` infers the same way, writes nothing,
+and compares with the two files committed there. Both take:
 
 | Argument or option | What it is |
 |---|---|
 | `source` | The folder of `.sql` files, the `.sqlproj` or the `.dacpac` to read. Replaces `source` in the config file. |
-| `--config`, `-c` | The config file. By default, `haruspex.json` in the working directory or the nearest folder above it. |
+| `--config`, `-c` | The config file. By default, `haruspex.json` in the working directory or the nearest folder above it. Give it again for more modules. |
+| `--all`, `-a` | Every `haruspex.json` below the folder given, or below the working directory, each a module ("Several modules", below). |
 | `--include`, `-i` | Procedures to type, as `schema.name`, where `*` and `?` match within a part; give it again, or give several, for more. Replaces the config file's includes for this run. |
-| `--out`, `-o` | The folder to write to. Replaces `out` in the config file. |
+| `--out`, `-o` | The folder to write to, or for `check` to compare with. Replaces `out` in the config file. |
 
-Without a config file, the source, `--include` and `--out` are all required. `haruspex --help` and
-`haruspex generate --help` list the same.
+Without a config file, the source, `--include` and `--out` are all required. `haruspex --help`, `haruspex generate --help`
+and `haruspex check --help` list the same.
+
+**Several modules.** An application whose plugins each have their own interface to the database has a `haruspex.json`
+for each, and each is a module of its own: its own selection, names, output and committed contract. `--config` may be
+repeated, and `--all` runs every `haruspex.json` below a folder (the working directory, or the one it names), in path
+order, leaving out folders whose name starts with a dot, `node_modules`, and a repository or worktree nested below (a
+folder holding `.git`), whose modules are another checkout's. Each module runs as a run of its own would, under a line
+naming its config file, and the run ends with one line saying which failed; its exit code is the worst of theirs. A
+source, `--include` and `--out` are one module's, so they can't be given with several, and two modules may not share an
+`out`. With one config file, nothing is added to what a run prints.
+
+A check that fails says what changed, one line for each change, at the procedure it is in:
+
+```text
+db/procedures.sql:1:1: error HAR6014: shop.list_orders results[0][].customer: became nullable
+db/procedures.sql:1:1: error HAR6014: shop.list_orders results[0][].status: value set grew: added "closed"
+haruspex: 2 change(s) from what is committed. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
+```
 
 Everything it finds goes to standard error, one line each, in the form compilers write and editors and CI annotate, with
 the problem's code, whose page in [docs/diagnostics](https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/README.md)
@@ -84,12 +115,21 @@ output: how many procedures it typed, how many unknowns there are, and where it 
   between the two renames, which can also leave the hidden temporary files (`.haruspex.ir.json.….tmp`, `….old`) in the
   folder; and a file system that refuses to put the IR back, which the error then says, keeping the old IR beside it.
 - **The same input gives the same bytes**, on every platform, so a CI check can compare the output with what is committed.
-- **The exit codes are fixed**, so scripts and CI can rely on them (`ExitCodeTests` holds each row):
+- **`check` writes nothing, and fails on any change of claim**, said as the change: a field added or removed, a value that
+  became nullable, a type that changed, a value set that grew. What only says where a claim came from (a location, a reason,
+  a DACPAC's hash) isn't compared, so moving a procedure down its file passes. A module that differs though the IR claims the
+  same fails too, quoting the first line that differs (a comment giving a reason that changed, a module another version of
+  haruspex wrote, a hand edit), as does nothing committed, a committed IR of
+  another version, and a selected procedure whose result sets are unknown and not declared. Unknowns are notes, and pass,
+  unless the config file says `"check": { "unknowns": "fail" }`
+  ([decision 0050](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0050-check-compares-claims-not-files.md)).
+- **The exit codes are fixed**, so scripts and CI can rely on them (`ExitCodeTests` holds each row). A run over several
+  modules exits with the highest of theirs (`ModuleSetTests`):
 
 | Code | Meaning |
 |---|---|
 | 0 | Success, with or without warnings and notes |
-| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), or the output couldn't be written |
+| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed: what the module claims would change, or it can't be compared with what is committed |
 | 2 | The command line or the config file is wrong: an unknown option, a missing folder, a pattern that matches nothing, an override whose path doesn't exist, generated names that clash, an import the module can't write |
 | 3 | A fault in haruspex itself |
 

@@ -1,4 +1,5 @@
 using Haruspex.Cli;
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.Tests.Snapshotting;
@@ -104,7 +105,7 @@ public class CliTests
         var (exitCode, _, error) = RunIn(dir.Path, "generate");
 
         Assert.Equal(0, exitCode);
-        Assert.Contains(Path.Join(dir.Path, "shared", "lib.dacpac/[dbo].[v]:2:"), error, StringComparison.Ordinal);
+        Assert.Contains(DiagnosticFormatter.PathAsShown(Path.Join(dir.Path, "shared", "lib.dacpac/[dbo].[v]:2:")), error, StringComparison.Ordinal);
         Assert.DoesNotContain(Path.Join(dir.Path, "app", "lib.dacpac"), error, StringComparison.Ordinal);
     }
 

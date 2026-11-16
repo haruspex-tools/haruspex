@@ -22,6 +22,16 @@ public class IrJsonReaderTests
 
     private static JsonObject FirstResult(JsonObject json) => json["objects"]![0]!["results"]![0]!.AsObject();
 
+    [Theory]
+    [InlineData("{ \"irVersion\": \"0.9\", \"anything\": [] }", "0.9")]
+    [InlineData("{ \"source\": {}, \"irVersion\": \"9.9\" }", "9.9")]
+    [InlineData("{ \"irVersion\": 21 }", null)]
+    [InlineData("[\"irVersion\"]", null)]
+    [InlineData("{ \"irVersion\": ", null)]
+    [InlineData("{}", null)]
+    public void The_version_a_file_says_it_is_is_read_without_the_rest(string json, string? version) =>
+        Assert.Equal(version, IrJsonReader.VersionOf(json));
+
     [Fact]
     public void A_document_with_every_node_and_property_reads_back_equal()
     {

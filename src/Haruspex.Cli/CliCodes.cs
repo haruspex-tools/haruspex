@@ -43,4 +43,46 @@ internal static class CliCodes
     /// one used.
     /// </summary>
     public static DiagnosticCode CollationOverruled { get; } = new(6010, DiagnosticSeverity.Warning, "A collation the package records otherwise");
+
+    /// <summary><c>check</c> finds no committed IR, module or both in the output folder, so there is nothing to compare with.</summary>
+    public static DiagnosticCode NothingCommitted { get; } = new(6011, DiagnosticSeverity.Error, "Nothing committed to check against");
+
+    /// <summary>The committed IR is of a version this haruspex doesn't read, so no claim can be compared.</summary>
+    public static DiagnosticCode CommittedOtherVersion { get; } = new(6012, DiagnosticSeverity.Error, "The committed IR is of another version");
+
+    /// <summary>The committed IR can't be read: not JSON, or not an IR document.</summary>
+    public static DiagnosticCode CommittedUnreadable { get; } = new(6013, DiagnosticSeverity.Error, "The committed IR can't be read");
+
+    /// <summary>What the module claims would change: one diagnostic per change, at the procedure.</summary>
+    public static DiagnosticCode ClaimChanged { get; } = new(6014, DiagnosticSeverity.Error, "What the module claims would change");
+
+    /// <summary>The committed module isn't what haruspex writes, though the IR claims the same.</summary>
+    public static DiagnosticCode ModuleDiffers { get; } = new(6015, DiagnosticSeverity.Error, "The committed module isn't what haruspex writes");
+
+    /// <summary>A selected procedure's result sets are unknown and not declared, which <c>check</c> doesn't pass.</summary>
+    public static DiagnosticCode ResultsUnknown { get; } = new(6016, DiagnosticSeverity.Error, "A selected procedure's result sets are unknown");
+
+    /// <summary>The module has unknowns, and the config file's <c>check.unknowns</c> is <c>fail</c>.</summary>
+    public static DiagnosticCode UnknownsFail { get; } = new(6017, DiagnosticSeverity.Error, "Unknowns the config file fails");
+
+    /// <summary><c>--all</c> finds no config file below its folder, or the folder isn't there.</summary>
+    public static DiagnosticCode NoConfigFound { get; } = new(6018, DiagnosticSeverity.Error, "No config file below the folder");
+
+    /// <summary>
+    /// Options that can't go together: <c>--all</c> and <c>--config</c>, or a source, <c>--include</c> or <c>--out</c>, which are for one
+    /// module, with several.
+    /// </summary>
+    public static DiagnosticCode OptionsApart { get; } = new(6019, DiagnosticSeverity.Error, "Options that can't go together");
+
+    /// <summary>Two modules of one run write to the same output folder.</summary>
+    public static DiagnosticCode SharedOut { get; } = new(6020, DiagnosticSeverity.Error, "Two modules write to one folder");
+
+    /// <summary>
+    /// The codes with which <c>check</c> fails: what it found differs from what is committed, or can't be compared with it, or is
+    /// incomplete. Each makes the exit code 1, not 2: the command line and the config file may be right.
+    /// </summary>
+    public static IReadOnlySet<DiagnosticCode> CheckFailures { get; } = new HashSet<DiagnosticCode>
+    {
+        NothingCommitted, CommittedOtherVersion, CommittedUnreadable, ClaimChanged, ModuleDiffers, ResultsUnknown, UnknownsFail,
+    };
 }

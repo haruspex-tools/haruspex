@@ -47,6 +47,9 @@ public sealed record HaruspexConfig
     /// </summary>
     public SessionOptions Session { get; init; } = SessionOptions.NotKnown;
 
+    /// <summary>What <c>haruspex check</c> does about unknowns in the module (<c>check.unknowns</c>).</summary>
+    public CheckUnknowns CheckUnknowns { get; init; } = CheckUnknowns.Report;
+
     /// <summary>How result objects treat keys their type does not list.</summary>
     public ObjectsPolicy Objects { get; init; } = ObjectsPolicy.Strip;
 

@@ -32,6 +32,7 @@ public class ConfigReaderTests
               "source": "db", /* a block comment */
               "out": "../generated",
               "objects": "strict",
+              "check": { "unknowns": "fail" },
               "session": { "ansiWarnings": true, "concatNullYieldsNull": false, "numericRoundAbort": true },
               "naming": { "replace": [{ "pattern": "#$", "with": "Row" }], "case": "camel" },
               "schemas": {
@@ -55,11 +56,12 @@ public class ConfigReaderTests
 
         Assert.Empty(result.Diagnostics);
         var config = result.Expected();
+        Assert.Equal(CheckUnknowns.Fail, config.CheckUnknowns);
         Assert.Equal(Path.Combine(directory, "db"), config.Source);
         Assert.Equal(Path.GetFullPath(Path.Combine(directory, "..", "generated")), config.Out);
         Assert.Equal(["sales", "RDF.", "reference"], config.Schemas.Select(s => s.Name));
         Assert.Equal(["get_*", "list_*"], config.Schemas[0].Include!.Select(p => p.Pattern.Text));
-        Assert.Equal(10, config.Schemas[0].Include![0].At.Line);
+        Assert.Equal(11, config.Schemas[0].Include![0].At.Line);
         Assert.Equal(["*_internal"], config.Schemas[0].Exclude.Select(p => p.Pattern.Text));
         Assert.Equal("", config.Schemas[0].Prefix);
         Assert.Equal("Rdf", config.Schemas[1].Prefix);
@@ -149,14 +151,18 @@ public class ConfigReaderTests
     {
         // The file as a whole, and its settings' types.
         { "[]", "haruspex.json:1:1: error HAR3005: must be an object." },
-        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, references, collation, out, schemas, objects, naming, procedures, session." },
-        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, references, collation, out, schemas, objects, naming, procedures, session." },
+        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, references, collation, out, schemas, objects, naming, procedures, session, check." },
+        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, references, collation, out, schemas, objects, naming, procedures, session, check." },
         { """{ "$schema": 1 }""", "haruspex.json:1:14: error HAR3005: $schema: must be a string." },
         { """{ "source": "" }""", "haruspex.json:1:13: error HAR3005: source: must not be empty." },
         { """{ "out": 3 }""", "haruspex.json:1:10: error HAR3005: out: must be a string." },
         { """{ "references": "lib" }""", "haruspex.json:1:17: error HAR3005: references: must be an array of folders to look for referenced DACPACs in, such as \"../shared/bin/Release\"." },
         { """{ "references": ["no/such/folder"] }""", "haruspex.json:1:18: error HAR3021: references[0]: \"no/such/folder\" is not a folder, so no referenced DACPAC can be found in it." },
         { """{ "objects": "loose" }""", "haruspex.json:1:14: error HAR3005: objects: must be \"strip\" or \"strict\", not \"loose\"." },
+
+        // What check does beyond comparing.
+        { """{ "check": { "unknowns": "warn" } }""", "haruspex.json:1:26: error HAR3005: check.unknowns: must be \"report\" or \"fail\", not \"warn\"." },
+        { """{ "check": { "changes": "ignore" } }""", "haruspex.json:1:14: error HAR3004: check.changes: unknown setting \"changes\". The settings here are unknowns." },
 
         // The callers' session: only the options a rule reads, each true or false.
         { """{ "session": [] }""", "haruspex.json:1:14: error HAR3005: session: must be an object." },

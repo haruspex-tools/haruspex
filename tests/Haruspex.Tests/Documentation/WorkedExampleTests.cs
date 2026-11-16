@@ -48,6 +48,7 @@ public class WorkedExampleTests
                 WorkedExample.OutputKind.Zod => (Text(output.Text), Text(WorkedExample.ZodShown(ZodEmitter.Emit(Infer(example)).Expected(), output.Text))),
                 WorkedExample.OutputKind.Ir => (Json(JsonNode.Parse(output.Text)), Json(IrShown(Infer(example), output.Property))),
                 WorkedExample.OutputKind.Run => (Text(output.Text), Text(Run(example.Sql, output))),
+                WorkedExample.OutputKind.Check => (Text(output.Text), Text(Check(output.Before!, example.Sql, output))),
             };
             if (expected != actual)
                 problems.Add($"{file}:{output.Line.ToString(CultureInfo.InvariantCulture)}: haruspex gives\n{actual}");
@@ -160,6 +161,38 @@ public class WorkedExampleTests
     }
 
     [Fact]
+    public void A_check_compares_with_the_example_before_and_needs_one()
+    {
+        const string markdown = """
+            ```sql haruspex-example
+            CREATE TABLE dbo.t (id int NOT NULL);
+            ```
+
+            ```text haruspex-check
+            first
+            ```
+
+            ```sql haruspex-example
+            CREATE TABLE dbo.t (id int NULL);
+            ```
+
+            ```text haruspex-check --include dbo.*
+            second
+            ```
+            """;
+        var (examples, problems) = WorkedExample.Read("guide.md", markdown);
+
+        Assert.Equal(
+            [
+                "guide.md:5: a haruspex-check block in the first haruspex-example block's outputs, with no project before it to have generated",
+                "guide.md:1: a haruspex-example block with no output block after it",
+            ],
+            problems);
+        var check = Assert.Single(Assert.Single(examples).Outputs);
+        Assert.Equal((WorkedExample.OutputKind.Check, "CREATE TABLE dbo.t (id int NOT NULL);", "--include dbo.*"), (check.Kind, check.Before, string.Join(' ', check.Arguments)));
+    }
+
+    [Fact]
     public void An_output_with_no_example_and_an_example_with_no_output_are_reported()
     {
         const string markdown = """
@@ -199,7 +232,28 @@ public class WorkedExampleTests
         using var output = new StringWriter();
         using var error = new StringWriter();
         HaruspexCli.Run(["generate", .. arguments], output, error, folder.Path);
-        return (error.ToString() + output).Replace(folder.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal);
+        return CliOutput.Shown(error.ToString() + output, folder.Path);
+    }
+
+    /// <summary>
+    /// What <c>haruspex check</c> prints after <c>haruspex generate</c> has written the project <paramref name="before"/> (the
+    /// example before), and the project has become <paramref name="sql"/>; set out as for <see cref="Run"/>.
+    /// </summary>
+    private static string Check(string before, string sql, WorkedExample.Output check)
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/project.sql", before);
+        if (check.Config is { } config)
+            folder.File("haruspex.json", config);
+        string[] arguments = check.Arguments.Count > 0 ? [.. check.Arguments] : check.Config is null ? ["db", "--include", "*.*", "--out", "out"] : [];
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        Assert.Equal(0, HaruspexCli.Run(["generate", .. arguments], output, error, folder.Path));
+        output.GetStringBuilder().Clear();
+        error.GetStringBuilder().Clear();
+        folder.File("db/project.sql", sql);
+        HaruspexCli.Run(["check", .. arguments], output, error, folder.Path);
+        return CliOutput.Shown(error.ToString() + output, folder.Path);
     }
 
     /// <summary>

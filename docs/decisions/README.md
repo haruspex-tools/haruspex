@@ -54,6 +54,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0046](0046-a-sqlcmd-variable-in-a-body-is-unknown.md) | 15 Nov 2026 | A SQLCMD variable in a body is unknown |
 | [0047](0047-a-star-is-bound-against-the-tables-the-project-defines.md) | 15 Nov 2026 | A star is bound against the tables the project defines |
 | [0048](0048-an-absent-json-result-reads-as-null.md) | 16 Nov 2026 | An absent JSON result reads as null, as the mssql driver hands it over |
+| [0050](0050-check-compares-claims-not-files.md) | 16 Nov 2026 | `check` compares claims, not files, and fails when there is nothing to compare |
 
 ## Writing a record
 

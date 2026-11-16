@@ -134,8 +134,11 @@ public static class ConfigReader
                     case "session":
                         config = config with { Session = Session(member.Value, path) };
                         break;
+                    case "check":
+                        config = config with { CheckUnknowns = Check(member.Value, path) };
+                        break;
                     default:
-                        Unknown(member, path, "$schema, source, references, collation, out, schemas, objects, naming, procedures, session");
+                        Unknown(member, path, "$schema, source, references, collation, out, schemas, objects, naming, procedures, session, check");
                         break;
                 }
             }
@@ -165,6 +168,24 @@ public static class ConfigReader
             }
 
             return session;
+        }
+
+        /// <summary>What <c>haruspex check</c> does beyond comparing: today, whether an unknown fails it.</summary>
+        private CheckUnknowns Check(JsonValue value, string path)
+        {
+            var unknowns = CheckUnknowns.Report;
+            if (Object(value, path) is not { } block)
+                return unknowns;
+            foreach (var member in block.Members)
+            {
+                var memberPath = Child(path, member.Name);
+                if (member.Name != "unknowns")
+                    Unknown(member, memberPath, "unknowns");
+                else if (Choice(member.Value, memberPath, "report", "fail") is { } choice)
+                    unknowns = choice == "fail" ? CheckUnknowns.Fail : CheckUnknowns.Report;
+            }
+
+            return unknowns;
         }
 
         private List<SchemaSettings> Schemas(JsonValue value, string path)

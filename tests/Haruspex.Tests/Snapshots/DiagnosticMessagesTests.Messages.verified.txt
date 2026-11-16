@@ -95,7 +95,7 @@ HAR3003
 haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
 
 HAR3004
-haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, references, collation, out, schemas, objects, naming, procedures, session.
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, references, collation, out, schemas, objects, naming, procedures, session, check.
 
 HAR3005
 haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".
@@ -321,4 +321,34 @@ haruspex.json: warning HAR6009: "references" is read only when the source is a .
 
 HAR6010
 haruspex.json: warning HAR6010: "collation" is Latin1_General_100_CI_AS, but atelier.dacpac records SQL_Latin1_General_CP1_CI_AS, the database's own, which is the one used.
+
+HAR6011
+haruspex: error HAR6011: nothing to compare with: out/haruspex.ir.json and out/haruspex.zod.ts aren't there. Run haruspex generate, read what it writes, and commit it.
+
+HAR6012
+out/haruspex.ir.json: error HAR6012: this file is IR 0.9, and this haruspex writes IR 0.21, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to out/haruspex.zod.ts before committing it, and commit both.
+
+HAR6013
+out/haruspex.ir.json: error HAR6013: this file can't be read as IR: $.source is missing. Run haruspex generate to write it again.
+
+HAR6014
+db/p1.sql:1:1: error HAR6014: lib.get_book results[0][].note: removed (string, nvarchar(200), nullable)
+
+HAR6015
+out/haruspex.zod.ts: error HAR6015: line 28 is `// edited` where haruspex now writes nothing (the module ends before), though no claim the IR makes has changed. A comment written from a reason (why a value is unknown, why a result may be absent) changes so; so does a module another version of haruspex wrote, or one edited. Run haruspex generate, and read the change to the module before committing it.
+
+HAR6016
+db/p1.sql:1:1: error HAR6016: lib.p: its result sets are unknown, and check passes a selected procedure only when they are known or declared. Declare them in haruspex.json under procedures["lib.p"].results, as "none" or a JSON Schema, or leave the procedure out of the selection.
+
+HAR6017
+haruspex.json: error HAR6017: 1 unknown in the module, each said above, and "check": { "unknowns": "fail" } fails the check on any. Type each (an override, declared results), or set it to "report".
+
+HAR6018
+haruspex: error HAR6018: --all: no haruspex.json below db. Give the folder that holds the modules' config files.
+
+HAR6019
+haruspex: error HAR6019: a source, --include and --out are for one module; with several config files, each says its own source, selection and out.
+
+HAR6020
+haruspex: error HAR6020: a/haruspex.json and b/haruspex.json both write to out, so one module would overwrite the other's. Give each module its own "out".
 

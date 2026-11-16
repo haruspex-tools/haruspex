@@ -4,7 +4,8 @@ namespace Haruspex.Tests.Cli;
 
 /// <summary>
 /// The exit codes the CLI's README promises, a case for each row: 0 for success (notes and warnings included), 1 when the
-/// input has errors or the output can't be written, 2 when the command line or the config file is wrong, and 3 for a fault.
+/// input has errors, the output can't be written or a check fails, 2 when the command line or the config file is wrong, and 3
+/// for a fault.
 /// Scripts and CI rely on them, so each is pinned here.
 /// </summary>
 public class ExitCodeTests
@@ -110,6 +111,47 @@ public class ExitCodeTests
         using var folder = Project("CREATE PROCEDURE dbo.p AS SELECT t.id FROM dbo.t AS t;\nGO\nCREATE PROCEDURE dbo.[p#] AS SELECT t.id FROM dbo.t AS t;");
         folder.File("haruspex.json", "{ \"source\": \"db\", \"out\": \"out\", \"schemas\": { \"dbo\": { \"include\": [\"*\"] } }, \"naming\": { \"replace\": [{ \"pattern\": \"#$\", \"with\": \"\" }] } }");
         Fails(2, "HAR4303", folder);
+    }
+
+    [Fact]
+    public void A_check_that_finds_a_change_is_1()
+    {
+        using var folder = Project(Plain);
+        Assert.Equal(0, Run(folder, "db", "--include", "*.*", "--out", "out"));
+        folder.File("db/p.sql", Plain.Replace("t.id", "t.note", StringComparison.Ordinal));
+
+        Assert.Equal(1, Checks(folder, "db", "--include", "*.*", "--out", "out").ExitCode);
+    }
+
+    [Fact]
+    public void A_check_with_nothing_committed_is_1()
+    {
+        using var folder = Project(Plain);
+        var (exitCode, error) = Checks(folder, "db", "--include", "*.*", "--out", "out");
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("error HAR6011:", error, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("HAR6001", "--colour", "blue")]
+    [InlineData("HAR6005", "db", "--include", "*.*")]
+    [InlineData("HAR4005", "db", "--include", "dbo.nothing", "--out", "out")]
+    public void A_check_with_a_wrong_command_line_is_2(string code, params string[] args)
+    {
+        using var folder = Project(Plain);
+        var (exitCode, error) = Checks(folder, args);
+
+        Assert.Equal(2, exitCode);
+        Assert.Contains($"error {code}:", error, StringComparison.Ordinal);
+    }
+
+    private static (int ExitCode, string Error) Checks(TempDirectory folder, params string[] args)
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var exitCode = HaruspexCli.Run(["check", .. args], output, error, folder.Path);
+        return (exitCode, error.ToString());
     }
 
     [Fact]

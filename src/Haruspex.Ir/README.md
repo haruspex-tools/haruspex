@@ -11,7 +11,7 @@ The IR is the product: front ends write it, emitters read it, and it is a file, 
 language suits it. This project holds the model (`IrDocument` and the records it holds, one to a file), its writer, its
 reader, the generator of its schema, and the walks every reader needs: `IrTypeTree` for the structure of one type and
 `IrTypeGraph` for what a document's types refer to, which of them lie on a cycle, and an order that puts each after the
-types it refers to.
+types it refers to. `IrComparison` says what changed between two documents, claim by claim, for `haruspex check`.
 
 ## How data flows through it
 
@@ -68,6 +68,10 @@ shows one whole, with an unknown.
   same asks the records, never their JSON.
 - **Every closed vocabulary is an enum**, and its names in the JSON are in one table, `IrWireNames`, which the writer uses
   and the reader reads backwards.
+- **A comparison reports every change of claim, and only those.** `IrComparison.Compare` lists each difference in what two
+  documents claim as an `IrChange`, where it is (`results[0][].note`) and how it changed (`became nullable`), and nothing for
+  what only says where a claim came from: a location, a reason, the source of a fact, a package's hash. Equality of documents
+  is stricter: two documents with no changes between them may still differ there.
 
 ## What it deliberately doesn't do
 

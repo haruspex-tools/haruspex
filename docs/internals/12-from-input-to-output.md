@@ -2,14 +2,16 @@
 
 The other chapters are about what haruspex works out. This one is about the run that carries a project from its files to
 the two it writes: how `haruspex generate` is put together from steps, how each step says what went wrong without
-stopping the program to say it, and why a run reports every problem it can rather than the first. The ideas are old and
+stopping the program to say it, why a run reports every problem it can rather than the first, and how `haruspex check`
+reuses the same steps to say what a change to the database would change. The ideas are old and
 have names: *result types* against exceptions, *railway-oriented programming* and its *applicative* side, and the
 *error recovery* every compiler does. A running example, a small library's database, goes through all of it.
 
 ## A run is a pipeline of steps
 
-`haruspex generate` (`Generate`) is eight steps, each a method short enough to read at once, each taking what the one
-before it gave:
+`haruspex generate` is eight steps, each a method short enough to read at once, each taking what the one before it gave.
+The first six are `ModuleRun`'s, shared with `haruspex check`, and end with the module in memory; the last two are
+`Generate`'s:
 
 ```mermaid
 flowchart LR
@@ -20,6 +22,8 @@ flowchart LR
     infer --> emit["emit"]
     emit --> write["write"]
     write --> noted["note the unknowns"]
+    emit -. "check" .-> checkNoted["note the unknowns"]
+    checkNoted -.-> compare["compare with what is committed"]
 ```
 
 - **Settle** works out what the run is asked: it reads the config file (named, or `haruspex.json` in the working folder
@@ -31,6 +35,9 @@ flowchart LR
 - **Emit** writes the Zod module, in memory.
 - **Write** puts both files in place.
 - **Noted** lists each unknown in what was written.
+
+`haruspex check` takes the dotted path after **Emit**: it notes the unknowns, then compares the module with what is committed
+instead of writing it ("Checking without writing", below).
 
 Each step can fail because of its input: a config file that isn't JSON, a folder that isn't there, a pattern that
 matches nothing, two generated names that clash. What matters is how a step says so.
@@ -70,14 +77,17 @@ Composing such functions by hand means testing each result before calling the ne
 on the success track the value goes on to the next step, and once on the failure track a value never comes back. In
 haruspex the switch is `Outcome.Then`: on a success it runs the next step on the value and puts what both found
 together; on a failure it doesn't run the next step, and carries the failure, with everything found so far, to the end.
-The functional literature calls it *monadic bind*. `Generate.Run` is the railway written down:
+The functional literature calls it *monadic bind*. `ModuleRun.Emitted` and `Generate.Run` are the railway written down:
 
 ```csharp
-var run = Settle(request)
-    .Then(ReadProject)
-    .Then(Select)
-    .Then(Infer)
-    .Then(Emit)
+public static Outcome<EmittedModule> Emitted(RunRequest request) =>
+    Settle(request)
+        .Then(ReadProject)
+        .Then(Select)
+        .Then(Infer)
+        .Then(Emit);
+
+var run = ModuleRun.Emitted(request)
     .Then(Write)
     .Then(Noted);
 return Report(run, output, error);
@@ -178,7 +188,7 @@ their own, since bind needs the first value before it can run the second; it is 
 Paterson, *Applicative programming with effects*, 2008), which libraries for validation (*Validated* in Scala's Cats,
 *Validation* in Haskell) are built on.
 
-In `Generate.Settle`, the `--include` patterns don't depend on the config file, so a config file that doesn't read and a
+In `ModuleRun.Settle`, the `--include` patterns don't depend on the config file, so a config file that doesn't read and a
 malformed pattern are both reported. The two folders depend on the config file, and whether anything is selected on the
 config file and the patterns, so they follow the config file with `Outcome.Then`, combined with each other. A run with no folder, no output and a malformed pattern hears about
 all three, and nothing about a selection never made. With no config file:
@@ -207,6 +217,73 @@ process killed between the two renames, and a file system that refuses to put th
 keeps the old IR's backup. A run that fails earlier writes nothing, and doesn't even create the folder, since the folder
 is made in `Generate.Write`, after every other step has succeeded.
 
+## Checking without writing
+
+`haruspex check` runs the same six steps and, where `generate` writes, compares: `Check.Run` is `ModuleRun.Emitted`, then
+`Check.Noted`, then `Check.Compared`. Reuse is why the steps stop at a value, the module in memory, rather than at a file:
+a check that read the project differently from `generate` would compare two things that were never alike.
+
+What it compares is the question. The files are text, and a text diff is the obvious answer, but the IR records where each
+claim came from, so a comment added above a procedure moves every location after it, and a DACPAC's hash changes with every
+build. A check that compared bytes would fail on every change to the database, and say only that a file differs. So `check`
+compares *claims*: what a reader of the IR, or of code generated from it, may rely on. `IrComparison.Compare` walks the two
+documents side by side, objects by id, fields and parameters by name, result sets by position, following each reference into
+the type it names, and reports each difference where it is and as what it is: a field removed, a value that became nullable,
+a value set that grew. Locations, the reasons a value may be null and the sources of facts are left out, since they say why
+a claim holds, not what it is. Tools that compare programs by their syntax trees rather than their text, such as GumTree,
+make the same move for the same reason: a change is better said in the terms of what changed than of where its characters
+moved. [Decision 0050](../decisions/0050-check-compares-claims-not-files.md) argues it, with what `check` does when there is
+nothing committed to compare with.
+
+The library's catalogue is generated and committed:
+
+```sql haruspex-example
+CREATE TABLE lib.book (
+    id int NOT NULL PRIMARY KEY,
+    title nvarchar(100) NOT NULL,
+    status varchar(10) NOT NULL CHECK (status IN ('shelved', 'lent')));
+GO
+CREATE PROCEDURE lib.list_books AS
+SELECT b.id, b.title, b.status FROM lib.book AS b;
+```
+
+```jsonc haruspex-config
+{ "source": "db", "out": "generated", "schemas": { "lib": { "include": ["list_*"] } } }
+```
+
+```text haruspex-run
+haruspex: 1 procedure, 0 unknown(s). Wrote generated/haruspex.ir.json and generated/haruspex.zod.ts.
+```
+
+Then a stocktake changes the table: a book may have lost its title, and a book may be lost. A comment is added above it too,
+which moves every line below:
+
+```sql haruspex-example
+-- The catalogue, as the stocktake left it.
+CREATE TABLE lib.book (
+    id int NOT NULL PRIMARY KEY,
+    title nvarchar(100) NULL,
+    status varchar(10) NOT NULL CHECK (status IN ('shelved', 'lent', 'lost')));
+GO
+CREATE PROCEDURE lib.list_books AS
+SELECT b.id, b.title, b.status FROM lib.book AS b;
+```
+
+```jsonc haruspex-config
+{ "source": "db", "out": "generated", "schemas": { "lib": { "include": ["list_*"] } } }
+```
+
+```text haruspex-check
+db/project.sql:7:1: error HAR6014: lib.list_books results[0][].title: became nullable
+db/project.sql:7:1: error HAR6014: lib.list_books results[0][].status: value set grew: added "lost"
+haruspex: 2 change(s) from what is committed. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
+```
+
+Two changes, each where an application reading `list_books` will meet it, and nothing about the comment. The exit code is 1,
+which fails the build. If the change is meant, `generate` writes the new module and the applications that compile against it
+see the change in their own build; if not, the SQL goes back. That is consumer-driven contract testing, as Pact does for HTTP
+services: the committed module is the contract, and the database's build checks that it still holds.
+
 ## Where to read more
 
 - Scott Wlaschin, *Railway oriented programming* (2014), the talk and the article, for the pattern and its pictures.
@@ -214,5 +291,8 @@ is made in `Generate.Write`, after every other step has succeeded.
   why independent steps compose differently from dependent ones.
 - Alfred Aho, Monica Lam, Ravi Sethi and Jeffrey Ullman, *Compilers: Principles, Techniques, and Tools*, section 4.1.4, on
   error recovery.
+- Jean-Rémy Falleri and others, *Fine-grained and accurate source code differencing* (ASE 2014), which describes GumTree:
+  differencing by structure rather than by text.
+- Ian Robinson, *Consumer-Driven Contracts: A Service Evolution Pattern* (2006), for the pattern `check` applies to a database.
 - OASIS, *Static Analysis Results Interchange Format (SARIF) 2.1.0*, for the levels `error`, `warning` and `note`, and rule
   identifiers such as haruspex's codes.

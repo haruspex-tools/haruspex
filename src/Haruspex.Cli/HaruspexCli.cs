@@ -61,16 +61,38 @@ internal static class HaruspexCli
         }
     }
 
-    private static RootCommand Build(TextWriter output, TextWriter error, string workingDirectory)
+    private static RootCommand Build(TextWriter output, TextWriter error, string workingDirectory) =>
+        new("haruspex: infers the result shapes of SQL Server procedures, FOR JSON included.")
+        {
+            Module(
+                "generate",
+                "Infer the result shapes of procedures, and write the IR and a Zod module.",
+                request => ModuleSet.Run(request, Generate.Run, output, error),
+                workingDirectory),
+            Module(
+                "check",
+                $"Infer as generate does, write nothing, and fail if {IrFileName} and {ZodFileName} in the output folder claim something else, saying what changed.",
+                request => ModuleSet.Run(request, Check.Run, output, error),
+                workingDirectory),
+        };
+
+    /// <summary>A command that makes a module from a project: <c>generate</c> and <c>check</c> take the same arguments.</summary>
+    private static Command Module(string name, string description, Func<ModulesRequest, int> run, string workingDirectory)
     {
         var directory = new Argument<string?>("source")
         {
             Description = "The folder of .sql files to read, including subfolders; a database project's .sqlproj, read as its build reads it; or a .dacpac, read with the packages of its database it refers to. Overrides \"source\" in the config file.",
             Arity = ArgumentArity.ZeroOrOne,
         };
-        var config = new Option<string?>("--config", "-c")
+        var config = new Option<string[]>("--config", "-c")
         {
-            Description = $"The config file. By default, {HaruspexConfig.FileName} in the working directory or the nearest folder above it.",
+            Description = $"The config file. By default, {HaruspexConfig.FileName} in the working directory or the nearest folder above it. Repeat for more modules, each run and reported apart.",
+            Arity = ArgumentArity.OneOrMore,
+        };
+        var all = new Option<string?>("--all", "-a")
+        {
+            Description = $"Every {HaruspexConfig.FileName} below the folder given, or below the working directory, each a module run and reported apart. Folders whose name starts with a dot, node_modules, and another repository or worktree nested below (a folder with .git) are left out.",
+            Arity = ArgumentArity.ZeroOrOne,
         };
         var include = new Option<string[]>("--include", "-i")
         {
@@ -79,29 +101,25 @@ internal static class HaruspexCli
         };
         var outDirectory = new Option<string?>("--out", "-o")
         {
-            Description = $"The folder to write {IrFileName} and {ZodFileName} to. Overrides \"out\" in the config file.",
+            Description = $"The folder of {IrFileName} and {ZodFileName}. Overrides \"out\" in the config file.",
         };
 
-        var generate = new Command("generate", "Infer the result shapes of procedures, and write the IR and a Zod module.")
+        var command = new Command(name, description)
         {
             directory,
             config,
+            all,
             include,
             outDirectory,
         };
-        generate.SetAction(parsed => Generate.Run(
-            new GenerateRequest(
+        command.SetAction(parsed => run(
+            new ModulesRequest(
                 parsed.GetValue(directory),
-                parsed.GetValue(config),
+                [.. parsed.GetValue(config) ?? []],
+                parsed.GetResult(all) is null ? null : parsed.GetValue(all) ?? "",
                 [.. parsed.GetValue(include) ?? []],
                 parsed.GetValue(outDirectory),
-                workingDirectory),
-            output,
-            error));
-
-        return new RootCommand("haruspex: infers the result shapes of SQL Server procedures, FOR JSON included.")
-        {
-            generate,
-        };
+                workingDirectory)));
+        return command;
     }
 }
