@@ -379,4 +379,69 @@ public partial class StatementFlowTests
         Assert.Equal(IrCardinality.One, Results(doc)[0].Cardinality);
         Assert.Equal([], Rules(Field(doc, "code", result: 1)));
     }
+
+    // ---- where paths meet: each fact a guard relies on, held on one arm of an IF only ------------------------------------
+
+    [Fact]
+    public void A_select_that_may_assign_nothing_on_one_arm_only_proves_nothing_after_the_if()
+    {
+        // On the ELSE arm @w is set and the SELECT never ran, so @w not NULL after the IF proves nothing of @a: what the SELECT
+        // may have assigned holds where paths meet only if both hold it.
+        var doc = Procedure("""
+            DECLARE @a nvarchar(10), @w int;
+            IF @f = 1 SELECT @a = t.name, @w = t.id FROM dbo.t AS t WHERE t.id = @id; ELSE SET @w = 1;
+            IF @w IS NULL RETURN;
+            SELECT @a AS a;
+            """, "@id int, @f int");
+
+        Assert.Contains(IrNullRule.Variable, Rules(doc, "a"));
+    }
+
+    [Fact]
+    public void A_variable_assigned_on_one_arm_only_is_not_a_witness_after_the_if()
+    {
+        // @w may hold 1 from the first IF, so @w not NULL after the SELECT doesn't prove the SELECT read a row: a variable is
+        // certainly NULL where paths meet only if it is on both.
+        var doc = Procedure("""
+            DECLARE @a nvarchar(10), @w int;
+            IF @f = 1 SET @w = 1;
+            SELECT @a = t.name, @w = t.id FROM dbo.t AS t WHERE t.id = @id;
+            IF @w IS NULL RETURN;
+            SELECT @a AS a;
+            """, "@id int, @f int");
+
+        Assert.Contains(IrNullRule.Variable, Rules(doc, "a"));
+    }
+
+    [Fact]
+    public void A_row_a_guard_found_on_one_arm_only_is_not_found_after_the_if()
+    {
+        // The guard runs only when @f = 1; on the other path nothing tested the row, so the read may find none for a reason
+        // that is no race.
+        var doc = Procedure("""
+            BEGIN TRAN;
+            IF @f = 1
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @id) RETURN;
+            END
+            SELECT (SELECT t.code FROM dbo.t AS t WHERE t.id = @id) AS code;
+            COMMIT;
+            """, "@id int, @f int");
+
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "code"));
+    }
+
+    [Fact]
+    public void A_transaction_begun_on_one_arm_only_holds_no_row_after_the_if()
+    {
+        // Without the transaction the guard's lock ends with its statement, so where paths meet the shallower depth counts.
+        var doc = Procedure("""
+            IF @f = 1 BEGIN TRAN;
+            IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @id) RETURN;
+            SELECT (SELECT t.code FROM dbo.t AS t WHERE t.id = @id) AS code;
+            WHILE @@TRANCOUNT > 0 COMMIT;
+            """, "@id int, @f int");
+
+        Assert.Equal([IrNullRule.ReadTwice], Rules(doc, "code"));
+    }
 }
