@@ -251,7 +251,8 @@ dotnet build
 ## Quick start
 
 [Five minutes with AdventureWorks](docs/quick-start.md) goes from a fresh clone to a schema for one of the sample's
-procedures, and a script that parses rows with it.
+procedures, and a script that parses rows with it. [The documentation's index](docs/README.md) says what every other page is
+for, with where to start to use haruspex, to judge whether to trust it, or to contribute.
 
 The repository's example application has a database project and a config file. From the repository's root:
 

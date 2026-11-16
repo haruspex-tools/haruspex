@@ -124,3 +124,4 @@ rather than somewhere deep in the code.
   project, and [the configuration reference](configuration.md) lists every setting.
 - **A `FOR JSON` procedure:** the README's [two examples](../README.md#two-examples-on-microsofts-samples) show nested objects,
   arrays and a recursive tree.
+- **Everything else:** [the documentation's index](README.md) says what each page is for.
