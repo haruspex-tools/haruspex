@@ -168,16 +168,24 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     }
 
     /// <summary>
-    /// An <c>ALTER TABLE</c>: one that only tightens the table adds the foreign keys it declares, if any; any other changes the
-    /// table in a way the model doesn't apply, and is recorded, with the foreign keys a column it adds declares.
+    /// An <c>ALTER TABLE</c>: one that only tightens the table adds the foreign keys it declares, if any, and the primary key and
+    /// unique constraints, when it names the table with its schema (<see cref="AddedKey"/>); any other changes the table in a way
+    /// the model doesn't apply, and is recorded, with the foreign keys a column it adds declares.
     /// </summary>
     private void ReadAlterTable(AlterTableStatement statement)
     {
         var name = SyntaxReader.Name(statement.SchemaObjectName);
         if (!OnlyTightens(statement))
             into.TableChanges.TryAdd(name, Changed(name, RedefiningStatement.AlterTable, statement));
-        if (statement is AlterTableAddTableElementStatement add)
-            ReadCascadingKeys(name, add.Definition);
+        if (statement is not AlterTableAddTableElementStatement add)
+            return;
+        ReadCascadingKeys(name, add.Definition);
+        if (add.Definition.ColumnDefinitions.Count == 0 && statement.SchemaObjectName.SchemaIdentifier is not null)
+        {
+            var span = SyntaxReader.Span(file, statement);
+            foreach (var key in add.Definition.TableConstraints.OfType<UniqueConstraintDefinition>())
+                into.AddedKeys.Add(new AddedKey(name, SyntaxReader.Key(key, span)));
+        }
     }
 
     /// <summary>
@@ -185,8 +193,8 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     /// constraint (a primary key can only add NOT NULL), checking or disabling constraints, rebuilding, and
     /// switching triggers or change tracking. Ignoring them can only leave a column more nullable than it is.
     /// Disabling a CHECK constraint does matter to what values a column holds; that is recorded on the constraint
-    /// (<see cref="ConstraintTrust"/>), not as a redefinition of the table. A CHECK added this way is not read, which only
-    /// claims less.
+    /// (<see cref="ConstraintTrust"/>), not as a redefinition of the table. A primary key or unique constraint added this way
+    /// is read (<see cref="AddedKey"/>); a CHECK is not, which only claims less.
     /// </summary>
     private static bool OnlyTightens(AlterTableStatement statement) => statement switch
     {

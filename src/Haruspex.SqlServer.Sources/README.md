@@ -102,7 +102,10 @@ Console.WriteLine($"{project.Projects.Count} projects, {project.References.Count
   from a query (`WITH (…) AS SELECT`), is passed over with a note (HAR1013), so a name in it is unresolved, never guessed.
   DML triggers are read from `CREATE`, `CREATE OR ALTER` and `ALTER TRIGGER`, every definition kept, since
   which applies depends on the order the scripts run. Foreign keys with an `ON DELETE` or `ON UPDATE` action are read from
-  `CREATE TABLE` and `ALTER TABLE … ADD`, as their actions fire the referencing table's triggers. A view defined once keeps
+  `CREATE TABLE` and `ALTER TABLE … ADD`, as their actions fire the referencing table's triggers. A primary key or unique
+  constraint `ALTER TABLE … ADD CONSTRAINT` adds, as AdventureWorks adds every key, is one of the table's keys
+  (`AddedKey`), when the statement is a batch's and names the table with its schema: SQL Server enforces it as one the table
+  declares, and an unqualified name may mean another table. A CHECK it adds is not read, which only claims less. A view defined once keeps
   its definition (one defined twice records its second as a `Redefinition`), and a synonym the name it stands for. Every
   object keeps where it was read (`SourceSpan`).
 - **Settings a definition keeps are kept.** A procedure, function or view records whether `SET ANSI_NULLS OFF` came before

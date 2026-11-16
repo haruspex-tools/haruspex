@@ -1122,7 +1122,9 @@ query's own sources: an aggregate of only an enclosing query's columns is that q
 subquery an aggregate query.
 
 **Keys.** A source is fixed when every column of one of its enforced keys (`SchemaRules.EnforcedKeys`: the primary key,
-unique constraints and unfiltered unique indexes of its definition, less any an `ALTER INDEX … DISABLE` anywhere may have
+unique constraints and unfiltered unique indexes of its definition, and the primary key and unique constraints an
+`ALTER TABLE … ADD CONSTRAINT` adds, which are enforced as the definition's are
+(`A_key_added_by_alter_table_is_enforced_as_one_the_table_declares`), less any an `ALTER INDEX … DISABLE` anywhere may have
 disabled: a filtered unique index allows duplicates outside its filter, `A_filtered_unique_index_allows_duplicates_outside_its_filter`,
 and a disabled one allows them, `A_disabled_unique_index_allows_duplicates`) is compared with `=` to a value the same for every row: a literal, a variable, an enclosing query's column, or a
 column of a source already fixed; or is tested `IS NULL`, since a key holds one NULL at most

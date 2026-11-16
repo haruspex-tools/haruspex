@@ -47,6 +47,8 @@ column Production.Product.Weight decimal(8,2) at tables/Product.sql:18:5
 column Production.Product.WeightUnitMeasureCode nchar(3) at tables/Product.sql:17:5
 column Production.Product.rowguid uniqueidentifier at tables/Product.sql:28:5
 function Production.GetComponents at functions/GetComponents.sql:1:1
+key Production.BillOfMaterials PK_BillOfMaterials_BillOfMaterialsID (BillOfMaterialsID) at tables/BillOfMaterials.sql:25:5
+key Production.Product PK_Product_ProductID (ProductID) at tables/Product.sql:44:5
 named function Production.GetComponents
 parameter Production.GetComponents @ProductAssemblyID at functions/GetComponents.sql:1:42
 parameter Production.GetProductTree @ProductID at procedures/GetProductTree.sql:2:5

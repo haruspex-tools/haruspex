@@ -23,6 +23,9 @@ internal sealed class SchemaDeclarations
     /// <summary>The first statement that changes a table in a way the model does not apply, by table.</summary>
     public Dictionary<ObjectName, Redefinition> TableChanges { get; } = [];
 
+    /// <summary>The primary keys and unique constraints <c>ALTER TABLE … ADD CONSTRAINT</c> adds, in the order read.</summary>
+    public List<AddedKey> AddedKeys { get; } = [];
+
     /// <summary>The alias and CLR types.</summary>
     public Dictionary<ObjectName, UserType> UserTypes { get; } = [];
 
@@ -69,7 +72,7 @@ internal sealed class SchemaDeclarations
     /// <param name="unread">What the source refers to but couldn't read (<see cref="DatabaseModel.Unread"/>).</param>
     /// <param name="databases">The other databases the source holds the schema of (<see cref="DatabaseModel.Databases"/>).</param>
     public DatabaseModel ToModel(DatabaseSettings? settings = null, IEnumerable<UnreadPart>? unread = null, IReadOnlyDictionary<string, DatabaseModel>? databases = null) => new(
-        [.. Tables.Values.Select(t => ConstraintTrust.Trusted(t, Enforcement, IndexDisables))],
+        [.. Tables.Values.Select(t => ConstraintTrust.Trusted(AddedKey.Into(t, AddedKeys), Enforcement, IndexDisables))],
         UserTypes.Values,
         DefinitionsInEffect.Modules(Procedures, ProcedureChanges, (procedure, why) => procedure with { Redefinition = why }),
         DefinitionsInEffect.Modules(Functions, FunctionChanges, (function, why) => function with { Redefinition = why }),

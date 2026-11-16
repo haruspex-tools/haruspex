@@ -292,6 +292,25 @@ public partial class RefinementObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_key_added_by_alter_table_is_enforced_as_one_the_table_declares()
+    {
+        // A primary key can't be added over a nullable column (8111), so its columns are NOT NULL however it was added.
+        Assert.Equal(8111, (await Run(["CREATE TABLE dbo.obs_late (id int NULL);"], "ALTER TABLE dbo.obs_late ADD CONSTRAINT pk_obs_late PRIMARY KEY (id);")).Error);
+
+        // WITH NOCHECK doesn't apply to a unique key: rows already there that share a key, NULL included, refuse it (1505).
+        Assert.Equal(1505, (await Run(
+            ["CREATE TABLE dbo.obs_late (id int NOT NULL, code int NULL); INSERT INTO dbo.obs_late VALUES (1, NULL), (2, NULL);"],
+            "ALTER TABLE dbo.obs_late WITH NOCHECK ADD CONSTRAINT uq_obs_late UNIQUE (code);")).Error);
+
+        // Once added, NOCHECK CONSTRAINT can't disable it (11415, and ALL passes it over), so a second NULL is refused (2627);
+        // only ALTER INDEX … DISABLE stops it, as for a key the table declares (A_disabled_unique_index_allows_duplicates).
+        string[] added = ["CREATE TABLE dbo.obs_late (id int NOT NULL, code int NULL); ALTER TABLE dbo.obs_late WITH NOCHECK ADD CONSTRAINT uq_obs_late UNIQUE (code);"];
+        Assert.Equal(11415, (await Run(added, "ALTER TABLE dbo.obs_late NOCHECK CONSTRAINT uq_obs_late;")).Error);
+        Assert.Equal(2627, (await Run(added, "ALTER TABLE dbo.obs_late NOCHECK CONSTRAINT ALL; INSERT INTO dbo.obs_late VALUES (1, NULL), (2, NULL);")).Error);
+        Assert.Equal("n: 2", (await Run([.. added, "ALTER INDEX uq_obs_late ON dbo.obs_late DISABLE;"], "INSERT INTO dbo.obs_late VALUES (1, NULL), (2, NULL); SELECT COUNT(*) AS n FROM dbo.obs_late;")).ToString());
+    }
+
+    [Fact]
     public async Task Top_1_and_fetch_1_give_at_most_one_row_but_with_ties_gives_more()
     {
         Assert.Equal("id: 1", (await Run([Rows], "SELECT TOP (1) id FROM dbo.obs_val ORDER BY id;")).ToString());

@@ -13,8 +13,8 @@ namespace Haruspex.SqlServer.Sources;
 /// a body or under IF runs is not knowable. Only <c>WITH CHECK CHECK CONSTRAINT</c> validates every row, and it undoes a
 /// disable only when both are statements of batches in the same script, the re-enable after it, naming the table with its
 /// schema and the check by name (or ALL): then it certainly runs after it on that check. Across scripts the order isn't known.
-/// A constraint added later by ALTER TABLE, with or without WITH NOCHECK, is not read at all
-/// (<see cref="ScriptReader"/>, "only tightens").
+/// A CHECK added later by ALTER TABLE, with or without WITH NOCHECK, is not read at all (<see cref="ScriptReader"/>, "only
+/// tightens"); a key it adds is (<see cref="AddedKey"/>), and is marked here as one the table declares.
 /// </remarks>
 internal static class ConstraintTrust
 {
