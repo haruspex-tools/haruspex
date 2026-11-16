@@ -111,7 +111,7 @@ internal static class ModuleRun
         {
             return Refused<string>(CliCodes.NoSource, settings.Path is null
                 ? "give the folder of .sql files, the .sqlproj or the .dacpac to read, or a config file with \"source\"."
-                : $"give the folder of .sql files, the .sqlproj or the .dacpac to read, or \"source\" in {settings.Path}.");
+                : $"give the folder of .sql files, the .sqlproj or the .dacpac to read, or \"source\" in {DiagnosticFormatter.PathAsShown(settings.Path)}.");
         }
 
         if (SqlProject.IsPackage(source) || SqlProject.IsProjectFile(source))
@@ -131,7 +131,7 @@ internal static class ModuleRun
             ? new Succeeded<string>(output)
             : Refused<string>(CliCodes.NoOut, settings.Path is null
                 ? "give --out, the folder to write to, or a config file with \"out\"."
-                : $"give --out, the folder to write to, or \"out\" in {settings.Path}.");
+                : $"give --out, the folder to write to, or \"out\" in {DiagnosticFormatter.PathAsShown(settings.Path)}.");
 
     /// <summary>The <c>--include</c> patterns, which replace the file's schema includes for one run; each schema's exclude still applies.</summary>
     private static Outcome<EquatableArray<ObjectPattern>> Includes(RunRequest request) => Outcome.All(request.Include.Select(Include));
@@ -147,7 +147,7 @@ internal static class ModuleRun
             ? new Succeeded<bool>(true)
             : Refused<bool>(CliCodes.NothingSelected, settings.Path is null
                 ? "nothing is selected: give --include, or a config file whose \"schemas\" include procedures. Use '*.*' to type every procedure."
-                : $"nothing is selected: give --include, or a schema with \"include\" in {settings.Path}, such as \"schemas\": {{ \"dbo\": {{ \"include\": [\"*\"] }} }}.");
+                : $"nothing is selected: give --include, or a schema with \"include\" in {DiagnosticFormatter.PathAsShown(settings.Path)}, such as \"schemas\": {{ \"dbo\": {{ \"include\": [\"*\"] }} }}.");
 
     /// <summary>
     /// The project, read from the source folder, project file or DACPAC; its diagnostics, with their files under the folder each was

@@ -7,15 +7,13 @@ namespace Haruspex.TestSupport;
 internal static class CliOutput
 {
     /// <summary>
-    /// <paramref name="printed"/> with <paramref name="folder"/> left out of each path, whether a location prints it (with <c>/</c>,
-    /// <c>DiagnosticFormatter.PathAsShown</c>) or a message holds it as the platform writes it, and on Windows every <c>\</c> made
-    /// <c>/</c>, so that a path inside a message reads as a location does.
+    /// <paramref name="printed"/> with <paramref name="folder"/> left out of each path, whether haruspex prints it (with <c>/</c>,
+    /// <c>DiagnosticFormatter.PathAsShown</c>) or it is quoted from the system, as in a file system's error, which writes the
+    /// platform's own. A <c>\</c> anywhere else is kept: haruspex quotes a path from a project or a package as it was written
+    /// (<c>..\shelf\shelf.sqlproj</c>), on every platform, and a test must see that it does.
     /// </summary>
-    public static string Shown(string printed, string folder)
-    {
-        var shown = printed.ReplaceLineEndings("\n")
+    public static string Shown(string printed, string folder) =>
+        printed.ReplaceLineEndings("\n")
             .Replace(folder + Path.DirectorySeparatorChar, "", StringComparison.Ordinal)
             .Replace(folder.Replace('\\', '/') + "/", "", StringComparison.Ordinal);
-        return OperatingSystem.IsWindows() ? shown.Replace('\\', '/') : shown;
-    }
 }

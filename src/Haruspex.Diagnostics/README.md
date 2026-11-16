@@ -43,7 +43,10 @@ Outcome<int> read = Outcome.Of(42, [problem]);   // a Failed<int>: one of what w
   about something the output rests on that couldn't be checked or input that could be simpler, and a note says what the
   output is (an unknown, with its reason). They are SARIF's three levels.
 - **One written form**, `file:line:column: error HAR1001: message`, which editors and CI annotate. A SQL file's path is
-  relative to the source root, with `/` separators on every platform, so a diagnostic prints the same everywhere.
+  relative to the source root, with `/` separators on every platform, so a diagnostic prints the same everywhere. A path in a
+  message follows one rule as well: one haruspex makes, such as a place it looked or a file it writes, is printed with `/`
+  (`DiagnosticFormatter.PathAsShown`), and one quoted from a project, a package or a config file is printed as written there,
+  such as `..\shelf\shelf.sqlproj`, on every platform.
 - **An outcome is one of two cases**, each holding its invariant: `Succeeded<T>` has a value and no error, `Failed<T>` at
   least one error and no value ([decision 0037](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0037-steps-return-outcomes.md)).
 

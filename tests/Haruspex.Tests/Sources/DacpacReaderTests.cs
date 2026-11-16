@@ -3,6 +3,7 @@ using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
 using Haruspex.Cli;
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
@@ -184,7 +185,7 @@ public class DacpacReaderTests
         var odd = Atelier.Value.Model.Procedures.Single(p => p.Name.Name == "get:kiln/one");
 
         Assert.Equal("atelier.dacpac/[studio].[get:kiln/one]:2:1", odd.Span.Start.ToString());
-        Assert.True(Haruspex.Diagnostics.SourceLocation.TryParse(odd.Span.Start.ToString(), out var parsed));
+        Assert.True(SourceLocation.TryParse(odd.Span.Start.ToString(), out var parsed));
         Assert.Equal("atelier.dacpac/[studio].[get:kiln/one]", parsed.File);
     }
 
@@ -439,14 +440,14 @@ public class DacpacReaderTests
     {
         using var dir = new TempDirectory();
         var package = Path.Combine(dir.Path, "app.dacpac");
-        TestPackage.Write(package, TestPackage.Procedure("dbo", "p", "SELECT 1 AS one"), references: new TestPackage.Reference(recorded));
+        TestPackage.Write(package, TestPackage.Procedure("dbo", "p", "SELECT 1 AS one"), references: new TestPackage.Reference("other.dacpac", Recorded: recorded));
 
         var read = DacpacReader.Read(package);
 
         var warning = Assert.Single(read.Diagnostics, d => d.Code == SourceCodes.ReferenceNotFound);
         var looked = ReferenceFinder.Candidates(new PackageReference(recorded, "other.dacpac", null), package, []);
         Assert.Equal([Path.Combine(dir.Path, "other.dacpac")], looked.Where(place => place.StartsWith(dir.Path, StringComparison.Ordinal)));
-        Assert.All(looked, place => Assert.Contains(place, warning.Message, StringComparison.Ordinal));
+        Assert.EndsWith($"looked for at {DiagnosticFormatter.PathAsShown(Path.Combine(dir.Path, "other.dacpac"))}, {recorded}. Put it beside app.dacpac, or name its folder in \"references\" in the config file.", warning.Message, StringComparison.Ordinal);
         if (!OperatingSystem.IsWindows())
             Assert.Equal(recorded, looked[^1]);
     }

@@ -12,10 +12,11 @@ namespace Haruspex.Tests.Sources;
 internal static class TestPackage
 {
     /// <summary>A reference in a package's header: the package's file name, and the database when it is another.</summary>
-    /// <param name="Package">The referenced package's file name, as its <c>LogicalName</c> and the end of its recorded path.</param>
+    /// <param name="Package">The referenced package's file name, as its <c>LogicalName</c> and, unless <paramref name="Recorded"/> is given, the end of its recorded path.</param>
     /// <param name="Database">Null for the same database; otherwise the database as <c>ExternalParts</c> names it, without its brackets (<c>$(Ledger)</c>, <c>master</c>).</param>
     /// <param name="Server">Null for this server; otherwise the server, which <c>ExternalParts</c> names before the database.</param>
-    public sealed record Reference(string Package, string? Database = null, string? Server = null);
+    /// <param name="Recorded">The path its build recorded, its <c>FileName</c>; when null, <c>C:\build\</c> and <paramref name="Package"/>.</param>
+    public sealed record Reference(string Package, string? Database = null, string? Server = null, string? Recorded = null);
 
     /// <summary>Writes the package to <paramref name="path"/>.</summary>
     /// <param name="path">Where.</param>
@@ -25,7 +26,7 @@ internal static class TestPackage
     public static void Write(string path, string elements, string? collation = "SQL_Latin1_General_CP1_CI_AS", params Reference[] references)
     {
         var header = string.Concat(references.Select(r =>
-            $"""<CustomData Category="Reference" Type="SqlSchema"><Metadata Name="FileName" Value="C:\build\{r.Package}" /><Metadata Name="LogicalName" Value="{r.Package}" />{(r.Database is null ? "" : $"""<Metadata Name="ExternalParts" Value="{(r.Server is null ? "" : $"[{r.Server}].")}[{r.Database}]" />""")}</CustomData>"""));
+            $"""<CustomData Category="Reference" Type="SqlSchema"><Metadata Name="FileName" Value="{r.Recorded ?? $@"C:\build\{r.Package}"}" /><Metadata Name="LogicalName" Value="{r.Package}" />{(r.Database is null ? "" : $"""<Metadata Name="ExternalParts" Value="{(r.Server is null ? "" : $"[{r.Server}].")}[{r.Database}]" />""")}</CustomData>"""));
         var options = collation is null ? "" : $"""<Element Type="SqlDatabaseOptions"><Property Name="Collation" Value="{collation}" /></Element>""";
         using var zip = ZipFile.Open(path, ZipArchiveMode.Create);
         using var writer = new StreamWriter(zip.CreateEntry("model.xml").Open(), new UTF8Encoding(false));

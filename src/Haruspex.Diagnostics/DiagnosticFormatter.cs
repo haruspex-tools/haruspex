@@ -40,7 +40,8 @@ public static class DiagnosticFormatter
     /// <summary>
     /// A path as haruspex prints it: with <c>/</c> between its names on every platform, so that a diagnostic or a summary reads the
     /// same on Windows as elsewhere, as the IR's own locations do. Only Windows writes <c>\</c> as a separator; elsewhere it is a
-    /// character a name may hold, and is kept.
+    /// character a name may hold, and is kept. It is for every path haruspex makes, in a message too, such as a place it looked; a
+    /// path quoted from a project, a package or a config file is printed as written there instead, on every platform.
     /// </summary>
     /// <param name="path">A path as the platform writes it.</param>
     public static string PathAsShown(string path)

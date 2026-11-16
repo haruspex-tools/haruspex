@@ -85,7 +85,9 @@ public class FetchedCorpusManifestTests
     [Fact]
     public void The_corpora_are_fetched_into_the_folder_the_variable_names_or_the_cache()
     {
-        Assert.Equal("/elsewhere", FetchedCorpus.Root(v => v == FetchedCorpus.FolderVariable ? "/elsewhere" : null));
+        // A full path on this platform: on Windows, /elsewhere is relative to the current drive, and refused.
+        var elsewhere = Path.Combine(Path.GetTempPath(), "elsewhere");
+        Assert.Equal(elsewhere, FetchedCorpus.Root(v => v == FetchedCorpus.FolderVariable ? elsewhere : null));
         Assert.EndsWith(Path.Combine(".cache", "haruspex", "corpora"), FetchedCorpus.Root(_ => null), StringComparison.Ordinal);
         Assert.EndsWith(Path.Combine(".cache", "haruspex", "corpora"), FetchedCorpus.Root(_ => ""), StringComparison.Ordinal);
     }

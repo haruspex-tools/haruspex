@@ -272,6 +272,6 @@ public class ConfigReaderTests
         var result = ConfigReader.Read(missing);
 
         Assert.IsType<Failed<HaruspexConfig>>(result);
-        Assert.StartsWith($"{missing}: error HAR3001: cannot read the config file: ", Assert.Single(result.Diagnostics).ToString(), StringComparison.Ordinal);
+        Assert.StartsWith($"{DiagnosticFormatter.PathAsShown(missing)}: error HAR3001: cannot read the config file: ", Assert.Single(result.Diagnostics).ToString(), StringComparison.Ordinal);
     }
 }

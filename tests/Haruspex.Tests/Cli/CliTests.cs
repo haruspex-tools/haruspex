@@ -261,7 +261,7 @@ public class CliTests
         Assert.Equal(0, exitCode);
         Assert.Contains("1 unknown(s)", output, StringComparison.Ordinal);
         var note = Assert.Single(error.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n'));
-        Assert.StartsWith($"{Path.Join(source.Path, "p.sql")}:2:", note, StringComparison.Ordinal);
+        Assert.StartsWith($"{DiagnosticFormatter.PathAsShown(Path.Join(source.Path, "p.sql"))}:2:", note, StringComparison.Ordinal);
         Assert.Contains(": note HAR2009: dbo.p results[0][].gone: ", note, StringComparison.Ordinal);
     }
 

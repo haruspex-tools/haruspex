@@ -1,4 +1,5 @@
 using Haruspex.Cli;
+using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
 using Haruspex.SqlServer.Sources.Projects;
@@ -170,7 +171,7 @@ public partial class SqlProjectReaderTests
 
         var reported = Assert.Single(read.Diagnostics);
         Assert.Equal(SourceCodes.ReferenceNotFound, reported.Code);
-        Assert.Contains($"p.sqlproj refers to the DACPAC ../lib/gone.dacpac, of its own database, which isn't found: looked for at {Path.Combine(folder.Path, "lib", "gone.dacpac")}.", reported.Message, StringComparison.Ordinal);
+        Assert.Contains($"p.sqlproj refers to the DACPAC ../lib/gone.dacpac, of its own database, which isn't found: looked for at {DiagnosticFormatter.PathAsShown(Path.Combine(folder.Path, "lib", "gone.dacpac"))}.", reported.Message, StringComparison.Ordinal);
         var reference = Assert.Single(read.References);
         Assert.Equal(("gone.dacpac", null), (reference.Name, reference.Found));
         Assert.Equal([new UnreadPart("gone.dacpac", "p.sqlproj, q.sqlproj")], read.Model.Unread);

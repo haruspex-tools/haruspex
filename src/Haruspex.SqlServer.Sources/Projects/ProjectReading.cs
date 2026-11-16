@@ -184,7 +184,7 @@ internal sealed class ProjectReading
         if (at is null)
         {
             var which = reference.Database is null ? "of its own database" : $"the database {reference.Database}";
-            var looked = places.Count == 0 ? "" : $": looked for at {string.Join(", ", places)}";
+            var looked = places.Count == 0 ? "" : $": looked for at {string.Join(", ", places.Select(DiagnosticFormatter.PathAsShown))}";
             diagnostics.Add(SourceCodes.ReferenceNotFound.At(reference.At, $"{referrer} refers to {reference.Described}, {which}, which isn't found{looked}. {Remedy(reference)}"));
         }
 

@@ -198,7 +198,7 @@ public class ResultsDeclarationTests
 
         var problem = Assert.Single(read.Diagnostics);
         var at = Assert.IsType<JsonLocation>(problem.At);
-        Assert.Equal(Path.Combine(dir.Path, "schemas/row.schema.json"), at.File);
+        Assert.Equal(Path.Combine(dir.Path, "schemas", "row.schema.json"), at.File);
         Assert.Equal(3, at.Line);
         Assert.Contains("one type", problem.Message, StringComparison.Ordinal);
     }

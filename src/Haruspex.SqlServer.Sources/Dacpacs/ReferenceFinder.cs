@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Sources.Projects;
 
 namespace Haruspex.SqlServer.Sources.Dacpacs;
@@ -25,24 +26,59 @@ internal static class ReferenceFinder
     /// <param name="reference">The reference.</param>
     /// <param name="referrer">The path of the package that records it.</param>
     /// <param name="searchFolders">The config file's <c>references</c> folders, full paths.</param>
-    public static IReadOnlyList<string> Candidates(PackageReference reference, string referrer, IReadOnlyList<string> searchFolders)
+    public static IReadOnlyList<string> Candidates(PackageReference reference, string referrer, IReadOnlyList<string> searchFolders) =>
+        [.. Made(reference, referrer, searchFolders).Append(RecordedPlace(reference, referrer)).Distinct(StringComparer.Ordinal)];
+
+    /// <summary>
+    /// The places looked, as the warning that the package isn't found lists them: each place haruspex made, beside the referrer or
+    /// in a folder of references, as haruspex prints a path (<see cref="DiagnosticFormatter.PathAsShown"/>), and then the path
+    /// the package recorded, exactly as recorded, unless a place already listed is the one it names.
+    /// </summary>
+    /// <remarks>
+    /// The recorded path is quoted, as a project's paths are quoted from the project (<c>..\archive\loans.sql</c>), because it is
+    /// the build machine's path, which a reader knows from their build, and because then the warning reads the same wherever
+    /// haruspex runs. Made full here it wouldn't: on Windows, <c>/tmp/…</c> recorded by a build on Linux names a folder on the
+    /// current drive, <c>D:\tmp\…</c>, which is where it is looked for, but which no build wrote.
+    /// </remarks>
+    public static IReadOnlyList<string> Shown(PackageReference reference, string referrer, IReadOnlyList<string> searchFolders)
     {
-        var beside = Path.GetDirectoryName(Path.GetFullPath(referrer)) ?? ".";
+        var made = Made(reference, referrer, searchFolders).Distinct(StringComparer.Ordinal).ToList();
+        var shown = made.Select(DiagnosticFormatter.PathAsShown).ToList();
+        if (!made.Contains(RecordedPlace(reference, referrer), StringComparer.Ordinal))
+            shown.Add(reference.FileName);
+        return shown;
+    }
+
+    /// <summary>The first place a file is, or null when none.</summary>
+    public static string? Find(PackageReference reference, string referrer, IReadOnlyList<string> searchFolders) =>
+        Candidates(reference, referrer, searchFolders).FirstOrDefault(File.Exists);
+
+    /// <summary>The places looked beside the referrer and in the config's folders, full, in order.</summary>
+    private static IEnumerable<string> Made(PackageReference reference, string referrer, IReadOnlyList<string> searchFolders)
+    {
+        var beside = Beside(referrer);
         var names = new[] { DacPackage.FileNameOf(reference.FileName), reference.LogicalName }.Where(n => n.Length > 0).Distinct(StringComparer.Ordinal).ToList();
         IEnumerable<string> places =
         [
             .. names.Select(name => Path.Join(beside, name)),
             .. searchFolders.SelectMany(folder => names.Select(name => Path.Join(folder, name))),
         ];
-        var looked = places.Select(Path.GetFullPath);
-        var recorded = reference.FileName;
-        if (DiskPath.IsRootedElsewhere(recorded))
-            return [.. looked.Append(recorded).Distinct(StringComparer.Ordinal)];
-        var here = recorded.Replace('\\', Path.DirectorySeparatorChar);
-        return [.. looked.Append(Path.GetFullPath(Path.IsPathRooted(here) ? here : Path.Join(beside, here))).Distinct(StringComparer.Ordinal)];
+        return places.Select(Path.GetFullPath);
     }
 
-    /// <summary>The first place a file is, or null when none.</summary>
-    public static string? Find(PackageReference reference, string referrer, IReadOnlyList<string> searchFolders) =>
-        Candidates(reference, referrer, searchFolders).FirstOrDefault(File.Exists);
+    /// <summary>
+    /// The place the recorded path names here: made full against the referrer's folder when relative, or as recorded when rooted
+    /// the other platform's way.
+    /// </summary>
+    private static string RecordedPlace(PackageReference reference, string referrer)
+    {
+        var recorded = reference.FileName;
+        if (DiskPath.IsRootedElsewhere(recorded))
+            return recorded;
+        var here = recorded.Replace('\\', Path.DirectorySeparatorChar);
+        return Path.GetFullPath(Path.IsPathRooted(here) ? here : Path.Join(Beside(referrer), here));
+    }
+
+    /// <summary>The folder of the package that records the reference.</summary>
+    private static string Beside(string referrer) => Path.GetDirectoryName(Path.GetFullPath(referrer)) ?? ".";
 }

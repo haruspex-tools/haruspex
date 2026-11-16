@@ -69,7 +69,7 @@ internal static class Generate
                     // The new IR stands beside the old module, so the old IR, the backup, is the one copy left: it is kept.
                     keepBackup = hadIr;
                     return ModuleRun.Refused<Written>(CliCodes.CannotWrite,
-                        $"cannot write to {folder}: {e.Message} The IR written before it could not be put back ({failure}), so {irPath} is new and {zodPath} is not{(hadIr ? $"; the old IR is kept at {irBackup}" : "")}.");
+                        $"cannot write to {DiagnosticFormatter.PathAsShown(folder)}: {e.Message} The IR written before it could not be put back ({failure}), so {DiagnosticFormatter.PathAsShown(irPath)} is new and {DiagnosticFormatter.PathAsShown(zodPath)} is not{(hadIr ? $"; the old IR is kept at {DiagnosticFormatter.PathAsShown(irBackup)}" : "")}.");
                 }
 
                 throw;
@@ -77,7 +77,7 @@ internal static class Generate
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            return ModuleRun.Refused<Written>(CliCodes.CannotWrite, $"cannot write to {folder}: {e.Message}");
+            return ModuleRun.Refused<Written>(CliCodes.CannotWrite, $"cannot write to {DiagnosticFormatter.PathAsShown(folder)}: {e.Message}");
         }
         finally
         {

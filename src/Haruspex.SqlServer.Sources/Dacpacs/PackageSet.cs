@@ -129,7 +129,7 @@ internal sealed class PackageSet(IReadOnlyList<string> folders, List<Diagnostic>
         if (ReferenceFinder.Find(reference, referrer.Path, Folders) is { } path)
             return Open(path);
         var which = reference.Database is null ? "a package of the same database" : $"the package of the database {reference.Database}";
-        var places = string.Join(", ", ReferenceFinder.Candidates(reference, referrer.Path, Folders));
+        var places = string.Join(", ", ReferenceFinder.Shown(reference, referrer.Path, Folders));
         diagnostics.Add(SourceCodes.ReferenceNotFound.At(
             new FileLocation(referrer.Path),
             $"{referrer.Name} refers to {reference.LogicalName}, {which}, which isn't found: looked for at {places}. Put it beside {referrer.Name}, or name its folder in \"references\" in the config file."));
