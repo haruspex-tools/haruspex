@@ -1682,6 +1682,13 @@ README):
   offset: `datetime`, `datetime2`, `smalldatetime`) or `offset` (`datetimeoffset`), and `uuid` (8-4-4-4-12
   hex, not necessarily an RFC 9562 UUID). JSON *text* in a column (`json-text`) is unaffected: it is a
   string to parse.
+- **A rowset under the name of `FOR JSON` or `FOR XML` output is unknown.** SQL Server names the one column of top-level
+  `FOR JSON` output `JSON_F52E2B61-18A1-11d1-B105-00805F49916B` (`XML_…` for `FOR XML`), and the mssql driver takes any result
+  set whose one column has that name, matching case, for that output: it joins the rows into one, in either mode, and with
+  `parseJSON` parses a JSON one (`A_rowset_whose_one_column_is_named_as_for_json_output_is_joined_into_one_row_in_either_mode`,
+  `So_is_one_named_as_for_xml_output`, `The_name_must_match_with_its_case`). So a rowset whose one column is given the name,
+  from a `SELECT` or an `OUTPUT`, doesn't arrive as rows: it is `unsupported-query`, saying why
+  (`A_rowset_whose_one_column_the_driver_takes_for_for_json_or_for_xml_output_is_unknown`).
 - **A result can be absent.** A top-level `FOR JSON` query that matches no rows returns a result set with no
   row in it, not `[]`, `{}` or a NULL (observed, with and without `WITHOUT_ARRAY_WRAPPER` and
   `INCLUDE_NULL_VALUES`), so a JSON result has `mayBeAbsent: true` with the reason `no-rows`. A rowset is always

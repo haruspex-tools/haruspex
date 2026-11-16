@@ -170,6 +170,12 @@ internal sealed partial class Typer(
             ? bound
             : null;
 
+    /// <summary>The name SQL Server gives the one column of top-level FOR JSON output.</summary>
+    private const string JsonOutputColumn = "JSON_F52E2B61-18A1-11d1-B105-00805F49916B";
+
+    /// <summary>The name SQL Server gives the one column of top-level FOR XML output.</summary>
+    private const string XmlOutputColumn = "XML_F52E2B61-18A1-11d1-B105-00805F49916B";
+
     internal static Shape Rowset(Row row)
     {
         if (row.Unlisted is { } unlisted)
@@ -184,6 +190,17 @@ internal sealed partial class Typer(
         var duplicate = row.Columns.GroupBy(c => c.Name, StringComparer.Ordinal).FirstOrDefault(g => g.Count() > 1);
         if (duplicate is not null)
             return Unsupported(IrUnknownReason.DuplicateColumn, $"The column name '{duplicate.Key}' is used more than once.", duplicate.Skip(1).First().At);
+
+        // The mssql driver takes a result set whose one column has the name SQL Server gives FOR JSON or FOR XML output for
+        // that output, by the name alone and matching case: it joins the rows into one, and with parseJSON parses a JSON one
+        // (MssqlDriverObservationTests). So a rowset under that name doesn't arrive as rows, in either mode.
+        if (row.Columns is [{ Name: JsonOutputColumn or XmlOutputColumn } only])
+        {
+            return Unsupported(
+                IrUnknownReason.UnsupportedQuery,
+                $"The one column is named {only.Name}, as SQL Server names FOR JSON or FOR XML output, so the mssql driver joins its rows into one.",
+                only.At);
+        }
 
         var fields = row.Columns.Select(c => new FieldShape(
             // Never null: a column without a name was reported above.

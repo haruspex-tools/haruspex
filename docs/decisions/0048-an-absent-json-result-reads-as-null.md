@@ -19,6 +19,9 @@ joins the rows it is split over into one row, through `query` and `execute` alik
 - without it, the row is an object holding the joined text under that column's name, and `''` when no rows matched.
 - JSON anywhere else, a `FOR JSON` subquery, `json_object`, a `json` column, a `FOR JSON` beside another column, is an
   ordinary rowset holding text, in either mode. `FOR XML` is joined the same way and never parsed.
+- The driver goes by the name alone, matching case: a rowset whose one column is given that name (or `FOR XML`'s) is joined
+  into one row too, in either mode, and parsed with `parseJSON`. Its shape does depend on the mode, and on its rows, so the
+  inference makes such a result set unknown, saying why, rather than type rows that never arrive.
 
 Before, the README told applications to join the rows themselves and read no row as `[]` for an array, and the schema of an
 array result didn't accept `null`. An application in the common mode, whose every procedure's document is `recordset[0]`,
@@ -39,4 +42,5 @@ got a parse error whenever a list was empty.
 **Reason.** The schema accepts what arrives, in the mode applications use, with no setting and no wrapper; the other mode
 is a line of the application's own code. It also claims more than before: a present `FOR JSON` array is never empty.
 
-**In the code:** `ZodLowering.Result`, and the reader convention in the IR's README ("Results").
+**In the code:** `ZodLowering.Result` and `ZodLowering.Rows`; `Typer.Rowset`, for a rowset under the driver's column
+name; and the reader convention in the IR's README ("Results").

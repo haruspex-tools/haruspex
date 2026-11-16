@@ -190,12 +190,36 @@ public class MssqlDriverObservationTests(SqlServerFixture server)
     }
 
     [Fact]
-    public async Task A_column_named_as_for_json_output_is_taken_for_it_whatever_holds_it()
+    public async Task A_rowset_whose_one_column_is_named_as_for_json_output_is_joined_into_one_row_in_either_mode()
     {
-        // The driver goes by the name alone, so a rowset whose one column is given that name is parsed too.
-        var (on, _) = await Both($"SELECT N'[1,2]' AS [{JsonColumn}];");
+        // The driver goes by the name alone, so three rows of 1, 2 and 3 become the text 123, parsed as a number with
+        // parseJSON. The inference makes such a result set unknown (Typer.Rowset).
+        var (on, off) = await Both($"SELECT v.n AS [{JsonColumn}] FROM (VALUES (1), (2), (3)) AS v(n) ORDER BY v.n;");
+        var (noneOn, noneOff) = await Both($"SELECT v.n AS [{JsonColumn}] FROM (VALUES (1)) AS v(n) WHERE v.n = 0;");
 
-        Assert.Equal("[1,2]", Compact(OnlyRow(on).Row));
+        Assert.Equal("123", Compact(OnlyRow(on).Row));
+        Assert.Equal("123", OnlyRow(off).Row.GetProperty(JsonColumn).GetString());
+        Assert.Equal(JsonValueKind.Null, OnlyRow(noneOn).Row.ValueKind);
+        Assert.Equal("", OnlyRow(noneOff).Row.GetProperty(JsonColumn).GetString());
+    }
+
+    [Fact]
+    public async Task So_is_one_named_as_for_xml_output()
+    {
+        var (on, off) = await Both($"SELECT v.s AS [{XmlColumn}] FROM (VALUES (N'a'), (N'b'), (N'c')) AS v(s) ORDER BY v.s;");
+
+        Assert.Equal("abc", OnlyRow(on).Row.GetProperty(XmlColumn).GetString());
+        Assert.Equal("abc", OnlyRow(off).Row.GetProperty(XmlColumn).GetString());
+    }
+
+    [Fact]
+    public async Task The_name_must_match_with_its_case()
+    {
+        const string name = "json_f52e2b61-18a1-11d1-b105-00805f49916b";
+        var (on, _) = await Both($"SELECT v.n AS [{name}] FROM (VALUES (1), (2), (3)) AS v(n) ORDER BY v.n;");
+
+        Assert.Null(on.Error);
+        Assert.Equal([1, 2, 3], Assert.Single(on.Recordsets).Rows.Select(r => r.GetProperty(name).GetInt32()));
     }
 
     [Theory]

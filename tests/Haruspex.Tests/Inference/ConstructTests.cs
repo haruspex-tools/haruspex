@@ -60,6 +60,27 @@ public class ConstructTests
             IrUnknownReason.DuplicateColumn);
 
     [Theory]
+    [InlineData("SELECT t.id AS [JSON_F52E2B61-18A1-11d1-B105-00805F49916B] FROM dbo.t AS t;")]
+    [InlineData("SELECT t.name AS [XML_F52E2B61-18A1-11d1-B105-00805F49916B] FROM dbo.t AS t;")]
+    [InlineData("SELECT (SELECT u.name FROM dbo.u AS u FOR JSON PATH) AS [JSON_F52E2B61-18A1-11d1-B105-00805F49916B];")]
+    [InlineData("UPDATE dbo.t SET code = 1 OUTPUT inserted.id AS [JSON_F52E2B61-18A1-11d1-B105-00805F49916B];")]
+    public void A_rowset_whose_one_column_the_driver_takes_for_for_json_or_for_xml_output_is_unknown(string body)
+    {
+        // MssqlDriverObservationTests: the driver joins such a result set's rows into one, in either mode, and with
+        // parseJSON parses a JSON one, so neither the rows nor their values arrive as SQL Server sent them.
+        var unknown = Unknown(Procedure(body), "results[0]");
+
+        Assert.Equal(IrUnknownReason.UnsupportedQuery, unknown.Reason);
+        Assert.Contains("mssql driver", unknown.Detail, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("SELECT t.id AS [json_f52e2b61-18a1-11d1-b105-00805f49916b] FROM dbo.t AS t;")]
+    [InlineData("SELECT t.id AS [JSON_F52E2B61-18A1-11d1-B105-00805F49916B], t.code FROM dbo.t AS t;")]
+    public void The_driver_goes_by_the_exact_name_of_the_one_column_so_others_are_rows(string body) =>
+        AllTyped(Procedure(body));
+
+    [Theory]
     [InlineData("t.id AS a, t.code AS [a.b]")]
     [InlineData("t.id AS [a.x], t.code AS b, t.name AS [a.y]")]
     [InlineData("t.id AS a, t.code AS A")]
