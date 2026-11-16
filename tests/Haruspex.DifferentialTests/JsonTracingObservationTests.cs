@@ -300,4 +300,17 @@ public class JsonTracingObservationTests(SqlServerFixture server)
                        CAST((SELECT 1 AS id WHERE 1 = 0 FOR JSON PATH) AS nvarchar(max)) AS e;
                 """));
     }
+
+    [Fact]
+    public async Task Json_converted_to_json_rewrites_a_float_as_a_decimal_of_ten_places()
+    {
+        // The json type parses the text again: a float becomes a number of 10 places (1.5e-11 is 0.0000000000), a decimal,
+        // money or bigint stays exactly as written, and a float of 1e38 or more is refused (1007). A constructor RETURNING
+        // json does the same. A float in JSON claims only that it is a number, so its content still holds.
+        Assert.Equal(
+            """j: {"f":0.0000000000,"d":12.25}""",
+            await Select("SELECT CAST((SELECT CAST('1.5e-11' AS float) AS f, CAST(12.25 AS decimal(9,2)) AS d FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS json) AS j;"));
+        Assert.Equal("""j: {"f":0.0000000000}""", await Select("SELECT json_object('f': CAST('1.5e-11' AS float) RETURNING json) AS j;"));
+        Assert.Equal(1007, await Error("SELECT CAST((SELECT CAST('1e38' AS float) AS f FOR JSON PATH) AS json) AS j;"));
+    }
 }

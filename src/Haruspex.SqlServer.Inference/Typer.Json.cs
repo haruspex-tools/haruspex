@@ -60,6 +60,9 @@ internal sealed partial class Typer
     /// <summary>
     /// <c>CAST(x AS json)</c> and its forms, where x is JSON built here: live JSON of the same shape, null when x is. Live JSON
     /// stays live, and JSON text with known content is made live, as json_query makes it. Anything else is not modelled yet.
+    /// The json type parses the text again, which writes a float as a number of 10 places (1.5e-11 as 0.0000000000) and refuses
+    /// one of 1e38 or more (1007; observed: Json_converted_to_json_rewrites_a_float_as_a_decimal_of_ten_places). The shape still
+    /// holds because a float in JSON claims only that it is a number, with no facets; a float facet would have to be dropped here.
     /// </summary>
     private Value JsonCast(ScalarExpression operand, TSqlFragment call, ReadScope scope)
     {

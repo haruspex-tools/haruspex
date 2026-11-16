@@ -577,7 +577,7 @@ constructor) is `nvarchar(max)`, a constructor `RETURNING json` is `json`, and `
 
 | Converted to | Gives |
 |---|---|
-| `json` | live JSON of the same shape; JSON text with known content (`WITHOUT_ARRAY_WRAPPER`) made live, as `json_query` makes it |
+| `json` | live JSON of the same shape; JSON text with known content (`WITHOUT_ARRAY_WRAPPER`) made live, as `json_query` makes it. The `json` type parses the text again and writes a float as a number of 10 places (`1.5e-11` as `0.0000000000`, and one of `1e38` or more is refused, 1007), as a constructor `RETURNING json` does (`Json_converted_to_json_rewrites_a_float_as_a_decimal_of_ten_places`); the shape holds because a float in JSON claims no facets |
 | its own type, no style | the same live JSON (`CAST((SELECT … FOR JSON PATH) AS nvarchar(max))`) |
 | `nvarchar(max)` from another type, or with a style | `json-text` with its content, which holds any JSON unchanged |
 | any other string type | a string of that type: cut short past its length without an error, `nchar` padded, `varchar` writing `?` for a character its code page lacks |
