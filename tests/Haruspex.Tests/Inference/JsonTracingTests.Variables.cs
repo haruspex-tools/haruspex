@@ -131,4 +131,48 @@ public partial class JsonTracingTests
         Assert.Equal(IrScalarKind.Number, Assert.IsType<IrScalar>(Field(doc, "n").Type).Kind);
         Assert.Contains("loop", Unknown(doc, "x").Detail, StringComparison.Ordinal);
     }
+    [Fact]
+    public void A_variable_assigned_coalesce_over_json_holds_its_content_whether_or_not_the_server_folds_it()
+    {
+        // Observed: Assigned_to_a_variable_coalesce_and_case_over_json_are_the_same_text_whether_or_not_the_server_folds_them.
+        // Nested in FOR JSON the folding decides whether it is JSON or escaped text; in a variable it is text either way.
+        var doc = Infer("""
+            DECLARE @qty nvarchar(max) = COALESCE((SELECT json_arrayagg(l.qty) FROM sales.order_line AS l WHERE l.order_id = @id), json_array());
+            SELECT json_query(@qty) AS qty;
+            """);
+
+        // In a rowset JSON is a string holding it; the subquery's array, or json_array()'s empty one, so with no least count.
+        var items = Assert.IsType<IrArray>(Assert.IsType<IrJsonText>(Field(doc, "qty").Type).Content);
+        Assert.Null(items.MinItems);
+        Assert.Equal(IrScalarKind.Number, Assert.IsType<IrScalar>(items.Items).Kind);
+        Assert.Empty(doc.Unknowns);
+    }
+
+    [Theory]
+    [InlineData("SET @x = CASE WHEN @flag = 1 THEN json_object('n': 1) ELSE json_object('n': 2) END;")]
+    [InlineData("SELECT @x = IIF(@flag = 1, json_object('n': 1), json_object('n': 2));")]
+    [InlineData("SELECT @x = COALESCE(json_query(@x), json_object('n': 2)) WHERE @flag = 1;")]
+    public void A_variable_assigned_case_or_coalesce_over_live_json_holds_the_join_of_its_results(string assignment)
+    {
+        var doc = Infer($"""
+            DECLARE @x nvarchar(max) = json_object('n': 0);
+            {assignment}
+            SELECT json_query(@x) AS x FOR JSON PATH;
+            """);
+
+        Assert.Equal(["n"], Fields(doc, Field(doc, "x").Type).Select(f => f.Name));
+        Assert.Empty(doc.Unknowns);
+    }
+
+    [Fact]
+    public void Coalesce_over_json_nested_in_for_json_stays_unknown_even_on_its_way_to_a_variable()
+    {
+        // Embedded in an outer FOR JSON, whether the server folds it decides whether it nests as JSON or as escaped text.
+        var doc = Infer("""
+            DECLARE @x nvarchar(max) = (SELECT COALESCE((SELECT json_arrayagg(l.qty) FROM sales.order_line AS l WHERE l.order_id = @id), json_array()) AS qty FOR JSON PATH);
+            SELECT json_query(@x) AS x FOR JSON PATH;
+            """);
+
+        Assert.Contains("folds", Assert.Single(doc.Unknowns).Detail, StringComparison.Ordinal);
+    }
 }

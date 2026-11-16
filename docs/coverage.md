@@ -596,7 +596,7 @@ Functions the list above doesn't name, such as those the reference documents as 
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
-| `COALESCE` | `scalar.coalesce` | the type of highest precedence over its arguments | `arithmetic-overflow`, `read-twice`, `null-literal` | [Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments](../tests/Haruspex.DifferentialTests/ExpressionObservationTests.cs), [Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot](../tests/Haruspex.DifferentialTests/ExpressionObservationTests.cs) |
+| `COALESCE` | `scalar.coalesce` | the type of highest precedence over its arguments | `arithmetic-overflow`, `read-twice`, `null-literal` | [Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments](../tests/Haruspex.DifferentialTests/ExpressionObservationTests.cs), [Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot](../tests/Haruspex.DifferentialTests/ExpressionObservationTests.cs), [Assigned_to_a_variable_coalesce_and_case_over_json_are_the_same_text_whether_or_not_the_server_folds_them](../tests/Haruspex.DifferentialTests/JsonTracingObservationTests.cs) |
 | `NULLIF` | `scalar.nullif` | the first argument's type | `null-when-equal` | [Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it](../tests/Haruspex.DifferentialTests/CaseObservationTests.cs) |
 
 ## Statements, queries and expressions

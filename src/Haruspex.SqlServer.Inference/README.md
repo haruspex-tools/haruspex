@@ -981,8 +981,12 @@ observed in each position before it was typed (`CaseObservationTests`):
   (`Coalesce_reads_a_for_json_subquery_twice_so_it_can_be_null_though_its_fallback_is_not`, the subquery reading its outer
   row, as real ones do: one that does not may be read once and spooled). One exception: `COALESCE` whose first argument is a
   constant never NULL is folded to it and keeps its JSON (`COALESCE(JSON_QUERY(N'[1]'), '[]')` nests `[1]`), so a COALESCE
-  with a live argument that is not a FOR JSON subquery (perhaps in `JSON_QUERY`) is not modelled. A FOR JSON subquery is never
-  folded, even one without FROM.
+  with a live argument that is not a FOR JSON subquery (perhaps in `JSON_QUERY`) is not modelled where it nests. A FOR JSON
+  subquery is never folded, even one without FROM. Where the folding doesn't matter, it is modelled: under `JSON_QUERY`, and as
+  the value assigned to a variable or a column, which holds the same text whether or not the server folds it
+  (`Assigned_to_a_variable_coalesce_and_case_over_json_are_the_same_text_whether_or_not_the_server_folds_them`), so
+  `DECLARE @ids nvarchar(max) = COALESCE((SELECT json_arrayagg(…) …), json_array())` holds the aggregate's array or the empty
+  one ("JSON built here, traced" below).
 - **`ISNULL` keeps its first argument's JSON**: over live JSON it nests as JSON, and its fallback is written into the JSON as
   it is, unchecked (`Isnull_writes_its_fallback_into_the_json_as_it_is`): `'[]'` the empty array (so the array may have no
   items), `'{}'` the empty object (a union), any other literal that is a JSON document its exact shape
@@ -1547,6 +1551,10 @@ column is never traced: someone else may write it. Every rule is observed in `Js
 - **`json_query`** over a place or literal is live JSON of its content, nullable as the value is. Under `json_query` a
   `CASE`, `IIF`, `CHOOSE` or `COALESCE` holds JSON whether or not the server folds it to one result, so its results' JSON is
   joined, literals parsed (`Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken`).
+  So does one assigned to a variable or a column: folded or not, the text it is given is the same
+  (`Assigned_to_a_variable_coalesce_and_case_over_json_are_the_same_text_whether_or_not_the_server_folds_them`). Only the
+  expression assigned itself: nested in a `FOR JSON` or a constructor on its way, its folding still decides how it nests.
+  `ReadScope.FoldingMoot` marks the expression where folding doesn't matter.
   Elsewhere a `CASE` whose results are all JSON text is JSON text of the join; one with a live result is unknown, as before.
   `ISNULL` over live JSON writes any literal fallback that is a JSON document as JSON (one that is not, `'[1]x'`, makes text
   that is not JSON, so it is not modelled).
@@ -2096,7 +2104,7 @@ For the IR:
   array's `minItems`, `'{}'` adds the empty object as a variant of a `union`); `ISNULL` over JSON is JSON where it nests, with
   the same content, and never null with a literal fallback. A `CASE`, `IIF`, `CHOOSE` or `NULLIF` over JSON is unknown
   (`unsupported-expression`): whether it nests as JSON depends on whether the server folds it. The exceptions: under
-  `json_query`, and when every result is JSON text, `CASE`, `IIF` and `CHOOSE` hold the join of their results' JSON, and any
+  `json_query` or assigned to a variable or column, and when every result is JSON text, `CASE`, `IIF` and `CHOOSE` hold the join of their results' JSON, and any
   literal that is a JSON document counts as JSON, not only `'[]'` and `'{}'` ("JSON built here, traced" below).
 
 ### Set operations, CROSS JOIN, FULL OUTER JOIN and OPENJSON

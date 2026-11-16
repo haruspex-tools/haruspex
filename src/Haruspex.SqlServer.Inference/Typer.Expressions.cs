@@ -269,7 +269,7 @@ internal sealed partial class Typer
             : values.Take(first).Select((v, i) => i).Where(i => ReadTwice(arguments[i]))
                 .Select(i => (EquatableArray<IrNullReason>)[new IrNullReason(IrNullRule.ReadTwice, At(arguments[i]).ToString())])
                 .Aggregate((EquatableArray<IrNullReason>)[], NullReasons.Join);
-        if (values.Any(IsJson) || ReferenceEquals(coalesce, scope.JsonQueryArgument))
+        if (values.Any(IsJson) || ReferenceEquals(coalesce, scope.FoldingMoot))
         {
             var json = CoalesceJson(coalesce, arguments, values, because, scope);
             if (values.Any(IsJson) || json.Shape is JsonTextShape)

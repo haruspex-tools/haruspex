@@ -250,7 +250,7 @@ internal sealed partial class Walker
                 return Continue(RolledBack(state, at).Written(rolledBack: true));
             case DeclareVariableStatement declare:
                 foreach (var element in declare.Declarations.Where(d => d.Value is not null))
-                    state = Assign(state, names.Declarations.Declared(element).Name, typer.Expression(element.Value, Reading(state)), definitely: true, at, element.Value);
+                    state = Assign(state, names.Declarations.Declared(element).Name, typer.AssignedValue(AssignmentKind.Equals, element.Value, Reading(state), element), definitely: true, at, element.Value);
                 return Continue(state);
             case SetVariableStatement set when set.CursorDefinition is null && set.Identifier is null && set.Expression is not null:
                 return Continue(Assign(state, Resolved(set.Variable).Name, typer.AssignedValue(set.AssignmentKind, set.Expression, Reading(state), set), definitely: true, at, set.Expression));
