@@ -49,9 +49,10 @@ export async function report(pool: sql.ConnectionPool): Promise<void> {
  * uses without declaring, @kind typed from the column it is compared with (nvarchar(10)) and @since from the comment that declares
  * it (datetime2(0), sent as an ISO 8601 string), and its rows are checked by its schema.
  */
-export async function thirsty(pool: sql.ConnectionPool, since: Date): Promise<ThirstyPlantsRow[]> {
-  // A Date from the driver holds the stored clock time in its UTC fields: the string is its ISO form without the Z, to the second.
-  return await thirstyPlants(pool, { kind: null, since: since.toISOString().slice(0, 19) })
+export async function thirsty(pool: sql.ConnectionPool, since: string): Promise<ThirstyPlantsRow[]> {
+  // since is the greenhouse's own clock time, as the log stores it: '2026-11-16T08:30:00'. The schema refuses any other form, and a
+  // JavaScript Date, whose meaning would depend on the process's time zone.
+  return await thirstyPlants(pool, { kind: null, since })
 }
 
 /**
